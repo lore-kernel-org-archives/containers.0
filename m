@@ -1,46 +1,77 @@
-From: Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>
-Subject: Re: [RFC][PATCH 4/4] Represent RPC Callers
-Date: Tue, 06 Jan 2009 08:04:22 -0500
-Message-ID: <1231247062.7127.36.camel@heimdal.trondhjem.org>
-References: <20090106011314.534653345@us.ibm.com>
-	 <20090106011315.229045829@us.ibm.com>
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: nfsd and containers
+Date: Tue, 6 Jan 2009 10:41:59 -0500
+Message-ID: <20090106154159.GC2386@fieldses.org>
+References: <20090104025415.GF24075@fieldses.org>
+	<20090105164016.GA8746@us.ibm.com>
+	<1231196118.14345.37.camel@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20090106011315.229045829-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1231196118.14345.37.camel@localhost>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-01-05 at 17:13 -0800, Matt Helsley wrote:
-> plain text document attachment (move-rpc-client-nodename-cache.patch)
-> Currently RPC needs to know the nodename (often the same as the hostname) which
-> should be used for UNIX-style authentication and file-lock tracking. Because
-> hostname can change between RPC calls and some sequences of RPC calls may
-> require consistent names between calls RPC currently saves the nodename with
-> the RPC client structure.
+On Mon, Jan 05, 2009 at 02:55:18PM -0800, Matt Helsley wrote:
+> On Mon, 2009-01-05 at 10:40 -0600, Serge E. Hallyn wrote:
+> > Quoting J. Bruce Fields (bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org):
+> > > Does anyone have any ideas about how the kernel's nfsd should interact
+> > > (if at all) with network namespaces?
+> > > 
+> > > I'm initially interested because I've been experimenting with modifying
+> > > the server to allow it to present different exported filesystems
+> > > depending on which ip address it's accessed through.  One way to do that
+> > > might be by modifying the kernel to behave as though there's a separate
+> > > nfsd service per network namespace; then we'd need little or no
+> > > modification of the userspace support daemons (statd, the portmapper,
+> > > etc.)--just start multiple instances of them in separate network
+> > > namespaces and teach the kernel to route requests to them to the
+> > > corresponding loopback interface.  (That would work at least for daemons
+> > > that communicate with the kernel exclusively using rpc over loopback.
+> > > We could perhaps do something similar with the various /proc and nfsctl
+> > > interfaces.)
 > 
-> This is doesn't always work because RPC clients may be discarded over the
-> lifetime of a higher level service -- like those that compose NFS. Specifically
-> this is known to happen during shutdown.
+> This sounds good. It is somewhat related to UTS namespaces because the
+> hostname reported from the UTS namespace and the DNS name might not
+> match. I haven't thoroughly explored all the combinations but I suspect
+> the use of network namespaces could play a part in that depending on
+> what choices the administrator(s) make.
 > 
-> Hence RPC should expect the nodename to be saved by the caller when sequences
-> of RPC calls requiring consistent nodenames may be needed (e.g. NFS). To enable
-> this we introduce an RPC caller structure that allows RPC to query the caller
-> for this information.
+> > > I'm also curious more generally whether anyone's thought about how nfsd 
+> > > should behave in the presence of containers.
 > 
-> This patch is not complete but is meant to indicate the direction I'm planning
-> on going. I'd like to know if there are any objections or if anyone sees a
-> better way to handle this.
+> I have only thought about how nfsd should see clients in different UTS
+> and mount namespaces. The conclusion I came to was NFS should use
+> whatever name was used with the original mount. So if we mounted an NFS
+> export and then create a container that uses that mount then it should
+> use the hostname of the original container. However if the child
+> container then does another NFS mount then the child's hostname ought to
+> be used for the new mount.
 
-You're planning on slowing down every RPC call in order to fix a problem
-on client shutdown? Why?
+I'm interested in what needs to be done on the server side rather than
+on the client side.  The server is perhaps less of a natural fit for the
+containers project since, unlike the rest of the kernel, it doesn't
+exist to perform services on behalf of local processes--it's more like a
+full-blown application that happens to run inside the kernel.
 
-Trond
+Still, it might make sense to use network namespaces to implement
+something like Apache's ip-based virtual hosts, by presenting the
+processes in each network namespace with the illusion that they control
+their own private nfs server.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On the other hand, requiring administrators to set up multiple network
+namespaces just to configure this kind of nfs service may be cumbersome.
+
+--b.
