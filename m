@@ -1,54 +1,46 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 1/6] proc: implement support for automounts in task directories
-Date: Tue, 06 Jan 2009 04:20:55 -0800
-Message-ID: <m1vdss1v88.fsf@frodo.ebiederm.org>
-References: <20090105233241.GA3924@x200.localdomain>
-	<20090106092114.GA11877@infradead.org>
+From: Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/4] Represent RPC Callers
+Date: Tue, 06 Jan 2009 08:04:22 -0500
+Message-ID: <1231247062.7127.36.camel@heimdal.trondhjem.org>
+References: <20090106011314.534653345@us.ibm.com>
+	 <20090106011315.229045829@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753234AbZAFM1x@vger.kernel.org>
-In-Reply-To: <20090106092114.GA11877@infradead.org> (Christoph Hellwig's
-	message of "Tue, 6 Jan 2009 04:21:14 -0500")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Alexey Dobriyan <adobriyan@gmail.com>, viro@zeniv.linux.org.uk, linux-kernel@vger.kernel.org, containers@lists.osdl.org, sds@tycho.nsa.gov, jmorris@namei.org
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20090106011315.229045829-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Christoph Hellwig <hch@infradead.org> writes:
+On Mon, 2009-01-05 at 17:13 -0800, Matt Helsley wrote:
+> plain text document attachment (move-rpc-client-nodename-cache.patch)
+> Currently RPC needs to know the nodename (often the same as the hostname) which
+> should be used for UNIX-style authentication and file-lock tracking. Because
+> hostname can change between RPC calls and some sequences of RPC calls may
+> require consistent names between calls RPC currently saves the nodename with
+> the RPC client structure.
+> 
+> This is doesn't always work because RPC clients may be discarded over the
+> lifetime of a higher level service -- like those that compose NFS. Specifically
+> this is known to happen during shutdown.
+> 
+> Hence RPC should expect the nodename to be saved by the caller when sequences
+> of RPC calls requiring consistent nodenames may be needed (e.g. NFS). To enable
+> this we introduce an RPC caller structure that allows RPC to query the caller
+> for this information.
+> 
+> This patch is not complete but is meant to indicate the direction I'm planning
+> on going. I'd like to know if there are any objections or if anyone sees a
+> better way to handle this.
 
-> On Tue, Jan 06, 2009 at 02:32:41AM +0300, Alexey Dobriyan wrote:
->> This is current version of /proc/net as separate file system patchset,
->> rebased, etc. I'll put it into -next again when merge window closes.
->
-> I still don't see the point for that.  Why not /proc/nets/<netid> with
-> symlinks from /proc/<pid>/net into those?
+You're planning on slowing down every RPC call in order to fix a problem
+on client shutdown? Why?
 
-Simple really.
+Trond
 
-/proc/nets/<netid> is the other possible viable solution.  Where netid
-is some pid value that we assign to the network namespace during
-unshare or clone.  While there is precedent of using a pid value
-to identify a process group or a session it is a bit of a stretch
-to have it cover a namespace.
-
-When I talked it over with Al his preference was to for the
-current approach, and it happens to be my preference as well.
-
-It gives more control of naming policy to user space allowing us to
-avoid the maintenance pain that is sysfs where user space depends upon
-a fixed kernel naming policy (which makes change hard).
-
-It gives us a guarantee that we only have a single dentry tree for
-any given network namespace.
-
-It allows us to eventually separate out maintenance of proc/generic
-and proc/net, as inherently they have nothing in common.
-
-The only cost of this is that we actually use one of the rare but
-fully supported vfs features, on demand submounts.
-
-Beyond that proc has wanted to be several filesystems for ages, and doing
-it this way allows us to actually start splitting proc up without breaking
-backwards compatibility with out existing user space.
-
-Eric
+--
+To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
