@@ -1,54 +1,71 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH 7/7][v6] SI_USER: Masquerade si_pid when crossing pid ns
-	boundary
-Date: Tue, 6 Jan 2009 23:52:42 -0800
-Message-ID: <20090107075242.GG27985@us.ibm.com>
-References: <20090107074558.GA27881@us.ibm.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [RFC][PATCH] IP address restricting cgroup subsystem
+Date: Wed, 07 Jan 2009 16:36:35 +0800
+Message-ID: <49646993.6080802@cn.fujitsu.com>
+References: <20090106230554.GB25228@eskarina.localdomain.pl> <49644526.8030205@cn.fujitsu.com> <20090107073831.GA23648@megiteam.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756045AbZAGHzo@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090107074558.GA27881@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20090107073831.GA23648@megiteam.pl>
+Sender: netdev-owner@vger.kernel.org
+To: Grzegorz Nosek <root@localdomain.pl>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Grzegorz Nosek wrote:
+> On =C5=9Bro, sty 07, 2009 at 02:01:10 +0800, Li Zefan wrote:
+>> CC: netdev@vger.kernel.org
+>>
+>> I'll review the cgroup part if this patch is regarded as useful.
+>>
+>> Grzegorz Nosek wrote:
+>>> This is a very simple cgroup subsystem to restrict IP addresses use=
+d
+>>> by member processes. Currently it is limited to IPv4 only but IPv6 =
+(or
+>>> other protocols) should be easy to implement.
+>>>
+>>> IP addresses are write-once (via /cgroup/.../ipaddr.ipv4 in dotted-=
+quad
+>> Why they should be write-once ?
+>=20
+> No real (technical) reason. Making it read-write would be fine with m=
+e.
+> I wanted to make the restriction a one-way road but I guess I can pol=
+ice
+> that in userspace (simply don't write anything to the file twice).
+>=20
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Wed, 24 Dec 2008 14:14:18 -0800
-Subject: [PATCH 7/7][v6] SI_USER: Masquerade si_pid when crossing pid ns boundary
+But seems the patch makes it impossible to re-allow a restricted task t=
+o
+be binded to INADDR_ANY.
 
-When sending a signal to a descendant namespace, set ->si_pid to 0 since
-the sender does not have a pid in the receiver's namespace.
+> However, I think that the restriction should be inherited, so that if
+> CG1 is bound to e.g. 10.0.0.1, CG1/CG2 must be bound to the same
+> address. But what would I do then with descendant cgroups? Leave them=
+ as
+> is (breaking the inheritance)? Find them all and change their bound
+> address behind their back (do we have an API for that?)?
+>=20
 
-Note:
-	- If rt_sigqueueinfo() sets si_code to SI_USER when sending a
-	  signal across a pid namespace boundary, the value in ->si_pid
-	  will be cleared to 0.
+=46irstly, is inheritance necessary ?
 
-Changelog[v5]:
-	- (Oleg Nesterov) Address both sys_kill() and sys_tkill() cases
-	  in send_signal() to simplify code (this drops patch 7/7 from
-	  earlier version of patchset).
+If yes, then how about:
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- kernel/signal.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+The root cgroup is read-only, so the tasks in it always bind to INADDR_=
+ANY.
+=46or other cgroups, write is allowed only if it has no children and th=
+e
+parent is INADDR_ANY.
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 6ad47c0..d96ac1a 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -917,6 +917,8 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			break;
- 		default:
- 			copy_siginfo(&q->info, info);
-+			if (from_ancestor_ns)
-+				q->info.si_pid = 0;
- 			break;
- 		}
- 	} else if (!is_si_special(info)) {
--- 
-1.5.2.5
+> I guess I have the same problem right now, anyway (only once instead =
+of
+> multiple times), so I'd really appreciate your input on this.
+>=20
+> Best regards,
+>  Grzegorz Nosek
+>=20
+>=20
+
+
