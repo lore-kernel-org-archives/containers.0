@@ -1,120 +1,198 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/4] sunrpc: Improve UTS namespace workaround
-Date: Tue, 06 Jan 2009 19:02:12 -0800
-Message-ID: <1231297332.14345.334.camel@localhost>
-References: <20090106011314.534653345@us.ibm.com>
-	 <20090106011315.100081168@us.ibm.com>
-	 <E184097A-C995-4C92-9608-A97B43E750E0@oracle.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v12][PATCH 14/14] Restart multiple processes
+Date: Tue, 06 Jan 2009 22:20:59 -0500
+Message-ID: <49641F9B.9020803__15813.7178318158$1231298646$gmane$org@cs.columbia.edu>
+References: <1230542187-10434-1-git-send-email-orenl@cs.columbia.edu>
+	<1230542187-10434-15-git-send-email-orenl@cs.columbia.edu>
+	<20090104201957.GA12725@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E184097A-C995-4C92-9608-A97B43E750E0-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090104201957.GA12725-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Argh, missed some questions I should've answered earlier...
 
-On Tue, 2009-01-06 at 11:02 -0500, Chuck Lever wrote:
-> Matt-
+
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> Restarting of multiple processes expects all restarting tasks to call
+>> sys_restart(). Once inside the system call, each task will restart
+>> itself at the same order that they were saved. The internals of the
+>> syscall will take care of in-kernel synchronization bewteen tasks.
+
+[...]
+
+> Thanks, Oren.
 > 
-> Thanks for pursuing a permanent fix for this.
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> On Jan 5, 2009, at Jan 5, 2009, 8:13 PM, Matt Helsley wrote:
+> with a few comments below.
+
+Thanks for the comments.
+
+[...]
+
+>> +/* FIXME: this should be per container */
+>> +DECLARE_WAIT_QUEUE_HEAD(cr_restart_waitq);
+>> +
+>> +static int do_restart_task(struct cr_ctx *ctx, pid_t pid)
 > 
-> > We can improve upon a workaround applied in commit
-> > 63ffc23d307c9534c732edd87895e37b223004a3 ( http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=63ffc23d307c9534c732edd87895e37b223004a3 
-> >  )
-> >
-> > The original problem was:
-> >
-> > "On a system with nfs mounts, if a task unshares its mount namespace,
-> > a oops can occur when the system is rebooted if the task is the last
-> > to unreference the nfs mount. It will try to create a rpc request
-> > using utsname() which has been invalidated by free_nsproxy()."
-> >
-> > Cedric worked around this by always using the initial uts namespace  
-> > for RPC.
-> > Critically this workaround meant that RPC clients in uts namespaces  
-> > can never
-> > report the changed nodename when utilizing RPC.
-> >
-> > Fix that by storing the nodename in the NFS server structure (part  
-> > of the NFS
-> > super block) and, when an RPC client is operating on behalf of NFS,  
-> > reporting
-> > that nodename. This solves the problem for NFS clients but leaves  
-> > any other
-> > RPC users out in the cold.
-> >
-> > Rather than caching the nodename in the client structure RPC should  
-> > obtain the
-> > nodename from RPC callers. It would then be up to those services  
-> > making RPC
-> > calls to cache the nodename for as long as necessary -- somewhat  
-> > like this patch
-> > does with NFS.
+> Passing ctx in here, when it is always NULL, is just a bit
+> confusing, and, since you goto out and cr_ctx_put(ctx) without
+> initializing ctx, you make verifying that that's ok a step
+> harder.
 > 
-> Instead of having the RPC client call the consumer back, why can't you  
-> pass the nodename as an argument to each RPC call; say, via the  
-> rpc_message structure?
+> Do you intend to ever pass in non-NULL in later patches?
 
-I suspect it would work and it would avoid the layering violation you
-pointed out.
+Yes; for instance I expect Andrey's create-tasks-in-kernel patch
+(when ready) to eventually have each thread call do_restart_task().
+I also liked the symmetry with do_restart_root()...
 
-> > NOTE: Part of Cedric's workaround -- use of the initial uts  
-> > namespace -- is
-> > still necessary because non-NFS RPC callers still rely on the  
-> > nodename cached
-> > with the RPC client struct.
+You are correct that it's confusing now, so I'll take it out.
+
 > 
-> In the long run I think it would be more useful to spell out where  
-> each consumer gets its nodename value, rather than having a convenient  
-> default value.  A default would encourage exposing nodenames  
-> inappropriately due to sloppy coding and incorrect assumptions (on the  
-> developer's part) about a complex API.
-
-You make some good points here. I'll add your idea to my list of patches
-to try writing:
-	1. Store a reference to the uts namespace with the credentials
-	2. Pass the nodename directly for each RPC call (via rpc_message
-		perhaps)
-
-<snip>
-
-> > Index: linux-2.6.28/include/linux/sunrpc/clnt.h
-> > ===================================================================
-> > --- linux-2.6.28.orig/include/linux/sunrpc/clnt.h
-> > +++ linux-2.6.28/include/linux/sunrpc/clnt.h
-> > @@ -19,6 +19,7 @@
-> > #include <asm/signal.h>
-> >
-> > struct rpc_inode;
-> > +struct nfs_server;
-> >
-> > /*
-> >  * The high-level client handle
-> > @@ -50,6 +51,7 @@ struct rpc_clnt {
-> >
-> > 	int			cl_nodelen;	/* nodename length */
-> > 	char 			cl_nodename[UNX_MAXNODENAME];
-> > +	struct nfs_server	*cl_nfs_server;
+>> +{
+>> +	struct task_struct *root_task;
+>> +	int ret;
+>> +
+>> +	rcu_read_lock();
+>> +	root_task = find_task_by_pid_ns(pid, current->nsproxy->pid_ns);
+>> +	if (root_task)
+>> +		get_task_struct(root_task);
+>> +	rcu_read_unlock();
+>> +
+>> +	if (!root_task)
+>> +		return -EINVAL;
+>> +
+>> +	/*
+>> +	 * wait for container init to initialize the restart context, then
+>> +	 * grab a reference to that context, and if we're the last task to
+>> +	 * do it, notify the container init.
+>> +	 */
+>> +	ret = wait_event_interruptible(cr_restart_waitq,
+>> +				       root_task->checkpoint_ctx);
 > 
-> This is a layering violation...  I would rather avoid introducing new  
-> strong data structure dependencies on one of RPC's consumers.
+> Would seem more sensible to do the above using the ctx which
+> you grabbed under task_lock(root_task) next.  Your whole
+> locking of root_task->checkpoint_ctx seems haphazard (see below).
 
-<snip>
+At this point 'root_task->checkpoint_ctx' may still be NULL if the
+container init did not yet initialize it. That's why we first wait
+for it to become non-NULL.
 
-I addressed your other comments in an earlier reply.
+The code solves a coordination problem between the container init and
+the other tasks, given that:
+a) the order in which they call sys_restart() is unknown
+b) the container init creates a 'ctx' that is to be used by everyone
 
-Thanks!
+The container init simply (1) allocates a shared 'ctx' and makes it
+visible via 'root_task->chcekpoint_ctx', then waits for all tasks to
+grab it (thus, be ready to restart), then initiates the restart chain,
+and finally waits for all tasks to finish.
 
-Cheers,
-	-Matt Helsley
+The other tasks, because of (a) and (b), may enter the kernel before
+the container init completes its step (1). So they must first wait
+for that 'ctx' to be available
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+>> +	if (ret < 0)
+>> +		goto out;
+>> +
+>> +	task_lock(root_task);
+>> +	ctx = root_task->checkpoint_ctx;
+>> +	if (ctx)
+>> +		cr_ctx_get(ctx);
+>> +	task_unlock(root_task);
+
+So the other tasks work in two steps:
+1) wait for the container init ->checkpoint_ctx (we don't know when !)
+2) grab a reference to that 'ctx'
+
+Step (2) ensures that our reference to 'ctx' is valid even if the
+container init exits (due to error, signal etc). The last user of
+the 'ctx' will be the one to actually free it.
+
+I use the lock to protect against time-of-check to time-of-use race
+(e.g.the container init may exit due to an error or a signal); the
+container init also grabs the lock before clearing its ->checkpoint_ctx.
+
+>> +
+>> +	if (!ctx) {
+>> +		ret = -EAGAIN;
+>> +		goto out;
+>> +	}
+>> +
+>> +	if (atomic_dec_and_test(&ctx->tasks_count))
+>> +		complete(&ctx->complete);
+>> +
+>> +	/* wait for our turn, do the restore, and tell next task in line */
+>> +	ret = cr_wait_task(ctx);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +	ret = cr_read_task(ctx);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +	ret = cr_next_task(ctx);
+>> +
+>> + out:
+>> +	cr_ctx_put(ctx);
+>> +	put_task_struct(root_task);
+>> +	return ret;
+>> +}
+>> +
+>> +static int cr_wait_all_tasks_start(struct cr_ctx *ctx)
+>> +{
+>> +	int ret;
+>> +
+>> +	if (ctx->pids_nr == 1)
+>> +		return 0;
+>> +
+>> +	init_completion(&ctx->complete);
+>> +	current->checkpoint_ctx = ctx;
+>> +
+>> +	wake_up_all(&cr_restart_waitq);
+>> +
+>> +	ret = wait_for_completion_interruptible(&ctx->complete);
+>> +	if (ret < 0)
+>> +		return ret;
+>> +
+>> +	task_lock(current);
+>> +	current->checkpoint_ctx = NULL;
+>> +	task_unlock(current);
+> 
+> Who can you be racing with here?  All other tasks should have
+> already dereferenced current->checkpoint_ctx.
+> 
+> If you want to always lock root_task around setting and
+> reading of (root_task|current)->checkpoint_ctx, that's
+> ok, but I think you can sufficiently argue that your
+> completion is completely protecint readers from the sole
+> writer.
+
+Only lock around clearing and reading; setting is safe.
+
+The completion is interruptible so that you can signal or kill
+the container init if something goes wrong, e.g. bad checkpoint
+image causes it to wait for non-existing processes forever.
+
+At a second glance, the clearing of '->checkpoint_ctx' must
+happen regardless of whether an error occurred, so the test for
+'ret < 0' should follow (and not precede) it.
+
+[...]
+
+Thanks,
+
+Oren.
