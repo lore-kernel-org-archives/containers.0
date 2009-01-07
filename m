@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Subject: Re: [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Wed, 7 Jan 2009 12:07:52 -0600
-Message-ID: <20090107180752.GA19153@us.ibm.com>
+Date: Wed, 7 Jan 2009 20:15:37 +0100
+Message-ID: <20090107191536.GA15159@megiteam.pl>
 References: <20090106230554.GB25228@eskarina.localdomain.pl>
+	<20090107180752.GA19153@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090106230554.GB25228-IaEwMO9oKu/77SC2UrCW1JJg/dWx8T/9@public.gmane.org>
+In-Reply-To: <20090107180752.GA19153-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,48 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Grzegorz Nosek (root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org):
-> This is a very simple cgroup subsystem to restrict IP addresses used
-> by member processes. Currently it is limited to IPv4 only but IPv6 (or
-> other protocols) should be easy to implement.
-> 
-> IP addresses are write-once (via /cgroup/.../ipaddr.ipv4 in dotted-quad
-> format) and are inherited by descendant cgroups, so a process once
-> restricted should never be able to get rid of the limits. Any address
-> may be specified in multiple cgroups. No verification is done to ensure
-> the addresses are actually configured on the machine, which has its
-> advantages (may add the addresses later) and disadvantages (if you enter
-> the wrong address, the cgroup will be effectively cut off from the
-> network).
-> 
-> Whenever a process inside a restricted cgroup calls bind(2), the address
-> is checked like this:
->  - INADDR_LOOPBACK is explicitly allowed (a special case)
->  - INADDR_ANY is remapped to _the_ IP address
->  - _the_ IP address is passed through unharmed
->  - everything else causes -EPERM
-> 
-> When a process calls connect(2), this subsystem calls bind(_the_IP_)
-> quietly behind its back, while preserving the original bound port (if
-> any).
-> 
-> Rationale (or when/why would you want it):
-> The use case for ipaddr_cgroup doesn't overlap with network namespaces,
-> which also allow IP address restrictions, because it aims to be much
-> lighter due to its limited scope (hopefully able to easily support
-> hundreds or possibly thousands of distinct cgroups). It does not attempt
-> to hide the existence of other IP addresses from the user.
-
-Have you run a test, and found that in fact a network namespace
-is too heavyweight to do so?  If so, some numbers here would be
-far more pursuasive.
-
-(Mind you I've written a few version of this - based on LSM -
-myself in the past, but that was before network namespaces
-existed)
-
--serge
+T24gxZtybywgc3R5IDA3LCAyMDA5IGF0IDEyOjA3OjUyIC0wNjAwLCBTZXJnZSBFLiBIYWxseW4g
+d3JvdGU6Cj4gSGF2ZSB5b3UgcnVuIGEgdGVzdCwgYW5kIGZvdW5kIHRoYXQgaW4gZmFjdCBhIG5l
+dHdvcmsgbmFtZXNwYWNlCj4gaXMgdG9vIGhlYXZ5d2VpZ2h0IHRvIGRvIHNvPyAgSWYgc28sIHNv
+bWUgbnVtYmVycyBoZXJlIHdvdWxkIGJlCj4gZmFyIG1vcmUgcHVyc3Vhc2l2ZS4KCklzICJob3cg
+bG9uZyBpdCB0b29rIG1lIHRvIHNldCB1cCBhbmQgZG9jdW1lbnQgdGhpcyIgYSB2YWxpZCBiZW5j
+aG1hcms/Ck5vLCBJIGhhdmVuJ3QgcnVuIGFueSB0ZXN0cyB5ZXQuIEhvd2V2ZXIsIHRoZSBvdmVy
+aGVhZCBJJ20gdGhpbmtpbmcgb2YKaXNuJ3Qgb25seSByZWxhdGVkIHRvIHJhdyBzcGVlZCwgYnV0
+IGFsc28gaW5jbHVkZXMgYWRtaW5pc3RyYXRpdmUgdGFza3MuCgpPdmVyYWxsLCBJJ2QgbGlrZSB0
+byBoYXZlIGFuIGVudmlyb25tZW50IHdoZXJlIHVzZXJzIGFyZSBncm91cGVkIGluCmNvbnRhaW5l
+cnMgYnV0IHN0aWxsIGhhdmUgdGhlbSBzbGlnaHRseSBpc29sYXRlZCBmcm9tIGVhY2ggb3RoZXIg
+KHRoaW5ncwpvdXRzaWRlIG5vcm1hbCBVbml4IHJlc3RyaWN0aW9ucyBpbmNsdWRlIGUuZy4gbm90
+IHNlZWluZyBvdGhlcnMnCnByb2Nlc3NlcyBvciBub3QgYmVpbmcgYWJsZSB0byBzdGVwIG9uIHRo
+ZWlyIHJlc291cmNlcy0tbGlrZSB0aGUgSVAKYWRkcmVzcyBhc3NpZ25lZCkuIEluIHRoZSBlbmQs
+IEknZCBsaWtlIHRvIGhhdmUgdXAgdG8gYSBkb3plbiBvciBhIGZldwoiYmlnIiBjb250YWluZXJz
+IGFuZCBodW5kcmVkcysgb2YgcGVyLXVzZXIgY2dyb3VwcyAod2l0aG91dCBhZGRpdGlvbmFsCm5h
+bWVzcGFjZSBkaXZpc2lvbnMpIHBlciBtYWNoaW5lLiBEbyB5b3UgdGhpbmsgYSBicmlkZ2UgdG9n
+ZXRoZXIgd2l0aApzZXZlcmFsIGh1bmRyZWQgdmV0aHMgaW4gdGhlIHJvb3QgbmFtZXNwYWNlIHdv
+bid0IGNvbmZ1c2UgYWRtaW4gdG9vbHMKKG9yIHRoZSBhZG1pbnMgdGhlbXNlbHZlcyk/IE9yIHNo
+b3VsZCBJIHVzZSBtYWN2bGFuIGZvciB0aGF0LCBvcgpwb3NzaWJseSBzb21ldGhpbmcgZWxzZSBh
+bHRvZ2V0aGVyPwoKSSdsbCB0cnkgdG8gZ2V0IHNvbWUgbnVtYmVycyBidXQgbXkgY3VycmVudCBk
+ZXYuIG1hY2hpbmUgaXMgYSBWTXdhcmUKaW5zdGFuY2Ugb24gbXkgbGFwdG9wIGFuZCB0aGF0IHJ1
+bnMgcmF0aGVyIGFieXNtYWxseSwgc28gdGhleSdsbCBiZQpwcm9iYWJseSBza2V3ZWQgb25lIHdh
+eSBvciBhbm90aGVyLgoKPiAoTWluZCB5b3UgSSd2ZSB3cml0dGVuIGEgZmV3IHZlcnNpb24gb2Yg
+dGhpcyAtIGJhc2VkIG9uIExTTSAtCj4gbXlzZWxmIGluIHRoZSBwYXN0LCBidXQgdGhhdCB3YXMg
+YmVmb3JlIG5ldHdvcmsgbmFtZXNwYWNlcwo+IGV4aXN0ZWQpCgpCZXN0IHJlZ2FyZHMsCiBHcnpl
+Z29yeiBOb3NlawpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
