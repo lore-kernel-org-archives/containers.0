@@ -1,50 +1,115 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Wed, 7 Jan 2009 08:38:32 +0100
-Message-ID: <20090107073831.GA23648@megiteam.pl>
-References: <20090106230554.GB25228@eskarina.localdomain.pl>
-	<49644526.8030205@cn.fujitsu.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 0/7][v6] Container-init signal semantics
+Date: Tue, 6 Jan 2009 23:45:58 -0800
+Message-ID: <20090107074558.GA27881@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755247AbZAGHsk@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <49644526.8030205-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
+Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-T24gxZtybywgc3R5IDA3LCAyMDA5IGF0IDAyOjAxOjEwICswODAwLCBMaSBaZWZhbiB3cm90ZToK
-PiBDQzogbmV0ZGV2QHZnZXIua2VybmVsLm9yZwo+IAo+IEknbGwgcmV2aWV3IHRoZSBjZ3JvdXAg
-cGFydCBpZiB0aGlzIHBhdGNoIGlzIHJlZ2FyZGVkIGFzIHVzZWZ1bC4KPiAKPiBHcnplZ29yeiBO
-b3NlayB3cm90ZToKPiA+IFRoaXMgaXMgYSB2ZXJ5IHNpbXBsZSBjZ3JvdXAgc3Vic3lzdGVtIHRv
-IHJlc3RyaWN0IElQIGFkZHJlc3NlcyB1c2VkCj4gPiBieSBtZW1iZXIgcHJvY2Vzc2VzLiBDdXJy
-ZW50bHkgaXQgaXMgbGltaXRlZCB0byBJUHY0IG9ubHkgYnV0IElQdjYgKG9yCj4gPiBvdGhlciBw
-cm90b2NvbHMpIHNob3VsZCBiZSBlYXN5IHRvIGltcGxlbWVudC4KPiA+IAo+ID4gSVAgYWRkcmVz
-c2VzIGFyZSB3cml0ZS1vbmNlICh2aWEgL2Nncm91cC8uLi4vaXBhZGRyLmlwdjQgaW4gZG90dGVk
-LXF1YWQKPiAKPiBXaHkgdGhleSBzaG91bGQgYmUgd3JpdGUtb25jZSA/CgpObyByZWFsICh0ZWNo
-bmljYWwpIHJlYXNvbi4gTWFraW5nIGl0IHJlYWQtd3JpdGUgd291bGQgYmUgZmluZSB3aXRoIG1l
-LgpJIHdhbnRlZCB0byBtYWtlIHRoZSByZXN0cmljdGlvbiBhIG9uZS13YXkgcm9hZCBidXQgSSBn
-dWVzcyBJIGNhbiBwb2xpY2UKdGhhdCBpbiB1c2Vyc3BhY2UgKHNpbXBseSBkb24ndCB3cml0ZSBh
-bnl0aGluZyB0byB0aGUgZmlsZSB0d2ljZSkuCgpIb3dldmVyLCBJIHRoaW5rIHRoYXQgdGhlIHJl
-c3RyaWN0aW9uIHNob3VsZCBiZSBpbmhlcml0ZWQsIHNvIHRoYXQgaWYKQ0cxIGlzIGJvdW5kIHRv
-IGUuZy4gMTAuMC4wLjEsIENHMS9DRzIgbXVzdCBiZSBib3VuZCB0byB0aGUgc2FtZQphZGRyZXNz
-LiBCdXQgd2hhdCB3b3VsZCBJIGRvIHRoZW4gd2l0aCBkZXNjZW5kYW50IGNncm91cHM/IExlYXZl
-IHRoZW0gYXMKaXMgKGJyZWFraW5nIHRoZSBpbmhlcml0YW5jZSk/IEZpbmQgdGhlbSBhbGwgYW5k
-IGNoYW5nZSB0aGVpciBib3VuZAphZGRyZXNzIGJlaGluZCB0aGVpciBiYWNrIChkbyB3ZSBoYXZl
-IGFuIEFQSSBmb3IgdGhhdD8pPwoKSSBndWVzcyBJIGhhdmUgdGhlIHNhbWUgcHJvYmxlbSByaWdo
-dCBub3csIGFueXdheSAob25seSBvbmNlIGluc3RlYWQgb2YKbXVsdGlwbGUgdGltZXMpLCBzbyBJ
-J2QgcmVhbGx5IGFwcHJlY2lhdGUgeW91ciBpbnB1dCBvbiB0aGlzLgoKQmVzdCByZWdhcmRzLAog
-R3J6ZWdvcnogTm9zZWsKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
-dGluZm8vY29udGFpbmVycw==
+
+Container-init must behave like global-init to processes within the
+container and hence it must be immune to unhandled fatal signals from
+within the container (i.e SIG_DFL signals that terminate the process).
+
+But the same container-init must behave like a normal process to 
+processes in ancestor namespaces and so if it receives the same fatal
+signal from a process in ancestor namespace, the signal must be
+processed.
+
+Implementing these semantics requires that send_signal() determine pid
+namespace of the sender but since signals can originate from workqueues/
+interrupt-handlers, determining pid namespace of sender may not always
+be possible or safe.
+
+This patchset implements the design/simplified semantics suggested by
+Oleg Nesterov.  The simplified semantics for container-init are:
+
+	- container-init must never be terminated by a signal from a
+	  descendant process.
+
+	- container-init must never be immune to SIGKILL from an ancestor
+	  namespace (so a process in parent namespace must always be able
+	  to terminate a descendant container).
+
+	- container-init may be immune to unhandled fatal signals (like
+	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
+	  the only reliable signal from ancestor namespace).
+
+Patches in this set:
+
+	 [PATCH 1/7] Remove 'handler' parameter to tracehook functions
+	 [PATCH 2/7] Protect init from unwanted signals more
+	 [PATCH 3/7] Add from_ancestor_ns parameter to send_signal()
+	 [PATCH 4/7] Define siginfo_from_ancestor_ns()
+	 [PATCH 5/7] Protect cinit from unblocked SIG_DFL signals
+	 [PATCH 6/7] Protect cinit from blocked fatal signals
+	 [PATCH 7/7] SI_USER: Masquerade si_pid when crossing pid ns boundary
+
+Changelog[v6]:
+
+	- Patches 3,4: Have kill_pid_info_as_uid() pass in 'from_ancestor_ns'
+	  parameter to __send_signal() and remove SI_ASYNCIO check in
+	  siginfo_from_user().
+	- Patches 4,6: Update changelog and simplify code
+
+Changelog[v5]:
+	- Patch 2/6: Remove SIG_IGN check in sig_task_ignored() and let
+	  sig_handler_ignored() check SIG_IGN.
+        - Patch 3/6. Put siginfo_from_ancestor_ns() back under CONFIG_PID_NS
+	  and remove warning in rt_sigqueueinfo().
+	- (Patch 5/6)Simplify check in get_signal_to_deliver()
+	- (Patch 6/6)Simplify masquerading pid
+	- LTP-20081219-intermediate showed no new errors on 2.6.28-rc5-mm2.
+
+Changelog[v4]:
+	- [Bugfix] Patch 3/7. Check ns == NULL in siginfo_from_ancestor_ns().
+	  Although http://lkml.org/lkml/2008/12/16/502 makes it less likely
+	  that ns == NULL, looks like an explicit check won't hurt ?
+	- Remove SIGNAL_UNKILLABLE_FROM_NS flag and simplify logic as
+	  suggested by Oleg Nesterov.
+	- Dropped patch that set SIGNAL_UNKILLABLE_FROM_NS and set
+	  SIGNAL_UNKILLABLE in patch 5/7 to be bisect-safe.
+	- Add a warning in rt_sigqueueinfo() if SI_ASYNCIO is used
+	  (patch 3/7)
+	- Added two patches (6/7 and 7/7) to masquerade si_pid for
+	  SI_USER and SI_TKILL
+
+
+Changelog[v3]:
+	Changes based on discussions of previous version:
+		http://lkml.org/lkml/2008/11/25/458
+
+	Major changes:
+
+	- Define SIGNAL_UNKILLABLE_FROM_NS and use in container-inits to
+	  skip fatal signals from same namespace but process SIGKILL/SIGSTOP
+	  from ancestor namespace.
+	- Use SI_FROMUSER() and si_code != SI_ASYNCIO to determine if
+	  it is safe to dereference pid-namespace of caller. Highly
+	  experimental :-)
+	- Masquerading si_pid when crossing namespace boundary: relevant
+	  patches merged in -mm and dropped from this set.
+
+	Minor changes:
+
+	- Remove 'handler' parameter to tracehook functions
+	- Update sig_ignored() to drop SIG_DFL signals to global init early
+	  (tried to address Roland's  and Oleg's comments)
+	- Use 'same_ns' flag to drop SIGKILL/SIGSTOP to cinit from same
+	  namespace
+
+TODO:
+	- Add a check in fs/proc/array.c:task_sig() to include SIG_DFL
+	  signals from same namespace in 'ignored signals' set for
+	  container/global init.
+
+
+Limitations/side-effects of current design
+
+	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
+	  ignored. Use exit() :-)
