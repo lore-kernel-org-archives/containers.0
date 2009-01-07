@@ -1,49 +1,48 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC][PATCH 2/4] sunrpc: Use utsnamespaces
-Date: Tue, 06 Jan 2009 15:58:35 -0800
-Message-ID: <1231286315.14345.184.camel@localhost>
-References: <20090106011314.534653345@us.ibm.com>
-	 <20090106011314.961946803@us.ibm.com>  <20090106200229.GA17031@us.ibm.com>
-	 <1231274682.20316.65.camel@heimdal.trondhjem.org>
-	 <1231283935.14345.142.camel@localhost>
-	 <1231285417.8041.15.camel@heimdal.trondhjem.org>
+Date: Tue, 6 Jan 2009 18:01:32 -0600
+Message-ID: <20090107000132.GA22261@us.ibm.com>
+References: <20090106011314.534653345@us.ibm.com> <20090106011314.961946803@us.ibm.com> <20090106200229.GA17031@us.ibm.com> <FB1BAB9F-25D4-449F-A66D-D1CC705F3741@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1231285417.8041.15.camel-rJ7iovZKK19ZJLDQqaL3InhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <FB1BAB9F-25D4-449F-A66D-D1CC705F3741-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>
-Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-01-06 at 18:43 -0500, Trond Myklebust wrote:
-> On Tue, 2009-01-06 at 15:18 -0800, Matt Helsley wrote:
-> > Yes, I was aware that the inode might be dirtied by another container. I
-> > was thinking that, at least in the case of NFS, it makes sense to report
-> > the node name of the container that did the original mount. Of course
-> > this doesn't address the general RPC client case and, like patch 3, it
-> > makes the superblock solution rather NFS-specific. That brings me to a
-> > basic question: Are there any RPC clients in the kernel that do not
-> > operate on behalf of NFS?
-> 
-> Yes. There is, for instance, the portmapper/rpcbind client.
+Quoting Chuck Lever (chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org):
+> On Jan 6, 2009, at Jan 6, 2009, 3:02 PM, Serge E. Hallyn wrote:
+>> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>>> We can often specify the UTS namespace to use when starting an RPC  
+>>> client.
+>>> However sometimes no UTS namespace is available (specifically during 
+>>> system
+>>> shutdown as the last NFS mount in a container is unmounted) so fall
+>>> back to the initial UTS namespace.
+>>
+>> So what happens if we take this patch and do nothing else?
+>
+> I thought the point of this was to prevent incorrect container nodenames 
+> from leaking onto the network.
 
-<snip>
+But define incorrect.  If container B does an nfs mount, container c
+is launched with a tree in that mount, container B dies, and container C
+umounts it.  Should the umount belong to container B (for having
+mounted it), container C (for having umount it), or the init_utsname
+(for being the physical host/kernel)?
 
-OK that's a good example. Point taken.
+I get the feeling that consensus on this thread is that init_utsname
+is actually the best choice, but OTOH if I have 3 containers on my
+host, for apache, mysql, and postfix servers, and each is doing
+nfs mounts from a physically remote machine, maybe I care about
+having them report separate nodenames?
 
->  The NFS and
-> lockd servers also sometime needs to send RPC callbacks. 
+(that's a question, I really don't know...)
 
-Yes, these won't have an NFS superblock handy and hence they use the
-node name cached in the RPC client struct. That means that these patches
-have only addressed NFS client-side namespace issues. Have you seen J.
-Bruce Fields post on the nfsd side of things?
-
-Cheers,
-	-Matt Helsley
-
+-serge
 --
 To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
