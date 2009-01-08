@@ -1,16 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Benny Amorsen <benny+usenet-sjWZyPj6pFx/SzgSGea1oA@public.gmane.org>
 Subject: Re: [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Wed, 7 Jan 2009 13:32:34 -0600
-Message-ID: <20090107193234.GA22625@us.ibm.com>
+Date: Thu, 08 Jan 2009 13:43:15 +0100
+Message-ID: <m34p0at1cs.fsf@ursa.amorsen.dk>
 References: <20090106230554.GB25228@eskarina.localdomain.pl>
 	<20090107180752.GA19153@us.ibm.com>
 	<20090107191536.GA15159@megiteam.pl>
+	<20090107193234.GA22625@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090107191536.GA15159-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <20090107193234.GA22625-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Wed\, 7 Jan 2009 13\:32\:34 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,39 +21,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <public-serue-r/Jw6+rmf7HQT0dZR+AlfA-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org>
+Cc: Grzegorz Nosek <public-root-AfQBxy1nhrQ00sYp1HPQUA-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org>, public-containers-qjLDD68F18O7TbgM5vRIOg-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBHcnplZ29yeiBOb3NlayAocm9vdEBsb2NhbGRvbWFpbi5wbCk6Cj4gT24gxZtybywg
-c3R5IDA3LCAyMDA5IGF0IDEyOjA3OjUyIC0wNjAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6Cj4g
-PiBIYXZlIHlvdSBydW4gYSB0ZXN0LCBhbmQgZm91bmQgdGhhdCBpbiBmYWN0IGEgbmV0d29yayBu
-YW1lc3BhY2UKPiA+IGlzIHRvbyBoZWF2eXdlaWdodCB0byBkbyBzbz8gIElmIHNvLCBzb21lIG51
-bWJlcnMgaGVyZSB3b3VsZCBiZQo+ID4gZmFyIG1vcmUgcHVyc3Vhc2l2ZS4KPiAKPiBJcyAiaG93
-IGxvbmcgaXQgdG9vayBtZSB0byBzZXQgdXAgYW5kIGRvY3VtZW50IHRoaXMiIGEgdmFsaWQgYmVu
-Y2htYXJrPwo+IE5vLCBJIGhhdmVuJ3QgcnVuIGFueSB0ZXN0cyB5ZXQuIEhvd2V2ZXIsIHRoZSBv
-dmVyaGVhZCBJJ20gdGhpbmtpbmcgb2YKPiBpc24ndCBvbmx5IHJlbGF0ZWQgdG8gcmF3IHNwZWVk
-LCBidXQgYWxzbyBpbmNsdWRlcyBhZG1pbmlzdHJhdGl2ZSB0YXNrcy4KPiAKPiBPdmVyYWxsLCBJ
-J2QgbGlrZSB0byBoYXZlIGFuIGVudmlyb25tZW50IHdoZXJlIHVzZXJzIGFyZSBncm91cGVkIGlu
-Cj4gY29udGFpbmVycyBidXQgc3RpbGwgaGF2ZSB0aGVtIHNsaWdodGx5IGlzb2xhdGVkIGZyb20g
-ZWFjaCBvdGhlciAodGhpbmdzCj4gb3V0c2lkZSBub3JtYWwgVW5peCByZXN0cmljdGlvbnMgaW5j
-bHVkZSBlLmcuIG5vdCBzZWVpbmcgb3RoZXJzJwo+IHByb2Nlc3NlcyBvciBub3QgYmVpbmcgYWJs
-ZSB0byBzdGVwIG9uIHRoZWlyIHJlc291cmNlcy0tbGlrZSB0aGUgSVAKPiBhZGRyZXNzIGFzc2ln
-bmVkKS4gSW4gdGhlIGVuZCwgSSdkIGxpa2UgdG8gaGF2ZSB1cCB0byBhIGRvemVuIG9yIGEgZmV3
-Cj4gImJpZyIgY29udGFpbmVycyBhbmQgaHVuZHJlZHMrIG9mIHBlci11c2VyIGNncm91cHMgKHdp
-dGhvdXQgYWRkaXRpb25hbAo+IG5hbWVzcGFjZSBkaXZpc2lvbnMpIHBlciBtYWNoaW5lLiBEbyB5
-b3UgdGhpbmsgYSBicmlkZ2UgdG9nZXRoZXIgd2l0aAo+IHNldmVyYWwgaHVuZHJlZCB2ZXRocyBp
-biB0aGUgcm9vdCBuYW1lc3BhY2Ugd29uJ3QgY29uZnVzZSBhZG1pbiB0b29scwo+IChvciB0aGUg
-YWRtaW5zIHRoZW1zZWx2ZXMpPyBPciBzaG91bGQgSSB1c2UgbWFjdmxhbiBmb3IgdGhhdCwgb3IK
-PiBwb3NzaWJseSBzb21ldGhpbmcgZWxzZSBhbHRvZ2V0aGVyPwo+IAo+IEknbGwgdHJ5IHRvIGdl
-dCBzb21lIG51bWJlcnMgYnV0IG15IGN1cnJlbnQgZGV2LiBtYWNoaW5lIGlzIGEgVk13YXJlCj4g
-aW5zdGFuY2Ugb24gbXkgbGFwdG9wIGFuZCB0aGF0IHJ1bnMgcmF0aGVyIGFieXNtYWxseSwgc28g
-dGhleSdsbCBiZQo+IHByb2JhYmx5IHNrZXdlZCBvbmUgd2F5IG9yIGFub3RoZXIuCj4gCj4gPiAo
-TWluZCB5b3UgSSd2ZSB3cml0dGVuIGEgZmV3IHZlcnNpb24gb2YgdGhpcyAtIGJhc2VkIG9uIExT
-TSAtCj4gPiBteXNlbGYgaW4gdGhlIHBhc3QsIGJ1dCB0aGF0IHdhcyBiZWZvcmUgbmV0d29yayBu
-YW1lc3BhY2VzCj4gPiBleGlzdGVkKQo+IAo+IEJlc3QgcmVnYXJkcywKPiAgR3J6ZWdvcnogTm9z
-ZWsKCkRvZXMgYW55b25lIGVsc2UgKEVyaWM/IFBhdmVsPykgaGF2ZSBleHBlcmllbmNlIHdpdGgg
-aHVuZHJlZHMKb3IgdGhvdXNhbmRzIG9mIG5ldHdvcmsgbmFtZXNwYWNlcz8KCi1zZXJnZQpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org>
+writes:
+
+> Does anyone else (Eric? Pavel?) have experience with hundreds
+> or thousands of network namespaces?
+
+Hundreds aren't a problem with OpenVZ (I do that in production) and
+the vanilla kernel namespaces shouldn't be heavier. I don't think
+performance is a good argument for the patch.
+
+However, I do see the appeal of patch anyway. It would be tempting to
+use cgroups inside a network namespace for administrative reasons,
+like Grzegorz Nosek proposed. I am not sure if you can create name
+spaces with the semantics he proposed:
+
+ - INADDR_LOOPBACK is explicitly allowed (a special case)
+ - INADDR_ANY is remapped to _the_ IP address
+ - _the_ IP address is passed through unharmed
+ - everything else causes -EPERM
+
+If you can get those semantics (or something close) already, then the
+patch isn't useful.
+
+
+/Benny
