@@ -1,68 +1,38 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Sat, 10 Jan 2009 12:20:09 +0100
-Message-ID: <20090110112009.GA12336@megiteam.pl>
+From: Paul Menage <menage@google.com>
+Subject: Re: [Devel] Re: [RFC][PATCH] IP address restricting cgroup subsystem
+Date: Sat, 10 Jan 2009 08:14:19 -0800
+Message-ID: <6599ad830901100814g5faeb611v7a36eed987c103ff@mail.gmail.com>
 References: <20090106230554.GB25228@eskarina.localdomain.pl>
-	<6599ad830901091358m11effdbegeff6cbb7ee28e262@mail.gmail.com>
+	 <49644526.8030205@cn.fujitsu.com> <20090107073831.GA23648@megiteam.pl>
+	 <49646993.6080802@cn.fujitsu.com> <20090107091600.GA17612@megiteam.pl>
+	 <496476FD.8090209@cn.fujitsu.com>
+	 <6599ad830901091338t38f5d5bav6adcd55ea188e28d@mail.gmail.com>
+	 <49682921.4020100@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830901091358m11effdbegeff6cbb7ee28e262-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <49682921.4020100@cn.fujitsu.com>
+Sender: netdev-owner@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Grzegorz Nosek <root@localdomain.pl>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-T24gcGnEhSwgc3R5IDA5LCAyMDA5IGF0IDAxOjU4OjQyIC0wODAwLCBQYXVsIE1lbmFnZSB3cm90
-ZToKPiBXaGlsZSBzb21ldGhpbmcgdG8gYWxsb3cgcmVzdHJpY3RpbmcgbmV0d29yayBhY2Nlc3Mg
-ZnJvbSB0YXNrcyBpbiBhCj4gY2dyb3VwIGlzIHVzZWZ1bCwgdGhlIGJhc2ljIHByb2JsZW0gd2l0
-aCB0aGUgcGF0Y2hlcyB0aGF0IGhhdmUgYmVlbgo+IHByb3Bvc2VkIGlzIHRoZSB1c2Vyc3BhY2Ug
-QVBJLgo+IAo+IE9uY2UgYW4gQVBJIG1ha2VzIGl0IGludG8gdGhlIGtlcm5lbCwgd2UgaGF2ZSB0
-byBzdXBwb3J0IGl0IG1vcmUgb3IKPiBsZXNzIGluZGVmaW5pdGVseS4gU28gdGhhdCBtZWFucyB3
-ZSB3YW50IHRvIGNvbWUgdXAgd2l0aCBzb21ldGhpbmcKPiB0aGF0IHdpbGwgc2F0aXNmeSBzYXkg
-OTUlIG9mIHVzZXJzICpiZWZvcmUqIGl0IGdldHMgYW55d2hlcmUgbmVhcgo+IG1haW5saW5lLgoK
-Q2VydGFpbmx5LiBUaGUgcGF0Y2ggaXMgUkZDLCBub3QgbWFpbmxpbmUtbWUtbm93LiBXaGlsZSBp
-dCBzY3JhdGNoZXMgbXkKY3VycmVudCBpdGNoLCBJJ2QgZGVmaW5pdGVseSB3YW50IGl0IHRvIGJl
-IG1vcmUgdXNlZnVsLiBJIGp1c3Qgd2FudGVkIHRvCnJlY2VpdmUgc29tZSBjb21tZW50cyBvbiB0
-aGUgb3ZlcmFsbCBpZGVhIGJlZm9yZSBJIGludmVzdCB3YXkgdG9vIG11Y2gKdGltZSBpbiBpdC4K
-Cj4gU28gZm9yIGV4YW1wbGUsIHNvbWUgcGVvcGxlIG1pZ2h0IHdhbnQgbXVsdGlwbGUgSVAgYWRk
-cmVzc2VzOyBvdGhlcnMKPiBtaWdodCB3YW50IHRvIHNwZWNpZnkgYSBzdWJuZXQsIGJ1dCBleGNs
-dWRlIGNlcnRhaW4gYWRkcmVzc2VzOwo+IGNvbnRyb2xsaW5nIHdoaWNoIHBvcnRzIG9yIHBvcnQt
-cmFuZ2VzIGNhbiBiZSBib3VuZCB0byBpcyBhbHNvIHVzZWZ1bAo+IChhbmQgaW4gZmFjdCBpcyB3
-aGF0IEknZCBiZSBtb3N0IGludGVyZXN0ZWQgaW4pLgoKLi4uYW5kIHNvbWUgcGVvcGxlIG1pZ250
-IG5vdCB3YW50IHRoZSBsb29wYmFjayBzcGVjaWFsIGNhc2UuIFNvIHdlJ2QKbmVlZCBhIGJsYWNr
-LSBhbmQgd2hpdGVsaXN0IG9mOgoKSVAgYWRkcmVzcyBbL25ldG1hc2tdIFtwb3J0IFstIHBvcnRd
-XQoKcmlnaHQ/IFdvdWxkIHRoYXQgY292ZXIgYSByZWFzb25hYmxlIHNldCBvZiB1c2UgY2FzZXM/
-IElmIHRoZXJlIGFyZQpnb2luZyB0byBiZSBtdWx0aXBsZSBhZGRyZXNzZXMsIHdlJ2QgcHJvYmFi
-bHkgd2FudCBzb21lIG1lY2hhbmlzbSB0bwpkZXRlcm1pbmUgd2hpY2ggb25lIHNob3VsZCBiZSB1
-c2VkIGZvciByZW1hcHBpbmcgSU5BRERSX0FOWS4gQlRXLCBkbyB5b3UKd2FudCB0byByZXN0cmlj
-dCBjb25uZWN0KCkgc291cmNlIHBvcnRzIHRvbz8KCj4gSWRlYWxseSB3ZSdkIGF2b2lkIG1ha2lu
-ZyB1cCBhIGJyYW5kIG5ldyB1c2Vyc3BhY2UgQVBJIGZvciB0aGlzLiBJdAo+IHdvdWxkIGJlIGdy
-ZWF0IGlmIHdlIGNvdWxkIHNvbWVob3cgbWFrZSB1c2Ugb2YgdGhlIGlwdGFibGVzIEFQSSwgd2hp
-Y2gKPiBhbHJlYWR5IGhhcyBzdXBwb3J0IGZvciBzcGVjaWZ5aW5nIHRoZXNlIGtpbmRzIG9mIGNv
-bmRpdGlvbnMuCgpUaGUgaXB0YWJsZXMgaW50ZXJmYWNlIGlzIG5pY2UgYnV0IG9ubHkgd29ya3Mg
-d2l0aCBuZXR3b3JrIHBhY2tldHMgYW5kCm5vdCBzb2NrZXRzIGFuZCBJJ2QgZmluZCBiaW5kKCkg
-cmVtYXBwaW5nIHZpYSBpcHRhYmxlcyByYXRoZXIgc3RyYW5nZS4KSSdtIGN1cnJlbnRseSB1c2lu
-ZyBpcHRhYmxlcyB0byBTTkFUIG91dGdvaW5nIGNvbm5lY3Rpb25zIHBlciB1aWQgYnV0CkkgZmlu
-ZCB0aGUgY2dyb3VwIGlkZWEgcmF0aGVyIGFwcGVhbGluZyAoYXMgbWFueSByZXNvdXJjZXMgYXMg
-cG9zc2libGUKbWFuYWdlZCBmcm9tIGEgc2luZ2xlIHZpcnR1YWwgZGlyZWN0b3J5IHdpdGggc2lt
-cGxlIHNoZWxsIHRvb2xzKS4KClNvLCBhcmUgeW91IG9wcG9zZWQgdG8gdGhlIGN1cnJlbnQgaW1w
-bGVtZW50YXRpb24gKHNpbmdsZSBJUCBhZGRyZXNzKSBvcgp0byB0aGUgaW50ZXJmYWNlIChhIGZp
-bGUgaW4gY2dyb3VwZnMpPwoKPiBJIGRpZCBvbmNlIGhhY2sgdG9nZXRoZXIgYSBwcm9vZi1vZi1j
-b25jZXB0IHRoYXQgbGV0IHlvdSB1c2UgaXB0YWJsZXMKPiBmb3IgY29udHJvbGxpbmcgY29ubmVj
-dC9hY2NlcHQvYmluZCBvcGVyYXRpb25zLCBidXQgaXQgd2FzIGEgY29tcGxldGUKPiBtZXNzIGFu
-ZCB3b3VsZG4ndCBzdXJ2aXZlIGNvZGUgcmV2aWV3IDotKQoKPHNodWRkZXI+IDopCgpCZXN0IHJl
-Z2FyZHMsCiBHcnplZ29yeiBOb3NlawpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxp
-bnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFp
-bG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Fri, Jan 9, 2009 at 8:50 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>>
+>> For checking the "children" list, you can just lock
+>> ipaddr_subsys.hierarchy_mutex.
+>>
+>
+> Unfortunately hierarchy_mutex can't be used here, since hierarchy_mutex
+> doesn't protect subsys's create() method, and the create() will access
+> parent cgroup's data.
+>
+
+But that can be solved by putting a spinlock in the ipaddr_cgroup
+structure and taking it in the write handler (and the connect/bind
+handlers, which should also be using RCU), and taking the parent
+structure's lock before copying from it in the create callback. No
+need for something as heavy as cgroup_lock().
+
+Paul
