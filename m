@@ -1,34 +1,33 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: consolidate cgroup documents
-Date: Fri, 9 Jan 2009 16:25:02 -0800
-Message-ID: <6599ad830901091625h7eb9d978v61f99d4afde220a1@mail.gmail.com>
-References: <4966B383.3030106@cn.fujitsu.com>
-	<20090109223442.GO9737@balbir.in.ibm.com>
-	<20090109161947.70f6d73d.rdunlap@xenotime.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [Devel] Re: [RFC][PATCH] IP address restricting cgroup subsystem
+Date: Sat, 10 Jan 2009 12:50:41 +0800
+Message-ID: <49682921.4020100@cn.fujitsu.com>
+References: <20090106230554.GB25228@eskarina.localdomain.pl>	 <49644526.8030205@cn.fujitsu.com> <20090107073831.GA23648@megiteam.pl>	 <49646993.6080802@cn.fujitsu.com> <20090107091600.GA17612@megiteam.pl>	 <496476FD.8090209@cn.fujitsu.com> <6599ad830901091338t38f5d5bav6adcd55ea188e28d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090109161947.70f6d73d.rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <6599ad830901091338t38f5d5bav6adcd55ea188e28d@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: Grzegorz Nosek <root@localdomain.pl>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 9, 2009 at 4:19 PM, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org> wrote:
->
-> I'm for that also, but I thought that cpusets existed regardless of
-> cgroups/controllers.  Maybe I'm wrong?
->
+Paul Menage wrote:
+> On Wed, Jan 7, 2009 at 1:33 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>>> Yes, I like that. Will update the patch. I assume that I must check
+>>> list_empty(&cgroup->children)?
+>> Yes.
+>>
+>>> Should I use cgroup_lock()/cgroup_unlock()
+>> Yes.
+> 
+> For checking the "children" list, you can just lock
+> ipaddr_subsys.hierarchy_mutex.
+> 
 
-Cpusets is just a client subsystem of cgroups.
+Unfortunately hierarchy_mutex can't be used here, since hierarchy_mutex
+doesn't protect subsys's create() method, and the create() will access
+parent cgroup's data.
 
-Paul
+
