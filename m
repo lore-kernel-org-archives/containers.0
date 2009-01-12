@@ -1,17 +1,11 @@
-From: Benny Amorsen <benny+usenet-sjWZyPj6pFx/SzgSGea1oA@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Sun, 11 Jan 2009 01:25:05 +0100
-Message-ID: <m37i523d0e.fsf@ursa.amorsen.dk>
-References: <20090106230554.GB25228@eskarina.localdomain.pl>
-	<6599ad830901091358m11effdbegeff6cbb7ee28e262@mail.gmail.com>
-	<20090110112009.GA12336@megiteam.pl>
-	<6599ad830901100821q2c943d38i314c00f7db51b4f0@mail.gmail.com>
+From: "Mandy Walls" <cereal-nNPDF7nS6Qc@public.gmane.org>
+Subject: {Spam?} Medical Doctor List in America
+Date: Mon, 12 Jan 2009 19:12:34 -0300
+Message-ID: <41426.8345958137$1231799413@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830901100821q2c943d38i314c00f7db51b4f0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Paul Menage's message of "Sat\, 10 Jan 2009 08\:21\:53 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,32 +15,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <public-menage-hpIqsD4AKlfQT0dZR+AlfA-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org>
-Cc: Grzegorz Nosek <public-root-AfQBxy1nhrQ00sYp1HPQUA-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org>, public-containers-qjLDD68F18O7TbgM5vRIOg-z5DuStaUktnZ+VzJOa5vwg@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-ktyBINRzYIPvnOemgxGiVw@public.gmane.org, containers-ELmoAI9CXp0@public.gmane.org, containers-O5WfVfzUwx8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org> writes:
-
-> Oh, and don't forget being able to control remote addresses/ports too.
-> E.g. you might not care what local port/address something binds to (or
-> there may only be one local address anyway) but you might want to
-> restrict a cgroup from e.g. connecting outside your data center, etc.
-> (Something that I'm interested in).
-
-If it's going to be that advanced, it will end up either like iptables
-or like routing tables.
-
-It is a bit much to expect normal applications to use either, but
-iptables is especially complicated. I am a little bit tempted by
-something resembling routing/rule tables, but it would obviously have
-to be a bit more limited. E.g. gateway addresses should not be stored
-there at all.
-
-There is also the classic question: What happens if you invoke a
-setuid or setgid executable with restrictions in effect? It is hard to
-guarantee that this isn't exploitable in any way.
 
 
-/Benny
+
+Current Medical Doctors in the USA 
+
+788,722 in total <> 17,147 emails
+
+Many popular specialties like Emergency Medicine, Plastic Surgery, OBGYN, Oncology, Pediatrics and more
+
+Over a dozen sortable fields
+
+Now priced at: $395
+
+
+<><><> IF YOU ORDER THIS WEEK YOU GET THESE AS A BO NUS <><><>
+
+US Pharmaceutical Company Executives Directory
+Names and email addresses of 47,000 employees in high-ranking positions
+
+American Hospital Listing
+Complete contact information for the important jobs held at the hospitals
+
+Complete and Accurate Listing for Dental Service Providers
+More than half a million listings [worth $499 alone!]
+
+Contact List of US Chiropractors
+Complete data for all chiropractors in America (a $250 value)
+
+email to:      Hewitt-H5PVNQ+r41MXaHpxuH1l7laTQe2KTcn/@public.gmane.org
+
+  
+
+above expires on January 16 
+
+
+to get off please email null-H5PVNQ+r41MXaHpxuH1l7laTQe2KTcn/@public.gmane.org
