@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Net containers config and usage
-Date: Mon, 12 Jan 2009 16:51:40 -0600
-Message-ID: <20090112225140.GA29834@us.ibm.com>
-References: <20090112223545.GA15781@versecorp.net>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v12][PATCH 13/14] Checkpoint multiple processes
+Date: Mon, 12 Jan 2009 17:14:52 -0600
+Message-ID: <20090112231452.GC6850__28298.0334749029$1231802287$gmane$org@localdomain>
+References: <1230542187-10434-1-git-send-email-orenl@cs.columbia.edu>
+	<1230542187-10434-14-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090112223545.GA15781-SqNQQPNds68nxqbYAscKCQ@public.gmane.org>
+In-Reply-To: <1230542187-10434-14-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,53 +19,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Mike-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Dave-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org (chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org):
-> All,
-> 
->   I'm new to linux containers and am interested in the network containers
-> support, but am having some troubles getting it working & could use some help.
-> 
->   I saw that the code released to 2.6.26 was incompatible with sysfs, but
-> that 2.6.29 should have support for both.  
-> 
->   So, I built:
->     linux-2.6.29-rc1
->     iproute2.2.6.25 plus the patch for containers support
->     lxc-0.5.2
-> 
->   I can now run lxc-unshare -n /bin/tcsh
->   And, as expected, that process only sees loopback.
+> +/* count number of tasks in tree (and optionally fill pid's in array) */
+> +static int cr_tree_count_tasks(struct cr_ctx *ctx)
+> +{
+> +	struct task_struct *root = ctx->root_task;
+> +	struct task_struct *task = root;
+> +	struct task_struct *parent = NULL;
+> +	struct task_struct **tasks_arr = ctx->tasks_arr;
+> +	int tasks_nr = ctx->tasks_nr;
+> +	int nr = 0;
+> +
+> +	read_lock(&tasklist_lock);
+> +
+> +	/* count tasks via DFS scan of the tree */
+> +	while (1) {
+> +		if (tasks_arr) {
+> +			/* unlikely, but ... */
+> +			if (nr == tasks_nr)
+> +				return -EBUSY;	/* cleanup in cr_ctx_free() */
 
-Since you're using the liblxc tools, can you just use one
-of the configs it comes with which sets up networking for
-you?
-
->   But I'm having trouble assigning an interface over to that container.
-> 
->   I tried doing:
->      # echo <pid> > /sys/class/net/eth4/new_ns_pid
-> 
->   But there are no entries in sysfs called new_ns_pid.
-
-Yeah I'm not sure where that command came from.  To move eth4 into a new
-netns, you'd want to do
-
-	ip link set eth4 netns $pid_of_shell_in_ns
-
-See http://lxc.sourceforge.net/network/configuration.php for
-more  info.
-
->   I also tried doing ip link set eth4 newns <pid>
->   but I get a netlink error:
->     RTNETLINK answers: Invalid argument 
-> 
-> 
-> Any tips on what I might be doing wrong, or how to get this working?  Since
-> I can do the lxc-unshare, it seems like I'm part way there, but can't move
-> network devices between namespaces.
-
--serge
+Returns without unlocking tasklist_lock?
