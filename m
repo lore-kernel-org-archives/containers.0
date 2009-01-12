@@ -1,54 +1,77 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH] IP address restricting cgroup subsystem
-Date: Sun, 11 Jan 2009 11:19:46 +0100
-Message-ID: <20090111101946.GA14325@megiteam.pl>
-References: <20090106230554.GB25228@eskarina.localdomain.pl>
-	<6599ad830901091358m11effdbegeff6cbb7ee28e262@mail.gmail.com>
-	<20090110112009.GA12336@megiteam.pl>
-	<6599ad830901100821q2c943d38i314c00f7db51b4f0@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [Devel] Re: [RFC][PATCH] IP address restricting cgroup subsystem
+Date: Mon, 12 Jan 2009 10:20:16 +0800
+Message-ID: <496AA8E0.2070002@cn.fujitsu.com>
+References: <20090106230554.GB25228@eskarina.localdomain.pl>	 <49644526.8030205@cn.fujitsu.com> <20090107073831.GA23648@megiteam.pl>	 <49646993.6080802@cn.fujitsu.com> <20090107091600.GA17612@megiteam.pl>	 <496476FD.8090209@cn.fujitsu.com>	 <6599ad830901091338t38f5d5bav6adcd55ea188e28d@mail.gmail.com>	 <49682921.4020100@cn.fujitsu.com> <6599ad830901100814g5faeb611v7a36eed987c103ff@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830901100821q2c943d38i314c00f7db51b4f0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <6599ad830901100814g5faeb611v7a36eed987c103ff@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: Grzegorz Nosek <root@localdomain.pl>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On sob, sty 10, 2009 at 08:21:53 -0800, Paul Menage wrote:
-> But converting a socket definition into a packet header that would be
-> sent/received on that socket is a fairly mechanical operation, and
-> after that you have the entire flexibility of the iptables API
-> available. So the connect()  operation would construct a fake packet
-> header and send it through the iptable associated with the current
-> cgroup; if the packet was accepted the operation was permitted, else
-> the operation was denied.
+Paul Menage wrote:
+> On Fri, Jan 9, 2009 at 8:50 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>>> For checking the "children" list, you can just lock
+>>> ipaddr_subsys.hierarchy_mutex.
+>>>
+>> Unfortunately hierarchy_mutex can't be used here, since hierarchy_mutex
+>> doesn't protect subsys's create() method, and the create() will access
+>> parent cgroup's data.
+>>
+> 
+> But that can be solved by putting a spinlock in the ipaddr_cgroup
+> structure and taking it in the write handler (and the connect/bind
+> handlers, which should also be using RCU), and taking the parent
+> structure's lock before copying from it in the create callback. No
+> need for something as heavy as cgroup_lock().
+> 
 
-So if I understand you right, your proposed solution would be something
-akin to ipt_cgroup (matching packets originating from a cgroup, like
-ipt_owner matches uid/gid) plus netfilter hooks for blocking/remapping
-addresses passed to connect() and/or bind()? Or maybe a dedicated
-netfilter table with per-cgroup chains?
+Still won't work. :(
 
-I'd rather not invent some new userspace tools (to use the iptables API
-without /sbin/iptables) to manage the cgroup networking so I guess
-extending iptables (or iproute) would be the way to go in that case.
+================
+lock(ipaddr_subsys.hierarchy_mutex);
 
-Using the iptables API with connect() sending a fake packet, how would
-you represent "allow this connection, but bind() to 10.0.0.1 first"?
-Rewrite the source address in an iptables target?
+if (list_empty(&cgrp->children) &&
+    parent->ipv4_addr == INADDR_ANY)
+						create()
+						  parent->spin_lock();
+						  cgrp->ipv4_addr = parent->ipv4_addr;
+						  parent->spin_unlock();
+	ipcgroup->spin_lock();
+	ipcgroup->ipv4_addr = new_addr;
+	ipcgroup->spin_unlock();
 
-Am I right or completely off the mark?
+unlock(ipaddr_subsys.hierarchy_mutex);
+						list_add(&cgrp->sibling, &cgrp->parent->children);
+================
 
-Best regards,
- Grzegorz Nosek
+And neither can it work to hold hierarchy_mutex in subsys's create().
+
+I think the only way to make hierarchy_mutex works for this issue is:
+
+@@ -2403,16 +2403,18 @@ static long cgroup_create(struct cgroup *parent, struct
+        if (notify_on_release(parent))
+                set_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
+
++       cgroup_lock_hierarchy(root);
++
+        for_each_subsys(root, ss) {
+                struct cgroup_subsys_state *css = ss->create(ss, cgrp);
+                if (IS_ERR(css)) {
++                       cgroup_unlock_hierarchy(root);
+                        err = PTR_ERR(css);
+                        goto err_destroy;
+                }
+                init_cgroup_css(css, ss, cgrp);
+        }
+
+-       cgroup_lock_hierarchy(root);
+        list_add(&cgrp->sibling, &cgrp->parent->children);
+        cgroup_unlock_hierarchy(root);
+        root->number_of_cgroups++;
+
+
