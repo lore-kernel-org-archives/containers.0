@@ -1,11 +1,12 @@
-From: "Mandy Walls" <cereal-nNPDF7nS6Qc@public.gmane.org>
-Subject: {Spam?} Medical Doctor List in America
-Date: Mon, 12 Jan 2009 19:12:34 -0300
-Message-ID: <14420.338944956$1231799626@news.gmane.org>
+From: chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org
+Subject: Net containers config and usage
+Date: Mon, 12 Jan 2009 14:35:45 -0800
+Message-ID: <20090112223545.GA15781@versecorp.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,45 +16,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-ktyBINRzYIPvnOemgxGiVw@public.gmane.org, containers-ELmoAI9CXp0@public.gmane.org, containers-O5WfVfzUwx8@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+All,
+
+  I'm new to linux containers and am interested in the network containers
+support, but am having some troubles getting it working & could use some help.
+
+  I saw that the code released to 2.6.26 was incompatible with sysfs, but
+that 2.6.29 should have support for both.  
+
+  So, I built:
+    linux-2.6.29-rc1
+    iproute2.2.6.25 plus the patch for containers support
+    lxc-0.5.2
+
+  I can now run lxc-unshare -n /bin/tcsh
+  And, as expected, that process only sees loopback.
+
+  But I'm having trouble assigning an interface over to that container.
+
+  I tried doing:
+     # echo <pid> > /sys/class/net/eth4/new_ns_pid
+
+  But there are no entries in sysfs called new_ns_pid.
+
+  I also tried doing ip link set eth4 newns <pid>
+  but I get a netlink error:
+    RTNETLINK answers: Invalid argument 
 
 
+Any tips on what I might be doing wrong, or how to get this working?  Since
+I can do the lxc-unshare, it seems like I'm part way there, but can't move
+network devices between namespaces.
 
-
-
-Current Medical Doctors in the USA 
-
-788,722 in total <> 17,147 emails
-
-Many popular specialties like Emergency Medicine, Plastic Surgery, OBGYN, Oncology, Pediatrics and more
-
-Over a dozen sortable fields
-
-Now priced at: $395
-
-
-<><><> IF YOU ORDER THIS WEEK YOU GET THESE AS A BO NUS <><><>
-
-US Pharmaceutical Company Executives Directory
-Names and email addresses of 47,000 employees in high-ranking positions
-
-American Hospital Listing
-Complete contact information for the important jobs held at the hospitals
-
-Complete and Accurate Listing for Dental Service Providers
-More than half a million listings [worth $499 alone!]
-
-Contact List of US Chiropractors
-Complete data for all chiropractors in America (a $250 value)
-
-email to:      Hewitt-H5PVNQ+r41MXaHpxuH1l7laTQe2KTcn/@public.gmane.org
-
-  
-
-above expires on January 16 
-
-
-to get off please email null-H5PVNQ+r41MXaHpxuH1l7laTQe2KTcn/@public.gmane.org
+Thanks,
+Chris
