@@ -1,7 +1,7 @@
 From: "Mandy Walls" <cereal-nNPDF7nS6Qc@public.gmane.org>
 Subject: {Spam?} Medical Doctor List in America
 Date: Mon, 12 Jan 2009 19:12:34 -0300
-Message-ID: <41426.8345958137$1231799413@news.gmane.org>
+Message-ID: <13999.810946598$1231799520@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
