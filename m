@@ -1,14 +1,15 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH] Relax ns_can_attach checks to allow attaching to
-	grandchild cgroups
-Date: Mon, 12 Jan 2009 16:37:29 -0800
-Message-ID: <20090112163729.774b5b50.akpm@linux-foundation.org>
-References: <20090106222536.GA25228@eskarina.localdomain.pl>
+From: chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org
+Subject: Re: Net containers config and usage
+Date: Mon, 12 Jan 2009 16:54:36 -0800
+Message-ID: <20090113005436.GA26167@versecorp.net>
+References: <20090112223545.GA15781@versecorp.net>
+	<20090112225140.GA29834@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090106222536.GA25228-IaEwMO9oKu/77SC2UrCW1JJg/dWx8T/9@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090112225140.GA29834-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,97 +19,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 6 Jan 2009 23:25:36 +0100
-Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org> wrote:
+On Mon, Jan 12, 2009 at 04:51:40PM -0600, Serge E. Hallyn wrote:
+> 
+> >   But I'm having trouble assigning an interface over to that container.
+> > 
+> >   I tried doing:
+> >      # echo <pid> > /sys/class/net/eth4/new_ns_pid
+> > 
+> >   But there are no entries in sysfs called new_ns_pid.
+> 
+> Yeah I'm not sure where that command came from.
 
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -3104,18 +3104,19 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
->  }
->  
->  /**
-> - * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
-> + * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
->   * @cgrp: the cgroup in question
-> + * @task: the task in question
->   *
-> - * See if @cgrp is a descendant of the current task's cgroup in
-> - * the appropriate hierarchy.
-> + * See if @cgrp is a descendant of @task's cgroup in the appropriate
-> + * hierarchy.
->   *
->   * If we are sending in dummytop, then presumably we are creating
->   * the top cgroup in the subsystem.
->   *
->   * Called only by the ns (nsproxy) cgroup.
->   */
-> -int cgroup_is_descendant(const struct cgroup *cgrp)
-> +int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task)
->  {
->  	int ret;
->  	struct cgroup *target;
-> @@ -3125,7 +3126,7 @@ int cgroup_is_descendant(const struct cgroup *cgrp)
->  		return 1;
->  
->  	get_first_subsys(cgrp, NULL, &subsys_id);
-> -	target = task_cgroup(current, subsys_id);
-> +	target = task_cgroup(task, subsys_id);
+OK - just FYI, I got that command from http://lxc.sourceforge.net/network.php
 
-What locking prevents *task from vanishing here?
+> To move eth4 into a new
+> netns, you'd want to do
+> 
+> 	ip link set eth4 netns $pid_of_shell_in_ns
+> 
+> See http://lxc.sourceforge.net/network/configuration.php for
+> more  info.
+> 
 
->  	while (cgrp != target && cgrp!= cgrp->top_cgroup)
->  		cgrp = cgrp->parent;
->  	ret = (cgrp == target);
-> diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
-> index 43c2111..890691a 100644
-> --- a/kernel/ns_cgroup.c
-> +++ b/kernel/ns_cgroup.c
-> @@ -35,7 +35,7 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
->  
->  /*
->   * Rules:
-> - *   1. you can only enter a cgroup which is a child of your current
-> + *   1. you can only enter a cgroup which is a descendant of your current
->   *     cgroup
->   *   2. you can only place another process into a cgroup if
->   *     a. you have CAP_SYS_ADMIN
-> @@ -46,21 +46,15 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
->  static int ns_can_attach(struct cgroup_subsys *ss,
->  		struct cgroup *new_cgroup, struct task_struct *task)
->  {
-> -	struct cgroup *orig;
-> -
->  	if (current != task) {
->  		if (!capable(CAP_SYS_ADMIN))
->  			return -EPERM;
->  
-> -		if (!cgroup_is_descendant(new_cgroup))
-> +		if (!cgroup_is_descendant(new_cgroup, current))
->  			return -EPERM;
->  	}
->  
-> -	if (atomic_read(&new_cgroup->count) != 0)
-> -		return -EPERM;
-> -
-> -	orig = task_cgroup(task, ns_subsys_id);
+Trying to use the "ip link set" command, I get a different problem - it
+reports an RTNETLINK error:
 
-Same question applied to the previous code.
+ [root@C100273 iproute2-2.6.25]# ps aux | grep tcsh
+ root     21918  0.0  0.0  71036  2084 pts/1    S+   16:47   0:00 -bin/tcsh
+ root     22008  0.0  0.0  61144   716 pts/2    R+   16:57   0:00 grep tcsh
+ [root@C100273 iproute2-2.6.25]# ip/ip link set eth4 netns 21918
+ RTNETLINK answers: Invalid argument
 
-> -	if (orig && orig != new_cgroup->parent)
-> +	if (!cgroup_is_descendant(new_cgroup, task))
->  		return -EPERM;
->  
->  	return 0;
-> @@ -78,7 +72,7 @@ static struct cgroup_subsys_state *ns_create(struct cgroup_subsys *ss,
->  
->  	if (!capable(CAP_SYS_ADMIN))
->  		return ERR_PTR(-EPERM);
-> -	if (!cgroup_is_descendant(cgroup))
-> +	if (!cgroup_is_descendant(cgroup, current))
->  		return ERR_PTR(-EPERM);
->  
->  	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
+Any idea what could cause that error?
+
+Thanks,
+Chris
