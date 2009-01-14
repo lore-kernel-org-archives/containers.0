@@ -1,15 +1,20 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v12][PATCH 13/14] Checkpoint multiple processes
-Date: Wed, 14 Jan 2009 12:27:06 -0500
-Message-ID: <496E206A.6020003__5466.745052445$1231954211$gmane$org@cs.columbia.edu>
-References: <1230542187-10434-1-git-send-email-orenl@cs.columbia.edu>
-	<1230542187-10434-14-git-send-email-orenl@cs.columbia.edu>
-	<20090112231452.GC6850@localdomain>
+From: chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org
+Subject: Re: Net containers config and usage
+Date: Wed, 14 Jan 2009 09:27:39 -0800
+Message-ID: <20090114172739.GA13581@versecorp.net>
+References: <20090112223545.GA15781@versecorp.net>
+	<20090112225140.GA29834@us.ibm.com>
+	<20090113005436.GA26167@versecorp.net> <496C4EB0.30203@free.fr>
+	<20090113142925.GA11767@us.ibm.com>
+	<20090113191837.GA29900@versecorp.net> <496CF11A.7090908@free.fr>
+	<20090113214747.GA23742@versecorp.net>
+	<1231887220.6398.73.camel@groeck-laptop> <496DA755.1040001@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090112231452.GC6850@localdomain>
+Content-Disposition: inline
+In-Reply-To: <496DA755.1040001-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +24,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Nathan Lynch wrote:
->> +/* count number of tasks in tree (and optionally fill pid's in array) */
->> +static int cr_tree_count_tasks(struct cr_ctx *ctx)
->> +{
->> +	struct task_struct *root = ctx->root_task;
->> +	struct task_struct *task = root;
->> +	struct task_struct *parent = NULL;
->> +	struct task_struct **tasks_arr = ctx->tasks_arr;
->> +	int tasks_nr = ctx->tasks_nr;
->> +	int nr = 0;
->> +
->> +	read_lock(&tasklist_lock);
->> +
->> +	/* count tasks via DFS scan of the tree */
->> +	while (1) {
->> +		if (tasks_arr) {
->> +			/* unlikely, but ... */
->> +			if (nr == tasks_nr)
->> +				return -EBUSY;	/* cleanup in cr_ctx_free() */
+On Wed, Jan 14, 2009 at 09:50:29AM +0100, Daniel Lezcano wrote:
+> Guenter Roeck wrote:
+> >As far as I recall, if you have sysfs active and use the sysfs patch to
+> >let you configure both sysfs and network namespaces, you can only move
+> >virtual interfaces into a network namespace.
+> >
+> >Guenter
+> >  
+> Ah ! yes, you are right :)
 > 
-> Returns without unlocking tasklist_lock?
+> The current upstream implementation allowing sysfs and netns to coexist 
+> together has one restriction, the physical network devices can not be 
+> moved if sysfs is enabled in the kernel. This is why Chris can not move 
+> the physical network device with this version of the kernel.
+> This restriction will be set until the sysfs per namespace is fully 
+> supported.
+> 
+> This restriction does not exist with with the previous kernel version 
+> with the sysfs per namespace patchset.
+> 
+> -- Daniel
 > 
 
-Thanks. Will fix.
+Ah, great, thanks to all for your help on this.
+Do you have any rough estimate when the support for sysfs per namespace will
+be added in the upstream?
 
-Oren.
+Thanks again,
+Chris
