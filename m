@@ -1,17 +1,19 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v12][PATCH 01/14] Create syscalls: sys_checkpoint,
-	sys_restart
-Date: Wed, 14 Jan 2009 23:34:41 +0530
-Message-ID: <20090114180441.GD21516__7036.74080218679$1231956652$gmane$org@balbir.in.ibm.com>
-References: <1230542187-10434-1-git-send-email-orenl@cs.columbia.edu>
-	<1230542187-10434-2-git-send-email-orenl@cs.columbia.edu>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Net containers config and usage
+Date: Wed, 14 Jan 2009 13:26:34 -0600
+Message-ID: <20090114192633.GA8572@us.ibm.com>
+References: <20090113005436.GA26167@versecorp.net> <496C4EB0.30203@free.fr>
+	<20090113142925.GA11767@us.ibm.com>
+	<20090113191837.GA29900@versecorp.net> <496CF11A.7090908@free.fr>
+	<20090113214747.GA23742@versecorp.net>
+	<1231887220.6398.73.camel@groeck-laptop> <496DA755.1040001@free.fr>
+	<20090114172739.GA13581@versecorp.net> <496E23DA.9080402@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1230542187-10434-2-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <496E23DA.9080402-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,75 +23,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> [2008-12-29 04:16:14]:
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org wrote:
+> > On Wed, Jan 14, 2009 at 09:50:29AM +0100, Daniel Lezcano wrote:
+> >   
+> >> Guenter Roeck wrote:
+> >>     
+> >>> As far as I recall, if you have sysfs active and use the sysfs patch to
+> >>> let you configure both sysfs and network namespaces, you can only move
+> >>> virtual interfaces into a network namespace.
+> >>>
+> >>> Guenter
+> >>>  
+> >>>       
+> >> Ah ! yes, you are right :)
+> >>
+> >> The current upstream implementation allowing sysfs and netns to coexist 
+> >> together has one restriction, the physical network devices can not be 
+> >> moved if sysfs is enabled in the kernel. This is why Chris can not move 
+> >> the physical network device with this version of the kernel.
+> >> This restriction will be set until the sysfs per namespace is fully 
+> >> supported.
+> >>
+> >> This restriction does not exist with with the previous kernel version 
+> >> with the sysfs per namespace patchset.
+> >>
+> >> -- Daniel
+> >>
+> >>     
+> >
+> > Ah, great, thanks to all for your help on this.
+> > Do you have any rough estimate when the support for sysfs per namespace will
+> >   
+> The sysfs per namespace has been rejected because of some design 
+> problems related with the sysfs itself.
+> Perhaps Eric can tell more about that...
 
-> Create trivial sys_checkpoint and sys_restore system calls. They will
-> enable to checkpoint and restart an entire container, to and from a
-> checkpoint image file descriptor.
-> 
-> The syscalls take a file descriptor (for the image file) and flags as
-> arguments. For sys_checkpoint the first argument identifies the target
-> container; for sys_restart it will identify the checkpoint image.
-> 
-> A checkpoint, much like a process coredump, dumps the state of multiple
-> processes at once, including the state of the container. The checkpoint
-> image is written to (and read from) the file descriptor directly from
-> the kernel. This way the data is generated and then pushed out naturally
-> as resources and tasks are scanned to save their state. This is the
-> approach taken by, e.g., Zap and OpenVZ.
-> 
-> By using a return value and not a file descriptor, we can distinguish
-> between a return from checkpoint, a return from restart (in case of a
-> checkpoint that includes self, i.e. a task checkpointing its own
-> container, or itself), and an error condition, in a manner analogous
-> to a fork() call.
-> 
-> We don't use copyin()/copyout() because it requires holding the entire
+Chris, in the meantime, is using the physical device an absolute
+necessity, or could you work around it for now using a veth tunnel?
 
-              ^^^^^^^^^^^^^^^^^^^ Do you mean get_user_pages(),
-copy_to/from_user()?
+Even if Eric has been working on the sysfs locking rework quietly
+the last few months, i'd expect several months of back-and-forth
+trying to prove that the rework is correct...
 
-> image in user space, and does not make sense for restart.  Also, we
-> don't use a pipe, pseudo-fs file and the like, because they work by
-> generating data on demand as the user pulls it (unless the entire
-> image is buffered in the kernel) and would require more complex logic.
-> They also would significantly complicate checkpoint that includes self.
-> 
-> Changelog[v5]:
->   - Config is 'def_bool n' by default
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  arch/x86/include/asm/unistd_32.h   |    2 +
->  arch/x86/kernel/syscall_table_32.S |    2 +
->  checkpoint/Kconfig                 |   11 +++++++++
->  checkpoint/Makefile                |    5 ++++
->  checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
->  include/linux/syscalls.h           |    2 +
->  init/Kconfig                       |    2 +
->  kernel/sys_ni.c                    |    4 +++
->  8 files changed, 69 insertions(+), 0 deletions(-)
->  create mode 100644 checkpoint/Kconfig
->  create mode 100644 checkpoint/Makefile
->  create mode 100644 checkpoint/sys.c
-> 
-> diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-> index f2bba78..a5f9e09 100644
-> --- a/arch/x86/include/asm/unistd_32.h
-> +++ b/arch/x86/include/asm/unistd_32.h
-> @@ -338,6 +338,8 @@
->  #define __NR_dup3		330
->  #define __NR_pipe2		331
->  #define __NR_inotify_init1	332
-> +#define __NR_checkpoint		333
-                           ^^^ extra tab
-> +#define __NR_restart		334
-
--- 
-	Balbir
+-serge
