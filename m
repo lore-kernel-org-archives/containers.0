@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] fix ckpt_mem build on ppc64
-Date: Thu, 15 Jan 2009 13:34:40 -0600
-Message-ID: <20090115193440.GA4924@localdomain>
+Subject: [PATCH/RFC] objhash.c: fix (?) invalid casts
+Date: Thu, 15 Jan 2009 13:40:49 -0600
+Message-ID: <20090115194049.GB4924@localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,34 +17,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 64-bit powerpc:
+When building 64-bit powerpc:
 
-checkpoint/ckpt_mem.c: In function 'cr_write_vma':
-checkpoint/ckpt_mem.c:447: error: request for member 'pgprot' in something not a structure or union
+checkpoint/objhash.c: In function 'cr_obj_find_by_objref':
+checkpoint/objhash.c:121: warning: cast to pointer from integer of different size
+checkpoint/objhash.c: In function 'cr_obj_new':
+checkpoint/objhash.c:158: warning: cast to pointer from integer of different size
 
-pgprot_t is an abstract type; use the proper accessor.
+Is this the right fix or is struct cr_objref->objref the wrong type?
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- checkpoint/ckpt_mem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ checkpoint/objhash.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-This is based on v12 of the C/R patches.
+This is on top of v12 of the C/R patches.
 
-diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
-index ccb14c7..4925ff2 100644
---- a/checkpoint/ckpt_mem.c
-+++ b/checkpoint/ckpt_mem.c
-@@ -444,7 +444,7 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 13d3e5d..cb08d3c 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -118,7 +118,8 @@ static struct cr_objref *cr_obj_find_by_objref(struct cr_ctx *ctx, int objref)
+ 	struct hlist_node *n;
+ 	struct cr_objref *obj;
  
- 	hh->vm_start = vma->vm_start;
- 	hh->vm_end = vma->vm_end;
--	hh->vm_page_prot = vma->vm_page_prot.pgprot;
-+	hh->vm_page_prot = pgprot_val(vma->vm_page_prot);
- 	hh->vm_flags = vma->vm_flags;
- 	hh->vm_pgoff = vma->vm_pgoff;
- 
+-	h = &ctx->objhash->head[hash_ptr((void *) objref, CR_OBJHASH_NBITS)];
++	h = &ctx->objhash->head[hash_ptr((void *)(unsigned long)objref,
++					 CR_OBJHASH_NBITS)];
+ 	hlist_for_each_entry(obj, n, h, hash)
+ 		if (obj->objref == objref)
+ 			return obj;
+@@ -155,7 +156,7 @@ static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
+ 	if (objref) {
+ 		/* use @objref to index (restart) */
+ 		obj->objref = objref;
+-		i = hash_ptr((void *) objref, CR_OBJHASH_NBITS);
++		i = hash_ptr((void *)(unsigned long)objref, CR_OBJHASH_NBITS);
+ 	} else {
+ 		/* use @ptr to index, assign objref (checkpoint) */
+ 		obj->objref = ctx->objhash->next_free_objref++;;
 -- 
 1.5.5
