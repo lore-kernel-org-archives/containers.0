@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC PATCH 0/2] cr: Introduce s390x checkpoint/restart code
-Date: Thu, 15 Jan 2009 04:55:56 -0500
-Message-ID: <496F082C.3020008@cs.columbia.edu>
+Date: Thu, 15 Jan 2009 11:10:44 +0100
+Message-ID: <1232014244.30152.19.camel@localhost>
 References: <20090115050523.GA10415@us.ibm.com>
 	<1232012395.30152.13.camel@localhost>
+	<496F082C.3020008@cs.columbia.edu>
+Reply-To: schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1232012395.30152.13.camel@localhost>
+In-Reply-To: <496F082C.3020008-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,70 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Martin Schwidefsky wrote:
-> On Wed, 2009-01-14 at 23:05 -0600, Serge E. Hallyn wrote:
->> Hi,
->>
->> here is a first stab at extending Oren's application c/r patchset
->> (http://lkml.org/lkml/2008/12/29/38) to s390.  I pretty much spent a day
->> or two looking through the s390 include and .S files and then took a
->> stab, so I won't be surprised to find these patches (and myself) the
->> subject of ridicule.  For instance, I'm really not *sure* whether I
->> should be backing up the acrs registers (some s390 docs suggested
->> userspace could use them), the ksp, or the vdso_base.  But one thing
->> I've got going for me at least...  it works!
+On Thu, 2009-01-15 at 04:55 -0500, Oren Laadan wrote:
 > 
-> The access registers need to be saved, a0/a1 contain the TLS pointer and
-> the user can store anything to a2-a15. The ksp does not have to be
-> stored as it cannot contain an important value. If it would then we'd
-> have kernel state which would break checkpoint/restart. The restart code
-> needs to come up with a sensible initial value for ksp though. The
-> vdso_base code needs to be stored as well. 
+> Martin Schwidefsky wrote:
+> > This hunk from patch #2 worries me a bit:
+> > 
+> >  struct cr_hdr_mm_context {
+> > -       __s16 unimplemented;
+> > +#if 0
+> > +       unsigned long asce_bits;
+> > +       unsigned long asce_limit;
+> > +       int noexec;
+> > +       int has_pgste;
+> > +       int alloc_pgste;
+> > +#endif
+> > +       unsigned long vdso_base;
+> >  };
+> > 
+> > The page table can have 2, 3, or 4 levels and if KVM is used the page
+> > tables have a the pgste table attached to them. If that is ignored then
+> > the creation of the process address space on restart is definitly
+> > broken.
 > 
-> This hunk from patch #2 worries me a bit:
+> Disclaimer: I have zero knowledge about s390 specifics, so take
+> this with a grain of salt...
 > 
->  struct cr_hdr_mm_context {
-> -       __s16 unimplemented;
-> +#if 0
-> +       unsigned long asce_bits;
-> +       unsigned long asce_limit;
-> +       int noexec;
-> +       int has_pgste;
-> +       int alloc_pgste;
-> +#endif
-> +       unsigned long vdso_base;
->  };
+> That said, I wonder why would we care about the page table choice ?
+> Does user-level have any notion of this low-level detail ?
 > 
-> The page table can have 2, 3, or 4 levels and if KVM is used the page
-> tables have a the pgste table attached to them. If that is ignored then
-> the creation of the process address space on restart is definitly
-> broken.
-
-Disclaimer: I have zero knowledge about s390 specifics, so take
-this with a grain of salt...
-
-That said, I wonder why would we care about the page table choice ?
-Does user-level have any notion of this low-level detail ?
-
-We save the VMAs in checkpoint, and reconstruct them in restart by
-calling do_mmap_pgoff(). The nearest we get to that level is in
-calling follow_page() in cr_consider_private_page(), at checkpoint.
-
-I'd expect everything below to be entirely transparent to us.
-
+> We save the VMAs in checkpoint, and reconstruct them in restart by
+> calling do_mmap_pgoff(). The nearest we get to that level is in
+> calling follow_page() in cr_consider_private_page(), at checkpoint.
 > 
->> Please take a look, point and laugh, and maybe even explain
->> what's so funny and how to improve them.
-> 
-> It doesn't look THAT bad ;-)
-> 
+> I'd expect everything below to be entirely transparent to us.
 
-Thanks, Serge. It looks perfect to me ... see disclaimer above :p
+Ok, the recreation of the VMs with do_mmap_pgoff takes care of the
+number of page table leves. It gets automatically upgraded when the
+first VMA is mapped that is over the limit.
 
-Oren.
+What is left are the pgstes tables. After you forked the new process
+that is used to restart a KVM enabled process you need to call
+s390_enable_sie(), preferably before you recreate the VMAs.
+
+-- 
+blue skies,
+  Martin.
+
+"Reality continues to ruin my life." - Calvin.
