@@ -1,23 +1,15 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: LSM stacking/secondary modules / RFC: Socket MAC LSM
-Date: Thu, 15 Jan 2009 16:35:31 +0100
-Message-ID: <20090115153531.GI17884@megiteam.pl>
-References: <1231952907.5315.17.camel@sp-laptop3.sp-local>
-	<1231953606.31192.41.camel@localhost.localdomain>
-	<f639a5c10901140934w3a019308yb5c5c1d73b605fd5@mail.gmail.com>
-	<20090114180129.GB7337@kroah.com>
-	<1231972131.5315.48.camel@sp-laptop3.sp-local>
-	<20090114231645.GA24111@kroah.com>
-	<1231979170.5315.69.camel@sp-laptop3.sp-local>
-	<20090115004143.GB14467@us.ibm.com>
-	<20090115004407.GA14867@us.ibm.com>
-	<1232027832.14136.8.camel@sp-laptop3.sp-local>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 0/2] cr: Introduce s390x checkpoint/restart code
+Date: Thu, 15 Jan 2009 10:29:43 -0600
+Message-ID: <20090115162943.GA14103@us.ibm.com>
+References: <20090115050523.GA10415@us.ibm.com>
+	<1232012395.30152.13.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1232027832.14136.8.camel-tVJweC8gK2XqZ64ylGF+7cM6rOWSkUom@public.gmane.org>
+In-Reply-To: <1232012395.30152.13.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,50 +19,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephan Peijnik <stephan-3C5IBFg0S+qzZXS1Dc/lvw@public.gmane.org>
-Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rafael Konrath <rafael.konrath-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 15, 2009 at 02:57:12PM +0100, Stephan Peijnik wrote:
-> Okay, that idea does sound nice. However, to me it rather looks like
-> another use-case for the framework/interface I am proposing (ie. sactl).
+Quoting Martin Schwidefsky (schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org):
+> On Wed, 2009-01-14 at 23:05 -0600, Serge E. Hallyn wrote:
+> > Hi,
+> > 
+> > here is a first stab at extending Oren's application c/r patchset
+> > (http://lkml.org/lkml/2008/12/29/38) to s390.  I pretty much spent a day
+> > or two looking through the s390 include and .S files and then took a
+> > stab, so I won't be surprised to find these patches (and myself) the
+> > subject of ridicule.  For instance, I'm really not *sure* whether I
+> > should be backing up the acrs registers (some s390 docs suggested
+> > userspace could use them), the ksp, or the vdso_base.  But one thing
+> > I've got going for me at least...  it works!
 > 
-> Using sactl the cgroup-based approach could easily hook the relevant
-> socket calls. sactl might need some refining for this, but then again
-> it's just a proposal and not anywhere being a final interface.
+> The access registers need to be saved, a0/a1 contain the TLS pointer and
+> the user can store anything to a2-a15. The ksp does not have to be
+> stored as it cannot contain an important value. If it would then we'd
 
-How is sactl different from the iptables hooks Paul proposed? The "fake
-packet" abstraction is maybe not very natural (at least that was my
-first impression) but quite flexible, as it allows some degree of
-socket manipulation. My use case that sparked the discussion was
-transparently remapping bind() and connect() operations to use a
-per-cgroup source IP address. How do I do that with sactl?
+Ok, will drop the kso part.
 
-> On the other hand the cgroup-based approach could provide a similar
-> interface to the userspace, which would also be an option.
+> have kernel state which would break checkpoint/restart. The restart code
+> needs to come up with a sensible initial value for ksp though. The
+> vdso_base code needs to be stored as well. 
 
-I guess the net result would comprise two parts:
- - iptable_control, possibly based on Paul's code (hook
-   socket/connect/bind/accept calls into iptables)
- - ipt_cgroup, matching the cgroup the requesting process is a member
-   of (I'd also need a target to remap the source address but it would
-   probably a minor thing to do)
+But the vdso is set up at exec() time, right?  So if I reset vdso_base
+to the checkpointed value, might it actually end up at the wrong place,
+since the exec() of the 'restart' program might have placed the vdso
+at a different location than where it was at checkpoint time?
 
-One thing I'm not quite sure about is matching the cgroups. Should I
-attempt to match the cgroup path? Or some per-cgroup cookie stored in a
-virtual file? Both don't seem too pretty, need help :/
+I also notice that on s390 vdso_base seems to always be either
+20000020000 or 20000000000, and so far my checkpointed and restart
+programs have always had 20000000000, so testing doesn't really help :)
 
-> > > Presumably one possible iptables target would be something which
-> > > launches a popup window to ask the user 'should task firefox in
-> > > cgroup webclient be allowed to access google.com'?
-> 
-> If such a target is implemented it could also be done this way. To be
-> honest I am not really sure about which road to take myself.
-
-Wouldn't NFQUEUE and some userspace tool suffice without creating new
-interfaces (never used it, just guessing)? BTW, how are you going to
-know that I wanted to connect to foo.example.com, not bar.example.com
-(which share the IP address)?
-
-Best regards,
- Grzegorz Nosek
+-serge
