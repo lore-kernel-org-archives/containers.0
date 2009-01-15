@@ -1,17 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 0/2] cr: Introduce s390x checkpoint/restart code
-Date: Thu, 15 Jan 2009 16:25:39 -0600
-Message-ID: <20090115222539.GA24296@us.ibm.com>
-References: <20090115050523.GA10415@us.ibm.com>
-	<1232012395.30152.13.camel@localhost>
-	<496F082C.3020008@cs.columbia.edu>
-	<1232014244.30152.19.camel@localhost>
+From: "Chris R. Jones" <chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org>
+Subject: Re: Net containers config and usage
+Date: Thu, 15 Jan 2009 15:20:13 -0800
+Message-ID: <20090115232013.GA9722@versecorp.net>
+References: <20090113214747.GA23742@versecorp.net>
+	<1231887220.6398.73.camel@groeck-laptop> <496DA755.1040001@free.fr>
+	<20090114172739.GA13581@versecorp.net>
+	<496E23DA.9080402@free.fr> <20090114192633.GA8572@us.ibm.com>
+	<20090114193944.GA14129@versecorp.net> <496E42D6.2080306@free.fr>
+	<20090115215900.GA30607@versecorp.net> <496FB6F7.9080906@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1232014244.30152.19.camel@localhost>
+In-Reply-To: <496FB6F7.9080906-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,28 +23,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Martin Schwidefsky (schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org):
-> What is left are the pgstes tables. After you forked the new process
-> that is used to restart a KVM enabled process you need to call
-> s390_enable_sie(), preferably before you recreate the VMAs.
+On Thu, Jan 15, 2009 at 11:21:43PM +0100, Daniel Lezcano wrote:
+> chris-SqNQQPNds68nxqbYAscKCQ@public.gmane.org wrote:
+> >>Did you tried with the macvlan ?
+> >>    
+> >
+> >I just tried it - and it does work - I can move the vlan interfaces into 
+> >the
+> >namespace.   But that's not a solution for us - we really need to support
+> >communications out to other nodes on the network that we can't count on 
+> >using
+> >vlan.  
+> >  
+> Perhaps I am misunderstand but the macvlan is just an "eth aliased" 
+> interface, so you should but able to communicate with the outside world 
+> and keep the same performances as the physical device, no ? The only 
+> drawback with the macvlan is you can not communicate on the same host 
+> between different namespaces. We did some benchmark last year wih the 
+> macvlan and we got very good results.
 
-So, let's say we're checkpointing 3 tasks in a s390-kvm.
-Now we restart them outside of kvm.  Some process will
-fork(), exec() some restart program, which will in turn
-fork() twice, then each of those programs will call
-sys_restart(), read the info pertaining to the checkpoint
-task they are to re-create, and set themselves up.
+Oh great, I confused the macvlan support with 802.1q vlan interfaces 
+(as added through vconfig).  macvlan does look very promising - I was able 
+to create a macvlan interface and assign it to my namespace - looks pretty good!
 
-Should the s390_enable_sie() then not be correctly set
-by the system automatically?  So whether or not I'm
-restarting in kvm, the kvm_arch_create_vm() for s390
-will have been called?
-
-Or do I misunderstand?
-
-thanks,
--serge
+Thanks,
+Chris
