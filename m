@@ -1,68 +1,38 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: LSM stacking/secondary modules / RFC: Socket MAC LSM
-Date: Wed, 14 Jan 2009 18:44:07 -0600
-Message-ID: <20090115004407.GA14867@us.ibm.com>
-References: <1231952352.5315.13.camel@sp-laptop3.sp-local> <1231952313.31192.27.camel@localhost.localdomain> <1231952907.5315.17.camel@sp-laptop3.sp-local> <1231953606.31192.41.camel@localhost.localdomain> <f639a5c10901140934w3a019308yb5c5c1d73b605fd5@mail.gmail.com> <20090114180129.GB7337@kroah.com> <1231972131.5315.48.camel@sp-laptop3.sp-local> <20090114231645.GA24111@kroah.com> <1231979170.5315.69.camel@sp-laptop3.sp-local> <20090115004143.GB14467@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC PATCH 0/2] cr: Introduce s390x checkpoint/restart code
+Date: Wed, 14 Jan 2009 23:05:23 -0600
+Message-ID: <20090115050523.GA10415@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090115004143.GB14467@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Stephan Peijnik <stephan@peijnik.at>
-Cc: Greg KH <greg@kroah.com>, Rafael Konrath <rafael.konrath@gmail.com>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Li Zefan <lizf@cn.fujitsu.com>, Grzegorz Nosek <root@localdomain.pl>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(Sorry!  Meant to add extra recipients!)
+Hi,
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Quoting Stephan Peijnik (stephan@peijnik.at):
-> > On Wed, 2009-01-14 at 15:16 -0800, Greg KH wrote:
-> > > On Wed, Jan 14, 2009 at 11:28:51PM +0100, Stephan Peijnik wrote:
-> > > > But Tuxguardian provides a different set of features and works
-> > > > differently. 
-> > > 
-> > > Not entirely, SELinux provides a lot of what it sounds like Tuxguardian
-> > > provides, but in a different way.  If you were to mix them, it could get
-> > > very messy, very quickly.
-> > 
-> > Well, maybe I don't understand the whole concept behind LSM and/or the
-> > security concept in general. But from my understanding it could, in
-> > theory, be safe to have at least multiple socket MAC modules running. 
-> > If one denies access the others don't need to be consulted. On the other
-> > hand, if all allow a specific call to be made it could be granted.
-> > 
-> > > > Maybe this can't be solved by using the LSM framework, but come up with
-> > > > something different and independent.
-> > > 
-> > > Patches are always welcome.
-> > 
-> > Even though I have no patches prepared I have been playing around with
-> > my ideas.
-> > I haven't done a lot of testing on this yet, as it is meant to be a
-> > prototype only, but two implementations of a possible Socket MAC
-> > subsystem can be found at http://repo.or.cz/w/linux-2.6/sactl.git.
-> > 
-> > The subsystem is intended to be used by modules like Tuxguardian and
-> > does only provide a limited set of information (ie. no direct access to
-> > the relevant socket structures, only works for AF_INET and AF_INET6
-> > sockets).
-> 
-> So do you think we could come up with a usable framework using the
-> idea which Paul Menage suggests here:
-> https://lists.linux-foundation.org/pipermail/containers/2009-January/015280.html
-> ?
-> 
-> Basically, you would use a control group (cgroup) to track tasks.
-> I.e. you might launch firefox in a separate 'webclient' cgroup.
-> Traffic then gets controlled (and mangled) based on the cgroup
-> of the sending/receiving task.
-> 
-> Presumably one possible iptables target would be something which
-> launches a popup window to ask the user 'should task firefox in
-> cgroup webclient be allowed to access google.com'?
-> 
-> Just wondering - and figuring these appear to be two completely distinct
-> groups of people having very similar discussion...
-> 
-> -serge
+here is a first stab at extending Oren's application c/r patchset
+(http://lkml.org/lkml/2008/12/29/38) to s390.  I pretty much spent a day
+or two looking through the s390 include and .S files and then took a
+stab, so I won't be surprised to find these patches (and myself) the
+subject of ridicule.  For instance, I'm really not *sure* whether I
+should be backing up the acrs registers (some s390 docs suggested
+userspace could use them), the ksp, or the vdso_base.  But one thing
+I've got going for me at least...  it works!
+
+Please take a look, point and laugh, and maybe even explain
+what's so funny and how to improve them.
+
+thanks,
+-serge
