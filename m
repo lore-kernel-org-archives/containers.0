@@ -1,54 +1,50 @@
-From: Paul Moore <paul.moore@hp.com>
-Subject: Re: LSM stacking/secondary modules / RFC: Socket MAC LSM
-Date: Fri, 16 Jan 2009 15:43:29 -0500
-Message-ID: <200901161543.29320.paul.moore@hp.com>
-References: <1231952352.5315.13.camel@sp-laptop3.sp-local> <1232027832.14136.8.camel@sp-laptop3.sp-local> <6599ad830901150925p771dcc3if60b8ec5ed617963@mail.gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: [Patch 0/3] posix mqueue namespace (v14)
+Date: Fri, 16 Jan 2009 20:02:48 -0600
+Message-ID: <20090117020248.GA8615@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <6599ad830901150925p771dcc3if60b8ec5ed617963@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754726AbZAQCDE@vger.kernel.org>
 Content-Disposition: inline
-Sender: linux-security-module-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Stephan Peijnik <stephan@peijnik.at>, "Serge E. Hallyn" <serue@us.ibm.com>, Greg KH <greg@kroah.com>, Rafael Konrath <rafael.konrath@gmail.com>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Li Zefan <lizf@cn.fujitsu.com>, Grzegorz Nosek <root@localdomain.pl>
+Sender: linux-kernel-owner@vger.kernel.org
+To: lkml <linux-kernel@vger.kernel.org>
+Cc: Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Thursday 15 January 2009 12:25:34 pm Paul Menage wrote:
-> On Thu, Jan 15, 2009 at 5:57 AM, Stephan Peijnik <stephan@peijnik.at> 
-wrote:
-> > So Paul, do you think the interface would be of any use to you?
->
-> Potentially, yes. My concern was that we not add another new
-> (incomplete) userspace API in cgroups for doing socket permissions -
-> hooking into iptables was one way to do it, but if sactl is going to
-> become the official way to do this, then hooking a cgroups filter
-> into that seems like a good alternative.
+IPC namespaces are completely disjoint id->object mappings.
+A task can pass CLONE_NEWIPC to unshare and clone to get
+a new, empty, IPC namespace.  Until now this has supported
+SYSV IPC.
 
-I'll confess to knowing very little about cgroups and even less about 
-Stephan's sactl concept (only what I've read so far in this thread), 
-however, like Paul Menage I tend to prefer solutions which leverage 
-existing mechanisms as much as possible.
+Most Posix IPC is done in userspace.  The posix mqueue
+support, however, is implemented on top of the mqueue fs.
 
-Conceptually, I've always associated iptables/netfilter as more of a 
-per-packet traffic control mechanism whereas the LSM approach was 
-geared more towards per-connection and per-application traffic control 
-mechanism; although I will be the first to admit this is a very fuzzy 
-distinction and could easily be argued the other way as well.  Other 
-than the issues around blocking due to userspace notification and 
-potential conflicts with other LSMs are there any objections to using 
-the LSM interface?
+This patchset implements multiple mqueue fs instances,
+one per IPC namespace to be precise.
 
-I know I've come out against the LSM networking hooks proposed by the 
-TOMOYO developers in the past to address the blocking issues, and while 
-I still believe this is not the "ideal" solution I recognize that there 
-are certain use cases and "personal firewall" projects that could 
-benefit from such LSM hooks.  While I stand by my original objections, 
-I'm most interested in making sure that if we do decide to go forward 
-with introducing such functionality into the mainline kernel that we do 
-so in the most appropriate manner.
+To create a new ipc namespace with posix mq support, you
+should now:
 
--- 
-paul moore
-linux @ hp
+	unshare(CLONE_NEWIPC|CLONE_NEWNS);
+	umount /dev/mqueue
+	mount -t mqueue mqueue /dev/mqueue
+
+It's perfectly valid to do vfs operations on files
+in another ipc_namespace's /dev/mqueue, but any use
+of mq_open(3) and friends will act in your own ipc_ns.
+After the ipc namespace has exited, you can still
+unlink but no longer create files in that fs (since
+accounting is carried.
+
+Changelog:
+	v14: (Jan 16 2009) port to linux-next
+	v13: (Dec 28 2009)
+	   1. addressed comments by Dave and Suka
+	   2. ported Cedric's patch to make posix mq sysctls
+	      per-namespace
+
+When convenient, it would be great to see this tested
+in -mm.
+
+thanks,
+-serge
