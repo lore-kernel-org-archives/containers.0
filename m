@@ -1,303 +1,118 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 3/3] mqueue namespace: adapt sysctl
-Date: Fri, 16 Jan 2009 20:05:25 -0600
-Message-ID: <20090117020525.GC8708@us.ibm.com>
-References: <20090117020248.GA8615@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 0/7][v7] Container-init signal semantics
+Date: Sat, 17 Jan 2009 12:26:38 -0800
+Message-ID: <20090117202638.GA11825@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S936535AbZAQCFj@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932302AbZAQUaL@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090117020248.GA8615@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: lkml <linux-kernel@vger.kernel.org>
-Cc: Linux Containers <containers@lists.osdl.org>
+To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
+Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Largely inspired from ipc/ipc_sysctl.c. This patch isolates the mqueue
-sysctl stuff in its own file.
 
-Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
-Signed-off-by: Nadia Derbey <Nadia.Derbey@bull.net>
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- include/linux/ipc_namespace.h |   14 +++++
- init/Kconfig                  |    6 ++
- ipc/Makefile                  |    1 +
- ipc/mq_sysctl.c               |  125 +++++++++++++++++++++++++++++++++++++++++
- ipc/mqueue.c                  |   65 +---------------------
- 5 files changed, 147 insertions(+), 64 deletions(-)
- create mode 100644 ipc/mq_sysctl.c
+Container-init must behave like global-init to processes within the
+container and hence it must be immune to unhandled fatal signals from
+within the container (i.e SIG_DFL signals that terminate the process).
 
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index a73bbef..9f57f55 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -121,4 +121,18 @@ static inline void put_ipc_ns(struct ipc_namespace *ns)
- {
- }
- #endif
-+
-+#ifdef CONFIG_POSIX_MQUEUE_SYSCTL
-+
-+struct ctl_table_header;
-+extern struct ctl_table_header *mq_register_sysctl_table(void);
-+
-+#else /* CONFIG_POSIX_MQUEUE_SYSCTL */
-+
-+static inline struct ctl_table_header *mq_register_sysctl_table(void)
-+{
-+	return NULL;
-+}
-+
-+#endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
- #endif
-diff --git a/init/Kconfig b/init/Kconfig
-index 8084385..f926c10 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -148,6 +148,12 @@ config POSIX_MQUEUE
- 
- 	  If unsure, say Y.
- 
-+config POSIX_MQUEUE_SYSCTL
-+	bool
-+	depends on POSIX_MQUEUE
-+	depends on SYSCTL
-+	default y
-+
- config BSD_PROCESS_ACCT
- 	bool "BSD Process Accounting"
- 	help
-diff --git a/ipc/Makefile b/ipc/Makefile
-index 65c3843..4e1955e 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -8,4 +8,5 @@ obj-$(CONFIG_SYSVIPC_SYSCTL) += ipc_sysctl.o
- obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
-+obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
- 
-diff --git a/ipc/mq_sysctl.c b/ipc/mq_sysctl.c
-new file mode 100644
-index 0000000..81f01b7
---- /dev/null
-+++ b/ipc/mq_sysctl.c
-@@ -0,0 +1,125 @@
-+/*
-+ *  Copyright (C) 2007 IBM Corporation
-+ *
-+ *  Author: Cedric Le Goater <clg@fr.ibm.com>
-+ *
-+ *  This program is free software; you can redistribute it and/or
-+ *  modify it under the terms of the GNU General Public License as
-+ *  published by the Free Software Foundation, version 2 of the
-+ *  License.
-+ */
-+
-+#include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
-+#include <linux/sysctl.h>
-+
-+/*
-+ * Define the ranges various user-specified maximum values can
-+ * be set to.
-+ */
-+#define MIN_MSGMAX	1		/* min value for msg_max */
-+#define MAX_MSGMAX	HARD_MSGMAX	/* max value for msg_max */
-+#define MIN_MSGSIZEMAX	128		/* min value for msgsize_max */
-+#define MAX_MSGSIZEMAX	(8192*128)	/* max value for msgsize_max */
-+
-+static void *get_mq(ctl_table *table)
-+{
-+	char *which = table->data;
-+	struct ipc_namespace *ipc_ns = current->nsproxy->ipc_ns;
-+	which = (which - (char *)&init_ipc_ns) + (char *)ipc_ns;
-+	return which;
-+}
-+
-+#ifdef CONFIG_PROC_FS
-+static int proc_mq_dointvec(ctl_table *table, int write, struct file *filp,
-+	void __user *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	struct ctl_table mq_table;
-+	memcpy(&mq_table, table, sizeof(mq_table));
-+	mq_table.data = get_mq(table);
-+
-+	return proc_dointvec(&mq_table, write, filp, buffer, lenp, ppos);
-+}
-+
-+static int proc_mq_dointvec_minmax(ctl_table *table, int write,
-+	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	struct ctl_table mq_table;
-+	memcpy(&mq_table, table, sizeof(mq_table));
-+	mq_table.data = get_mq(table);
-+
-+	return proc_dointvec_minmax(&mq_table, write, filp, buffer,
-+					lenp, ppos);
-+}
-+#else /* CONFIG_PROC_FS */
-+static int proc_mq_dointvec(ctl_table *table, int write, struct file *filp,
-+	void __user *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	return -ENOSYS;
-+}
-+
-+static int proc_mq_dointvec_minmax(ctl_table *table, int write,
-+	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
-+{
-+	return -ENOSYS;
-+}
-+#endif /* CONFIG_PROC_FS */
-+
-+static int msg_max_limit_min = MIN_MSGMAX;
-+static int msg_max_limit_max = MAX_MSGMAX;
-+
-+static int msg_maxsize_limit_min = MIN_MSGSIZEMAX;
-+static int msg_maxsize_limit_max = MAX_MSGSIZEMAX;
-+
-+static ctl_table mq_sysctls[] = {
-+	{
-+		.procname	= "queues_max",
-+		.data		= &init_ipc_ns.mq_queues_max,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= &proc_mq_dointvec,
-+	},
-+	{
-+		.procname	= "msg_max",
-+		.data		= &init_ipc_ns.mq_msg_max,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= &proc_mq_dointvec_minmax,
-+		.extra1		= &msg_max_limit_min,
-+		.extra2		= &msg_max_limit_max,
-+	},
-+	{
-+		.procname	= "msgsize_max",
-+		.data		= &init_ipc_ns.mq_msgsize_max,
-+		.maxlen		= sizeof(int),
-+		.mode		= 0644,
-+		.proc_handler	= &proc_mq_dointvec_minmax,
-+		.extra1		= &msg_maxsize_limit_min,
-+		.extra2		= &msg_maxsize_limit_max,
-+	},
-+	{ .ctl_name = 0 }
-+};
-+
-+static ctl_table mq_sysctl_dir[] = {
-+	{
-+		.procname	= "mqueue",
-+		.mode		= 0555,
-+		.child		= mq_sysctls,
-+	},
-+	{ .ctl_name = 0 }
-+};
-+
-+static ctl_table mq_sysctl_root[] = {
-+	{
-+		.ctl_name	= CTL_FS,
-+		.procname	= "fs",
-+		.mode		= 0555,
-+		.child		= mq_sysctl_dir,
-+	},
-+	{ .ctl_name = 0 }
-+};
-+
-+struct ctl_table_header *mq_register_sysctl_table(void)
-+{
-+	return register_sysctl_table(mq_sysctl_root);
-+}
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index b51a6d3..5fc8d57 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -47,15 +47,6 @@
- #define STATE_PENDING	1
- #define STATE_READY	2
- 
--/*
-- * Define the ranges various user-specified maximum values can
-- * be set to.
-- */
--#define MIN_MSGMAX	1		/* min value for msg_max */
--#define MAX_MSGMAX	HARD_MSGMAX	/* max value for msg_max */
--#define MIN_MSGSIZEMAX	128		/* min value for msgsize_max */
--#define MAX_MSGSIZEMAX	(8192*128)	/* max value for msgsize_max */
--
- struct ext_wait_queue {		/* queue of sleeping tasks */
- 	struct task_struct *task;
- 	struct list_head list;
-@@ -1296,60 +1287,6 @@ void mq_put_mnt(struct ipc_namespace *ns)
- 	mntput(ns->mq_mnt);
- }
- 
--static int msg_max_limit_min = MIN_MSGMAX;
--static int msg_max_limit_max = MAX_MSGMAX;
--
--static int msg_maxsize_limit_min = MIN_MSGSIZEMAX;
--static int msg_maxsize_limit_max = MAX_MSGSIZEMAX;
--
--static ctl_table mq_sysctls[] = {
--	{
--		.procname	= "queues_max",
--		.data		= &init_ipc_ns.mq_queues_max,
--		.maxlen		= sizeof(int),
--		.mode		= 0644,
--		.proc_handler	= &proc_dointvec,
--	},
--	{
--		.procname	= "msg_max",
--		.data		= &init_ipc_ns.mq_msg_max,
--		.maxlen		= sizeof(int),
--		.mode		= 0644,
--		.proc_handler	= &proc_dointvec_minmax,
--		.extra1		= &msg_max_limit_min,
--		.extra2		= &msg_max_limit_max,
--	},
--	{
--		.procname	= "msgsize_max",
--		.data		= &init_ipc_ns.mq_msgsize_max,
--		.maxlen		= sizeof(int),
--		.mode		= 0644,
--		.proc_handler	= &proc_dointvec_minmax,
--		.extra1		= &msg_maxsize_limit_min,
--		.extra2		= &msg_maxsize_limit_max,
--	},
--	{ .ctl_name = 0 }
--};
--
--static ctl_table mq_sysctl_dir[] = {
--	{
--		.procname	= "mqueue",
--		.mode		= 0555,
--		.child		= mq_sysctls,
--	},
--	{ .ctl_name = 0 }
--};
--
--static ctl_table mq_sysctl_root[] = {
--	{
--		.ctl_name	= CTL_FS,
--		.procname	= "fs",
--		.mode		= 0555,
--		.child		= mq_sysctl_dir,
--	},
--	{ .ctl_name = 0 }
--};
--
- static int __init init_mqueue_fs(void)
- {
- 	int error;
-@@ -1361,7 +1298,7 @@ static int __init init_mqueue_fs(void)
- 		return -ENOMEM;
- 
- 	/* ignore failues - they are not fatal */
--	mq_sysctl_table = register_sysctl_table(mq_sysctl_root);
-+	mq_sysctl_table = mq_register_sysctl_table();
- 
- 	error = register_filesystem(&mqueue_fs_type);
- 	if (error)
--- 
-1.5.4.3
+But the same container-init must behave like a normal process to 
+processes in ancestor namespaces and so if it receives the same fatal
+signal from a process in ancestor namespace, the signal must be
+processed.
+
+Implementing these semantics requires that send_signal() determine pid
+namespace of the sender but since signals can originate from workqueues/
+interrupt-handlers, determining pid namespace of sender may not always
+be possible or safe.
+
+This patchset implements the design/simplified semantics suggested by
+Oleg Nesterov.  The simplified semantics for container-init are:
+
+	- container-init must never be terminated by a signal from a
+	  descendant process.
+
+	- container-init must never be immune to SIGKILL from an ancestor
+	  namespace (so a process in parent namespace must always be able
+	  to terminate a descendant container).
+
+	- container-init may be immune to unhandled fatal signals (like
+	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
+	  the only reliable signal from ancestor namespace).
+
+Patches in this set:
+
+	[PATCH 1/7] Remove 'handler' parameter to tracehook functions
+	[PATCH 2/7] Protect init from unwanted signals more
+	[PATCH 3/7] Add from_ancestor_ns parameter to send_signal()
+	[PATCH 4/7] Protect cinit from unblocked SIG_DFL signals
+	[PATCH 5/7] Protect cinit from blocked fatal signals
+	[PATCH 6/7] SI_USER: Masquerade si_pid when crossing pid ns boundary
+	[PATCH 7/7] proc: Show SIG_DFL signals to init as "ignored" signals
+
+Changelog[v7]:
+	- siginfo_from_user() and siginfo_from_ancestor_ns() are fairly simple
+	  and used only in send_signal(). Remove them and move the logic into
+	  send_signal() (Drop old patch 4, update new patch 4/7)
+
+	- Update /proc/pid/status to include SIG_DFL signals to init in the
+	  "ignored" set (and remove the TODO in Patch 0/7) (Patch 7/7)
+
+Changelog[v6]:
+
+	- Patches 3,4: Have kill_pid_info_as_uid() pass in 'from_ancestor_ns'
+	  parameter to __send_signal() and remove SI_ASYNCIO check in
+	  siginfo_from_user().
+	- Patches 4,6: Update changelog and simplify code
+
+Changelog[v5]:
+	- Patch 2/6: Remove SIG_IGN check in sig_task_ignored() and let
+	  sig_handler_ignored() check SIG_IGN.
+        - Patch 3/6. Put siginfo_from_ancestor_ns() back under CONFIG_PID_NS
+	  and remove warning in rt_sigqueueinfo().
+	- (Patch 5/6)Simplify check in get_signal_to_deliver()
+	- (Patch 6/6)Simplify masquerading pid
+	- LTP-20081219-intermediate showed no new errors on 2.6.28-rc5-mm2.
+
+Changelog[v4]:
+	- [Bugfix] Patch 3/7. Check ns == NULL in siginfo_from_ancestor_ns().
+	  Although http://lkml.org/lkml/2008/12/16/502 makes it less likely
+	  that ns == NULL, looks like an explicit check won't hurt ?
+	- Remove SIGNAL_UNKILLABLE_FROM_NS flag and simplify logic as
+	  suggested by Oleg Nesterov.
+	- Dropped patch that set SIGNAL_UNKILLABLE_FROM_NS and set
+	  SIGNAL_UNKILLABLE in patch 5/7 to be bisect-safe.
+	- Add a warning in rt_sigqueueinfo() if SI_ASYNCIO is used
+	  (patch 3/7)
+	- Added two patches (6/7 and 7/7) to masquerade si_pid for
+	  SI_USER and SI_TKILL
+
+
+Changelog[v3]:
+	Changes based on discussions of previous version:
+		http://lkml.org/lkml/2008/11/25/458
+
+	Major changes:
+
+	- Define SIGNAL_UNKILLABLE_FROM_NS and use in container-inits to
+	  skip fatal signals from same namespace but process SIGKILL/SIGSTOP
+	  from ancestor namespace.
+	- Use SI_FROMUSER() and si_code != SI_ASYNCIO to determine if
+	  it is safe to dereference pid-namespace of caller. Highly
+	  experimental :-)
+	- Masquerading si_pid when crossing namespace boundary: relevant
+	  patches merged in -mm and dropped from this set.
+
+	Minor changes:
+
+	- Remove 'handler' parameter to tracehook functions
+	- Update sig_ignored() to drop SIG_DFL signals to global init early
+	  (tried to address Roland's  and Oleg's comments)
+	- Use 'same_ns' flag to drop SIGKILL/SIGSTOP to cinit from same
+	  namespace
+
+
+Limitations/side-effects of current design
+
+	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
+	  ignored. Use exit() :-)
