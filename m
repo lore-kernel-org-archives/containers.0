@@ -1,36 +1,36 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [PATCH 0/7][v6] Container-init signal semantics
-Date: Sat, 17 Jan 2009 12:46:11 -0800
-Message-ID: <20090117204611.GA12283@us.ibm.com>
-References: <20090107074558.GA27881@us.ibm.com> <20090111060452.GA9014@redhat.com>
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: Re: [PATCH 4/7][v7] Protect cinit from unblocked SIG_DFL signals
+Date: Sat, 17 Jan 2009 23:12:42 +0100
+Message-ID: <20090117221242.GA3962@redhat.com>
+References: <20090117202638.GA11825@us.ibm.com> <20090117203621.GE11825@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933328AbZAQUtp@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765424AbZAQWPL@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090111060452.GA9014@redhat.com>
+In-Reply-To: <20090117203621.GE11825@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg@redhat.com] wrote:
-| Eric, Roland, what do you think ?
-| 
-| The whole series looks good to me. I think it adds minimal
-| complications to solove the problem.
+On 01/17, Sukadev Bhattiprolu wrote:
+>
+> @@ -1331,7 +1341,7 @@ int send_sigqueue(struct sigqueue *q, struct task_struct *t, int group)
+>  		goto ret;
+>
+>  	ret = 1; /* the signal is ignored */
+> -	if (!prepare_signal(sig, t))
+> +	if (!prepare_signal(sig, t, 1))
 
-Thanks Oleg.
+Hmm, just noticed. This looks wrong, it should be prepare_signal(sig, t, 0),
+no?
 
-I made a small style update - basically removed the helpers
-siginfo_from_user() and siginfo_from_ancestor_ns() and moved their
-logic into send_signal() (merged patch 4 and 5 from [v6] patchset). 
+For example, /sbin/init can create the posix timer with sigev_signo = SIGKILL
+and it won't be killed before this patch.
 
-Also added a patch to update /proc/pid/status to include SIG_DFL
-signals and removed a pending todo for the patchset.
+This also looks wrong from the masquerading pov.
 
-Roland, Eric, Daniel, Bastian, can you please comment on the [v7]
-patchset ?
 
-Thanks,
+Otherwise, the patches 1-6 are imho fine.
 
-Sukadev
+Oleg.
