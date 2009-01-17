@@ -1,89 +1,36 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH 7/7][v7] proc: Show SIG_DFL signals to init as "ignored"
-	signals
-Date: Sat, 17 Jan 2009 12:37:53 -0800
-Message-ID: <20090117203753.GH11825@us.ibm.com>
-References: <20090117202638.GA11825@us.ibm.com>
+Subject: Re: [PATCH 0/7][v6] Container-init signal semantics
+Date: Sat, 17 Jan 2009 12:46:11 -0800
+Message-ID: <20090117204611.GA12283@us.ibm.com>
+References: <20090107074558.GA27881@us.ibm.com> <20090111060452.GA9014@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933092AbZAQUlt@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933328AbZAQUtp@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090117202638.GA11825@us.ibm.com>
+In-Reply-To: <20090111060452.GA9014@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Oleg Nesterov [oleg@redhat.com] wrote:
+| Eric, Roland, what do you think ?
+| 
+| The whole series looks good to me. I think it adds minimal
+| complications to solove the problem.
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Sat, 17 Jan 2009 09:26:26 -0800
-Subject: [PATCH 7/7][v7] proc: Show SIG_DFL signals to init as "ignored" signals
+Thanks Oleg.
 
-Init processes ignore SIG_DFL signals unless they are from an ancestor
-namespace.  Ensure /proc/pid/status correcly reports these signals.
+I made a small style update - basically removed the helpers
+siginfo_from_user() and siginfo_from_ancestor_ns() and moved their
+logic into send_signal() (merged patch 4 and 5 from [v6] patchset). 
 
-Values for "normal" /bin/bash from /proc/pid/status:
+Also added a patch to update /proc/pid/status to include SIG_DFL
+signals and removed a pending todo for the patchset.
 
-	SigIgn: 0000000000384004
-	SigCgt: 000000004b813efb
+Roland, Eric, Daniel, Bastian, can you please comment on the [v7]
+patchset ?
 
-	Signals 9, 16, 19 etc are neither ignored nor caught
+Thanks,
 
-/bin/bash as container-init, Status viewed from outside container:
-
-	SigIgn: 0000000000384004
-	SigCgt: 000000004b813efb
-
-	(same as 'normal')
-
-/bin/bash as container-init, Status viewed from inside container:
-
-	SigIgn: ffffffffb47ec104
-	SigCgt: 000000004b813efb
-
-	All "uncaught" signals, including SIGKILL(9) SIGSTOP(19) are ignored.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- fs/proc/array.c |   18 +++++++++++++++++-
- 1 files changed, 17 insertions(+), 1 deletions(-)
-
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index 7e4877d..16e39db 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -228,15 +228,31 @@ static void render_sigset_t(struct seq_file *m, const char *header,
- 	seq_printf(m, "\n");
- }
- 
-+static int is_unkillable(struct task_struct *p)
-+{
-+	if (!(p->signal->flags & SIGNAL_UNKILLABLE))
-+		return 0;
-+
-+	/* If caller is an ancestor, we are not unkillable */
-+	if (task_pid_nr_ns(current, task_active_pid_ns(p)) <= 0)
-+		return 0;
-+
-+	return 1;
-+}
-+
- static void collect_sigign_sigcatch(struct task_struct *p, sigset_t *ign,
- 				    sigset_t *catch)
- {
- 	struct k_sigaction *k;
- 	int i;
-+	int unkillable;
-+	
-+	unkillable = is_unkillable(p);
- 
- 	k = p->sighand->action;
- 	for (i = 1; i <= _NSIG; ++i, ++k) {
--		if (k->sa.sa_handler == SIG_IGN)
-+		if (k->sa.sa_handler == SIG_IGN ||
-+				(k->sa.sa_handler == SIG_DFL && unkillable))
- 			sigaddset(ign, i);
- 		else if (k->sa.sa_handler != SIG_DFL)
- 			sigaddset(catch, i);
--- 
-1.5.2.5
+Sukadev
