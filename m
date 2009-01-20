@@ -1,104 +1,51 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: nsgroup autoremoving
-Date: Mon, 19 Jan 2009 12:05:33 +0900
-Message-ID: <20090119120533.bfc2c804.kamezawa.hiroyu@jp.fujitsu.com>
-References: <49706006.80002@free.fr> <20090116165217.GA8477@us.ibm.com>
-	<4973A0AD.6090508@free.fr> <20090118233216.GA10126@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: [PATCH 7/7][v7] proc: Show SIG_DFL signals to init as
+	"ignored" signals
+Date: Mon, 19 Jan 2009 17:04:53 -0800
+Message-ID: <20090120010453.GA14612@us.ibm.com>
+References: <20090117202638.GA11825@us.ibm.com> <20090117203753.GH11825@us.ibm.com> <20090117221909.GB3962@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090118233216.GA10126-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761094AbZATBId@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090117221909.GB3962@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Sun, 18 Jan 2009 17:32:16 -0600
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Oleg Nesterov [oleg@redhat.com] wrote:
+| On 01/17, Sukadev Bhattiprolu wrote:
+| >
+| > Init processes ignore SIG_DFL signals unless they are from an ancestor
+| > namespace.  Ensure /proc/pid/status correcly reports these signals.
+| 
+| This is the user-visible change, and I don't really understand why do we
+| need it.
 
-> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> > Serge E. Hallyn wrote:
-> >> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> >>   
-> >>> Hi,
-> >>>
-> >>> While trying to unshare a namespace with the clone syscall with an  
-> >>> inifinite loop, I got an EEXIST.
-> >>> That looks weird to have such syscall returning EEXIST ... :)
-> >>>
-> >>> After investigating, it appears the ns_cgroup creates automatically a 
-> >>> control group named with the pid number when we call the clone 
-> >>> syscall with a namespace parameter and when the namespace exits, the 
-> >>> control group is not automatically removed. So when the pid numbers 
-> >>> are recycled we conflict with a previous ns_cgroup name and the clone 
-> >>> fails.
-> >>>
-> >>> IMHO, if the nsgroup is automatically created, it should 
-> >>> automatically destroyed, otherwise what will happen to application 
-> >>> using the namespaces (eg. mount namespace) wrote before nsgroup 
-> >>> appeared ?
-> >>>     
-> >>
-> >> but you can have it automatically destroyed.  I.e. I did the
-> >> following:
-> >>
-> >> mount -t cgroup -o freezer,ns freezer /cgroup
-> >> cat > /bin/release_cgroup.sh << EOF
-> >> #!/bin/sh
-> >> echo "Removing dead cgroup .$*." >> /var/log/cgroup
-> >> rmdir /cgroup/$* >> /var/log/cgroup 2>&1
-> >> echo "return value was $?" >> /var/log/cgroup
-> >> EOF
-> >> echo /bin/release_cgroup.sh > /cgroup/release_agent
-> >> echo 1 > /cgroup/notify_on_release
-> >> chmod ugo+x /bin/release_cgroup.sh
-> >> ns_exec -m /bin/sh
-> >> ls /cgroup`
-> >> 	3581  notify_on_release  release_agent  tasks
-> >> exit
-> >> ls /cgroup
-> >> 	notify_on_release  release_agent  tasks
-> >>   
-> > Assuming you mount with all the subsystems, this script will destroy the  
-> > non-nsgroup too. Each time I create a control group manually, I have to  
-> > unset the notify_on_release, right ?
-> 
-> I assume notify_on_release is per-hierarchy.  So you're just asking
-> about manually created cgroups in a hierarchy which has ns mounted,
-> right?
-> 
-> I suppose you could use a naming convention and do some name
-> checking in the release_agent to not delete manually created
-> ones.
-> 
-> Would that be too much of a hassle?
-> 
-> Maybe you're right.  Maybe we should tag auto-created cgroups,
-> and auto-remove them.
+This discussion came up earlier, with Bastian and Roland and my understanding
+was that we should fix the SigIgn line in /proc/pid/status - so I had added
+a TODO for this patchset.
 
-I think auto-remove is more useful.
+| 
+| Imho, this patch can confuse the user-space. Why should we report that,
+| say, SIGCONT is ignored by the global init?
 
->  It's more convenient for me that way...
-> Paul, would you have any objections?  Daniel do you have a patch
-> written?
-> 
+But it is ignored right ?
 
-Just a notice:
-When the memory subsystem is mounted, notify_on_release will not work as you
-expected. Because refcnts from pages still exits.
+Also, if user space looks at the SigIgn line and assumes that SIGKILL or
+SIGUSR1 will kill init, user space can still be confused when it doesn't
+really kill - no ?
 
-But you will be able to do rmdir() in many case because of pre_destroy()
-handler. (so, the directroy is releasable.)
-I'd like to fix this. But now, it doesn't work for memory subsys.
+| 
+| 
+| Even if I am wrong, I believe this change is orthogonal to rhis series,
+| and should be posted separately.
+| 
 
-Thanks,
--Kame
+You are right that its not strictly tied to this patchset. init was
+dropping SIGKILL before too.
+
+So, should I just post separately or drop altogether ?
+
+Sukadev
