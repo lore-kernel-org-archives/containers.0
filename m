@@ -1,43 +1,150 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [PATCH 4/7][v7] Protect cinit from unblocked SIG_DFL signals
-Date: Mon, 19 Jan 2009 17:07:34 -0800
-Message-ID: <20090120010734.GB14612@us.ibm.com>
-References: <20090117202638.GA11825@us.ibm.com> <20090117203621.GE11825@us.ibm.com> <20090117221242.GA3962@redhat.com>
+Subject: [PATCH 4/7][v7] Protect cinit from unblocked SIG_DFL signals
+Date: Mon, 19 Jan 2009 17:09:53 -0800
+Message-ID: <20090120010953.GC14612@us.ibm.com>
+References: <20090117202638.GA11825@us.ibm.com> <20090117203621.GE11825@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761386AbZATBLS@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761586AbZATBNa@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090117221242.GA3962@redhat.com>
+In-Reply-To: <20090117203621.GE11825@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
+Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg@redhat.com] wrote:
-| On 01/17, Sukadev Bhattiprolu wrote:
-| >
-| > @@ -1331,7 +1341,7 @@ int send_sigqueue(struct sigqueue *q, struct task_struct *t, int group)
-| >  		goto ret;
-| >
-| >  	ret = 1; /* the signal is ignored */
-| > -	if (!prepare_signal(sig, t))
-| > +	if (!prepare_signal(sig, t, 1))
-| 
-| Hmm, just noticed. This looks wrong, it should be prepare_signal(sig, t, 0),
-| no?
+Minor update - set 'from_ancestor_ns' parameter to 0 in send_sigque().
 
-Grr. I missed that when we changed the parameter from 'same-ns' to
-'from_ancestor_ns' and inverted the logic.
+---
 
-| 
-| For example, /sbin/init can create the posix timer with sigev_signo = SIGKILL
-| and it won't be killed before this patch.
-| 
-| This also looks wrong from the masquerading pov.
-| 
-| 
-| Otherwise, the patches 1-6 are imho fine.
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Date: Wed, 24 Dec 2008 14:03:57 -0800
+Subject: [PATCH 4/7][v7] Protect cinit from unblocked SIG_DFL signals
 
-Thanks, Will resend this patch.
+Drop early any SIG_DFL or SIG_IGN signals to container-init from within
+the same container. But queue SIGSTOP and SIGKILL to the container-init
+if they are from an ancestor container.
 
-Sukadev
+Blocked, fatal signals (i.e when SIG_DFL is to terminate) from within the
+container can still terminate the container-init. That will be addressed
+in the next patch.
+
+Note:	To be bisect-safe, SIGNAL_UNKILLABLE will be set for container-inits
+   	in a follow-on patch. Until then, this patch is just a preparatory
+	step.
+
+Changelog[v7]:
+	- (Oleg Nesterov) Bugfix: send_sigqueue() should use from_ancestor_ns=0
+	- siginfo_from_user(), siginfo_from_ancestor_ns() are needed in only
+	  one place.  Remove them and move their logic into send_signal().
+	  Seems to make code more easier to read :-)
+
+Changelog[v6]:
+	- (Roland McGrath) Remove unnecessary helper signal_task_unkillable()
+	  and fold checks into sig_task_ignored().
+
+Changelog[v4]:
+	- (Oleg Nesterov) Remove SIGNAL_UNKILLABLE_FROM_NS and rename
+	  'same_ns' to 'from_ancestor_ns'.
+	- SIGNAL_UNKILLABLE is not yet set for container-inits (will be
+	  set in follow-on patch).
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+---
+ kernel/signal.c |   28 +++++++++++++++++++---------
+ 1 files changed, 19 insertions(+), 9 deletions(-)
+
+diff --git a/kernel/signal.c b/kernel/signal.c
+index bb3b6f5..35556aa 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -53,20 +53,21 @@ static int sig_handler_ignored(void __user *handler, int sig)
+ 		(handler == SIG_DFL && sig_kernel_ignore(sig));
+ }
+ 
+-static int sig_task_ignored(struct task_struct *t, int sig)
++static int sig_task_ignored(struct task_struct *t, int sig,
++		int from_ancestor_ns)
+ {
+ 	void __user *handler;
+ 
+ 	handler = sig_handler(t, sig);
+ 
+ 	if (unlikely(t->signal->flags & SIGNAL_UNKILLABLE) &&
+-			handler == SIG_DFL)
++			handler == SIG_DFL && !from_ancestor_ns)
+ 		return 1;
+ 
+ 	return sig_handler_ignored(handler, sig);
+ }
+ 
+-static int sig_ignored(struct task_struct *t, int sig)
++static int sig_ignored(struct task_struct *t, int sig, int from_ancestor_ns)
+ {
+ 	/*
+ 	 * Blocked signals are never ignored, since the
+@@ -76,7 +77,7 @@ static int sig_ignored(struct task_struct *t, int sig)
+ 	if (sigismember(&t->blocked, sig) || sigismember(&t->real_blocked, sig))
+ 		return 0;
+ 
+-	if (!sig_task_ignored(t, sig))
++	if (!sig_task_ignored(t, sig, from_ancestor_ns))
+ 		return 0;
+ 
+ 	/*
+@@ -632,7 +633,7 @@ static int check_kill_permission(int sig, struct siginfo *info,
+  * Returns true if the signal should be actually delivered, otherwise
+  * it should be dropped.
+  */
+-static int prepare_signal(int sig, struct task_struct *p)
++static int prepare_signal(int sig, struct task_struct *p, int from_ancestor_ns)
+ {
+ 	struct signal_struct *signal = p->signal;
+ 	struct task_struct *t;
+@@ -716,7 +717,7 @@ static int prepare_signal(int sig, struct task_struct *p)
+ 		}
+ 	}
+ 
+-	return !sig_ignored(p, sig);
++	return !sig_ignored(p, sig, from_ancestor_ns);
+ }
+ 
+ /*
+@@ -830,7 +831,8 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 	trace_sched_signal_send(sig, t);
+ 
+ 	assert_spin_locked(&t->sighand->siglock);
+-	if (!prepare_signal(sig, t))
++
++	if (!prepare_signal(sig, t, from_ancestor_ns))
+ 		return 0;
+ 
+ 	pending = group ? &t->signal->shared_pending : &t->pending;
+@@ -899,7 +901,15 @@ out_set:
+ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			int group)
+ {
+-	return __send_signal(sig, info, t, group, 0);
++	int from_ancestor_ns = 0;
++
++#ifdef CONFIG_PID_NS
++	if (!is_si_special(info) && SI_FROMUSER(info) &&
++			task_pid_nr_ns(current, task_active_pid_ns(t)) <= 0)
++		from_ancestor_ns = 1;
++#endif
++
++	return __send_signal(sig, info, t, group, from_ancestor_ns);
+ }
+ 
+ int print_fatal_signals;
+@@ -1331,7 +1341,7 @@ int send_sigqueue(struct sigqueue *q, struct task_struct *t, int group)
+ 		goto ret;
+ 
+ 	ret = 1; /* the signal is ignored */
+-	if (!prepare_signal(sig, t))
++	if (!prepare_signal(sig, t, 0))
+ 		goto out;
+ 
+ 	ret = 0;
+-- 
+1.5.2.5
