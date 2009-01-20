@@ -1,17 +1,11 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH] NOOP cgroup subsystem
-Date: Tue, 20 Jan 2009 12:07:28 +0900
-Message-ID: <20090120120728.9be81131.kamezawa.hiroyu__24463.1649264649$1232421131$gmane$org@jp.fujitsu.com>
-References: <20090109143226.b79d21b4.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830901082226h6d47053cp801dafb67b6e2bc9@mail.gmail.com>
-	<20090109153219.dd8c153d.kamezawa.hiroyu@jp.fujitsu.com>
-	<1232072445.7955.40.camel@localhost>
-	<6599ad830901191752o53926bdbve593301aeff7330f@mail.gmail.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] cgroups: fix lock inconsistency in cgroup_clone()
+Date: Tue, 20 Jan 2009 14:43:54 +0800
+Message-ID: <497572AA.8020101__11563.0781431266$1232434010$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830901191752o53926bdbve593301aeff7330f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,41 +15,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 19 Jan 2009 17:52:36 -0800
-Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+I fixed a bug in cgroup_clone() in Linus' tree (commit 7b574b7), without
+noticing there was a cleanup patch in -mm tree that should be rebased
+(now commit 104cbd5), thus resulted in lock inconsistency.
 
-> On Thu, Jan 15, 2009 at 6:20 PM, Matthew Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >
-> >        My feeling is this should be a signal subsystem rather than a NOOP
-> > subsystem. Then, if users want the grouping for something besides
-> > signaling, it doesn't matter if they don't issue any signals via the
-> > signal.send file. Also, I think Paul's suggestion would be just as
-> > useful for a signal subsystem.
-> 
-> The signal subsystem is similar to the "no-op" subsystem in that
-> neither of them actually need any state - in principle, it could be
-> useful to attach a signal subsys to multiple mounted hierarchies, to
-> provide signal semantics for each of them.
-> 
-In my understanding, "sending signal" requires some protocol/order in userland.
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
 
-Assume that users has to send signal in following order
-  Application A -> Application B -> Application C.....
-and may have problems sending signals in following order
-  Application B -> Application A ->.....
+for 2.6.29
 
-So, signal and noop(just classify apps) is not equivalent in this semantics.
+---
+ kernel/cgroup.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
 
-> Would it make sense to allow a class of subsystem that explicitly has
-> no state (or at least, has no state that has a global meaning on the
-> machine), so that it can be multiply-mounted?
-> 
-multilply-mounted means its own hierachy can be created per mount point ?
-If so, signal subsystem can be used instead of noop.
-
-Thanks,
--Kame
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index c298310..a5826f3 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2991,20 +2991,21 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ 		mutex_unlock(&cgroup_mutex);
+ 		return 0;
+ 	}
+-	task_lock(tsk);
+-	cg = tsk->cgroups;
+-	parent = task_cgroup(tsk, subsys->subsys_id);
+ 
+ 	/* Pin the hierarchy */
+-	if (!atomic_inc_not_zero(&parent->root->sb->s_active)) {
++	if (!atomic_inc_not_zero(&root->sb->s_active)) {
+ 		/* We race with the final deactivate_super() */
+ 		mutex_unlock(&cgroup_mutex);
+ 		return 0;
+ 	}
+ 
+ 	/* Keep the cgroup alive */
++	task_lock(tsk);
++	parent = task_cgroup(tsk, subsys->subsys_id);
++	cg = tsk->cgroups;
+ 	get_css_set(cg);
+ 	task_unlock(tsk);
++
+ 	mutex_unlock(&cgroup_mutex);
+ 
+ 	/* Now do the VFS work to create a cgroup */
+@@ -3043,7 +3044,7 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ 		mutex_unlock(&inode->i_mutex);
+ 		put_css_set(cg);
+ 
+-		deactivate_super(parent->root->sb);
++		deactivate_super(root->sb);
+ 		/* The cgroup is still accessible in the VFS, but
+ 		 * we're not going to try to rmdir() it at this
+ 		 * point. */
+@@ -3069,7 +3070,7 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ 	mutex_lock(&cgroup_mutex);
+ 	put_css_set(cg);
+ 	mutex_unlock(&cgroup_mutex);
+-	deactivate_super(parent->root->sb);
++	deactivate_super(root->sb);
+ 	return ret;
+ }
+ 
+-- 
+1.5.4.rc3
