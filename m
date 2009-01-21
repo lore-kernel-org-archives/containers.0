@@ -1,53 +1,54 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [PATCH 0/7][v7] Container-init signal semantics
-Date: Tue, 20 Jan 2009 19:05:00 -0800
-Message-ID: <20090121030500.GA32138@us.ibm.com>
-References: <20090117202638.GA11825@us.ibm.com> <20090119110906.58ccbcbd.kamezawa.hiroyu@jp.fujitsu.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] NOOP cgroup subsystem
+Date: Tue, 20 Jan 2009 19:16:42 -0800
+Message-ID: <6599ad830901201916o36e5e23bse440025618495ace__42842.7015351646$1232507953$gmane$org@mail.gmail.com>
+References: <20090109143226.b79d21b4.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830901082226h6d47053cp801dafb67b6e2bc9@mail.gmail.com>
+	<20090109153219.dd8c153d.kamezawa.hiroyu@jp.fujitsu.com>
+	<1232072445.7955.40.camel@localhost>
+	<6599ad830901191752o53926bdbve593301aeff7330f@mail.gmail.com>
+	<20090120120728.9be81131.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763369AbZAUDIr@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090119110906.58ccbcbd.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090120120728.9be81131.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki [kamezawa.hiroyu@jp.fujitsu.com] wrote:
-| On Sat, 17 Jan 2009 12:26:38 -0800
-| Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> wrote:
-| 
-| > 
-| > Container-init must behave like global-init to processes within the
-| > container and hence it must be immune to unhandled fatal signals from
-| > within the container (i.e SIG_DFL signals that terminate the process).
-| > 
-| > But the same container-init must behave like a normal process to 
-| > processes in ancestor namespaces and so if it receives the same fatal
-| > signal from a process in ancestor namespace, the signal must be
-| > processed.
-| > 
-| > Implementing these semantics requires that send_signal() determine pid
-| > namespace of the sender but since signals can originate from workqueues/
-| > interrupt-handlers, determining pid namespace of sender may not always
-| > be possible or safe.
-| > 
-| 
-| Is this feature is for blocking signals from children to name-space
-| creator(owner) ?  And automatically used when namespace/cgroup is created ?
-| IOW, Container-init is Namespace-Cgroup-init ? 
+On Mon, Jan 19, 2009 at 7:07 PM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> In my understanding, "sending signal" requires some protocol/order in userland.
+>
+> Assume that users has to send signal in following order
+>  Application A -> Application B -> Application C.....
+> and may have problems sending signals in following order
+>  Application B -> Application A ->.....
 
-I am not sure what "Namespace-cgroup-init refers" to.
+In a case like that, a user would have to do their own signal sending
+rather than letting the "signal" subsystem handle it. The signal
+subsystem is more useful for doing things like sending less-refined
+signals like SIGSTOP or SIGKILL to all tasks in a cgroup.
 
-But, yes, this patchset applies to the first process in a pid namespace
-i.e the child of clone(NEWPID) call.
+> multilply-mounted means its own hierachy can be created per mount point ?
 
-| 
-| I'm glad if you add some documentation updates about how-it-works to patch set.
+Yes.
 
-Yes,  when the patchset is accepted, I am planning to add some notes to
-/sbin/init man page. 
+> If so, signal subsystem can be used instead of noop.
 
-Thanks,
+Supporting mounting a subsystem in multiple different hierarchies
+would pretty much involve supporting mounting a hierarchy with no
+subsystems (at least in the way I envisaged it), so you wouldn't need
+any subsystem in that case if you were just trying to do grouping.
 
-Sukadev
+Paul
