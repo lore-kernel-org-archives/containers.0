@@ -1,12 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH] Reset pos in cr_write_pids()
-Date: Wed, 21 Jan 2009 21:14:07 -0800
-Message-ID: <20090122051407.GA20039@us.ibm.com>
+Subject: Re: [PATCH] Reset pos in cr_write_pids()
+Date: Wed, 21 Jan 2009 21:19:32 -0800
+Message-ID: <20090122051932.GA20487@us.ibm.com>
+References: <20090122051407.GA20039@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20090122051407.GA20039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,6 +21,12 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: orenl-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+Fix typo in Oren's address
+
+
+---
+Oren,
 
 Noticed this while reviewing the code in [v12] branch of your git tree.
 
