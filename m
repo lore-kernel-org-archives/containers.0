@@ -1,58 +1,73 @@
-From: Matt Helsley <matthltc@us.ibm.com>
-Subject: Re: [PATCH 0/7][v7] Container-init signal semantics
-Date: Wed, 21 Jan 2009 21:48:31 -0800
-Message-ID: <1232603311.8007.71.camel@localhost>
-References: <20090117202638.GA11825@us.ibm.com>
-	 <20090119110906.58ccbcbd.kamezawa.hiroyu@jp.fujitsu.com>
-	 <20090121030500.GA32138@us.ibm.com>
+From: Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [RFC] [PATCH] Cgroup based OOM killer controller
+Date: Thu, 22 Jan 2009 11:42:00 +0530
+Message-ID: <200901221142.00803.knikanth__4365.38247527114$1232605095$gmane$org@suse.de>
+References: <200901211638.23101.knikanth@suse.de>
+	<200901221043.13684.knikanth@suse.de>
+	<d6200be20901212139u3683c829x4db1840a28986a6f@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757245AbZAVFst@vger.kernel.org>
-In-Reply-To: <20090121030500.GA32138@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, linux-kernel@vger.kernel.org, bastian@waldi.eu.org, oleg@redhat.com, ebiederm@xmission.com, containers@lists.osdl.org, roland@redhat.com, xemul@openvz.org, "Michael Kerrisk [manpages]" <mtk-manpages@gmx.net>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <d6200be20901212139u3683c829x4db1840a28986a6f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Arve =?iso-8859-1?q?Hj=F8nnev=E5g?= <arve-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, Evgeniy Polyakov <zbr-i6C2adt8DTjR7s880joybQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Chris Snook <csnook-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-01-20 at 19:05 -0800, Sukadev Bhattiprolu wrote:
-> KAMEZAWA Hiroyuki [kamezawa.hiroyu@jp.fujitsu.com] wrote:
-> | On Sat, 17 Jan 2009 12:26:38 -0800
-> | Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> wrote:
-> | 
-> | > 
-> | > Container-init must behave like global-init to processes within the
-> | > container and hence it must be immune to unhandled fatal signals from
-> | > within the container (i.e SIG_DFL signals that terminate the process).
-> | > 
-> | > But the same container-init must behave like a normal process to 
-> | > processes in ancestor namespaces and so if it receives the same fatal
-> | > signal from a process in ancestor namespace, the signal must be
-> | > processed.
-> | > 
-> | > Implementing these semantics requires that send_signal() determine pid
-> | > namespace of the sender but since signals can originate from workqueues/
-> | > interrupt-handlers, determining pid namespace of sender may not always
-> | > be possible or safe.
-> | > 
-> | 
-> | Is this feature is for blocking signals from children to name-space
-> | creator(owner) ?  And automatically used when namespace/cgroup is created ?
-> | IOW, Container-init is Namespace-Cgroup-init ? 
-> 
-> I am not sure what "Namespace-cgroup-init refers" to.
-> 
-> But, yes, this patchset applies to the first process in a pid namespace
-> i.e the child of clone(NEWPID) call.
-> 
-> | 
-> | I'm glad if you add some documentation updates about how-it-works to patch set.
-> 
-> Yes,  when the patchset is accepted, I am planning to add some notes to
-> /sbin/init man page. 
+On Thursday 22 January 2009 11:09:45 Arve Hj=F8nnev=E5g wrote:
+> On Wed, Jan 21, 2009 at 9:13 PM, Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org> =
 
-When it's accepted I wonder if it might also be good to contact the
-manpages list too so they can update the kill/signal manpages.
+wrote:
+> > To use oom_adj effectively one should continuously monitor oom_score of
+> > all the processes, which is a complex moving target and keep on adjusti=
+ng
+> > the oom_adj of many tasks which still cannot guarantee the order. This
+> > controller is deterministic and hence easier to use.
+>
+> Why not add an option to make oom_adj ensure strict ordering instead?
 
-Cheers,
-	-Matt Helsley
+This could be done in 2 ways.
+1. Make oom_adj itself strict.(based on some other parameter?)
+- Adds to confusion whether the current oom_adj is a strict value or the us=
+ual =
+
+suggestion. =
+
+- It would disable the oom_adj suggestion which could have been used till n=
+ow. =
+
+- It is a public interface, and changing that might break some one's script.
+
+2. Add addtional parameter, say  /proc/<pid>/oom_order
+- Not easy to use.
+- Say I had assigned the oom.victim to a task and it had forked a lot. Now =
+to =
+
+change the value for all the tasks it is easier with cgroups.
+- Some optimization that Kame specified earlier would be harder to achieve.
+
+Basically oom-controller implements option 2, using cgroups which can be =
+
+thought of as a modern interface for proc. Also it could be used along with =
+
+other cgroup controllers like the group scheduler. Say you have 2 groups of =
+
+tasks, clubed as entertainment and science, you could use the group schedul=
+er =
+
+to give more CPU bandwidth to science and instruct oom-controller to kill =
+
+entertainment tasks in case of OOM situation.
+
+Thanks
+Nikanth
