@@ -1,40 +1,58 @@
-From: =?ISO-8859-1?Q?Arve_Hj=F8nnev=E5g?= <arve-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC] [PATCH] Cgroup based OOM killer controller
-Date: Wed, 21 Jan 2009 21:39:45 -0800
-Message-ID: <d6200be20901212139u3683c829x4db1840a28986a6f__10115.6195662499$1232603000$gmane$org@mail.gmail.com>
-References: <200901211638.23101.knikanth@suse.de>
-	<20090122122843.7e94878e.kamezawa.hiroyu@jp.fujitsu.com>
-	<200901221043.13684.knikanth@suse.de>
+From: Matt Helsley <matthltc@us.ibm.com>
+Subject: Re: [PATCH 0/7][v7] Container-init signal semantics
+Date: Wed, 21 Jan 2009 21:48:31 -0800
+Message-ID: <1232603311.8007.71.camel@localhost>
+References: <20090117202638.GA11825@us.ibm.com>
+	 <20090119110906.58ccbcbd.kamezawa.hiroyu@jp.fujitsu.com>
+	 <20090121030500.GA32138@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200901221043.13684.knikanth-l3A5Bk7waGM@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, Evgeniy Polyakov <zbr-i6C2adt8DTjR7s880joybQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Chris Snook <csnook-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757245AbZAVFst@vger.kernel.org>
+In-Reply-To: <20090121030500.GA32138@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, linux-kernel@vger.kernel.org, bastian@waldi.eu.org, oleg@redhat.com, ebiederm@xmission.com, containers@lists.osdl.org, roland@redhat.com, xemul@openvz.org, "Michael Kerrisk [manpages]" <mtk-manpages@gmx.net>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 21, 2009 at 9:13 PM, Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org> wro=
-te:
-> To use oom_adj effectively one should continuously monitor oom_score of a=
-ll
-> the processes, which is a complex moving target and keep on adjusting the
-> oom_adj of many tasks which still cannot guarantee the order. This contro=
-ller
-> is deterministic and hence easier to use.
->
+On Tue, 2009-01-20 at 19:05 -0800, Sukadev Bhattiprolu wrote:
+> KAMEZAWA Hiroyuki [kamezawa.hiroyu@jp.fujitsu.com] wrote:
+> | On Sat, 17 Jan 2009 12:26:38 -0800
+> | Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> wrote:
+> | 
+> | > 
+> | > Container-init must behave like global-init to processes within the
+> | > container and hence it must be immune to unhandled fatal signals from
+> | > within the container (i.e SIG_DFL signals that terminate the process).
+> | > 
+> | > But the same container-init must behave like a normal process to 
+> | > processes in ancestor namespaces and so if it receives the same fatal
+> | > signal from a process in ancestor namespace, the signal must be
+> | > processed.
+> | > 
+> | > Implementing these semantics requires that send_signal() determine pid
+> | > namespace of the sender but since signals can originate from workqueues/
+> | > interrupt-handlers, determining pid namespace of sender may not always
+> | > be possible or safe.
+> | > 
+> | 
+> | Is this feature is for blocking signals from children to name-space
+> | creator(owner) ?  And automatically used when namespace/cgroup is created ?
+> | IOW, Container-init is Namespace-Cgroup-init ? 
+> 
+> I am not sure what "Namespace-cgroup-init refers" to.
+> 
+> But, yes, this patchset applies to the first process in a pid namespace
+> i.e the child of clone(NEWPID) call.
+> 
+> | 
+> | I'm glad if you add some documentation updates about how-it-works to patch set.
+> 
+> Yes,  when the patchset is accepted, I am planning to add some notes to
+> /sbin/init man page. 
 
-Why not add an option to make oom_adj ensure strict ordering instead?
+When it's accepted I wonder if it might also be good to contact the
+manpages list too so they can update the kill/signal manpages.
 
--- =
-
-Arve Hj=F8nnev=E5g
+Cheers,
+	-Matt Helsley
