@@ -1,61 +1,58 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: commit 7534432dcc3c654a8671b6b0cdffd1dbdbc73074
-Date: Thu, 22 Jan 2009 20:06:03 -0600
-Message-ID: <20090123020603.GA9267@us.ibm.com>
-References: <20090122184754.GA17511@us.ibm.com>
-	<6599ad830901221507x796c154ck5fe4f95cc3eb8e0e@mail.gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH] cgroup: Fix root_count when mount fails due to busy
+	subsystem
+Date: Thu, 22 Jan 2009 20:20:14 -0600
+Message-ID: <20090123022014.GB9267@us.ibm.com>
+References: <20090123004703.25103.29754.stgit@menage.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760457AbZAWCUa@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <6599ad830901221507x796c154ck5fe4f95cc3eb8e0e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <20090123004703.25103.29754.stgit@menage.corp.google.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: akpm@linux-foundation.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Quoting Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> On Thu, Jan 22, 2009 at 10:47 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> > #!/bin/bash
-> > mount -t cgroup -o freezer none /cgroup
-> > sleep 100 &
-> > pid=`jobs -p`
+Quoting Paul Menage (menage@google.com):
+> cgroup: Fix root_count when mount fails due to busy subsystem
 > 
-> You can use $! to refer to the most recently started background process.
-
-Hah - thanks, I actually looked for something like that but couldn't
-find it.
-
+> root_count was being incremented in cgroup_get_sb() after all error
+> checking was complete, but decremented in cgroup_kill_sb(), which can
+> be called on a superblock that we gave up on due to an error.  This
+> patch changes cgroup_kill_sb() to only decrement root_count if the
+> root was previously linked into the list of roots.
 > 
-> > mkdir /cgroup/1
-> > echo $pid > /cgroup/1/tasks
-> > umount /cgroup
-> > mount -t cgroup -o freezer,ns none /cgroup
-> 
-> This command should have failed with EBUSY, since freezer is already
-> part of an existing hierarchy. So I think it's a red herring in this
-> problem.
-> 
-> > mount -t cgroup -o freezer none /cgroup
-> > #kill %1
-> 
-> Is there a reason for this commented-out line?
+> Signed-off-by: Paul Menage <menage@google.com>
 
-Sorry, I'd meant to look into whether that needed
-to be there or not, but decided to put it off until
-after git bisecting, then forgot, probably because
-the bisect result was so confusing.
+Tested-by: Serge Hallyn <serue@us.ibm.com>
 
-I see you already sent a patch for the *real*
-problem, thanks!
-
+thanks,
 -serge
+
+> 
+> ---
+> 
+> I was actually surprised to find that list_del() doesn't crash when
+> run on an unattached list_head structure.
+> 
+>  kernel/cgroup.c |    6 ++++--
+>  1 files changed, 4 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index adcd0bb..9ce27e8 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -1115,8 +1115,10 @@ static void cgroup_kill_sb(struct super_block *sb) {
+>  	}
+>  	write_unlock(&css_set_lock);
+> 
+> -	list_del(&root->root_list);
+> -	root_count--;
+> +	if (!list_empty(&root->root_list)) {
+> +		list_del(&root->root_list);
+> +		root_count--;
+> +	}
+> 
+>  	mutex_unlock(&cgroup_mutex);
+> 
