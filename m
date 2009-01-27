@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v13][PATCH 01/14] Create syscalls: sys_checkpoint, sys_restart
-Date: Tue, 27 Jan 2009 12:07:59 -0500
-Message-ID: <1233076092-8660-2-git-send-email-orenl__28638.9780034826$1233077906$gmane$org@cs.columbia.edu>
+Subject: [RFC v13][PATCH 10/14] Restore open file descriprtors
+Date: Tue, 27 Jan 2009 12:08:08 -0500
+Message-ID: <1233076092-8660-11-git-send-email-orenl__39438.8956403874$1233077927$gmane$org@cs.columbia.edu>
 References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,114 +21,65 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file descriptor.
+Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
+and lookup objref in the hash table; if not found (first occurence), read
+in 'struct cr_hdr_fd_data', create a new FD and register in the hash.
+Otherwise attach the file pointer from the hash as an FD.
 
-The syscalls take a file descriptor (for the image file) and flags as
-arguments. For sys_checkpoint the first argument identifies the target
-container; for sys_restart it will identify the checkpoint image.
+This patch only handles basic FDs - regular files, directories and also
+symbolic links.
 
-A checkpoint, much like a process coredump, dumps the state of multiple
-processes at once, including the state of the container. The checkpoint
-image is written to (and read from) the file descriptor directly from
-the kernel. This way the data is generated and then pushed out naturally
-as resources and tasks are scanned to save their state. This is the
-approach taken by, e.g., Zap and OpenVZ.
+Changelog[v12]:
+  - Replace obsolete cr_debug() with pr_debug()
 
-By using a return value and not a file descriptor, we can distinguish
-between a return from checkpoint, a return from restart (in case of a
-checkpoint that includes self, i.e. a task checkpointing its own
-container, or itself), and an error condition, in a manner analogous
-to a fork() call.
-
-We don't use copy_from_user()/copy_to_user() because it requires
-holding the entire image in user space, and does not make sense for
-restart.  Also, we don't use a pipe, pseudo-fs file and the like,
-because they work by generating data on demand as the user pulls it
-(unless the entire image is buffered in the kernel) and would require
-more complex logic.  They also would significantly complicate
-checkpoint that includes self.
-
-Changelog[v5]:
-  - Config is 'def_bool n' by default
+Changelog[v6]:
+  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
+    (even though it's not really needed)
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- arch/x86/include/asm/unistd_32.h   |    2 +
- arch/x86/kernel/syscall_table_32.S |    2 +
- checkpoint/Kconfig                 |   11 +++++++++
- checkpoint/Makefile                |    5 ++++
- checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
- include/linux/syscalls.h           |    2 +
- init/Kconfig                       |    2 +
- kernel/sys_ni.c                    |    4 +++
- 8 files changed, 69 insertions(+), 0 deletions(-)
- create mode 100644 checkpoint/Kconfig
- create mode 100644 checkpoint/Makefile
- create mode 100644 checkpoint/sys.c
+ checkpoint/Makefile        |    2 +-
+ checkpoint/restart.c       |    4 +
+ checkpoint/rstr_file.c     |  248 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h |    1 +
+ 4 files changed, 254 insertions(+), 1 deletions(-)
+ create mode 100644 checkpoint/rstr_file.c
 
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index f2bba78..a5f9e09 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -338,6 +338,8 @@
- #define __NR_dup3		330
- #define __NR_pipe2		331
- #define __NR_inotify_init1	332
-+#define __NR_checkpoint		333
-+#define __NR_restart		334
- 
- #ifdef __KERNEL__
- 
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index d44395f..5543136 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -332,3 +332,5 @@ ENTRY(sys_call_table)
- 	.long sys_dup3			/* 330 */
- 	.long sys_pipe2
- 	.long sys_inotify_init1
-+	.long sys_checkpoint
-+	.long sys_restart
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-new file mode 100644
-index 0000000..ffaa635
---- /dev/null
-+++ b/checkpoint/Kconfig
-@@ -0,0 +1,11 @@
-+config CHECKPOINT_RESTART
-+	prompt "Enable checkpoint/restart (EXPERIMENTAL)"
-+	def_bool n
-+	depends on X86_32 && EXPERIMENTAL
-+	help
-+	  Application checkpoint/restart is the ability to save the
-+	  state of a running application so that it can later resume
-+	  its execution from the time at which it was checkpointed.
-+
-+	  Turning this option on will enable checkpoint and restart
-+	  functionality in the kernel.
 diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-new file mode 100644
-index 0000000..07d018b
---- /dev/null
+index 7496695..88bbc10 100644
+--- a/checkpoint/Makefile
 +++ b/checkpoint/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for linux checkpoint/restart.
-+#
-+
-+obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+@@ -3,4 +3,4 @@
+ #
+ 
+ obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
+-		ckpt_mem.o rstr_mem.o ckpt_file.o
++		ckpt_mem.o rstr_mem.o ckpt_file.o rstr_file.o
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 536d017..ece05b7 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -261,6 +261,10 @@ static int cr_read_task(struct cr_ctx *ctx)
+ 	pr_debug("memory: ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++	ret = cr_read_files(ctx);
++	pr_debug("files: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
+ 	ret = cr_read_thread(ctx);
+ 	pr_debug("thread: ret %d\n", ret);
+ 	if (ret < 0)
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
 new file mode 100644
-index 0000000..375129c
+index 0000000..f44b081
 --- /dev/null
-+++ b/checkpoint/sys.c
-@@ -0,0 +1,41 @@
++++ b/checkpoint/rstr_file.c
+@@ -0,0 +1,248 @@
 +/*
-+ *  Generic container checkpoint-restart
++ *  Checkpoint file descriptors
 + *
 + *  Copyright (C) 2008 Oren Laadan
 + *
@@ -137,74 +88,255 @@ index 0000000..375129c
 + *  distribution for more details.
 + */
 +
-+#include <linux/sched.h>
 +#include <linux/kernel.h>
++#include <linux/sched.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/fdtable.h>
++#include <linux/fsnotify.h>
++#include <linux/syscalls.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++#include "checkpoint_file.h"
++
++static int cr_close_all_fds(struct files_struct *files)
++{
++	int *fdtable;
++	int nfds;
++
++	nfds = cr_scan_fds(files, &fdtable);
++	if (nfds < 0)
++		return nfds;
++	while (nfds--)
++		sys_close(fdtable[nfds]);
++	kfree(fdtable);
++	return 0;
++}
 +
 +/**
-+ * sys_checkpoint - checkpoint a container
-+ * @pid: pid of the container init(1) process
-+ * @fd: file to which dump the checkpoint image
-+ * @flags: checkpoint operation flags
-+ *
-+ * Returns positive identifier on success, 0 when returning from restart
-+ * or negative value on error
++ * cr_attach_file - attach a lonely file ptr to a file descriptor
++ * @file: lonely file pointer
 + */
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
++static int cr_attach_file(struct file *file)
 +{
-+	pr_debug("sys_checkpoint not implemented yet\n");
-+	return -ENOSYS;
++	int fd = get_unused_fd_flags(0);
++
++	if (fd >= 0) {
++		fsnotify_open(file->f_path.dentry);
++		fd_install(fd, file);
++	}
++	return fd;
 +}
++
 +/**
-+ * sys_restart - restart a container
-+ * @crid: checkpoint image identifier
-+ * @fd: file from which read the checkpoint image
-+ * @flags: restart operation flags
-+ *
-+ * Returns negative value on error, or otherwise returns in the realm
-+ * of the original checkpoint
++ * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
++ * @file: lonely file pointer
 + */
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
++static int cr_attach_get_file(struct file *file)
 +{
-+	pr_debug("sys_restart not implemented yet\n");
-+	return -ENOSYS;
++	int fd = get_unused_fd_flags(0);
++
++	if (fd >= 0) {
++		fsnotify_open(file->f_path.dentry);
++		get_file(file);
++		fd_install(fd, file);
++	}
++	return fd;
 +}
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index 04fb47b..9750393 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -621,6 +621,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
- asmlinkage long sys_eventfd(unsigned int count);
- asmlinkage long sys_eventfd2(unsigned int count, int flags);
- asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
- 
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index f763762..57364fe 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -814,6 +814,8 @@ config MARKERS
- 
- source "arch/Kconfig"
- 
-+source "checkpoint/Kconfig"
 +
- endmenu		# General setup
- 
- config HAVE_GENERIC_DMA_COHERENT
-diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-index e14a232..fcd65cc 100644
---- a/kernel/sys_ni.c
-+++ b/kernel/sys_ni.c
-@@ -174,3 +174,7 @@ cond_syscall(compat_sys_timerfd_settime);
- cond_syscall(compat_sys_timerfd_gettime);
- cond_syscall(sys_eventfd);
- cond_syscall(sys_eventfd2);
++#define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
 +
-+/* checkpoint/restart */
-+cond_syscall(sys_checkpoint);
-+cond_syscall(sys_restart);
++/* cr_read_fd_data - restore the state of a given file pointer */
++static int
++cr_read_fd_data(struct cr_ctx *ctx, struct files_struct *files, int rparent)
++{
++	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct file *file;
++	int parent, ret;
++	int fd = 0;	/* pacify gcc warning */
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_DATA);
++	pr_debug("rparent %d parent %d flags %#x mode %#x how %d\n",
++		 rparent, parent, hh->f_flags, hh->f_mode, hh->fd_type);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	}
++
++	ret = -EINVAL;
++
++	if (parent != rparent)
++		goto out;
++
++	/* FIX: more sanity checks on f_flags, f_mode etc */
++
++	switch (hh->fd_type) {
++	case CR_FD_FILE:
++	case CR_FD_DIR:
++		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++		break;
++	default:
++		goto out;
++	}
++
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
++
++	/* FIX: need to restore uid, gid, owner etc */
++
++	/* adding <objref,file> to the hash will keep a reference to it */
++	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
++	if (ret < 0) {
++		filp_close(file, NULL);
++		goto out;
++	}
++
++	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
++	if (fd < 0) {
++		ret = fd;
++		filp_close(file, NULL);
++		goto out;
++	}
++
++	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
++	if (ret < 0)
++		goto out;
++	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
++	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
++		ret = 0;
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret < 0 ? ret : fd;
++}
++
++/**
++ * cr_read_fd_ent - restore the state of a given file descriptor
++ * @ctx: checkpoint context
++ * @files: files_struct pointer
++ * @parent: parent objref
++ *
++ * Restores the state of a file descriptor; looks up the objref (in the
++ * header) in the hash table, and if found picks the matching file and
++ * use it; otherwise calls cr_read_fd_data to restore the file too.
++ */
++static int
++cr_read_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int rparent)
++{
++	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct file *file;
++	int newfd, parent, ret;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_ENT);
++	pr_debug("rparent %d parent %d ref %d fd %d c.o.e %d\n",
++		 rparent, parent, hh->objref, hh->fd, hh->close_on_exec);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	}
++
++	ret = -EINVAL;
++
++	if (parent != rparent)
++		goto out;
++	if (hh->objref <= 0)
++		goto out;
++
++	file = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_FILE);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
++
++	if (file) {
++		/* reuse file descriptor found in the hash table */
++		newfd = cr_attach_get_file(file);
++	} else {
++		/* create new file pointer (and register in hash table) */
++		newfd = cr_read_fd_data(ctx, files, hh->objref);
++	}
++
++	if (newfd < 0) {
++		ret = newfd;
++		goto out;
++	}
++
++	pr_debug("newfd got %d wanted %d\n", newfd, hh->fd);
++
++	/* if newfd isn't desired fd then reposition it */
++	if (newfd != hh->fd) {
++		ret = sys_dup2(newfd, hh->fd);
++		if (ret < 0)
++			goto out;
++		sys_close(newfd);
++	}
++
++	if (hh->close_on_exec)
++		set_close_on_exec(hh->fd, 1);
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++int cr_read_files(struct cr_ctx *ctx)
++{
++	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct files_struct *files = current->files;
++	int i, parent, ret;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FILES);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	}
++
++	ret = -EINVAL;
++#if 0	/* activate when containers are used */
++	if (parent != task_pid_vnr(current))
++		goto out;
++#endif
++	pr_debug("objref %d nfds %d\n", hh->objref, hh->nfds);
++	if (hh->objref < 0 || hh->nfds < 0)
++		goto out;
++
++	if (hh->nfds > sysctl_nr_open) {
++		ret = -EMFILE;
++		goto out;
++	}
++
++	/* point of no return -- close all file descriptors */
++	ret = cr_close_all_fds(files);
++	if (ret < 0)
++		goto out;
++
++	for (i = 0; i < hh->nfds; i++) {
++		ret = cr_read_fd_ent(ctx, files, hh->objref);
++		if (ret < 0)
++			break;
++	}
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 59cc515..ea9ab4c 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -89,6 +89,7 @@ extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
+ 
+ extern int do_restart(struct cr_ctx *ctx, pid_t pid);
+ extern int cr_read_mm(struct cr_ctx *ctx);
++extern int cr_read_files(struct cr_ctx *ctx);
+ 
+ #ifdef pr_fmt
+ #undef pr_fmt
 -- 
 1.5.4.3
