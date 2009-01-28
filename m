@@ -1,81 +1,83 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH] c/r: define s390-specific checkpoint-restart code
-Date: Wed, 28 Jan 2009 09:37:17 -0600
-Message-ID: <20090128153717.GA25153@us.ibm.com>
-References: <20090116173633.GB8477@us.ibm.com> <497F3F9F.2000803@cs.columbia.edu>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] liblxc: Complete use of autoconf prefix in lxc-debian
+Date: Tue, 27 Jan 2009 16:23:28 -0800
+Message-ID: <1233102208.9544.10.camel@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754405AbZA1Phk@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <497F3F9F.2000803@cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Mike Waychison <mikew@google.com>, Andrew Morton <akpm@osdl.org>, linux-s390@vger.kernel.org, linux390@de.ibm.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl@cs.columbia.edu):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Implement the s390 arch-specific checkpoint/restart helpers.  This
-> 
-> Thanks for the patch.
-> 
-> I will assume that the s390 specifics are correct...
-> 
-> > is on top of Oren Laadan's c/r code (which so far was x86_32-only)
-> > submitted here: http://lkml.org/lkml/2008/12/29/38, plus two more
-> > patches by Nathan Lynch to fix some 64-bit issues (see
-> > https://lists.linux-foundation.org/pipermail/containers/2009-January/015313.html
-> > and
-> > https://lists.linux-foundation.org/pipermail/containers/2009-January/015314.html
-> > ).
-> 
-> ckpt-v13 already has these two fixed.
-> 
-> > 
-> > With these, I am able to checkpoint and restart simple programs as per
-> > Oren's patch intro.  While on x86 I never had to freeze a single task
-> > to checkpoint it, on s390 I do need to.  That is a prereq for consistent
-> > snapshots (esp with multiple processes) anyway so I don't see that as
-> > a problem.
-> > 
-> > Oren, should we be putting a byte at the front of the format to
-> > specify the architecture?
-> 
-> If we add a field to 'struct cr_hdr_head', then we'll need arch-dependent
-> code in a non-arch dependent source, to ensure that no two architectures
-> choose the same value as an identifier.
-> 
-> Can we not use the 'machine' string fiels in 'struct cr_hdr_head' - and
-> then additional classification can take place in cr_read/write_head_arch() ?
+The lxc-debian script does not consistently address the lxc lock as
+@LOCALSTATEDIR@/lock/subsys/lxc. Make consistent use of the autotools
+substitution to completely enable configure --prefixes.
 
-Huh, yes, I somehow missed that.
+I also added a comment explaining why some of the paths didn't need
+autoconf substitutions for anyone who wants to understand the script.
+Also, to separate it from the container contents proper, I moved the
+CACHE variable initialization above the container-internal path
+variables.
 
-> > +#define DEBUG 1
-> > +
-> >  #include <linux/version.h>
-> >  #include <linux/sched.h>
-> >  #include <linux/ptrace.h>
-> > diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> > index 6b4cd75..f65a63e 100644
-> > --- a/checkpoint/restart.c
-> > +++ b/checkpoint/restart.c
-> > @@ -8,6 +8,8 @@
-> >   *  distribution for more details.
-> >   */
-> >  
-> > +#define DEBUG 1
-> > +
-> >  #include <linux/version.h>
-> >  #include <linux/sched.h>
-> >  #include <linux/wait.h>
-> > 
-> 
-> Probably unrelated ?
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ scripts/lxc-debian.in |    9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-Yup.  Will send a new version inc. your changes and against
-v13 later this week.
+Index: lxc-0.5.2/scripts/lxc-debian.in
+===================================================================
+--- lxc-0.5.2.orig/scripts/lxc-debian.in
++++ lxc-0.5.2/scripts/lxc-debian.in
+@@ -1,18 +1,21 @@
+ #!/bin/bash
+ set -ex
+ 
++CACHE="@LOCALSTATEDIR@/cache/lxc/debian"
++
+ NAME="debian"
+ CONFFILE="lxc.conf"
+ MNTFILE="mount.conf"
+ UTSNAME=
+ IPV4="172.20.0.21"
+ GATEWAY="172.20.0.1"
++
++# These paths are within the container so do not need to obey configure
+prefixes
+ INTERFACES="/etc/network/interfaces"
+ INITTAB="/etc/inittab"
+ HOSTNAME="/etc/hostname"
+ FSTAB="/etc/fstab"
+ SSHD_CONFIG="/etc/ssh/sshd_config"
+-CACHE="@LOCALSTATEDIR@/cache/lxc/debian"
+ 
 
-thanks,
--serge
+################################################################################
+ #                    debian custom configuration files
+@@ -223,7 +226,7 @@ create() {
+             # make a local copy of the minidebian
+ 	    echo -n "Copying rootfs ..."
+ 	    cp -a $CACHE/rootfs-$ARCH $ROOTFS && echo "Done." || exit
+-	) 200>/var/lock/subsys/lxc
++	) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
+     fi
+ 
+ write_lxc_mounts
+@@ -335,7 +338,7 @@ purge() {
+ 	rm --preserve-root --one-file-system -rf $CACHE && echo "Done." ||
+exit 1
+ 	exit 0
+ 
+-    ) 200>/var/lock/subsys/lxc
++    ) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
+ }
+ 
+ if [ "$(id -u)" != "0" ]; then
