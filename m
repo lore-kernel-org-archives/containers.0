@@ -1,17 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re:
-	Checkpoint / Restart)
-Date: Wed, 28 Jan 2009 15:59:02 -0600
-Message-ID: <20090128215902.GA5635@us.ibm.com>
-References: <EF0F4DD0-96C2-47CF-A247-19002A3BD53B@uni-duesseldorf.de>
-	<20090127155947.GB10039@us.ibm.com>
-	<090128111035.M0106630@noir.ex.jp.nec.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 2/3] powerpc: wire up checkpoint and restart syscalls
+Date: Wed, 28 Jan 2009 16:41:17 -0600
+Message-ID: <1233182478-27113-3-git-send-email-ntl@pobox.com>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <090128111035.M0106630-n+Fz6uxiQ6t02ytvwG4l7tBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1233182478-27113-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,34 +17,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Masahiko Takahashi (m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org):
-> Hi,
-> 
-> I'm now working on porting to x86_64 with help from Nauman Rafique.
-> Here is the preliminary patch. If there is someone who is interested
-> in x86_64 support, please join.
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ arch/powerpc/include/asm/systbl.h |    2 ++
+ arch/powerpc/include/asm/unistd.h |    4 +++-
+ 2 files changed, 5 insertions(+), 1 deletions(-)
 
-Cool.  Looks nice and minimal.  Thanks for doing this.
-
-> This patch is to support x86_64 on Oren's checkpoint/restart patchset
-> (v12 on December 29th). His patchset is well implemented, so the x86_64
-> patch is only handling architecture specific registers. (Maybe I'm
-> missing something important...)
-> 
-> I've tested this patch with his test suite (self.c and rstr.c) but I'm
-> not confident especially in handling segment registers (%fs/%gs).
->
-> This patch doesn't support external checkpointing, nor 32bit binary
-
-Heh, and I just realized that my s390 port doesn't do self-checkpoint,
-I'd only been doing external.  Oops.
-
-> checkpoint/restart on 64bit Linux.
-> 
-> I would appreciate any comments and feedback.
-
--serge
+diff --git a/arch/powerpc/include/asm/systbl.h b/arch/powerpc/include/asm/systbl.h
+index 803def2..cdb60b4 100644
+--- a/arch/powerpc/include/asm/systbl.h
++++ b/arch/powerpc/include/asm/systbl.h
+@@ -322,3 +322,5 @@ SYSCALL_SPU(epoll_create1)
+ SYSCALL_SPU(dup3)
+ SYSCALL_SPU(pipe2)
+ SYSCALL(inotify_init1)
++SYSCALL(checkpoint)
++SYSCALL(restart)
+diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
+index e07d0c7..2e333a1 100644
+--- a/arch/powerpc/include/asm/unistd.h
++++ b/arch/powerpc/include/asm/unistd.h
+@@ -341,10 +341,12 @@
+ #define __NR_dup3		316
+ #define __NR_pipe2		317
+ #define __NR_inotify_init1	318
++#define __NR_checkpoint		319
++#define __NR_restart		320
+ 
+ #ifdef __KERNEL__
+ 
+-#define __NR_syscalls		319
++#define __NR_syscalls		321
+ 
+ #define __NR__exit __NR_exit
+ #define NR_syscalls	__NR_syscalls
+-- 
+1.5.5
