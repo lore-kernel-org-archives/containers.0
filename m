@@ -1,11 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] liblxc: Complete use of autoconf prefix in lxc-debian
-Date: Tue, 27 Jan 2009 16:23:28 -0800
-Message-ID: <1233102208.9544.10.camel@localhost>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re:
+	Checkpoint / Restart)
+Date: Wed, 28 Jan 2009 15:59:02 -0600
+Message-ID: <20090128215902.GA5635@us.ibm.com>
+References: <EF0F4DD0-96C2-47CF-A247-19002A3BD53B@uni-duesseldorf.de>
+	<20090127155947.GB10039@us.ibm.com>
+	<090128111035.M0106630@noir.ex.jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <090128111035.M0106630-n+Fz6uxiQ6t02ytvwG4l7tBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,69 +21,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The lxc-debian script does not consistently address the lxc lock as
-@LOCALSTATEDIR@/lock/subsys/lxc. Make consistent use of the autotools
-substitution to completely enable configure --prefixes.
+Quoting Masahiko Takahashi (m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org):
+> Hi,
+> 
+> I'm now working on porting to x86_64 with help from Nauman Rafique.
+> Here is the preliminary patch. If there is someone who is interested
+> in x86_64 support, please join.
 
-I also added a comment explaining why some of the paths didn't need
-autoconf substitutions for anyone who wants to understand the script.
-Also, to separate it from the container contents proper, I moved the
-CACHE variable initialization above the container-internal path
-variables.
+Cool.  Looks nice and minimal.  Thanks for doing this.
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- scripts/lxc-debian.in |    9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+> This patch is to support x86_64 on Oren's checkpoint/restart patchset
+> (v12 on December 29th). His patchset is well implemented, so the x86_64
+> patch is only handling architecture specific registers. (Maybe I'm
+> missing something important...)
+> 
+> I've tested this patch with his test suite (self.c and rstr.c) but I'm
+> not confident especially in handling segment registers (%fs/%gs).
+>
+> This patch doesn't support external checkpointing, nor 32bit binary
 
-Index: lxc-0.5.2/scripts/lxc-debian.in
-===================================================================
---- lxc-0.5.2.orig/scripts/lxc-debian.in
-+++ lxc-0.5.2/scripts/lxc-debian.in
-@@ -1,18 +1,21 @@
- #!/bin/bash
- set -ex
- 
-+CACHE="@LOCALSTATEDIR@/cache/lxc/debian"
-+
- NAME="debian"
- CONFFILE="lxc.conf"
- MNTFILE="mount.conf"
- UTSNAME=
- IPV4="172.20.0.21"
- GATEWAY="172.20.0.1"
-+
-+# These paths are within the container so do not need to obey configure
-prefixes
- INTERFACES="/etc/network/interfaces"
- INITTAB="/etc/inittab"
- HOSTNAME="/etc/hostname"
- FSTAB="/etc/fstab"
- SSHD_CONFIG="/etc/ssh/sshd_config"
--CACHE="@LOCALSTATEDIR@/cache/lxc/debian"
- 
+Heh, and I just realized that my s390 port doesn't do self-checkpoint,
+I'd only been doing external.  Oops.
 
-################################################################################
- #                    debian custom configuration files
-@@ -223,7 +226,7 @@ create() {
-             # make a local copy of the minidebian
- 	    echo -n "Copying rootfs ..."
- 	    cp -a $CACHE/rootfs-$ARCH $ROOTFS && echo "Done." || exit
--	) 200>/var/lock/subsys/lxc
-+	) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
-     fi
- 
- write_lxc_mounts
-@@ -335,7 +338,7 @@ purge() {
- 	rm --preserve-root --one-file-system -rf $CACHE && echo "Done." ||
-exit 1
- 	exit 0
- 
--    ) 200>/var/lock/subsys/lxc
-+    ) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
- }
- 
- if [ "$(id -u)" != "0" ]; then
+> checkpoint/restart on 64bit Linux.
+> 
+> I would appreciate any comments and feedback.
+
+-serge
