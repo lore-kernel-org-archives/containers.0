@@ -1,8 +1,9 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: 2-Level IO scheduling (Re: [dm-devel] [PATCH 1/2] dm-ioband: I/O
-	bandwidth controller v1.10.0: Source code and patch)
-Date: Thu, 29 Jan 2009 12:36:44 +0900 (JST)
-Message-ID: <20090129.123644.28802208.ryov__15939.2594862313$1233200353$gmane$org@valinux.co.jp>
+Subject: Hierarchical grouping facility for IO controller (Re: [dm-devel]
+	[PATCH 1/2] dm-ioband: I/O bandwidth controller v1.10.0: Source code
+	and patch)
+Date: Thu, 29 Jan 2009 12:39:55 +0900 (JST)
+Message-ID: <20090129.123955.102562289.ryov__540.114651858126$1233200530$gmane$org@valinux.co.jp>
 References: <20090122161218.GA28795@redhat.com>
 	<20090123.191404.39168431.ryov@valinux.co.jp>
 	<20090126162951.GI31802@redhat.com>
@@ -26,84 +27,62 @@ List-Id: containers.vger.kernel.org
 
 Hi Vivek,
 
-I split this mail thread into three topics:
-  o 2-Level IO scheduling
-  o Hierarchical grouping facility for IO controller
-  o Implement IO controller as a dm-driver
+This mail is about hierarchical grouping facility for IO controller.
 
-This mail is about 2-Level IO scheduling.
+> I think with the introduction of cgroup, IO scheduling has become now
+> a hierarhical scheduling. Previously it was flat scheduling where there
+> was only one level. Not there can be multiple levels and each level
+> can have groups and queues. I don't think that we can break down
+> hiearchical scheduling problem in two parts where top level part is moved
+> into a module. It is something like saying that lets break out cpu group
+> schedling into a separate module and it should not be part of kernel.
+> 
+> I think we need to implement this hiearchical IO scheduler in kernel which
+> can schedule groups as well as end level io queues. (maintained by cfq,
+> deadline, as, or noop).
 
-> Just because device mapper framework allows one to implement IO controller
-> in a separate module, we should not implement it there. It will be
-> difficult to take care of issues like, configuration, breaking underlying IO
-> scheduler's assumptions, capability to treat tasks and groups at same level
-> etc.
+I can implement the hierarchical grouping facility if really necessary
+and the patch will be released after dm-ioband is merged into the
+kernel. But do you believe the hierarchical grouping facility should
+be implemented in the kernel, even if we can do it in the userland?
+I think disk bandwidth control doesn't need responsiveness like the
+CPU scheduler. I know it's possible to implement in the kernel, but
+does it only make the kernel complex?
 
-If you are satisfied with low-accuracy bandwidth control by an IO
-scheduler, you don't need to use dm-ioband. If you want to use
-dm-ioband with an IO scheduler, dm-ioband can work with any type of IO
-scheduler, of course dm-ioband can work with your own IO scheduler
-which you are developing.
-
-> > > - If there is one task of io priority 0 in a cgroup and rest of the tasks
-> > >   are of io prio 7. All the tasks belong to best effort class. If tasks of
-> > >   lower priority (7) do lot of IO, then due to buffering there is a chance
-> > >   that IO from lower prio tasks is seen by CFQ first and io from higher prio
-> > >   task is not seen by cfq for quite some time hence that task not getting it
-> > >   fair share with in the cgroup. Similar situation can arise with RT tasks
-> > >   also.
+> > > - Task grouping logic
+> > > 	- We already have the notion of cgroup where tasks can be grouped
+> > > 	  in hierarhical manner. dm-ioband does not make full use of that and
+> > > 	  comes up with own mechansim of grouping tasks (apart from cgroup).
+> > > 	  And there are odd ways of specifying cgroup id which configuring the
+> > > 	  dm-ioband device. I think once somebody has created the cgroup
+> > > 	  hieararchy, any IO controller logic should be able to internally
+> > > 	  read that hiearchy and provide control. There should not be need
+> > > 	  of any other configuration utity on top of cgroup.
+> > > 
+> > > 	  My RFC patches had done that.
 > > 
-> > Whether using dm-ioband or not, if the tasks of IO priority 7 do lot
-> > of IO, then the device queue is going to be full and tasks which tries
-> > to issue IOs are blocked until the queue get a slot. The IOs are
-> > backlogged even if they are issued from the task of IO priority 0.
-> > I don't understand why you think it's the biggest issue. The same
-> > thing is going to happen without dm-ioband. 
-> > 
+> > Dm-ioband can work with the bio-cgroup mechanism, which makes task groups
+> > in manner of the cgroup, of course.
+> > I already have a basic design to make dm-ioband support the cgroup
+> > hierarchy. This should be started after the core code of bio-cgroup,
+> > which helps trace each I/O requests, is merged in -mm tree.
 > 
-> True that even limited availability of request descriptors can be a
-> bottleneck and can lead to same kind of issues but my contention is
-> that you are aggravating the problem. Putting a 2nd layer can break IO
-> scheduler's assumption even before underlying request queue is full.
-
-I don't think so. Dm-ioband doesn't break IO scheduler's assumptions.
-In CFQ's case, the priority order is not changed within a cgroup.
-
-> So second level solution on top will increase the frequency of such
-> incidents where a lower priority task can run away with more job done than
-> high priority task because there are no separate queues for different
-> priority tasks and release of buffered bio is FIFO.
+> bio-cgroup patches are fine because they provide us the capability to 
+> map delayed writes to right cgroup. And it can be used by any IO
+> controller. 
 > 
-> Secondly what happens to tasks of RT class? dm-ioband does not have any
-> notion of handling the RT cgroup or RT tasks.
-
-It's not an issue, it's a talk about how to determine a policy.
-I think giving priority to cgroup policy rather than I/O scheduler
-policy is more flexible.
-
-> Thirdly, doing any kind of resource control at higher level takes away the
-> capability to treat task and groups at same level. I have had this
-> discussion in other offline thread also where you are copied. I think
-> it is a good idea to treat tasks and groups at same level where possible
-> (depends if IO scheduler creates separate queues for tasks or not, cfq
-> does.) 
+> > And the reason dm-ioband uses cgroup id to specify a cgroup is that
+> > the current cgroup infrastructure lacks features to manage resources
+> > placed in the kernel modules.
 > 
-> > If I were you, I create two cgroups and let tasks of lower priority
-> > belong to one cgroup and tasks of higher priority belong to another,
-> > and give higher bandwidth to the cgroup to which the higher priority
-> > tasks belong. What do you think about this way?
-> 
-> I think this is not practical. What we are talking is that task
-> priority does not have any meaning. If we want service difference between
-> two tasks, we need to pack them in separate cgroup otherwise we can't
-> gurantee things. If we need to pack every task in separate cgroup then
-> why to even have the notion of task priority.  
+> Can you elaborate on that please? We have heard in the past that cgroup 
+> does not give you enough flexibility but never got details.
 
-It is possible to modify dm-ioband to cooperate with CFQ, but I'm not
-sure it's really meaningful. What do you do when a task of RT class
-issues a lot of I/O? Do you always give priority to the I/Os from the
-task of RT class despite of the assigned bandwidth? Which one do you
-give priority bandwidth or RT class?
+The current cgroup framework can't manage resources dynamically. The
+reason for using a cgroup ID to specify a cgroup is that it makes the
+implementation quite simple. Although it is possible to implement the
+function without using the ID, it makes the kernel complex due to the
+function has to be implemented outside of the kernel.
 
 Thanks,
 Ryo Tsuruta
