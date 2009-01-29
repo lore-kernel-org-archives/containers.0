@@ -1,90 +1,99 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 4/5] Remove get_init_pts_sb()
-Date: Wed, 28 Jan 2009 22:47:20 -0800
-Message-ID: <20090129064720.GE23160@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 5/5] Merge code for single and multiple-instance mounts
+Date: Wed, 28 Jan 2009 22:47:53 -0800
+Message-ID: <20090129064753.GF23160@us.ibm.com>
 References: <20090129064259.GA23160@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758728AbZA2GwW@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090129064259.GA23160-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
-Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+In-Reply-To: <20090129064259.GA23160@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Christoph Hellwig <hch@lst.de>
+Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 28 Jan 2009 18:59:28 -0800
-Subject: [RFC][PATCH 4/5] Remove get_init_pts_sb()
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Date: Wed, 28 Jan 2009 19:11:15 -0800
+Subject: [RFC][PATCH 5/5] Merge code for single and multiple-instance mounts
 
-With mknod_ptmx() moved to devpts_get_sb(), init_pts_mount() becomes
-a wrapper around get_init_pts_sb(). Remove get_init_pts_sb() and
-fold code into init_pts_mount().
+new_pts_mount() (including the get_sb_nodev()), shares a lot of code
+with init_pts_mount(). The only difference between them is the 'test-super'
+function passed into sget().
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Move the shared code into a new, common function, do_pts_mount() and
+remove new_pts_mount() and init_pts_mount() functions,
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 ---
- fs/devpts/inode.c |   25 ++++++-------------------
- 1 files changed, 6 insertions(+), 19 deletions(-)
+ fs/devpts/inode.c |   34 ++++++++++------------------------
+ 1 files changed, 10 insertions(+), 24 deletions(-)
 
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 97b8e9f..733e8e0 100644
+index 733e8e0..8d0b675 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -347,7 +347,11 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
- }
- 
- /*
-- * get_init_pts_sb()
-+ * init_pts_mount()
-+ *
-+ *     Mount or remount the initial kernel mount of devpts. This type of
-+ *     mount maintains the legacy, single-instance semantics, while the
-+ *     kernel still allows multiple-instances.
-  *
-  *     This interface is needed to support multiple namespace semantics in
-  *     devpts while preserving backward compatibility of the current 'single-
-@@ -367,7 +371,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
-  *     consistently selects the 'single-namespace' superblock even in the
-  *     presence of the private namespace (i.e 'newinstance') super-blocks.
+@@ -328,23 +328,6 @@ static int compare_init_pts_sb(struct super_block *s, void *p)
+  * Mount a new (private) instance of devpts.  PTYs created in this
+  * instance are independent of the PTYs in other devpts instances.
   */
--static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
-+static int init_pts_mount(struct file_system_type *fs_type, int flags,
- 		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
- {
- 	struct super_block *s;
-@@ -397,23 +401,6 @@ static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
- 	return 0;
- }
- 
--/*
-- * Mount or remount the initial kernel mount of devpts. This type of
-- * mount maintains the legacy, single-instance semantics, while the
-- * kernel still allows multiple-instances.
-- */
--static int init_pts_mount(struct file_system_type *fs_type, int flags,
+-static int new_pts_mount(struct file_system_type *fs_type, int flags,
 -		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
 -{
 -	int err;
+-	struct pts_fs_info *fsi;
 -
--	err = get_init_pts_sb(fs_type, flags, data, opts, mnt);
+-	printk(KERN_NOTICE "devpts: newinstance mount\n");
+-
+-	err = get_sb_nodev(fs_type, flags, data, devpts_fill_super, mnt);
 -	if (err)
 -		return err;
 -
--	return err;
--}
+-	fsi = DEVPTS_SB(mnt->mnt_sb);
+-	memcpy(&fsi->mount_opts, opts, sizeof(opts));
 -
- static int devpts_get_sb(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+-	return 0;
+-}
+ 
+ /*
+  * init_pts_mount()
+@@ -371,14 +354,21 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
+  *     consistently selects the 'single-namespace' superblock even in the
+  *     presence of the private namespace (i.e 'newinstance') super-blocks.
+  */
+-static int init_pts_mount(struct file_system_type *fs_type, int flags,
++static int do_pts_mount(struct file_system_type *fs_type, int flags,
+ 		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
  {
+ 	struct super_block *s;
+ 	struct pts_fs_info *fsi;
+ 	int error;
+ 
+-	s = sget(fs_type, compare_init_pts_sb, set_anon_super, NULL);
++	if (opts->newinstance) {
++		printk(KERN_NOTICE "devpts: newinstance mount\n");
++		s = sget(fs_type, NULL, set_anon_super, NULL);
++	} else {
++		printk(KERN_NOTICE "devpts: single-instance mount\n");
++		s = sget(fs_type, compare_init_pts_sb, set_anon_super, NULL);
++	}
++
+ 	if (IS_ERR(s))
+ 		return PTR_ERR(s);
+ 
+@@ -413,11 +403,7 @@ static int devpts_get_sb(struct file_system_type *fs_type,
+ 			return error;
+ 	}
+ 
+-	if (opts.newinstance)
+-		error = new_pts_mount(fs_type, flags, data, &opts, mnt);
+-	else
+-		error = init_pts_mount(fs_type, flags, data, &opts, mnt);
+-
++	error = do_pts_mount(fs_type, flags, data, &opts, mnt);
+ 	if (error)
+ 		return error;
+ 
 -- 
 1.5.2.5
