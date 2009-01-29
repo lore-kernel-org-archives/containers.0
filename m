@@ -1,9 +1,9 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Hierarchical grouping facility for IO controller (Re: [dm-devel]
-	[PATCH 1/2] dm-ioband: I/O bandwidth controller v1.10.0: Source code
-	and patch)
-Date: Thu, 29 Jan 2009 12:39:55 +0900 (JST)
-Message-ID: <20090129.123955.102562289.ryov__540.114651858126$1233200530$gmane$org@valinux.co.jp>
+Subject: Implementation of dm-ioband as a dm-driver (Re: [dm-devel] [PATCH
+	1/2] dm-ioband: I/O bandwidth controller v1.10.0: Source code and
+	patch)
+Date: Thu, 29 Jan 2009 12:41:33 +0900 (JST)
+Message-ID: <20090129.124133.179945157.ryov__40266.7095223025$1233200625$gmane$org@valinux.co.jp>
 References: <20090122161218.GA28795@redhat.com>
 	<20090123.191404.39168431.ryov@valinux.co.jp>
 	<20090126162951.GI31802@redhat.com>
@@ -27,62 +27,34 @@ List-Id: containers.vger.kernel.org
 
 Hi Vivek,
 
-This mail is about hierarchical grouping facility for IO controller.
+This mail is about implement IO controller as a dm-driver.
 
-> I think with the introduction of cgroup, IO scheduling has become now
-> a hierarhical scheduling. Previously it was flat scheduling where there
-> was only one level. Not there can be multiple levels and each level
-> can have groups and queues. I don't think that we can break down
-> hiearchical scheduling problem in two parts where top level part is moved
-> into a module. It is something like saying that lets break out cpu group
-> schedling into a separate module and it should not be part of kernel.
-> 
-> I think we need to implement this hiearchical IO scheduler in kernel which
-> can schedule groups as well as end level io queues. (maintained by cfq,
-> deadline, as, or noop).
+> In this case first you are forcing some functionalilty to go in a kernel
+> module and then coming up with tools for configuration. I never understood
+> that why don't you let the controller be inside the kernel, let it
+> directly interact with cgroup subsystem and work instead of first taking
+> the functionality out of kernel in a module and then justifying the case
+> that now we need new ways of configuring that module because cgroup
+> infrastructure is not sufficient.  
 
-I can implement the hierarchical grouping facility if really necessary
-and the patch will be released after dm-ioband is merged into the
-kernel. But do you believe the hierarchical grouping facility should
-be implemented in the kernel, even if we can do it in the userland?
-I think disk bandwidth control doesn't need responsiveness like the
-CPU scheduler. I know it's possible to implement in the kernel, but
-does it only make the kernel complex?
+It is possible the algorithm of dm-ioband can be directly implemented
+in the kernel. I've been investigating how to do it.
 
-> > > - Task grouping logic
-> > > 	- We already have the notion of cgroup where tasks can be grouped
-> > > 	  in hierarhical manner. dm-ioband does not make full use of that and
-> > > 	  comes up with own mechansim of grouping tasks (apart from cgroup).
-> > > 	  And there are odd ways of specifying cgroup id which configuring the
-> > > 	  dm-ioband device. I think once somebody has created the cgroup
-> > > 	  hieararchy, any IO controller logic should be able to internally
-> > > 	  read that hiearchy and provide control. There should not be need
-> > > 	  of any other configuration utity on top of cgroup.
+> > > - Need of a dm device for every device we want to control
 > > > 
-> > > 	  My RFC patches had done that.
+> > > 	- This requirement looks odd. It forces everybody to use dm-tools
+> > > 	  and if there are lots of disks in the system, configuation is
+> > > 	  pain.
 > > 
-> > Dm-ioband can work with the bio-cgroup mechanism, which makes task groups
-> > in manner of the cgroup, of course.
-> > I already have a basic design to make dm-ioband support the cgroup
-> > hierarchy. This should be started after the core code of bio-cgroup,
-> > which helps trace each I/O requests, is merged in -mm tree.
+> > I don't think it's so pain. I think you are already using LVM devices on
+> > your boxes. Setting up dm-ioband is the same as that for LVM. And some
+> > scripts or something similar will help you set up them.
 > 
-> bio-cgroup patches are fine because they provide us the capability to 
-> map delayed writes to right cgroup. And it can be used by any IO
-> controller. 
-> 
-> > And the reason dm-ioband uses cgroup id to specify a cgroup is that
-> > the current cgroup infrastructure lacks features to manage resources
-> > placed in the kernel modules.
-> 
-> Can you elaborate on that please? We have heard in the past that cgroup 
-> does not give you enough flexibility but never got details.
+> Not everybody uses LVM. Balbir had asked once, if there are thousands of 
+> disks in the system, does that mean I need to create this dm-ioband device
+> for all the disks?
 
-The current cgroup framework can't manage resources dynamically. The
-reason for using a cgroup ID to specify a cgroup is that it makes the
-implementation quite simple. Although it is possible to implement the
-function without using the ID, it makes the kernel complex due to the
-function has to be implemented outside of the kernel.
+I think it could be easily done by a small script of several lines.
 
 Thanks,
 Ryo Tsuruta
