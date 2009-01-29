@@ -1,13 +1,17 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/3] allow checkpoint/restart on powerpc
-Date: Wed, 28 Jan 2009 16:41:18 -0600
-Message-ID: <1233182478-27113-4-git-send-email-ntl__6334.28320657021$1233183046$gmane$org@pobox.com>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
+From: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re:
+	Checkpoint / Restart)
+Date: Thu, 29 Jan 2009 10:45:00 +0900
+Message-ID: <1233193500.6482.8.camel@noir.spf.cl.nec.co.jp>
+References: <EF0F4DD0-96C2-47CF-A247-19002A3BD53B@uni-duesseldorf.de>
+	<20090127155947.GB10039@us.ibm.com>
+	<090128111035.M0106630@noir.ex.jp.nec.com>
+	<20090128215902.GA5635@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1233182478-27113-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090128215902.GA5635-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,27 +21,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- checkpoint/Kconfig |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Hi Serge,
 
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-index ffaa635..00036aa 100644
---- a/checkpoint/Kconfig
-+++ b/checkpoint/Kconfig
-@@ -1,7 +1,7 @@
- config CHECKPOINT_RESTART
- 	prompt "Enable checkpoint/restart (EXPERIMENTAL)"
- 	def_bool n
--	depends on X86_32 && EXPERIMENTAL
-+	depends on (X86_32 || PPC) && EXPERIMENTAL
- 	help
- 	  Application checkpoint/restart is the ability to save the
- 	  state of a running application so that it can later resume
--- 
-1.5.5
+Thank you for the comment.
+I have checked the patch works on the Oren's latest patchset(v13) also.
+
+And, ... I notice the email's subject was incorrect. Oops.
+As you know, "x86_64 support" is correct.
+
+
+Thanks,
+
+Masahiko.
+
+
+On 2009-01-28 at 15:59 -0600, Serge E. Hallyn wrote:
+> Quoting Masahiko Takahashi (m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org):
+> > Hi,
+> > 
+> > I'm now working on porting to x86_64 with help from Nauman Rafique.
+> > Here is the preliminary patch. If there is someone who is interested
+> > in x86_64 support, please join.
+> 
+> Cool.  Looks nice and minimal.  Thanks for doing this.
+> 
+> > This patch is to support x86_64 on Oren's checkpoint/restart patchset
+> > (v12 on December 29th). His patchset is well implemented, so the x86_64
+> > patch is only handling architecture specific registers. (Maybe I'm
+> > missing something important...)
+> > 
+> > I've tested this patch with his test suite (self.c and rstr.c) but I'm
+> > not confident especially in handling segment registers (%fs/%gs).
+> >
+> > This patch doesn't support external checkpointing, nor 32bit binary
+> 
+> Heh, and I just realized that my s390 port doesn't do self-checkpoint,
+> I'd only been doing external.  Oops.
+> 
+> > checkpoint/restart on 64bit Linux.
+> > 
+> > I would appreciate any comments and feedback.
+> 
+> -serge
