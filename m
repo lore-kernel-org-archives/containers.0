@@ -1,14 +1,11 @@
-From: Christian Borntraeger <borntraeger-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] c/r: define s390-specific checkpoint-restart code (v3)
-Date: Wed, 4 Feb 2009 10:19:53 +0100
-Message-ID: <200902041019.53683.borntraeger@de.ibm.com>
-References: <20090203161223.GA17998@us.ibm.com>
+From: "primal Black" <armmojru-gB0RVcEZ0sg@public.gmane.org>
+Subject: Medical Doctor Directory in the US
+Date: Sat, 31 Jan 2009 03:56:20 -0400
+Message-ID: <23178.7945064299$1233746329@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090203161223.GA17998-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +15,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux390-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: serge.hagege-mNE9qrFzr+yJSR7vXED2qdi2O/JbrIOy@public.gmane.org
+Cc: bnj2co1yr-ksC8LV8Y0H5vJfC08Ln5Tw@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, uvhaljastus-PUpibIf5tGBasPewnMDGnw@public.gmane.org, pavelkristan-PkL3B3/Gfv0@public.gmane.org, makras-wCfmUj/O59RQFI55V6+gNQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Am Tuesday 03 February 2009 17:12:23 schrieb Serge E. Hallyn:
-[...]
-> +/* Nothing to do for mm context state */
-> +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int
-> parent) +{
-> +	struct cr_hdr h;
-> +	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	int ret;
-> +
-> +	h.type = CR_HDR_MM_CONTEXT;
-> +	h.len = sizeof(*hh);
-> +	h.parent = parent;
-> +
-> +#if 0
-> +	/* Oren's v13 is on an older kernel which has no vdso_base */
-> +	/* on newer kernel, we'll have to enable this */
-> +	hh->vdso_base = mm->context.vdso_base;
-> +	printk(KERN_NOTICE "checkpointing vdso_base %lx\n", hh->vdso_base);
-> +#else
-> +	hh->vdso_base = 0;
-> +#endif
-> +
-> +	ret = cr_write_obj(ctx, &h, hh);
-> +	cr_hbuf_put(ctx, sizeof(*hh));
-> +
-> +	return ret;
-> +}
 
-Hmm, maybe you should also save/restore other elements of mm_context_t.
 
-At least noexec, has_pgste and alloc_pgste have an impact on the page table 
-layout and special features like no execute or the ability to run kvm guests.
 
-[...]
 
-> +int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int
-> rparent) +{
-> +	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	int parent, ret = -EINVAL;
-> +
-> +	s390_enable_sie();
 
-Hmm, why do you call s390_enable_sie()? It will fail on multi-threaded apps 
-and will create enhanced page tables for running kvm guest otherwise. It is 
-not needed for non-kvm processes. See the has_pgste/alloc_pgste topic above.
+Practicing Medical Doctors in America 
+
+788,923 in total <> 17,468 emails
+
+Many popular specialties like Emergency Medicine, Plastic Surgery, OBGYN, Oncology, Pediatrics and more
+
+Sort by over a dozen different fields
+
+Dramatic cost reduction: $395
+
+
++++ Get These Fr EE with every order this week +++
+
+American Pharmaceutical Company Directory
+Personal email addresses (47,000 in total) and names for top level executives
+
+Complete Contact List of Hospitals in the US
+Full data for all the major positions in more than 7k facilities
+
+Dentists in the USA
+More than half a million listings [worth $499 alone!]
+
+Chiropractors in the USA
+100,000 Chiropractors in the USA (worth $250 alone)
+
+email to:      Underwood-+zxytIWJTX5l57MIdRCFDg@public.gmane.org
+
+  
+
+valid until  February 06 
+
+
+click this to stop getting these emails. please email discontinue-+zxytIWJTX5l57MIdRCFDg@public.gmane.org 
