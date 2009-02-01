@@ -1,56 +1,36 @@
-From: Nathan Lynch <ntl@pobox.com>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Fri, 30 Jan 2009 14:25:44 -0600
-Message-ID: <20090130202544.GG6913__6235.73826528645$1233347335$gmane$org@localdomain>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<49814FA2.9060108@cs.columbia.edu> <20090129214035.GB6913@localdomain>
-	<49824599.5030503@cs.columbia.edu>
+From: Christoph Hellwig <hch@lst.de>
+Subject: Re: [RFC][PATCH] simple_set_mnt() should return void
+Date: Sun, 1 Feb 2009 17:32:34 +0100
+Message-ID: <20090201163234.GC3416@lst.de>
+References: <20090129063001.GA22898@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754703AbZBAQdM@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <49824599.5030503@cs.columbia.edu>
-List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
-List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
-List-Post: <mailto:linuxppc-dev@ozlabs.org>
-List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
-List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
-Sender: linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org
-Errors-To: linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: containers@lists.osdl.org, linuxppc-dev@ozlabs.org
+In-Reply-To: <20090129063001.GA22898@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, hch@lst.de, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
+On Wed, Jan 28, 2009 at 10:30:01PM -0800, Sukadev Bhattiprolu wrote:
 > 
-> Nathan Lynch wrote:
-> > 
-> > Oren Laadan wrote:
-> >> Nathan Lynch wrote:
-> >>> +		pr_debug("%s: unexpected thread_hdr contents: 0x%lx\n",
-> >>> +			 __func__, (unsigned long)thread_hdr->unimplemented);
-> >> Given the macro for 'pr_fmt' in include/linux/checkpoint.h, the use of
-> >> __func__ is redunant.
-> > 
-> > It seems to me that defining your own pr_fmt in a "public" header like
-> > that is inappropriate, or at least unconventional.  Any file that
-> > happens to include linux/checkpoint.h will have any prior definitions
-> > of pr_fmt overridden, no?
-> > 
+> From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+> Date: Wed, 28 Jan 2009 17:11:13 -0800
+> Subject: [RFC][PATCH] simple_set_mnt() should return void
 > 
-> Hmmm.. didn't think of it this way. Using the pr_debug() there was yet
-> another feedback from LKML, and it seemed reasonable to me. Can you
-> think of a case where linux/checkpoint.h will happen to be included
-> in checkpoint-related code ?
+> simple_set_mnt() is defined to return int but always returns 0.
+> Callers assume simple_set_mnt() never fails and don't properly
+> cleanup if it were to _ever_ fail. For instance, get_sb_single()
+> and get_sb_nodev() should:
+> 
+>         up_write(sb->s_unmount);
+>         deactivate_super(sb);
+> 
+> if simple_set_mnt() fails.
+> 
+> Since simple_set_mnt() never fails, would be cleaner if it did
+> not return anything.
 
-(Assume you meant "included in checkpoint-unrelated code")
-
-I could see checkpoint.h being included by files that don't
-exclusively deal with C/R.  If you want a uniform debug statement
-format for C/R-related code, that's fine, but this isn't the way to do
-it.  See the existing users (almost all in drivers/s390).
+Makes sense to me.  Feel free to resend once you did an allmodconfig
+or similar build.
