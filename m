@@ -1,15 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC cr-pipe-v13][PATCH 3/3] Restore open pipes
-Date: Mon, 02 Feb 2009 09:43:01 -0800
-Message-ID: <87k5887n16.fsf@caffeine.danplanet.com>
-References: <1233091395-24582-1-git-send-email-orenl@cs.columbia.edu>
-	<1233091395-24582-5-git-send-email-orenl@cs.columbia.edu>
+From: Thadeu Lima de Souza Cascardo <cascardo-/wxwWNsM9nk+uJoB2kUjGw@public.gmane.org>
+Subject: Re: cgroup mount point
+Date: Mon, 2 Feb 2009 19:41:53 -0200
+Message-ID: <20090202214153.GV3643__15921.0668680773$1233611160$gmane$org@vespa.holoscopio.com>
+References: <20090202200013.GU3643@vespa.holoscopio.com>
+	<1233606371.15779.32.camel@radis.liafa.jussieu.fr>
+	<20090202205246.GA28593@glandium.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0135396006964608280=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1233091395-24582-5-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren
-	Laadan's message of "Tue, 27 Jan 2009 16:23:15 -0500")
+In-Reply-To: <20090202205246.GA28593-YmoObPS1fuhg9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,63 +16,117 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: debian-devel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OL> +/* restore a pipe */
-OL> +static int
-OL> +cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_fd_data *hh, int rparent)
-OL> +{
-OL> +	struct file *file;
-OL> +	int fds[2], which, ret;
-OL> +
-OL> +	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
-OL> +	if (IS_ERR(file))
-OL> +		return PTR_ERR(file);
-OL> +	else if (file)
-OL> +		return cr_attach_get_file(file);
-OL> +
-OL> +	/* first encounter of this pipe: create it */
-OL> +	ret = do_pipe(fds);
-OL> +	if (ret < 0)
-OL> +		return ret;
-OL> +
-OL> +	which = (hh->f_flags & O_WRONLY ? 1 : 0);
-OL> +
-OL> +	/*
-OL> +	 * Below we return the fd corersponding to one side of the pipe
-OL> +	 * for our caller to use. Now register the other side of the pipe
-OL> +	 * in the hash, to be picked up when that side is to be restored.
-OL> +	 */
-OL> +	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
-OL> +	if (IS_ERR(file)) {
-OL> +		ret = PTR_ERR(file);
-OL> +		goto out;
-OL> +	}
-OL> +
-OL> +	ret = cr_read_pipe(ctx, fds[which]);
-OL> + out:
-OL> +	sys_close(fds[1-which]);	/* this side isn't used anymore */
 
-This isn't always a valid thing to do, right?  I can think of two
-scenarios off the top of my head that will break here:
+--===============0135396006964608280==
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="nYySOmuH/HDX6pKp"
+Content-Disposition: inline
 
-1. The process has called pipe() but has not yet fork()'d
-2. The process is using both sides of a pipe for a select()-based
-   event loop
 
-I worked up a quick test for #1, and it dies immediately on restart
-with a SIGPIPE.
+--nYySOmuH/HDX6pKp
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I'll see if I can work up and post a patch to fix this if I can come
-up with something I think is reasonable.
+On Mon, Feb 02, 2009 at 09:52:46PM +0100, Mike Hommey wrote:
+> On Mon, Feb 02, 2009 at 09:26:11PM +0100, Julien Cristau wrote:
+> > On Mon, 2009-02-02 at 18:00 -0200, Thadeu Lima de Souza Cascardo wrote:
+> > > Hello,
+> > >=20
+> > > Some software I intend to package work with the new cgroup feature in
+> > > Linux. I would like to open a discussion about what would be the bett=
+er
+> > > place to mount it and how/when to mount it.
+> >=20
+> > What do other distros use?
+>=20
+> Even better: what do the kernel folks want to do?
+>=20
+> Mike
 
-Thanks!
+=46rom what I've seen, most of them are in the same phases as Debian, or,
+perhaps, behind. Fedora seems to plan that for Fedora 11, and they have
+some support in libvirt.
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Linux Documentation is not consistent and have some funny options. In
+Documentation/cgroups/*, we have:
+
+cgroups.txt:
+/dev/cgroup
+
+cpuacct.txt:
+/cgroups
+
+devices.txt:
+/cgroups
+
+memcg_test.txt:
+/opt/cgroup
+/opt/cpuset
+/cgroup
+
+memory.txt:
+/cgroups
+
+cpusets.txt:
+/dev/cpuset
+
+freezer-subsystem.txt:
+/containers
+
+There is also:
+
+Documentation/scheduler/sched-design-CFS.txt:
+/dev/cpuctl
+/cgroup
+
+Documentation/scheduler/sched-rt-group.txt:
+/cgroup
+
+Documentation/accounting/cgroupstats.txt:
+/cgroup
+
+
+So, we have some more options now: /cgroups, /containers, /dev/cpuset,
+/dev/cpuctl, /opt/cgroup, /opt/cpuset.
+
+I am copying the container and the kernel guys. Perhaps, we can find an
+agreement (if we want to find one at all) and change all that
+Documentation to get consistent.
+
+Regards,
+Cascardo.
+
+--nYySOmuH/HDX6pKp
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkmHaKEACgkQyTpryRcqtS0sqwCcDigmXRoVTC5Rwq6+O83uHA3O
+uP0An0TonymKQRNhtkBM+GxYaIPkHPR0
+=VqDr
+-----END PGP SIGNATURE-----
+
+--nYySOmuH/HDX6pKp--
+
+--===============0135396006964608280==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============0135396006964608280==--
