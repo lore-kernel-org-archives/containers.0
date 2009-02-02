@@ -1,16 +1,15 @@
-From: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
-Subject: Re: [RFC][PATCH 5/5] Merge code for single and multiple-instance
-	mounts
-Date: Sun, 1 Feb 2009 17:38:07 +0100
-Message-ID: <20090201163807.GI3416@lst.de>
-References: <20090129064259.GA23160@us.ibm.com>
-	<20090129064753.GF23160@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC cr-pipe-v13][PATCH 3/3] Restore open pipes
+Date: Mon, 02 Feb 2009 09:43:01 -0800
+Message-ID: <87k5887n16.fsf@caffeine.danplanet.com>
+References: <1233091395-24582-1-git-send-email-orenl@cs.columbia.edu>
+	<1233091395-24582-5-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090129064753.GF23160-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1233091395-24582-5-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren
+	Laadan's message of "Tue, 27 Jan 2009 16:23:15 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,22 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 28, 2009 at 10:47:53PM -0800, Sukadev Bhattiprolu wrote:
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Wed, 28 Jan 2009 19:11:15 -0800
-> Subject: [RFC][PATCH 5/5] Merge code for single and multiple-instance mounts
-> 
-> new_pts_mount() (including the get_sb_nodev()), shares a lot of code
-> with init_pts_mount(). The only difference between them is the 'test-super'
-> function passed into sget().
-> 
-> Move the shared code into a new, common function, do_pts_mount() and
-> remove new_pts_mount() and init_pts_mount() functions,
+OL> +/* restore a pipe */
+OL> +static int
+OL> +cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_fd_data *hh, int rparent)
+OL> +{
+OL> +	struct file *file;
+OL> +	int fds[2], which, ret;
+OL> +
+OL> +	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
+OL> +	if (IS_ERR(file))
+OL> +		return PTR_ERR(file);
+OL> +	else if (file)
+OL> +		return cr_attach_get_file(file);
+OL> +
+OL> +	/* first encounter of this pipe: create it */
+OL> +	ret = do_pipe(fds);
+OL> +	if (ret < 0)
+OL> +		return ret;
+OL> +
+OL> +	which = (hh->f_flags & O_WRONLY ? 1 : 0);
+OL> +
+OL> +	/*
+OL> +	 * Below we return the fd corersponding to one side of the pipe
+OL> +	 * for our caller to use. Now register the other side of the pipe
+OL> +	 * in the hash, to be picked up when that side is to be restored.
+OL> +	 */
+OL> +	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
+OL> +	if (IS_ERR(file)) {
+OL> +		ret = PTR_ERR(file);
+OL> +		goto out;
+OL> +	}
+OL> +
+OL> +	ret = cr_read_pipe(ctx, fds[which]);
+OL> + out:
+OL> +	sys_close(fds[1-which]);	/* this side isn't used anymore */
 
-I would even merge init_pts_mount into devpts_get_sb, otherwise looks
-good to me.
+This isn't always a valid thing to do, right?  I can think of two
+scenarios off the top of my head that will break here:
+
+1. The process has called pipe() but has not yet fork()'d
+2. The process is using both sides of a pipe for a select()-based
+   event loop
+
+I worked up a quick test for #1, and it dies immediately on restart
+with a SIGPIPE.
+
+I'll see if I can work up and post a patch to fix this if I can come
+up with something I think is reasonable.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
