@@ -1,19 +1,17 @@
-From: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: cgroup mount point
-Date: Tue, 3 Feb 2009 11:19:49 -0500
-Message-ID: <20090203161949.GB32677@nostromo.devel.redhat.com>
-References: <20090202200013.GU3643@vespa.holoscopio.com>
-	<1233606371.15779.32.camel@radis.liafa.jussieu.fr>
-	<20090202205246.GA28593@glandium.org>
-	<20090202214153.GV3643@vespa.holoscopio.com>
-	<20090203102416.GA8886@redhat.com>
-	<20090203150315.GI482@boogie.lpds.sztaki.hu>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC cr-pipe-v13][PATCH 3/3] Restore open pipes
+Date: Tue, 03 Feb 2009 08:23:21 -0800
+Message-ID: <87bptj7ame.fsf@caffeine.danplanet.com>
+References: <1233091395-24582-1-git-send-email-orenl@cs.columbia.edu>
+	<1233091395-24582-5-git-send-email-orenl@cs.columbia.edu>
+	<87k5887n16.fsf@caffeine.danplanet.com>
+	<498789B1.80601@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090203150315.GI482-WfxVeM0IB4OcrO3FVCo2em/Xy1I+TMuj@public.gmane.org>
+In-Reply-To: <498789B1.80601-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of "Mon,
+	02 Feb 2009 19:02:57 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,24 +21,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gabor Gombas <gombasg-SuEj7oiQppWHXe+LvDLADg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, debian-devel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Gabor Gombas (gombasg-SuEj7oiQppWHXe+LvDLADg@public.gmane.org) said: 
-> On Tue, Feb 03, 2009 at 10:24:16AM +0000, Daniel P. Berrange wrote:
-> 
-> > Putting new mount points in / is not really acceptable, so that rules
-> > out the first two. /opt is just totally wrong, since that is intended
-> > for add on software packages. /dev/ feels a little odd, since it is
-> > not really device nodes, but perhaps that doesn't matter. So my pref
-> > would be something in /dev/cgroups or /sys/cgroups
-> 
-> How about /var/lib/cgroup? There's already precedent
-> (/var/lib/nfs/rpc_pipefs) of mounting virtual file systems under
-> /var/lib.
+OL> So the implementation of the logic above is ... inaccurate :( I
+OL> can reproduce it here; will take a closer look at it soon.
 
-Depending on when you need the cgroup filesystem to setup your
-containers, /var may not be there.
+Indeed.  I think fixing the following typo makes my test case work as
+expected for me:
 
-Bill
+diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
+index 9ff401a..71aafb4 100644
+--- a/checkpoint/ckpt_file.c
++++ b/checkpoint/ckpt_file.c
+@@ -215,7 +215,7 @@ static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
+ 		return fd_type;
+ 	}
+ 
+-	hh->fd_objref = cr_inode_to_objref(ctx, inode, hh->fd_type, &new);
++	hh->fd_objref = cr_inode_to_objref(ctx, inode, fd_type, &new);
+ 	pr_debug("type %d objref %d (%d)\n", hh->fd_type, hh->fd_objref, new);
+ 	if (!new)
+ 		fd_type = CR_FD_OBJREF;
+
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
