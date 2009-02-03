@@ -1,16 +1,20 @@
-From: Thadeu Lima de Souza Cascardo <cascardo-/wxwWNsM9nk+uJoB2kUjGw@public.gmane.org>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: cgroup mount point
-Date: Tue, 3 Feb 2009 10:57:45 -0200
-Message-ID: <20090203125744.GC3788__35001.3219089762$1233666051$gmane$org@vespa.holoscopio.com>
+Date: Tue, 3 Feb 2009 13:26:08 +0000
+Message-ID: <20090203132608.GA15613__3423.03410075164$1233667793$gmane$org@redhat.com>
 References: <20090202200013.GU3643@vespa.holoscopio.com>
 	<1233606371.15779.32.camel@radis.liafa.jussieu.fr>
 	<20090202205246.GA28593@glandium.org>
 	<20090202214153.GV3643@vespa.holoscopio.com>
-	<20090203102416.GA8886@redhat.com> <87ljsnzo4v.fsf@benfinney.id.au>
+	<20090203102416.GA8886@redhat.com>
+	<20090203123028.GA3788@vespa.holoscopio.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3717111643697006715=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87ljsnzo4v.fsf-TqlCGjI+HWGnbCmf7pGUHw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090203123028.GA3788-StA3NKSgq9XYLCA8tIpKU1aTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,84 +22,64 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Finney <ben+debian-TqlCGjI+HWGnbCmf7pGUHw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, debian-devel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: debian-devel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tue, Feb 03, 2009 at 10:30:28AM -0200, Thadeu Lima de Souza Cascardo wrote:
+> Sorry. I didn't mean to imply that libvirt or Fedora did anything in
+> respect to the mountpoint themselves. But that they are supporting or
+> planning to support cgroups. And I think that one time we will need to
+> sort the problem of the mountpoint, either let the applications mount it
+> (in this case, libvirt) or the system do it (Fedora install, Debian
+> initscripts, et al).
+>
+> I have some experience with lxc tools from http://lxc.sf.net/ and these
+> tools also look up the mountpoint at /proc/mounts. So it is up to the
+> system or the user to mount it.
 
---===============3717111643697006715==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="da4uJneut+ArUgXk"
-Content-Disposition: inline
+That's good. We settled on letting mount points be OS / admin defined
+in libvirt, because we felt libvirt shouldn't try to impose a mount
+policy on a resource that will have many users & we are able to work
+with whatever mount hierarchy the admin / OS decided to setup.
 
-
---da4uJneut+ArUgXk
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Tue, Feb 03, 2009 at 11:44:00PM +1100, Ben Finney wrote:
-> "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->=20
-> > On Mon, Feb 02, 2009 at 07:41:53PM -0200, Thadeu Lima de Souza Cascardo=
- wrote:
-> > > So, we have some more options now: /cgroups, /containers,
-> > > /dev/cpuset, /dev/cpuctl, /opt/cgroup, /opt/cpuset.
-> >=20
 > > Putting new mount points in / is not really acceptable, so that rules
 > > out the first two. /opt is just totally wrong, since that is intended
 > > for add on software packages. /dev/ feels a little odd, since it is
-> > not really device nodes
->=20
-> I agree with all that Thadeu Lima says here. I would add that cgroups
-> are nothing to do with device nodes, so definitely don't belong in
-> =E2=80=98/dev/=E2=80=99 either.
+> > not really device nodes, but perhaps that doesn't matter. So my pref
+> > would be something in /dev/cgroups or /sys/cgroups
+> 
+> My suggestions were /proc/cgroup, /sys/cgroup, /cgroup or /dev/cgroup. I
+> sent the problems with the former two, and the rationale for the latter
+> two in a previous message.
+> 
+> I agree that /opt/ is not the place for it (and that's the one I called
+> 'funny'). I've head some people telling that /dev/ is for devices, but I
+> can't see a problem (/dev/log is a socket and it is there, the FHS
+> refers to special files).
+> 
+> /proc/ and /sys/ are two good options if the kernel does not put anything
+> else there. /proc/cgroups already exist, for example.
+> 
+> Could you please give your rationale why / is not really acceptable?
+ 
+Just a general preference is to not continually add more ad-hoc top 
+level directories to /, when there are other places in the filesystem
+hierarchy that are available, such as /sys or /proc. 
 
-The message you quoted is from Daniel Berrange, not me. Could you also
-tell your rationale for not agreeing with /?
+> > I also think 'cgroups' is a better name than 'containers', since 
+> > 'containers' is refering to just one specific use case.
+> 
+> Agreed on this one, although I still prefer the singular (it is also the
+> name of the filesystem type).
+
+Either singular / plural sounds fine to me
 
 Regards,
-Cascardo.
-
-> Since they're a filesystem mapping =E2=80=9Cfor browsing and manipulation
-> from user space=E2=80=9D of a kernel facility, I think =E2=80=98/sys/cgro=
-ups/=E2=80=99 is
-> appropriate.
->=20
-> --=20
->  \     =E2=80=9CIt's my belief we developed language because of our deep =
-inner |
->   `\                  need to complain.=E2=80=9D =E2=80=94Jane Wagner, vi=
-a Lily Tomlin |
-> _o__)                                                                  |
-> Ben Finney
-
---da4uJneut+ArUgXk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkmIP0gACgkQyTpryRcqtS0gfwCeNESvcsbtrnHDydfihDHfsyXV
-1F0AnjoRLwCaSYBnpRh9BIJFhQn2EJMd
-=w/XP
------END PGP SIGNATURE-----
-
---da4uJneut+ArUgXk--
-
---===============3717111643697006715==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============3717111643697006715==--
+Daniel
+-- 
+|: Red Hat, Engineering, London   -o-   http://people.redhat.com/berrange/ :|
+|: http://libvirt.org  -o-  http://virt-manager.org  -o-  http://ovirt.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: GnuPG: 7D3B9505  -o-  F3C9 553F A1DA 4AC2 5648 23C1 B3DF F742 7D3B 9505 :|
