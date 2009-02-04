@@ -1,200 +1,103 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [v2][PATCH 2/5] Parse mount options just once and copy them to
-	super block
-Date: Tue, 3 Feb 2009 20:37:05 -0800
-Message-ID: <20090204043705.GB26202@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [v2][PATCH 3/5] Move common mknod_ptmx() calls into caller
+Date: Tue, 3 Feb 2009 20:37:32 -0800
+Message-ID: <20090204043732.GC26202@us.ibm.com>
 References: <20090204043516.GB25963@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755063AbZBDEls@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090204043516.GB25963@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, hch@lst.de
-Cc: serue@us.ibm.com, sukadev@us.ibm.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+In-Reply-To: <20090204043516.GB25963-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, hch-jcswGhMUV9g@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Tue, 27 Jan 2009 23:15:47 -0800
-Subject: [v2][PATCH 2/5] Parse mount options just once and copy them to super block
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Wed, 28 Jan 2009 18:54:25 -0800
+Subject: [v2][PATCH 3/5] Move common mknod_ptmx() calls into caller
 
-Since all the mount option parsing is done in devpts, we could do it
-just once and pass it around in devpts functions and eventually store
-it in the super block.
+We create 'ptmx' node in both single-instance and multiple-instance
+mounts. So devpts_get_sb() can call mknod_ptmx() once rather than
+have both modes calling mknod_ptmx() separately.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/devpts/inode.c |  100 ++++++++++++-----------------------------------------
- 1 files changed, 22 insertions(+), 78 deletions(-)
+ fs/devpts/inode.c |   36 +++++++++++++++++-------------------
+ 1 files changed, 17 insertions(+), 19 deletions(-)
 
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index de15e73..9b24de8 100644
+index 9b24de8..f7e887c 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -325,49 +325,14 @@ static int compare_init_pts_sb(struct super_block *s, void *p)
- }
- 
- /*
-- * Safely parse the mount options in @data and update @opts.
-- *
-- * devpts ends up parsing options two times during mount, due to the
-- * two modes of operation it supports. The first parse occurs in
-- * devpts_get_sb() when determining the mode (single-instance or
-- * multi-instance mode). The second parse happens in devpts_remount()
-- * or new_pts_mount() depending on the mode.
-- *
-- * Parsing of options modifies the @data making subsequent parsing
-- * incorrect. So make a local copy of @data and parse it.
-- *
-- * Return: 0 On success, -errno on error
-- */
--static int safe_parse_mount_options(void *data, struct pts_mount_opts *opts)
--{
--	int rc;
--	void *datacp;
--
--	if (!data)
--		return 0;
--
--	/* Use kstrdup() ?  */
--	datacp = kmalloc(PAGE_SIZE, GFP_KERNEL);
--	if (!datacp)
--		return -ENOMEM;
--
--	memcpy(datacp, data, PAGE_SIZE);
--	rc = parse_mount_options((char *)datacp, PARSE_MOUNT, opts);
--	kfree(datacp);
--
--	return rc;
--}
--
--/*
-  * Mount a new (private) instance of devpts.  PTYs created in this
-  * instance are independent of the PTYs in other devpts instances.
-  */
- static int new_pts_mount(struct file_system_type *fs_type, int flags,
--		void *data, struct vfsmount *mnt)
-+		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
- {
- 	int err;
- 	struct pts_fs_info *fsi;
--	struct pts_mount_opts *opts;
- 
- 	printk(KERN_NOTICE "devpts: newinstance mount\n");
- 
-@@ -376,11 +341,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
- 		return err;
- 
+@@ -343,17 +343,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
  	fsi = DEVPTS_SB(mnt->mnt_sb);
--	opts = &fsi->mount_opts;
--
--	err = parse_mount_options(data, PARSE_MOUNT, opts);
+ 	memcpy(&fsi->mount_opts, opts, sizeof(opts));
+ 
+-	err = mknod_ptmx(mnt->mnt_sb);
 -	if (err)
 -		goto fail;
-+	memcpy(&fsi->mount_opts, opts, sizeof(opts));
- 
- 	err = mknod_ptmx(mnt->mnt_sb);
- 	if (err)
-@@ -396,28 +357,6 @@ fail:
+-
+ 	return 0;
+-
+-fail:
+-	dput(mnt->mnt_sb->s_root);
+-	up_write(&mnt->mnt_sb->s_umount);
+-	deactivate_super(mnt->mnt_sb);
+-	return err;
  }
  
  /*
-- * Check if 'newinstance' mount option was specified in @data.
-- *
-- * Return: -errno  	on error (eg: invalid mount options specified)
-- * 	 : 1 		if 'newinstance' mount option was specified
-- * 	 : 0 		if 'newinstance' mount option was NOT specified
-- */
--static int is_new_instance_mount(void *data)
--{
--	int rc;
--	struct pts_mount_opts opts;
--
--	if (!data)
--		return 0;
--
--	rc = safe_parse_mount_options(data, &opts);
--	if (!rc)
--		rc = opts.newinstance;
--
--	return rc;
--}
--
--/*
-  * get_init_pts_sb()
-  *
-  *     This interface is needed to support multiple namespace semantics in
-@@ -439,10 +378,9 @@ static int is_new_instance_mount(void *data)
-  *     presence of the private namespace (i.e 'newinstance') super-blocks.
-  */
- static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
--		void *data, struct vfsmount *mnt)
-+		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
- {
- 	struct super_block *s;
--	struct pts_mount_opts *opts;
- 	struct pts_fs_info *fsi;
- 	int error;
- 
-@@ -460,11 +398,12 @@ static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
- 		}
- 		s->s_flags |= MS_ACTIVE;
- 	}
--	fsi = DEVPTS_SB(s);
--	opts = &fsi->mount_opts;
--	parse_mount_options(data, PARSE_REMOUNT, opts);
- 
- 	simple_set_mnt(mnt, s);
-+
-+	fsi = DEVPTS_SB(mnt->mnt_sb);
-+	memcpy(&fsi->mount_opts, opts, sizeof(opts));
-+
- 	return 0;
- }
- 
-@@ -474,11 +413,11 @@ static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
-  * kernel still allows multiple-instances.
-  */
- static int init_pts_mount(struct file_system_type *fs_type, int flags,
--		void *data, struct vfsmount *mnt)
-+		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
- {
- 	int err;
- 
--	err = get_init_pts_sb(fs_type, flags, data, mnt);
-+	err = get_init_pts_sb(fs_type, flags, data, opts, mnt);
+@@ -421,13 +411,6 @@ static int init_pts_mount(struct file_system_type *fs_type, int flags,
  	if (err)
  		return err;
  
-@@ -495,17 +434,22 @@ static int init_pts_mount(struct file_system_type *fs_type, int flags,
- static int devpts_get_sb(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
- {
--	int new;
+-	err = mknod_ptmx(mnt->mnt_sb);
+-	if (err) {
+-		dput(mnt->mnt_sb->s_root);
+-		up_write(&mnt->mnt_sb->s_umount);
+-		deactivate_super(mnt->mnt_sb);
+-	}
 -
--	new = is_new_instance_mount(data);
--	if (new < 0)
--		return new;
-+	int error;
-+	struct pts_mount_opts opts;
- 
--	if (new)
--		return new_pts_mount(fs_type, flags, data, mnt);
-+	memset(&opts, 0, sizeof(opts)); 
-+	if (data) {
-+		error = parse_mount_options(data, PARSE_MOUNT, &opts);
-+		if (error)
-+			return error;
-+	}
- 
--	return init_pts_mount(fs_type, flags, data, mnt);
-+	if (opts.newinstance)
-+		return new_pts_mount(fs_type, flags, data, &opts, mnt);
-+	else
-+		return init_pts_mount(fs_type, flags, data, &opts, mnt);
+ 	return err;
  }
+ 
+@@ -445,9 +428,24 @@ static int devpts_get_sb(struct file_system_type *fs_type,
+ 	}
+ 
+ 	if (opts.newinstance)
+-		return new_pts_mount(fs_type, flags, data, &opts, mnt);
++		error = new_pts_mount(fs_type, flags, data, &opts, mnt);
+ 	else
+-		return init_pts_mount(fs_type, flags, data, &opts, mnt);
++		error = init_pts_mount(fs_type, flags, data, &opts, mnt);
 +
++	if (error)
++		return error;
++
++	error = mknod_ptmx(mnt->mnt_sb);
++	if (error)
++		goto out_dput;
++
++	return 0;
++
++out_dput:
++	dput(mnt->mnt_sb->s_root);
++	up_write(&mnt->mnt_sb->s_umount);
++	deactivate_super(mnt->mnt_sb);
++	return error;
+ }
+ 
  #else
- /*
-  * This supports only the legacy single-instance semantics (no
 -- 
 1.5.2.5
