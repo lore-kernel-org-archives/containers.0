@@ -1,17 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Wed, 4 Feb 2009 09:54:06 -0600
-Message-ID: <20090204155406.GA2039@us.ibm.com>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<1233718789.16867.156.camel@pasglop>
+Subject: Re: storage considerations
+Date: Wed, 4 Feb 2009 10:05:18 -0600
+Message-ID: <20090204160518.GC2039@us.ibm.com>
+References: <7B7881568CF40E4388B615CD06F87B980989E9@clara.maurer-it.com>
+	<49887307.1080105@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1233718789.16867.156.camel@pasglop>
+In-Reply-To: <49887307.1080105-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,31 +19,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Benjamin Herrenschmidt (benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org):
-> 
-> > +struct cr_hdr_cpu {
-> > +	struct pt_regs pt_regs;
-> > +	/* relevant fields from thread_struct */
-> > +	double fpr[32][TS_FPRWIDTH];
-> > +	unsigned int fpscr;
-> > +	int fpexc_mode;
-> > +	/* unsigned int align_ctl; this is never updated? */
-> > +	unsigned long dabr;
-> > +};
-> 
-> Is there some version or other identification somewhere ? If not there
-> should be. ie, we're going to add things here. For example, what about
-> the vector registers ? Also, some CPUs will have more HW debug registers
-> than just the DABR (we plan to add support for all the BookE architected
-> IACs and DACs for example), etc...
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> Dietmar Maurer wrote:
+> > Hi Daniel,
+> >
+> > I think we should have several options for the root storage:
+> >
+> > 1.) simply use the host filesystem (like Openvz)
+> >
+> > 	- special quota support is needed (simfs?)
+> >
+> > 	- quota support depends on ext3 fs, so this only works for
+> > 	  local attached storage (does not work on NFS)
+> >
+> > 	- LVM snapshots are slow, because the snapshot includes all
+> > container
+> > 	  on that filesystem.
 
-The arch-independent checkpoint header does have kernel
-maj:min:rev:patch info.  We expect to have to do more,
-assuming that the .config can change the arch-dependent
-cpu header (i.e. perhaps TS_FPRWIDTH could be changed).
+I'm looking forward to the btrfs, tux3, and nilfs snapshotting
+capabilities.
 
 -serge
