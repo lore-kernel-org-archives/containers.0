@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v2][PATCH 3/5] Move common mknod_ptmx() calls into caller
-Date: Tue, 3 Feb 2009 20:37:32 -0800
-Message-ID: <20090204043732.GC26202@us.ibm.com>
+Subject: [v2][PATCH 4/5] Remove get_init_pts_sb()
+Date: Tue, 3 Feb 2009 20:37:52 -0800
+Message-ID: <20090204043752.GD26202@us.ibm.com>
 References: <20090204043516.GB25963@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,80 +24,67 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 28 Jan 2009 18:54:25 -0800
-Subject: [v2][PATCH 3/5] Move common mknod_ptmx() calls into caller
+Date: Wed, 28 Jan 2009 18:59:28 -0800
+Subject: [v2][PATCH 4/5] Remove get_init_pts_sb()
 
-We create 'ptmx' node in both single-instance and multiple-instance
-mounts. So devpts_get_sb() can call mknod_ptmx() once rather than
-have both modes calling mknod_ptmx() separately.
+With mknod_ptmx() moved to devpts_get_sb(), init_pts_mount() becomes
+a wrapper around get_init_pts_sb(). Remove get_init_pts_sb() and
+fold code into init_pts_mount().
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/devpts/inode.c |   36 +++++++++++++++++-------------------
- 1 files changed, 17 insertions(+), 19 deletions(-)
+ fs/devpts/inode.c |   25 ++++++-------------------
+ 1 files changed, 6 insertions(+), 19 deletions(-)
 
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 9b24de8..f7e887c 100644
+index f7e887c..c821c9a 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -343,17 +343,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
- 	fsi = DEVPTS_SB(mnt->mnt_sb);
- 	memcpy(&fsi->mount_opts, opts, sizeof(opts));
- 
--	err = mknod_ptmx(mnt->mnt_sb);
--	if (err)
--		goto fail;
--
- 	return 0;
--
--fail:
--	dput(mnt->mnt_sb->s_root);
--	up_write(&mnt->mnt_sb->s_umount);
--	deactivate_super(mnt->mnt_sb);
--	return err;
+@@ -347,7 +347,11 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
  }
  
  /*
-@@ -421,13 +411,6 @@ static int init_pts_mount(struct file_system_type *fs_type, int flags,
- 	if (err)
- 		return err;
+- * get_init_pts_sb()
++ * init_pts_mount()
++ *
++ *     Mount or remount the initial kernel mount of devpts. This type of
++ *     mount maintains the legacy, single-instance semantics, while the
++ *     kernel still allows multiple-instances.
+  *
+  *     This interface is needed to support multiple namespace semantics in
+  *     devpts while preserving backward compatibility of the current 'single-
+@@ -367,7 +371,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
+  *     consistently selects the 'single-namespace' superblock even in the
+  *     presence of the private namespace (i.e 'newinstance') super-blocks.
+  */
+-static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
++static int init_pts_mount(struct file_system_type *fs_type, int flags,
+ 		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
+ {
+ 	struct super_block *s;
+@@ -397,23 +401,6 @@ static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
+ 	return 0;
+ }
  
--	err = mknod_ptmx(mnt->mnt_sb);
--	if (err) {
--		dput(mnt->mnt_sb->s_root);
--		up_write(&mnt->mnt_sb->s_umount);
--		deactivate_super(mnt->mnt_sb);
--	}
+-/*
+- * Mount or remount the initial kernel mount of devpts. This type of
+- * mount maintains the legacy, single-instance semantics, while the
+- * kernel still allows multiple-instances.
+- */
+-static int init_pts_mount(struct file_system_type *fs_type, int flags,
+-		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
+-{
+-	int err;
 -
- 	return err;
- }
- 
-@@ -445,9 +428,24 @@ static int devpts_get_sb(struct file_system_type *fs_type,
- 	}
- 
- 	if (opts.newinstance)
--		return new_pts_mount(fs_type, flags, data, &opts, mnt);
-+		error = new_pts_mount(fs_type, flags, data, &opts, mnt);
- 	else
--		return init_pts_mount(fs_type, flags, data, &opts, mnt);
-+		error = init_pts_mount(fs_type, flags, data, &opts, mnt);
-+
-+	if (error)
-+		return error;
-+
-+	error = mknod_ptmx(mnt->mnt_sb);
-+	if (error)
-+		goto out_dput;
-+
-+	return 0;
-+
-+out_dput:
-+	dput(mnt->mnt_sb->s_root);
-+	up_write(&mnt->mnt_sb->s_umount);
-+	deactivate_super(mnt->mnt_sb);
-+	return error;
- }
- 
- #else
+-	err = get_init_pts_sb(fs_type, flags, data, opts, mnt);
+-	if (err)
+-		return err;
+-
+-	return err;
+-}
+-
+ static int devpts_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
 -- 
 1.5.2.5
