@@ -1,13 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix lockdep subclasses overflow
-Date: Wed, 04 Feb 2009 17:15:25 +0800
-Message-ID: <49895CAD.1020008__3270.88628332621$1233739312$gmane$org@cn.fujitsu.com>
-References: <49895BD7.8090405@cn.fujitsu.com>
+From: Christian Borntraeger <borntraeger-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] c/r: define s390-specific checkpoint-restart code (v3)
+Date: Wed, 4 Feb 2009 10:19:53 +0100
+Message-ID: <200902041019.53683.borntraeger@de.ibm.com>
+References: <20090203161223.GA17998@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49895BD7.8090405-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090203161223.GA17998-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,33 +18,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux390-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
-> I enabled all cgroup subsystems when compiling kernel, and then:
->  # mount -t cgroup -o net_cls xxx /mnt
->  # mkdir /mnt/0
-> 
-> This showed up immediately:
->  BUG: MAX_LOCKDEP_SUBCLASSES too low!
->  turning off the locking correctness validator.
-> 
-> It's caused by the cgroup hierarchy lock:
-> 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-> 		struct cgroup_subsys *ss = subsys[i];
-> 		if (ss->root == root)
-> 			mutex_lock_nested(&ss->hierarchy_mutex, i);
-> 	}
-> 
-> Now we have 9 cgroup subsystems, and the above 'i' for net_cls is 9, but
+Am Tuesday 03 February 2009 17:12:23 schrieb Serge E. Hallyn:
+[...]
+> +/* Nothing to do for mm context state */
+> +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int
+> parent) +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	int ret;
+> +
+> +	h.type = CR_HDR_MM_CONTEXT;
+> +	h.len = sizeof(*hh);
+> +	h.parent = parent;
+> +
+> +#if 0
+> +	/* Oren's v13 is on an older kernel which has no vdso_base */
+> +	/* on newer kernel, we'll have to enable this */
+> +	hh->vdso_base = mm->context.vdso_base;
+> +	printk(KERN_NOTICE "checkpointing vdso_base %lx\n", hh->vdso_base);
+> +#else
+> +	hh->vdso_base = 0;
+> +#endif
+> +
+> +	ret = cr_write_obj(ctx, &h, hh);
+> +	cr_hbuf_put(ctx, sizeof(*hh));
+> +
+> +	return ret;
+> +}
 
-sorry, a typo here: the above 'i' for net_cls is 8.
+Hmm, maybe you should also save/restore other elements of mm_context_t.
 
-> MAX_LOCKDEP_SUBCLASSES is 8.
-> 
-> This patch uses different lockdep keys for different subsystems.
-> 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
+At least noexec, has_pgste and alloc_pgste have an impact on the page table 
+layout and special features like no execute or the ability to run kvm guests.
+
+[...]
+
+> +int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int
+> rparent) +{
+> +	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	int parent, ret = -EINVAL;
+> +
+> +	s390_enable_sie();
+
+Hmm, why do you call s390_enable_sie()? It will fail on multi-threaded apps 
+and will create enhanced page tables for running kvm guest otherwise. It is 
+not needed for non-kvm processes. See the has_pgste/alloc_pgste topic above.
