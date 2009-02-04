@@ -1,16 +1,16 @@
-From: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Thu, 05 Feb 2009 07:58:19 +1100
-Message-ID: <1233781099.4612.1.camel__8752.72899070314$1233781279$gmane$org@pasglop>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<1233718789.16867.156.camel@pasglop> <20090204155406.GA2039@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re:
+	Checkpoint / Restart)
+Date: Wed, 04 Feb 2009 08:21:28 -0800
+Message-ID: <1233764488.20090.58.camel@nimitz>
+References: <EF0F4DD0-96C2-47CF-A247-19002A3BD53B@uni-duesseldorf.de>
+	<20090127155947.GB10039@us.ibm.com>
+	<090128111035.M0106630@noir.ex.jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090204155406.GA2039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <090128111035.M0106630-n+Fz6uxiQ6t02ytvwG4l7tBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,37 +20,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-02-04 at 09:54 -0600, Serge E. Hallyn wrote:
-> Quoting Benjamin Herrenschmidt (benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org):
-> > 
-> > > +struct cr_hdr_cpu {
-> > > +	struct pt_regs pt_regs;
-> > > +	/* relevant fields from thread_struct */
-> > > +	double fpr[32][TS_FPRWIDTH];
-> > > +	unsigned int fpscr;
-> > > +	int fpexc_mode;
-> > > +	/* unsigned int align_ctl; this is never updated? */
-> > > +	unsigned long dabr;
-> > > +};
-> > 
-> > Is there some version or other identification somewhere ? If not there
-> > should be. ie, we're going to add things here. For example, what about
-> > the vector registers ? Also, some CPUs will have more HW debug registers
-> > than just the DABR (we plan to add support for all the BookE architected
-> > IACs and DACs for example), etc...
-> 
-> The arch-independent checkpoint header does have kernel
-> maj:min:rev:patch info.  We expect to have to do more,
-> assuming that the .config can change the arch-dependent
-> cpu header (i.e. perhaps TS_FPRWIDTH could be changed).
+On Wed, 2009-01-28 at 11:10 +0900, Masahiko Takahashi wrote:
+> I'm now working on porting to x86_64 with help from Nauman Rafique.
+> Here is the preliminary patch. If there is someone who is interested
+> in x86_64 support, please join.
 
-It could to a certain extent... things like VSX, VSR, or freescale SPE,
-or even the Cell SPU state etc....
+Do you have anything more recent than this?  I think there are a few
+cleanups we can add to get rid of some of the #ifdef mess.  
 
-I wonder if we want a tagged structure so we can easily add things...
-
-Ben.
+-- Dave
