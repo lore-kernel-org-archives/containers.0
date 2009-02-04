@@ -1,13 +1,17 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix lockdep subclasses overflow
-Date: Wed, 4 Feb 2009 07:48:42 -0800
-Message-ID: <6599ad830902040748u58c7afcasc4152175aa382a2b__34083.7683099837$1233762768$gmane$org@mail.gmail.com>
-References: <49895BD7.8090405@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
+	implementation
+Date: Wed, 4 Feb 2009 09:54:06 -0600
+Message-ID: <20090204155406.GA2039@us.ibm.com>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
+	<1233182478-27113-2-git-send-email-ntl@pobox.com>
+	<1233718789.16867.156.camel@pasglop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49895BD7.8090405-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1233718789.16867.156.camel@pasglop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,63 +21,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 4, 2009 at 1:11 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
-> This patch uses different lockdep keys for different subsystems.
->
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Quoting Benjamin Herrenschmidt (benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org):
+> 
+> > +struct cr_hdr_cpu {
+> > +	struct pt_regs pt_regs;
+> > +	/* relevant fields from thread_struct */
+> > +	double fpr[32][TS_FPRWIDTH];
+> > +	unsigned int fpscr;
+> > +	int fpexc_mode;
+> > +	/* unsigned int align_ctl; this is never updated? */
+> > +	unsigned long dabr;
+> > +};
+> 
+> Is there some version or other identification somewhere ? If not there
+> should be. ie, we're going to add things here. For example, what about
+> the vector registers ? Also, some CPUs will have more HW debug registers
+> than just the DABR (we plan to add support for all the BookE architected
+> IACs and DACs for example), etc...
 
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+The arch-independent checkpoint header does have kernel
+maj:min:rev:patch info.  We expect to have to do more,
+assuming that the .config can change the arch-dependent
+cpu header (i.e. perhaps TS_FPRWIDTH could be changed).
 
-Looks good, thanks.
-
-Paul
-
-> ---
->  include/linux/cgroup.h |    1 +
->  kernel/cgroup.c        |    3 ++-
->  2 files changed, 3 insertions(+), 1 deletions(-)
->
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index e4e8e11..499900d 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -378,6 +378,7 @@ struct cgroup_subsys {
->         * - initiating hotplug events
->         */
->        struct mutex hierarchy_mutex;
-> +       struct lock_class_key subsys_key;
->
->        /*
->         * Link to parent, and list entry in parent's children.
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 5a54ff4..e14db9c 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -2351,7 +2351,7 @@ static void cgroup_lock_hierarchy(struct cgroupfs_root *root)
->        for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
->                struct cgroup_subsys *ss = subsys[i];
->                if (ss->root == root)
-> -                       mutex_lock_nested(&ss->hierarchy_mutex, i);
-> +                       mutex_lock(&ss->hierarchy_mutex);
->        }
->  }
->
-> @@ -2637,6 +2637,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
->        BUG_ON(!list_empty(&init_task.tasks));
->
->        mutex_init(&ss->hierarchy_mutex);
-> +       lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
->        ss->active = 1;
->  }
->
-> --
-> 1.5.4.rc3
->
->
->
->
+-serge
