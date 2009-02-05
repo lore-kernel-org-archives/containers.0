@@ -1,68 +1,63 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [v2][PATCH 2/5] Parse mount options just once and copy them to
-	super block
-Date: Wed, 4 Feb 2009 18:10:10 -0600
-Message-ID: <20090205001010.GC17354@us.ibm.com>
-References: <20090204043516.GB25963@us.ibm.com> <20090204043705.GB26202@us.ibm.com>
+From: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
+	implementation
+Date: Thu, 05 Feb 2009 11:16:52 +1100
+Message-ID: <1233793012.4612.32.camel__40852.1813144491$1233793191$gmane$org@pasglop>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
+	<1233182478-27113-2-git-send-email-ntl@pobox.com>
+	<1233718789.16867.156.camel@pasglop> <20090204155406.GA2039@us.ibm.com>
+	<1233781099.4612.1.camel@pasglop>  <498A284E.4050501@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759748AbZBEAK3@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090204043705.GB26202@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, hch@lst.de, sukadev@us.ibm.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <498A284E.4050501-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev@linux.vnet.ibm.com):
+On Wed, 2009-02-04 at 18:44 -0500, Oren Laadan wrote:
+> * Anything that is decided at compiled time should probably go to the arch-
+> dependent header.
 > 
-> From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-> Date: Tue, 27 Jan 2009 23:15:47 -0800
-> Subject: [v2][PATCH 2/5] Parse mount options just once and copy them to super block
-> 
-> Since all the mount option parsing is done in devpts, we could do it
-> just once and pass it around in devpts functions and eventually store
-> it in the super block.
-> ---
->  fs/devpts/inode.c |  100 ++++++++++++-----------------------------------------
->  1 files changed, 22 insertions(+), 78 deletions(-)
+> * Anything that can change at boot time (e.g., for x86 that would include
+> the capabilities of the FPU), or even run time (is there any ?) should
+> be described to the letter (in fine print) in 'struct cr_hdr_cpu' and
+> friends.
 
-Nice ratio of - to +....
+I think we should avoid compile time completely.
 
-> @@ -495,17 +434,22 @@ static int init_pts_mount(struct file_system_type *fs_type, int flags,
->  static int devpts_get_sb(struct file_system_type *fs_type,
->  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
->  {
-> -	int new;
-> -
-> -	new = is_new_instance_mount(data);
-> -	if (new < 0)
-> -		return new;
-> +	int error;
-> +	struct pts_mount_opts opts;
-> 
-> -	if (new)
-> -		return new_pts_mount(fs_type, flags, data, mnt);
-> +	memset(&opts, 0, sizeof(opts)); 
-> +	if (data) {
-> +		error = parse_mount_options(data, PARSE_MOUNT, &opts);
+We mostly try to have kernels running on everything anyway, and there's
+no reason not to be able to move a snapshot to a different CPU if it's
+not using a feature of the CPU that is different.
 
-Is there any reason to keep the PARSE_MOUNT argument to
-parse_mount_options?
+Nathan, what about you start the structure with a 64 bit bitmask that
+indicates what "records" are present followed by concatenated records ?
 
-> +		if (error)
-> +			return error;
-> +	}
-> 
-> -	return init_pts_mount(fs_type, flags, data, mnt);
-> +	if (opts.newinstance)
-> +		return new_pts_mount(fs_type, flags, data, &opts, mnt);
-> +	else
-> +		return init_pts_mount(fs_type, flags, data, &opts, mnt);
->  }
-> +
->  #else
->  /*
->   * This supports only the legacy single-instance semantics (no
-> -- 
-> 1.5.2.5
+IE. The "main" state (pt_regs) wouldn't change, but then, you could have
+a list of things:
+
+ - FPRs
+ - old style VSX
+ - VSRs
+ - Freescale SPE state
+ - DABR
+ - BookE IAC/DACs
+ - tbd...
+
+Then, when resuming a snapshot, we can use some bit masks trickery
+indicating the validity on a given target. IE. If CPU has no VSX and
+original program uses VSX then you can't resume. But if CPU has VSR you
+can.. etc... We can keep it trivial at fist, especting the same
+features, and try to be smart later.
+
+Ben.
