@@ -1,43 +1,95 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [v2][PATCH 1/5] Unroll essentials of do_remount_sb() into
-	devpts
-Date: Wed, 4 Feb 2009 18:27:57 -0600
-Message-ID: <20090205002757.GA18758@us.ibm.com>
-References: <20090204043516.GB25963@us.ibm.com> <20090204043640.GA26202@us.ibm.com> <20090204234905.GB17354@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [v2][PATCH 4/5] Remove get_init_pts_sb()
+Date: Wed, 4 Feb 2009 19:07:39 -0600
+Message-ID: <20090205010739.GA18792@us.ibm.com>
+References: <20090204043516.GB25963@us.ibm.com>
+	<20090204043752.GD26202@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761299AbZBEA2S@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090204234905.GB17354@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: linux-kernel@vger.kernel.org, hpa@zytor.com, Containers <containers@lists.osdl.org>, hch@lst.de, Alan Cox <alan@lxorguk.ukuu.org.uk>
+In-Reply-To: <20090204043752.GD26202-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, hch-jcswGhMUV9g@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Quoting Sukadev Bhattiprolu (sukadev@linux.vnet.ibm.com):
-> > 
-> > From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-> > Date: Tue, 27 Jan 2009 22:58:18 -0800
-> > Subject: [v2][PATCH 1/5] Unroll essentials of do_remount_sb() into devpts
-> > 
-> > On remount, devpts fs only needs to parse the mount options. Users cannot
-> > directly create/dirty files in /dev/pts so the MS_RDONLY flag and
-> > shrinking the dcache does not really apply to devpts.
-> > 
-> > So effectively on remount, devpts only parses the mount options and updates
-> > these options in its super block. As such, we could replace do_remount_sb()
-> > call with a direct parse_mount_options().
-> > 
-> > Doing so enables subsequent patches to avoid parsing the mount options twice
-> > and simplify the code.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> You've dropped the update_ptmx_mode() which you used to do
-> inside devpts_remount().  Is that also on purpose?
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Wed, 28 Jan 2009 18:59:28 -0800
+> Subject: [v2][PATCH 4/5] Remove get_init_pts_sb()
+> 
+> With mknod_ptmx() moved to devpts_get_sb(), init_pts_mount() becomes
+> a wrapper around get_init_pts_sb(). Remove get_init_pts_sb() and
+> fold code into init_pts_mount().
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Since it appears that mknod_ptmx() will be called anyway and
-will do the same thing,
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> > Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-
-Acked-by: Serge Hallyn <serue@us.ibm.com>
+> ---
+>  fs/devpts/inode.c |   25 ++++++-------------------
+>  1 files changed, 6 insertions(+), 19 deletions(-)
+> 
+> diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+> index f7e887c..c821c9a 100644
+> --- a/fs/devpts/inode.c
+> +++ b/fs/devpts/inode.c
+> @@ -347,7 +347,11 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
+>  }
+> 
+>  /*
+> - * get_init_pts_sb()
+> + * init_pts_mount()
+> + *
+> + *     Mount or remount the initial kernel mount of devpts. This type of
+> + *     mount maintains the legacy, single-instance semantics, while the
+> + *     kernel still allows multiple-instances.
+>   *
+>   *     This interface is needed to support multiple namespace semantics in
+>   *     devpts while preserving backward compatibility of the current 'single-
+> @@ -367,7 +371,7 @@ static int new_pts_mount(struct file_system_type *fs_type, int flags,
+>   *     consistently selects the 'single-namespace' superblock even in the
+>   *     presence of the private namespace (i.e 'newinstance') super-blocks.
+>   */
+> -static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
+> +static int init_pts_mount(struct file_system_type *fs_type, int flags,
+>  		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
+>  {
+>  	struct super_block *s;
+> @@ -397,23 +401,6 @@ static int get_init_pts_sb(struct file_system_type *fs_type, int flags,
+>  	return 0;
+>  }
+> 
+> -/*
+> - * Mount or remount the initial kernel mount of devpts. This type of
+> - * mount maintains the legacy, single-instance semantics, while the
+> - * kernel still allows multiple-instances.
+> - */
+> -static int init_pts_mount(struct file_system_type *fs_type, int flags,
+> -		void *data, struct pts_mount_opts *opts, struct vfsmount *mnt)
+> -{
+> -	int err;
+> -
+> -	err = get_init_pts_sb(fs_type, flags, data, opts, mnt);
+> -	if (err)
+> -		return err;
+> -
+> -	return err;
+> -}
+> -
+>  static int devpts_get_sb(struct file_system_type *fs_type,
+>  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+>  {
+> -- 
+> 1.5.2.5
