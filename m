@@ -1,17 +1,20 @@
-From: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
-Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re:
-	Checkpoint / Restart)
-Date: Thu, 05 Feb 2009 10:13:36 +0900
-Message-ID: <1233796416.5930.10.camel@noir.spf.cl.nec.co.jp>
-References: <EF0F4DD0-96C2-47CF-A247-19002A3BD53B@uni-duesseldorf.de>
-	<20090127155947.GB10039@us.ibm.com>
-	<090128111035.M0106630@noir.ex.jp.nec.com>
-	<1233764488.20090.58.camel@nimitz>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
+	implementation
+Date: Wed, 04 Feb 2009 22:30:00 -0500
+Message-ID: <498A5D38.9030009__9645.97887727923$1233804728$gmane$org@cs.columbia.edu>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>	
+	<1233182478-27113-2-git-send-email-ntl@pobox.com>	
+	<1233718789.16867.156.camel@pasglop>
+	<20090204155406.GA2039@us.ibm.com>	
+	<1233781099.4612.1.camel@pasglop>
+	<498A284E.4050501@cs.columbia.edu>
+	<1233793012.4612.32.camel@pasglop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1233764488.20090.58.camel@nimitz>
+In-Reply-To: <1233793012.4612.32.camel@pasglop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,28 +24,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org
+To: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Dave,
-
-Actually, that was the latest patch I made.
-You're right, it needs cleanups and I'm sorry
-for using #ifdefs.
-If there is anything I can do, please let me know.
 
 
-Thanks,
-
-Masahiko.
-
-
-On 2009-02-04 at 08:21 -0800, Dave Hansen wrote:
-> On Wed, 2009-01-28 at 11:10 +0900, Masahiko Takahashi wrote:
-> > I'm now working on porting to x86_64 with help from Nauman Rafique.
-> > Here is the preliminary patch. If there is someone who is interested
-> > in x86_64 support, please join.
+Benjamin Herrenschmidt wrote:
+> On Wed, 2009-02-04 at 18:44 -0500, Oren Laadan wrote:
+>> * Anything that is decided at compiled time should probably go to the arch-
+>> dependent header.
+>>
+>> * Anything that can change at boot time (e.g., for x86 that would include
+>> the capabilities of the FPU), or even run time (is there any ?) should
+>> be described to the letter (in fine print) in 'struct cr_hdr_cpu' and
+>> friends.
 > 
-> Do you have anything more recent than this?  I think there are a few
-> cleanups we can add to get rid of some of the #ifdef mess.
+> I think we should avoid compile time completely.
+
+For instance, TASK_COMM_LEN is currently defined as 16; but in future
+(or custom) kernel it may be different; so in the task header I put a
+field that explicitly indicates this length, just in case. I think it's
+useful to be able to detect such inconsistencies.
+
+(of course this example is not arch-specific; and it would be wiser to
+have one such entry for the entire checkpoint image instead of one for
+each process)
+
+I concur with the rest below.
+
+Oren
+
+> 
+> We mostly try to have kernels running on everything anyway, and there's
+> no reason not to be able to move a snapshot to a different CPU if it's
+> not using a feature of the CPU that is different.
+> 
+> Nathan, what about you start the structure with a 64 bit bitmask that
+> indicates what "records" are present followed by concatenated records ?
+> 
+> IE. The "main" state (pt_regs) wouldn't change, but then, you could have
+> a list of things:
+> 
+>  - FPRs
+>  - old style VSX
+>  - VSRs
+>  - Freescale SPE state
+>  - DABR
+>  - BookE IAC/DACs
+>  - tbd...
+> 
+> Then, when resuming a snapshot, we can use some bit masks trickery
+> indicating the validity on a given target. IE. If CPU has no VSX and
+> original program uses VSX then you can't resume. But if CPU has VSR you
+> can.. etc... We can keep it trivial at fist, especting the same
+> features, and try to be smart later.
+> 
+> Ben.
+> 
+> 
+> 
