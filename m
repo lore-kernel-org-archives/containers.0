@@ -1,12 +1,13 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] liblxc: handle interruption/failure of lxc-debian more
-	gracefully
-Date: Thu, 05 Feb 2009 01:22:19 -0800
-Message-ID: <1233825739.28338.22.camel@localhost>
+Subject: Re: [PATCH] liblxc: lxc-debian expects missing directories
+Date: Thu, 05 Feb 2009 01:29:34 -0800
+Message-ID: <1233826174.28338.30.camel@localhost>
+References: <1233824717.28338.8.camel@localhost>  <498AAF77.20906@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <498AAF77.20906-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,44 +21,21 @@ To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-If lxc-debian fails or is interrupted during debootstrap then the next
-invocation of lxc-debian breaks because it only checks for the existence
-of the directory. This forces the user to remove the cache by hand to
-retry the create step.
+On Thu, 2009-02-05 at 10:20 +0100, Daniel Lezcano wrote:
+> Matt Helsley wrote:
+> > lxc-debian fails unless the directories a given rootfs needs already
+> > exist. To fix this without relying on any particular function call order
+> > we can do: mkdir -p `dirname PATH/TO/FILE`
+> > before actually making the file.
+> >
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >   
+> Do you have an example on how that happens ?
 
-Let's allow the user to re-run lxc-debian to resume/retry. Store the
-cache in a partial-$ARCH directory until debootstrap succeeds. Then move
-the valid cache to its final destination.
+Configure lxc with a non-/ prefix:
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- scripts/lxc-debian.in |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+./configure --prefix=/usr
 
-Index: lxc/scripts/lxc-debian.in
-===================================================================
---- lxc.orig/scripts/lxc-debian.in
-+++ lxc/scripts/lxc-debian.in
-@@ -217,19 +217,20 @@ create() {
- 		
- 		echo "not cached"
- 		
--		mkdir -p "$CACHE/rootfs-$ARCH"
-+		mkdir -p "$CACHE/partial-$ARCH"
- 		
- 	        # download a mini debian into a cache
- 		echo "Downloading debian minimal ..."
- 		debootstrap --verbose --variant=minbase --arch=$ARCH \
- 		    --include apache,netbase,net-tools,iproute,openssh-server \
--		    etch $CACHE/rootfs-$ARCH http://ftp.debian.org/debian
-+		    etch $CACHE/partial-$ARCH http://ftp.debian.org/debian
- 		
- 		RESULT=$?
- 		if [ "$RESULT" != "0" ]; then
- 		    echo "Failed to download the rootfs, aborting."
- 		    exit 1
- 		fi
-+		mv "$CACHE/partial-$ARCH" "$CACHE/rootfs-$ARCH"
- 		echo "Download complete."
- 	    else
- 		echo "Found."
+Cheers,
+	-Matt
