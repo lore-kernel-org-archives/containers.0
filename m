@@ -1,46 +1,77 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: storage considerations
-Date: Thu, 5 Feb 2009 10:04:02 -0600
-Message-ID: <20090205160402.GE27410@us.ibm.com>
-References: <7B7881568CF40E4388B615CD06F87B980989E9@clara.maurer-it.com>
-	<49887307.1080105@free.fr> <20090204160518.GC2039@us.ibm.com>
-	<4989C7C0.6060906@free.fr> <498A1EE6.3000204@cs.columbia.edu>
-	<7B7881568CF40E4388B615CD06F87B98098A12@clara.maurer-it.com>
-	<20090205153638.GD27410@us.ibm.com>
-	<7B7881568CF40E4388B615CD06F87B98098A22@clara.maurer-it.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
+	implementation
+Date: Thu, 5 Feb 2009 10:09:46 -0600
+Message-ID: <20090205160946.GF27410__13409.6451256939$1233850874$gmane$org@us.ibm.com>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
+	<1233182478-27113-2-git-send-email-ntl@pobox.com>
+	<1233718789.16867.156.camel@pasglop>
+	<20090204155406.GA2039@us.ibm.com>
+	<1233781099.4612.1.camel@pasglop>
+	<498A284E.4050501@cs.columbia.edu>
+	<1233793012.4612.32.camel@pasglop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org>
 Content-Disposition: inline
-In-Reply-To: <7B7881568CF40E4388B615CD06F87B98098A22-cHQ43lMKbBKenyD9vqZGNUEOCMrvLtNR@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <1233793012.4612.32.camel@pasglop>
+List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
+List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
+List-Post: <mailto:linuxppc-dev@ozlabs.org>
+List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
+List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
+Sender: linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org
+Errors-To: linuxppc-dev-bounces+glppd-linuxppc64-dev=m.gmane.org@ozlabs.org
+To: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: containers@lists.osdl.org, Oren Laadan <orenl@cs.columbia.edu>, Nathan Lynch <ntl@pobox.com>, linuxppc-dev@ozlabs.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dietmar Maurer (dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org):
-> > > NILFS, BTRFS, ... maybe provide solution for snapshots, but quota
-> > > support
-> > > is still missing (we need quotas on subdirectories)?
+Quoting Benjamin Herrenschmidt (benh@kernel.crashing.org):
+> On Wed, 2009-02-04 at 18:44 -0500, Oren Laadan wrote:
+> > * Anything that is decided at compiled time should probably go to the arch-
+> > dependent header.
 > > 
-> > Haven't thought it through 100%, but does it not suffice to be able
-> > to specify quotas per user-namespace?  It won't help with NFS...
+> > * Anything that can change at boot time (e.g., for x86 that would include
+> > the capabilities of the FPU), or even run time (is there any ?) should
+> > be described to the letter (in fine print) in 'struct cr_hdr_cpu' and
+> > friends.
 > 
-> I was not aware that this is possible. How do I enable per
-> user-namespace quotas?
+> I think we should avoid compile time completely.
+> 
+> We mostly try to have kernels running on everything anyway, and there's
+> no reason not to be able to move a snapshot to a different CPU if it's
+> not using a feature of the CPU that is different.
 
-Oh you don't yet  :)  Just thinking ahead.  But I'm not clear on
-your requirements - do you want per-uid quotas inside a container,
-or just a gross quota for the whole container?
+Absolutely, but the accepted way to handle that so far is that if
+you want to run an "incompatible" checkpoint image on a new cpu,
+a userspace program will rewrite the image to be correct for the target
+cpu.
 
-thanks,
--serge
+But what you list below seems more usable than trying to encapsulate
+that info in some hokey version number system.
+
+> Nathan, what about you start the structure with a 64 bit bitmask that
+> indicates what "records" are present followed by concatenated records ?
+> 
+> IE. The "main" state (pt_regs) wouldn't change, but then, you could have
+> a list of things:
+> 
+>  - FPRs
+>  - old style VSX
+>  - VSRs
+>  - Freescale SPE state
+>  - DABR
+>  - BookE IAC/DACs
+>  - tbd...
+> 
+> Then, when resuming a snapshot, we can use some bit masks trickery
+> indicating the validity on a given target. IE. If CPU has no VSX and
+> original program uses VSX then you can't resume. But if CPU has VSR you
+> can.. etc... We can keep it trivial at fist, especting the same
+> features, and try to be smart later.
+> 
+> Ben.
+> 
