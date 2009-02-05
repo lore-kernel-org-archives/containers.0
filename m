@@ -1,15 +1,16 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH] liblxc: lxc-debian expects missing directories
-Date: Thu, 05 Feb 2009 11:21:44 +0100
-Message-ID: <498ABDB8.4000702@free.fr>
-References: <1233824717.28338.8.camel@localhost> <498AAF77.20906@free.fr>	
-	<1233826174.28338.30.camel@localhost>
-	<1233827943.28338.49.camel@localhost>
+From: "Dietmar Maurer" <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
+Subject: RE: [Devel] RE: storage considerations
+Date: Thu, 5 Feb 2009 11:56:30 +0100
+Message-ID: <7B7881568CF40E4388B615CD06F87B98098A1A@clara.maurer-it.com>
+References: <7B7881568CF40E4388B615CD06F87B980989E9@clara.maurer-it.com>	<49887307.1080105@free.fr><20090204160518.GC2039@us.ibm.com>
+	<4989C7C0.6060906@free.fr><498A1EE6.3000204@cs.columbia.edu>
+	<7B7881568CF40E4388B615CD06F87B98098A12@clara.maurer-it.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1233827943.28338.49.camel@localhost>
+Content-class: urn:content-classes:message
+In-Reply-To: <7B7881568CF40E4388B615CD06F87B98098A12-cHQ43lMKbBKenyD9vqZGNUEOCMrvLtNR@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +20,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Matt Helsley wrote:
-> On Thu, 2009-02-05 at 01:29 -0800, Matt Helsley wrote:
->   
->> On Thu, 2009-02-05 at 10:20 +0100, Daniel Lezcano wrote:
->>     
->>> Matt Helsley wrote:
->>>       
->>>> lxc-debian fails unless the directories a given rootfs needs already
->>>> exist. To fix this without relying on any particular function call order
->>>> we can do: mkdir -p `dirname PATH/TO/FILE`
->>>> before actually making the file.
->>>>
->>>> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>>> ---
->>>>   
->>>>         
->>> Do you have an example on how that happens ?
->>>       
->> Configure lxc with a non-/ prefix:
->>
->> ./configure --prefix=/usr
->>     
->
-> This explanation is wrong, sorry.
->
-> The patch isn't necessary -- take a look at the one that handles
-> debootstrap interruption/failure. Basically debootstrap would fail
-> (apache doesn't exist in lenny I found out) and I'd have to go cleaning
-> up lxc-debian directories by hand before I could retry. If I missed
-> something one time then then lxc behaved oddly. This got me past some of
-> that odd behavior (only to fail later of course).
->   
-Ok, I understand why you tried to force the directory creation.
-I will not apply this one, the next patch you sent with the partial 
-debootstrap will fix this.
+> And a FS independent solution would be great, so that it works on top
+> of NFS too.
 
-Thanks Matt.
+Replying to myself. I just noticed that this is not possible, because
+NFS is a shared file system. So the only option for NFS would be a loop
+mount.
+
+- Dietmar
