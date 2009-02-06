@@ -1,36 +1,60 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC cr-pipe-v13][PATCH 2/3] Checkpoint open pipes
-Date: Fri, 06 Feb 2009 09:24:08 -0800
-Message-ID: <1233941048.20090.123.camel@nimitz>
-References: <1233091395-24582-1-git-send-email-orenl@cs.columbia.edu>
-	<1233091395-24582-4-git-send-email-orenl@cs.columbia.edu>
-	<498AB553.3090902@fr.ibm.com> <20090205202637.4d4f4a29@thinkcentre.lan>
-	<1233940315.20090.120.camel@nimitz>  <498C715B.4050303@fr.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [v2][PATCH 5/5] Merge code for single and multiple-instance
+	mounts
+Date: Fri, 6 Feb 2009 12:51:42 -0600
+Message-ID: <20090206185142.GA29582@us.ibm.com>
+References: <20090204043516.GB25963@us.ibm.com> <20090204043813.GE26202@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <498C715B.4050303-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757233AbZBFSwJ@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090204043813.GE26202@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, hch@lst.de, sukadev@us.ibm.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-02-06 at 18:20 +0100, Cedric Le Goater wrote:
-> > Sleeping inside mutexes is OK.  In general, they're drop-in compatible
-> > with semaphore behavior.
+Quoting Sukadev Bhattiprolu (sukadev@linux.vnet.ibm.com):
 > 
-> what about the vfs_write() ? 
+> From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+> Date: Wed, 28 Jan 2009 19:11:15 -0800
+> Subject: [v2][PATCH 5/5] Merge code for single and multiple-instance mounts
+> 
+> new_pts_mount() (including the get_sb_nodev()), shares a lot of code
+> with init_pts_mount(). The only difference between them is the 'test-super'
+> function passed into sget().
+> 
+> Move all common code into devpts_get_sb() and remove the new_pts_mount() and
+> init_pts_mount() functions,
+> 
+> Changelog[v2]:
+> 	(Christoph Hellwig): Merge code in 'do_pts_mount()' into devpts_get_sb()
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 
-Unless vfs_write() can come back and take the same mutex, I still think
-you're OK.  
+Acked-by: Serge Hallyn <serue@us.ibm.com>
+Tested-by: Serge Hallyn <serue@us.ibm.com>
 
--- Dave
+except that:
+
+> @@ -414,24 +365,41 @@ static int devpts_get_sb(struct file_system_type *fs_type,
+>  			return error;
+>  	}
+> 
+> -	if (opts.newinstance)
+> -		error = new_pts_mount(fs_type, flags, data, &opts, mnt);
+> -	else
+> -		error = init_pts_mount(fs_type, flags, data, &opts, mnt);
+> +	if (opts.newinstance) {
+> +		printk(KERN_NOTICE "devpts: newinstance mount\n");
+> +		s = sget(fs_type, NULL, set_anon_super, NULL);
+> +	} else {
+> +		printk(KERN_NOTICE "devpts: single-instance mount\n");
+
+These printks probably shouldn't stay in...
+
+> +		s = sget(fs_type, compare_init_pts_sb, set_anon_super, NULL);
+> +	}
+
+thanks,
+-serge
