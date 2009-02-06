@@ -1,18 +1,15 @@
-From: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Fri, 06 Feb 2009 08:01:22 +1100
-Message-ID: <1233867682.4612.102.camel__32059.4178782359$1233867846$gmane$org@pasglop>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<1233718789.16867.156.camel@pasglop> <20090204155406.GA2039@us.ibm.com>
-	<1233781099.4612.1.camel@pasglop> <498A284E.4050501@cs.columbia.edu>
-	<1233793012.4612.32.camel@pasglop> <20090205160946.GF27410@us.ibm.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC cr-pipe-v13][PATCH 2/3] Checkpoint open pipes
+Date: Thu, 5 Feb 2009 20:26:37 -0600
+Message-ID: <20090205202637.4d4f4a29@thinkcentre.lan>
+References: <1233091395-24582-1-git-send-email-orenl@cs.columbia.edu>
+	<1233091395-24582-4-git-send-email-orenl@cs.columbia.edu>
+	<498AB553.3090902@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090205160946.GF27410-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <498AB553.3090902-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,43 +19,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Thu, 05 Feb 2009 10:45:55 +0100
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
 
-> Absolutely, but the accepted way to handle that so far is that if
-> you want to run an "incompatible" checkpoint image on a new cpu,
-> a userspace program will rewrite the image to be correct for the target
-> cpu.
+> >  
+> > +/* cr_write_pipebuf - dump contents of a pipe/fifo (assume i_mutex taken) */
+> > +static int cr_write_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe)
+> > +{
+> > +	struct cr_hdr h;
+> > +	void *kbuf, *addr;
+> > +	int i, ret = 0;
+> > +
+> > +	kbuf = (void *) __get_free_page(GFP_KERNEL);
+> 
+> this can sleep and inode->i_mutex is locked.
 
-That doesn't sound nice and definitely not something we want to do on
-PowerPC. There are lots of reasons for that including the fact that the
-actual feature set may depend on what the FW enabled which itself can
-depend on the kernel version .. or not, etc etc...
-
-I'd rather keep all that logic in the kernel to be honest.
-
-> But what you list below seems more usable than trying to encapsulate
-> that info in some hokey version number system.
-
-There are things however that I can't expose and for which we can't do
-much about.
-
-IE. The kernel exposes some features to userspace, such as the PowerPC
-ISA level supported, the presence of some optional instructions, etc...
-
-We don't know whether the user space program is using that stuff
-though... ie, we could get into situations where userspace is trying to
-use, let's say, 44x MAC instructions, and thus that program will fail to
-resume on some other processor, and we have no way to know about it from
-the kernel.
-
-But I'll leave that problem for later... Maybe we should implement some
-way, using personalities or something similar, to run programs so that
-they see a limited set of CPU features, for people who explicitely want
-them to be migrateable.. a bit similar to what our Hypervisor does if
-you want a partition to be migrateable between different processors, it
-only advertises the common subset of functionality.
-
-Ben.
+Generally, it is okay to perform operations that may sleep while
+holding a mutex (not so with spinlocks, though).  Unless the page
+allocator could try to acquire the same inode->i_mutex, this code
+should be fine, no?
