@@ -1,32 +1,25 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+From: Roland McGrath <roland@redhat.com>
 Subject: Re: [PATCH 0/7][v7] Container-init signal semantics
-Date: Sat, 7 Feb 2009 13:20:22 -0800
-Message-ID: <20090207212022.GA25353@us.ibm.com>
+Date: Sun,  8 Feb 2009 20:04:53 -0800 (PST)
+Message-ID: <20090209040453.9CBB0FC330@magilla.sf.frob.com>
 References: <20090117202638.GA11825@us.ibm.com>
+	<20090207212022.GA25353@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755071AbZBGVZ3@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090117202638.GA11825@us.ibm.com>
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754563AbZBIEF0@vger.kernel.org>
+In-Reply-To: Sukadev Bhattiprolu's message of  Saturday, 7 February 2009 13:20:22 -0800 <20090207212022.GA25353@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: oleg@redhat.com, ebiederm@xmission.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu [sukadev@linux.vnet.ibm.com] wrote:
-| Patches in this set:
-| 
-| 	[PATCH 1/7] Remove 'handler' parameter to tracehook functions
-| 	[PATCH 2/7] Protect init from unwanted signals more
-| 	[PATCH 3/7] Add from_ancestor_ns parameter to send_signal()
-| 	[PATCH 4/7] Protect cinit from unblocked SIG_DFL signals
-| 	[PATCH 5/7] Protect cinit from blocked fatal signals
-| 	[PATCH 6/7] SI_USER: Masquerade si_pid when crossing pid ns boundary
-| 	[PATCH 7/7] proc: Show SIG_DFL signals to init as "ignored" signals
+> Any comments on this patchset ? We are not sure about patch 7, but should
+> I send the rest to Andrew ?
 
-Roland, Eric, Daniel, Pavel
+I think they are fine now if Oleg doesn't see any problems.  The /proc
+change in patch 7 is a matter of taste and I just don't care either way.
 
-Any comments on this patchset ? We are not sure about patch 7, but should
-I send the rest to Andrew ?
 
-Sukadev
+Thanks,
+Roland
