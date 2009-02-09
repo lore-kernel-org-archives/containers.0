@@ -1,52 +1,51 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH] liblxc: Update lxc-debian to use the lenny release
-Date: Mon, 09 Feb 2009 18:14:57 +0100
-Message-ID: <49906491.8050200@free.fr>
-References: <1233825739.28338.22.camel@localhost>
-	<1233826353.28338.35.camel@localhost>
+From: Dave Hansen <dave@linux.vnet.ibm.com>
+Subject: Re: [cgroup or VFS ?]  WARNING: at fs/namespace.c:636
+	mntput_no_expire+0xac/0xf2()
+Date: Mon, 09 Feb 2009 09:48:59 -0800
+Message-ID: <1234201739.20090.194.camel@nimitz>
+References: <49617D35.4040805@cn.fujitsu.com>
+	 <20090209004046.3ce1dde0.akpm@linux-foundation.org>
+	 <20090209093414.GU28946@ZenIV.linux.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1233826353.28338.35.camel@localhost>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756347AbZBIRtT@vger.kernel.org>
+In-Reply-To: <20090209093414.GU28946@ZenIV.linux.org.uk>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>, Arjan van de Ven <arjan@infradead.org>
 List-Id: containers.vger.kernel.org
 
-Matt Helsley wrote:
-> With the release of lenny nearing this patch may soon be useful.
->
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  scripts/lxc-debian.in |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> Index: lxc/scripts/lxc-debian.in
-> ===================================================================
-> --- lxc.orig/scripts/lxc-debian.in
-> +++ lxc/scripts/lxc-debian.in
-> @@ -222,8 +222,8 @@ create() {
->  	        # download a mini debian into a cache
->  		echo "Downloading debian minimal ..."
->  		debootstrap --verbose --variant=minbase --arch=$ARCH \
-> -		    --include apache,netbase,net-tools,iproute,openssh-server \
-> -		    etch $CACHE/partial-$ARCH http://ftp.debian.org/debian
-> +		    --include apache2,netbase,net-tools,iproute,openssh-server \
-> +		    lenny $CACHE/partial-$ARCH http://ftp.debian.org/debian
->  		
->  		RESULT=$?
->  		if [ "$RESULT" != "0" ]; then
->   
-Applied, thanks Matt.
+On Mon, 2009-02-09 at 09:34 +0000, Al Viro wrote:
+> On Mon, Feb 09, 2009 at 12:40:46AM -0800, Andrew Morton wrote:
+> > > Thread 1:
+> > >   for ((; ;))
+> > >   {
+> > >       mount -t cgroup -o cpuset xxx /mnt > /dev/null 2>&1
+> > >       mkdir /mnt/0 > /dev/null 2>&1
+> > >       rmdir /mnt/0 > /dev/null 2>&1
+> > >       umount /mnt > /dev/null 2>&1
+> > >   }
+> > > 
+> > > Thread 2:
+> > >   {
+> > >       mount -t cpuset xxx /mnt > /dev/null 2>&1
+> > >       umount /mnt > /dev/null 2>&1
+> > >   }
+> 
+> How cute...  Same mountpoint in both, so these mount(2) will sometimes
+> fail (cgroup picks the same sb on the same options, AFAICS) and fail
+> silently due to these redirects...
+> 
+> That's a lovely way to stress-test a large part of ro-bind stuff *and*
+> umount()-related code.  Could you do C equivalent of the above (just
+> the same syscalls in loop, nothing fancier) and do time-stamped
+> strace?
 
-ps : I added the ifupdown missing package because ifup/ifdown are no 
-longer in the initscripts package.
+Could you also add a printk of what ->__mnt_writers was at the time of
+the WARN_ON()?  That will hopefully at least tell us whether we're
+looking at a real leak or just a single missed mnt_want/drop_write().
+Also hopefully in which direction the thing is biased.  With the mount
+not being around long I'm not horribly hopeful, but it can't hurt.
+
+-- Dave
