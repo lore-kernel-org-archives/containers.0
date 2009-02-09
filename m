@@ -1,15 +1,14 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re: Checkpoint
-	/ Restart)
-Date: Mon, 09 Feb 2009 21:14:24 +0100
-Message-ID: <49908EA0.2080901@fr.ibm.com>
-References: <20090207001609.8168.14884.stgit@lahore.corp.google.com>	<f4192e520902090953x43a98134hfaa8443d586a32a6@mail.gmail.com>
-	<49908323.3090606@google.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] liblxc: Update lxc-debian to use the lenny release
+Date: Mon, 09 Feb 2009 12:58:38 -0800
+Message-ID: <1234213118.29561.17.camel@localhost>
+References: <1233825739.28338.22.camel@localhost>
+	<1233826353.28338.35.camel@localhost>  <49906491.8050200@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49908323.3090606-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <49906491.8050200-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,85 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org, Jim Winget <winget-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Mike Waychison wrote:
-> Jim Winget wrote:
->> Any way to use a delayed checkpoint signal (perhaps somewhat
->> non-deterministic, e.g. "do it now" really means "do it pretty soon") that
->> is only taken on return to user space thus allowing a deterministic
->> solution?
+On Mon, 2009-02-09 at 18:14 +0100, Daniel Lezcano wrote:
+> Matt Helsley wrote:
+> > With the release of lenny nearing this patch may soon be useful.
+> >
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  scripts/lxc-debian.in |    4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> >
+> > Index: lxc/scripts/lxc-debian.in
+> > ===================================================================
+> > --- lxc.orig/scripts/lxc-debian.in
+> > +++ lxc/scripts/lxc-debian.in
+> > @@ -222,8 +222,8 @@ create() {
+> >  	        # download a mini debian into a cache
+> >  		echo "Downloading debian minimal ..."
+> >  		debootstrap --verbose --variant=minbase --arch=$ARCH \
+> > -		    --include apache,netbase,net-tools,iproute,openssh-server \
+> > -		    etch $CACHE/partial-$ARCH http://ftp.debian.org/debian
+> > +		    --include apache2,netbase,net-tools,iproute,openssh-server \
+> > +		    lenny $CACHE/partial-$ARCH http://ftp.debian.org/debian
+> >  		
+> >  		RESULT=$?
+> >  		if [ "$RESULT" != "0" ]; then
+> >   
+> Applied, thanks Matt.
 > 
-> Ya, I'm thinking that a 'checkpoint' signal would be advisory, with the 
-> SIG_DFL action performing the checkpoint itself.
-> 
-> Considering that we'd need to cleanly get access to all registers, the 
-> checkpoint itself needs to be a well defined path from 
-> userland->kernelland.  I'm wondering if sys_checkpoint could be this 
-> well-defined path using the PTREGSCALL stub macro.
-> 
-> For tasks that aren't checkpoint-aware, SIG_DFL could possibly be done 
-> by having the vsyscall page/vdso implement the userland sighandler that 
-> calls sys_checkpoint.
-> 
-> What this means though is that we won't be able to freeze or SIGSTOP 
-> tasks before checkpoint. 
+> ps : I added the ifupdown missing package because ifup/ifdown are no 
+> longer in the initscripts package.
 
-the sys_checkpoint() in the userland sighandler you are proposing, is how 
-you would freeze all the tasks of a container. Once all the tasks have 
-entered sys_checkpoint() and are blocked on a wait queue, you can start 
-gathering states. 
+	Hasn't debian switched to Network Manager too? Seems like there should
+be a way to interact with it via scripts without forcing the use of
+ifup/ifdown.
 
-This means that you need to count how many tasks should enter sys_checkpoint(). 
-The cgroup fork callback can be used to signal new comers and maintain
-a coherent count of tasks. But we would also need an exit callback, which
-is not available.  
-
-> Both of these paths can be entered via a 
-> variety of kernel entry points and unless we start dumping the full 
-> ptregs on each entry point, we'll never be able to reliably get access 
-> to all registers.
-> 
-> sys_checkpoint itself would have to have it's own method to quiesce all 
-> the tasks (basically wait for all tasks to enter sys_checkpoint so that 
-> a multi-task checkpoint is self-consistent).  
-
-yes.
-
-sys_restart() works the same, all the tasks are signalled in advance how 
-many should enter the wait queue. once the task state is restored, you 
-let each task restart from its signal handler using the cpu state that 
-was saved on user stack at checkpoint time.
-
-> The nice thing about a signal too is that userland can block it and 
-> ignore it in a deterministic way.
-
-yes and 
-
-The *very* nice thing about a signal handler is that you don't have to
-worry about your cpu state. I don't think it's a good idea to duplicate 
-this code in the C/R framework. it is *very* arch dependent.
-
-> The failure logic for ignored or blocked-for-a-long time can be pushed 
-> back down to userland.
-> 
-> This is all a dramatic shift from the current way things are done, so 
-> we'd be best getting a better feel for our options though..
-
-I think that the current way of doing things is work in progress and needs
-to be reviewed. The way checkpoint/restart is triggered has always been
-controversial among the stakeholders.
-
-We've been maintaining a C/R solution on ppc32, ppc64, x86, x86_64, ia64, 
-s390, s390x since 2002 working on the above principles you are describing.
-UNICOS and later IRIX used similar principles, following the POSIX draft
-on checkpoint/restart.
-
-For the signal, we have 'hijacked' SIGSTOP but new signals SIGCKPT and 
-SIGRESTART would definitely be a nicer solution for a mainline solution.
+	I was somewhat suprised to find debootstrap is incredibly easy to
+install by hand on non-debian systems. Even better, there's a package in
+fedora. So I've been playing with lxc-debian on fedora 9 and 10. However
+I've had problems "Configuring" the opennssh-server package. Removing
+that package allows lxc-debian to create the rootfs. I haven't found an
+underlying reason yet :/ -- have you run into this problem?
 
 Cheers,
-
-C.
+	-Matt
