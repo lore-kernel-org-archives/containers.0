@@ -1,41 +1,78 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] liblxc: Update lxc-debian to use the lenny release
-Date: Mon, 09 Feb 2009 15:43:11 -0800
-Message-ID: <87d4dr41o0.fsf@caffeine.danplanet.com>
-References: <1233825739.28338.22.camel@localhost>
-	<1233826353.28338.35.camel@localhost> <49906491.8050200@free.fr>
-	<1234213118.29561.17.camel@localhost> <4990A410.3040701@free.fr>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [cgroup or VFS ?]  WARNING: at fs/namespace.c:636	mntput_no_expire+0xac/0xf2()
+Date: Tue, 10 Feb 2009 13:47:40 +0800
+Message-ID: <499114FC.6090307@cn.fujitsu.com>
+References: <49617D35.4040805@cn.fujitsu.com> <20090209004046.3ce1dde0.akpm@linux-foundation.org> <498FEE24.5030407@cn.fujitsu.com> <20090209110348.GV28946@ZenIV.linux.org.uk> <20090209115818.GX28946@ZenIV.linux.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4990A410.3040701-GANU6spQydw@public.gmane.org> (Daniel Lezcano's message of "Mon, 09
-	Feb 2009 22:45:52 +0100")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753420AbZBJFsZ@vger.kernel.org>
+In-Reply-To: <20090209115818.GX28946@ZenIV.linux.org.uk>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, containers@lists.osdl.org, Arjan van de Ven <arjan@infradead.org>
 List-Id: containers.vger.kernel.org
 
-DL> It may be possible to use yum like debootstrap for an minbase
-DL> fedora install.
+Al Viro wrote:
+> On Mon, Feb 09, 2009 at 11:03:48AM +0000, Al Viro wrote:
+>> 	BTW, a trivial note - kfree(root) in your ->kill_sb() is done
+>> earlier than it's nice to do.  Shouldn't affect the problem, though.
+> 
 
-Yep, something like the following should work:
+Do you mean kfree(root) should be called after kill_litter_super()?
+I don't see the point here..
 
-  root=/path/to/tmproot
-  mkdir -p $root/var/lib/rpm
-  rpm --root $root --initdb
-  rpm --root $root -Uvfh --nodeps http://fedora.osuosl.org/linux/releases/10/Fedora/i386/os/Packages/fedora-release-10-1.noarch.rpm
-  yum --installroot=$root -y groupinstall Base
+> 	Other probably irrelevant notes:
+> 
+>                 memcpy(start, cgrp->dentry->d_name.name, len);
+>                 cgrp = cgrp->parent;
+>                 if (!cgrp)
+>                         break;
+>                 dentry = rcu_dereference(cgrp->dentry);
+> 
+> in cgroup_path().  Why don't we need rcu_dereference on both?
+> Moreover, shouldn't that be
+>                 memcpy(start, dentry->d_name.name, len);
+> anyway, seeing that we'd just looked at dentry->d_name.len?
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+We are right, dentry-> but not cgrp->dentry-> should be used.
+
+> 
+> In cgroup_rmdir():
+>         spin_lock(&cgrp->dentry->d_lock);
+>         d = dget(cgrp->dentry);
+>         spin_unlock(&d->d_lock);
+> 
+>         cgroup_d_remove_dir(d);
+>         dput(d);
+> Er?  Comments, please...  Unless something very unusual is going on,
+> either that d_lock is pointless or dget() is rather unsafe.
+> 
+
+The code was inherited from cpuset. I doubted it's redundant, but
+I was not confident enough to remove it.
+
+> cgroups_clone()
+>         /* Now do the VFS work to create a cgroup */
+>         inode = parent->dentry->d_inode;
+> 
+>         /* Hold the parent directory mutex across this operation to
+>          * stop anyone else deleting the new cgroup */
+>         mutex_lock(&inode->i_mutex);
+> Can the parent be in process of getting deleted by somebody else?  If yes,
+> we are in trouble here.
+> 
+> BTW, that thing in cgroup_path()...  What guarantees that cgroup_rename()
+> won't hit between getting len and doing memcpy()?
+> 
+
+cgroup_path() was inherited from cpuset's cpuset_path(), and I think it's
+true it races with rename.
+
+> That said, cgroup seems to be completely agnostic wrt anything happening
+> on vfsmount level, so I really don't see how it gets to that WARN_ON().
+> Hell knows; I really want to see the sequence of events - it might be
+> something like fscking up ->s_active handling with interesting results
+> (cgroup code is certainly hitting it in not quite usual ways), it may be
+> genuine VFS-only race.  Need more data...
+> 
