@@ -1,78 +1,485 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [cgroup or VFS ?]  WARNING: at fs/namespace.c:636	mntput_no_expire+0xac/0xf2()
-Date: Tue, 10 Feb 2009 13:47:40 +0800
-Message-ID: <499114FC.6090307@cn.fujitsu.com>
-References: <49617D35.4040805@cn.fujitsu.com> <20090209004046.3ce1dde0.akpm@linux-foundation.org> <498FEE24.5030407@cn.fujitsu.com> <20090209110348.GV28946@ZenIV.linux.org.uk> <20090209115818.GX28946@ZenIV.linux.org.uk>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] liblxc: add scripts/lxc-fedora.in (WAS: Re: [PATCH]
+	liblxc: Update lxc-debian to use the lenny release)
+Date: Tue, 10 Feb 2009 00:28:27 -0800
+Message-ID: <1234254507.8536.14.camel@localhost>
+References: <1233825739.28338.22.camel@localhost>
+	<1233826353.28338.35.camel@localhost> <49906491.8050200@free.fr>
+	<1234213118.29561.17.camel@localhost> <4990A410.3040701@free.fr>
+	<87d4dr41o0.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753420AbZBJFsZ@vger.kernel.org>
-In-Reply-To: <20090209115818.GX28946@ZenIV.linux.org.uk>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, containers@lists.osdl.org, Arjan van de Ven <arjan@infradead.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87d4dr41o0.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Al Viro wrote:
-> On Mon, Feb 09, 2009 at 11:03:48AM +0000, Al Viro wrote:
->> 	BTW, a trivial note - kfree(root) in your ->kill_sb() is done
->> earlier than it's nice to do.  Shouldn't affect the problem, though.
+On Mon, 2009-02-09 at 15:43 -0800, Dan Smith wrote:
+> DL> It may be possible to use yum like debootstrap for an minbase
+> DL> fedora install.
 > 
+> Yep, something like the following should work:
+> 
+>   root=/path/to/tmproot
+>   mkdir -p $root/var/lib/rpm
+>   rpm --root $root --initdb
+>   rpm --root $root -Uvfh --nodeps http://fedora.osuosl.org/linux/releases/10/Fedora/i386/os/Packages/fedora-release-10-1.noarch.rpm
+>   yum --installroot=$root -y groupinstall Base
 
-Do you mean kfree(root) should be called after kill_litter_super()?
-I don't see the point here..
+Looks familiar! ;) I was intrigued by this idea last weekend so I
+started such a script. However I only tested it as far as creating a
+semi-correct rootfs. With the exception of network configs most of the
+configs are still written as for debian. For example I know the selinux
+policy enforcement settings need to move, the inittab needs to be
+replaced by the proper upstart configs, etc.
 
-> 	Other probably irrelevant notes:
-> 
->                 memcpy(start, cgrp->dentry->d_name.name, len);
->                 cgrp = cgrp->parent;
->                 if (!cgrp)
->                         break;
->                 dentry = rcu_dereference(cgrp->dentry);
-> 
-> in cgroup_path().  Why don't we need rcu_dereference on both?
-> Moreover, shouldn't that be
->                 memcpy(start, dentry->d_name.name, len);
-> anyway, seeing that we'd just looked at dentry->d_name.len?
+Of course it's based heavily on Daniel's excellent lxc-debian script.
 
-We are right, dentry-> but not cgrp->dentry-> should be used.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ configure.in          |    1 
+ scripts/Makefile.am   |    1 
+ scripts/lxc-fedora.in |  404 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 406 insertions(+)
 
-> 
-> In cgroup_rmdir():
->         spin_lock(&cgrp->dentry->d_lock);
->         d = dget(cgrp->dentry);
->         spin_unlock(&d->d_lock);
-> 
->         cgroup_d_remove_dir(d);
->         dput(d);
-> Er?  Comments, please...  Unless something very unusual is going on,
-> either that d_lock is pointless or dget() is rather unsafe.
-> 
-
-The code was inherited from cpuset. I doubted it's redundant, but
-I was not confident enough to remove it.
-
-> cgroups_clone()
->         /* Now do the VFS work to create a cgroup */
->         inode = parent->dentry->d_inode;
-> 
->         /* Hold the parent directory mutex across this operation to
->          * stop anyone else deleting the new cgroup */
->         mutex_lock(&inode->i_mutex);
-> Can the parent be in process of getting deleted by somebody else?  If yes,
-> we are in trouble here.
-> 
-> BTW, that thing in cgroup_path()...  What guarantees that cgroup_rename()
-> won't hit between getting len and doing memcpy()?
-> 
-
-cgroup_path() was inherited from cpuset's cpuset_path(), and I think it's
-true it races with rename.
-
-> That said, cgroup seems to be completely agnostic wrt anything happening
-> on vfsmount level, so I really don't see how it gets to that WARN_ON().
-> Hell knows; I really want to see the sequence of events - it might be
-> something like fscking up ->s_active handling with interesting results
-> (cgroup code is certainly hitting it in not quite usual ways), it may be
-> genuine VFS-only race.  Need more data...
-> 
+Index: lxc/configure.in
+===================================================================
+--- lxc.orig/configure.in
++++ lxc/configure.in
+@@ -90,6 +90,7 @@ AC_CONFIG_FILES([
+ 
+ 	scripts/Makefile
+ 	scripts/lxc-debian
++	scripts/lxc-fedora
+ 	scripts/lxc-sshd
+ 
+         src/Makefile
+Index: lxc/scripts/Makefile.am
+===================================================================
+--- lxc.orig/scripts/Makefile.am
++++ lxc/scripts/Makefile.am
+@@ -1,3 +1,4 @@
+ bin_SCRIPTS = \
+ 	lxc-debian \
++	lxc-fedora \
+ 	lxc-sshd
+Index: lxc/scripts/lxc-fedora.in
+===================================================================
+--- /dev/null
++++ lxc/scripts/lxc-fedora.in
+@@ -0,0 +1,404 @@
++#!/bin/bash
++# set -ex
++
++DISTRO="fedora"
++CACHE="@LOCALSTATEDIR@/cache/lxc/${DISTRO}"
++
++# Default container name
++NAME="fedora"
++CONFFILE="lxc.conf"
++MNTFILE="mount.conf"
++UTSNAME=
++IPV4="172.20.0.21"
++GATEWAY="172.20.0.1"
++
++# These paths are within the container so do not need to obey configure prefixes
++INITTAB="/etc/inittab"
++FSTAB="/etc/fstab"
++SSHD_CONFIG="/etc/ssh/sshd_config"
++
++################################################################################
++#                    DISTRO custom configuration files
++################################################################################
++
++# custom selinux
++
++write_distro_selinux() {
++    mkdir -p ${ROOTFS}/selinux
++    echo 0 > ${ROOTFS}/selinux/enforce
++}
++
++# custom fstab
++
++write_distro_fstab() {
++cat <<EOF > ${ROOTFS}/${FSTAB}
++tmpfs  /dev/shm   tmpfs  defaults  0 0
++EOF
++}
++
++# custom inittab
++
++write_distro_inittab() {
++cat <<EOF > ${ROOTFS}/${INITTAB}
++id:3:initdefault:
++si::sysinit:/etc/init.d/rcS
++l0:0:wait:/etc/init.d/rc 0
++l1:1:wait:/etc/init.d/rc 1
++l2:2:wait:/etc/init.d/rc 2
++l3:3:wait:/etc/init.d/rc 3
++l4:4:wait:/etc/init.d/rc 4
++l5:5:wait:/etc/init.d/rc 5
++l6:6:wait:/etc/init.d/rc 6
++# Normally not reached, but fallthrough in case of emergency.
++z6:6:respawn:/sbin/sulogin
++1:2345:respawn:/sbin/getty 38400 console
++c1:12345:respawn:/sbin/getty 38400 tty1 linux
++c2:12345:respawn:/sbin/getty 38400 tty2 linux
++c3:12345:respawn:/sbin/getty 38400 tty3 linux
++c4:12345:respawn:/sbin/getty 38400 tty4 linux
++EOF
++}
++
++# custom network configuration
++write_distro_network() {
++cat <<EOF > ${ROOTFS}/etc/sysconfig/network-scripts/ifcfg-lo
++DEVICE=lo
++IPADDR=127.0.0.1
++NETMASK=255.0.0.0
++NETWORK=127.0.0.0
++# If you're having problems with gated making 127.0.0.0/8 a martian,
++# you can change this to something else (255.255.255.255, for example)
++BROADCAST=127.255.255.255
++ONBOOT=yes
++NAME=loopback
++EOF
++cat <<EOF > ${ROOTFS}/etc/sysconfig/network-scripts/ifcfg-eth0
++DEVICE=eth0
++BOOTPROTO=static
++HWADDR=52:54:00:12:34:56
++ONBOOT=yes
++HOSTNAME=${UTSNAME}
++NM_CONTROLLED=no
++TYPE=Ethernet
++IPADDR=${IPV4}
++NETWORK=$(ipcalc -sn ${IPV4} 255.255.255.0)
++GATEWAY=${GATEWAY}
++BROADCAST=$(ipcalc -sb ${IPV4} 255.255.255.0)
++NETMASK=255.255.255.0
++EOF
++}
++
++# custom hostname
++
++write_distro_hostname() {
++cat <<EOF > ${ROOTFS}/sysconfig/network
++NETWORKING=yes
++HOSTNAME=${UTSNAME}
++EOF
++}
++
++# custom sshd configuration file
++
++write_distro_sshd_config() {
++cat <<EOF > ${ROOTFS}/${SSHD_CONFIG}
++Port 22
++Protocol 2
++HostKey /etc/ssh/ssh_host_rsa_key
++HostKey /etc/ssh/ssh_host_dsa_key
++UsePrivilegeSeparation yes
++KeyRegenerationInterval 3600
++ServerKeyBits 768
++SyslogFacility AUTH
++LogLevel INFO
++LoginGraceTime 120
++PermitRootLogin yes
++StrictModes yes
++RSAAuthentication yes
++PubkeyAuthentication yes
++IgnoreRhosts yes
++RhostsRSAAuthentication no
++HostbasedAuthentication no
++PermitEmptyPasswords yes
++ChallengeResponseAuthentication no
++EOF
++}
++
++################################################################################
++#                        lxc configuration files
++################################################################################
++
++write_lxc_configuration() {
++cat <<EOF > ${CONFFILE}
++lxc.utsname = ${UTSNAME}
++lxc.tty = 4
++lxc.network.type = veth
++lxc.network.flags = up
++lxc.network.link = br0
++lxc.network.name = eth0
++lxc.mount = ${MNTFILE}
++lxc.rootfs = ${ROOTFS}
++lxc.cgroup.devices.deny = a
++# /dev/null and zero
++lxc.cgroup.devices.allow = c 1:3 rwm
++lxc.cgroup.devices.allow = c 1:5 rwm
++# consoles
++lxc.cgroup.devices.allow = c 5:1 rwm
++lxc.cgroup.devices.allow = c 5:0 rwm
++lxc.cgroup.devices.allow = c 4:0 rwm
++lxc.cgroup.devices.allow = c 4:1 rwm
++# /dev/{,u}random
++lxc.cgroup.devices.allow = c 1:9 rwm
++lxc.cgroup.devices.allow = c 1:8 rwm
++# /dev/pts/* - pts namespaces are "coming soon"
++lxc.cgroup.devices.allow = c 136:* rwm
++lxc.cgroup.devices.allow = c 5:2 rwm
++# rtc
++lxc.cgroup.devices.allow = c 254:0 rwm
++EOF
++}
++
++write_lxc_mounts() {
++cat <<EOF > ${MNTFILE}
++
++EOF
++}
++
++create() {
++
++    # choose a container name, default is already in shell NAME variable
++    echo -n "What is the name for the container ? [${NAME}] "
++    read _NAME_
++
++    if [ ! -z "${_NAME_}" ]; then
++	NAME=${_NAME_}
++    fi
++
++    # choose a hostname, default is the container name
++    echo -n "What hostname do you wish for this container ? [${NAME}] "
++    read _UTSNAME_
++
++    if [ ! -z "${_UTSNAME_}" ]; then
++	UTSNAME=${_UTSNAME_}
++    else
++	UTSNAME=${NAME}
++    fi
++
++    # choose an ipv4 address, better to choose the same network than
++    # your host
++    echo -n "What IP address do you wish for this container ? [${IPV4}] "
++    read _IPV4_
++
++    if [ ! -z "${_IPV4_}" ]; then
++	IPV4=${_IPV4_}
++    fi
++
++    # choose the gateway ip address
++    echo -n "What is the gateway IP address ? [${GATEWAY}] "
++    read _GATEWAY_
++
++    if [ ! -z "${_GATEWAY_}" ]; then
++	GATEWAY=${_GATEWAY_}
++    fi
++
++    # the rootfs name will be build with the container name
++    ROOTFS="./rootfs.${NAME}"
++
++    # check if the rootfs does already exist
++    if [ ! -e "${ROOTFS}" ]; then
++	    mkdir -p @LOCALSTATEDIR@/lock/subsys/
++	(
++	    flock -n -x 200
++
++
++	    RES=$?
++	    if [ "${RES}" != "0" ]; then
++		echo "Cache repository is busy."
++		break
++	    fi
++
++	    # check the mini distro was not already downloaded
++	    echo -n "Checking cache download ..."
++	    if [ ! -e "${CACHE}/rootfs" ]; then
++
++		echo "not cached"
++
++		# Rather than write a special yum config we just make the
++		# default RPM and yum layout in ${CACHE}. The alternative is
++		# to copy /etc/yum/yum.conf or /etc/yum.conf and fiddle with
++		# some settings.
++		mkdir -p "${CACHE}/partial/var/lib/rpm"
++		mkdir -p "${CACHE}/partial/var/log"
++		touch "${CACHE}/partial/var/log/yum.log"
++
++		RELEASE="$(yum info ${DISTRO}-release | \
++			awk -F '[[:space:]]*:[[:space:]]*' \
++				'/^Release/ { release = $2 }
++				/^Version/ { version = $2 }
++				END { print version "-" release }')"
++		PKG="${DISTRO}-release.noarch.rpm"
++		RPM="rpm --root \"${CACHE}/partial\""
++
++		echo "Initializing RPM cache ..."
++		${RPM} --initdb
++		echo "Downloading ${DISTRO} Release ${RELEASE} description ..."
++		yumdownloader --destdir="${CACHE}/partial" "${DISTRO}-release.noarch.rpm" && \
++		${RPM} --nodeps -ihv "${CACHE}/partial/${DISTRO}-release*.noarch.rpm"
++		echo "Downloading ${DISTRO} minimal ..."
++		yum --installroot="${CACHE}/partial" -y groupinstall Base
++		RESULT=$?
++		if [ "${RESULT}" != "0" ]; then
++		    echo "Failed to download the rootfs, aborting."
++		    exit 1
++		fi
++		mv "${CACHE}/partial" "${CACHE}/rootfs"
++		echo "Download complete."
++	    else
++		echo "Found."
++	    fi
++
++            # make a local copy of the mini
++	    echo -n "Copying rootfs ..."
++	    cp -a ${CACHE}/rootfs ${ROOTFS} && echo "Done." || exit
++	) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
++    fi
++
++write_lxc_mounts
++
++write_lxc_configuration
++
++write_distro_inittab
++
++write_distro_hostname
++
++write_distro_fstab
++
++write_distro_network
++
++write_distro_sshd_config
++
++write_distro_selinux
++
++@BINDIR@/lxc-create -n ${NAME} -f ${CONFFILE}
++RES=$?
++
++# remove the configuration files
++rm -f ${CONFFILE}
++rm -f ${MNTFILE}
++
++if [ "${RES}" != "0" ]; then
++    echo "Failed to create '${NAME}'"
++    exit 1
++fi
++
++echo "Done."
++echo -e "\nYou can run your container with the 'lxc-start -n ${NAME}'\n"
++}
++
++destroy() {
++
++    echo -n "What is the name for the container ? [${NAME}] "
++    read _NAME_
++
++    if [ ! -z "${_NAME_}" ]; then
++	NAME=${_NAME_}
++    fi
++
++    @BINDIR@/lxc-destroy -n ${NAME}
++    RETVAL=$?
++    if [ ! ${RETVAL} -eq 0 ]; then
++	echo "Failed to destroyed '${NAME}'"
++	return ${RETVAL}
++    fi
++
++    ROOTFS="./rootfs.${NAME}"
++
++    echo -n "Shall I remove the rootfs [y/n] ? "
++    read
++    if [ "${REPLY}" = "y" ]; then
++	rm -rf ${ROOTFS}
++    fi
++
++    return 0
++}
++
++help() {
++    cat <<EOF
++
++This script is a helper to create ${DISTRO} system containers.
++
++The script will create the container configuration file following
++the informations submitted interactively with 'lxc-${DISTRO} create'
++
++The first creation will download, with yum, a ${DISTRO} minimal
++install and store it into a cache.
++
++The script will copy from the cache the root filesystem to the
++current directory.
++
++If there is a problem with the container, (bad configuration for
++example), you can destroy the container with 'lxc-${DISTRO} destroy'
++but without removing the rootfs and recreate it again with
++'lxc-${DISTRO} create'.
++
++If you want to create another ${DISTRO} container, call the 'lxc-${DISTRO}
++ create' again, specifying another name and new parameters.
++
++At any time you can purge the ${DISTRO} cache download by calling
++'lxc-${DISTRO} purge'
++
++Have fun :)
++
++EOF
++}
++
++purge() {
++
++    if [ ! -e ${CACHE} ]; then
++	exit 0
++    fi
++
++    # lock, so we won't purge while someone is creating a repository
++    (
++	flock -n -x 200
++
++	RES=$?
++	if [ "${RES}" != "0" ]; then
++	    echo "Cache repository is busy."
++	    exit 1
++	fi
++
++	echo -n "Purging the download cache..."
++	rm --preserve-root --one-file-system -rf ${CACHE} && echo "Done." || exit 1
++	exit 0
++
++    ) 200> "@LOCALSTATEDIR@/lock/subsys/lxc"
++}
++
++# Note: assuming uid==0 is root -- might break with userns??
++if [ "$(id -u)" != "0" ]; then
++	echo "This script should be run as 'root'"
++	exit 1
++fi
++
++# Detect which executable we were run as, lxc-fedora or lxc-redhat
++case "$0" in
++    *lxc-redhat)
++	DISTRO="redhat";;
++    *) # default is fedora
++	DISTRO="fedora";;
++esac
++CACHE="@LOCALSTATEDIR@/cache/lxc/${DISTRO}"
++
++case "$1" in
++    create)
++	create;;
++    destroy)
++	destroy;;
++    help)
++	help;;
++    purge)
++	purge;;
++    *)
++	echo "Usage: $0 {create|destroy|purge|help}"
++	exit 1;;
++esac
