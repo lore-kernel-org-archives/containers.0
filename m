@@ -1,81 +1,38 @@
-From: Nicolas Dichtel <nicolas.dichtel@dev.6wind.com>
-Subject: Re: [PATCH] netns: remove useless synchronize_net()
-Date: Tue, 10 Feb 2009 17:48:26 +0100
-Message-ID: <4991AFDA.8020704@dev.6wind.com>
-References: <498ABDA2.5040603@dev.6wind.com>	<20090205.234520.149982266.davem@davemloft.net>	<498C403D.9040500@dev.6wind.com> <20090206.141026.85510254.davem@davemloft.net> <49919FD4.3000008@dev.6wind.com> <4991AE04.7020307@free.fr>
-Reply-To: nicolas.dichtel@dev.6wind.com
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v13][PATCH 00/14] Kernel based checkpoint/restart
+Date: Tue, 10 Feb 2009 09:05:47 -0800
+Message-ID: <1234285547.30155.6.camel__23495.6048116603$1234285708$gmane$org@nimitz>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4991AE04.7020307@free.fr>
-Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <daniel.lezcano@free.fr>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1233076092-8660-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Le 10.02.2009 17:40, Daniel Lezcano a =E9crit :
-> Nicolas Dichtel wrote:
->> Le 06.02.2009 23:10, David Miller a =E9crit :
->>> From: Nicolas Dichtel <nicolas.dichtel@dev.6wind.com>
->>> Date: Fri, 06 Feb 2009 14:50:53 +0100
->>>
->>>> If namespace is destroyed after this function, then cleanup_net()
->>>> will ensure that nobody is looking at it
->>>
->>> Maybe, but you better get some opinions from the people who wrote
->>> and maintain the network namespace code before I can consider
->>> your change seriously.
->>>
->>> None of them responded to your patch posting, probably because
->>> you failed to CC: any of them.
->> Sorry, I forget to cc them, now it's done.
->> The thread can be found here:=20
->> http://marc.info/?l=3Dlinux-netdev&m=3D123382930115535&w=3D2
->>
->> So, I'm waiting for maintainers's opinions.
-> We can move one network device from one namespace to another namespac=
-e,=20
-> and that do not necessarily implies the network namespace will die an=
-d=20
-> call cleanup_net.
-> Without synchronize_net, it would be possible to have netif_receive_s=
-kb=20
-> and dev_change_net_namespace to be executed concurrently, no ?
-> Wouldn't the execution of one of this function be problematic if we a=
-re=20
-> in the delivery of a packet to the upper protocol in the big=20
-> rcu_read_lock section of netif_receive_skb ?
-Just to be sure: there is two synchronize_net() in dev_change_net_names=
-pace(),=20
-and I was talking about the second one. The second one is called just b=
-efore=20
-exiting the function.
+On Tue, 2009-01-27 at 12:07 -0500, Oren Laadan wrote:
+> Checkpoint-restart (c/r): a couple of fixes in preparation for 64bit
+> architectures, and a couple of fixes for bugss (comments from Serge
+> Hallyn, Sudakvev Bhattiprolu and Nathan Lynch). Updated and tested
+> against v2.6.28.
+> 
+> Aiming for -mm.
 
+Is there anything that we're waiting on before these can go into -mm?  I
+think the discussion on the first few patches has died down to almost
+nothing.  They're pretty reviewed-out.  Do they need a run in -mm?  I
+don't think linux-next is quite appropriate since they're not _quite_
+aimed at mainline yet.
 
-Regards,
-Nicolas
-
->=20
->    dev_shutdown(dev);
->=20
->    /* Notify protocols, that we are about to destroy
->       this device. They should clean all the things.
->    */
->    call_netdevice_notifiers(NETDEV_UNREGISTER, dev);
->=20
->    /*
->     *    Flush the unicast and multicast chains
->     */
->    dev_addr_discard(dev);
->=20
->    netdev_unregister_kobject(dev);
->=20
->    /* Actually switch the network namespace */
->    dev_net_set(dev, net);
->=20
->=20
-> Thanks
->  -- Daniel
->=20
+-- Dave
