@@ -1,37 +1,38 @@
-From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix possible use after free
-Date: Tue, 10 Feb 2009 12:45:27 +0000
-Message-ID: <20090210124527.GA28946@ZenIV.linux.org.uk>
-References: <4991497B.4030200@cn.fujitsu.com>
-	<6599ad830902100215o185edd31k8731e033717dbb49@mail.gmail.com>
+From: Nicolas Dichtel <nicolas.dichtel@dev.6wind.com>
+Subject: Re: [PATCH] netns: remove useless synchronize_net()
+Date: Tue, 10 Feb 2009 16:40:04 +0100
+Message-ID: <49919FD4.3000008@dev.6wind.com>
+References: <498ABDA2.5040603@dev.6wind.com>	<20090205.234520.149982266.davem@davemloft.net>	<498C403D.9040500@dev.6wind.com> <20090206.141026.85510254.davem@davemloft.net>
+Reply-To: nicolas.dichtel@dev.6wind.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830902100215o185edd31k8731e033717dbb49-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20090206.141026.85510254.davem@davemloft.net>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 10, 2009 at 02:15:36AM -0800, Paul Menage wrote:
-> On Tue, Feb 10, 2009 at 1:31 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> > In cgroup_kill_sb(), root is freed before sb is detached from the list,
-> > so another sget() may find this sb and call cgroup_test_super(),
-> > which will access the root that has been freed.
-> 
-> I think that I'd assumed that by the time we get to cgroup_kill_sb()
-> there's no chance of the sb being resurrected by sget().
+Le 06.02.2009 23:10, David Miller a =E9crit :
+> From: Nicolas Dichtel <nicolas.dichtel@dev.6wind.com>
+> Date: Fri, 06 Feb 2009 14:50:53 +0100
+>=20
+>> If namespace is destroyed after this function, then cleanup_net()
+>> will ensure that nobody is looking at it
+>=20
+> Maybe, but you better get some opinions from the people who wrote
+> and maintain the network namespace code before I can consider
+> your change seriously.
+>=20
+> None of them responded to your patch posting, probably because
+> you failed to CC: any of them.
+Sorry, I forget to cc them, now it's done.
+The thread can be found here: http://marc.info/?l=3Dlinux-netdev&m=3D12=
+3382930115535&w=3D2
 
-There is none.  grab_super() will fail to get it, so sget() will go
-through retry logics.  Which doesn't mean that test won't be called
-on it in the meanwhile.
+So, I'm waiting for maintainers's opinions.
+
+Thank you,
+Nicolas
