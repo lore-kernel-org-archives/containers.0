@@ -1,89 +1,130 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
-Subject: Re: [PATCH] netns: remove useless synchronize_net()
-Date: Wed, 11 Feb 2009 16:49:06 +0100
-Message-ID: <4992F372.4020206@free.fr>
-References: <498ABDA2.5040603@dev.6wind.com>	<20090205.234520.149982266.davem@davemloft.net>	<498C403D.9040500@dev.6wind.com>	<20090206.141026.85510254.davem@davemloft.net>	<49919FD4.3000008@dev.6wind.com> <4991AE04.7020307@free.fr>	<4991AFDA.8020704@dev.6wind.com> <4991B5C9.9040005@free.fr> <m1zlgtjtrf.fsf@fess.ebiederm.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: namespaces?: bug at mm/slub.c:2750
+Date: Wed, 11 Feb 2009 10:37:53 -0600
+Message-ID: <20090211163753.GA29372@us.ibm.com>
+References: <20090206113556.GA3161@alice> <20090206161518.81e7d42c.akpm@linux-foundation.org> <19f34abd0902102355o5bf51096o9aa3737e87104fb9@mail.gmail.com> <20090211000740.f1de7cec.akpm@linux-foundation.org> <19f34abd0902110248n22f8de12lccfa99faafafb942@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1zlgtjtrf.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: nicolas.dichtel@dev.6wind.com, David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757413AbZBKQiX@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <19f34abd0902110248n22f8de12lccfa99faafafb942@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Vegard Nossum <vegard.nossum@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, David Howells <dhowells@redhat.com>, Eric Sesterhenn <snakebyte@gmx.de>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, Dhaval Giani <dhaval@linux.vnet.ibm.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <daniel.lezcano@free.fr> writes:
->   
->> Hmm, at the first glance I would say it is useless but perhaps there is a trick
->> here I do not understand.
->> Eric, is there any particular reason to call synchronize_net before exiting the
->> dev_change_net_namespace function ?
->>     
->
-> I haven't thought about that part of the code path in detail in a long
-> time.  dev_change_net_namespace() is a condensed version of
-> register_netdevice() unregister_netdevice().  With the calls down into
-> the driver removed.
->
-> On a side note.  It looks like we now cope with:
-> call_netdevice_notifiers(NETDEV_REGISTER, dev); failing in
-> register_netdev, but no one updated dev_change_net_namespace to handle
-> the change, looks like a real pain to cope with.
->
-> As for the synchronize_net, and in response to the original
-> comment as best as I can tell we do have things being being
-> deleted that are at least candidates for synchronize_net.
->
-> dev_addr_discard(dev);
-> dev_net_set(dev, net);
-> netdev_unregister_kobject(dev);
->
-> We very much do access dev->net with only rcu protection.
->
-> Hmm.
->
-> It looks like I originally took the second synchronize_net from what
-> became rollback_registered, which happens just before we start freeing
-> the netdevice.
->
-> The nastiest case that I can envision is if we happen to receive a
-> packet (on another cpu) for the network device that we are moving,
-> just after it has registered in the new network namespace.  If we read
-> the old network namespace and forward it up the network stack in that
-> context I can imagine it being a recipe for all kinds of strange
-> non-deterministic behavior.
->   
+Quoting Vegard Nossum (vegard.nossum@gmail.com):
+> On Wed, Feb 11, 2009 at 9:07 AM, Andrew Morton
+> <akpm@linux-foundation.org> wrote:
+> >> In case you missed it, KOSAKI Motohiro posted a similar stack-trace
+> >> (but not the same BUG) in this thread:
+> >> http://lkml.org/lkml/2009/2/10/7
+> >>
+> >
+> > Both traces include the newly-added put_cred_rcu().  Suspicious.
+> >
+> 
+> I have this test case which triggers it regularly after some minutes:
+> 
+> #include <sys/wait.h>
+> #include <sys/types.h>
+> 
+> #include <errno.h>
+> #include <stdio.h>
+> #include <stdlib.h>
+> #include <string.h>
+> #include <unistd.h>
+> 
+> int main(int argc, char* argv[])
+> {
+>         unsigned int i;
+> 
+>         if (fork() == 0) {
+>                 while (1)
+>                         system("echo -n .");
+>         }
+> 
+>         for (i = 0; i < 2; ++i) {
+>                 if (fork() == 0) {
+>                         while (1) {
+>                                 setreuid(0, 0xcafeba);
+>                                 setreuid(0xcafeba, 0);
+> 
+>                                 setreuid(0, 0xcafebb);
+>                                 setreuid(0xcafebb, 0);
+>                         }
+> 
+>                         exit(EXIT_SUCCESS);
+>                 }
+>         }
+> 
+>         while (!(wait(NULL) == -1 && errno == ECHILD))
+>                 ;
+> 
+>         return 0;
+> }
+> 
+> It seems to be the combination of exec() and setreuid(), but I
+> couldn't get it to work with just exec() instead of system(). It is
+> possible that CONFIG_USER_SCHED must be =y for this to work. It can
+> probably be simplified too...
+> 
+> 
+> Vegard
 
-The code does:
+I haven't yet been able to reproduce it, but I'm wondering whether
+something like the following is needed.
 
-    dev_close
-       dev_deactive
-          synchronize_rcu
-    synchronize_net
-    ...
-    dev_shutdown
-    ...
-    synchronize_net
+Note that free_user() still seems wrong there, as it won't call
+uid_hash_remove(up) for a user which is not inthe init_user_ns at
+all, right?
 
-The network device can no longer receive packets after dev_deactive, no ?
-The first synchronize_net will wait for the outstanding packets to be 
-delivered to the upper layer and we change the nd_net field after.
-Your scenario makes sense for the first synchronize_net but I am not 
-sure that can happen if we remove the second synchronize_net.
 
-> So unless there is a reason for this change beyond general cleanup I
-> would prefer not to think about it potential weirdness, and keep the
-> code the way it is.
->
-> I seem to remember a conversation about this synchronize_net when the
-> code was merged as well so if we are going to change it, let's look
-> up those arguments if we can and see if there was something useful
-> said.
->
-> Eric
->
->
->   
+From 2bc9da9728e0a4242bd8b1362d34e8d425be1b66 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue@us.ibm.com>
+Date: Wed, 11 Feb 2009 11:29:52 -0500
+Subject: [PATCH 1/1] user namespaces: only put the userns when we unhash the uid
 
+uids in namespaces other than init don't get a sysfs entry.
+
+For those in the init namespace, while we're waiting to remove
+the sysfs entry for the uid the uid is still hashed, and
+alloc_uid() may re-grab that uid without getting a new
+reference to the user_ns, which we've already put in free_user
+before scheduling remove_user_sysfs_dir().
+
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+---
+ kernel/user.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/user.c b/kernel/user.c
+index 477b666..bb401a5 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -71,6 +71,7 @@ static void uid_hash_insert(struct user_struct *up, struct hlist_head *hashent)
+ 
+ static void uid_hash_remove(struct user_struct *up)
+ {
++	put_user_ns(up->user_ns);
+ 	hlist_del_init(&up->uidhash_node);
+ }
+ 
+@@ -334,7 +335,6 @@ static void free_user(struct user_struct *up, unsigned long flags)
+ 	atomic_inc(&up->__count);
+ 	spin_unlock_irqrestore(&uidhash_lock, flags);
+ 
+-	put_user_ns(up->user_ns);
+ 	INIT_WORK(&up->work, remove_user_sysfs_dir);
+ 	schedule_work(&up->work);
+ }
+@@ -357,7 +357,6 @@ static void free_user(struct user_struct *up, unsigned long flags)
+ 	sched_destroy_user(up);
+ 	key_put(up->uid_keyring);
+ 	key_put(up->session_keyring);
+-	put_user_ns(up->user_ns);
+ 	kmem_cache_free(uid_cachep, up);
+ }
+ 
+-- 
+1.6.1
