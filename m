@@ -1,29 +1,89 @@
-From: David Howells <dhowells@redhat.com>
-Subject: Re: [CRED bug?] 2.6.29-rc3 don't survive on stress workload
-Date: Wed, 11 Feb 2009 12:54:06 +0000
-Message-ID: <27972.1234356846@redhat.com>
-References: <20090211212208.C3C6.KOSAKI.MOTOHIRO@jp.fujitsu.com> <20090210142443.629E.KOSAKI.MOTOHIRO@jp.fujitsu.com> <19f34abd0902092310g513fb776s2e4d37285c8fa7be@mail.gmail.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756232AbZBKMz3@vger.kernel.org>
-In-Reply-To: <20090211212208.C3C6.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Cc: dhowells@redhat.com, Vegard Nossum <vegard.nossum@gmail.com>, Serge Hallyn <serue@us.ibm.com>, LKML <linux-kernel@vger.kernel.org>, Lee Schermerhorn <Lee.Schermerhorn@hp.com>, Eric Sesterhenn <snakebyte@gmx.de>, Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: [PATCH] netns: remove useless synchronize_net()
+Date: Wed, 11 Feb 2009 16:49:06 +0100
+Message-ID: <4992F372.4020206@free.fr>
+References: <498ABDA2.5040603@dev.6wind.com>	<20090205.234520.149982266.davem@davemloft.net>	<498C403D.9040500@dev.6wind.com>	<20090206.141026.85510254.davem@davemloft.net>	<49919FD4.3000008@dev.6wind.com> <4991AE04.7020307@free.fr>	<4991AFDA.8020704@dev.6wind.com> <4991B5C9.9040005@free.fr> <m1zlgtjtrf.fsf@fess.ebiederm.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1zlgtjtrf.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: nicolas.dichtel@dev.6wind.com, David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com> wrote:
+Eric W. Biederman wrote:
+> Daniel Lezcano <daniel.lezcano@free.fr> writes:
+>   
+>> Hmm, at the first glance I would say it is useless but perhaps there is a trick
+>> here I do not understand.
+>> Eric, is there any particular reason to call synchronize_net before exiting the
+>> dev_change_net_namespace function ?
+>>     
+>
+> I haven't thought about that part of the code path in detail in a long
+> time.  dev_change_net_namespace() is a condensed version of
+> register_netdevice() unregister_netdevice().  With the calls down into
+> the driver removed.
+>
+> On a side note.  It looks like we now cope with:
+> call_netdevice_notifiers(NETDEV_REGISTER, dev); failing in
+> register_netdev, but no one updated dev_change_net_namespace to handle
+> the change, looks like a real pain to cope with.
+>
+> As for the synchronize_net, and in response to the original
+> comment as best as I can tell we do have things being being
+> deleted that are at least candidates for synchronize_net.
+>
+> dev_addr_discard(dev);
+> dev_net_set(dev, net);
+> netdev_unregister_kobject(dev);
+>
+> We very much do access dev->net with only rcu protection.
+>
+> Hmm.
+>
+> It looks like I originally took the second synchronize_net from what
+> became rollback_registered, which happens just before we start freeing
+> the netdevice.
+>
+> The nastiest case that I can envision is if we happen to receive a
+> packet (on another cpu) for the network device that we are moving,
+> just after it has registered in the new network namespace.  If we read
+> the old network namespace and forward it up the network stack in that
+> context I can imagine it being a recipe for all kinds of strange
+> non-deterministic behavior.
+>   
 
-> f6  : 1003e6b6b6b6b6b6b6b6b f7  : 0ffe6af8e85a500000000
+The code does:
 
-I'd guess you now have CONFIG_DEBUG_SLAB turned on.  That looks like slab
-poisoning in register f6.
+    dev_close
+       dev_deactive
+          synchronize_rcu
+    synchronize_net
+    ...
+    dev_shutdown
+    ...
+    synchronize_net
 
-> r17 : 00000000dead4ead r18 : a000000100cd2274 r19 : a000000100d6b6c0
+The network device can no longer receive packets after dev_deactive, no ?
+The first synchronize_net will wait for the outstanding packets to be 
+delivered to the upper layer and we change the nd_net field after.
+Your scenario makes sense for the first synchronize_net but I am not 
+sure that can happen if we remove the second synchronize_net.
 
-And that looks like SPINLOCK_MAGIC in r17, so I'd guess something just
-successfully validated a spinlock, possibly atomic_dec_and_lock() in
-free_uid().
+> So unless there is a reason for this change beyond general cleanup I
+> would prefer not to think about it potential weirdness, and keep the
+> code the way it is.
+>
+> I seem to remember a conversation about this synchronize_net when the
+> code was merged as well so if we are going to change it, let's look
+> up those arguments if we can and see if there was something useful
+> said.
+>
+> Eric
+>
+>
+>   
 
-This may mean that the user_struct being released is valid, but the
-user_namespace it refers to is already released.
-
-David
