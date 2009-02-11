@@ -1,17 +1,16 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix possible use after free
-Date: Tue, 10 Feb 2009 17:54:07 -0800
-Message-ID: <6599ad830902101754w50a64b0ds126510360fdef28e__38173.837241675$1234317367$gmane$org@mail.gmail.com>
-References: <4991497B.4030200@cn.fujitsu.com>
-	<6599ad830902100215o185edd31k8731e033717dbb49@mail.gmail.com>
-	<20090210124527.GA28946@ZenIV.linux.org.uk>
-	<6599ad830902101601i294ffaa5xd01611c5121a5685@mail.gmail.com>
-	<20090211011933.GB28946@ZenIV.linux.org.uk>
+From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re: Checkpoint
+	/ Restart)
+Date: Tue, 10 Feb 2009 19:34:17 -0800
+Message-ID: <e98e18940902101934o6f93230ag7226da6013afd20@mail.gmail.com>
+References: <20090207001609.8168.14884.stgit@lahore.corp.google.com>
+	<1234202558.20090.201.camel@nimitz>
+	<e98e18940902101427i7459a7edke4fdd8404e2ef642@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090211011933.GB28946-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+In-Reply-To: <e98e18940902101427i7459a7edke4fdd8404e2ef642-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,24 +20,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 10, 2009 at 5:19 PM, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org> wrote:
+Actually looking at the code in entry_64.S again closely, external
+checkpointing should work with my patch too. The callee save registers
+-- rbx, rbp, r12, r13, r14, r15 -- are saved on the kernel stack
+before calling signal handling code (i.e. right before switching from
+kernel to user mode). This signal handling code would be called
+whenever we are trying to checkpoint a process with SIGSTOP or cgroup
+freezer. Thus these registers would be on the kernel stack of
+checkpointed process. And we don't need any user level signal handling
+for external checkpointing to work in x86_64. Sorry for causing
+confusion.
+
+On Tue, Feb 10, 2009 at 2:27 PM, Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Feb 9, 2009 at 10:02 AM, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> On Fri, 2009-02-06 at 16:17 -0800, Nauman Rafique wrote:
+>>> The patch sent by Masahiko assumes that all the user-space registers
+>>> are saved on
+>>> the kernel stack on a system call. This is not true for the majority
+>>> of the system calls. The callee saved registers (as defined by x86_64
+>>> ABI) - rbx, rbp, r12, r13, r14, r15 - are saved only in some special
+>>> cases. That means that these registers would not be available to
+>>> checkpoint code. Moreover, the restore code would have no space in
+>>> stack to restore those registers.
+>>
+>> According to this:
+>>
+>> http://msdn.microsoft.com/en-us/library/6t169e9c(VS.80).aspx
+>>
+>> Those registers all get clobbered on all function calls.  I assume that
+>> userspace also considers them to get clobbered on system calls as
+>> well.
+>>
+>> What are those special cases you are talking about?  Certain special
+>> cases for entering the kernel where we do save those registers?
 >
-> So you can't wrap sget() into a mutex that might be grabbed at some
-> point of ->kill_sb() or it'll wait forever in that scenario.
-
-Good point.
-
+> There are the system calls the use the same stub that I have used to
+> save the full stack (and thus all the registers).
+>        sys_clone
+>        sys_fork
+>        sys_vfork
+>        sys_sigaltstack
+>        sys_iopl
 >
-> So no exclusion is needed there at all.  If you don't want later remount
-> of the first mount to affect these flags of second one you shouldn't share
-> the superblock at all, obviously...
-
-I have plans for some slightly more complex state in that structure -
-I'll probably just add a spinlock around accesses to those fields so
-that we can avoid exposing any inconsistent state.
-
-Paul
+>>
+>> Signal handling and ptrace single stepping are two places I would
+>> imagine we have to enter the kernel and preserve those registers.  Is
+>> that why you were suggesting overloading signal delivery?
+>>
+>> Thanks for pointing out the problem, though.  This one will be
+>> interesting. :)
+>>
+>> -- Dave
+>>
+>>
+>
