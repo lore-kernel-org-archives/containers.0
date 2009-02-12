@@ -1,94 +1,158 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
-Subject: Re: [PATCH] netns: remove useless synchronize_net()
-Date: Thu, 12 Feb 2009 16:11:19 +0100
-Message-ID: <49943C17.5080509@free.fr>
-References: <498ABDA2.5040603@dev.6wind.com> <20090205.234520.149982266.davem@davemloft.net> <498C403D.9040500@dev.6wind.com> <20090206.141026.85510254.davem@davemloft.net> <49919FD4.3000008@dev.6wind.com> <4991AE04.7020307@free.fr> <4991AFDA.8020704@dev.6wind.com> <4991B5C9.9040005@free.fr> <m1zlgtjtrf.fsf@fess.ebiederm.org> <4992F372.4020206@free.fr> <m1iqngh8yo.fsf@fess.ebiederm.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v13][PATCH 00/14] Kernel based checkpoint/restart
+Date: Thu, 12 Feb 2009 10:11:22 -0800
+Message-ID: <1234462282.30155.171.camel__16078.8712827072$1234462426$gmane$org@nimitz>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
+	<1234285547.30155.6.camel@nimitz>
+	<20090211141434.dfa1d079.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1iqngh8yo.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: containers@lists.osdl.org, nicolas.dichtel@dev.6wind.com, David Miller <davem@davemloft.net>, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090211141434.dfa1d079.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <daniel.lezcano@free.fr> writes:
->
->   
->> Eric W. Biederman wrote:
->>     
->>> Daniel Lezcano <daniel.lezcano@free.fr> writes:
->>>   
->>>       
->>>> Hmm, at the first glance I would say it is useless but perhaps there is a
->>>>         
->> trick
->>     
->>>> here I do not understand.
->>>> Eric, is there any particular reason to call synchronize_net before exiting
->>>>         
->> the
->>     
->>>> dev_change_net_namespace function ?
->>>>     
->>>>         
->>> I haven't thought about that part of the code path in detail in a long
->>> time.  dev_change_net_namespace() is a condensed version of
->>> register_netdevice() unregister_netdevice().  With the calls down into
->>> the driver removed.
->>>
->>> On a side note.  It looks like we now cope with:
->>> call_netdevice_notifiers(NETDEV_REGISTER, dev); failing in
->>> register_netdev, but no one updated dev_change_net_namespace to handle
->>> the change, looks like a real pain to cope with.
->>>
->>> As for the synchronize_net, and in response to the original
->>> comment as best as I can tell we do have things being being
->>> deleted that are at least candidates for synchronize_net.
->>>
->>> dev_addr_discard(dev);
->>> dev_net_set(dev, net);
->>> netdev_unregister_kobject(dev);
->>>
->>> We very much do access dev->net with only rcu protection.
->>>
->>> Hmm.
->>>
->>> It looks like I originally took the second synchronize_net from what
->>> became rollback_registered, which happens just before we start freeing
->>> the netdevice.
->>>
->>> The nastiest case that I can envision is if we happen to receive a
->>> packet (on another cpu) for the network device that we are moving,
->>> just after it has registered in the new network namespace.  If we read
->>> the old network namespace and forward it up the network stack in that
->>> context I can imagine it being a recipe for all kinds of strange
->>> non-deterministic behavior.
->>>   
->>>       
->> The code does:
->>
->>    dev_close
->>       dev_deactive
->>          synchronize_rcu
->>    synchronize_net
->>    ...
->>    dev_shutdown
->>    ...
->>    synchronize_net
->>
->> The network device can no longer receive packets after dev_deactive, no ?
->> The first synchronize_net will wait for the outstanding packets to be delivered
->> to the upper layer and we change the nd_net field after.
->> Your scenario makes sense for the first synchronize_net but I am not sure that
->> can happen if we remove the second synchronize_net.
->>     
->
-> Good point.  Visibility is key.  What can find us after we
-> call list_netdevice() ?  Aren't there some pieces of code that
-> do for_each_netdevice under the rcu lock?
->   
-AFAIR, no. for_each_netdev is protected by rtnl_lock.
+On Wed, 2009-02-11 at 14:14 -0800, Andrew Morton wrote:
+> On Tue, 10 Feb 2009 09:05:47 -0800
+> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> 
+> > On Tue, 2009-01-27 at 12:07 -0500, Oren Laadan wrote:
+> > > Checkpoint-restart (c/r): a couple of fixes in preparation for 64bit
+> > > architectures, and a couple of fixes for bugss (comments from Serge
+> > > Hallyn, Sudakvev Bhattiprolu and Nathan Lynch). Updated and tested
+> > > against v2.6.28.
+> > > 
+> > > Aiming for -mm.
+> > 
+> > Is there anything that we're waiting on before these can go into -mm?  I
+> > think the discussion on the first few patches has died down to almost
+> > nothing.  They're pretty reviewed-out.  Do they need a run in -mm?  I
+> > don't think linux-next is quite appropriate since they're not _quite_
+> > aimed at mainline yet.
+> > 
+> 
+> I raised an issue a few months ago and got inconclusively waffled at. 
+> Let us revisit.
+> 
+> I am concerned that this implementation is a bit of a toy, and that we
+> don't know what a sufficiently complete implementation will look like. 
+> There is a risk that if we merge the toy we either:
+> 
+> a) end up having to merge unacceptably-expensive-to-maintain code to
+>    make it a non-toy or
+> 
+> b) decide not to merge the unacceptably-expensive-to-maintain code,
+>    leaving us with a toy or
+> 
+> c) simply cannot work out how to implement the missing functionality.
+> 
+> 
+> So perhaps we can proceed by getting you guys to fill out the following
+> paperwork:
+> 
+> - In bullet-point form, what features are present?
 
+ * i386 arch is supported
+ * processes can perform a "self-checkpoint" which means calling 
+   sys_checkpoint() on itself as well as "external checkpoint" where
+   one task checkpoints another.
+ * supported fds:
+   * "normal" files on the filesystem
+   * both endpoints of a pipe are checkpointed, as are pipe contents
+ * each process's memory map is saved
+ * the contents of anonymous memory are saved
+ * infrastructure for managing objects in the checkpoint which are
+   "shared" by multiple users like fds or a SVSV semaphore, for instance
+ * multiple processes may be checkpointed during a single sys_checkpoint()
+
+> - In bullet-point form, what features are missing, and should be added?
+
+ * support for more architectures than i386
+ * file descriptors:
+  * sockets (network, AF_UNIX, etc...)
+  * devices files
+  * shmfs, hugetlbfs
+  * epoll
+  * unlinked files
+ * Filesystem state
+  * contents of files
+  * mount tree for individual processes
+ * flock
+ * threads and sessions
+ * CPU and NUMA affinity
+ * sys_remap_file_pages()
+
+This is a very minimal list that is surely incomplete and sure to grow.
+I think of it like kernel scalability.  Is scalability important?  Do we
+want the whole kernel to scale?  Yes, and yes, of course.  *Does* every
+single device and feature in the kernel scale?  No way.  Will it ever be
+"done"?  No freakin' way!  But, the kernel is scalable on the workloads
+that are important to people.
+
+Checkpoint/restart is the same way.  We intend to make core kernel
+functionality checkpointable first.  We'll move outwards from there as
+we (and our users) deem things important, but we'll certainly never be
+done.  
+
+> - Is it possible to briefly sketch out the design of the to-be-added
+>   features?
+
+For architecture (and indeed processor variation) we need a look at how
+and when its registers are saved on kernel entry as well as things like
+32/64-bit processes  and mm_context considerations.  There is x86_64,
+s390 and ppc work ongoing.  Those ports have required quite small
+changes in the generic code, which is a good sign.
+
+Each fd type will need to be worked on separately.  Device files will
+generally have to be one-off.  /dev/null has no internal state at all.
+But, work needs done for devices which may have had all kinds of
+ioctl()s done on them. 
+
+Unlinked files will need their contents stored in the checkpoint so that
+they may be copied over during restart (say to a temporary file),
+opened, and unlinked again.  Files on kernel-internal mounts will need
+similar treatment (think 'pipe_mnt').
+
+We expect the filesystem *contents* to be taken care of generally by
+outside mechanisms like dm or btrfs snapshotting.  
+
+For the filesystem namespace, we'll effectively need to export what we
+already have in /proc/$pid/mountinfo.  
+
+I'm going to punt on explaining the networking bits for now because I
+think I'd be wasting your time.  There are a couple of other guys around
+much more versed in that area.
+
+> For extra marks:
+> 
+> - Will any of this involve non-trivial serialisation of kernel
+>   objects?  If so, that's getting into the
+>   unacceptably-expensive-to-maintain space, I suspect.
+
+We have some structures that are certainly tied to the kernel-internal
+ones.  However, we are certainly *not* simply writing kernel structures
+to userspace.  We could do that with /dev/mem.  We are carefully pulling
+out the minimal bits of information from the kernel structures that we
+*need* to recreate the function of the structure at restart.  There is a
+maintenance burden here but, so far, that burden is almost entirely in
+checkpoint/*.c.  We intend to test this functionality thoroughly to
+ensure that we don't regress once we have integrated it.
+
+> - Does (or will) this feature also support process migration?  If
+>   not, I'd have thought this to be a showstopper.
+
+You mean moving processes between machines?  Yes, it certainly will.
+That is one of the primary design goals.
+
+-- Dave
