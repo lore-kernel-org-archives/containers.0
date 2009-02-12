@@ -1,7 +1,7 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: What can OpenVZ do?
-Date: Thu, 12 Feb 2009 14:10:14 -0800
-Message-ID: <20090212141014.2cd3d54d.akpm__17409.2517620467$1234476737$gmane$org@linux-foundation.org>
+Date: Fri, 13 Feb 2009 01:17:41 +0300
+Message-ID: <20090212221741.GA13861__39741.0126556226$1234476809$gmane$org@x200.localdomain>
 References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
 	<1234285547.30155.6.camel@nimitz>
 	<20090211141434.dfa1d079.akpm@linux-foundation.org>
@@ -13,6 +13,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1234475483.30155.194.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -24,12 +25,10 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 12 Feb 2009 13:51:23 -0800
-Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-
+On Thu, Feb 12, 2009 at 01:51:23PM -0800, Dave Hansen wrote:
 > On Thu, 2009-02-12 at 11:42 -0800, Andrew Morton wrote:
 > > On Thu, 12 Feb 2009 13:30:35 -0600
 > > Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org> wrote:
@@ -78,47 +77,19 @@ Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 >  628 files changed, 59597 insertions(+), 2927 deletions(-)
 > dave@nimitz:~/kernels/linux-2.6-openvz$ git diff v2.6.27.10... | wc 
 >   84887  290855 2308745
-> 
+
+	git-diff -- kernel/cpt/
+
+should give more realistic picture.
+
 > Unfortunately, the git tree doesn't have that great of a history.  It
 > appears that the forward-ports are just applications of huge single
 > patches which then get committed into git.  This tree has also
 > historically contained a bunch of stuff not directly related to
 > checkpoint/restart like resource management.
-> 
+
 > We'd be idiots not to take a hard look at what has been done in OpenVZ.
 > But, for the time being, we have absolutely no shortage of things that
 > we know are important and know have to be done.  Our largest problem is
 > not finding things to do, but is our large out-of-tree patch that is
 > growing by the day. :(
-> 
-
-Well we have a chicken-and-eggish thing.  The patchset will keep
-growing until we understand how much of this:
-
-> dave@nimitz:~/kernels/linux-2.6-openvz$ git diff v2.6.27.10... | diffstat | tail -1
->  628 files changed, 59597 insertions(+), 2927 deletions(-)
-
-we will be committed to if we were to merge the current patchset.
-
-
-Now, we've gone in blind before - most notably on the
-containers/cgroups/namespaces stuff.  That hail mary pass worked out
-acceptably, I think.  Maybe we got lucky.  I thought that
-net-namespaces in particular would never get there, but it did.
-
-That was a very large and quite long-term-important user-visible
-feature.
-
-checkpoint/restart/migration is also a long-term-...-feature.  But if
-at all possible I do think that we should go into it with our eyes a
-little less shut.
-
-Interestingly, there was also prior-art for
-containers/cgroups/namespaces within OpenVZ.  But we decided up-front
-(I think) that the eventual implementation would have little in common
-with preceding implementations.
-
-
-Oh, and I'd disagree with your new Subject:.  It's pretty easy to find
-out what OpenVZ can do.  The more important question here is "how much
-of a mess did it make when it did it?"
