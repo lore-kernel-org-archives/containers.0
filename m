@@ -1,53 +1,47 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: containers mini-summit @ Linux Symposium
-Date: Wed, 11 Feb 2009 19:25:00 -0600
-Message-ID: <20090212012500.GA14389@us.ibm.com>
-References: <49928261.5040905@openvz.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [cgroup or VFS ?] WARNING: at	fs/namespace.c:636	mntput_no_expire+0xac/0xf2()
+Date: Thu, 12 Feb 2009 14:10:37 +0800
+Message-ID: <4993BD5D.2020707@cn.fujitsu.com>
+References: <49617D35.4040805@cn.fujitsu.com>	<20090209004046.3ce1dde0.akpm@linux-foundation.org>	<20090209093414.GU28946@ZenIV.linux.org.uk> <499013CC.2060808@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49928261.5040905-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757484AbZBLGLV@vger.kernel.org>
+In-Reply-To: <499013CC.2060808@cn.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: containers@lists.osdl.org, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Arjan van de Ven <arjan@infradead.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Kir Kolyshkin (kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> What about organizing containers mini-summit during (now Montreal) Linux 
-> Symposium 2009, similar to what we did last year? Do you think we should 
-> meet and discuss our plans for the upcoming year, check the progress and 
-> try to find ways around major obstacles?
+Li Zefan wrote:
+> Al Viro wrote:
+>> On Mon, Feb 09, 2009 at 12:40:46AM -0800, Andrew Morton wrote:
+>>>> Thread 1:
+>>>>   for ((; ;))
+>>>>   {
+>>>>       mount -t cgroup -o cpuset xxx /mnt > /dev/null 2>&1
+>>>>       mkdir /mnt/0 > /dev/null 2>&1
+>>>>       rmdir /mnt/0 > /dev/null 2>&1
+>>>>       umount /mnt > /dev/null 2>&1
+>>>>   }
+>>>>
+>>>> Thread 2:
+>>>>   {
+>>>>       mount -t cpuset xxx /mnt > /dev/null 2>&1
+>>>>       umount /mnt > /dev/null 2>&1
+>>>>   }
+>> How cute...  Same mountpoint in both, so these mount(2) will sometimes
+>> fail (cgroup picks the same sb on the same options, AFAICS) and fail
+>> silently due to these redirects...
+>>
+>> That's a lovely way to stress-test a large part of ro-bind stuff *and*
+>> umount()-related code.  Could you do C equivalent of the above (just
+>> the same syscalls in loop, nothing fancier) and do time-stamped strace?
+>>
 > 
-> If people think it makes sense I will start mocking up a proposal.
+> Sure, I'll write a C version and try to reproduce the warning.
+> 
 
-Hey,
-
-I don't think I'll be able to make it.  So I would selfishly suggest
-that we try to find a conference later in the year (like the
-linux foundation september conference) to have it at :)
-
-But i suppose in order to come up with the best venue (and help
-decide if it's better to have a summit sooner or later), we should
-collect the following info:
-
-Who will be at OLS this year?
-
-What issues do we put on the agenda?  Are there things we should be
-discussing now to make progress, or are there more things on which
-we have more to do before we talk (which is mainly how I feel about
-checkpoint/restart at this point, which I guess is why I don't feel
-much urgency).
-
-What other conferences do people plan to attend over the next year?
-
--serge
+Unfortunately, the C equivalent can't reproduce the warning, I've run the
+test for the whole night. :( While using the script, often I can trigger
+the warning in several mins.
