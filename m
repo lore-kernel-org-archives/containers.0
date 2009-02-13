@@ -1,80 +1,61 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: What can OpenVZ do?
-Date: Fri, 13 Feb 2009 12:45:03 +0100
-Message-ID: <20090213114503.GG15679__8237.48474144868$1234525648$gmane$org@elte.hu>
-References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
-	<1234285547.30155.6.camel@nimitz>
-	<20090211141434.dfa1d079.akpm@linux-foundation.org>
-	<1234462282.30155.171.camel@nimitz>
-	<1234467035.3243.538.camel@calx>
-	<20090212114207.e1c2de82.akpm@linux-foundation.org>
-	<1234475483.30155.194.camel@nimitz> <20090213102732.GB4608@elte.hu>
-	<20090213113248.GA15275@x200.localdomain>
+From: David Howells <dhowells@redhat.com>
+Subject: [PATCH] User namespaces: Only put the userns when we unhash the uid
+Date: Fri, 13 Feb 2009 14:04:21 +0000
+Message-ID: <20090213140421.5698.86876.stgit@warthog.procyon.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090213113248.GA15275-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759147AbZBMOF2@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: torvalds@osdl.org, jmorris@namei.sys
+Cc: akpm@linux-foundation.org, dhowells@redhat.com, serue@us.ibm.com, mingo@elte.hu, kosaki.motohiro@jp.fujitsu.com, linux-kernel@vger.kernel.org, vegard.nossum@gmail.com, containers@lists.osdl.org, snakebyte@gmx.de
 List-Id: containers.vger.kernel.org
 
+From: Serge E. Hallyn <serue@us.ibm.com>
 
-* Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+uids in namespaces other than init don't get a sysfs entry.
 
-> On Fri, Feb 13, 2009 at 11:27:32AM +0100, Ingo Molnar wrote:
-> > 
-> > * Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > 
-> > > > If so, perhaps that can be used as a guide.  Will the planned feature
-> > > > have a similar design?  If not, how will it differ?  To what extent can
-> > > > we use that implementation as a tool for understanding what this new
-> > > > implementation will look like?
-> > > 
-> > > Yes, we can certainly use it as a guide.  However, there are some
-> > > barriers to being able to do that:
-> > > 
-> > > dave@nimitz:~/kernels/linux-2.6-openvz$ git diff v2.6.27.10... | diffstat | tail -1
-> > >  628 files changed, 59597 insertions(+), 2927 deletions(-)
-> > > dave@nimitz:~/kernels/linux-2.6-openvz$ git diff v2.6.27.10... | wc 
-> > >   84887  290855 2308745
-> > > 
-> > > Unfortunately, the git tree doesn't have that great of a history.  It
-> > > appears that the forward-ports are just applications of huge single
-> > > patches which then get committed into git.  This tree has also
-> > > historically contained a bunch of stuff not directly related to
-> > > checkpoint/restart like resource management.
-> > 
-> > Really, OpenVZ/Virtuozzo does not seem to have enough incentive to merge
-> > upstream, they only seem to forward-port, keep their tree messy, do minimal
-> > work to reduce the cross section to the rest of the kernel (so that they can
-> > manage the forward ports) but otherwise are happy with their carved-out
-> > niche market. [which niche is also spiced with some proprietary add-ons,
-> > last i checked, not exactly the contribution environment that breeds a
-> > healthy flow of patches towards the upstream kernel.]
-> 
-> Oh, cut the crap!
-> 
-> > Merging checkpoints instead might give them the incentive to get
-> > their act together.
-> 
-> Knowing how much time it takes to beat CPT back into usable shape every time
-> big kernel rebase is done, OpenVZ/Virtuozzo have every single damn incentive
-> to have CPT mainlined.
+For those in the init namespace, while we're waiting to remove
+the sysfs entry for the uid the uid is still hashed, and
+alloc_uid() may re-grab that uid without getting a new
+reference to the user_ns, which we've already put in free_user
+before scheduling remove_user_sysfs_dir().
 
-So where is the bottleneck? I suspect the effort in having forward ported
-it across 4 major kernel releases in a single year is already larger than
-the technical effort it would  take to upstream it. Any unreasonable upstream 
-resistence/passivity you are bumping into?
+Reported-by: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+Acked-by: David Howells <dhowells@redhat.com>
+Tested-by: Ingo Molnar <mingo@elte.hu>
+---
 
-	Ingo
+ kernel/user.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+
+diff --git a/kernel/user.c b/kernel/user.c
+index 477b666..3551ac7 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -72,6 +72,7 @@ static void uid_hash_insert(struct user_struct *up, struct hlist_head *hashent)
+ static void uid_hash_remove(struct user_struct *up)
+ {
+ 	hlist_del_init(&up->uidhash_node);
++	put_user_ns(up->user_ns);
+ }
+ 
+ static struct user_struct *uid_hash_find(uid_t uid, struct hlist_head *hashent)
+@@ -334,7 +335,6 @@ static void free_user(struct user_struct *up, unsigned long flags)
+ 	atomic_inc(&up->__count);
+ 	spin_unlock_irqrestore(&uidhash_lock, flags);
+ 
+-	put_user_ns(up->user_ns);
+ 	INIT_WORK(&up->work, remove_user_sysfs_dir);
+ 	schedule_work(&up->work);
+ }
+@@ -357,7 +357,6 @@ static void free_user(struct user_struct *up, unsigned long flags)
+ 	sched_destroy_user(up);
+ 	key_put(up->uid_keyring);
+ 	key_put(up->session_keyring);
+-	put_user_ns(up->user_ns);
+ 	kmem_cache_free(uid_cachep, up);
+ }
+ 
