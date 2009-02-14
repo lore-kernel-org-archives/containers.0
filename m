@@ -1,16 +1,18 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 Subject: Re: [RFC v13][PATCH 00/14] Kernel based checkpoint/restart
-Date: Fri, 13 Feb 2009 15:28:36 -0800
-Message-ID: <20090213152836.0fbbfa7d.akpm__22871.7456026518$1234567844$gmane$org@linux-foundation.org>
+Date: Sun, 15 Feb 2009 00:08:02 +0100
+Message-ID: <20090214230802.GE20477__16294.8892605074$1234653089$gmane$org@elte.hu>
 References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
 	<1234285547.30155.6.camel@nimitz>
 	<20090211141434.dfa1d079.akpm@linux-foundation.org>
 	<1234462282.30155.171.camel@nimitz>
+	<20090213152836.0fbbfa7d.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1234462282.30155.171.camel@nimitz>
+Content-Disposition: inline
+In-Reply-To: <20090213152836.0fbbfa7d.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,79 +22,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 12 Feb 2009 10:11:22 -0800
-Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-> 
-> ...
->
-> > - In bullet-point form, what features are missing, and should be added?
-> 
->  * support for more architectures than i386
->  * file descriptors:
->   * sockets (network, AF_UNIX, etc...)
->   * devices files
->   * shmfs, hugetlbfs
->   * epoll
->   * unlinked files
->  * Filesystem state
->   * contents of files
->   * mount tree for individual processes
->  * flock
->  * threads and sessions
->  * CPU and NUMA affinity
->  * sys_remap_file_pages()
-> 
-> This is a very minimal list that is surely incomplete and sure to grow.
+* Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
 
-That's a worry.
+> Similar to the way in which perfectly correct and normal kernel
+> sometimes has to be changed because it unexpectedly upsets the -rt
+> patch.
 
-> 
-> > For extra marks:
-> > 
-> > - Will any of this involve non-trivial serialisation of kernel
-> >   objects?  If so, that's getting into the
-> >   unacceptably-expensive-to-maintain space, I suspect.
-> 
-> We have some structures that are certainly tied to the kernel-internal
-> ones.  However, we are certainly *not* simply writing kernel structures
-> to userspace.  We could do that with /dev/mem.  We are carefully pulling
-> out the minimal bits of information from the kernel structures that we
-> *need* to recreate the function of the structure at restart.  There is a
-> maintenance burden here but, so far, that burden is almost entirely in
-> checkpoint/*.c.  We intend to test this functionality thoroughly to
-> ensure that we don't regress once we have integrated it.
+Actually, regarding -rt, we try to keep that in two buckets:
 
-I guess my question can be approximately simplified to: "will it end up
-looking like openvz"?  (I don't believe that we know of any other way
-of implementing this?)
+ 1) Normal kernel code works but is unclean or structured less
+    than ideal. In this case we restructure the mainline code,
+    but that change stands on its own four legs, without any
+    -rt considerations.
 
-Because if it does then that's a concern, because my assessment when I
-looked at that code (a number of years ago) was that having code of
-that nature in mainline would be pretty costly to us, and rather
-unwelcome.
+ 2) Normal kernel code that is clean - i.e. a change that only
+    matters to -rt. In this case we dont touch the mainline code,
+    nor do we bother mainline.
 
-The broadest form of the question is "will we end up regretting having
-done this".
+Do you know any specific example that falls outside of those categories?
 
-If we can arrange for the implementation to sit quietly over in a
-corner with a team of people maintaining it and not screwing up other
-people's work then I guess we'd be OK - if it breaks then the breakage
-is localised.
-
-
-
-And it's not just a matter of "does the diffstat only affect a single
-subdirectory".  We also should watch out for the imposition of new
-rules which kernel code must follow.  "you can't do that, because we
-can't serialise it", or something.
-
-Similar to the way in which perfectly correct and normal kernel
-sometimes has to be changed because it unexpectedly upsets the -rt
-patch.
-
-Do you expect that any restrictions of this type will be imposed?
+	Ingo
