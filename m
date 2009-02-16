@@ -1,129 +1,54 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH] netns: remove useless synchronize_net()
-Date: Sun, 15 Feb 2009 17:13:01 +0100
-Message-ID: <49983F0D.2090905@free.fr>
-References: <498ABDA2.5040603@dev.6wind.com>	<20090205.234520.149982266.davem@davemloft.net>	<498C403D.9040500@dev.6wind.com>	<20090206.141026.85510254.davem@davemloft.net>	<49919FD4.3000008@dev.6wind.com>
-	<4991AE04.7020307@free.fr>	<4991AFDA.8020704@dev.6wind.com>
-	<4991B5C9.9040005@free.fr>	<m1zlgtjtrf.fsf@fess.ebiederm.org>
-	<4992F372.4020206@free.fr>	<m1iqngh8yo.fsf@fess.ebiederm.org>
-	<49943C17.5080509@free.fr>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [cgroup or VFS ?] WARNING: at	fs/namespace.c:636	mntput_no_expire+0xac/0xf2()
+Date: Mon, 16 Feb 2009 09:29:00 +0800
+Message-ID: <4998C15C.2070203@cn.fujitsu.com>
+References: <499013CC.2060808@cn.fujitsu.com> <4993BD5D.2020707@cn.fujitsu.com>	<20090212062442.GE28946@ZenIV.linux.org.uk>	<4993C2A0.3050507@cn.fujitsu.com> <4993C7C2.4060100@cn.fujitsu.com>	<20090212070729.GF28946@ZenIV.linux.org.uk>	<4995007D.7040101@cn.fujitsu.com>	<20090213054751.GI28946@ZenIV.linux.org.uk>	<49950F3D.3030704@cn.fujitsu.com>	<20090213064135.GJ28946@ZenIV.linux.org.uk>	<20090213071816.GK28946@ZenIV.linux.org.uk> <4995208D.8050700@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49943C17.5080509-GANU6spQydw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nicolas.dichtel-rosZqcz4S8v2eFz/2MeuCQ@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756447AbZBPB3T@vger.kernel.org>
+In-Reply-To: <4995208D.8050700@cn.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, Arjan van de Ven <arjan@infradead.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Eric W. Biederman wrote:
->   
->> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
+Li Zefan wrote:
+> Al Viro wrote:
+>> On Fri, Feb 13, 2009 at 06:41:35AM +0000, Al Viro wrote:
 >>
->>   
->>     
->>> Eric W. Biederman wrote:
->>>     
->>>       
->>>> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
->>>>   
->>>>       
->>>>         
->>>>> Hmm, at the first glance I would say it is useless but perhaps there is a
->>>>>         
->>>>>           
->>> trick
->>>     
->>>       
->>>>> here I do not understand.
->>>>> Eric, is there any particular reason to call synchronize_net before exiting
->>>>>         
->>>>>           
->>> the
->>>     
->>>       
->>>>> dev_change_net_namespace function ?
->>>>>     
->>>>>         
->>>>>           
->>>> I haven't thought about that part of the code path in detail in a long
->>>> time.  dev_change_net_namespace() is a condensed version of
->>>> register_netdevice() unregister_netdevice().  With the calls down into
->>>> the driver removed.
->>>>
->>>> On a side note.  It looks like we now cope with:
->>>> call_netdevice_notifiers(NETDEV_REGISTER, dev); failing in
->>>> register_netdev, but no one updated dev_change_net_namespace to handle
->>>> the change, looks like a real pain to cope with.
->>>>
->>>> As for the synchronize_net, and in response to the original
->>>> comment as best as I can tell we do have things being being
->>>> deleted that are at least candidates for synchronize_net.
->>>>
->>>> dev_addr_discard(dev);
->>>> dev_net_set(dev, net);
->>>> netdev_unregister_kobject(dev);
->>>>
->>>> We very much do access dev->net with only rcu protection.
->>>>
->>>> Hmm.
->>>>
->>>> It looks like I originally took the second synchronize_net from what
->>>> became rollback_registered, which happens just before we start freeing
->>>> the netdevice.
->>>>
->>>> The nastiest case that I can envision is if we happen to receive a
->>>> packet (on another cpu) for the network device that we are moving,
->>>> just after it has registered in the new network namespace.  If we read
->>>> the old network namespace and forward it up the network stack in that
->>>> context I can imagine it being a recipe for all kinds of strange
->>>> non-deterministic behavior.
->>>>   
->>>>       
->>>>         
->>> The code does:
->>>
->>>    dev_close
->>>       dev_deactive
->>>          synchronize_rcu
->>>    synchronize_net
->>>    ...
->>>    dev_shutdown
->>>    ...
->>>    synchronize_net
->>>
->>> The network device can no longer receive packets after dev_deactive, no ?
->>> The first synchronize_net will wait for the outstanding packets to be delivered
->>> to the upper layer and we change the nd_net field after.
->>> Your scenario makes sense for the first synchronize_net but I am not sure that
->>> can happen if we remove the second synchronize_net.
->>>     
->>>       
->> Good point.  Visibility is key.  What can find us after we
->> call list_netdevice() ?  Aren't there some pieces of code that
->> do for_each_netdevice under the rcu lock?
->>   
->>     
-> AFAIR, no. for_each_netdev is protected by rtnl_lock.
->   
+>> Aaaargh...
+>>
+>>         /*
+>>          * We don't have to hold all of the locks at the
+>>          * same time here because we know that we're the
+>>          * last reference to mnt and that no new writers
+>>          * can come in.
+>>          */
+>>         for_each_possible_cpu(cpu) {
+>>                 struct mnt_writer *cpu_writer = &per_cpu(mnt_writers, cpu);
+>>                 if (cpu_writer->mnt != mnt)
+>>                         continue;
+>>                 spin_lock(&cpu_writer->lock);
+>>
+>> is *almost* OK.  Modulo SMP cache coherency.  We know that nothing should
+>> be setting ->mnt to ours anymore, that's fine.  But we do not know if
+>> we'd seen *earlier* change done on CPU in question (not the one we
+>> are running __mntput() on).
+>>
+>> I probably would still like to use milder solution in the long run, but for
+>> now let's check if turning that into
+>>
+>>                 struct mnt_writer *cpu_writer = &per_cpu(mnt_writers, cpu);
+>>                 spin_lock(&cpu_writer->lock);
+>>                 if (cpu_writer->mnt != mnt) {
+>> 			spin_unlock(&cpu_writer->lock);
+>>                         continue;
+>> 		}
+>> prevents the problem, OK?
+>>
+> 
+> Sure, I'll try. :)
+> 
 
-Nicolas,
-
-At the first glance it looks like the removing of the second 
-synchronize_net is fine, but before posting the patch do you mind to 
-wait a little ?
-I would like to do some tests with your patch to check if we don't 
-missed something.
-
-Thanks
-  -- Daniel
+Not a single warning for the whole weekend, so I think above change works.
