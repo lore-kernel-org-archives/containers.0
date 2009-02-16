@@ -1,24 +1,36 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Subject: Re: [cgroup or VFS ?] WARNING: at fs/namespace.c:636
-	mntput_no_expire+0xac/0xf2()
-Date: Mon, 16 Feb 2009 02:57:30 +0000
-Message-ID: <20090216025729.GU28946@ZenIV.linux.org.uk>
-References: <20090212070729.GF28946@ZenIV.linux.org.uk> <4995007D.7040101@cn.fujitsu.com> <20090213054751.GI28946@ZenIV.linux.org.uk> <49950F3D.3030704@cn.fujitsu.com> <20090213064135.GJ28946@ZenIV.linux.org.uk> <20090213071816.GK28946@ZenIV.linux.org.uk> <4995208D.8050700@cn.fujitsu.com> <4998C15C.2070203@cn.fujitsu.com> <20090216023812.GT28946@ZenIV.linux.org.uk> <4998D3A6.9010406@cn.fujitsu.com>
+From: Ian jonhson <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: how to get each process handler in given cgroup system
+Date: Mon, 16 Feb 2009 19:30:38 +0800
+Message-ID: <8f34198c0902160330x5a821949q68878475ab2f3f59@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757099AbZBPC5r@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4998D3A6.9010406@cn.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, Arjan van de Ven <arjan@infradead.org>, gregkh@ZenIV.linux.org.uk, Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 16, 2009 at 10:47:02AM +0800, Li Zefan wrote:
-> And here is my:
-> 
-> Tested-by: Li Zefan <lizf@cn.fujitsu.com>
+Hi all,
 
-Right...
+In my development, I need to traverse all the processes in given
+cgroup subsystem, collecting some information in their PCB.
+But I don't know how to loop around all the processes and
+then get corresponding process handlers.
 
-Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+I have browsed two cgroup subsystems (CPU, Memory) which
+have been embedded in mainstream, however I can not get
+useful hints.
+
+Could any body give me some advices?
+
+Thanks in advance,
+
+Ian
