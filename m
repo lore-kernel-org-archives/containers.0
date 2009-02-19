@@ -1,57 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
-Date: Thu, 19 Feb 2009 08:11:06 -0800
-Message-ID: <m1y6w21k6d.fsf@fess.ebiederm.org>
-References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030743.GG18990@us.ibm.com>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/9] Multiple devpts instances
+Date: Thu, 19 Feb 2009 09:32:33 -0800
+Message-ID: <499D97B1.1090902@zytor.com>
+References: <20081015053000.GA2039@us.ibm.com> <499D7E13.10601@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753745AbZBSQLV@vger.kernel.org>
-In-Reply-To: <20090219030743.GG18990@us.ibm.com> (Sukadev Bhattiprolu's message of "Wed\, 18 Feb 2009 19\:07\:43 -0800")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: Andrew Morton <akpm@osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <499D7E13.10601-GANU6spQydw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> writes:
+Daniel Lezcano wrote:
+> sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org wrote:
+>> Enable multiple instances of devpts filesystem so each container can
+>> allocate
+>> ptys independently.
+>>   
+> Hi suka,
+> 
+> It looks like the /proc/sys/kernel/pty/max and nr are not virtualized.
+> Modifying in the container the "max" pty, that impacts the init_pty.
+> Same as nr which does not show the real number of pty allocated for the
+> container.
+> 
+> Are you planning to fix this ?
+> 
 
-> From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-> Date: Wed, 24 Dec 2008 14:14:18 -0800
-> Subject: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns
-> boundary
->
-> When sending a signal to a descendant namespace, set ->si_pid to 0 since
-> the sender does not have a pid in the receiver's namespace.
->
-> Note:
-> 	- If rt_sigqueueinfo() sets si_code to SI_USER when sending a
-> 	  signal across a pid namespace boundary, the value in ->si_pid
-> 	  will be cleared to 0.
->
-> Changelog[v5]:
-> 	- (Oleg Nesterov) Address both sys_kill() and sys_tkill() cases
-> 	  in send_signal() to simplify code (this drops patch 7/7 from
-> 	  earlier version of patchset).
->
-> Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-> ---
->  kernel/signal.c |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
->
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index c94355b..a416d77 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -883,6 +883,8 @@ static int __send_signal(int sig, struct siginfo *info,
-> struct task_struct *t,
->  			break;
->  		default:
->  			copy_siginfo(&q->info, info);
-> +			if (from_ancestor_ns)
-> +				q->info.si_pid = 0;
+That's a separate issue, i.e. a resource allocation
+localization/globalization issue.  The main reason for these limits is
+top put a cap on the amount of low kernel memory used on 32-bit systems
+especially, which is somewhat inherently global.
 
-This is wrong.  siginfo is a union and you need to inspect
-code to see if si_pid is present in the current union.
+Resource limit partitioning is a much bigger and orthogonal problem.
 
+	-hpa
 
-Eric
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
