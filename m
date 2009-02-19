@@ -1,15 +1,20 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/7][v8] zap_pid_ns_process() should use force_sig()
-Date: Thu, 19 Feb 2009 19:59:54 +0100
-Message-ID: <20090219185954.GB374@redhat.com>
-References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030704.GE18990@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Banning checkpoint (was: Re: What can OpenVZ do?)
+Date: Thu, 19 Feb 2009 11:11:54 -0800
+Message-ID: <1235070714.26788.56.camel__46561.7441609085$1235070854$gmane$org@nimitz>
+References: <20090213105302.GC4608@elte.hu>
+	<1234817490.30155.287.camel@nimitz> <20090217222319.GA10546@elte.hu>
+	<1234909849.4816.9.camel@nimitz> <20090218003217.GB25856@elte.hu>
+	<1234917639.4816.12.camel@nimitz>
+	<20090218051123.GA9367@x200.localdomain>
+	<20090218181644.GD19995@elte.hu> <1234992447.26788.12.camel@nimitz>
+	<20090218231545.GA17524@elte.hu>
+	<20090219190637.GA4846@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090219030704.GE18990-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090219190637.GA4846-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,26 +24,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 02/18, Sukadev Bhattiprolu wrote:
->
->  	read_lock(&tasklist_lock);
->  	nr = next_pidmap(pid_ns, 1);
->  	while (nr > 0) {
-> -		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-> +		rcu_read_lock();
-> +
-> +		/*
-> +		 * Use force_sig() since it clears SIGNAL_UNKILLABLE ensuring
-> +		 * any nested-container's init processes don't ignore the
-> +		 * signal
-> +		 */
-> +		task = pid_task(find_vpid(nr), PIDTYPE_PID);
-> +		force_sig(SIGKILL, task);
+On Thu, 2009-02-19 at 22:06 +0300, Alexey Dobriyan wrote:
+> Inotify isn't supported yet? You do
+> 
+>         if (!list_empty(&inode->inotify_watches))
+>                 return -E;
+> 
+> without hooking into inotify syscalls.
+> 
+> ptrace(2) isn't supported -- look at struct task_struct::ptraced and
+> friends.
+> 
+> And so on.
+> 
+> System call (or whatever) does something with some piece of kernel
+> internals. We look at this "something" when walking data structures
+> and
+> abort if it's scary enough.
+> 
+> Please, show at least one counter-example.
 
-Shouldn't we check task != NULL ?
+Alexey, I agree with you here.  I've been fighting myself internally
+about these two somewhat opposing approaches.  Of *course* we can
+determine the "checkpointability" at sys_checkpoint() time by checking
+all the various bits of state.
 
-Oleg.
+The problem that I think Ingo is trying to address here is that doing it
+then makes it hard to figure out _when_ you went wrong.  That's the
+single most critical piece of finding out how to go address it.
+
+I see where you are coming from.  Ingo's suggestion has the *huge*
+downside that we've got to go muck with a lot of generic code and hook
+into all the things we don't support.
+
+I think what I posted is a decent compromise.  It gets you those
+warnings at runtime and is a one-way trip for any given process.  But,
+it does detect in certain cases (fork() and unshare(FILES)) when it is
+safe to make the trip back to the "I'm checkpointable" state again.
+
+-- Dave
