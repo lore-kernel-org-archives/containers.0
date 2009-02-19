@@ -1,101 +1,69 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
-Date: Thu, 19 Feb 2009 14:18:46 -0800
-Message-ID: <m1fxiayss9.fsf@fess.ebiederm.org>
-References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030743.GG18990@us.ibm.com> <m1y6w21k6d.fsf@fess.ebiederm.org>
-	<20090219185159.GA374@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 0/9] Multiple devpts instances
+Date: Thu, 19 Feb 2009 14:28:56 -0800
+Message-ID: <m1vdr6xdqv.fsf@fess.ebiederm.org>
+References: <20081015053000.GA2039@us.ibm.com> <499D7E13.10601@free.fr>
+	<499D97B1.1090902@zytor.com> <499DA069.3040603@free.fr>
+	<499DB9DA.2070301@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756637AbZBSWSl@vger.kernel.org>
-In-Reply-To: <20090219185159.GA374@redhat.com> (Oleg Nesterov's message of "Thu\, 19 Feb 2009 19\:51\:59 +0100")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, roland@redhat.com, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <499DB9DA.2070301-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org> (H. Peter Anvin's message of "Thu\,
+	19 Feb 2009 11\:58\:18 -0800")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg@redhat.com> writes:
+"H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org> writes:
 
-> On 02/19, Eric W. Biederman wrote:
+> Daniel Lezcano wrote:
+>>>
+>>> Resource limit partitioning is a much bigger and orthogonal problem.
+>>>   
+>> In this case we don't have the pty allocated independently, no ?
+>> I mean one container can allocate 4095 pty, making a pty starvation for others
+>> containers. Or imagine I am a vilain and I want to mess the other containers,
+>> I can do echo 0 > /proc/sys/kernel/pty/max.
+>> AFAIR, we said people making isolation of a resource is in charge (if it is
+>> relevant), to take into account the /proc/sys part.
 >>
->> Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> writes:
+>> For example, making the network per namespace all the network configuration
+>> variable located in /proc/sys/net are per namespace too. When it is irrelevant
+>> the file is read-only or just not displayed.
+
+Such as for global limits like /proc/sys/kernel/pty/max.
+The design is a little different here because we do this at a filesystem level.
+
+
+>> IMHO, pty/max and pty/nr is part of the "multiple devpts instances" feature.
 >>
->> > From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
->> > Date: Wed, 24 Dec 2008 14:14:18 -0800
->> > Subject: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns
->> > boundary
->> >
->> > When sending a signal to a descendant namespace, set ->si_pid to 0 since
->> > the sender does not have a pid in the receiver's namespace.
->> >
->> > Note:
->> > 	- If rt_sigqueueinfo() sets si_code to SI_USER when sending a
->> > 	  signal across a pid namespace boundary, the value in ->si_pid
->> > 	  will be cleared to 0.
->> >
->> > Changelog[v5]:
->> > 	- (Oleg Nesterov) Address both sys_kill() and sys_tkill() cases
->> > 	  in send_signal() to simplify code (this drops patch 7/7 from
->> > 	  earlier version of patchset).
->> >
->> > Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
->> > ---
->> >  kernel/signal.c |    2 ++
->> >  1 files changed, 2 insertions(+), 0 deletions(-)
->> >
->> > diff --git a/kernel/signal.c b/kernel/signal.c
->> > index c94355b..a416d77 100644
->> > --- a/kernel/signal.c
->> > +++ b/kernel/signal.c
->> > @@ -883,6 +883,8 @@ static int __send_signal(int sig, struct siginfo *info,
->> > struct task_struct *t,
->> >  			break;
->> >  		default:
->> >  			copy_siginfo(&q->info, info);
->> > +			if (from_ancestor_ns)
->> > +				q->info.si_pid = 0;
->>
->> This is wrong.  siginfo is a union and you need to inspect
->> code to see if si_pid is present in the current union.
 >
-> SI_FROMUSER() == T, unless we have more (hopefully not) in-kernel
-> users which send SI_FROMUSER() signals, .si_pid must be valid?
+> Naming and resource partitioning are two orthogonal issues, regardless of what's
+> IYHO.
+>
+> Really.  You have the same classes of issues with ANY allocatable
+> resource in the system.  Period.  Furthermore, there are quite a few
+> applications which want one and not the other.  Trying to entangle
+> them is broken.
 
-So the argument is that while things such as force_sig_info(SIGSEGV)
-don't have a si_pid we don't care because from_ancestor_ns  == 0.
+Peter they are entangled issues because the limits frequently show up
+in the naming.  pids are a good example of that.
 
-Interesting.  Then I don't know if we have any kernel senders
-that cross the namespace boundaries.
-
-That said I still object to this code.
-
-sys_kill(-pgrp, SIGUSR1)
-  kill_something_info(SIGUSR1, &info, 0)
-    __kill_pgrp_info(SIGUSR1, &info task_pgrp(current))
-      group_send_sig_info(SIGUSR1, &info, tsk)
-        __group_send_sig_info(SIGUSR1, &info, tsk)
-          send_signal(SIGUSR1, &info, tsk, 1)
-            __send_signal(SIGUSR1, &info, tsk, 1)
-
-
-Process groups and sessions can have processes in multiple pid
-namespaces, which is very useful for not messing up your controlling
-terminal.
-
-In which case sys_kill cannot possibly set the si_pid value correct
-and from_ancestor_ns is not enough either.
-
-So I see two valid policies with setting si_pid.  Push the work
-out to the callers of send_signal (kill_pgrp in this case).  And
-know you have a valid set of siginfo values.  Or handle the work
-in send_signal.
-
-Given that except for process groups we don't send the same siginfo
-to multiple processes simply generating the right siginfo values
-from the start appears easy enough.
-
-I am not current with the current rule: the caller of send_signal will
-do all of the work except for sometimes.  I don't see how we can figure
-out which code path has the bug in it with a rule like that.
+That said with the approach we have taken with ptys, is to move all of the
+relevant files and state into the pty filesystem.  That is a very good
+model for new development, especially because it does not require magic
+systems calls or magic glue elsewhere in the kernel.  Using that model
+if we are to add limits on the names generated by a particular devpts
+instance those control files should likely live in devpts itself.
 
 Eric
