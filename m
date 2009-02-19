@@ -1,92 +1,80 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
+From: Roland McGrath <roland@redhat.com>
 Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
-Date: Thu, 19 Feb 2009 15:21:34 -0800
-Message-ID: <m1fxiaxbb5.fsf@fess.ebiederm.org>
+Date: Thu, 19 Feb 2009 15:51:59 -0800 (PST)
+Message-ID: <20090219235159.6A542FC3BE@magilla.sf.frob.com>
 References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030743.GG18990@us.ibm.com> <m1y6w21k6d.fsf@fess.ebiederm.org>
-	<20090219185159.GA374@redhat.com> <m1fxiayss9.fsf@fess.ebiederm.org>
+	<20090219030743.GG18990@us.ibm.com>
+	<m1y6w21k6d.fsf@fess.ebiederm.org>
+	<20090219185159.GA374@redhat.com>
+	<m1fxiayss9.fsf@fess.ebiederm.org>
 	<20090219223137.GA10378@redhat.com>
+	<m1fxiaxbb5.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756796AbZBSXVa@vger.kernel.org>
-In-Reply-To: <20090219223137.GA10378@redhat.com> (Oleg Nesterov's message of "Thu\, 19 Feb 2009 23\:31\:37 +0100")
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757477AbZBSXxT@vger.kernel.org>
+In-Reply-To: Eric W. Biederman's message of  Thursday, 19 February 2009 15:21:34 -0800 <m1fxiaxbb5.fsf@fess.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, roland@redhat.com, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Oleg Nesterov <oleg@redhat.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg@redhat.com> writes:
+> Suppose I have 3 processes in a process group in three separate pid
+> namespaces.
+> 
+> Looking from the init pid namespace I have:
+>      pid pgrp ppid
+>       10 10    1
+>       11 10    10
+>       12 10    11
+> 
+> Looking from the pid namespace of pid 11 I have:
+>      pid pgrp ppid
+>       0  0     0
+>       1  0     0
+>       2  0     1
+> 
+> Looking from the pid namespace of pid 12 I have:
+>      pid pgrp ppid
+>       0  0     0
+>       0  0     0
+>       1  0     0
+> 
+> So if the process with pid 12 in the initial pid namespace
+> sends to process group 0.
 
-> On 02/19, Eric W. Biederman wrote:
->>
->> Oleg Nesterov <oleg@redhat.com> writes:
->> >
->> > SI_FROMUSER() == T, unless we have more (hopefully not) in-kernel
->> > users which send SI_FROMUSER() signals, .si_pid must be valid?
->>
->> So the argument is that while things such as force_sig_info(SIGSEGV)
->> don't have a si_pid we don't care because from_ancestor_ns  == 0.
->>
->> Interesting.  Then I don't know if we have any kernel senders
->> that cross the namespace boundaries.
->>
->> That said I still object to this code.
->>
->> sys_kill(-pgrp, SIGUSR1)
->>   kill_something_info(SIGUSR1, &info, 0)
->>     __kill_pgrp_info(SIGUSR1, &info task_pgrp(current))
->>       group_send_sig_info(SIGUSR1, &info, tsk)
->>         __group_send_sig_info(SIGUSR1, &info, tsk)
->>           send_signal(SIGUSR1, &info, tsk, 1)
->>             __send_signal(SIGUSR1, &info, tsk, 1)
->>
->>
->> Process groups and sessions can have processes in multiple pid
->> namespaces, which is very useful for not messing up your controlling
->> terminal.
->>
->> In which case sys_kill cannot possibly set the si_pid value correct
->> and from_ancestor_ns is not enough either.
->
-> (I know, I shouldn't reply today because I am already sleeping ;)
->
-> Why? send_signal() should calculate the correct value of
-> from_parent and pass it to __send_signal(). If it is true, then
-> we clear .si_pid in the copied siginfo (which was already queued).
-> We don't mangle the original siginfo.
->
-> This happens for each process we send the signal.
->
-> Or I misunderstood you?
+There is no "process group 0".  0 means "the sender's pgrp".
 
-Suppose I have 3 processes in a process group in three separate pid
-namespaces.
+One possibility is that perhaps what people really want the pid_ns to mean
+is that "the sender's pgrp" in the view of the sender does not include any
+processes outside its pid_ns scope.  That would be consistent with the
+behavior of kill (kill_something_info) on -1; it's described as "all
+processes", but in fact means "all processes within my pid_ns scope".
 
-Looking from the init pid namespace I have:
-     pid pgrp ppid
-      10 10    1
-      11 10    10
-      12 10    11
+What I mean to describe there is changing kill_something_info, so that
+e.g. killpg() inside the NS would affect only the NS init itself but e.g.
+^Z (effectively an implicit killpg() that's always from the global NS)
+would also go to that init's "mother" pgrp in the outer NS.
 
-Looking from the pid namespace of pid 11 I have:
-     pid pgrp ppid
-      0  0     0
-      1  0     0
-      2  0     1
+Another possibility is to decide that's just not worth having at all, and
+CLONE_NEWNS should just implicitly reset pgrp to self.  That is simple.
+But perhaps today someone has a script running a pid_ns-world whose init is
+gracefully killed by ^C of the whole script and we wouldn't want to break
+that if it is actually useful now.
 
-Looking from the pid namespace of pid 12 I have:
-     pid pgrp ppid
-      0  0     0
-      0  0     0
-      1  0     0
+> pid 10 should see si_pid 12.
+> pid 11 should see si_pid 2.
 
-So if the process with pid 12 in the initial pid namespace
-sends to process group 0.
+We indeed have this problem if we think it's useful to continue to have
+a concept of pgrp for the sub-init that can see outside its own NS.
 
-pid 10 should see si_pid 12.
-pid 11 should see si_pid 2.
+> Neither should see si_pid 0, as from_ancestor_ns will not be true.
 
-Neither should see si_pid 0, as from_ancestor_ns will not
-be true.
+Perhaps replace from_ancestor_ns with struct pid_namespace *sender_ns?
+(I don't know if there was already a can of worms with such an idea before.)
+Then si_pid could be translated as appropriate for each recipient.
+(Or perhaps just struct pid *sender and reset si_pid from that.)
 
-Eric
+
+Thanks,
+Roland
