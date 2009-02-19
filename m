@@ -1,59 +1,134 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: What can OpenVZ do?
-Date: Thu, 19 Feb 2009 00:15:45 +0100
-Message-ID: <20090218231545.GA17524__25741.0386846916$1234999108$gmane$org@elte.hu>
-References: <20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<20090213105302.GC4608@elte.hu> <1234817490.30155.287.camel@nimitz>
-	<20090217222319.GA10546@elte.hu> <1234909849.4816.9.camel@nimitz>
-	<20090218003217.GB25856@elte.hu> <1234917639.4816.12.camel@nimitz>
-	<20090218051123.GA9367@x200.localdomain>
-	<20090218181644.GD19995@elte.hu> <1234992447.26788.12.camel@nimitz>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 0/7][v8] Container-init signal semantics
+Date: Wed, 18 Feb 2009 19:02:07 -0800
+Message-ID: <20090219030207.GA18783@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755518AbZBSDCs@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1234992447.26788.12.camel@nimitz>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@osdl.org>
+Cc: Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, "Eric W. Biederman" <ebiederm@xmission.com>, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 
-* Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+Patch 5/7 is new in this set and fixes a bug. Remaining patches are
+just a forward-port from previous version and I believe they address
+all comments I have received.
 
-> On Wed, 2009-02-18 at 19:16 +0100, Ingo Molnar wrote:
-> > Nothing motivates more than app designers complaining about the 
-> > one-way flag.
-> > 
-> > Furthermore, it's _far_ easier to make a one-way flag SMP-safe. 
-> > We just set it and that's it. When we unset it, what do we about 
-> > SMP races with other threads in the same MM installing another 
-> > non-linear vma, etc.
-> 
-> After looking at this for file descriptors, I have to really 
-> agree with Ingo on this one, at least as far as the flag is 
-> concerned.  I want to propose one teeny change, though: I 
-> think the flag should be per-resource.
-> 
-> We should have one flag in mm_struct, one in files_struct, 
-> etc...  The task_is_checkpointable() function can just query 
-> task->mm, task->files, etc...  This gives us nice behavior at 
-> clone() *and* fork that just works.
-> 
-> I'll do this for files_struct and see how it comes out so you 
-> can take a peek.
+Oleg please sign-off/ack if you agree.
 
-Yeah, per resource it should be. That's per task in the normal 
-case - except for threaded workloads where it's shared by 
-threads.
+---
 
-	Ingo
+Container-init must behave like global-init to processes within the
+container and hence it must be immune to unhandled fatal signals from
+within the container (i.e SIG_DFL signals that terminate the process).
+
+But the same container-init must behave like a normal process to 
+processes in ancestor namespaces and so if it receives the same fatal
+signal from a process in ancestor namespace, the signal must be
+processed.
+
+Implementing these semantics requires that send_signal() determine pid
+namespace of the sender but since signals can originate from workqueues/
+interrupt-handlers, determining pid namespace of sender may not always
+be possible or safe.
+
+This patchset implements the design/simplified semantics suggested by
+Oleg Nesterov.  The simplified semantics for container-init are:
+
+	- container-init must never be terminated by a signal from a
+	  descendant process.
+
+	- container-init must never be immune to SIGKILL from an ancestor
+	  namespace (so a process in parent namespace must always be able
+	  to terminate a descendant container).
+
+	- container-init may be immune to unhandled fatal signals (like
+	  SIGUSR1) even if they are from ancestor namespace. SIGKILL/SIGSTOP
+	  are the only reliable signals to a container-init from ancestor
+	  namespace.
+
+Patches in this set:
+
+	[PATCH 1/7] Remove 'handler' parameter to tracehook functions
+	[PATCH 2/7] Protect init from unwanted signals more
+	[PATCH 3/7] Add from_ancestor_ns parameter to send_signal()
+	[PATCH 4/7] Protect cinit from unblocked SIG_DFL signals
+	[PATCH 5/7] zap_pid_ns_process() should use force_sig()
+	[PATCH 6/7] Protect cinit from blocked fatal signals
+	[PATCH 7/7] SI_USER: Masquerade si_pid when crossing pid ns boundary
+
+Changelog[v8]:
+
+	- Bugfix (new patch, 5/7): Nested container-init not terminated when
+	  parent container-init exits and calls zap_pid_ns_processes().
+	- Dropped old patch 7/7 which showed SIG_DFL signals to init as
+	  "ignored" in /proc (we were undecided on whether its good or bad).
+
+Changelog[v7]:
+	- siginfo_from_user() and siginfo_from_ancestor_ns() are fairly simple
+	  and used only in send_signal(). Remove them and move the logic into
+	  send_signal() (Patch 4/7)
+
+	- Update /proc/pid/status to include SIG_DFL signals to init in the
+	  "ignored" set (and remove the TODO in Patch 0/7) (Patch 7/7)
+
+Changelog[v6]:
+
+	- Patches 3,4: Have kill_pid_info_as_uid() pass in 'from_ancestor_ns'
+	  parameter to __send_signal() and remove SI_ASYNCIO check in
+	  siginfo_from_user().
+	- Patches 4,6: Update changelog and simplify code
+
+Changelog[v5]:
+	- Patch 2/6: Remove SIG_IGN check in sig_task_ignored() and let
+	  sig_handler_ignored() check SIG_IGN.
+        - Patch 3/6. Put siginfo_from_ancestor_ns() back under CONFIG_PID_NS
+	  and remove warning in rt_sigqueueinfo().
+	- (Patch 5/6)Simplify check in get_signal_to_deliver()
+	- (Patch 6/6)Simplify masquerading pid
+	- LTP-20081219-intermediate showed no new errors on 2.6.28-rc5-mm2.
+
+Changelog[v4]:
+	- [Bugfix] Patch 3/7. Check ns == NULL in siginfo_from_ancestor_ns().
+	  Although http://lkml.org/lkml/2008/12/16/502 makes it less likely
+	  that ns == NULL, looks like an explicit check won't hurt ?
+	- Remove SIGNAL_UNKILLABLE_FROM_NS flag and simplify logic as
+	  suggested by Oleg Nesterov.
+	- Dropped patch that set SIGNAL_UNKILLABLE_FROM_NS and set
+	  SIGNAL_UNKILLABLE in patch 5/7 to be bisect-safe.
+	- Add a warning in rt_sigqueueinfo() if SI_ASYNCIO is used
+	  (patch 3/7)
+	- Added two patches (6/7 and 7/7) to masquerade si_pid for
+	  SI_USER and SI_TKILL
+
+
+Changelog[v3]:
+	Changes based on discussions of previous version:
+		http://lkml.org/lkml/2008/11/25/458
+
+	Major changes:
+
+	- Define SIGNAL_UNKILLABLE_FROM_NS and use in container-inits to
+	  skip fatal signals from same namespace but process SIGKILL/SIGSTOP
+	  from ancestor namespace.
+	- Use SI_FROMUSER() and si_code != SI_ASYNCIO to determine if
+	  it is safe to dereference pid-namespace of caller. Highly
+	  experimental :-)
+	- Masquerading si_pid when crossing namespace boundary: relevant
+	  patches merged in -mm and dropped from this set.
+
+	Minor changes:
+
+	- Remove 'handler' parameter to tracehook functions
+	- Update sig_ignored() to drop SIG_DFL signals to global init early
+	  (tried to address Roland's  and Oleg's comments)
+	- Use 'same_ns' flag to drop SIGKILL/SIGSTOP to cinit from same
+	  namespace
+
+
+Limitations/side-effects of current design
+
+	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
+	  ignored. Use exit() :-)
