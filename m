@@ -1,20 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Banning checkpoint (was: Re: What can OpenVZ do?)
-Date: Thu, 19 Feb 2009 11:11:54 -0800
-Message-ID: <1235070714.26788.56.camel__46561.7441609085$1235070854$gmane$org@nimitz>
-References: <20090213105302.GC4608@elte.hu>
-	<1234817490.30155.287.camel@nimitz> <20090217222319.GA10546@elte.hu>
-	<1234909849.4816.9.camel@nimitz> <20090218003217.GB25856@elte.hu>
-	<1234917639.4816.12.camel@nimitz>
-	<20090218051123.GA9367@x200.localdomain>
-	<20090218181644.GD19995@elte.hu> <1234992447.26788.12.camel@nimitz>
-	<20090218231545.GA17524@elte.hu>
-	<20090219190637.GA4846@x200.localdomain>
+Subject: Re: [RFC][PATCH 1/5] create fs flag to mark c/r supported fs's
+Date: Thu, 19 Feb 2009 11:24:51 -0800
+Message-ID: <1235071491.26788.67.camel@nimitz>
+References: <20090219182007.B4B47C1F@kernel>
+	<20090219190009.GC28490@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090219190637.GA4846-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090219190009.GC28490-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,46 +18,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-02-19 at 22:06 +0300, Alexey Dobriyan wrote:
-> Inotify isn't supported yet? You do
+On Thu, 2009-02-19 at 14:00 -0500, Christoph Hellwig wrote:
+> On Thu, Feb 19, 2009 at 10:20:07AM -0800, Dave Hansen wrote:
+> > 
+> > There are plenty of filesystems that are not supported for
+> > c/r at this point.  Think of things like hugetlbfs which
+> > are externally visible or pipefs which are kernel-internal.
+> > 
+> > This provides a quick way to make the "normal" filesystems
+> > which are currently supported.  This is also safe if any
+> > new code gets added.  We assume that a fs is non-supported
+> > unless someone takes explicit action to the contrary.
+> > 
+> > I bet there are some more filesystems that are OK, but
+> > these probably cover 99% of the users for now.
 > 
->         if (!list_empty(&inode->inotify_watches))
->                 return -E;
-> 
-> without hooking into inotify syscalls.
-> 
-> ptrace(2) isn't supported -- look at struct task_struct::ptraced and
-> friends.
-> 
-> And so on.
-> 
-> System call (or whatever) does something with some piece of kernel
-> internals. We look at this "something" when walking data structures
-> and
-> abort if it's scary enough.
-> 
-> Please, show at least one counter-example.
+> Given that a normal fs should be checkpointable you should
+> make those exposing internal state, not the other way around.
 
-Alexey, I agree with you here.  I've been fighting myself internally
-about these two somewhat opposing approaches.  Of *course* we can
-determine the "checkpointability" at sys_checkpoint() time by checking
-all the various bits of state.
+In general I agree with you.  But, I think practicality gets in the way
+here.  Here's the cscope output from file_system_type and
+FS_REQUIRES_DEV (basically grepping the tree for them):
 
-The problem that I think Ingo is trying to address here is that doing it
-then makes it hard to figure out _when_ you went wrong.  That's the
-single most critical piece of finding out how to go address it.
+$ wc -l file_system_type FS_REQUIRES_DEV 
+  256 file_system_type
+   41 FS_REQUIRES_DEV
 
-I see where you are coming from.  Ingo's suggestion has the *huge*
-downside that we've got to go muck with a lot of generic code and hook
-into all the things we don't support.
+So, (very) roughly 1/6 of the filesystems are the "normal" block-based
+ones that we all know and love.  The rest are ones that I'd have to at
+the very least think about before saying that they're supported.
 
-I think what I posted is a decent compromise.  It gets you those
-warnings at runtime and is a one-way trip for any given process.  But,
-it does detect in certain cases (fork() and unshare(FILES)) when it is
-safe to make the trip back to the "I'm checkpointable" state again.
+I guess we could say that FS_REQUIRES_DEV by default implies
+FS_CHECKPOINTABLE:
+
+#define __FS_REQUIRES_DEV 1
+#define FS_REQUIRES_DEV (__FS_REQUIRES_DEV|FS_CHECKPOINTABLE)
+
+I really don't mind doing it *that* much either way, but I'd sure like
+to go specifically tag ~40 filesystems rather than 200.  
 
 -- Dave
