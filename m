@@ -1,54 +1,79 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns
-	boundary
-Date: Wed, 18 Feb 2009 19:07:43 -0800
-Message-ID: <20090219030743.GG18990@us.ibm.com>
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: [PATCH 0/7][v8] Container-init signal semantics
+Date: Thu, 19 Feb 2009 15:59:20 +0100
+Message-ID: <499D73C8.3090209@free.fr>
 References: <20090219030207.GA18783@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758745AbZBSDIW@vger.kernel.org>
-Content-Disposition: inline
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758214AbZBSO7q@vger.kernel.org>
 In-Reply-To: <20090219030207.GA18783@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@osdl.org>
-Cc: Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, "Eric W. Biederman" <ebiederm@xmission.com>, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@osdl.org>, linux-kernel@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, Containers <containers@lists.osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, Greg Kurz <gkurz@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
+Sukadev Bhattiprolu wrote:
+> Patch 5/7 is new in this set and fixes a bug. Remaining patches are
+> just a forward-port from previous version and I believe they address
+> all comments I have received.
+>
+> Oleg please sign-off/ack if you agree.
+>
+> ---
+>
+> Container-init must behave like global-init to processes within the
+> container and hence it must be immune to unhandled fatal signals from
+> within the container (i.e SIG_DFL signals that terminate the process).
+>
+> But the same container-init must behave like a normal process to 
+> processes in ancestor namespaces and so if it receives the same fatal
+> signal from a process in ancestor namespace, the signal must be
+> processed.
+>
+> Implementing these semantics requires that send_signal() determine pid
+> namespace of the sender but since signals can originate from workqueues/
+> interrupt-handlers, determining pid namespace of sender may not always
+> be possible or safe.
+>
+> This patchset implements the design/simplified semantics suggested by
+> Oleg Nesterov.  The simplified semantics for container-init are:
+>
+> 	- container-init must never be terminated by a signal from a
+> 	  descendant process.
+>
+> 	- container-init must never be immune to SIGKILL from an ancestor
+> 	  namespace (so a process in parent namespace must always be able
+> 	  to terminate a descendant container).
+>
+> 	- container-init may be immune to unhandled fatal signals (like
+> 	  SIGUSR1) even if they are from ancestor namespace. SIGKILL/SIGSTOP
+> 	  are the only reliable signals to a container-init from ancestor
+> 	  namespace.
+>   
+Hi Suka,
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Wed, 24 Dec 2008 14:14:18 -0800
-Subject: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
+I agree with these semantics, they look good.
 
-When sending a signal to a descendant namespace, set ->si_pid to 0 since
-the sender does not have a pid in the receiver's namespace.
+What is planned to have the init process to die when a system container 
+shuts down ?
 
-Note:
-	- If rt_sigqueueinfo() sets si_code to SI_USER when sending a
-	  signal across a pid namespace boundary, the value in ->si_pid
-	  will be cleared to 0.
+Let's say we use the "shutdown" command, it will telinit to go to the 
+runlevel 0, and will kill -1.
+At this point, the container finishes with a sys_reboot (we take care to 
+do nothing otherwise the real system shuts down). But the init process 
+will stay there and the launcher of the container will never know if the 
+container has stopped or not.
 
-Changelog[v5]:
-	- (Oleg Nesterov) Address both sys_kill() and sys_tkill() cases
-	  in send_signal() to simplify code (this drops patch 7/7 from
-	  earlier version of patchset).
+Gregory Kurz proposed a solution:
+    * when shutdown is called and we are not in the init pidns, then we 
+kill the process 1 of the pidnamespace.
+    * when reboot is called and we are not in the init pidns, then we 
+reexec the init process, using the same command line. I guess this one 
+could be easily retrieved if we are able to display /proc/1/cmdline ;)
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- kernel/signal.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+IMHO, this is a good proposition because it is generic and intuitive, no ?
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index c94355b..a416d77 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -883,6 +883,8 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			break;
- 		default:
- 			copy_siginfo(&q->info, info);
-+			if (from_ancestor_ns)
-+				q->info.si_pid = 0;
- 			break;
- 		}
- 	} else if (!is_si_special(info)) {
--- 
-1.5.2.5
+What do you thing ?
+
+  -- Daniel
