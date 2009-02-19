@@ -1,45 +1,92 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/9] Multiple devpts instances
-Date: Thu, 19 Feb 2009 14:46:37 -0800
-Message-ID: <499DE14D.9050503@zytor.com>
-References: <20081015053000.GA2039@us.ibm.com> <499D7E13.10601@free.fr>
-	<499D97B1.1090902@zytor.com> <499DA069.3040603@free.fr>
-	<499DB9DA.2070301@zytor.com> <499DE06E.4030108@free.fr>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
+Date: Thu, 19 Feb 2009 15:21:34 -0800
+Message-ID: <m1fxiaxbb5.fsf@fess.ebiederm.org>
+References: <20090219030207.GA18783@us.ibm.com>
+	<20090219030743.GG18990@us.ibm.com> <m1y6w21k6d.fsf@fess.ebiederm.org>
+	<20090219185159.GA374@redhat.com> <m1fxiayss9.fsf@fess.ebiederm.org>
+	<20090219223137.GA10378@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <499DE06E.4030108-GANU6spQydw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756796AbZBSXVa@vger.kernel.org>
+In-Reply-To: <20090219223137.GA10378@redhat.com> (Oleg Nesterov's message of "Thu\, 19 Feb 2009 23\:31\:37 +0100")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, roland@redhat.com, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> 
-> But if I am able to create a new instance of devpts for a container and 
-> modify the configuration of another devpts from this container, is it 
-> acceptable ? Can we convince people to use the containers for security 
-> and have anybody able to make a pty starvation from one container to 
-> another ?
-> If it is too much complicated to handle one value per new devpts 
-> instance, IMHO /proc/sys/kernel/pty/max should be, at least, read-only 
-> for the new instance, no ?
-> 
+Oleg Nesterov <oleg@redhat.com> writes:
 
-First of all, there is no such thing... the devpts instance is simply 
-another filesystem, whereas the /proc/sys entry is a global limit on the 
-total number of ptys in the system.  Again, one of thousands, and yes, 
-they probably should ALL be readonly in a container environment.  That 
-has to be set up separately than the devpts filesystem, because the 
-devpts filesystem is not tied to procfs or even containers in any way.
+> On 02/19, Eric W. Biederman wrote:
+>>
+>> Oleg Nesterov <oleg@redhat.com> writes:
+>> >
+>> > SI_FROMUSER() == T, unless we have more (hopefully not) in-kernel
+>> > users which send SI_FROMUSER() signals, .si_pid must be valid?
+>>
+>> So the argument is that while things such as force_sig_info(SIGSEGV)
+>> don't have a si_pid we don't care because from_ancestor_ns  == 0.
+>>
+>> Interesting.  Then I don't know if we have any kernel senders
+>> that cross the namespace boundaries.
+>>
+>> That said I still object to this code.
+>>
+>> sys_kill(-pgrp, SIGUSR1)
+>>   kill_something_info(SIGUSR1, &info, 0)
+>>     __kill_pgrp_info(SIGUSR1, &info task_pgrp(current))
+>>       group_send_sig_info(SIGUSR1, &info, tsk)
+>>         __group_send_sig_info(SIGUSR1, &info, tsk)
+>>           send_signal(SIGUSR1, &info, tsk, 1)
+>>             __send_signal(SIGUSR1, &info, tsk, 1)
+>>
+>>
+>> Process groups and sessions can have processes in multiple pid
+>> namespaces, which is very useful for not messing up your controlling
+>> terminal.
+>>
+>> In which case sys_kill cannot possibly set the si_pid value correct
+>> and from_ancestor_ns is not enough either.
+>
+> (I know, I shouldn't reply today because I am already sleeping ;)
+>
+> Why? send_signal() should calculate the correct value of
+> from_parent and pass it to __send_signal(). If it is true, then
+> we clear .si_pid in the copied siginfo (which was already queued).
+> We don't mangle the original siginfo.
+>
+> This happens for each process we send the signal.
+>
+> Or I misunderstood you?
 
-	-hpa
+Suppose I have 3 processes in a process group in three separate pid
+namespaces.
+
+Looking from the init pid namespace I have:
+     pid pgrp ppid
+      10 10    1
+      11 10    10
+      12 10    11
+
+Looking from the pid namespace of pid 11 I have:
+     pid pgrp ppid
+      0  0     0
+      1  0     0
+      2  0     1
+
+Looking from the pid namespace of pid 12 I have:
+     pid pgrp ppid
+      0  0     0
+      0  0     0
+      1  0     0
+
+So if the process with pid 12 in the initial pid namespace
+sends to process group 0.
+
+pid 10 should see si_pid 12.
+pid 11 should see si_pid 2.
+
+Neither should see si_pid 0, as from_ancestor_ns will not
+be true.
+
+Eric
