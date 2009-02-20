@@ -1,17 +1,13 @@
-From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] cgroup for disk quota
-Date: Sat, 21 Feb 2009 00:14:10 +0800
-Message-ID: <d95d44a20902200814o4f7f3daexbe0986be28e83eaf@mail.gmail.com>
-References: <d95d44a20902200028h1e229cc0pa3cdd4f42814e78e@mail.gmail.com>
-	<d95d44a20902200221w67ee1b49ua6027f3090186af9@mail.gmail.com>
-	<b6a2d2e20902200232x33204c61j30837a697d69c4d4@mail.gmail.com>
-	<d95d44a20902200300x43ef2ccfh6a66d3b81056d7fd@mail.gmail.com>
-	<499EB56B.6030502@free.fr>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Question for remount
+Date: Fri, 20 Feb 2009 08:22:45 -0800
+Message-ID: <6599ad830902200822u6d453340me718bacac3925040__38387.2407525361$1235147097$gmane$org@mail.gmail.com>
+References: <20090220190223.e8b4f6a8.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <499EB56B.6030502-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20090220190223.e8b4f6a8.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,29 +17,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
->> Although Paolo Valente has presented a solution of I/O bandwidth control
->> (see http://lwn.net/Articles/309400/), I would more like to present
->> bandwidth reservation mechanism, especially for data-intensive
->> applications (e.g. hadoop cluster).
->>
->> This kind of applications take more account of the reservation of
->> I/O bandwidth and netword bandwidth.
->>
+On Fri, Feb 20, 2009 at 2:02 AM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> Does this feature do what you want for network bandwidth ?
->
-> http://lwn.net/Articles/291161/
->
+> 2. /proc/mounts information of release_agent should be updated....
+>   when it's overwritten directly.
 
-Well. I will make a close look in the work.
+Yes, definitely. But shouldn't that happen already?
+cgroup_show_options() reports the current value of
+root->release_agent_path in /proc/mounts. Is it possible that mount is
+actually storing/retrieving this information in /etc/mtab, which
+doesn't get updated?
 
-Thanks you very much
-
-
-Best Regards,
-
-Anqin
+Paul
