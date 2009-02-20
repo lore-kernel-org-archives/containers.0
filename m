@@ -1,108 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
-Date: Thu, 19 Feb 2009 20:05:11 -0800
-Message-ID: <m11vttn47c.fsf@fess.ebiederm.org>
-References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030743.GG18990@us.ibm.com> <m1y6w21k6d.fsf@fess.ebiederm.org>
-	<20090219185159.GA374@redhat.com> <m1fxiayss9.fsf@fess.ebiederm.org>
-	<20090219223137.GA10378@redhat.com> <m1fxiaxbb5.fsf@fess.ebiederm.org>
-	<20090219235159.6A542FC3BE@magilla.sf.frob.com>
-	<m1bpsyt05t.fsf@fess.ebiederm.org>
-	<20090220010600.DCEA7FC2F7@magilla.sf.frob.com>
-	<m1wsblq2jx.fsf@fess.ebiederm.org>
-	<20090220031004.331EDFC2F7@magilla.sf.frob.com>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/9] Multiple devpts instances
+Date: Thu, 19 Feb 2009 20:22:48 -0800
+Message-ID: <499E3018.3070108@zytor.com>
+References: <20081015053000.GA2039@us.ibm.com>
+	<499D7E13.10601@free.fr>	<499D97B1.1090902@zytor.com>
+	<499DA069.3040603@free.fr>	<499DB9DA.2070301@zytor.com>
+	<m1vdr6xdqv.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755842AbZBTEFM@vger.kernel.org>
-In-Reply-To: <20090220031004.331EDFC2F7@magilla.sf.frob.com> (Roland McGrath's message of "Thu\, 19 Feb 2009 19\:10\:04 -0800 \(PST\)")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Roland McGrath <roland@redhat.com>
-Cc: Oleg Nesterov <oleg@redhat.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1vdr6xdqv.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Roland McGrath <roland@redhat.com> writes:
+Eric W. Biederman wrote:
+>>
+>> Really.  You have the same classes of issues with ANY allocatable
+>> resource in the system.  Period.  Furthermore, there are quite a few
+>> applications which want one and not the other.  Trying to entangle
+>> them is broken.
+> 
+> Peter they are entangled issues because the limits frequently show up
+> in the naming.  pids are a good example of that.
+> 
 
->> > think it would be best to fully elucidate what we think about desireable
->> > semantics for the whole spectrum of cross-NS signal-sending cases before
->> > actually choosing the implementation details.
->
-> ... and then you answered all the questions that are already well settled,
-> and did not address the new question that you had raised earlier today.
+No.  The *reason* for these limits are a matter of resource control, and
+that has to at least have the ability to be global.
 
-Oh sorry.  I misunderstood what you were asking.
+Entangling them because it peers through somewhat in the naming is
+nonsense, at least in this case.
 
-> To which processes should a pgrp-wide signal sent from user mode inside a
-> pid_ns go?  Should they go to a pgrp member in a different pid_ns, or not?
->
-> If your answer is that you don't care, my inclination is to leave it as it
-> is ("my pgrp" can include processes outside your pid_ns, which you could
-> not explicitly target in any other way).  The way we are going just for the
-> sake of cleanliness happens to make the si_pid values all work out right
-> for this.  Possibly the semantics are even what you want: If e.g. the
-> sub-init acts like many terminal apps and might use the tty in raw mode but
-> then handle something like ^Z by fiddling the tty and then kill(0,SIGTSTP)
-> to act like ^Z was hit in cooked mode, then this preserves the proper
-> effect of that suspending a whole script/pipeline.
+Containers may very well want resource control, but it's a separate
+issue from naming.
 
-As it is are the easiest and most intuitive semantics to me.  It is
-simply weird to people expecting that signals will never exit out of a
-pid namespace.  Additionally I like having a prominent easy to create
-case because it makes it much easier for people to realize it can
-happen.
+	-hpa
 
-What I don't have is a compelling usage that means we must send to
-every process in our process group if our process group spans multiple
-pid namespaces.  Your description of manually implementing ^Z sounds
-as close as I can come to a compelling case.
-
-I simply have a compelling case for process groups and sessions that
-span pid namespaces where the tty sends the signals to all of the
-processes.
-
-A nearly compelling case for the current process group semantics
-and comes from using pid namespaces as inescapable process groups.
-In that use case I would find it very convenient to be able to
-set SIGCHLD to SIG_IGN and exec an arbitrary program a pid namespace
-leader.
-
-Ouch!
-
-I have just recalled a use case that will cause problems with the
-current ignoring of signals in this patchset.  Currently a container
-init can not send SIGSTOP to itself.  And I have been taking advantage
-of that in usages such as supporting the bash suspend command or the
-M-x suspend-emacs.  And it is very handy for getting back to a shell
-outside of a chroot like container.  SIGTSTP will still work, but
-SIGSTOP which I'm pretty certain bash sends itself will not.
-
-So I have the question.  How few special cases do we need to implement
-to signal handling in a container init and still support running
-programs written to be /sbin/init, on linux.  Can we limit this our
-special case to just ignoring SIGKILL and SIGSTOP when sent from other
-process in the same pid namespace?  Or do we actually need more?
-
->> Another case where we can send signals between namespaces is posix
->> message queues.  Implemented in ipc/mqueue.c.  In that case because it
->> is a unicast message we are generating the proper si_pid when we
->> generate the signal.
->
-> Ah, this is the clear example of "any to any", since all the sender and
-> recipient have to share is the mqueue they each have a descriptor on.
-> But, as you say, it's got no problems because the sender is just
-> "current in mq_timedsend" to a single recipient, no different than
-> "current in sys_kill" when that is going to a single recipient.
-
-I suspect there are others buried in the kernel somewhere or there
-will be others in the future.  We have a very similar pattern with
-fcntl and SIGIO and SIGURG, but they all look they are coming from the
-kernel.  Everything except the tty code appears to slowly approach
-the general case.
-
->> I think that is where we need to go, to be safe and to be certain
->> weird things won't sneak up on us.  We already handle half of the logic in
->> send_signal anyway.  We might as well handle the other half.
->
-> Agreed.
-
-
-Eric
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
