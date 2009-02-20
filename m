@@ -1,16 +1,21 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/9] Multiple devpts instances
-Date: Thu, 19 Feb 2009 15:59:11 -0800
-Message-ID: <m1eixuvv00.fsf@fess.ebiederm.org>
-References: <20081015053000.GA2039@us.ibm.com> <499D7E13.10601@free.fr>
-	<499D97B1.1090902@zytor.com> <499DA069.3040603@free.fr>
-	<499DB9DA.2070301@zytor.com> <499DE06E.4030108@free.fr>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid
+	ns boundary
+Date: Fri, 20 Feb 2009 01:28:51 +0100
+Message-ID: <20090220002851.GA15255@redhat.com>
+References: <20090219030207.GA18783@us.ibm.com>
+	<20090219030743.GG18990@us.ibm.com>
+	<m1y6w21k6d.fsf@fess.ebiederm.org>
+	<20090219185159.GA374@redhat.com>
+	<m1fxiayss9.fsf@fess.ebiederm.org>
+	<20090219223137.GA10378@redhat.com>
+	<m1fxiaxbb5.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <499DE06E.4030108-GANU6spQydw@public.gmane.org> (Daniel Lezcano's message of "Thu\,
-	19 Feb 2009 23\:42\:54 +0100")
+Content-Disposition: inline
+In-Reply-To: <m1fxiaxbb5.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,28 +25,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
+On 02/19, Eric W. Biederman wrote:
+>
+> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > On 02/19, Eric W. Biederman wrote:
+> >>
+> >> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> >> >
+> >> > SI_FROMUSER() == T, unless we have more (hopefully not) in-kernel
+> >> > users which send SI_FROMUSER() signals, .si_pid must be valid?
+> >>
+> >> So the argument is that while things such as force_sig_info(SIGSEGV)
+> >> don't have a si_pid we don't care because from_ancestor_ns  == 0.
+> >>
+> >> Interesting.  Then I don't know if we have any kernel senders
+> >> that cross the namespace boundaries.
+> >>
+> >> That said I still object to this code.
+> >>
+> >> sys_kill(-pgrp, SIGUSR1)
+> >>   kill_something_info(SIGUSR1, &info, 0)
+> >>     __kill_pgrp_info(SIGUSR1, &info task_pgrp(current))
+> >>       group_send_sig_info(SIGUSR1, &info, tsk)
+> >>         __group_send_sig_info(SIGUSR1, &info, tsk)
+> >>           send_signal(SIGUSR1, &info, tsk, 1)
+> >>             __send_signal(SIGUSR1, &info, tsk, 1)
+> >>
+> >>
+> >> Process groups and sessions can have processes in multiple pid
+> >> namespaces, which is very useful for not messing up your controlling
+> >> terminal.
+> >>
+> >> In which case sys_kill cannot possibly set the si_pid value correct
+> >> and from_ancestor_ns is not enough either.
+> >
+> > (I know, I shouldn't reply today because I am already sleeping ;)
+> >
+> > Why? send_signal() should calculate the correct value of
+> > from_parent and pass it to __send_signal(). If it is true, then
+> > we clear .si_pid in the copied siginfo (which was already queued).
+> > We don't mangle the original siginfo.
+> >
+> > This happens for each process we send the signal.
+> >
+> > Or I misunderstood you?
+>
+> Suppose I have 3 processes in a process group in three separate pid
+> namespaces.
+>
+> Looking from the init pid namespace I have:
+>      pid pgrp ppid
+>       10 10    1
+>       11 10    10
+>       12 10    11
+>
+> Looking from the pid namespace of pid 11 I have:
+>      pid pgrp ppid
+>       0  0     0
+>       1  0     0
+>       2  0     1
+>
+> Looking from the pid namespace of pid 12 I have:
+>      pid pgrp ppid
+>       0  0     0
+>       0  0     0
+>       1  0     0
+>
+> So if the process with pid 12 in the initial pid namespace
+> sends to process group 0.
 
-> But if I am able to create a new instance of devpts for a container and modify
-> the configuration of another devpts from this container, is it acceptable ? Can
-> we convince people to use the containers for security and have anybody able to
-> make a pty starvation from one container to another ?
+But this is the different problem, it is not that we clear si_pid while
+we shouldn't, just the .si_pid passed from kill_something_info() is not
+right.
 
-I hardly how that is significant.  Anyone can allocate the rest of the possible
-pty's today.  The situation does not get worse with devpts.
+Personally, I think we should not allow to send signals outside our
+namespace (except SIGCHLD on exit), this looks just wrong to me. And
+some time ago copy_process(CLONE_PID) did "setsid".
 
-If you want security and permission arguments get with Serge and finish
-the uid namespace.  The you will have a user that looks like root but
-does not have permissions to do most things.
+Hmm... that was changed by your commit 5cd17569fd0eeca510735e63a6061291e3971bf6.
+And while I agree with this commit, I think that cinit should do sys_setsid()
+itself to detach itself from the parent namespace.
 
-> If it is too much complicated to handle one value per new devpts instance, IMHO
-> /proc/sys/kernel/pty/max should be, at least, read-only for the new instance, no?
 
-No.  Either we add a pty_max value to the filesystem like we did with ptmx
-or we forget it.
+Or. We can fix the case you described. We can move "si_pid = task_tgid_vnr()"
+from sys_kill/do_tkill/etc to send_signal(), it can calculate the correct
+.si_pid looking at sender/receiver namespaces.
 
-Eric
+Oleg.
