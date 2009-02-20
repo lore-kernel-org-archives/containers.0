@@ -1,125 +1,49 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH 3/3] netns: Remove net_alive
-Date: Fri, 20 Feb 2009 08:02:57 -0800
-Message-ID: <m1zlghgkpa.fsf_-_@fess.ebiederm.org>
-References: <m1ocwxi00a.fsf@fess.ebiederm.org>
-	<m1bpsxhzqz.fsf@fess.ebiederm.org>
-	<m163j5hzow.fsf_-_@fess.ebiederm.org>
+From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] cgroup for disk quota
+Date: Sat, 21 Feb 2009 00:14:10 +0800
+Message-ID: <d95d44a20902200814o4f7f3daexbe0986be28e83eaf@mail.gmail.com>
+References: <d95d44a20902200028h1e229cc0pa3cdd4f42814e78e@mail.gmail.com>
+	<d95d44a20902200221w67ee1b49ua6027f3090186af9@mail.gmail.com>
+	<b6a2d2e20902200232x33204c61j30837a697d69c4d4@mail.gmail.com>
+	<d95d44a20902200300x43ef2ccfh6a66d3b81056d7fd@mail.gmail.com>
+	<499EB56B.6030502@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m163j5hzow.fsf_-_@fess.ebiederm.org> (Eric W. Biederman's message of "Fri\, 20 Feb 2009 07\:53\:51 -0800")
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>, "Denis V. Lunev" <den@openvz.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <499EB56B.6030502-GANU6spQydw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+>> Although Paolo Valente has presented a solution of I/O bandwidth control
+>> (see http://lwn.net/Articles/309400/), I would more like to present
+>> bandwidth reservation mechanism, especially for data-intensive
+>> applications (e.g. hadoop cluster).
+>>
+>> This kind of applications take more account of the reservation of
+>> I/O bandwidth and netword bandwidth.
+>>
+>
+> Does this feature do what you want for network bandwidth ?
+>
+> http://lwn.net/Articles/291161/
+>
 
-It turns out that net_alive is unnecessary, and the original problem
-that led to it being added was simply that the icmp code thought
-it was a network device and wound up being unable to handle packets
-while there were still packets in the network namespace.
+Well. I will make a close look in the work.
 
-Now that icmp and tcp have been fixed to properly register themselves
-this problem is no longer present and we have a stronger guarantee
-that packets will not arrive in a network namespace then that provided
-by net_alive in netif_receive_skb.  So remove net_alive allowing
-packet reception run a little faster.
+Thanks you very much
 
-Additionally document the strong reason why network namespace cleanup
-is safe so that if something happens again someone else will have
-a chance of figuring it out.
 
-Signed-off-by: Eric W. Biederman <ebiederm@aristanetworks.com>
----
- include/net/net_namespace.h |   27 +++++++++++++++++----------
- net/core/dev.c              |    6 ------
- net/core/net_namespace.c    |    3 ---
- 3 files changed, 17 insertions(+), 19 deletions(-)
+Best Regards,
 
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 6fc13d9..ded434b 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -109,11 +109,6 @@ extern struct list_head net_namespace_list;
- #ifdef CONFIG_NET_NS
- extern void __put_net(struct net *net);
- 
--static inline int net_alive(struct net *net)
--{
--	return net && atomic_read(&net->count);
--}
--
- static inline struct net *get_net(struct net *net)
- {
- 	atomic_inc(&net->count);
-@@ -145,11 +140,6 @@ int net_eq(const struct net *net1, const struct net *net2)
- }
- #else
- 
--static inline int net_alive(struct net *net)
--{
--	return 1;
--}
--
- static inline struct net *get_net(struct net *net)
- {
- 	return net;
-@@ -234,6 +224,23 @@ struct pernet_operations {
- 	void (*exit)(struct net *net);
- };
- 
-+/*
-+ * Use these carefully.  If you implement a network device and it
-+ * needs per network namespace operations use device pernet operations,
-+ * otherwise use pernet subsys operations.
-+ *
-+ * This is critically important.  Most of the network code cleanup
-+ * runs with the assumption that dev_remove_pack has been called so no
-+ * new packets will arrive during and after the cleanup functions have
-+ * been called.  dev_remove_pack is not per namespace so instead the
-+ * guarantee of no more packets arriving in a network namespace is
-+ * provided by ensuring that all network devices and all sockets have
-+ * left the network namespace before the cleanup methods are called.
-+ *
-+ * For the longest time the ipv4 icmp code was registered as a pernet
-+ * device which caused kernel oops, and panics during network
-+ * namespace cleanup.   So please don't get this wrong.
-+ */
- extern int register_pernet_subsys(struct pernet_operations *);
- extern void unregister_pernet_subsys(struct pernet_operations *);
- extern int register_pernet_gen_subsys(int *id, struct pernet_operations *);
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 5493394..fd1712d 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -2267,12 +2267,6 @@ int netif_receive_skb(struct sk_buff *skb)
- 
- 	rcu_read_lock();
- 
--	/* Don't receive packets in an exiting network namespace */
--	if (!net_alive(dev_net(skb->dev))) {
--		kfree_skb(skb);
--		goto out;
--	}
--
- #ifdef CONFIG_NET_CLS_ACT
- 	if (skb->tc_verd & TC_NCLS) {
- 		skb->tc_verd = CLR_TC_NCLS(skb->tc_verd);
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 55151fa..516c7b1 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -140,9 +140,6 @@ static void cleanup_net(struct work_struct *work)
- 	struct pernet_operations *ops;
- 	struct net *net;
- 
--	/* Be very certain incoming network packets will not find us */
--	rcu_barrier();
--
- 	net = container_of(work, struct net, work);
- 
- 	mutex_lock(&net_mutex);
--- 
-1.6.1.2.350.g88cc
-
+Anqin
