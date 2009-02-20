@@ -1,84 +1,130 @@
-From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns
-	boundary
-Date: Thu, 19 Feb 2009 17:06:00 -0800 (PST)
-Message-ID: <20090220010600.DCEA7FC2F7@magilla.sf.frob.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 7/7][v8] SI_USER: Masquerade si_pid when crossing pid ns boundary
+Date: Thu, 19 Feb 2009 17:16:03 -0800
+Message-ID: <m1zlghrjqk.fsf@fess.ebiederm.org>
 References: <20090219030207.GA18783@us.ibm.com>
-	<20090219030743.GG18990@us.ibm.com>
-	<m1y6w21k6d.fsf@fess.ebiederm.org>
-	<20090219185159.GA374@redhat.com>
-	<m1fxiayss9.fsf@fess.ebiederm.org>
-	<20090219223137.GA10378@redhat.com>
-	<m1fxiaxbb5.fsf@fess.ebiederm.org>
-	<20090219235159.6A542FC3BE@magilla.sf.frob.com>
-	<m1bpsyt05t.fsf@fess.ebiederm.org>
+	<20090219030743.GG18990@us.ibm.com> <m1y6w21k6d.fsf@fess.ebiederm.org>
+	<20090219185159.GA374@redhat.com> <m1fxiayss9.fsf@fess.ebiederm.org>
+	<20090219223137.GA10378@redhat.com> <m1fxiaxbb5.fsf@fess.ebiederm.org>
+	<20090220002851.GA15255@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Eric W. Biederman's message of  Thursday,
-	19 February 2009 16:35:58 -0800 <m1bpsyt05t.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759389AbZBTBRv@vger.kernel.org>
+In-Reply-To: <20090220002851.GA15255@redhat.com> (Oleg Nesterov's message of "Fri\, 20 Feb 2009 01\:28\:51 +0100")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@osdl.org>, roland@redhat.com, daniel@hozac.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-> It is especially useful, and this is a deliberate feature.  
+Oleg Nesterov <oleg@redhat.com> writes:
 
-Ok, I thought that might be so.
+> On 02/19, Eric W. Biederman wrote:
+>>
+>> Oleg Nesterov <oleg@redhat.com> writes:
+>> 
+>> > On 02/19, Eric W. Biederman wrote:
+>> >>
+>> >> Oleg Nesterov <oleg@redhat.com> writes:
+>> >> >
+>> >> > SI_FROMUSER() == T, unless we have more (hopefully not) in-kernel
+>> >> > users which send SI_FROMUSER() signals, .si_pid must be valid?
+>> >>
+>> >> So the argument is that while things such as force_sig_info(SIGSEGV)
+>> >> don't have a si_pid we don't care because from_ancestor_ns  == 0.
+>> >>
+>> >> Interesting.  Then I don't know if we have any kernel senders
+>> >> that cross the namespace boundaries.
+>> >>
+>> >> That said I still object to this code.
+>> >>
+>> >> sys_kill(-pgrp, SIGUSR1)
+>> >>   kill_something_info(SIGUSR1, &info, 0)
+>> >>     __kill_pgrp_info(SIGUSR1, &info task_pgrp(current))
+>> >>       group_send_sig_info(SIGUSR1, &info, tsk)
+>> >>         __group_send_sig_info(SIGUSR1, &info, tsk)
+>> >>           send_signal(SIGUSR1, &info, tsk, 1)
+>> >>             __send_signal(SIGUSR1, &info, tsk, 1)
+>> >>
+>> >>
+>> >> Process groups and sessions can have processes in multiple pid
+>> >> namespaces, which is very useful for not messing up your controlling
+>> >> terminal.
+>> >>
+>> >> In which case sys_kill cannot possibly set the si_pid value correct
+>> >> and from_ancestor_ns is not enough either.
+>> >
+>> > (I know, I shouldn't reply today because I am already sleeping ;)
+>> >
+>> > Why? send_signal() should calculate the correct value of
+>> > from_parent and pass it to __send_signal(). If it is true, then
+>> > we clear .si_pid in the copied siginfo (which was already queued).
+>> > We don't mangle the original siginfo.
+>> >
+>> > This happens for each process we send the signal.
+>> >
+>> > Or I misunderstood you?
+>>
+>> Suppose I have 3 processes in a process group in three separate pid
+>> namespaces.
+>>
+>> Looking from the init pid namespace I have:
+>>      pid pgrp ppid
+>>       10 10    1
+>>       11 10    10
+>>       12 10    11
+>>
+>> Looking from the pid namespace of pid 11 I have:
+>>      pid pgrp ppid
+>>       0  0     0
+>>       1  0     0
+>>       2  0     1
+>>
+>> Looking from the pid namespace of pid 12 I have:
+>>      pid pgrp ppid
+>>       0  0     0
+>>       0  0     0
+>>       1  0     0
+>>
+>> So if the process with pid 12 in the initial pid namespace
+>> sends to process group 0.
+>
+> But this is the different problem, it is not that we clear si_pid while
+> we shouldn't, just the .si_pid passed from kill_something_info() is not
+> right.
+>
+> Personally, I think we should not allow to send signals outside our
+> namespace (except SIGCHLD on exit), this looks just wrong to me. And
+> some time ago copy_process(CLONE_PID) did "setsid".
 
-> In practice I don't care about si_pid and I doubt I care about processes
-> sending signals outside of their pid namespace.  But I do care about
-> sharing a tty and a session and having job control work.
+There are cases that happen, and it very much simplifies dealing with
+tty's if we allow it.
 
-Understood.
+Another case where we can send signals between namespaces is posix
+message queues.  Implemented in ipc/mqueue.c.  In that case because it
+is a unicast message we are generating the proper si_pid when we
+generate the signal.
 
-> >> pid 10 should see si_pid 12.
-> >> pid 11 should see si_pid 2.
-> >
-> > We indeed have this problem if we think it's useful to continue to have
-> > a concept of pgrp for the sub-init that can see outside its own NS.
-> >
-> >> Neither should see si_pid 0, as from_ancestor_ns will not be true.
-> >
-> > Perhaps replace from_ancestor_ns with struct pid_namespace *sender_ns?
-> > (I don't know if there was already a can of worms with such an idea before.)
-> > Then si_pid could be translated as appropriate for each recipient.
-> > (Or perhaps just struct pid *sender and reset si_pid from that.)
-> 
-> The last was my original line of thinking.  I seem to recall Oleg
-> figuring the code gets pretty ugly when you add in the necessary test
-> to see if si_pid is actually present.
+When programmers get lazy it is all to easy to have signals that are
+useful and cross namespace boundaries.  In practice it is possible to
+close those holes if don't want the confusion in your userspace
+programs.  For the people who take advantage of the flexibility of
+namespace to mix things together I don't think we can get away in the
+kernel assuming weird things won't happen.
 
-Well, the existing test to set from_ancestor_ns is in one place and we
-think that its logic is OK.  What I had in mind was that when that logic
-says "0", we pass NULL and the innards don't touch .si_pid (same as now);
-when it says "1", we pass a pointer and the innards do rewrite it.
+> Hmm... that was changed by your commit 5cd17569fd0eeca510735e63a6061291e3971bf6.
+> And while I agree with this commit, I think that cinit should do sys_setsid()
+> itself to detach itself from the parent namespace.
 
-> There are several other cases where we also signal a process outside
-> of our current pid namespace, where we have a pid inside the recipients
-> pid namespace.  do_notify_parent is the easiest example.
+In general that should indeed happen.  There are specific cases where it is
+advantageous not to call setsid().  It is all under control of the creator
+of the pid namespace.
 
-It's the only example that Oleg has mentioned.  What others are there?
+> Or. We can fix the case you described. We can move "si_pid = task_tgid_vnr()"
+> from sys_kill/do_tkill/etc to send_signal(), it can calculate the correct
+> .si_pid looking at sender/receiver namespaces.
 
-> a) We pass in struct pid *sender and we reset si_pid in send_signal.
-> b) We make the rule that send_signal must receive a valid siginfo from
->    the caller and we only do the extra work for process groups.
+I think that is where we need to go, to be safe and to be certain
+weird things won't sneak up on us.  We already handle half of the logic in
+send_signal anyway.  We might as well handle the other half.
 
-That's what I said. ;-) The a) option seems cleaner to me regardless, to
-the extent that the "from_ancestor_ns" approach is a "clean" one.  But I
-think it would be best to fully elucidate what we think about desireable
-semantics for the whole spectrum of cross-NS signal-sending cases before
-actually choosing the implementation details.
-
-
-Thanks,
-Roland
+Eric
