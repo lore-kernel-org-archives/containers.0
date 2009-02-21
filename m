@@ -1,14 +1,12 @@
-From: "KAMEZAWA Hiroyuki" <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Question for remount
-Date: Sat, 21 Feb 2009 09:45:33 +0900 (JST)
-Message-ID: <d7928a87d8c1bf661e3a3b64db9fa988.squirrel__44950.6590761759$1235177271$gmane$org@webmail-b.css.fujitsu.com>
-References: <20090220190223.e8b4f6a8.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830902200822u6d453340me718bacac3925040@mail.gmail.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH] Check may_checkpoint() early
+Date: Sat, 21 Feb 2009 12:12:21 -0800
+Message-ID: <20090221201221.GA13532@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830902200822u6d453340me718bacac3925040-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,25 +16,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage さんは書きました：
-> On Fri, Feb 20, 2009 at 2:02 AM, KAMEZAWA Hiroyuki
-> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->>
->> 2. /proc/mounts information of release_agent should be updated....
->>   when it's overwritten directly.
->
-> Yes, definitely. But shouldn't that happen already?
-> cgroup_show_options() reports the current value of
-> root->release_agent_path in /proc/mounts. Is it possible that mount is
-> actually storing/retrieving this information in /etc/mtab, which
-> doesn't get updated?
->
-Ah, you're right. /proc/mounts is updated but /etc/mtab is not updated.
-Hmm..from man mount(1), /etc/mtab is not synchronized with /proc/mounts.
-Do we need to allow release_agent override at remount ?
 
--Kame
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 16 Feb 2009 12:05:50 -0800
+Subject: [PATCH] Check 'may_checkpoint()' early
+
+We currently check if a task is checkpointable when writing the task
+information to checkpoint file. The small downside of doing this check
+late is that we may have processed several processes in the tree before
+hitting one that cannot be checkpointed.
+
+We anyway walk the process tree we are checkpointing earlier, while
+counting the tasks. We could check if all processes in the tree are
+checkpointable at that time and fail early if any of them are not.
+Since the process tree should be frozen, checking earlier should not
+matter ?
+
+For now, the patch leaves the existing check in cr_write_pids(). We
+can remove that later.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ checkpoint/checkpoint.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 64155de..2bbb409 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -347,11 +347,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
+ 	struct task_struct **tasks_arr = ctx->tasks_arr;
+ 	int tasks_nr = ctx->tasks_nr;
+ 	int nr = 0;
++	int ret;
+ 
+ 	read_lock(&tasklist_lock);
+ 
+ 	/* count tasks via DFS scan of the tree */
+ 	while (1) {
++		ret = cr_may_checkpoint_task(task, ctx);
++		if (ret < 0) {
++			nr = ret;
++			break;
++		}
++
+ 		if (tasks_arr) {
+ 			/* unlikely... but if so then try again later */
+ 			if (nr == tasks_nr) {
+@@ -409,6 +416,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
+ 
+ 	/* count tasks (no side effects) */
+ 	n = cr_tree_count_tasks(ctx);
++	if (n < 0)
++		return n;
+ 
+ 	ctx->tasks_nr = n;
+ 	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
+-- 
+1.5.2.5
