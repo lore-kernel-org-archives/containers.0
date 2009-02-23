@@ -1,50 +1,95 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/9] Multiple devpts instances
-Date: Mon, 23 Feb 2009 13:23:52 -0800
-Message-ID: <49A313E8.1020309@zytor.com>
-References: <20081015053000.GA2039@us.ibm.com> <499D7E13.10601@free.fr>
-	<499D97B1.1090902@zytor.com> <499DA069.3040603@free.fr>
-	<499DB9DA.2070301@zytor.com> <499DE06E.4030108@free.fr>
-	<m1eixuvv00.fsf@fess.ebiederm.org>
-	<20090223205609.GA32351@us.ibm.com> <49A312E6.9090900@free.fr>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC] [PATCH] cgroup: accounting and limitation of disk quota
+Date: Mon, 23 Feb 2009 15:37:49 -0600
+Message-ID: <20090223213749.GA945@us.ibm.com>
+References: <d95d44a20902220437m2fb7af08y8c71fe275fe06a57@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49A312E6.9090900-GANU6spQydw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755132AbZBWViK@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <d95d44a20902220437m2fb7af08y8c71fe275fe06a57@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: anqin <anqin.qin@gmail.com>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Rolando Martins <rolando.martins@gmail.com>, menage@google.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
+Quoting anqin (anqin.qin@gmail.com):
+> The patch presents a cgroup subsystem to control the usage of disk quota.
 > 
-> Yep,  I changed my mind, I think Eric and HPA are right. devpts is a 
-> file system and not a namespace even if the result is the same. That 
-> makes sense to keep a global sysctl for the root container and handle 
-> security problem with user namespace and mount option.
+> The subsystem for disk quota (disk_cgroup, to be brief) does accounting
+> of inode and block allocated by ext3/ext2 filesystem. Simarily as
+> filesystem quota, the disk_cgroup can do limitation but without needing
+> to open filesytem quota options (e.g. usrquota,grpquota in /etc/fstab).
 > 
+> The simple usage of disk_cgroup is as follows:
+> 
+> # mount -t cgroup cgroup /mnt/cgrp
+> # lxc-execute -n lxc-template.conf /bin/bash
+> # ls /mnt/cgrp/11457/           // <--  11457 is the pid of bash
+> ...
+> disk.stat
+> disk.usage_in_inode
+> disk.usage_in_block
+> disk.max_usage_in_inode
+> disk.max_usage_in_block
+> disk.limit_in_inode
+> disk.limit_in_inode
+> ...
+> 
+> # echo  3 > /mnt/cgrp/11457/disk.max_usage_in_block
+> 
+> # touch /tmp/mytestfile1
+> # touch /tmp/mytestfile2
+> # touch /tmp/mytestfile3
+> # touch /tmp/mytestfile4
+> touch: cannot touch `/tmp/mytestfile4': Disk quota exceeded
+> 
+> The disk_cgroup is easily extended to manage complex objects
+> of filesystem.
+>
+> Signed-off-by: An Qin <anqin.qin@gmail.com>
 
-No, it's more dramatic than that.
+It's probably worth sending this to linux-fsdevel as well as the
+ext2 and ext3 maintainers and lists (see MAINTAINERS - at
+least linux-ext4@vger.kernel.org).
 
-Namespaces are not resource allocation boundaries, even though in the 
-container use case you probably want both.
+> +static struct cgroup_subsys_state *disk_cgroup_create(
+> +			struct cgroup_subsys *ss, struct cgroup *cont)
+> +{
+> +	struct disk_cgroup *disk;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return ERR_PTR(-EPERM);
 
-Furthermore, namespaces are relatively straightforward in comparison: 
-you generally either want to share a namespace or you don't.  Resource 
-control policies are much more complex.  In the general case you want to 
-be able to support a hierarchial cascade of policies; at the least you 
-want to have global and local limits.
+On the whole it is preferred to let the cgroup uid permissions
+handle access control, and not check CAP_SYS_ADMIN for cgroup
+creation.
 
-Furthermore, there are a number of use cases for resource allocation 
-boundaries that do *not* involve namespaces.
+> +	if (!cgroup_is_descendant(cont))
+> +		return ERR_PTR(-EPERM);
+> +	
+> +	disk = kzalloc(sizeof(struct disk_cgroup), GFP_KERNEL);
 
-	-hpa
+So you are setting all the limits to 0, with 0 meaning unlimited, at
+cgroup create?  What do you think about copying the parent cgroup's 
+limits?
+
+> --- linux-2.6.28.5/kernel/Makefile	2009-02-13 01:51:15.000000000 +0800
+> +++ linux-2.6.28.5-cgroup-disk-quota/kernel/Makefile	2009-02-19
+> 06:52:04.000000000 +0800
+> @@ -55,6 +55,7 @@ obj-$(CONFIG_COMPAT) += compat.o
+>  obj-$(CONFIG_CGROUPS) += cgroup.o
+>  obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
+>  obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+> +obj-$(CONFIG_CGROUP_FREEZER) += cgroup_disk.o
+
+I don't think you wanted to put this under _FREEZER :)
+
+>  obj-$(CONFIG_CPUSETS) += cpuset.o
+>  obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+>  obj-$(CONFIG_UTS_NS) += utsname.o
+
+per-container quota has been mentioned before as a desireable
+feature so thanks for working on this.
+
+-serge
