@@ -1,80 +1,73 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Question for remount
-Date: Mon, 23 Feb 2009 10:56:04 +0800
-Message-ID: <49A21044.40402__10288.8246452951$1235357871$gmane$org@cn.fujitsu.com>
-References: <20090220190223.e8b4f6a8.kamezawa.hiroyu@jp.fujitsu.com>
-	<49A20976.2050301@cn.fujitsu.com>
+From: Paul Menage <menage@google.com>
+Subject: Re: [RFC] [PATCH] cgroup: accounting and limitation of disk quota
+Date: Mon, 23 Feb 2009 00:09:54 -0800
+Message-ID: <6599ad830902230009mbfe7ddkf40f183c4a61a81a@mail.gmail.com>
+References: <d95d44a20902220437m2fb7af08y8c71fe275fe06a57@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49A20976.2050301-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754254AbZBWIKS@vger.kernel.org>
+In-Reply-To: <d95d44a20902220437m2fb7af08y8c71fe275fe06a57@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: anqin <anqin.qin@gmail.com>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Rolando Martins <rolando.martins@gmail.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
->> 1. Documentation/cgroups/cgroup.txt says
->>    #mount -oremount,cpuset,ns /dev/cgroup
->>    But this should be
->>    #mount -tcgroup none /dev/cgroup -oremount,cpuset,ns
->>
-> 
-> I agree. Actually I noticed this long ago.
-> 
-> Doing this won't remove cpuacct from the cgroup hierarchy:
-> # mount -t cgroup -o cpu,cpuacct xxx /mnt
-> # mount -o remount,cpu /mnt
-> This will get you right:
-> # mount [-t cgroup] -o remount,cpu xxx /mnt
-> 
+Hi An,
 
-How about this patch:
+On Sun, Feb 22, 2009 at 4:37 AM, anqin <anqin.qin@gmail.com> wrote:
+> The patch presents a cgroup subsystem to control the usage of disk quota.
 
-[PATCH] cgroups: fix documentation about remount
+Thanks for sending this patch.
 
-This won't remove cpuacct from the mounted hierachy:
- # mount -t cgroup -o cpu,cpuacct xxx /mnt
- # mount -o remount,cpu /mnt
+My overall feeling is that disk quotas aren't really something that
+you want to control at a cgroup level (i.e. associating a limit with a
+specific set of processes), they're something that you want to control
+at the directory hierarchy level (i.e. associate a limit with this
+directory and all its children).
 
-Because for this usage mount(8) will append the new options to the current
-options.
+In the case of a virtual server these may well be the same thing - a
+process in the virtual server can't touch any files outside the
+virtual server's filespace, and stuff outside the virtual server will
+be well-behaved and won't touch files inside the virtual server's
+filespace.
 
-And this will get you right:
- # mount [-t cgroup] -o remount,cpu xxx /mnt
+But for systems that are doing resource isolation without
+virtualization, this isn't necessarily still the case. A process may
+have access to multiple areas of the disk with independent quotas.
 
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+E.g. I work on a job control system where each job has some private
+disk space, and may share a common pool of disk space with some
+related jobs on the same machine, for data that's shared between
+multiple jobs.
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 93feb84..5cbeab2 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -337,8 +337,13 @@ subsystems, type:
- 
- To change the set of subsystems bound to a mounted hierarchy, just
- remount with different options:
-+# mount -o remount,cpuset,ns hier1 /dev/cgroup
- 
--# mount -o remount,cpuset,ns  /dev/cgroup
-+Now numtasks is removed from the hierarchy and ns is added.
-+
-+Note this will add ns to the hierarchy but won't remove numtasks or
-+cpuset:
-+# mount -o remount,ns /dev/cgroup
- 
- Note that changing the set of subsystems is currently only supported
- when the hierarchy consists of a single (root) cgroup. Supporting
--- 
-1.5.4.rc3
+In this case, there are separate disk quotas for the per-job private
+areas and the shared area, so this cgroup-based approach wouldn't be
+much use there. Something like Neil Brown's "tree quota" proposal from
+way back in 2001 seemed much more useful for this kind of isolation.
+The proposal was that you could associate a "tree id" with an inode,
+and then that inode and all its children were accounted against the
+quota of that tree id. The arguments against it were (AFAIR) mostly
+about the non-determinism issues that could arise if a single inode
+were hard-linked into multiple trees - essentially, the first time it
+was accessed from either tree it would become part of that tree, even
+though it was reachable (and modifiable) from the other tree. But as
+long as root doesn't do anything silly, this isn't really an issue,
+and similar issues arise with this cgroup-based approach - if a
+process outside a virtual server moves a file into that virtual
+server's filespace without updating the usage correctly (which AFAICS
+can't be done atomically?) then the quota stats will be off.
+
+More specific comments on this patch:
+
+- it would make more sense to integrate with the existing DQUOT_XXX
+macros rather than have to update every filesystem to include
+references to cgroup quotas as well as regular quotas.
+
+- disk_cgroup_read_stats() should be a read_map() handler, and
+disk_cgroup_read_quota() should be a read_u64() handler.
+
+- why do you have the checks and EPERM returns in disk_cgroup_create()
+? cgroupfs already does permission checking.
+
+Paul
