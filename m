@@ -1,15 +1,14 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: Question for remount
-Date: Mon, 23 Feb 2009 10:32:46 +0800
-Message-ID: <49A20ACE.7020309__43573.8509324894$1235356470$gmane$org@cn.fujitsu.com>
+Date: Mon, 23 Feb 2009 10:56:04 +0800
+Message-ID: <49A21044.40402__10288.8246452951$1235357871$gmane$org@cn.fujitsu.com>
 References: <20090220190223.e8b4f6a8.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830902200822u6d453340me718bacac3925040@mail.gmail.com>
-	<d7928a87d8c1bf661e3a3b64db9fa988.squirrel@webmail-b.css.fujitsu.com>
+	<49A20976.2050301@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <d7928a87d8c1bf661e3a3b64db9fa988.squirrel-n3SY6/QrmYVJe+uFzlzAcYO9/linGGC/AL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <49A20976.2050301-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,25 +19,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> Paul Menage さんは書きました：
->> On Fri, Feb 20, 2009 at 2:02 AM, KAMEZAWA Hiroyuki
->> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->>> 2. /proc/mounts information of release_agent should be updated....
->>>   when it's overwritten directly.
->> Yes, definitely. But shouldn't that happen already?
->> cgroup_show_options() reports the current value of
->> root->release_agent_path in /proc/mounts. Is it possible that mount is
->> actually storing/retrieving this information in /etc/mtab, which
->> doesn't get updated?
+Li Zefan wrote:
+>> 1. Documentation/cgroups/cgroup.txt says
+>>    #mount -oremount,cpuset,ns /dev/cgroup
+>>    But this should be
+>>    #mount -tcgroup none /dev/cgroup -oremount,cpuset,ns
 >>
-> Ah, you're right. /proc/mounts is updated but /etc/mtab is not updated.
-> Hmm..from man mount(1), /etc/mtab is not synchronized with /proc/mounts.
-> Do we need to allow release_agent override at remount ?
+> 
+> I agree. Actually I noticed this long ago.
+> 
+> Doing this won't remove cpuacct from the cgroup hierarchy:
+> # mount -t cgroup -o cpu,cpuacct xxx /mnt
+> # mount -o remount,cpu /mnt
+> This will get you right:
+> # mount [-t cgroup] -o remount,cpu xxx /mnt
 > 
 
-Since we've allowed this behavior, I think we shouldn't disallow it to
-supprise users?
+How about this patch:
+
+[PATCH] cgroups: fix documentation about remount
+
+This won't remove cpuacct from the mounted hierachy:
+ # mount -t cgroup -o cpu,cpuacct xxx /mnt
+ # mount -o remount,cpu /mnt
+
+Because for this usage mount(8) will append the new options to the current
+options.
+
+And this will get you right:
+ # mount [-t cgroup] -o remount,cpu xxx /mnt
+
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ Documentation/cgroups/cgroups.txt |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 93feb84..5cbeab2 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -337,8 +337,13 @@ subsystems, type:
+ 
+ To change the set of subsystems bound to a mounted hierarchy, just
+ remount with different options:
++# mount -o remount,cpuset,ns hier1 /dev/cgroup
+ 
+-# mount -o remount,cpuset,ns  /dev/cgroup
++Now numtasks is removed from the hierarchy and ns is added.
++
++Note this will add ns to the hierarchy but won't remove numtasks or
++cpuset:
++# mount -o remount,ns /dev/cgroup
+ 
+ Note that changing the set of subsystems is currently only supported
+ when the hierarchy consists of a single (root) cgroup. Supporting
+-- 
+1.5.4.rc3
