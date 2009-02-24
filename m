@@ -1,72 +1,47 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
+From: Andrew Morton <akpm@linux-foundation.org>
 Subject: Re: [PATCH 4/4] mqueue namespace: adapt sysctl
-Date: Tue, 24 Feb 2009 16:32:07 -0600
-Message-ID: <20090224223207.GA31959@us.ibm.com>
-References: <20090224220256.GA31001@us.ibm.com> <20090224141651.70155ebd.akpm@linux-foundation.org>
+Date: Tue, 24 Feb 2009 14:48:00 -0800
+Message-ID: <20090224144800.4c7e3fcb.akpm@linux-foundation.org>
+References: <20090224220256.GA31001@us.ibm.com>
+	<20090224141651.70155ebd.akpm@linux-foundation.org>
+	<20090224223245.GA17473@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760175AbZBXWce@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090224141651.70155ebd.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760946AbZBXWsq@vger.kernel.org>
+In-Reply-To: <20090224223245.GA17473@x200.localdomain>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: adobriyan@gmail.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm@linux-foundation.org):
-> On Tue, 24 Feb 2009 16:02:56 -0600
-> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
-> 
-> > +#ifdef CONFIG_PROC_SYSCTL
-> > +static int proc_mq_dointvec(ctl_table *table, int write, struct file *filp,
-> > +	void __user *buffer, size_t *lenp, loff_t *ppos)
-> > +{
-> > +	struct ctl_table mq_table;
-> > +	memcpy(&mq_table, table, sizeof(mq_table));
-> > +	mq_table.data = get_mq(table);
-> > +
-> > +	return proc_dointvec(&mq_table, write, filp, buffer, lenp, ppos);
-> > +}
-> > +
-> > +static int proc_mq_dointvec_minmax(ctl_table *table, int write,
-> > +	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
-> > +{
-> > +	struct ctl_table mq_table;
-> > +	memcpy(&mq_table, table, sizeof(mq_table));
-> > +	mq_table.data = get_mq(table);
-> > +
-> > +	return proc_dointvec_minmax(&mq_table, write, filp, buffer,
-> > +					lenp, ppos);
-> > +}
-> > +#else
-> > +proc_handler *proc_mq_dointvec = NULL;
-> > +proc_handler *proc_mq_dointvec_minmax = NULL;
-> > +#endif
-> 
-> looks odd.  Was this
-> 
-> --- a/ipc/mq_sysctl.c~mqueue-namespace-adapt-sysctl-update-fix
-> +++ a/ipc/mq_sysctl.c
-> @@ -52,8 +52,8 @@ static int proc_mq_dointvec_minmax(ctl_t
->  					lenp, ppos);
->  }
->  #else
-> -proc_handler *proc_mq_dointvec = NULL;
-> -proc_handler *proc_mq_dointvec_minmax = NULL;
-> +#define proc_mq_dointvec NULL
-> +#define proc_mq_dointvec_minmax NULL
->  #endif
-> 
->  static int msg_max_limit_min = MIN_MSGMAX;
-> _
-> 
-> intended?
+On Wed, 25 Feb 2009 01:32:45 +0300
+Alexey Dobriyan <adobriyan@gmail.com> wrote:
 
-It just seemed more in line with the idea of ensuring type
-safety...  Of course the #defines will work and are how the
-others (at least ipc and utsname) do it, but this seemed
-a touch better.  Of course I'll change it if that's the
-preference.
+> > > +proc_handler *proc_mq_dointvec = NULL;
+> > > +proc_handler *proc_mq_dointvec_minmax = NULL;
+> > > +#endif
+> > 
+> > looks odd.  Was this
+> > 
+> > --- a/ipc/mq_sysctl.c~mqueue-namespace-adapt-sysctl-update-fix
+> > +++ a/ipc/mq_sysctl.c
+> > @@ -52,8 +52,8 @@ static int proc_mq_dointvec_minmax(ctl_t
+> >  					lenp, ppos);
+> >  }
+> >  #else
+> > -proc_handler *proc_mq_dointvec = NULL;
+> > -proc_handler *proc_mq_dointvec_minmax = NULL;
+> > +#define proc_mq_dointvec NULL
+> > +#define proc_mq_dointvec_minmax NULL
+> >  #endif
+> 
+> I hope, not.
+> 
+> "#define foo NULL" is the least intrusive thing.
 
-thanks,
--serge
+well the original code would have spat a warning at compile time
+then tried to execute code from BSS at runtime, methinks.
+
+But I can't be assed working out how to disable CONFIG_SYSCTL to
+test that.  Gawd I hate `select'.
