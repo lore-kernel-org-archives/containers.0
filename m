@@ -1,15 +1,18 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v13][PATCH 05/14] x86 support for checkpoint/restart
-Date: Tue, 24 Feb 2009 08:06:46 -0800
-Message-ID: <1235491606.26788.248.camel__3920.39436051181$1235491896$gmane$org@nimitz>
-References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
-	<1233076092-8660-6-git-send-email-orenl@cs.columbia.edu>
-	<20090224014739.1b82fc35@thinkcentre.lan>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Deny external checkpoint unless frozen
+Date: Tue, 24 Feb 2009 12:31:16 -0600
+Message-ID: <20090224183116.GA21891@us.ibm.com>
+References: <20090221201317.GB13532@us.ibm.com>
+	<20090223230438.GA2590@us.ibm.com>
+	<1235435947.26788.216.camel@nimitz>
+	<20090224010945.GA4797@us.ibm.com>
+	<1235438283.26788.219.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090224014739.1b82fc35-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1235438283.26788.219.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +22,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-02-24 at 01:47 -0600, Nathan Lynch wrote:
-> But I think this has been pointed out before.  If I understand the
-> justification for cr_hbuf_get correctly, the allocations it services
-> are somehow known to be bounded in size and nesting.  But even if that
-> is the case, it's not much of a reason to avoid using kmalloc, is it?
+Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> On Mon, 2009-02-23 at 19:09 -0600, Serge E. Hallyn wrote:
+> > 
+> > > > Agreed.  I personally would like to just get rid of support
+> > > > for t==current, but don't expect to get anywhere with that
+> > > > argument :)
+> > > 
+> > > Along the lines of what Ingo has been asking for, do we need to expose
+> > > this logic in some way?  Do we need a /proc/$$/checkpointable file which
+> > > says, "I'm not checkpointable because I'm not frozen"?
+> > 
+> > I really like that.
+> > 
+> > > Or, is this just a core part of the API: you have to freeze before
+> > > checkpointing?  As such, we'll never move to a place where we're not
+> > > frozen when checkpointing, so we might as well not even track or expose
+> > > it.  
+> > 
+> > the only way that would make sense is if sys_checkpoint went ahead
+> > and frozen them all, right?
+> 
+> Yeah, I agree with that.
+> 
+> Does this mean Suka has to do the patch? ;)
 
-Oren wants this particular facility to be used for live migration.  To
-support good live migration, we need to be able to return from the
-syscall as fast as possible.  To do that, Oren proposed that we buffer
-all the data needed for the checkpoint inside the kernel.
+Heh.
 
-The current cr_hbuf_put/get() could easily be modified to support this
-usage by basically making put() do nothing, then handing off a handle to
-the cr_ctx structure elsewhere in the kernel.  When the time comes to
-free up the in-memory image, you only have one simple structure to go
-free (the hbuf) as opposed to a bunch of little kmalloc()'d objects.
+Well the patch is mainly on top of your patchset which defines
+the string holding reasons for uncheckpointability, right?  I
+assume you've modified that since then (too bad we're on a
+patch model at the moment) so seems easiest for you to toss it
+on top of your set.
 
-I'm sure I'm missing something.  I'm also sure that this *will* work
-eventually.  But, I don't think the code as it stands supports keeping
-the abstraction in there.  It is virtually impossible to debate the
-design or its alternatives in this state.
+Or you can send your latest version and I (or Suka) can write
+the /proc/$$/checkpointable file.
 
--- Dave
+-serge
