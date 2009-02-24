@@ -1,80 +1,92 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Tue, 24 Feb 2009 13:58:26 -0600
-Message-ID: <20090224195826.GA25909@us.ibm.com>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<49814FA2.9060108@cs.columbia.edu>
-	<20090129214035.GB6913@localdomain>
-	<20090217010355.58afd5cf@thinkcentre.lan>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] c/r: define s390-specific checkpoint-restart code (v5)
+Date: Tue, 24 Feb 2009 11:56:59 -0800
+Message-ID: <87k57flib8.fsf@caffeine.danplanet.com>
+References: <1235500639-9597-1-git-send-email-danms@us.ibm.com>
+	<1235500639-9597-3-git-send-email-danms@us.ibm.com>
+	<20090224193737.GB24007@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org>
-Content-Disposition: inline
-In-Reply-To: <20090217010355.58afd5cf@thinkcentre.lan>
-List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
-List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
-List-Post: <mailto:linuxppc-dev@ozlabs.org>
-List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
-List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
-Sender: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
-Errors-To: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
-To: Nathan Lynch <ntl@pobox.com>
-Cc: containers@lists.osdl.org, Oren Laadan <orenl@cs.columbia.edu>, linuxppc-dev@ozlabs.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090224193737.GB24007-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Tue, 24 Feb 2009 13:37:37 -0600")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl@pobox.com):
-> Nathan Lynch <ntl@pobox.com> wrote:
-> >
-> > Oren Laadan wrote:
-> > > 
-> > > Nathan Lynch wrote:
-> > > > 
-> > > > What doesn't work:
-> > > > * restarting a 32-bit task from a 64-bit task and vice versa
-> > > 
-> > > Is there a test to bail if we attempt to checkpoint such tasks ?
-> > 
-> > No, but I'll add one if it looks too hard to fix for the next round.
-> 
-> Unfortunately, adding a check for this is hard.
-> 
-> The "point of no return" in the restart path is cr_read_mm, which tears
-> down current's address space.  cr_read_mm runs way before cr_read_cpu,
-> which is the only restart method I've implemented for powerpc so far.
-> So, checking for this condition in cr_read_cpu is too late if I want
-> restart(2) to return an error and leave the caller's memory map
-> intact.  (And I do want this: restart should be as robust as execve.)
-> 
-> Well okay then, cr_read_head_arch seems to be the right place in the
-> restart sequence for the architecture code to handle this.  However,
-> cr_write_head_arch (which produces the buffer that cr_read_head_arch
-> consumes) is not provided a reference to the task to be checkpointed,
-> nor can it assume that it's operating on current.  I need a reference
-> to a task before I can determine whether it's running in 32- or 64-bit
-> mode, or using the FPU, Altivec, SPE, whatever.
-> 
-> In any case, mixing 32- and 64-bit tasks across restart is something I
-> eventually want to support, not reject.  But the problem I've outlined
-> applies to FPU state and vector extensions (VMX, SPE), as well as
-> sanity-checking debug register (DABR) contents.  We'll need to be able
-> to error out gracefully from restart when a checkpoint image specifies a
-> feature unsupported by the current kernel or hardware.  But I don't see
-> how to do it with the current architecture.  Am I missing something?
+>> +struct cr_hdr_cpu {
+>> +	__u64 args[1];
 
-I suspect I can guess the response to this suggestion, but how about we
-accept that if sys_restart() fails due to something like this, the
-task is lost and can't exit gracefully?  The end-user can then run
-a user-space program to run through the checkpoint image ahead of
-time (if they want) and verify whether restart can be expected to
-succeed on the current hardware and os version?
+SH> Dave wanted this to not be an array, right?
 
-If a minor difference is detected, the user-space program might
-simply rewrite (a copy of) the checkpoint image into one which can
-in fact succeed.
+I think he was okay with it since it matched what is in the rest of
+the s390 code.  I think that the use of the CR_COPY() macros makes it
+nicer to have matching types as closely as possible.
 
--serge
+>> +	union {
+>> +		float f;
+>> +		double d;
+>> +		__u64 ui;
+
+SH> Since this is a union, and you don't deal with its members but
+SH> just memcpy it, why not just change it to
+
+That's a fair argument, although I was thinking that there was some
+expectation of being able to include this in userspace at some point
+to inspect the contents of the CR stream.  The #ifdef __KERNEL__ at
+the top of the file makes me think that's true.  If so, does it make
+sense to leave this as-is for easier inspection of the contents?
+
+>> +		struct {
+>> +			__u32 fp_hi;
+>> +			__u32 fp_lo;
+>> +		} fp;
+>> +	} fprs[NUM_FPRS];
+>> +
+>> +	/* per_struct */
+>> +	__u64 per_control_regs[3];
+
+SH> I assume Dave still wants you to add a
+
+SH> #define PER_NUM_REGS 3
+
+SH> into the arch/s390/include/asm/processor.h or something.
+
+Ah, right, I thought I was getting out of fixing that with the
+CR_COPY() macro, but I forgot about this one :)
+
+>> +void cr_s390_mm(int op, struct cr_hdr_mm_context *hh, struct mm_struct *mm)
+>> +{
+>> +#if 0
+
+SH> The comment about why this is ifdefed out for now should stay
+SH> here.
+
+Yep.
+
+>> +/* Nothing to do for mm context state */
+
+SH> The above comment is clearly wrong :)
+
+Oops :)
+
+>> +	restore_access_regs(hh->acrs);
+
+SH> Just a comment explaining why?
+
+But it's *so* obvious, right?  <ahem> ... Yeah, agreed :)
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
