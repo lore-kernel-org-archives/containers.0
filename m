@@ -1,615 +1,523 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 2/4] mqueue ns: move mqueue_mnt into struct ipc_namespace
-Date: Mon, 23 Feb 2009 21:09:14 -0600
-Message-ID: <20090224030914.GA11441@us.ibm.com>
+Subject: [PATCH 3/4] ipc namespaces: implement support for posix msqueues
+Date: Mon, 23 Feb 2009 21:09:24 -0600
+Message-ID: <20090224030924.GB11441@us.ibm.com>
 References: <20090224030347.GA10913@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755726AbZBXDJa@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752370AbZBXDJq@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20090224030347.GA10913@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>, lkml <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Move mqueue vfsmount plus a few tunables into the
-ipc_namespace struct.  The CONFIG_IPC_NS boolean
-and the ipc_namespace struct will serve both the
-posix message queue namespaces and the SYSV ipc
-namespaces.
+Implement multiple mounts of the mqueue file system, and
+link it to usage of CLONE_NEWIPC.
 
-The sysctl code will be fixed separately in patch 3.
-After just this patch, making a change to posix mqueue
-tunables always changes the values in the initial
-ipc namespace.
+Each ipc ns has a corresponding mqueuefs superblock.  When
+a user does clone(CLONE_NEWIPC) or unshare(CLONE_NEWIPC), the
+unshare will cause an internal mount of a new mqueuefs sb
+linked to the new ipc ns.
+
+When a user does 'mount -t mqueue mqueue /dev/mqueue', he
+mounts the mqueuefs superblock.
+
+Posix message queues can be worked with both through the
+mq_* system calls (see mq_overview(7)), and through the VFS
+through the mqueue mount.  Any usage of mq_open() and friends
+will work with the acting task's ipc namespace.  Any actions
+through the VFS will work with the mqueuefs in which the
+file was created.  So if a user doesn't remount mqueuefs
+after unshare(CLONE_NEWIPC), mq_open("/ab") will not be
+reflected in "ls /dev/mqueue".
+
+If task a mounts mqueue for ipc_ns:1, then clones task b with
+a new ipcns, ipcns:2, and then task a is the last task in
+ipc_ns:1 to exit, then (1) ipc_ns:1 will be freed, (2) it's
+superblock will live on until task b umounts the corresponding
+mqueuefs, and vfs actions will continue to succeed, but (3)
+sb->s_fs_info will be NULL for the sb corresponding to the
+deceased ipc_ns:1.
+
+To make this happen, we must protect the ipc reference count
+when
+	a. a task exits and drops its ipcns->count, since
+	   it might be dropping it to 0 and freeing the ipcns
+	b. a task accesses the ipcns through its mqueuefs
+	   interface, since it bumps the ipcns refcount and
+	   might race with the last task in the ipcns exiting.
+So the kref is changed to an atomic_t so we can use
+atomic_dec_and_lock(&ns->count,mq_lock), and every access to
+the ipcns through ns = mqueuefs_sb->s_fs_info is protected by
+the same lock.
 
 Changelog:
-	Feb 10: Address Andrew Morton feedback, including:
-		1. turn #defines into fns for type safety
-		2. document new ipc_namespace fields
-	Dec 18: fix dummy fn #defines
+	Feb 11: Addresed feedback from Andrew Morton including:
+		. use DEFINE_SPINLOCK
+		. don't check for null ns in put_ipc_ns()
+		. comment why ipc_ns can be NULL at delete_inode
+		. set mq_mnt to NULL if IS_ERR() in mq_init_ns
+		. convert #defines to inline fns for type checking
+		. use generic get_sb_ns helper
+	Dec 19: Commented put_ipc_ns (As per Dave Hansen comment)
+		Addressed nits (per Sukadev Bhattiprolu comment)
+	Dec 17: removed unused static fn (get_ipcns_from_sb)
 
 Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
 Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
 ---
- include/linux/ipc_namespace.h |   39 ++++++++++++-
- init/Kconfig                  |    4 +-
- ipc/mqueue.c                  |  124 ++++++++++++++++++++++------------------
- ipc/msgutil.c                 |   22 +++++++
- ipc/namespace.c               |    2 +
- ipc/util.c                    |    9 ---
- ipc/util.h                    |   16 +++++
- 7 files changed, 145 insertions(+), 71 deletions(-)
+ include/linux/ipc_namespace.h |   16 +++---
+ ipc/mqueue.c                  |  111 ++++++++++++++++++++++++++++++-----------
+ ipc/msgutil.c                 |   10 ++--
+ ipc/namespace.c               |   41 +++++++++++++--
+ ipc/util.h                    |    6 ++-
+ 5 files changed, 132 insertions(+), 52 deletions(-)
 
 diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index ea330f9..3e6fcac 100644
+index 3e6fcac..3392d50 100644
 --- a/include/linux/ipc_namespace.h
 +++ b/include/linux/ipc_namespace.h
-@@ -44,24 +44,55 @@ struct ipc_namespace {
- 	int		shm_tot;
- 
- 	struct notifier_block ipcns_nb;
-+
-+	/* The kern_mount of the mqueuefs sb.  We take a ref on it */
-+	struct vfsmount	*mq_mnt;
-+
-+	/* # queues in this ns, protected by mq_lock */
-+	unsigned int    mq_queues_count;
-+
-+	/* next fields are set through sysctl */
-+	unsigned int    mq_queues_max;   /* initialized to DFLT_QUEUESMAX */
-+	unsigned int    mq_msg_max;      /* initialized to DFLT_MSGMAX */
-+	unsigned int    mq_msgsize_max;  /* initialized to DFLT_MSGSIZEMAX */
-+
+@@ -25,7 +25,7 @@ struct ipc_ids {
  };
  
+ struct ipc_namespace {
+-	struct kref	kref;
++	atomic_t	count;
+ 	struct ipc_ids	ids[3];
+ 
+ 	int		sem_ctls[4];
+@@ -61,6 +61,7 @@ struct ipc_namespace {
  extern struct ipc_namespace init_ipc_ns;
  extern atomic_t nr_ipc_ns;
  
--#ifdef CONFIG_SYSVIPC
-+#if defined(CONFIG_POSIX_MQUEUE) || defined(CONFIG_SYSVIPC)
++extern spinlock_t mq_lock;
+ #if defined(CONFIG_POSIX_MQUEUE) || defined(CONFIG_SYSVIPC)
  #define INIT_IPC_NS(ns)		.ns		= &init_ipc_ns,
-+#else
-+#define INIT_IPC_NS(ns)
-+#endif
- 
-+#ifdef CONFIG_SYSVIPC
- extern int register_ipcns_notifier(struct ipc_namespace *);
- extern int cond_register_ipcns_notifier(struct ipc_namespace *);
- extern void unregister_ipcns_notifier(struct ipc_namespace *);
- extern int ipcns_notify(unsigned long);
--
- #else /* CONFIG_SYSVIPC */
--#define INIT_IPC_NS(ns)
-+static inline int register_ipcns_notifier(struct ipc_namespace *ns)
-+{ return 0; }
-+static inline int cond_register_ipcns_notifier(struct ipc_namespace *ns)
-+{ return 0; }
-+static inline void unregister_ipcns_notifier(struct ipc_namespace *ns) { }
-+static inline int ipcns_notify(unsigned long l) { return 0; }
+ #else
+@@ -82,18 +83,18 @@ static inline int ipcns_notify(unsigned long l) { return 0; }
  #endif /* CONFIG_SYSVIPC */
  
--#if defined(CONFIG_SYSVIPC) && defined(CONFIG_IPC_NS)
-+#ifdef CONFIG_POSIX_MQUEUE
-+extern void mq_init_ns(struct ipc_namespace *ns);
-+/* default values */
-+#define DFLT_QUEUESMAX 256     /* max number of message queues */
-+#define DFLT_MSGMAX    10      /* max number of messages in each queue */
-+#define HARD_MSGMAX    (131072/sizeof(void *))
-+#define DFLT_MSGSIZEMAX 8192   /* max message size */
-+#else
-+#define mq_init_ns(ns) ((void) 0)
-+#endif
-+
-+#if defined(CONFIG_IPC_NS)
- extern void free_ipc_ns(struct kref *kref);
+ #ifdef CONFIG_POSIX_MQUEUE
+-extern void mq_init_ns(struct ipc_namespace *ns);
++extern int mq_init_ns(struct ipc_namespace *ns);
+ /* default values */
+ #define DFLT_QUEUESMAX 256     /* max number of message queues */
+ #define DFLT_MSGMAX    10      /* max number of messages in each queue */
+ #define HARD_MSGMAX    (131072/sizeof(void *))
+ #define DFLT_MSGSIZEMAX 8192   /* max message size */
+ #else
+-#define mq_init_ns(ns) ((void) 0)
++static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
+ #endif
+ 
+ #if defined(CONFIG_IPC_NS)
+-extern void free_ipc_ns(struct kref *kref);
++extern void free_ipc_ns(struct ipc_namespace *ns);
  extern struct ipc_namespace *copy_ipcs(unsigned long flags,
  				       struct ipc_namespace *ns);
-diff --git a/init/Kconfig b/init/Kconfig
-index 0f34c50..2fd6518 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -608,10 +608,10 @@ config UTS_NS
+ extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+@@ -103,14 +104,11 @@ extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+ static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
+ {
+ 	if (ns)
+-		kref_get(&ns->kref);
++		atomic_inc(&ns->count);
+ 	return ns;
+ }
  
- config IPC_NS
- 	bool "IPC namespace"
--	depends on NAMESPACES && SYSVIPC
-+	depends on NAMESPACES && (SYSVIPC || POSIX_MQUEUE)
- 	help
- 	  In this namespace tasks work with IPC ids which correspond to
--	  different IPC objects in different namespaces
-+	  different IPC objects in different namespaces.
- 
- config USER_NS
- 	bool "User namespace (EXPERIMENTAL)"
+-static inline void put_ipc_ns(struct ipc_namespace *ns)
+-{
+-	kref_put(&ns->kref, free_ipc_ns);
+-}
++extern void put_ipc_ns(struct ipc_namespace *ns);
+ #else
+ static inline struct ipc_namespace *copy_ipcs(unsigned long flags,
+ 		struct ipc_namespace *ns)
 diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index 54b4077..edaeeca 100644
+index edaeeca..1b169b7 100644
 --- a/ipc/mqueue.c
 +++ b/ipc/mqueue.c
-@@ -31,6 +31,7 @@
- #include <linux/mutex.h>
- #include <linux/nsproxy.h>
- #include <linux/pid.h>
-+#include <linux/ipc_namespace.h>
+@@ -88,7 +88,6 @@ static const struct file_operations mqueue_file_operations;
+ static struct super_operations mqueue_super_ops;
+ static void remove_notification(struct mqueue_inode_info *info);
  
- #include <net/sock.h>
- #include "util.h"
-@@ -46,12 +47,6 @@
- #define STATE_PENDING	1
- #define STATE_READY	2
- 
--/* default values */
--#define DFLT_QUEUESMAX	256	/* max number of message queues */
--#define DFLT_MSGMAX 	10	/* max number of messages in each queue */
--#define HARD_MSGMAX 	(131072/sizeof(void*))
--#define DFLT_MSGSIZEMAX 8192	/* max message size */
--
- /*
-  * Define the ranges various user-specified maximum values can
-  * be set to.
-@@ -95,12 +90,6 @@ static void remove_notification(struct mqueue_inode_info *info);
- 
- static spinlock_t mq_lock;
+-static spinlock_t mq_lock;
  static struct kmem_cache *mqueue_inode_cachep;
--static struct vfsmount *mqueue_mnt;
--
--static unsigned int queues_count;
--static unsigned int queues_max 	= DFLT_QUEUESMAX;
--static unsigned int msg_max 	= DFLT_MSGMAX;
--static unsigned int msgsize_max = DFLT_MSGSIZEMAX;
  
  static struct ctl_table_header * mq_sysctl_table;
- 
-@@ -109,11 +98,27 @@ static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
+@@ -98,27 +97,30 @@ static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
  	return container_of(inode, struct mqueue_inode_info, vfs_inode);
  }
  
-+void mq_init_ns(struct ipc_namespace *ns)
+-void mq_init_ns(struct ipc_namespace *ns)
++/*
++ * This routine should be called with the mq_lock held.
++ */
++static inline struct ipc_namespace *__get_ns_from_inode(struct inode *inode)
+ {
+-	ns->mq_queues_count  = 0;
+-	ns->mq_queues_max    = DFLT_QUEUESMAX;
+-	ns->mq_msg_max       = DFLT_MSGMAX;
+-	ns->mq_msgsize_max   = DFLT_MSGSIZEMAX;
+-	ns->mq_mnt           = mntget(init_ipc_ns.mq_mnt);
++	return get_ipc_ns(inode->i_sb->s_fs_info);
+ }
+ 
+-void mq_exit_ns(struct ipc_namespace *ns)
++static struct ipc_namespace *get_ns_from_inode(struct inode *inode)
+ {
+-	/* will need to clear out ns->mq_mnt->mnt_sb->s_fs_info here */
+-	mntput(ns->mq_mnt);
++	struct ipc_namespace *ns;
++
++	spin_lock(&mq_lock);
++	ns = __get_ns_from_inode(inode);
++	spin_unlock(&mq_lock);
++	return ns;
+ }
+ 
+-static struct inode *mqueue_get_inode(struct super_block *sb, int mode,
+-							struct mq_attr *attr)
++static struct inode *mqueue_get_inode(struct super_block *sb,
++		struct ipc_namespace *ipc_ns, int mode,
++		struct mq_attr *attr)
+ {
+ 	struct user_struct *u = current_user();
+ 	struct inode *inode;
+-	struct ipc_namespace *ipc_ns = &init_ipc_ns;
+ 
+ 	inode = new_inode(sb);
+ 	if (inode) {
+@@ -193,30 +195,38 @@ out_inode:
+ static int mqueue_fill_super(struct super_block *sb, void *data, int silent)
+ {
+ 	struct inode *inode;
++	struct ipc_namespace *ns = data;
++	int error = 0;
+ 
+ 	sb->s_blocksize = PAGE_CACHE_SIZE;
+ 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+ 	sb->s_magic = MQUEUE_MAGIC;
+ 	sb->s_op = &mqueue_super_ops;
+ 
+-	inode = mqueue_get_inode(sb, S_IFDIR | S_ISVTX | S_IRWXUGO, NULL);
+-	if (!inode)
+-		return -ENOMEM;
++	inode = mqueue_get_inode(sb, ns, S_IFDIR | S_ISVTX | S_IRWXUGO,
++				NULL);
++	if (!inode) {
++		error = -ENOMEM;
++		goto out;
++	}
+ 
+ 	sb->s_root = d_alloc_root(inode);
+ 	if (!sb->s_root) {
+ 		iput(inode);
+-		return -ENOMEM;
++		error = -ENOMEM;
+ 	}
+ 
+-	return 0;
++out:
++	return error;
+ }
+ 
+ static int mqueue_get_sb(struct file_system_type *fs_type,
+ 			 int flags, const char *dev_name,
+ 			 void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_single(fs_type, flags, data, mqueue_fill_super, mnt);
++	if (!(flags & MS_KERNMOUNT))
++		data = current->nsproxy->ipc_ns;
++	return get_sb_ns(fs_type, flags, data, mqueue_fill_super, mnt);
+ }
+ 
+ static void init_once(void *foo)
+@@ -247,12 +257,13 @@ static void mqueue_delete_inode(struct inode *inode)
+ 	struct user_struct *user;
+ 	unsigned long mq_bytes;
+ 	int i;
+-	struct ipc_namespace *ipc_ns = &init_ipc_ns;
++	struct ipc_namespace *ipc_ns;
+ 
+ 	if (S_ISDIR(inode->i_mode)) {
+ 		clear_inode(inode);
+ 		return;
+ 	}
++	ipc_ns = get_ns_from_inode(inode);
+ 	info = MQUEUE_I(inode);
+ 	spin_lock(&info->lock);
+ 	for (i = 0; i < info->attr.mq_curmsgs; i++)
+@@ -268,10 +279,19 @@ static void mqueue_delete_inode(struct inode *inode)
+ 	if (user) {
+ 		spin_lock(&mq_lock);
+ 		user->mq_bytes -= mq_bytes;
+-		ipc_ns->mq_queues_count--;
++		/*
++		 * get_ns_from_inode() ensures that the
++		 * (ipc_ns = sb->s_fs_info) is either a valid ipc_ns
++		 * to which we now hold a reference, or it is NULL.
++		 * We can't put it here under mq_lock, though.
++		 */
++		if (ipc_ns)
++			ipc_ns->mq_queues_count--;
+ 		spin_unlock(&mq_lock);
+ 		free_uid(user);
+ 	}
++	if (ipc_ns)
++		put_ipc_ns(ipc_ns);
+ }
+ 
+ static int mqueue_create(struct inode *dir, struct dentry *dentry,
+@@ -280,9 +300,14 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
+ 	struct inode *inode;
+ 	struct mq_attr *attr = dentry->d_fsdata;
+ 	int error;
+-	struct ipc_namespace *ipc_ns = &init_ipc_ns;
++	struct ipc_namespace *ipc_ns;
+ 
+ 	spin_lock(&mq_lock);
++	ipc_ns = __get_ns_from_inode(dir);
++	if (!ipc_ns) {
++		error = -EACCES;
++		goto out_unlock;
++	}
+ 	if (ipc_ns->mq_queues_count >= ipc_ns->mq_queues_max &&
+ 			!capable(CAP_SYS_RESOURCE)) {
+ 		error = -ENOSPC;
+@@ -291,7 +316,7 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
+ 	ipc_ns->mq_queues_count++;
+ 	spin_unlock(&mq_lock);
+ 
+-	inode = mqueue_get_inode(dir->i_sb, mode, attr);
++	inode = mqueue_get_inode(dir->i_sb, ipc_ns, mode, attr);
+ 	if (!inode) {
+ 		error = -ENOMEM;
+ 		spin_lock(&mq_lock);
+@@ -299,6 +324,7 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
+ 		goto out_unlock;
+ 	}
+ 
++	put_ipc_ns(ipc_ns);
+ 	dir->i_size += DIRENT_SIZE;
+ 	dir->i_ctime = dir->i_mtime = dir->i_atime = CURRENT_TIME;
+ 
+@@ -307,6 +333,8 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
+ 	return 0;
+ out_unlock:
+ 	spin_unlock(&mq_lock);
++	if (ipc_ns)
++		put_ipc_ns(ipc_ns);
+ 	return error;
+ }
+ 
+@@ -668,7 +696,7 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
+ 	char *name;
+ 	struct mq_attr attr;
+ 	int fd, error;
+-	struct ipc_namespace *ipc_ns = &init_ipc_ns;
++	struct ipc_namespace *ipc_ns = current->nsproxy->ipc_ns;
+ 
+ 	if (u_attr && copy_from_user(&attr, u_attr, sizeof(struct mq_attr)))
+ 		return -EFAULT;
+@@ -738,7 +766,7 @@ SYSCALL_DEFINE1(mq_unlink, const char __user *, u_name)
+ 	char *name;
+ 	struct dentry *dentry;
+ 	struct inode *inode = NULL;
+-	struct ipc_namespace *ipc_ns = &init_ipc_ns;
++	struct ipc_namespace *ipc_ns = current->nsproxy->ipc_ns;
+ 
+ 	name = getname(u_name);
+ 	if (IS_ERR(name))
+@@ -1215,6 +1243,32 @@ static struct file_system_type mqueue_fs_type = {
+ 	.kill_sb = kill_litter_super,
+ };
+ 
++int mq_init_ns(struct ipc_namespace *ns)
 +{
 +	ns->mq_queues_count  = 0;
 +	ns->mq_queues_max    = DFLT_QUEUESMAX;
 +	ns->mq_msg_max       = DFLT_MSGMAX;
 +	ns->mq_msgsize_max   = DFLT_MSGSIZEMAX;
-+	ns->mq_mnt           = mntget(init_ipc_ns.mq_mnt);
++
++	ns->mq_mnt = kern_mount_data(&mqueue_fs_type, ns);
++	if (IS_ERR(ns->mq_mnt)) {
++		int err = PTR_ERR(ns->mq_mnt);
++		ns->mq_mnt = NULL;
++		return err;
++	}
++	return 0;
 +}
 +
-+void mq_exit_ns(struct ipc_namespace *ns)
++void mq_clear_sbinfo(struct ipc_namespace *ns)
 +{
-+	/* will need to clear out ns->mq_mnt->mnt_sb->s_fs_info here */
++	ns->mq_mnt->mnt_sb->s_fs_info = NULL;
++}
++
++void mq_put_mnt(struct ipc_namespace *ns)
++{
 +	mntput(ns->mq_mnt);
 +}
 +
- static struct inode *mqueue_get_inode(struct super_block *sb, int mode,
- 							struct mq_attr *attr)
- {
- 	struct user_struct *u = current_user();
- 	struct inode *inode;
-+	struct ipc_namespace *ipc_ns = &init_ipc_ns;
+ static int msg_max_limit_min = MIN_MSGMAX;
+ static int msg_max_limit_max = MAX_MSGMAX;
  
- 	inode = new_inode(sb);
- 	if (inode) {
-@@ -141,8 +146,8 @@ static struct inode *mqueue_get_inode(struct super_block *sb, int mode,
- 			info->qsize = 0;
- 			info->user = NULL;	/* set when all is ok */
- 			memset(&info->attr, 0, sizeof(info->attr));
--			info->attr.mq_maxmsg = msg_max;
--			info->attr.mq_msgsize = msgsize_max;
-+			info->attr.mq_maxmsg = ipc_ns->mq_msg_max;
-+			info->attr.mq_msgsize = ipc_ns->mq_msgsize_max;
- 			if (attr) {
- 				info->attr.mq_maxmsg = attr->mq_maxmsg;
- 				info->attr.mq_msgsize = attr->mq_msgsize;
-@@ -242,6 +247,7 @@ static void mqueue_delete_inode(struct inode *inode)
- 	struct user_struct *user;
- 	unsigned long mq_bytes;
- 	int i;
-+	struct ipc_namespace *ipc_ns = &init_ipc_ns;
- 
- 	if (S_ISDIR(inode->i_mode)) {
- 		clear_inode(inode);
-@@ -262,7 +268,7 @@ static void mqueue_delete_inode(struct inode *inode)
- 	if (user) {
- 		spin_lock(&mq_lock);
- 		user->mq_bytes -= mq_bytes;
--		queues_count--;
-+		ipc_ns->mq_queues_count--;
- 		spin_unlock(&mq_lock);
- 		free_uid(user);
- 	}
-@@ -274,21 +280,23 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
- 	struct inode *inode;
- 	struct mq_attr *attr = dentry->d_fsdata;
- 	int error;
-+	struct ipc_namespace *ipc_ns = &init_ipc_ns;
- 
- 	spin_lock(&mq_lock);
--	if (queues_count >= queues_max && !capable(CAP_SYS_RESOURCE)) {
-+	if (ipc_ns->mq_queues_count >= ipc_ns->mq_queues_max &&
-+			!capable(CAP_SYS_RESOURCE)) {
- 		error = -ENOSPC;
--		goto out_lock;
-+		goto out_unlock;
- 	}
--	queues_count++;
-+	ipc_ns->mq_queues_count++;
- 	spin_unlock(&mq_lock);
- 
- 	inode = mqueue_get_inode(dir->i_sb, mode, attr);
- 	if (!inode) {
- 		error = -ENOMEM;
- 		spin_lock(&mq_lock);
--		queues_count--;
--		goto out_lock;
-+		ipc_ns->mq_queues_count--;
-+		goto out_unlock;
- 	}
- 
- 	dir->i_size += DIRENT_SIZE;
-@@ -297,7 +305,7 @@ static int mqueue_create(struct inode *dir, struct dentry *dentry,
- 	d_instantiate(dentry, inode);
- 	dget(dentry);
- 	return 0;
--out_lock:
-+out_unlock:
- 	spin_unlock(&mq_lock);
- 	return error;
- }
-@@ -562,7 +570,7 @@ static void remove_notification(struct mqueue_inode_info *info)
- 	info->notify_owner = NULL;
- }
- 
--static int mq_attr_ok(struct mq_attr *attr)
-+static int mq_attr_ok(struct ipc_namespace *ipc_ns, struct mq_attr *attr)
- {
- 	if (attr->mq_maxmsg <= 0 || attr->mq_msgsize <= 0)
- 		return 0;
-@@ -570,8 +578,8 @@ static int mq_attr_ok(struct mq_attr *attr)
- 		if (attr->mq_maxmsg > HARD_MSGMAX)
- 			return 0;
- 	} else {
--		if (attr->mq_maxmsg > msg_max ||
--				attr->mq_msgsize > msgsize_max)
-+		if (attr->mq_maxmsg > ipc_ns->mq_msg_max ||
-+				attr->mq_msgsize > ipc_ns->mq_msgsize_max)
- 			return 0;
- 	}
- 	/* check for overflow */
-@@ -587,8 +595,9 @@ static int mq_attr_ok(struct mq_attr *attr)
- /*
-  * Invoked when creating a new queue via sys_mq_open
-  */
--static struct file *do_create(struct dentry *dir, struct dentry *dentry,
--			int oflag, mode_t mode, struct mq_attr *attr)
-+static struct file *do_create(struct ipc_namespace *ipc_ns, struct dentry *dir,
-+			struct dentry *dentry, int oflag, mode_t mode,
-+			struct mq_attr *attr)
- {
- 	const struct cred *cred = current_cred();
- 	struct file *result;
-@@ -596,14 +605,14 @@ static struct file *do_create(struct dentry *dir, struct dentry *dentry,
- 
- 	if (attr) {
- 		ret = -EINVAL;
--		if (!mq_attr_ok(attr))
-+		if (!mq_attr_ok(ipc_ns, attr))
- 			goto out;
- 		/* store for use during create */
- 		dentry->d_fsdata = attr;
- 	}
- 
- 	mode &= ~current->fs->umask;
--	ret = mnt_want_write(mqueue_mnt);
-+	ret = mnt_want_write(ipc_ns->mq_mnt);
- 	if (ret)
- 		goto out;
- 	ret = vfs_create(dir->d_inode, dentry, mode, NULL);
-@@ -611,24 +620,25 @@ static struct file *do_create(struct dentry *dir, struct dentry *dentry,
- 	if (ret)
- 		goto out_drop_write;
- 
--	result = dentry_open(dentry, mqueue_mnt, oflag, cred);
-+	result = dentry_open(dentry, ipc_ns->mq_mnt, oflag, cred);
- 	/*
- 	 * dentry_open() took a persistent mnt_want_write(),
- 	 * so we can now drop this one.
- 	 */
--	mnt_drop_write(mqueue_mnt);
-+	mnt_drop_write(ipc_ns->mq_mnt);
- 	return result;
- 
- out_drop_write:
--	mnt_drop_write(mqueue_mnt);
-+	mnt_drop_write(ipc_ns->mq_mnt);
- out:
- 	dput(dentry);
--	mntput(mqueue_mnt);
-+	mntput(ipc_ns->mq_mnt);
- 	return ERR_PTR(ret);
- }
- 
- /* Opens existing queue */
--static struct file *do_open(struct dentry *dentry, int oflag)
-+static struct file *do_open(struct ipc_namespace *ipc_ns,
-+				struct dentry *dentry, int oflag)
- {
- 	const struct cred *cred = current_cred();
- 
-@@ -637,17 +647,17 @@ static struct file *do_open(struct dentry *dentry, int oflag)
- 
- 	if ((oflag & O_ACCMODE) == (O_RDWR | O_WRONLY)) {
- 		dput(dentry);
--		mntput(mqueue_mnt);
-+		mntput(ipc_ns->mq_mnt);
- 		return ERR_PTR(-EINVAL);
- 	}
- 
- 	if (inode_permission(dentry->d_inode, oflag2acc[oflag & O_ACCMODE])) {
- 		dput(dentry);
--		mntput(mqueue_mnt);
-+		mntput(ipc_ns->mq_mnt);
- 		return ERR_PTR(-EACCES);
- 	}
- 
--	return dentry_open(dentry, mqueue_mnt, oflag, cred);
-+	return dentry_open(dentry, ipc_ns->mq_mnt, oflag, cred);
- }
- 
- SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
-@@ -658,6 +668,7 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
- 	char *name;
- 	struct mq_attr attr;
- 	int fd, error;
-+	struct ipc_namespace *ipc_ns = &init_ipc_ns;
- 
- 	if (u_attr && copy_from_user(&attr, u_attr, sizeof(struct mq_attr)))
- 		return -EFAULT;
-@@ -671,13 +682,13 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
- 	if (fd < 0)
- 		goto out_putname;
- 
--	mutex_lock(&mqueue_mnt->mnt_root->d_inode->i_mutex);
--	dentry = lookup_one_len(name, mqueue_mnt->mnt_root, strlen(name));
-+	mutex_lock(&ipc_ns->mq_mnt->mnt_root->d_inode->i_mutex);
-+	dentry = lookup_one_len(name, ipc_ns->mq_mnt->mnt_root, strlen(name));
- 	if (IS_ERR(dentry)) {
- 		error = PTR_ERR(dentry);
- 		goto out_err;
- 	}
--	mntget(mqueue_mnt);
-+	mntget(ipc_ns->mq_mnt);
- 
- 	if (oflag & O_CREAT) {
- 		if (dentry->d_inode) {	/* entry already exists */
-@@ -685,10 +696,10 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
- 			error = -EEXIST;
- 			if (oflag & O_EXCL)
- 				goto out;
--			filp = do_open(dentry, oflag);
-+			filp = do_open(ipc_ns, dentry, oflag);
- 		} else {
--			filp = do_create(mqueue_mnt->mnt_root, dentry,
--						oflag, mode,
-+			filp = do_create(ipc_ns, ipc_ns->mq_mnt->mnt_root,
-+						dentry, oflag, mode,
- 						u_attr ? &attr : NULL);
- 		}
- 	} else {
-@@ -696,7 +707,7 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
- 		if (!dentry->d_inode)
- 			goto out;
- 		audit_inode(name, dentry);
--		filp = do_open(dentry, oflag);
-+		filp = do_open(ipc_ns, dentry, oflag);
- 	}
- 
- 	if (IS_ERR(filp)) {
-@@ -709,13 +720,13 @@ SYSCALL_DEFINE4(mq_open, const char __user *, u_name, int, oflag, mode_t, mode,
- 
- out:
- 	dput(dentry);
--	mntput(mqueue_mnt);
-+	mntput(ipc_ns->mq_mnt);
- out_putfd:
- 	put_unused_fd(fd);
- out_err:
- 	fd = error;
- out_upsem:
--	mutex_unlock(&mqueue_mnt->mnt_root->d_inode->i_mutex);
-+	mutex_unlock(&ipc_ns->mq_mnt->mnt_root->d_inode->i_mutex);
- out_putname:
- 	putname(name);
- 	return fd;
-@@ -727,14 +738,15 @@ SYSCALL_DEFINE1(mq_unlink, const char __user *, u_name)
- 	char *name;
- 	struct dentry *dentry;
- 	struct inode *inode = NULL;
-+	struct ipc_namespace *ipc_ns = &init_ipc_ns;
- 
- 	name = getname(u_name);
- 	if (IS_ERR(name))
- 		return PTR_ERR(name);
- 
--	mutex_lock_nested(&mqueue_mnt->mnt_root->d_inode->i_mutex,
-+	mutex_lock_nested(&ipc_ns->mq_mnt->mnt_root->d_inode->i_mutex,
- 			I_MUTEX_PARENT);
--	dentry = lookup_one_len(name, mqueue_mnt->mnt_root, strlen(name));
-+	dentry = lookup_one_len(name, ipc_ns->mq_mnt->mnt_root, strlen(name));
- 	if (IS_ERR(dentry)) {
- 		err = PTR_ERR(dentry);
- 		goto out_unlock;
-@@ -748,16 +760,16 @@ SYSCALL_DEFINE1(mq_unlink, const char __user *, u_name)
- 	inode = dentry->d_inode;
- 	if (inode)
- 		atomic_inc(&inode->i_count);
--	err = mnt_want_write(mqueue_mnt);
-+	err = mnt_want_write(ipc_ns->mq_mnt);
- 	if (err)
- 		goto out_err;
- 	err = vfs_unlink(dentry->d_parent->d_inode, dentry);
--	mnt_drop_write(mqueue_mnt);
-+	mnt_drop_write(ipc_ns->mq_mnt);
- out_err:
- 	dput(dentry);
- 
- out_unlock:
--	mutex_unlock(&mqueue_mnt->mnt_root->d_inode->i_mutex);
-+	mutex_unlock(&ipc_ns->mq_mnt->mnt_root->d_inode->i_mutex);
- 	putname(name);
- 	if (inode)
- 		iput(inode);
-@@ -1212,14 +1224,14 @@ static int msg_maxsize_limit_max = MAX_MSGSIZEMAX;
- static ctl_table mq_sysctls[] = {
- 	{
- 		.procname	= "queues_max",
--		.data		= &queues_max,
-+		.data		= &init_ipc_ns.mq_queues_max,
- 		.maxlen		= sizeof(int),
- 		.mode		= 0644,
- 		.proc_handler	= &proc_dointvec,
- 	},
- 	{
- 		.procname	= "msg_max",
--		.data		= &msg_max,
-+		.data		= &init_ipc_ns.mq_msg_max,
- 		.maxlen		= sizeof(int),
- 		.mode		= 0644,
- 		.proc_handler	= &proc_dointvec_minmax,
-@@ -1228,7 +1240,7 @@ static ctl_table mq_sysctls[] = {
- 	},
- 	{
- 		.procname	= "msgsize_max",
--		.data		= &msgsize_max,
-+		.data		= &init_ipc_ns.mq_msgsize_max,
- 		.maxlen		= sizeof(int),
- 		.mode		= 0644,
- 		.proc_handler	= &proc_dointvec_minmax,
-@@ -1274,13 +1286,13 @@ static int __init init_mqueue_fs(void)
+@@ -1286,15 +1340,14 @@ static int __init init_mqueue_fs(void)
  	if (error)
  		goto out_sysctl;
  
--	if (IS_ERR(mqueue_mnt = kern_mount(&mqueue_fs_type))) {
--		error = PTR_ERR(mqueue_mnt);
-+	init_ipc_ns.mq_mnt = kern_mount(&mqueue_fs_type);
-+	if (IS_ERR(init_ipc_ns.mq_mnt)) {
-+		error = PTR_ERR(init_ipc_ns.mq_mnt);
+-	init_ipc_ns.mq_mnt = kern_mount(&mqueue_fs_type);
++	spin_lock_init(&mq_lock);
++
++	init_ipc_ns.mq_mnt = kern_mount_data(&mqueue_fs_type, &init_ipc_ns);
+ 	if (IS_ERR(init_ipc_ns.mq_mnt)) {
+ 		error = PTR_ERR(init_ipc_ns.mq_mnt);
  		goto out_filesystem;
  	}
  
- 	/* internal initialization - not common for vfs */
--	queues_count = 0;
- 	spin_lock_init(&mq_lock);
- 
+-	/* internal initialization - not common for vfs */
+-	spin_lock_init(&mq_lock);
+-
  	return 0;
+ 
+ out_filesystem:
 diff --git a/ipc/msgutil.c b/ipc/msgutil.c
-index c82c215..73c316c 100644
+index 73c316c..e5d6da1 100644
 --- a/ipc/msgutil.c
 +++ b/ipc/msgutil.c
-@@ -13,10 +13,32 @@
- #include <linux/security.h>
- #include <linux/slab.h>
- #include <linux/ipc.h>
-+#include <linux/ipc_namespace.h>
- #include <asm/uaccess.h>
+@@ -18,19 +18,17 @@
  
  #include "util.h"
  
-+/*
-+ * The next 2 defines are here bc this is the only file
-+ * compiled when either CONFIG_SYSVIPC and CONFIG_POSIX_MQUEUE
-+ * and not CONFIG_IPC_NS.
-+ */
-+struct ipc_namespace init_ipc_ns = {
-+	.kref = {
-+		/* It's not for this patch to change, but should this be 1? */
-+		.refcount	= ATOMIC_INIT(2),
-+	},
-+#ifdef CONFIG_POSIX_MQUEUE
-+	.mq_mnt          = NULL,
-+	.mq_queues_count = 0,
-+	.mq_queues_max   = DFLT_QUEUESMAX,
-+	.mq_msg_max      = DFLT_MSGMAX,
-+	.mq_msgsize_max  = DFLT_MSGSIZEMAX,
-+#endif
-+};
++DEFINE_SPINLOCK(mq_lock);
 +
-+atomic_t nr_ipc_ns = ATOMIC_INIT(1);
-+
- struct msg_msgseg {
- 	struct msg_msgseg* next;
- 	/* the next part of the message follows immediately */
+ /*
+  * The next 2 defines are here bc this is the only file
+  * compiled when either CONFIG_SYSVIPC and CONFIG_POSIX_MQUEUE
+  * and not CONFIG_IPC_NS.
+  */
+ struct ipc_namespace init_ipc_ns = {
+-	.kref = {
+-		/* It's not for this patch to change, but should this be 1? */
+-		.refcount	= ATOMIC_INIT(2),
+-	},
++	/* It's not for this patch to change, but should this be 1? */
++	.count		= ATOMIC_INIT(2),
+ #ifdef CONFIG_POSIX_MQUEUE
+-	.mq_mnt          = NULL,
+-	.mq_queues_count = 0,
+ 	.mq_queues_max   = DFLT_QUEUESMAX,
+ 	.mq_msg_max      = DFLT_MSGMAX,
+ 	.mq_msgsize_max  = DFLT_MSGSIZEMAX,
 diff --git a/ipc/namespace.c b/ipc/namespace.c
-index 9171d94..4b4dc6d 100644
+index 4b4dc6d..4a5e752 100644
 --- a/ipc/namespace.c
 +++ b/ipc/namespace.c
-@@ -25,6 +25,7 @@ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
+@@ -9,23 +9,31 @@
+ #include <linux/rcupdate.h>
+ #include <linux/nsproxy.h>
+ #include <linux/slab.h>
++#include <linux/fs.h>
++#include <linux/mount.h>
+ 
+ #include "util.h"
+ 
+ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
+ {
+ 	struct ipc_namespace *ns;
++	int err;
+ 
+ 	ns = kmalloc(sizeof(struct ipc_namespace), GFP_KERNEL);
+ 	if (ns == NULL)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	atomic_set(&ns->count, 1);
++	err = mq_init_ns(ns);
++	if (err) {
++		kfree(ns);
++		return ERR_PTR(err);
++	}
+ 	atomic_inc(&nr_ipc_ns);
+ 
  	sem_init_ns(ns);
  	msg_init_ns(ns);
  	shm_init_ns(ns);
-+	mq_init_ns(ns);
+-	mq_init_ns(ns);
  
  	/*
  	 * msgmni has already been computed for the new ipc ns.
-@@ -101,6 +102,7 @@ void free_ipc_ns(struct kref *kref)
+@@ -35,7 +43,6 @@ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
+ 	ipcns_notify(IPCNS_CREATED);
+ 	register_ipcns_notifier(ns);
+ 
+-	kref_init(&ns->kref);
+ 	return ns;
+ }
+ 
+@@ -85,11 +92,34 @@ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+ 	up_write(&ids->rw_mutex);
+ }
+ 
+-void free_ipc_ns(struct kref *kref)
++/*
++ * put_ipc_ns - drop a reference to an ipc namespace.
++ * @ns: the namespace to put
++ *
++ * If this is the last task in the namespace exiting, and
++ * it is dropping the refcount to 0, then it can race with
++ * a task in another ipc namespace but in a mounts namespace
++ * which has this ipcns's mqueuefs mounted, doing some action
++ * with one of the mqueuefs files.  That can raise the refcount.
++ * So dropping the refcount, and raising the refcount when
++ * accessing it through the VFS, are protected with mq_lock.
++ *
++ * (Clearly, a task raising the refcount on its own ipc_ns
++ * needn't take mq_lock since it can't race with the last task
++ * in the ipcns exiting).
++ */
++void put_ipc_ns(struct ipc_namespace *ns)
+ {
+-	struct ipc_namespace *ns;
++	if (atomic_dec_and_lock(&ns->count, &mq_lock)) {
++		mq_clear_sbinfo(ns);
++		spin_unlock(&mq_lock);
++		mq_put_mnt(ns);
++		free_ipc_ns(ns);
++	}
++}
+ 
+-	ns = container_of(kref, struct ipc_namespace, kref);
++void free_ipc_ns(struct ipc_namespace *ns)
++{
+ 	/*
+ 	 * Unregistering the hotplug notifier at the beginning guarantees
+ 	 * that the ipc namespace won't be freed while we are inside the
+@@ -102,7 +132,6 @@ void free_ipc_ns(struct kref *kref)
  	sem_exit_ns(ns);
  	msg_exit_ns(ns);
  	shm_exit_ns(ns);
-+	mq_exit_ns(ns);
+-	mq_exit_ns(ns);
  	kfree(ns);
  	atomic_dec(&nr_ipc_ns);
  
-diff --git a/ipc/util.c b/ipc/util.c
-index 7585a72..b8e4ba9 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -47,15 +47,6 @@ struct ipc_proc_iface {
- 	int (*show)(struct seq_file *, void *);
- };
- 
--struct ipc_namespace init_ipc_ns = {
--	.kref = {
--		.refcount	= ATOMIC_INIT(2),
--	},
--};
--
--atomic_t nr_ipc_ns = ATOMIC_INIT(1);
--
--
- #ifdef CONFIG_MEMORY_HOTPLUG
- 
- static void ipc_memory_notifier(struct work_struct *work)
 diff --git a/ipc/util.h b/ipc/util.h
-index 3646b45..0e7d922 100644
+index 0e7d922..1187332 100644
 --- a/ipc/util.h
 +++ b/ipc/util.h
-@@ -20,6 +20,13 @@ void shm_init (void);
- 
+@@ -21,9 +21,11 @@ void shm_init (void);
  struct ipc_namespace;
  
-+#ifdef CONFIG_POSIX_MQUEUE
-+void mq_exit_ns(struct ipc_namespace *ns);
-+#else
-+static inline void mq_exit_ns(struct ipc_namespace *ns) { }
-+#endif
-+
-+#ifdef CONFIG_SYSVIPC
- void sem_init_ns(struct ipc_namespace *ns);
- void msg_init_ns(struct ipc_namespace *ns);
- void shm_init_ns(struct ipc_namespace *ns);
-@@ -27,6 +34,15 @@ void shm_init_ns(struct ipc_namespace *ns);
- void sem_exit_ns(struct ipc_namespace *ns);
- void msg_exit_ns(struct ipc_namespace *ns);
- void shm_exit_ns(struct ipc_namespace *ns);
-+#else
-+static inline void sem_init_ns(struct ipc_namespace *ns) { }
-+static inline void msg_init_ns(struct ipc_namespace *ns) { }
-+static inline void shm_init_ns(struct ipc_namespace *ns) { }
-+
-+static inline void sem_exit_ns(struct ipc_namespace *ns) { }
-+static inline void msg_exit_ns(struct ipc_namespace *ns) { }
-+static inline void shm_exit_ns(struct ipc_namespace *ns) { }
-+#endif
+ #ifdef CONFIG_POSIX_MQUEUE
+-void mq_exit_ns(struct ipc_namespace *ns);
++extern void mq_clear_sbinfo(struct ipc_namespace *ns);
++extern void mq_put_mnt(struct ipc_namespace *ns);
+ #else
+-static inline void mq_exit_ns(struct ipc_namespace *ns) { }
++static inline void mq_clear_sbinfo(struct ipc_namespace *ns) { }
++static inline void mq_put_mnt(struct ipc_namespace *ns) { }
+ #endif
  
- /*
-  * Structure that holds the parameters needed by the ipc operations
+ #ifdef CONFIG_SYSVIPC
 -- 
 1.5.4.3
