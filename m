@@ -1,19 +1,19 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: Re: [PATCH 4/4] mqueue namespace: adapt sysctl
-Date: Wed, 25 Feb 2009 01:32:45 +0300
-Message-ID: <20090224223245.GA17473@x200.localdomain>
+Date: Tue, 24 Feb 2009 16:32:07 -0600
+Message-ID: <20090224223207.GA31959@us.ibm.com>
 References: <20090224220256.GA31001@us.ibm.com> <20090224141651.70155ebd.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761281AbZBXW0h@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760175AbZBXWce@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20090224141651.70155ebd.akpm@linux-foundation.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Cc: adobriyan@gmail.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 24, 2009 at 02:16:51PM -0800, Andrew Morton wrote:
+Quoting Andrew Morton (akpm@linux-foundation.org):
 > On Tue, 24 Feb 2009 16:02:56 -0600
 > "Serge E. Hallyn" <serue@us.ibm.com> wrote:
 > 
@@ -56,7 +56,17 @@ On Tue, Feb 24, 2009 at 02:16:51PM -0800, Andrew Morton wrote:
 > +#define proc_mq_dointvec NULL
 > +#define proc_mq_dointvec_minmax NULL
 >  #endif
+> 
+>  static int msg_max_limit_min = MIN_MSGMAX;
+> _
+> 
+> intended?
 
-I hope, not.
+It just seemed more in line with the idea of ensuring type
+safety...  Of course the #defines will work and are how the
+others (at least ipc and utsname) do it, but this seemed
+a touch better.  Of course I'll change it if that's the
+preference.
 
-"#define foo NULL" is the least intrusive thing.
+thanks,
+-serge
