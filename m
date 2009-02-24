@@ -1,58 +1,58 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Banning checkpoint (was: Re: What can OpenVZ do?)
-Date: Mon, 23 Feb 2009 21:11:25 -0800
-Message-ID: <1235452285.26788.226.camel__45867.1705019244$1235462111$gmane$org@nimitz>
-References: <20090217222319.GA10546@elte.hu>
-	<1234909849.4816.9.camel@nimitz> <20090218003217.GB25856@elte.hu>
-	<1234917639.4816.12.camel@nimitz>
-	<20090218051123.GA9367@x200.localdomain>
-	<20090218181644.GD19995@elte.hu> <1234992447.26788.12.camel@nimitz>
-	<20090218231545.GA17524@elte.hu>
-	<20090219190637.GA4846@x200.localdomain>
-	<1235070714.26788.56.camel@nimitz>
-	<20090224044752.GB3202@x200.localdomain>
+From: Cedric Le Goater <clg@fr.ibm.com>
+Subject: Re: [PATCH 4/4] mqueue namespace: adapt sysctl
+Date: Tue, 24 Feb 2009 09:25:33 +0100
+Message-ID: <49A3AEFD.3050705@fr.ibm.com>
+References: <20090224030347.GA10913@us.ibm.com>	<20090224030933.GC11441@us.ibm.com> <20090224043512.GA3202@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090224044752.GB3202-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754957AbZBXIZu@vger.kernel.org>
+In-Reply-To: <20090224043512.GA3202@x200.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, lkml <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-02-24 at 07:47 +0300, Alexey Dobriyan wrote:
-> > I think what I posted is a decent compromise.  It gets you those
-> > warnings at runtime and is a one-way trip for any given process.  But,
-> > it does detect in certain cases (fork() and unshare(FILES)) when it is
-> > safe to make the trip back to the "I'm checkpointable" state again.
+Alexey Dobriyan wrote:
+> On Mon, Feb 23, 2009 at 09:09:33PM -0600, Serge E. Hallyn wrote:
+>> +#ifdef CONFIG_PROC_FS
+>> +static int proc_mq_dointvec(ctl_table *table, int write, struct file *filp,
+>> +	void __user *buffer, size_t *lenp, loff_t *ppos)
+>> +{
+>> +	struct ctl_table mq_table;
+>> +	memcpy(&mq_table, table, sizeof(mq_table));
+>> +	mq_table.data = get_mq(table);
+>> +
+>> +	return proc_dointvec(&mq_table, write, filp, buffer, lenp, ppos);
+>> +}
+>> +
+>> +static int proc_mq_dointvec_minmax(ctl_table *table, int write,
+>> +	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
+>> +{
+>> +	struct ctl_table mq_table;
+>> +	memcpy(&mq_table, table, sizeof(mq_table));
+>> +	mq_table.data = get_mq(table);
+>> +
+>> +	return proc_dointvec_minmax(&mq_table, write, filp, buffer,
+>> +					lenp, ppos);
+>> +}
+>> +#else /* CONFIG_PROC_FS */
+>> +static int proc_mq_dointvec(ctl_table *table, int write, struct file *filp,
+>> +	void __user *buffer, size_t *lenp, loff_t *ppos)
+>> +{
+>> +	return -ENOSYS;
+>> +}
+>> +
+>> +static int proc_mq_dointvec_minmax(ctl_table *table, int write,
+>> +	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
+>> +{
+>> +	return -ENOSYS;
+>> +}
+>> +#endif /* CONFIG_PROC_FS */
 > 
-> "Checkpointable" is not even per-process property.
-> 
-> Imagine, set of SAs (struct xfrm_state) and SPDs (struct xfrm_policy).
-> They are a) per-netns, b) persistent.
-> 
-> You can hook into socketcalls to mark process as uncheckpointable,
-> but since SAs and SPDs are persistent, original process already exited.
-> You're going to walk every process with same netns as SA adder and mark
-> it as uncheckpointable. Definitely doable, but ugly, isn't it?
-> 
-> Same for iptable rules.
-> 
-> "Checkpointable" is container property, OK?
+> These should be under CONFIG_PROC_SYSCTL and one should define them to
+> NULL otherwise.
 
-Ideally, I completely agree.
+ipc_sysctl.c and utsname_sysctl.c need to fix the CONFIG_PROC_FS #ifdef.
 
-But, we don't currently have a concept of a true container in the
-kernel.  Do you have any suggestions for any current objects that we
-could use in its place for a while?
-
--- Dave
+C.
