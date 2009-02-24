@@ -1,49 +1,80 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/5] check files for checkpointability
-Date: Tue, 24 Feb 2009 11:47:19 -0800
-Message-ID: <1235504839.26788.300.camel__3059.35044675625$1235505286$gmane$org@nimitz>
-References: <20090219182007.B4B47C1F@kernel>
-	<20090219182009.1A3E8860@kernel> <20090223234911.GB2590@us.ibm.com>
-	<1235435430.26788.212.camel@nimitz> <20090224011037.GB4797@us.ibm.com>
-	<1235438459.26788.222.camel@nimitz> <20090224194329.GC24007@us.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
+	implementation
+Date: Tue, 24 Feb 2009 13:58:26 -0600
+Message-ID: <20090224195826.GA25909@us.ibm.com>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
+	<1233182478-27113-2-git-send-email-ntl@pobox.com>
+	<49814FA2.9060108@cs.columbia.edu>
+	<20090129214035.GB6913@localdomain>
+	<20090217010355.58afd5cf@thinkcentre.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090224194329.GC24007-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Return-path: <linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org>
+Content-Disposition: inline
+In-Reply-To: <20090217010355.58afd5cf@thinkcentre.lan>
+List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
+List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
+List-Post: <mailto:linuxppc-dev@ozlabs.org>
+List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
+List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
+Sender: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+Errors-To: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+To: Nathan Lynch <ntl@pobox.com>
+Cc: containers@lists.osdl.org, Oren Laadan <orenl@cs.columbia.edu>, linuxppc-dev@ozlabs.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-02-24 at 13:43 -0600, Serge E. Hallyn wrote:
-> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > On Mon, 2009-02-23 at 19:10 -0600, Serge E. Hallyn wrote:
-> > > > This allows us to tell where and when we went wrong.  Take a process
-> > > > that's been running for a month.  After 5 days it did something random
-> > > > to keep it from being checkpointed.  You're going to have forgotten all
-> > > > about it 25 days later.  This gives us an opportunity to spit into dmesg
-> > > > or just plain log it.  It also gives the app some ability to reflect and
-> > > > see what its uncheckpointable attributes are.  
+Quoting Nathan Lynch (ntl@pobox.com):
+> Nathan Lynch <ntl@pobox.com> wrote:
+> >
+> > Oren Laadan wrote:
 > > > 
-> > > Hmm.  In that case, rather than refuse checkpoint, I prefer that we make
-> > > this a footnote in the /proc/$$/checkpointable output.
+> > > Nathan Lynch wrote:
+> > > > 
+> > > > What doesn't work:
+> > > > * restarting a 32-bit task from a 64-bit task and vice versa
+> > > 
+> > > Is there a test to bail if we attempt to checkpoint such tasks ?
 > > 
-> > Yeah, that's cool.  If we were smart, we'd also get hooked into some of
-> > the ftrace output so that we have a real chance of logging these things
-> > and being able to go look at something about them down the line.
+> > No, but I'll add one if it looks too hard to fix for the next round.
 > 
-> How exactly woudl that work?  Would that work as a *replacement* for
-> filling up the logs as I was recommending?  If so I'm all for it...
+> Unfortunately, adding a check for this is hard.
+> 
+> The "point of no return" in the restart path is cr_read_mm, which tears
+> down current's address space.  cr_read_mm runs way before cr_read_cpu,
+> which is the only restart method I've implemented for powerpc so far.
+> So, checking for this condition in cr_read_cpu is too late if I want
+> restart(2) to return an error and leave the caller's memory map
+> intact.  (And I do want this: restart should be as robust as execve.)
+> 
+> Well okay then, cr_read_head_arch seems to be the right place in the
+> restart sequence for the architecture code to handle this.  However,
+> cr_write_head_arch (which produces the buffer that cr_read_head_arch
+> consumes) is not provided a reference to the task to be checkpointed,
+> nor can it assume that it's operating on current.  I need a reference
+> to a task before I can determine whether it's running in 32- or 64-bit
+> mode, or using the FPU, Altivec, SPE, whatever.
+> 
+> In any case, mixing 32- and 64-bit tasks across restart is something I
+> eventually want to support, not reject.  But the problem I've outlined
+> applies to FPU state and vector extensions (VMX, SPE), as well as
+> sanity-checking debug register (DABR) contents.  We'll need to be able
+> to error out gracefully from restart when a checkpoint image specifies a
+> feature unsupported by the current kernel or hardware.  But I don't see
+> how to do it with the current architecture.  Am I missing something?
 
-I think it would be a replacement for dmesg, at least.  
+I suspect I can guess the response to this suggestion, but how about we
+accept that if sys_restart() fails due to something like this, the
+task is lost and can't exit gracefully?  The end-user can then run
+a user-space program to run through the checkpoint image ahead of
+time (if they want) and verify whether restart can be expected to
+succeed on the current hardware and os version?
 
--- Dave
+If a minor difference is detected, the user-space program might
+simply rewrite (a copy of) the checkpoint image into one which can
+in fact succeed.
+
+-serge
