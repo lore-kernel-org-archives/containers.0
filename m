@@ -1,13 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroups: more documentation for remount and release_agent
-Date: Tue, 24 Feb 2009 13:39:58 +0900
-Message-ID: <20090224133958.597e7788.kamezawa.hiroyu__16937.6677986749$1235450656$gmane$org@jp.fujitsu.com>
-References: <49A35C91.6000904@cn.fujitsu.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v13][PATCH 05/14] x86 support for checkpoint/restart
+Date: Tue, 24 Feb 2009 01:47:39 -0600
+Message-ID: <20090224014739.1b82fc35__23873.402135405$1235461863$gmane$org@thinkcentre.lan>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
+	<1233076092-8660-6-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49A35C91.6000904-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1233076092-8660-6-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,78 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dave-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter
+	Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 24 Feb 2009 10:33:53 +0800
-Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+Hi, this is an old thread I guess, but I just noticed some issues while
+looking at this code.
 
-> This won't remove cpuacct from the mounted hierachy:
->  # mount -t cgroup -o cpu,cpuacct xxx /mnt
->  # mount -o remount,cpu /mnt
-> 
-> Because for this usage mount(8) will append the new options to the original
-> options.
-> 
-> And this will get you right:
->  # mount [-t cgroup] -o remount,cpu xxx /mnt
-> 
-> Also document how to specify or change release_agent.
-> 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+On Tue, 27 Jan 2009 12:08:03 -0500
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+> +static int cr_read_cpu_fpu(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	void *xstate_buf = cr_hbuf_get(ctx, xstate_size);
+> +	int ret;
+> +
+> +	ret = cr_kread(ctx, xstate_buf, xstate_size);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	/* i387 + MMU + SSE */
+> +	preempt_disable();
+> +
+> +	/* init_fpu() also calls set_used_math() */
+> +	ret = init_fpu(current);
+> +	if (ret < 0)
+> +		return ret;
 
-Seems nice!
-Thank you.
-Reviewd-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Several problems here:
+* init_fpu can call kmem_cache_alloc(GFP_KERNEL), but is called here
+  with preempt disabled (init_fpu could use a might_sleep annotation?)
+* if init_fpu returns an error, we get preempt imbalance
+* if init_fpu returns an error, we "leak" the cr_hbuf_get for
+  xstate_buf
 
-> ---
->  Documentation/cgroups/cgroups.txt |   20 ++++++++++++++++++--
->  1 files changed, 18 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-> index 93feb84..df295c6 100644
-> --- a/Documentation/cgroups/cgroups.txt
-> +++ b/Documentation/cgroups/cgroups.txt
-> @@ -333,12 +333,23 @@ The "xxx" is not interpreted by the cgroup code, but will appear in
->  
->  To mount a cgroup hierarchy with just the cpuset and numtasks
->  subsystems, type:
-> -# mount -t cgroup -o cpuset,numtasks hier1 /dev/cgroup
-> +# mount -t cgroup -o cpuset,memory hier1 /dev/cgroup
->  
->  To change the set of subsystems bound to a mounted hierarchy, just
->  remount with different options:
-> +# mount -o remount,cpuset,ns hier1 /dev/cgroup
->  
-> -# mount -o remount,cpuset,ns  /dev/cgroup
-> +Now memory is removed from the hierarchy and ns is added.
-> +
-> +Note this will add ns to the hierarchy but won't remove memory or
-> +cpuset, because the new options are appended to the old ones:
-> +# mount -o remount,ns /dev/cgroup
-> +
-> +To Specify a hierarchy's release_agent:
-> +# mount -t cgroup -o cpuset,release_agent="/sbin/cpuset_release_agent" \
-> +  xxx /dev/cgroup
-> +
-> +Note that specifying 'release_agent' more than once will return failure.
->  
->  Note that changing the set of subsystems is currently only supported
->  when the hierarchy consists of a single (root) cgroup. Supporting
-> @@ -349,6 +360,11 @@ Then under /dev/cgroup you can find a tree that corresponds to the
->  tree of the cgroups in the system. For instance, /dev/cgroup
->  is the cgroup that holds the whole system.
->  
-> +If you want to change the value of release_agent:
-> +# echo "/sbin/new_release_agent" > /dev/cgroup/release_agent
-> +
-> +It can also be changed via remount.
-> +
->  If you want to create a new cgroup under /dev/cgroup:
->  # cd /dev/cgroup
->  # mkdir my_cgroup
-> -- 
-> 1.5.4.rc3
-> 
-> 
+Speaking of cr_hbuf_get... I'd prefer to see that "allocator" go away
+and its users converted to kmalloc/kfree (this is what I've done for
+the powerpc C/R code, btw).
+
+Using the slab allocator would:
+
+* make the code less obscure and easier to review
+* make the code more amenable to static analysis
+* gain the benefits of slab debugging at runtime
+
+But I think this has been pointed out before.  If I understand the
+justification for cr_hbuf_get correctly, the allocations it services
+are somehow known to be bounded in size and nesting.  But even if that
+is the case, it's not much of a reason to avoid using kmalloc, is it?
