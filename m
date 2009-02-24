@@ -1,15 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/5] check files for checkpointability
-Date: Mon, 23 Feb 2009 17:20:59 -0800
-Message-ID: <1235438459.26788.222.camel__17722.3752755255$1235438674$gmane$org@nimitz>
-References: <20090219182007.B4B47C1F@kernel>
-	<20090219182009.1A3E8860@kernel> <20090223234911.GB2590@us.ibm.com>
-	<1235435430.26788.212.camel@nimitz> <20090224011037.GB4797@us.ibm.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Question for remount
+Date: Tue, 24 Feb 2009 09:33:38 +0800
+Message-ID: <49A34E72.1040609__9701.32297738946$1235439332$gmane$org@cn.fujitsu.com>
+References: <20090220190223.e8b4f6a8.kamezawa.hiroyu@jp.fujitsu.com>	<6599ad830902200822u6d453340me718bacac3925040@mail.gmail.com>	<d7928a87d8c1bf661e3a3b64db9fa988.squirrel@webmail-b.css.fujitsu.com>	<49A20ACE.7020309@cn.fujitsu.com>
+	<20090224085724.4cc1b3b2.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090224011037.GB4797-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090224085724.4cc1b3b2.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,23 +18,103 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-02-23 at 19:10 -0600, Serge E. Hallyn wrote:
-> > This allows us to tell where and when we went wrong.  Take a process
-> > that's been running for a month.  After 5 days it did something random
-> > to keep it from being checkpointed.  You're going to have forgotten all
-> > about it 25 days later.  This gives us an opportunity to spit into dmesg
-> > or just plain log it.  It also gives the app some ability to reflect and
-> > see what its uncheckpointable attributes are.  
+KAMEZAWA Hiroyuki wrote:
+> On Mon, 23 Feb 2009 10:32:46 +0800
+> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 > 
-> Hmm.  In that case, rather than refuse checkpoint, I prefer that we make
-> this a footnote in the /proc/$$/checkpointable output.
+>> KAMEZAWA Hiroyuki wrote:
+>>> Paul Menage さんは書きました：
+>>>> On Fri, Feb 20, 2009 at 2:02 AM, KAMEZAWA Hiroyuki
+>>>> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+>>>>> 2. /proc/mounts information of release_agent should be updated....
+>>>>>   when it's overwritten directly.
+>>>> Yes, definitely. But shouldn't that happen already?
+>>>> cgroup_show_options() reports the current value of
+>>>> root->release_agent_path in /proc/mounts. Is it possible that mount is
+>>>> actually storing/retrieving this information in /etc/mtab, which
+>>>> doesn't get updated?
+>>>>
+>>> Ah, you're right. /proc/mounts is updated but /etc/mtab is not updated.
+>>> Hmm..from man mount(1), /etc/mtab is not synchronized with /proc/mounts.
+>>> Do we need to allow release_agent override at remount ?
+>>>
+>> Since we've allowed this behavior, I think we shouldn't disallow it to
+>> supprise users?
+>>
+> In a bit different stroy, it already surprises a user (me).
+> for example)
+> 
 
-Yeah, that's cool.  If we were smart, we'd also get hooked into some of
-the ftrace output so that we have a real chance of logging these things
-and being able to go look at something about them down the line.
+I think what may surprise people is the following mount will append opts
+to the original opts.
 
--- Dave
+> #mount -t cgroup none /cgroups -ocpu,release_agent=hogehoge
+> #mount -oremount,cpuacct /cgroups,release_agent=xxxx
+> => remount fails. because the option "release_agent" appears twice.
+> 
+> #mount -t cgroup none /cgroups -ocpu,release_agent=hogehoge
+> #mount -t cgroup none /cgroups -oremount,cpuacct /cgroups,release_agent=xxxx
+> => remount success.
+> 
+> At least, updating documentation to notice this is necessary I think.
+> 
+
+How about this:
+
+[PATCH] cgroups: more documentation for remount and release_agent
+
+This won't remove cpuacct from the mounted hierachy:
+ # mount -t cgroup -o cpu,cpuacct xxx /mnt
+ # mount -o remount,cpu /mnt
+
+Because for this usage mount(8) will append the new options to the original
+options.
+
+And this will get you right:
+ # mount [-t cgroup] -o remount,cpu xxx /mnt
+
+Also document how to specify and change release_agent.
+
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 93feb84..824277d 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -337,8 +337,19 @@ subsystems, type:
+ 
+ To change the set of subsystems bound to a mounted hierarchy, just
+ remount with different options:
++# mount -o remount,cpuset,ns hier1 /dev/cgroup
+ 
+-# mount -o remount,cpuset,ns  /dev/cgroup
++Now numtasks is removed from the hierarchy and ns is added.
++
++Note this will add ns to the hierarchy but won't remove numtasks or
++cpuset:
++# mount -o remount,ns /dev/cgroup
++
++To Specify a hierarchy's release_agent:
++# mount -t cgroup -o cpuset,release_agent="/sbin/cpuset_release_agent" \
++  xxx /dev/cgroup
++
++Note that specifying 'release_agent' more than once will return failure.
+ 
+ Note that changing the set of subsystems is currently only supported
+ when the hierarchy consists of a single (root) cgroup. Supporting
+@@ -349,6 +360,11 @@ Then under /dev/cgroup you can find a tree that corresponds to the
+ tree of the cgroups in the system. For instance, /dev/cgroup
+ is the cgroup that holds the whole system.
+ 
++If you want to change the value of release_agent:
++# echo "/sbin/new_release_agent" > /dev/cgroup/release_agent
++
++It can also be changed via remount.
++
+ If you want to create a new cgroup under /dev/cgroup:
+ # cd /dev/cgroup
+ # mkdir my_cgroup
