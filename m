@@ -1,14 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Check may_checkpoint() early
-Date: Mon, 23 Feb 2009 19:06:34 -0600
-Message-ID: <20090224010634.GC2590@us.ibm.com>
-References: <20090221201221.GA13532@us.ibm.com>
+Subject: Re: [PATCH] Deny external checkpoint unless frozen
+Date: Mon, 23 Feb 2009 19:09:45 -0600
+Message-ID: <20090224010945.GA4797@us.ibm.com>
+References: <20090221201317.GB13532@us.ibm.com>
+	<20090223230438.GA2590@us.ibm.com>
+	<1235435947.26788.216.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090221201221.GA13532-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1235435947.26788.216.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,71 +20,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> On Mon, 2009-02-23 at 17:04 -0600, Serge E. Hallyn wrote:
+> > Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> > > 
+> > > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > > Date: Sat, 21 Feb 2009 11:17:07 -0800
+> > > Subject: [PATCH] Deny external checkpoint unless task is frozen
+> > > 
+> > > Remove a 'FIXME' and ensure that the tasks we are checkpointing are
+> > > frozen unless its a self-checkpoint.
+> > > 
+> > > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > 
+> > Agreed.  I personally would like to just get rid of support
+> > for t==current, but don't expect to get anywhere with that
+> > argument :)
 > 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 16 Feb 2009 12:05:50 -0800
-> Subject: [PATCH] Check 'may_checkpoint()' early
-> 
-> We currently check if a task is checkpointable when writing the task
-> information to checkpoint file. The small downside of doing this check
-> late is that we may have processed several processes in the tree before
-> hitting one that cannot be checkpointed.
-> 
-> We anyway walk the process tree we are checkpointing earlier, while
-> counting the tasks. We could check if all processes in the tree are
-> checkpointable at that time and fail early if any of them are not.
-> Since the process tree should be frozen, checking earlier should not
-> matter ?
-> 
-> For now, the patch leaves the existing check in cr_write_pids(). We
+> Along the lines of what Ingo has been asking for, do we need to expose
+> this logic in some way?  Do we need a /proc/$$/checkpointable file which
+> says, "I'm not checkpointable because I'm not frozen"?
 
-Yes we'll at least need to add checks that there is no running task
-sharing an mm or files_struct with a checkpointed task, else some of
-our checks will definately be racy (and are even now).
+I really like that.
 
-> can remove that later.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  checkpoint/checkpoint.c |    9 +++++++++
->  1 files changed, 9 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index 64155de..2bbb409 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -347,11 +347,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
->  	struct task_struct **tasks_arr = ctx->tasks_arr;
->  	int tasks_nr = ctx->tasks_nr;
->  	int nr = 0;
-> +	int ret;
-> 
->  	read_lock(&tasklist_lock);
-> 
->  	/* count tasks via DFS scan of the tree */
->  	while (1) {
-> +		ret = cr_may_checkpoint_task(task, ctx);
-> +		if (ret < 0) {
-> +			nr = ret;
-> +			break;
-> +		}
-> +
->  		if (tasks_arr) {
->  			/* unlikely... but if so then try again later */
->  			if (nr == tasks_nr) {
-> @@ -409,6 +416,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
-> 
->  	/* count tasks (no side effects) */
->  	n = cr_tree_count_tasks(ctx);
-> +	if (n < 0)
-> +		return n;
-> 
->  	ctx->tasks_nr = n;
->  	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
-> -- 
-> 1.5.2.5
+> Or, is this just a core part of the API: you have to freeze before
+> checkpointing?  As such, we'll never move to a place where we're not
+> frozen when checkpointing, so we might as well not even track or expose
+> it.  
+
+the only way that would make sense is if sys_checkpoint went ahead
+and frozen them all, right?
+
+-serge
