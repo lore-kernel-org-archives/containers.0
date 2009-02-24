@@ -1,21 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Banning checkpoint (was: Re: What can OpenVZ do?)
-Date: Tue, 24 Feb 2009 09:43:51 -0600
-Message-ID: <20090224154351.GD17294__49927.1295535893$1235490885$gmane$org@us.ibm.com>
-References: <20090218003217.GB25856@elte.hu> <1234917639.4816.12.camel@nimitz>
-	<20090218051123.GA9367@x200.localdomain>
-	<20090218181644.GD19995@elte.hu> <1234992447.26788.12.camel@nimitz>
-	<20090218231545.GA17524@elte.hu>
-	<20090219190637.GA4846@x200.localdomain>
-	<1235070714.26788.56.camel@nimitz>
-	<20090224044752.GB3202@x200.localdomain>
-	<1235452285.26788.226.camel@nimitz>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v13][PATCH 05/14] x86 support for checkpoint/restart
+Date: Tue, 24 Feb 2009 08:06:46 -0800
+Message-ID: <1235491606.26788.248.camel__3920.39436051181$1235491896$gmane$org@nimitz>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
+	<1233076092-8660-6-git-send-email-orenl@cs.columbia.edu>
+	<20090224014739.1b82fc35@thinkcentre.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1235452285.26788.226.camel@nimitz>
+In-Reply-To: <20090224014739.1b82fc35-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,46 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Tue, 2009-02-24 at 07:47 +0300, Alexey Dobriyan wrote:
-> > > I think what I posted is a decent compromise.  It gets you those
-> > > warnings at runtime and is a one-way trip for any given process.  But,
-> > > it does detect in certain cases (fork() and unshare(FILES)) when it is
-> > > safe to make the trip back to the "I'm checkpointable" state again.
-> > 
-> > "Checkpointable" is not even per-process property.
-> > 
-> > Imagine, set of SAs (struct xfrm_state) and SPDs (struct xfrm_policy).
-> > They are a) per-netns, b) persistent.
-> > 
-> > You can hook into socketcalls to mark process as uncheckpointable,
-> > but since SAs and SPDs are persistent, original process already exited.
-> > You're going to walk every process with same netns as SA adder and mark
-> > it as uncheckpointable. Definitely doable, but ugly, isn't it?
-> > 
-> > Same for iptable rules.
-> > 
-> > "Checkpointable" is container property, OK?
-> 
-> Ideally, I completely agree.
-> 
-> But, we don't currently have a concept of a true container in the
-> kernel.  Do you have any suggestions for any current objects that we
-> could use in its place for a while?
+On Tue, 2009-02-24 at 01:47 -0600, Nathan Lynch wrote:
+> But I think this has been pointed out before.  If I understand the
+> justification for cr_hbuf_get correctly, the allocations it services
+> are somehow known to be bounded in size and nesting.  But even if that
+> is the case, it's not much of a reason to avoid using kmalloc, is it?
 
-I think the main point is that it makes the concept of marking a task as
-uncheckpointable unworkable.  So at sys_checkpoint() time or when we cat
-/proc/$$/checkpointable, we can check for all of the uncheckpointable
-state of both $$ and its container (including whether $$ is a container
-init).  But we can't expect that (to use Alexey's example) when one task
-in a netns does a certain sys_socketcall, all tasks in the container
-will be marked uncheckpointable.  Or at least we don't want to.
+Oren wants this particular facility to be used for live migration.  To
+support good live migration, we need to be able to return from the
+syscall as fast as possible.  To do that, Oren proposed that we buffer
+all the data needed for the checkpoint inside the kernel.
 
-Which means task->uncheckpointable can't be the big stick which I think
-you were hoping it would be.
+The current cr_hbuf_put/get() could easily be modified to support this
+usage by basically making put() do nothing, then handing off a handle to
+the cr_ctx structure elsewhere in the kernel.  When the time comes to
+free up the in-memory image, you only have one simple structure to go
+free (the hbuf) as opposed to a bunch of little kmalloc()'d objects.
 
--serge
+I'm sure I'm missing something.  I'm also sure that this *will* work
+eventually.  But, I don't think the code as it stands supports keeping
+the abstraction in there.  It is virtually impossible to debate the
+design or its alternatives in this state.
+
+-- Dave
