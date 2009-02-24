@@ -1,13 +1,11 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] c/r: Add CR_COPY() macro
-Date: Tue, 24 Feb 2009 13:37:18 -0500
-Message-ID: <1235500639-9597-2-git-send-email-danms@us.ibm.com>
-References: <1235500639-9597-1-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 0/2] c/r: Add s390 support
+Date: Tue, 24 Feb 2009 13:37:17 -0500
+Message-ID: <1235500639-9597-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1235500639-9597-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,43 +18,5 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-As suggested by Dave, this provides us a way to make the copy-in and
-copy-out processes symmetric.  I also added CR_COPY_BIT() to use with
-the s390 bitfields, since we can't memcpy() those.
-
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint.h |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 217cf6e..b94422a 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -149,4 +149,24 @@ static inline void process_deny_checkpointing(struct task_struct *task) {}
- 
- #endif
- 
-+#define CR_CPT 1
-+#define CR_RST 2
-+
-+#define CR_COPY(op, a, b)				\
-+	do {						\
-+		WARN_ON(sizeof(a) != sizeof(b));	\
-+		if (op == CR_CPT)			\
-+			memcpy(&a, &b, sizeof(a));	\
-+		else					\
-+			memcpy(&b, &a, sizeof(a));	\
-+	} while (0);
-+
-+#define CR_COPY_BIT(op, a, b)				\
-+	do {						\
-+		if (op == CR_CPT)			\
-+			a = b;				\
-+		else					\
-+			b = a;				\
-+	} while (0);
-+
- #endif /* _CHECKPOINT_CKPT_H_ */
--- 
-1.6.1
+This set includes an updated version of the s390 patch as well as a new
+one that adds the common CR_COPY() macros suggested by Dave.
