@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] c/r: Add CR_COPY() macro
-Date: Tue, 24 Feb 2009 13:20:54 -0600
-Message-ID: <20090224192054.GA24007@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] c/r: Add s390 support
+Date: Tue, 24 Feb 2009 11:31:08 -0800
+Message-ID: <87ocwrljib.fsf@caffeine.danplanet.com>
 References: <1235500639-9597-1-git-send-email-danms@us.ibm.com>
-	<1235500639-9597-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1235500639-9597-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1235500639-9597-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Dan Smith's
+	message of "Tue, 24 Feb 2009 13:37:17 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,61 +18,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> As suggested by Dave, this provides us a way to make the copy-in and
-> copy-out processes symmetric.  I also added CR_COPY_BIT() to use with
-> the s390 bitfields, since we can't memcpy() those.
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/checkpoint.h |   20 ++++++++++++++++++++
->  1 files changed, 20 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 217cf6e..b94422a 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -149,4 +149,24 @@ static inline void process_deny_checkpointing(struct task_struct *task) {}
-> 
->  #endif
-> 
-> +#define CR_CPT 1
-> +#define CR_RST 2
-> +
-> +#define CR_COPY(op, a, b)				\
-> +	do {						\
-> +		WARN_ON(sizeof(a) != sizeof(b));	\
+DS> This set includes an updated version of the s390 patch as well as
+DS> a new one that adds the common CR_COPY() macros suggested by Dave.
 
-Can this be a BUILD_BUG_ON()?
+For the sake of comparison, the (trimmed) diffstat of the original
+patch was:
 
-> +		if (op == CR_CPT)			\
-> +			memcpy(&a, &b, sizeof(a));	\
-> +		else					\
-> +			memcpy(&b, &a, sizeof(a));	\
-> +	} while (0);
-> +
-> +#define CR_COPY_BIT(op, a, b)				\
-> +	do {						\
+ arch/s390/include/asm/checkpoint_hdr.h |   99 +++++++++++++++++++++++++++
+ arch/s390/mm/checkpoint.c              |  106 +++++++++++++++++++++++++++++
+ arch/s390/mm/restart.c                 |  117 ++++++++++++++++++++++++++++++++
+ 8 files changed, 341 insertions(+), 2 deletions(-)
 
-maybe add a 
-	BUILD_BUG_ON(typeof(a)!=typeof(b));
-?
+and after the macros it was
 
-> +		if (op == CR_CPT)			\
-> +			a = b;				\
-> +		else					\
-> +			b = a;				\
-> +	} while (0);
-> +
->  #endif /* _CHECKPOINT_CKPT_H_ */
-> -- 
-> 1.6.1
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+ arch/s390/include/asm/checkpoint_hdr.h |   84 +++++++++++++++++++++++++
+ arch/s390/mm/checkpoint.c              |  104 ++++++++++++++++++++++++++++++++
+ arch/s390/mm/restart.c                 |   71 ++++++++++++++++++++++
+ 8 files changed, 278 insertions(+), 2 deletions(-)
+
+That's a savings of ~60 lines in the affected bits.  Personally, I
+think that it makes the save/load bits significantly easier to read as
+well.
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
