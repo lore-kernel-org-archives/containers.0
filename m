@@ -1,11 +1,12 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: more documentation for remount and release_agent
-Date: Tue, 24 Feb 2009 10:33:53 +0800
-Message-ID: <49A35C91.6000904__3915.8534179025$1235443003$gmane$org@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/4] move proc_net_get_sb to a generic fs/super.c helper
+Date: Mon, 23 Feb 2009 21:03:47 -0600
+Message-ID: <20090224030347.GA10913@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,68 +16,140 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This won't remove cpuacct from the mounted hierachy:
- # mount -t cgroup -o cpu,cpuacct xxx /mnt
- # mount -o remount,cpu /mnt
+The mqueuefs filesystem will use this helper as well.  Proc's
+main get_sb could also be made to use it, but that will require
+a bit more rework.
 
-Because for this usage mount(8) will append the new options to the original
-options.
-
-And this will get you right:
- # mount [-t cgroup] -o remount,cpu xxx /mnt
-
-Also document how to specify or change release_agent.
-
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/cgroups/cgroups.txt |   20 ++++++++++++++++++--
- 1 files changed, 18 insertions(+), 2 deletions(-)
+ fs/proc/proc_net.c |   34 ++--------------------------------
+ fs/super.c         |   38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |    3 +++
+ 3 files changed, 43 insertions(+), 32 deletions(-)
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 93feb84..df295c6 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -333,12 +333,23 @@ The "xxx" is not interpreted by the cgroup code, but will appear in
+diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
+index 2da0002..500e70d 100644
+--- a/fs/proc/proc_net.c
++++ b/fs/proc/proc_net.c
+@@ -226,7 +226,7 @@ void proc_net_remove(struct net *net, const char *name)
+ }
+ EXPORT_SYMBOL_GPL(proc_net_remove);
  
- To mount a cgroup hierarchy with just the cpuset and numtasks
- subsystems, type:
--# mount -t cgroup -o cpuset,numtasks hier1 /dev/cgroup
-+# mount -t cgroup -o cpuset,memory hier1 /dev/cgroup
+-static int proc_net_fill_super(struct super_block *sb)
++static int proc_net_fill_super(struct super_block *sb, void *data, int silent)
+ {
+ 	struct net *net = sb->s_fs_info;
+ 	struct proc_dir_entry *netd = net->proc_net;
+@@ -257,43 +257,13 @@ out_no_root:
+ 	return -ENOMEM;
+ }
  
- To change the set of subsystems bound to a mounted hierarchy, just
- remount with different options:
-+# mount -o remount,cpuset,ns hier1 /dev/cgroup
+-static int proc_net_test_super(struct super_block *sb, void *data)
+-{
+-	return sb->s_fs_info == data;
+-}
+-
+-static int proc_net_set_super(struct super_block *sb, void *data)
+-{
+-	sb->s_fs_info = data;
+-	return set_anon_super(sb, NULL);
+-}
+-
+ static int proc_net_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
+-	struct super_block *sb;
+-
+ 	if (!(flags & MS_KERNMOUNT))
+ 		data = current->nsproxy->net_ns;
  
--# mount -o remount,cpuset,ns  /dev/cgroup
-+Now memory is removed from the hierarchy and ns is added.
-+
-+Note this will add ns to the hierarchy but won't remove memory or
-+cpuset, because the new options are appended to the old ones:
-+# mount -o remount,ns /dev/cgroup
-+
-+To Specify a hierarchy's release_agent:
-+# mount -t cgroup -o cpuset,release_agent="/sbin/cpuset_release_agent" \
-+  xxx /dev/cgroup
-+
-+Note that specifying 'release_agent' more than once will return failure.
+-	sb = sget(fs_type, proc_net_test_super, proc_net_set_super, data);
+-	if (IS_ERR(sb))
+-		return PTR_ERR(sb);
+-
+-	if (!sb->s_root) {
+-		int err;
+-		sb->s_flags = flags;
+-		err = proc_net_fill_super(sb);
+-		if (err) {
+-			up_write(&sb->s_umount);
+-			deactivate_super(sb);
+-			return err;
+-		}
+-
+-		sb->s_flags |= MS_ACTIVE;
+-	}
+-
+-	simple_set_mnt(mnt, sb);
++	return get_sb_ns(fs_type,  flags, data, proc_net_fill_super, mnt);
+ }
  
- Note that changing the set of subsystems is currently only supported
- when the hierarchy consists of a single (root) cgroup. Supporting
-@@ -349,6 +360,11 @@ Then under /dev/cgroup you can find a tree that corresponds to the
- tree of the cgroups in the system. For instance, /dev/cgroup
- is the cgroup that holds the whole system.
+ static struct file_system_type proc_net_fs_type = {
+diff --git a/fs/super.c b/fs/super.c
+index 3aa9853..45846f1 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -759,6 +759,44 @@ static int test_bdev_super(struct super_block *s, void *data)
+ 	return (void *)s->s_bdev == data;
+ }
  
-+If you want to change the value of release_agent:
-+# echo "/sbin/new_release_agent" > /dev/cgroup/release_agent
++static int ns_test_super(struct super_block *sb, void *data)
++{
++	return sb->s_fs_info == data;
++}
 +
-+It can also be changed via remount.
++static int ns_set_super(struct super_block *sb, void *data)
++{
++	sb->s_fs_info = data;
++	return set_anon_super(sb, NULL);
++}
 +
- If you want to create a new cgroup under /dev/cgroup:
- # cd /dev/cgroup
- # mkdir my_cgroup
++int get_sb_ns(struct file_system_type *fs_type, int flags, void *data,
++	int (*fill_super)(struct super_block *, void *, int),
++	struct vfsmount *mnt)
++{
++	struct super_block *sb;
++
++	sb = sget(fs_type, ns_test_super, ns_set_super, data);
++	if (IS_ERR(sb))
++		return PTR_ERR(sb);
++
++	if (!sb->s_root) {
++		int err;
++		sb->s_flags = flags;
++		err = fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
++		if (err) {
++			up_write(&sb->s_umount);
++			deactivate_super(sb);
++			return err;
++		}
++
++		sb->s_flags |= MS_ACTIVE;
++	}
++
++	simple_set_mnt(mnt, sb);
++	return 0;
++}
++
+ int get_sb_bdev(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int),
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index b0bfa3b..4bb26ca 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1597,6 +1597,9 @@ struct file_system_type {
+ 	struct lock_class_key i_alloc_sem_key;
+ };
+ 
++extern int get_sb_ns(struct file_system_type *fs_type, int flags, void *data,
++	int (*fill_super)(struct super_block *, void *, int),
++	struct vfsmount *mnt);
+ extern int get_sb_bdev(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int),
 -- 
-1.5.4.rc3
+1.5.4.3
