@@ -1,13 +1,17 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] c/r: Add CR_COPY() macro (v2)
-Date: Wed, 25 Feb 2009 13:12:08 -0500
-Message-ID: <1235585529-806-3-git-send-email-danms@us.ibm.com>
-References: <1235585529-806-1-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/4] keys: make procfiles per-user-namespace
+Date: Wed, 25 Feb 2009 15:03:36 -0600
+Message-ID: <20090225210336.GA20086@us.ibm.com>
+References: <20090223204041.GA31626@us.ibm.com>
+	<20090109225313.GB15599@us.ibm.com>
+	<20090109225208.GA15252@us.ibm.com>
+	<5296.1234522990@redhat.com> <16728.1235565664@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1235585529-806-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <16728.1235565664-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,50 +21,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-As suggested by Dave, this provides us a way to make the copy-in and
-copy-out processes symmetric.  I also added CR_COPY_BIT() to use with
-the s390 bitfields, since we can't memcpy() those.
+Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > > Hmmm...  I wonder if we can do better by making the file position indicate
+> > > the key ID rather than being a count of the number of keys read.  It might
+> > > make this cleaner.
+> > 
+> > file position?  as in the result of lseek(fd, 0, SEEK_CUR)?
+> > 
+> > I don't understand what you're suggesting.
+> 
+> Currently the file position on /proc/keys indicates the number of keys that
+> have been read.  It is incremented by 1 for each key read, irrespective of the
+> length of the line that was read for that key.
+> 
+> We could, instead, map file positions to key IDs, and skip any file positions
+> that don't actually map to an extant key.
 
-Changelog:
-    Feb 25:
-            . Changed WARN_ON() to BUILD_BUG_ON()
+So you want users to be able to mmap the file and lseek to a particular
+spot?  Is that bc you have users with so many keys that
+	grep keyid /proc/keys
+becomes slow?
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint.h |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
+Or am I still misunderstanding?
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 217cf6e..3add90e 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -149,4 +149,24 @@ static inline void process_deny_checkpointing(struct task_struct *task) {}
- 
- #endif
- 
-+#define CR_CPT 1
-+#define CR_RST 2
-+
-+#define CR_COPY(op, a, b)				\
-+	do {						\
-+		BUILD_BUG_ON(sizeof(a) != sizeof(b));	\
-+		if (op == CR_CPT)			\
-+			memcpy(&a, &b, sizeof(a));	\
-+		else					\
-+			memcpy(&b, &a, sizeof(a));	\
-+	} while (0);
-+
-+#define CR_COPY_BIT(op, a, b)				\
-+	do {						\
-+		if (op == CR_CPT)			\
-+			a = b;				\
-+		else					\
-+			b = a;				\
-+	} while (0);
-+
- #endif /* _CHECKPOINT_CKPT_H_ */
--- 
-1.6.1
+Meanwhile, do you have any objections to these 4 patches?  :)
+
+thanks,
+-serge
