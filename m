@@ -1,30 +1,45 @@
-From: David Howells <dhowells@redhat.com>
-Subject: Re: [PATCH 4/4] keys: make procfiles per-user-namespace
-Date: Wed, 25 Feb 2009 12:41:04 +0000
-Message-ID: <16728.1235565664@redhat.com>
-References: <20090223204041.GA31626@us.ibm.com> <20090109225313.GB15599@us.ibm.com> <20090109225208.GA15252@us.ibm.com> <5296.1234522990@redhat.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754383AbZBYMlV@vger.kernel.org>
-In-Reply-To: <20090223204041.GA31626@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: dhowells@redhat.com, lkml <linux-kernel@vger.kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: [PATCH 0/3] Fix Network namespace shutdown take 2
+Date: Wed, 25 Feb 2009 13:43:29 +0100
+Message-ID: <49A53CF1.5060503@free.fr>
+References: <m1ocwxi00a.fsf@fess.ebiederm.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1ocwxi00a.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>, "Denis V. Lunev" <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn <serue@us.ibm.com> wrote:
+Eric W. Biederman wrote:
+> 6 months ago when I introduced net_alive I fixed the symptoms
+> but I failed to properly fix network namespace shutdown.
+>
+> I realized this when I received a bug report on Tuesday about a
+> failure in icmp_send caused by packets in the arp_gueue.
+>
+> It turns out that the net_alive check in netif_receive_skb
+> is completely unnecessary and just masked the real problem.
+>
+> If we remove all network devices from a network namespace before we
+> shutdown network subsystems and protocols then as designed we cannot
+> have packets in flight causing problems.
+>
+> It turns out that the root cause of these problems is that the icmp
+> code was calling register_pernet_device instead of
+> register_pernet_subsys and so it's cleanup was happening much too
+> early.
+>
+> The following patchset which should work against both 2.6.29-rcX
+> and net-next fixes the registration problems and removes the
+> unncessary net_alive check, making the code simpler and hopefully
+> more comprehensible.
+>   
+Hi Dave,
 
-> > Hmmm...  I wonder if we can do better by making the file position indicate
-> > the key ID rather than being a count of the number of keys read.  It might
-> > make this cleaner.
-> 
-> file position?  as in the result of lseek(fd, 0, SEEK_CUR)?
-> 
-> I don't understand what you're suggesting.
+I don't see these patches in the net-2.6 tree. Shouldn't they be in 
+net-2.6 too ?
 
-Currently the file position on /proc/keys indicates the number of keys that
-have been read.  It is incremented by 1 for each key read, irrespective of the
-length of the line that was read for that key.
-
-We could, instead, map file positions to key IDs, and skip any file positions
-that don't actually map to an extant key.
-
-David
+  -- Daniel
