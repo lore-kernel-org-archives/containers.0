@@ -1,45 +1,23 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
-Subject: Re: [PATCH 0/3] Fix Network namespace shutdown take 2
-Date: Wed, 25 Feb 2009 13:43:29 +0100
-Message-ID: <49A53CF1.5060503@free.fr>
-References: <m1ocwxi00a.fsf@fess.ebiederm.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/3] c/r: Add s390 support
+Date: Wed, 25 Feb 2009 13:12:06 -0500
+Message-ID: <1235585529-806-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1ocwxi00a.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>, "Denis V. Lunev" <den@openvz.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> 6 months ago when I introduced net_alive I fixed the symptoms
-> but I failed to properly fix network namespace shutdown.
->
-> I realized this when I received a bug report on Tuesday about a
-> failure in icmp_send caused by packets in the arp_gueue.
->
-> It turns out that the net_alive check in netif_receive_skb
-> is completely unnecessary and just masked the real problem.
->
-> If we remove all network devices from a network namespace before we
-> shutdown network subsystems and protocols then as designed we cannot
-> have packets in flight causing problems.
->
-> It turns out that the root cause of these problems is that the icmp
-> code was calling register_pernet_device instead of
-> register_pernet_subsys and so it's cleanup was happening much too
-> early.
->
-> The following patchset which should work against both 2.6.29-rcX
-> and net-next fixes the registration problems and removes the
-> unncessary net_alive check, making the code simpler and hopefully
-> more comprehensible.
->   
-Hi Dave,
-
-I don't see these patches in the net-2.6 tree. Shouldn't they be in 
-net-2.6 too ?
-
-  -- Daniel
+This version includes changes to the s390 c/r patch as suggested by Dave
+and Serge, and changes to the CR_COPY() patch suggested by Serge.  It also
+adds a patch to pull the magic 3 in the core s390 code out to a constant.
