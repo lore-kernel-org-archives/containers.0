@@ -1,22 +1,14 @@
-From: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Thu, 26 Feb 2009 19:30:16 +0100
-Message-ID: <1235673016.5877.62.camel__20969.6357640953$1235673169$gmane$org@bahia>
-References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
-	<1234285547.30155.6.camel@nimitz>
-	<20090211141434.dfa1d079.akpm@linux-foundation.org>
-	<1234462282.30155.171.camel@nimitz> <1234467035.3243.538.camel@calx>
-	<20090212114207.e1c2de82.akpm@linux-foundation.org>
-	<1234475483.30155.194.camel@nimitz>
-	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226162755.GB1456@x200.localdomain>
-	<20090226173302.GB29439@elte.hu>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 1/2] cgroup allow subsys to set default mode of its own
+	file
+Date: Thu, 26 Feb 2009 13:00:05 -0800
+Message-ID: <20090226130005.3282cb02.akpm@linux-foundation.org>
+References: <20090225163555.d2a0b24c.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090226173302.GB29439-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <20090225163555.d2a0b24c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,36 +18,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-02-26 at 18:33 +0100, Ingo Molnar wrote:
-> I think the main question is: will we ever find ourselves in the 
-> future saying that "C/R sucks, nobody but a small minority uses 
-> it, wish we had never merged it"? I think the likelyhood of that 
-> is very low. I think the current OpenVZ stuff already looks very 
+On Wed, 25 Feb 2009 16:35:55 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-We've been maintaining for some years now a C/R middleware with only a
-few hooks in the kernel. Our strategy is to leverage existing kernel
-paths as they do most of the work right.
+>  When I wrote tools for maintain cgroup, I can't find which file is
+>  writable intarfece or not via cgroup file systems. (finally, I did
+>  dirty approach.)
+>  IMHO, showing "this file is read-only" in explicit way is useful
+>  for user-land (tools). In other story, a file whose name sounds read-only
+>  may have "trigger" operation and support reseting. In this case,
+>  "writable" is informative.
 
-Most of the checkpoint is performed from userspace, using regular
-syscalls in a signal handler or /proc parsing. Restart is a bit trickier
-and needs some kernel support to bypass syscall checks and enforce a
-specific id for a resource. At the end, we support C/R and live
-migration of networking apps (websphere application server for example).
+Well, we have compatibility issues here.  If we make this change, and
+people write tools which depend upon that change then those tools might
+break when run upon older kernels.  Or they need back-compatibility
+additions, which increases the testing burden of those tools.
 
-From our experience, we can tell:
+One way in which we could improve this situation is to backport these
+changes into earlier kernels, although I don't know which versions.
 
-Pros: mostly not-so-tricky userland code, independent from kernel
-internals
-Cons: sub-optimal for some resources
-
--- 
-Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
-
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+What do we think?
