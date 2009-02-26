@@ -1,55 +1,117 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] liblxc: Remove unused variable
-Date: Wed, 25 Feb 2009 20:25:37 -0800
-Message-ID: <20090226042537.GD11052@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 1/2] veth:  Fix carrier detect
+Date: Wed, 25 Feb 2009 21:47:29 -0800
+Message-ID: <m1ljrtkavi.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-nbargs isn't used for anything in lxc_unshare.c. Remove it.
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+The current implementation of carrier detect in veth is broken.
+It reports the link is down until both sides of the veth pair
+are administatively up and then forever after it reports link up.
+
+So fix veth so that it only reports link up when both interfaces
+of the pair are administratively up.
+
+Signed-off-by: Eric Biederman <ebiederm@aristanetworks.com>
 ---
- src/lxc/lxc_unshare.c |    5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ drivers/net/veth.c |   51 +++++++++++----------------------------------------
+ 1 files changed, 11 insertions(+), 40 deletions(-)
 
-Index: lxc/src/lxc/lxc_unshare.c
-===================================================================
---- lxc.orig/src/lxc/lxc_unshare.c
-+++ lxc/src/lxc/lxc_unshare.c
-@@ -76,7 +76,7 @@ static uid_t lookup_user(const char *opt
+diff --git a/drivers/net/veth.c b/drivers/net/veth.c
+index 108bbbe..124fe75 100644
+--- a/drivers/net/veth.c
++++ b/drivers/net/veth.c
+@@ -239,6 +239,16 @@ static int veth_open(struct net_device *dev)
+ 	return 0;
+ }
  
- int main(int argc, char *argv[])
++static int veth_close(struct net_device *dev)
++{
++	struct veth_priv *priv = netdev_priv(dev);
++
++	netif_carrier_off(dev);
++	netif_carrier_off(priv->peer);
++
++	return 0;
++}
++
+ static int veth_dev_init(struct net_device *dev)
  {
--	int opt, nbargs = 0, status = 1, hastofork = 0;
-+	int opt, status = 1, hastofork = 0;
- 	char **args;
- 	long flags = 0;
-  	uid_t uid = -1; /* valid only if (flags & CLONE_NEWUSER) */
-@@ -109,12 +109,9 @@ int main(int argc, char *argv[])
- 			hastofork = 1;
- 			break;
- 		}
+ 	struct veth_net_stats *stats;
+@@ -265,6 +275,7 @@ static void veth_dev_free(struct net_device *dev)
+ static const struct net_device_ops veth_netdev_ops = {
+ 	.ndo_init            = veth_dev_init,
+ 	.ndo_open            = veth_open,
++	.ndo_stop            = veth_close,
+ 	.ndo_start_xmit      = veth_xmit,
+ 	.ndo_get_stats       = veth_get_stats,
+ 	.ndo_set_mac_address = eth_mac_addr,
+@@ -280,44 +291,6 @@ static void veth_setup(struct net_device *dev)
+ 	dev->destructor = veth_dev_free;
+ }
+ 
+-static void veth_change_state(struct net_device *dev)
+-{
+-	struct net_device *peer;
+-	struct veth_priv *priv;
 -
--		nbargs++;
- 	}
+-	priv = netdev_priv(dev);
+-	peer = priv->peer;
+-
+-	if (netif_carrier_ok(peer)) {
+-		if (!netif_carrier_ok(dev))
+-			netif_carrier_on(dev);
+-	} else {
+-		if (netif_carrier_ok(dev))
+-			netif_carrier_off(dev);
+-	}
+-}
+-
+-static int veth_device_event(struct notifier_block *unused,
+-			     unsigned long event, void *ptr)
+-{
+-	struct net_device *dev = ptr;
+-
+-	if (dev->netdev_ops->ndo_open != veth_open)
+-		goto out;
+-
+-	switch (event) {
+-	case NETDEV_CHANGE:
+-		veth_change_state(dev);
+-		break;
+-	}
+-out:
+-	return NOTIFY_DONE;
+-}
+-
+-static struct notifier_block veth_notifier_block __read_mostly = {
+-	.notifier_call	= veth_device_event,
+-};
+-
+ /*
+  * netlink interface
+  */
+@@ -468,14 +441,12 @@ static struct rtnl_link_ops veth_link_ops = {
  
- 	args = &argv[optind];
--	argc -= nbargs;
+ static __init int veth_init(void)
+ {
+-	register_netdevice_notifier(&veth_notifier_block);
+ 	return rtnl_link_register(&veth_link_ops);
+ }
  
- 	if (!flags)
- 		usage(argv[0]);
+ static __exit void veth_exit(void)
+ {
+ 	rtnl_link_unregister(&veth_link_ops);
+-	unregister_netdevice_notifier(&veth_notifier_block);
+ }
+ 
+ module_init(veth_init);
+-- 
+1.6.1.2.350.g88cc
+
