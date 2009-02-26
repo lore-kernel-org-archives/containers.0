@@ -1,152 +1,56 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 4/4] keys: make procfiles per-user-namespace
-Date: Thu, 26 Feb 2009 15:50:12 -0600
-Message-ID: <20090226215012.GA24500@us.ibm.com>
-References: <20090109225313.GB15599@us.ibm.com> <20090109225208.GA15252@us.ibm.com> <5296.1234522990@redhat.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Fri, 27 Feb 2009 01:17:09 +0300
+Message-ID: <20090226221709.GA2924__14338.1037786186$1235686374$gmane$org@x200.localdomain>
+References: <20090211141434.dfa1d079.akpm@linux-foundation.org>
+	<1234462282.30155.171.camel@nimitz>
+	<1234467035.3243.538.camel@calx>
+	<20090212114207.e1c2de82.akpm@linux-foundation.org>
+	<1234475483.30155.194.camel@nimitz>
+	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
+	<1234479845.30155.220.camel@nimitz>
+	<20090226162755.GB1456@x200.localdomain>
+	<20090226173302.GB29439@elte.hu> <1235673016.5877.62.camel@bahia>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759438AbZBZVum@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5296.1234522990@redhat.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: David Howells <dhowells@redhat.com>
-Cc: lkml <linux-kernel@vger.kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
+In-Reply-To: <1235673016.5877.62.camel@bahia>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells@redhat.com):
-> Serge E. Hallyn <serue@us.ibm.com> wrote:
+On Thu, Feb 26, 2009 at 07:30:16PM +0100, Greg Kurz wrote:
+> On Thu, 2009-02-26 at 18:33 +0100, Ingo Molnar wrote:
+> > I think the main question is: will we ever find ourselves in the 
+> > future saying that "C/R sucks, nobody but a small minority uses 
+> > it, wish we had never merged it"? I think the likelyhood of that 
+> > is very low. I think the current OpenVZ stuff already looks very 
 > 
-> > Restrict the /proc/keys and /proc/key-users output to keys
-> > belonging to the same user namespace as the reading task.
-> > 
-> > We may want to make this more complicated - so that any
-> > keys in a user-namespace which is belongs to the reading
-> > task are also shown.  But let's see if anyone wants that
-> > first.
+> We've been maintaining for some years now a C/R middleware with only a
+> few hooks in the kernel. Our strategy is to leverage existing kernel
+> paths as they do most of the work right.
 > 
-> Hmmm...  I wonder if we can do better by making the file position indicate the
-> key ID rather than being a count of the number of keys read.  It might make
-> this cleaner.
+> Most of the checkpoint is performed from userspace, using regular
+> syscalls in a signal handler or /proc parsing. Restart is a bit trickier
+> and needs some kernel support to bypass syscall checks and enforce a
+> specific id for a resource. At the end, we support C/R and live
+> migration of networking apps (websphere application server for example).
+> 
+> >From our experience, we can tell:
+> 
+> Pros: mostly not-so-tricky userland code, independent from kernel
+> internals
+> Cons: sub-optimal for some resources
 
-Ok, what I came up with so far is the following.  The diffstat
-would be far more impressive (in terms of - vs +) if I could
-use key_lookup() for proc_keys_start(), but since I need to
-return the next greatest key, it seems like I need to do my
-own find_ge_key() function.
-
-From cf3961ed60d162bb2b1a3da231009733fd114546 Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue@us.ibm.com>
-Date: Thu, 26 Feb 2009 13:29:59 -0800
-Subject: [PATCH 1/1] keys: /proc/keys: use keyid not numread as fpos
-
-Just an experiment - previously the fpos used in
-printing /proc/keys through seq_file interface
-represented number of items read.  This patch
-instead stores the key->serial in fpos.
-
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- security/keys/proc.c |   63 ++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 41 insertions(+), 22 deletions(-)
-
-diff --git a/security/keys/proc.c b/security/keys/proc.c
-index 769f9bd..6132629 100644
---- a/security/keys/proc.c
-+++ b/security/keys/proc.c
-@@ -91,8 +91,9 @@ __initcall(key_proc_init);
-  */
- #ifdef CONFIG_KEYS_DEBUG_PROC_KEYS
- 
--static struct rb_node *__key_serial_next(struct rb_node *n)
-+static struct rb_node *key_serial_next(struct rb_node *n)
- {
-+	n = rb_next(n);
- 	while (n) {
- 		struct key *key = rb_entry(n, struct key, serial_node);
- 		if (key->user->user_ns == current_user_ns())
-@@ -102,44 +103,62 @@ static struct rb_node *__key_serial_next(struct rb_node *n)
- 	return n;
- }
- 
--static struct rb_node *key_serial_next(struct rb_node *n)
-+static int proc_keys_open(struct inode *inode, struct file *file)
- {
--	return __key_serial_next(rb_next(n));
--}
-+	return seq_open(file, &proc_keys_ops);
- 
--static struct rb_node *key_serial_first(struct rb_root *r)
--{
--	struct rb_node *n = rb_first(r);
--	return __key_serial_next(n);
- }
- 
--static int proc_keys_open(struct inode *inode, struct file *file)
-+static struct key *find_ge_key(unsigned int id)
- {
--	return seq_open(file, &proc_keys_ops);
-+	struct rb_node *n = key_serial_tree.rb_node;
-+	struct key *minkey = NULL;
-+
-+	while (n) {
-+		struct key *key = rb_entry(n, struct key, serial_node);
-+		if (id < key->serial) {
-+			if (!minkey || minkey->serial > key->serial)
-+				minkey = key;
-+			n = n->rb_left;
-+		} else if (id > key->serial)
-+			n = n->rb_right;
-+		else {
-+			minkey = key;
-+			break;
-+		}
-+		key = NULL;
-+	}
- 
-+	return minkey;
- }
- 
- static void *proc_keys_start(struct seq_file *p, loff_t *_pos)
- {
--	struct rb_node *_p;
--	loff_t pos = *_pos;
-+	struct key *key;
-+	unsigned int pos = *_pos;
- 
- 	spin_lock(&key_serial_lock);
-+	key = find_ge_key(pos);
-+	if (!key)
-+		return NULL;
-+	*_pos = key->serial;
-+	return &key->serial_node;
-+}
- 
--	_p = key_serial_first(&key_serial_tree);
--	while (pos > 0 && _p) {
--		pos--;
--		_p = key_serial_next(_p);
--	}
--
--	return _p;
--
-+static inline unsigned int key_node_serial(struct rb_node *n)
-+{
-+	struct key *key = rb_entry(n, struct key, serial_node);
-+	return key->serial;
- }
- 
- static void *proc_keys_next(struct seq_file *p, void *v, loff_t *_pos)
- {
--	(*_pos)++;
--	return key_serial_next((struct rb_node *) v);
-+	struct rb_node *n;
-+
-+	n = key_serial_next(v);
-+	if (n)
-+		*_pos = key_node_serial(n);
-+	return n;
- 
- }
- 
--- 
-1.5.4.3
+How do you restore struct task_struct::did_exec ?
