@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 5/8] add f_op for checkpointability
-Date: Fri, 27 Feb 2009 12:34:31 -0800
-Message-ID: <20090227203431.D1E697CB@kernel>
+Subject: [RFC][PATCH 8/8] check files for checkpointability
+Date: Fri, 27 Feb 2009 12:34:35 -0800
+Message-ID: <20090227203435.98735E54@kernel>
 References: <20090227203425.F3B51176@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,183 +22,151 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-We have set up sane defaults for how filesystems should
-be checkpointed.  However, as usual in the VFS, there
-are specialized places that will always need an ability
-to override these defaults.
+Introduce a files_struct counter to indicate whether a particular
+file_struct has ever contained a file which can not be
+checkpointed.  This flag is a one-way trip; once it is set, it may
+not be unset.
 
-This adds a new 'file_operations' function for
-checkpointing a file.  I did this under the assumption
-that we should have a dirt-simple way to make something
-(un)checkpointable that fits in with current code.
+We assume at allocation that a new files_struct is clean and may
+be checkpointed.  However, as soon as it has had its files filled
+from its parent's, we check it for real in __scan_files_for_cr().
+At that point, we mark it if it contained any uncheckpointable
+files.
 
-As you can see in the /dev/null patch in a second, all
-that we have to do to make something like /dev/null
-supported is add a single "generic" f_op entry.
+We also check each 'struct file' when it is installed in a fd
+slot.  This way, if anyone open()s or managed to dup() an
+unsuppored file, we can catch it.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/checkpoint/ckpt_file.c     |   77 ++++++++++++++++----------
- linux-2.6.git-dave/include/linux/checkpoint.h |    6 ++
- linux-2.6.git-dave/include/linux/fs.h         |    4 +
- 3 files changed, 60 insertions(+), 27 deletions(-)
+ linux-2.6.git-dave/fs/file.c                  |   19 +++++++++++++++++++
+ linux-2.6.git-dave/fs/open.c                  |    5 +++++
+ linux-2.6.git-dave/include/linux/checkpoint.h |   14 ++++++++++++++
+ linux-2.6.git-dave/include/linux/fdtable.h    |    3 +++
+ 4 files changed, 41 insertions(+)
 
-diff -puN checkpoint/ckpt_file.c~f_op-for-checkpointability checkpoint/ckpt_file.c
---- linux-2.6.git/checkpoint/ckpt_file.c~f_op-for-checkpointability	2009-02-27 12:07:39.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-02-27 12:07:39.000000000 -0800
-@@ -104,56 +104,79 @@ int cr_explain_file(struct file *file, c
- 	return 0;
+diff -puN fs/file.c~track-files_struct-checkpointability fs/file.c
+--- linux-2.6.git/fs/file.c~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
++++ linux-2.6.git-dave/fs/file.c	2009-02-27 12:07:41.000000000 -0800
+@@ -15,6 +15,7 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/bitops.h>
++#include <linux/checkpoint.h>
+ #include <linux/interrupt.h>
+ #include <linux/spinlock.h>
+ #include <linux/rcupdate.h>
+@@ -285,6 +286,20 @@ static int count_open_files(struct fdtab
+ 	return i;
  }
  
--int cr_file_supported(struct file *file)
-+typedef int (do_checkpoint_t)(struct file *, struct cr_ctx *,
-+			      struct cr_hdr_fd *);
-+
-+int generic_file_checkpoint(struct file *file, struct cr_ctx *ctx,
-+			 struct cr_hdr_fd *hh)
++static void __scan_files_for_cr(struct files_struct *files)
 +{
-+	/*
-+	 * A NULL hh means to make a trial run not
-+	 * actually writing data.  Just determine
-+	 * if the file is checkpointable.
-+	 */
-+	if (!hh)
-+		return 0;
++	int i;
 +
-+	hh->f_flags = file->f_flags;
-+	hh->f_mode = file->f_mode;
-+	hh->f_pos = file->f_pos;
-+	hh->f_version = file->f_version;
-+	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
-+
-+	return 0;
++	for (i = 0; i < files->fdtab.max_fds; i++) {
++		struct file *f = fcheck_files(files, i);
++		if (!f)
++			continue;
++		if (cr_file_supported(f))
++			continue;
++		files_deny_checkpointing(files);
++	}
 +}
 +
-+do_checkpoint_t *cr_file_get_func(struct file *file)
+ /*
+  * Allocate a new files structure and copy contents from the
+  * passed in files structure.
+@@ -303,6 +318,9 @@ struct files_struct *dup_fd(struct files
+ 		goto out;
+ 
+ 	atomic_set(&newf->count, 1);
++#ifdef CONFIG_CHECKPOINT_RESTART
++	newf->may_checkpoint = 1;
++#endif
+ 
+ 	spin_lock_init(&newf->file_lock);
+ 	newf->next_fd = 0;
+@@ -396,6 +414,7 @@ struct files_struct *dup_fd(struct files
+ 
+ 	rcu_assign_pointer(newf->fdt, new_fdt);
+ 
++	__scan_files_for_cr(newf);
+ 	return newf;
+ 
+ out_release:
+diff -puN fs/open.c~track-files_struct-checkpointability fs/open.c
+--- linux-2.6.git/fs/open.c~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
++++ linux-2.6.git-dave/fs/open.c	2009-02-27 12:07:41.000000000 -0800
+@@ -29,6 +29,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/audit.h>
+ #include <linux/falloc.h>
++#include <linux/checkpoint.h>
+ 
+ int vfs_statfs(struct dentry *dentry, struct kstatfs *buf)
  {
- 	struct inode *inode = file->f_dentry->d_inode;
- 	struct file_system_type *fs_type = inode->i_sb->s_type;
- 
--	if (fs_is_cr_able(fs_type))
--		return 0;
-+	if (file->f_op->checkpoint)
-+		return file->f_op->checkpoint;
+@@ -1015,6 +1016,10 @@ void fd_install(unsigned int fd, struct 
+ {
+ 	struct files_struct *files = current->files;
+ 	struct fdtable *fdt;
 +
-+	if (!fs_is_cr_able(fs_type))
-+		return NULL;
- 
- 	if (special_file(inode->i_mode))
--		return 0;
-+		return NULL;
- 
--	return 1;
-+	return generic_file_checkpoint;
-+}
++	if (!cr_file_supported(file))
++		files_deny_checkpointing(files);
 +
-+int cr_file_supported(struct file *file)
+ 	spin_lock(&files->file_lock);
+ 	fdt = files_fdtable(files);
+ 	BUG_ON(fdt->fd[fd] != NULL);
+diff -puN include/linux/checkpoint.h~track-files_struct-checkpointability include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-02-27 12:07:41.000000000 -0800
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/path.h>
+ #include <linux/fs.h>
++#include <linux/fdtable.h>
+ 
+ #ifdef CONFIG_CHECKPOINT_RESTART
+ 
+@@ -102,6 +103,18 @@ extern int cr_read_files(struct cr_ctx *
+ 
+ #define pr_fmt(fmt) "[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__
+ 
++static inline void __files_deny_checkpointing(struct files_struct *files,
++		char *file, int line)
 +{
-+	do_checkpoint_t *func = cr_file_get_func(file);
++	if (!test_and_clear_bit(0, &files->may_checkpoint))
++		return;
++	printk(KERN_INFO "process performed an action that can not be "
++			"checkpointed at: %s:%d\n", file, line);
++	WARN_ON(1);
++}
++#define files_deny_checkpointing(f)  \
++	__files_deny_checkpointing(f, __FILE__, __LINE__)
 +
-+	if (func)
-+		return !func(file, NULL, NULL);
-+
-+	return 0;
- }
- 
- /* cr_write_fd_data - dump the state of a given file pointer */
- static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
- {
-+	do_checkpoint_t *ckpt_func;
- 	struct cr_hdr h;
- 	struct cr_hdr_fd *hh = cr_hbuf_get(ctx, sizeof(*hh));
--	struct dentry *dent = file->f_dentry;
--	struct inode *inode = dent->d_inode;
--	enum fd_type fd_type;
- 	int ret;
- 
- 	h.type = CR_HDR_FD_DATA;
- 	h.len = sizeof(*hh);
- 	h.parent = parent;
- 
--	hh->f_flags = file->f_flags;
--	hh->f_mode = file->f_mode;
--	hh->f_pos = file->f_pos;
--	hh->f_version = file->f_version;
--	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
--
--	switch (inode->i_mode & S_IFMT) {
--	case S_IFREG:
--		fd_type = CR_FD_FILE;
--		break;
--	case S_IFDIR:
--		fd_type = CR_FD_DIR;
--		break;
--	default:
--		cr_hbuf_put(ctx, sizeof(*hh));
--		return -EBADF;
--	}
-+	ckpt_func = cr_file_get_func(file);
-+	ret = -EBADF;
-+	if (!ckpt_func)
-+		goto out;
- 
--	/* FIX: check if the file/dir/link is unlinked */
--	hh->fd_type = fd_type;
-+	ret = ckpt_func(file, ctx, hh);
-+	if (ret)
-+		goto out;
- 
- 	ret = cr_write_obj(ctx, &h, hh);
-+out:
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	if (ret < 0)
- 		return ret;
-diff -puN include/linux/checkpoint.h~f_op-for-checkpointability include/linux/checkpoint.h
---- linux-2.6.git/include/linux/checkpoint.h~f_op-for-checkpointability	2009-02-27 12:07:39.000000000 -0800
-+++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-02-27 12:07:39.000000000 -0800
-@@ -70,6 +70,7 @@ extern int cr_obj_add_ref(struct cr_ctx 
- 			  unsigned short type, unsigned short flags);
- 
- struct cr_hdr;
-+struct cr_hdr_fd;
- 
- extern int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
- extern int cr_write_buffer(struct cr_ctx *ctx, void *buf, int len);
-@@ -103,9 +104,14 @@ extern int cr_read_files(struct cr_ctx *
- 
  int cr_explain_file(struct file *file, char *explain, int left);
  int cr_file_supported(struct file *file);
-+int generic_file_checkpoint(struct file *, struct cr_ctx *, struct cr_hdr_fd *);
+ int generic_file_checkpoint(struct file *, struct cr_ctx *, struct cr_hdr_fd *);
+@@ -112,6 +125,7 @@ struct cr_hdr_fd;
  
- #else /* !CONFIG_CHECKPOINT_RESTART */
+ #define generic_file_checkpoint NULL
  
-+struct cr_hdr_fd;
-+
-+#define generic_file_checkpoint NULL
-+
++static inline void files_deny_checkpointing(struct files_struct *files) {}
  static inline int cr_explain_file(struct file *file, char *explain, int left)
  {
  	return 0;
-diff -puN include/linux/fs.h~f_op-for-checkpointability include/linux/fs.h
---- linux-2.6.git/include/linux/fs.h~f_op-for-checkpointability	2009-02-27 12:07:39.000000000 -0800
-+++ linux-2.6.git-dave/include/linux/fs.h	2009-02-27 12:07:39.000000000 -0800
-@@ -1303,6 +1303,9 @@ struct block_device_operations;
- #define HAVE_COMPAT_IOCTL 1
- #define HAVE_UNLOCKED_IOCTL 1
- 
-+struct cr_ctx;
-+struct cr_hdr_fd;
-+
- /*
-  * NOTE:
-  * read, write, poll, fsync, readv, writev, unlocked_ioctl and compat_ioctl
-@@ -1335,6 +1338,7 @@ struct file_operations {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
- 	int (*setlease)(struct file *, long, struct file_lock **);
-+	int (*checkpoint)(struct file *, struct cr_ctx *, struct cr_hdr_fd *);
- };
- 
- struct inode_operations {
+diff -puN include/linux/fdtable.h~track-files_struct-checkpointability include/linux/fdtable.h
+--- linux-2.6.git/include/linux/fdtable.h~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
++++ linux-2.6.git-dave/include/linux/fdtable.h	2009-02-27 12:07:41.000000000 -0800
+@@ -45,6 +45,9 @@ struct files_struct {
+ 	atomic_t count;
+ 	struct fdtable *fdt;
+ 	struct fdtable fdtab;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	unsigned long may_checkpoint;
++#endif
+   /*
+    * written part on a separate cache line in SMP
+    */
 _
