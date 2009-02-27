@@ -1,16 +1,11 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup allow subsys to set default mode of its own
-	file
-Date: Fri, 27 Feb 2009 08:40:54 +0800
-Message-ID: <49A73696.9020805__29840.5766873204$1235695443$gmane$org@cn.fujitsu.com>
-References: <20090225163555.d2a0b24c.kamezawa.hiroyu@jp.fujitsu.com>	
-	<20090226130005.3282cb02.akpm@linux-foundation.org>
-	<6599ad830902261628k4ce8e1aflb7981672562801fb@mail.gmail.com>
+From: Jerkin Merkley <effectors-pPmsh6Dw/mAQ9m95uX4lbQ@public.gmane.org>
+Subject: tibia tidy furor immmunise
+Date: Fri, 27 Feb 2009 00:43:55 +0000
+Message-ID: <4948616754.20090227004142@erreviprint.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830902261628k4ce8e1aflb7981672562801fb-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,14 +15,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> But I don't see why we can't figure out the mode automatically based
-> on whether or not there's a write handler defined for the control
-> file.
-> 
+concomitant connelly drypoint mmanoeuvred
 
-This almost works.. except for 'tasks' file, which has no 'read' handler
-but is readable.
+http://cid-cafed82e6941f815.spaces.live.com/blog/cns!CAFED82E6941F815!106.entry
+
+concomitant connelly drypoint mmanoeuvred
