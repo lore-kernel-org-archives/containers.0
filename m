@@ -1,15 +1,23 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 4/8] file c/r: expose functions to query fs support
-Date: Fri, 27 Feb 2009 13:32:54 -0800
-Message-ID: <1235770374.26788.395.camel__43300.1651465476$1235770551$gmane$org@nimitz>
-References: <20090227203425.F3B51176@kernel>
-	<20090227203429.6963AFC4@kernel> <20090227211408.GB19872@us.ibm.com>
-	<1235769880.26788.394.camel@nimitz>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Sat, 28 Feb 2009 00:57:49 +0300
+Message-ID: <20090227215749.GA3453__7457.63022355295$1235771619$gmane$org@x200.localdomain>
+References: <1234462282.30155.171.camel@nimitz>
+	<1234467035.3243.538.camel@calx>
+	<20090212114207.e1c2de82.akpm@linux-foundation.org>
+	<1234475483.30155.194.camel@nimitz>
+	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
+	<1234479845.30155.220.camel@nimitz>
+	<20090226162755.GB1456@x200.localdomain>
+	<20090226173302.GB29439@elte.hu>
+	<20090226223112.GA2939@x200.localdomain>
+	<1235751298.26788.372.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1235769880.26788.394.camel@nimitz>
+Content-Disposition: inline
+In-Reply-To: <1235751298.26788.372.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,27 +27,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-02-27 at 13:24 -0800, Dave Hansen wrote:
-> On Fri, 2009-02-27 at 13:14 -0800, Sukadev Bhattiprolu wrote:
-> > Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> > | +int cr_file_supported(struct file *file)
-> > | +{
-> > | +   struct inode *inode = file->f_dentry->d_inode;
-> > | +   struct file_system_type *fs_type = inode->i_sb->s_type;
-> > | +
-> > | +   if (fs_is_cr_able(fs_type))
-> > | +           return 0;
+On Fri, Feb 27, 2009 at 08:14:58AM -0800, Dave Hansen wrote:
+> On Fri, 2009-02-27 at 01:31 +0300, Alexey Dobriyan wrote:
+> > > I think the main question is: will we ever find ourselves in the 
+> > > future saying that "C/R sucks, nobody but a small minority uses 
+> > > it, wish we had never merged it"? I think the likelyhood of that 
+> > > is very low. I think the current OpenVZ stuff already looks very 
+> > > useful, and i dont think we've realized (let alone explored) all 
+> > > the possibilities yet.
 > > 
-> > Should this be if (!fs_is_cr_able(fs_type)) ?
+> > This is collecting and start of dumping part of cleaned up OpenVZ C/R
+> > implementation, FYI.
 > 
-> Yes.  I did find and fix that at some point, but it appears I didn't
-> manage to integrate it into what I sent out.
+> Are you just posting this to show how you expect c/r to look eventually?
+> Or are you proposing this as an alternative to what Oren has bee
+> posting?
 
-Yeah, I think I managed to accidentally dump the fix into the next patch
-instead of this one.  I'll correct that in the next set.
-
--- Dave
+This is under discussion right now.
