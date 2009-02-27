@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 6/8] mark /dev/null and zero as checkpointable
-Date: Fri, 27 Feb 2009 12:34:32 -0800
-Message-ID: <20090227203432.5A9DF0FC@kernel>
+Subject: [RFC][PATCH 7/8] add c/r info to fdinfo
+Date: Fri, 27 Feb 2009 12:34:34 -0800
+Message-ID: <20090227203434.D4729F99@kernel>
 References: <20090227203425.F3B51176@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,44 +22,49 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-We currently have a special_file() check in the checkpoint
-code which considers all special files as uncheckpointable.
+Use the new checkpoint/restart file functions to query
+and report on each fd in the /proc/$$/fdinfo/X file.
 
-Now that we have the f_op and a generic function, use that
-to override these simple devices and make them OK to
-checkpoint.
+This should provide an easy way to examine processes
+at runtime to see what exactly is causing their inability
+to checkpoint.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/drivers/char/mem.c |    3 +++
- 1 file changed, 3 insertions(+)
+ linux-2.6.git-dave/fs/proc/base.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff -puN drivers/char/mem.c~make-dev-null-work drivers/char/mem.c
---- linux-2.6.git/drivers/char/mem.c~make-dev-null-work	2009-02-27 12:07:39.000000000 -0800
-+++ linux-2.6.git-dave/drivers/char/mem.c	2009-02-27 12:07:39.000000000 -0800
-@@ -27,6 +27,7 @@
- #include <linux/splice.h>
- #include <linux/pfn.h>
- #include <linux/smp_lock.h>
+diff -puN fs/proc/base.c~add-cr-part-to-fdinfo fs/proc/base.c
+--- linux-2.6.git/fs/proc/base.c~add-cr-part-to-fdinfo	2009-02-27 12:07:40.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/base.c	2009-02-27 12:07:40.000000000 -0800
+@@ -80,6 +80,7 @@
+ #include <linux/oom.h>
+ #include <linux/elf.h>
+ #include <linux/pid_namespace.h>
 +#include <linux/checkpoint.h>
+ #include "internal.h"
  
- #include <asm/uaccess.h>
- #include <asm/io.h>
-@@ -824,6 +825,7 @@ static const struct file_operations null
- 	.read		= read_null,
- 	.write		= write_null,
- 	.splice_write	= splice_write_null,
-+	.checkpoint	= generic_file_checkpoint,
- };
+ /* NOTE:
+@@ -1636,6 +1637,7 @@ out:
  
- #ifdef CONFIG_DEVPORT
-@@ -840,6 +842,7 @@ static const struct file_operations zero
- 	.read		= read_zero,
- 	.write		= write_zero,
- 	.mmap		= mmap_zero,
-+	.checkpoint	= generic_file_checkpoint,
- };
+ static void proc_fd_write_info(struct file *file, char *info)
+ {
++	int checkpointable;
+ 	int max = PROC_FDINFO_MAX;
+ 	int p = 0;
+ 	if (!info)
+@@ -1643,6 +1645,12 @@ static void proc_fd_write_info(struct fi
  
- /*
+ 	p += snprintf(info+p, max-p, "pos:\t%lli\n", (long long) file->f_pos);
+ 	p += snprintf(info+p, max-p, "flags:\t0%o\n", file->f_flags);
++
++	checkpointable = cr_file_supported(file);
++	p += snprintf(info+p, max-p, "checkpointable:\t%d", checkpointable);
++	if (!checkpointable)
++		p += cr_explain_file(file, info+p, max-p);
++	p += snprintf(info+p, max-p, "\n");
+ }
+ 
+ static int proc_fd_info(struct inode *inode, struct path *path, char *info)
 _
