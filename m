@@ -1,11 +1,15 @@
-From: Baguio Vacation Apartments <panagbenga.baguio-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Welcome to the 14th PANAGBENGA, Baguio City, Philippines!
-Date: Fri, 27 Feb 2009 21:35:48 +0800
-Message-ID: <1719078975.20050864564568__42889.6813341$1235741982$gmane$org@abv.bg>
-Reply-To: Baguio Vacation Apartments <panagbenga.baguio-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Fri, 27 Feb 2009 15:33:59 +0100
+Message-ID: <49A7F9D7.4060907__9070.52841871536$1235745461$gmane$org@free.fr>
+References: <1234467035.3243.538.camel@calx>	<20090212114207.e1c2de82.akpm@linux-foundation.org>	<1234475483.30155.194.camel@nimitz>	<20090212141014.2cd3d54d.akpm@linux-foundation.org>	<1234479845.30155.220.camel@nimitz>	<20090226162755.GB1456@x200.localdomain>	<20090226173302.GB29439@elte.hu>
+	<1235673016.5877.62.camel@bahia>	<20090226221709.GA2924@x200.localdomain>	<1235726349.4570.7.camel@bahia>
+	<20090227105306.GB2939@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8594666573787680744=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090227105306.GB2939-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,58 +19,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============8594666573787680744==
-Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n1RDbLRA031806
+> How do you restore set of uts_namespace's?
 
+	clone(CLONE_NEWUTS);
+	sethostname(...)
 
-Dear Friends and Colleagues,
+> Kernel never exposes to userspace which are the same, which are independent.
+ 
+I think you are addressing the problem from a kernel POV. If you see it
+from the user POV, what he cares about is what the gethostname() returns 
+and not 'struct uts_namespace'. 
 
-With the theme,=93Our Festival=85Yours Too!=94, the
-14th PANAGBENGA (Baguio Flower Festival 2009) will culminate with the mos=
-t awaited Grand Street Parade  (Feb.28) and Float Parade (Mar.1).
+that doesn't mean that C/R shouldn't be aware of the kernel implementation
+but if you think in terms of user API, it makes life a easier.
 
-An added BONUS, right after the street and float parades, will be the =93=
-Session Road in Bloom=94, starting from March 2-March 8, where floral-the=
-med accessories will be sold with flower-inspired activities.
+Cheers,
 
-And on March 7, Baguio Pony Boys and fun riders shall have their day of e=
-xhibition rides, games and activities on horseback. Known as =93Gymkhana=94=
-, this event is reminiscent of Golden Baguio days when horse =93aficionad=
-os=94 will come together and prove their guts on horse games.
-
-We would like to invite you to join us on this great event. Please stay w=
-ith us at:
-
-BAGUIO VACATION APARTMENTS
-...unique, luxury holiday homes where
-the whole family can experience
-=93A HOME AWAY FROM HOME=94.
-
-RATES
-P2,500/day        2BR         5 Beds
-P4,000/day        3BR       10 Beds
-
-_____________________________________________________________
-Pines Garden Villas Subdivision
-28 Munoz Drive, Km. 4, Circumferential Road, Baguio City, Philippines
-Mobile #: 09189395629; 09175190713   LandLine: (074) 4455546
-Website: http://www.baguiovacationapartments.net
-E-mail:  baguiovacation-ZJ1lI1tsz2jR7s880joybQ@public.gmane.org <mailto:bsguiovscation-ZJ1lI1tsz2jR7s880joybQ@public.gmane.org>; =
-  baguiovacation-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-
-
---===============8594666573787680744==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Disposition: inline
-Content-Transfer-Encoding: 7bit
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============8594666573787680744==--
+C.
