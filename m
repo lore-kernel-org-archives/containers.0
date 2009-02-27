@@ -1,13 +1,14 @@
-From: Vegard Nossum <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/8] breakout fdinfo sprintf() into its own function
-Date: Fri, 27 Feb 2009 21:56:00 +0100
-Message-ID: <19f34abd0902271256r49a06336rcba56234c06645a7__20164.6204026931$1235768395$gmane$org@mail.gmail.com>
-References: <20090227203425.F3B51176@kernel> <20090227203426.9F73083F@kernel>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/8] create fs flags to mark c/r supported fs's
+Date: Sat, 28 Feb 2009 00:16:20 +0300
+Message-ID: <20090227211620.GA3326@x200.localdomain>
+References: <20090227203425.F3B51176@kernel> <20090227203428.556600DA@kernel>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090227203426.9F73083F@kernel>
+Content-Disposition: inline
+In-Reply-To: <20090227203428.556600DA@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +19,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-MjAwOS8yLzI3IERhdmUgSGFuc2VuIDxkYXZlQGxpbnV4LnZuZXQuaWJtLmNvbT46Cj4KPiBJJ2xs
-IGJlIGFkZGluZyB0byB0aGlzIGluIGEgbW9tZW50IGFuZCBpdCBpcyBpbiBhIGJhZCBwbGFjZQo+
-IHRvIGRvIHRoYXQgY2xlYW5seSBub3cuCj4KPiBBbHNvLCBpbmNyZWFzZSB0aGUgYnVmZmVyIHNp
-emUuIMKgTW9zdCAvcHJvYyBmaWxlcyBjYW4KPiBvdXRwdXQgdXAgdG8gYSBwYWdlLCBzbyB1c2Ug
-dGhlIHNhbWUgaGVyZS4KPgo+IFNpZ25lZC1vZmYtYnk6IERhdmUgSGFuc2VuIDxkYXZlQGxpbnV4
-LnZuZXQuaWJtLmNvbT4KPiAtLS0KPgo+IMKgbGludXgtMi42LmdpdC1kYXZlL2ZzL3Byb2MvYmFz
-ZS5jIHwgwqAgMjMgKysrKysrKysrKysrKysrLS0tLS0tLS0KPiDCoDEgZmlsZSBjaGFuZ2VkLCAx
-NSBpbnNlcnRpb25zKCspLCA4IGRlbGV0aW9ucygtKQo+Cj4gZGlmZiAtcHVOIGZzL3Byb2MvYmFz
-ZS5jfmJyZWFrb3V0LWZkaW5mbyBmcy9wcm9jL2Jhc2UuYwo+IC0tLSBsaW51eC0yLjYuZ2l0L2Zz
-L3Byb2MvYmFzZS5jfmJyZWFrb3V0LWZkaW5mbyDCoCDCoCDCoCDCoDIwMDktMDItMjcgMTI6MDc6
-MzcuMDAwMDAwMDAwIC0wODAwCj4gKysrIGxpbnV4LTIuNi5naXQtZGF2ZS9mcy9wcm9jL2Jhc2Uu
-YyDCoCAyMDA5LTAyLTI3IDEyOjA3OjM3LjAwMDAwMDAwMCAtMDgwMAo+IEBAIC0xNjMyLDcgKzE2
-MzIsMTggQEAgb3V0Ogo+IMKgIMKgIMKgIMKgcmV0dXJuIH4wVTsKPiDCoH0KPgo+IC0jZGVmaW5l
-IFBST0NfRkRJTkZPX01BWCA2NAo+ICsjZGVmaW5lIFBST0NfRkRJTkZPX01BWCBQQUdFX1NJWkUK
-PiArCj4gK3N0YXRpYyB2b2lkIHByb2NfZmRfd3JpdGVfaW5mbyhzdHJ1Y3QgZmlsZSAqZmlsZSwg
-Y2hhciAqaW5mbykKPiArewo+ICsgwqAgwqAgwqAgaW50IG1heCA9IFBST0NfRkRJTkZPX01BWDsK
-PiArIMKgIMKgIMKgIGludCBwID0gMDsKPiArIMKgIMKgIMKgIGlmICghaW5mbykKPiArIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIHJldHVybjsKPiArCj4gKyDCoCDCoCDCoCBwICs9IHNucHJpbnRmKGlu
-Zm8rcCwgbWF4LXAsICJwb3M6XHQlbGxpXG4iLCAobG9uZyBsb25nKSBmaWxlLT5mX3Bvcyk7Cj4g
-KyDCoCDCoCDCoCBwICs9IHNucHJpbnRmKGluZm8rcCwgbWF4LXAsICJmbGFnczpcdDAlb1xuIiwg
-ZmlsZS0+Zl9mbGFncyk7CgpBY3R1YWxseSwgc25wcmludGYoKSBpcyBub3QgdGhlIHJpZ2h0IGZ1
-bmN0aW9uIHRvIHVzZSBoZXJlLgpzY25wcmludGYoKSwgcGVyaGFwcz8KCgpWZWdhcmQKCi0tIAoi
-VGhlIGFuaW1pc3RpYyBtZXRhcGhvciBvZiB0aGUgYnVnIHRoYXQgbWFsaWNpb3VzbHkgc25lYWtl
-ZCBpbiB3aGlsZQp0aGUgcHJvZ3JhbW1lciB3YXMgbm90IGxvb2tpbmcgaXMgaW50ZWxsZWN0dWFs
-bHkgZGlzaG9uZXN0IGFzIGl0CmRpc2d1aXNlcyB0aGF0IHRoZSBlcnJvciBpcyB0aGUgcHJvZ3Jh
-bW1lcidzIG93biBjcmVhdGlvbi4iCgktLSBFLiBXLiBEaWprc3RyYSwgRVdEMTAzNgpfX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
-bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Fri, Feb 27, 2009 at 12:34:28PM -0800, Dave Hansen wrote:
+> +#define FS_CHECKPOINTABLE 8
+
+This will ban all sockets, for instance, until all of them are
+C/R-ready. And every new socket type must be made C/R-ready from
+the very beginning, or risk major C/R breakage.
