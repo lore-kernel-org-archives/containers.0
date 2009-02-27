@@ -1,22 +1,13 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Fri, 27 Feb 2009 08:14:58 -0800
-Message-ID: <1235751298.26788.372.camel__29577.4274309681$1235751548$gmane$org@nimitz>
-References: <1234285547.30155.6.camel@nimitz>
-	<20090211141434.dfa1d079.akpm@linux-foundation.org>
-	<1234462282.30155.171.camel@nimitz> <1234467035.3243.538.camel@calx>
-	<20090212114207.e1c2de82.akpm@linux-foundation.org>
-	<1234475483.30155.194.camel@nimitz>
-	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226162755.GB1456@x200.localdomain>
-	<20090226173302.GB29439@elte.hu>
-	<20090226223112.GA2939@x200.localdomain>
+Subject: [RFC][PATCH 2/8] breakout fdinfo sprintf() into its own function
+Date: Fri, 27 Feb 2009 12:34:26 -0800
+Message-ID: <20090227203426.9F73083F@kernel>
+References: <20090227203425.F3B51176@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090226223112.GA2939-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090227203425.F3B51176@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,23 +17,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-02-27 at 01:31 +0300, Alexey Dobriyan wrote:
-> > I think the main question is: will we ever find ourselves in the 
-> > future saying that "C/R sucks, nobody but a small minority uses 
-> > it, wish we had never merged it"? I think the likelyhood of that 
-> > is very low. I think the current OpenVZ stuff already looks very 
-> > useful, and i dont think we've realized (let alone explored) all 
-> > the possibilities yet.
-> 
-> This is collecting and start of dumping part of cleaned up OpenVZ C/R
-> implementation, FYI.
 
-Are you just posting this to show how you expect c/r to look eventually?
-Or are you proposing this as an alternative to what Oren has bee
-posting?
+I'll be adding to this in a moment and it is in a bad place
+to do that cleanly now.
 
--- Dave
+Also, increase the buffer size.  Most /proc files can
+output up to a page, so use the same here.
+
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+
+ linux-2.6.git-dave/fs/proc/base.c |   23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
+
+diff -puN fs/proc/base.c~breakout-fdinfo fs/proc/base.c
+--- linux-2.6.git/fs/proc/base.c~breakout-fdinfo	2009-02-27 12:07:37.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/base.c	2009-02-27 12:07:37.000000000 -0800
+@@ -1632,7 +1632,18 @@ out:
+ 	return ~0U;
+ }
+ 
+-#define PROC_FDINFO_MAX 64
++#define PROC_FDINFO_MAX PAGE_SIZE
++
++static void proc_fd_write_info(struct file *file, char *info)
++{
++	int max = PROC_FDINFO_MAX;
++	int p = 0;
++	if (!info)
++		return;
++
++	p += snprintf(info+p, max-p, "pos:\t%lli\n", (long long) file->f_pos);
++	p += snprintf(info+p, max-p, "flags:\t0%o\n", file->f_flags);
++}
+ 
+ static int proc_fd_info(struct inode *inode, struct path *path, char *info)
+ {
+@@ -1657,12 +1668,7 @@ static int proc_fd_info(struct inode *in
+ 				*path = file->f_path;
+ 				path_get(&file->f_path);
+ 			}
+-			if (info)
+-				snprintf(info, PROC_FDINFO_MAX,
+-					 "pos:\t%lli\n"
+-					 "flags:\t0%o\n",
+-					 (long long) file->f_pos,
+-					 file->f_flags);
++			proc_fd_write_info(file, info);
+ 			spin_unlock(&files->file_lock);
+ 			put_files_struct(files);
+ 			return 0;
+@@ -1870,10 +1876,11 @@ static int proc_readfd(struct file *filp
+ static ssize_t proc_fdinfo_read(struct file *file, char __user *buf,
+ 				      size_t len, loff_t *ppos)
+ {
+-	char tmp[PROC_FDINFO_MAX];
++	char *tmp = kmalloc(PROC_FDINFO_MAX, GFP_KERNEL);
+ 	int err = proc_fd_info(file->f_path.dentry->d_inode, NULL, tmp);
+ 	if (!err)
+ 		err = simple_read_from_buffer(buf, len, ppos, tmp, strlen(tmp));
++	kfree(tmp);
+ 	return err;
+ }
+ 
+_
