@@ -1,13 +1,13 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 7/8] add c/r info to fdinfo
-Date: Fri, 27 Feb 2009 12:34:34 -0800
-Message-ID: <20090227203434.D4729F99@kernel>
-References: <20090227203425.F3B51176@kernel>
+From: Vegard Nossum <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/8] breakout fdinfo sprintf() into its own function
+Date: Fri, 27 Feb 2009 21:56:00 +0100
+Message-ID: <19f34abd0902271256r49a06336rcba56234c06645a7__20164.6204026931$1235768395$gmane$org@mail.gmail.com>
+References: <20090227203425.F3B51176@kernel> <20090227203426.9F73083F@kernel>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090227203425.F3B51176@kernel>
+In-Reply-To: <20090227203426.9F73083F@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,54 +17,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-Use the new checkpoint/restart file functions to query
-and report on each fd in the /proc/$$/fdinfo/X file.
-
-This should provide an easy way to examine processes
-at runtime to see what exactly is causing their inability
-to checkpoint.
-
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
-
- linux-2.6.git-dave/fs/proc/base.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff -puN fs/proc/base.c~add-cr-part-to-fdinfo fs/proc/base.c
---- linux-2.6.git/fs/proc/base.c~add-cr-part-to-fdinfo	2009-02-27 12:07:40.000000000 -0800
-+++ linux-2.6.git-dave/fs/proc/base.c	2009-02-27 12:07:40.000000000 -0800
-@@ -80,6 +80,7 @@
- #include <linux/oom.h>
- #include <linux/elf.h>
- #include <linux/pid_namespace.h>
-+#include <linux/checkpoint.h>
- #include "internal.h"
- 
- /* NOTE:
-@@ -1636,6 +1637,7 @@ out:
- 
- static void proc_fd_write_info(struct file *file, char *info)
- {
-+	int checkpointable;
- 	int max = PROC_FDINFO_MAX;
- 	int p = 0;
- 	if (!info)
-@@ -1643,6 +1645,12 @@ static void proc_fd_write_info(struct fi
- 
- 	p += snprintf(info+p, max-p, "pos:\t%lli\n", (long long) file->f_pos);
- 	p += snprintf(info+p, max-p, "flags:\t0%o\n", file->f_flags);
-+
-+	checkpointable = cr_file_supported(file);
-+	p += snprintf(info+p, max-p, "checkpointable:\t%d", checkpointable);
-+	if (!checkpointable)
-+		p += cr_explain_file(file, info+p, max-p);
-+	p += snprintf(info+p, max-p, "\n");
- }
- 
- static int proc_fd_info(struct inode *inode, struct path *path, char *info)
-_
+MjAwOS8yLzI3IERhdmUgSGFuc2VuIDxkYXZlQGxpbnV4LnZuZXQuaWJtLmNvbT46Cj4KPiBJJ2xs
+IGJlIGFkZGluZyB0byB0aGlzIGluIGEgbW9tZW50IGFuZCBpdCBpcyBpbiBhIGJhZCBwbGFjZQo+
+IHRvIGRvIHRoYXQgY2xlYW5seSBub3cuCj4KPiBBbHNvLCBpbmNyZWFzZSB0aGUgYnVmZmVyIHNp
+emUuIMKgTW9zdCAvcHJvYyBmaWxlcyBjYW4KPiBvdXRwdXQgdXAgdG8gYSBwYWdlLCBzbyB1c2Ug
+dGhlIHNhbWUgaGVyZS4KPgo+IFNpZ25lZC1vZmYtYnk6IERhdmUgSGFuc2VuIDxkYXZlQGxpbnV4
+LnZuZXQuaWJtLmNvbT4KPiAtLS0KPgo+IMKgbGludXgtMi42LmdpdC1kYXZlL2ZzL3Byb2MvYmFz
+ZS5jIHwgwqAgMjMgKysrKysrKysrKysrKysrLS0tLS0tLS0KPiDCoDEgZmlsZSBjaGFuZ2VkLCAx
+NSBpbnNlcnRpb25zKCspLCA4IGRlbGV0aW9ucygtKQo+Cj4gZGlmZiAtcHVOIGZzL3Byb2MvYmFz
+ZS5jfmJyZWFrb3V0LWZkaW5mbyBmcy9wcm9jL2Jhc2UuYwo+IC0tLSBsaW51eC0yLjYuZ2l0L2Zz
+L3Byb2MvYmFzZS5jfmJyZWFrb3V0LWZkaW5mbyDCoCDCoCDCoCDCoDIwMDktMDItMjcgMTI6MDc6
+MzcuMDAwMDAwMDAwIC0wODAwCj4gKysrIGxpbnV4LTIuNi5naXQtZGF2ZS9mcy9wcm9jL2Jhc2Uu
+YyDCoCAyMDA5LTAyLTI3IDEyOjA3OjM3LjAwMDAwMDAwMCAtMDgwMAo+IEBAIC0xNjMyLDcgKzE2
+MzIsMTggQEAgb3V0Ogo+IMKgIMKgIMKgIMKgcmV0dXJuIH4wVTsKPiDCoH0KPgo+IC0jZGVmaW5l
+IFBST0NfRkRJTkZPX01BWCA2NAo+ICsjZGVmaW5lIFBST0NfRkRJTkZPX01BWCBQQUdFX1NJWkUK
+PiArCj4gK3N0YXRpYyB2b2lkIHByb2NfZmRfd3JpdGVfaW5mbyhzdHJ1Y3QgZmlsZSAqZmlsZSwg
+Y2hhciAqaW5mbykKPiArewo+ICsgwqAgwqAgwqAgaW50IG1heCA9IFBST0NfRkRJTkZPX01BWDsK
+PiArIMKgIMKgIMKgIGludCBwID0gMDsKPiArIMKgIMKgIMKgIGlmICghaW5mbykKPiArIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIHJldHVybjsKPiArCj4gKyDCoCDCoCDCoCBwICs9IHNucHJpbnRmKGlu
+Zm8rcCwgbWF4LXAsICJwb3M6XHQlbGxpXG4iLCAobG9uZyBsb25nKSBmaWxlLT5mX3Bvcyk7Cj4g
+KyDCoCDCoCDCoCBwICs9IHNucHJpbnRmKGluZm8rcCwgbWF4LXAsICJmbGFnczpcdDAlb1xuIiwg
+ZmlsZS0+Zl9mbGFncyk7CgpBY3R1YWxseSwgc25wcmludGYoKSBpcyBub3QgdGhlIHJpZ2h0IGZ1
+bmN0aW9uIHRvIHVzZSBoZXJlLgpzY25wcmludGYoKSwgcGVyaGFwcz8KCgpWZWdhcmQKCi0tIAoi
+VGhlIGFuaW1pc3RpYyBtZXRhcGhvciBvZiB0aGUgYnVnIHRoYXQgbWFsaWNpb3VzbHkgc25lYWtl
+ZCBpbiB3aGlsZQp0aGUgcHJvZ3JhbW1lciB3YXMgbm90IGxvb2tpbmcgaXMgaW50ZWxsZWN0dWFs
+bHkgZGlzaG9uZXN0IGFzIGl0CmRpc2d1aXNlcyB0aGF0IHRoZSBlcnJvciBpcyB0aGUgcHJvZ3Jh
+bW1lcidzIG93biBjcmVhdGlvbi4iCgktLSBFLiBXLiBEaWprc3RyYSwgRVdEMTAzNgpfX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
+bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
+dHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
