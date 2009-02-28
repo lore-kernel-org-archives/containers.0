@@ -1,23 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Fri, 27 Feb 2009 13:54:15 -0800
-Message-ID: <1235771655.26788.400.camel__5771.80760815299$1235771947$gmane$org@nimitz>
-References: <1234462282.30155.171.camel@nimitz>
-	<1234467035.3243.538.camel@calx>
-	<20090212114207.e1c2de82.akpm@linux-foundation.org>
-	<1234475483.30155.194.camel@nimitz>
-	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226162755.GB1456@x200.localdomain>
-	<20090226173302.GB29439@elte.hu>
-	<20090226223112.GA2939@x200.localdomain>
-	<1235751298.26788.372.camel@nimitz>
-	<20090227215749.GA3453@x200.localdomain>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/8] file c/r: expose functions to query fs support
+Date: Fri, 27 Feb 2009 17:33:02 -0800
+Message-ID: <20090228013302.GC19872__44599.4666232311$1235784979$gmane$org@us.ibm.com>
+References: <20090227203425.F3B51176@kernel> <20090227203429.6963AFC4@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090227215749.GA3453-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090227203429.6963AFC4@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,35 +18,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 2009-02-28 at 00:57 +0300, Alexey Dobriyan wrote:
-> On Fri, Feb 27, 2009 at 08:14:58AM -0800, Dave Hansen wrote:
-> > On Fri, 2009-02-27 at 01:31 +0300, Alexey Dobriyan wrote:
-> > > > I think the main question is: will we ever find ourselves in the 
-> > > > future saying that "C/R sucks, nobody but a small minority uses 
-> > > > it, wish we had never merged it"? I think the likelyhood of that 
-> > > > is very low. I think the current OpenVZ stuff already looks very 
-> > > > useful, and i dont think we've realized (let alone explored) all 
-> > > > the possibilities yet.
-> > > 
-> > > This is collecting and start of dumping part of cleaned up OpenVZ C/R
-> > > implementation, FYI.
-> > 
-> > Are you just posting this to show how you expect c/r to look eventually?
-> > Or are you proposing this as an alternative to what Oren has bee
-> > posting?
-> 
-> This is under discussion right now.
+Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| 
+| This pair of functions will check to see whether a given
+| 'struct file' can be checkpointed.  If it can't be, the
+| "explain" function can also give a description why.
+| 
+| Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| ---
+| 
+|  linux-2.6.git-dave/checkpoint/ckpt_file.c     |   46 ++++++++++++++++++++++++++
+|  linux-2.6.git-dave/include/linux/checkpoint.h |   18 ++++++++++
+|  2 files changed, 64 insertions(+)
+| 
+| diff -puN checkpoint/ckpt_file.c~cr-explain-unckpt-file checkpoint/ckpt_file.c
+| --- linux-2.6.git/checkpoint/ckpt_file.c~cr-explain-unckpt-file	2009-02-27 12:07:38.000000000 -0800
+| +++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-02-27 12:07:38.000000000 -0800
+| @@ -72,6 +72,52 @@ int cr_scan_fds(struct files_struct *fil
+|  	return n;
+|  }
+| 
+| +int fs_is_cr_able(struct file_system_type *fs_type)
 
-Here as in LKML and containers@?  Or do you mean among the
-OpenVZ/Virtuozzo folks?
+Too many variations in naming ? "*cr_able(), *supported(), *checkpointable()'
+all for a boolean result.
 
-The reason I ask is that we have gone through several rounds of
-community review over the last few months with Oren's code, and I'd hate
-to throw that away unless there's something wrong with it.  Is there
-something wrong with it?
+How about calling this cr_fs_checkpointable() ?
 
--- Dave
+| +{
+| +	if (fs_type->fs_flags & FS_CHECKPOINTABLE)
+| +		return 1;
+| +	/*
+| +	 * We assume that all block-based filesystems that
+| +	 * need devices work.  This covers all of the
+| +	 * "important" fs's by default like ext*.  If this
+| +	 * assumption becomes untrue, we may need a
+| +	 * NOT_CHECKPOINTABLE flag in the future
+| +	 */
+| +	if (fs_type->fs_flags & FS_REQUIRES_DEV)
+| +		return 1;
+| +	return 0;
+| +}
+| +
+| +int cr_explain_file(struct file *file, char *explain, int left)
+| +{
+| +	struct inode *inode = file->f_dentry->d_inode;
+| +	struct file_system_type *fs_type = inode->i_sb->s_type;
+| +
+| +	if (!fs_is_cr_able(fs_type))
+| +		return snprintf(explain, left,
+| +				" (%s does not support checkpoint)",
+| +				fs_type->name);
+| +
+| +	if (special_file(inode->i_mode))
+| +		return snprintf(explain, left, " (special file)");
+| +
+| +	return 0;
+| +}
+| +
+| +int cr_file_supported(struct file *file)
+
+and this cr_file_checkpointable() ?
+
+Sukadev
