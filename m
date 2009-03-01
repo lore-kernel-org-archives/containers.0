@@ -1,14 +1,23 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
-Date: Sun, 1 Mar 2009 13:43:33 -0600
-Message-ID: <20090301194333.GA25234__45794.593418441$1235936772$gmane$org@us.ibm.com>
-References: <20090227203425.F3B51176@kernel> <20090227203435.98735E54@kernel>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Sun, 1 Mar 2009 14:02:31 -0600
+Message-ID: <20090301200231.GA25276__41665.0620325983$1235937885$gmane$org@us.ibm.com>
+References: <1234462282.30155.171.camel@nimitz>
+	<1234467035.3243.538.camel@calx>
+	<20090212114207.e1c2de82.akpm@linux-foundation.org>
+	<1234475483.30155.194.camel@nimitz>
+	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
+	<1234479845.30155.220.camel@nimitz>
+	<20090226162755.GB1456@x200.localdomain>
+	<20090226173302.GB29439@elte.hu>
+	<20090226223112.GA2939@x200.localdomain>
+	<20090301013304.GA2428@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090227203435.98735E54@kernel>
+In-Reply-To: <20090301013304.GA2428-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,133 +27,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> On Fri, Feb 27, 2009 at 01:31:12AM +0300, Alexey Dobriyan wrote:
+> > This is collecting and start of dumping part of cleaned up OpenVZ C/R
+> > implementation, FYI.
 > 
-> Introduce a files_struct counter to indicate whether a particular
-> file_struct has ever contained a file which can not be
-> checkpointed.  This flag is a one-way trip; once it is set, it may
-> not be unset.
+> OK, here is second version which shows what to do with shared objects
+> (cr_dump_nsproxy(), cr_dump_task_struct()), introduced more checks
+> (still no unlinked files) and dumps some more information including
+> structures connections (cr_pos_*)
 > 
-> We assume at allocation that a new files_struct is clean and may
-> be checkpointed.  However, as soon as it has had its files filled
-> from its parent's, we check it for real in __scan_files_for_cr().
-> At that point, we mark it if it contained any uncheckpointable
-> files.
+> Dumping pids in under thinking because in OpenVZ pids are saved as
+> numbers due to CLONE_NEWPID is not allowed in container. In presense
+> of multiple CLONE_NEWPID levels this must present a big problem. Looks
+> like there is now way to not dump pids as separate object.
 > 
-> We also check each 'struct file' when it is installed in a fd
-> slot.  This way, if anyone open()s or managed to dup() an
-> unsuppored file, we can catch it.
+> As result, struct cr_image_pid is variable-sized, don't know how this will
+> play later.
 > 
-> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
+> Also, pid refcount check for external pointers is busted right now,
+> because /proc inode pins struct pid, so there is almost always refcount
+> vs ->o_count mismatch.
 > 
->  linux-2.6.git-dave/fs/file.c                  |   19 +++++++++++++++++++
->  linux-2.6.git-dave/fs/open.c                  |    5 +++++
->  linux-2.6.git-dave/include/linux/checkpoint.h |   14 ++++++++++++++
->  linux-2.6.git-dave/include/linux/fdtable.h    |    3 +++
->  4 files changed, 41 insertions(+)
-> 
-> diff -puN fs/file.c~track-files_struct-checkpointability fs/file.c
-> --- linux-2.6.git/fs/file.c~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
-> +++ linux-2.6.git-dave/fs/file.c	2009-02-27 12:07:41.000000000 -0800
-> @@ -15,6 +15,7 @@
->  #include <linux/file.h>
->  #include <linux/fdtable.h>
->  #include <linux/bitops.h>
-> +#include <linux/checkpoint.h>
->  #include <linux/interrupt.h>
->  #include <linux/spinlock.h>
->  #include <linux/rcupdate.h>
-> @@ -285,6 +286,20 @@ static int count_open_files(struct fdtab
->  	return i;
->  }
-> 
-> +static void __scan_files_for_cr(struct files_struct *files)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < files->fdtab.max_fds; i++) {
-> +		struct file *f = fcheck_files(files, i);
-> +		if (!f)
-> +			continue;
-> +		if (cr_file_supported(f))
-> +			continue;
-> +		files_deny_checkpointing(files);
-> +	}
-> +}
-> +
->  /*
->   * Allocate a new files structure and copy contents from the
->   * passed in files structure.
-> @@ -303,6 +318,9 @@ struct files_struct *dup_fd(struct files
->  		goto out;
-> 
->  	atomic_set(&newf->count, 1);
-> +#ifdef CONFIG_CHECKPOINT_RESTART
-> +	newf->may_checkpoint = 1;
-> +#endif
-> 
->  	spin_lock_init(&newf->file_lock);
->  	newf->next_fd = 0;
-> @@ -396,6 +414,7 @@ struct files_struct *dup_fd(struct files
-> 
->  	rcu_assign_pointer(newf->fdt, new_fdt);
-> 
-> +	__scan_files_for_cr(newf);
->  	return newf;
-> 
->  out_release:
-> diff -puN fs/open.c~track-files_struct-checkpointability fs/open.c
-> --- linux-2.6.git/fs/open.c~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
-> +++ linux-2.6.git-dave/fs/open.c	2009-02-27 12:07:41.000000000 -0800
-> @@ -29,6 +29,7 @@
->  #include <linux/rcupdate.h>
->  #include <linux/audit.h>
->  #include <linux/falloc.h>
-> +#include <linux/checkpoint.h>
-> 
->  int vfs_statfs(struct dentry *dentry, struct kstatfs *buf)
->  {
-> @@ -1015,6 +1016,10 @@ void fd_install(unsigned int fd, struct 
->  {
->  	struct files_struct *files = current->files;
->  	struct fdtable *fdt;
-> +
-> +	if (!cr_file_supported(file))
-> +		files_deny_checkpointing(files);
-> +
->  	spin_lock(&files->file_lock);
->  	fdt = files_fdtable(files);
->  	BUG_ON(fdt->fd[fd] != NULL);
-> diff -puN include/linux/checkpoint.h~track-files_struct-checkpointability include/linux/checkpoint.h
-> --- linux-2.6.git/include/linux/checkpoint.h~track-files_struct-checkpointability	2009-02-27 12:07:41.000000000 -0800
-> +++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-02-27 12:07:41.000000000 -0800
-> @@ -12,6 +12,7 @@
-> 
->  #include <linux/path.h>
->  #include <linux/fs.h>
-> +#include <linux/fdtable.h>
-> 
->  #ifdef CONFIG_CHECKPOINT_RESTART
-> 
-> @@ -102,6 +103,18 @@ extern int cr_read_files(struct cr_ctx *
-> 
->  #define pr_fmt(fmt) "[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__
-> 
-> +static inline void __files_deny_checkpointing(struct files_struct *files,
-> +		char *file, int line)
-> +{
-> +	if (!test_and_clear_bit(0, &files->may_checkpoint))
-> +		return;
-> +	printk(KERN_INFO "process performed an action that can not be "
-> +			"checkpointed at: %s:%d\n", file, line);
-> +	WARN_ON(1);
+> No restore yet. ;-)
 
-This WARN_ON(1) is one step past the line into obnoxiousness on my
-console :)
+Hi Alexey,
 
+thanks for posting this.  Of course there are some predictable responses
+(I like the simplicity of pure in-kernel, Dave will not :) but this
+needs to be posted to make us talk about it.
+
+A few more comments that came to me while looking it over:
+
+1. cap_sys_admin check is unfortunate.  In discussions about Oren's
+patchset we've agreed that not having that check from the outset forces
+us to consider security with each new patch and feature, which is a good
+thing.
+
+2. if any tasks being checkpointed are frozen, checkpoint has the
+side effect of thawing them, right?
+
+3. wrt pids, i guess what you really want is to store the pids from
+init_tsk's level down to the task's lowest pid, right?  Then you
+manually set each of those on restart?  Any higher pids of course
+don't matter.
+
+4. do you have any thoughts on what to do with the mntns info at
+restart?  Will you try to detect mounts which need to be re-created?
+How?
+
+5. Since you're always setting f_pos, this won't work straight over
+a pipe?  Do you figure that's just not a worthwhile feature?
+
+Were you saying (in response to Dave) that you're having private
+discussions about whether to pursue posting this as an alternative
+to Oren's patchset?  If so, any updates on those discussions?
+
+thanks,
 -serge
