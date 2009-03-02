@@ -1,14 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] devcgroup: show correct file mode
-Date: Mon, 2 Mar 2009 07:06:52 -0600
-Message-ID: <20090302130652.GA6628__7436.12045557729$1235999460$gmane$org@us.ibm.com>
-References: <49AB40BF.4030706@cn.fujitsu.com> <49AB4143.9050704@cn.fujitsu.com>
+Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
+Date: Mon, 2 Mar 2009 07:37:54 -0600
+Message-ID: <20090302133754.GA8033__18812.2528525584$1236001570$gmane$org@us.ibm.com>
+References: <20090227203425.F3B51176@kernel> <20090227203435.98735E54@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49AB4143.9050704-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090227203435.98735E54@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,48 +18,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> devices.allow and devices.deny are write-only, and devices.list is read-only.
+Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Introduce a files_struct counter to indicate whether a particular
+> file_struct has ever contained a file which can not be
+> checkpointed.  This flag is a one-way trip; once it is set, it may
+> not be unset.
+> 
+> We assume at allocation that a new files_struct is clean and may
+> be checkpointed.  However, as soon as it has had its files filled
+> from its parent's, we check it for real in __scan_files_for_cr().
+> At that point, we mark it if it contained any uncheckpointable
+> files.
+> 
+> We also check each 'struct file' when it is installed in a fd
+> slot.  This way, if anyone open()s or managed to dup() an
+> unsuppored file, we can catch it.
+> 
+> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Yup that should be intuitive for people.
+So on a practical note, Ingo's scheme appears to be paying off.  In
+order for any program's files_struct to be checkpointable right now,
+it must be statically compiled, else ld.so (I assume) looks up
+/proc/$$/status.  So since proc is not checkpointable, the result
+is irreversibly non-checkpointable.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+So...  does it make sense to mark proc as checkpointable?  Do we
+reasonably assume that the same procfile will be available at
+restart?
 
-thanks,
 -serge
-
-> ---
->  security/device_cgroup.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
-> 
-> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-> index 3aacd0f..b13fbb8 100644
-> --- a/security/device_cgroup.c
-> +++ b/security/device_cgroup.c
-> @@ -439,16 +439,19 @@ static struct cftype dev_cgroup_files[] = {
->  		.name = "allow",
->  		.write_string  = devcgroup_access_write,
->  		.private = DEVCG_ALLOW,
-> +		.mode = 0200,
->  	},
->  	{
->  		.name = "deny",
->  		.write_string = devcgroup_access_write,
->  		.private = DEVCG_DENY,
-> +		.mode = 0200,
->  	},
->  	{
->  		.name = "list",
->  		.read_seq_string = devcgroup_seq_read,
->  		.private = DEVCG_LIST,
-> +		.mode = 0444,
->  	},
->  };
-> 
-> -- 1.5.4.rc3 
