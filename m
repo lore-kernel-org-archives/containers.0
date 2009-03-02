@@ -1,21 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
-Date: Mon, 2 Mar 2009 12:35:22 -0600
-Message-ID: <20090302183522.GA13447__46986.0309073285$1236019160$gmane$org@us.ibm.com>
-References: <20090227203425.F3B51176@kernel> <20090227203435.98735E54@kernel>
-	<20090302133754.GA8033@us.ibm.com>
-	<20090302095917.6cfeda55@thinkcentre.lan>
-	<1236011251.26788.450.camel@nimitz>
-	<20090302112247.76bb3662@thinkcentre.lan>
-	<1236015052.26788.471.camel@nimitz>
-	<20090302174433.GA12708@us.ibm.com>
-	<1236017600.26788.488.camel@nimitz>
+Subject: Re: thoughts on checkpointing /proc/mounts
+Date: Mon, 2 Mar 2009 13:43:18 -0600
+Message-ID: <20090302194318.GA15043@us.ibm.com>
+References: <1236019719.26788.505.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1236017600.26788.488.camel@nimitz>
+In-Reply-To: <1236019719.26788.505.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,48 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Mon, 2009-03-02 at 11:44 -0600, Serge E. Hallyn wrote:
-> > Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > > On Mon, 2009-03-02 at 11:22 -0600, Nathan Lynch wrote:
-> > > > No.. I mean what if a process 1234 does
-> > > > 
-> > > > f = fopen("/proc/1234/stat", "r");
-> > > > 
-> > > > and is then checkpointed.  Can that path be resolved during restart,
-> > > > before pid 1234 is alive?
-> > > 
-> > > Heh, that's a good one.
-> > > 
-> > > It does mean that we can't do restore like this:
-> > > 
-> > > 	for_each_cr_task()
-> > > 		restore_task_struct()
-> > > 		restore_files()
-> > > 		...
-> > > 
-> > > We have to do:
-> > > 
-> > > 	for_each_cr_task()
-> > > 		restore_task_struct()
-> > > 	for_each_cr_task()
-> > > 		restore_files()
-> > >
-> > Which is what we actually do, right?
+> Christoph's suggestion that we go add f_ops individually is a really
+> good way to get people thinking about individual cases that we have to
+> deal with.
 > 
-> OK, I have a really evil one.
+> Can we checkpoint an *open* /proc/mounts?  I don't think we want to.  It
+> could get really nasty really fast.  But, what if the f_pos is 0?  That
+> makes it a lot easier.
 > 
-> What if task 1234 does:
+> If the "may checkpoint" flag is per-container (as Alexey has said) and
+> one-way (as Ingo has said), does a single 'cat /proc/mounts' 5 days ago
+> keep a container from being checkpointed today?
 > 
-> 	open(O_RDONLY, "/proc/5678/fdinfo/44");
+> I just don't think the container-wide flag works if it is one way.
 > 
-> and task 5678 does:
+> I think making it per-process or per-resource (so it can be more easily
+> tracked at fork()/clone()/exec()) is the only way to go.  It makes it so
+> simple since only the 'cat /proc/mounts' process becomes
+> uncheckpointable.  Once it exits, we are OK and can checkpoint again.
+> That all seems right to me. 
 > 
-> 	open(O_RDONLY, "/proc/5678/fdinfo/55");
+> -- Dave
 
-Nice one.  Let's make fdinfo files uncheckpointable for now :)
+Well one way to look at it:
+
+the files_struct may_checkpoint is the short-term big stick to put
+pressure on us to fix things that are fixable.
+
+the per-file ->checkpoint() will (I guess) always be able to return
+an error.  So for now an open /proc/mounts fd will irreversibly make
+the process non-checkpointable.  But eventually the files_struct
+may_checkpoint flag will go away, and we'll just let each fd decide
+at checkpoint time whether it's ok to checkpoint.
 
 -serge
