@@ -1,13 +1,21 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] cgroups: show correct file mode
-Date: Mon, 2 Mar 2009 10:19:15 -0800
-Message-ID: <6599ad830903021019p3b29c173oc7772af6679d90e0__14657.9730710529$1236018079$gmane$org@mail.gmail.com>
-References: <49AB40BF.4030706@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
+Date: Mon, 2 Mar 2009 12:35:22 -0600
+Message-ID: <20090302183522.GA13447__46986.0309073285$1236019160$gmane$org@us.ibm.com>
+References: <20090227203425.F3B51176@kernel> <20090227203435.98735E54@kernel>
+	<20090302133754.GA8033@us.ibm.com>
+	<20090302095917.6cfeda55@thinkcentre.lan>
+	<1236011251.26788.450.camel@nimitz>
+	<20090302112247.76bb3662@thinkcentre.lan>
+	<1236015052.26788.471.camel@nimitz>
+	<20090302174433.GA12708@us.ibm.com>
+	<1236017600.26788.488.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49AB40BF.4030706-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1236017600.26788.488.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,30 +25,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Mar 1, 2009 at 6:13 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> Now a cgroup subsystem can set default file mode of its control files,
-> so here is a patchset to correct file mode of each subsystem's files.
+Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> On Mon, 2009-03-02 at 11:44 -0600, Serge E. Hallyn wrote:
+> > Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> > > On Mon, 2009-03-02 at 11:22 -0600, Nathan Lynch wrote:
+> > > > No.. I mean what if a process 1234 does
+> > > > 
+> > > > f = fopen("/proc/1234/stat", "r");
+> > > > 
+> > > > and is then checkpointed.  Can that path be resolved during restart,
+> > > > before pid 1234 is alive?
+> > > 
+> > > Heh, that's a good one.
+> > > 
+> > > It does mean that we can't do restore like this:
+> > > 
+> > > 	for_each_cr_task()
+> > > 		restore_task_struct()
+> > > 		restore_files()
+> > > 		...
+> > > 
+> > > We have to do:
+> > > 
+> > > 	for_each_cr_task()
+> > > 		restore_task_struct()
+> > > 	for_each_cr_task()
+> > > 		restore_files()
+> > >
+> > Which is what we actually do, right?
+> 
+> OK, I have a really evil one.
+> 
+> What if task 1234 does:
+> 
+> 	open(O_RDONLY, "/proc/5678/fdinfo/44");
+> 
+> and task 5678 does:
+> 
+> 	open(O_RDONLY, "/proc/5678/fdinfo/55");
 
-I really think that we should be defaulting this based on whether the
-control file has read or write handlers.
+Nice one.  Let's make fdinfo files uncheckpointable for now :)
 
-Sure, there are special cases like "tasks" that we'd need to set a
-manual value for, but most of these patches would be unnecessary.
-
-Paul
-
->
-> Should be applied after:
-> =A0 =A0 =A0 =A0cgroup-allow-subsys-to-set-default-mode-of-its-own-file.pa=
-tch
->
-> [PATCH 1/4] cgroup debug: show correct file mode
-> [PATCH 2/4] cpuacct: show correct file mode
-> [PATCH 3/4] devcgroup: show correct file mode
-> [PATCH 4/4] cpuset: show correct file mode
->
->
+-serge
