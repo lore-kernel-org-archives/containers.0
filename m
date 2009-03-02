@@ -1,23 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Sun, 1 Mar 2009 16:21:30 -0600
-Message-ID: <20090301222130.GA27198__42013.7828369208$1235946324$gmane$org@us.ibm.com>
-References: <20090212114207.e1c2de82.akpm@linux-foundation.org>
-	<1234475483.30155.194.camel@nimitz>
-	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226162755.GB1456@x200.localdomain>
-	<20090226173302.GB29439@elte.hu>
-	<20090226223112.GA2939@x200.localdomain>
-	<20090301013304.GA2428@x200.localdomain>
-	<20090301200231.GA25276@us.ibm.com>
-	<20090301205659.GA7276@x200.localdomain>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 0/4] cgroups: show correct file mode
+Date: Mon, 02 Mar 2009 10:13:19 +0800
+Message-ID: <49AB40BF.4030706__30634.6588572071$1235960084$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090301205659.GA7276-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,51 +15,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Sun, Mar 01, 2009 at 02:02:31PM -0600, Serge E. Hallyn wrote:
-> > Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> > > On Fri, Feb 27, 2009 at 01:31:12AM +0300, Alexey Dobriyan wrote:
-> > > > This is collecting and start of dumping part of cleaned up OpenVZ C/R
-> > > > implementation, FYI.
-> > > 
-> > > OK, here is second version which shows what to do with shared objects
-> > > (cr_dump_nsproxy(), cr_dump_task_struct()), introduced more checks
-> > > (still no unlinked files) and dumps some more information including
-> > > structures connections (cr_pos_*)
-> > > 
-> > > Dumping pids in under thinking because in OpenVZ pids are saved as
-> > > numbers due to CLONE_NEWPID is not allowed in container. In presense
-> > > of multiple CLONE_NEWPID levels this must present a big problem. Looks
-> > > like there is now way to not dump pids as separate object.
-> > > 
-> > > As result, struct cr_image_pid is variable-sized, don't know how this will
-> > > play later.
-> > > 
-> > > Also, pid refcount check for external pointers is busted right now,
-> > > because /proc inode pins struct pid, so there is almost always refcount
-> > > vs ->o_count mismatch.
-> > > 
-> > > No restore yet. ;-)
-> > 
-> > Hi Alexey,
-> > 
-> > thanks for posting this.  Of course there are some predictable responses
-> > (I like the simplicity of pure in-kernel, Dave will not :) but this
-> > needs to be posted to make us talk about it.
-> > 
-> > A few more comments that came to me while looking it over:
-> > 
-> > 1. cap_sys_admin check is unfortunate.  In discussions about Oren's
-> > patchset we've agreed that not having that check from the outset forces
-> > us to consider security with each new patch and feature, which is a good
-> > thing.
-> 
-> Removing CAP_SYS_ADMIN on restore?
+Now a cgroup subsystem can set default file mode of its control files,
+so here is a patchset to correct file mode of each subsystem's files.
 
-And checkpoint.
+Should be applied after:
+	cgroup-allow-subsys-to-set-default-mode-of-its-own-file.patch
 
--serge
+[PATCH 1/4] cgroup debug: show correct file mode
+[PATCH 2/4] cpuacct: show correct file mode
+[PATCH 3/4] devcgroup: show correct file mode
+[PATCH 4/4] cpuset: show correct file mode
