@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 2/4] cpuacct: show correct file mode
-Date: Mon, 02 Mar 2009 10:14:48 +0800
-Message-ID: <49AB4118.2040004@cn.fujitsu.com>
+Subject: [PATCH 3/4] devcgroup: show correct file mode
+Date: Mon, 02 Mar 2009 10:15:31 +0800
+Message-ID: <49AB4143.9050704__3326.2743884281$1235960283$gmane$org@cn.fujitsu.com>
 References: <49AB40BF.4030706@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,26 +18,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cpuacct.usage_percpu is read-only.
+devices.allow and devices.deny are write-only, and devices.list is read-only.
 
 Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/sched.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ security/device_cgroup.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/sched.c b/kernel/sched.c
-index e66f009..638aa4d 100644
---- a/kernel/sched.c
-+++ b/kernel/sched.c
-@@ -9734,6 +9734,7 @@ static struct cftype files[] = {
+diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+index 3aacd0f..b13fbb8 100644
+--- a/security/device_cgroup.c
++++ b/security/device_cgroup.c
+@@ -439,16 +439,19 @@ static struct cftype dev_cgroup_files[] = {
+ 		.name = "allow",
+ 		.write_string  = devcgroup_access_write,
+ 		.private = DEVCG_ALLOW,
++		.mode = 0200,
+ 	},
  	{
- 		.name = "usage_percpu",
- 		.read_seq_string = cpuacct_percpu_seq_read,
+ 		.name = "deny",
+ 		.write_string = devcgroup_access_write,
+ 		.private = DEVCG_DENY,
++		.mode = 0200,
+ 	},
+ 	{
+ 		.name = "list",
+ 		.read_seq_string = devcgroup_seq_read,
+ 		.private = DEVCG_LIST,
 +		.mode = 0444,
  	},
- 
  };
+ 
 -- 1.5.4.rc3 
