@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
-Date: Mon, 02 Mar 2009 09:58:26 -0800
-Message-ID: <1236016706.26788.478.camel__27584.9597099752$1236016840$gmane$org@nimitz>
+Date: Mon, 02 Mar 2009 10:13:20 -0800
+Message-ID: <1236017600.26788.488.camel@nimitz>
 References: <20090227203425.F3B51176@kernel>
 	<20090227203435.98735E54@kernel> <20090302133754.GA8033@us.ibm.com>
 	<20090302095917.6cfeda55@thinkcentre.lan>
@@ -27,21 +27,58 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 On Mon, 2009-03-02 at 11:44 -0600, Serge E. Hallyn wrote:
+> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> > On Mon, 2009-03-02 at 11:22 -0600, Nathan Lynch wrote:
+> > > No.. I mean what if a process 1234 does
+> > > 
+> > > f = fopen("/proc/1234/stat", "r");
+> > > 
+> > > and is then checkpointed.  Can that path be resolved during restart,
+> > > before pid 1234 is alive?
+> > 
+> > Heh, that's a good one.
+> > 
+> > It does mean that we can't do restore like this:
+> > 
+> > 	for_each_cr_task()
+> > 		restore_task_struct()
+> > 		restore_files()
+> > 		...
+> > 
+> > We have to do:
+> > 
+> > 	for_each_cr_task()
+> > 		restore_task_struct()
+> > 	for_each_cr_task()
+> > 		restore_files()
+> >
 > Which is what we actually do, right?
-> 
-> Actually we have userspace create the tasks first, and
-> then each task calls sys_restart which does restore_files().
 
-Quoting:
+OK, I have a really evil one.
 
-http://git.ncl.cs.columbia.edu/?p=linux-cr.git;a=commitdiff;h=3c1b1900f92ed12f5020a7b566065bffda2908d8;hp=7aec1a8f3345bb33c3f93226c895a45ec269bb59
+What if task 1234 does:
 
-> Restarting of multiple processes expects all restarting tasks to call
-> sys_restart(). Once inside the system call, each task will restart
-> itself at the same order that they were saved. The internals of the
-> syscall will take care of in-kernel synchronization bewteen tasks.
+	open(O_RDONLY, "/proc/5678/fdinfo/44");
 
-I guess it is OK since everybody sleeps once they enter sys_restart()
-until the container init decides it is ready to go.  
+and task 5678 does:
+
+	open(O_RDONLY, "/proc/5678/fdinfo/55");
+
+There is no right order.
+
+The only right way I can think to do it is that we have to loop on the
+restore and defer files that we can't seem to find right now, hoping
+that they'll show up as the restore progresses.
+
+Basically:
+
+	for_each_cr_task()
+		deferred_files = restore_files()
+retry:
+	making_progress = 0
+	for_each(deferred_file)
+		restore(deferred_file)
+	if (making_progress)
+		goto retry;
 
 -- Dave
