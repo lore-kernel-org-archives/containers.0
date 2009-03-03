@@ -1,14 +1,15 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Allow cpusets to be configured/built on non-SMP systems
-Date: Tue, 3 Mar 2009 09:07:34 +0100
-Message-ID: <20090303080734.GB11484__49177.1037145101$1236067938$gmane$org@elte.hu>
+Date: Tue, 3 Mar 2009 00:26:42 -0800
+Message-ID: <6599ad830903030026w2081a72dhf3cac90346b1d806__42647.809329401$1236069011$gmane$org@mail.gmail.com>
 References: <20090303013432.11211.18662.stgit@menage.corp.google.com>
+	<49ACA13B.5050106@cn.fujitsu.com>
+	<6599ad830903022201s4d2296c7u225e84a77f9f7167@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090303013432.11211.18662.stgit-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
+In-Reply-To: <6599ad830903022201s4d2296c7u225e84a77f9f7167-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,85 +19,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-* Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-
-> Allow cpusets to be configured/built on non-SMP systems
-> 
-> Currently it's impossible to build cpusets under UML on x86-64, since
-> cpusets depends on SMP and x86-64 UML doesn't support SMP.
-> 
-> There's code in cpusets that doesn't depend on SMP.  This patch
-> surrounds the minimum amount of cpusets code with #ifdef CONFIG_SMP in
-> order to allow cpusets to build/run on UP systems (for testing
-> purposes under UML).
-> 
-> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
-> ---
-> 
->  init/Kconfig    |    2 +-
->  kernel/cpuset.c |   14 ++++++++++++++
->  2 files changed, 15 insertions(+), 1 deletions(-)
-> 
-> diff --git a/init/Kconfig b/init/Kconfig
-> index 92d2c64..3f20aa2 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -477,7 +477,7 @@ config CGROUP_DEVICE
->  
->  config CPUSETS
->  	bool "Cpuset support"
-> -	depends on SMP && CGROUPS
-> +	depends on CGROUPS
->  	help
->  	  This option will let you create and manage CPUSETs which
->  	  allow dynamically partitioning a system into sets of CPUs and
-> diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-> index a46d693..b4d12d8 100644
-> --- a/kernel/cpuset.c
-> +++ b/kernel/cpuset.c
+On Mon, Mar 2, 2009 at 10:01 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Mar 2, 2009 at 7:17 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>>> +static int generate_sched_domains(struct cpumask **domains,
+>>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct sched_domain_attr **at=
+tributes)
+>>> +{
+>>
+>> Except here should "return 0;", otherwise emit a compile warining.
+>>
 >
-> @@ -517,6 +517,8 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
->  	return 0;
->  }
->  
-> +#ifdef CONFIG_SMP
-> +
->  /*
->   * Helper routine for generate_sched_domains().
->   * Do cpusets a, b have overlapping cpus_allowed masks?
-> @@ -811,6 +813,16 @@ static void do_rebuild_sched_domains(struct work_struct *unused)
->  
->  	put_online_cpus();
->  }
-> +#else
+> Good catch - the weird thing is that (in my UML build) it doesn't
+> actually generate that warning. Mysterious.
+>
+> I'll resend with the extra return.
 
-Please use:
+After looking at the sched domains code it's not clear to me that
+returning 0 is necessarily the right thing to do -
+partition_sched_domains() says that 0 is a special case used for
+destroying existing domains? Would returning 1 and setting up a single
+dummy domain be better?
 
-> +#else /* !CONFIG_SMP: */
+Given that this return code only matters when CONFIG_HOTPLUG_CPU &&
+!CONFIG_SMP it's unlikely to ever be used, but I guess it's better to
+get it right.
 
-to show that it's the UP branch - even if the #ifdef itself has 
-scrolled off from screen already.
-
-> +static void do_rebuild_sched_domains(struct work_struct *unused)
-> +{
-> +}
-> +
-> +static int generate_sched_domains(struct cpumask **domains,
-> +			struct sched_domain_attr **attributes)
-> +{
-> +}
-> +#endif // CONFIG_SMP
-
-Please dont use C++ comments.
-
-Looks good otherwise. (Btw., please try to Cc: PeterZ and me to 
-cpusets patches in the future, especially when it affects the 
-scheduler.)
-
-	Ingo
+Paul
