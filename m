@@ -1,43 +1,54 @@
-From: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [RFC][PATCH 5/8] add f_op for checkpointability
-Date: Tue, 3 Mar 2009 08:15:28 -0500
-Message-ID: <20090303131528.GB10931__27074.8699819253$1236086263$gmane$org@infradead.org>
-References: <20090227203425.F3B51176@kernel> <20090227203431.D1E697CB@kernel>
-	<20090228205329.GB4254@infradead.org>
-	<1236013556.26788.466.camel@nimitz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1236013556.26788.466.camel@nimitz>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Dan Smith <danms@us.ibm.com>
+Subject: [PATCH 1/3] s390: Expose a constant for the number of words representing the CRs
+Date: Tue,  3 Mar 2009 10:56:02 -0500
+Message-ID: <1236095764-19325-2-git-send-email-danms@us.ibm.com>
+References: <1236095764-19325-1-git-send-email-danms@us.ibm.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757471AbZCCP41@vger.kernel.org>
+In-Reply-To: <1236095764-19325-1-git-send-email-danms@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: containers@lists.osdl.org
+Cc: linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 02, 2009 at 09:05:56AM -0800, Dave Hansen wrote:
-> On Sat, 2009-02-28 at 15:53 -0500, Christoph Hellwig wrote:
-> > Also the double-use of the op seem not very nice to me.  Is there any
-> > real life use case were you would have the operation on a file but
-> > sometimes not allow checkpoiting?
-> 
-> I'm still reaching here...
-> 
-> I was thinking of /proc.  Opening your own /proc/$$/* would certainly be
-> considered OK.  But, doing it for some other process not in your pid
-> namespace would not be OK and would not be checkpointable.
-> 
-> I know we're not quite in real-life territory here, yet, but I'm still
-> thinking.
+We need to use this value in the checkpoint/restart code and would like to
+have a constant instead of a magic '3'.
 
-That mighr be a good enough excuse, I was just wondering what the use
-case was.
+Signed-off-by: Dan Smith <danms@us.ibm.com>
+Cc: linux-s390@vger.kernel.org
+---
+ arch/s390/include/asm/ptrace.h   |    2 ++
+ arch/s390/kernel/compat_ptrace.h |    3 ++-
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/arch/s390/include/asm/ptrace.h b/arch/s390/include/asm/ptrace.h
+index 5396f9f..d5b0781 100644
+--- a/arch/s390/include/asm/ptrace.h
++++ b/arch/s390/include/asm/ptrace.h
+@@ -172,6 +172,8 @@
+ #define NUM_CRS		16
+ #define NUM_ACRS	16
+ 
++#define NUM_CR_WORDS	3
++
+ #define FPR_SIZE	8
+ #define FPC_SIZE	4
+ #define FPC_PAD_SIZE	4 /* gcc insists on aligning the fpregs */
+diff --git a/arch/s390/kernel/compat_ptrace.h b/arch/s390/kernel/compat_ptrace.h
+index a2be3a9..123dd66 100644
+--- a/arch/s390/kernel/compat_ptrace.h
++++ b/arch/s390/kernel/compat_ptrace.h
+@@ -1,10 +1,11 @@
+ #ifndef _PTRACE32_H
+ #define _PTRACE32_H
+ 
++#include <asm/ptrace.h>    /* needed for NUM_CR_WORDS */
+ #include "compat_linux.h"  /* needed for psw_compat_t */
+ 
+ typedef struct {
+-	__u32 cr[3];
++	__u32 cr[NUM_CR_WORDS];
+ } per_cr_words32;
+ 
+ typedef struct {
+-- 
+1.6.1
