@@ -1,57 +1,65 @@
-From: Dave Hansen <dave@linux.vnet.ibm.com>
-Subject: Re: [PATCH 2/3] c/r: Add CR_COPY() macro (v3)
-Date: Wed, 04 Mar 2009 12:18:02 -0800
-Message-ID: <1236197882.22399.40.camel@nimitz>
-References: <1236095764-19325-1-git-send-email-danms@us.ibm.com>
-	 <1236095764-19325-3-git-send-email-danms@us.ibm.com>
-	 <1236097332.22399.8.camel@nimitz> <878wnmrtp9.fsf@caffeine.danplanet.com>
-	 <1236128437.22399.31.camel@nimitz>
-	 <20090304135314.618ad07e@thinkcentre.lan>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] checkpoint: Note checkpointability of mm_struct (v2)
+Date: Wed, 04 Mar 2009 14:01:23 -0800
+Message-ID: <87iqmpvtfw.fsf@caffeine.danplanet.com>
+References: <20090302161115.GA10484@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757663AbZCDUSg@vger.kernel.org>
-In-Reply-To: <20090304135314.618ad07e@thinkcentre.lan>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Nathan Lynch <ntl@pobox.com>
-Cc: containers@lists.osdl.org, Dan Smith <danms@us.ibm.com>, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-03-04 at 13:53 -0600, Nathan Lynch wrote:
-> On Tue, 03 Mar 2009 17:00:37 -0800
-> Dave Hansen <dave@linux.vnet.ibm.com> wrote:
-> 
-> > On Tue, 2009-03-03 at 16:57 -0800, Dan Smith wrote:
-> > > DH> Did you convince Nathan that this ends up being a good idea?
-> > > 
-> > > Technically he hasn't seen this version, but my hopes are not high
-> > > that he will change his mind.  If the feedback is that they're not
-> > > liked, I'll happily remove them.
-> > 
-> > I just figure if Nathan feels that strongly that we'll encounter more
-> > people who feel even more so.  So, I was curious if he changed his mind
-> > somehow.
-> 
-> No, not really, sorry.
-> 
-> I understand why it's nice for the developer to have this sort of
-> helper, but I don't think it's nice for someone trying to review or
-> debug the code.
+SH> +static inline void task_show_checkpointable(struct seq_file *m,
+SH> +						struct task_struct *p)
+SH> +{
+SH> +	if (test_bit(0, &p->mm->may_checkpoint))
+SH> +		seq_printf(m,	"mm is checkpointable\n");
+                             ^^^
+You have a hard tab in the middle of the line.  Was that intentional?
 
-That's funny.  I've only reviewed and debugged these things, but I don't
-think I've actually written any code that would have used these macros!
-As someone trying to debug and review, I love how this looks.
+SH> +	else
+SH> +		seq_printf(m,	"mm is not checkpointable\n");
+SH> +
+SH> +	if (test_bit(0, &p->files->may_checkpoint))
+SH> +		seq_printf(m,	"files are checkpointable\n");
+SH> +	else
+SH> +		seq_printf(m,	"files are not checkpointable\n");
+SH> +}
 
-It gets the point across much more clearly about what is going on to me
-as a reviewer and I appreciate that.  memcpy()s contain a lot of gunk
-that my brain can't parse easily, but this is rather clean, and it
-*HALVES* the number of lines of code I have to look at.  
+These too.
 
-> Surely discussing these macros has already consumed more developer time
-> than they would ever save?  :)
+SH> +static inline void __mm_deny_checkpointing(struct mm_struct *mm,
+SH> +		char *file, int line)
+SH> +{
+SH> +	if (!test_and_clear_bit(0, &mm->may_checkpoint))
+SH> +		return;
+SH> +	printk(KERN_INFO "process performed an (mm) action that can not be "
+SH> +			"checkpointed at: %s:%d\n", file, line);
+SH> +}
+SH> +#define mm_deny_checkpointing(f) \
+SH> +	__mm_deny_checkpointing(f, __FILE__, __LINE__)
 
-That's exactly my point.  We're not trying to save development time here
-at all.  My argument is that this reduces the maintenance and review
-burden.  
+There is no definition of mm_deny_checkpointing() outside of
+CONFIG_CHECKPOINT_RESTART, which means that you get a build error
+because mm->may_checkpoint is only present when CR is enabled.
 
--- Dave
+SH> -	WARN_ON(1);
+SH> +	//WARN_ON(1);
+
+I assume commenting this out wasn't intended to be in this patch.
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
