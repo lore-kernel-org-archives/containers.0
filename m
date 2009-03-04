@@ -1,68 +1,160 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: don't change release_agent when remount failed
-Date: Wed, 04 Mar 2009 10:17:20 +0800
-Message-ID: <49ADE4B0.5090405__13681.1562268578$1236133114$gmane$org@cn.fujitsu.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH] veth: Allow setting the L3 MTU
+Date: Tue, 03 Mar 2009 20:14:18 -0800
+Message-ID: <m1ab813ox1.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Remount can fail in either case:
-  - wrong mount options is specified, or option 'noprefix' is changed.
-  - a to-be-added subsys is already mounted/active.
 
-When using remount to change 'release_agent', for the above former failure
-case, remount will return errno with release_agent unchanged, but for the
-latter case, remount will return EBUSY with relase_agent changed, which is
-unexpected I think:
+The limitation to only 1500 byte mtu's limits the utility of the veth
+device for testing routing.  So implement implement a configurable
+MTU.
 
- # mount -t cgroup -o cpu xxx /cgrp1
- # mount -t cgroup -o cpuset,release_agent=agent1 yyy /cgrp2
- # cat /cgrp2/release_agent
- agent1
- # mount -t cgroup -o remount,cpuset,noprefix,release_agent=agent2 yyy /cgrp2
- mount: /cgrp2 not mounted already, or bad option
- # cat /cgrp2/release_agent
- agent1     <-- ok
- # mount -t cgroup -o remount,cpu,cpuset,release_agent=agent2 yyy /cgrp2
- mount: /cgrp2 is busy
- # cat /cgrp2/release_agent
- agent2     <-- unexpected!
+For consistency I drop packets on the receive side when they are
+larger than the MTU.  I count those drops.  And I allow
+a little padding for vlan headers.
 
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+I also test the mtu when a new device is created with netlink
+because that path currently bypasses the current mtu setting
+code.
+
+Signed-off-by: Eric Biederman <ebiederm@aristanetworks.com>
 ---
- kernel/cgroup.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ drivers/net/veth.c |   45 +++++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 39 insertions(+), 6 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ad10c5d..ebb4a4e 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -915,10 +915,11 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+diff --git a/drivers/net/veth.c b/drivers/net/veth.c
+index 124fe75..015db1c 100644
+--- a/drivers/net/veth.c
++++ b/drivers/net/veth.c
+@@ -19,12 +19,17 @@
+ #define DRV_NAME	"veth"
+ #define DRV_VERSION	"1.0"
+ 
++#define MIN_MTU 68		/* Min L3 MTU */
++#define MAX_MTU 65535		/* Max L3 MTU (arbitrary) */
++#define MTU_PAD (ETH_HLEN + 4)  /* Max difference between L2 and L3 size MTU */
++
+ struct veth_net_stats {
+ 	unsigned long	rx_packets;
+ 	unsigned long	tx_packets;
+ 	unsigned long	rx_bytes;
+ 	unsigned long	tx_bytes;
+ 	unsigned long	tx_dropped;
++	unsigned long	rx_dropped;
+ };
+ 
+ struct veth_priv {
+@@ -147,7 +152,7 @@ static int veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct net_device *rcv = NULL;
+ 	struct veth_priv *priv, *rcv_priv;
+-	struct veth_net_stats *stats;
++	struct veth_net_stats *stats, *rcv_stats;
+ 	int length, cpu;
+ 
+ 	skb_orphan(skb);
+@@ -158,9 +163,13 @@ static int veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	cpu = smp_processor_id();
+ 	stats = per_cpu_ptr(priv->stats, cpu);
++	rcv_stats = per_cpu_ptr(rcv_priv->stats, cpu);
+ 
+ 	if (!(rcv->flags & IFF_UP))
+-		goto outf;
++		goto tx_drop;
++
++	if (skb->len > (rcv->mtu + MTU_PAD))
++		goto rx_drop;
+ 
+ 	skb->pkt_type = PACKET_HOST;
+ 	skb->protocol = eth_type_trans(skb, rcv);
+@@ -178,17 +187,21 @@ static int veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	stats->tx_bytes += length;
+ 	stats->tx_packets++;
+ 
+-	stats = per_cpu_ptr(rcv_priv->stats, cpu);
+-	stats->rx_bytes += length;
+-	stats->rx_packets++;
++	rcv_stats->rx_bytes += length;
++	rcv_stats->rx_packets++;
+ 
+ 	netif_rx(skb);
+ 	return 0;
+ 
+-outf:
++tx_drop:
+ 	kfree_skb(skb);
+ 	stats->tx_dropped++;
+ 	return 0;
++
++rx_drop:
++	kfree_skb(skb);
++	rcv_stats->rx_dropped++;
++	return 0;
+ }
+ 
+ /*
+@@ -210,6 +223,7 @@ static struct net_device_stats *veth_get_stats(struct net_device *dev)
+ 	dev_stats->rx_bytes = 0;
+ 	dev_stats->tx_bytes = 0;
+ 	dev_stats->tx_dropped = 0;
++	dev_stats->rx_dropped = 0;
+ 
+ 	for_each_online_cpu(cpu) {
+ 		stats = per_cpu_ptr(priv->stats, cpu);
+@@ -219,6 +233,7 @@ static struct net_device_stats *veth_get_stats(struct net_device *dev)
+ 		dev_stats->rx_bytes += stats->rx_bytes;
+ 		dev_stats->tx_bytes += stats->tx_bytes;
+ 		dev_stats->tx_dropped += stats->tx_dropped;
++		dev_stats->rx_dropped += stats->rx_dropped;
  	}
  
- 	ret = rebind_subsystems(root, opts.subsys_bits);
-+	if (ret)
-+		goto out_unlock;
+ 	return dev_stats;
+@@ -249,6 +264,19 @@ static int veth_close(struct net_device *dev)
+ 	return 0;
+ }
  
- 	/* (re)populate subsystem files */
--	if (!ret)
--		cgroup_populate_dir(cgrp);
-+	cgroup_populate_dir(cgrp);
++static int is_valid_veth_mtu(int new_mtu)
++{
++	return (new_mtu >= MIN_MTU && new_mtu <= MAX_MTU);
++}
++
++static int veth_change_mtu(struct net_device *dev, int new_mtu)
++{
++	if (!is_valid_veth_mtu(new_mtu))
++		return -EINVAL;
++	dev->mtu = new_mtu;
++	return 0;
++}
++
+ static int veth_dev_init(struct net_device *dev)
+ {
+ 	struct veth_net_stats *stats;
+@@ -277,6 +305,7 @@ static const struct net_device_ops veth_netdev_ops = {
+ 	.ndo_open            = veth_open,
+ 	.ndo_stop            = veth_close,
+ 	.ndo_start_xmit      = veth_xmit,
++	.ndo_change_mtu      = veth_change_mtu,
+ 	.ndo_get_stats       = veth_get_stats,
+ 	.ndo_set_mac_address = eth_mac_addr,
+ };
+@@ -303,6 +332,10 @@ static int veth_validate(struct nlattr *tb[], struct nlattr *data[])
+ 		if (!is_valid_ether_addr(nla_data(tb[IFLA_ADDRESS])))
+ 			return -EADDRNOTAVAIL;
+ 	}
++	if (tb[IFLA_MTU]) {
++		if (!is_valid_veth_mtu(nla_get_u32(tb[IFLA_MTU])))
++			return -EINVAL;
++	}
+ 	return 0;
+ }
  
- 	if (opts.release_agent)
- 		strcpy(root->release_agent_path, opts.release_agent);
 -- 
-1.5.4.rc3
+1.6.1.2.350.g88cc
+
