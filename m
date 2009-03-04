@@ -1,33 +1,37 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH] veth: Allow setting the L3 MTU
-Date: Tue, 03 Mar 2009 23:36:16 -0800 (PST)
-Message-ID: <20090303.233616.17571375.davem@davemloft.net>
-References: <m1ab813ox1.fsf@fess.ebiederm.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 2/3] c/r: Add CR_COPY() macro (v3)
+Date: Wed, 4 Mar 2009 09:05:19 -0600
+Message-ID: <20090304150519.GB10186@us.ibm.com>
+References: <1236095764-19325-1-git-send-email-danms@us.ibm.com> <1236095764-19325-3-git-send-email-danms@us.ibm.com> <1236097332.22399.8.camel@nimitz> <878wnmrtp9.fsf@caffeine.danplanet.com> <1236128437.22399.31.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1ab813ox1.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, dlezcano@fr.ibm.com, xemul@openvz.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755609AbZCDPL7@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <1236128437.22399.31.camel@nimitz>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Dave Hansen <dave@linux.vnet.ibm.com>
+Cc: Dan Smith <danms@us.ibm.com>, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Tue, 03 Mar 2009 20:14:18 -0800
+Quoting Dave Hansen (dave@linux.vnet.ibm.com):
+> On Tue, 2009-03-03 at 16:57 -0800, Dan Smith wrote:
+> > DH> Did you convince Nathan that this ends up being a good idea?
+> > 
+> > Technically he hasn't seen this version, but my hopes are not high
+> > that he will change his mind.  If the feedback is that they're not
+> > liked, I'll happily remove them.
+> 
+> I just figure if Nathan feels that strongly that we'll encounter more
+> people who feel even more so.  So, I was curious if he changed his mind
+> somehow.
 
-> The limitation to only 1500 byte mtu's limits the utility of the veth
-> device for testing routing.  So implement implement a configurable
-> MTU.
-> 
-> For consistency I drop packets on the receive side when they are
-> larger than the MTU.  I count those drops.  And I allow
-> a little padding for vlan headers.
-> 
-> I also test the mtu when a new device is created with netlink
-> because that path currently bypasses the current mtu setting
-> code.
-> 
-> Signed-off-by: Eric Biederman <ebiederm@aristanetworks.com>
+I maintain however that two strong advantages of moving the checkpoint
+and restart of simple registers etc into a single function are:
 
-Applied to net-next-2.6, thanks Eric.
+	1. we won't forget to add (or accidentally lose) one or the
+		other
+	2. any actual special handling at checkpoint or restart, like
+		the loading of access registers at restart on s390x,
+		stand out
+
+-serge
