@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 03/11] Introduce generic_file_checkpoint()
-Date: Thu, 05 Mar 2009 08:39:01 -0800
-Message-ID: <20090305163901.02518456@kernel>
+Subject: [RFC][PATCH 05/11] add generic checkpoint f_op to ext fses
+Date: Thu, 05 Mar 2009 08:39:04 -0800
+Message-ID: <20090305163904.D9CFC631@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,126 +22,90 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-In a bit we will introduce a f_op to do per-file
-checkpointing.  But, before I do that, I want to
-demonstrate how it splices in here.
-
-So, introduce generic_file_checkpoint() and use it
-only for regular files.
-
-I'm also removing the CR_FD_DIR type.  We treat
-normal files and directories the same way, so just
-call it CR_FD_GENERIC to make it more clear that
-we always follow the same generic behavior.
+This marks ext[234] as being checkpointable.  There will be many
+more to do this to, but this is a start.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/checkpoint/ckpt_file.c         |   50 ++++++++++++----------
- linux-2.6.git-dave/checkpoint/rstr_file.c         |    3 -
- linux-2.6.git-dave/include/linux/checkpoint_hdr.h |    4 -
- 3 files changed, 32 insertions(+), 25 deletions(-)
+ linux-2.6.git-dave/fs/ext2/dir.c  |    1 +
+ linux-2.6.git-dave/fs/ext2/file.c |    2 ++
+ linux-2.6.git-dave/fs/ext3/dir.c  |    1 +
+ linux-2.6.git-dave/fs/ext3/file.c |    1 +
+ linux-2.6.git-dave/fs/ext4/dir.c  |    1 +
+ linux-2.6.git-dave/fs/ext4/file.c |    1 +
+ 6 files changed, 7 insertions(+)
 
-diff -puN checkpoint/ckpt_file.c~generic_file_checkpoint checkpoint/ckpt_file.c
---- linux-2.6.git/checkpoint/ckpt_file.c~generic_file_checkpoint	2009-03-05 08:37:00.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-03-05 08:37:00.000000000 -0800
-@@ -72,42 +72,50 @@ int cr_scan_fds(struct files_struct *fil
- 	return n;
- }
- 
-+int generic_file_checkpoint(struct file *file, struct cr_ctx *ctx,
-+			    struct cr_hdr_fd *hh)
-+{
-+	hh->f_flags = file->f_flags;
-+	hh->f_mode = file->f_mode;
-+	hh->f_pos = file->f_pos;
-+	hh->f_version = file->f_version;
-+	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
-+
-+	/*
-+	 * CR_FD_GENERIC basically means that this can simply be
-+	 * open()'d on restore.  Nothing special.  Note that this
-+	 * includes directories.
-+	 */
-+	hh->fd_type = CR_FD_GENERIC;
-+
-+	/* FIX: check if the file/dir/link is unlinked */
-+
-+	return 0;
-+}
-+
- /* cr_write_fd_data - dump the state of a given file pointer */
- static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
- {
- 	struct cr_hdr h;
- 	struct cr_hdr_fd *hh = cr_hbuf_get(ctx, sizeof(*hh));
--	struct dentry *dent = file->f_dentry;
--	struct inode *inode = dent->d_inode;
--	enum fd_type fd_type;
- 	int ret;
- 
- 	h.type = CR_HDR_FD_DATA;
- 	h.len = sizeof(*hh);
- 	h.parent = parent;
- 
--	hh->f_flags = file->f_flags;
--	hh->f_mode = file->f_mode;
--	hh->f_pos = file->f_pos;
--	hh->f_version = file->f_version;
--	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
-+	hh->fd_type = CR_FD_UNSET;
-+	ret = -EBADF;
-+	if ((file->f_dentry->d_inode->i_mode & S_IFMT) == S_IFREG)
-+		ret = generic_file_checkpoint(file, ctx, hh);
- 
--	switch (inode->i_mode & S_IFMT) {
--	case S_IFREG:
--		fd_type = CR_FD_FILE;
--		break;
--	case S_IFDIR:
--		fd_type = CR_FD_DIR;
--		break;
--	default:
--		cr_hbuf_put(ctx, sizeof(*hh));
--		return -EBADF;
--	}
-+	if (ret)
-+		goto out;
- 
--	/* FIX: check if the file/dir/link is unlinked */
--	hh->fd_type = fd_type;
-+	WARN_ON(hh->fd_type == CR_FD_UNSET);
- 
- 	ret = cr_write_obj(ctx, &h, hh);
-+out:
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	if (ret < 0)
- 		return ret;
-diff -puN checkpoint/rstr_file.c~generic_file_checkpoint checkpoint/rstr_file.c
---- linux-2.6.git/checkpoint/rstr_file.c~generic_file_checkpoint	2009-03-05 08:37:00.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/rstr_file.c	2009-03-05 08:37:00.000000000 -0800
-@@ -92,8 +92,7 @@ cr_read_fd_data(struct cr_ctx *ctx, stru
- 	/* FIX: more sanity checks on f_flags, f_mode etc */
- 
- 	switch (hh->fd_type) {
--	case CR_FD_FILE:
--	case CR_FD_DIR:
-+	case CR_FD_GENERIC:
- 		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
- 		break;
- 	default:
-diff -puN include/linux/checkpoint_hdr.h~generic_file_checkpoint include/linux/checkpoint_hdr.h
---- linux-2.6.git/include/linux/checkpoint_hdr.h~generic_file_checkpoint	2009-03-05 08:37:00.000000000 -0800
-+++ linux-2.6.git-dave/include/linux/checkpoint_hdr.h	2009-03-05 08:37:00.000000000 -0800
-@@ -133,8 +133,8 @@ struct cr_hdr_fd_ent {
- 
- /* fd types */
- enum  fd_type {
--	CR_FD_FILE = 1,
--	CR_FD_DIR,
-+	CR_FD_UNSET   = 0,
-+	CR_FD_GENERIC = 1,
+diff -puN fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/dir.c
+--- linux-2.6.git/fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext2/dir.c	2009-03-05 08:37:01.000000000 -0800
+@@ -721,4 +721,5 @@ const struct file_operations ext2_dir_op
+ 	.compat_ioctl	= ext2_compat_ioctl,
+ #endif
+ 	.fsync		= ext2_sync_file,
++	.checkpoint	= generic_file_checkpoint,
+ };
+diff -puN fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/file.c
+--- linux-2.6.git/fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext2/file.c	2009-03-05 08:37:01.000000000 -0800
+@@ -58,6 +58,7 @@ const struct file_operations ext2_file_o
+ 	.fsync		= ext2_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
  };
  
- struct cr_hdr_fd {
+ #ifdef CONFIG_EXT2_FS_XIP
+@@ -73,6 +74,7 @@ const struct file_operations ext2_xip_fi
+ 	.open		= generic_file_open,
+ 	.release	= ext2_release_file,
+ 	.fsync		= ext2_sync_file,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ #endif
+ 
+diff -puN fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/dir.c
+--- linux-2.6.git/fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext3/dir.c	2009-03-05 08:37:01.000000000 -0800
+@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_op
+ #endif
+ 	.fsync		= ext3_sync_file,	/* BKL held */
+ 	.release	= ext3_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff -puN fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/file.c
+--- linux-2.6.git/fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext3/file.c	2009-03-05 08:37:01.000000000 -0800
+@@ -122,6 +122,7 @@ const struct file_operations ext3_file_o
+ 	.fsync		= ext3_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext3_file_inode_operations = {
+diff -puN fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/dir.c
+--- linux-2.6.git/fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext4/dir.c	2009-03-05 08:37:01.000000000 -0800
+@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_op
+ #endif
+ 	.fsync		= ext4_sync_file,
+ 	.release	= ext4_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff -puN fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/file.c
+--- linux-2.6.git/fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
++++ linux-2.6.git-dave/fs/ext4/file.c	2009-03-05 08:37:01.000000000 -0800
+@@ -156,6 +156,7 @@ const struct file_operations ext4_file_o
+ 	.fsync		= ext4_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext4_file_inode_operations = {
 _
