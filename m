@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 05/11] add generic checkpoint f_op to ext fses
-Date: Thu, 05 Mar 2009 08:39:04 -0800
-Message-ID: <20090305163904.D9CFC631@kernel>
+Subject: [RFC][PATCH 06/11] add checkpoint_file_generic() to /proc
+Date: Thu, 05 Mar 2009 08:39:06 -0800
+Message-ID: <20090305163906.756FAD1A@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,90 +22,158 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-This marks ext[234] as being checkpointable.  There will be many
-more to do this to, but this is a start.
+/proc gets opened a *lot* including during some things that
+ld.so does (according to Serge).  If we want *anything* to
+be checkpointable, we need to handle at least a few things
+in /proc.
+
+My approach here was we should be conservative.  We should
+only mark things that we basically already know can change
+at any time, so a process would not be confused if they
+changed.
+
+Things like /proc/kcore are a bit trickier and should be
+left alone for now.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/fs/ext2/dir.c  |    1 +
- linux-2.6.git-dave/fs/ext2/file.c |    2 ++
- linux-2.6.git-dave/fs/ext3/dir.c  |    1 +
- linux-2.6.git-dave/fs/ext3/file.c |    1 +
- linux-2.6.git-dave/fs/ext4/dir.c  |    1 +
- linux-2.6.git-dave/fs/ext4/file.c |    1 +
- 6 files changed, 7 insertions(+)
+ linux-2.6.git-dave/fs/proc/base.c    |    9 +++++++++
+ linux-2.6.git-dave/fs/proc/meminfo.c |    1 +
+ linux-2.6.git-dave/fs/proc/stat.c    |    1 +
+ linux-2.6.git-dave/mm/vmstat.c       |    4 ++++
+ 4 files changed, 15 insertions(+)
 
-diff -puN fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/dir.c
---- linux-2.6.git/fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext2/dir.c	2009-03-05 08:37:01.000000000 -0800
-@@ -721,4 +721,5 @@ const struct file_operations ext2_dir_op
- 	.compat_ioctl	= ext2_compat_ioctl,
+diff -puN fs/proc/base.c~add-stupid-checkpoint-to-proc-0 fs/proc/base.c
+--- linux-2.6.git/fs/proc/base.c~add-stupid-checkpoint-to-proc-0	2009-03-05 08:37:02.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/base.c	2009-03-05 08:37:02.000000000 -0800
+@@ -690,6 +690,7 @@ static const struct file_operations proc
+ 	.llseek		= seq_lseek,
+ 	.release	= mounts_release,
+ 	.poll		= mounts_poll,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static int mountinfo_open(struct inode *inode, struct file *file)
+@@ -703,6 +704,7 @@ static const struct file_operations proc
+ 	.llseek		= seq_lseek,
+ 	.release	= mounts_release,
+ 	.poll		= mounts_poll,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static int mountstats_open(struct inode *inode, struct file *file)
+@@ -715,6 +717,7 @@ static const struct file_operations proc
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= mounts_release,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ #define PROC_BLOCK_SIZE	(3*1024)		/* 4K page size but our output routines use some slack for overruns */
+@@ -751,6 +754,7 @@ out_no_task:
+ 
+ static const struct file_operations proc_info_file_operations = {
+ 	.read		= proc_info_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static int proc_single_show(struct seq_file *m, void *v)
+@@ -790,6 +794,7 @@ static const struct file_operations proc
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= single_release,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static int mem_open(struct inode* inode, struct file* file)
+@@ -1008,6 +1013,7 @@ out_no_task:
+ 
+ static const struct file_operations proc_environ_operations = {
+ 	.read		= environ_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static ssize_t oom_adjust_read(struct file *file, char __user *buf,
+@@ -1063,6 +1069,7 @@ static ssize_t oom_adjust_write(struct f
+ static const struct file_operations proc_oom_adjust_operations = {
+ 	.read		= oom_adjust_read,
+ 	.write		= oom_adjust_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ #ifdef CONFIG_AUDITSYSCALL
+@@ -1130,6 +1137,7 @@ out_free_page:
+ static const struct file_operations proc_loginuid_operations = {
+ 	.read		= proc_loginuid_read,
+ 	.write		= proc_loginuid_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static ssize_t proc_sessionid_read(struct file * file, char __user * buf,
+@@ -1150,6 +1158,7 @@ static ssize_t proc_sessionid_read(struc
+ 
+ static const struct file_operations proc_sessionid_operations = {
+ 	.read		= proc_sessionid_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
  #endif
- 	.fsync		= ext2_sync_file,
-+	.checkpoint	= generic_file_checkpoint,
- };
-diff -puN fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/file.c
---- linux-2.6.git/fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext2/file.c	2009-03-05 08:37:01.000000000 -0800
-@@ -58,6 +58,7 @@ const struct file_operations ext2_file_o
- 	.fsync		= ext2_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+	.checkpoint	= generic_file_checkpoint,
- };
  
- #ifdef CONFIG_EXT2_FS_XIP
-@@ -73,6 +74,7 @@ const struct file_operations ext2_xip_fi
- 	.open		= generic_file_open,
- 	.release	= ext2_release_file,
- 	.fsync		= ext2_sync_file,
-+	.checkpoint	= generic_file_checkpoint,
- };
- #endif
- 
-diff -puN fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/dir.c
---- linux-2.6.git/fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext3/dir.c	2009-03-05 08:37:01.000000000 -0800
-@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_op
- #endif
- 	.fsync		= ext3_sync_file,	/* BKL held */
- 	.release	= ext3_release_dir,
+diff -puN fs/proc/meminfo.c~add-stupid-checkpoint-to-proc-0 fs/proc/meminfo.c
+--- linux-2.6.git/fs/proc/meminfo.c~add-stupid-checkpoint-to-proc-0	2009-03-05 08:37:02.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/meminfo.c	2009-03-05 08:37:02.000000000 -0800
+@@ -164,6 +164,7 @@ static const struct file_operations memi
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= single_release,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- 
-diff -puN fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/file.c
---- linux-2.6.git/fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext3/file.c	2009-03-05 08:37:01.000000000 -0800
-@@ -122,6 +122,7 @@ const struct file_operations ext3_file_o
- 	.fsync		= ext3_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
+ static int __init proc_meminfo_init(void)
+diff -puN fs/proc/stat.c~add-stupid-checkpoint-to-proc-0 fs/proc/stat.c
+--- linux-2.6.git/fs/proc/stat.c~add-stupid-checkpoint-to-proc-0	2009-03-05 08:37:02.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/stat.c	2009-03-05 08:37:02.000000000 -0800
+@@ -142,6 +142,7 @@ static const struct file_operations proc
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= single_release,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- const struct inode_operations ext3_file_inode_operations = {
-diff -puN fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/dir.c
---- linux-2.6.git/fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext4/dir.c	2009-03-05 08:37:01.000000000 -0800
-@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_op
- #endif
- 	.fsync		= ext4_sync_file,
- 	.release	= ext4_release_dir,
+ static int __init proc_stat_init(void)
+diff -puN mm/vmstat.c~add-stupid-checkpoint-to-proc-0 mm/vmstat.c
+--- linux-2.6.git/mm/vmstat.c~add-stupid-checkpoint-to-proc-0	2009-03-05 08:37:02.000000000 -0800
++++ linux-2.6.git-dave/mm/vmstat.c	2009-03-05 08:37:02.000000000 -0800
+@@ -598,6 +598,7 @@ static const struct file_operations frag
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= seq_release,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- 
-diff -puN fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/file.c
---- linux-2.6.git/fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/fs/ext4/file.c	2009-03-05 08:37:01.000000000 -0800
-@@ -156,6 +156,7 @@ const struct file_operations ext4_file_o
- 	.fsync		= ext4_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
+ static const struct seq_operations pagetypeinfo_op = {
+@@ -617,6 +618,7 @@ static const struct file_operations page
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= seq_release,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- const struct inode_operations ext4_file_inode_operations = {
+ #ifdef CONFIG_ZONE_DMA
+@@ -813,6 +815,7 @@ static const struct file_operations proc
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= seq_release,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static void *vmstat_start(struct seq_file *m, loff_t *pos)
+@@ -887,6 +890,7 @@ static const struct file_operations proc
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= seq_release,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ #endif /* CONFIG_PROC_FS */
+ 
 _
