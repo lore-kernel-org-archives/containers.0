@@ -1,14 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
 Subject: Re: [RFC][PATCH 8/8] check files for checkpointability
-Date: Wed, 04 Mar 2009 15:41:41 -0800
-Message-ID: <1236210101.22399.55.camel__5539.8573437289$1236210328$gmane$org@nimitz>
-References: <20090227203425.F3B51176@kernel>
-	<20090227203435.98735E54@kernel>  <20090228025743.GA22451@us.ibm.com>
+Date: Thu, 05 Mar 2009 09:20:42 +0100
+Message-ID: <49AF8B5A.4080505__32024.0621957511$1236241406$gmane$org@free.fr>
+References: <20090227203425.F3B51176@kernel>	<20090227203435.98735E54@kernel>
+	<20090302133754.GA8033@us.ibm.com>	<20090302095917.6cfeda55@thinkcentre.lan>	<1236011251.26788.450.camel@nimitz>	<20090302112247.76bb3662@thinkcentre.lan>	<1236015052.26788.471.camel@nimitz>
+	<20090302174433.GA12708@us.ibm.com>
+	<1236017600.26788.488.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090228025743.GA22451-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1236017600.26788.488.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,70 +20,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-02-27 at 18:57 -0800, Sukadev Bhattiprolu wrote: 
-> Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | 
-> | Introduce a files_struct counter to indicate whether a particular
-> | file_struct has ever contained a file which can not be
-> | checkpointed.  This flag is a one-way trip; once it is set, it may
-> | not be unset.
-> | 
-> | We assume at allocation that a new files_struct is clean and may
-> | be checkpointed.  However, as soon as it has had its files filled
-> | from its parent's, we check it for real in __scan_files_for_cr().
-> | At that point, we mark it if it contained any uncheckpointable
-> | files.
+Dave Hansen wrote:
+> On Mon, 2009-03-02 at 11:44 -0600, Serge E. Hallyn wrote:
+>> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>>> On Mon, 2009-03-02 at 11:22 -0600, Nathan Lynch wrote:
+>>>> No.. I mean what if a process 1234 does
+>>>>
+>>>> f = fopen("/proc/1234/stat", "r");
+>>>>
+>>>> and is then checkpointed.  Can that path be resolved during restart,
+>>>> before pid 1234 is alive?
+>>> Heh, that's a good one.
+>>>
+>>> It does mean that we can't do restore like this:
+>>>
+>>> 	for_each_cr_task()
+>>> 		restore_task_struct()
+>>> 		restore_files()
+>>> 		...
+>>>
+>>> We have to do:
+>>>
+>>> 	for_each_cr_task()
+>>> 		restore_task_struct()
+>>> 	for_each_cr_task()
+>>> 		restore_files()
+>>>
+>> Which is what we actually do, right?
 > 
-> Hmm. Why not just copy ->may_checkpoint setting from parent (or old)
-> files_struct ? If parent is not checkpointable, then child won't be
-> and vice-versa - no ?
-
-Because init does things that are uncheckpointable.  If we purely
-inherit, we'll never be able to checkpoint.
-
-> | +static void __scan_files_for_cr(struct files_struct *files)
-> | +{
-> | +	int i;
-> | +
-> | +	for (i = 0; i < files->fdtab.max_fds; i++) {
-> | +		struct file *f = fcheck_files(files, i);
-> | +		if (!f)
-> | +			continue;
-> | +		if (cr_file_supported(f))
-> | +			continue;
-> | +		files_deny_checkpointing(files);
-> | +	}
-> | +}
-> | +
+> OK, I have a really evil one.
 > 
-> A version of __scan_files_for_cr() for CONFIG_CHECKPOINT_RESTART=n or...
+> What if task 1234 does:
 > 
-> |  /*
-> |   * Allocate a new files structure and copy contents from the
-> |   * passed in files structure.
-> | @@ -303,6 +318,9 @@ struct files_struct *dup_fd(struct files
-> |  		goto out;
-> | 
-> |  	atomic_set(&newf->count, 1);
-> | +#ifdef CONFIG_CHECKPOINT_RESTART
-> | +	newf->may_checkpoint = 1;
-> | +#endif
-> | 
-> |  	spin_lock_init(&newf->file_lock);
-> |  	newf->next_fd = 0;
-> | @@ -396,6 +414,7 @@ struct files_struct *dup_fd(struct files
-> | 
-> |  	rcu_assign_pointer(newf->fdt, new_fdt);
-> | 
-> | +	__scan_files_for_cr(newf);
+> 	open(O_RDONLY, "/proc/5678/fdinfo/44");
 > 
-> ... #ifdef CONFIG_CHECKPOINT_RESTART here ?
+> and task 5678 does:
+> 
+> 	open(O_RDONLY, "/proc/5678/fdinfo/55");
+> 
+> There is no right order.
+> 
+> The only right way I can think to do it is that we have to loop on the
+> restore and defer files that we can't seem to find right now, hoping
+> that they'll show up as the restore progresses.
 
-gcc isn't quite smart enough to figure out that this is a noop.  Please
-see my new set for a new compiler helper to solve this problem.
+or the restore algorithm should support recursion. for example, epoll, 
+attached 'struct files' to af_unix socket, pipes (2 ends), fifos (idem),
+connected socket (you need the listening end), etc. 
 
--- Dave
+C.
+
+> Basically:
+> 
+> 	for_each_cr_task()
+> 		deferred_files = restore_files()
+> retry:
+> 	making_progress = 0
+> 	for_each(deferred_file)
+> 		restore(deferred_file)
+> 	if (making_progress)
+> 		goto retry;
