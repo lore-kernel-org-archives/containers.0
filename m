@@ -1,7 +1,8 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 11/11] optimize c/r check in dup_fd()
-Date: Thu, 05 Mar 2009 08:39:13 -0800
-Message-ID: <20090305163913.E59C59BB@kernel>
+Subject: [RFC][PATCH 08/11] expose file checkpointability and reasoning in
+	/proc
+Date: Thu, 05 Mar 2009 08:39:09 -0800
+Message-ID: <20090305163909.4204C711@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,34 +23,47 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-__scan_files_for_cr() should compile down to nothing
-if checkpoint/restart is disabled.
+This is the first in a set of things that checked to
+ensure that a process or entire container is
+able to be checkpointed.
 
-But, I think the spinlocks in fcheck_files() keep
-the compiler from figuring this out.  So, instead
-if putting in some #ifdefs, use our new cr_enabled()
-helper.
-
-I've verified that this puts .text size back to
-where it was without the __scan_files_for_cr() call.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/fs/file.c |    3 +++
- 1 file changed, 3 insertions(+)
+ linux-2.6.git-dave/fs/proc/base.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff -puN fs/file.c~optimize-cr-checkk fs/file.c
---- linux-2.6.git/fs/file.c~optimize-cr-checkk	2009-03-05 08:37:05.000000000 -0800
-+++ linux-2.6.git-dave/fs/file.c	2009-03-05 08:37:05.000000000 -0800
-@@ -290,6 +290,9 @@ static void __scan_files_for_cr(struct f
- {
- 	int i;
+diff -puN fs/proc/base.c~proc-part-of-f_op-conversion fs/proc/base.c
+--- linux-2.6.git/fs/proc/base.c~proc-part-of-f_op-conversion	2009-03-05 08:37:03.000000000 -0800
++++ linux-2.6.git-dave/fs/proc/base.c	2009-03-05 08:37:03.000000000 -0800
+@@ -80,6 +80,7 @@
+ #include <linux/oom.h>
+ #include <linux/elf.h>
+ #include <linux/pid_namespace.h>
++#include <linux/checkpoint.h>
+ #include "internal.h"
  
-+	if (!cr_enabled())
-+		return;
+ /* NOTE:
+@@ -1645,6 +1646,7 @@ out:
+ 
+ static void proc_fd_write_info(struct file *file, char *info)
+ {
++	int checkpointable = 0;
+ 	int max = PROC_FDINFO_MAX;
+ 	int p = 0;
+ 	if (!info)
+@@ -1652,6 +1654,12 @@ static void proc_fd_write_info(struct fi
+ 
+ 	p += scnprintf(info+p, max-p, "pos:\t%lli\n", (long long) file->f_pos);
+ 	p += scnprintf(info+p, max-p, "flags:\t0%o\n", file->f_flags);
 +
- 	for (i = 0; i < files->fdtab.max_fds; i++) {
- 		struct file *f = fcheck_files(files, i);
- 		if (!f)
++	if (file->f_op->checkpoint)
++		checkpointable = 1;
++	p += scnprintf(info+p, max-p, "checkpointable:\t%d", checkpointable);
++	if (!checkpointable)
++		p += cr_explain_file(file, info+p, max-p);
+ }
+ 
+ static int proc_fd_info(struct inode *inode, struct path *path, char *info)
 _
