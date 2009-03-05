@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 07/11] file c/r: expose functions to query fs support
-Date: Thu, 05 Mar 2009 08:39:07 -0800
-Message-ID: <20090305163907.143E9D50@kernel>
+Subject: [RFC][PATCH 09/11] check files for checkpointability
+Date: Thu, 05 Mar 2009 08:39:10 -0800
+Message-ID: <20090305163910.5960D190@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,89 +22,148 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-This pair of functions will check to see whether a given
-'struct file' can be checkpointed.  If it can't be, the
-"explain" function can also give a description why.
+Introduce a files_struct counter to indicate whether a particular
+file_struct has ever contained a file which can not be
+checkpointed.  This flag is a one-way trip; once it is set, it may
+not be unset.
 
-Note that we assume the presence of an f_op->checkpoint
-implies that a file is always checkpointable.  That may
-have to change in the future, but it is a fixed rule
-for now.
-  
+We assume at allocation that a new files_struct is clean and may
+be checkpointed.  However, as soon as it has had its files filled
+from its parent's, we check it for real in __scan_files_for_cr().
+At that point, we mark it if it contained any uncheckpointable
+files.
+
+We also check each 'struct file' when it is installed in a fd
+slot.  This way, if anyone open()s or managed to dup() an
+unsuppored file, we can catch it.
+
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/checkpoint/ckpt_file.c     |   26 ++++++++++++++++++++++++++
- linux-2.6.git-dave/include/linux/checkpoint.h |   18 ++++++++++++++++++
- 2 files changed, 44 insertions(+)
+ linux-2.6.git-dave/fs/file.c                  |   19 +++++++++++++++++++
+ linux-2.6.git-dave/fs/open.c                  |    5 +++++
+ linux-2.6.git-dave/include/linux/checkpoint.h |   13 +++++++++++++
+ linux-2.6.git-dave/include/linux/fdtable.h    |    3 +++
+ 4 files changed, 40 insertions(+)
 
-diff -puN checkpoint/ckpt_file.c~cfcc333a1e665c38185a12ba119c32cf796dbd85 checkpoint/ckpt_file.c
---- linux-2.6.git/checkpoint/ckpt_file.c~cfcc333a1e665c38185a12ba119c32cf796dbd85	2009-03-05 08:37:03.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-03-05 08:37:03.000000000 -0800
-@@ -93,6 +93,32 @@ int generic_file_checkpoint(struct file 
- 	return 0;
+diff -puN fs/file.c~242c7afafb1a81c0d9a41085536f2197d81146e7 fs/file.c
+--- linux-2.6.git/fs/file.c~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
++++ linux-2.6.git-dave/fs/file.c	2009-03-05 08:37:04.000000000 -0800
+@@ -15,6 +15,7 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/bitops.h>
++#include <linux/checkpoint.h>
+ #include <linux/interrupt.h>
+ #include <linux/spinlock.h>
+ #include <linux/rcupdate.h>
+@@ -285,6 +286,20 @@ static int count_open_files(struct fdtab
+ 	return i;
  }
  
-+int cr_explain_file(struct file *file, char *explain, int left)
++static void __scan_files_for_cr(struct files_struct *files)
 +{
-+	struct inode *inode = file->f_dentry->d_inode;
++	int i;
 +
-+	if (!file->f_op->checkpoint)
-+		return scnprintf(explain, left, " (no checkpoint handler)");
-+
-+	if (special_file(inode->i_mode))
-+		return scnprintf(explain, left, " (special file)");
-+
-+	return 0;
++	for (i = 0; i < files->fdtab.max_fds; i++) {
++		struct file *f = fcheck_files(files, i);
++		if (!f)
++			continue;
++		if (cr_file_supported(f))
++			continue;
++		files_deny_checkpointing(files);
++	}
 +}
 +
-+int cr_file_supported(struct file *file)
-+{
-+	struct inode *inode = file->f_dentry->d_inode;
-+
-+	if (!file->f_op->checkpoint)
-+		return 0;
-+
-+	if (special_file(inode->i_mode))
-+		return 0;
-+
-+	return 1;
-+}
-+
- /* cr_write_fd_data - dump the state of a given file pointer */
- static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
+ /*
+  * Allocate a new files structure and copy contents from the
+  * passed in files structure.
+@@ -303,6 +318,9 @@ struct files_struct *dup_fd(struct files
+ 		goto out;
+ 
+ 	atomic_set(&newf->count, 1);
++#ifdef CONFIG_CHECKPOINT_RESTART
++	newf->may_checkpoint = 1;
++#endif
+ 
+ 	spin_lock_init(&newf->file_lock);
+ 	newf->next_fd = 0;
+@@ -396,6 +414,7 @@ struct files_struct *dup_fd(struct files
+ 
+ 	rcu_assign_pointer(newf->fdt, new_fdt);
+ 
++	__scan_files_for_cr(newf);
+ 	return newf;
+ 
+ out_release:
+diff -puN fs/open.c~242c7afafb1a81c0d9a41085536f2197d81146e7 fs/open.c
+--- linux-2.6.git/fs/open.c~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
++++ linux-2.6.git-dave/fs/open.c	2009-03-05 08:37:04.000000000 -0800
+@@ -29,6 +29,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/audit.h>
+ #include <linux/falloc.h>
++#include <linux/checkpoint.h>
+ 
+ int vfs_statfs(struct dentry *dentry, struct kstatfs *buf)
  {
-diff -puN include/linux/checkpoint.h~cfcc333a1e665c38185a12ba119c32cf796dbd85 include/linux/checkpoint.h
---- linux-2.6.git/include/linux/checkpoint.h~cfcc333a1e665c38185a12ba119c32cf796dbd85	2009-03-05 08:37:03.000000000 -0800
-+++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-03-05 08:37:03.000000000 -0800
-@@ -13,6 +13,8 @@
+@@ -1015,6 +1016,10 @@ void fd_install(unsigned int fd, struct 
+ {
+ 	struct files_struct *files = current->files;
+ 	struct fdtable *fdt;
++
++	if (!cr_file_supported(file))
++		files_deny_checkpointing(files);
++
+ 	spin_lock(&files->file_lock);
+ 	fdt = files_fdtable(files);
+ 	BUG_ON(fdt->fd[fd] != NULL);
+diff -puN include/linux/checkpoint.h~242c7afafb1a81c0d9a41085536f2197d81146e7 include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-03-05 08:37:04.000000000 -0800
+@@ -12,6 +12,7 @@
+ 
  #include <linux/path.h>
  #include <linux/fs.h>
++#include <linux/fdtable.h>
  
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+
- #define CR_VERSION  2
+ #ifdef CONFIG_CHECKPOINT_RESTART
  
- struct cr_ctx {
-@@ -99,4 +101,20 @@ extern int cr_read_files(struct cr_ctx *
+@@ -101,11 +102,23 @@ extern int cr_read_files(struct cr_ctx *
  
  #define pr_fmt(fmt) "[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__
  
-+int cr_explain_file(struct file *file, char *explain, int left);
-+int cr_file_supported(struct file *file);
-+
-+#else /* !CONFIG_CHECKPOINT_RESTART */
-+
-+static inline int cr_explain_file(struct file *file, char *explain, int left)
++static inline void __files_deny_checkpointing(struct files_struct *files,
++		char *file, int line)
 +{
-+	return 0;
++	if (!test_and_clear_bit(0, &files->may_checkpoint))
++		return;
++	printk(KERN_INFO "process performed an action that can not be "
++			"checkpointed at: %s:%d\n", file, line);
 +}
++#define files_deny_checkpointing(f)  \
++	__files_deny_checkpointing(f, __FILE__, __LINE__)
 +
-+static inline int cr_file_supported(struct file *file)
-+{
-+	return 0;
-+}
-+
-+#endif /* CONFIG_CHECKPOINT_RESTART */
- #endif /* _CHECKPOINT_CKPT_H_ */
+ int cr_explain_file(struct file *file, char *explain, int left);
+ int cr_file_supported(struct file *file);
+ 
+ #else /* !CONFIG_CHECKPOINT_RESTART */
+ 
++static inline void files_deny_checkpointing(struct files_struct *files) {}
+ static inline int cr_explain_file(struct file *file, char *explain, int left)
+ {
+ 	return 0;
+diff -puN include/linux/fdtable.h~242c7afafb1a81c0d9a41085536f2197d81146e7 include/linux/fdtable.h
+--- linux-2.6.git/include/linux/fdtable.h~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
++++ linux-2.6.git-dave/include/linux/fdtable.h	2009-03-05 08:37:04.000000000 -0800
+@@ -45,6 +45,9 @@ struct files_struct {
+ 	atomic_t count;
+ 	struct fdtable *fdt;
+ 	struct fdtable fdtab;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	unsigned long may_checkpoint;
++#endif
+   /*
+    * written part on a separate cache line in SMP
+    */
 _
