@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 04/11] actually use f_op in checkpoint code
-Date: Thu, 05 Mar 2009 08:39:02 -0800
-Message-ID: <20090305163902.C0DC6044@kernel>
+Subject: [RFC][PATCH 07/11] file c/r: expose functions to query fs support
+Date: Thu, 05 Mar 2009 08:39:07 -0800
+Message-ID: <20090305163907.143E9D50@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,66 +22,89 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-Right now, we assume all normal files and directories
-can be checkpointed.  However, as usual in the VFS, there
-are specialized places that will always need an ability
-to override these defaults.  We could do this completely
-in the checkpoint code, but that would bitrot quickly.
+This pair of functions will check to see whether a given
+'struct file' can be checkpointed.  If it can't be, the
+"explain" function can also give a description why.
 
-This adds a new 'file_operations' function for
-checkpointing a file.  I did this under the assumption
-that we should have a dirt-simple way to make something
-(un)checkpointable that fits in with current code.
-
-As you can see in the ext[234] and /proc patches, all
-that we have to do to make something simple be
-supported is add a single "generic" f_op entry.
-
+Note that we assume the presence of an f_op->checkpoint
+implies that a file is always checkpointable.  That may
+have to change in the future, but it is a fixed rule
+for now.
+  
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/checkpoint/ckpt_file.c |    4 ++--
- linux-2.6.git-dave/include/linux/fs.h     |    9 +++++++++
- 2 files changed, 11 insertions(+), 2 deletions(-)
+ linux-2.6.git-dave/checkpoint/ckpt_file.c     |   26 ++++++++++++++++++++++++++
+ linux-2.6.git-dave/include/linux/checkpoint.h |   18 ++++++++++++++++++
+ 2 files changed, 44 insertions(+)
 
-diff -puN checkpoint/ckpt_file.c~f_op-for-checkpointability checkpoint/ckpt_file.c
---- linux-2.6.git/checkpoint/ckpt_file.c~f_op-for-checkpointability	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-03-05 08:37:01.000000000 -0800
-@@ -106,8 +106,8 @@ static int cr_write_fd_data(struct cr_ct
+diff -puN checkpoint/ckpt_file.c~cfcc333a1e665c38185a12ba119c32cf796dbd85 checkpoint/ckpt_file.c
+--- linux-2.6.git/checkpoint/ckpt_file.c~cfcc333a1e665c38185a12ba119c32cf796dbd85	2009-03-05 08:37:03.000000000 -0800
++++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2009-03-05 08:37:03.000000000 -0800
+@@ -93,6 +93,32 @@ int generic_file_checkpoint(struct file 
+ 	return 0;
+ }
  
- 	hh->fd_type = CR_FD_UNSET;
- 	ret = -EBADF;
--	if ((file->f_dentry->d_inode->i_mode & S_IFMT) == S_IFREG)
--		ret = generic_file_checkpoint(file, ctx, hh);
-+	if (file->f_op->checkpoint)
-+		ret = file->f_op->checkpoint(file, ctx, hh);
- 
- 	if (ret)
- 		goto out;
-diff -puN include/linux/fs.h~f_op-for-checkpointability include/linux/fs.h
---- linux-2.6.git/include/linux/fs.h~f_op-for-checkpointability	2009-03-05 08:37:01.000000000 -0800
-+++ linux-2.6.git-dave/include/linux/fs.h	2009-03-05 08:37:01.000000000 -0800
-@@ -1296,6 +1296,14 @@ int generic_osync_inode(struct inode *, 
- typedef int (*filldir_t)(void *, const char *, int, loff_t, u64, unsigned);
- struct block_device_operations;
- 
-+struct cr_ctx;
-+struct cr_hdr_fd;
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+int generic_file_checkpoint(struct file *, struct cr_ctx *, struct cr_hdr_fd *);
-+#else
-+#define generic_file_checkpoint NULL
-+#endif
++int cr_explain_file(struct file *file, char *explain, int left)
++{
++	struct inode *inode = file->f_dentry->d_inode;
 +
- /* These macros are for out of kernel modules to test that
-  * the kernel supports the unlocked_ioctl and compat_ioctl
-  * fields in struct file_operations. */
-@@ -1334,6 +1342,7 @@ struct file_operations {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
- 	int (*setlease)(struct file *, long, struct file_lock **);
-+	int (*checkpoint)(struct file *, struct cr_ctx *, struct cr_hdr_fd *);
- };
++	if (!file->f_op->checkpoint)
++		return scnprintf(explain, left, " (no checkpoint handler)");
++
++	if (special_file(inode->i_mode))
++		return scnprintf(explain, left, " (special file)");
++
++	return 0;
++}
++
++int cr_file_supported(struct file *file)
++{
++	struct inode *inode = file->f_dentry->d_inode;
++
++	if (!file->f_op->checkpoint)
++		return 0;
++
++	if (special_file(inode->i_mode))
++		return 0;
++
++	return 1;
++}
++
+ /* cr_write_fd_data - dump the state of a given file pointer */
+ static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
+ {
+diff -puN include/linux/checkpoint.h~cfcc333a1e665c38185a12ba119c32cf796dbd85 include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~cfcc333a1e665c38185a12ba119c32cf796dbd85	2009-03-05 08:37:03.000000000 -0800
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-03-05 08:37:03.000000000 -0800
+@@ -13,6 +13,8 @@
+ #include <linux/path.h>
+ #include <linux/fs.h>
  
- struct inode_operations {
++#ifdef CONFIG_CHECKPOINT_RESTART
++
+ #define CR_VERSION  2
+ 
+ struct cr_ctx {
+@@ -99,4 +101,20 @@ extern int cr_read_files(struct cr_ctx *
+ 
+ #define pr_fmt(fmt) "[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__
+ 
++int cr_explain_file(struct file *file, char *explain, int left);
++int cr_file_supported(struct file *file);
++
++#else /* !CONFIG_CHECKPOINT_RESTART */
++
++static inline int cr_explain_file(struct file *file, char *explain, int left)
++{
++	return 0;
++}
++
++static inline int cr_file_supported(struct file *file)
++{
++	return 0;
++}
++
++#endif /* CONFIG_CHECKPOINT_RESTART */
+ #endif /* _CHECKPOINT_CKPT_H_ */
 _
