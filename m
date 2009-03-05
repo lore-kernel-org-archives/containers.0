@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 02/11] breakout fdinfo sprintf() into its own function
-Date: Thu, 05 Mar 2009 08:38:59 -0800
-Message-ID: <20090305163859.584741AF__18927.6279103526$1236271293$gmane$org@kernel>
+Subject: [RFC][PATCH 10/11] add checkpoint/restart compile helper
+Date: Thu, 05 Mar 2009 08:39:12 -0800
+Message-ID: <20090305163912.3A8363E9@kernel>
 References: <20090305163857.0C18F3FD@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,66 +22,42 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-I'll be adding to this in a moment and it is in a bad place
-to do that cleanly now.
-
-Also, increase the buffer size.  Most /proc files can
-output up to a page, so use the same here.
+This is to aid the compiler a little bit so that we
+don't have to add as many #ifdefs.  Gets used in the
+next patch.
 
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/fs/proc/base.c |   23 +++++++++++++++--------
- 1 file changed, 15 insertions(+), 8 deletions(-)
+ linux-2.6.git-dave/include/linux/checkpoint.h |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff -puN fs/proc/base.c~breakout-fdinfo-sprintf fs/proc/base.c
---- linux-2.6.git/fs/proc/base.c~breakout-fdinfo-sprintf	2009-03-05 08:37:00.000000000 -0800
-+++ linux-2.6.git-dave/fs/proc/base.c	2009-03-05 08:37:00.000000000 -0800
-@@ -1632,7 +1632,18 @@ out:
- 	return ~0U;
- }
+diff -puN include/linux/checkpoint.h~cr-compile-helper include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~cr-compile-helper	2009-03-05 08:37:04.000000000 -0800
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-03-05 08:37:04.000000000 -0800
+@@ -115,6 +115,10 @@ static inline void __files_deny_checkpoi
  
--#define PROC_FDINFO_MAX 64
-+#define PROC_FDINFO_MAX PAGE_SIZE
-+
-+static void proc_fd_write_info(struct file *file, char *info)
+ int cr_explain_file(struct file *file, char *explain, int left);
+ int cr_file_supported(struct file *file);
++static inline int cr_enabled(void)
 +{
-+	int max = PROC_FDINFO_MAX;
-+	int p = 0;
-+	if (!info)
-+		return;
-+
-+	p += scnprintf(info+p, max-p, "pos:\t%lli\n", (long long) file->f_pos);
-+	p += scnprintf(info+p, max-p, "flags:\t0%o\n", file->f_flags);
++	return 1;
 +}
  
- static int proc_fd_info(struct inode *inode, struct path *path, char *info)
- {
-@@ -1657,12 +1668,7 @@ static int proc_fd_info(struct inode *in
- 				*path = file->f_path;
- 				path_get(&file->f_path);
- 			}
--			if (info)
--				snprintf(info, PROC_FDINFO_MAX,
--					 "pos:\t%lli\n"
--					 "flags:\t0%o\n",
--					 (long long) file->f_pos,
--					 file->f_flags);
-+			proc_fd_write_info(file, info);
- 			spin_unlock(&files->file_lock);
- 			put_files_struct(files);
- 			return 0;
-@@ -1870,10 +1876,11 @@ static int proc_readfd(struct file *filp
- static ssize_t proc_fdinfo_read(struct file *file, char __user *buf,
- 				      size_t len, loff_t *ppos)
- {
--	char tmp[PROC_FDINFO_MAX];
-+	char *tmp = kmalloc(PROC_FDINFO_MAX, GFP_KERNEL);
- 	int err = proc_fd_info(file->f_path.dentry->d_inode, NULL, tmp);
- 	if (!err)
- 		err = simple_read_from_buffer(buf, len, ppos, tmp, strlen(tmp));
-+	kfree(tmp);
- 	return err;
- }
+ #else /* !CONFIG_CHECKPOINT_RESTART */
  
+@@ -128,6 +132,13 @@ static inline int cr_file_supported(stru
+ {
+ 	return 0;
+ }
++/*
++ * Use this when you can in lieu of an #ifdef
++ */
++static inline int cr_enabled(void)
++{
++	return 0;
++}
+ 
+ #endif /* CONFIG_CHECKPOINT_RESTART */
+ #endif /* _CHECKPOINT_CKPT_H_ */
 _
