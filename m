@@ -1,15 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC][PATCH 00/11] track files for checkpointability
-Date: Tue, 10 Mar 2009 11:20:26 -0500
-Message-ID: <20090310162026.GA9354__14837.45001392$1236702731$gmane$org@us.ibm.com>
+Date: Tue, 10 Mar 2009 11:23:50 -0500
+Message-ID: <20090310162350.GB9354__39516.8731025935$1236702890$gmane$org@us.ibm.com>
 References: <20090305163857.0C18F3FD@kernel>
 	<20090310105702.43eb1402@thinkcentre.lan>
+	<20090310110000.24893e0c@thinkcentre.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090310105702.43eb1402-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
+In-Reply-To: <20090310110000.24893e0c-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,41 +25,51 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> Please consider this and a following patch.
-> 
-> >From a0fb96aa41c4d360559013cfd7f32f07f449c1c4 Mon Sep 17 00:00:00 2001
+> >From 3695fbda6225d2436e4af67a4bce6984df0891be Mon Sep 17 00:00:00 2001
 > From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-> Date: Mon, 9 Mar 2009 22:23:02 -0500
-> Subject: [PATCH] checkpoint: make files_deny_checkpointing print task name and pid
+> Date: Mon, 9 Mar 2009 22:36:40 -0500
+> Subject: [PATCH] ratelimit files_deny_checkpointing output
 > 
-> This lets the developer know *which* task performed an action that
-> prevents checkpoint.
-> 
-> 
+> Any common distribution's boot sequence causes thousands of
+> "<something> performed an action that cannot be checkpointed"
+> messages.  Kernels are known to produce other messages of interest at
+> times,
+
+nonense...
+
+> so ratelimit the output of files_deny_checkpointing.
+
+Yes, please.
+
 > Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
 > ---
->  fs/file.c                  |    2 +-
->  fs/open.c                  |    2 +-
->  include/linux/checkpoint.h |   13 +++++++------
->  3 files changed, 9 insertions(+), 8 deletions(-)
+>  include/linux/checkpoint.h |    6 ++++--
+>  1 files changed, 4 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/file.c b/fs/file.c
-> index 0501af6..fcb2803 100644
-> --- a/fs/file.c
-> +++ b/fs/file.c
-> @@ -299,7 +299,7 @@ static void __scan_files_for_cr(struct files_struct *files)
->  			continue;
->  		if (cr_file_supported(f))
->  			continue;
-> -		files_deny_checkpointing(files);
-> +		files_deny_checkpointing(current, files);
-
-Ah but you can't do this, because __scan_files_for_cr is called
-from dupfd which is called during copy_files, right?
-
-So you'll need to send the task into __scan_files_for_cr, right?
-
-I do wholeheartedly agree with the idea though.
-
-thanks,
--serge
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 27366ac..efdb8f0 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -108,8 +108,10 @@ static inline void __files_deny_checkpointing(const struct task_struct *tsk,
+>  {
+>  	if (!test_and_clear_bit(0, &files->may_checkpoint))
+>  		return;
+> -	printk(KERN_INFO "%s/%i performed an action that can not be "
+> -	       "checkpointed at: %s:%d\n", tsk->comm, tsk->pid, file, line);
+> +	if (printk_ratelimit())
+> +		printk(KERN_INFO "%s/%i performed an action that can not be "
+> +				"checkpointed at: %s:%d\n",
+> +				tsk->comm, tsk->pid, file, line);
+>  }
+>  #define files_deny_checkpointing(tsk,f)				\
+>  	__files_deny_checkpointing(tsk, f, __FILE__, __LINE__)
+> -- 
+> 1.6.0.6
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
