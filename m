@@ -1,8 +1,8 @@
-From: hut Crump <conspire-xM/nA0DbR+Vl57MIdRCFDg@public.gmane.org>
-Subject: MD List
-Date: Wed, 11 Mar 2009 14:51:06 +0200
-Message-ID: <da2761ba-befe-4f69-9e78-b2d6b5e388b7@gl-server.local.grantleigh.co.za>
-Reply-To: hut Crump <noreplyhere-dY8dr7OXV/uGaxxthHjfDUEOCMrvLtNR@public.gmane.org>
+From: "Leona Houser" <Akers_Edmund-1mzRgePW2/wS+FvcfC7Uqw@public.gmane.org>
+Subject: MD Database in the US
+Date: Wed, 11 Mar 2009 13:49:58 +0100
+Message-ID: <OF897E12F4.487BE77A-ONC1257576.00467E79@icomkft.hu>
+Reply-To: Leona Houser <noreplyhere-dY8dr7OXV/uGaxxthHjfDUEOCMrvLtNR@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,41 +16,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: howman-WI+1/yke35Y@public.gmane.org, bambina_priscilla-fZsAqLoOLWc@public.gmane.org, anilp-jKOIEHm7hE12JnaGHHonKe1GAupnlqi7@public.gmane.org, sales-SbWBNd3U8zlP/mTvfkRUKA@public.gmane.org, hom_wu-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, seznam-oSqHw6TIcYk@public.gmane.org, ekwabo-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, containers-cunTk1MwBs9kibMonLAN/Q@public.gmane.org
+To: toddulman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, dilinger-nReEUC9YoSk@public.gmane.org, sociale.berlino-DDSYH7JHKsleoWH0uzbU5w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Certified MDs in the USA 
+Currently Practicing MDs in the US 
 
-788,290 in total <> 17,400 emails
+788,459 in total <> 17,835 emails
 
-MDs in many different specialties
+Lots of MDs in specialties like Orthopedics, Surgery, Radiology, Dermatology, Neurology, General Practice etc..
 
 Can easily be sorted by 16 different fields
 
-Reduced to only: $394
+This week only you pay only: $398
 
 
-*** ITEMS BELOW ARE INCLUDED IN THE DEAL AT NO EXTRA COST ***
+{}{}{} ITEMS BELOW ARE INCLUDED IN THE DEAL AT NO EXTRA COST {}{}{}
 
-<> American Pharmaceutical Company Database
-  47,000 personal emails and names of decision makers
+**> List of US Pharma Companies
+  47,000 names and emails of the major positions
 
-<> Complete Database of Hospitals in the US
-  Full data for all the major positions in more than 7k facilities
+**> Complete Listing of Hospitals in America
+  more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
 
-<> Database of American Dentists
-  Practically every dentist in the United States is listed here
+**> Complete and Accurate Database for Dental Service Providers
+  597,000 dentists and dental services ( a $350 value!) 
 
-<> Listing of US Chiropractors
-  Over than 100k chiropractors practicing in the United States
+**> American Chiropractors Listing
+  100,000 Chiropractors in the USA (worth $250 alone)
 
-Email us at:      Dempsey-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org
+send us an email:      Wiley-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org
 
   
 
-good until Mar 14
+valid until  Mar 14
 
 
-Send email to xyz-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org to ensure no further communication
+Forward email to xyz-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org to purge you from our records
