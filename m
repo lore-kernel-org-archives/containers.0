@@ -1,14 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 7/7] [RFC] Example multi-bindable subsystem: a per-cgroup
-	notes field
-Date: Thu, 12 Mar 2009 03:51:53 -0700
-Message-ID: <20090312105153.24154.29389.stgit@menage.corp.google.com>
-References: <20090312104507.24154.71691.stgit@menage.corp.google.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO Controller
+Date: Thu, 12 Mar 2009 09:43:05 -0400
+Message-ID: <20090312134305.GB10919@redhat.com>
+References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
+	<49B8810B.7030603@oss.ntt.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090312104507.24154.71691.stgit-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <49B8810B.7030603-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,174 +19,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+To: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Cc: oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[RFC] Example multi-bindable subsystem: a per-cgroup notes field
+On Thu, Mar 12, 2009 at 12:27:07PM +0900, Takuya Yoshikawa wrote:
+> Hi Vivek,
+>
+> Could you tell me to which kernel I can apply your patches?
+>   # latest mm?
+> I would like to test your controller.
+>
 
-As an example of a multiply-bindable subsystem, this patch introduces
-the "info" subsystem, which provides a single file, "info.notes", in
-which user-space middleware can store an arbitrary (up to one page)
-string representing configuration data about that cgroup. This reduces
-the need to keep additional state outside the cgroup filesystem.
+Hi Takuya,
 
-TODO: a single page is somewhat limiting - the file limit should be
-userspace-configurable, and the system should store large notes in a
-vector of pages (to avoid trying to kmalloc() an excessively large
-chunk of memory. (Or maybe just use vmalloc())
+These apply on linus git tree (2.6.29-rc7).
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Thanks
+Vivek
 
----
-
- include/linux/cgroup_subsys.h |    6 +++
- init/Kconfig                  |    8 ++++
- kernel/Makefile               |    1 
- kernel/info_cgroup.c          |   93 +++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 108 insertions(+), 0 deletions(-)
- create mode 100644 kernel/info_cgroup.c
-
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index f78605e..5dfea38 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -60,3 +60,9 @@ SUBSYS(net_cls)
- #endif
- 
- /* */
-+
-+#ifdef CONFIG_CGROUP_INFO
-+MULTI_SUBSYS(info)
-+#endif
-+
-+/* */
-diff --git a/init/Kconfig b/init/Kconfig
-index fd5e3be..018601b 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -604,6 +604,14 @@ config CGROUP_MEM_RES_CTLR_SWAP
- 	  there will be no overhead from this. Even when you set this config=y,
- 	  if boot option "noswapaccount" is set, swap will not be accounted.
- 
-+config CGROUP_INFO
-+	bool "Simple application-specific info cgroup subsystem
-+	help
-+	  Provides a simple cgroups subsystem with an "info.notes"
-+	  field, which can be used by middleware to store
-+	  application-specific configuration data about a cgroup. Can
-+	  be mounted on multiple hierarchies at once.
-+
- endif # CGROUPS
- 
- config MM_OWNER
-diff --git a/kernel/Makefile b/kernel/Makefile
-index bdc528f..782752f 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_CGROUPS) += cgroup.o
- obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
-+obj-$(CONFIG_CGROUP_INFO) += info_cgroup.o
- obj-$(CONFIG_UTS_NS) += utsname.o
- obj-$(CONFIG_USER_NS) += user_namespace.o
- obj-$(CONFIG_PID_NS) += pid_namespace.o
-diff --git a/kernel/info_cgroup.c b/kernel/info_cgroup.c
-new file mode 100644
-index 0000000..b8fdb37
---- /dev/null
-+++ b/kernel/info_cgroup.c
-@@ -0,0 +1,93 @@
-+/*
-+ * info_cgroup.c - simple cgroup providing a "notes" field
-+ */
-+
-+#include "linux/cgroup.h"
-+#include "linux/err.h"
-+#include "linux/seq_file.h"
-+
-+#define MAX_NOTES_LEN PAGE_SIZE
-+
-+struct info_cgroup {
-+	struct cgroup_subsys_state css;
-+	const char *notes;
-+	spinlock_t lock;
-+};
-+
-+static inline struct info_cgroup *cg_info(struct cgroup *cg)
-+{
-+	return container_of(cgroup_subsys_state(cg, info_subsys_id),
-+			    struct info_cgroup, css);
-+}
-+
-+static struct cgroup_subsys_state *info_create(struct cgroup_subsys *ss,
-+					       struct cgroup *cg)
-+{
-+	struct info_cgroup *info = kzalloc(sizeof(*info), GFP_KERNEL);
-+	if (!info)
-+		return ERR_PTR(-ENOMEM);
-+	spin_lock_init(&info->lock);
-+	return &info->css;
-+}
-+
-+static void info_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
-+{
-+	struct info_cgroup *css = cg_info(cont);
-+	kfree(css->notes);
-+	kfree(css);
-+}
-+
-+static int info_read(struct cgroup *cont,
-+		     struct cftype *cft,
-+		     struct seq_file *seq)
-+{
-+	struct info_cgroup *css = cg_info(cont);
-+	spin_lock(&css->lock);
-+	if (css->notes)
-+		seq_puts(seq, css->notes);
-+	spin_unlock(&css->lock);
-+	return 0;
-+}
-+
-+static int info_write(struct cgroup *cont,
-+		      struct cftype *cft,
-+		      const char *str) {
-+	struct info_cgroup *css = cg_info(cont);
-+	if (*str) {
-+		if (strlen(str) > MAX_NOTES_LEN)
-+			return -ENOSPC;
-+		str = kstrdup(str, GFP_KERNEL);
-+		if (!str)
-+			return -ENOMEM;
-+	} else {
-+		str = NULL;
-+	}
-+
-+	spin_lock(&css->lock);
-+	kfree(css->notes);
-+	css->notes = str;
-+	spin_unlock(&css->lock);
-+	return 0;
-+}
-+
-+static struct cftype info_files[] =  {
-+	{
-+		.name = "notes",
-+		.read_seq_string = info_read,
-+		.write_string = info_write,
-+	},
-+};
-+
-+static int info_populate(struct cgroup_subsys *ss, struct cgroup *cont)
-+{
-+	return cgroup_add_files(cont, ss, info_files,
-+				ARRAY_SIZE(info_files));
-+}
-+
-+struct cgroup_subsys info_subsys = {
-+	.name = "info",
-+	.create = info_create,
-+	.destroy = info_destroy,
-+	.populate = info_populate,
-+	.subsys_id = info_subsys_id,
-+};
+> Thank you,
+>   Takuya Yoshikawa
+>
+>
+> Vivek Goyal wrote:
+>>
+>> Hi All,
+>>
+>> Here is another posting for IO controller patches. Last time I had posted
+>> RFC patches for an IO controller which did bio control per cgroup.
+>>
+>> http://lkml.org/lkml/2008/11/6/227
+>>
+>> One of the takeaway from the discussion in this thread was that let us
+>> implement a common layer which contains the proportional weight scheduling
+>> code which can be shared by all the IO schedulers.
+>>
+>> Implementing IO controller will not cover the devices which don't use
+>> IO schedulers but it should cover the common case.
+>>
+>> There were more discussions regarding 2 level vs 1 level IO control at
+>> following link.
+>>
+>> https://lists.linux-foundation.org/pipermail/containers/2009-January/015402.html
+>>
+>> So in the mean time we took the discussion off the list and spent time on
+>> making the 1 level control apporoach work where majority of the proportional
+>> weight control is shared by the four schedulers instead of each one having
+>> to replicate the code. We make use of BFQ code for fair queuing as posted
+>> by Paolo and Fabio here.
+>>
+>> http://lkml.org/lkml/2008/11/11/148
+>>
+>> Details about design and howto have been put in documentation patch.
+>>
+>> I have done very basic testing of running 2 or 3 "dd" threads in different
+>> cgroups. Wanted to get the patchset out for feedback/review before we dive
+>> into more bug fixing, benchmarking, optimizations etc.
+>>
+>> Your feedback/comments are welcome.
+>>
+>> Patch series contains 10 patches. It should be compilable and bootable after
+>> every patch. Intial 2 patches implement flat fair queuing (no cgroup
+>> support) and make cfq to use that. Later patches introduce hierarchical
+>> fair queuing support in elevator layer and modify other IO schdulers to use
+>> that.
+>>
+>> Thanks
+>> Vivek
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+>>
