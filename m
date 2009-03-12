@@ -1,7 +1,8 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/7] [RFC] Support named cgroups hierarchies
-Date: Thu, 12 Mar 2009 03:51:22 -0700
-Message-ID: <20090312105122.24154.73633.stgit@menage.corp.google.com>
+Subject: [PATCH 2/7] [RFC]Move the cgroup debug subsys into cgroup.c to access
+	internal state
+Date: Thu, 12 Mar 2009 03:51:27 -0700
+Message-ID: <20090312105127.24154.39200.stgit@menage.corp.google.com>
 References: <20090312104507.24154.71691.stgit@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,296 +21,248 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[RFC] Support named cgroups hierarchies
+[RFC]Move the cgroup debug subsys into cgroup.c to access internal state
 
-To simplify referring to cgroup hierarchies in mount statements, and
-to allow disambiguation in the presence of empty hierarchies and
-multiply-bindable subsystems (see later patches in series) this patch
-adds support for naming a new cgroup hierarchy via the "name=" mount
-option
-
-A pre-existing hierarchy may be specified by either name or by
-subsystems; a hierarchy's name cannot be changed by a remount
-operation.
-
-Example usage:
-
-# To create a hierarchy called "foo" containing the "cpu" subsystem
-mount -t cgroup -oname=foo,cpu cgroup /mnt/cgroup1
-
-# To mount the "foo" hierarchy on a second location
-mount -t cgroup -oname=foo cgroup /mnt/cgroup2
-
-Open issues:
-
-- should the specification be via a name= option as in this patch, or
-  should we simply use the "device name" as passed to the mount()
-  system call?  Using the device name is more conceptually clean and
-  consistent with the filesystem API; however, given that the device
-  name is currently ignored by cgroups, this would lead to a
-  user-visible behaviour change.
+While it's architecturally clean to have the cgroup debug subsystem be
+completely independent of the cgroups framework, it limits its
+usefulness for debugging the contents of internal data structures.
+Move the debug subsystem code into the scope of all the cgroups data
+structures to make more detailed debugging possible.
 
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
- kernel/cgroup.c |  126 ++++++++++++++++++++++++++++++++++++-------------------
- 1 files changed, 82 insertions(+), 44 deletions(-)
+ kernel/Makefile       |    1 
+ kernel/cgroup.c       |   94 +++++++++++++++++++++++++++++++++++++++++++
+ kernel/cgroup_debug.c |  107 -------------------------------------------------
+ 3 files changed, 94 insertions(+), 108 deletions(-)
+ delete mode 100644 kernel/cgroup_debug.c
 
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 97b5060..bdc528f 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -57,7 +57,6 @@ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+-obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
+ obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 5995477..aa5edc8 100644
+index aa5edc8..ecf00ad 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -92,6 +92,9 @@ struct cgroupfs_root {
- 
- 	/* The path to use for release notifications. */
- 	char release_agent_path[PATH_MAX];
-+
-+	/* The name for this hierarchy - may be empty */
-+	char name[PATH_MAX];
- };
- 
- /*
-@@ -826,6 +829,8 @@ static int cgroup_show_options(struct seq_file *seq, struct vfsmount *vfs)
- 		seq_puts(seq, ",noprefix");
- 	if (strlen(root->release_agent_path))
- 		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
-+	if (strlen(root->name))
-+		seq_printf(seq, ",name=%s", root->name);
- 	mutex_unlock(&cgroup_mutex);
- 	return 0;
- }
-@@ -834,18 +839,22 @@ struct cgroup_sb_opts {
- 	unsigned long subsys_bits;
- 	unsigned long flags;
- 	char *release_agent;
-+	char *name;
-+	/* A flag indicating that a root was created from this options block */
-+	bool created_root;
- };
- 
- /* Convert a hierarchy specifier into a bitmask of subsystems and
-  * flags. */
- static int parse_cgroupfs_options(char *data,
--				     struct cgroup_sb_opts *opts)
-+				  struct cgroup_sb_opts *opts)
- {
- 	char *token, *o = data ?: "all";
- 
- 	opts->subsys_bits = 0;
- 	opts->flags = 0;
- 	opts->release_agent = NULL;
-+	opts->name = NULL;
- 
- 	while ((token = strsep(&o, ",")) != NULL) {
- 		if (!*token)
-@@ -870,6 +879,15 @@ static int parse_cgroupfs_options(char *data,
- 				return -ENOMEM;
- 			strncpy(opts->release_agent, token + 14, PATH_MAX - 1);
- 			opts->release_agent[PATH_MAX - 1] = 0;
-+		} else if (!strncmp(token, "name=", 5)) {
-+			/* Specifying two names is forbidden */
-+			if (opts->name)
-+				return -EINVAL;
-+			opts->name = kzalloc(PATH_MAX, GFP_KERNEL);
-+			if (!opts->name)
-+				return -ENOMEM;
-+			strncpy(opts->name, token + 5, PATH_MAX - 1);
-+			opts->name[PATH_MAX - 1] = 0;
- 		} else {
- 			struct cgroup_subsys *ss;
- 			int i;
-@@ -887,7 +905,7 @@ static int parse_cgroupfs_options(char *data,
+@@ -3645,3 +3645,97 @@ css_get_next(struct cgroup_subsys *ss, int id,
  	}
- 
- 	/* We can't have an empty hierarchy */
--	if (!opts->subsys_bits)
-+	if (!opts->subsys_bits && !opts->name)
- 		return -EINVAL;
- 
- 	return 0;
-@@ -914,6 +932,12 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 		goto out_unlock;
- 	}
- 
-+	/* Don't allow name to change at remount */
-+	if (opts.name && strcmp(opts.name, root->name)) {
-+		ret = -EINVAL;
-+		goto out_unlock;
-+	}
-+
- 	ret = rebind_subsystems(root, opts.subsys_bits);
- 	if (ret)
- 		goto out_unlock;
-@@ -925,6 +949,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 		strcpy(root->release_agent_path, opts.release_agent);
-  out_unlock:
- 	kfree(opts.release_agent);
-+	kfree(opts.name);
- 	mutex_unlock(&cgroup_mutex);
- 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
  	return ret;
-@@ -958,28 +983,56 @@ static void init_cgroup_root(struct cgroupfs_root *root)
- 
- static int cgroup_test_super(struct super_block *sb, void *data)
- {
--	struct cgroupfs_root *new = data;
-+	struct cgroup_sb_opts *new = data;
- 	struct cgroupfs_root *root = sb->s_fs_info;
- 
--	/* First check subsystems */
--	if (new->subsys_bits != root->subsys_bits)
--	    return 0;
-+	/* If we asked for a name then it must match */
-+	if (new->name && strcmp(new->name, root->name))
-+		return 0;
- 
--	/* Next check flags */
--	if (new->flags != root->flags)
-+	/* If we asked for subsystems then they must match */
-+	if (new->subsys_bits && new->subsys_bits != root->subsys_bits)
- 		return 0;
- 
- 	return 1;
  }
- 
-+static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
++
++#ifdef CONFIG_CGROUP_DEBUG
++static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
++						   struct cgroup *cont)
 +{
-+	struct cgroupfs_root *root;
++	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
 +
-+	if (!opts->subsys_bits)
-+		return ERR_PTR(-EINVAL);
-+
-+	root = kzalloc(sizeof(*root), GFP_KERNEL);
-+	if (!root)
++	if (!css)
 +		return ERR_PTR(-ENOMEM);
 +
-+	init_cgroup_root(root);
-+	root->subsys_bits = opts->subsys_bits;
-+	root->flags = opts->flags;
-+	if (opts->release_agent)
-+		strcpy(root->release_agent_path, opts->release_agent);
-+	if (opts->name)
-+		strcpy(root->name, opts->name);
-+	opts->created_root = true;
-+	return root;
++	return css;
 +}
 +
- static int cgroup_set_super(struct super_block *sb, void *data)
- {
- 	int ret;
--	struct cgroupfs_root *root = data;
-+	struct cgroup_sb_opts *opts = data;
-+	struct cgroupfs_root *root;
- 
-+	root = cgroup_root_from_opts(opts);
-+	if (IS_ERR(root))
-+		return PTR_ERR(root);
- 	ret = set_anon_super(sb, NULL);
--	if (ret)
-+	if (ret) {
-+		kfree(root);
- 		return ret;
-+	}
- 
- 	sb->s_fs_info = root;
- 	root->sb = sb;
-@@ -1018,47 +1071,26 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
- 			 int flags, const char *unused_dev_name,
- 			 void *data, struct vfsmount *mnt)
- {
--	struct cgroup_sb_opts opts;
-+	struct cgroup_sb_opts opts = { 0 };
- 	int ret = 0;
- 	struct super_block *sb;
--	struct cgroupfs_root *root;
--	struct list_head tmp_cg_links;
- 
- 	/* First find the desired set of subsystems */
- 	ret = parse_cgroupfs_options(data, &opts);
--	if (ret) {
--		kfree(opts.release_agent);
--		return ret;
--	}
--
--	root = kzalloc(sizeof(*root), GFP_KERNEL);
--	if (!root) {
--		kfree(opts.release_agent);
--		return -ENOMEM;
--	}
--
--	init_cgroup_root(root);
--	root->subsys_bits = opts.subsys_bits;
--	root->flags = opts.flags;
--	if (opts.release_agent) {
--		strcpy(root->release_agent_path, opts.release_agent);
--		kfree(opts.release_agent);
--	}
-+	if (ret)
-+		goto out_err;
- 
--	sb = sget(fs_type, cgroup_test_super, cgroup_set_super, root);
-+	sb = sget(fs_type, cgroup_test_super, cgroup_set_super, &opts);
- 
- 	if (IS_ERR(sb)) {
--		kfree(root);
--		return PTR_ERR(sb);
-+		ret = PTR_ERR(sb);
-+		goto out_err;
- 	}
- 
--	if (sb->s_fs_info != root) {
--		/* Reusing an existing superblock */
--		BUG_ON(sb->s_root == NULL);
--		kfree(root);
--		root = NULL;
--	} else {
-+	if (opts.created_root) {
- 		/* New superblock */
-+		struct cgroupfs_root *root = sb->s_fs_info;
-+		struct list_head tmp_cg_links;
- 		struct cgroup *root_cgrp = &root->top_cgroup;
- 		struct inode *inode;
- 		int i;
-@@ -1091,7 +1123,8 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
- 		if (ret == -EBUSY) {
- 			mutex_unlock(&cgroup_mutex);
- 			mutex_unlock(&inode->i_mutex);
--			goto free_cg_links;
-+			free_cg_links(&tmp_cg_links);
-+			goto drop_new_super;
- 		}
- 
- 		/* EBUSY should be the only error here */
-@@ -1130,11 +1163,14 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
- 	simple_set_mnt(mnt, sb);
- 	return 0;
- 
-- free_cg_links:
--	free_cg_links(&tmp_cg_links);
-  drop_new_super:
- 	up_write(&sb->s_umount);
- 	deactivate_super(sb);
++static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	kfree(cont->subsys[debug_subsys_id]);
++}
 +
-+ out_err:
-+	kfree(opts.release_agent);
-+	kfree(opts.name);
++static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	return atomic_read(&cont->count);
++}
 +
- 	return ret;
- }
- 
-@@ -2906,6 +2942,9 @@ static int proc_cgroup_show(struct seq_file *m, void *v)
- 		seq_printf(m, "%lu:", root->subsys_bits);
- 		for_each_subsys(root, ss)
- 			seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
-+		if (strlen(root->name))
-+			seq_printf(m, "%sname=%s",
-+				   count++ ? "," : "", root->name);
- 		seq_putc(m, ':');
- 		get_first_subsys(&root->top_cgroup, NULL, &subsys_id);
- 		cgrp = task_cgroup(tsk, subsys_id);
-@@ -3606,4 +3645,3 @@ css_get_next(struct cgroup_subsys *ss, int id,
- 	}
- 	return ret;
- }
++static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	u64 count;
++
++	cgroup_lock();
++	count = cgroup_task_count(cont);
++	cgroup_unlock();
++	return count;
++}
++
++static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
++{
++	return (u64)(long)current->cgroups;
++}
++
++static u64 current_css_set_refcount_read(struct cgroup *cont,
++					   struct cftype *cft)
++{
++	u64 count;
++
++	rcu_read_lock();
++	count = atomic_read(&current->cgroups->refcount);
++	rcu_read_unlock();
++	return count;
++}
++
++static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
++{
++	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
++}
++
++static struct cftype debug_files[] =  {
++	{
++		.name = "cgroup_refcount",
++		.read_u64 = cgroup_refcount_read,
++	},
++	{
++		.name = "taskcount",
++		.read_u64 = taskcount_read,
++	},
++
++	{
++		.name = "current_css_set",
++		.read_u64 = current_css_set_read,
++	},
++
++	{
++		.name = "current_css_set_refcount",
++		.read_u64 = current_css_set_refcount_read,
++	},
++
++	{
++		.name = "releasable",
++		.read_u64 = releasable_read,
++	},
++};
++
++static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, debug_files,
++				ARRAY_SIZE(debug_files));
++}
++
++struct cgroup_subsys debug_subsys = {
++	.name = "debug",
++	.create = debug_create,
++	.destroy = debug_destroy,
++	.populate = debug_populate,
++	.subsys_id = debug_subsys_id,
++};
++#endif /* CONFIG_CGROUP_DEBUG */
+diff --git a/kernel/cgroup_debug.c b/kernel/cgroup_debug.c
+deleted file mode 100644
+index daca620..0000000
+--- a/kernel/cgroup_debug.c
++++ /dev/null
+@@ -1,107 +0,0 @@
+-/*
+- * kernel/cgroup_debug.c - Example cgroup subsystem that
+- * exposes debug info
+- *
+- * Copyright (C) Google Inc, 2007
+- *
+- * Developed by Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org)
+- *
+- */
 -
+-#include <linux/cgroup.h>
+-#include <linux/fs.h>
+-#include <linux/slab.h>
+-#include <linux/rcupdate.h>
+-
+-#include <asm/atomic.h>
+-
+-static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
+-						   struct cgroup *cont)
+-{
+-	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
+-
+-	if (!css)
+-		return ERR_PTR(-ENOMEM);
+-
+-	return css;
+-}
+-
+-static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
+-{
+-	kfree(cont->subsys[debug_subsys_id]);
+-}
+-
+-static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return atomic_read(&cont->count);
+-}
+-
+-static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	u64 count;
+-
+-	cgroup_lock();
+-	count = cgroup_task_count(cont);
+-	cgroup_unlock();
+-	return count;
+-}
+-
+-static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return (u64)(long)current->cgroups;
+-}
+-
+-static u64 current_css_set_refcount_read(struct cgroup *cont,
+-					   struct cftype *cft)
+-{
+-	u64 count;
+-
+-	rcu_read_lock();
+-	count = atomic_read(&current->cgroups->refcount);
+-	rcu_read_unlock();
+-	return count;
+-}
+-
+-static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
+-{
+-	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
+-}
+-
+-static struct cftype files[] =  {
+-	{
+-		.name = "cgroup_refcount",
+-		.read_u64 = cgroup_refcount_read,
+-	},
+-	{
+-		.name = "taskcount",
+-		.read_u64 = taskcount_read,
+-	},
+-
+-	{
+-		.name = "current_css_set",
+-		.read_u64 = current_css_set_read,
+-	},
+-
+-	{
+-		.name = "current_css_set_refcount",
+-		.read_u64 = current_css_set_refcount_read,
+-	},
+-
+-	{
+-		.name = "releasable",
+-		.read_u64 = releasable_read,
+-	},
+-};
+-
+-static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
+-{
+-	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
+-}
+-
+-struct cgroup_subsys debug_subsys = {
+-	.name = "debug",
+-	.create = debug_create,
+-	.destroy = debug_destroy,
+-	.populate = debug_populate,
+-	.subsys_id = debug_subsys_id,
+-};
