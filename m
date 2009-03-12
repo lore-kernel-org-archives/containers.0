@@ -1,18 +1,21 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/10] Documentation
-Date: Thu, 12 Mar 2009 11:03:33 -0400
-Message-ID: <20090312150333.GH10919__21481.4122104601$1236871199$gmane$org@redhat.com>
-References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
-	<1236823015-4183-2-git-send-email-vgoyal@redhat.com>
-	<20090312100054.GA8024@linux.vnet.ibm.com>
-	<20090312140450.GE10919@redhat.com>
-	<20090312144842.GS12361@gandalf.sssup.it>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 00/11] track files for checkpointability
+Date: Thu, 12 Mar 2009 10:30:48 -0500
+Message-ID: <20090312153048.GA11147@hallyn.com>
+References: <20090305174037.GA2274@x200.localdomain>
+	<1236280567.22399.99.camel@nimitz>
+	<20090305210840.GA2499@x200.localdomain>
+	<1236288427.22399.122.camel@nimitz>
+	<20090305220044.GA2819@x200.localdomain>
+	<1236352121.5732.80.camel@bahia>
+	<20090306153549.GA898@us.ibm.com> <49B15F35.2010909@free.fr>
+	<20090306183055.GA6729@us.ibm.com> <49B76D91.1020807@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090312144842.GS12361-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+In-Reply-To: <49B76D91.1020807-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,73 +25,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 12, 2009 at 03:48:42PM +0100, Fabio Checconi wrote:
-> > From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > Date: Thu, Mar 12, 2009 10:04:50AM -0400
-> >
-> > On Thu, Mar 12, 2009 at 03:30:54PM +0530, Dhaval Giani wrote:
-> ...
-> > > > +Some Test Results
-> > > > +=================
-> > > > +- Two dd in two cgroups with prio 0 and 4. Ran two "dd" in those cgroups.
-> > > > +
-> > > > +234179072 bytes (234 MB) copied, 10.1811 s, 23.0 MB/s
-> > > > +234179072 bytes (234 MB) copied, 12.6187 s, 18.6 MB/s
-> > > > +
-> > > > +- Three dd in three cgroups with prio 0, 4, 4.
-> > > > +
-> > > > +234179072 bytes (234 MB) copied, 13.7654 s, 17.0 MB/s
-> > > > +234179072 bytes (234 MB) copied, 19.476 s, 12.0 MB/s
-> > > > +234179072 bytes (234 MB) copied, 20.1858 s, 11.6 MB/s
-> > > 
-> > > Hi Vivek,
-> > > 
-> > > I would be interested in knowing if these are the results expected?
-> > > 
+Quoting Cedric Le Goater (legoater-GANU6spQydw@public.gmane.org):
+> >> And if Ingo's requirement is fulfilled, would any C/R patchset be acceptable ?
 > > 
-> > Hi Dhaval, 
+> > Yup, no matter how hideous  :)  Ok not really.
 > > 
-> > Good question. Keeping current expectation in mind, yes these are expected
-> > results. To begin with, current expectations are that try to emulate
-> > cfq behavior and the kind of service differentiation we get between
-> > threads of different priority, same kind of service differentiation we
-> > should get from different cgroups.
-> >  
-> > Having said that, in theory a more accurate estimate should be amount 
-> > of actual disk time a queue/cgroup got. I have put a tracing message
-> > to keep track of total service received by a queue. If you run "blktrace"
-> > then you can see that. Ideally, total service received by two threads
-> > over a period of time should be in same proportion as their cgroup
-> > weights.
-> > 
-> > It will not be easy to achive it given the constraints we have got in
-> > terms of how to accurately we can account for disk time actually used by a
-> > queue in certain situations. So to begin with I am targetting that
-> > try to meet same kind of service differentation between cgroups as
-> > cfq provides between threads and then slowly refine it to see how
-> > close one can come to get accurate numbers in terms of "total_serivce"
-> > received by each queue.
-> > 
+> > But the point was that it wasn't Dave not understanding Alexey's
+> > suggestion, but Greg not understanding Ingo's.  If you think Ingo's
+> > goal isn't worthwhile or achievable, then argue that (as I am), don't
+> > keep elaborating on something we all agree will be needed (Alexey's
+> > suggestion or some other way of doing a true may-be-checkpointed test).
 > 
-> There is also another issue to consider; to achieve a proper weighted
-> distribution of ``service time'' (assuming that service time can be
-> attributed accurately) over any time window, we need also that the tasks
-> actually compete for disk service during this window.
-> 
-> For example, in the case above with three tasks, the highest weight task
-> terminates earlier than the other ones, so we have two time frames:
-> during the first one disk time is divided among all the three tasks
-> according to their weights, then the highest weight one terminates,
-> and disk time is divided (equally) among the remaining ones.
+> I rather spend my time on enabling things rather than forbid them. 
 
-True. But we can do one thing. I am printing total_service every time
-a queue expires(elv_ioq_served()). So when first task exits, at that
-point of time, we can see how much service each competing queue has
-received till that point and it should be proportionate to queue's weight.
+That sure sounds productive.  How could I argue with that.
 
-Thanks
-Vivek
+But wait, haven't several teams been doing that for years?  So why is
+c/r not in the upstream kernel?  Could it be that ignoring the
+upstream maintainers' concerns about (a) treating the feature as a
+toy, (b) long-term maintainability, and (c) c/r becoming an impediment
+to future features, and instead hacking away at our toy feature, is
+*not* always the best course?
+
+Now I actually don't think you believe it's politically possible for
+c/r to get upstream.  But I do.
+
+Getting back on track.  Ingo's concern is that this turn into a toy feature
+rather than something which serious apps can rely on.  To address that
+he wants an application to be able to tell whether or not it is
+checkpointable, and, if not, then why not.
+
+Now Alexey also has a suggestion for addressing this.  It has (at least)
+two shortcomings relative to Dave's:
+
+	1. it is more prone to race conditions.  If an app opens an
+uncheckpointable file briefly and then closes it, and later reopens
+it, then it may think it is checkpointable even though it could have
+already known it is not always.  If you want to argue that returning
+-EAGAIN is better in that case, that seems reasonable.
+
+	2. For repeatedly checking the checkpointability of large
+applications it could be much more costly.  For instance, if we have
+to check the flags on each vma, and an application has 10s or 100s of
+gigs of memory, each check for checkpointability would require walking
+all those vmas each time.  Dave's approach has the advantage of only
+checking those when the resource is opened.
+
+Hmm, plus
+
+	3. One of the things Ingo likes about Dave's approach, which
+you may think is bogus, is that users of an uncheckpointable application
+will scream more loudly if the app becomes permanently uncheckpointable
+(and they know why), than if it sometimes works and sometimes doesn't
+(-EAGAIN).
+
+The funny thing is, for simplicity I actually prefer Alexey's approach.
+It's easier (and therefore seems more robust) to tell if a task has a
+particular sort of file at a definite point in time, than to try and
+catch all the ways such an open file can be opened or received.  Which
+is where Ingo's LSM suggestion is seductive, but I'm convinced that
+approach would be politically impossible.
+
+-serge
