@@ -1,14 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 09/11] check files for checkpointability
-Date: Mon, 9 Mar 2009 10:38:37 -0700
-Message-ID: <20090309173837.GC7561__5757.87509228594$1236881631$gmane$org@us.ibm.com>
-References: <20090305163910.5960D190@kernel>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] devcgroup: avoid using cgroup_lock
+Date: Thu, 12 Mar 2009 13:19:12 -0500
+Message-ID: <20090312181912.GA20144__4771.73918993703$1236882268$gmane$org@us.ibm.com>
+References: <49B869BB.7030907@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090305163910.5960D190@kernel>
+In-Reply-To: <49B869BB.7030907-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,140 +18,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 05, 2009 at 08:39:10AM -0800, Dave Hansen wrote:
+Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> There is nothing special that has to be protected by cgroup_lock,
+> so introduce devcgroup_mtuex for it's own use.
 > 
-> Introduce a files_struct counter to indicate whether a particular
-> file_struct has ever contained a file which can not be
-> checkpointed.  This flag is a one-way trip; once it is set, it may
-> not be unset.
-> 
-> We assume at allocation that a new files_struct is clean and may
-> be checkpointed.  However, as soon as it has had its files filled
-> from its parent's, we check it for real in __scan_files_for_cr().
-> At that point, we mark it if it contained any uncheckpointable
-> files.
-> 
-> We also check each 'struct file' when it is installed in a fd
-> slot.  This way, if anyone open()s or managed to dup() an
-> unsuppored file, we can catch it.
-> 
-> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > ---
+>  security/device_cgroup.c |   21 +++++++++++++--------
+>  1 files changed, 13 insertions(+), 8 deletions(-)
 > 
->  linux-2.6.git-dave/fs/file.c                  |   19 +++++++++++++++++++
->  linux-2.6.git-dave/fs/open.c                  |    5 +++++
->  linux-2.6.git-dave/include/linux/checkpoint.h |   13 +++++++++++++
->  linux-2.6.git-dave/include/linux/fdtable.h    |    3 +++
->  4 files changed, 40 insertions(+)
-> 
-> diff -puN fs/file.c~242c7afafb1a81c0d9a41085536f2197d81146e7 fs/file.c
-> --- linux-2.6.git/fs/file.c~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
-> +++ linux-2.6.git-dave/fs/file.c	2009-03-05 08:37:04.000000000 -0800
-> @@ -15,6 +15,7 @@
->  #include <linux/file.h>
->  #include <linux/fdtable.h>
->  #include <linux/bitops.h>
-> +#include <linux/checkpoint.h>
->  #include <linux/interrupt.h>
->  #include <linux/spinlock.h>
+> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+> index 3aacd0f..5fda7df 100644
+> --- a/security/device_cgroup.c
+> +++ b/security/device_cgroup.c
+> @@ -11,6 +11,7 @@
+>  #include <linux/uaccess.h>
+>  #include <linux/seq_file.h>
 >  #include <linux/rcupdate.h>
-> @@ -285,6 +286,20 @@ static int count_open_files(struct fdtab
->  	return i;
->  }
+> +#include <linux/mutex.h>
 > 
-> +static void __scan_files_for_cr(struct files_struct *files)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < files->fdtab.max_fds; i++) {
-> +		struct file *f = fcheck_files(files, i);
-> +		if (!f)
-> +			continue;
-> +		if (cr_file_supported(f))
-> +			continue;
-> +		files_deny_checkpointing(files);
-
-At this point couldn't we skip the rest of the loop iterations?
-
-Might it also be useful to print a path to f here? So not only would
-the log show the location in the kernel source but we'd also get some
-idea of which file caused the problem? Of course "f" isn't always
-available everywhere we call files_deny_checkpointing()..
-
-> +	}
-> +}
+>  #define ACC_MKNOD 1
+>  #define ACC_READ  2
+> @@ -21,9 +22,11 @@
+>  #define DEV_CHAR  2
+>  #define DEV_ALL   4  /* this represents all devices */
+> 
+> +static DEFINE_MUTEX(devcgroup_mutex);
 > +
 >  /*
->   * Allocate a new files structure and copy contents from the
->   * passed in files structure.
-> @@ -303,6 +318,9 @@ struct files_struct *dup_fd(struct files
->  		goto out;
+>   * whitelist locking rules:
+> - * hold cgroup_lock() for update/read.
+> + * hold devcgroup_mutex for update/read.
+>   * hold rcu_read_lock() for read.
+>   */
 > 
->  	atomic_set(&newf->count, 1);
-> +#ifdef CONFIG_CHECKPOINT_RESTART
-> +	newf->may_checkpoint = 1;
-> +#endif
+> @@ -67,7 +70,7 @@ static int devcgroup_can_attach(struct cgroup_subsys *ss,
+>  }
 > 
->  	spin_lock_init(&newf->file_lock);
->  	newf->next_fd = 0;
-> @@ -396,6 +414,7 @@ struct files_struct *dup_fd(struct files
-> 
->  	rcu_assign_pointer(newf->fdt, new_fdt);
-> 
-> +	__scan_files_for_cr(newf);
->  	return newf;
-> 
->  out_release:
-> diff -puN fs/open.c~242c7afafb1a81c0d9a41085536f2197d81146e7 fs/open.c
-> --- linux-2.6.git/fs/open.c~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
-> +++ linux-2.6.git-dave/fs/open.c	2009-03-05 08:37:04.000000000 -0800
-> @@ -29,6 +29,7 @@
->  #include <linux/rcupdate.h>
->  #include <linux/audit.h>
->  #include <linux/falloc.h>
-> +#include <linux/checkpoint.h>
-> 
->  int vfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>  /*
+> - * called under cgroup_lock()
+> + * called under devcgroup_mutex
+>   */
+>  static int dev_whitelist_copy(struct list_head *dest, struct list_head *orig)
 >  {
-> @@ -1015,6 +1016,10 @@ void fd_install(unsigned int fd, struct 
+> @@ -92,7 +95,7 @@ free_and_exit:
+> 
+>  /* Stupid prototype - don't bother combining existing entries */
+>  /*
+> - * called under cgroup_lock()
+> + * called under devcgroup_mutex
+>   */
+>  static int dev_whitelist_add(struct dev_cgroup *dev_cgroup,
+>  			struct dev_whitelist_item *wh)
+> @@ -130,7 +133,7 @@ static void whitelist_item_free(struct rcu_head *rcu)
+>  }
+> 
+>  /*
+> - * called under cgroup_lock()
+> + * called under devcgroup_mutex
+>   */
+>  static void dev_whitelist_rm(struct dev_cgroup *dev_cgroup,
+>  			struct dev_whitelist_item *wh)
+> @@ -185,8 +188,10 @@ static struct cgroup_subsys_state *devcgroup_create(struct cgroup_subsys *ss,
+>  		list_add(&wh->list, &dev_cgroup->whitelist);
+>  	} else {
+>  		parent_dev_cgroup = cgroup_to_devcgroup(parent_cgroup);
+> +		mutex_lock(&devcgroup_mutex);
+>  		ret = dev_whitelist_copy(&dev_cgroup->whitelist,
+>  				&parent_dev_cgroup->whitelist);
+> +		mutex_unlock(&devcgroup_mutex);
+>  		if (ret) {
+>  			kfree(dev_cgroup);
+>  			return ERR_PTR(ret);
+> @@ -273,7 +278,7 @@ static int devcgroup_seq_read(struct cgroup *cgroup, struct cftype *cft,
+>   * does the access granted to dev_cgroup c contain the access
+>   * requested in whitelist item refwh.
+>   * return 1 if yes, 0 if no.
+> - * call with c->lock held
+> + * call with devcgroup_mutex held
+>   */
+>  static int may_access_whitelist(struct dev_cgroup *c,
+>  				       struct dev_whitelist_item *refwh)
+> @@ -426,11 +431,11 @@ static int devcgroup_access_write(struct cgroup *cgrp, struct cftype *cft,
+>  				  const char *buffer)
 >  {
->  	struct files_struct *files = current->files;
->  	struct fdtable *fdt;
-> +
-> +	if (!cr_file_supported(file))
-> +		files_deny_checkpointing(files);
-> +
->  	spin_lock(&files->file_lock);
->  	fdt = files_fdtable(files);
->  	BUG_ON(fdt->fd[fd] != NULL);
-> diff -puN include/linux/checkpoint.h~242c7afafb1a81c0d9a41085536f2197d81146e7 include/linux/checkpoint.h
-> --- linux-2.6.git/include/linux/checkpoint.h~242c7afafb1a81c0d9a41085536f2197d81146e7	2009-03-05 08:37:04.000000000 -0800
-> +++ linux-2.6.git-dave/include/linux/checkpoint.h	2009-03-05 08:37:04.000000000 -0800
-> @@ -12,6 +12,7 @@
-> 
->  #include <linux/path.h>
->  #include <linux/fs.h>
-> +#include <linux/fdtable.h>
-> 
->  #ifdef CONFIG_CHECKPOINT_RESTART
-> 
-> @@ -101,11 +102,23 @@ extern int cr_read_files(struct cr_ctx *
-> 
->  #define pr_fmt(fmt) "[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__
-> 
-> +static inline void __files_deny_checkpointing(struct files_struct *files,
-> +		char *file, int line)
-> +{
-> +	if (!test_and_clear_bit(0, &files->may_checkpoint))
-> +		return;
-> +	printk(KERN_INFO "process performed an action that can not be "
-> +			"checkpointed at: %s:%d\n", file, line);
-> +}
-> +#define files_deny_checkpointing(f)  \
-> +	__files_deny_checkpointing(f, __FILE__, __LINE__)
-> +
+>  	int retval;
+> -	if (!cgroup_lock_live_group(cgrp))
 
-<snip>
+Does it matter that we no longer check for cgroup_is_removed()?
+
+> -		return -ENODEV;
+> +
+> +	mutex_lock(&devcgroup_mutex);
+>  	retval = devcgroup_update_access(cgroup_to_devcgroup(cgrp),
+>  					 cft->private, buffer);
+> -	cgroup_unlock();
+> +	mutex_unlock(&devcgroup_mutex);
+>  	return retval;
+>  }
+> 
+> -- 
+> 1.5.4.rc3
