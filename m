@@ -1,16 +1,16 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 01/10] Documentation
-Date: Thu, 12 Mar 2009 09:51:50 -0400
-Message-ID: <20090312135150.GD10919__2635.54024645618$1236866400$gmane$org@redhat.com>
+Date: Thu, 12 Mar 2009 10:04:50 -0400
+Message-ID: <20090312140450.GE10919__24568.3946217925$1236867165$gmane$org@redhat.com>
 References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
 	<1236823015-4183-2-git-send-email-vgoyal@redhat.com>
-	<49B8BDB3.40808@cn.fujitsu.com>
+	<20090312100054.GA8024@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49B8BDB3.40808-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090312100054.GA8024-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,19 +20,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Yang Hongyang <yanghy-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 12, 2009 at 03:45:55PM +0800, Yang Hongyang wrote:
-> Don't forget to update the 00-INDEX file when you add a new doc.^!^
-> 
-
-Thanks. Will do it.
-
-Vivek
-
-> Vivek Goyal wrote:
+On Thu, Mar 12, 2009 at 03:30:54PM +0530, Dhaval Giani wrote:
+> On Wed, Mar 11, 2009 at 09:56:46PM -0400, Vivek Goyal wrote:
 > > o Documentation for io-controller.
 > > 
 > > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -269,7 +262,33 @@ Vivek
 > > +234179072 bytes (234 MB) copied, 19.476 s, 12.0 MB/s
 > > +234179072 bytes (234 MB) copied, 20.1858 s, 11.6 MB/s
 > 
+> Hi Vivek,
 > 
-> -- 
-> Regards
-> Yang Hongyang
+> I would be interested in knowing if these are the results expected?
+> 
+
+Hi Dhaval, 
+
+Good question. Keeping current expectation in mind, yes these are expected
+results. To begin with, current expectations are that try to emulate
+cfq behavior and the kind of service differentiation we get between
+threads of different priority, same kind of service differentiation we
+should get from different cgroups.
+ 
+Having said that, in theory a more accurate estimate should be amount 
+of actual disk time a queue/cgroup got. I have put a tracing message
+to keep track of total service received by a queue. If you run "blktrace"
+then you can see that. Ideally, total service received by two threads
+over a period of time should be in same proportion as their cgroup
+weights.
+
+It will not be easy to achive it given the constraints we have got in
+terms of how to accurately we can account for disk time actually used by a
+queue in certain situations. So to begin with I am targetting that
+try to meet same kind of service differentation between cgroups as
+cfq provides between threads and then slowly refine it to see how
+close one can come to get accurate numbers in terms of "total_serivce"
+received by each queue.
+
+Thanks
+Vivek
