@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] debug cgroup: remove unneeded cgroup_lock
-Date: Thu, 12 Mar 2009 09:47:35 +0800
-Message-ID: <49B869B7.1090108__34899.1454965018$1236822744$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cls_cgroup: remove unneeded cgroup_lock
+Date: Thu, 12 Mar 2009 09:47:30 +0800
+Message-ID: <49B869B2.1020303__21948.9505784169$1236822870$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,31 +15,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Since we are in cgroup write handler, so the cgrp is valid, so we
-don't have to hold cgroup_mutex when calling cgroup_task_count().
-One similar example is in cgroup_tasks_open().
+We can remove this lock here, since we are in cgroup write handler
+and thus the cgrp is guaranteed to be valid, and no lock is needed
+when writing a u32 variable.
 
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHWHlK3f2culvg@public.gmane.org>
 ---
- kernel/cgroup_debug.c |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ net/sched/cls_cgroup.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/kernel/cgroup_debug.c b/kernel/cgroup_debug.c
-index daca620..0c92d79 100644
---- a/kernel/cgroup_debug.c
-+++ b/kernel/cgroup_debug.c
-@@ -40,9 +40,7 @@ static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
- {
- 	u64 count;
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index 91a3db4..1ab4542 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -62,13 +62,7 @@ static u64 read_classid(struct cgroup *cgrp, struct cftype *cft)
  
--	cgroup_lock();
- 	count = cgroup_task_count(cont);
+ static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
+ {
+-	if (!cgroup_lock_live_group(cgrp))
+-		return -ENODEV;
+-
+ 	cgrp_cls_state(cgrp)->classid = (u32) value;
+-
 -	cgroup_unlock();
- 	return count;
+-
+ 	return 0;
  }
  
 -- 
