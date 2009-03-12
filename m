@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/5] Track in-kernel when we expect checkpoint/restart
-	to work
-Date: Thu, 12 Mar 2009 11:57:48 -0500
-Message-ID: <20090312165748.GA17253@us.ibm.com>
+Subject: Re: [PATCH 4/5] Check 'may_checkpoint()' early
+Date: Thu, 12 Mar 2009 12:33:14 -0500
+Message-ID: <20090312173314.GB17253@us.ibm.com>
 References: <20090312042416.GC7733@us.ibm.com>
-	<20090312042503.GA8703@us.ibm.com>
+	<20090312042559.GD8703@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090312042503.GA8703-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090312042559.GD8703-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,13 +24,70 @@ Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. H
 List-Id: containers.vger.kernel.org
 
 Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Subject: [PATCH 4/5] Check 'may_checkpoint()' early
+> 
+> We currently check if a task is checkpointable when writing the task
+> information to checkpoint file. The small downside of doing this check
+> late is that we may have processed several processes in the tree before
+> hitting one that cannot be checkpointed.
+> 
+> We anyway walk the process tree we are checkpointing earlier, while
+> counting the tasks. We could check if all processes in the tree are
+> checkpointable at that time and fail early if any of them are not.
+> Since the process tree should be frozen, checking earlier should not
+> matter ?
+> 
+> For now, the patch leaves the existing check in cr_write_pids(). We
+> can remove that later.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Hi Suka,
+Yes this seems like a good idea to me.
 
-the reason this patch was dropped is that we've moved from
-task to slightly more per-resource checkpointability tracking.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-So right now there is no t->may_checkpoint, but there is
-t->files->may_checkpoint and t->mm->may_checkpoint.
-
--serge
+> ---
+>  checkpoint/checkpoint.c |    9 +++++++++
+>  1 files changed, 9 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index fbcd9eb..9189abb 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -346,11 +346,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
+>  	struct task_struct **tasks_arr = ctx->tasks_arr;
+>  	int tasks_nr = ctx->tasks_nr;
+>  	int nr = 0;
+> +	int ret;
+> 
+>  	read_lock(&tasklist_lock);
+> 
+>  	/* count tasks via DFS scan of the tree */
+>  	while (1) {
+> +		ret = cr_may_checkpoint_task(task, ctx);
+> +		if (ret < 0) {
+> +			nr = ret;
+> +			break;
+> +		}
+> +
+>  		if (tasks_arr) {
+>  			/* unlikely, but ... */
+>  			if (nr == tasks_nr)
+> @@ -406,6 +413,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
+> 
+>  	/* count tasks (no side effects) */
+>  	n = cr_tree_count_tasks(ctx);
+> +	if (n < 0)
+> +		return n;
+> 
+>  	ctx->tasks_nr = n;
+>  	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
+> -- 
+> 1.5.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
