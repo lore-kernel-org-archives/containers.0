@@ -1,15 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/5] Check 'may_checkpoint()' early
-Date: Thu, 12 Mar 2009 12:33:14 -0500
-Message-ID: <20090312173314.GB17253@us.ibm.com>
-References: <20090312042416.GC7733@us.ibm.com>
-	<20090312042559.GD8703@us.ibm.com>
+From: Rev Sam Hulleman <rev.samhulleman-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: Order
+Date: Thu, 12 Mar 2009 10:36:43 -0700 (PDT)
+Message-ID: <201711.34543.qm@web43402.mail.sp1.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090312042559.GD8703-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,75 +15,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Subject: [PATCH 4/5] Check 'may_checkpoint()' early
-> 
-> We currently check if a task is checkpointable when writing the task
-> information to checkpoint file. The small downside of doing this check
-> late is that we may have processed several processes in the tree before
-> hitting one that cannot be checkpointed.
-> 
-> We anyway walk the process tree we are checkpointing earlier, while
-> counting the tasks. We could check if all processes in the tree are
-> checkpointable at that time and fail early if any of them are not.
-> Since the process tree should be frozen, checking earlier should not
-> matter ?
-> 
-> For now, the patch leaves the existing check in cr_write_pids(). We
-> can remove that later.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Hello Customer,=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 =A0
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 My na=
+me is=A0 Rev.Samhulleman and I will like to know if you
+can supply me with a special Order 0f=A0 100pcs of containers=A0 with the=
+=A0=A0=A0=A0=A0=A0 =A0
+Size:13.5Feet,Length in 50' with Design Sizes 640 x 475 - 82k - jpg
+If yes kindly please go ahead and=A0 email with the total cost of 100pcs=A0=
+=A0 =A0
+also advice me with the types of=A0 payment that you accept. Looking forward
+to hear back from you soon.=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0 =A0
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 =A0
+Regards,=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 =A0
+Rev.Sam hulleman
 
-Yes this seems like a good idea to me.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-> ---
->  checkpoint/checkpoint.c |    9 +++++++++
->  1 files changed, 9 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index fbcd9eb..9189abb 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -346,11 +346,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
->  	struct task_struct **tasks_arr = ctx->tasks_arr;
->  	int tasks_nr = ctx->tasks_nr;
->  	int nr = 0;
-> +	int ret;
-> 
->  	read_lock(&tasklist_lock);
-> 
->  	/* count tasks via DFS scan of the tree */
->  	while (1) {
-> +		ret = cr_may_checkpoint_task(task, ctx);
-> +		if (ret < 0) {
-> +			nr = ret;
-> +			break;
-> +		}
-> +
->  		if (tasks_arr) {
->  			/* unlikely, but ... */
->  			if (nr == tasks_nr)
-> @@ -406,6 +413,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
-> 
->  	/* count tasks (no side effects) */
->  	n = cr_tree_count_tasks(ctx);
-> +	if (n < 0)
-> +		return n;
-> 
->  	ctx->tasks_nr = n;
->  	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
-> -- 
-> 1.5.2.5
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+      =
