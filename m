@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Thu, 12 Mar 2009 17:48:20 -0500
-Message-ID: <20090312224820.GA12723@hallyn.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
-	<20090312162954.4a4b8e00@thinkcentre.lan>
+Date: Thu, 12 Mar 2009 23:48:36 +0100
+Message-ID: <49B99144.9000106@free.fr>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>
 	<87fxhipfrh.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <87fxhipfrh.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -24,17 +22,17 @@ To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+Dan Smith wrote:
 > NL> I'd like there to be some discussion about this, because namespace
 > NL> creation seems like a significant addition to the semantics of
 > NL> restart as I understand it.
-> 
+>
 > Indeed.
-> 
+>
 > NL> Is namespace creation during restart unavoidable, or merely
 > NL> desirable?  Is there a case for requiring the user to provide a
 > NL> suitable namespace environment before attempting restart?
-> 
+>
 > Information about the namespaces has to be saved at checkpoint time no
 > matter what, right?  I guess I don't see any compelling reason to not
 > have the restart operation replicate the environment of the original
@@ -42,27 +40,15 @@ Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > checkpoint stream and selectively feed the bits that the kernel is
 > responsible for to the kernel and process the rest itself (or have the
 > kernel ignore those records).
+>   
 
-Well we haven't yet settled the Oren-vs-Alexey argument of who sets
-up the new process tree.  Oren would have userspace parse the checkpoint
-file, do a bunch of clones to recreate the process tree, then have each
-task call sys_restart().  Alexey would have one task call sys_restart()
-where the system call then recreates the process tree.
-
-You seem to be doing half of each :)  I think if we go with Oren's
-route then we should use CLONE_NEWPID etc flags from userspace to set
-up the proper relationships.  If we go with Alexey's, then the kernel
-can just hand-create the nsproxies somewhat the way you are doing using
-copy_namespaces().
+Assuming you have a process and this one unshared the network 100 times 
+and each time opens a socket, how do you checkpoint these namespaces ?
 
 > What's the argument for depending on userspace to set this up?
-
-Well it forces restart to go through the established userspace API's
-when creating resources (in this case, tasks and namespaces) which
-means any existing security guarantees are leveraged.
-
-If we go with your patch, we suddenly have to worry about whether
-restart is a way to get around the CAP_SYS_ADMIN requirements for
-cloning a new namespace.  Just as an example.
-
--serge
+>   
+Maybe, CR of the namespaces is more complicate topic than it looks like 
+and the CR itself is big enough to not complicate things. IMHO, I would 
+recommend as the first step to forbid the unshare inside a container and 
+let the container implementation to save the configuration with the 
+statefile in order to recreate it at the restart
