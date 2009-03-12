@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/5] Check 'may_checkpoint()' early
-Date: Wed, 11 Mar 2009 21:25:59 -0700
-Message-ID: <20090312042559.GD8703@us.ibm.com>
+Subject: [PATCH 5/5] Deny external checkpoint unless task is frozen
+Date: Wed, 11 Mar 2009 21:26:14 -0700
+Message-ID: <20090312042614.GE8703@us.ibm.com>
 References: <20090312042416.GC7733@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,58 +24,38 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/5] Check 'may_checkpoint()' early
+Subject: [PATCH 5/5] Deny external checkpoint unless task is frozen
 
-We currently check if a task is checkpointable when writing the task
-information to checkpoint file. The small downside of doing this check
-late is that we may have processed several processes in the tree before
-hitting one that cannot be checkpointed.
-
-We anyway walk the process tree we are checkpointing earlier, while
-counting the tasks. We could check if all processes in the tree are
-checkpointable at that time and fail early if any of them are not.
-Since the process tree should be frozen, checking earlier should not
-matter ?
-
-For now, the patch leaves the existing check in cr_write_pids(). We
-can remove that later.
+Remove a 'FIXME' and ensure that the tasks we are checkpointing are
+frozen unless its a self-checkpoint.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- checkpoint/checkpoint.c |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ checkpoint/checkpoint.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index fbcd9eb..9189abb 100644
+index 9189abb..cfa6b4f 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -346,11 +346,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
- 	struct task_struct **tasks_arr = ctx->tasks_arr;
- 	int tasks_nr = ctx->tasks_nr;
- 	int nr = 0;
-+	int ret;
+@@ -19,6 +19,7 @@
+ #include <linux/mount.h>
+ #include <linux/utsname.h>
+ #include <linux/magic.h>
++#include <linux/freezer.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- 	read_lock(&tasklist_lock);
+@@ -280,7 +281,9 @@ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
+ 	if (!ptrace_may_access(t, PTRACE_MODE_READ))
+ 		return -EPERM;
  
- 	/* count tasks via DFS scan of the tree */
- 	while (1) {
-+		ret = cr_may_checkpoint_task(task, ctx);
-+		if (ret < 0) {
-+			nr = ret;
-+			break;
-+		}
-+
- 		if (tasks_arr) {
- 			/* unlikely, but ... */
- 			if (nr == tasks_nr)
-@@ -406,6 +413,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
+-	/* FIXME: verify that the task is frozen (unless self) */
++	/* verify that the task is frozen (unless self) */
++	if (t != current && !frozen(t))
++		return -EBUSY;
  
- 	/* count tasks (no side effects) */
- 	n = cr_tree_count_tasks(ctx);
-+	if (n < 0)
-+		return n;
- 
- 	ctx->tasks_nr = n;
- 	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
+ 	/* FIXME: change this for nested containers */
+ 	if (task_nsproxy(t) != ctx->root_nsproxy)
 -- 
 1.5.2.5
