@@ -1,8 +1,7 @@
-From: "Leona Houser" <Akers_Edmund-1mzRgePW2/wS+FvcfC7Uqw@public.gmane.org>
-Subject: MD Database in the US
-Date: Wed, 11 Mar 2009 13:49:58 +0100
-Message-ID: <OF897E12F4.487BE77A-ONC1257576.00467E79@icomkft.hu>
-Reply-To: Leona Houser <noreplyhere-dY8dr7OXV/uGaxxthHjfDUEOCMrvLtNR@public.gmane.org>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] debug cgroup: remove unneeded cgroup_lock
+Date: Thu, 12 Mar 2009 09:47:35 +0800
+Message-ID: <49B869B7.1090108__34899.1454965018$1236822744$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,41 +15,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: toddulman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, dilinger-nReEUC9YoSk@public.gmane.org, sociale.berlino-DDSYH7JHKsleoWH0uzbU5w@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Since we are in cgroup write handler, so the cgrp is valid, so we
+don't have to hold cgroup_mutex when calling cgroup_task_count().
+One similar example is in cgroup_tasks_open().
 
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ kernel/cgroup_debug.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
-Currently Practicing MDs in the US 
-
-788,459 in total <> 17,835 emails
-
-Lots of MDs in specialties like Orthopedics, Surgery, Radiology, Dermatology, Neurology, General Practice etc..
-
-Can easily be sorted by 16 different fields
-
-This week only you pay only: $398
-
-
-{}{}{} ITEMS BELOW ARE INCLUDED IN THE DEAL AT NO EXTRA COST {}{}{}
-
-**> List of US Pharma Companies
-  47,000 names and emails of the major positions
-
-**> Complete Listing of Hospitals in America
-  more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
-
-**> Complete and Accurate Database for Dental Service Providers
-  597,000 dentists and dental services ( a $350 value!) 
-
-**> American Chiropractors Listing
-  100,000 Chiropractors in the USA (worth $250 alone)
-
-send us an email:      Wiley-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org
-
-  
-
-valid until  Mar 14
-
-
-Forward email to xyz-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org to purge you from our records
+diff --git a/kernel/cgroup_debug.c b/kernel/cgroup_debug.c
+index daca620..0c92d79 100644
+--- a/kernel/cgroup_debug.c
++++ b/kernel/cgroup_debug.c
+@@ -40,9 +40,7 @@ static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
+ {
+ 	u64 count;
+ 
+-	cgroup_lock();
+ 	count = cgroup_task_count(cont);
+-	cgroup_unlock();
+ 	return count;
+ }
+ 
+-- 
+1.5.4.rc3
