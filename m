@@ -1,162 +1,94 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Fri, 13 Mar 2009 12:37:19 -0500
-Message-ID: <20090313173719.GA12179__42830.1682034091$1236966156$gmane$org@us.ibm.com>
-References: <1234475483.30155.194.camel@nimitz>
-	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226155755.GA1456@x200.localdomain>
-	<20090310215305.GA2078@x200.localdomain>
-	<49B775B4.1040800@free.fr> <20090312145311.GC12390@us.ibm.com>
-	<1236891719.32630.14.camel@bahia>
-	<20090312212124.GA25019@us.ibm.com>
-	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: Ensuring c/r maintainability (WAS Re: [RFC][PATCH 00/11] track
+	files for checkpointability)
+Date: Fri, 13 Mar 2009 12:53:01 -0500
+Message-ID: <20090313175301.GA13050@us.ibm.com>
+References: <20090305210840.GA2499@x200.localdomain> <1236288427.22399.122.camel@nimitz> <20090305220044.GA2819@x200.localdomain> <1236352121.5732.80.camel@bahia> <20090306153549.GA898@us.ibm.com> <49B15F35.2010909@free.fr> <20090306183055.GA6729@us.ibm.com> <49B76D91.1020807@free.fr> <20090312153048.GA11147@hallyn.com> <20090313063611.GH7561@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753672AbZCMRxW@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <604427e00903122129y37ad791aq5fe7ef2552415da9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ying Han <yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090313063611.GH7561@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Matt Helsley <matthltc@us.ibm.com>
+Cc: Serge Hallyn <serue@linux.vnet.ibm.com>, Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Oren Laadan <orenl@cs.columbia.edu>, Dave Hansen <dave@linux.vnet.ibm.com>, Ingo Molnar <mingo@elte.hu>, Christoph Hellwig <hch@infradead.org>, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-Quoting Ying Han (yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> Hi Serge:
-> I made a patch based on Oren's tree recently which implement a new
-> syscall clone_with_pid. I tested with checkpoint/restart process tree
-> and it works as expected.
-> This patch has some hack in it which i made a copy of libc's clone and
-> made modifications of passing one more argument(pid number). I will
-> try to clean up the code and do more testing.
+Quoting Matt Helsley (matthltc@us.ibm.com):
+> On Thu, Mar 12, 2009 at 10:30:48AM -0500, Serge E. Hallyn wrote:
+> > Quoting Cedric Le Goater (legoater@free.fr):
+> > > >> And if Ingo's requirement is fulfilled, would any C/R patchset be acceptable ?
+> > > > 
+> > > > Yup, no matter how hideous  :)  Ok not really.
+> > > > 
+> > > > But the point was that it wasn't Dave not understanding Alexey's
+> > > > suggestion, but Greg not understanding Ingo's.  If you think Ingo's
+> > > > goal isn't worthwhile or achievable, then argue that (as I am), don't
+> > > > keep elaborating on something we all agree will be needed (Alexey's
+> > > > suggestion or some other way of doing a true may-be-checkpointed test).
+> > > 
+> > > I rather spend my time on enabling things rather than forbid them. 
+> > 
+> > That sure sounds productive.  How could I argue with that.
+> > 
+> > But wait, haven't several teams been doing that for years?  So why is
+> > c/r not in the upstream kernel?  Could it be that ignoring the
+> > upstream maintainers' concerns about (a) treating the feature as a
+> > toy, (b) long-term maintainability, and (c) c/r becoming an impediment
+> > to future features, and instead hacking away at our toy feature, is
+> > *not* always the best course?
 > 
-> New syscall clone_with_pid
-> Implement a new syscall which clone a thread with a preselected pid number.
+> I've been thinking about how we could make checkpoint/restart (c/r) more
+> maintainable in the long-term. I've only come up with two ideas:
 > 
-> clone_with_pid(child_func, child_stack + CHILD_STACK - 16,
-> 			CLONE_WITH_PID|SIGCHLD, pid, NULL);
+> I. Implement sparse-like __cr struct annotations for some compile-time checking.
 > 
-> Signed-off-by: Ying Han <yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> First we annotate structures which c/r needs to save. For example we might have:
 > 
-> diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
-> index 87803da..b5a1b03 100644
-> --- a/arch/x86/include/asm/syscalls.h
-> +++ b/arch/x86/include/asm/syscalls.h
-> @@ -26,6 +26,7 @@ asmlinkage int sys_fork(struct pt_regs);
->  asmlinkage int sys_clone(struct pt_regs);
->  asmlinkage int sys_vfork(struct pt_regs);
->  asmlinkage int sys_execve(struct pt_regs);
-> +asmlinkage int sys_clone_with_pid(struct pt_regs);
+> 	struct mm_struct {
+> 		__cr struct vm_area_struct * mmap;
+> 		struct rb_root mm_rb;
+> 		struct vm_area_struct *mmap_cache;
+> 		...
+> 		__cr unsigned long mmap_base;
+> 		__cr unsigned long task_size;
+> 		..
+> 	};
 > 
->  /* kernel/signal_32.c */
->  asmlinkage int sys_sigsuspend(int, int, old_sigset_t);
-> diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32
-> index a5f9e09..f10ca0e 100644
-> --- a/arch/x86/include/asm/unistd_32.h
-> +++ b/arch/x86/include/asm/unistd_32.h
-> @@ -340,6 +340,7 @@
->  #define __NR_inotify_init1	332
->  #define __NR_checkpoint		333
->  #define __NR_restart		334
-> +#define __NR_clone_with_pid	335
+> The __cr annotations indicate fields of the mm_struct which must be
+> saved during checkpoint restart. In fact, for non-pointer fields these
+> annotations would be sufficient to generate c/r code.
 > 
->  #ifdef __KERNEL__
-> 
-> diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-> index 0a1302f..88ae634 100644
-> --- a/arch/x86/kernel/process_32.c
-> +++ b/arch/x86/kernel/process_32.c
-> @@ -8,7 +8,6 @@
->  /*
->   * This file handles the architecture-dependent parts of process handling..
->   */
-> -
->  #include <stdarg.h>
-> 
->  #include <linux/cpu.h>
-> @@ -652,6 +651,28 @@ asmlinkage int sys_clone(struct pt_regs regs)
->  	return do_fork(clone_flags, newsp, &regs, 0, parent_tidptr, child_tidptr);
->  }
-> 
-> +/**
-> + * sys_clone_with_pid - clone a thread with pre-select pid number.
-> + */
-> +asmlinkage int sys_clone_with_pid(struct pt_regs regs)
-> +{
-> +	unsigned long clone_flags;
-> +	unsigned long newsp;
-> +	int __user *parent_tidptr, *child_tidptr;
-> +	pid_t pid_nr;
-> +
-> +	clone_flags = regs.bx;
-> +	newsp = regs.cx;
-> +	parent_tidptr = (int __user *)regs.dx;
-> +	child_tidptr = (int __user *)regs.di;
-> +	pid_nr = regs.bp;
+> Next we would need a __cr_root annotation. These mark structures which
+> the c/r code visits that determine the scope of c/r. If there is no path from a
+> __cr annotation to a __cr_root annotation then we would conclude that c/r of
+> this struct is broken. These path constraint checks could be done at compile
+> time.
 
-Hi,
+Hi Matt,
 
-Thanks for looking at this.  I appreciate the patch.  Two comments
-however.
+is what you're detecting here really something we're worried about?
 
-As I was saying in another email, i think that so long as we are going
-with a new syscall, we should make sure that it suffices for nested
-pid namespaces.  So send in an array of pids and its lengths, then
-use an algorithm like Alexey's to fill in the sent-in pids if possible.
+Maybe that's something we should be doing - coming up with a list of
+the things we are trying to detect or prevent.  I can only think of
+a few offhand:
 
-> +	if (!newsp)
-> +		newsp = regs.sp;
-> +	return do_fork(clone_flags, newsp, &regs, pid_nr, parent_tidptr,
-> +			child_tidptr);
-> +}
-> +
->  /*
->   * This is trivial, and on the face of it looks like it
->   * could equally well be done in user mode.
+1. checkpoint (and restart) a task which has used a resource which we
+do cannot (yet, or ever) safely checkpoint/restart.
 
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 085ce56..262ae1e 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -10,7 +10,7 @@
->   * Fork is rather simple, once you get the hang of it, but the memory
->   * management can be a bitch. See 'mm/memory.c': 'copy_page_range()'
->   */
-> -
-> +#define DEBUG
->  #include <linux/slab.h>
->  #include <linux/init.h>
->  #include <linux/unistd.h>
-> @@ -959,10 +959,19 @@ static struct task_struct *copy_process(unsigned long cl
->  	int retval;
->  	struct task_struct *p;
->  	int cgroup_callbacks_done = 0;
-> +	pid_t clone_pid = stack_size;
+2. kernel has a new feature for which we have not considered
+checkpoint/restart.  Not only is it not safe to c/r a task using it,
+but we haven't even implemented a check for tasks using it.
 
-Note that some architectures (i.e. ia64) actually use the stack_size
-sent to copy_thread, so you at least need to zero out stack_size here.
+3. Some new kernel feature has an attribute which simply must be
+stored away.  An example would be the vdso_base in s390 as of
+recent 2.6.29 rc's, which was not present in 2.6.28.  So there are
+two things to worry about in this one:
 
-And I suspect there are cases where a stack_size is actually sent in,
-so this doesn't seem legitimate, but I haven't tracked down the callers.
-If you tell me you think there should be no case where a real stack_size
-is sent in, well, I'll feel better if you prove it by breaking the patch
-up so that:
+	a. detect that this happened and handle it, so c/r continues
+	   to work.
+	b. figure out a way to restart an older c/r image on a newer
+	   kernel - or simply detect older images and call them
+	   incompatible.
 
-1. you remove the stack_size argument from copy_process.  Test such a
-kernel on some architectures (boot+ltp, for instance).
-
-2. add a chosen_pid argument to copy_process.
-
-Then we can be sure noone is using the field.
-
-thanks,
 -serge
