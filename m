@@ -1,16 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] devcgroup: avoid using cgroup_lock
-Date: Fri, 13 Mar 2009 08:41:39 -0500
-Message-ID: <20090313134139.GB32304__1487.01814837313$1236951993$gmane$org@us.ibm.com>
-References: <49B869BB.7030907@cn.fujitsu.com>
-	<20090312181912.GA20144@us.ibm.com>
-	<49B9BCC7.7090908@cn.fujitsu.com>
+Subject: Re: [PATCH 5/5] Deny external checkpoint unless task is frozen
+Date: Fri, 13 Mar 2009 08:54:50 -0500
+Message-ID: <20090313135450.GD32304@us.ibm.com>
+References: <20090312042416.GC7733@us.ibm.com>
+	<20090312042614.GE8703@us.ibm.com>
+	<20090312173707.GC17253@us.ibm.com>
+	<49B9D0BD.40701@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49B9BCC7.7090908-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49B9D0BD.40701-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,33 +21,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> >> @@ -426,11 +431,11 @@ static int devcgroup_access_write(struct cgroup *cgrp, struct cftype *cft,
-> >>  				  const char *buffer)
-> >>  {
-> >>  	int retval;
-> >> -	if (!cgroup_lock_live_group(cgrp))
-> > 
-> > Does it matter that we no longer check for cgroup_is_removed()?
-> > 
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> No, this means in a rare case that the write handler is called when the cgroup
-> is dead, we still do the update work instead of returning ENODEV.
 > 
-> This is ok, since at that time, accessing cgroup and devcgroup is still valid,
-> but will have no effect since there is no task in this cgroup and the cgroup
-> will be destroyed soon.
+> Serge E. Hallyn wrote:
+> > Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> >> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> >> Subject: [PATCH 5/5] Deny external checkpoint unless task is frozen
+> >>
+> >> Remove a 'FIXME' and ensure that the tasks we are checkpointing are
+> >> frozen unless its a self-checkpoint.
+> >>
+> >> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > 
+> > I remain not-a-fan of self-checkpoint, and think it needlessly
+> > complicates locking, but it isn't for this patch to change that :)
+> 
+> lol ... here's is an interesting use case for self checkpoint: "ASSURE:
+> Automatic Software Self-healing Using REscue points" (ASPLOS 2009).
+> 
+> Oren.
 
-Ok, just wanted to make sure the devcgroup couldn't be partially torn
-down and risking NULL or freed-memory derefs...
+Right, but we can always do self-checkpoint by sending a signal to
+an external daemon which freezes us and then does the checkpoint, no?
 
-BTW is that against linux-next?  (didn't seem to apply cleanly against
-my 2.6.29-rc9)  I guess I'd like to do a little test before acking,
-though it looks ok based on your answer.
+Ok I haven't read the paper, so if the answer is "no that won't work,
+dumbass" then i'll go and read it :)
 
 thanks,
 -serge
