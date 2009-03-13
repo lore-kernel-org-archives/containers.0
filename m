@@ -1,14 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v13][PATCH 00/14] Kernel based checkpoint/restart
-Date: Thu, 12 Mar 2009 22:45:52 -0400
-Message-ID: <49B9C8E0.5080500__350.957460659806$1236912703$gmane$org@cs.columbia.edu>
-References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>	<1234285547.30155.6.camel@nimitz>	<20090211141434.dfa1d079.akpm@linux-foundation.org>	<1234462282.30155.171.camel@nimitz>
-	<20090213152836.0fbbfa7d.akpm@linux-foundation.org>
+Subject: Re: [RFC][PATCH 05/11] add generic checkpoint f_op to ext fses
+Date: Thu, 12 Mar 2009 22:50:19 -0400
+Message-ID: <49B9C9EB.90408@cs.columbia.edu>
+References: <20090305163857.0C18F3FD@kernel> <20090305163904.D9CFC631@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090213152836.0fbbfa7d.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20090305163904.D9CFC631@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,131 +17,107 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
 
-Just got back from 3 weeks with practically no internet, and I see
-that I missed a big party !
+Note that as far as I understand, ext4 does _not_ support a "relink"
+operation. By "re-link" I mean an operation that re-links an (orphan)
+inode to a filename.  (By "orphan" I mean a file that was opened and
+unlinked, so it does not appear in any directory anymore).
 
-Trying to catch up with what's been said so far --
+This feature is very useful to efficiently checkpoint unlinked files.
 
-"An app really has to know whether it can reliably checkpoint+restart."
-
-It was suggested (Dave) to either have an "uncheckpointable" flag at containter,
-or process, or resource level. Another suggestion (Serge, Alexey) was to let
-the app try to checkpoint and return an error.
-
-For what it's worth, I vote for the latter. Have the checkpoint code always
-return an error if the checkpoint cannot be taken. If checkpoint succeeds
-then the app/user is guaranteed that restart will succeed (if it is given
-the right starting conditions, e.g. correct file system view).
-
-To figure out what/when went wrong, the c/r code can indicate the _reason_
-to the failure (e.g. output to the console, or other means) so that the
-frustrated user/developer/app can report it. I also think it's cleaner as
-it keep c/r consideration within the c/r subsystem and not scattered around
-different locations in the kernel.
+Oren.
 
 
-Andrew Morton wrote:
-> On Thu, 12 Feb 2009 10:11:22 -0800
-> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+Dave Hansen wrote:
+> This marks ext[234] as being checkpointable.  There will be many
+> more to do this to, but this is a start.
 > 
->> ...
->>
->>> - In bullet-point form, what features are missing, and should be added?
->>  * support for more architectures than i386
->>  * file descriptors:
->>   * sockets (network, AF_UNIX, etc...)
->>   * devices files
->>   * shmfs, hugetlbfs
->>   * epoll
->>   * unlinked files
->>  * Filesystem state
->>   * contents of files
->>   * mount tree for individual processes
->>  * flock
->>  * threads and sessions
->>  * CPU and NUMA affinity
->>  * sys_remap_file_pages()
->>
->> This is a very minimal list that is surely incomplete and sure to grow.
+> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
 > 
-> That's a worry.
+>  linux-2.6.git-dave/fs/ext2/dir.c  |    1 +
+>  linux-2.6.git-dave/fs/ext2/file.c |    2 ++
+>  linux-2.6.git-dave/fs/ext3/dir.c  |    1 +
+>  linux-2.6.git-dave/fs/ext3/file.c |    1 +
+>  linux-2.6.git-dave/fs/ext4/dir.c  |    1 +
+>  linux-2.6.git-dave/fs/ext4/file.c |    1 +
+>  6 files changed, 7 insertions(+)
 > 
->>> For extra marks:
->>>
->>> - Will any of this involve non-trivial serialisation of kernel
->>>   objects?  If so, that's getting into the
->>>   unacceptably-expensive-to-maintain space, I suspect.
->> We have some structures that are certainly tied to the kernel-internal
->> ones.  However, we are certainly *not* simply writing kernel structures
->> to userspace.  We could do that with /dev/mem.  We are carefully pulling
->> out the minimal bits of information from the kernel structures that we
->> *need* to recreate the function of the structure at restart.  There is a
->> maintenance burden here but, so far, that burden is almost entirely in
->> checkpoint/*.c.  We intend to test this functionality thoroughly to
->> ensure that we don't regress once we have integrated it.
+> diff -puN fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/dir.c
+> --- linux-2.6.git/fs/ext2/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext2/dir.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -721,4 +721,5 @@ const struct file_operations ext2_dir_op
+>  	.compat_ioctl	= ext2_compat_ioctl,
+>  #endif
+>  	.fsync		= ext2_sync_file,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+> diff -puN fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext2/file.c
+> --- linux-2.6.git/fs/ext2/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext2/file.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -58,6 +58,7 @@ const struct file_operations ext2_file_o
+>  	.fsync		= ext2_sync_file,
+>  	.splice_read	= generic_file_splice_read,
+>  	.splice_write	= generic_file_splice_write,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  
+>  #ifdef CONFIG_EXT2_FS_XIP
+> @@ -73,6 +74,7 @@ const struct file_operations ext2_xip_fi
+>  	.open		= generic_file_open,
+>  	.release	= ext2_release_file,
+>  	.fsync		= ext2_sync_file,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  #endif
+>  
+> diff -puN fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/dir.c
+> --- linux-2.6.git/fs/ext3/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext3/dir.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -48,6 +48,7 @@ const struct file_operations ext3_dir_op
+>  #endif
+>  	.fsync		= ext3_sync_file,	/* BKL held */
+>  	.release	= ext3_release_dir,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  
+>  
+> diff -puN fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext3/file.c
+> --- linux-2.6.git/fs/ext3/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext3/file.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -122,6 +122,7 @@ const struct file_operations ext3_file_o
+>  	.fsync		= ext3_sync_file,
+>  	.splice_read	= generic_file_splice_read,
+>  	.splice_write	= generic_file_splice_write,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  
+>  const struct inode_operations ext3_file_inode_operations = {
+> diff -puN fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/dir.c
+> --- linux-2.6.git/fs/ext4/dir.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext4/dir.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -48,6 +48,7 @@ const struct file_operations ext4_dir_op
+>  #endif
+>  	.fsync		= ext4_sync_file,
+>  	.release	= ext4_release_dir,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  
+>  
+> diff -puN fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0 fs/ext4/file.c
+> --- linux-2.6.git/fs/ext4/file.c~add-stupid-checkpoint-to-lots-of-fses-take0	2009-03-05 08:37:01.000000000 -0800
+> +++ linux-2.6.git-dave/fs/ext4/file.c	2009-03-05 08:37:01.000000000 -0800
+> @@ -156,6 +156,7 @@ const struct file_operations ext4_file_o
+>  	.fsync		= ext4_sync_file,
+>  	.splice_read	= generic_file_splice_read,
+>  	.splice_write	= generic_file_splice_write,
+> +	.checkpoint	= generic_file_checkpoint,
+>  };
+>  
+>  const struct inode_operations ext4_file_inode_operations = {
+> _
 > 
-> I guess my question can be approximately simplified to: "will it end up
-> looking like openvz"?  (I don't believe that we know of any other way
-> of implementing this?)
-> 
-> Because if it does then that's a concern, because my assessment when I
-> looked at that code (a number of years ago) was that having code of
-> that nature in mainline would be pretty costly to us, and rather
-> unwelcome.
-
-I originally implemented c/r for linux as as kernel module, without
-requiring any changes from the kernel. (Doing the namespaces as a kernel
-module was much harder). For more details, see:
-	https://www.ncl.cs.columbia.edu/research/migrate
-
-The current set of patches is the beginning of a re-implementation
-based on that work and other lessons learned, as well as feedback and
-collaboration with other players.
-
-I am confident that the the vast majority of the code will end up as a
-separate "subsystem", and that relatively few changes will be required
-from the existing kernel.
-
-> The broadest form of the question is "will we end up regretting having
-> done this".
-
-I bet that once this works for a critical mass of apps/users - we will
-never regret having done this. (We may regret - and fix - having done
-specific part this way or another).
-
-> 
-> If we can arrange for the implementation to sit quietly over in a
-> corner with a team of people maintaining it and not screwing up other
-> people's work then I guess we'd be OK - if it breaks then the breakage
-> is localised.
-
-In my experience, there is very little code of the c/r that affects
-other parts of the kernel, it's mostly isolated. So I believe this
-will be the case.
-
-> 
-> And it's not just a matter of "does the diffstat only affect a single
-> subdirectory".  We also should watch out for the imposition of new
-> rules which kernel code must follow.  "you can't do that, because we
-> can't serialise it", or something.
-> 
-> Similar to the way in which perfectly correct and normal kernel
-> sometimes has to be changed because it unexpectedly upsets the -rt
-> patch.
-> 
-> Do you expect that any restrictions of this type will be imposed?
-> 
-
-That an excellent point. Again, judging from past experience -
-it is possible (but not always pretty) to implement c/r as a kernel
-module, without requiring _any_ kernel changes. I can't think of
-any such restrictions, but we'll certainly have to keep our eyes
-open.
-
-Oren
