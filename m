@@ -1,20 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum checkpoint/restart
-	implementation
-Date: Thu, 12 Mar 2009 23:36:49 -0400
-Message-ID: <49B9D4D1.8020807@cs.columbia.edu>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>
-	<1233182478-27113-2-git-send-email-ntl@pobox.com>
-	<49814FA2.9060108@cs.columbia.edu>
-	<20090129214035.GB6913@localdomain>
-	<20090217010355.58afd5cf@thinkcentre.lan>
-	<20090224195826.GA25909@us.ibm.com>
-	<20090224151152.29e98b5f@thinkcentre.lan>
+Subject: Re: [RFC v13][PATCH 00/14] Kernel based checkpoint/restart
+Date: Thu, 12 Mar 2009 23:57:45 -0400
+Message-ID: <49B9D9B9.4070508__25556.1025151566$1236916938$gmane$org@cs.columbia.edu>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>	<1234285547.30155.6.camel@nimitz>	<20090211141434.dfa1d079.akpm@linux-foundation.org>	<1234462282.30155.171.camel@nimitz>	<20090213152836.0fbbfa7d.akpm@linux-foundation.org>
+	<49B9C8E0.5080500@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090224151152.29e98b5f-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
+In-Reply-To: <49B9C8E0.5080500-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,87 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Nathan Lynch wrote:
-> On Tue, 24 Feb 2009 13:58:26 -0600
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Oren Laadan wrote:
+> Hi,
 > 
->> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->>> Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org> wrote:
->>>> Oren Laadan wrote:
->>>>> Nathan Lynch wrote:
->>>>>> What doesn't work:
->>>>>> * restarting a 32-bit task from a 64-bit task and vice versa
->>>>> Is there a test to bail if we attempt to checkpoint such tasks ?
->>>> No, but I'll add one if it looks too hard to fix for the next round.
->>> Unfortunately, adding a check for this is hard.
->>>
->>> The "point of no return" in the restart path is cr_read_mm, which tears
->>> down current's address space.  cr_read_mm runs way before cr_read_cpu,
->>> which is the only restart method I've implemented for powerpc so far.
->>> So, checking for this condition in cr_read_cpu is too late if I want
->>> restart(2) to return an error and leave the caller's memory map
->>> intact.  (And I do want this: restart should be as robust as execve.)
->>>
->>> Well okay then, cr_read_head_arch seems to be the right place in the
->>> restart sequence for the architecture code to handle this.  However,
->>> cr_write_head_arch (which produces the buffer that cr_read_head_arch
->>> consumes) is not provided a reference to the task to be checkpointed,
->>> nor can it assume that it's operating on current.  I need a reference
->>> to a task before I can determine whether it's running in 32- or 64-bit
->>> mode, or using the FPU, Altivec, SPE, whatever.
->>>
->>> In any case, mixing 32- and 64-bit tasks across restart is something I
->>> eventually want to support, not reject.  But the problem I've outlined
->>> applies to FPU state and vector extensions (VMX, SPE), as well as
->>> sanity-checking debug register (DABR) contents.  We'll need to be able
->>> to error out gracefully from restart when a checkpoint image specifies a
->>> feature unsupported by the current kernel or hardware.  But I don't see
->>> how to do it with the current architecture.  Am I missing something?
->> I suspect I can guess the response to this suggestion, but how about we
->> accept that if sys_restart() fails due to something like this, the
->> task is lost and can't exit gracefully?
+> Just got back from 3 weeks with practically no internet, and I see
+> that I missed a big party !
 > 
-> In the short term it might be necessary.  But the restart code should
-> forcibly kill the task instead of returning an error back up to
-> userspace in this case.  Once the memory map of the process has been
-> altered, there is no point in allowing it to continue (and likely dump
-> a useless core).  Btw, this failure mode seems to apply when
-> cr_read_files() fails, too...
+> Trying to catch up with what's been said so far --
+
+[...]
+
+>>>>
+>>>> - Will any of this involve non-trivial serialisation of kernel
+>>>>   objects?  If so, that's getting into the
+>>>>   unacceptably-expensive-to-maintain space, I suspect.
+>>> We have some structures that are certainly tied to the kernel-internal
+>>> ones.  However, we are certainly *not* simply writing kernel structures
+>>> to userspace.  We could do that with /dev/mem.  We are carefully pulling
+>>> out the minimal bits of information from the kernel structures that we
+>>> *need* to recreate the function of the structure at restart.  There is a
+>>> maintenance burden here but, so far, that burden is almost entirely in
+>>> checkpoint/*.c.  We intend to test this functionality thoroughly to
+>>> ensure that we don't regress once we have integrated it.
+>> I guess my question can be approximately simplified to: "will it end up
+>> looking like openvz"?  (I don't believe that we know of any other way
+>> of implementing this?)
+>>
+>> Because if it does then that's a concern, because my assessment when I
+>> looked at that code (a number of years ago) was that having code of
+>> that nature in mainline would be pretty costly to us, and rather
+>> unwelcome.
 > 
-> But in the long term, things need to be more robust (e.g. restart(2)
-> returns ENOEXEC without messing with current->mm).  I think it's worth
-> looking at how execve operates... if I understand correctly, it sets up
-> a new mm_struct disconnected from the current task and activates it at
-> the last moment.
-> 
+> I originally implemented c/r for linux as as kernel module, without
+> requiring any changes from the kernel. (Doing the namespaces as a kernel
+> module was much harder). For more details, see:
+> 	https://www.ncl.cs.columbia.edu/research/migrate
 
-That's a good idea, and I have considered it in the past.
+oops... I meant the following link:
+	http://www.ncl.cs.columbia.edu/research/migration/
 
-However, it is easier to restarti a task in its own, new, context,
-including the MM. For instance, you can leverage all memory syscalls.
-
-An in-between way would be to switch to the new MM but not tear down
-the original one, but rather save it along side. If a failure occur -
-restore it.
-
-Then, you'll have to ask the same question about all other resources -
-signal handlers, open files, etc. Either you make all changes atomic
-at once, or none - if you want the operation to be non-intrusive in
-the case of an error.
-
-However, I do think that this is not necessary: the tasks that are
-doing the restart have been created from scratch for that purpose,
-so they need not return any specific value to the user. It is the
-task that initiates the restart that needs to handle error gracefully.
-The scheme I proposed in the previous email does exactly that.
-
-(This does not apply to self-restart, for obvious reasons, but that
-is a special case anyway).
+see, for example, the papers from DejaView (SOSP 07) and Zap (USENIX 07).
 
 Oren.
