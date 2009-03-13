@@ -1,94 +1,115 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: Ensuring c/r maintainability (WAS Re: [RFC][PATCH 00/11] track
-	files for checkpointability)
-Date: Fri, 13 Mar 2009 12:53:01 -0500
-Message-ID: <20090313175301.GA13050@us.ibm.com>
-References: <20090305210840.GA2499@x200.localdomain> <1236288427.22399.122.camel@nimitz> <20090305220044.GA2819@x200.localdomain> <1236352121.5732.80.camel@bahia> <20090306153549.GA898@us.ibm.com> <49B15F35.2010909@free.fr> <20090306183055.GA6729@us.ibm.com> <49B76D91.1020807@free.fr> <20090312153048.GA11147@hallyn.com> <20090313063611.GH7561@us.ibm.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] [RFC] c/r: Add UTS support
+Date: Fri, 13 Mar 2009 18:53:32 +0100
+Message-ID: <49BA9D9C.2030208@free.fr>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
+	<20090312162954.4a4b8e00@thinkcentre.lan>
+	<87fxhipfrh.fsf@caffeine.danplanet.com> <49B99144.9000106@free.fr>
+	<877i2upcvo.fsf@caffeine.danplanet.com> <49B996BC.1090908@free.fr>
+	<873adipc5l.fsf@caffeine.danplanet.com>
+	<49B999A6.2000005@free.fr> <20090313153004.GA8317@us.ibm.com>
+	<49BA811C.4070302@free.fr> <20090313171556.GB10685@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753672AbZCMRxW@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090313063611.GH7561@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Matt Helsley <matthltc@us.ibm.com>
-Cc: Serge Hallyn <serue@linux.vnet.ibm.com>, Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Oren Laadan <orenl@cs.columbia.edu>, Dave Hansen <dave@linux.vnet.ibm.com>, Ingo Molnar <mingo@elte.hu>, Christoph Hellwig <hch@infradead.org>, Alexey Dobriyan <adobriyan@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090313171556.GB10685-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc@us.ibm.com):
-> On Thu, Mar 12, 2009 at 10:30:48AM -0500, Serge E. Hallyn wrote:
-> > Quoting Cedric Le Goater (legoater@free.fr):
-> > > >> And if Ingo's requirement is fulfilled, would any C/R patchset be acceptable ?
-> > > > 
-> > > > Yup, no matter how hideous  :)  Ok not really.
-> > > > 
-> > > > But the point was that it wasn't Dave not understanding Alexey's
-> > > > suggestion, but Greg not understanding Ingo's.  If you think Ingo's
-> > > > goal isn't worthwhile or achievable, then argue that (as I am), don't
-> > > > keep elaborating on something we all agree will be needed (Alexey's
-> > > > suggestion or some other way of doing a true may-be-checkpointed test).
-> > > 
-> > > I rather spend my time on enabling things rather than forbid them. 
-> > 
-> > That sure sounds productive.  How could I argue with that.
-> > 
-> > But wait, haven't several teams been doing that for years?  So why is
-> > c/r not in the upstream kernel?  Could it be that ignoring the
-> > upstream maintainers' concerns about (a) treating the feature as a
-> > toy, (b) long-term maintainability, and (c) c/r becoming an impediment
-> > to future features, and instead hacking away at our toy feature, is
-> > *not* always the best course?
-> 
-> I've been thinking about how we could make checkpoint/restart (c/r) more
-> maintainable in the long-term. I've only come up with two ideas:
-> 
-> I. Implement sparse-like __cr struct annotations for some compile-time checking.
-> 
-> First we annotate structures which c/r needs to save. For example we might have:
-> 
-> 	struct mm_struct {
-> 		__cr struct vm_area_struct * mmap;
-> 		struct rb_root mm_rb;
-> 		struct vm_area_struct *mmap_cache;
-> 		...
-> 		__cr unsigned long mmap_base;
-> 		__cr unsigned long task_size;
-> 		..
-> 	};
-> 
-> The __cr annotations indicate fields of the mm_struct which must be
-> saved during checkpoint restart. In fact, for non-pointer fields these
-> annotations would be sufficient to generate c/r code.
-> 
-> Next we would need a __cr_root annotation. These mark structures which
-> the c/r code visits that determine the scope of c/r. If there is no path from a
-> __cr annotation to a __cr_root annotation then we would conclude that c/r of
-> this struct is broken. These path constraint checks could be done at compile
-> time.
+Serge E. Hallyn wrote:
+> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>   
+>> Serge E. Hallyn wrote:
+>>     
+>>> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>>>   
+>>>       
+>>>> Dan Smith wrote:
+>>>>     
+>>>>         
+>>>>> DL> I guess it will be esay to implement with a nsproxy level counter.
+>>>>> DL> Each time you unshare, the new nsproxy count is incremented.
+>>>>> DL> Assuming the init_nsproxy is level 0, when the nsproxy counter is
+>>>>> DL> > 1, the process is uncheckpointable.
+>>>>>
+>>>>> This should also be possible by just making sure that the nsproxy of
+>>>>> the root process being checkpointed is the same as any of the
+>>>>> children, correct?  That way we avoid having to modify the core
+>>>>> nsproxy bits and can still reject any nested namespaces.
+>>>>>         
+>>>>>           
+>>>> Right, this is another option. The nsproxy counter will allow to flag 
+>>>> at runtime a process to be uncheckpointable. The nsproxy comparison 
+>>>> will detect nested nsproxies at checkpoint time.
+>>>>     
+>>>>         
+>>> Or, to stick more to the resource->may_checkpoint way of doing it, you
+>>> setbit(&nsproxy->uts_ns->may_checkpoint, 0) when the uts_ns is
+>>> created, and anytime a task does clone(CLONE_NEWUTS) or
+>>> unshare(CLONE_NEWUTS), you clear the bit on the parent uts_ns.
+>>>   
+>>>       
+>> Hmm, you will need to add a back pointer for the nsproxy | utsns parent,  
+>> no ?
+>>     
+>
+> Why?
+>   
+Never mind, I talked too fast :) we have both parent and child namespace 
+in the clone and unshare functions.
+>> What I was proposing is a counter directly in the nsproxy. Maybe instead  
+>> of initializing it to zero, it can be initialized to the max supported  
+>> nested level ( only one right now) and decrement each time a clone or a  
+>> unshare is done whatever the namespace.
+>>
+>> init nsproxy->may_checkpoint = 2
+>> First clone | unshare => for the new nsproxy the counter may_checkpoint  
+>> becomes 1
+>>     
+>
+> I don't understand why it gets decremented twice before not being
+> checkpointable - or do you mean that by the time the nsproxy is
+> useful it will be 1?   2 is basically an init-only unused phase?
+>   
+The counter is initialized on the system to 2, which is (max level + 1), 
+it is for the init namespaces.
 
-Hi Matt,
+>> Second clone | unshare (forbidden) => may_checkpoint becomes 0
+>>     
+>
+> Ok but if I
+>
+> 	unshare(CLONE_NEWNS)
+>
+> I'll get a new nsproxy with an old uts_ns.  So we'll need
+> some (potentially complicated) logic at nsproxy creation to
+> decide whether the namespaces being cloned or not being cloned
+> impact the checkpointability of the new nsproxy...
+>
+> Hmm.  I think I prefer making sure that the uts_ns is the
+> same for all checkpointed tasks :)
+>   
+Yes, this is an alternative. Maybe, I will say something stupid but IMO 
+the "maycheckpoint" will depends on what you assume you have for the CR:
+    1) the container is instantiated in one step, that is 
+clone(mycloneflags) and that's all, any other clone/unshare is 
+forbidden. In this case, you can concentrate the code in the nsproxy 
+structure.
+    2) the container can be instantiated in several steps, that is 
+several clone/unshare but with different namespaces. In this case, you 
+have to take care of all the namespaces and do a "maycheckpoint" for 
+each of them.
 
-is what you're detecting here really something we're worried about?
-
-Maybe that's something we should be doing - coming up with a list of
-the things we are trying to detect or prevent.  I can only think of
-a few offhand:
-
-1. checkpoint (and restart) a task which has used a resource which we
-do cannot (yet, or ever) safely checkpoint/restart.
-
-2. kernel has a new feature for which we have not considered
-checkpoint/restart.  Not only is it not safe to c/r a task using it,
-but we haven't even implemented a check for tasks using it.
-
-3. Some new kernel feature has an attribute which simply must be
-stored away.  An example would be the vdso_base in s390 as of
-recent 2.6.29 rc's, which was not present in 2.6.28.  So there are
-two things to worry about in this one:
-
-	a. detect that this happened and handle it, so c/r continues
-	   to work.
-	b. figure out a way to restart an older c/r image on a newer
-	   kernel - or simply detect older images and call them
-	   incompatible.
-
--serge
+IMHO, both solutions are valid. Of course, we are talking about short 
+term solution :)
