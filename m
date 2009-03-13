@@ -1,400 +1,155 @@
-From: Ying Han <yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Thu, 12 Mar 2009 23:19:43 -0700
-Message-ID: <604427e00903122319y4d98ffc3ub62547960181a2bf__3881.53794124282$1236925450$gmane$org@mail.gmail.com>
-References: <1234475483.30155.194.camel@nimitz>
-	<1234479845.30155.220.camel@nimitz>
-	<20090226155755.GA1456@x200.localdomain>
-	<20090310215305.GA2078@x200.localdomain> <49B775B4.1040800@free.fr>
-	<20090312145311.GC12390@us.ibm.com> <1236891719.32630.14.camel@bahia>
-	<20090312212124.GA25019@us.ibm.com>
-	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>
-	<20090313053458.GA28833@us.ibm.com>
+From: Matt Helsley <matthltc@us.ibm.com>
+Subject: Ensuring c/r maintainability (WAS Re: [RFC][PATCH 00/11] track
+	files for checkpointability)
+Date: Thu, 12 Mar 2009 23:36:11 -0700
+Message-ID: <20090313063611.GH7561@us.ibm.com>
+References: <1236280567.22399.99.camel@nimitz> <20090305210840.GA2499@x200.localdomain> <1236288427.22399.122.camel@nimitz> <20090305220044.GA2819@x200.localdomain> <1236352121.5732.80.camel@bahia> <20090306153549.GA898@us.ibm.com> <49B15F35.2010909@free.fr> <20090306183055.GA6729@us.ibm.com> <49B76D91.1020807@free.fr> <20090312153048.GA11147@hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090313053458.GA28833-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757304AbZCMGg1@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090312153048.GA11147@hallyn.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Serge Hallyn <serue@linux.vnet.ibm.com>
+Cc: Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Oren Laadan <orenl@cs.columbia.edu>, Dave Hansen <dave@linux.vnet.ibm.com>, Ingo Molnar <mingo@elte.hu>, Christoph Hellwig <hch@infradead.org>, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-Thank you Sukadev for your comments. I will try to clean up my patch
-and repost it.
+On Thu, Mar 12, 2009 at 10:30:48AM -0500, Serge E. Hallyn wrote:
+> Quoting Cedric Le Goater (legoater@free.fr):
+> > >> And if Ingo's requirement is fulfilled, would any C/R patchset be acceptable ?
+> > > 
+> > > Yup, no matter how hideous  :)  Ok not really.
+> > > 
+> > > But the point was that it wasn't Dave not understanding Alexey's
+> > > suggestion, but Greg not understanding Ingo's.  If you think Ingo's
+> > > goal isn't worthwhile or achievable, then argue that (as I am), don't
+> > > keep elaborating on something we all agree will be needed (Alexey's
+> > > suggestion or some other way of doing a true may-be-checkpointed test).
+> > 
+> > I rather spend my time on enabling things rather than forbid them. 
+> 
+> That sure sounds productive.  How could I argue with that.
+> 
+> But wait, haven't several teams been doing that for years?  So why is
+> c/r not in the upstream kernel?  Could it be that ignoring the
+> upstream maintainers' concerns about (a) treating the feature as a
+> toy, (b) long-term maintainability, and (c) c/r becoming an impediment
+> to future features, and instead hacking away at our toy feature, is
+> *not* always the best course?
 
---Ying
+I've been thinking about how we could make checkpoint/restart (c/r) more
+maintainable in the long-term. I've only come up with two ideas:
 
-On Thu, Mar 12, 2009 at 10:34 PM, Sukadev Bhattiprolu
-<sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> Ying Han [yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org] wrote:
-> | Hi Serge:
-> | I made a patch based on Oren's tree recently which implement a new
-> | syscall clone_with_pid. I tested with checkpoint/restart process tree
-> | and it works as expected.
->
-> Yes, I think we had a version of clone() with pid a while ago.
->
-> But it would be easier to review if you break it up into smaller
-> patches. and remove the unnecessary diffs in this patch like...
->
->
-> | This patch has some hack in it which i made a copy of libc's clone and
-> | made modifications of passing one more argument(pid number). I will
-> | try to clean up the code and do more testing.
-> |
-> | New syscall clone_with_pid
-> | Implement a new syscall which clone a thread with a preselected pid num=
-ber.
-> |
-> | clone_with_pid(child_func, child_stack + CHILD_STACK - 16,
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 CLONE_WITH_PID|SIGCHLD, pid=
-, NULL);
-> |
-> | Signed-off-by: Ying Han <yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> |
-> | diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/sys=
-calls.h
-> | index 87803da..b5a1b03 100644
-> | --- a/arch/x86/include/asm/syscalls.h
-> | +++ b/arch/x86/include/asm/syscalls.h
-> | @@ -26,6 +26,7 @@ asmlinkage int sys_fork(struct pt_regs);
-> | =A0asmlinkage int sys_clone(struct pt_regs);
-> | =A0asmlinkage int sys_vfork(struct pt_regs);
-> | =A0asmlinkage int sys_execve(struct pt_regs);
-> | +asmlinkage int sys_clone_with_pid(struct pt_regs);
-> |
-> | =A0/* kernel/signal_32.c */
-> | =A0asmlinkage int sys_sigsuspend(int, int, old_sigset_t);
-> | diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/un=
-istd_32
-> | index a5f9e09..f10ca0e 100644
-> | --- a/arch/x86/include/asm/unistd_32.h
-> | +++ b/arch/x86/include/asm/unistd_32.h
-> | @@ -340,6 +340,7 @@
-> | =A0#define __NR_inotify_init1 =A0 332
-> | =A0#define __NR_checkpoint =A0 =A0 =A0 =A0 =A0 =A0 =A0333
-> | =A0#define __NR_restart =A0 =A0 =A0 =A0 334
-> | +#define __NR_clone_with_pid =A0335
-> |
-> | =A0#ifdef __KERNEL__
-> |
-> | diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-> | index 0a1302f..88ae634 100644
-> | --- a/arch/x86/kernel/process_32.c
-> | +++ b/arch/x86/kernel/process_32.c
-> | @@ -8,7 +8,6 @@
-> | =A0/*
-> | =A0 * This file handles the architecture-dependent parts of process han=
-dling..
-> | =A0 */
-> | -
->
-> these
->
-> | =A0#include <stdarg.h>
-> |
-> | =A0#include <linux/cpu.h>
-> | @@ -652,6 +651,28 @@ asmlinkage int sys_clone(struct pt_regs regs)
-> | =A0 =A0 =A0 return do_fork(clone_flags, newsp, &regs, 0, parent_tidptr,=
- child_tidptr);
-> | =A0}
-> |
-> | +/**
-> | + * sys_clone_with_pid - clone a thread with pre-select pid number.
-> | + */
-> | +asmlinkage int sys_clone_with_pid(struct pt_regs regs)
-> | +{
-> | + =A0 =A0 unsigned long clone_flags;
-> | + =A0 =A0 unsigned long newsp;
-> | + =A0 =A0 int __user *parent_tidptr, *child_tidptr;
-> | + =A0 =A0 pid_t pid_nr;
-> | +
-> | + =A0 =A0 clone_flags =3D regs.bx;
-> | + =A0 =A0 newsp =3D regs.cx;
-> | + =A0 =A0 parent_tidptr =3D (int __user *)regs.dx;
-> | + =A0 =A0 child_tidptr =3D (int __user *)regs.di;
-> | + =A0 =A0 pid_nr =3D regs.bp;
-> | +
-> | + =A0 =A0 if (!newsp)
-> | + =A0 =A0 =A0 =A0 =A0 =A0 newsp =3D regs.sp;
-> | + =A0 =A0 return do_fork(clone_flags, newsp, &regs, pid_nr, parent_tidp=
-tr,
-> | + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 child_tidptr);
-> | +}
-> | +
-> | =A0/*
-> | =A0 * This is trivial, and on the face of it looks like it
-> | =A0 * could equally well be done in user mode.
-> | diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/sysca=
-ll_tabl
-> | index 5543136..5191117 100644
-> | --- a/arch/x86/kernel/syscall_table_32.S
-> | +++ b/arch/x86/kernel/syscall_table_32.S
-> | @@ -334,3 +334,4 @@ ENTRY(sys_call_table)
-> | =A0 =A0 =A0 .long sys_inotify_init1
-> | =A0 =A0 =A0 .long sys_checkpoint
-> | =A0 =A0 =A0 .long sys_restart
-> | + =A0 =A0 .long sys_clone_with_pid
-> | diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-> | index 50bde9a..a4aee65 100644
-> | --- a/arch/x86/mm/checkpoint.c
-> | +++ b/arch/x86/mm/checkpoint.c
-> | @@ -7,7 +7,6 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | =A0#include <asm/desc.h>
-> | =A0#include <asm/i387.h>
-> |
-> | diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> | index 64155de..b7de611 100644
-> | --- a/checkpoint/checkpoint.c
-> | +++ b/checkpoint/checkpoint.c
-> | @@ -8,6 +8,7 @@
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> |
-> | +#define DEBUG
-> | =A0#include <linux/version.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/ptrace.h>
-> | @@ -564,3 +565,4 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
-> | =A0 out:
-> | =A0 =A0 =A0 return ret;
-> | =A0}
-> | +
-> | diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
-> | index e3097ac..a8c5ad5 100644
-> | --- a/checkpoint/ckpt_file.c
-> | +++ b/checkpoint/ckpt_file.c
-> | @@ -7,7 +7,7 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/kernel.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/file.h>
-> | diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
-> | index 4925ff2..ca5840b 100644
-> | --- a/checkpoint/ckpt_mem.c
-> | +++ b/checkpoint/ckpt_mem.c
-> | @@ -7,7 +7,7 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/kernel.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/slab.h>
-> | diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> | index 7ec4de4..30e43c2 100644
-> | --- a/checkpoint/restart.c
-> | +++ b/checkpoint/restart.c
-> | @@ -8,6 +8,7 @@
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> |
-> | +#define DEBUG
-> | =A0#include <linux/version.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/wait.h>
-> | @@ -242,7 +243,7 @@ static int cr_read_task_struct(struct cr_ctx *ctx)
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcpy(t->comm, buf, min(hh->task_comm_len,=
- TASK_COMM_LEN));
-> | =A0 =A0 =A0 }
-> | =A0 =A0 =A0 kfree(buf);
-> | -
-> | + =A0 =A0 pr_debug("read task %s\n", t->comm);
-> | =A0 =A0 =A0 /* FIXME: restore remaining relevant task_struct fields */
-> | =A0 out:
-> | =A0 =A0 =A0 cr_hbuf_put(ctx, sizeof(*hh));
-> | diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
-> | index f44b081..755e40e 100644
-> | --- a/checkpoint/rstr_file.c
-> | +++ b/checkpoint/rstr_file.c
-> | @@ -7,7 +7,7 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/kernel.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/fs.h>
-> | diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
-> | index 4d5ce1a..8330468 100644
-> | --- a/checkpoint/rstr_mem.c
-> | +++ b/checkpoint/rstr_mem.c
-> | @@ -7,7 +7,7 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/kernel.h>
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/fcntl.h>
-> | diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> | index f26b0c6..d1a5394 100644
-> | --- a/checkpoint/sys.c
-> | +++ b/checkpoint/sys.c
-> | @@ -7,7 +7,7 @@
-> | =A0 * =A0License. =A0See the file COPYING in the main directory of the =
-Linux
-> | =A0 * =A0distribution for more details.
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/sched.h>
-> | =A0#include <linux/nsproxy.h>
-> | =A0#include <linux/kernel.h>
-> | @@ -263,7 +263,6 @@ asmlinkage long sys_checkpoint(pid_t pid, int fd, u=
-nsigned
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 return PTR_ERR(ctx);
-> |
-> | =A0 =A0 =A0 ret =3D do_checkpoint(ctx, pid);
-> | -
-> | =A0 =A0 =A0 if (!ret)
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D ctx->crid;
-> |
-> | @@ -304,3 +303,4 @@ asmlinkage long sys_restart(int crid, int fd, unsig=
-ned lon
-> | =A0 =A0 =A0 cr_ctx_put(ctx);
-> | =A0 =A0 =A0 return ret;
-> | =A0}
-> | +
-> | diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> | index 217cf6e..bc2c202 100644
-> | --- a/include/linux/checkpoint.h
-> | +++ b/include/linux/checkpoint.h
-> | @@ -114,7 +114,6 @@ extern int cr_write_files(struct cr_ctx *ctx, struc=
-t task_
-> | =A0extern int do_restart(struct cr_ctx *ctx, pid_t pid);
-> | =A0extern int cr_read_mm(struct cr_ctx *ctx);
-> | =A0extern int cr_read_files(struct cr_ctx *ctx);
-> | -
-> | =A0#ifdef pr_fmt
-> | =A0#undef pr_fmt
-> | =A0#endif
-> | diff --git a/include/linux/pid.h b/include/linux/pid.h
-> | index d7e98ff..86e2f61 100644
-> | --- a/include/linux/pid.h
-> | +++ b/include/linux/pid.h
-> | @@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
-> | =A0extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
-> | =A0int next_pidmap(struct pid_namespace *pid_ns, int last);
-> |
-> | -extern struct pid *alloc_pid(struct pid_namespace *ns);
-> | +extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t pid_nr);
-> | =A0extern void free_pid(struct pid *pid);
-> |
-> | =A0/*
-> | diff --git a/include/linux/sched.h b/include/linux/sched.h
-> | index 0150e90..7fb4e28 100644
-> | --- a/include/linux/sched.h
-> | +++ b/include/linux/sched.h
-> | @@ -28,6 +28,7 @@
-> | =A0#define CLONE_NEWPID =A0 =A0 =A0 =A0 0x20000000 =A0 =A0 =A0/* New pi=
-d namespace */
-> | =A0#define CLONE_NEWNET =A0 =A0 =A0 =A0 0x40000000 =A0 =A0 =A0/* New ne=
-twork namespace */
-> | =A0#define CLONE_IO =A0 =A0 =A0 =A0 =A0 =A0 0x80000000 =A0 =A0 =A0/* Cl=
-one io context */
-> | +#define CLONE_WITH_PID =A0 =A0 =A0 =A0 =A0 =A0 =A0 0x00001000 =A0 =A0 =
-=A0/* Clone with pre-select PID */
-> |
-> | =A0/*
-> | =A0 * Scheduling policies
-> | diff --git a/kernel/exit.c b/kernel/exit.c
-> | index 2d8be7e..4baf651 100644
-> | --- a/kernel/exit.c
-> | +++ b/kernel/exit.c
-> | @@ -3,7 +3,7 @@
-> | =A0 *
-> | =A0 * =A0Copyright (C) 1991, 1992 =A0Linus Torvalds
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/mm.h>
-> | =A0#include <linux/slab.h>
-> | =A0#include <linux/interrupt.h>
-> | @@ -1676,6 +1676,7 @@ static long do_wait(enum pid_type type, struct pi=
-d *pid,
-> | =A0 =A0 =A0 DECLARE_WAITQUEUE(wait, current);
-> | =A0 =A0 =A0 struct task_struct *tsk;
-> | =A0 =A0 =A0 int retval;
-> | + =A0 =A0 int level;
->
-> and this (level is not used).
-> |
-> | =A0 =A0 =A0 trace_sched_process_wait(pid);
-> |
-> | @@ -1708,7 +1709,6 @@ repeat:
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 retval =3D tsk_result;
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto end;
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> | -
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (options & __WNOTHREAD)
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 tsk =3D next_thread(tsk);
-> | @@ -1817,7 +1817,6 @@ asmlinkage long sys_wait4(pid_t upid, int __user =
-*stat_a
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 type =3D PIDTYPE_PID;
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 pid =3D find_get_pid(upid);
-> | =A0 =A0 =A0 }
-> | -
-> | =A0 =A0 =A0 ret =3D do_wait(type, pid, options | WEXITED, NULL, stat_ad=
-dr, ru);
-> | =A0 =A0 =A0 put_pid(pid);
-> |
-> | diff --git a/kernel/fork.c b/kernel/fork.c
-> | index 085ce56..262ae1e 100644
-> | --- a/kernel/fork.c
-> | +++ b/kernel/fork.c
-> | @@ -10,7 +10,7 @@
-> | =A0 * Fork is rather simple, once you get the hang of it, but the memory
-> | =A0 * management can be a bitch. See 'mm/memory.c': 'copy_page_range()'
-> | =A0 */
-> | -
-> | +#define DEBUG
-> | =A0#include <linux/slab.h>
-> | =A0#include <linux/init.h>
-> | =A0#include <linux/unistd.h>
-> | @@ -959,10 +959,19 @@ static struct task_struct *copy_process(unsigned =
-long cl
-> | =A0 =A0 =A0 int retval;
-> | =A0 =A0 =A0 struct task_struct *p;
-> | =A0 =A0 =A0 int cgroup_callbacks_done =3D 0;
-> | + =A0 =A0 pid_t clone_pid =3D stack_size;
-> |
-> | =A0 =A0 =A0 if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) =3D=3D (CLONE_NE=
-WNS|CLONE_FS))
-> | =A0 =A0 =A0 =A0 =A0 =A0 =A0 return ERR_PTR(-EINVAL);
-> |
-> | + =A0 =A0 /* We only allow the clone_with_pid when a new pid namespace =
-is
-> | + =A0 =A0 =A0* created. FIXME: how to restrict it.
->
-> Not sure why CLONE_NEWPID is required to set pid_nr. In fact with CLONE_N=
-EWPID,
-> by definition, pid_nr should be 1. Also, what happens if a container has
-> more than one process - where the second process has a pid_nr > 2 ?
->
+I. Implement sparse-like __cr struct annotations for some compile-time checking.
+
+First we annotate structures which c/r needs to save. For example we might have:
+
+	struct mm_struct {
+		__cr struct vm_area_struct * mmap;
+		struct rb_root mm_rb;
+		struct vm_area_struct *mmap_cache;
+		...
+		__cr unsigned long mmap_base;
+		__cr unsigned long task_size;
+		..
+	};
+
+The __cr annotations indicate fields of the mm_struct which must be
+saved during checkpoint restart. In fact, for non-pointer fields these
+annotations would be sufficient to generate c/r code.
+
+Next we would need a __cr_root annotation. These mark structures which
+the c/r code visits that determine the scope of c/r. If there is no path from a
+__cr annotation to a __cr_root annotation then we would conclude that c/r of
+this struct is broken. These path constraint checks could be done at compile
+time.
+
+Since the example so far lacks a __cr_root we would know that there's a bug
+since no __cr_root struct is reachable from an mm_struct. We'd fix that with:
+
+	struct task_struct __cr_root {
+		__cr volatile long state;
+		..
+		__cr struct mm_struct *mm;
+		struct *active_mm;
+		...
+	};
+
+Of course there are problems with this specific annotation scheme. It doesn't
+follow casts -- e.g. list heads, rb_nodes, and anything that uses the important
+container_of() idiom would be problematic if the containers themselves are not
+uniform. What I've proposed so far doesn't check the functions that walk these
+data structures during c/r to make sure each saved instance has a matching
+restore (seems like this could be addressed though). I'm no sparse expert so I
+don't know that sparse can check these kinds of struct constraints,
+however I'm pretty sure that if sparse can't do it then we can do it
+with the dwarf-2 debugging information available.
+
+We could also save __cr-annotated struct definitions across one or more commits
+and compare them to determine how structures with __cr annotations change. We
+could use dwarf-2 information to detect certain types of changes which can then
+be flagged for further review, emit warnings or even  errors. I think once c/r
+was in mainline this would ideally be run against automated compile tests of
+linux-next and the output sent to c/r maintainers/lists. This output would also
+highlight changes relevant to userspace checkpoint-image converters that enable
+things like kernel upgrades by doing checkpoint, kexec, and restart.
+
+The idea of generating straight-line struct assignment code from these
+annotations crossed my mind but I'm pretty sure that would be less 
+maintainable.
+
+II. JIT-instrumentation
+
+WARNING: This idea is much more vaporous than the previous idea.
+
+Confirm that, from the perspective of executing userspace code, a restarted
+container does exactly the same thing as the original, checkpointed container.
+Use valgrind's JIT instrumentation framework to do instruction by instruction
+step-and-compare cycles between corresponding tasks in each container:
+
+	1. Compare instruction pointer (IP)
+	2. Compare the instruction (redundant if we check text mappings)
+	3. Compare all register and memory operand contents
+
+Each comparison must match exactly otherwise we "abort" the two containers.
+
+Normally this would break even if c/r is correctly implemented. The idea is we
+insert "mirroring" code into parts of the kernel to ensure that the timing and
+contents of inputs external to the userspace portion of these containers match:
+	1. Network
+		i. Need to "mirror" packets to both containers
+		ii. Need to merge packets from both containers
+	2. Time
+		Each corresponding call to functions like gettimeofday()
+		would need to return the same struct timeval.
+	
+		Each timeout result from calls like ppoll() would need
+		to be the same.
+	3. Locking "order" would need to be "mirrored". This is probably
+		the hardest to implement. Task A and A' (original and
+		duplicate respectively) could try to acquire the same
+		lock or semaphore in the kernel. The results of a system call
+		could vary depending on whether trying to acquire this
+		lock succeeds. Suddenly the task behavior would diverge
+		even though c/r is correct. I haven't figured out how to
+		address this problem but perhaps others can make
+		suggestions.
+	4. Scheduling
+		Need to schedule tasks within a container in the same order.
+		This is probably strongly tied to both timing and locking --
+		perhaps so much so that taking care of those will take care
+		of scheduling??
+
+This should catch any points where the restarted application differs
+from the original. I'm hoping it would catch most of the problems that
+struct annotation would miss and make maintenance of c/r much less
+problematic. One weakness of this method as I've described it so far is there's
+no mechanism for relating the divergence of the two tasks to a spot in the c/r
+code. Again, I haven't thought of a way to do that and perhaps others
+can help take the idea farther.
+
+A weakened version of this check might use the same kernel changes but only
+compare system calls.
+
+Cheers,
+	-Matt Helsley
