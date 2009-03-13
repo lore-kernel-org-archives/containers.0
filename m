@@ -1,18 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Thu, 12 Mar 2009 19:12:21 -0500
-Message-ID: <20090313001221.GA13213@hallyn.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
-	<20090312162954.4a4b8e00@thinkcentre.lan>
-	<87fxhipfrh.fsf@caffeine.danplanet.com>
-	<20090312224820.GA12723@hallyn.com>
-	<87bps6pcyf.fsf@caffeine.danplanet.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] devcgroup: avoid using cgroup_lock
+Date: Fri, 13 Mar 2009 09:54:15 +0800
+Message-ID: <49B9BCC7.7090908__36145.4986189075$1236909513$gmane$org@cn.fujitsu.com>
+References: <49B869BB.7030907@cn.fujitsu.com>
+	<20090312181912.GA20144@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87bps6pcyf.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <20090312181912.GA20144-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,41 +18,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> SH> Well it forces restart to go through the established userspace
-> SH> API's when creating resources (in this case, tasks and namespaces)
-> SH> which means any existing security guarantees are leveraged.
+>> @@ -426,11 +431,11 @@ static int devcgroup_access_write(struct cgroup *cgrp, struct cftype *cft,
+>>  				  const char *buffer)
+>>  {
+>>  	int retval;
+>> -	if (!cgroup_lock_live_group(cgrp))
 > 
-> That's a very valid point.  However, it still seems unbalanced to make
-> checkpoint a completely in-kernel process and restart an odd mix of
-> the two with potentially more confusing semantics and requirements.
-
-core_dump vs gdb? :)
-
-> SH> If we go with your patch, we suddenly have to worry about whether
-> SH> restart is a way to get around the CAP_SYS_ADMIN requirements for
-> SH> cloning a new namespace.  Just as an example.
+> Does it matter that we no longer check for cgroup_is_removed()?
 > 
-> Why?  The call to copy_namespaces() will do the CAP_SYS_ADMIN check,
 
-Had to check, but yes you're right.
+No, this means in a rare case that the write handler is called when the cgroup
+is dead, we still do the update work instead of returning ENODEV.
 
-> right?  Maybe your point is that in the restart implementation of
-> other namespace types we could potentially slide in a call to
-> something else that has already assumed the check has been made?  I
-> think that doing the obligatory copy_namespaces() during the restart
-> helps catch that case early and explicitly, no?
+This is ok, since at that time, accessing cgroup and devcgroup is still valid,
+but will have no effect since there is no task in this cgroup and the cgroup
+will be destroyed soon.
 
-Actually we can go a step further and say we expect user-space to
-set the hostname, which otherwise (admittedly in a container) the
-user, with your patch, can now do unprivileged, right?
-
-In particular, once it comes to setting up network devices for a
-container at restart, I think we'll find userspace a far easier
-place to work.
-
--serge
+>> -		return -ENODEV;
+>> +
+>> +	mutex_lock(&devcgroup_mutex);
+>>  	retval = devcgroup_update_access(cgroup_to_devcgroup(cgrp),
+>>  					 cft->private, buffer);
+>> -	cgroup_unlock();
+>> +	mutex_unlock(&devcgroup_mutex);
+>>  	return retval;
+>>  }
