@@ -1,20 +1,21 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Fri, 13 Mar 2009 12:15:56 -0500
-Message-ID: <20090313171556.GB10685@us.ibm.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
-	<20090312162954.4a4b8e00@thinkcentre.lan>
-	<87fxhipfrh.fsf@caffeine.danplanet.com> <49B99144.9000106@free.fr>
-	<877i2upcvo.fsf@caffeine.danplanet.com> <49B996BC.1090908@free.fr>
-	<873adipc5l.fsf@caffeine.danplanet.com>
-	<49B999A6.2000005@free.fr> <20090313153004.GA8317@us.ibm.com>
-	<49BA811C.4070302@free.fr>
+From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Fri, 13 Mar 2009 10:27:54 -0700 (PDT)
+Message-ID: <alpine.LFD.2.00.0903131018390.3940__12820.7034351819$1236966021$gmane$org@localhost.localdomain>
+References: <1234475483.30155.194.camel@nimitz>
+	<20090212141014.2cd3d54d.akpm@linux-foundation.org>
+	<1234479845.30155.220.camel@nimitz>
+	<20090226155755.GA1456@x200.localdomain>
+	<20090310215305.GA2078@x200.localdomain> <49B775B4.1040800@free.fr>
+	<20090312145311.GC12390@us.ibm.com> <1236891719.32630.14.camel@bahia>
+	<20090312212124.GA25019@us.ibm.com>
+	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>
+	<20090313053458.GA28833@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49BA811C.4070302-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20090313053458.GA28833-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,66 +25,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> Serge E. Hallyn wrote:
->> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
->>   
->>> Dan Smith wrote:
->>>     
->>>> DL> I guess it will be esay to implement with a nsproxy level counter.
->>>> DL> Each time you unshare, the new nsproxy count is incremented.
->>>> DL> Assuming the init_nsproxy is level 0, when the nsproxy counter is
->>>> DL> > 1, the process is uncheckpointable.
->>>>
->>>> This should also be possible by just making sure that the nsproxy of
->>>> the root process being checkpointed is the same as any of the
->>>> children, correct?  That way we avoid having to modify the core
->>>> nsproxy bits and can still reject any nested namespaces.
->>>>         
->>> Right, this is another option. The nsproxy counter will allow to flag 
->>> at runtime a process to be uncheckpointable. The nsproxy comparison 
->>> will detect nested nsproxies at checkpoint time.
->>>     
->>
->> Or, to stick more to the resource->may_checkpoint way of doing it, you
->> setbit(&nsproxy->uts_ns->may_checkpoint, 0) when the uts_ns is
->> created, and anytime a task does clone(CLONE_NEWUTS) or
->> unshare(CLONE_NEWUTS), you clear the bit on the parent uts_ns.
->>   
-> Hmm, you will need to add a back pointer for the nsproxy | utsns parent,  
-> no ?
 
-Why?
 
-> What I was proposing is a counter directly in the nsproxy. Maybe instead  
-> of initializing it to zero, it can be initialized to the max supported  
-> nested level ( only one right now) and decrement each time a clone or a  
-> unshare is done whatever the namespace.
->
-> init nsproxy->may_checkpoint = 2
-> First clone | unshare => for the new nsproxy the counter may_checkpoint  
-> becomes 1
+On Thu, 12 Mar 2009, Sukadev Bhattiprolu wrote:
 
-I don't understand why it gets decremented twice before not being
-checkpointable - or do you mean that by the time the nsproxy is
-useful it will be 1?   2 is basically an init-only unused phase?
+> Ying Han [yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org] wrote:
+> | Hi Serge:
+> | I made a patch based on Oren's tree recently which implement a new
+> | syscall clone_with_pid. I tested with checkpoint/restart process tree
+> | and it works as expected.
+> 
+> Yes, I think we had a version of clone() with pid a while ago.
 
-> Second clone | unshare (forbidden) => may_checkpoint becomes 0
+Are people _at_all_ thinking about security?
 
-Ok but if I
+Obviously not.
 
-	unshare(CLONE_NEWNS)
+There's no way we can do anything like this. Sure, it's trivial to do 
+inside the kernel. But it also sounds like a _wonderful_ attack vector 
+against badly written user-land software that sends signals and has small 
+races.
 
-I'll get a new nsproxy with an old uts_ns.  So we'll need
-some (potentially complicated) logic at nsproxy creation to
-decide whether the namespaces being cloned or not being cloned
-impact the checkpointability of the new nsproxy...
+Quite frankly, from having followed the discussion(s) over the last few 
+weeks about checkpoint/restart in various forms, my reaction to just about 
+_all_ of this is that people pushing this are pretty damn borderline. 
 
-Hmm.  I think I prefer making sure that the uts_ns is the
-same for all checkpointed tasks :)
+I think you guys are working on all the wrong problems. 
 
--serge
+Let's face it, we're not going to _ever_ checkpoint any kind of general 
+case process. Just TCP makes that fundamentally impossible in the general 
+case, and there are lots and lots of other cases too (just something as 
+totally _trivial_ as all the files in the filesystem that don't get rolled 
+back).
+
+So unless people start realizing that
+ (a) processes that want to be checkpointed had better be ready and aware 
+     of it, and help out
+ (b) there's no way in hell that we're going to add these kinds of 
+     interfaces that have dubious upsides (just teach the damn program 
+     you're checkpointing that pids will change, and admit to everybody 
+     that people who want to be checkpointed need to do work) and are 
+     potential security holes.
+ (c) if you are going to play any deeper games, you need to have 
+     privileges. IOW, "clone_with_pid()" is ok for _root_, but not for 
+     some random user. And you'd better keep that in mind EVERY SINGLE 
+     STEP OF THE WAY.
+
+I'm really fed up with these discussions. I have seen almost _zero_ 
+critical thinking at all. Probably because anybody who is in the least 
+doubtful about it simply has tuned out the discussion. So here's my input: 
+start small, start over, and start thinking about other issues than just 
+checkpointing.
+
+		Linus
