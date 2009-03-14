@@ -1,98 +1,108 @@
-From: Joseph Ruscio <jruscio-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Sat, 14 Mar 2009 10:11:11 -0700
-Message-ID: <32D23C53-5407-4C7C-9F33-CA58C5BBF0E4@gmail.com>
-References: <49B775B4.1040800@free.fr> <20090312145311.GC12390@us.ibm.com>
-	<1236891719.32630.14.camel@bahia>
-	<20090312212124.GA25019@us.ibm.com>
-	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>
-	<20090313053458.GA28833@us.ibm.com>
-	<alpine.LFD.2.00.0903131018390.3940@localhost.localdomain>
-	<20090313193500.GA2285@x200.localdomain>
-	<alpine.LFD.2.00.0903131401070.3940@localhost.localdomain>
-	<20090314002059.GA4167@x200.localdomain>
-	<20090314082532.GB16436@elte.hu>
-Mime-Version: 1.0 (Apple Message framework v930.3)
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090314082532.GB16436-X9Un+BFzKDI@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] Document signal-semantics changes of container-init
+Date: Sat, 14 Mar 2009 16:23:53 -0700
+Message-ID: <20090314232353.GA29682@us.ibm.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org
+Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-On Mar 14, 2009, at 1:25 AM, Ingo Molnar wrote:
+Hi Michael,
 
-> * Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->
->> On Fri, Mar 13, 2009 at 02:01:50PM -0700, Linus Torvalds wrote:
->>>
->>>
->>> On Fri, 13 Mar 2009, Alexey Dobriyan wrote:
->>>>>
->>>>> Let's face it, we're not going to _ever_ checkpoint any
->>>>> kind of general case process. Just TCP makes that
->>>>> fundamentally impossible in the general case, and there
->>>>> are lots and lots of other cases too (just something as
->>>>> totally _trivial_ as all the files in the filesystem
->>>>> that don't get rolled back).
->>>>
->>>> What do you mean here? Unlinked files?
->>>
->>> Or modified files, or anything else. "External state" is a
->>> pretty damn wide net. It's not just TCP sequence numbers and
->>> another machine.
->>
->> I think (I think) you're seriously underestimating what's
->> doable with kernel C/R and what's already done.
->>
->> I was told (haven't seen it myself) that Oracle installations
->> and Counter Strike servers were moved between boxes just fine.
->>
->> They were run in specially prepared environment of course, but
->> still.
->
-> That's the kind of stuff i'd like to see happen.
->
-> Right now the main 'enterprise' approach to do
-> migration/consolidation of server contexts is based on hardware
-> virtualization - but that pushes runtime overhead to the native
-> kernel and slows down the guest context as well - massively so.
->
-> Before we've blinked twice it will be a 'required' enterprise
-> feature and enterprise people will measure/benchmark Linux
-> server performance in guest context primarily and we'll have a
-> deep performance pit to dig ourselves out of.
->
-> We can ignore that trend as uninteresting (it is uninteresting
-> in a number of ways because it is partly driven by stupidity),
-> or we can do something about it while still advancing the
-> kernel.
+The kernel changes corresponding to his update were added to -mm
+on 2009-02-19. Please review and let me know if other man pages
+should be updated to document these semantics.
+---
 
-I'd tend to echo these comments. I don't think you can underestimate  
-how many workloads are stuck in VM's (or under consideration for such)  
-mainly in order to containerize them and make them mobile. Right now  
-VM's are the only hammer, so every virtualization scenario looks like  
-a nail. As an extreme example, some of the National Labs are  
-experimenting with VM's to checkpoint long-running jobs or live- 
-migrate a part of a job off a machine throwing hardware errors (soon  
-to fail). They're trying this approach even though VM's can add a  
-significant overhead (in the I/O path), typically considered the third  
-rail in HPC.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Sat, 14 Mar 2009 16:08:42 -0700
+Subject: [PATCH] Document signal-semantics changes of container-init
 
-KVM is a step in the right direction, because we can now locate some  
-number of VM's with a native workload, but the OpenVZ guys have shown  
-that you can achieve much higher densities with an OS Virtualization  
-container approach.
+Container-inits have some special signal semantics depending on
+whether the signal was sent from the same container or a parent
+container. These changes were implemented by the patchset:
 
-Joe
+	http://lkml.org/lkml/2009/2/18/493
+
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ man2/clone.2 |    7 ++++++-
+ man2/kill.2  |   27 +++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 1 deletions(-)
+
+diff --git a/man2/clone.2 b/man2/clone.2
+index 5d07f7c..975b321 100644
+--- a/man2/clone.2
++++ b/man2/clone.2
+@@ -396,7 +396,8 @@ will produce processes with PIDs that are unique within the namespace.
+ The first process created in a new namespace
+ (i.e., the process created using the
+ .BR CLONE_NEWPID
+-flag) has the PID 1, and is the "init" process for the namespace.
++flag) has the PID 1, and is the "init" process for the namespace,
++also referred to as "container-init" process.
+ Children that are orphaned within the namespace will be reparented
+ to this process rather than
+ .BR init (8).
+@@ -405,6 +406,10 @@ Unlike the traditional
+ process, the "init" process of a PID namespace can terminate,
+ and if it does, all of the processes in the namespace are terminated.
+ 
++See NOTES section of
++.B kill(2)
++for special signal semantics of the "container-init" process.
++
+ PID namespaces form a hierarchy.
+ When a PID new namespace is created,
+ the processes in that namespace are visible
+diff --git a/man2/kill.2 b/man2/kill.2
+index 5cfa9a4..d0ba8bb 100644
+--- a/man2/kill.2
++++ b/man2/kill.2
+@@ -128,6 +128,33 @@ has explicitly installed signal handlers.
+ This is done to assure the
+ system is not brought down accidentally.
+ .LP
++A
++.I container-init
++process (i.e a process created by a call to
++.I clone() 
++with
++.I CLONE_NEWPID
++flag) is also similarly immune to 'unhandled' signals
++sent by a descendant process.
++But the
++.I container-init
++recieves the unhandled signal and may terminate, if the signal is sent
++by a process in the parent namespace of the
++.I container-init.
++i.e the 
++.I container-init
++appears like an 
++.I init
++process to its descendant process and they cannot accidentally terminate
++the
++.I container-init
++and thereby, the entire pid-namespace.
++But
++.I container-init
++appears like a normal process to another process in its parent-pid-namespace,
++allowing an administrator to terminate any run-away
++.I container-inits.
++.LP
+ POSIX.1-2001 requires that \fIkill(\-1,sig)\fP send \fIsig\fP
+ to all processes that the calling process may send signals to,
+ except possibly for some implementation-defined system processes.
+-- 
+1.5.2.5
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-man" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
