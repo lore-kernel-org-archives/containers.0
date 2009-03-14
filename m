@@ -1,14 +1,22 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Fri, 13 Mar 2009 18:35:58 -0400
-Message-ID: <49BADFCE.8020207__43515.0526384406$1236984104$gmane$org@cs.columbia.edu>
-References: <1234475483.30155.194.camel@nimitz>	<20090212141014.2cd3d54d.akpm@linux-foundation.org>	<1234479845.30155.220.camel@nimitz>	<20090226155755.GA1456@x200.localdomain>	<20090310215305.GA2078@x200.localdomain>	<49B775B4.1040800@free.fr>	<20090312145311.GC12390@us.ibm.com>	<1236891719.32630.14.camel@bahia>	<20090312212124.GA25019@us.ibm.com>	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>	<20090313053458.GA28833@us.ibm.com>	<alpine.LFD.2.00.0903131018390.3940@localhost.localdomain>
-	<49BAC6AF.9090607@google.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: What can OpenVZ do?
+Date: Fri, 13 Mar 2009 17:04:55 -0700
+Message-ID: <m1wsatrmu0.fsf__33810.3628172123$1236989376$gmane$org@fess.ebiederm.org>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
+	<1234285547.30155.6.camel@nimitz>
+	<20090211141434.dfa1d079.akpm@linux-foundation.org>
+	<1234462282.30155.171.camel@nimitz> <1234467035.3243.538.camel@calx>
+	<20090212114207.e1c2de82.akpm@linux-foundation.org>
+	<1234475483.30155.194.camel@nimitz> <20090213102732.GB4608@elte.hu>
+	<20090213113248.GA15275@x200.localdomain>
+	<20090213114503.GG15679@elte.hu>
+	<20090213222818.GA17630@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49BAC6AF.9090607-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090213222818.GA17630-2ev+ksY9ol182hYKe6nXyg@public.gmane.org> (Alexey Dobriyan's
+	message of "Sat\, 14 Feb 2009 01\:28\:18 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,98 +26,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
+> On Fri, Feb 13, 2009 at 12:45:03PM +0100, Ingo Molnar wrote:
+>> 
+>> * Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>> 
+>> > On Fri, Feb 13, 2009 at 11:27:32AM +0100, Ingo Molnar wrote:
+>> > > Merging checkpoints instead might give them the incentive to get
+>> > > their act together.
+>> > 
+>> > Knowing how much time it takes to beat CPT back into usable shape every time
+>> > big kernel rebase is done, OpenVZ/Virtuozzo have every single damn incentive
+>> > to have CPT mainlined.
+>> 
+>> So where is the bottleneck? I suspect the effort in having forward ported
+>> it across 4 major kernel releases in a single year is already larger than
+>> the technical effort it would  take to upstream it. Any unreasonable upstream 
+>> resistence/passivity you are bumping into?
+>
+> People were busy with netns/containers stuff and OpenVZ/Virtuozzo bugs.
 
-Mike Waychison wrote:
-> Linus Torvalds wrote:
->> On Thu, 12 Mar 2009, Sukadev Bhattiprolu wrote:
->>
->>> Ying Han [yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org] wrote:
->>> | Hi Serge:
->>> | I made a patch based on Oren's tree recently which implement a new
->>> | syscall clone_with_pid. I tested with checkpoint/restart process tree
->>> | and it works as expected.
->>>
->>> Yes, I think we had a version of clone() with pid a while ago.
->> Are people _at_all_ thinking about security?
->>
->> Obviously not.
->>
->> There's no way we can do anything like this. Sure, it's trivial to do 
->> inside the kernel. But it also sounds like a _wonderful_ attack vector 
->> against badly written user-land software that sends signals and has small 
->> races.
-> 
-> I'm not really sure how this is different than a malicious app going off 
-> and spawning thousands of threads in an attempt to hit a target pid from 
-> a security pov.  Sure, it makes it easier, but it's not like there is 
-> anything in place to close the attack vector.
-> 
->> Quite frankly, from having followed the discussion(s) over the last few 
->> weeks about checkpoint/restart in various forms, my reaction to just about 
->> _all_ of this is that people pushing this are pretty damn borderline. 
->>
->> I think you guys are working on all the wrong problems. 
->>
->> Let's face it, we're not going to _ever_ checkpoint any kind of general 
->> case process. Just TCP makes that fundamentally impossible in the general 
->> case, and there are lots and lots of other cases too (just something as 
->> totally _trivial_ as all the files in the filesystem that don't get rolled 
->> back).
-> 
-> In some instances such as ours, TCP is probably the easiest thing to 
-> migrate.  In an rpc-based cluster application, TCP is nothing more than 
-> an RPC channel and applications already have to handle RPC channel 
-> failure and re-establishment.
-> 
-> I agree that this is not the 'general case' as you mention above 
-> however.  This is the bit that sorta bothers me with the way the 
-> implementation has been going so far on this list.  The implementation 
-> that folks are building on top of Oren's patchset tries to be everything 
-> to everybody.  For our purposes, we need to have the flexibility of 
-> choosing *how* we checkpoint.  The line seems to be arbitrarily drawn at 
-> the kernel being responsible for checkpointing and restoring all 
-> resources associated with a task, and leaving userland with nothing more 
-> than transporting filesystem bits.  This approach isn't flexible enough: 
->   Consider the case where we want to stub out most of the TCP file 
-> descriptors with ECONNRESETed sockets because we know that they are RPC 
-> sockets and can re-establish themselves, but we want to use some other 
-> mechanism for TCP sockets we don't know much about.  The current 
-> monolithic approach has zero flexibility for doing anything like this, 
-> and I figure out how we could even fit anything like this in.
+Yes.  Getting the namespaces particularly the network namespace finished
+has consumed a lot of work.
 
-The flexibility exists, but wasn't spelled out, so here it is:
+Then we have a bunch of people helping with ill conceived patches that seem
+to wear out the patience of people upstream.  Al, Greg kh, Linus.
 
-1) Similar to madvice(), I envision a cradvice() that could tell the c/r
-something about specific resources, e.g.:
- * cradvice(CR_ADV_MEM, ptr, len)  -> don't save that memory, it's scratch
- * cradvice(CR_ADV_SOCK, fd, CR_ADV_SOCK_RESET)  -> reset connection on restart
-etc .. (nevermind the exact interface right now)
+The whole recent ressurection of the question of we should have a clone
+with pid syscall.
 
-2) Tasks can ask to be notified (e.g. register a signal) when a checkpoint
-or a restart complete successfully. At that time they can do their private
-house-keeping if they know better.
-
-3) If restoring some resource is significantly easier in user space (e.g. a
-file-descriptor of some special device which user space knows how to
-re-initialize), then the restarting task can prepare it ahead of time,
-and, call:
-  * cradvice(CR_ADV_USERFD, fd, 0)  -> use the fd in place instead of trying
-				       to restore it yourself.
-
-Method #3 is what I used in Zap to implement distributed checkpoints, where
-it is so much easier to recreate all network connections in user space then
-putting that logic into the kernel.
-
-Now, on the other hand, doing the c/r from userland is much less flexible
-than in the kernel (e.g. epollfd, futex state and much more) and requires
-exposing tremendous amount of in-kernel data to user space. And we all know
-than exposing internals is always a one-way ticket :(
-
-[...]
-
-Oren.
+Eric
