@@ -1,40 +1,46 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH] Document signal-semantics changes of container-init
-Date: Sat, 14 Mar 2009 16:23:53 -0700
-Message-ID: <20090314232353.GA29682@us.ibm.com>
+Subject: Re: [PATCH] Document signal-semantics changes of container-init
+Date: Sat, 14 Mar 2009 21:06:42 -0700
+Message-ID: <20090315040642.GA32744@us.ibm.com>
+References: <20090314232353.GA29682@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20090314232353.GA29682-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Sender: linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 To: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org
-Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| 
+| Hi Michael,
+| 
+| The kernel changes corresponding to his update were added to -mm
+| on 2009-02-19. Please review and let me know if other man pages
+| should be updated to document these semantics.
 
-Hi Michael,
-
-The kernel changes corresponding to his update were added to -mm
-on 2009-02-19. Please review and let me know if other man pages
-should be updated to document these semantics.
+Grr, failed to mention about SIGKILL/SIGSTOP from parent ns.
+Here is an updated patch.
 ---
-
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Date: Sat, 14 Mar 2009 16:08:42 -0700
 Subject: [PATCH] Document signal-semantics changes of container-init
 
 Container-inits have some special signal semantics depending on
-whether the signal was sent from the same container or a parent
-container. These changes were implemented by the patchset:
+whether the sender is from an ancestor pid-namespace or from a
+descendant process. These changes were implemented by the patchset:
 
 	http://lkml.org/lkml/2009/2/18/493
 
+Document the new semantics in the clone(2) and kill(2) man pages.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  man2/clone.2 |    7 ++++++-
- man2/kill.2  |   27 +++++++++++++++++++++++++++
- 2 files changed, 33 insertions(+), 1 deletions(-)
+ man2/kill.2  |   29 +++++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 1 deletions(-)
 
 diff --git a/man2/clone.2 b/man2/clone.2
 index 5d07f7c..975b321 100644
@@ -62,10 +68,10 @@ index 5d07f7c..975b321 100644
  When a PID new namespace is created,
  the processes in that namespace are visible
 diff --git a/man2/kill.2 b/man2/kill.2
-index 5cfa9a4..d0ba8bb 100644
+index 5cfa9a4..a3bde50 100644
 --- a/man2/kill.2
 +++ b/man2/kill.2
-@@ -128,6 +128,33 @@ has explicitly installed signal handlers.
+@@ -128,6 +128,35 @@ has explicitly installed signal handlers.
  This is done to assure the
  system is not brought down accidentally.
  .LP
@@ -75,26 +81,28 @@ index 5cfa9a4..d0ba8bb 100644
 +.I clone() 
 +with
 +.I CLONE_NEWPID
-+flag) is also similarly immune to 'unhandled' signals
-+sent by a descendant process.
-+But the
-+.I container-init
-+recieves the unhandled signal and may terminate, if the signal is sent
-+by a process in the parent namespace of the
-+.I container-init.
++flag) is also similarly immune to all "unhandled" signals sent by a
++descendant process.
 +i.e the 
 +.I container-init
 +appears like an 
 +.I init
-+process to its descendant process and they cannot accidentally terminate
++process to its descendant processes and they cannot accidentally terminate
 +the
 +.I container-init
 +and thereby, the entire pid-namespace.
-+But
++
++The
 +.I container-init
-+appears like a normal process to another process in its parent-pid-namespace,
-+allowing an administrator to terminate any run-away
-+.I container-inits.
++also ignores all "unhandled" signals sent from an ancestor pid-namespace,
++except SIGKILL and SIGSTOP. i.e. if a
++.I container-init
++receives a SIGKILL or SIGSTOP from a process in an ancestor pid-namespace
++the
++.I container-init
++behaves like a normal process allowing an administrator in ancestor container
++to stop/terminate the
++.I container-init.
 +.LP
  POSIX.1-2001 requires that \fIkill(\-1,sig)\fP send \fIsig\fP
  to all processes that the calling process may send signals to,
