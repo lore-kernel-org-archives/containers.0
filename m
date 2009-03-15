@@ -1,116 +1,72 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] Document signal-semantics changes of container-init
-Date: Sat, 14 Mar 2009 21:06:42 -0700
-Message-ID: <20090315040642.GA32744@us.ibm.com>
-References: <20090314232353.GA29682@us.ibm.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] devcgroup: avoid using cgroup_lock
+Date: Sun, 15 Mar 2009 12:41:40 +0800
+Message-ID: <49BC8704.4020705__20459.2872215018$1237092352$gmane$org@cn.fujitsu.com>
+References: <49B869BB.7030907@cn.fujitsu.com>
+	<20090312181912.GA20144@us.ibm.com>
+	<49B9BCC7.7090908@cn.fujitsu.com>
+	<20090313134139.GB32304@us.ibm.com>
+	<20090313195712.GA18439@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090314232353.GA29682-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Sender: linux-man-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org
-Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090313195712.GA18439-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| 
-| Hi Michael,
-| 
-| The kernel changes corresponding to his update were added to -mm
-| on 2009-02-19. Please review and let me know if other man pages
-| should be updated to document these semantics.
+Serge E. Hallyn wrote:
+> Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>> Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+>>>>> @@ -426,11 +431,11 @@ static int devcgroup_access_write(struct cgroup *cgrp, struct cftype *cft,
+>>>>>  				  const char *buffer)
+>>>>>  {
+>>>>>  	int retval;
+>>>>> -	if (!cgroup_lock_live_group(cgrp))
+>>>> Does it matter that we no longer check for cgroup_is_removed()?
+>>>>
+>>> No, this means in a rare case that the write handler is called when the cgroup
+>>> is dead, we still do the update work instead of returning ENODEV.
+>>>
+>>> This is ok, since at that time, accessing cgroup and devcgroup is still valid,
+>>> but will have no effect since there is no task in this cgroup and the cgroup
+>>> will be destroyed soon.
+>> Ok, just wanted to make sure the devcgroup couldn't be partially torn
+>> down and risking NULL or freed-memory derefs...
+> 
+> Ok, so the cgroup's files will be deleted first, then on the directory
+> removal the cgroup's data (each whitelist entry) is deleted.  So we can
+> let that ordering (by cgroup_clear_directory) ensure that nothing inside
+> a file write can happen while the destroy handler is called, right?
+> 
 
-Grr, failed to mention about SIGKILL/SIGSTOP from parent ns.
-Here is an updated patch.
----
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 14 Mar 2009 16:08:42 -0700
-Subject: [PATCH] Document signal-semantics changes of container-init
+When we are in the read/write handler, we have a pin in the dir's dentry
+(dentry->d_count > 0), thus cgroup_diput() which destroys the cgroup won't
+be called during the read/write.
 
-Container-inits have some special signal semantics depending on
-whether the sender is from an ancestor pid-namespace or from a
-descendant process. These changes were implemented by the patchset:
+> (That's why I was worried about not using the cgroup_lock: we need some
+> way of synchronizing those.  But I guess we're fine)
+> 
 
-	http://lkml.org/lkml/2009/2/18/493
+Many read/write handlers in other cgroup subsystems don't take cgroup_lock.
+:)
 
-Document the new semantics in the clone(2) and kill(2) man pages.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- man2/clone.2 |    7 ++++++-
- man2/kill.2  |   29 +++++++++++++++++++++++++++++
- 2 files changed, 35 insertions(+), 1 deletions(-)
-
-diff --git a/man2/clone.2 b/man2/clone.2
-index 5d07f7c..975b321 100644
---- a/man2/clone.2
-+++ b/man2/clone.2
-@@ -396,7 +396,8 @@ will produce processes with PIDs that are unique within the namespace.
- The first process created in a new namespace
- (i.e., the process created using the
- .BR CLONE_NEWPID
--flag) has the PID 1, and is the "init" process for the namespace.
-+flag) has the PID 1, and is the "init" process for the namespace,
-+also referred to as "container-init" process.
- Children that are orphaned within the namespace will be reparented
- to this process rather than
- .BR init (8).
-@@ -405,6 +406,10 @@ Unlike the traditional
- process, the "init" process of a PID namespace can terminate,
- and if it does, all of the processes in the namespace are terminated.
- 
-+See NOTES section of
-+.B kill(2)
-+for special signal semantics of the "container-init" process.
-+
- PID namespaces form a hierarchy.
- When a PID new namespace is created,
- the processes in that namespace are visible
-diff --git a/man2/kill.2 b/man2/kill.2
-index 5cfa9a4..a3bde50 100644
---- a/man2/kill.2
-+++ b/man2/kill.2
-@@ -128,6 +128,35 @@ has explicitly installed signal handlers.
- This is done to assure the
- system is not brought down accidentally.
- .LP
-+A
-+.I container-init
-+process (i.e a process created by a call to
-+.I clone() 
-+with
-+.I CLONE_NEWPID
-+flag) is also similarly immune to all "unhandled" signals sent by a
-+descendant process.
-+i.e the 
-+.I container-init
-+appears like an 
-+.I init
-+process to its descendant processes and they cannot accidentally terminate
-+the
-+.I container-init
-+and thereby, the entire pid-namespace.
-+
-+The
-+.I container-init
-+also ignores all "unhandled" signals sent from an ancestor pid-namespace,
-+except SIGKILL and SIGSTOP. i.e. if a
-+.I container-init
-+receives a SIGKILL or SIGSTOP from a process in an ancestor pid-namespace
-+the
-+.I container-init
-+behaves like a normal process allowing an administrator in ancestor container
-+to stop/terminate the
-+.I container-init.
-+.LP
- POSIX.1-2001 requires that \fIkill(\-1,sig)\fP send \fIsig\fP
- to all processes that the calling process may send signals to,
- except possibly for some implementation-defined system processes.
--- 
-1.5.2.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-man" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> BTW is that against linux-next?  (didn't seem to apply cleanly against
+>> my 2.6.29-rc9)  I guess I'd like to do a little test before acking,
+>> though it looks ok based on your answer.
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> -serge
+> 
+> 
