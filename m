@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add a simple UTS test program
-Date: Mon, 16 Mar 2009 11:13:04 -0700
-Message-ID: <1237227184-2757-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH] Add UTS support to mktree
+Date: Mon, 16 Mar 2009 11:13:03 -0700
+Message-ID: <1237227184-2757-2-git-send-email-danms@us.ibm.com>
 References: <1237227184-2757-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,137 +20,112 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This program creates a top-level UTS namespace and then forks a child.  The
-parent sets the hostname to a different value every second and the child
-prints the value.  If the child's value changes with the parent, even after
-restart, then the pair are running in the same UTS namespace.  The test
-self-checkpoints every iteration.
+Read the namespace records from the restore stream and do the unshare()
+necessary to create a new namespace.  For UTS, set hostname and domainname
+to match what was stored in the checkpoint.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- utstest.c |  114 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 114 insertions(+), 0 deletions(-)
- create mode 100644 utstest.c
+ mktree.c |   66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 66 insertions(+), 0 deletions(-)
 
-diff --git a/utstest.c b/utstest.c
-new file mode 100644
-index 0000000..1afca49
---- /dev/null
-+++ b/utstest.c
-@@ -0,0 +1,114 @@
-+#define _GNU_SOURCE
-+#include <stdio.h>
-+#include <fcntl.h>
-+#include <unistd.h>
+diff --git a/mktree.c b/mktree.c
+index 55149dd..e0898db 100644
+--- a/mktree.c
++++ b/mktree.c
+@@ -14,6 +14,7 @@
+ #include <unistd.h>
+ #include <errno.h>
+ #include <signal.h>
 +#include <sched.h>
-+#include <string.h>
-+#include <stdlib.h>
-+#include <asm/unistd.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <asm/unistd.h>
+@@ -101,6 +102,7 @@ static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
+ 
+ static int cr_read_head(struct cr_ctx *ctx);
+ static int cr_read_head_arch(struct cr_ctx *ctx);
++static int cr_read_namespaces(struct cr_ctx *ctx);
+ static int cr_read_tree(struct cr_ctx *ctx);
+ 
+ struct pid_swap {
+@@ -191,6 +193,12 @@ int main(int argc, char *argv[])
+ 		exit(1);
+ 	}
+ 
++	ret = cr_read_namespaces(&ctx);
++	if (ret < 0) {
++		perror("read c/r namespaces");
++		exit(1);
++	}
 +
-+#define OUTFILE "/tmp/cr-test.out"
-+#define CKPTDIR "/tmp"
-+
-+int ckpt = 0;
-+
-+int do_checkpoint(void)
+ 	ret = cr_fork_feeder(&ctx);
+ 	if (ret < 0)
+ 		exit(1);
+@@ -557,6 +565,64 @@ static int cr_read_head_arch(struct cr_ctx *ctx)
+ 	return 0;
+ }
+ 
++static int cr_read_task_namespaces(struct cr_ctx *ctx)
 +{
-+	char fn[256];
-+	int fd;
-+	int ret;
 +
-+	snprintf(fn, sizeof(fn)-1, CKPTDIR "/ckpt-%i", ckpt++);
++	struct cr_hdr_nsproxy hhn;
++	struct cr_hdr_utsns hhu;
++	int parent;
 +
-+	fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-+	if (fd < 0) {
-+		perror(fn);
++	parent = cr_read_obj_type(ctx, &hhn, sizeof(hhn), CR_HDR_NSP);
++	if (parent < 0)
++		return parent;
++	else if (parent != 0) {
++		errno = -EINVAL;
 +		return -1;
 +	}
 +
-+	ret = syscall(__NR_checkpoint, getpid(), fd, 0);
-+	if (ret < 0)
-+		printf("Checkpoint to %s returned %i (%m)\n", fn, ret);
++	if (hhn.types == 0)
++		return 0;
 +
-+	close(fd);
++	if (unshare(CLONE_NEWUTS) != 0) {
++		perror("unshare(CLONE_NEWUTS)");
++		return -1;
++	}
++
++	if (hhn.types & CR_NSP_UTS) {
++		parent = cr_read_obj_type(ctx, &hhu, sizeof(hhu),
++					  CR_HDR_UTSNS);
++		if (parent < 0)
++			return parent;
++		else if (parent != 0) {
++			errno = -EINVAL;
++			return -1;
++		}
++
++		cr_dbg("UTS namespace nn=%s dn=%s\n",
++		       hhu.nodename,
++		       hhu.domainname);
++
++		sethostname(hhu.nodename, strlen(hhu.nodename));
++		setdomainname(hhu.domainname, strlen(hhu.domainname));
++	}
++
++	return 0;
++}
++
++static int cr_read_namespaces(struct cr_ctx *ctx)
++{
++	int n;
++	int ret = 0;
++
++	for (n = 0; n < ctx->pids_nr; n++) {
++		ret = cr_read_task_namespaces(ctx);
++		if (ret < 0)
++			break;
++	}
 +
 +	return ret;
 +}
 +
-+void child(int fd, int subunshare)
-+{
-+	char hostname[256] = "foo";
-+	int ret;
-+
-+	if (subunshare) {
-+		ret = unshare(CLONE_NEWUTS);
-+		if (ret) {
-+			printf("unshare: %m");
-+			exit(1);
-+		}
-+	}
-+
-+	while (1) {
-+		ret = gethostname(hostname, sizeof(hostname));
-+		if (ret) {
-+			perror("gethostname");
-+			_exit(1);
-+		}
-+
-+		printf("Hostname in child is:  %s\n", hostname);
-+		sleep(1);
-+	}
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	int ret;
-+	int fd;
-+	int i = 0;
-+	int subunshare = 0;
-+
-+#ifndef NOUTS
-+	ret = unshare(CLONE_NEWUTS);
-+	if (ret) {
-+		perror("unshare");
-+		return 1;
-+	}
-+#endif
-+
-+	/* Pass '-u' to test nested namespace */
-+	if ((argc == 2) && (strcmp(argv[1], "-u") == 0))
-+		subunshare = 1;
-+
-+	fd = open(OUTFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
-+	if (fd < 0) {
-+		perror(OUTFILE);
-+		return 1;
-+	}
-+
-+	dup2(fd, 1);
-+	dup2(fd, 2);
-+	close(0);
-+
-+	setlinebuf(stdout);
-+	setlinebuf(stderr);
-+
-+	if (fork() == 0)
-+		child(fd, subunshare);
-+
-+	while (1) {
-+#ifndef NOUTS
-+		char hostname[256];
-+
-+		snprintf(hostname, sizeof(hostname)-1, "test%i", i++);
-+		ret = sethostname(hostname, strlen(hostname));
-+		if (ret) {
-+			perror("sethostname");
-+			return 1;
-+		}
-+
-+		printf("Hostname in parent is: %s\n", hostname);
-+#endif
-+		do_checkpoint();
-+		sleep(1);
-+	}
-+}
+ static int cr_read_tree(struct cr_ctx *ctx)
+ {
+ 	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
 -- 
 1.5.6.3
