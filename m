@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/6] Deny external checkpoint unless task is frozen
-Date: Tue, 17 Mar 2009 10:50:34 -0700
-Message-ID: <20090317175034.GE10796@us.ibm.com>
+Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
+Date: Tue, 17 Mar 2009 10:51:13 -0700
+Message-ID: <20090317175113.GF10796@us.ibm.com>
 References: <20090317174359.GA10796@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,39 +24,126 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 12 Mar 2009 14:20:02 -0700
-Subject: [PATCH 4/6] Deny external checkpoint unless task is frozen
+Date: Fri, 13 Mar 2009 17:25:42 -0700
+Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
 
-Remove a 'FIXME' and ensure that the tasks we are checkpointing are
-frozen unless its a self-checkpoint.
+Create a proc file, /proc/pid/checkpointable, which shows '1' if
+task is checkpointable and '0' if it is not.
+
+To determine whether a task is checkpointable, the handler for this
+new proc file, shares the same code with sys_checkpoint().
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- checkpoint/checkpoint.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c    |   23 ++++++++++++++++-------
+ fs/proc/base.c             |   13 +++++++++++++
+ include/linux/checkpoint.h |    7 +++++++
+ 3 files changed, 36 insertions(+), 7 deletions(-)
 
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index dae9b97..c16f30c 100644
+index c16f30c..ad0956c 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -19,6 +19,7 @@
- #include <linux/mount.h>
- #include <linux/utsname.h>
- #include <linux/magic.h>
-+#include <linux/freezer.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+@@ -264,22 +264,31 @@ static int cr_write_all_tasks(struct cr_ctx *ctx)
+ 	return ret;
+ }
  
-@@ -275,7 +276,9 @@ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
++int task_checkpointable(struct task_struct *t)
++{
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
++		return 0;
++	}
++
++	/* Verify that task is frozen, unless it is self-checkpoint */
++	if (t != current && !frozen(t))
++		return 0;
++
++	return 1;
++}
++
+ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
+ {
+ 	pr_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
+ 
+-	if (t->state == TASK_DEAD) {
+-		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
++	/* verify that the task is checkpointable */
++	if (!task_checkpointable(t))
+ 		return -EAGAIN;
+-	}
+ 
  	if (!ptrace_may_access(t, PTRACE_MODE_READ))
  		return -EPERM;
  
--	/* FIXME: verify that the task is frozen (unless self) */
-+	/* verify that the task is frozen (unless self) */
-+	if (t != current && !frozen(t))
-+		return -EBUSY;
- 
+-	/* verify that the task is frozen (unless self) */
+-	if (t != current && !frozen(t))
+-		return -EBUSY;
+-
  	/* FIXME: change this for nested containers */
  	if (task_nsproxy(t) != ctx->root_nsproxy)
+ 		return -EPERM;
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index bde92c3..989ca93 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2501,6 +2501,13 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_CHECKPOINT_RESTART
++static int proc_pid_checkpointable(struct task_struct *task, char *buffer)
++{
++	return sprintf(buffer, "%d\n", task_checkpointable(task));
++}
++#endif
++
+ /*
+  * Thread groups
+  */
+@@ -2580,6 +2587,9 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_TASK_IO_ACCOUNTING
+ 	INF("io",	S_IRUGO, proc_tgid_io_accounting),
+ #endif
++#ifdef CONFIG_CHECKPOINT_RESTART
++	INF("checkpointable", S_IRUGO, proc_pid_checkpointable),
++#endif
+ };
+ 
+ static int proc_tgid_base_readdir(struct file * filp,
+@@ -2915,6 +2925,9 @@ static const struct pid_entry tid_base_stuff[] = {
+ #ifdef CONFIG_TASK_IO_ACCOUNTING
+ 	INF("io",	S_IRUGO, proc_tid_io_accounting),
+ #endif
++#ifdef CONFIG_CHECKPOINT_RESTART
++	INF("checkpointable", S_IRUGO, proc_pid_checkpointable),
++#endif
+ };
+ 
+ static int proc_tid_base_readdir(struct file * filp,
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 484be56..d1f53a6 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -142,6 +142,8 @@ static inline int cr_enabled(void)
+ 	return 1;
+ }
+ 
++int task_checkpointable(struct task_struct *t);
++
+ #else /* !CONFIG_CHECKPOINT_RESTART */
+ 
+ static inline void files_deny_checkpointing(struct files_struct *files) {}
+@@ -162,5 +164,10 @@ static inline int cr_enabled(void)
+ 	return 0;
+ }
+ 
++static inline int task_checkpointable(struct task_struct *t)
++{
++	return 0;
++}
++
+ #endif /* CONFIG_CHECKPOINT_RESTART */
+ #endif /* _CHECKPOINT_CKPT_H_ */
 -- 
 1.5.2.5
