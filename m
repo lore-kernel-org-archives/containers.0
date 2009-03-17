@@ -1,56 +1,44 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 7/7] [RFC] Example multi-bindable subsystem: a per-cgroup
-	notes field
-Date: Tue, 17 Mar 2009 14:46:51 +0800
-Message-ID: <49BF475B.1070300@cn.fujitsu.com>
-References: <20090312104507.24154.71691.stgit@menage.corp.google.com>
-	<20090312105153.24154.29389.stgit@menage.corp.google.com>
+From: Cedric Le Goater <legoater@free.fr>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum
+	checkpoint/restart	implementation
+Date: Tue, 17 Mar 2009 07:55:37 +0100
+Message-ID: <49BF4969.3080308@free.fr>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>	<1233182478-27113-2-git-send-email-ntl@pobox.com>	<49814FA2.9060108@cs.columbia.edu>
+	<20090129214035.GB6913@localdomain>	<20090217010355.58afd5cf@thinkcentre.lan>	<49B9D37A.1070503@cs.columbia.edu>
+	<20090316133745.4f636979@thinkcentre.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090312105153.24154.29389.stgit-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org>
+In-Reply-To: <20090316133745.4f636979@thinkcentre.lan>
+List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
+List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
+List-Post: <mailto:linuxppc-dev@ozlabs.org>
+List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
+List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
+Sender: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+Errors-To: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+To: Nathan Lynch <ntl@pobox.com>
+Cc: containers@lists.osdl.org, Oren Laadan <orenl@cs.columbia.edu>, linuxppc-dev@ozlabs.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> [RFC] Example multi-bindable subsystem: a per-cgroup notes field
-> 
-> As an example of a multiply-bindable subsystem, this patch introduces
-> the "info" subsystem, which provides a single file, "info.notes", in
-> which user-space middleware can store an arbitrary (up to one page)
-> string representing configuration data about that cgroup. This reduces
-> the need to keep additional state outside the cgroup filesystem.
-> 
-> TODO: a single page is somewhat limiting - the file limit should be
-> userspace-configurable, and the system should store large notes in a
-> vector of pages (to avoid trying to kmalloc() an excessively large
-> chunk of memory. (Or maybe just use vmalloc())
-> 
+> Again, how would 'cr' obtain exit status for these tasks, and how would
+> it distinguish failure from normal operation?
 
-add info.size, and the size will default to PAGESIZE but is changable?
+Here's our solution to this issue.
 
-> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
+mcr maintains in its kernel container object an exitcode attribute for 
+the mcr-restart process. This process is detached from the fork tree of 
+the restarted application.  
 
-> +config CGROUP_INFO
-> +	bool "Simple application-specific info cgroup subsystem
+when the restart is finished, an mcr-wait command can be called to reap 
+this exitcode. This make it possible to distinguish an exit of the 
+application process from an exit of the mcr-restart process.
 
-"..."
+This is a must-have for batch managers in an HPC environment. 
 
-> +	help
-> +	  Provides a simple cgroups subsystem with an "info.notes"
-> +	  field, which can be used by middleware to store
-> +	  application-specific configuration data about a cgroup. Can
-> +	  be mounted on multiple hierarchies at once.
-> +
+Cheers,
+
+C.
