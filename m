@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
-Date: Mon, 16 Mar 2009 23:39:40 -0700
-Message-ID: <20090317063940.GF2377@us.ibm.com>
+Date: Mon, 16 Mar 2009 23:39:58 -0700
+Message-ID: <20090317063958.GG2377@us.ibm.com>
 References: <20090317062754.GA2377@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,126 +24,99 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Fri, 13 Mar 2009 17:25:42 -0700
-Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
+Date: Sat, 14 Mar 2009 10:21:07 -0700
+Subject: [PATCH 6/6] Explain reason for task being uncheckpointable
 
-Create a proc file, /proc/pid/checkpointable, which shows '1' if
-task is checkpointable and '0' if it is not.
-
-To determine whether a task is checkpointable, the handler for this
-new proc file, shares the same code with sys_checkpoint().
+Try to give an useful message on why a task is uncheckpointable.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- checkpoint/checkpoint.c    |   23 ++++++++++++++++-------
- fs/proc/base.c             |   13 +++++++++++++
+ checkpoint/checkpoint.c    |   13 +++++++++----
+ fs/proc/base.c             |   19 ++++++++++++++++++-
  include/linux/checkpoint.h |    7 +++++++
- 3 files changed, 36 insertions(+), 7 deletions(-)
+ 3 files changed, 34 insertions(+), 5 deletions(-)
 
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index c16f30c..ad0956c 100644
+index ad0956c..c8c377d 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -264,22 +264,31 @@ static int cr_write_all_tasks(struct cr_ctx *ctx)
+@@ -264,18 +264,23 @@ static int cr_write_all_tasks(struct cr_ctx *ctx)
  	return ret;
  }
  
+-int task_checkpointable(struct task_struct *t)
++int __task_checkpointable(struct task_struct *t)
+ {
+ 	if (t->state == TASK_DEAD) {
+ 		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
+-		return 0;
++		return CR_DEAD;
+ 	}
+ 
+ 	/* Verify that task is frozen, unless it is self-checkpoint */
+ 	if (t != current && !frozen(t))
+-		return 0;
++		return CR_NOT_FROZEN;
++
++	return CR_CHECKPOINTABLE;
++}
+ 
+-	return 1;
 +int task_checkpointable(struct task_struct *t)
 +{
-+	if (t->state == TASK_DEAD) {
-+		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-+		return 0;
-+	}
-+
-+	/* Verify that task is frozen, unless it is self-checkpoint */
-+	if (t != current && !frozen(t))
-+		return 0;
-+
-+	return 1;
-+}
-+
- static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
- {
- 	pr_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
- 
--	if (t->state == TASK_DEAD) {
--		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-+	/* verify that the task is checkpointable */
-+	if (!task_checkpointable(t))
- 		return -EAGAIN;
--	}
- 
- 	if (!ptrace_may_access(t, PTRACE_MODE_READ))
- 		return -EPERM;
- 
--	/* verify that the task is frozen (unless self) */
--	if (t != current && !frozen(t))
--		return -EBUSY;
--
- 	/* FIXME: change this for nested containers */
- 	if (task_nsproxy(t) != ctx->root_nsproxy)
- 		return -EPERM;
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index bde92c3..989ca93 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2501,6 +2501,13 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
- 	return 0;
++	return __task_checkpointable(t) == CR_CHECKPOINTABLE;
  }
  
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+static int proc_pid_checkpointable(struct task_struct *task, char *buffer)
+ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 989ca93..6e4c07c 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2502,9 +2502,26 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+ }
+ 
+ #ifdef CONFIG_CHECKPOINT_RESTART
++static char *explain_checkpointable(int reason)
 +{
-+	return sprintf(buffer, "%d\n", task_checkpointable(task));
-+}
-+#endif
++	char *message;
 +
- /*
-  * Thread groups
-  */
-@@ -2580,6 +2587,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- #ifdef CONFIG_TASK_IO_ACCOUNTING
- 	INF("io",	S_IRUGO, proc_tgid_io_accounting),
++	switch(reason) {
++	case CR_CHECKPOINTABLE: message = "1"; break;
++	case CR_DEAD: 		message = "0 (dead)"; break;
++	case CR_NOT_FROZEN: 	message = "0 (not frozen)"; break;
++	default:		message = "0 (unknown)"; break;
++	}
++	return message;
++}
++
+ static int proc_pid_checkpointable(struct task_struct *task, char *buffer)
+ {
+-	return sprintf(buffer, "%d\n", task_checkpointable(task));
++	int rc;
++
++	rc = __task_checkpointable(task);
++
++	return scnprintf(buffer, PAGE_SIZE, "%s\n", explain_checkpointable(rc));
+ }
  #endif
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	INF("checkpointable", S_IRUGO, proc_pid_checkpointable),
-+#endif
- };
  
- static int proc_tgid_base_readdir(struct file * filp,
-@@ -2915,6 +2925,9 @@ static const struct pid_entry tid_base_stuff[] = {
- #ifdef CONFIG_TASK_IO_ACCOUNTING
- 	INF("io",	S_IRUGO, proc_tid_io_accounting),
- #endif
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	INF("checkpointable", S_IRUGO, proc_pid_checkpointable),
-+#endif
- };
- 
- static int proc_tid_base_readdir(struct file * filp,
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 484be56..d1f53a6 100644
+index d1f53a6..a1eba73 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -142,6 +142,8 @@ static inline int cr_enabled(void)
+@@ -142,6 +142,13 @@ static inline int cr_enabled(void)
  	return 1;
  }
  
-+int task_checkpointable(struct task_struct *t);
++enum cr_uncheckpointable_reason {
++	CR_CHECKPOINTABLE = 0,
++	CR_DEAD,
++	CR_NOT_FROZEN
++};
 +
++int __task_checkpointable(struct task_struct *t);
+ int task_checkpointable(struct task_struct *t);
+ 
  #else /* !CONFIG_CHECKPOINT_RESTART */
- 
- static inline void files_deny_checkpointing(struct files_struct *files) {}
-@@ -162,5 +164,10 @@ static inline int cr_enabled(void)
- 	return 0;
- }
- 
-+static inline int task_checkpointable(struct task_struct *t)
-+{
-+	return 0;
-+}
-+
- #endif /* CONFIG_CHECKPOINT_RESTART */
- #endif /* _CHECKPOINT_CKPT_H_ */
 -- 
 1.5.2.5
