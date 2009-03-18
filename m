@@ -1,16 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
-Date: Wed, 18 Mar 2009 08:53:20 -0500
-Message-ID: <20090318135320.GD22636@us.ibm.com>
+Date: Wed, 18 Mar 2009 08:59:53 -0500
+Message-ID: <20090318135953.GE22636@us.ibm.com>
 References: <20090317062754.GA2377@us.ibm.com>
-	<20090317063958.GG2377@us.ibm.com>
-	<49C0B750.4050109@cs.columbia.edu>
+	<20090317063940.GF2377@us.ibm.com>
+	<49C0B6FF.5030104@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49C0B750.4050109-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <49C0B6FF.5030104-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,40 +29,64 @@ Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
 > Sukadev Bhattiprolu wrote:
 > > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > Date: Sat, 14 Mar 2009 10:21:07 -0700
-> > Subject: [PATCH 6/6] Explain reason for task being uncheckpointable
+> > Date: Fri, 13 Mar 2009 17:25:42 -0700
+> > Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
 > > 
-> > Try to give an useful message on why a task is uncheckpointable.
+> > Create a proc file, /proc/pid/checkpointable, which shows '1' if
+> > task is checkpointable and '0' if it is not.
 > > 
-> > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > ---
-> >  checkpoint/checkpoint.c    |   13 +++++++++----
-> >  fs/proc/base.c             |   19 ++++++++++++++++++-
-> >  include/linux/checkpoint.h |    7 +++++++
-> >  3 files changed, 34 insertions(+), 5 deletions(-)
-> > 
-> 
-> [...]
-> 
-> >  #ifdef CONFIG_CHECKPOINT_RESTART
-> > +static char *explain_checkpointable(int reason)
-> > +{
-> > +	char *message;
-> > +
-> > +	switch(reason) {
-> > +	case CR_CHECKPOINTABLE: message = "1"; break;
-> > +	case CR_DEAD: 		message = "0 (dead)"; break;
-> > +	case CR_NOT_FROZEN: 	message = "0 (not frozen)"; break;
-> 
-> Hmmm... so a task cannot test if it itself is checkpointable, because
-> it will never be frozen and will fail right there before proceeding to
-> addition (future) tests ?
+> > To determine whether a task is checkpointable, the handler for this
+> > new proc file, shares the same code with sys_checkpoint().
 
-No, no...  :
+Hey Oren,
 
-/* Verify that task is frozen, unless it is self-checkpoint */
-if (t != current && !frozen(t))
--               return 0;
-+               return CR_NOT_FROZEN;
+3 counter-points:
+
+> I still don't understand why we would like to do it this way.
+> 
+> First, it makes little sense to do it per-task, because we are supposed
+> to checkpoint an entire container.
+
+Yes we need per-container info too.  Actually, per-checkpoint-job-init,
+so if we send pids in for that, it should return false if we send in the
+pid of a task which isn't a proper checkpoint-job-init.
+
+But we also want the info per-task, for debugging info.
+
+I don't know how to represent those two cases, though.
+
+Also debugfs may be a more appropriate medium.
+
+> Second, what's wrong with doing a "dry" checkpoint on the container (or
+> if you prefer, the task, for what it's worth), that will not buffer nor
+> write out any data - just say "yes" or "no" ?
+
+You can't get a text explanation like 'fd 4 (/sys/class/net/eth0) is not
+checkpointable'.  That's what's wrong with it.
+
+> (we could use a flag "CR_CTX_DRYRUN" when calling sys_checkpoint() for
+> this, and test for this flag in, say, kwrite/kread).
+> 
+> After all, we don't expect applications or users to continuously and
+> repeatedly test if they can checkpoint, so it isn't performance critical.
+> So we simply reuse the existing code.
+
+No, but we do expect someone trying to checkpoint their job and failing
+to be curious as to why.
+
+> This would also catch cases where we can't checkpoint because the kernel
+> is low on memory - which wouldn't show up otherwise.
+> 
+> And in any case, this is orthogonal to what Dave is pushing, following
+> Ingo's comment, to know when a task _becomes_ not-checkpointable. (And
+> in any case, I think our time is better spent on adding functionality
+> instead).
+
+I think Suka's patch is small enough that there's not a lot of pursuing
+going on.  Dave's may_checkpoint is a lot more ambitious.
+
+Just to be clear - are you saying you think both this patch and Dave's
+may_checkpoint patchsets ought to be delayed, or just Suka's, or just
+Dave's?  :)
 
 -serge
