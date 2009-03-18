@@ -1,19 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 08:49:32 -0500
-Message-ID: <20090318134932.GC22636@us.ibm.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
-	<20090312162954.4a4b8e00@thinkcentre.lan>
-	<87fxhipfrh.fsf@caffeine.danplanet.com>
-	<20090312224820.GA12723@hallyn.com>
-	<87bps6pcyf.fsf@caffeine.danplanet.com>
-	<49C0B069.6060300@cs.columbia.edu>
+Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
+Date: Wed, 18 Mar 2009 08:53:20 -0500
+Message-ID: <20090318135320.GD22636@us.ibm.com>
+References: <20090317062754.GA2377@us.ibm.com>
+	<20090317063958.GG2377@us.ibm.com>
+	<49C0B750.4050109@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49C0B069.6060300-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <49C0B750.4050109-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,32 +21,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
 > 
-> Dan Smith wrote:
-> > SH> Well it forces restart to go through the established userspace
-> > SH> API's when creating resources (in this case, tasks and namespaces)
-> > SH> which means any existing security guarantees are leveraged.
+> Sukadev Bhattiprolu wrote:
+> > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > Date: Sat, 14 Mar 2009 10:21:07 -0700
+> > Subject: [PATCH 6/6] Explain reason for task being uncheckpointable
 > > 
-> > That's a very valid point.  However, it still seems unbalanced to make
-> > checkpoint a completely in-kernel process and restart an odd mix of
-> > the two with potentially more confusing semantics and requirements.
+> > Try to give an useful message on why a task is uncheckpointable.
+> > 
+> > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > ---
+> >  checkpoint/checkpoint.c    |   13 +++++++++----
+> >  fs/proc/base.c             |   19 ++++++++++++++++++-
+> >  include/linux/checkpoint.h |    7 +++++++
+> >  3 files changed, 34 insertions(+), 5 deletions(-)
 > > 
 > 
-> There are other reasons to allow restart to be not fully symmetric
-> with respect to checkpoint. For example, if you have a smart(er) user
-> space application that wants to provide the restart some of the resources
-> pre-constructed, allowing much flexibility (already requested by people)
-> for the restart provdure (E.g., when doing distributed checkpoint, or
-> when restarting a special device whose).
+> [...]
 > 
-> See my post:
-> https://lists.linux-foundation.org/pipermail/containers/2009-March/016234.html
+> >  #ifdef CONFIG_CHECKPOINT_RESTART
+> > +static char *explain_checkpointable(int reason)
+> > +{
+> > +	char *message;
+> > +
+> > +	switch(reason) {
+> > +	case CR_CHECKPOINTABLE: message = "1"; break;
+> > +	case CR_DEAD: 		message = "0 (dead)"; break;
+> > +	case CR_NOT_FROZEN: 	message = "0 (not frozen)"; break;
+> 
+> Hmmm... so a task cannot test if it itself is checkpointable, because
+> it will never be frozen and will fail right there before proceeding to
+> addition (future) tests ?
 
-(Note that in Dan's next version, he did move unshare into userspace)
+No, no...  :
+
+/* Verify that task is frozen, unless it is self-checkpoint */
+if (t != current && !frozen(t))
+-               return 0;
++               return CR_NOT_FROZEN;
 
 -serge
