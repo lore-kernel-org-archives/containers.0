@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 04:35:58 -0400
-Message-ID: <49C0B26E.9050108@cs.columbia.edu>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
+Date: Wed, 18 Mar 2009 04:55:27 -0400
+Message-ID: <49C0B6FF.5030104@cs.columbia.edu>
+References: <20090317062754.GA2377@us.ibm.com>
+	<20090317063940.GF2377@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1236880612-15316-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090317063940.GF2377-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,63 +18,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Dan Smith wrote:
-> (apologies if you see this multiple times...IBM mail server troubles)
+Sukadev Bhattiprolu wrote:
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Fri, 13 Mar 2009 17:25:42 -0700
+> Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
 > 
-> This patch adds a "phase" of c/r that saves out information about any
-> namespaces the task(s) may have.  Do this by tracking the nsproxy of the
-> first task and making sure that the tasks that follow get hooked back to
-> share the same one on restart.  On restart, we also explicitly create new
-> namespaces for any that we support at the first task.
+> Create a proc file, /proc/pid/checkpointable, which shows '1' if
+> task is checkpointable and '0' if it is not.
 > 
-> I tested this with single and multiple task restore, on top of Oren's
-> v13 tree.
-> 
-> This is intended to get some discussion going about how to c/r the various
-> namespaces.  So, if this approach isn't favorable, speak up with some
-> suggestions for how to do it better.
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/checkpoint.c        |   57 ++++++++++++++++++++++++++
->  checkpoint/objhash.c           |    7 +++
->  checkpoint/restart.c           |   87 ++++++++++++++++++++++++++++++++++++++++
->  include/linux/checkpoint.h     |    1 +
->  include/linux/checkpoint_hdr.h |   15 +++++++
->  5 files changed, 167 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index 64155de..a613f2d 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -193,6 +193,59 @@ static int cr_write_tail(struct cr_ctx *ctx)
->  	return ret;
->  }
->  
-> +static int cr_write_ns_uts(struct cr_ctx *ctx, struct task_struct *t)
-> +{
-> +	struct cr_hdr h;
-> +	struct cr_hdr_utsns *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	struct new_utsname *n = &t->nsproxy->uts_ns->name;
-> +	int ret;
-> +
-> +	h.type = CR_HDR_UTSNS;
-> +	h.len = sizeof(*hh);
-> +	h.parent = 0;
-> +
-> +	memcpy(hh->nodename, n->nodename, sizeof(n->nodename));
-> +	memcpy(hh->domainname, n->domainname, sizeof(n->domainname));
+> To determine whether a task is checkpointable, the handler for this
+> new proc file, shares the same code with sys_checkpoint().
 
-The length of ->nodename etc may change between kernels or in future
-versions. Please also save the length of the buffer.
-(see for example cr_write_task_struct() handling of ->comm)
+I still don't understand why we would like to do it this way.
 
-[...]
+First, it makes little sense to do it per-task, because we are supposed
+to checkpoint an entire container.
+
+Second, what's wrong with doing a "dry" checkpoint on the container (or
+if you prefer, the task, for what it's worth), that will not buffer nor
+write out any data - just say "yes" or "no" ?
+
+(we could use a flag "CR_CTX_DRYRUN" when calling sys_checkpoint() for
+this, and test for this flag in, say, kwrite/kread).
+
+After all, we don't expect applications or users to continuously and
+repeatedly test if they can checkpoint, so it isn't performance critical.
+So we simply reuse the existing code.
+
+This would also catch cases where we can't checkpoint because the kernel
+is low on memory - which wouldn't show up otherwise.
+
+And in any case, this is orthogonal to what Dave is pushing, following
+Ingo's comment, to know when a task _becomes_ not-checkpointable. (And
+in any case, I think our time is better spent on adding functionality
+instead).
 
 Oren.
