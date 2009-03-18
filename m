@@ -1,14 +1,13 @@
 From: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Wed, 18 Mar 2009 11:54:19 -0700
-Message-ID: <49C1435B.1090809__41021.0551148795$1237404592$gmane$org@google.com>
-References: <1234475483.30155.194.camel@nimitz>	<20090212141014.2cd3d54d.akpm@linux-foundation.org>	<1234479845.30155.220.camel@nimitz>	<20090226155755.GA1456@x200.localdomain>	<20090310215305.GA2078@x200.localdomain>	<49B775B4.1040800@free.fr>	<20090312145311.GC12390@us.ibm.com>	<1236891719.32630.14.camel@bahia>	<20090312212124.GA25019@us.ibm.com>	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>	<20090313053458.GA28833@us.ibm.com>	<alpine.LFD.2.00.0903131018390.3940@localhost.localdomain>
-	<49BAC6AF.9090607@google.com> <49BADFCE.8020207@cs.columbia.edu>
+Subject: Re: [PATCH] [RFC] c/r: Add UTS support
+Date: Wed, 18 Mar 2009 12:50:04 -0700
+Message-ID: <49C1506C.1080500@google.com>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>	<20090312224820.GA12723@hallyn.com>	<87bps6pcyf.fsf@caffeine.danplanet.com>	<49C0B069.6060300@cs.columbia.edu>	<20090318134932.GC22636@us.ibm.com>	<878wn353mf.fsf@caffeine.danplanet.com>
+	<49C1175F.9060600@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------010404030001070209050100"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49BADFCE.8020207-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <49C1175F.9060600-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,102 +17,263 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
-> 
-> Mike Waychison wrote:
->> Linus Torvalds wrote:
->>> On Thu, 12 Mar 2009, Sukadev Bhattiprolu wrote:
->>>
->>>> Ying Han [yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org] wrote:
->>>> | Hi Serge:
->>>> | I made a patch based on Oren's tree recently which implement a new
->>>> | syscall clone_with_pid. I tested with checkpoint/restart process tree
->>>> | and it works as expected.
->>>>
->>>> Yes, I think we had a version of clone() with pid a while ago.
->>> Are people _at_all_ thinking about security?
->>>
->>> Obviously not.
->>>
->>> There's no way we can do anything like this. Sure, it's trivial to do 
->>> inside the kernel. But it also sounds like a _wonderful_ attack vector 
->>> against badly written user-land software that sends signals and has small 
->>> races.
->> I'm not really sure how this is different than a malicious app going off 
->> and spawning thousands of threads in an attempt to hit a target pid from 
->> a security pov.  Sure, it makes it easier, but it's not like there is 
->> anything in place to close the attack vector.
->>
->>> Quite frankly, from having followed the discussion(s) over the last few 
->>> weeks about checkpoint/restart in various forms, my reaction to just about 
->>> _all_ of this is that people pushing this are pretty damn borderline. 
->>>
->>> I think you guys are working on all the wrong problems. 
->>>
->>> Let's face it, we're not going to _ever_ checkpoint any kind of general 
->>> case process. Just TCP makes that fundamentally impossible in the general 
->>> case, and there are lots and lots of other cases too (just something as 
->>> totally _trivial_ as all the files in the filesystem that don't get rolled 
->>> back).
->> In some instances such as ours, TCP is probably the easiest thing to 
->> migrate.  In an rpc-based cluster application, TCP is nothing more than 
->> an RPC channel and applications already have to handle RPC channel 
->> failure and re-establishment.
->>
->> I agree that this is not the 'general case' as you mention above 
->> however.  This is the bit that sorta bothers me with the way the 
->> implementation has been going so far on this list.  The implementation 
->> that folks are building on top of Oren's patchset tries to be everything 
->> to everybody.  For our purposes, we need to have the flexibility of 
->> choosing *how* we checkpoint.  The line seems to be arbitrarily drawn at 
->> the kernel being responsible for checkpointing and restoring all 
->> resources associated with a task, and leaving userland with nothing more 
->> than transporting filesystem bits.  This approach isn't flexible enough: 
->>   Consider the case where we want to stub out most of the TCP file 
->> descriptors with ECONNRESETed sockets because we know that they are RPC 
->> sockets and can re-establish themselves, but we want to use some other 
->> mechanism for TCP sockets we don't know much about.  The current 
->> monolithic approach has zero flexibility for doing anything like this, 
->> and I figure out how we could even fit anything like this in.
-> 
-> The flexibility exists, but wasn't spelled out, so here it is:
-> 
-> 1) Similar to madvice(), I envision a cradvice() that could tell the c/r
-> something about specific resources, e.g.:
->  * cradvice(CR_ADV_MEM, ptr, len)  -> don't save that memory, it's scratch
->  * cradvice(CR_ADV_SOCK, fd, CR_ADV_SOCK_RESET)  -> reset connection on restart
-> etc .. (nevermind the exact interface right now)
-> 
-> 2) Tasks can ask to be notified (e.g. register a signal) when a checkpoint
-> or a restart complete successfully. At that time they can do their private
-> house-keeping if they know better.
-> 
-> 3) If restoring some resource is significantly easier in user space (e.g. a
-> file-descriptor of some special device which user space knows how to
-> re-initialize), then the restarting task can prepare it ahead of time,
-> and, call:
->   * cradvice(CR_ADV_USERFD, fd, 0)  -> use the fd in place instead of trying
-> 				       to restore it yourself.
+This is a multi-part message in MIME format.
+--------------010404030001070209050100
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-This would be called by the embryo process (mktree.c?) before calling 
-sys_restart?
+Cedric Le Goater wrote:
+> Dan Smith wrote:
+>> SH> (Note that in Dan's next version, he did move unshare into
+>> SH> userspace)
+>>
+>> The idealist in me still wants it to be in the kernel.  However, after
+>> seeing it done I agree that it's the right thing to do, at least in
+>> this case.
+> 
+> I would say in all cases.
+> 
+> as you can't unshare(CLONE_NEWPID), 
 
-> 
-> Method #3 is what I used in Zap to implement distributed checkpoints, where
-> it is so much easier to recreate all network connections in user space then
-> putting that logic into the kernel.
-> 
-> Now, on the other hand, doing the c/r from userland is much less flexible
-> than in the kernel (e.g. epollfd, futex state and much more) and requires
-> exposing tremendous amount of in-kernel data to user space. And we all know
-> than exposing internals is always a one-way ticket :(
-> 
-> [...]
-> 
-> Oren.
-> 
-> 
+Eric,
+
+Is there a particular reason the above doesn't work?  I made an attempt 
+to implement it a while back, but haven't convinced myself that signals 
+and re-attaching a new struct pid to a running task is correct.
+
+This should apply on top of Oren's ckpt v13 (based on 2.6.27-rc8). 
+Consider this me floating the idea of adding support and I'll clean it 
+up/rebase if you think it's useful.
+
+Mike Waychison
+
+--------------010404030001070209050100
+Content-Type: text/plain;
+ name="add-unshare-support"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="add-unshare-support"
+
+Add unshare CLONE_NEWPID support
+
+From: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+Add support for doing CLONE_NEWPID to sys_unshare().  Doing so requires that
+the calling thread isn't sharing their signal handlers with anyone, or if they
+are, they must also unshare their signal handler config at the same time.
+
+Open issues:
+   - I'm not 100% convinced I'm doing the right thing with pending signals.
+   - I'm rewriting current's struct pid without any kind of synchronization.
+   The lifetimes look alright to me, but it seems a little racy.  I can't think
+   of any actual cases where we'd cause problems though: paths where we'd race
+   would include cases where we go off and look at a struct pid's level, but
+   then index in to get the pid_t out.  This is the same before and after we
+   attach the pid to the task however, so maybe it's okay?
+
+Signed-off-by: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+---
+
+ include/linux/pid.h |    2 ++
+ kernel/fork.c       |   47 ++++++++++++++++++++++++++++++++++++++-
+ kernel/nsproxy.c    |    2 +-
+ kernel/pid.c        |   61 +++++++++++++++++++++++++++++++++++++++++++++++----
+ 4 files changed, 105 insertions(+), 7 deletions(-)
+
+
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index d7e98ff..0ff4829 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -120,6 +120,8 @@ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ 
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid_keep(struct pid_namespace *ns,
++				  struct pid *orig_pid);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 7ce2ebe..2db6f38 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1575,7 +1575,10 @@ asmlinkage long sys_unshare(unsigned long unshare_flags)
+ 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
+ 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
+ 				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
+-				CLONE_NEWNET))
++				CLONE_NEWNET|CLONE_NEWPID))
++		goto bad_unshare_out;
++	if ((unshare_flags & CLONE_NEWPID) && !(unshare_flags & CLONE_SIGHAND)
++	 && atomic_read(&current->sighand->count) > 1)
+ 		goto bad_unshare_out;
+ 
+ 	/*
+@@ -1599,6 +1602,47 @@ asmlinkage long sys_unshare(unsigned long unshare_flags)
+ 			new_fs)))
+ 		goto bad_unshare_cleanup_fd;
+ 
++	if (unshare_flags & CLONE_NEWPID) {
++		struct pid *new_pid, *old_pid;
++		err = pid_ns_prepare_proc(new_nsproxy->pid_ns);
++		if (err)
++			goto bad_unshare_cleanup_nsproxy;
++		/* Give ourselves a pid. */
++		new_pid = alloc_pid_keep(new_nsproxy->pid_ns,
++					 ask_pid(current));
++		if (!new_pid)
++			goto bad_unshare_cleanup_nsproxy;
++
++		old_pid = task_pid(current);
++
++		write_lock_irq(&tasklist_lock);
++		spin_lock(&current->sighand->siglock);
++
++		/* TODO: Do we have to check if there are signals pending at
++		 * this point? */
++
++		current->pid = pid_nr(new_pid);
++		current->tgid = current->pid;
++		current->group_leader = current;
++		list_del_init(&current->thread_group);
++		new_nsproxy->pid_ns->child_reaper = current;
++		/*
++		 * TODO: Is this the right way to handle the signal updates?
++		 *
++		 * The guard that ensures that we specified CLONE_SIGHAND
++		 * currently ensures that we aren't sharing our sighand with
++		 * anyone else.
++		 */
++		current->signal->leader_pid = new_pid;
++
++		set_task_pgrp(current, pid_nr(new_pid));
++		set_task_session(current, pid_nr(new_pid));
++		detach_pid(current, PIDTYPE_PID);
++		attach_pid(current, PIDTYPE_PID, new_pid);
++		spin_unlock(&current->sighand->siglock);
++		write_unlock_irq(&tasklist_lock);
++	}
++
+ 	if (new_fs ||  new_mm || new_fd || do_sysvsem || new_nsproxy) {
+ 		if (do_sysvsem) {
+ 			/*
+@@ -1638,6 +1682,7 @@ asmlinkage long sys_unshare(unsigned long unshare_flags)
+ 		task_unlock(current);
+ 	}
+ 
++bad_unshare_cleanup_nsproxy:
+ 	if (new_nsproxy)
+ 		put_nsproxy(new_nsproxy);
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 1d3ef29..23cafe7 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -189,7 +189,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+ 	int err = 0;
+ 
+ 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-			       CLONE_NEWUSER | CLONE_NEWNET)))
++			       CLONE_NEWUSER | CLONE_NEWNET | CLONE_NEWPID)))
+ 		return 0;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 064e76a..3919b0d 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -239,10 +239,64 @@ void free_pid(struct pid *pid)
+ 	call_rcu(&pid->rcu, delayed_put_pid);
+ }
+ 
++static void init_pid(struct pid_namespace *ns, struct pid *pid)
++{
++	enum pid_type type;
++	pid->level = ns->level;
++	atomic_set(&pid->count, 1);
++	for (type = 0; type < PIDTYPE_MAX; ++type)
++		INIT_HLIST_HEAD(&pid->tasks[type]);
++}
++
++struct pid *alloc_pid_keep(struct pid_namespace *ns, struct pid *orig_pid)
++{
++	struct pid *pid;
++	int i;
++	pid_t nr;
++
++	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
++	if (!pid)
++		goto out;
++
++	nr = alloc_pidmap(ns);
++	if (nr < 0)
++		goto out_free;
++	BUG_ON(nr != 1);
++
++	pid->numbers[ns->level].nr = nr;
++	pid->numbers[ns->level].ns = ns;
++	for (i = ns->level - 1; i >= 0; i--) {
++		/* Transfer the pid references to the new structure. */
++		pid->numbers[i].nr = orig_pid->numbers[i].nr;
++		orig_pid->numbers[i].nr = 0;
++
++		pid->numbers[i].ns = orig_pid->numbers[i].ns;
++	}
++
++	get_pid_ns(ns);
++	init_pid(ns, pid);
++
++	/* Update the hash tables.. */
++	spin_lock_irq(&pidmap_lock);
++	for (i = ns->level; i >= 0; i--) {
++		struct upid *upid;
++		upid = &pid->numbers[i];
++		/* put_pid will unhash the old upids */
++		hlist_add_head_rcu(&upid->pid_chain,
++				&pid_hash[pid_hashfn(upid->nr, upid->ns)]);
++	}
++	spin_unlock_irq(&pidmap_lock);
++
++out:
++	return pid;
++out_free:
++	kmem_cache_free(ns->pid_cachep, pid);
++	return NULL;
++}
++
+ struct pid *alloc_pid(struct pid_namespace *ns)
+ {
+ 	struct pid *pid;
+-	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
+ 	struct upid *upid;
+@@ -263,10 +317,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 	}
+ 
+ 	get_pid_ns(ns);
+-	pid->level = ns->level;
+-	atomic_set(&pid->count, 1);
+-	for (type = 0; type < PIDTYPE_MAX; ++type)
+-		INIT_HLIST_HEAD(&pid->tasks[type]);
++	init_pid(ns, pid);
+ 
+ 	spin_lock_irq(&pidmap_lock);
+ 	for (i = ns->level; i >= 0; i--) {
+
+--------------010404030001070209050100
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------010404030001070209050100--
