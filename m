@@ -1,47 +1,43 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: C/R review
-Date: Tue, 17 Mar 2009 19:47:42 -0500
-Message-ID: <20090318004742.GA14308@us.ibm.com>
-References: <20090317210110.GA3897@x200.localdomain>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 6/7] [RFC] Support multiply-bindable cgroup subsystems
+Date: Wed, 18 Mar 2009 10:09:47 +0800
+Message-ID: <49C057EB.1000307@cn.fujitsu.com>
+References: <20090312104507.24154.71691.stgit@menage.corp.google.com>	<20090312105147.24154.62638.stgit@menage.corp.google.com>
+	<49BF4744.5060309@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754657AbZCRAr5@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20090317210110.GA3897@x200.localdomain>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Alexey Dobriyan <adobriyan@gmail.com>
-Cc: orenl@cs.columbia.edu, lkml <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <49BF4744.5060309-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan@gmail.com):
-> > +Keeping the restart procedure to operate within the limits of the
-> > +caller's credentials means that there various scenarios that cannot
-> > +be supported. For instance, a setuid program that opened a protected
-> > +log file and then dropped privileges will fail the restart, because
-> > +the user won't have enough credentials to reopen the file.
+>>  			cgrp->subsys[i] = NULL;
+>>  			root->subsys_bits &= ~bit;
+>> -			rootnode.subsys_bits |= bit;
+>> +			if (singleton)
+>> +				rootnode.subsys_bits |= bit;
 > 
-> That's a bug.
+> initially we can see all subsystems in /proc/cgroups, but:
+> 
 
-What is described is not a bug, but I think the way it is done is in
-fact a bug.
-
-Note that just because you *can* do the restart without privilege
-doesn't mean that you have to.  If you do a restart with privilege,
-then you should be able to open that file, then drop down to the
-original task's uid.
-
-But to say that letting an unprivileged user do restart, and that
-it will only succeed if it can access the resources its allowed to
-access, is bogus.
-
-But I do think the way it's implemented will become buggy and needs to
-be fixed.  That is, we do cr_read_task_struct() before we do
-cr_read_files().  So in fact if I'm root doing restart of such a
-checkpoint image, I'll first drop down to uid 500, then open the files.
-
-That would obviously be a bug.
-
-Now, we don't actually restore uids yet in the current code, so
-it's still a theoretical bug :)
-
--serge
+Ah, I just notice debug_subsys will never be in rootnode. But this is a bit odd,
+and one of the use of /proc/cgroups is to check if a subsystem is supported or
+not, so we can no longer do this:
+	#! /bin/sh
+	grep -q debug /proc/cgroups
+	if [ $? -ne 0 ]; then
+		echo "debug subsystem is not compiled into kernel"
+		exit 1
+	fi
+	# mount debug_subsys and do something with it...
