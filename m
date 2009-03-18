@@ -1,156 +1,48 @@
-From: Ryousei Takano <ryousei@gmail.com>
-Subject: Re: [lxc-devel] Poor bridging performance on 10 GbE
-Date: Thu, 19 Mar 2009 00:56:53 +0900
-Message-ID: <b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com>
-References: <b30d1c3b0903180221h5175618eue162ffdec3817b4c@mail.gmail.com>
-	 <49C0C87B.7070507@fr.ibm.com>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] [RFC] c/r: Add UTS support
+Date: Wed, 18 Mar 2009 16:46:39 +0100
+Message-ID: <49C1175F.9060600@free.fr>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>	<20090312224820.GA12723@hallyn.com>	<87bps6pcyf.fsf@caffeine.danplanet.com>	<49C0B069.6060300@cs.columbia.edu>
+	<20090318134932.GC22636@us.ibm.com>
+	<878wn353mf.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <49C0C87B.7070507@fr.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: lxc-devel@lists.sourceforge.net, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <878wn353mf.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Daniel,
+Dan Smith wrote:
+> SH> (Note that in Dan's next version, he did move unshare into
+> SH> userspace)
+> 
+> The idealist in me still wants it to be in the kernel.  However, after
+> seeing it done I agree that it's the right thing to do, at least in
+> this case.
 
-On Wed, Mar 18, 2009 at 7:10 PM, Daniel Lezcano <dlezcano@fr.ibm.com> w=
-rote:
-> Ryousei Takano wrote:
->>
->> Hi all,
->>
->> I am evaluating the networking performance of lxc on 10 Gigabit Ethe=
-rnet
->> by
->> using netperf benchmark.
->
-> Thanks for doing benchmarking.
-> I did two years ago similar tests and there is an analysis of the
-> performances at:
-> http://lxc.sourceforge.net/network/benchs.php
->
-> It is not up to date, but that will give you some clues of what is ha=
-ppening
-> with this overhead.
->
-I am using VServer because other virtualization mechanisms, including O=
-penVZ,
-Xen, and KVM cannot fully utilize the network bandwidth of 10 GbE.
+I would say in all cases.
 
-Here are the results of netperf bencmark:
-	vanilla (2.6.27-9)		9525.94
-	Vserver (2.6.27.10)	9521.79
-	OpenVZ (2.6.27.10)	2049.89
-	Xen (2.6.26.1)		1011.47
-	KVM (2.6.27-9)		1022.42
+as you can't unshare(CLONE_NEWPID), you might consider doing a 
 
-Now I am interesting to use LXC instead of VServer.
+	clone(CLONE_NEW*|CLONE_WHATEVER)
 
->> Using a macvlan device, the throughput was 9.6 Gbps. But, using a ve=
-th
->> device,
->> the throughput was only 2.7 Gbps.
->
-> Yeah, definitively the macvlan interfaces is the best in terms of
-> performances but with the restriction of not being able to communicat=
-e
-> between containers on the same hosts.
->
-This restriction is not so big issue for my purpose.
+to restart 1 and then restart the container process tree under it, block
+them, restore the container namespaces and other shared resources in the
+right order and then release the processes to let them restart themselves. 
+that's how we've implemented restart. You might be doing that already, 
+sorry I haven't had time to look at your code. 
 
-> There are some discussions around that:
->
-> http://marc.info/?l=3Dlinux-netdev&m=3D123643508124711&w=3D2
->
-> The veth is a virtual device hence it has not offloading. When the pa=
-cket
-> are sent out, the network stack looks at the nic offloading capabilit=
-y which
-> is not present. So the kernel will compute the checksums instead of l=
-etting
-> the nic to do that either if the packet is transmitted through the ph=
-ysical
-> nic. This is a well known issue related to network virtualization and=
- xen
-> has developed a specific network driver:
-> http://www.cse.psu.edu/~bhuvan/teaching/spring06/papers/xen-net-opt.p=
-df
->
->> I think this is because the overhead of bridging devices is high.
->
-> Yes, bridging adds some overhead and AFAIR bridging + netfilter does =
-some
-> skb copy.
->
-Thank you for pointers.
+1 being an invariant between checkpoint and restart.
 
->> I also checked the host OS's performance when I used a veth device.
->> I observed a strange phenomenon.
->>
->> Before issuing lxc-start command, the throughput was 9.6 Gbps.
->> Here is the output of brctl show:
->> =A0 =A0 =A0 =A0$ brctl show
->> =A0 =A0 =A0 =A0bridge name =A0 =A0 bridge id =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 STP enabled =A0 =A0 interfaces
->> =A0 =A0 =A0 =A0br0 =A0 =A0 =A0 =A0 =A0 =A0 8000.0060dd470d49 =A0 =A0=
- =A0 no =A0 =A0 =A0 =A0 =A0 =A0 =A0eth1
->>
->> After issuing lxc-start command, the throughput decreased to 3.2 Gbp=
-s.
->> Here is the output of brctl show:
->> =A0 =A0 =A0 =A0$ sudo brctl show
->> =A0 =A0 =A0 =A0bridge name =A0 =A0 bridge id =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 STP enabled =A0 =A0 interfaces
->> =A0 =A0 =A0 =A0br0 =A0 =A0 =A0 =A0 =A0 =A0 8000.0060dd470d49 =A0 =A0=
- =A0 no =A0 =A0 =A0 =A0 =A0 =A0 =A0eth1
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0veth0_7573
->>
->> I wonder why the performance is greatly influenced by adding a veth =
-device
->> to a bridge device.
->
-> Hmm, good question :)
->
->> Here is my experimental setting:
->> =A0 =A0 =A0 =A0OS: Ubuntu server 8.10 amd64
->> =A0 =A0 =A0 =A0Kernel: 2.6.27-rc8 (checkout from the lxc git reposit=
-ory)
->
-> I would recommend to use the 2.6.29-rc8 vanilla because this kernel d=
-oes no
-> longer need patches, a lot of fixes were done in the network namespac=
-e and
-> maybe the bridge has been improved in the meantime :)
->
-I checked out the 2.6.29-rc8 vanilla kernel.
-The performance after issuing lxc-start improved to 8.7 Gbps!
-It's a big improvement, while some performance loss remains.
-Can not we avoid this loss?
-
->> =A0 =A0 =A0 =A0Userland tool: 0.6.0
->> =A0 =A0 =A0 =A0NIC: Myricom Myri-10G
->>
->> Any comments and suggestions will be appreciate.
->> If this list is not proper place to talk about this problem, can any=
-one
->> tell me
->> the proper one?
->
-> The performances question is more related to the network virtualizati=
-on
-> implementation and should be sent to netdev@ and containers@ (added i=
-n the
-> Cc' of this email), of course people at lxc-devel@ will be interested=
- by
-> these aspects, so lxc-devel@ is the right mailing list too.
->
-> Thanks for your testings
-> =A0-- Daniel
->
-
-Best regards,
-Ryousei Takano
+C.
