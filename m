@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Add UTS support to mktree (v4)
-Date: Wed, 18 Mar 2009 11:55:09 -0700
-Message-ID: <1237402510-29053-2-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 2/2] Add a simple UTS test program
+Date: Wed, 18 Mar 2009 11:55:10 -0700
+Message-ID: <1237402510-29053-3-git-send-email-danms@us.ibm.com>
 References: <1237402510-29053-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,182 +20,137 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Read the namespace records from the restore stream and do the unshare()
-necessary to create a new namespace.  For UTS, set hostname and domainname
-to match what was stored in the checkpoint.
-
-Changes:
- - Check return of sethostname() and setdomainname()
- - Update to match new struct name and header type to kernel patch
- - Update the method used to read the node and domain names to match
-   what the updated kernel patch is doing
+This program creates a top-level UTS namespace and then forks a child.  The
+parent sets the hostname to a different value every second and the child
+prints the value.  If the child's value changes with the parent, even after
+restart, then the pair are running in the same UTS namespace.  The test
+self-checkpoints every iteration.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- mktree.c |  120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 120 insertions(+), 0 deletions(-)
+ utstest.c |  114 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 114 insertions(+), 0 deletions(-)
+ create mode 100644 utstest.c
 
-diff --git a/mktree.c b/mktree.c
-index 55149dd..fcfa779 100644
---- a/mktree.c
-+++ b/mktree.c
-@@ -14,6 +14,7 @@
- #include <unistd.h>
- #include <errno.h>
- #include <signal.h>
+diff --git a/utstest.c b/utstest.c
+new file mode 100644
+index 0000000..1afca49
+--- /dev/null
++++ b/utstest.c
+@@ -0,0 +1,114 @@
++#define _GNU_SOURCE
++#include <stdio.h>
++#include <fcntl.h>
++#include <unistd.h>
 +#include <sched.h>
- #include <sys/types.h>
- #include <sys/wait.h>
- #include <asm/unistd.h>
-@@ -98,9 +99,11 @@ static int cr_write_tree(struct cr_ctx *ctx);
- static int cr_read(int fd, void *buf, int count);
- static int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
- static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
-+static int cr_read_string(struct cr_ctx *ctx, char **buf, int len);
- 
- static int cr_read_head(struct cr_ctx *ctx);
- static int cr_read_head_arch(struct cr_ctx *ctx);
-+static int cr_read_namespaces(struct cr_ctx *ctx);
- static int cr_read_tree(struct cr_ctx *ctx);
- 
- struct pid_swap {
-@@ -191,6 +194,12 @@ int main(int argc, char *argv[])
- 		exit(1);
- 	}
- 
-+	ret = cr_read_namespaces(&ctx);
-+	if (ret < 0) {
-+		perror("read c/r namespaces");
-+		exit(1);
-+	}
++#include <string.h>
++#include <stdlib.h>
++#include <asm/unistd.h>
 +
- 	ret = cr_fork_feeder(&ctx);
- 	if (ret < 0)
- 		exit(1);
-@@ -511,6 +520,30 @@ static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type)
- 	return ret;
- }
- 
-+static int cr_read_string(struct cr_ctx *ctx, char **buf, int len)
++#define OUTFILE "/tmp/cr-test.out"
++#define CKPTDIR "/tmp"
++
++int ckpt = 0;
++
++int do_checkpoint(void)
 +{
-+	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
++	char fn[256];
++	int fd;
 +	int ret;
 +
-+	ret = cr_read(STDIN_FILENO, h, sizeof(*h));
-+	if (ret < 0)
-+		return ret;
-+	if (h->type != CR_HDR_STRING)
++	snprintf(fn, sizeof(fn)-1, CKPTDIR "/ckpt-%i", ckpt++);
++
++	fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC, 0666);
++	if (fd < 0) {
++		perror(fn);
 +		return -1;
-+
-+	*buf = (char *) malloc(len);
-+	if (!*buf)
-+		return -ENOMEM;
-+
-+	ret = cr_read(STDIN_FILENO, *buf, len);
-+	if (ret < 0) {
-+		free(*buf);
-+		*buf = NULL;
 +	}
++
++	ret = syscall(__NR_checkpoint, getpid(), fd, 0);
++	if (ret < 0)
++		printf("Checkpoint to %s returned %i (%m)\n", fn, ret);
++
++	close(fd);
 +
 +	return ret;
 +}
 +
- /*
-  * read/write the checkpoint image: similar to in-kernel code
-  */
-@@ -557,6 +590,93 @@ static int cr_read_head_arch(struct cr_ctx *ctx)
- 	return 0;
- }
- 
-+static int cr_read_task_utsns(struct cr_ctx *ctx)
++void child(int fd, int subunshare)
 +{
-+	int parent;
-+	struct cr_hdr_utsns hh;
-+	char *namebuf = NULL;
-+	int ret = 0;
-+
-+	parent = cr_read_obj_type(ctx, &hh, sizeof(hh),
-+				  CR_HDR_UTSNS);
-+	if (parent < 0)
-+		return parent;
-+	else if (parent != 0) {
-+		errno = -EINVAL;
-+		return -1;
-+	}
-+
-+	ret = cr_read_string(ctx, &namebuf, hh.nodename_len);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (sethostname(namebuf, strlen(namebuf)) < 0) {
-+		perror("sethostname");
-+		goto out;
-+	}
-+
-+	free(namebuf);
-+	namebuf = NULL;
-+
-+	ret = cr_read_string(ctx, &namebuf, hh.domainname_len);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (setdomainname(namebuf, strlen(namebuf)) < 0)
-+		perror("setdomainname");
-+ out:
-+	free(namebuf);
-+
-+	return 0;
-+}
-+
-+static int cr_read_task_namespaces(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_namespaces hh;
-+	int parent;
++	char hostname[256] = "foo";
 +	int ret;
 +
-+	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_NS);
-+	if (parent < 0)
-+		return parent;
-+	else if (parent != 0) {
-+		errno = -EINVAL;
-+		return -1;
++	if (subunshare) {
++		ret = unshare(CLONE_NEWUTS);
++		if (ret) {
++			printf("unshare: %m");
++			exit(1);
++		}
 +	}
 +
-+	if (hh.types == 0)
-+		return 0;
++	while (1) {
++		ret = gethostname(hostname, sizeof(hostname));
++		if (ret) {
++			perror("gethostname");
++			_exit(1);
++		}
 +
-+	if (unshare(CLONE_NEWUTS) != 0) {
-+		perror("unshare(CLONE_NEWUTS)");
-+		return -1;
++		printf("Hostname in child is:  %s\n", hostname);
++		sleep(1);
 +	}
-+
-+	if (hh.types & CR_NS_UTS) {
-+		ret = cr_read_task_utsns(ctx);
-+		if (ret < 0)
-+			return ret;
-+
-+		/* Read other namespaces here */
-+	}
-+
-+	return 0;
 +}
 +
-+static int cr_read_namespaces(struct cr_ctx *ctx)
++int main(int argc, char **argv)
 +{
-+	int n;
-+	int ret = 0;
++	int ret;
++	int fd;
++	int i = 0;
++	int subunshare = 0;
 +
-+	for (n = 0; n < ctx->pids_nr; n++) {
-+		ret = cr_read_task_namespaces(ctx);
-+		if (ret < 0)
-+			break;
++#ifndef NOUTS
++	ret = unshare(CLONE_NEWUTS);
++	if (ret) {
++		perror("unshare");
++		return 1;
++	}
++#endif
++
++	/* Pass '-u' to test nested namespace */
++	if ((argc == 2) && (strcmp(argv[1], "-u") == 0))
++		subunshare = 1;
++
++	fd = open(OUTFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
++	if (fd < 0) {
++		perror(OUTFILE);
++		return 1;
 +	}
 +
-+	return ret;
-+}
++	dup2(fd, 1);
++	dup2(fd, 2);
++	close(0);
 +
- static int cr_read_tree(struct cr_ctx *ctx)
- {
- 	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
++	setlinebuf(stdout);
++	setlinebuf(stderr);
++
++	if (fork() == 0)
++		child(fd, subunshare);
++
++	while (1) {
++#ifndef NOUTS
++		char hostname[256];
++
++		snprintf(hostname, sizeof(hostname)-1, "test%i", i++);
++		ret = sethostname(hostname, strlen(hostname));
++		if (ret) {
++			perror("sethostname");
++			return 1;
++		}
++
++		printf("Hostname in parent is: %s\n", hostname);
++#endif
++		do_checkpoint();
++		sleep(1);
++	}
++}
 -- 
 1.5.6.3
