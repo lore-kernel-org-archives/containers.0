@@ -1,37 +1,61 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add UTS support (v3)
-Date: Wed, 18 Mar 2009 06:30:36 -0700
-Message-ID: <87d4cf556r.fsf@caffeine.danplanet.com>
-References: <1237306139-23075-1-git-send-email-danms@us.ibm.com>
-	<49C0BD63.7000309@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 2/3] c/r: Add CR_COPY() macro (v3)
+Date: Wed, 18 Mar 2009 08:43:41 -0500
+Message-ID: <20090318134341.GB22636@us.ibm.com>
+References: <1236095764-19325-1-git-send-email-danms@us.ibm.com> <1236095764-19325-3-git-send-email-danms@us.ibm.com> <1236097332.22399.8.camel@nimitz> <878wnmrtp9.fsf@caffeine.danplanet.com> <1236128437.22399.31.camel@nimitz> <20090304150519.GB10186@us.ibm.com> <49C0A80E.1040603@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49C0BD63.7000309-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
-	"Wed, 18 Mar 2009 05:22:43 -0400")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757472AbZCRNoS@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <49C0A80E.1040603@cs.columbia.edu>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oren Laadan <orenl@cs.columbia.edu>
+Cc: Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Dan Smith <danms@us.ibm.com>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-OL> The length of ->nodename etc may change in the future. It's
-OL> probably safer to also add the length of the field as well (see
-OL> for instance how task->comm is saved).
+Quoting Oren Laadan (orenl@cs.columbia.edu):
+> 
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Dave Hansen (dave@linux.vnet.ibm.com):
+> >> On Tue, 2009-03-03 at 16:57 -0800, Dan Smith wrote:
+> >>> DH> Did you convince Nathan that this ends up being a good idea?
+> >>>
+> >>> Technically he hasn't seen this version, but my hopes are not high
+> >>> that he will change his mind.  If the feedback is that they're not
+> >>> liked, I'll happily remove them.
+> >> I just figure if Nathan feels that strongly that we'll encounter more
+> >> people who feel even more so.  So, I was curious if he changed his mind
+> >> somehow.
+> > 
+> > I maintain however that two strong advantages of moving the checkpoint
+> > and restart of simple registers etc into a single function are:
+> > 
+> > 	1. we won't forget to add (or accidentally lose) one or the
+> > 		other
+> > 	2. any actual special handling at checkpoint or restart, like
+> > 		the loading of access registers at restart on s390x,
+> > 		stand out
+> > 
+> 
+> I, too, think that this scheme is elegant, and at the same time I, too,
+> think that it obfuscates the code. Since I only touch arch-dependent code
+> only if I really really must, I don't have strong opinion about it ;)
+> 
+> However, a problem with this scheme is that checkpoint and restart
+> are not fully symmetric -- on restart we must sanitize the input data
+> before restoring the registers to that data. I'm not familiar with
+> s390, but it is likely that by not doing so we create a security issue.
+> 
+> Oren.
 
-Ah, good point.  I'll fix it up.
+But that's exactly why I think CR_COPY() helps - the sanitation is
+explicit next to some boring CR_COPY()s.  It becomes clearer that
+it is being done.
 
-Thanks!
+Anyway we've got plenty of other, bigger hurdles to clear, so while
+I do have a strong opinion, I'm not planning on pushing hard either
+way.
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+thanks,
+-serge
