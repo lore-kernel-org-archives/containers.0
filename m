@@ -1,56 +1,47 @@
-From: "afforestation Stanford" <SheldonAngelo-mleE8VdkWOsES5aQMQQu3w@public.gmane.org>
-Subject: [*** BULK ***] Re: medical profession listings
-Date: 17 Mar 2009 21:55:42 +0100
-Message-ID: <NIBISRV0013GykBbKP70000c26e@nibi.nl>
-Reply-To: afforestation Stanford <noreplyhere-dY8dr7OXV/uGaxxthHjfDUEOCMrvLtNR@public.gmane.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: C/R review
+Date: Tue, 17 Mar 2009 19:47:42 -0500
+Message-ID: <20090318004742.GA14308@us.ibm.com>
+References: <20090317210110.GA3897@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754657AbZCRAr5@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090317210110.GA3897@x200.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: orenl@cs.columbia.edu, lkml <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Special Package for this week
+Quoting Alexey Dobriyan (adobriyan@gmail.com):
+> > +Keeping the restart procedure to operate within the limits of the
+> > +caller's credentials means that there various scenarios that cannot
+> > +be supported. For instance, a setuid program that opened a protected
+> > +log file and then dropped privileges will fail the restart, because
+> > +the user won't have enough credentials to reopen the file.
+> 
+> That's a bug.
 
-Currently in Practice:  Doctors in the USA 
+What is described is not a bug, but I think the way it is done is in
+fact a bug.
 
-788,966 in total * 17,871 emails
+Note that just because you *can* do the restart without privilege
+doesn't mean that you have to.  If you do a restart with privilege,
+then you should be able to open that file, then drop down to the
+original task's uid.
 
-34 primary and secondary specialties
+But to say that letting an unprivileged user do restart, and that
+it will only succeed if it can access the resources its allowed to
+access, is bogus.
 
-Sort by over a dozen different fields
+But I do think the way it's implemented will become buggy and needs to
+be fixed.  That is, we do cr_read_task_struct() before we do
+cr_read_files().  So in fact if I'm root doing restart of such a
+checkpoint image, I'll first drop down to uid 500, then open the files.
 
+That would obviously be a bug.
 
-Database of American Pharma Companies
-47,000 names and emails of the major positions
+Now, we don't actually restore uids yet in the current code, so
+it's still a theoretical bug :)
 
-American Hospital List
-Full data for all the major positions in more than 7k facilities
-
-Dentists in the United States
-More than half a million listings [worth $499 alone!]
-
-US Chiropractor Directory
-Over than 100k chiropractors practicing in the United States
-
-
-This week only you pay only: 
-$394 for all above data
-
-reply by email:      Jaclyn-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org
-
-  
-
-good until March 21 
-
-
-email xyz-rhF2/e/fxLEdw2Fo+rOw49BPR1lH4CV8@public.gmane.org for delisting
+-serge
