@@ -1,17 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH] x86_86 support of checkpoint/restart (Re: Checkpoint
-	/ Restart)
-Date: Wed, 18 Mar 2009 02:56:03 -0400
-Message-ID: <49C09B03.6040403@cs.columbia.edu>
-References: <20090207001609.8168.14884.stgit@lahore.corp.google.com>	
-	<1234202558.20090.201.camel@nimitz>	
-	<e98e18940902101427i7459a7edke4fdd8404e2ef642@mail.gmail.com>
-	<e98e18940902101934o6f93230ag7226da6013afd20@mail.gmail.com>
+Subject: Re: [RFC v13][PATCH 05/14] x86 support for checkpoint/restart
+Date: Wed, 18 Mar 2009 03:21:34 -0400
+Message-ID: <49C0A0FE.2000403__8112.2289099314$1237361174$gmane$org@cs.columbia.edu>
+References: <1233076092-8660-1-git-send-email-orenl@cs.columbia.edu>
+	<1233076092-8660-6-git-send-email-orenl@cs.columbia.edu>
+	<20090224014739.1b82fc35@thinkcentre.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <e98e18940902101934o6f93230ag7226da6013afd20-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20090224014739.1b82fc35-4v5LP+xe+1byhTdZtsIeww@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,73 +19,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-I was very confued byt he original post; there is no need for a special
-signal (handling) for checkpoint.
 
-To checkpoint, we first freeze (or stop) the processes, meaning that
-they are kept with empty kernel stack before returning to user-mode.
+Nathan Lynch wrote:
+> Hi, this is an old thread I guess, but I just noticed some issues while
+> looking at this code.
+> 
+> On Tue, 27 Jan 2009 12:08:03 -0500
+> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+>> +static int cr_read_cpu_fpu(struct cr_ctx *ctx, struct task_struct *t)
+>> +{
+>> +	void *xstate_buf = cr_hbuf_get(ctx, xstate_size);
+>> +	int ret;
+>> +
+>> +	ret = cr_kread(ctx, xstate_buf, xstate_size);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +
+>> +	/* i387 + MMU + SSE */
+>> +	preempt_disable();
+>> +
+>> +	/* init_fpu() also calls set_used_math() */
+>> +	ret = init_fpu(current);
+>> +	if (ret < 0)
+>> +		return ret;
+> 
+> Several problems here:
+> * init_fpu can call kmem_cache_alloc(GFP_KERNEL), but is called here
+>   with preempt disabled (init_fpu could use a might_sleep annotation?)
+> * if init_fpu returns an error, we get preempt imbalance
+> * if init_fpu returns an error, we "leak" the cr_hbuf_get for
+>   xstate_buf
 
-We then rely on the fact that a process saves everything that it needs
-before entering a syscall - so whatever is on the stack when it enters
-the kernel must be preserved, the rest can be overwritten. Otherwise,
-processes wouldn't survive context switches while in syscalls ...
+Fixed, thanks.
+
+> 
+> Speaking of cr_hbuf_get... I'd prefer to see that "allocator" go away
+> and its users converted to kmalloc/kfree (this is what I've done for
+> the powerpc C/R code, btw).
+> 
+> Using the slab allocator would:
+> 
+> * make the code less obscure and easier to review
+> * make the code more amenable to static analysis
+> * gain the benefits of slab debugging at runtime
+> 
+> But I think this has been pointed out before.  If I understand the
+> justification for cr_hbuf_get correctly, the allocations it services
+> are somehow known to be bounded in size and nesting.  But even if that
+> is the case, it's not much of a reason to avoid using kmalloc, is it?
+> 
+
+The reason I want these wrappers (as opposed to allocators) in place is
+allow an optimization that will reduce application downtime during checkpoint.
+
+Since we freeze the container during checkpoint, the applications inside are
+unresponsive. The idea is to minimize the downtime by buffering the checkpoint
+data in the kernel while the applications are frozen, and defer the (slow)
+write-back of the buffer until after the application is allowed to resume
+execution. (Memory pages will be marked COW instead of a physical copy in the
+kernel).
+
+To that, we'll need the wrapper to not only allocate memory, but also track
+all the pieces together as a long buffer. Actual implementation details are
+not important now, but having a wrapper in place is.
+
+Consequently, although I prefer not to change the current implementation of
+cr_hbuf_get/put(), if you find it really helpful to change to kmalloc/kfree
+I won't stand in the way. However, I do insist that the wrappers remain.
 
 Oren.
-
-Nauman Rafique wrote:
-> Actually looking at the code in entry_64.S again closely, external
-> checkpointing should work with my patch too. The callee save registers
-> -- rbx, rbp, r12, r13, r14, r15 -- are saved on the kernel stack
-> before calling signal handling code (i.e. right before switching from
-> kernel to user mode). This signal handling code would be called
-> whenever we are trying to checkpoint a process with SIGSTOP or cgroup
-> freezer. Thus these registers would be on the kernel stack of
-> checkpointed process. And we don't need any user level signal handling
-> for external checkpointing to work in x86_64. Sorry for causing
-> confusion.
-> 
-> On Tue, Feb 10, 2009 at 2:27 PM, Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->> On Mon, Feb 9, 2009 at 10:02 AM, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>> On Fri, 2009-02-06 at 16:17 -0800, Nauman Rafique wrote:
->>>> The patch sent by Masahiko assumes that all the user-space registers
->>>> are saved on
->>>> the kernel stack on a system call. This is not true for the majority
->>>> of the system calls. The callee saved registers (as defined by x86_64
->>>> ABI) - rbx, rbp, r12, r13, r14, r15 - are saved only in some special
->>>> cases. That means that these registers would not be available to
->>>> checkpoint code. Moreover, the restore code would have no space in
->>>> stack to restore those registers.
->>> According to this:
->>>
->>> http://msdn.microsoft.com/en-us/library/6t169e9c(VS.80).aspx
->>>
->>> Those registers all get clobbered on all function calls.  I assume that
->>> userspace also considers them to get clobbered on system calls as
->>> well.
->>>
->>> What are those special cases you are talking about?  Certain special
->>> cases for entering the kernel where we do save those registers?
->> There are the system calls the use the same stub that I have used to
->> save the full stack (and thus all the registers).
->>        sys_clone
->>        sys_fork
->>        sys_vfork
->>        sys_sigaltstack
->>        sys_iopl
->>
->>> Signal handling and ptrace single stepping are two places I would
->>> imagine we have to enter the kernel and preserve those registers.  Is
->>> that why you were suggesting overloading signal delivery?
->>>
->>> Thanks for pointing out the problem, though.  This one will be
->>> interesting. :)
->>>
->>> -- Dave
->>>
->>>
-> 
