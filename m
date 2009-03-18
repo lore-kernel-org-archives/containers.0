@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
-Date: Wed, 18 Mar 2009 04:55:27 -0400
-Message-ID: <49C0B6FF.5030104@cs.columbia.edu>
+Date: Wed, 18 Mar 2009 04:56:48 -0400
+Message-ID: <49C0B750.4050109@cs.columbia.edu>
 References: <20090317062754.GA2377@us.ibm.com>
-	<20090317063940.GF2377@us.ibm.com>
+	<20090317063958.GG2377@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090317063940.GF2377-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090317063958.GG2377-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,37 +26,35 @@ List-Id: containers.vger.kernel.org
 
 Sukadev Bhattiprolu wrote:
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Fri, 13 Mar 2009 17:25:42 -0700
-> Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
+> Date: Sat, 14 Mar 2009 10:21:07 -0700
+> Subject: [PATCH 6/6] Explain reason for task being uncheckpointable
 > 
-> Create a proc file, /proc/pid/checkpointable, which shows '1' if
-> task is checkpointable and '0' if it is not.
+> Try to give an useful message on why a task is uncheckpointable.
 > 
-> To determine whether a task is checkpointable, the handler for this
-> new proc file, shares the same code with sys_checkpoint().
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  checkpoint/checkpoint.c    |   13 +++++++++----
+>  fs/proc/base.c             |   19 ++++++++++++++++++-
+>  include/linux/checkpoint.h |    7 +++++++
+>  3 files changed, 34 insertions(+), 5 deletions(-)
+> 
 
-I still don't understand why we would like to do it this way.
+[...]
 
-First, it makes little sense to do it per-task, because we are supposed
-to checkpoint an entire container.
+>  #ifdef CONFIG_CHECKPOINT_RESTART
+> +static char *explain_checkpointable(int reason)
+> +{
+> +	char *message;
+> +
+> +	switch(reason) {
+> +	case CR_CHECKPOINTABLE: message = "1"; break;
+> +	case CR_DEAD: 		message = "0 (dead)"; break;
+> +	case CR_NOT_FROZEN: 	message = "0 (not frozen)"; break;
 
-Second, what's wrong with doing a "dry" checkpoint on the container (or
-if you prefer, the task, for what it's worth), that will not buffer nor
-write out any data - just say "yes" or "no" ?
+Hmmm... so a task cannot test if it itself is checkpointable, because
+it will never be frozen and will fail right there before proceeding to
+addition (future) tests ?
 
-(we could use a flag "CR_CTX_DRYRUN" when calling sys_checkpoint() for
-this, and test for this flag in, say, kwrite/kread).
-
-After all, we don't expect applications or users to continuously and
-repeatedly test if they can checkpoint, so it isn't performance critical.
-So we simply reuse the existing code.
-
-This would also catch cases where we can't checkpoint because the kernel
-is low on memory - which wouldn't show up otherwise.
-
-And in any case, this is orthogonal to what Dave is pushing, following
-Ingo's comment, to know when a task _becomes_ not-checkpointable. (And
-in any case, I think our time is better spent on adding functionality
-instead).
+[...]
 
 Oren.
