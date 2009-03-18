@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
-Date: Wed, 18 Mar 2009 04:56:48 -0400
-Message-ID: <49C0B750.4050109@cs.columbia.edu>
-References: <20090317062754.GA2377@us.ibm.com>
-	<20090317063958.GG2377@us.ibm.com>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] [RFC] c/r: Add UTS support
+Date: Wed, 18 Mar 2009 10:01:00 +0100
+Message-ID: <49C0B84C.8010307@free.fr>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>	<20090312224820.GA12723@hallyn.com>	<87bps6pcyf.fsf@caffeine.danplanet.com>
+	<49C0B069.6060300@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090317063958.GG2377-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <49C0B069.6060300-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,43 +18,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Sat, 14 Mar 2009 10:21:07 -0700
-> Subject: [PATCH 6/6] Explain reason for task being uncheckpointable
+Oren Laadan wrote:
 > 
-> Try to give an useful message on why a task is uncheckpointable.
+> Dan Smith wrote:
+>> SH> Well it forces restart to go through the established userspace
+>> SH> API's when creating resources (in this case, tasks and namespaces)
+>> SH> which means any existing security guarantees are leveraged.
+>>
+>> That's a very valid point.  However, it still seems unbalanced to make
+>> checkpoint a completely in-kernel process and restart an odd mix of
+>> the two with potentially more confusing semantics and requirements.
+>>
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  checkpoint/checkpoint.c    |   13 +++++++++----
->  fs/proc/base.c             |   19 ++++++++++++++++++-
->  include/linux/checkpoint.h |    7 +++++++
->  3 files changed, 34 insertions(+), 5 deletions(-)
-> 
+> There are other reasons to allow restart to be not fully symmetric
+> with respect to checkpoint. For example, if you have a smart(er) user
+> space application that wants to provide the restart some of the resources
+> pre-constructed, allowing much flexibility (already requested by people)
+> for the restart provdure (E.g., when doing distributed checkpoint, or
+> when restarting a special device whose).
 
-[...]
+yes
 
->  #ifdef CONFIG_CHECKPOINT_RESTART
-> +static char *explain_checkpointable(int reason)
-> +{
-> +	char *message;
-> +
-> +	switch(reason) {
-> +	case CR_CHECKPOINTABLE: message = "1"; break;
-> +	case CR_DEAD: 		message = "0 (dead)"; break;
-> +	case CR_NOT_FROZEN: 	message = "0 (not frozen)"; break;
+the arguments you have for restart are also valid for checkpoint in a 
+distributed checkpoint scenario. 
 
-Hmmm... so a task cannot test if it itself is checkpointable, because
-it will never be frozen and will fail right there before proceeding to
-addition (future) tests ?
+you want to be able to easily and rapidly abort the checkpoint of a job 
+when one node (among thousands) fails for some reason. a batch manager 
+would use a signal.  
 
-[...]
+you also want fine grain synchronization for network, when migrating only 
+one node. 
 
-Oren.
+We've had to solve the above issues on a large HPC project and there are 
+plenty of other good reasons to have a mix of kernel and user space for 
+restart and for checkpoint. 
+
+C.
