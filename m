@@ -1,19 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 07:04:24 -0700
-Message-ID: <878wn353mf.fsf@caffeine.danplanet.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
-	<20090312162954.4a4b8e00@thinkcentre.lan>
-	<87fxhipfrh.fsf@caffeine.danplanet.com>
-	<20090312224820.GA12723@hallyn.com>
-	<87bps6pcyf.fsf@caffeine.danplanet.com>
-	<49C0B069.6060300@cs.columbia.edu> <20090318134932.GC22636@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
+Date: Wed, 18 Mar 2009 07:42:51 -0700
+Message-ID: <1237387371.8286.113.camel@nimitz>
+References: <20090317062754.GA2377@us.ibm.com>
+	<20090317063940.GF2377@us.ibm.com> <49C0B6FF.5030104@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090318134932.GC22636-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Wed, 18 Mar 2009 08:49:32 -0500")
+In-Reply-To: <49C0B6FF.5030104-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,18 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SH> (Note that in Dan's next version, he did move unshare into
-SH> userspace)
+On Wed, 2009-03-18 at 04:55 -0400, Oren Laadan wrote: Bhattiprolu wrote:
+> > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > Date: Fri, 13 Mar 2009 17:25:42 -0700
+> > Subject: [PATCH 5/6] Define and use proc_pid_checkpointable()
+> > 
+> > Create a proc file, /proc/pid/checkpointable, which shows '1' if
+> > task is checkpointable and '0' if it is not.
+> > 
+> > To determine whether a task is checkpointable, the handler for this
+> > new proc file, shares the same code with sys_checkpoint().
+> 
+> I still don't understand why we would like to do it this way.
+> 
+> First, it makes little sense to do it per-task, because we are supposed
+> to checkpoint an entire container.
 
-The idealist in me still wants it to be in the kernel.  However, after
-seeing it done I agree that it's the right thing to do, at least in
-this case.
+I take it you didn't like the 'files' or 'uts' versions of this, either.
+Do we have a container object in the kernel that we could tag, anyway?
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+> Second, what's wrong with doing a "dry" checkpoint on the container (or
+> if you prefer, the task, for what it's worth), that will not buffer nor
+> write out any data - just say "yes" or "no" ?
+> 
+> (we could use a flag "CR_CTX_DRYRUN" when calling sys_checkpoint() for
+> this, and test for this flag in, say, kwrite/kread).
+> 
+> After all, we don't expect applications or users to continuously and
+> repeatedly test if they can checkpoint, so it isn't performance critical.
+> So we simply reuse the existing code.
+
+Heh.  Did you read Ingo's suggestions?  He suggested *exactly* that.
+
+http://lkml.org/lkml/2008/10/9/196
+
+> This would also catch cases where we can't checkpoint because the kernel
+> is low on memory - which wouldn't show up otherwise.
+> 
+> And in any case, this is orthogonal to what Dave is pushing, following
+> Ingo's comment, to know when a task _becomes_ not-checkpointable. (And
+> in any case, I think our time is better spent on adding functionality
+> instead).
+> 
+> Oren.
+-- Dave
