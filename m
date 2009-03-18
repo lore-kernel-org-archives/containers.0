@@ -1,60 +1,102 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: Re: [PATCH 1/3] powerpc: bare minimum
-	checkpoint/restart	implementation
-Date: Wed, 18 Mar 2009 05:15:05 -0400
-Message-ID: <49C0BB99.7090609@cs.columbia.edu>
-References: <1233182478-27113-1-git-send-email-ntl@pobox.com>	<1233182478-27113-2-git-send-email-ntl@pobox.com>	<49814FA2.9060108@cs.columbia.edu>
-	<20090129214035.GB6913@localdomain>	<20090217010355.58afd5cf@thinkcentre.lan>	<49B9D37A.1070503@cs.columbia.edu>
-	<20090316133745.4f636979@thinkcentre.lan>
-	<49BF4969.3080308@free.fr>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] c/r: Add UTS support (v3)
+Date: Wed, 18 Mar 2009 05:22:43 -0400
+Message-ID: <49C0BD63.7000309@cs.columbia.edu>
+References: <1237306139-23075-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org>
-In-Reply-To: <49BF4969.3080308@free.fr>
-List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
-List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
-List-Post: <mailto:linuxppc-dev@ozlabs.org>
-List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
-List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
-	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
-Sender: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
-Errors-To: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
-To: Cedric Le Goater <legoater@free.fr>
-Cc: containers@lists.osdl.org, linuxppc-dev@ozlabs.org, Nathan Lynch <ntl@pobox.com>, "Serge E. Hallyn" <serue@us.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1237306139-23075-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-An alternative: the task that created the container namely, is the parent
-(outside the container) of the container init(1). In turn, init(1) creates
-a special 'monitor' thread that monitors the restart, and the outside task
-reaps the exit status of that thread (and only that thread).
 
-[Hmmm... thinking about this - what happens if the container init(1) calls
-clone() with CLONE_PARENT ??  does it not generate sort of a competing
-container init(1) ??!!
+Dan Smith wrote:
+> This patch adds a "phase" of checkpoint that saves out information about any
+> namespaces the task(s) may have.  Do this by tracking the nsproxy of the
+> first task and making sure that the tasks that follow get hooked back to
+> share the same one on restart.
+> 
+> Restart is handled in userspace by reading the UTS record(s), calling
+> unshare() and setting the hostname accordingly.  See my changes to
+> mktree.c for details.
+> 
+> I tested this with single and multiple task restore, on top of Oren's
+> v13 tree.
+
+Thanks, Dan.
+
+[..]
+
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index 64155de..12eb1d5 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -193,6 +193,82 @@ static int cr_write_tail(struct cr_ctx *ctx)
+>  	return ret;
+>  }
+>  
+> +static int cr_write_ns_uts(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_utsns *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	struct new_utsname *n = &t->nsproxy->uts_ns->name;
+> +	int ret;
+> +
+> +	h.type = CR_HDR_UTSNS;
+> +	h.len = sizeof(*hh);
+> +	h.parent = 0;
+> +
+> +	memcpy(hh->nodename, n->nodename, sizeof(n->nodename));
+> +	memcpy(hh->domainname, n->domainname, sizeof(n->domainname));
+> +
+
+The length of ->nodename etc may change in the future. It's probably
+safer to also add the length of the field as well (see for instance
+how task->comm is saved).
+
+> +	ret = cr_write_obj(ctx, &h, hh);
+> +	cr_hbuf_put(ctx, sizeof(*hh));
+> +
+> +	return ret;
+> +}
+
+[...]
+
+> @@ -156,4 +158,17 @@ struct cr_hdr_fd_data {
+>  	__u64 f_version;
+>  } __attribute__((aligned(8)));
+>  
+> +#define CR_NSP_UTS 1
+> +
+> +struct cr_hdr_nsproxy {
+> +	__u32 objref;
+> +	__u32 types;
+> +};
+> +
+> +struct cr_hdr_utsns {
+> +	/* Both of these fields are defined as 65-chars long */
+> +	char nodename[__NEW_UTS_LEN+1];
+> +	char domainname[__NEW_UTS_LEN+1];
+> +};
+
+add ?
+	__u16 nodename_len;
+	__u16 domainname_len;
+
+> +
+>  #endif /* _CHECKPOINT_CKPT_HDR_H_ */
 
 Oren.
-
-
-Cedric Le Goater wrote:
->> Again, how would 'cr' obtain exit status for these tasks, and how would
->> it distinguish failure from normal operation?
-> 
-> Here's our solution to this issue.
-> 
-> mcr maintains in its kernel container object an exitcode attribute for 
-> the mcr-restart process. This process is detached from the fork tree of 
-> the restarted application.  
-> 
-> when the restart is finished, an mcr-wait command can be called to reap 
-> this exitcode. This make it possible to distinguish an exit of the 
-> application process from an exit of the mcr-restart process.
-> 
-> This is a must-have for batch managers in an HPC environment. 
-> 
-> Cheers,
-> 
-> C.
-> 
