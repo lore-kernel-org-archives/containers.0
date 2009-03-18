@@ -1,11 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] c/r: Add UTS support (v4)
-Date: Wed, 18 Mar 2009 11:51:31 -0700
-Message-ID: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
+Date: Wed, 18 Mar 2009 15:04:01 -0400
+Message-ID: <49C145A1.3000506__21501.5118396424$1237403417$gmane$org@cs.columbia.edu>
+References: <1234475483.30155.194.camel@nimitz>	<20090212141014.2cd3d54d.akpm@linux-foundation.org>	<1234479845.30155.220.camel@nimitz>	<20090226155755.GA1456@x200.localdomain>	<20090310215305.GA2078@x200.localdomain>	<49B775B4.1040800@free.fr>	<20090312145311.GC12390@us.ibm.com>	<1236891719.32630.14.camel@bahia>	<20090312212124.GA25019@us.ibm.com>	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>	<20090313053458.GA28833@us.ibm.com>	<alpine.LFD.2.00.0903131018390.3940@localhost.localdomain>
+	<49BAC6AF.9090607@google.com> <49BADFCE.8020207@cs.columbia.edu>
+	<49C1435B.1090809@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <49C1435B.1090809-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,244 +19,120 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds a "phase" of checkpoint that saves out information about any
-namespaces the task(s) may have.  Do this by tracking the namespace objects
-of the tasks and making sure that tasks with the same namespace that follow
-get properly referenced in the checkpoint stream.  Note that for now, we
-refuse to checkpoint if all tasks in the set don't share the same set of
-*all* namespaces.
 
-Restart is handled in userspace by reading the UTS record(s), calling
-unshare() and setting the hostname accordingly.  See my changes to
-mktree.c for details.
 
-I tested this with single and multiple task restore, on top of Oren's
-v13 tree.
+Mike Waychison wrote:
+> Oren Laadan wrote:
+>>
+>> Mike Waychison wrote:
+>>> Linus Torvalds wrote:
+>>>> On Thu, 12 Mar 2009, Sukadev Bhattiprolu wrote:
+>>>>
+>>>>> Ying Han [yinghan-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org] wrote:
+>>>>> | Hi Serge:
+>>>>> | I made a patch based on Oren's tree recently which implement a new
+>>>>> | syscall clone_with_pid. I tested with checkpoint/restart process
+>>>>> tree
+>>>>> | and it works as expected.
+>>>>>
+>>>>> Yes, I think we had a version of clone() with pid a while ago.
+>>>> Are people _at_all_ thinking about security?
+>>>>
+>>>> Obviously not.
+>>>>
+>>>> There's no way we can do anything like this. Sure, it's trivial to
+>>>> do inside the kernel. But it also sounds like a _wonderful_ attack
+>>>> vector against badly written user-land software that sends signals
+>>>> and has small races.
+>>> I'm not really sure how this is different than a malicious app going
+>>> off and spawning thousands of threads in an attempt to hit a target
+>>> pid from a security pov.  Sure, it makes it easier, but it's not like
+>>> there is anything in place to close the attack vector.
+>>>
+>>>> Quite frankly, from having followed the discussion(s) over the last
+>>>> few weeks about checkpoint/restart in various forms, my reaction to
+>>>> just about _all_ of this is that people pushing this are pretty damn
+>>>> borderline.
+>>>> I think you guys are working on all the wrong problems.
+>>>> Let's face it, we're not going to _ever_ checkpoint any kind of
+>>>> general case process. Just TCP makes that fundamentally impossible
+>>>> in the general case, and there are lots and lots of other cases too
+>>>> (just something as totally _trivial_ as all the files in the
+>>>> filesystem that don't get rolled back).
+>>> In some instances such as ours, TCP is probably the easiest thing to
+>>> migrate.  In an rpc-based cluster application, TCP is nothing more
+>>> than an RPC channel and applications already have to handle RPC
+>>> channel failure and re-establishment.
+>>>
+>>> I agree that this is not the 'general case' as you mention above
+>>> however.  This is the bit that sorta bothers me with the way the
+>>> implementation has been going so far on this list.  The
+>>> implementation that folks are building on top of Oren's patchset
+>>> tries to be everything to everybody.  For our purposes, we need to
+>>> have the flexibility of choosing *how* we checkpoint.  The line seems
+>>> to be arbitrarily drawn at the kernel being responsible for
+>>> checkpointing and restoring all resources associated with a task, and
+>>> leaving userland with nothing more than transporting filesystem
+>>> bits.  This approach isn't flexible enough:   Consider the case where
+>>> we want to stub out most of the TCP file descriptors with
+>>> ECONNRESETed sockets because we know that they are RPC sockets and
+>>> can re-establish themselves, but we want to use some other mechanism
+>>> for TCP sockets we don't know much about.  The current monolithic
+>>> approach has zero flexibility for doing anything like this, and I
+>>> figure out how we could even fit anything like this in.
+>>
+>> The flexibility exists, but wasn't spelled out, so here it is:
+>>
+>> 1) Similar to madvice(), I envision a cradvice() that could tell the c/r
+>> something about specific resources, e.g.:
+>>  * cradvice(CR_ADV_MEM, ptr, len)  -> don't save that memory, it's
+>> scratch
+>>  * cradvice(CR_ADV_SOCK, fd, CR_ADV_SOCK_RESET)  -> reset connection
+>> on restart
+>> etc .. (nevermind the exact interface right now)
+>>
+>> 2) Tasks can ask to be notified (e.g. register a signal) when a
+>> checkpoint
+>> or a restart complete successfully. At that time they can do their
+>> private
+>> house-keeping if they know better.
+>>
+>> 3) If restoring some resource is significantly easier in user space
+>> (e.g. a
+>> file-descriptor of some special device which user space knows how to
+>> re-initialize), then the restarting task can prepare it ahead of time,
+>> and, call:
+>>   * cradvice(CR_ADV_USERFD, fd, 0)  -> use the fd in place instead of
+>> trying
+>>                        to restore it yourself.
+> 
+> This would be called by the embryo process (mktree.c?) before calling
+> sys_restart?
 
-Changes:
-  - Remove the kernel restore path
-  - Punt on nested namespaces
-  - Use __NEW_UTS_LEN in nodename and domainname buffers
-  - Add a note to Documentation/checkpoint/internals.txt to indicate where
-    in the save/restore process the UTS information is kept
-  - Store (and track) the objref of the namespace itself instead of the
-    nsproxy (based on comments from Dave on IRC)
-  - Remove explicit check for non-root nsproxy
-  - Store the nodename and domainname lengths and use cr_write_string()
-    to store the actual name strings
+Yes.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
----
- Documentation/checkpoint/internals.txt |    2 +
- checkpoint/checkpoint.c                |   80 ++++++++++++++++++++++++++++++++
- checkpoint/objhash.c                   |    7 +++
- checkpoint/restart.c                   |    1 +
- include/linux/checkpoint.h             |    1 +
- include/linux/checkpoint_hdr.h         |   14 ++++++
- 6 files changed, 105 insertions(+), 0 deletions(-)
-
-diff --git a/Documentation/checkpoint/internals.txt b/Documentation/checkpoint/internals.txt
-index b363e83..7a2488b 100644
---- a/Documentation/checkpoint/internals.txt
-+++ b/Documentation/checkpoint/internals.txt
-@@ -12,6 +12,8 @@ The order of operations, both save and restore, is as follows:
- 
- * Process forest: [TBD] tasks and their relationships
- 
-+* Namespace section: per-container namespace information
-+
- * Per task data (for each task):
-   -> task state: elements of task_struct
-   -> thread state: elements of thread_struct and thread_info
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 64155de..228bdae 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -193,6 +193,82 @@ static int cr_write_tail(struct cr_ctx *ctx)
- 	return ret;
- }
- 
-+static int cr_write_ns_uts(struct cr_ctx *ctx, struct task_struct *t)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_utsns *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct new_utsname *n = &t->nsproxy->uts_ns->name;
-+	int ret;
-+
-+	h.type = CR_HDR_UTSNS;
-+	h.len = sizeof(*hh);
-+	h.parent = 0;
-+
-+	hh->nodename_len = sizeof(n->nodename);
-+	hh->domainname_len = sizeof(n->domainname);
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = cr_write_string(ctx, n->nodename, hh->nodename_len);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = cr_write_string(ctx, n->domainname, hh->domainname_len);
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	return ret;
-+}
-+
-+static int cr_write_namespaces(struct cr_ctx *ctx, struct task_struct *t)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_namespaces *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct nsproxy *nsp = t->nsproxy;
-+	int ret;
-+
-+	h.type = CR_HDR_NS;
-+	h.len = sizeof(*hh);
-+	h.parent = 0;
-+
-+	hh->types = 0;
-+
-+	if (cr_obj_add_ptr(ctx, nsp->uts_ns, &hh->uts_ref, CR_OBJ_UTSNS, 0))
-+		hh->types |= CR_NS_UTS;
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	if (ret)
-+		goto out;
-+
-+	if (hh->types & CR_NS_UTS) {
-+		ret = cr_write_ns_uts(ctx, t);
-+		if (ret < 0)
-+			goto out;
-+
-+		/* FIXME: Write other namespaces here */
-+	}
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	return ret;
-+}
-+
-+static int cr_write_all_namespaces(struct cr_ctx *ctx)
-+{
-+	int n, ret = 0;
-+
-+	for (n = 0; n < ctx->tasks_nr; n++) {
-+		pr_debug("dumping ns for task #%d\n", n);
-+		ret = cr_write_namespaces(ctx, ctx->tasks_arr[n]);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	return ret;
-+}
-+
- /* dump the task_struct of a given task */
- static int cr_write_task_struct(struct cr_ctx *ctx, struct task_struct *t)
- {
-@@ -549,6 +625,10 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		goto out;
- 
-+	ret = cr_write_all_namespaces(ctx);
-+	if (ret < 0)
-+		goto out;
-+
- 	ret = cr_write_all_tasks(ctx);
- 	if (ret < 0)
- 		goto out;
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index ee31b38..afcf1d1 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -12,6 +12,7 @@
- #include <linux/file.h>
- #include <linux/hash.h>
- #include <linux/checkpoint.h>
-+#include <linux/utsname.h>
- 
- struct cr_objref {
- 	int objref;
-@@ -35,6 +36,9 @@ static void cr_obj_ref_drop(struct cr_objref *obj)
- 	case CR_OBJ_FILE:
- 		fput((struct file *) obj->ptr);
- 		break;
-+	case CR_OBJ_UTSNS:
-+		put_uts_ns((struct uts_namespace *) obj->ptr);
-+		break;
- 	default:
- 		BUG();
- 	}
-@@ -46,6 +50,9 @@ static void cr_obj_ref_grab(struct cr_objref *obj)
- 	case CR_OBJ_FILE:
- 		get_file((struct file *) obj->ptr);
- 		break;
-+	case CR_OBJ_UTSNS:
-+		get_uts_ns((struct uts_namespace *) obj->ptr);
-+		break;
- 	default:
- 		BUG();
- 	}
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 7ec4de4..0ed01aa 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -15,6 +15,7 @@
- #include <linux/magic.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
-+#include <linux/utsname.h>
- 
- #include "checkpoint_arch.h"
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 217cf6e..02c2990 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -75,6 +75,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
- 
- enum {
- 	CR_OBJ_FILE = 1,
-+	CR_OBJ_UTSNS,
- 	CR_OBJ_MAX
- };
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 6dc739f..886ab53 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -49,6 +49,8 @@ enum {
- 	CR_HDR_TASK,
- 	CR_HDR_THREAD,
- 	CR_HDR_CPU,
-+	CR_HDR_NS,
-+	CR_HDR_UTSNS,
- 
- 	CR_HDR_MM = 201,
- 	CR_HDR_VMA,
-@@ -156,4 +158,16 @@ struct cr_hdr_fd_data {
- 	__u64 f_version;
- } __attribute__((aligned(8)));
- 
-+#define CR_NS_UTS 1
-+
-+struct cr_hdr_namespaces {
-+	__u32 types;   /* NS records that follow this */
-+	__u32 uts_ref; /* Objref of matching UTS namespace */
-+};
-+
-+struct cr_hdr_utsns {
-+	__u32 nodename_len;
-+	__u32 domainname_len;
-+};
-+
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
--- 
-1.5.6.3
+> 
+>>
+>> Method #3 is what I used in Zap to implement distributed checkpoints,
+>> where
+>> it is so much easier to recreate all network connections in user space
+>> then
+>> putting that logic into the kernel.
+>>
+>> Now, on the other hand, doing the c/r from userland is much less flexible
+>> than in the kernel (e.g. epollfd, futex state and much more) and requires
+>> exposing tremendous amount of in-kernel data to user space. And we all
+>> know
+>> than exposing internals is always a one-way ticket :(
+>>
+>> [...]
+>>
+>> Oren.
+>>
+>>
+> 
+> 
