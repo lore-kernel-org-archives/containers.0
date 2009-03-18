@@ -1,62 +1,49 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Deny external checkpoint unless frozen
-Date: Wed, 18 Mar 2009 03:31:08 -0400
-Message-ID: <49C0A33C.8020905@cs.columbia.edu>
-References: <20090221201317.GB13532@us.ibm.com>
+From: Oren Laadan <orenl@cs.columbia.edu>
+Subject: Re: [PATCH 2/3] c/r: Add CR_COPY() macro (v3)
+Date: Wed, 18 Mar 2009 03:51:42 -0400
+Message-ID: <49C0A80E.1040603@cs.columbia.edu>
+References: <1236095764-19325-1-git-send-email-danms@us.ibm.com>	<1236095764-19325-3-git-send-email-danms@us.ibm.com>	<1236097332.22399.8.camel@nimitz>	<878wnmrtp9.fsf@caffeine.danplanet.com>	<1236128437.22399.31.camel@nimitz> <20090304150519.GB10186@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090221201317.GB13532-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753587AbZCRHxE@vger.kernel.org>
+In-Reply-To: <20090304150519.GB10186@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Dan Smith <danms@us.ibm.com>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 
-Fixed.
 
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Sat, 21 Feb 2009 11:17:07 -0800
-> Subject: [PATCH] Deny external checkpoint unless task is frozen
+Serge E. Hallyn wrote:
+> Quoting Dave Hansen (dave@linux.vnet.ibm.com):
+>> On Tue, 2009-03-03 at 16:57 -0800, Dan Smith wrote:
+>>> DH> Did you convince Nathan that this ends up being a good idea?
+>>>
+>>> Technically he hasn't seen this version, but my hopes are not high
+>>> that he will change his mind.  If the feedback is that they're not
+>>> liked, I'll happily remove them.
+>> I just figure if Nathan feels that strongly that we'll encounter more
+>> people who feel even more so.  So, I was curious if he changed his mind
+>> somehow.
 > 
-> Remove a 'FIXME' and ensure that the tasks we are checkpointing are
-> frozen unless its a self-checkpoint.
+> I maintain however that two strong advantages of moving the checkpoint
+> and restart of simple registers etc into a single function are:
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  checkpoint/checkpoint.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
+> 	1. we won't forget to add (or accidentally lose) one or the
+> 		other
+> 	2. any actual special handling at checkpoint or restart, like
+> 		the loading of access registers at restart on s390x,
+> 		stand out
 > 
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index 2bbb409..023bd9d 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -19,6 +19,7 @@
->  #include <linux/mount.h>
->  #include <linux/utsname.h>
->  #include <linux/magic.h>
-> +#include <linux/freezer.h>
->  #include <linux/checkpoint.h>
->  #include <linux/checkpoint_hdr.h>
->  
-> @@ -280,7 +281,9 @@ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
->  	if (!ptrace_may_access(t, PTRACE_MODE_READ))
->  		return -EPERM;
->  
-> -	/* FIXME: verify that the task is frozen (unless self) */
-> +	/* verify that the task is frozen (unless self) */
-> +	if (t != current && !frozen(t))
-> +		return -EBUSY;
->  
->  	/* FIXME: change this for nested containers */
->  	if (task_nsproxy(t) != ctx->root_nsproxy)
+
+I, too, think that this scheme is elegant, and at the same time I, too,
+think that it obfuscates the code. Since I only touch arch-dependent code
+only if I really really must, I don't have strong opinion about it ;)
+
+However, a problem with this scheme is that checkpoint and restart
+are not fully symmetric -- on restart we must sanitize the input data
+before restoring the registers to that data. I'm not familiar with
+s390, but it is likely that by not doing so we create a security issue.
+
+Oren.
