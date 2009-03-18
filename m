@@ -1,60 +1,60 @@
-From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 10:01:00 +0100
-Message-ID: <49C0B84C.8010307@free.fr>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>	<20090312224820.GA12723@hallyn.com>	<87bps6pcyf.fsf@caffeine.danplanet.com>
-	<49C0B069.6060300@cs.columbia.edu>
+From: Oren Laadan <orenl@cs.columbia.edu>
+Subject: Re: [PATCH 1/3] powerpc: bare minimum
+	checkpoint/restart	implementation
+Date: Wed, 18 Mar 2009 05:15:05 -0400
+Message-ID: <49C0BB99.7090609@cs.columbia.edu>
+References: <1233182478-27113-1-git-send-email-ntl@pobox.com>	<1233182478-27113-2-git-send-email-ntl@pobox.com>	<49814FA2.9060108@cs.columbia.edu>
+	<20090129214035.GB6913@localdomain>	<20090217010355.58afd5cf@thinkcentre.lan>	<49B9D37A.1070503@cs.columbia.edu>
+	<20090316133745.4f636979@thinkcentre.lan>
+	<49BF4969.3080308@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49C0B069.6060300-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Return-path: <linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org>
+In-Reply-To: <49BF4969.3080308@free.fr>
+List-Unsubscribe: <https://ozlabs.org/mailman/options/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=unsubscribe>
+List-Archive: <http://ozlabs.org/pipermail/linuxppc-dev>
+List-Post: <mailto:linuxppc-dev@ozlabs.org>
+List-Help: <mailto:linuxppc-dev-request@ozlabs.org?subject=help>
+List-Subscribe: <https://ozlabs.org/mailman/listinfo/linuxppc-dev>,
+	<mailto:linuxppc-dev-request@ozlabs.org?subject=subscribe>
+Sender: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+Errors-To: linuxppc-dev-bounces+glppe-linuxppc-embedded-2=m.gmane.org@ozlabs.org
+To: Cedric Le Goater <legoater@free.fr>
+Cc: containers@lists.osdl.org, linuxppc-dev@ozlabs.org, Nathan Lynch <ntl@pobox.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
+
+An alternative: the task that created the container namely, is the parent
+(outside the container) of the container init(1). In turn, init(1) creates
+a special 'monitor' thread that monitors the restart, and the outside task
+reaps the exit status of that thread (and only that thread).
+
+[Hmmm... thinking about this - what happens if the container init(1) calls
+clone() with CLONE_PARENT ??  does it not generate sort of a competing
+container init(1) ??!!
+
+Oren.
+
+
+Cedric Le Goater wrote:
+>> Again, how would 'cr' obtain exit status for these tasks, and how would
+>> it distinguish failure from normal operation?
 > 
-> Dan Smith wrote:
->> SH> Well it forces restart to go through the established userspace
->> SH> API's when creating resources (in this case, tasks and namespaces)
->> SH> which means any existing security guarantees are leveraged.
->>
->> That's a very valid point.  However, it still seems unbalanced to make
->> checkpoint a completely in-kernel process and restart an odd mix of
->> the two with potentially more confusing semantics and requirements.
->>
+> Here's our solution to this issue.
 > 
-> There are other reasons to allow restart to be not fully symmetric
-> with respect to checkpoint. For example, if you have a smart(er) user
-> space application that wants to provide the restart some of the resources
-> pre-constructed, allowing much flexibility (already requested by people)
-> for the restart provdure (E.g., when doing distributed checkpoint, or
-> when restarting a special device whose).
-
-yes
-
-the arguments you have for restart are also valid for checkpoint in a 
-distributed checkpoint scenario. 
-
-you want to be able to easily and rapidly abort the checkpoint of a job 
-when one node (among thousands) fails for some reason. a batch manager 
-would use a signal.  
-
-you also want fine grain synchronization for network, when migrating only 
-one node. 
-
-We've had to solve the above issues on a large HPC project and there are 
-plenty of other good reasons to have a mix of kernel and user space for 
-restart and for checkpoint. 
-
-C.
+> mcr maintains in its kernel container object an exitcode attribute for 
+> the mcr-restart process. This process is detached from the fork tree of 
+> the restarted application.  
+> 
+> when the restart is finished, an mcr-wait command can be called to reap 
+> this exitcode. This make it possible to distinguish an exit of the 
+> application process from an exit of the mcr-restart process.
+> 
+> This is a must-have for batch managers in an HPC environment. 
+> 
+> Cheers,
+> 
+> C.
+> 
