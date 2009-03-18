@@ -1,16 +1,11 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
-Date: Wed, 18 Mar 2009 11:06:07 -0700
-Message-ID: <1237399567.8286.184.camel@nimitz>
-References: <20090317062754.GA2377@us.ibm.com>
-	<20090317063940.GF2377@us.ibm.com> <49C0B6FF.5030104@cs.columbia.edu>
-	<20090318135953.GE22636@us.ibm.com> <49C11E61.4010505@cs.columbia.edu>
-	<1237393495.8286.161.camel@nimitz> <49C133F9.2020505@cs.columbia.edu>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] c/r: Add UTS support (v4)
+Date: Wed, 18 Mar 2009 11:51:31 -0700
+Message-ID: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49C133F9.2020505-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +15,244 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-03-18 at 13:48 -0400, Oren Laadan wrote:
-> Dave Hansen wrote:
-> > On Wed, 2009-03-18 at 12:16 -0400, Oren Laadan wrote:
-> >> My suggestions works for this two: we add a flag CR_CTX_DRYRUN; a task
-> >> can ask to checkpoint itself, or another task, with CR_CTX_DRYRUN and
-> >> the checkpoint code runs without actual effect. (If we don't want to
-> >> expose the actual flag to userspace, then we simply use it in an
-> >> implementation of a /proc/PID/checkpointable operation).
-> > 
-> > This mostly falls short answering the question "Where/when did I go
-> > wrong?"  Personally, I think that is critical for getting good bug
-> > reports out of normal Joes that might not really be interested in c/r
-> > development itself.  It is like lockdep.  The guys/gals posting those
-> > reports really don't know about kernel locking, but they are able to
-> > improve it anyway.
-> > 
-> 
-> As long as we have the descriptive text accompanied, it will answer the
-> "where/why" question.
-> 
-> I can't think of an example where for me, as the developer, the "when"
-> question was important in finding and fixing an unsupported corner.
-> 
-> Can you think of examples where this would be that much more informative
-> then simply answering the "where/what" question ?
+This patch adds a "phase" of checkpoint that saves out information about any
+namespaces the task(s) may have.  Do this by tracking the namespace objects
+of the tasks and making sure that tasks with the same namespace that follow
+get properly referenced in the checkpoint stream.  Note that for now, we
+refuse to checkpoint if all tasks in the set don't share the same set of
+*all* namespaces.
 
-I think it is crucially important if a ->may_checkpoint-style flag is
-persistent and sticky.
+Restart is handled in userspace by reading the UTS record(s), calling
+unshare() and setting the hostname accordingly.  See my changes to
+mktree.c for details.
 
-If we're *just* considering moment-by-moment state it doesn't matter at
-all.
+I tested this with single and multiple task restore, on top of Oren's
+v13 tree.
 
-How about I rephrase: "Where/when did I first go wrong?"
+Changes:
+  - Remove the kernel restore path
+  - Punt on nested namespaces
+  - Use __NEW_UTS_LEN in nodename and domainname buffers
+  - Add a note to Documentation/checkpoint/internals.txt to indicate where
+    in the save/restore process the UTS information is kept
+  - Store (and track) the objref of the namespace itself instead of the
+    nsproxy (based on comments from Dave on IRC)
+  - Remove explicit check for non-root nsproxy
+  - Store the nodename and domainname lengths and use cr_write_string()
+    to store the actual name strings
 
-I consider that an important question to answer.  What was the first
-thing that I did that made this thing uncheckpointable?  If I want my
-container to always be checkpointable, how else do I find race
-conditions that may may it uncheckpointable for a moment?
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+---
+ Documentation/checkpoint/internals.txt |    2 +
+ checkpoint/checkpoint.c                |   80 ++++++++++++++++++++++++++++++++
+ checkpoint/objhash.c                   |    7 +++
+ checkpoint/restart.c                   |    1 +
+ include/linux/checkpoint.h             |    1 +
+ include/linux/checkpoint_hdr.h         |   14 ++++++
+ 6 files changed, 105 insertions(+), 0 deletions(-)
 
-Yep, it requires extra code.  But it also completely changes the way in
-which we can go after features.  Oh, well.  You don't like it.  It is
-different from how Zap did it.  Let's drop it.
-
--- Dave
+diff --git a/Documentation/checkpoint/internals.txt b/Documentation/checkpoint/internals.txt
+index b363e83..7a2488b 100644
+--- a/Documentation/checkpoint/internals.txt
++++ b/Documentation/checkpoint/internals.txt
+@@ -12,6 +12,8 @@ The order of operations, both save and restore, is as follows:
+ 
+ * Process forest: [TBD] tasks and their relationships
+ 
++* Namespace section: per-container namespace information
++
+ * Per task data (for each task):
+   -> task state: elements of task_struct
+   -> thread state: elements of thread_struct and thread_info
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 64155de..228bdae 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -193,6 +193,82 @@ static int cr_write_tail(struct cr_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int cr_write_ns_uts(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr h;
++	struct cr_hdr_utsns *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct new_utsname *n = &t->nsproxy->uts_ns->name;
++	int ret;
++
++	h.type = CR_HDR_UTSNS;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh->nodename_len = sizeof(n->nodename);
++	hh->domainname_len = sizeof(n->domainname);
++
++	ret = cr_write_obj(ctx, &h, hh);
++	if (ret < 0)
++		goto out;
++
++	ret = cr_write_string(ctx, n->nodename, hh->nodename_len);
++	if (ret < 0)
++		goto out;
++
++	ret = cr_write_string(ctx, n->domainname, hh->domainname_len);
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++
++	return ret;
++}
++
++static int cr_write_namespaces(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr h;
++	struct cr_hdr_namespaces *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct nsproxy *nsp = t->nsproxy;
++	int ret;
++
++	h.type = CR_HDR_NS;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh->types = 0;
++
++	if (cr_obj_add_ptr(ctx, nsp->uts_ns, &hh->uts_ref, CR_OBJ_UTSNS, 0))
++		hh->types |= CR_NS_UTS;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	if (ret)
++		goto out;
++
++	if (hh->types & CR_NS_UTS) {
++		ret = cr_write_ns_uts(ctx, t);
++		if (ret < 0)
++			goto out;
++
++		/* FIXME: Write other namespaces here */
++	}
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++
++	return ret;
++}
++
++static int cr_write_all_namespaces(struct cr_ctx *ctx)
++{
++	int n, ret = 0;
++
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		pr_debug("dumping ns for task #%d\n", n);
++		ret = cr_write_namespaces(ctx, ctx->tasks_arr[n]);
++		if (ret < 0)
++			break;
++	}
++
++	return ret;
++}
++
+ /* dump the task_struct of a given task */
+ static int cr_write_task_struct(struct cr_ctx *ctx, struct task_struct *t)
+ {
+@@ -549,6 +625,10 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	ret = cr_write_all_namespaces(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = cr_write_all_tasks(ctx);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index ee31b38..afcf1d1 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -12,6 +12,7 @@
+ #include <linux/file.h>
+ #include <linux/hash.h>
+ #include <linux/checkpoint.h>
++#include <linux/utsname.h>
+ 
+ struct cr_objref {
+ 	int objref;
+@@ -35,6 +36,9 @@ static void cr_obj_ref_drop(struct cr_objref *obj)
+ 	case CR_OBJ_FILE:
+ 		fput((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_UTSNS:
++		put_uts_ns((struct uts_namespace *) obj->ptr);
++		break;
+ 	default:
+ 		BUG();
+ 	}
+@@ -46,6 +50,9 @@ static void cr_obj_ref_grab(struct cr_objref *obj)
+ 	case CR_OBJ_FILE:
+ 		get_file((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_UTSNS:
++		get_uts_ns((struct uts_namespace *) obj->ptr);
++		break;
+ 	default:
+ 		BUG();
+ 	}
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 7ec4de4..0ed01aa 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -15,6 +15,7 @@
+ #include <linux/magic.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
++#include <linux/utsname.h>
+ 
+ #include "checkpoint_arch.h"
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 217cf6e..02c2990 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -75,6 +75,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
+ 
+ enum {
+ 	CR_OBJ_FILE = 1,
++	CR_OBJ_UTSNS,
+ 	CR_OBJ_MAX
+ };
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 6dc739f..886ab53 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -49,6 +49,8 @@ enum {
+ 	CR_HDR_TASK,
+ 	CR_HDR_THREAD,
+ 	CR_HDR_CPU,
++	CR_HDR_NS,
++	CR_HDR_UTSNS,
+ 
+ 	CR_HDR_MM = 201,
+ 	CR_HDR_VMA,
+@@ -156,4 +158,16 @@ struct cr_hdr_fd_data {
+ 	__u64 f_version;
+ } __attribute__((aligned(8)));
+ 
++#define CR_NS_UTS 1
++
++struct cr_hdr_namespaces {
++	__u32 types;   /* NS records that follow this */
++	__u32 uts_ref; /* Objref of matching UTS namespace */
++};
++
++struct cr_hdr_utsns {
++	__u32 nodename_len;
++	__u32 domainname_len;
++};
++
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+-- 
+1.5.6.3
