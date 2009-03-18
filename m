@@ -1,14 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 04:32:10 -0400
-Message-ID: <49C0B18A.90208@cs.columbia.edu>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>
-	<49B99144.9000106@free.fr>
+Date: Wed, 18 Mar 2009 04:35:58 -0400
+Message-ID: <49C0B26E.9050108@cs.columbia.edu>
+References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49B99144.9000106-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1236880612-15316-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,48 +17,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Daniel Lezcano wrote:
-> Dan Smith wrote:
->> NL> I'd like there to be some discussion about this, because namespace
->> NL> creation seems like a significant addition to the semantics of
->> NL> restart as I understand it.
->>
->> Indeed.
->>
->> NL> Is namespace creation during restart unavoidable, or merely
->> NL> desirable?  Is there a case for requiring the user to provide a
->> NL> suitable namespace environment before attempting restart?
->>
->> Information about the namespaces has to be saved at checkpoint time no
->> matter what, right?  I guess I don't see any compelling reason to not
->> have the restart operation replicate the environment of the original
->> process.  Otherwise we require userspace to read and interpret the
->> checkpoint stream and selectively feed the bits that the kernel is
->> responsible for to the kernel and process the rest itself (or have the
->> kernel ignore those records).
->>   
+Dan Smith wrote:
+> (apologies if you see this multiple times...IBM mail server troubles)
 > 
-> Assuming you have a process and this one unshared the network 100 times 
-> and each time opens a socket, how do you checkpoint these namespaces ?
+> This patch adds a "phase" of c/r that saves out information about any
+> namespaces the task(s) may have.  Do this by tracking the nsproxy of the
+> first task and making sure that the tasks that follow get hooked back to
+> share the same one on restart.  On restart, we also explicitly create new
+> namespaces for any that we support at the first task.
 > 
->> What's the argument for depending on userspace to set this up?
->>   
-> Maybe, CR of the namespaces is more complicate topic than it looks like 
-
-s/Maybe/Surely/ ...
-
-> and the CR itself is big enough to not complicate things. IMHO, I would 
-> recommend as the first step to forbid the unshare inside a container and 
-> let the container implementation to save the configuration with the 
-> statefile in order to recreate it at the restart
+> I tested this with single and multiple task restore, on top of Oren's
+> v13 tree.
 > 
+> This is intended to get some discussion going about how to c/r the various
+> namespaces.  So, if this approach isn't favorable, speak up with some
+> suggestions for how to do it better.
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/checkpoint.c        |   57 ++++++++++++++++++++++++++
+>  checkpoint/objhash.c           |    7 +++
+>  checkpoint/restart.c           |   87 ++++++++++++++++++++++++++++++++++++++++
+>  include/linux/checkpoint.h     |    1 +
+>  include/linux/checkpoint_hdr.h |   15 +++++++
+>  5 files changed, 167 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index 64155de..a613f2d 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -193,6 +193,59 @@ static int cr_write_tail(struct cr_ctx *ctx)
+>  	return ret;
+>  }
+>  
+> +static int cr_write_ns_uts(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_utsns *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	struct new_utsname *n = &t->nsproxy->uts_ns->name;
+> +	int ret;
+> +
+> +	h.type = CR_HDR_UTSNS;
+> +	h.len = sizeof(*hh);
+> +	h.parent = 0;
+> +
+> +	memcpy(hh->nodename, n->nodename, sizeof(n->nodename));
+> +	memcpy(hh->domainname, n->domainname, sizeof(n->domainname));
 
-Agreed.
+The length of ->nodename etc may change between kernels or in future
+versions. Please also save the length of the buffer.
+(see for example cr_write_task_struct() handling of ->comm)
+
+[...]
 
 Oren.
