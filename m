@@ -1,77 +1,58 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 02/10] Common flat fair queuing code in elevaotor layer
-Date: Thu, 19 Mar 2009 14:27:14 +0800
-Message-ID: <49C1E5C2.5000107__26502.4381493733$1237444395$gmane$org@cn.fujitsu.com>
-References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
-	<1236823015-4183-3-git-send-email-vgoyal@redhat.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [lxc-devel] Poor bridging performance on 10 GbE
+Date: Thu, 19 Mar 2009 10:08:00 +0100
+Message-ID: <49C20B70.7050509@fr.ibm.com>
+References: <b30d1c3b0903180221h5175618eue162ffdec3817b4c@mail.gmail.com> <49C0C87B.7070507@fr.ibm.com> <b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com> <m1wsamcp4n.fsf@fess.ebiederm.org> <b30d1c3b0903182237w7667c5bbt1ea098025f3b5f36@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1236823015-4183-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <b30d1c3b0903182237w7667c5bbt1ea098025f3b5f36@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: Ryousei Takano <ryousei@gmail.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, lxc-devel@lists.sourceforge.net
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
-> +
-> +int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
-> +			void *sched_queue, int ioprio_class, int ioprio,
-> +			int is_sync)
-> +{
-> +	struct elv_fq_data *efqd = &eq->efqd;
-> +	struct io_group *iog = io_lookup_io_group_current(efqd->queue);
-> +
-> +	RB_CLEAR_NODE(&ioq->entity.rb_node);
-> +	atomic_set(&ioq->ref, 0);
-> +	ioq->efqd = efqd;
-> +	ioq->entity.budget = efqd->elv_slice[is_sync];
-> +	elv_ioq_set_ioprio_class(ioq, ioprio_class);
-> +	elv_ioq_set_ioprio(ioq, ioprio);
-> +	ioq->pid = current->pid;
+Ryousei Takano wrote:
+> Hi Eric,
+> 
+> On Thu, Mar 19, 2009 at 9:50 AM, Eric W. Biederman
+> <ebiederm@xmission.com> wrote:
+> 
+> [snip]
+> 
+>> Bridging last I looked uses the least common denominator of hardware
+>> offloads.  Which likely explains why adding a veth decreased your
+>> bridging performance.
+>>
+> At least now LRO cannot coexist bridging.
+> So I disable the LRO feature of the myri10ge driver.
+> 
+>>>>> Here is my experimental setting:
+>>>>>        OS: Ubuntu server 8.10 amd64
+>>>>>        Kernel: 2.6.27-rc8 (checkout from the lxc git repository)
+>>>> I would recommend to use the 2.6.29-rc8 vanilla because this kernel does no
+>>>> longer need patches, a lot of fixes were done in the network namespace and
+>>>> maybe the bridge has been improved in the meantime :)
+>>>>
+>>> I checked out the 2.6.29-rc8 vanilla kernel.
+>>> The performance after issuing lxc-start improved to 8.7 Gbps!
+>>> It's a big improvement, while some performance loss remains.
+>>> Can not we avoid this loss?
+>> Good question.  Any chance you can profile this and see where the
+>> performance loss seems to be coming from?
+>>
+> I found out this issue is caused by decreasing the MTU size.
+> Myri-10G's MTU size is 9000 bytes; the veth' MTU size is 1500 bytes.
+> After bridging veth, MTU size decreases from 9000 to 1500 bytes.
+> I changed the veth's MTU size to 9000 bytes, and then I confirmed
+> the throughput improved to 9.6 Gbps.
+> 
+> The throughput between LXC containers also improved to 4.9 Gbps
+> by changing the MTU sizes.
+> 
+> So I propose to add lxc.network.mtu into the LXC configuration.
+> How does that sound?
 
-  Hi Vivek,
-
-  If we are using a scheduler other than cfq, IOW single ioq is used.
-  that storing a pid to the ioq makes no sense, it just stores the first 
-  serviced task.
-
-> +	ioq->sched_queue = sched_queue;
-> +	elv_mark_ioq_idle_window(ioq);
-> +	bfq_init_entity(&ioq->entity, iog);
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL(elv_init_ioq);
-...
-> +
-> +extern int elv_slice_idle;
-> +extern int elv_slice_async;
-> +
-> +/* Logging facilities. */
-> +#define elv_log_ioq(efqd, ioq, fmt, args...) \
-> +	blk_add_trace_msg((efqd)->queue, "%d" fmt, (ioq)->pid, ##args)
-
-   Maybe we need to use current->pid instead, for ioq->pid is not valid
-   sometimes.
-
-> +
-> +#define elv_log(efqd, fmt, args...) \
-> +	blk_add_trace_msg((efqd)->queue, "" fmt, ##args)
-> +
-> +#define ioq_sample_valid(samples)   ((samples) > 80)
-> +
-
-
--- 
-Regards
-Gui Jianfeng
+Sounds good :)
+Do you plan to send a patch ?
