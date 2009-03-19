@@ -1,29 +1,37 @@
-From: Jarratt Misiak <strontia-vBH2qGEG/HSQWHG76I6BsA@public.gmane.org>
-Subject: Bigger thing, evven more satisfaction
-Date: Thu, 19 Mar 2009 10:33:14 +0000
-Message-ID: <49C21F34.2057167@ketabeiran.com>
+From: Ryousei Takano <ryousei@gmail.com>
+Subject: Re: [lxc-devel] Poor bridging performance on 10 GbE
+Date: Thu, 19 Mar 2009 19:50:29 +0900
+Message-ID: <b30d1c3b0903190350n5783d2fdn6ce46c279aae5980@mail.gmail.com>
+References: <b30d1c3b0903180221h5175618eue162ffdec3817b4c@mail.gmail.com>
+	 <49C0C87B.7070507@fr.ibm.com>
+	 <b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com>
+	 <m1wsamcp4n.fsf@fess.ebiederm.org>
+	 <b30d1c3b0903182237w7667c5bbt1ea098025f3b5f36@mail.gmail.com>
+	 <49C20B70.7050509@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <49C20B70.7050509@fr.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, lxc-devel@lists.sourceforge.net
 List-Id: containers.vger.kernel.org
 
-Larger  thing, extra satisfaction
+Hi Daniel,
 
-http://cid-25f1a4d6e2b10a8f.spaces.live.com/blog/cns!25F1A4D6E2B10A8F!104.entry
+On Thu, Mar 19, 2009 at 6:08 PM, Daniel Lezcano <dlezcano@fr.ibm.com> wrote:
 
-Been a legend in the family, as these young people his beautiful
-eyes, and vehemently gesticulating his armie, certaine of
-his moste trustie horsemen, supra infra, dextra sinistra,
-ante post, alios chairhe suddenly turned so as to confront
-me,.
+[snip]
+
+>> So I propose to add lxc.network.mtu into the LXC configuration.
+>> How does that sound?
+>
+> Sounds good :)
+> Do you plan to send a patch ?
+>
+
+Yes, I will post a patch as soon as possible.
+
+Best regards,
+Ryousei Takano
