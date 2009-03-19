@@ -1,22 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: How much of a mess does OpenVZ make? ;) Was: What can OpenVZ do?
-Date: Thu, 19 Mar 2009 14:19:15 -0700
-Message-ID: <m1hc1p9pnw.fsf__29720.1920686804$1237497886$gmane$org@fess.ebiederm.org>
-References: <1236891719.32630.14.camel@bahia>
-	<20090312212124.GA25019@us.ibm.com>
-	<604427e00903122129y37ad791aq5fe7ef2552415da9@mail.gmail.com>
-	<20090313053458.GA28833@us.ibm.com>
-	<alpine.LFD.2.00.0903131018390.3940@localhost.localdomain>
-	<20090313193500.GA2285@x200.localdomain>
-	<alpine.LFD.2.00.0903131401070.3940@localhost.localdomain>
-	<1236981097.30142.251.camel@nimitz> <49BADAE5.8070900@cs.columbia.edu>
-	<m1hc1xrlt5.fsf@fess.ebiederm.org> <20090314081207.GA16436@elte.hu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] c/r: Add UTS support (v4)
+Date: Thu, 19 Mar 2009 18:26:14 -0400
+Message-ID: <49C2C686.2060806@cs.columbia.edu>
+References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090314081207.GA16436-X9Un+BFzKDI@public.gmane.org> (Ingo Molnar's message of "Sat\,
-	14 Mar 2009 09\:12\:07 +0100")
+In-Reply-To: <1237402291-28812-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,53 +17,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org> writes:
 
-> * Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->
->> >> In the OpenVZ case, they've at least demonstrated that the 
->> >> filesystem can be moved largely with rsync.  Unlinked files 
->> >> need some in-kernel TLC (or /proc mangling) but it isn't 
->> >> *that* bad.
->> >
->> > And in the Zap we have successfully used a log-based 
->> > filesystem (specifically NILFS) to continuously snapshot the 
->> > file-system atomically with taking a checkpoint, so it can 
->> > easily branch off past checkpoints, including the file 
->> > system.
->> >
->> > And unlinked files can be (inefficiently) handled by saving 
->> > their full contents with the checkpoint image - it's not a 
->> > big toll on many apps (if you exclude Wine and UML...). At 
->> > least that's a start.
->> 
->> Oren we might want to do a proof of concept implementation 
->> like I did with network namespaces.  That is done in the 
->> community and goes far enough to show we don't have horribly 
->> nasty code.  The patches and individual changes don't need to 
->> be quite perfect but close enough that they can be considered 
->> for merging.
->> 
->> For the network namespace that seems to have made a big 
->> difference.
->> 
->> I'm afraid in our clean start we may have focused a little too 
->> much on merging something simple and not gone far enough on 
->> showing that things will work.
->> 
->> After I had that in the network namespace and we had a clear 
->> vision of the direction.  We started merging the individual 
->> patches and things went well.
->
-> I'm curious: what is the actual end result other than good 
-> looking code? In terms of tangible benefits to the everyday 
-> Linux distro user. [This is not meant to be sarcastic, i'm
-> truly curious.]
+So what happens in the following scenario:
 
-Of the network namespace?  Sorry I'm not certain what you are asking.
+* task A is the container init(1)
+* A calls fork() to create task B
+* B calls unshare(CLONE_NEWUTS)
+* B calls clone(CLONE_PARENT) to create task C
 
-Eric
+Now C and B have the same UTS namespace, which differs from A's, but
+they will each have a different UTS namespace when restarted with this
+patch.
+
+This is part of a larger complexity related to how CLONE_PARENT works.
+Also related to how session IDs are inherited.
+
+Two approaches to solve this are:
+
+a) Identify, in mktree, that this was the case, and impose an order on
+the forks/clones to recreate the same dependency (an algorithm for this
+is described in [1])
+
+b) Do it in the kernel: for each nsproxy (identified by an objref) the
+first task that has it will create it during restart, in or out of the
+kernel, and the next task will simply attach to the existing one that
+will be deposited in the objhash.
+
+Oren.
+
+[1] "Transparent Checkpoint/Restart of Multiple Processes on Commodity
+Operating Systems",
+http://www1.cs.columbia.edu/~orenl/papers/usenix07-checkpoint.pdf
+
+Dan Smith wrote:
+> This patch adds a "phase" of checkpoint that saves out information about any
+> namespaces the task(s) may have.  Do this by tracking the namespace objects
+> of the tasks and making sure that tasks with the same namespace that follow
+> get properly referenced in the checkpoint stream.  Note that for now, we
+> refuse to checkpoint if all tasks in the set don't share the same set of
+> *all* namespaces.
+> 
+> Restart is handled in userspace by reading the UTS record(s), calling
+> unshare() and setting the hostname accordingly.  See my changes to
+> mktree.c for details.
+> 
+> I tested this with single and multiple task restore, on top of Oren's
+> v13 tree.
+
+[...]
