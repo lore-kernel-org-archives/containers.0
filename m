@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Thu, 19 Mar 2009 18:26:14 -0400
-Message-ID: <49C2C686.2060806@cs.columbia.edu>
+Date: Thu, 19 Mar 2009 18:28:02 -0400
+Message-ID: <49C2C6F2.7060403@cs.columbia.edu>
 References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,36 +22,6 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8Avx
 List-Id: containers.vger.kernel.org
 
 
-So what happens in the following scenario:
-
-* task A is the container init(1)
-* A calls fork() to create task B
-* B calls unshare(CLONE_NEWUTS)
-* B calls clone(CLONE_PARENT) to create task C
-
-Now C and B have the same UTS namespace, which differs from A's, but
-they will each have a different UTS namespace when restarted with this
-patch.
-
-This is part of a larger complexity related to how CLONE_PARENT works.
-Also related to how session IDs are inherited.
-
-Two approaches to solve this are:
-
-a) Identify, in mktree, that this was the case, and impose an order on
-the forks/clones to recreate the same dependency (an algorithm for this
-is described in [1])
-
-b) Do it in the kernel: for each nsproxy (identified by an objref) the
-first task that has it will create it during restart, in or out of the
-kernel, and the next task will simply attach to the existing one that
-will be deposited in the objhash.
-
-Oren.
-
-[1] "Transparent Checkpoint/Restart of Multiple Processes on Commodity
-Operating Systems",
-http://www1.cs.columbia.edu/~orenl/papers/usenix07-checkpoint.pdf
 
 Dan Smith wrote:
 > This patch adds a "phase" of checkpoint that saves out information about any
@@ -67,5 +37,59 @@ Dan Smith wrote:
 > 
 > I tested this with single and multiple task restore, on top of Oren's
 > v13 tree.
+> 
+> Changes:
+>   - Remove the kernel restore path
+>   - Punt on nested namespaces
+>   - Use __NEW_UTS_LEN in nodename and domainname buffers
+>   - Add a note to Documentation/checkpoint/internals.txt to indicate where
+>     in the save/restore process the UTS information is kept
+>   - Store (and track) the objref of the namespace itself instead of the
+>     nsproxy (based on comments from Dave on IRC)
+>   - Remove explicit check for non-root nsproxy
+>   - Store the nodename and domainname lengths and use cr_write_string()
+>     to store the actual name strings
+> 
 
 [...]
+
+> +static int cr_write_namespaces(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_namespaces *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	struct nsproxy *nsp = t->nsproxy;
+> +	int ret;
+> +
+> +	h.type = CR_HDR_NS;
+> +	h.len = sizeof(*hh);
+> +	h.parent = 0;
+> +
+> +	hh->types = 0;
+> +
+> +	if (cr_obj_add_ptr(ctx, nsp->uts_ns, &hh->uts_ref, CR_OBJ_UTSNS, 0))
+> +		hh->types |= CR_NS_UTS;
+
+cr_obj_add_ptr() may fail with an error (e.g. -ENOMEM).
+
+> +
+> +	ret = cr_write_obj(ctx, &h, hh);
+> +	if (ret)
+> +		goto out;
+> +
+> +	if (hh->types & CR_NS_UTS) {
+> +		ret = cr_write_ns_uts(ctx, t);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		/* FIXME: Write other namespaces here */
+> +	}
+> + out:
+> +	cr_hbuf_put(ctx, sizeof(*hh));
+> +
+> +	return ret;
+> +}
+> +
+
+[...]
+
+Oren.
