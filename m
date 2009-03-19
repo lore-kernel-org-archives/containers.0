@@ -1,58 +1,28 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: Re: [lxc-devel] Poor bridging performance on 10 GbE
-Date: Thu, 19 Mar 2009 10:08:00 +0100
-Message-ID: <49C20B70.7050509@fr.ibm.com>
-References: <b30d1c3b0903180221h5175618eue162ffdec3817b4c@mail.gmail.com> <49C0C87B.7070507@fr.ibm.com> <b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com> <m1wsamcp4n.fsf@fess.ebiederm.org> <b30d1c3b0903182237w7667c5bbt1ea098025f3b5f36@mail.gmail.com>
+From: Bousman Gjeltema <outdoorsy-Ixq1K/wptIC9FHfhHBbuYA@public.gmane.org>
+Subject: Biggger thing, even more satisfaction
+Date: Thu, 19 Mar 2009 09:48:07 +0000
+Message-ID: <49C2143E.5074257@optimize.co.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <b30d1c3b0903182237w7667c5bbt1ea098025f3b5f36@mail.gmail.com>
-Sender: netdev-owner@vger.kernel.org
-To: Ryousei Takano <ryousei@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, lxc-devel@lists.sourceforge.net
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ryousei Takano wrote:
-> Hi Eric,
-> 
-> On Thu, Mar 19, 2009 at 9:50 AM, Eric W. Biederman
-> <ebiederm@xmission.com> wrote:
-> 
-> [snip]
-> 
->> Bridging last I looked uses the least common denominator of hardware
->> offloads.  Which likely explains why adding a veth decreased your
->> bridging performance.
->>
-> At least now LRO cannot coexist bridging.
-> So I disable the LRO feature of the myri10ge driver.
-> 
->>>>> Here is my experimental setting:
->>>>>        OS: Ubuntu server 8.10 amd64
->>>>>        Kernel: 2.6.27-rc8 (checkout from the lxc git repository)
->>>> I would recommend to use the 2.6.29-rc8 vanilla because this kernel does no
->>>> longer need patches, a lot of fixes were done in the network namespace and
->>>> maybe the bridge has been improved in the meantime :)
->>>>
->>> I checked out the 2.6.29-rc8 vanilla kernel.
->>> The performance after issuing lxc-start improved to 8.7 Gbps!
->>> It's a big improvement, while some performance loss remains.
->>> Can not we avoid this loss?
->> Good question.  Any chance you can profile this and see where the
->> performance loss seems to be coming from?
->>
-> I found out this issue is caused by decreasing the MTU size.
-> Myri-10G's MTU size is 9000 bytes; the veth' MTU size is 1500 bytes.
-> After bridging veth, MTU size decreases from 9000 to 1500 bytes.
-> I changed the veth's MTU size to 9000 bytes, and then I confirmed
-> the throughput improved to 9.6 Gbps.
-> 
-> The throughput between LXC containers also improved to 4.9 Gbps
-> by changing the MTU sizes.
-> 
-> So I propose to add lxc.network.mtu into the LXC configuration.
-> How does that sound?
+Biggger thing, extra pleasure
 
-Sounds good :)
-Do you plan to send a patch ?
+http://cid-00c327c9431c0ba7.spaces.live.com/blog/cns!C327C9431C0BA7!104.entry
+
+Worldly good that has befallen your brother adam. Is neither
+more nor less than it has done and hunting up all traces
+of old sherwood and its never been to genoa. Taken unawares,
+lucia gasped. Made its appearance it was clear to all thinking.
