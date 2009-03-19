@@ -1,57 +1,107 @@
-From: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Wed, 18 Mar 2009 17:46:07 -0700
-Message-ID: <49C195CF.1080506@google.com>
-References: <1236880612-15316-1-git-send-email-danms@us.ibm.com>	<20090312162954.4a4b8e00@thinkcentre.lan>	<87fxhipfrh.fsf@caffeine.danplanet.com>	<20090312224820.GA12723@hallyn.com>	<87bps6pcyf.fsf@caffeine.danplanet.com>	<49C0B069.6060300@cs.columbia.edu>
-	<20090318134932.GC22636@us.ibm.com>	<878wn353mf.fsf@caffeine.danplanet.com>
-	<49C1175F.9060600@free.fr>	<49C1506C.1080500@google.com>
-	<m1bprye5io.fsf@fess.ebiederm.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [lxc-devel] Poor bridging performance on 10 GbE
+Date: Wed, 18 Mar 2009 17:50:16 -0700
+Message-ID: <m1wsamcp4n.fsf@fess.ebiederm.org>
+References: <b30d1c3b0903180221h5175618eue162ffdec3817b4c@mail.gmail.com>
+	<49C0C87B.7070507@fr.ibm.com>
+	<b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1bprye5io.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <b30d1c3b0903180856r6dce554ap35b8d6a3ee7829e0@mail.gmail.com> (Ryousei Takano's message of "Thu\, 19 Mar 2009 00\:56\:53 +0900")
+Sender: netdev-owner@vger.kernel.org
+To: Ryousei Takano <ryousei@gmail.com>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, lxc-devel@lists.sourceforge.net
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> writes:
-> 
->> Cedric Le Goater wrote:
->>> Dan Smith wrote:
->>>> SH> (Note that in Dan's next version, he did move unshare into
->>>> SH> userspace)
->>>>
->>>> The idealist in me still wants it to be in the kernel.  However, after
->>>> seeing it done I agree that it's the right thing to do, at least in
->>>> this case.
->>> I would say in all cases.
->>>
->>> as you can't unshare(CLONE_NEWPID), 
->> Eric,
->>
->> Is there a particular reason the above doesn't work?  I made an attempt to
->> implement it a while back, but haven't convinced myself that signals and
->> re-attaching a new struct pid to a running task is correct.
-> 
-> Last time I was thinking about this I figured unsharing a pid namespace would
-> simply place it's children in a different pid namespace, not the originating
-> process.
-> 
-> Would that semantic be useful?  It would certainly be a lot less effort than
-> changing the pid on a running process correctly.
+Ryousei Takano <ryousei@gmail.com> writes:
 
-Hmm, that would be a little odd.  I think getting the unsharing task to 
-become pid 1 is a bit easier to understand and it makes it clear which 
-task is the reaper for the new namespace.  Otherwise the first child 
-becomes pid 1 but it isn't the reaper.
+> I am using VServer because other virtualization mechanisms, including=
+ OpenVZ,
+> Xen, and KVM cannot fully utilize the network bandwidth of 10 GbE.
+>
+> Here are the results of netperf bencmark:
+> 	vanilla (2.6.27-9)		9525.94
+> 	Vserver (2.6.27.10)	9521.79
+> 	OpenVZ (2.6.27.10)	2049.89
+> 	Xen (2.6.26.1)		1011.47
+> 	KVM (2.6.27-9)		1022.42
+>
+> Now I am interesting to use LXC instead of VServer.
+
+A good argument.
+
+>>> Using a macvlan device, the throughput was 9.6 Gbps. But, using a v=
+eth
+>>> device,
+>>> the throughput was only 2.7 Gbps.
+>>
+>> Yeah, definitively the macvlan interfaces is the best in terms of
+>> performances but with the restriction of not being able to communica=
+te
+>> between containers on the same hosts.
+>>
+> This restriction is not so big issue for my purpose.
+
+Right.  I have been trying to figure out what the best way to cope
+with that restriction is.
+
+>>> I also checked the host OS's performance when I used a veth device.
+>>> I observed a strange phenomenon.
+>>>
+>>> Before issuing lxc-start command, the throughput was 9.6 Gbps.
+>>> Here is the output of brctl show:
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0$ brctl show
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0bridge name =C2=A0 =C2=A0 bridge id =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 STP enabled =C2=A0 =C2=A0 in=
+terfaces
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0br0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 8000.0060dd470d49 =C2=A0 =C2=A0 =C2=A0 no =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0eth1
+>>>
+>>> After issuing lxc-start command, the throughput decreased to 3.2 Gb=
+ps.
+>>> Here is the output of brctl show:
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0$ sudo brctl show
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0bridge name =C2=A0 =C2=A0 bridge id =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 STP enabled =C2=A0 =C2=A0 in=
+terfaces
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0br0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 8000.0060dd470d49 =C2=A0 =C2=A0 =C2=A0 no =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0eth1
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0veth0_7573
+>>>
+>>> I wonder why the performance is greatly influenced by adding a veth=
+ device
+>>> to a bridge device.
+>>
+>> Hmm, good question :)
+
+Bridging last I looked uses the least common denominator of hardware
+offloads.  Which likely explains why adding a veth decreased your
+bridging performance.
+
+>>> Here is my experimental setting:
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0OS: Ubuntu server 8.10 amd64
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0Kernel: 2.6.27-rc8 (checkout from the lx=
+c git repository)
+>>
+>> I would recommend to use the 2.6.29-rc8 vanilla because this kernel =
+does no
+>> longer need patches, a lot of fixes were done in the network namespa=
+ce and
+>> maybe the bridge has been improved in the meantime :)
+>>
+> I checked out the 2.6.29-rc8 vanilla kernel.
+> The performance after issuing lxc-start improved to 8.7 Gbps!
+> It's a big improvement, while some performance loss remains.
+> Can not we avoid this loss?
+
+Good question.  Any chance you can profile this and see where the
+performance loss seems to be coming from?
+
+Eric
