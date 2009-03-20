@@ -1,22 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Fri, 20 Mar 2009 17:26:59 -0400
-Message-ID: <49C40A23.6080708@cs.columbia.edu>
-References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>	
-	<49C2C686.2060806@cs.columbia.edu>
-	<871vstdtn1.fsf@caffeine.danplanet.com>	
-	<49C2CDFA.4010907@cs.columbia.edu>
-	<49C2D183.8040905@cs.columbia.edu>	
-	<20090320181043.GB8380@us.ibm.com>
-	<49C3EFAF.9030706@cs.columbia.edu>	
-	<1237579196.8286.239.camel@nimitz>
-	<49C4011C.1050707@cs.columbia.edu>
-	<1237582825.8286.285.camel@nimitz>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v14-rc][PATCH 18/23] Prepare to support shared memory
+Date: Fri, 20 Mar 2009 14:27:53 -0700
+Message-ID: <1237584473.8286.307.camel@nimitz>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
+	<1237574868-3371-19-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1237582825.8286.285.camel@nimitz>
+In-Reply-To: <1237574868-3371-19-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,35 +18,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Fri, 2009-03-20 at 14:47 -0400, Oren Laadan wrote:
+> diff --git a/checkpoint/checkpoint_mem.h b/checkpoint/checkpoint_mem.h
+> index de1d4c8..3157dde 100644
+> --- a/checkpoint/checkpoint_mem.h
+> +++ b/checkpoint/checkpoint_mem.h
+> @@ -43,4 +43,22 @@ static inline int cr_pgarr_nr_free(struct cr_pgarr *pgarr)
+>         return CR_PGARR_TOTAL - pgarr->nr_used;
+>  }
+> 
+> +/*
+> + * This probably belongs in include/linux/mm.h
+> + */
+> +
+> +/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
+> +enum sgp_type {
+> +       SGP_READ,       /* don't exceed i_size, don't allocate page */
+> +       SGP_CACHE,      /* don't exceed i_size, may allocate page */
+> +       SGP_DIRTY,      /* like SGP_CACHE, but set new page dirty */
+> +       SGP_WRITE,      /* may exceed i_size, may allocate page */
+> +};
+> +
+> +int shmem_getpage(struct inode *inode, unsigned long idx,
+> +                 struct page **pagep, enum sgp_type sgp, int *type);
+> +
+> +extern struct vm_operations_struct shmem_vm_ops;
+> +extern struct vm_operations_struct shm_vm_ops;
+...
+> --- a/mm/shmem.c
+> +++ b/mm/shmem.c
+> @@ -103,8 +103,8 @@ static unsigned long shmem_default_max_inodes(void)
+>  }
+>  #endif
+> 
+> -static int shmem_getpage(struct inode *inode, unsigned long idx,
+> -                        struct page **pagep, enum sgp_type sgp, int *type);
+> +int shmem_getpage(struct inode *inode, unsigned long idx,
+> +                 struct page **pagep, enum sgp_type sgp, int *type);
 
+Personally, I think it is bad form to export someone else's function for
+them.  Please move the current shmem.c function declaration to a header
+that can be included by both the c/r code and shmem.c
 
-Dave Hansen wrote:
-> On Fri, 2009-03-20 at 16:48 -0400, Oren Laadan wrote:
->> Does that scale well with many (1000's) of tasks ?
->>
->> (The motivation to expose 'nsproxy_objref' to user space was to allow
->> user-space to decide on a sequence of clones/unshared that will create
->> an equivalent process tree with space-efficient nsproxy's).
+> /* return the subtype of a shared vma segment */
+> static enum vm_type cr_shared_vma_type(struct vm_area_struct *vma, int new)
+> {
+>         enum vm_type vma_type;
 > 
-> OK, so you're saying that there's no way for userspace to tell that a
-> set of tasks share an nsproxy other than exporting that nsproxy?
+>         if (vma->vm_ops == &shmem_vm_ops)       /* /dev/zero or anonymous */
+>                 vma_type = CR_VMA_SHM_ANON;
+>         else if (vma->vm_ops == &shm_vm_ops)    /* IPC (unsupported yet) */
+>                 vma_type = -EINVAL;
+>         else
+>                 vma_type = CR_VMA_SHM_FILE;
+> 
+>         if (!new && vma_type == CR_VMA_SHM_ANON)
+>                 vma_type = CR_VMA_SHM_ANON_SKIP;
+> 
+>         return vma_type;
+> }
 
-I don't think so. Maybe the namespaces people know better.
+This just looks really fragile to me.  The first thing that comes up in
+my cscope is bf5xx_pcm_mmap().  That is VM_SHARED, but is *certainly*
+not CR_VMA_SHM_FILE.  
 
-Oren.
+Instead of *checking* vma->vm_ops, I believe the more correct solutions
+here is to add an new vm_op which can be asked for its CR_VMA_* type.
 
-> 
->> Perhaps instead of nsproxy_equal() we could use an 'nsproxy_objref'
->> to know a-priori that it is common, and save the "compare-and-swap"
->> phase altogether.
-> 
-> Sure, that's workable.  The important thing is that it is an
-> optimization that can be left for later.
-> 
-> -- Dave
-> 
-> 
+-- Dave
