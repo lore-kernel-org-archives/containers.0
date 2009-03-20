@@ -1,31 +1,31 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Subject: Re: [PATCH 1/1] introduce user_ns inheritance in user-sched
-Date: Fri, 20 Mar 2009 09:24:20 +0100
-Message-ID: <1237537460.24626.32.camel@twins>
-References: <20090319211615.GA18383@us.ibm.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] Add powerpc signalfd syscall numbers
+Date: Fri, 20 Mar 2009 14:35:37 +0100
+Message-ID: <49C39BA9.5090404@free.fr>
+References: <20090320054420.GB26719@us.ibm.com>
+	<20090320060903.GA4360@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755593AbZCTIZj@vger.kernel.org>
-In-Reply-To: <20090319211615.GA18383@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: lkml <linux-kernel@vger.kernel.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, mingo@elte.hu, Bharata B Rao <bharata@linux.vnet.ibm.com>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090320060903.GA4360-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-03-19 at 16:16 -0500, Serge E. Hallyn wrote:
-> In a kernel compiled with CONFIG_USER_SCHED=y, cpu shares are
-> allocated according to uid.  Shares are specifiable under
-> /sys/kernel/uids/<uid>/
-> 
-> In a kernel compiled with CONFIG_USER_NS=y, clone(2) with the
-> CLONE_NEWUSER flag creates a new user namespace, and the newly
-> cloned task will belong to uid 0 in the new user namespace.
-
-We seem to be adding more and more stuff for USER_SCHED, is anybody
-actually using that cruft?
-
-How far along with cgroups are we to fully simulate that behaviour?
-
-I think if we have a capable cgroup based replacement for USER_SCHED we
-should axe it from the kernel, would save lots of code...
+Matt Helsley wrote:
+> Argh, forgot to mention it's a patch for liblxc and not a kernel patch!
+>
+> Also I'm taking lxc-devel-TtF/mJH4Jtrk1uMJSBkQmQ@public.gmane.org off Cc since it seems to refuse email
+> from non-members.
+>   
+I changed the option in mailman, that should be fixed.
