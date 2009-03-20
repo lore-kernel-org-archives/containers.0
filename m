@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 16/23] Restore open pipes
-Date: Fri, 20 Mar 2009 14:47:41 -0400
-Message-ID: <1237574868-3371-17-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 12/23] Checkpoint multiple processes
+Date: Fri, 20 Mar 2009 14:47:37 -0400
+Message-ID: <1237574868-3371-13-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,212 +21,397 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When seeing a CR_FD_PIPE file type, we create a new pipe and thus
-have two file pointers (read- and write- ends). We only use one of
-them, depending on which side was checkpointed first. We register the
-file pointer of the other end in the hash table, with the 'objref'
-given for this pipe from the checkpoint, deposited for later use. At
-this point we also restore the contents of the pipe buffers.
+Checkpointing of multiple processes works by recording the tasks tree
+structure below a given task (usually this task is the container init).
 
-When the other end arrives, it will have file type CR_FD_OBJREF. We
-will then use the corresponding 'objref' to retrieve the file pointer
-from the hash table, and attach it to the process.
+For a given task, do a DFS scan of the tasks tree and collect them
+into an array (keeping a reference to each task). Using DFS simplifies
+the recreation of tasks either in user space or kernel space. For each
+task collected, test if it can be checkpointed, and save its pid, tgid,
+and ppid.
 
-Note the difference from the checkpoint logic: during checkpoint we
-placed the _inode_ of the pipe in the hash table, while during restart
-we place the resulting _file_ in the hash table.
+The actual work is divided into two passes: a first scan counts the
+tasks, then memory is allocated and a second scan fills the array.
 
-We restore the pipe contents we manually allocation and attaching
-buffers to the pipe; (alternatively we could read the data from the
-image file and then write it into the pipe, or use splice() syscall).
+The logic is suitable for creation of processes during restart either
+in userspace or by the kernel.
+
+Currently we ignore threads and zombies, as well as session ids.
 
 Changelog[v14]:
-  - Discard the 'h.parent' field
+  - Refuse non-self checkpoint if target task isn't frozen
+  - Revert change to pr_debug(), back to cr_debug()
+  - Use only unsigned fields in checkpoint headers
+  - Check retval of cr_tree_count_tasks() in cr_build_tree()
+  - Discard 'h.parent' field
   - Check whether calls to cr_hbuf_get() fail
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/checkpoint_file.h |    2 +
- checkpoint/rstr_file.c       |  124 +++++++++++++++++++++++++++++++++++++++++-
- fs/pipe.c                    |    2 +-
- 3 files changed, 125 insertions(+), 3 deletions(-)
+Changelog[v13]:
+  - Release tasklist_lock in error path in cr_tree_count_tasks()
+  - Use separate index for 'tasks_arr' and 'hh' in cr_write_pids()
 
-diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
-index 9dc3eba..cac1a5d 100644
---- a/checkpoint/checkpoint_file.h
-+++ b/checkpoint/checkpoint_file.h
-@@ -14,4 +14,6 @@
+Changelog[v12]:
+  - Replace obsolete cr_debug() with pr_debug()
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/checkpoint.c        |  228 ++++++++++++++++++++++++++++++++++++++--
+ checkpoint/sys.c               |   16 +++
+ include/linux/checkpoint.h     |    3 +
+ include/linux/checkpoint_hdr.h |   13 ++-
+ 4 files changed, 248 insertions(+), 12 deletions(-)
+
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index a5db9be..89d57ad 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -242,11 +242,6 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ {
+ 	int ret;
  
- int cr_scan_fds(struct files_struct *files, int **fdtable);
- 
-+extern const struct pipe_buf_operations anon_pipe_buf_ops;
-+
- #endif /* _CHECKPOINT_CKPT_FILE_H_ */
-diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
-index 41efadb..2cbc308 100644
---- a/checkpoint/rstr_file.c
-+++ b/checkpoint/rstr_file.c
-@@ -14,6 +14,8 @@
- #include <linux/file.h>
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
-+#include <linux/pagemap.h>
-+#include <linux/pipe_fs_i.h>
- #include <linux/syscalls.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
-@@ -86,6 +88,121 @@ static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
- 	return (ret < 0 ? ERR_PTR(ret) : file);
+-	if (t->state == TASK_DEAD) {
+-		pr_warning("c/r: task may not be in state TASK_DEAD\n");
+-		return -EAGAIN;
+-	}
+-
+ 	ret = cr_write_task_struct(ctx, t);
+ 	cr_debug("task_struct: ret %d\n", ret);
+ 	if (ret < 0)
+@@ -269,6 +264,211 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 	return ret;
  }
  
-+/* cr_read_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
-+static int
-+cr_read_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe, int nbufs)
++/* dump all tasks in ctx->tasks_arr[] */
++static int cr_write_all_tasks(struct cr_ctx *ctx)
 +{
-+	void *kbuf, *addr;
-+	int i, ret = 0;
++	int n, ret = 0;
 +
-+	kbuf = (void *) __get_free_page(GFP_KERNEL);
-+	if (!kbuf)
-+		return -ENOMEM;
-+
-+	for (i = 0; i < nbufs; i++) {
-+		struct pipe_buffer *pbuf = pipe->bufs + i;
-+		struct page *page;
-+		int len = PAGE_SIZE;
-+
-+		ret = cr_read_buffer(ctx, kbuf, &len);
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		cr_debug("dumping task #%d\n", n);
++		ret = cr_write_task(ctx, ctx->tasks_arr[n]);
 +		if (ret < 0)
 +			break;
-+		page = alloc_page(GFP_HIGHUSER);
-+		if (!page) {
-+			ret = -ENOMEM;
-+			break;
-+		}
-+
-+		addr = kmap_atomic(page, KM_USER0);
-+		memcpy(addr, kbuf, len);
-+		kunmap_atomic(addr, KM_USER0);
-+
-+		pbuf->page = page;
-+		pbuf->ops = &anon_pipe_buf_ops;
-+		pbuf->offset = 0;
-+		pbuf->len = len;
-+		pipe->nrbufs++;
-+		pipe->tmp_page = NULL;
 +	}
 +
-+	free_page((unsigned long) kbuf);
 +	return ret;
 +}
 +
-+/* cr_read_pipe - restore pipe (assume i_mutex taken) */
-+static int cr_read_pipe(struct cr_ctx *ctx, int pipefd)
++static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
 +{
-+	struct cr_hdr_fd_pipe *hh;
-+	struct file *file;
-+	struct inode *inode;
-+	int nbufs, ret;
++	cr_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
++
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
++		return -EAGAIN;
++	}
++
++	if (!ptrace_may_access(t, PTRACE_MODE_READ))
++		return -EPERM;
++
++	/* verify that the task is frozen (unless self) */
++	if (t != current && !frozen(t))
++		return -EBUSY;
++
++	/* FIXME: change this for nested containers */
++	if (task_nsproxy(t) != ctx->root_nsproxy)
++		return -EPERM;
++
++	return 0;
++}
++
++#define CR_HDR_PIDS_CHUNK	256
++
++static int cr_write_pids(struct cr_ctx *ctx)
++{
++	struct cr_hdr_pids *hh;
++	struct pid_namespace *ns;
++	struct task_struct *task;
++	struct task_struct **tasks_arr;
++	int tasks_nr, n, pos = 0, ret = 0;
++
++	ns = ctx->root_nsproxy->pid_ns;
++	tasks_arr = ctx->tasks_arr;
++	tasks_nr = ctx->tasks_nr;
++	BUG_ON(tasks_nr <= 0);
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh) * CR_HDR_PIDS_CHUNK);
++	if (!hh)
++		return -ENOMEM;
++
++	do {
++		rcu_read_lock();
++		for (n = 0; n < min(tasks_nr, CR_HDR_PIDS_CHUNK); n++) {
++			task = tasks_arr[pos];
++
++			/* is this task cool ? */
++			ret = cr_may_checkpoint_task(task, ctx);
++			if (ret < 0) {
++				rcu_read_unlock();
++				goto out;
++			}
++			hh[n].vpid = task_pid_nr_ns(task, ns);
++			hh[n].vtgid = task_tgid_nr_ns(task, ns);
++			hh[n].vppid = task_tgid_nr_ns(task->real_parent, ns);
++			cr_debug("task[%d]: vpid %d vtgid %d parent %d\n", pos,
++				 hh[n].vpid, hh[n].vtgid, hh[n].vppid);
++			pos++;
++		}
++		rcu_read_unlock();
++
++		n = min(tasks_nr, CR_HDR_PIDS_CHUNK);
++		ret = cr_kwrite(ctx, hh, n * sizeof(*hh));
++		if (ret < 0)
++			break;
++
++		tasks_nr -= n;
++	} while (tasks_nr > 0);
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* count number of tasks in tree (and optionally fill pid's in array) */
++static int cr_tree_count_tasks(struct cr_ctx *ctx)
++{
++	struct task_struct *root = ctx->root_task;
++	struct task_struct *task = root;
++	struct task_struct *parent = NULL;
++	struct task_struct **tasks_arr = ctx->tasks_arr;
++	int tasks_nr = ctx->tasks_nr;
++	int nr = 0;
++
++	read_lock(&tasklist_lock);
++
++	/* count tasks via DFS scan of the tree */
++	while (1) {
++		if (tasks_arr) {
++			/* unlikely... but if so then try again later */
++			if (nr == tasks_nr) {
++				nr = -EAGAIN;	/* cleanup in cr_ctx_free() */
++				break;
++			}
++			tasks_arr[nr] = task;
++			get_task_struct(task);
++		}
++
++		nr++;
++
++		/* if has children - proceed with child */
++		if (!list_empty(&task->children)) {
++			parent = task;
++			task = list_entry(task->children.next,
++					  struct task_struct, sibling);
++			continue;
++		}
++
++		while (task != root) {
++			/* if has sibling - proceed with sibling */
++			if (!list_is_last(&task->sibling, &parent->children)) {
++				task = list_entry(task->sibling.next,
++						  struct task_struct, sibling);
++				break;
++			}
++
++			/* else, trace back to parent and proceed */
++			task = parent;
++			parent = parent->real_parent;
++		}
++
++		if (task == root)
++			break;
++	}
++
++	read_unlock(&tasklist_lock);
++	return nr;
++}
++
++/*
++ * cr_build_tree - scan the tasks tree in DFS order and fill in array
++ * @ctx: checkpoint context
++ *
++ * Using DFS order simplifies the restart logic to re-create the tasks.
++ *
++ * On success, ctx->tasks_arr will be allocated and populated with all
++ * tasks (reference taken), and ctx->tasks_nr will hold the total count.
++ * The array is cleaned up by cr_ctx_free().
++ */
++static int cr_build_tree(struct cr_ctx *ctx)
++{
++	int n, m;
++
++	/* count tasks (no side effects) */
++	n = cr_tree_count_tasks(ctx);
++	if (n < 0)
++		return n;
++
++	ctx->tasks_nr = n;
++	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
++	if (!ctx->tasks_arr)
++		return -ENOMEM;
++
++	/* count again (now will fill array) */
++	m = cr_tree_count_tasks(ctx);
++
++	/* unlikely, but ... (cleanup in cr_ctx_free) */
++	if (m < 0)
++		return m;
++	else if (m != n)
++		return -EBUSY;
++
++	return 0;
++}
++
++/* dump the array that describes the tasks tree */
++static int cr_write_tree(struct cr_ctx *ctx)
++{
++	struct cr_hdr h;
++	struct cr_hdr_tree *hh;
++	int ret;
++
++	h.type = CR_HDR_TREE;
++	h.len = sizeof(*hh);
 +
 +	hh = cr_hbuf_get(ctx, sizeof(*hh));
 +	if (!hh)
 +		return -ENOMEM;
 +
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_PIPE);
-+	nbufs = hh->nr_bufs;
++	hh->tasks_nr = ctx->tasks_nr;
++
++	ret = cr_write_obj(ctx, &h, hh);
 +	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	if (ret < 0)
-+		return ret;
-+	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
-+		return -EINVAL;
-+
-+	file = fget(pipefd);
-+	if (!file)
-+		return -EIO;
-+
-+	inode = file->f_dentry->d_inode;
-+	mutex_lock(&inode->i_mutex);
-+	ret = cr_read_pipebuf(ctx, inode->i_pipe, nbufs);
-+	mutex_unlock(&inode->i_mutex);
-+
-+	fput(file);
-+	return ret;
-+}
-+
-+/* restore a pipe */
-+static int cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_file *hh)
-+{
-+	struct file *file;
-+	int fds[2], which, ret;
-+
-+	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
-+	if (IS_ERR(file))
-+		return PTR_ERR(file);
-+	else if (file)
-+		return cr_attach_get_file(file);
-+
-+	/* first encounter of this pipe: create it */
-+	ret = do_pipe(fds);
 +	if (ret < 0)
 +		return ret;
 +
-+	which = (hh->f_flags & O_WRONLY ? 1 : 0);
-+
-+	/*
-+	 * Below we return the fd corersponding to one side of the pipe
-+	 * for our caller to use. Now register the other side of the pipe
-+	 * in the hash, to be picked up when that side is to be restored.
-+	 */
-+	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	ret = cr_read_pipe(ctx, fds[which]);
-+ out:
-+	sys_close(fds[1-which]);	/* this side isn't used anymore */
-+	if (ret < 0)
-+		sys_close(fds[which]);
-+	else
-+		ret = fds[which];
++	ret = cr_write_pids(ctx);
 +	return ret;
 +}
 +
- /* return a new fd associated with a the file referenced by @hh->objref */
- static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
+ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
  {
-@@ -138,12 +255,15 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
- 	/* FIX: more sanity checks on f_flags, f_mode etc */
- 
- 	switch (hh->fd_type) {
-+	case CR_FD_OBJREF:
-+		fd = cr_read_fd_objref(ctx, hh);
-+		break;
- 	case CR_FD_FILE:
- 	case CR_FD_DIR:
- 		fd = cr_read_fd_file(ctx, hh);
- 		break;
--	case CR_FD_OBJREF:
--		fd = cr_read_fd_objref(ctx, hh);
-+	case CR_FD_PIPE:
-+		fd = cr_read_fd_pipe(ctx, hh);
- 		break;
- 	default:
+ 	struct task_struct *task = NULL;
+@@ -286,7 +486,7 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+ 	if (!task)
  		goto out;
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 14f502b..f192c1c 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -268,7 +268,7 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *info,
- 	return 0;
- }
  
--static const struct pipe_buf_operations anon_pipe_buf_ops = {
-+const struct pipe_buf_operations anon_pipe_buf_ops = {
- 	.can_merge = 1,
- 	.map = generic_pipe_buf_map,
- 	.unmap = generic_pipe_buf_unmap,
+-#if 0	/* enable to use containers */
++#if 0	/* enable with containers */
+ 	if (!is_container_init(task)) {
+ 		err = -EINVAL;
+ 		goto out;
+@@ -298,10 +498,6 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+ 		goto out;
+ 	}
+ 
+-	/* verify that the task is frozen (unless self) */
+-	if (task != current && !frozen(task))
+-		return -EBUSY;
+-
+ 	rcu_read_lock();
+ 	if (task_nsproxy(task)) {
+ 		nsproxy = task_nsproxy(task);
+@@ -358,12 +554,22 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	ret = cr_ctx_checkpoint(ctx, pid);
+ 	if (ret < 0)
+ 		goto out;
++
++	ret = cr_build_tree(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = cr_write_head(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_write_task(ctx, ctx->root_task);
++	ret = cr_write_tree(ctx);
+ 	if (ret < 0)
+ 		goto out;
++
++	ret = cr_write_all_tasks(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = cr_write_tail(ctx);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index b1c60b1..8630144 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -152,6 +152,19 @@ void cr_hbuf_put(struct cr_ctx *ctx, int n)
+  * restart operation, and persists until the operation is completed.
+  */
+ 
++static void cr_task_arr_free(struct cr_ctx *ctx)
++{
++	int n;
++
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		if (ctx->tasks_arr[n]) {
++			put_task_struct(ctx->tasks_arr[n]);
++			ctx->tasks_arr[n] = NULL;
++		}
++	}
++	kfree(ctx->tasks_arr);
++}
++
+ static void cr_ctx_free(struct cr_ctx *ctx)
+ {
+ 	if (ctx->file)
+@@ -164,6 +177,9 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	cr_pgarr_free(ctx);
+ 	cr_objhash_free(ctx);
+ 
++	if (ctx->tasks_arr)
++		cr_task_arr_free(ctx);
++
+ 	if (ctx->root_nsproxy)
+ 		put_nsproxy(ctx->root_nsproxy);
+ 	if (ctx->root_task)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 3a6cef9..c946320 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -31,6 +31,9 @@ struct cr_ctx {
+ 	void *hbuf;		/* temporary buffer for headers */
+ 	int hpos;		/* position in headers buffer */
+ 
++	struct task_struct **tasks_arr;	/* array of all tasks in container */
++	int tasks_nr;			/* size of tasks array */
++
+ 	struct cr_objhash *objhash;	/* hash for shared objects */
+ 
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 3d68161..e34a437 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -44,7 +44,8 @@ enum {
+ 	CR_HDR_STRING,
+ 	CR_HDR_FNAME,
+ 
+-	CR_HDR_TASK = 101,
++	CR_HDR_TREE = 101,
++	CR_HDR_TASK,
+ 	CR_HDR_THREAD,
+ 	CR_HDR_CPU,
+ 
+@@ -85,6 +86,16 @@ struct cr_hdr_tail {
+ 	__u64 magic;
+ } __attribute__((aligned(8)));
+ 
++struct cr_hdr_tree {
++	__s32 tasks_nr;
++} __attribute__((aligned(8)));
++
++struct cr_hdr_pids {
++	__s32 vpid;
++	__s32 vtgid;
++	__s32 vppid;
++} __attribute__((aligned(8)));
++
+ struct cr_hdr_task {
+ 	__u32 state;
+ 	__u32 exit_state;
 -- 
 1.5.4.3
