@@ -1,20 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] c/r: Add UTS support
-Date: Fri, 20 Mar 2009 12:26:17 -0500
-Message-ID: <20090320172616.GA7203@us.ibm.com>
-References: <49C0B069.6060300@cs.columbia.edu>
-	<20090318134932.GC22636@us.ibm.com>
-	<878wn353mf.fsf@caffeine.danplanet.com>
-	<49C1175F.9060600@free.fr> <49C1506C.1080500@google.com>
-	<m1bprye5io.fsf@fess.ebiederm.org> <49C195CF.1080506@google.com>
-	<m1ab7icodl.fsf@fess.ebiederm.org> <49C1A52D.4000503@google.com>
-	<m1iqm6xkc7.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH] c/r: Add UTS support (v4)
+Date: Fri, 20 Mar 2009 13:05:06 -0500
+Message-ID: <20090320180506.GA8380@us.ibm.com>
+References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
+	<49C2C686.2060806@cs.columbia.edu>
+	<871vstdtn1.fsf@caffeine.danplanet.com>
+	<49C2CDFA.4010907@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1iqm6xkc7.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <49C2CDFA.4010907-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,50 +21,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Ok.  I see what you are trying to accomplish with this and honestly I
-> think it is silly.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> We should start the threads we need in the kernel, and if we need to
-> run clone_pid fine.  I am not comfortable exporting clone_with_pid to
-> user space.
+> 
+> Dan Smith wrote:
+> > OL> So what happens in the following scenario:
+> > 
+> > OL> * task A is the container init(1)
+> > OL> * A calls fork() to create task B
+> > OL> * B calls unshare(CLONE_NEWUTS)
+> > OL> * B calls clone(CLONE_PARENT) to create task C
+> > 
+> > In the previous version of the patch, I failed the checkpoint if this
+> > was the case by making sure that all tasks in the set had the same
+> > nsproxy.  You said in IRC that this was already done elsewhere in the
+> > infrastructure, but now that I look I don't see that anywhere.
+> > 
+> 
+> in cr_may_checkpoint_task():
+> 
+>  285         /* FIXME: change this for nested containers */
+>  286         if (task_nsproxy(t) != ctx->root_nsproxy)
+>  287                 return -EPERM;
+> 
+> > The check I had was in response to Daniel's comments about avoiding
+> > the situation for the time being by making sure that all the tasks had
+> > the same set of namespaces (i.e. the same nsproxy at the time of
+> > checkpoint).
+> > 
+> > OL> Two approaches to solve this are:
+> > 
+> > OL> a) Identify, in mktree, that this was the case, and impose an
+> > OL> order on the forks/clones to recreate the same dependency (an
+> > OL> algorithm for this is described in [1])
+> > 
+> > OL> b) Do it in the kernel: for each nsproxy (identified by an objref)
+> > OL> the first task that has it will create it during restart, in or
+> > OL> out of the kernel, and the next task will simply attach to the
+> > OL> existing one that will be deposited in the objhash.
+> > 
+> > I think that prior discussion led to the conclusion that simplicity
+> > wins for the moment, but if you want to solve it now I can cook up
+> > some changes.
+> > 
+> 
+> If we keep the assumption, for simplicity, that all tasks share the
+> same namespace, then the checkpoint code should check, once, how that
+> nsproxy differs from the container's parent (except for the obvious
+> pidns).
 
-Even if we create the task tree in userspace, I don't see why we
-can't have the parent of each nested pid_ns pass CLONE_NEWPID to
-clone_with_pid() instead of doing clone first and then unsharing
-the pidns?
+I disagree.  Whether the container had its own utsns doesn't
+affect whether it should have a private utsns on restart.
 
-As for clone_with_pid(), I don't particularly like the semantics,
-but as was discussed over IRC, we could have clone_with_pid()
-return -EINVAL unless it is called while it is called from a task
-inside a restarting container.  (and -EPERM if setting a pid in
-a pid_ns which was not created as part of the container)  Eric
-do you dislike that any less?
+> If it does differ, e.g. in uts, then the checkpoint should save the
+> uts state _once_ - as in global data. Restart will restore the state
+> also _once_, for the init of the container (the first task restored),
+> _before_ it forks the rest of the tree.
+> 
+> Otherwise, we don't get the same outcome.
 
-> As for the implementation of allocating a struct pid with a certain
-> set of pid values.  I expect we can do that easily enough by
-> refactoring the pid allocator to be passed in the min/max pid to
-> allocate from, and have a special case that passes in a different set
-> of min/max values so we can allocate just the pid we need.
+Again I disagree.  If we were planning on never supporting nested
+uts namespaces it woudl be fine, but what you are talking about
+is making sure we have to break the checkpoint format later to support
+nested namespaces.
 
-What is wrong with Alexey's patch, which simply passes in the values
-themselves?  Do you have another use in mind for the min/max pid
-values?
+Rather, we should do:
 
-> If the primary use for a userspace interface is restart I feel we are
-> doing it wrong.
-
-I think that's a good guideline, bad rule.  Certainly possible
-that you're right that this is just pointing to in-kernel
-recreation of process tree as the way to go.  I was getting
-that feeling myself, but then there are still very good reasons
-not to do that, as there are things which each task should do
-before completing sys_restart() which are best done in userspace.
-These include for instance creating virtual nics, and calling
-Oren's suggested 'cr_advise()' system calls.
+1. record the hostname for the container in global data.
+2. The restart program can decide whether to honor the global
+   checkpoint image hostname or not.  It can either use a
+   command line option, or check whether the recorded hostname
+   is different from the restart host.  I prefer the former.
+3. for each task, leave an optional spot for hostname.  If
+   there is a hostname, then it will unshare(CLONE_NEWUTS)
+   and set its hostname before calling sys_restart() or
+   cloning any child tasks.
 
 -serge
