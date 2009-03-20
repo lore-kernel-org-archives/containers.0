@@ -1,16 +1,15 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 5/8] add f_op for checkpointability
-Date: Fri, 20 Mar 2009 14:13:24 -0700
-Message-ID: <1237583604.8286.294.camel__21040.3157551356$1237583861$gmane$org@nimitz>
-References: <20090227203425.F3B51176@kernel>
-	<20090227203431.D1E697CB@kernel> <20090228205329.GB4254@infradead.org>
-	<1236013556.26788.466.camel@nimitz>
-	<20090303131528.GB10931@infradead.org>
+Subject: Re: [RFC v14-rc][PATCH 09/23] Dump open file descriptors
+Date: Fri, 20 Mar 2009 14:14:00 -0700
+Message-ID: <1237583640.8286.296.camel@nimitz>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
+	<1237574868-3371-10-git-send-email-orenl@cs.columbia.edu>
+	<1237579789.8286.242.camel@nimitz> <49C402BE.4010308@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090303131528.GB10931-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+In-Reply-To: <49C402BE.4010308-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +19,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-03-03 at 08:15 -0500, Christoph Hellwig wrote:
-> On Mon, Mar 02, 2009 at 09:05:56AM -0800, Dave Hansen wrote:
-> > On Sat, 2009-02-28 at 15:53 -0500, Christoph Hellwig wrote:
-> > > Also the double-use of the op seem not very nice to me.  Is there any
-> > > real life use case were you would have the operation on a file but
-> > > sometimes not allow checkpoiting?
+On Fri, 2009-03-20 at 16:55 -0400, Oren Laadan wrote:
+> Dave Hansen wrote:
+> > On Fri, 2009-03-20 at 14:47 -0400, Oren Laadan wrote:
+> >> +       switch (inode->i_mode & S_IFMT) {
+> >> +       case S_IFREG:
+> >> +               fd_type = CR_FD_FILE;
+> >> +               break;
+> >> +       case S_IFDIR:
+> >> +               fd_type = CR_FD_DIR;
+> >> +               break;
+> >> +       default:
+> >> +               cr_hbuf_put(ctx, sizeof(*hh));
+> >> +               return -EBADF;
+> >> +       }
 > > 
-> > I'm still reaching here...
-> > 
-> > I was thinking of /proc.  Opening your own /proc/$$/* would certainly be
-> > considered OK.  But, doing it for some other process not in your pid
-> > namespace would not be OK and would not be checkpointable.
-> > 
-> > I know we're not quite in real-life territory here, yet, but I'm still
-> > thinking.
+> > Why is there differentiation between files and directories?  Since we
+> > deal with them in the same way, why bother adding this code everywhere
+> > to make them distinct?
 > 
-> That mighr be a good enough excuse, I was just wondering what the use
-> case was.
+> When we will handle unlinked files and unlinked directories, they will
+> be handled differently.
 
-I just thought of another one: unlinked files and directories.  They're
-a pain to checkpoint and won't be supported for a while.  Holding open
-an unlinked file would make a process uncheckpointable for a bit.
+This at *LEAST* needs a big fat comment.
+
+... and unlinked files will be handled differently than normal files.
+Can we cross that bridge when we come to it?  The abstraction that I
+drew before in my patch was this:
+
+	CR_FD_GENERIC
+
+It means an fd the can be checkpointed/restored in a "generic" way,
+namely "open()/lseek()", done.  Linked directories and linked files
+share this attribute.  Unlinked files/directories do not.
+
+Is it more important that we classify things based on the file/directory
+properties, or how we handle them?
 
 -- Dave
