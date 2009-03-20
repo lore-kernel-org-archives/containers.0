@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 15/23] Checkpoint open pipes
-Date: Fri, 20 Mar 2009 14:47:40 -0400
-Message-ID: <1237574868-3371-16-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 17/23] Record 'struct file' object instead of the
+	file name for VMAs
+Date: Fri, 20 Mar 2009 14:47:42 -0400
+Message-ID: <1237574868-3371-18-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,256 +22,332 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-A pipe is essentially a double-headed inode with a buffer attached to
-it. We checkpoint the pipe buffer only once, as soon as we hit one
-side of the pipe, regardless whether it is read- or write- end.
+The vma->vm_file can be an arbitrary file pointer, including one that
+is in use by a process as well and provided originally via the mmap()
+syscall.
 
-To checkpoint a file descriptor that refers to a pipe (either end), we
-first lookup the inode in the hash table:
-
-If not found, it is the first encounter of this pipe. Besides the file
-descriptor, we also (a) save the pipe data, and (b) register the pipe
-inode in the hash. We save the 'objref' of the inode 'in ->fd_objref'
-of the file descriptor. The file descriptor type becomes CR_FD_PIPE.
-
-If found, it is the second encounter of this pipe, namely, as we hit
-the other end of the same pipe. In this case we need only record the
-reference ('objref') to the inode that we had saved before, and the
-file descriptor type is changed to CR_FD_OBJREF.
-
-The type CR_FD_PIPE will indicate to the kernel to create a new pipe;
-since both ends are created at the same time, one end will be used,
-and the other end will be deposited in the hash table for later use.
-The type CR_FD_OBJREF will indicate that the corresponding file
-descriptor is already setup and registered in the hash using the
-'->fd_objref' that it had been assigned.
-
-The format of the pipe data is as follows:
-
-struct cr_hdr_fd_pipe {
-       __u32 nr_bufs;
-}
-
-cr_hdr + cr_hdr_fd_ent
-	cr_hdr + cr_hdr_fd_data
-		cr_hdr + cr_hdr_fd_pipe		-> # buffers
-			cr_hdr + cr_hdr_buffer	-> 1st buffer
-			cr_hdr + cr_hdr_buffer	-> 2nd buffer
-			cr_hdr + cr_hdr_buffer	-> 3rd buffer
-			...
+Thus, when dumping the state of a VMA, save a file object instead
+of only the file name. As with other file objects, if it's seen for
+the first time it is dumped entirely, otherwise only the 'objref' is
+saved. The restart logic updated accordingly.
 
 Changelog[v14]:
-  - Use 'fd_type' instead of 'hh->fd_objref' in cr_write_fd_data()
-  - Revert change to pr_debug(), back to cr_debug()
-  - Discard the 'h.parent' field
-  - Check whether calls to cr_hbuf_get() fail
-  - Test that a pipe's inode != ctx->file's inode to prevent deadlock
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/ckpt_file.c         |  119 +++++++++++++++++++++++++++++++++++++++-
- include/linux/checkpoint_hdr.h |    6 ++
- 2 files changed, 124 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c        |    5 +++
+ checkpoint/ckpt_file.c         |    2 +-
+ checkpoint/ckpt_mem.c          |   49 ++++++++++++++++---------
+ checkpoint/rstr_file.c         |    2 +-
+ checkpoint/rstr_mem.c          |   79 +++++++++++++++++++++++++++-------------
+ include/linux/checkpoint.h     |    2 +
+ include/linux/checkpoint_hdr.h |    2 +-
+ 7 files changed, 94 insertions(+), 47 deletions(-)
 
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 89d57ad..1bd2dce 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -118,6 +118,11 @@ int cr_write_fname(struct cr_ctx *ctx, struct path *path, struct path *root)
+ 	char *buf, *fname;
+ 	int ret, flen;
+ 
++	/*
++	 * FIXME: we can optimize and save memory (and storage) if we
++	 * share strings (through objhash) and reference them instead
++	 */
++
+ 	flen = PATH_MAX;
+ 	buf = kmalloc(flen, GFP_KERNEL);
+ 	if (!buf)
 diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
-index bb9f96f..7444402 100644
+index 7444402..2a83b95 100644
 --- a/checkpoint/ckpt_file.c
 +++ b/checkpoint/ckpt_file.c
-@@ -12,6 +12,7 @@
- #include <linux/sched.h>
- #include <linux/file.h>
- #include <linux/fdtable.h>
-+#include <linux/pipe_fs_i.h>
+@@ -201,7 +201,7 @@ cr_inode_to_objref(struct cr_ctx *ctx, struct inode *inode, int type, int *new)
+ }
+ 
+ /* cr_write_file - dump the state of a given file pointer */
+-static int cr_write_file(struct cr_ctx *ctx, struct file *file)
++int cr_write_file(struct cr_ctx *ctx, struct file *file)
+ {
+ 	struct cr_hdr h;
+ 	struct cr_hdr_file *hh;
+diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
+index e479b2f..6975c87 100644
+--- a/checkpoint/ckpt_mem.c
++++ b/checkpoint/ckpt_mem.c
+@@ -440,7 +440,10 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ {
+ 	struct cr_hdr h;
+ 	struct cr_hdr_vma *hh;
+-	int vma_type, ret;
++	int vma_type;
++	int objref = 0;
++	int new = 0;
++	int ret;
+ 
+ 	h.type = CR_HDR_VMA;
+ 	h.len = sizeof(*hh);
+@@ -460,36 +463,46 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 
+ 	if (vma->vm_flags & CR_BAD_VM_FLAGS) {
+ 		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
+-		cr_hbuf_put(ctx, sizeof(*hh));
+-		return -ENOSYS;
++		ret = -ENOSYS;
++		goto out;
+ 	}
+ 
+-	/* by default assume anon memory */
+-	vma_type = CR_VMA_ANON;
++	vma_type = CR_VMA_ANON;  /* by default assume anon memory */
+ 
+-	/*
+-	 * if there is a backing file, assume private-mapped
+-	 * (FIXME: check if the file is unlinked)
+-	 */
+ 	if (vma->vm_file)
+-		vma_type = CR_VMA_FILE;
++		vma_type = CR_VMA_FILE;		/* assume private-mapped */
++
++	/* if file-backed, add 'file' to the hash (will keep a reference) */
++	if (vma->vm_file) {
++		new = cr_obj_add_ptr(ctx, vma->vm_file,
++				     &objref, CR_OBJ_FILE, 0);
++		cr_debug("vma %p objref %d file %p)\n",
++			 vma, objref, vma->vm_file);
++		if (new < 0) {
++			ret  = new;
++			goto out;
++		}
++	}
+ 
+ 	hh->vma_type = vma_type;
++	hh->vma_objref = objref;
+ 
+ 	ret = cr_write_obj(ctx, &h, hh);
+-	cr_hbuf_put(ctx, sizeof(*hh));
+ 	if (ret < 0)
+-		return ret;
++		goto out;
+ 
+-	/* save the file name */
+-	/* FIXME: files should be deposited and sought in the objhash */
+-	if (vma->vm_file) {
+-		ret = cr_write_fname(ctx, &vma->vm_file->f_path, &ctx->fs_mnt);
++	/* new==1 if-and-only-if file was newly added to hash */
++	if (new) {
++		ret = cr_write_file(ctx, vma->vm_file);
+ 		if (ret < 0)
+-			return ret;
++			goto out;
+ 	}
+ 
+-	return cr_write_private_vma_contents(ctx, vma);
++	ret = cr_write_private_vma_contents(ctx, vma);
++
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
+ }
+ 
+ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
+index 2cbc308..5d2f84c 100644
+--- a/checkpoint/rstr_file.c
++++ b/checkpoint/rstr_file.c
+@@ -232,7 +232,7 @@ static int cr_read_fd_file(struct cr_ctx *ctx, struct cr_hdr_file *hh)
+ #define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
+ 
+ /* cr_read_file - restore the state of a given file pointer */
+-static int cr_read_file(struct cr_ctx *ctx, int objref)
++int cr_read_file(struct cr_ctx *ctx, int objref)
+ {
+ 	struct cr_hdr_file *hh;
+ 	struct file *file;
+diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
+index 50309b6..5f46f11 100644
+--- a/checkpoint/rstr_mem.c
++++ b/checkpoint/rstr_mem.c
+@@ -18,6 +18,7 @@
+ #include <linux/mman.h>
+ #include <linux/mm.h>
+ #include <linux/err.h>
++#include <linux/syscalls.h>
  #include <linux/checkpoint.h>
  #include <linux/checkpoint_hdr.h>
  
-@@ -72,6 +73,93 @@ int cr_scan_fds(struct files_struct *files, int **fdtable)
- 	return n;
+@@ -204,6 +205,40 @@ static unsigned long cr_calc_map_flags_bits(unsigned long orig_vm_flags)
+ 	return vm_flags;
  }
  
-+/* cr_write_pipebuf - dump contents of a pipe/fifo (assume i_mutex taken) */
-+static int cr_write_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe)
++/*
++ * cr_vma_read_file - prepare a file object required for a vma
++ * @ctx - restart context
++ * @objref - objref of file object
++ *
++ * If the file object is found, will grab a reference to the pointer
++ * that the caller will need release.
++ */
++static struct file *cr_vma_read_file(struct cr_ctx *ctx, int objref)
 +{
-+	struct cr_hdr h;
-+	void *kbuf, *addr;
-+	int i, ret = 0;
++	struct file *file;
++	int fd;
 +
-+	kbuf = (void *) __get_free_page(GFP_KERNEL);
-+	if (!kbuf)
-+		return -ENOMEM;
++	file = cr_obj_get_by_ref(ctx, objref, CR_OBJ_FILE);
++	if (IS_ERR(file))
++		return file;
 +
-+	/* this is a simplified fs/pipe.c:read_pipe() */
-+
-+	for (i = 0; i < pipe->nrbufs; i++) {
-+		int nn = (pipe->curbuf + i) & (PIPE_BUFFERS-1);
-+		struct pipe_buffer *pbuf = pipe->bufs + nn;
-+		const struct pipe_buf_operations *ops = pbuf->ops;
-+
-+		ret = ops->confirm(pipe, pbuf);
-+		if (ret < 0)
-+			break;
-+
-+		addr = ops->map(pipe, pbuf, 1);
-+		memcpy(kbuf, addr + pbuf->offset, pbuf->len);
-+		ops->unmap(pipe, pbuf, addr);
-+
-+		h.type = CR_HDR_BUFFER;
-+		h.len = pbuf->len;
-+
-+		ret = cr_write_obj(ctx, &h, kbuf);
-+		if (ret < 0)
-+			break;
++	/* if object found in objhash - use it */
++	if (file) {
++		get_file(file);
++		return file;
 +	}
 +
-+	free_page((unsigned long) kbuf);
-+	return ret;
++	/* get (or construct) the respective file object */
++	fd = cr_read_file(ctx, objref);
++	if (fd < 0)
++		return ERR_PTR(fd);
++
++	file = fget(fd);
++	sys_close(fd);
++
++	return file;
 +}
 +
-+/* cr_write_pipe - dump pipe (assume i_mutex taken) */
-+static int cr_write_pipe(struct cr_ctx *ctx, struct inode *inode)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_fd_pipe *hh;
-+	struct pipe_inode_info *pipe = inode->i_pipe;
-+	int ret;
-+
-+	h.type = CR_HDR_FD_PIPE;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	hh->nr_bufs = pipe->nrbufs;
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		return ret;
-+
-+	return cr_write_pipebuf(ctx, pipe);
-+}
-+
-+/* cr_write_fd_fifo - for pipe */
-+static int cr_write_fd_pipe(struct cr_ctx *ctx, struct file *file)
-+{
-+	struct inode *inode = file->f_dentry->d_inode;
-+	int ret;
-+
-+	/*
-+	 * We take the inode's mutex and later will call vfs_write(),
-+	 * which also takes an inode's mutex. To avoid deadlock, make
-+	 * sure that the two inodes are distinct.
-+	 */
-+	if (ctx->file->f_dentry->d_inode == inode) {
-+		pr_warning("c/r: writing to pipe that is checkpointed "
-+			   "may result in a deadlock ... aborting\n");
-+		return -EDEADLK;
-+	}
-+
-+	mutex_lock(&inode->i_mutex);
-+	ret = cr_write_pipe(ctx, inode);
-+	mutex_unlock(&inode->i_mutex);
-+
-+	return ret;
-+}
-+
- /* cr_write_fd_file - for regular files, directories, symbolic links */
- static int cr_write_fd_file(struct cr_ctx *ctx, struct file *file)
+ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
  {
-@@ -86,11 +174,32 @@ static inline enum fd_type cr_inode_to_fdtype(struct inode *inode)
- 		return CR_FD_FILE;
- 	case S_IFDIR:
- 		return CR_FD_DIR;
-+	case S_IFIFO:
-+		if (inode->i_sb->s_magic == PIPEFS_MAGIC)
-+			return CR_FD_PIPE;	/* pipe */
- 	}
- 	/* file type unsupported */
- 	return -EBADF;
- }
+ 	struct cr_hdr_vma *hh;
+@@ -218,14 +253,16 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 		return -ENOMEM;
+ 	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_VMA);
+ 	if (ret < 0)
+-		goto err;
++		goto out;
  
-+static int
-+cr_inode_to_objref(struct cr_ctx *ctx, struct inode *inode, int type, int *new)
-+{
-+	int objref = 0;
-+	int newobj = 1;
-+
-+	if (type == CR_FD_PIPE) {
-+		newobj = cr_obj_add_ptr(ctx, inode, &objref, CR_OBJ_INODE, 0);
-+		pr_debug("objref %d inode %p new %d\n", objref, inode, newobj);
-+	}
-+
-+	if (newobj < 0)
-+		return newobj;
-+
-+	*new = newobj;
-+	return objref;
-+}
-+
- /* cr_write_file - dump the state of a given file pointer */
- static int cr_write_file(struct cr_ctx *ctx, struct file *file)
- {
-@@ -98,6 +207,7 @@ static int cr_write_file(struct cr_ctx *ctx, struct file *file)
- 	struct cr_hdr_file *hh;
- 	struct inode *inode = file->f_dentry->d_inode;
- 	enum fd_type fd_type;
-+	int new = 0;  /* pacitfy gcc */
- 	int ret;
+ 	cr_debug("vma %#lx-%#lx type %d\n", (unsigned long) hh->vm_start,
+ 		 (unsigned long) hh->vm_end, (int) hh->vma_type);
  
- 	h.type = CR_HDR_FILE;
-@@ -119,8 +229,12 @@ static int cr_write_file(struct cr_ctx *ctx, struct file *file)
- 		return fd_type;
- 	}
+ 	ret = -EINVAL;
+ 	if (hh->vm_end < hh->vm_start)
+-		goto err;
++		goto out;
++	if (hh->vma_objref <= 0)
++		goto out;
  
-+	hh->fd_objref = cr_inode_to_objref(ctx, inode, hh->fd_type, &new);
-+	pr_debug("type %d objref %d (%d)\n", hh->fd_type, hh->fd_objref, new);
-+	if (!new)
-+		fd_type = CR_FD_OBJREF;
-+
- 	hh->fd_type = fd_type;
--	hh->fd_objref = 0;
+ 	vm_start = hh->vm_start;
+ 	vm_pgoff = hh->vm_pgoff;
+@@ -234,13 +271,11 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 	vm_flags = cr_calc_map_flags_bits(hh->vm_flags);
+ 	vma_type = hh->vma_type;
  
- 	/* FIX: check if the inode is unlinked */
+-	cr_hbuf_put(ctx, sizeof(*hh));
+-
+ 	switch (vma_type) {
  
-@@ -137,6 +251,9 @@ static int cr_write_file(struct cr_ctx *ctx, struct file *file)
- 	case CR_FD_DIR:
- 		ret = cr_write_fd_file(ctx, file);
+ 	case CR_VMA_ANON:		/* anonymous private mapping */
+ 		if (vm_flags & VM_SHARED)
+-			goto err;
++			goto out;
+ 		/*
+ 		 * vm_pgoff for anonymous mapping is the "global" page
+ 		 * offset (namely from addr 0x0), so we force a zero
+@@ -250,23 +285,20 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 
+ 	case CR_VMA_FILE:		/* private mapping from a file */
+ 		if (vm_flags & VM_SHARED)
+-			goto err;
+-		/*
+-		 * for private mapping using 'read-only' is sufficient
+-		 */
+-		file = cr_read_open_fname(ctx, O_RDONLY, 0);
++			goto out;
++		file = cr_vma_read_file(ctx, hh->vma_objref);
+ 		if (IS_ERR(file)) {
+ 			ret = PTR_ERR(file);
+-			goto err;
++			file = NULL;
++			goto out;
+ 		}
  		break;
-+	case CR_FD_PIPE:
-+		ret = cr_write_fd_pipe(ctx, file);
-+		break;
+ 
  	default:
- 		BUG();
+-		goto err;
++		goto out;
+ 
  	}
+ 
+-
+ 	down_write(&mm->mmap_sem);
+ 	addr = do_mmap_pgoff(file, vm_start, vm_size,
+ 			     vm_prot, vm_flags, vm_pgoff);
+@@ -274,12 +306,10 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 	cr_debug("size %#lx prot %#lx flag %#lx pgoff %#lx => %#lx\n",
+ 		 vm_size, vm_prot, vm_flags, vm_pgoff, addr);
+ 
+-	/* the file (if opened) is now referenced by the vma */
+-	if (file)
+-		filp_close(file, NULL);
+-
+-	if (IS_ERR((void *) addr))
+-		return PTR_ERR((void *) addr);
++	if (IS_ERR((void *) addr)) {
++		ret = PTR_ERR((void *) addr);
++		goto out;
++	}
+ 
+ 	/*
+ 	 * CR_VMA_ANON: read in memory as is
+@@ -295,14 +325,11 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 		break;
+ 	}
+ 
+-	if (ret < 0)
+-		return ret;
+-
+-	cr_debug("vma retval %d\n", ret);
+-	return 0;
+-
+- err:
++ out:
++	if (file)
++		fput(file);
+ 	cr_hbuf_put(ctx, sizeof(*hh));
++	cr_debug("vma retval %d\n", ret);
+ 	return ret;
+ }
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 3be3902..69d14c4 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -110,10 +110,12 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
+ extern int do_checkpoint(struct cr_ctx *ctx, pid_t pid);
+ extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+ extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
++extern int cr_write_file(struct cr_ctx *ctx, struct file *file);
+ 
+ extern int do_restart(struct cr_ctx *ctx, pid_t pid);
+ extern int cr_read_mm(struct cr_ctx *ctx);
+ extern int cr_read_fd_table(struct cr_ctx *ctx);
++extern int cr_read_file(struct cr_ctx *ctx, int objref);
+ 
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index d16e371..68c1f6b 100644
+index 68c1f6b..bc054f2 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -57,6 +57,7 @@ enum {
- 	CR_HDR_FD_TABLE = 301,
- 	CR_HDR_FD_ENT,
- 	CR_HDR_FILE,
-+	CR_HDR_FD_PIPE,
+@@ -123,7 +123,7 @@ enum vm_type {
  
- 	CR_HDR_TAIL = 5001
- };
-@@ -151,6 +152,7 @@ enum  fd_type {
- 	CR_FD_OBJREF = 1,
- 	CR_FD_FILE,
- 	CR_FD_DIR,
-+	CR_FD_PIPE,
- };
+ struct cr_hdr_vma {
+ 	__u32 vma_type;
+-	__u32 _padding;
++	__u32 vma_objref;	/* for vma->vm_file */
  
- struct cr_hdr_file {
-@@ -163,4 +165,8 @@ struct cr_hdr_file {
- 	__u64 f_version;
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_fd_pipe {
-+	__s32 nr_bufs;
-+} __attribute__((aligned(8)));
-+
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+ 	__u64 vm_start;
+ 	__u64 vm_end;
 -- 
 1.5.4.3
