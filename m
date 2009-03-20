@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 18/23] Prepare to support shared memory
-Date: Fri, 20 Mar 2009 14:47:43 -0400
-Message-ID: <1237574868-3371-19-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 11/23] External checkpoint of a task other than
+	ourself
+Date: Fri, 20 Mar 2009 14:47:36 -0400
+Message-ID: <1237574868-3371-12-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,118 +22,214 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Export stuff from shared memory code that will be used in the next two
-patches to provide support for checkpoint/restart of shared memory.
+Now we can do "external" checkpoint, i.e. act on another task.
 
-mm/shmem.c:
-- shmem_getpage() and 'enum sgp_type'
-- struct vm_operations_struct shmem_vm_ops
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container.
 
-ipc/shm.c:
-- struct vm_operations_struct shm_vm_ops
+sys_restart() remains the same, as the restart is always done in the
+context of the restarting task.
 
 Changelog[v14]:
-  - Introduce patch
+  - Refuse non-self checkpoint if target task isn't frozen
+
+Changelog[v12]:
+  - Replace obsolete cr_debug() with pr_debug()
+
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint_mem.h |   18 ++++++++++++++++++
- ipc/shm.c                   |    4 ++--
- mm/shmem.c                  |   12 ++++++------
- 3 files changed, 26 insertions(+), 8 deletions(-)
+ checkpoint/checkpoint.c    |   73 ++++++++++++++++++++++++++++++++++++++++++-
+ checkpoint/restart.c       |    4 +-
+ checkpoint/sys.c           |    6 +++
+ include/linux/checkpoint.h |    2 +
+ 4 files changed, 81 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/checkpoint_mem.h b/checkpoint/checkpoint_mem.h
-index de1d4c8..3157dde 100644
---- a/checkpoint/checkpoint_mem.h
-+++ b/checkpoint/checkpoint_mem.h
-@@ -43,4 +43,22 @@ static inline int cr_pgarr_nr_free(struct cr_pgarr *pgarr)
- 	return CR_PGARR_TOTAL - pgarr->nr_used;
- }
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 248d594..a5db9be 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -10,6 +10,8 @@
  
-+/*
-+ * This probably belongs in include/linux/mm.h
-+ */
-+
-+/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
-+enum sgp_type {
-+	SGP_READ,	/* don't exceed i_size, don't allocate page */
-+	SGP_CACHE,	/* don't exceed i_size, may allocate page */
-+	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
-+	SGP_WRITE,	/* may exceed i_size, may allocate page */
-+};
-+
-+int shmem_getpage(struct inode *inode, unsigned long idx,
-+		  struct page **pagep, enum sgp_type sgp, int *type);
-+
-+extern struct vm_operations_struct shmem_vm_ops;
-+extern struct vm_operations_struct shm_vm_ops;
-+
- #endif /* _CHECKPOINT_CKPT_MEM_H_ */
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 05d51d2..719f329 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -54,7 +54,7 @@ struct shm_file_data {
- #define shm_file_data(file) (*((struct shm_file_data **)&(file)->private_data))
- 
- static const struct file_operations shm_file_operations;
--static struct vm_operations_struct shm_vm_ops;
-+struct vm_operations_struct shm_vm_ops;
- 
- #define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
- 
-@@ -311,7 +311,7 @@ static const struct file_operations shm_file_operations = {
- 	.get_unmapped_area	= shm_get_unmapped_area,
- };
- 
--static struct vm_operations_struct shm_vm_ops = {
-+struct vm_operations_struct shm_vm_ops = {
- 	.open	= shm_open,	/* callback for a new vm-area open */
- 	.close	= shm_close,	/* callback for when the vm-area is released */
- 	.fault	= shm_fault,
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 4103a23..e5abf26 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -103,8 +103,8 @@ static unsigned long shmem_default_max_inodes(void)
- }
- #endif
- 
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			 struct page **pagep, enum sgp_type sgp, int *type);
-+int shmem_getpage(struct inode *inode, unsigned long idx,
-+		  struct page **pagep, enum sgp_type sgp, int *type);
- 
- static inline struct page *shmem_dir_alloc(gfp_t gfp_mask)
+ #include <linux/version.h>
+ #include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -240,6 +242,11 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
  {
-@@ -203,7 +203,7 @@ static const struct file_operations shmem_file_operations;
- static const struct inode_operations shmem_inode_operations;
- static const struct inode_operations shmem_dir_inode_operations;
- static const struct inode_operations shmem_special_inode_operations;
--static struct vm_operations_struct shmem_vm_ops;
-+struct vm_operations_struct shmem_vm_ops;
+ 	int ret;
  
- static struct backing_dev_info shmem_backing_dev_info  __read_mostly = {
- 	.ra_pages	= 0,	/* No readahead */
-@@ -1187,8 +1187,8 @@ static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
-  * vm. If we swap it in we mark it dirty since we also free the swap
-  * entry since a page cannot live in both the swap and page cache
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task may not be in state TASK_DEAD\n");
++		return -EAGAIN;
++	}
++
+ 	ret = cr_write_task_struct(ctx, t);
+ 	cr_debug("task_struct: ret %d\n", ret);
+ 	if (ret < 0)
+@@ -262,22 +269,84 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 	return ret;
+ }
+ 
++static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
++{
++	struct task_struct *task = NULL;
++	struct nsproxy *nsproxy = NULL;
++	int err = -ESRCH;
++
++	ctx->root_pid = pid;
++
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
++
++	if (!task)
++		goto out;
++
++#if 0	/* enable to use containers */
++	if (!is_container_init(task)) {
++		err = -EINVAL;
++		goto out;
++	}
++#endif
++
++	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
++		err = -EPERM;
++		goto out;
++	}
++
++	/* verify that the task is frozen (unless self) */
++	if (task != current && !frozen(task))
++		return -EBUSY;
++
++	rcu_read_lock();
++	if (task_nsproxy(task)) {
++		nsproxy = task_nsproxy(task);
++		get_nsproxy(nsproxy);
++	}
++	rcu_read_unlock();
++
++	if (!nsproxy)
++		goto out;
++
++	ctx->root_task = task;
++	ctx->root_nsproxy = nsproxy;
++
++	return 0;
++
++ out:
++	if (task)
++		put_task_struct(task);
++	return err;
++}
++
++/* setup checkpoint-specific parts of ctx */
+ static int cr_ctx_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	struct fs_struct *fs;
++	int ret;
+ 
+ 	ctx->root_pid = pid;
+ 
++	ret = cr_get_container(ctx, pid);
++	if (ret < 0)
++		return ret;
++
+ 	/*
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
+ 
+-	fs = current->fs;
++	task_lock(ctx->root_task);
++	fs = ctx->root_task->fs;
+ 	read_lock(&fs->lock);
+ 	ctx->fs_mnt = fs->root;
+ 	path_get(&ctx->fs_mnt);
+ 	read_unlock(&fs->lock);
++	task_unlock(ctx->root_task);
+ 
+ 	return 0;
+ }
+@@ -292,7 +361,7 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	ret = cr_write_head(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_write_task(ctx, current);
++	ret = cr_write_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_write_tail(ctx);
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 2435f4c..9623cfb 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -291,7 +291,7 @@ static int cr_read_task(struct cr_ctx *ctx)
+ }
+ 
+ /* setup restart-specific parts of ctx */
+-static int cr_ctx_restart(struct cr_ctx *ctx)
++static int cr_ctx_restart(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	return 0;
+ }
+@@ -300,7 +300,7 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	int ret;
+ 
+-	ret = cr_ctx_restart(ctx);
++	ret = cr_ctx_restart(ctx, pid);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_read_head(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index eef774e..b1c60b1 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -9,6 +9,7 @@
   */
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			struct page **pagep, enum sgp_type sgp, int *type)
-+int shmem_getpage(struct inode *inode, unsigned long idx,
-+		  struct page **pagep, enum sgp_type sgp, int *type)
- {
- 	struct address_space *mapping = inode->i_mapping;
- 	struct shmem_inode_info *info = SHMEM_I(inode);
-@@ -2482,7 +2482,7 @@ static const struct super_operations shmem_ops = {
- 	.put_super	= shmem_put_super,
- };
  
--static struct vm_operations_struct shmem_vm_ops = {
-+struct vm_operations_struct shmem_vm_ops = {
- 	.fault		= shmem_fault,
- #ifdef CONFIG_NUMA
- 	.set_policy     = shmem_set_policy,
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -163,6 +164,11 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	cr_pgarr_free(ctx);
+ 	cr_objhash_free(ctx);
+ 
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++
+ 	kfree(ctx);
+ }
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index ad4322d..3a6cef9 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -19,6 +19,8 @@ struct cr_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+ 	pid_t root_pid;		/* container identifier */
++	struct task_struct *root_task;	/* container root task */
++	struct nsproxy *root_nsproxy;	/* container root nsproxy */
+ 
+ 	unsigned long flags;
+ 	unsigned long oflags;	/* restart: old flags */
 -- 
 1.5.4.3
