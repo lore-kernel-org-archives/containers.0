@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 01/23] Create syscalls: sys_checkpoint, sys_restart
-Date: Fri, 20 Mar 2009 14:47:26 -0400
-Message-ID: <1237574868-3371-2-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 16/23] Restore open pipes
+Date: Fri, 20 Mar 2009 14:47:41 -0400
+Message-ID: <1237574868-3371-17-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,193 +21,212 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file descriptor.
+When seeing a CR_FD_PIPE file type, we create a new pipe and thus
+have two file pointers (read- and write- ends). We only use one of
+them, depending on which side was checkpointed first. We register the
+file pointer of the other end in the hash table, with the 'objref'
+given for this pipe from the checkpoint, deposited for later use. At
+this point we also restore the contents of the pipe buffers.
 
-The syscalls take a file descriptor (for the image file) and flags as
-arguments. For sys_checkpoint the first argument identifies the target
-container; for sys_restart it will identify the checkpoint image.
+When the other end arrives, it will have file type CR_FD_OBJREF. We
+will then use the corresponding 'objref' to retrieve the file pointer
+from the hash table, and attach it to the process.
 
-A checkpoint, much like a process coredump, dumps the state of multiple
-processes at once, including the state of the container. The checkpoint
-image is written to (and read from) the file descriptor directly from
-the kernel. This way the data is generated and then pushed out naturally
-as resources and tasks are scanned to save their state. This is the
-approach taken by, e.g., Zap and OpenVZ.
+Note the difference from the checkpoint logic: during checkpoint we
+placed the _inode_ of the pipe in the hash table, while during restart
+we place the resulting _file_ in the hash table.
 
-By using a return value and not a file descriptor, we can distinguish
-between a return from checkpoint, a return from restart (in case of a
-checkpoint that includes self, i.e. a task checkpointing its own
-container, or itself), and an error condition, in a manner analogous
-to a fork() call.
-
-We don't use copy_from_user()/copy_to_user() because it requires
-holding the entire image in user space, and does not make sense for
-restart.  Also, we don't use a pipe, pseudo-fs file and the like,
-because they work by generating data on demand as the user pulls it
-(unless the entire image is buffered in the kernel) and would require
-more complex logic.  They also would significantly complicate
-checkpoint that includes self.
+We restore the pipe contents we manually allocation and attaching
+buffers to the pipe; (alternatively we could read the data from the
+image file and then write it into the pipe, or use splice() syscall).
 
 Changelog[v14]:
-  - Change CONFIG_CHEKCPOINT_RESTART to CONFIG_CHECKPOINT (Ingo)
-  - Remove line 'def_bool n' (default is already 'n')
-
-Changelog[v5]:
-  - Config is 'def_bool n' by default
+  - Discard the 'h.parent' field
+  - Check whether calls to cr_hbuf_get() fail
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- arch/x86/include/asm/unistd_32.h   |    2 +
- arch/x86/kernel/syscall_table_32.S |    2 +
- checkpoint/Kconfig                 |   10 ++++++++
- checkpoint/Makefile                |    5 ++++
- checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
- include/linux/syscalls.h           |    2 +
- init/Kconfig                       |    2 +
- kernel/sys_ni.c                    |    4 +++
- 8 files changed, 68 insertions(+), 0 deletions(-)
- create mode 100644 checkpoint/Kconfig
- create mode 100644 checkpoint/Makefile
- create mode 100644 checkpoint/sys.c
+ checkpoint/checkpoint_file.h |    2 +
+ checkpoint/rstr_file.c       |  124 +++++++++++++++++++++++++++++++++++++++++-
+ fs/pipe.c                    |    2 +-
+ 3 files changed, 125 insertions(+), 3 deletions(-)
 
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index f2bba78..a5f9e09 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -338,6 +338,8 @@
- #define __NR_dup3		330
- #define __NR_pipe2		331
- #define __NR_inotify_init1	332
-+#define __NR_checkpoint		333
-+#define __NR_restart		334
+diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
+index 9dc3eba..cac1a5d 100644
+--- a/checkpoint/checkpoint_file.h
++++ b/checkpoint/checkpoint_file.h
+@@ -14,4 +14,6 @@
  
- #ifdef __KERNEL__
+ int cr_scan_fds(struct files_struct *files, int **fdtable);
  
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index e2e86a0..9f8c398 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -332,3 +332,5 @@ ENTRY(sys_call_table)
- 	.long sys_dup3			/* 330 */
- 	.long sys_pipe2
- 	.long sys_inotify_init1
-+	.long sys_checkpoint
-+	.long sys_restart
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-new file mode 100644
-index 0000000..d7e7a68
---- /dev/null
-+++ b/checkpoint/Kconfig
-@@ -0,0 +1,10 @@
-+config CHECKPOINT
-+	bool "Enable checkpoint/restart (EXPERIMENTAL)"
-+	depends on X86_32 && EXPERIMENTAL
-+	help
-+	  Application checkpoint/restart is the ability to save the
-+	  state of a running application so that it can later resume
-+	  its execution from the time at which it was checkpointed.
++extern const struct pipe_buf_operations anon_pipe_buf_ops;
 +
-+	  Turning this option on will enable checkpoint and restart
-+	  functionality in the kernel.
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-new file mode 100644
-index 0000000..8a32c6f
---- /dev/null
-+++ b/checkpoint/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for linux checkpoint/restart.
-+#
-+
-+obj-$(CONFIG_CHECKPOINT) += sys.o
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-new file mode 100644
-index 0000000..375129c
---- /dev/null
-+++ b/checkpoint/sys.c
-@@ -0,0 +1,41 @@
-+/*
-+ *  Generic container checkpoint-restart
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/sched.h>
-+#include <linux/kernel.h>
-+
-+/**
-+ * sys_checkpoint - checkpoint a container
-+ * @pid: pid of the container init(1) process
-+ * @fd: file to which dump the checkpoint image
-+ * @flags: checkpoint operation flags
-+ *
-+ * Returns positive identifier on success, 0 when returning from restart
-+ * or negative value on error
-+ */
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
+ #endif /* _CHECKPOINT_CKPT_FILE_H_ */
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
+index 41efadb..2cbc308 100644
+--- a/checkpoint/rstr_file.c
++++ b/checkpoint/rstr_file.c
+@@ -14,6 +14,8 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
++#include <linux/pagemap.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/syscalls.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+@@ -86,6 +88,121 @@ static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
+ 	return (ret < 0 ? ERR_PTR(ret) : file);
+ }
+ 
++/* cr_read_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
++static int
++cr_read_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe, int nbufs)
 +{
-+	pr_debug("sys_checkpoint not implemented yet\n");
-+	return -ENOSYS;
++	void *kbuf, *addr;
++	int i, ret = 0;
++
++	kbuf = (void *) __get_free_page(GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
++
++	for (i = 0; i < nbufs; i++) {
++		struct pipe_buffer *pbuf = pipe->bufs + i;
++		struct page *page;
++		int len = PAGE_SIZE;
++
++		ret = cr_read_buffer(ctx, kbuf, &len);
++		if (ret < 0)
++			break;
++		page = alloc_page(GFP_HIGHUSER);
++		if (!page) {
++			ret = -ENOMEM;
++			break;
++		}
++
++		addr = kmap_atomic(page, KM_USER0);
++		memcpy(addr, kbuf, len);
++		kunmap_atomic(addr, KM_USER0);
++
++		pbuf->page = page;
++		pbuf->ops = &anon_pipe_buf_ops;
++		pbuf->offset = 0;
++		pbuf->len = len;
++		pipe->nrbufs++;
++		pipe->tmp_page = NULL;
++	}
++
++	free_page((unsigned long) kbuf);
++	return ret;
 +}
-+/**
-+ * sys_restart - restart a container
-+ * @crid: checkpoint image identifier
-+ * @fd: file from which read the checkpoint image
-+ * @flags: restart operation flags
-+ *
-+ * Returns negative value on error, or otherwise returns in the realm
-+ * of the original checkpoint
-+ */
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
++
++/* cr_read_pipe - restore pipe (assume i_mutex taken) */
++static int cr_read_pipe(struct cr_ctx *ctx, int pipefd)
 +{
-+	pr_debug("sys_restart not implemented yet\n");
-+	return -ENOSYS;
++	struct cr_hdr_fd_pipe *hh;
++	struct file *file;
++	struct inode *inode;
++	int nbufs, ret;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_PIPE);
++	nbufs = hh->nr_bufs;
++	cr_hbuf_put(ctx, sizeof(*hh));
++
++	if (ret < 0)
++		return ret;
++	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
++		return -EINVAL;
++
++	file = fget(pipefd);
++	if (!file)
++		return -EIO;
++
++	inode = file->f_dentry->d_inode;
++	mutex_lock(&inode->i_mutex);
++	ret = cr_read_pipebuf(ctx, inode->i_pipe, nbufs);
++	mutex_unlock(&inode->i_mutex);
++
++	fput(file);
++	return ret;
 +}
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index f9f900c..b96b61b 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -691,6 +691,8 @@ asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
- 			  size_t);
- asmlinkage long sys_pipe2(int __user *, int);
- asmlinkage long sys_pipe(int __user *);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
- 
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index 6a5c5fe..42355df 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -952,6 +952,8 @@ config MARKERS
- 
- source "arch/Kconfig"
- 
-+source "checkpoint/Kconfig"
 +
- endmenu		# General setup
- 
- config HAVE_GENERIC_DMA_COHERENT
-diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-index 27dad29..e9e749d 100644
---- a/kernel/sys_ni.c
-+++ b/kernel/sys_ni.c
-@@ -175,3 +175,7 @@ cond_syscall(compat_sys_timerfd_settime);
- cond_syscall(compat_sys_timerfd_gettime);
- cond_syscall(sys_eventfd);
- cond_syscall(sys_eventfd2);
++/* restore a pipe */
++static int cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++{
++	struct file *file;
++	int fds[2], which, ret;
 +
-+/* checkpoint/restart */
-+cond_syscall(sys_checkpoint);
-+cond_syscall(sys_restart);
++	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++	else if (file)
++		return cr_attach_get_file(file);
++
++	/* first encounter of this pipe: create it */
++	ret = do_pipe(fds);
++	if (ret < 0)
++		return ret;
++
++	which = (hh->f_flags & O_WRONLY ? 1 : 0);
++
++	/*
++	 * Below we return the fd corersponding to one side of the pipe
++	 * for our caller to use. Now register the other side of the pipe
++	 * in the hash, to be picked up when that side is to be restored.
++	 */
++	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
++
++	ret = cr_read_pipe(ctx, fds[which]);
++ out:
++	sys_close(fds[1-which]);	/* this side isn't used anymore */
++	if (ret < 0)
++		sys_close(fds[which]);
++	else
++		ret = fds[which];
++	return ret;
++}
++
+ /* return a new fd associated with a the file referenced by @hh->objref */
+ static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
+ {
+@@ -138,12 +255,15 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
+ 	/* FIX: more sanity checks on f_flags, f_mode etc */
+ 
+ 	switch (hh->fd_type) {
++	case CR_FD_OBJREF:
++		fd = cr_read_fd_objref(ctx, hh);
++		break;
+ 	case CR_FD_FILE:
+ 	case CR_FD_DIR:
+ 		fd = cr_read_fd_file(ctx, hh);
+ 		break;
+-	case CR_FD_OBJREF:
+-		fd = cr_read_fd_objref(ctx, hh);
++	case CR_FD_PIPE:
++		fd = cr_read_fd_pipe(ctx, hh);
+ 		break;
+ 	default:
+ 		goto out;
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 14f502b..f192c1c 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -268,7 +268,7 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *info,
+ 	return 0;
+ }
+ 
+-static const struct pipe_buf_operations anon_pipe_buf_ops = {
++const struct pipe_buf_operations anon_pipe_buf_ops = {
+ 	.can_merge = 1,
+ 	.map = generic_pipe_buf_map,
+ 	.unmap = generic_pipe_buf_unmap,
 -- 
 1.5.4.3
