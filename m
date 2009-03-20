@@ -1,15 +1,18 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14-rc][PATCH 17/23] Record 'struct file' object instead
-	of the file name for VMAs
-Date: Fri, 20 Mar 2009 13:57:55 -0700
-Message-ID: <1237582675.8286.281.camel@nimitz>
-References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
-	<1237574868-3371-18-git-send-email-orenl@cs.columbia.edu>
+Subject: Re: [PATCH] c/r: Add UTS support (v4)
+Date: Fri, 20 Mar 2009 14:00:25 -0700
+Message-ID: <1237582825.8286.285.camel@nimitz>
+References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
+	<49C2C686.2060806@cs.columbia.edu>
+	<871vstdtn1.fsf@caffeine.danplanet.com>
+	<49C2CDFA.4010907@cs.columbia.edu> <49C2D183.8040905@cs.columbia.edu>
+	<20090320181043.GB8380@us.ibm.com> <49C3EFAF.9030706@cs.columbia.edu>
+	<1237579196.8286.239.camel@nimitz> <49C4011C.1050707@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1237574868-3371-18-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <49C4011C.1050707-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,60 +23,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-03-20 at 14:47 -0400, Oren Laadan wrote:
-> +       /* if file-backed, add 'file' to the hash (will keep a reference) */
-> +       if (vma->vm_file) {
-> +               new = cr_obj_add_ptr(ctx, vma->vm_file,
-> +                                    &objref, CR_OBJ_FILE, 0);
-> +               cr_debug("vma %p objref %d file %p)\n",
-> +                        vma, objref, vma->vm_file);
-> +               if (new < 0) {
-> +                       ret  = new;
-> +                       goto out;
-> +               }
-> +       }
+On Fri, 2009-03-20 at 16:48 -0400, Oren Laadan wrote:
+> Does that scale well with many (1000's) of tasks ?
+> 
+> (The motivation to expose 'nsproxy_objref' to user space was to allow
+> user-space to decide on a sequence of clones/unshared that will create
+> an equivalent process tree with space-efficient nsproxy's).
 
-This is a very, very common pattern in these patches now.
+OK, so you're saying that there's no way for userspace to tell that a
+set of tasks share an nsproxy other than exporting that nsproxy?
 
-Can't we do better than this?  The objhash already has intimate
-knowledge of the files with which it deals.  So, why not also teach it
-how to write those into the checkpoint stream?  
- 
-int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
-                   unsigned short type, unsigned short flags)
-{
-        struct cr_objref *obj;
-        int ret = 0;
+> Perhaps instead of nsproxy_equal() we could use an 'nsproxy_objref'
+> to know a-priori that it is common, and save the "compare-and-swap"
+> phase altogether.
 
-        obj = cr_obj_find_by_ptr(ctx, ptr);
-        if (!obj) {
-                obj = cr_obj_new(ctx, ptr, 0, type, flags);
-                if (IS_ERR(obj))
-                        return PTR_ERR(obj);
-                else
-                        ret = 1;
-
-        } else if (obj->type != type)   /* sanity check */
-                return -EINVAL;
-        *objref = obj->objref;
--       return ret;
-+	return cr_write_object(ctx, ptr, type);
-}
-
-int cr_write_object(ctx, ptr, type)
-{
-	switch(type) {
-		...
-		case CR_OBJ_FILE:
-			return cr_write_file(ctx, (file *)ptr);
-		...
-	}
-}
-
-Why not?  It fits in with the rest of the objhash.
-
+Sure, that's workable.  The important thing is that it is an
+optimization that can be left for later.
 
 -- Dave
