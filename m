@@ -1,24 +1,18 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Fri, 20 Mar 2009 17:58:15 -0400
-Message-ID: <49C41177.6000908@cs.columbia.edu>
-References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>	
-	<49C2C686.2060806@cs.columbia.edu>
-	<871vstdtn1.fsf@caffeine.danplanet.com>	
-	<49C2CDFA.4010907@cs.columbia.edu>
-	<49C2D183.8040905@cs.columbia.edu>	
-	<20090320181043.GB8380@us.ibm.com>
-	<49C3EFAF.9030706@cs.columbia.edu>	
-	<1237579196.8286.239.camel@nimitz>
-	<49C4011C.1050707@cs.columbia.edu>	
-	<1237582825.8286.285.camel@nimitz>
-	<49C40A23.6080708@cs.columbia.edu>
-	<1237585188.8286.319.camel@nimitz>
+Subject: Re: [RFC v14-rc][PATCH 17/23] Record 'struct file' object instead
+	of the file name for VMAs
+Date: Fri, 20 Mar 2009 18:02:27 -0400
+Message-ID: <49C41273.5000202@cs.columbia.edu>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>	
+	<1237574868-3371-18-git-send-email-orenl@cs.columbia.edu>	
+	<1237582675.8286.281.camel@nimitz>
+	<49C40893.1060602@cs.columbia.edu>
+	<1237584650.8286.310.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1237585188.8286.319.camel@nimitz>
+In-Reply-To: <1237584650.8286.310.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,44 +23,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
 Dave Hansen wrote:
-> On Fri, 2009-03-20 at 17:26 -0400, Oren Laadan wrote:
->> Dave Hansen wrote:
->>> On Fri, 2009-03-20 at 16:48 -0400, Oren Laadan wrote:
->>>> Does that scale well with many (1000's) of tasks ?
->>>>
->>>> (The motivation to expose 'nsproxy_objref' to user space was to allow
->>>> user-space to decide on a sequence of clones/unshared that will create
->>>> an equivalent process tree with space-efficient nsproxy's).
->>> OK, so you're saying that there's no way for userspace to tell that a
->>> set of tasks share an nsproxy other than exporting that nsproxy?
->> I don't think so. Maybe the namespaces people know better.
+> On Fri, 2009-03-20 at 17:20 -0400, Oren Laadan wrote:
+>> What you suggest will reverse the order ... so while we expect to find
+>> a vma, we'll find a file object. I'm wonder if it's worth changing the
+>> format and logic for this.
 > 
-> Please go look at the code.
-
-
-Heheh .. read: "I don't think so" as in "I don't think tasks in user
-space can tell whether or not they share an nsproxy in the kernel."
-
-(and the corollary follows ...)
-
-> 
-> Two processes share an nsproxy (or *can* share an nsproxy) when all of
-> the namespace pointers are the same.  After allocation and
-> initialization, we basically don't ever write to the nsproxy.  We just
-> hook it into a task and run with it.
-> 
-> If anything ever unshares one of the nsproxy namespaces, before writing
-> to it we *first* create a new nsproxy which is a copy of the old one.
-> 
-> We basically open-code copy-on-write semantics for the nsproxy.
-> 
-> This means that it is safe for any two tasks that share all of the
-> pointers in the nsproxy to share an nsproxy itself.
+> It makes logical sense to me to do this.  You depend on the file to
+> create the VMA.  It makes sense to see dependencies before the object
+> that is doing the depending.
 > 
 > -- Dave
+> 
+
+Or: you look at the vma header to know that you depend on the file...
+(not that I really care how logic reads)
+
+Anyway, the down side that I was hoping to avoid on restart, is to need
+to expect "either...or" values of 'struct cr_hdr'->type instead of a
+single deterministic value. That's the extra burden that I was referring
+to.
+
+Oren.
