@@ -1,18 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Fri, 20 Mar 2009 13:10:43 -0500
-Message-ID: <20090320181043.GB8380@us.ibm.com>
-References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
-	<49C2C686.2060806@cs.columbia.edu>
-	<871vstdtn1.fsf@caffeine.danplanet.com>
-	<49C2CDFA.4010907@cs.columbia.edu>
-	<49C2D183.8040905@cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v14-rc][PATCH 03/23] Make file_pos_read/write() public
+Date: Fri, 20 Mar 2009 14:47:28 -0400
+Message-ID: <1237574868-3371-4-git-send-email-orenl@cs.columbia.edu>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49C2D183.8040905-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1237574868-3371-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,39 +17,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> What got me confused was that you loop over all tasks, which is not
-> needed because was assume they all share the name nsproxy; And in
-> restart, you unshare() many times by the same task, so all but the
-> last unshare() are useless.  In other words, I wonder what is the
-> need for that loop over all processes.
-> 
-> Here is a suggestion for a simple change that is likely to be a step
-> towards more generic solution in the future:
-> 
-> The nsprox is a property of a task, and it is (possibly) shared. We
-> can put the data either on the pids_arr or on the cr_hdr_task itself.
-> For simplicity (and to work with your scheme) let's assume the former.
-> 
-> We can extend the pids_arr to have a ns_objref field, that will hold
-> the objref of the nxproxy. Of course, now, all pids_arr will have the
-> same objref, or else ...  This data will follow the pids_arr data in
-> the image.
-> 
-> During checkpoint, we read the pids_arr from the image, and then for
-> each objref of an nsproxy that is seen for the first time, we read
-> the state of that nsproxy and restore a new one. (In our simple case,
-> there will always be exactly one).
+These two are used in the next patch when calling vfs_read/write()
 
-The nsproxy is not the right thing to record.  Rather, it
-should record a bitmap  of namespaces which are to be private
-from the parent task.  Then for each private ns, an optional
-section with configuration info.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ fs/read_write.c    |   10 ----------
+ include/linux/fs.h |   10 ++++++++++
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-(maybe that is waht you meant by 'recording the nsproxy')
-
--serge
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 400fe81..4f9264a 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -359,16 +359,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+ 
+ EXPORT_SYMBOL(vfs_write);
+ 
+-static inline loff_t file_pos_read(struct file *file)
+-{
+-	return file->f_pos;
+-}
+-
+-static inline void file_pos_write(struct file *file, loff_t pos)
+-{
+-	file->f_pos = pos;
+-}
+-
+ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+ {
+ 	struct file *file;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 92734c0..3bf5057 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1372,6 +1372,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
+ 				struct iovec *fast_pointer,
+ 				struct iovec **ret_pointer);
+ 
++static inline loff_t file_pos_read(struct file *file)
++{
++	return file->f_pos;
++}
++
++static inline void file_pos_write(struct file *file, loff_t pos)
++{
++	file->f_pos = pos;
++}
++
+ extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
+ extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
+ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+-- 
+1.5.4.3
