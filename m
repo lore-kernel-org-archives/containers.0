@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 21/23] s390: Expose a constant for the number of
-	words representing the CRs
-Date: Fri, 20 Mar 2009 14:47:46 -0400
-Message-ID: <1237574868-3371-22-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 22/23] c/r: Add CR_COPY() macro (v4)
+Date: Fri, 20 Mar 2009 14:47:47 -0400
+Message-ID: <1237574868-3371-23-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,57 +21,70 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We need to use this value in the checkpoint/restart code and would like to
-have a constant instead of a magic '3'.
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+As suggested by Dave[1], this provides us a way to make the copy-in and
+copy-out processes symmetric.  CR_COPY_ARRAY() provides us a way to do
+the same thing but for arrays.  It's not critical, but it helps us unify
+the checkpoint and restart paths for some things.
 
 Changelog:
-    Mar 03:
-            . Picked up additional use of magic '3' in ptrace.h
+    Mar 04:
+            . Removed semicolons
+            . Added build-time check for __must_be_array in CR_COPY_ARRAY
+    Feb 27:
+            . Changed CR_COPY() to use assignment, eliminating the need
+              for the CR_COPY_BIT() macro
+            . Add CR_COPY_ARRAY() macro to help copying register arrays,
+              etc
+            . Move the macro definitions inside the CR #ifdef
+    Feb 25:
+            . Changed WARN_ON() to BUILD_BUG_ON()
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/include/asm/ptrace.h   |    4 +++-
- arch/s390/kernel/compat_ptrace.h |    3 ++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-diff --git a/arch/s390/include/asm/ptrace.h b/arch/s390/include/asm/ptrace.h
-index 8920025..f1b0516 100644
---- a/arch/s390/include/asm/ptrace.h
-+++ b/arch/s390/include/asm/ptrace.h
-@@ -172,6 +172,8 @@
- #define NUM_CRS		16
- #define NUM_ACRS	16
+1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
+---
+ include/linux/checkpoint.h |   26 ++++++++++++++++++++++++++
+ 1 files changed, 26 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 69d14c4..2e99c74 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -117,6 +117,32 @@ extern int cr_read_mm(struct cr_ctx *ctx);
+ extern int cr_read_fd_table(struct cr_ctx *ctx);
+ extern int cr_read_file(struct cr_ctx *ctx, int objref);
  
-+#define NUM_CR_WORDS	3
++/* useful macros to copy fields and buffers to/from cr_hdr_xxx structures */
++#define CR_CPT 1
++#define CR_RST 2
 +
- #define FPR_SIZE	8
- #define FPC_SIZE	4
- #define FPC_PAD_SIZE	4 /* gcc insists on aligning the fpregs */
-@@ -334,7 +336,7 @@ struct pt_regs
-  */
- typedef struct
- {
--	unsigned long cr[3];
-+	unsigned long cr[NUM_CR_WORDS];
- } per_cr_words;
++#define CR_COPY(op, a, b)				        \
++	do {							\
++		if (op == CR_CPT)				\
++			a = b;					\
++		else						\
++			b = a;					\
++	} while (0)
++
++/*
++ * Copy @count items from @b to @a if op is CR_CPT (otherwise,
++ * copy in the reverse direction)
++ */
++#define CR_COPY_ARRAY(op, a, b, count)				\
++	do {							\
++		BUILD_BUG_ON(sizeof(*a) != sizeof(*b));		\
++		if (op == CR_CPT)				\
++			memcpy(a, b, count * sizeof(*a));	\
++		else						\
++			memcpy(b, a, count * sizeof(*a));	\
++	} while (__must_be_array(a) && __must_be_array(b) && 0)
++
++
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
  
- #define PER_EM_MASK 0xE8000000UL
-diff --git a/arch/s390/kernel/compat_ptrace.h b/arch/s390/kernel/compat_ptrace.h
-index a2be3a9..123dd66 100644
---- a/arch/s390/kernel/compat_ptrace.h
-+++ b/arch/s390/kernel/compat_ptrace.h
-@@ -1,10 +1,11 @@
- #ifndef _PTRACE32_H
- #define _PTRACE32_H
- 
-+#include <asm/ptrace.h>    /* needed for NUM_CR_WORDS */
- #include "compat_linux.h"  /* needed for psw_compat_t */
- 
- typedef struct {
--	__u32 cr[3];
-+	__u32 cr[NUM_CR_WORDS];
- } per_cr_words32;
- 
- typedef struct {
 -- 
 1.5.4.3
