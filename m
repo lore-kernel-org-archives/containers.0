@@ -1,64 +1,31 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add powerpc signalfd syscall numbers
-Date: Thu, 19 Mar 2009 23:09:03 -0700
-Message-ID: <20090320060903.GA4360@us.ibm.com>
-References: <20090320054420.GB26719@us.ibm.com>
+From: Peter Zijlstra <peterz@infradead.org>
+Subject: Re: [PATCH 1/1] introduce user_ns inheritance in user-sched
+Date: Fri, 20 Mar 2009 09:24:20 +0100
+Message-ID: <1237537460.24626.32.camel@twins>
+References: <20090319211615.GA18383@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090320054420.GB26719-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755593AbZCTIZj@vger.kernel.org>
+In-Reply-To: <20090319211615.GA18383@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: lkml <linux-kernel@vger.kernel.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, mingo@elte.hu, Bharata B Rao <bharata@linux.vnet.ibm.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Argh, forgot to mention it's a patch for liblxc and not a kernel patch!
-
-Also I'm taking lxc-devel-TtF/mJH4Jtrk1uMJSBkQmQ@public.gmane.org off Cc since it seems to refuse email
-from non-members.
-
-On Thu, Mar 19, 2009 at 10:44:20PM -0700, Matt Helsley wrote:
-> Add signalfd and signalfd4 syscall number definitions for powerpc so
-> that we may compile even with older platform headers.
+On Thu, 2009-03-19 at 16:16 -0500, Serge E. Hallyn wrote:
+> In a kernel compiled with CONFIG_USER_SCHED=y, cpu shares are
+> allocated according to uid.  Shares are specifiable under
+> /sys/kernel/uids/<uid>/
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> diff --git a/src/lxc/start.c b/src/lxc/start.c
-> index 476d695..051e70c 100644
-> --- a/src/lxc/start.c
-> +++ b/src/lxc/start.c
-> @@ -51,6 +51,8 @@
->  #      define __NR_signalfd4 327
->  #    elif __x86_64__
->  #      define __NR_signalfd4 289
-> +#    elif __powerpc__
-> +#      define __NR_signalfd4 313
->  #    elif __s390x__
->  #      define __NR_signalfd4 322
->  #    endif
-> @@ -62,6 +64,8 @@
->  #      define __NR_signalfd 321
->  #    elif __x86_64__
->  #      define __NR_signalfd 282
-> +#    elif __powerpc__
-> +#      define __NR_signalfd 305
->  #    elif __s390x__
->  #      define __NR_signalfd 316
->  #    endif
+> In a kernel compiled with CONFIG_USER_NS=y, clone(2) with the
+> CLONE_NEWUSER flag creates a new user namespace, and the newly
+> cloned task will belong to uid 0 in the new user namespace.
 
-As best I can tell the only other syscall nr definitions missing for
-powerpc are the checkpoint/restart ones. I figured those were probably
-left out intentionally so I did not add them.
+We seem to be adding more and more stuff for USER_SCHED, is anybody
+actually using that cruft?
 
-Cheers,
-	-Matt Helsley
+How far along with cgroups are we to fully simulate that behaviour?
+
+I think if we have a capable cgroup based replacement for USER_SCHED we
+should axe it from the kernel, would save lots of code...
