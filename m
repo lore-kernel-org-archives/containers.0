@@ -1,18 +1,17 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Fri, 20 Mar 2009 15:34:07 -0400
-Message-ID: <49C3EFAF.9030706@cs.columbia.edu>
+Date: Fri, 20 Mar 2009 15:38:17 -0400
+Message-ID: <49C3F0A9.9080703@cs.columbia.edu>
 References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
 	<49C2C686.2060806@cs.columbia.edu>
 	<871vstdtn1.fsf@caffeine.danplanet.com>
 	<49C2CDFA.4010907@cs.columbia.edu>
-	<49C2D183.8040905@cs.columbia.edu>
-	<20090320181043.GB8380@us.ibm.com>
+	<20090320180506.GA8380@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090320181043.GB8380-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090320180506.GA8380-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,77 +29,88 @@ List-Id: containers.vger.kernel.org
 
 Serge E. Hallyn wrote:
 > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->> What got me confused was that you loop over all tasks, which is not
->> needed because was assume they all share the name nsproxy; And in
->> restart, you unshare() many times by the same task, so all but the
->> last unshare() are useless.  In other words, I wonder what is the
->> need for that loop over all processes.
 >>
->> Here is a suggestion for a simple change that is likely to be a step
->> towards more generic solution in the future:
+>> Dan Smith wrote:
+>>> OL> So what happens in the following scenario:
+>>>
+>>> OL> * task A is the container init(1)
+>>> OL> * A calls fork() to create task B
+>>> OL> * B calls unshare(CLONE_NEWUTS)
+>>> OL> * B calls clone(CLONE_PARENT) to create task C
+>>>
+>>> In the previous version of the patch, I failed the checkpoint if this
+>>> was the case by making sure that all tasks in the set had the same
+>>> nsproxy.  You said in IRC that this was already done elsewhere in the
+>>> infrastructure, but now that I look I don't see that anywhere.
+>>>
+>> in cr_may_checkpoint_task():
 >>
->> The nsprox is a property of a task, and it is (possibly) shared. We
->> can put the data either on the pids_arr or on the cr_hdr_task itself.
->> For simplicity (and to work with your scheme) let's assume the former.
+>>  285         /* FIXME: change this for nested containers */
+>>  286         if (task_nsproxy(t) != ctx->root_nsproxy)
+>>  287                 return -EPERM;
 >>
->> We can extend the pids_arr to have a ns_objref field, that will hold
->> the objref of the nxproxy. Of course, now, all pids_arr will have the
->> same objref, or else ...  This data will follow the pids_arr data in
->> the image.
->>
->> During checkpoint, we read the pids_arr from the image, and then for
->> each objref of an nsproxy that is seen for the first time, we read
->> the state of that nsproxy and restore a new one. (In our simple case,
->> there will always be exactly one).
+>>> The check I had was in response to Daniel's comments about avoiding
+>>> the situation for the time being by making sure that all the tasks had
+>>> the same set of namespaces (i.e. the same nsproxy at the time of
+>>> checkpoint).
+>>>
+>>> OL> Two approaches to solve this are:
+>>>
+>>> OL> a) Identify, in mktree, that this was the case, and impose an
+>>> OL> order on the forks/clones to recreate the same dependency (an
+>>> OL> algorithm for this is described in [1])
+>>>
+>>> OL> b) Do it in the kernel: for each nsproxy (identified by an objref)
+>>> OL> the first task that has it will create it during restart, in or
+>>> OL> out of the kernel, and the next task will simply attach to the
+>>> OL> existing one that will be deposited in the objhash.
+>>>
+>>> I think that prior discussion led to the conclusion that simplicity
+>>> wins for the moment, but if you want to solve it now I can cook up
+>>> some changes.
+>>>
+>> If we keep the assumption, for simplicity, that all tasks share the
+>> same namespace, then the checkpoint code should check, once, how that
+>> nsproxy differs from the container's parent (except for the obvious
+>> pidns).
 > 
-> The nsproxy is not the right thing to record.  Rather, it
-> should record a bitmap  of namespaces which are to be private
-> from the parent task.  Then for each private ns, an optional
-> section with configuration info.
+> I disagree.  Whether the container had its own utsns doesn't
+> affect whether it should have a private utsns on restart.
 
-Rethinking, I agree that the nsproxy is not the right thing to record.
-On the other hand, a bitmap is insufficient to expose the relationships
-of sharing.
+Right, I missed that...
 
-Putting aside the pidns for a second, I'd think that all other ns's may
-be relative easy to handle, even nested. Let me try to explain:
+>> If it does differ, e.g. in uts, then the checkpoint should save the
+>> uts state _once_ - as in global data. Restart will restore the state
+>> also _once_, for the init of the container (the first task restored),
+>> _before_ it forks the rest of the tree.
+>>
+>> Otherwise, we don't get the same outcome.
+> 
+> Again I disagree.  If we were planning on never supporting nested
+> uts namespaces it woudl be fine, but what you are talking about
+> is making sure we have to break the checkpoint format later to support
+> nested namespaces.
 
-1) An nsproxy is a shared resource, so it gets an nsproxy_objref
+We don't know how we are to support nested namespaces. So either we solve
+it now, or we do something that is bound to break later. The image format
+is going to change anyways as we move along.
 
-2) Each ns in an nsproxy is itself shared (analoguous to file and then inode,
-in pipes), so each ns also gets an ns_objref.
+> 
+> Rather, we should do:
+> 
+> 1. record the hostname for the container in global data.
+> 2. The restart program can decide whether to honor the global
+>    checkpoint image hostname or not.  It can either use a
+>    command line option, or check whether the recorded hostname
+>    is different from the restart host.  I prefer the former.
 
-3) In checkpoint, for each task we'll do:
-	if (nsproxy seen first time) {
-		alloc nsproxy_objref
-		for each ns in nsproxy {
-			if (ns seen first time) {
-				alloc ns_objref
-				save state of ns
-			} else {
-				save existing ns_objref
-			}
-		}
-	} else {
-		save existing nsproxy_objref
-	}
+Sounds good.
 
-4) In restart, we'll do the same, but also creating the ns's and the nsproxy's
+> 3. for each task, leave an optional spot for hostname.  If
+>    there is a hostname, then it will unshare(CLONE_NEWUTS)
+>    and set its hostname before calling sys_restart() or
+>    cloning any child tasks.
 
-Just as we can restore a file in one process and use the point for another
-process, we could pull the same trick to assign nsproxy's to processes, and
-to assign ns's to nsproxy's.
-
-The only caveat that is left, and which is also a constraint on the process,
-is the nspid - which, in a sense, is a property of the nsproxy.
-
-If we are to restore those in user space, then the nspid will eventually
-dictate, I believe, the order of forks when creating the tasks, just as the
-session id may be a constraint. I do need to think it further.
+Doesn't this imply a a specific format that is bound to break later ?
 
 Oren.
-
-> (maybe that is waht you meant by 'recording the nsproxy')
-> 
-> -serge
-> 
