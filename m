@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc][PATCH 20/23] Restore anonymous- and file-mapped- shared
-	memory
-Date: Fri, 20 Mar 2009 14:47:45 -0400
-Message-ID: <1237574868-3371-21-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc][PATCH 08/23] Infrastructure for shared objects
+Date: Fri, 20 Mar 2009 14:47:33 -0400
+Message-ID: <1237574868-3371-9-git-send-email-orenl@cs.columbia.edu>
 References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,373 +21,409 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The bulk of the work is in cr_read_vma(), which has been refactored:
-the part that create the suitable 'struct file *' for the mapping is
-now larger and moved to a separate function. What's left is to read
-the VMA description, get the file pointer, create the mapping, and
-proceed to read the contents in.
+Infrastructure to handle objects that may be shared and referenced by
+multiple tasks or other objects, e..g open files, memory address space
+etc.
 
-Both anonymous shared VMAs that have been read earlier (as indicated
-by a look up to objhash) and file-mapped shared VMAs are skipped.
-Anonymous shared VMAs seen for the first time have their contents
-read in directly to the backing inode, as indexed by the page numbers
-(as opposed to virtual addresses).
+The state of shared objects is saved once. On the first encounter, the
+state is dumped and the object is assigned a unique identifier (objref)
+and also stored in a hash table (indexed by its physical kenrel address).
+From then on the object will be found in the hash and only its identifier
+is saved.
 
-Changelog[v14]:
-  - Introduce patch
+On restart the identifier is looked up in the hash table; if not found
+then the state is read, the object is created, and added to the hash
+table (this time indexed by its identifier). Otherwise, the object in
+the hash table is used.
+
+The hash is "one-way": objects added to it are never deleted until the
+hash it discarded. The hash is discarded at the end of checkpoint or
+restart, whether successful or not.
+
+The hash keeps a reference to every object that is added to it, matching
+the object's type, and maintains this reference during its lifetime.
+Therefore, it is always safe to use an object that is stored in the hash.
+
+Changelog[v13]:
+  - Use hash_long() with 'unsigned long' cast to support 64bit archs
+    (Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>)
+
+Changelog[v11]:
+  - Doc: be explicit about grabbing a reference and object lifetime
+
+Changelog[v4]:
+  - Fix calculation of hash table size
+
+Changelog[v3]:
+  - Use standard hlist_... for hash table
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- checkpoint/rstr_mem.c          |  213 ++++++++++++++++++++++++++++++----------
- include/linux/checkpoint_hdr.h |    2 +-
- 2 files changed, 161 insertions(+), 54 deletions(-)
+ checkpoint/Makefile        |    2 +-
+ checkpoint/objhash.c       |  280 ++++++++++++++++++++++++++++++++++++++++++++
+ checkpoint/sys.c           |    4 +
+ include/linux/checkpoint.h |   20 +++
+ 4 files changed, 305 insertions(+), 1 deletions(-)
+ create mode 100644 checkpoint/objhash.c
 
-diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
-index 3dc73f4..5874868 100644
---- a/checkpoint/rstr_mem.c
-+++ b/checkpoint/rstr_mem.c
-@@ -75,13 +75,35 @@ static int cr_page_read(struct cr_ctx *ctx, struct page *page, char *buf)
- 	return 0;
- }
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index c2c16e0..8368a03 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -2,5 +2,5 @@
+ # Makefile for linux checkpoint/restart.
+ #
  
-+static struct page *cr_bring_private_page(unsigned long addr)
+-obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o \
++obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o objhash.o \
+ 		ckpt_mem.o rstr_mem.o
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+new file mode 100644
+index 0000000..17f43fc
+--- /dev/null
++++ b/checkpoint/objhash.c
+@@ -0,0 +1,280 @@
++/*
++ *  Checkpoint-restart - object hash infrastructure to manage shared objects
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/kernel.h>
++#include <linux/file.h>
++#include <linux/hash.h>
++#include <linux/checkpoint.h>
++
++struct cr_objref {
++	int objref;
++	void *ptr;
++	unsigned short type;
++	unsigned short flags;
++	struct hlist_node hash;
++};
++
++struct cr_objhash {
++	struct hlist_head *head;
++	int next_free_objref;
++};
++
++#define CR_OBJHASH_NBITS  10
++#define CR_OBJHASH_TOTAL  (1UL << CR_OBJHASH_NBITS)
++
++static void cr_obj_ref_drop(struct cr_objref *obj)
 +{
-+	struct page *page;
-+	int ret;
-+
-+	ret = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
-+	if (ret < 0)
-+		page = ERR_PTR(ret);
-+	return page;
-+}
-+
-+static struct page *cr_bring_shared_page(unsigned long idx, struct inode *ino)
-+{
-+	struct page *page;
-+	int ret;
-+
-+	ret = shmem_getpage(ino, idx, &page, SGP_WRITE, NULL);
-+	if (ret < 0)
-+		page = ERR_PTR(ret);
-+	return page;
-+}
-+
- /**
-  * cr_read_pages_contents - read in data of pages in page-array chain
-  * @ctx - restart context
-+ * @inode - inode of shmem object
-  */
--static int cr_read_pages_contents(struct cr_ctx *ctx)
-+static int cr_read_pages_contents(struct cr_ctx *ctx, struct inode *inode)
- {
--	struct mm_struct *mm = current->mm;
- 	struct cr_pgarr *pgarr;
- 	unsigned long *vaddrs;
- 	char *buf;
-@@ -91,16 +113,21 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
- 	if (!buf)
- 		return -ENOMEM;
- 
--	down_read(&mm->mmap_sem);
-+	down_read(&current->mm->mmap_sem);
- 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
- 		vaddrs = pgarr->vaddrs;
- 		for (i = 0; i < pgarr->nr_used; i++) {
- 			struct page *page;
- 
--			ret = get_user_pages(current, mm, vaddrs[i],
--					     1, 1, 1, &page, NULL);
--			if (ret < 0)
-+			if (inode)
-+				page = cr_bring_shared_page(vaddrs[i], inode);
-+			else
-+				page = cr_bring_private_page(vaddrs[i]);
-+
-+			if (IS_ERR(page)) {
-+				ret = PTR_ERR(page);
- 				goto out;
-+			}
- 
- 			ret = cr_page_read(ctx, page, buf);
- 			page_cache_release(page);
-@@ -111,14 +138,15 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
- 	}
- 
-  out:
--	up_read(&mm->mmap_sem);
-+	up_read(&current->mm->mmap_sem);
- 	kfree(buf);
- 	return 0;
- }
- 
- /**
-- * cr_read_private_vma_contents - restore contents of a VMA with private memory
-+ * cr_read_vma_contents - restore contents of a VMA with private memory
-  * @ctx - restart context
-+ * @file - mapped file (shared memory)
-  *
-  * Reads a header that specifies how many pages will follow, then reads
-  * a list of virtual addresses into ctx->pgarr_list page-array chain,
-@@ -126,12 +154,15 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
-  * these steps until reaching a header specifying "0" pages, which marks
-  * the end of the contents.
-  */
--static int cr_read_private_vma_contents(struct cr_ctx *ctx)
-+static int cr_read_vma_contents(struct cr_ctx *ctx, struct file *file)
- {
- 	struct cr_hdr_pgarr *hh;
-+	struct inode *inode;
- 	unsigned long nr_pages;
- 	int ret;
- 
-+	inode = (file ? file->f_dentry->d_inode : NULL);
-+
- 	while (1) {
- 		hh = cr_hbuf_get(ctx, sizeof(*hh));
- 		if (!hh)
-@@ -153,7 +184,7 @@ static int cr_read_private_vma_contents(struct cr_ctx *ctx)
- 		ret = cr_read_pages_vaddrs(ctx, nr_pages);
- 		if (ret < 0)
- 			break;
--		ret = cr_read_pages_contents(ctx);
-+		ret = cr_read_pages_contents(ctx, inode);
- 		if (ret < 0)
- 			break;
- 		cr_pgarr_reset_all(ctx);
-@@ -162,6 +193,34 @@ static int cr_read_private_vma_contents(struct cr_ctx *ctx)
- 	return ret;
- }
- 
-+/* restore contents of a VMA with private memory */
-+static int cr_read_private_vma_contents(struct cr_ctx *ctx)
-+{
-+	/*
-+	 * CR_VMA_ANON: read contents into memory
-+	 * CR_VMA_FILE: read contents into memory
-+	 */
-+
-+	return cr_read_vma_contents(ctx, NULL);
-+}
-+
-+/* restore contents of a VMA with shared memory */
-+static int cr_read_shared_vma_contents(struct cr_ctx *ctx,
-+				      struct file *file,
-+				      enum vm_type vma_type)
-+{
-+	/*
-+	 * CR_VMA_SHM_ANON: read contents into shmem object
-+	 * CR_VMA_SHM_ANON_SKIP: skip (has been read before)
-+	 * CR_VMA_SHM_FILE: skip (contents already in file system)
-+	 */
-+
-+	if (vma_type == CR_VMA_SHM_ANON)
-+		return cr_read_vma_contents(ctx, file);
-+	else
-+		return 0;
-+}
-+
- /**
-  * cr_calc_map_prot_bits - convert vm_flags to mmap protection
-  * orig_vm_flags: source vm_flags
-@@ -239,6 +298,70 @@ static struct file *cr_vma_read_file(struct cr_ctx *ctx, int objref)
- 	return file;
- }
- 
-+static struct file *cr_vma_prep_file(struct cr_ctx *ctx, struct cr_hdr_vma *hh)
-+{
-+	struct file *file = ERR_PTR(-EINVAL);
-+	unsigned long vm_flags = hh->vm_flags;
-+	int add = 0;
-+	int ret;
-+
-+	switch (hh->vma_type) {
-+	case CR_VMA_ANON:		/* private anonymous mapping */
-+		if (hh->shm_objref || hh->vma_objref)
-+			break;
-+		file = NULL;
-+		break;
-+	case CR_VMA_FILE:		/* private mapping from a file */
-+		if (hh->shm_objref || !hh->vma_objref)
-+			break;
-+		file = cr_vma_read_file(ctx, hh->vma_objref);
-+		break;
-+	case CR_VMA_SHM_ANON:		/* shared anonymous mapping */
-+		if (!hh->shm_objref || hh->vma_objref)
-+			break;
-+		/*
-+		 * We could leave file==NULL and let mmap (below) do the
-+		 * work. However, if 'shm_size != vm_end - vm_start', or if
-+		 * 'vm_pgoff != 0', then this vma reflects only a portion
-+		 * of the shm object. In this case we need to "manually"
-+		 * create the full shm object. So we do it anyway ...
-+		 */
-+		file = shmem_file_setup("/dev/zero", hh->shm_size, vm_flags);
-+		add = 1;
-+		break;
-+	case CR_VMA_SHM_ANON_SKIP:	/* shared anonymous mapping skipped */
-+		if (!hh->shm_objref || hh->vma_objref)
-+			break;
-+		file = cr_obj_get_by_ref(ctx, hh->shm_objref, CR_OBJ_FILE);
-+		if (!file)
-+			file = ERR_PTR(-EINVAL);
-+		if (!IS_ERR(file))
-+			get_file(file);
-+		break;
-+	case CR_VMA_SHM_FILE:		/* shared mapping of a file */
-+		if (!hh->shm_objref || !hh->vma_objref)
-+			break;
-+		file = cr_vma_read_file(ctx, hh->vma_objref);
++	switch (obj->type) {
++	case CR_OBJ_FILE:
++		fput((struct file *) obj->ptr);
 +		break;
 +	default:
-+		file = ERR_PTR(-EINVAL);
-+		break;
++		BUG();
 +	}
-+
-+	if (IS_ERR(file))
-+		return file;
-+
-+	if (add) {
-+		ret = cr_obj_add_ref(ctx, file,
-+				     hh->shm_objref, CR_OBJ_FILE, 0);
-+		if (ret < 0 && file)
-+			fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+
-+	return file;
 +}
 +
- static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- {
- 	struct cr_hdr_vma *hh;
-@@ -246,22 +369,29 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 	unsigned long addr;
- 	enum vm_type vma_type;
- 	struct file *file = NULL;
--	int ret;
-+	int shm, ret;
- 
- 	hh = cr_hbuf_get(ctx, sizeof(*hh));
- 	if (!hh)
- 		return -ENOMEM;
++static void cr_obj_ref_grab(struct cr_objref *obj)
++{
++	switch (obj->type) {
++	case CR_OBJ_FILE:
++		get_file((struct file *) obj->ptr);
++		break;
++	default:
++		BUG();
++	}
++}
 +
- 	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_VMA);
- 	if (ret < 0)
- 		goto out;
- 
--	cr_debug("vma %#lx-%#lx type %d\n", (unsigned long) hh->vm_start,
--		 (unsigned long) hh->vm_end, (int) hh->vma_type);
-+	cr_debug("vma %#lx-%#lx flags %#lx objref %d type %d\n",
-+		 (unsigned long) hh->vm_start, (unsigned long) hh->vm_end,
-+		 (unsigned long) hh->vm_flags, (int) hh->shm_objref,
-+		 (int) hh->vma_type);
- 
- 	ret = -EINVAL;
- 	if (hh->vm_end < hh->vm_start)
- 		goto out;
--	if (hh->vma_objref <= 0)
-+	if (hh->vma_objref < 0 || hh->shm_objref < 0)
-+		goto out;
++static void cr_objhash_clear(struct cr_objhash *objhash)
++{
++	struct hlist_head *h = objhash->head;
++	struct hlist_node *n, *t;
++	struct cr_objref *obj;
++	int i;
 +
-+	shm = !!hh->shm_objref;
-+	if (!(hh->vm_flags & VM_SHARED) ^ !shm)
- 		goto out;
- 
- 	vm_start = hh->vm_start;
-@@ -271,34 +401,22 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 	vm_flags = cr_calc_map_flags_bits(hh->vm_flags);
- 	vma_type = hh->vma_type;
- 
--	switch (vma_type) {
--
--	case CR_VMA_ANON:		/* anonymous private mapping */
--		if (vm_flags & VM_SHARED)
--			goto out;
--		/*
--		 * vm_pgoff for anonymous mapping is the "global" page
--		 * offset (namely from addr 0x0), so we force a zero
--		 */
-+	/*
-+	 * vm_pgoff for anonymous mapping is the "global" page
-+	 * offset (namely from addr 0x0), so we force a zero
-+	 */
-+	if (vma_type == CR_VMA_ANON)
- 		vm_pgoff = 0;
--		break;
--
--	case CR_VMA_FILE:		/* private mapping from a file */
--		if (vm_flags & VM_SHARED)
--			goto out;
--		file = cr_vma_read_file(ctx, hh->vma_objref);
--		if (IS_ERR(file)) {
--			ret = PTR_ERR(file);
--			file = NULL;
--			goto out;
--		}
--		break;
- 
--	default:
-+	/* prepare the file for this vma */
-+	file = cr_vma_prep_file(ctx, hh);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		file = NULL;
- 		goto out;
--
- 	}
- 
-+	/* create a new vma */
- 	down_write(&mm->mmap_sem);
- 	addr = do_mmap_pgoff(file, vm_start, vm_size,
- 			     vm_prot, vm_flags, vm_pgoff);
-@@ -311,23 +429,11 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 		goto out;
- 	}
- 
--	/*
--	 * CR_VMA_ANON: read in memory as is
--	 * CR_VMA_FILE: read in memory as is
--	 * (more to follow ...)
--	 */
--
--	switch (vma_type) {
--	case CR_VMA_ANON:
--	case CR_VMA_FILE:
--		/* standard case: read the data into the memory */
-+	/* read in the contents of this vma */
-+	if (shm)
-+		ret = cr_read_shared_vma_contents(ctx, file, vma_type);
-+	else
- 		ret = cr_read_private_vma_contents(ctx);
--		break;
--	default:
--		/* pacifcy gcc (the default will be caught above) */
--		ret = -EINVAL;
--		break;
--	}
- 
-  out:
- 	if (file)
-@@ -365,6 +471,7 @@ int cr_read_mm(struct cr_ctx *ctx)
- 	hh = cr_hbuf_get(ctx, sizeof(*hh));
- 	if (!hh)
- 		return -ENOMEM;
++	for (i = 0; i < CR_OBJHASH_TOTAL; i++) {
++		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
++			cr_obj_ref_drop(obj);
++			kfree(obj);
++		}
++	}
++}
 +
- 	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_MM);
- 	if (ret < 0)
- 		goto out;
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index c30c5f6..e8059b5 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -117,7 +117,7 @@ struct cr_hdr_mm {
++void cr_objhash_free(struct cr_ctx *ctx)
++{
++	struct cr_objhash *objhash = ctx->objhash;
++
++	if (objhash) {
++		cr_objhash_clear(objhash);
++		kfree(objhash->head);
++		kfree(ctx->objhash);
++		ctx->objhash = NULL;
++	}
++}
++
++int cr_objhash_alloc(struct cr_ctx *ctx)
++{
++	struct cr_objhash *objhash;
++	struct hlist_head *head;
++
++	objhash = kzalloc(sizeof(*objhash), GFP_KERNEL);
++	if (!objhash)
++		return -ENOMEM;
++	head = kzalloc(CR_OBJHASH_TOTAL * sizeof(*head), GFP_KERNEL);
++	if (!head) {
++		kfree(objhash);
++		return -ENOMEM;
++	}
++
++	objhash->head = head;
++	objhash->next_free_objref = 1;
++
++	ctx->objhash = objhash;
++	return 0;
++}
++
++static struct cr_objref *cr_obj_find_by_ptr(struct cr_ctx *ctx, void *ptr)
++{
++	struct hlist_head *h;
++	struct hlist_node *n;
++	struct cr_objref *obj;
++
++	h = &ctx->objhash->head[hash_long((unsigned long) ptr,
++					  CR_OBJHASH_NBITS)];
++	hlist_for_each_entry(obj, n, h, hash)
++		if (obj->ptr == ptr)
++			return obj;
++	return NULL;
++}
++
++static struct cr_objref *cr_obj_find_by_objref(struct cr_ctx *ctx, int objref)
++{
++	struct hlist_head *h;
++	struct hlist_node *n;
++	struct cr_objref *obj;
++
++	h = &ctx->objhash->head[hash_long((unsigned long) objref,
++					  CR_OBJHASH_NBITS)];
++	hlist_for_each_entry(obj, n, h, hash)
++		if (obj->objref == objref)
++			return obj;
++	return NULL;
++}
++
++/**
++ * cr_obj_new - allocate an object and add to the hash table
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @objref: unique object reference
++ * @type: object type
++ * @flags: object flags
++ *
++ * Allocate an object referring to @ptr and add to the hash table.
++ * If @objref is zero, assign a unique object reference and use @ptr
++ * as a hash key [checkpoint]. Else use @objref as a key [restart].
++ * In both cases, grab a reference (depending on @type) to said obejct.
++ */
++static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
++				    unsigned short type, unsigned short flags)
++{
++	struct cr_objref *obj;
++	int i;
++
++	obj = kmalloc(sizeof(*obj), GFP_KERNEL);
++	if (!obj)
++		return NULL;
++
++	obj->ptr = ptr;
++	obj->type = type;
++	obj->flags = flags;
++
++	if (objref) {
++		/* use @objref to index (restart) */
++		obj->objref = objref;
++		i = hash_long((unsigned long) objref, CR_OBJHASH_NBITS);
++	} else {
++		/* use @ptr to index, assign objref (checkpoint) */
++		obj->objref = ctx->objhash->next_free_objref++;;
++		i = hash_long((unsigned long) ptr, CR_OBJHASH_NBITS);
++	}
++
++	hlist_add_head(&obj->hash, &ctx->objhash->head[i]);
++	cr_obj_ref_grab(obj);
++	return obj;
++}
++
++/**
++ * cr_obj_add_ptr - add an object to the hash table if not already there
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @objref: unique object reference [output]
++ * @type: object type
++ * @flags: object flags
++ *
++ * Look up the object pointed to by @ptr in the hash table. If it isn't
++ * already found there, then add the object to the table, and allocate a
++ * fresh unique object reference (objref). Grab a reference to every
++ * object that is added, and maintain the reference until the entire
++ * hash is free.
++ *
++ * Fills the unique objref of the object into @objref.
++ *
++ * [This is used during checkpoint].
++ *
++ * Returns 0 if found, 1 if added, < 0 on error
++ */
++int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
++		   unsigned short type, unsigned short flags)
++{
++	struct cr_objref *obj;
++	int ret = 0;
++
++	obj = cr_obj_find_by_ptr(ctx, ptr);
++	if (!obj) {
++		obj = cr_obj_new(ctx, ptr, 0, type, flags);
++		if (!obj)
++			return -ENOMEM;
++		else
++			ret = 1;
++	} else if (obj->type != type)	/* sanity check */
++		return -EINVAL;
++	*objref = obj->objref;
++	return ret;
++}
++
++/**
++ * cr_obj_add_ref - add an object with unique objref to the hash table
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @objref: unique identifier - object reference
++ * @type: object type
++ * @flags: object flags
++ *
++ * Add the object pointer to by @ptr and identified by unique object
++ * reference given by @objref to the hash table (indexed by @objref).
++ * Grab a reference to every object that is added, and maintain the
++ * reference until the entire hash is free.
++ *
++ * [This is used during restart].
++ */
++int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
++		   unsigned short type, unsigned short flags)
++{
++	struct cr_objref *obj;
++
++	obj = cr_obj_new(ctx, ptr, objref, type, flags);
++	return obj ? 0 : -ENOMEM;
++}
++
++/**
++ * cr_obj_get_by_ptr - find the unique object reference of an object
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @type: object type
++ *
++ * Look up the unique object reference (objref) of the object pointed
++ * to by @ptr, and return that number, or 0 if not found.
++ *
++ * [This is used during checkpoint].
++ */
++int cr_obj_get_by_ptr(struct cr_ctx *ctx, void *ptr, unsigned short type)
++{
++	struct cr_objref *obj;
++
++	obj = cr_obj_find_by_ptr(ctx, ptr);
++	if (!obj)
++		return -ESRCH;
++	if (obj->type != type)
++		return -EINVAL;
++	return obj->objref;
++}
++
++/**
++ * cr_obj_get_by_ref - find an object given its unique object reference
++ * @ctx: checkpoint context
++ * @objref: unique identifier - object reference
++ * @type: object type
++ *
++ * Look up the object who is identified by unique object reference that
++ * is specified by @objref, and return a pointer to that matching object,
++ * or NULL if not found.
++ *
++ * [This is used during restart].
++ */
++void *cr_obj_get_by_ref(struct cr_ctx *ctx, int objref, unsigned short type)
++{
++	struct cr_objref *obj;
++
++	obj = cr_obj_find_by_objref(ctx, objref);
++	if (!obj)
++		return NULL;
++	if (obj->type != type)
++		return ERR_PTR(-EINVAL);
++	return obj->ptr;
++}
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index d403731..eef774e 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -161,6 +161,7 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	path_put(&ctx->fs_mnt);		/* safe with NULL pointers */
  
- /* vma subtypes */
- enum vm_type {
--	CR_VMA_ANON,
-+	CR_VMA_ANON = 1,
- 	CR_VMA_FILE,
- 	CR_VMA_SHM_ANON,
- 	CR_VMA_SHM_ANON_SKIP,
+ 	cr_pgarr_free(ctx);
++	cr_objhash_free(ctx);
+ 
+ 	kfree(ctx);
+ }
+@@ -189,6 +190,9 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
+ 	if (!ctx->hbuf)
+ 		goto err;
+ 
++	if (cr_objhash_alloc(ctx) < 0)
++		goto err;
++
+ 	return ctx;
+ 
+  err:
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 31124ca..88854a9 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -29,6 +29,8 @@ struct cr_ctx {
+ 	void *hbuf;		/* temporary buffer for headers */
+ 	int hpos;		/* position in headers buffer */
+ 
++	struct cr_objhash *objhash;	/* hash for shared objects */
++
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+ 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+ 
+@@ -45,6 +47,24 @@ extern int cr_kread(struct cr_ctx *ctx, void *buf, int count);
+ extern void *cr_hbuf_get(struct cr_ctx *ctx, int n);
+ extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
+ 
++/* shared objects handling */
++
++enum {
++	CR_OBJ_FILE = 1,
++	CR_OBJ_MAX
++};
++
++extern void cr_objhash_free(struct cr_ctx *ctx);
++extern int cr_objhash_alloc(struct cr_ctx *ctx);
++extern void *cr_obj_get_by_ref(struct cr_ctx *ctx,
++			       int objref, unsigned short type);
++extern int cr_obj_get_by_ptr(struct cr_ctx *ctx,
++			     void *ptr, unsigned short type);
++extern int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
++			  unsigned short type, unsigned short flags);
++extern int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
++			  unsigned short type, unsigned short flags);
++
+ struct cr_hdr;
+ 
+ extern int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
 -- 
 1.5.4.3
