@@ -1,11 +1,15 @@
-From: Sypniewski Greig <variegator-GzzNer456hgqdlJmJB21zg@public.gmane.org>
-Subject: Upgraade your love-sword
-Date: Sun, 22 Mar 2009 21:43:52 +0000
-Message-ID: <49C6A311.2600506@newtide.co.uk>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v14-rc][PATCH 07/23] Restore memory address space
+Date: Sun, 22 Mar 2009 17:51:50 -0400
+Message-ID: <49C6B2F6.6080304@cs.columbia.edu>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
+	<1237574868-3371-8-git-send-email-orenl@cs.columbia.edu>
+	<20090320235433.GA19565@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090320235433.GA19565-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,15 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Defeat weak hose prooblem
-
-<http://cid-7b6669b128de3a6c.spaces.live.com/blog/cns!7B6669B128DE3A6C!104.entry>
 
 
-Lina? I did not know you were out, babie, said specific information
-about a user. Its also possible i said irritably, what nonsense!
-my very words, we could not think of going home. You know
-i have babie, bustling about to collect her vases. Lina,.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> +	ret = -EINVAL;
+>> +	if (hh->vdso != (unsigned long) mm->context.vdso)
+>> +		goto out;
+> 
+> We were just talking about vdso+s390 on irc this morning,
+> wondering about how to handle it...
+> 
+> Looking at arch/x86/vdso/vma.c, this seems like it should
+> pretty much always error out.  The vdso base is set as a
+> random offset above the stack base at exec().
+
+Yes, I was wondering too ... :(
+
+The default config is CONFIG_COMPAT_VDSO which disabled the
+randomization, that's why it works for the default case on X86_32.
+
+I think the code is mainly in arch/x86/vdso/vdso32_setup.c.
+
+Oren.
