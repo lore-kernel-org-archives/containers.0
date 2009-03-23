@@ -1,22 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add UTS support (v4)
-Date: Mon, 23 Mar 2009 10:08:33 -0500
-Message-ID: <20090323150833.GB31981@us.ibm.com>
-References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
-	<49C2C686.2060806@cs.columbia.edu>
-	<871vstdtn1.fsf@caffeine.danplanet.com>
-	<49C2CDFA.4010907@cs.columbia.edu>
-	<49C2D183.8040905@cs.columbia.edu>
-	<20090320181043.GB8380@us.ibm.com>
-	<49C3EFAF.9030706@cs.columbia.edu>
-	<1237579196.8286.239.camel@nimitz>
-	<87eiwoi956.fsf@caffeine.danplanet.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: c/r: Add UTS support
+Date: Mon, 23 Mar 2009 12:32:21 -0700
+Message-ID: <1237836743-20262-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87eiwoi956.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,34 +15,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> DH> for each ns in nsproxy {
-> DH>   if (ns seen first time) {
-> DH>     alloc ns_objref
-> DH>     save state of ns
-> DH>   } else {
-> DH>     save existing ns_objref
-> DH>   }
-> DH> }
-> 
-> Isn't this precisely what I have in the latest patch?  Since there is
-> only one supported namespace type, perhaps the for loop is hard to
-> recognize...
+This is the latest version of my UTS patch.  I think I integrated all
+necessary feedback in the flurry of recent discussion.  My apologies if
+I missed something.
 
-Yes, I still think your patch is good...
-
-> The bitfield serves only to describe which *new* namespace records
-> follow the general one, but the objref of each (supported) namespace
-> is included in the initial record.  Now that I think of it, I can do
-> away with the bitfield to avoid confusion.
-
-How about you tweak both Nathan and Oren (who I think both have
-IPC c/r patchsets) by adding dummy ipc c/r support.  Just define
-CR_OBJ_IPCNS, make cr_wrte_ns_ipc() empty and call it from
-cr_write_namespaces().
-
--serge
+This also adds the stub IPC namespace implementation, which right now
+just writes an empty record.  Matching userspace support to follow.
