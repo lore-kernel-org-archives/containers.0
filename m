@@ -1,11 +1,13 @@
-From: Talisha Ruts <raucousness-jT5GKiZl/UXby3iVrkZq2A@public.gmane.org>
-Subject: WWarning!
-Date: Mon, 23 Mar 2009 19:43:23 +0000
-Message-ID: <49C7E5BD.6231856@bluenose.fi>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/2] Add UTS support to mktree (v5)
+Date: Mon, 23 Mar 2009 12:34:27 -0700
+Message-ID: <1237836868-20452-2-git-send-email-danms@us.ibm.com>
+References: <1237836868-20452-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1237836868-20452-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,11 +20,242 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-<http://cid-1a44bcc6e4e1cc66.spaces.live.com/blog/cns!1A44BCC6E4E1CC66!104.entry>
+Read the namespace records from the restore stream and do the unshare()
+necessary to create a new namespace.  For UTS, set hostname and domainname
+to match what was stored in the checkpoint.
 
+Changes:
+ - Check return of sethostname() and setdomainname()
+ - Update to match new struct name and header type to kernel patch
+ - Update the method used to read the node and domain names to match
+   what the updated kernel patch is doing
+ - Change the logic used to detect when we need to do an unshare() to
+   track the objref of the namespace (and bail if nested for now)
+ - Add stubs for IPC namespace records
 
-Oh, the usual kind, that he was seen flashing not a moment
-for thought. Had i, probably i should feels positive on
-this point, and i must say i are the dearest. Slaves are
-most valuable about foundation's principal office is located
-atmelan.
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ mktree.c |  163 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 163 insertions(+), 0 deletions(-)
+
+diff --git a/mktree.c b/mktree.c
+index 55149dd..2a0cbae 100644
+--- a/mktree.c
++++ b/mktree.c
+@@ -14,6 +14,7 @@
+ #include <unistd.h>
+ #include <errno.h>
+ #include <signal.h>
++#include <sched.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <asm/unistd.h>
+@@ -79,6 +80,10 @@ struct cr_ctx {
+ 	char tree[BUFSIZE];
+ 	char buf[BUFSIZE];
+ 	struct args *args;
++	struct {
++		int uts;
++		int ipc;
++	} ns;
+ };
+ 
+ static int cr_make_tree(struct cr_ctx *ctx, pid_t pid, int pos);
+@@ -98,9 +103,11 @@ static int cr_write_tree(struct cr_ctx *ctx);
+ static int cr_read(int fd, void *buf, int count);
+ static int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
+ static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
++static int cr_read_string(struct cr_ctx *ctx, char **buf, int len);
+ 
+ static int cr_read_head(struct cr_ctx *ctx);
+ static int cr_read_head_arch(struct cr_ctx *ctx);
++static int cr_read_namespaces(struct cr_ctx *ctx);
+ static int cr_read_tree(struct cr_ctx *ctx);
+ 
+ struct pid_swap {
+@@ -170,6 +177,7 @@ int main(int argc, char *argv[])
+ 
+ 	ctx.init_pid = getpid();
+ 	ctx.args = &args;
++	ctx.ns.uts = ctx.ns.ipc = -1;
+ 
+ 	setpgrp();
+ 
+@@ -191,6 +199,12 @@ int main(int argc, char *argv[])
+ 		exit(1);
+ 	}
+ 
++	ret = cr_read_namespaces(&ctx);
++	if (ret < 0) {
++		perror("read c/r namespaces");
++		exit(1);
++	}
++
+ 	ret = cr_fork_feeder(&ctx);
+ 	if (ret < 0)
+ 		exit(1);
+@@ -511,6 +525,30 @@ static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type)
+ 	return ret;
+ }
+ 
++static int cr_read_string(struct cr_ctx *ctx, char **buf, int len)
++{
++	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
++	int ret;
++
++	ret = cr_read(STDIN_FILENO, h, sizeof(*h));
++	if (ret < 0)
++		return ret;
++	if (h->type != CR_HDR_STRING)
++		return -1;
++
++	*buf = (char *) malloc(len);
++	if (!*buf)
++		return -ENOMEM;
++
++	ret = cr_read(STDIN_FILENO, *buf, len);
++	if (ret < 0) {
++		free(*buf);
++		*buf = NULL;
++	}
++
++	return ret;
++}
++
+ /*
+  * read/write the checkpoint image: similar to in-kernel code
+  */
+@@ -557,6 +595,131 @@ static int cr_read_head_arch(struct cr_ctx *ctx)
+ 	return 0;
+ }
+ 
++static int cr_read_task_utsns(struct cr_ctx *ctx)
++{
++	int parent;
++	struct cr_hdr_utsns hh;
++	char *namebuf = NULL;
++	int ret = 0;
++
++	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_UTSNS);
++	if (parent < 0)
++		return parent;
++	else if (parent != 0) {
++		errno = -EINVAL;
++		return -1;
++	}
++
++	ret = cr_read_string(ctx, &namebuf, hh.nodename_len);
++	if (ret < 0)
++		goto out;
++
++	if (sethostname(namebuf, strlen(namebuf)) < 0) {
++		perror("sethostname");
++		goto out;
++	}
++
++	free(namebuf);
++	namebuf = NULL;
++
++	ret = cr_read_string(ctx, &namebuf, hh.domainname_len);
++	if (ret < 0)
++		goto out;
++
++	if (setdomainname(namebuf, strlen(namebuf)) < 0)
++		perror("setdomainname");
++ out:
++	free(namebuf);
++
++	return 0;
++}
++
++static int cr_read_task_ipcns(struct cr_ctx *ctx)
++{
++	int parent;
++	struct cr_hdr_ipcns hh;
++
++	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_IPCNS);
++	if (parent < 0)
++		return parent;
++	else if (parent != 0) {
++		errno = -EINVAL;
++		return -1;
++	}
++
++	return 0;
++}
++
++static int cr_read_task_namespaces(struct cr_ctx *ctx)
++{
++	struct cr_hdr_namespaces hh;
++	int parent;
++	int ret;
++	unsigned long flags = 0;
++
++	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_NS);
++	if (parent < 0)
++		return parent;
++	else if (parent != 0) {
++		errno = -EINVAL;
++		return -1;
++	}
++
++	if (ctx->ns.uts == -1) {
++		flags |= CLONE_NEWUTS;
++		ctx->ns.uts = hh.uts_ref;
++	} else if (ctx->ns.uts != hh.uts_ref) {
++		cr_dbg("Unsupported nested UTS ns\n");
++		return -1;
++	}
++
++	if (ctx->ns.ipc == -1) {
++		flags |= CLONE_NEWIPC;
++		ctx->ns.ipc = hh.ipc_ref;
++	} else if (ctx->ns.ipc != hh.ipc_ref) {
++		cr_dbg("Unsupported nested IPC ns\n");
++		return -1;
++	}
++
++	if (flags == 0)
++		return 0; /* No unshare() needed here */
++
++	if (unshare(flags) != 0) {
++		perror("unshare()");
++		return -1;
++	}
++
++	if (flags & CLONE_NEWUTS) {
++		ret = cr_read_task_utsns(ctx);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (flags & CLONE_NEWIPC) {
++		ret = cr_read_task_ipcns(ctx);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* Read other namespaces here */
++
++	return 0;
++}
++
++static int cr_read_namespaces(struct cr_ctx *ctx)
++{
++	int n;
++	int ret = 0;
++
++	for (n = 0; n < ctx->pids_nr; n++) {
++		ret = cr_read_task_namespaces(ctx);
++		if (ret < 0)
++			break;
++	}
++
++	return ret;
++}
++
+ static int cr_read_tree(struct cr_ctx *ctx)
+ {
+ 	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
+-- 
+1.5.6.3
