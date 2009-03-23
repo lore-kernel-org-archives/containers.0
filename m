@@ -1,17 +1,22 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc][PATCH 07/23] Restore memory address space
-Date: Mon, 23 Mar 2009 10:01:25 -0500
-Message-ID: <20090323150125.GA888@us.ibm.com>
-References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
-	<1237574868-3371-8-git-send-email-orenl@cs.columbia.edu>
-	<20090320235433.GA19565@us.ibm.com>
-	<49C6B2F6.6080304@cs.columbia.edu>
+Subject: Re: [PATCH] c/r: Add UTS support (v4)
+Date: Mon, 23 Mar 2009 10:08:33 -0500
+Message-ID: <20090323150833.GB31981@us.ibm.com>
+References: <1237402291-28812-1-git-send-email-danms@us.ibm.com>
+	<49C2C686.2060806@cs.columbia.edu>
+	<871vstdtn1.fsf@caffeine.danplanet.com>
+	<49C2CDFA.4010907@cs.columbia.edu>
+	<49C2D183.8040905@cs.columbia.edu>
+	<20090320181043.GB8380@us.ibm.com>
+	<49C3EFAF.9030706@cs.columbia.edu>
+	<1237579196.8286.239.camel@nimitz>
+	<87eiwoi956.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49C6B2F6.6080304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <87eiwoi956.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,37 +26,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> DH> for each ns in nsproxy {
+> DH>   if (ns seen first time) {
+> DH>     alloc ns_objref
+> DH>     save state of ns
+> DH>   } else {
+> DH>     save existing ns_objref
+> DH>   }
+> DH> }
 > 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >> +	ret = -EINVAL;
-> >> +	if (hh->vdso != (unsigned long) mm->context.vdso)
-> >> +		goto out;
-> > 
-> > We were just talking about vdso+s390 on irc this morning,
-> > wondering about how to handle it...
-> > 
-> > Looking at arch/x86/vdso/vma.c, this seems like it should
-> > pretty much always error out.  The vdso base is set as a
-> > random offset above the stack base at exec().
-> 
-> Yes, I was wondering too ... :(
-> 
-> The default config is CONFIG_COMPAT_VDSO which disabled the
-> randomization, that's why it works for the default case on X86_32.
-> 
-> I think the code is mainly in arch/x86/vdso/vdso32_setup.c.
+> Isn't this precisely what I have in the latest patch?  Since there is
+> only one supported namespace type, perhaps the for loop is hard to
+> recognize...
 
-We may earn the ire of the community once again, but it seems to
-me we have no choice but to tweak arch_setup_additional_pages()
-to take an optional requested location.  Then binfmt->load_binary()
-can pass NULL to indicate business as usual, while sys_restart()
-can pass the saved vdso_base.
+Yes, I still think your patch is good...
+
+> The bitfield serves only to describe which *new* namespace records
+> follow the general one, but the objref of each (supported) namespace
+> is included in the initial record.  Now that I think of it, I can do
+> away with the bitfield to avoid confusion.
+
+How about you tweak both Nathan and Oren (who I think both have
+IPC c/r patchsets) by adding dummy ipc c/r support.  Just define
+CR_OBJ_IPCNS, make cr_wrte_ns_ipc() empty and call it from
+cr_write_namespaces().
 
 -serge
