@@ -1,13 +1,13 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Add UTS support to mktree (v5)
-Date: Mon, 23 Mar 2009 12:34:27 -0700
-Message-ID: <1237836868-20452-2-git-send-email-danms@us.ibm.com>
-References: <1237836868-20452-1-git-send-email-danms@us.ibm.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v14-rc1][PATCH 00/23] Kernel based checkpoint/restart
+Date: Mon, 23 Mar 2009 17:18:18 -0500
+Message-ID: <20090323171818.4c238e9d@thinkcentre.lan>
+References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1237836868-20452-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1237574868-3371-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,245 +17,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Read the namespace records from the restore stream and do the unshare()
-necessary to create a new namespace.  For UTS, set hostname and domainname
-to match what was stored in the checkpoint.
-
-Changes:
- - Check return of sethostname() and setdomainname()
- - Update to match new struct name and header type to kernel patch
- - Update the method used to read the node and domain names to match
-   what the updated kernel patch is doing
- - Change the logic used to detect when we need to do an unshare() to
-   track the objref of the namespace (and bail if nested for now)
- - Add stubs for IPC namespace records
-
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- mktree.c |  163 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 163 insertions(+), 0 deletions(-)
-
-diff --git a/mktree.c b/mktree.c
-index 55149dd..2a0cbae 100644
---- a/mktree.c
-+++ b/mktree.c
-@@ -14,6 +14,7 @@
- #include <unistd.h>
- #include <errno.h>
- #include <signal.h>
-+#include <sched.h>
- #include <sys/types.h>
- #include <sys/wait.h>
- #include <asm/unistd.h>
-@@ -79,6 +80,10 @@ struct cr_ctx {
- 	char tree[BUFSIZE];
- 	char buf[BUFSIZE];
- 	struct args *args;
-+	struct {
-+		int uts;
-+		int ipc;
-+	} ns;
- };
- 
- static int cr_make_tree(struct cr_ctx *ctx, pid_t pid, int pos);
-@@ -98,9 +103,11 @@ static int cr_write_tree(struct cr_ctx *ctx);
- static int cr_read(int fd, void *buf, int count);
- static int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
- static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
-+static int cr_read_string(struct cr_ctx *ctx, char **buf, int len);
- 
- static int cr_read_head(struct cr_ctx *ctx);
- static int cr_read_head_arch(struct cr_ctx *ctx);
-+static int cr_read_namespaces(struct cr_ctx *ctx);
- static int cr_read_tree(struct cr_ctx *ctx);
- 
- struct pid_swap {
-@@ -170,6 +177,7 @@ int main(int argc, char *argv[])
- 
- 	ctx.init_pid = getpid();
- 	ctx.args = &args;
-+	ctx.ns.uts = ctx.ns.ipc = -1;
- 
- 	setpgrp();
- 
-@@ -191,6 +199,12 @@ int main(int argc, char *argv[])
- 		exit(1);
- 	}
- 
-+	ret = cr_read_namespaces(&ctx);
-+	if (ret < 0) {
-+		perror("read c/r namespaces");
-+		exit(1);
-+	}
-+
- 	ret = cr_fork_feeder(&ctx);
- 	if (ret < 0)
- 		exit(1);
-@@ -511,6 +525,30 @@ static int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type)
- 	return ret;
- }
- 
-+static int cr_read_string(struct cr_ctx *ctx, char **buf, int len)
-+{
-+	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
-+	int ret;
-+
-+	ret = cr_read(STDIN_FILENO, h, sizeof(*h));
-+	if (ret < 0)
-+		return ret;
-+	if (h->type != CR_HDR_STRING)
-+		return -1;
-+
-+	*buf = (char *) malloc(len);
-+	if (!*buf)
-+		return -ENOMEM;
-+
-+	ret = cr_read(STDIN_FILENO, *buf, len);
-+	if (ret < 0) {
-+		free(*buf);
-+		*buf = NULL;
-+	}
-+
-+	return ret;
-+}
-+
- /*
-  * read/write the checkpoint image: similar to in-kernel code
-  */
-@@ -557,6 +595,131 @@ static int cr_read_head_arch(struct cr_ctx *ctx)
- 	return 0;
- }
- 
-+static int cr_read_task_utsns(struct cr_ctx *ctx)
-+{
-+	int parent;
-+	struct cr_hdr_utsns hh;
-+	char *namebuf = NULL;
-+	int ret = 0;
-+
-+	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_UTSNS);
-+	if (parent < 0)
-+		return parent;
-+	else if (parent != 0) {
-+		errno = -EINVAL;
-+		return -1;
-+	}
-+
-+	ret = cr_read_string(ctx, &namebuf, hh.nodename_len);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (sethostname(namebuf, strlen(namebuf)) < 0) {
-+		perror("sethostname");
-+		goto out;
-+	}
-+
-+	free(namebuf);
-+	namebuf = NULL;
-+
-+	ret = cr_read_string(ctx, &namebuf, hh.domainname_len);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (setdomainname(namebuf, strlen(namebuf)) < 0)
-+		perror("setdomainname");
-+ out:
-+	free(namebuf);
-+
-+	return 0;
-+}
-+
-+static int cr_read_task_ipcns(struct cr_ctx *ctx)
-+{
-+	int parent;
-+	struct cr_hdr_ipcns hh;
-+
-+	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_IPCNS);
-+	if (parent < 0)
-+		return parent;
-+	else if (parent != 0) {
-+		errno = -EINVAL;
-+		return -1;
-+	}
-+
-+	return 0;
-+}
-+
-+static int cr_read_task_namespaces(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_namespaces hh;
-+	int parent;
-+	int ret;
-+	unsigned long flags = 0;
-+
-+	parent = cr_read_obj_type(ctx, &hh, sizeof(hh), CR_HDR_NS);
-+	if (parent < 0)
-+		return parent;
-+	else if (parent != 0) {
-+		errno = -EINVAL;
-+		return -1;
-+	}
-+
-+	if (ctx->ns.uts == -1) {
-+		flags |= CLONE_NEWUTS;
-+		ctx->ns.uts = hh.uts_ref;
-+	} else if (ctx->ns.uts != hh.uts_ref) {
-+		cr_dbg("Unsupported nested UTS ns\n");
-+		return -1;
-+	}
-+
-+	if (ctx->ns.ipc == -1) {
-+		flags |= CLONE_NEWIPC;
-+		ctx->ns.ipc = hh.ipc_ref;
-+	} else if (ctx->ns.ipc != hh.ipc_ref) {
-+		cr_dbg("Unsupported nested IPC ns\n");
-+		return -1;
-+	}
-+
-+	if (flags == 0)
-+		return 0; /* No unshare() needed here */
-+
-+	if (unshare(flags) != 0) {
-+		perror("unshare()");
-+		return -1;
-+	}
-+
-+	if (flags & CLONE_NEWUTS) {
-+		ret = cr_read_task_utsns(ctx);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	if (flags & CLONE_NEWIPC) {
-+		ret = cr_read_task_ipcns(ctx);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	/* Read other namespaces here */
-+
-+	return 0;
-+}
-+
-+static int cr_read_namespaces(struct cr_ctx *ctx)
-+{
-+	int n;
-+	int ret = 0;
-+
-+	for (n = 0; n < ctx->pids_nr; n++) {
-+		ret = cr_read_task_namespaces(ctx);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	return ret;
-+}
-+
- static int cr_read_tree(struct cr_ctx *ctx)
- {
- 	struct cr_hdr *h = (struct cr_hdr *) ctx->buf;
--- 
-1.5.6.3
+SGFzIGFueW9uZSBlbHNlIHRyaWVkIHRvIGJ1aWxkIHRoaXM/ICBJIGZldGNoZWQgdGhlIGNrcHQt
+djE0IGJyYW5jaCBhbmQKSSBnZXQ6CgokIG1ha2UgQVJDSD1pMzg2IC1zCmNoZWNrcG9pbnQvY2tw
+dF9tZW0uYzogSW4gZnVuY3Rpb24g4oCYY3Jfdm1hX2ZpbGxfcGdhcnLigJk6CmNoZWNrcG9pbnQv
+Y2twdF9tZW0uYzozMjc6IGVycm9yOiDigJhpbm9kZeKAmSB1bmRlY2xhcmVkIChmaXJzdCB1c2Ug
+aW4gdGhpcyBmdW5jdGlvbikKY2hlY2twb2ludC9ja3B0X21lbS5jOjMyNzogZXJyb3I6IChFYWNo
+IHVuZGVjbGFyZWQgaWRlbnRpZmllciBpcyByZXBvcnRlZCBvbmx5IG9uY2UKY2hlY2twb2ludC9j
+a3B0X21lbS5jOjMyNzogZXJyb3I6IGZvciBlYWNoIGZ1bmN0aW9uIGl0IGFwcGVhcnMgaW4uKQpj
+aGVja3BvaW50L2NrcHRfbWVtLmM6IEluIGZ1bmN0aW9uIOKAmGNyX3dyaXRlX3NoYXJlZF92bWFf
+Y29udGVudHPigJk6CmNoZWNrcG9pbnQvY2twdF9tZW0uYzo1NTE6IGVycm9yOiDigJhWTUFfU0hN
+X0FOT07igJkgdW5kZWNsYXJlZCAoZmlyc3QgdXNlIGluIHRoaXMgZnVuY3Rpb24pCmNoZWNrcG9p
+bnQvY2twdF9tZW0uYzo1NTc6IGVycm9yOiDigJhWTUFfU0hNX0FOT05fU0tJUOKAmSB1bmRlY2xh
+cmVkIChmaXJzdCB1c2UgaW4gdGhpcyBmdW5jdGlvbikKY2hlY2twb2ludC9ja3B0X21lbS5jOjU0
+Njogd2FybmluZzogZW51bWVyYXRpb24gdmFsdWUg4oCYQ1JfVk1BX0FOT07igJkgbm90IGhhbmRs
+ZWQgaW4gc3dpdGNoCmNoZWNrcG9pbnQvY2twdF9tZW0uYzo1NDY6IHdhcm5pbmc6IGVudW1lcmF0
+aW9uIHZhbHVlIOKAmENSX1ZNQV9GSUxF4oCZIG5vdCBoYW5kbGVkIGluIHN3aXRjaApjaGVja3Bv
+aW50L2NrcHRfbWVtLmM6NTQ2OiB3YXJuaW5nOiBlbnVtZXJhdGlvbiB2YWx1ZSDigJhDUl9WTUFf
+U0hNX0FOT07igJkgbm90IGhhbmRsZWQgaW4gc3dpdGNoCmNoZWNrcG9pbnQvY2twdF9tZW0uYzo1
+NDY6IHdhcm5pbmc6IGVudW1lcmF0aW9uIHZhbHVlIOKAmENSX1ZNQV9TSE1fQU5PTl9TS0lQ4oCZ
+IG5vdCBoYW5kbGVkIGluIHN3aXRjaApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxp
+bnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFp
+bG1hbi9saXN0aW5mby9jb250YWluZXJz
