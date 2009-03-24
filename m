@@ -1,12 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] s390 c/r: fix up v14 (v2)
-Date: Tue, 24 Mar 2009 11:39:11 -0500
-Message-ID: <20090324163911.GA20268@us.ibm.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: lxc-0.6.1 released
+Date: Tue, 24 Mar 2009 19:03:26 +0100
+Message-ID: <49C9206E.8030603@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,99 +15,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: LXC Development <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Uh, discard the previous version :)
 
-Make a few changes to the s390 c/r code to reflect v14 changes.
-CONFIG_CHECKPOINT_RESTART is now CONFIG_CHECKPOINT, and 'parent'
-is gone.
+* fixes several compilation problems and arch dependant buggy functions.
+* adds mtu option setting - Takano, thanks for the benchmarking and the 
+analysis :)
+* fixes capabilties dilemma by letting the user to set / drop the 
+capabilities via 'lxc-setcap'
+* fixes bind mounts to be propagated to the container
 
-Compiler missed another use of parent.  This version actually
-is tested with a working c/r  :)
+Thanks all for the patches and the feedbacks !
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/mm/Makefile     |    2 +-
- arch/s390/mm/checkpoint.c |    5 +----
- arch/s390/mm/restart.c    |   11 ++++-------
- 3 files changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/arch/s390/mm/Makefile b/arch/s390/mm/Makefile
-index 040fbb7..b16161e 100644
---- a/arch/s390/mm/Makefile
-+++ b/arch/s390/mm/Makefile
-@@ -6,4 +6,4 @@ obj-y	 := init.o fault.o extmem.o mmap.o vmem.o pgtable.o
- obj-$(CONFIG_CMM) += cmm.o
- obj-$(CONFIG_HUGETLB_PAGE) += hugetlbpage.o
- obj-$(CONFIG_PAGE_STATES) += page-states.o
--obj-$(CONFIG_CHECKPOINT_RESTART) += checkpoint.o restart.o
-+obj-$(CONFIG_CHECKPOINT) += checkpoint.o restart.o
-diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
-index 216bdd8..c4e3719 100644
---- a/arch/s390/mm/checkpoint.c
-+++ b/arch/s390/mm/checkpoint.c
-@@ -79,7 +79,6 @@ int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
- 
- 	h.type = CR_HDR_CPU;
- 	h.len = sizeof(*hh);
--	h.parent = task_pid_vnr(t);
- 
- 	cr_s390_regs(CR_CPT, hh, t);
- 
-@@ -98,7 +97,6 @@ int cr_write_head_arch(struct cr_ctx *ctx)
- 
- 	h.type = CR_HDR_HEAD_ARCH;
- 	h.len = sizeof(*hh);
--	h.parent = 0;
- 
- 	ret = cr_write_obj(ctx, &h, &hh);
- 	cr_hbuf_put(ctx, sizeof(*hh));
-@@ -106,7 +104,7 @@ int cr_write_head_arch(struct cr_ctx *ctx)
- 	return ret;
- }
- 
--int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent)
-+int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
- {
- 	struct cr_hdr h;
- 	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
-@@ -114,7 +112,6 @@ int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent)
- 
- 	h.type = CR_HDR_MM_CONTEXT;
- 	h.len = sizeof(*hh);
--	h.parent = parent;
- 
- 	cr_s390_mm(CR_CPT, hh, mm);
- 
-diff --git a/arch/s390/mm/restart.c b/arch/s390/mm/restart.c
-index 7da4111..6892a2a 100644
---- a/arch/s390/mm/restart.c
-+++ b/arch/s390/mm/restart.c
-@@ -60,18 +60,15 @@ int cr_read_head_arch(struct cr_ctx *ctx)
- }
- 
- 
--int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int rparent)
-+int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
- {
- 	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
--	int parent, ret = -EINVAL;
-+	int ret;
- 
--	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_MM_CONTEXT);
--	if (parent < 0) {
--		ret = parent;
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_MM_CONTEXT);
-+	if (ret < 0) {
- 		goto out;
- 	}
--	if (parent != rparent)
--		goto out;
- 
- 	cr_s390_mm(CR_RST, hh, mm);
- 	ret = 0;
--- 
-1.6.1
+git-log --pretty=oneline --abbrev-commit lxc_0_6_0..lxc_0_6_1
+
+1b36359... increment minor version number
+237315f... Use a specific script to set the capabilities
+75d09f8... set mtu for netdev
+442cbbe... Add lxc.network.mtu configuration (resend)
+dfdcea5... Fix capability setting for lxc-init
+bfa3802... Add powerpc signalfd syscall numbers
+3619350... CONTRIBUTING: specify where one can send patches
+e81c7f2... CONTRIBUTING: fix two typos
+dbdab2f... lxc-checkconfig: Allow to override grep and config
+84a1564... lxc-checkconfig: look in one more place
+a25ba7a... Install lxc-init in libexec dir
+d0dfcfb... Add .gitignore and avoid annoying interaction between 
+compiled files and git
+fdc0332... Use the rbind mount for the rootfs
+7e7f51d... lxc-checkconfig fails on a kernel compiled without IKCONFIG_PROC.
+30761e8... s390 sys_clone is backwards
+47f3833... define s390x signalfd for old headers
+8ca6173... define signalfd patch
+216061b... liblxc: Remove unused variable
+b7f85cc... liblxc: Add username and uid lookup/check.
+3cf586a... liblxc: Fix compiler warning
+656994b... liblxc: Handle missing PR_CAPBSET_DROP definition
+54b1eb6... liblxc: create a fedore template container
+
+git-diff --stats lxc_0_6_0..lxc_0_6_1
+
+ .gitignore                 |   90 ++++++++++
+ CONTRIBUTING               |    8
+ configure.in               |   20 +-
+ lxc.spec.in                |   22 --
+ scripts/Makefile.am        |    1
+ scripts/lxc-fedora.in      |  404 
++++++++++++++++++++++++++++++++++++++++++++++
+ src/lxc/Makefile.am        |   47 +----
+ src/lxc/lxc-checkconfig.in |   32 ++-
+ src/lxc/lxc-setcap.in      |  103 +++++++++++
+ src/lxc/lxc.h              |    2
+ src/lxc/lxc_conf.c         |   47 ++++-
+ src/lxc/lxc_conf.h         |    1
+ src/lxc/lxc_config.c       |   24 ++
+ src/lxc/lxc_execute.c      |    2
+ src/lxc/lxc_namespace.h    |    4
+ src/lxc/lxc_unshare.c      |   37 +++-
+ src/lxc/namespace.h        |    4
+ src/lxc/network.c          |   48 +++++
+ src/lxc/network.h          |    5
+ src/lxc/start.c            |   42 ++++
+ 20 files changed, 849 insertions(+), 94 deletions(-)
