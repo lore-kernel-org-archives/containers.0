@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/7] s390: enable checkpoint support in Kconfig
-Date: Wed, 25 Mar 2009 18:02:40 -0500
-Message-ID: <1238022166-13422-2-git-send-email-ntl@pobox.com>
+Subject: [PATCH 3/7] make CONFIG_CHECKPOINT depend on CONFIG_CHECKPOINT_SUPPORT
+Date: Wed, 25 Mar 2009 18:02:42 -0500
+Message-ID: <1238022166-13422-4-git-send-email-ntl@pobox.com>
 References: <1238022166-13422-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,27 +20,27 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Only 64-bit kernels are supported.
+Instead of trying to maintain a fruit salad of architecture names and
+options in the dependency list, have architectures define
+CHECKPOINT_SUPPORT in their respective Kconfigs when they have
+implemented the arch-specific C/R hooks.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/s390/Kconfig |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ checkpoint/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
-index 6b0a353..98d339e 100644
---- a/arch/s390/Kconfig
-+++ b/arch/s390/Kconfig
-@@ -49,6 +49,10 @@ config GENERIC_TIME_VSYSCALL
- config GENERIC_CLOCKEVENTS
- 	def_bool y
- 
-+config CHECKPOINT_SUPPORT
-+	bool
-+	default y if 64BIT
-+
- config GENERIC_BUG
- 	bool
- 	depends on BUG
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index e91e0fd..760c450 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -1,6 +1,6 @@
+ config CHECKPOINT
+ 	bool "Enable checkpoint/restart (EXPERIMENTAL)"
+-	depends on (X86_32 || (S390 && 64BIT)) && EXPERIMENTAL
++	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
 -- 
 1.6.0.6
