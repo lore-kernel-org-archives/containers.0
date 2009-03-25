@@ -1,13 +1,13 @@
-From: Bruce Jones <bruce.jones-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/6] netns: add linux-vrf features via network namespaces
-Date: Wed, 25 Mar 2009 12:21:19 -0600
-Message-ID: <49CA761F.1020006@alcatel-lucent.com>
-References: <4909B10A.8090403@thomson.net>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 1/7] s390: enable checkpoint support in Kconfig
+Date: Wed, 25 Mar 2009 18:02:40 -0500
+Message-ID: <1238022166-13422-2-git-send-email-ntl@pobox.com>
+References: <1238022166-13422-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4909B10A.8090403-L+G57L1VLRbR7s880joybQ@public.gmane.org>
+In-Reply-To: <1238022166-13422-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,33 +18,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivien Chappelier wrote:
-> Hi,
-> 
-> The recently introduced network namespaces allow separate standalone
->  network stacks to coexist on the same machine. This is a very useful
->  functionality that we have been needing and using in our products
-> for some time, through the VRF ptchset
-> (http://linux-vrf.sourceforge.net/). The goal of the VRF patchset and
-> network namespaces are very similar, yet some features of the VRF are
-> missing that these patches intend to provide.
-> 
-> 
-Hi,
+Only 64-bit kernels are supported.
 
-I have been a silent observer of the network namespace work for a few 
-months. Like a couple of others, I also am interested in the functionality 
-provided by the linux-vrf patches presented here by Vivien. Eric Biederman 
-mentioned some sysfs patches that he was working on. Daniel Lezcano 
-submitted a proposed new socketat syscall. Other than that this thread 
-seems to have died a few months ago as far as I have been able to find. 
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ arch/s390/Kconfig |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-I would like to find out if there is any updated status. I offer my help 
-in this effort. I am a new Linux developer, but I developed similar vrf 
-features in a BSD-based stack under VxWorks.
-
-Thanks,
-Bruce
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index 6b0a353..98d339e 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -49,6 +49,10 @@ config GENERIC_TIME_VSYSCALL
+ config GENERIC_CLOCKEVENTS
+ 	def_bool y
+ 
++config CHECKPOINT_SUPPORT
++	bool
++	default y if 64BIT
++
+ config GENERIC_BUG
+ 	bool
+ 	depends on BUG
+-- 
+1.6.0.6
