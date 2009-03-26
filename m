@@ -1,15 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/6] Check 'may_checkpoint()' early
-Date: Wed, 25 Mar 2009 22:58:40 -0700
-Message-ID: <20090326055840.GA8220@us.ibm.com>
-References: <20090317174359.GA10796@us.ibm.com>
-	<20090317175013.GD10796@us.ibm.com>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH 0/6] /proc/pid/checkpointable
+Date: Thu, 26 Mar 2009 10:52:10 +0100
+Message-ID: <49CB504A.2080400@free.fr>
+References: <20090317062754.GA2377@us.ibm.com>	<20090317063940.GF2377@us.ibm.com>	<49C0B6FF.5030104@cs.columbia.edu>	<20090318135953.GE22636@us.ibm.com>	<49C1201A.3050604@cs.columbia.edu>	<20090318171840.GA29523@us.ibm.com>	<49C1347F.3000601@cs.columbia.edu>
+	<49C153AF.7070504@google.com>	<1237407213.8286.198.camel@nimitz>	<m17i2dx00b.fsf@fess.ebiederm.org>
+	<20090325172938.GA18957@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090317175013.GD10796-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090325172938.GA18957-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,81 +19,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Serge E. Hallyn wrote:
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>
+>>> On Wed, 2009-03-18 at 13:03 -0700, Mike Waychison wrote:
+>>>> Polluting the dmesg buffer with messages from common failures (consider 
+>>>> a multi-user cluster where checkpoints may or may not succeed) isn't 
+>>>> very useful.
+>>> Yeah, I've already gotten an earful from Serge and Dan S. about this. :)
+>>>
+>>> Serge suggested that, perhaps, the audit framework could be used.  We
+>>> might also use an ftrace buffer if we want to keep a whole ton of
+>>> messages around, too.
+>>>
+>>> dmesg is definitely not workable long-term at all.
+>> How about having place holder objects in the generated checkpoint.
+>> Then instead of having a failure you have a non-restoreable checkpoint.
+>> But you know which fd, or which mmaped region, or which other thing
+>> is causing the problem and if you want more information you can
+>> look at that resource.
+>>
+>> That gives user space the freedom and scrub out the non-checkpointable
+>> bits and replace them with something like /dev/null so that we can
+>> continue on and restore the checkpoint anyway, if we think our
+>> app can cope with some things going away.
+>>
+>> Eric
+> 
+> I like this idea.
 
-Oren, 
+yes. This is something required to replace stdios for example, when 
+you execute an application under ssh, checkpoint and then restart on 
+an other host. This a topical scenario for a batch manager in an HPC 
+environment. 
 
-I see that patch 3/6 (deny external checkpoint unless frozen) in this
-set was merged in v14, but do you have any plans/objections to merging
-this optimization patch ? Serge had acked an earlier version of this
-patch.
+identified resources of the container are tracked to be ignored by 
+checkpoint and to be replaced by similar ones at restart.
 
-Suka
 
-Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| 
-| From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-| Date: Thu, 12 Mar 2009 14:19:54 -0700
-| Subject: [PATCH 3/6] Check 'may_checkpoint()' early
-| 
-| We currently check if a task is checkpointable when writing the task
-| information to checkpoint file. The small downside of doing this check
-| late is that we may have processed several processes in the tree before
-| hitting one that cannot be checkpointed.
-| 
-| We anyway walk the process tree we are checkpointing earlier, while
-| counting the tasks. We could check if all processes in the tree are
-| checkpointable at that time and fail early if any of them are not.
-| Since the process tree should be frozen, checking earlier should not
-| matter ?
-| 
-| For now, the patch leaves the existing check in cr_write_pids(). We
-| can remove that later.
-| 
-| Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-| ---
-|  checkpoint/checkpoint.c |    9 +++++++++
-|  1 files changed, 9 insertions(+), 0 deletions(-)
-| 
-| diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-| index ed4fd3d..dae9b97 100644
-| --- a/checkpoint/checkpoint.c
-| +++ b/checkpoint/checkpoint.c
-| @@ -341,11 +341,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
-|  	struct task_struct **tasks_arr = ctx->tasks_arr;
-|  	int tasks_nr = ctx->tasks_nr;
-|  	int nr = 0;
-| +	int ret;
-| 
-|  	read_lock(&tasklist_lock);
-| 
-|  	/* count tasks via DFS scan of the tree */
-|  	while (1) {
-| +		ret = cr_may_checkpoint_task(task, ctx);
-| +		if (ret < 0) {
-| +			nr = ret;
-| +			break;
-| +		}
-| +
-|  		if (tasks_arr) {
-|  			/* unlikely, but ... */
-|  			if (nr == tasks_nr)
-| @@ -401,6 +408,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
-| 
-|  	/* count tasks (no side effects) */
-|  	n = cr_tree_count_tasks(ctx);
-| +	if (n < 0)
-| +		return n;
-| 
-|  	ctx->tasks_nr = n;
-|  	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
-| -- 
-| 1.5.2.5
-| 
-| _______________________________________________
-| Containers mailing list
-| Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-| https://lists.linux-foundation.org/mailman/listinfo/containers
+C.
+
+> Subystems which are temporarily entirely unsupported (like sysvipc)
+> would need at least a dummy section in the format wherein we can at
+> least say 'unsupported', otherwise we'll still just get a meaningless
+> -EINVAL.
+>
+> I actually got bitten yesterday by trying to checkpoint a task that
+> wasn't frozen.  I forgot v14 had that check, and my failures (a
+> segfault actually) weren't helpful.
+> 
+> -serge
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
