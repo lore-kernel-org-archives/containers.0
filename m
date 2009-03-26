@@ -1,16 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 3/7] make CONFIG_CHECKPOINT depend on
-	CONFIG_CHECKPOINT_SUPPORT
-Date: Wed, 25 Mar 2009 22:09:31 -0500
-Message-ID: <20090325220931.2653f379@thinkcentre.lan>
-References: <1238022166-13422-1-git-send-email-ntl@pobox.com>
-	<1238022166-13422-4-git-send-email-ntl@pobox.com>
-	<1238027983.8286.441.camel@nimitz>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 3/6] Check 'may_checkpoint()' early
+Date: Wed, 25 Mar 2009 22:58:40 -0700
+Message-ID: <20090326055840.GA8220@us.ibm.com>
+References: <20090317174359.GA10796@us.ibm.com>
+	<20090317175013.GD10796@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1238027983.8286.441.camel@nimitz>
+Content-Disposition: inline
+In-Reply-To: <20090317175013.GD10796-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,75 +19,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-> On Wed, 2009-03-25 at 18:02 -0500, Nathan Lynch wrote:
-> > 
-> > diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-> > index e91e0fd..760c450 100644
-> > --- a/checkpoint/Kconfig
-> > +++ b/checkpoint/Kconfig
-> > @@ -1,6 +1,6 @@
-> >  config CHECKPOINT
-> >         bool "Enable checkpoint/restart (EXPERIMENTAL)"
-> > -       depends on (X86_32 || (S390 && 64BIT)) && EXPERIMENTAL
-> > +       depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
-> >         help
-> >           Application checkpoint/restart is the ability to save the
-> >           state of a running application so that it can later resume
-> 
-> Yeah, this is the right way to do it, very nice.
+Oren, 
 
-Thanks Dave.
+I see that patch 3/6 (deny external checkpoint unless frozen) in this
+set was merged in v14, but do you have any plans/objections to merging
+this optimization patch ? Serge had acked an earlier version of this
+patch.
 
- 
-> Could we add a wee little ARCH_ prepend on 'CHECKPOINT_SUPPORT' in
-> there?  That way, people at least know where to go looking when they
-> want to find out why it isn't enabled.  
+Suka
 
-You have a point, but I'd prefer to keep the name unchanged:
-
-* There doesn't seem to be a strong convention for putting the 'ARCH'
-  string in such symbols.  Examples: LOCKDEP_SUPPORT, HAVE_KPROBES,
-  STACKTRACE_SUPPORT.  Plenty of counter-examples, too, but there's no
-  standard practice AFAICT.
-
-* Making the string more verbose means people are more likely to get
-  it wrong e.g. CONFIG_CHECKPOINT_ARCH_SUPPORT (and this sort of thing
-  can go unnoticed for a while).
-
-* Implementers can grep or cscope for it and figure it out pretty
-  quickly, and they likely would do that anyway regardless of what it's
-  called.
-
-Prepending ARCH_ would imply the right things, but with a comment, we
-can be explicit.
-
-
-commit 07087d9295d1c4dcd7e79b19d70abf19370f59da
-Author: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Date:   Wed Mar 25 21:32:30 2009 -0500
-
-    document CHECKPOINT_SUPPORT
-    
-    Make CHECKPOINT_SUPPORT's intended use clear with a comment in
-    checkpoint/Kconfig.
-    
-    Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-index 760c450..1761b0a 100644
---- a/checkpoint/Kconfig
-+++ b/checkpoint/Kconfig
-@@ -1,3 +1,7 @@
-+# Architectures should define CHECKPOINT_SUPPORT when they have
-+# implemented the hooks for processor state etc. needed by the
-+# core checkpoint/restart code.
-+
- config CHECKPOINT
- 	bool "Enable checkpoint/restart (EXPERIMENTAL)"
- 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| 
+| From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| Date: Thu, 12 Mar 2009 14:19:54 -0700
+| Subject: [PATCH 3/6] Check 'may_checkpoint()' early
+| 
+| We currently check if a task is checkpointable when writing the task
+| information to checkpoint file. The small downside of doing this check
+| late is that we may have processed several processes in the tree before
+| hitting one that cannot be checkpointed.
+| 
+| We anyway walk the process tree we are checkpointing earlier, while
+| counting the tasks. We could check if all processes in the tree are
+| checkpointable at that time and fail early if any of them are not.
+| Since the process tree should be frozen, checking earlier should not
+| matter ?
+| 
+| For now, the patch leaves the existing check in cr_write_pids(). We
+| can remove that later.
+| 
+| Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| ---
+|  checkpoint/checkpoint.c |    9 +++++++++
+|  1 files changed, 9 insertions(+), 0 deletions(-)
+| 
+| diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+| index ed4fd3d..dae9b97 100644
+| --- a/checkpoint/checkpoint.c
+| +++ b/checkpoint/checkpoint.c
+| @@ -341,11 +341,18 @@ static int cr_tree_count_tasks(struct cr_ctx *ctx)
+|  	struct task_struct **tasks_arr = ctx->tasks_arr;
+|  	int tasks_nr = ctx->tasks_nr;
+|  	int nr = 0;
+| +	int ret;
+| 
+|  	read_lock(&tasklist_lock);
+| 
+|  	/* count tasks via DFS scan of the tree */
+|  	while (1) {
+| +		ret = cr_may_checkpoint_task(task, ctx);
+| +		if (ret < 0) {
+| +			nr = ret;
+| +			break;
+| +		}
+| +
+|  		if (tasks_arr) {
+|  			/* unlikely, but ... */
+|  			if (nr == tasks_nr)
+| @@ -401,6 +408,8 @@ static int cr_build_tree(struct cr_ctx *ctx)
+| 
+|  	/* count tasks (no side effects) */
+|  	n = cr_tree_count_tasks(ctx);
+| +	if (n < 0)
+| +		return n;
+| 
+|  	ctx->tasks_nr = n;
+|  	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
+| -- 
+| 1.5.2.5
+| 
+| _______________________________________________
+| Containers mailing list
+| Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+| https://lists.linux-foundation.org/mailman/listinfo/containers
