@@ -1,15 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/7] make CONFIG_CHECKPOINT depend on
-	CONFIG_CHECKPOINT_SUPPORT
-Date: Wed, 25 Mar 2009 17:39:43 -0700
-Message-ID: <1238027983.8286.441.camel@nimitz>
-References: <1238022166-13422-1-git-send-email-ntl@pobox.com>
-	<1238022166-13422-4-git-send-email-ntl@pobox.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Can not remove the subdirectory in cgroup pseudo-filesystem
+Date: Thu, 26 Mar 2009 09:15:00 +0800
+Message-ID: <49CAD714.4080307@cn.fujitsu.com>
+References: <d95d44a20903250924p2fb28afdq7ac47cac372c7de3@mail.gmail.com>	<20090325163702.GA17626@us.ibm.com>
+	<d95d44a20903251011u5786c780wb3a0a0cc3b759689@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1238022166-13422-4-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <d95d44a20903251011u5786c780wb3a0a0cc3b759689-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +18,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-03-25 at 18:02 -0500, Nathan Lynch wrote:
+anqin wrote:
+>> Yes you have to initialize some cpuset files first.  Otherwise
+>> the tasks have no access to any memory or cpus.
+>>
 > 
-> diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-> index e91e0fd..760c450 100644
-> --- a/checkpoint/Kconfig
-> +++ b/checkpoint/Kconfig
-> @@ -1,6 +1,6 @@
->  config CHECKPOINT
->         bool "Enable checkpoint/restart (EXPERIMENTAL)"
-> -       depends on (X86_32 || (S390 && 64BIT)) && EXPERIMENTAL
-> +       depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
->         help
->           Application checkpoint/restart is the ability to save the
->           state of a running application so that it can later resume
+> Oh... thank you for reminding. Previously, I run my tests in
+> a experimental kernel, it seems someone has set the
+> parameters.
+> 
+> 
+> BTW, is it possible currently to combine two tasks into
+> one cgroup? for instance, I have run two bashes (bash_A and
 
-Yeah, this is the right way to do it, very nice.
+I recomend you to read Documentation/cgroups/cgroups.txt to know
+cgroup better. Cgroup is used to aggregate/partition sets of tasks,
+so of course you can put more than 1 task into a cgroup.
 
-Could we add a wee little ARCH_ prepend on 'CHECKPOINT_SUPPORT' in
-there?  That way, people at least know where to go looking when they
-want to find out why it isn't enabled.  
+> bash_B). Now, in bash_A, I created a cgroup in procfs:
+> 
+> # mount -t cgroup cgroup /mnt/cgrp
 
--- Dave
+mount cgroupfs with all cgroup subsystems is not so sane IMO.
+
+> # cd /mnt/cgrp
+> # mkdir test
+> # echo $$ > test/tasks
+> 
+> Then, I would like to add bash_B in this task group but
+> fail:
+> 
+> # echo #(PID_OF_bash_B) >  test/tasks
+> -bash: echo: write error: Operation not permitted
+> 
+
+That's because ns_cgroup is binded in this cgroup hierarchy, and
+it's ns_cgroup that prevents the task attaching, but a patch in
+-mm tree relaxes this check, and you won't see this restriction
+when using ns_cgroup.
+
+> It seems the cgroup can not couple two irrelevant
+> task together, right?
+> 
+> 
+> Best,
+> 
+> Anqin
