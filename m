@@ -1,17 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Can not remove the subdirectory in cgroup pseudo-filesystem
-Date: Wed, 25 Mar 2009 20:51:56 -0500
-Message-ID: <20090326015155.GA31480@us.ibm.com>
-References: <d95d44a20903250924p2fb28afdq7ac47cac372c7de3@mail.gmail.com>
-	<20090325163702.GA17626@us.ibm.com>
-	<d95d44a20903251011u5786c780wb3a0a0cc3b759689@mail.gmail.com>
-	<49CAD714.4080307@cn.fujitsu.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 3/7] make CONFIG_CHECKPOINT depend on
+	CONFIG_CHECKPOINT_SUPPORT
+Date: Wed, 25 Mar 2009 22:09:31 -0500
+Message-ID: <20090325220931.2653f379@thinkcentre.lan>
+References: <1238022166-13422-1-git-send-email-ntl@pobox.com>
+	<1238022166-13422-4-git-send-email-ntl@pobox.com>
+	<1238027983.8286.441.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49CAD714.4080307-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1238027983.8286.441.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,61 +20,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> anqin wrote:
-> >> Yes you have to initialize some cpuset files first.  Otherwise
-> >> the tasks have no access to any memory or cpus.
-> >>
-> > 
-> > Oh... thank you for reminding. Previously, I run my tests in
-> > a experimental kernel, it seems someone has set the
-> > parameters.
-> > 
-> > 
-> > BTW, is it possible currently to combine two tasks into
-> > one cgroup? for instance, I have run two bashes (bash_A and
-> 
-> I recomend you to read Documentation/cgroups/cgroups.txt to know
-> cgroup better. Cgroup is used to aggregate/partition sets of tasks,
-> so of course you can put more than 1 task into a cgroup.
-> 
-> > bash_B). Now, in bash_A, I created a cgroup in procfs:
-> > 
-> > # mount -t cgroup cgroup /mnt/cgrp
-> 
-> mount cgroupfs with all cgroup subsystems is not so sane IMO.
-> 
-> > # cd /mnt/cgrp
-> > # mkdir test
-> > # echo $$ > test/tasks
-> > 
-> > Then, I would like to add bash_B in this task group but
-> > fail:
-> > 
-> > # echo #(PID_OF_bash_B) >  test/tasks
-> > -bash: echo: write error: Operation not permitted
-> > 
-> 
-> That's because ns_cgroup is binded in this cgroup hierarchy, and
-> it's ns_cgroup that prevents the task attaching, but a patch in
-> -mm tree relaxes this check, and you won't see this restriction
-> when using ns_cgroup.
+Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-Ooh, right, you can only enter an empty cgroup in "older" kernels...
-
-In my defense, that made sense when the ns cgroup was still possibly
-going to be used for allowing tasks to enter each other's namespaces. :)
-
--serge
-
-> > It seems the cgroup can not couple two irrelevant
-> > task together, right?
+> On Wed, 2009-03-25 at 18:02 -0500, Nathan Lynch wrote:
 > > 
-> > 
-> > Best,
-> > 
-> > Anqin
+> > diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+> > index e91e0fd..760c450 100644
+> > --- a/checkpoint/Kconfig
+> > +++ b/checkpoint/Kconfig
+> > @@ -1,6 +1,6 @@
+> >  config CHECKPOINT
+> >         bool "Enable checkpoint/restart (EXPERIMENTAL)"
+> > -       depends on (X86_32 || (S390 && 64BIT)) && EXPERIMENTAL
+> > +       depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+> >         help
+> >           Application checkpoint/restart is the ability to save the
+> >           state of a running application so that it can later resume
+> 
+> Yeah, this is the right way to do it, very nice.
+
+Thanks Dave.
+
+ 
+> Could we add a wee little ARCH_ prepend on 'CHECKPOINT_SUPPORT' in
+> there?  That way, people at least know where to go looking when they
+> want to find out why it isn't enabled.  
+
+You have a point, but I'd prefer to keep the name unchanged:
+
+* There doesn't seem to be a strong convention for putting the 'ARCH'
+  string in such symbols.  Examples: LOCKDEP_SUPPORT, HAVE_KPROBES,
+  STACKTRACE_SUPPORT.  Plenty of counter-examples, too, but there's no
+  standard practice AFAICT.
+
+* Making the string more verbose means people are more likely to get
+  it wrong e.g. CONFIG_CHECKPOINT_ARCH_SUPPORT (and this sort of thing
+  can go unnoticed for a while).
+
+* Implementers can grep or cscope for it and figure it out pretty
+  quickly, and they likely would do that anyway regardless of what it's
+  called.
+
+Prepending ARCH_ would imply the right things, but with a comment, we
+can be explicit.
+
+
+commit 07087d9295d1c4dcd7e79b19d70abf19370f59da
+Author: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Date:   Wed Mar 25 21:32:30 2009 -0500
+
+    document CHECKPOINT_SUPPORT
+    
+    Make CHECKPOINT_SUPPORT's intended use clear with a comment in
+    checkpoint/Kconfig.
+    
+    Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index 760c450..1761b0a 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -1,3 +1,7 @@
++# Architectures should define CHECKPOINT_SUPPORT when they have
++# implemented the hooks for processor state etc. needed by the
++# core checkpoint/restart code.
++
+ config CHECKPOINT
+ 	bool "Enable checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
