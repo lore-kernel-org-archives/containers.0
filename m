@@ -1,14 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: lxc configuration help - only network isolated?
-Date: Fri, 27 Mar 2009 08:08:59 -0500
-Message-ID: <20090327130859.GA9643@us.ibm.com>
-References: <20090326224541.GA25769@versecorp.net> <49CC9262.40302@free.fr>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] IO Controller: Don't store the pid in single queue
+	circumstances
+Date: Fri, 27 Mar 2009 09:52:35 -0400
+Message-ID: <20090327135235.GD30476__49552.8654581451$1238162212$gmane$org@redhat.com>
+References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
+	<1236823015-4183-3-git-send-email-vgoyal@redhat.com>
+	<49CC8EBA.9040804@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49CC9262.40302-GANU6spQydw@public.gmane.org>
+In-Reply-To: <49CC8EBA.9040804-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,63 +21,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> Chris R. Jones wrote:
-> > I have a couple of basic configuration questions on linux containers.  I'm using lxc-0.6.1.
-> >
-> > I'm trying to configure a setup where I have two containers, where the only virtualized/isolated resources are network resources, but I can still do IPC between processes in the two containers.
-> >
-> > The lxc.conf man page indicates that, "by default, the pids, sysv ipc, and mount points are virtualized and isolated. "
-> >
-> > Is there a way in the configuration to specify that those resources should NOT be isolated?  I'd really like to have communication between two processes running in different containers using sysV IPC and signals.  The only thing I really want to be isolated are two different network namespaces.
-> >
-> > Is there a setting I use in the lxc.conf file to accomplish this?
-> >
-> >   
-> I thought no one would be interested by less isolation :)
+On Fri, Mar 27, 2009 at 04:30:50PM +0800, Gui Jianfeng wrote:
+> Vivek Goyal wrote:
+> ...
+> > +int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
+> > +			void *sched_queue, int ioprio_class, int ioprio,
+> > +			int is_sync)
+> > +{
+> > +	struct elv_fq_data *efqd = &eq->efqd;
+> > +	struct io_group *iog = io_lookup_io_group_current(efqd->queue);
+> > +
+> > +	RB_CLEAR_NODE(&ioq->entity.rb_node);
+> > +	atomic_set(&ioq->ref, 0);
+> > +	ioq->efqd = efqd;
+> > +	ioq->entity.budget = efqd->elv_slice[is_sync];
+> > +	elv_ioq_set_ioprio_class(ioq, ioprio_class);
+> > +	elv_ioq_set_ioprio(ioq, ioprio);
+> > +	ioq->pid = current->pid;
 > 
-> I see you want to share the signals, that means no pid namespace, right ?
+>   Hi Vivek,
 > 
-> The design of the lxc is build around the pid namespace, if you kill the 
-> first process of the pid namespace, you kill all the process of the 
-> container. That allows to implement the 'lxc-stop' command.
+>   Storing a pid in single queue circumstances doesn't make sence.
+>   So just store the pid when cfq is used.
 > 
-> So no pid namespace, no container :)
-
-There has been discussion before about having a 'kill' or 'signal'
-cgroup, analogous to the freezer, for sending signals to all tasks
-in a cgroup.  We could push that, and have lxc-stop optionally use
-that.
-
-If there were interest.
-
-> > Up to now, I've been doing some prototyping using lxc-unshare -n, but that doesn't really create a container, correct?  That mostly accomplishes my goals, but I can't find a way to spawn new processes into that same namespace.  Is there a way, without defining a container?
-> >   
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>  ---
+>  block/elevator-fq.c |    5 ++++-
+>  1 files changed, 4 insertions(+), 1 deletions(-)
 > 
-> No, except writing a forker and launch it inside the container and have 
-> a command outside to tell the forker to spawn a specific program. 
-> Dietmar Maurer is working on such component to be integrated in lxc.
-> > Any recommendations on how to properly configure a containers to allow IPC between processes in two different containers while still isolating the network resources?
-> >   
-> 
-> If you want to share the ipc to do some testing, you can hack the 
-> lxc_start function in start.c and remove the ipc cloning flag.
-> 
-> - clone_flags = CLONE_NEWPID|CLONE_NEWIPC|CLONE_NEWNS;
-> +clone_flags = CLONE_NEWPID|CLONE_NEWNS;
-> 
-> I hope that helps.
+> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+> index df53418..c72f7e6 100644
+> --- a/block/elevator-fq.c
+> +++ b/block/elevator-fq.c
+> @@ -1988,7 +1988,10 @@ int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
+>  	ioq->entity.budget = efqd->elv_slice[is_sync];
+>  	elv_ioq_set_ioprio_class(ioq, ioprio_class);
+>  	elv_ioq_set_ioprio(ioq, ioprio);
+> -	ioq->pid = current->pid;
+> +	if (elv_iosched_single_ioq(eq))
+> +		ioq->pid = 0;
+> +	else
+> +		ioq->pid = current->pid;
+>  	ioq->sched_queue = sched_queue;
 
-I've heard this request in other places, especially about ipc, so maybe
-it's a good idea to work such support into the config.  Maybe something
-like:
+Thanks Gui. Yes, if there is a single ioq, this pid will reflect the
+pid of the process who caused the creation of the io queue and later
+requests from all the other processess will go into same queue.
 
-keep_sharing=CLONE_NEWIPC
+In fact cfq also has the same issue for async queues where async queue
+will store the pid when it is created later all other processes of same
+prio level will use it.
 
-in lxc.conf, and mask keep_sharing out of clone_flags at lxc_start?
+So if you think displaying "0" is better than displaying the the pid of
+the process who created the queue, then I will include this patch. Right
+now I don't have very strong opinion about it. 
 
--serge
+Thanks
+Vivek
