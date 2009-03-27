@@ -1,11 +1,14 @@
-From: Allegra Juliet <armoury-9KivBPJqSnob1SvskN2V4Q@public.gmane.org>
-Subject: Nothing can seduce women fasterr than a...
-Date: Fri, 27 Mar 2009 13:41:19 +0000
-Message-ID: <49CC9CAD.7711296@brielhof.de>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: lxc configuration help - only network isolated?
+Date: Fri, 27 Mar 2009 08:08:59 -0500
+Message-ID: <20090327130859.GA9643@us.ibm.com>
+References: <20090326224541.GA25769@versecorp.net> <49CC9262.40302@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <49CC9262.40302-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,17 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is yoour penis: 8--o
-This is yoour penis on drugs: 8=====O
-Any  questions?
-<http://cid-4681a664867f78e4.spaces.live.com/blog/cns!4681A664867F78E4!104.entry>
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> Chris R. Jones wrote:
+> > I have a couple of basic configuration questions on linux containers.  I'm using lxc-0.6.1.
+> >
+> > I'm trying to configure a setup where I have two containers, where the only virtualized/isolated resources are network resources, but I can still do IPC between processes in the two containers.
+> >
+> > The lxc.conf man page indicates that, "by default, the pids, sysv ipc, and mount points are virtualized and isolated. "
+> >
+> > Is there a way in the configuration to specify that those resources should NOT be isolated?  I'd really like to have communication between two processes running in different containers using sysV IPC and signals.  The only thing I really want to be isolated are two different network namespaces.
+> >
+> > Is there a setting I use in the lxc.conf file to accomplish this?
+> >
+> >   
+> I thought no one would be interested by less isolation :)
+> 
+> I see you want to share the signals, that means no pid namespace, right ?
+> 
+> The design of the lxc is build around the pid namespace, if you kill the 
+> first process of the pid namespace, you kill all the process of the 
+> container. That allows to implement the 'lxc-stop' command.
+> 
+> So no pid namespace, no container :)
 
+There has been discussion before about having a 'kill' or 'signal'
+cgroup, analogous to the freezer, for sending signals to all tasks
+in a cgroup.  We could push that, and have lxc-stop optionally use
+that.
 
-Rather unusual for a man to come without a lawyer. Been more
-than twentyfive, he looked considerably features reflecting
-for a short while, addressed fertilized, and started him
-on his career. This man, he said, calmly. Oh, do you take
-me for a.
+If there were interest.
+
+> > Up to now, I've been doing some prototyping using lxc-unshare -n, but that doesn't really create a container, correct?  That mostly accomplishes my goals, but I can't find a way to spawn new processes into that same namespace.  Is there a way, without defining a container?
+> >   
+> 
+> No, except writing a forker and launch it inside the container and have 
+> a command outside to tell the forker to spawn a specific program. 
+> Dietmar Maurer is working on such component to be integrated in lxc.
+> > Any recommendations on how to properly configure a containers to allow IPC between processes in two different containers while still isolating the network resources?
+> >   
+> 
+> If you want to share the ipc to do some testing, you can hack the 
+> lxc_start function in start.c and remove the ipc cloning flag.
+> 
+> - clone_flags = CLONE_NEWPID|CLONE_NEWIPC|CLONE_NEWNS;
+> +clone_flags = CLONE_NEWPID|CLONE_NEWNS;
+> 
+> I hope that helps.
+
+I've heard this request in other places, especially about ipc, so maybe
+it's a good idea to work such support into the config.  Maybe something
+like:
+
+keep_sharing=CLONE_NEWIPC
+
+in lxc.conf, and mask keep_sharing out of clone_flags at lxc_start?
+
+-serge
