@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14-rc][PATCH 18/23] Prepare to support shared memory
-Date: Thu, 26 Mar 2009 22:31:12 -0400
-Message-ID: <49CC3A70.8010403@cs.columbia.edu>
-References: <1237574868-3371-1-git-send-email-orenl@cs.columbia.edu>	
-	<1237574868-3371-19-git-send-email-orenl@cs.columbia.edu>
-	<1237584473.8286.307.camel@nimitz>
+From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Can not remove the subdirectory in cgroup pseudo-filesystem
+Date: Fri, 27 Mar 2009 11:06:36 +0800
+Message-ID: <d95d44a20903262006y573c1cceya50eeb6d4af231e4@mail.gmail.com>
+References: <d95d44a20903250924p2fb28afdq7ac47cac372c7de3@mail.gmail.com>
+	<20090325163702.GA17626@us.ibm.com>
+	<d95d44a20903251011u5786c780wb3a0a0cc3b759689@mail.gmail.com>
+	<49CAD714.4080307@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1237584473.8286.307.camel@nimitz>
+In-Reply-To: <49CAD714.4080307-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,80 +20,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Thank you,
+
+when I mount all cgroup subsystem to cgroupfs, it mounts also
+the ns_cgroup which blocks the adding new taskes into given
+cgroup.
+
+If I mount a single subsystem (such as a memory), it can work.
 
 
-Dave Hansen wrote:
-> On Fri, 2009-03-20 at 14:47 -0400, Oren Laadan wrote:
->> diff --git a/checkpoint/checkpoint_mem.h b/checkpoint/checkpoint_mem.h
->> index de1d4c8..3157dde 100644
->> --- a/checkpoint/checkpoint_mem.h
->> +++ b/checkpoint/checkpoint_mem.h
->> @@ -43,4 +43,22 @@ static inline int cr_pgarr_nr_free(struct cr_pgarr *pgarr)
->>         return CR_PGARR_TOTAL - pgarr->nr_used;
->>  }
+>> # mount -t cgroup cgroup /mnt/cgrp
+>
+> mount cgroupfs with all cgroup subsystems is not so sane IMO.
+>
+>> # cd /mnt/cgrp
+>> # mkdir test
+>> # echo $$ > test/tasks
 >>
->> +/*
->> + * This probably belongs in include/linux/mm.h
->> + */
->> +
->> +/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
->> +enum sgp_type {
->> +       SGP_READ,       /* don't exceed i_size, don't allocate page */
->> +       SGP_CACHE,      /* don't exceed i_size, may allocate page */
->> +       SGP_DIRTY,      /* like SGP_CACHE, but set new page dirty */
->> +       SGP_WRITE,      /* may exceed i_size, may allocate page */
->> +};
->> +
->> +int shmem_getpage(struct inode *inode, unsigned long idx,
->> +                 struct page **pagep, enum sgp_type sgp, int *type);
->> +
->> +extern struct vm_operations_struct shmem_vm_ops;
->> +extern struct vm_operations_struct shm_vm_ops;
-> ...
->> --- a/mm/shmem.c
->> +++ b/mm/shmem.c
->> @@ -103,8 +103,8 @@ static unsigned long shmem_default_max_inodes(void)
->>  }
->>  #endif
+>> Then, I would like to add bash_B in this task group but
+>> fail:
 >>
->> -static int shmem_getpage(struct inode *inode, unsigned long idx,
->> -                        struct page **pagep, enum sgp_type sgp, int *type);
->> +int shmem_getpage(struct inode *inode, unsigned long idx,
->> +                 struct page **pagep, enum sgp_type sgp, int *type);
-> 
-> Personally, I think it is bad form to export someone else's function for
-> them.  Please move the current shmem.c function declaration to a header
-> that can be included by both the c/r code and shmem.c
-> 
->> /* return the subtype of a shared vma segment */
->> static enum vm_type cr_shared_vma_type(struct vm_area_struct *vma, int new)
->> {
->>         enum vm_type vma_type;
+>> # echo #(PID_OF_bash_B) >  test/tasks
+>> -bash: echo: write error: Operation not permitted
 >>
->>         if (vma->vm_ops == &shmem_vm_ops)       /* /dev/zero or anonymous */
->>                 vma_type = CR_VMA_SHM_ANON;
->>         else if (vma->vm_ops == &shm_vm_ops)    /* IPC (unsupported yet) */
->>                 vma_type = -EINVAL;
->>         else
->>                 vma_type = CR_VMA_SHM_FILE;
->>
->>         if (!new && vma_type == CR_VMA_SHM_ANON)
->>                 vma_type = CR_VMA_SHM_ANON_SKIP;
->>
->>         return vma_type;
->> }
-> 
-> This just looks really fragile to me.  The first thing that comes up in
-> my cscope is bf5xx_pcm_mmap().  That is VM_SHARED, but is *certainly*
-> not CR_VMA_SHM_FILE.  
-> 
-> Instead of *checking* vma->vm_ops, I believe the more correct solutions
-> here is to add an new vm_op which can be asked for its CR_VMA_* type.
-
-Yes, it will be cleaner. I'll give it a try.
-
-Oren
+>
+> That's because ns_cgroup is binded in this cgroup hierarchy, and
+> it's ns_cgroup that prevents the task attaching, but a patch in
+> -mm tree relaxes this check, and you won't see this restriction
+> when using ns_cgroup.
+>
