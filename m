@@ -1,15 +1,15 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: List of filesystems to use generic checkpoint fops
-Date: Fri, 27 Mar 2009 20:19:11 -0700
-Message-ID: <20090328031911.GD27803@us.ibm.com>
-References: <20090327040534.GB27803@us.ibm.com>
-	<49CCE933.5050004@cs.columbia.edu>
+Subject: Re: lxc configuration help - only network isolated?
+Date: Fri, 27 Mar 2009 20:27:45 -0700
+Message-ID: <20090328032745.GE27803@us.ibm.com>
+References: <20090326224541.GA25769@versecorp.net> <49CC9262.40302@free.fr>
+	<20090327130859.GA9643@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49CCE933.5050004-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20090327130859.GA9643-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,68 +19,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 27, 2009 at 10:56:51AM -0400, Oren Laadan wrote:
-> 
-> 
-> Matt Helsley wrote:
-> > In case anyone's curious here is my list of filesystems which I think should
-> > have generic_file_checkpoint fops (31):
-> 
-> Thanks, Matt.
-
-You're welcome!
-
-<snip>
-> > 	ramfs
-> 
-> I'd think that in the case of ramfs we always need to dump the contents of the
-> file, or the entire file system, with the checkpoint image.
-
-I anticipated Dave's answer when I lumped ramfs with "regular"
-filesystems. To the best of my knowledge it doesn't matter what kind of "block"
-device backs these files. Only that the file contents can be migrated somehow
-and that they support the seek operation.
-
-Note that procfs is difficult for checkpoint/restart because the contents
-often can't be migrated using rsync. Each non-process /proc file probably
-will need its own checkpoint operation. I suspect this would frequently need to
-be passed through an extended seq_file API much like the checkpoint op
-extends the VFS file_operations. 
-
-> > 	reiserfs
-> > 	romfs
-> > 	squashfs
-> > 	sysv
-> > 	ubifs
-> > 	udf
-> > 	ufs
-> > 	xfs
+On Fri, Mar 27, 2009 at 08:08:59AM -0500, Serge E. Hallyn wrote:
+> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> > Chris R. Jones wrote:
+> > > I have a couple of basic configuration questions on linux containers.  I'm using lxc-0.6.1.
+> > >
+> > > I'm trying to configure a setup where I have two containers, where the only virtualized/isolated resources are network resources, but I can still do IPC between processes in the two containers.
+> > >
+> > > The lxc.conf man page indicates that, "by default, the pids, sysv ipc, and mount points are virtualized and isolated. "
+> > >
+> > > Is there a way in the configuration to specify that those resources should NOT be isolated?  I'd really like to have communication between two processes running in different containers using sysV IPC and signals.  The only thing I really want to be isolated are two different network namespaces.
+> > >
+> > > Is there a setting I use in the lxc.conf file to accomplish this?
+> > >
+> > >   
+> > I thought no one would be interested by less isolation :)
 > > 
-> > I also added the checkpoint operation to generic_ro_fops since it's used
-> > only in the set of filesystems listed above. For the curious:
-> > 	befs
-> > 	cramfs
-> > 	efs
-> > 	freevxfs
-> > 	isofs
-> > 	romfs
-> > 	squashfs
+> > I see you want to share the signals, that means no pid namespace, right ?
+> > 
+> > The design of the lxc is build around the pid namespace, if you kill the 
+> > first process of the pid namespace, you kill all the process of the 
+> > container. That allows to implement the 'lxc-stop' command.
+> > 
+> > So no pid namespace, no container :)
+> 
+> There has been discussion before about having a 'kill' or 'signal'
+> cgroup, analogous to the freezer, for sending signals to all tasks
+> in a cgroup.  We could push that, and have lxc-stop optionally use
+> that.
+> 
+> If there were interest.
 
-The patch modifying generic_ro_fops doesn't quite match the pattern
-established when patching the other filesystems so I thought it deserved
-special mention. The other filesystems all define their own file_operation
-structs but these share one.
-
-Amongst other things these filesystems do not allow modifications to their file
-contents. Consequently they share generic_ro_fops rather than define their own
-file operations. cramfs, isofs, romfs, and squashfs are designed to be static,
-offline-generated filesystems so generic_ro_fops makes sense here. I guess befs,
-freevxfs, and efs are legacy filesystems and there is little reason to
-implement write operations for them.
+I've got some ancient patches for that! :) I think we'd want to
+use Paul Menage's recent empty hierarchy, multiply-bound, and stateless
+subsystem patches for a signal subsystem. In fact, it may be such a
+simple task that using the old patches would be more of a hindrance...
 
 Cheers,
-	-Matt
+	-Matt Helsley
