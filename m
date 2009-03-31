@@ -1,15 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 3/7] sysvipc-shm: checkpoint
-Date: Tue, 31 Mar 2009 16:52:26 -0400
-Message-ID: <49D2828A.4050605@cs.columbia.edu>
-References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477552-17083-4-git-send-email-orenl@cs.columbia.edu>
-	<20090331200658.GA19038@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/3] Make cr_may_checkpoint_task() check each namespace
+	individually
+Date: Tue, 31 Mar 2009 13:58:25 -0700
+Message-ID: <1238533107-11796-2-git-send-email-danms@us.ibm.com>
+References: <1238533107-11796-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090331200658.GA19038-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1238533107-11796-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +18,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/checkpoint.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
 
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> ...
->>  int cr_write_ipc(struct cr_ctx *ctx, struct nsproxy *nsproxy)
->>  {
->> -	return 0;
->> +	return cr_write_ipc_shm(ctx, nsproxy->ipc_ns);
->>  }
-> 
-> What is the plan for implementing support for nested ipc namespaces,
-> since all ipc data is currently stored as a single global checkpoint
-> property before the task data?
-> 
-> Are you figuring you'll just do cr_write_ipc_shm() for all nsproxies
-> which are part of the checkpoint image, and store an ipc_ns id
-> or nsproxy id alongside it, so that at restart you just recreate all
-> the ipc namespaces ahead of time, then attach the tasks to their
-> target namespaces as they are created?
-> 
-> Just wondering...  as it stands the code looks more like it *wants*
-> to be targeted at only one ipcns per checkpoint image.
-
-Good question (i.e. this deserves a commentin the patch description...)
-
-The plan is to call cr_write_ipc() for each ipc namespace as soon as
-we discover it, and deposit in the objhash. The second encounter of the
-same namespace will simply skip.
-
-This fits well with restart, because we will encounter the new objref
-in in teh context of the right task, i.e. one that has that namespace
-in its nsproxy, and all operations (e.g. shmget) will take place in
-the correct namespace.
-
-So, yes, this will move from the 'global' section into a per-task
-'nsproxy-contents' section.
-
-Oren.
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index ef35754..c2f0e16 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -302,8 +302,19 @@ static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
+ 	if (t != current && !frozen(t))
+ 		return -EBUSY;
+ 
+-	/* FIXME: change this for nested containers */
+-	if (task_nsproxy(t) != ctx->root_nsproxy)
++	if (task_nsproxy(t)->uts_ns != ctx->root_nsproxy->uts_ns)
++		return -EPERM;
++
++	if (task_nsproxy(t)->ipc_ns != ctx->root_nsproxy->ipc_ns)
++		return -EPERM;
++
++	if (task_nsproxy(t)->mnt_ns != ctx->root_nsproxy->mnt_ns)
++		return -EPERM;
++
++	if (task_nsproxy(t)->pid_ns != ctx->root_nsproxy->pid_ns)
++		return -EPERM;
++
++	if (task_nsproxy(t)->net_ns != ctx->root_nsproxy->net_ns)
+ 		return -EPERM;
+ 
+ 	return 0;
+-- 
+1.5.6.3
