@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 22/29] Restore anonymous- and file-mapped- shared
-	memory
-Date: Tue, 31 Mar 2009 01:29:02 -0400
-Message-ID: <1238477349-11029-23-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 13/29] External checkpoint of a task other than
+	ourself
+Date: Tue, 31 Mar 2009 01:28:53 -0400
+Message-ID: <1238477349-11029-14-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,373 +22,214 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The bulk of the work is in cr_read_vma(), which has been refactored:
-the part that create the suitable 'struct file *' for the mapping is
-now larger and moved to a separate function. What's left is to read
-the VMA description, get the file pointer, create the mapping, and
-proceed to read the contents in.
+Now we can do "external" checkpoint, i.e. act on another task.
 
-Both anonymous shared VMAs that have been read earlier (as indicated
-by a look up to objhash) and file-mapped shared VMAs are skipped.
-Anonymous shared VMAs seen for the first time have their contents
-read in directly to the backing inode, as indexed by the page numbers
-(as opposed to virtual addresses).
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container.
+
+sys_restart() remains the same, as the restart is always done in the
+context of the restarting task.
 
 Changelog[v14]:
-  - Introduce patch
+  - Refuse non-self checkpoint if target task isn't frozen
+
+Changelog[v12]:
+  - Replace obsolete cr_debug() with pr_debug()
+
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/rstr_mem.c      |  219 +++++++++++++++++++++++++++++++++-----------
- include/linux/checkpoint.h |    1 +
- 2 files changed, 167 insertions(+), 53 deletions(-)
+ checkpoint/checkpoint.c    |   73 ++++++++++++++++++++++++++++++++++++++++++-
+ checkpoint/restart.c       |    4 +-
+ checkpoint/sys.c           |    6 +++
+ include/linux/checkpoint.h |    2 +
+ 4 files changed, 81 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
-index cdf08cd..414d6a9 100644
---- a/checkpoint/rstr_mem.c
-+++ b/checkpoint/rstr_mem.c
-@@ -75,13 +75,37 @@ static int cr_page_read(struct cr_ctx *ctx, struct page *page, char *buf)
- 	return 0;
- }
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index d4e0007..25229d3 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -10,6 +10,8 @@
  
-+static struct page *cr_bring_private_page(unsigned long addr)
-+{
-+	struct page *page;
-+	int ret;
-+
-+	ret = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
-+	if (ret < 0)
-+		page = ERR_PTR(ret);
-+	return page;
-+}
-+
-+static struct page *cr_bring_shared_page(unsigned long idx, struct inode *ino)
-+{
-+	struct page *page = NULL;
-+	int ret;
-+
-+	ret = shmem_getpage(ino, idx, &page, SGP_WRITE, NULL);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
-+	if (page)
-+		unlock_page(page);
-+	return page;
-+}
-+
- /**
-  * cr_read_pages_contents - read in data of pages in page-array chain
-  * @ctx - restart context
-+ * @inode - inode of shmem object
-  */
--static int cr_read_pages_contents(struct cr_ctx *ctx)
-+static int cr_read_pages_contents(struct cr_ctx *ctx, struct inode *inode)
+ #include <linux/version.h>
+ #include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -242,6 +244,11 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
  {
--	struct mm_struct *mm = current->mm;
- 	struct cr_pgarr *pgarr;
- 	unsigned long *vaddrs;
- 	char *buf;
-@@ -91,16 +115,21 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
- 	if (!buf)
- 		return -ENOMEM;
+ 	int ret;
  
--	down_read(&mm->mmap_sem);
-+	down_read(&current->mm->mmap_sem);
- 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
- 		vaddrs = pgarr->vaddrs;
- 		for (i = 0; i < pgarr->nr_used; i++) {
- 			struct page *page;
- 
--			ret = get_user_pages(current, mm, vaddrs[i],
--					     1, 1, 1, &page, NULL);
--			if (ret < 0)
-+			if (inode)
-+				page = cr_bring_shared_page(vaddrs[i], inode);
-+			else
-+				page = cr_bring_private_page(vaddrs[i]);
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task may not be in state TASK_DEAD\n");
++		return -EAGAIN;
++	}
 +
-+			if (IS_ERR(page)) {
-+				ret = PTR_ERR(page);
- 				goto out;
-+			}
- 
- 			ret = cr_page_read(ctx, page, buf);
- 			page_cache_release(page);
-@@ -111,14 +140,15 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
- 	}
- 
-  out:
--	up_read(&mm->mmap_sem);
-+	up_read(&current->mm->mmap_sem);
- 	kfree(buf);
- 	return 0;
- }
- 
- /**
-- * cr_read_private_vma_contents - restore contents of a VMA with private memory
-+ * cr_read_vma_contents - restore contents of a VMA with private memory
-  * @ctx - restart context
-+ * @file - mapped file (shared memory)
-  *
-  * Reads a header that specifies how many pages will follow, then reads
-  * a list of virtual addresses into ctx->pgarr_list page-array chain,
-@@ -126,7 +156,7 @@ static int cr_read_pages_contents(struct cr_ctx *ctx)
-  * these steps until reaching a header specifying "0" pages, which marks
-  * the end of the contents.
-  */
--static int cr_read_private_vma_contents(struct cr_ctx *ctx)
-+static int cr_read_vma_contents(struct cr_ctx *ctx, struct inode *inode)
- {
- 	struct cr_hdr_pgarr *hh;
- 	unsigned long nr_pages;
-@@ -153,7 +183,7 @@ static int cr_read_private_vma_contents(struct cr_ctx *ctx)
- 		ret = cr_read_pages_vaddrs(ctx, nr_pages);
- 		if (ret < 0)
- 			break;
--		ret = cr_read_pages_contents(ctx);
-+		ret = cr_read_pages_contents(ctx, inode);
- 		if (ret < 0)
- 			break;
- 		cr_pgarr_reset_all(ctx);
-@@ -162,6 +192,39 @@ static int cr_read_private_vma_contents(struct cr_ctx *ctx)
+ 	ret = cr_write_task_struct(ctx, t);
+ 	cr_debug("task_struct: ret %d\n", ret);
+ 	if (ret < 0)
+@@ -264,22 +271,84 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
  	return ret;
  }
  
-+int cr_read_shmem_contents(struct cr_ctx *ctx, struct inode *inode)
++static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
 +{
-+	return cr_read_vma_contents(ctx, inode);
-+}
++	struct task_struct *task = NULL;
++	struct nsproxy *nsproxy = NULL;
++	int err = -ESRCH;
 +
-+/* restore contents of a VMA with private memory */
-+static int cr_read_private_vma_contents(struct cr_ctx *ctx)
-+{
-+	/*
-+	 * CR_VMA_ANON: read contents into memory
-+	 * CR_VMA_FILE: read contents into memory
-+	 */
++	ctx->root_pid = pid;
 +
-+	return cr_read_vma_contents(ctx, NULL);
-+}
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
 +
-+/* restore contents of a VMA with shared memory */
-+static int cr_read_shared_vma_contents(struct cr_ctx *ctx,
-+				      struct file *file,
-+				      enum cr_vma_type vma_type)
-+{
-+	/*
-+	 * CR_VMA_SHM_ANON: read contents into shmem object
-+	 * CR_VMA_SHM_ANON_SKIP: skip (has been read before)
-+	 * CR_VMA_SHM_FILE: skip (contents already in file system)
-+	 */
-+
-+	if (vma_type == CR_VMA_SHM_ANON)
-+		return cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
-+	else
-+		return 0;
-+}
-+
- /**
-  * cr_calc_map_prot_bits - convert vm_flags to mmap protection
-  * orig_vm_flags: source vm_flags
-@@ -239,6 +302,72 @@ static struct file *cr_vma_read_file(struct cr_ctx *ctx, int objref)
- 	return file;
- }
- 
-+static struct file *cr_vma_prep_file(struct cr_ctx *ctx, struct cr_hdr_vma *hh)
-+{
-+	struct file *file = ERR_PTR(-EINVAL);
-+	unsigned long vm_flags = hh->vm_flags;
-+	int add = 0;
-+	int ret;
-+
-+	switch (hh->vma_type) {
-+	case CR_VMA_ANON:		/* private anonymous mapping */
-+		if (hh->shm_objref || hh->vma_objref)
-+			break;
-+		file = NULL;
-+		break;
-+	case CR_VMA_FILE:		/* private mapping from a file */
-+		if (hh->shm_objref || !hh->vma_objref)
-+			break;
-+		file = cr_vma_read_file(ctx, hh->vma_objref);
-+		break;
-+	case CR_VMA_SHM_ANON:		/* shared anonymous mapping */
-+		if (!hh->shm_objref || hh->vma_objref)
-+			break;
-+		/*
-+		 * We could leave file==NULL and let mmap (below) do the
-+		 * work. However, if 'shm_size != vm_end - vm_start', or if
-+		 * 'vm_pgoff != 0', then this vma reflects only a portion
-+		 * of the shm object. In this case we need to "manually"
-+		 * create the full shm object. So we do it anyway ...
-+		 */
-+		file = shmem_file_setup("/dev/zero", hh->shm_size, vm_flags);
-+		add = 1;
-+		break;
-+	case CR_VMA_SHM_ANON_SKIP:	/* shared anonymous mapping skipped */
-+		if (!hh->shm_objref || hh->vma_objref)
-+			break;
-+		file = cr_obj_get_by_ref(ctx, hh->shm_objref, CR_OBJ_FILE);
-+		if (!file)
-+			file = ERR_PTR(-EINVAL);
-+		if (!IS_ERR(file))
-+			get_file(file);
-+		break;
-+	case CR_VMA_SHM_FILE:		/* shared mapping of a file */
-+		if (!hh->shm_objref || !hh->vma_objref)
-+			break;
-+		file = cr_vma_read_file(ctx, hh->vma_objref);
-+		break;
-+	default:
-+		file = ERR_PTR(-EINVAL);
-+		break;
-+	}
-+
-+	if (IS_ERR(file))
-+		return file;
-+
-+	if (add) {
-+		ret = cr_obj_add_ref(ctx, file,
-+				     hh->shm_objref, CR_OBJ_FILE, 0);
-+		if (ret < 0) {
-+			if (file)
-+				fput(file);
-+			file = ERR_PTR(ret);
-+		}
-+	}
-+
-+	return file;
-+}
-+
- /**
-  * cr_read_vma - read vma data, recreate it and read contents
-  * @ctx: checkpoint context
-@@ -253,22 +382,29 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 	unsigned long addr;
- 	enum cr_vma_type vma_type;
- 	struct file *file = NULL;
--	int ret;
-+	int shm, ret;
- 
- 	hh = cr_hbuf_get(ctx, sizeof(*hh));
- 	if (!hh)
- 		return -ENOMEM;
-+
- 	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_VMA);
- 	if (ret < 0)
- 		goto out;
- 
--	cr_debug("vma %#lx-%#lx type %d\n", (unsigned long) hh->vm_start,
--		 (unsigned long) hh->vm_end, (int) hh->vma_type);
-+	cr_debug("vma %#lx-%#lx flags %#lx objref %d type %d\n",
-+		 (unsigned long) hh->vm_start, (unsigned long) hh->vm_end,
-+		 (unsigned long) hh->vm_flags, (int) hh->shm_objref,
-+		 (int) hh->vma_type);
- 
- 	ret = -EINVAL;
- 	if (hh->vm_end < hh->vm_start)
- 		goto out;
--	if (hh->vma_objref <= 0)
-+	if (hh->vma_objref < 0 || hh->shm_objref < 0)
++	if (!task)
 +		goto out;
 +
-+	shm = !!hh->shm_objref;
-+	if (!(hh->vm_flags & VM_SHARED) ^ !shm)
- 		goto out;
- 
- 	vm_start = hh->vm_start;
-@@ -278,34 +414,22 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 	vm_flags = cr_calc_map_flags_bits(hh->vm_flags);
- 	vma_type = hh->vma_type;
- 
--	switch (vma_type) {
--
--	case CR_VMA_ANON:		/* anonymous private mapping */
--		if (vm_flags & VM_SHARED)
--			goto out;
--		/*
--		 * vm_pgoff for anonymous mapping is the "global" page
--		 * offset (namely from addr 0x0), so we force a zero
--		 */
-+	/*
-+	 * vm_pgoff for anonymous mapping is the "global" page
-+	 * offset (namely from addr 0x0), so we force a zero
-+	 */
-+	if (vma_type == CR_VMA_ANON)
- 		vm_pgoff = 0;
--		break;
--
--	case CR_VMA_FILE:		/* private mapping from a file */
--		if (vm_flags & VM_SHARED)
--			goto out;
--		file = cr_vma_read_file(ctx, hh->vma_objref);
--		if (IS_ERR(file)) {
--			ret = PTR_ERR(file);
--			file = NULL;
--			goto out;
--		}
--		break;
- 
--	default:
-+	/* prepare the file for this vma */
-+	file = cr_vma_prep_file(ctx, hh);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		file = NULL;
- 		goto out;
--
- 	}
- 
-+	/* create a new vma */
- 	down_write(&mm->mmap_sem);
- 	addr = do_mmap_pgoff(file, vm_start, vm_size,
- 			     vm_prot, vm_flags, vm_pgoff);
-@@ -318,23 +442,11 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 		goto out;
- 	}
- 
--	/*
--	 * CR_VMA_ANON: read in memory as is
--	 * CR_VMA_FILE: read in memory as is
--	 * (more to follow ...)
--	 */
--
--	switch (vma_type) {
--	case CR_VMA_ANON:
--	case CR_VMA_FILE:
--		/* standard case: read the data into the memory */
-+	/* read in the contents of this vma */
-+	if (shm)
-+		ret = cr_read_shared_vma_contents(ctx, file, vma_type);
-+	else
- 		ret = cr_read_private_vma_contents(ctx);
--		break;
--	default:
--		/* pacifcy gcc (the default will be caught above) */
--		ret = -EINVAL;
--		break;
--	}
- 
-  out:
- 	if (file)
-@@ -372,6 +484,7 @@ int cr_read_mm(struct cr_ctx *ctx)
- 	hh = cr_hbuf_get(ctx, sizeof(*hh));
- 	if (!hh)
- 		return -ENOMEM;
++#if 0	/* enable to use containers */
++	if (!is_container_init(task)) {
++		err = -EINVAL;
++		goto out;
++	}
++#endif
 +
- 	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_MM);
++	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
++		err = -EPERM;
++		goto out;
++	}
++
++	/* verify that the task is frozen (unless self) */
++	if (task != current && !frozen(task))
++		return -EBUSY;
++
++	rcu_read_lock();
++	if (task_nsproxy(task)) {
++		nsproxy = task_nsproxy(task);
++		get_nsproxy(nsproxy);
++	}
++	rcu_read_unlock();
++
++	if (!nsproxy)
++		goto out;
++
++	ctx->root_task = task;
++	ctx->root_nsproxy = nsproxy;
++
++	return 0;
++
++ out:
++	if (task)
++		put_task_struct(task);
++	return err;
++}
++
++/* setup checkpoint-specific parts of ctx */
+ static int cr_ctx_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	struct fs_struct *fs;
++	int ret;
+ 
+ 	ctx->root_pid = pid;
+ 
++	ret = cr_get_container(ctx, pid);
++	if (ret < 0)
++		return ret;
++
+ 	/*
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
+ 
+-	fs = current->fs;
++	task_lock(ctx->root_task);
++	fs = ctx->root_task->fs;
+ 	read_lock(&fs->lock);
+ 	ctx->fs_mnt = fs->root;
+ 	path_get(&ctx->fs_mnt);
+ 	read_unlock(&fs->lock);
++	task_unlock(ctx->root_task);
+ 
+ 	return 0;
+ }
+@@ -294,7 +363,7 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	ret = cr_write_head(ctx);
  	if (ret < 0)
  		goto out;
+-	ret = cr_write_task(ctx, current);
++	ret = cr_write_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_write_tail(ctx);
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index da239fd..96d4d45 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -302,7 +302,7 @@ static int cr_read_task(struct cr_ctx *ctx)
+ }
+ 
+ /* setup restart-specific parts of ctx */
+-static int cr_ctx_restart(struct cr_ctx *ctx)
++static int cr_ctx_restart(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	return 0;
+ }
+@@ -311,7 +311,7 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	int ret;
+ 
+-	ret = cr_ctx_restart(ctx);
++	ret = cr_ctx_restart(ctx, pid);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_read_head(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index eef774e..b1c60b1 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -163,6 +164,11 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	cr_pgarr_free(ctx);
+ 	cr_objhash_free(ctx);
+ 
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++
+ 	kfree(ctx);
+ }
+ 
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 8cd94b3..031e414 100644
+index ad4322d..3a6cef9 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -108,6 +108,7 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
- 				       int flags, int mode);
+@@ -19,6 +19,8 @@ struct cr_ctx {
+ 	int crid;		/* unique checkpoint id */
  
- extern int cr_write_shmem_contents(struct cr_ctx *ctx, struct inode *inode);
-+extern int cr_read_shmem_contents(struct cr_ctx *ctx, struct inode *inode);
+ 	pid_t root_pid;		/* container identifier */
++	struct task_struct *root_task;	/* container root task */
++	struct nsproxy *root_nsproxy;	/* container root nsproxy */
  
- extern int do_checkpoint(struct cr_ctx *ctx, pid_t pid);
- extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+ 	unsigned long flags;
+ 	unsigned long oflags;	/* restart: old flags */
 -- 
 1.5.4.3
