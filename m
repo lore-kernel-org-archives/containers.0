@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 26/29] powerpc: provide APIs for validating and
-	updating DABR
-Date: Tue, 31 Mar 2009 01:29:06 -0400
-Message-ID: <1238477349-11029-27-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 27/29] powerpc: checkpoint/restart implementation
+Date: Tue, 31 Mar 2009 01:29:07 -0400
+Message-ID: <1238477349-11029-28-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,182 +23,574 @@ List-Id: containers.vger.kernel.org
 
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
-A checkpointed task image may specify a value for the DABR (Data
-Access Breakpoint Register).  The restart code needs to validate this
-value before making any changes to the current task.
+Support for checkpointing and restarting GPRs, FPU state, DABR, and
+Altivec state.
 
-ptrace_set_debugreg encapsulates the bounds checking and platform
-dependencies of programming the DABR.  Split this into "validate"
-(debugreg_valid) and "update" (debugreg_update) functions, and make
-them available for use outside of the ptrace code.
+The portion of the checkpoint image manipulated by this code begins
+with a bitmask of features indicating the various contexts saved.
+Fields in image that can vary depending on kernel configuration
+(e.g. FP regs due to VSX) have their sizes explicitly recorded, except
+for GPRS, so migrating between ppc32 and ppc64 won't work yet.
 
-Also ptrace_set_debugreg has extern linkage, but no users outside of
-ptrace.c.  Make it static.
+The restart code ensures that the task is not modified until the
+checkpoint image is validated against the current kernel configuration
+and hardware features (e.g. can't restart a task using Altivec on
+non-Altivec systems).
+
+What works:
+* self and external checkpoint of simple (single thread, one open
+  file) 32- and 64-bit processes on a ppc64 kernel
+
+What doesn't work:
+* restarting a 32-bit task from a 64-bit task and vice versa
+
+Untested:
+* ppc32 (but it builds)
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/include/asm/ptrace.h |    7 +++
- arch/powerpc/kernel/ptrace.c      |   88 +++++++++++++++++++++++++------------
- 2 files changed, 66 insertions(+), 29 deletions(-)
+ arch/powerpc/include/asm/checkpoint_hdr.h |   15 +
+ arch/powerpc/mm/Makefile                  |    1 +
+ arch/powerpc/mm/checkpoint.c              |  500 +++++++++++++++++++++++++++++
+ 3 files changed, 516 insertions(+), 0 deletions(-)
+ create mode 100644 arch/powerpc/include/asm/checkpoint_hdr.h
+ create mode 100644 arch/powerpc/mm/checkpoint.c
 
-diff --git a/arch/powerpc/include/asm/ptrace.h b/arch/powerpc/include/asm/ptrace.h
-index c9c678f..79bc816 100644
---- a/arch/powerpc/include/asm/ptrace.h
-+++ b/arch/powerpc/include/asm/ptrace.h
-@@ -81,6 +81,8 @@ struct pt_regs {
- 
- #ifndef __ASSEMBLY__
- 
-+#include <linux/types.h>
-+
- #define instruction_pointer(regs) ((regs)->nip)
- #define user_stack_pointer(regs) ((regs)->gpr[1])
- #define regs_return_value(regs) ((regs)->gpr[3])
-@@ -138,6 +140,11 @@ do {									      \
- extern void user_enable_single_step(struct task_struct *);
- extern void user_disable_single_step(struct task_struct *);
- 
-+/* for reprogramming DABR/DAC during restart of a checkpointed task */
-+extern bool debugreg_valid(unsigned long val, unsigned int index);
-+extern void debugreg_update(struct task_struct *task, unsigned long val,
-+			    unsigned int index);
-+
- #endif /* __ASSEMBLY__ */
- 
- #endif /* __KERNEL__ */
-diff --git a/arch/powerpc/kernel/ptrace.c b/arch/powerpc/kernel/ptrace.c
-index 3635be6..0b6cf84 100644
---- a/arch/powerpc/kernel/ptrace.c
-+++ b/arch/powerpc/kernel/ptrace.c
-@@ -735,22 +735,25 @@ void user_disable_single_step(struct task_struct *task)
- 	clear_tsk_thread_flag(task, TIF_SINGLESTEP);
- }
- 
--int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
--			       unsigned long data)
-+/**
-+ * debugreg_valid() - validate the value to be written to a debug register
-+ * @val:	The prospective contents of the register.
-+ * @index:	Must be zero.
+diff --git a/arch/powerpc/include/asm/checkpoint_hdr.h b/arch/powerpc/include/asm/checkpoint_hdr.h
+new file mode 100644
+index 0000000..9f0d099
+--- /dev/null
++++ b/arch/powerpc/include/asm/checkpoint_hdr.h
+@@ -0,0 +1,15 @@
++#ifndef __ASM_PPC_CKPT_HDR_H
++#define __ASM_PPC_CKPT_HDR_H
++/*
++ *  Checkpoint/restart - architecture specific headers ppc
 + *
-+ * Returns true if @val is an acceptable value for the register indicated by
-+ * @index, false otherwise.
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
 + */
-+bool debugreg_valid(unsigned long val, unsigned int index)
- {
--	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
--	 *  For embedded processors we support one DAC and no IAC's at the
--	 *  moment.
--	 */
--	if (addr > 0)
--		return -EINVAL;
-+	/* We support only one debug register for now */
-+	if (index != 0)
-+		return false;
- 
- 	/* The bottom 3 bits in dabr are flags */
--	if ((data & ~0x7UL) >= TASK_SIZE)
--		return -EIO;
-+	if ((val & ~0x7UL) >= TASK_SIZE)
-+		return false;
- 
- #ifndef CONFIG_BOOKE
--
- 	/* For processors using DABR (i.e. 970), the bottom 3 bits are flags.
- 	 *  It was assumed, on previous implementations, that 3 bits were
- 	 *  passed together with the data address, fitting the design of the
-@@ -764,47 +767,74 @@ int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
- 	 */
- 
- 	/* Ensure breakpoint translation bit is set */
--	if (data && !(data & DABR_TRANSLATION))
--		return -EIO;
--
--	/* Move contents to the DABR register */
--	task->thread.dabr = data;
--
--#endif
--#if defined(CONFIG_BOOKE)
--
-+	if (val && !(val & DABR_TRANSLATION))
-+		return false;
-+#else
- 	/* As described above, it was assumed 3 bits were passed with the data
- 	 *  address, but we will assume only the mode bits will be passed
- 	 *  as to not cause alignment restrictions for DAC-based processors.
- 	 */
- 
-+	/* Read or Write bits must be set */
-+	if (!(val & 0x3UL))
-+		return -EINVAL;
++
++/* nothing to see here */
++
++#endif /* __ASM_PPC_CKPT_HDR__H */
+diff --git a/arch/powerpc/mm/Makefile b/arch/powerpc/mm/Makefile
+index 953cc4a..02ecbcb 100644
+--- a/arch/powerpc/mm/Makefile
++++ b/arch/powerpc/mm/Makefile
+@@ -26,3 +26,4 @@ obj-$(CONFIG_NEED_MULTIPLE_NODES) += numa.o
+ obj-$(CONFIG_PPC_MM_SLICES)	+= slice.o
+ obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
+ obj-$(CONFIG_PPC_SUBPAGE_PROT)	+= subpage-prot.o
++obj-$(CONFIG_CHECKPOINT)	+= checkpoint.o
+diff --git a/arch/powerpc/mm/checkpoint.c b/arch/powerpc/mm/checkpoint.c
+new file mode 100644
+index 0000000..731874b
+--- /dev/null
++++ b/arch/powerpc/mm/checkpoint.c
+@@ -0,0 +1,500 @@
++/*
++ *  Checkpoint/restart - architecture specific support for powerpc.
++ *  Based on x86 implementation.
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *  Copyright 2009 IBM Corp.
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define DEBUG 1 /* for pr_debug */
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++#include <linux/kernel.h>
++#include <asm/processor.h>
++#include <asm/ptrace.h>
++#include <asm/system.h>
++
++enum cr_cpu_feature {
++	CKPT_USED_FP,
++	CKPT_USED_DEBUG,
++	CKPT_USED_ALTIVEC,
++	CKPT_USED_SPE,
++	CKPT_USED_VSX,
++	CKPT_FTR_END = 31,
++};
++
++#define x(ftr) (1UL << ftr)
++
++/* features this kernel can handle for restart */
++enum {
++	CKPT_FTRS_POSSIBLE =
++#ifdef CONFIG_PPC_FPU
++	x(CKPT_USED_FP) |
 +#endif
++	x(CKPT_USED_DEBUG) |
++#ifdef CONFIG_ALTIVEC
++	x(CKPT_USED_ALTIVEC) |
++#endif
++#ifdef CONFIG_SPE
++	x(CKPT_USED_SPE) |
++#endif
++#ifdef CONFIG_VSX
++	x(CKPT_USED_VSX) |
++#endif
++	0,
++};
++
++#undef x
++
++struct cr_hdr_cpu {
++	u32 features_used;
++	u32 pt_regs_size;
++	u32 fpr_size;
++	struct pt_regs pt_regs;
++	/* relevant fields from thread_struct */
++	double fpr[32][TS_FPRWIDTH];
++	u32 fpscr;
++	s32 fpexc_mode;
++	u64 dabr;
++	/* Altivec/VMX state */
++	vector128 vr[32];
++	vector128 vscr;
++	u64 vrsave;
++	/* SPE state */
++	u32 evr[32];
++	u64 acc;
++	u32 spefscr;
++};
++
++static void cr_cpu_feature_set(struct cr_hdr_cpu *hdr, enum cr_cpu_feature ftr)
++{
++	hdr->features_used |= 1ULL << ftr;
++}
++
++static bool cr_cpu_feature_isset(const struct cr_hdr_cpu *hdr,
++				 enum cr_cpu_feature ftr)
++{
++	return hdr->features_used & (1ULL << ftr);
++}
++
++/* determine whether an image has feature bits set that this kernel
++ * does not support */
++static bool cr_cpu_features_unknown(const struct cr_hdr_cpu *hdr)
++{
++	return hdr->features_used & ~CKPT_FTRS_POSSIBLE;
++}
++
++static void checkpoint_gprs(struct cr_hdr_cpu *cpu_hdr,
++			    struct task_struct *task)
++{
++	struct pt_regs *pt_regs;
++
++	pr_debug("%s: saving GPRs\n", __func__);
++
++	cpu_hdr->pt_regs_size = sizeof(*pt_regs);
++	pt_regs = task_pt_regs(task);
++	cpu_hdr->pt_regs = *pt_regs;
++}
++
++#ifdef CONFIG_PPC_FPU
++static void checkpoint_fpu(struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task)
++{
++	/* easiest to save FP state unconditionally */
++
++	pr_debug("%s: saving FPU state\n", __func__);
++
++	if (task == current)
++		flush_fp_to_thread(task);
++
++	cpu_hdr->fpr_size = sizeof(cpu_hdr->fpr);
++	cpu_hdr->fpscr = task->thread.fpscr.val;
++	cpu_hdr->fpexc_mode = task->thread.fpexc_mode;
++
++	memcpy(cpu_hdr->fpr, task->thread.fpr, sizeof(cpu_hdr->fpr));
++
++	cr_cpu_feature_set(cpu_hdr, CKPT_USED_FP);
++}
++#else
++static void checkpoint_fpu(struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task)
++{
++	return;
++}
++#endif
++
++#ifdef CONFIG_ALTIVEC
++static void checkpoint_altivec(struct cr_hdr_cpu *cpu_hdr,
++			       struct task_struct *task)
++{
++	if (!cpu_has_feature(CPU_FTR_ALTIVEC))
++		return;
++
++	if (!task->thread.used_vr)
++		return;
++
++	pr_debug("%s: saving Altivec state\n", __func__);
++
++	if (task == current)
++		flush_altivec_to_thread(task);
++
++	cpu_hdr->vrsave = task->thread.vrsave;
++	memcpy(cpu_hdr->vr, task->thread.vr, sizeof(cpu_hdr->vr));
++	cr_cpu_feature_set(cpu_hdr, CKPT_USED_ALTIVEC);
++}
++#else
++static void checkpoint_altivec(struct cr_hdr_cpu *cpu_hdr,
++			       struct task_struct *task)
++{
++	return;
++}
++#endif
++
++#ifdef CONFIG_SPE
++static void checkpoint_spe(struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task)
++{
++	if (!cpu_has_feature(CPU_FTR_SPE))
++		return;
++
++	if (!task->thread.used_spe)
++		return;
++
++	pr_debug("%s: saving SPE state\n", __func__);
++
++	if (task == current)
++		flush_spe_to_thread(task);
++
++	cpu_hdr->acc = task->thread.acc;
++	cpu_hdr->spefscr = task->thread.spefscr;
++	memcpy(cpu_hdr->evr, task->thread.evr, sizeof(cpu_hdr->evr));
++	cr_cpu_feature_set(cpu_hdr, CKPT_USED_SPE);
++}
++#else
++static void checkpoint_spe(struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task)
++{
++	return;
++}
++#endif
++
++static void checkpoint_dabr(struct cr_hdr_cpu *cpu_hdr,
++			    const struct task_struct *task)
++{
++	if (!task->thread.dabr)
++		return;
++
++	cpu_hdr->dabr = task->thread.dabr;
++	cr_cpu_feature_set(cpu_hdr, CKPT_USED_DEBUG);
++}
++
++/* dump the thread_struct of a given task */
++int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t)
++{
++	return 0;
++}
++
++/* dump the cpu state and registers of a given task */
++int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr_cpu *cpu_hdr;
++	struct cr_hdr cr_hdr;
++	int rc;
++
++	cr_hdr.type = CR_HDR_CPU;
++	cr_hdr.len = sizeof(*cpu_hdr);
++
++	rc = -ENOMEM;
++	cpu_hdr = kzalloc(sizeof(*cpu_hdr), GFP_KERNEL);
++	if (!cpu_hdr)
++		goto err;
++
++	checkpoint_gprs(cpu_hdr, t);
++	checkpoint_fpu(cpu_hdr, t);
++	checkpoint_dabr(cpu_hdr, t);
++	checkpoint_altivec(cpu_hdr, t);
++	checkpoint_spe(cpu_hdr, t);
++
++	rc = cr_write_obj(ctx, &cr_hdr, cpu_hdr);
++err:
++	kfree(cpu_hdr);
++	return rc;
++}
++
++int cr_write_head_arch(struct cr_ctx *ctx)
++{
++	return 0;
++}
++
++/* dump the mm->context state */
++int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
++{
++	return 0;
++}
++
++/* restart APIs */
++
++/* read the thread_struct into the current task */
++int cr_read_thread(struct cr_ctx *ctx)
++{
++	return 0;
++}
++
++/* Based on the MSR value from a checkpoint image, produce an MSR
++ * value that is appropriate for the restored task.  Right now we only
++ * check for MSR_SF (64-bit) for PPC64.
++ */
++static unsigned long sanitize_msr(unsigned long msr_ckpt)
++{
++#ifdef CONFIG_PPC32
++	return MSR_USER;
++#else
++	if (msr_ckpt & MSR_SF)
++		return MSR_USER64;
++	return MSR_USER32;
++#endif
++}
++
++static int restore_gprs(const struct cr_hdr_cpu *cpu_hdr,
++			struct task_struct *task, bool update)
++{
++	struct pt_regs *regs;
++	int rc;
++
++	rc = -EINVAL;
++	if (cpu_hdr->pt_regs_size != sizeof(*regs))
++		goto out;
++
++	rc = 0;
++	if (!update)
++		goto out;
++
++	regs = task_pt_regs(task);
++	*regs = cpu_hdr->pt_regs;
++
++	regs->msr = sanitize_msr(regs->msr);
++out:
++	return rc;
++}
++
++#ifdef CONFIG_PPC_FPU
++static int restore_fpu(const struct cr_hdr_cpu *cpu_hdr,
++		       struct task_struct *task, bool update)
++{
++	int rc;
++
++	rc = -EINVAL;
++	if (cpu_hdr->fpr_size != sizeof(task->thread.fpr))
++		goto out;
++
++	rc = 0;
++	if (!update || !cr_cpu_feature_isset(cpu_hdr, CKPT_USED_FP))
++		goto out;
++
++	task->thread.fpscr.val = cpu_hdr->fpscr;
++	task->thread.fpexc_mode = cpu_hdr->fpexc_mode;
++
++	memcpy(task->thread.fpr, cpu_hdr->fpr, sizeof(task->thread.fpr));
++out:
++	return rc;
++}
++#else
++static int restore_fpu(const struct cr_hdr_cpu *cpu_hdr,
++		       struct task_struct *task, bool update)
++{
++	WARN_ON_ONCE(cr_cpu_feature_isset(cpu_hdr, CKPT_USED_FP));
++	return 0;
++}
++#endif
++
++static int restore_dabr(const struct cr_hdr_cpu *cpu_hdr,
++			struct task_struct *task, bool update)
++{
++	int rc;
++
++	rc = 0;
++	if (!cr_cpu_feature_isset(cpu_hdr, CKPT_USED_DEBUG))
++		goto out;
++
++	rc = -EINVAL;
++	if (!debugreg_valid(cpu_hdr->dabr, 0))
++		goto out;
++
++	rc = 0;
++	if (!update)
++		goto out;
++
++	debugreg_update(task, cpu_hdr->dabr, 0);
++out:
++	return rc;
++}
++
++#ifdef CONFIG_ALTIVEC
++static int restore_altivec(const struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task, bool update)
++{
++	int rc;
++
++	rc = 0;
++	if (!cr_cpu_feature_isset(cpu_hdr, CKPT_USED_ALTIVEC))
++		goto out;
++
++	rc = -EINVAL;
++	if (!cpu_has_feature(CPU_FTR_ALTIVEC))
++		goto out;
++
++	rc = 0;
++	if (!update)
++		goto out;
++
++	task->thread.vrsave = cpu_hdr->vrsave;
++	task->thread.used_vr = 1;
++
++	memcpy(task->thread.vr, cpu_hdr->vr, sizeof(cpu_hdr->vr));
++out:
++	return rc;
++}
++#else
++static int restore_altivec(const struct cr_hdr_cpu *cpu_hdr,
++			   struct task_struct *task, bool update)
++{
++	WARN_ON_ONCE(cr_cpu_feature_isset(CKPT_USED_ALTIVEC));
++	return 0;
++}
++#endif
++
++#ifdef CONFIG_SPE
++static int restore_spe(const struct cr_hdr_cpu *cpu_hdr,
++		       struct task_struct *task, bool update)
++{
++	int rc;
++
++	rc = 0;
++	if (!cr_cpu_feature_isset(cpu_hdr, CKPT_USED_SPE))
++		goto out;
++
++	rc = -EINVAL;
++	if (!cpu_has_feature(CPU_FTR_SPE))
++		goto out;
++
++	rc = 0;
++	if (!update)
++		goto out;
++
++	task->thread.acc = cpu_hdr->acc;
++	task->thread.spefscr = cpu_hdr->spefscr;
++	task->thread.used_spe = 1;
++
++	memcpy(task->thread.evr, cpu_hdr->evr, sizeof(cpu_hdr->evr));
++out:
++	return rc;
++}
++#else
++static int restore_spe(const struct cr_hdr_cpu *cpu_hdr,
++		       struct task_struct *task, bool update)
++{
++	WARN_ON_ONCE(cr_cpu_feature_isset(cpu_hdr, CKPT_USED_SPE));
++	return 0;
++}
++#endif
++
++struct restore_func_desc {
++	int (*func)(const struct cr_hdr_cpu *, struct task_struct *, bool);
++	const char *info;
++};
++
++typedef int (*restore_func_t)(const struct cr_hdr_cpu *,
++			      struct task_struct *, bool);
++
++static const restore_func_t restore_funcs[] = {
++	restore_gprs,
++	restore_fpu,
++	restore_dabr,
++	restore_altivec,
++	restore_spe,
++};
++
++static bool bitness_match(const struct cr_hdr_cpu *cpu_hdr,
++			  const struct task_struct *task)
++{
++	/* 64-bit image */
++	if (cpu_hdr->pt_regs.msr & MSR_SF) {
++		if (task->thread.regs->msr & MSR_SF)
++			return true;
++		else
++			return false;
++	}
++
++	/* 32-bit image */
++	if (task->thread.regs->msr & MSR_SF)
++		return false;
++
 +	return true;
 +}
 +
-+/**
-+ * debugreg_update() - update a debug register associated with a task
-+ * @task:	The task whose register state is to be modified.
-+ * @val:	The value to be written to the debug register.
-+ * @index:	Specifies the debug register.  Currently unused.
-+ *
-+ * Set a task's DABR/DAC to @val, which should be validated with
-+ * debugreg_valid() beforehand.
-+ */
-+void debugreg_update(struct task_struct *task, unsigned long val,
-+		     unsigned int index)
++int cr_read_cpu(struct cr_ctx *ctx)
 +{
-+#ifndef CONFIG_BOOKE
-+	task->thread.dabr = val;
-+#else
- 	/* DAC's hold the whole address without any mode flags */
--	task->thread.dabr = data & ~0x3UL;
-+	task->thread.dabr = val & ~0x3UL;
- 
- 	if (task->thread.dabr == 0) {
- 		task->thread.dbcr0 &= ~(DBSR_DAC1R | DBSR_DAC1W | DBCR0_IDM);
- 		task->thread.regs->msr &= ~MSR_DE;
--		return 0;
- 	}
- 
--	/* Read or Write bits must be set */
--
--	if (!(data & 0x3UL))
--		return -EINVAL;
--
- 	/* Set the Internal Debugging flag (IDM bit 1) for the DBCR0
- 	   register */
- 	task->thread.dbcr0 = DBCR0_IDM;
- 
- 	/* Check for write and read flags and set DBCR0
- 	   accordingly */
--	if (data & 0x1UL)
-+	if (val & 0x1UL)
- 		task->thread.dbcr0 |= DBSR_DAC1R;
--	if (data & 0x2UL)
-+	if (val & 0x2UL)
- 		task->thread.dbcr0 |= DBSR_DAC1W;
- 
- 	task->thread.regs->msr |= MSR_DE;
- #endif
++	struct cr_hdr_cpu *cpu_hdr;
++	bool update;
++	int rc;
++	int i;
++
++	rc = -ENOMEM;
++	cpu_hdr = kzalloc(sizeof(*cpu_hdr), GFP_KERNEL);
++	if (!cpu_hdr)
++		goto err;
++
++	rc = cr_read_obj_type(ctx, cpu_hdr, sizeof(*cpu_hdr), CR_HDR_CPU);
++	if (rc < 0)
++		goto err;
++
++	rc = -EINVAL;
++	if (cr_cpu_features_unknown(cpu_hdr))
++		goto err;
++
++	/* temporary: restoring a 32-bit image from a 64-bit task and
++	 * vice-versa is known not to work (probably not restoring
++	 * thread_info correctly); detect this and fail gracefully.
++	 */
++	if (!bitness_match(cpu_hdr, current))
++		goto err;
++
++	/* We want to determine whether there's anything wrong with
++	 * the checkpoint image before changing the task at all.  Run
++	 * a "check" phase (update = false) first.
++	 */
++	update = false;
++commit:
++	for (i = 0; i < ARRAY_SIZE(restore_funcs); i++) {
++		rc = restore_funcs[i](cpu_hdr, current, update);
++		if (rc == 0)
++			continue;
++		pr_debug("%s: restore_func[%i] failed\n", __func__, i);
++		WARN_ON_ONCE(update);
++		goto err;
++	}
++
++	if (!update) {
++		update = true;
++		goto commit;
++	}
++
++err:
++	kfree(cpu_hdr);
++	return rc;
 +}
 +
-+static int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
-+			       unsigned long data)
++int cr_read_head_arch(struct cr_ctx *ctx)
 +{
-+	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
-+	 * For embedded processors we support one DAC and no IAC's at the
-+	 * moment.
-+	 */
-+	if (addr > 0)
-+		return -EINVAL;
++	return 0;
++}
 +
-+	if (!debugreg_valid(data, 0))
-+		return -EIO;
-+
-+	debugreg_update(task, data, 0);
-+
- 	return 0;
- }
- 
++int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
++{
++	return 0;
++}
 -- 
 1.5.4.3
