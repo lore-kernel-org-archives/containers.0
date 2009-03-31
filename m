@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 14/29] Checkpoint multiple processes
-Date: Tue, 31 Mar 2009 01:28:54 -0400
-Message-ID: <1238477349-11029-15-git-send-email-orenl@cs.columbia.edu>
-References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 1/7] ipc: allow allocation of an ipc object with
+	desired identifier
+Date: Tue, 31 Mar 2009 01:32:26 -0400
+Message-ID: <1238477552-17083-2-git-send-email-orenl@cs.columbia.edu>
+References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1238477349-11029-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1238477552-17083-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,397 +22,367 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpointing of multiple processes works by recording the tasks tree
-structure below a given task (usually this task is the container init).
-
-For a given task, do a DFS scan of the tasks tree and collect them
-into an array (keeping a reference to each task). Using DFS simplifies
-the recreation of tasks either in user space or kernel space. For each
-task collected, test if it can be checkpointed, and save its pid, tgid,
-and ppid.
-
-The actual work is divided into two passes: a first scan counts the
-tasks, then memory is allocated and a second scan fills the array.
-
-The logic is suitable for creation of processes during restart either
-in userspace or by the kernel.
-
-Currently we ignore threads and zombies, as well as session ids.
-
-Changelog[v14]:
-  - Refuse non-self checkpoint if target task isn't frozen
-  - Revert change to pr_debug(), back to cr_debug()
-  - Use only unsigned fields in checkpoint headers
-  - Check retval of cr_tree_count_tasks() in cr_build_tree()
-  - Discard 'h.parent' field
-  - Check whether calls to cr_hbuf_get() fail
-
-Changelog[v13]:
-  - Release tasklist_lock in error path in cr_tree_count_tasks()
-  - Use separate index for 'tasks_arr' and 'hh' in cr_write_pids()
-
-Changelog[v12]:
-  - Replace obsolete cr_debug() with pr_debug()
+During restart, we need to allocate ipc objects that with the same
+identifiers as recorded during checkpoint. Modify the allocation
+code allow an in-kernel caller to request a specific ipc identifier.
+The system call interface remains unchanged.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |  228 ++++++++++++++++++++++++++++++++++++++--
- checkpoint/sys.c               |   16 +++
- include/linux/checkpoint.h     |    3 +
- include/linux/checkpoint_hdr.h |   13 ++-
- 4 files changed, 248 insertions(+), 12 deletions(-)
+ ipc/msg.c  |   17 ++++++++++++-----
+ ipc/sem.c  |   17 ++++++++++++-----
+ ipc/shm.c  |   19 +++++++++++++------
+ ipc/util.c |   42 +++++++++++++++++++++++++++++-------------
+ ipc/util.h |   11 ++++++++---
+ 5 files changed, 74 insertions(+), 32 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 25229d3..7f5eee6 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -244,11 +244,6 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- {
- 	int ret;
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 2ceab7f..1db7c45 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -73,7 +73,7 @@ struct msg_sender {
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
  
--	if (t->state == TASK_DEAD) {
--		pr_warning("c/r: task may not be in state TASK_DEAD\n");
--		return -EAGAIN;
--	}
--
- 	ret = cr_write_task_struct(ctx, t);
- 	cr_debug("task_struct: ret %d\n", ret);
- 	if (ret < 0)
-@@ -271,6 +266,211 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- 	return ret;
+ static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+-static int newque(struct ipc_namespace *, struct ipc_params *);
++static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -174,10 +174,12 @@ static inline void msg_rmid(struct ipc_namespace *ns, struct msg_queue *s)
+  * newque - Create a new msg queue
+  * @ns: namespace
+  * @params: ptr to the structure that contains the key and msgflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with msg_ids.rw_mutex held (writer)
+  */
+-static int newque(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newque(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	struct msg_queue *msq;
+ 	int id, retval;
+@@ -201,7 +203,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
+ 	/*
+ 	 * ipc_addid() locks msq
+ 	 */
+-	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
++	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni, req_id);
+ 	if (id < 0) {
+ 		security_msg_queue_free(msq);
+ 		ipc_rcu_putref(msq);
+@@ -309,7 +311,7 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
+ 	return security_msg_queue_associate(msq, msgflg);
  }
  
-+/* dump all tasks in ctx->tasks_arr[] */
-+static int cr_write_all_tasks(struct cr_ctx *ctx)
-+{
-+	int n, ret = 0;
-+
-+	for (n = 0; n < ctx->tasks_nr; n++) {
-+		cr_debug("dumping task #%d\n", n);
-+		ret = cr_write_task(ctx, ctx->tasks_arr[n]);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	return ret;
-+}
-+
-+static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
-+{
-+	cr_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
-+
-+	if (t->state == TASK_DEAD) {
-+		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-+		return -EAGAIN;
-+	}
-+
-+	if (!ptrace_may_access(t, PTRACE_MODE_READ))
-+		return -EPERM;
-+
-+	/* verify that the task is frozen (unless self) */
-+	if (t != current && !frozen(t))
-+		return -EBUSY;
-+
-+	/* FIXME: change this for nested containers */
-+	if (task_nsproxy(t) != ctx->root_nsproxy)
-+		return -EPERM;
-+
-+	return 0;
-+}
-+
-+#define CR_HDR_PIDS_CHUNK	256
-+
-+static int cr_write_pids(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_pids *hh;
-+	struct pid_namespace *ns;
-+	struct task_struct *task;
-+	struct task_struct **tasks_arr;
-+	int tasks_nr, n, pos = 0, ret = 0;
-+
-+	ns = ctx->root_nsproxy->pid_ns;
-+	tasks_arr = ctx->tasks_arr;
-+	tasks_nr = ctx->tasks_nr;
-+	BUG_ON(tasks_nr <= 0);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh) * CR_HDR_PIDS_CHUNK);
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	do {
-+		rcu_read_lock();
-+		for (n = 0; n < min(tasks_nr, CR_HDR_PIDS_CHUNK); n++) {
-+			task = tasks_arr[pos];
-+
-+			/* is this task cool ? */
-+			ret = cr_may_checkpoint_task(task, ctx);
-+			if (ret < 0) {
-+				rcu_read_unlock();
-+				goto out;
-+			}
-+			hh[n].vpid = task_pid_nr_ns(task, ns);
-+			hh[n].vtgid = task_tgid_nr_ns(task, ns);
-+			hh[n].vppid = task_tgid_nr_ns(task->real_parent, ns);
-+			cr_debug("task[%d]: vpid %d vtgid %d parent %d\n", pos,
-+				 hh[n].vpid, hh[n].vtgid, hh[n].vppid);
-+			pos++;
-+		}
-+		rcu_read_unlock();
-+
-+		n = min(tasks_nr, CR_HDR_PIDS_CHUNK);
-+		ret = cr_kwrite(ctx, hh, n * sizeof(*hh));
-+		if (ret < 0)
-+			break;
-+
-+		tasks_nr -= n;
-+	} while (tasks_nr > 0);
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
-+
-+/* count number of tasks in tree (and optionally fill pid's in array) */
-+static int cr_tree_count_tasks(struct cr_ctx *ctx)
-+{
-+	struct task_struct *root = ctx->root_task;
-+	struct task_struct *task = root;
-+	struct task_struct *parent = NULL;
-+	struct task_struct **tasks_arr = ctx->tasks_arr;
-+	int tasks_nr = ctx->tasks_nr;
-+	int nr = 0;
-+
-+	read_lock(&tasklist_lock);
-+
-+	/* count tasks via DFS scan of the tree */
-+	while (1) {
-+		if (tasks_arr) {
-+			/* unlikely... but if so then try again later */
-+			if (nr == tasks_nr) {
-+				nr = -EAGAIN;	/* cleanup in cr_ctx_free() */
-+				break;
-+			}
-+			tasks_arr[nr] = task;
-+			get_task_struct(task);
-+		}
-+
-+		nr++;
-+
-+		/* if has children - proceed with child */
-+		if (!list_empty(&task->children)) {
-+			parent = task;
-+			task = list_entry(task->children.next,
-+					  struct task_struct, sibling);
-+			continue;
-+		}
-+
-+		while (task != root) {
-+			/* if has sibling - proceed with sibling */
-+			if (!list_is_last(&task->sibling, &parent->children)) {
-+				task = list_entry(task->sibling.next,
-+						  struct task_struct, sibling);
-+				break;
-+			}
-+
-+			/* else, trace back to parent and proceed */
-+			task = parent;
-+			parent = parent->real_parent;
-+		}
-+
-+		if (task == root)
-+			break;
-+	}
-+
-+	read_unlock(&tasklist_lock);
-+	return nr;
-+}
-+
-+/*
-+ * cr_build_tree - scan the tasks tree in DFS order and fill in array
-+ * @ctx: checkpoint context
-+ *
-+ * Using DFS order simplifies the restart logic to re-create the tasks.
-+ *
-+ * On success, ctx->tasks_arr will be allocated and populated with all
-+ * tasks (reference taken), and ctx->tasks_nr will hold the total count.
-+ * The array is cleaned up by cr_ctx_free().
-+ */
-+static int cr_build_tree(struct cr_ctx *ctx)
-+{
-+	int n, m;
-+
-+	/* count tasks (no side effects) */
-+	n = cr_tree_count_tasks(ctx);
-+	if (n < 0)
-+		return n;
-+
-+	ctx->tasks_nr = n;
-+	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
-+	if (!ctx->tasks_arr)
-+		return -ENOMEM;
-+
-+	/* count again (now will fill array) */
-+	m = cr_tree_count_tasks(ctx);
-+
-+	/* unlikely, but ... (cleanup in cr_ctx_free) */
-+	if (m < 0)
-+		return m;
-+	else if (m != n)
-+		return -EBUSY;
-+
-+	return 0;
-+}
-+
-+/* dump the array that describes the tasks tree */
-+static int cr_write_tree(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_tree *hh;
-+	int ret;
-+
-+	h.type = CR_HDR_TREE;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	hh->tasks_nr = ctx->tasks_nr;
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cr_write_pids(ctx);
-+	return ret;
-+}
-+
- static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+-SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++int do_msgget(key_t key, int msgflg, int req_id)
  {
- 	struct task_struct *task = NULL;
-@@ -288,7 +488,7 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
- 	if (!task)
- 		goto out;
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops msg_ops;
+@@ -324,7 +326,12 @@ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
+ 	msg_params.key = key;
+ 	msg_params.flg = msgflg;
  
--#if 0	/* enable to use containers */
-+#if 0	/* enable with containers */
- 	if (!is_container_init(task)) {
- 		err = -EINVAL;
- 		goto out;
-@@ -300,10 +500,6 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
- 		goto out;
- 	}
+-	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params);
++	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params, req_id);
++}
++
++SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++{
++	return do_msgget(key, msgflg, -1);
+ }
  
--	/* verify that the task is frozen (unless self) */
--	if (task != current && !frozen(task))
--		return -EBUSY;
--
- 	rcu_read_lock();
- 	if (task_nsproxy(task)) {
- 		nsproxy = task_nsproxy(task);
-@@ -360,12 +556,22 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	ret = cr_ctx_checkpoint(ctx, pid);
- 	if (ret < 0)
- 		goto out;
-+
-+	ret = cr_build_tree(ctx);
-+	if (ret < 0)
-+		goto out;
-+
- 	ret = cr_write_head(ctx);
- 	if (ret < 0)
- 		goto out;
--	ret = cr_write_task(ctx, ctx->root_task);
-+	ret = cr_write_tree(ctx);
- 	if (ret < 0)
- 		goto out;
-+
-+	ret = cr_write_all_tasks(ctx);
-+	if (ret < 0)
-+		goto out;
-+
- 	ret = cr_write_tail(ctx);
- 	if (ret < 0)
- 		goto out;
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index b1c60b1..8630144 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -152,6 +152,19 @@ void cr_hbuf_put(struct cr_ctx *ctx, int n)
-  * restart operation, and persists until the operation is completed.
+ static inline unsigned long
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 16a2189..207dbbb 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -92,7 +92,7 @@
+ #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
+ 
+-static int newary(struct ipc_namespace *, struct ipc_params *);
++static int newary(struct ipc_namespace *, struct ipc_params *, int);
+ static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+@@ -227,11 +227,13 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
+  * newary - Create a new semaphore set
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, semflg and nsems
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with sem_ids.rw_mutex held (as a writer)
   */
  
-+static void cr_task_arr_free(struct cr_ctx *ctx)
-+{
-+	int n;
-+
-+	for (n = 0; n < ctx->tasks_nr; n++) {
-+		if (ctx->tasks_arr[n]) {
-+			put_task_struct(ctx->tasks_arr[n]);
-+			ctx->tasks_arr[n] = NULL;
-+		}
-+	}
-+	kfree(ctx->tasks_arr);
+-static int newary(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newary(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	int id;
+ 	int retval;
+@@ -263,7 +265,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
+ 		return retval;
+ 	}
+ 
+-	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
++	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni, req_id);
+ 	if (id < 0) {
+ 		security_sem_free(sma);
+ 		ipc_rcu_putref(sma);
+@@ -308,7 +310,7 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
+ }
+ 
+-SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
++int do_semget(key_t key, int nsems, int semflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops sem_ops;
+@@ -327,7 +329,12 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+ 	sem_params.flg = semflg;
+ 	sem_params.u.nsems = nsems;
+ 
+-	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params);
++	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params, req_id);
 +}
 +
- static void cr_ctx_free(struct cr_ctx *ctx)
++SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
++{
++	return do_semget(key, nsems, semflg, -1);
+ }
+ 
+ /*
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 05d51d2..4135f28 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -61,7 +61,7 @@ static struct vm_operations_struct shm_vm_ops;
+ #define shm_unlock(shp)			\
+ 	ipc_unlock(&(shp)->shm_perm)
+ 
+-static int newseg(struct ipc_namespace *, struct ipc_params *);
++static int newseg(struct ipc_namespace *, struct ipc_params *, int);
+ static void shm_open(struct vm_area_struct *vma);
+ static void shm_close(struct vm_area_struct *vma);
+ static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
+@@ -82,7 +82,7 @@ void shm_init_ns(struct ipc_namespace *ns)
+  * Called with shm_ids.rw_mutex (writer) and the shp structure locked.
+  * Only shm_ids.rw_mutex remains locked on exit.
+  */
+-static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
  {
- 	if (ctx->file)
-@@ -164,6 +177,9 @@ static void cr_ctx_free(struct cr_ctx *ctx)
- 	cr_pgarr_free(ctx);
- 	cr_objhash_free(ctx);
+ 	struct shmid_kernel *shp;
+ 	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
+@@ -325,11 +325,13 @@ static struct vm_operations_struct shm_vm_ops = {
+  * newseg - Create a new shared memory segment
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, size and shmflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with shm_ids.rw_mutex held as a writer.
+  */
  
-+	if (ctx->tasks_arr)
-+		cr_task_arr_free(ctx);
+-static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newseg(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	key_t key = params->key;
+ 	int shmflg = params->flg;
+@@ -384,7 +386,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 	if (IS_ERR(file))
+ 		goto no_file;
+ 
+-	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
++	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni, req_id);
+ 	if (id < 0) {
+ 		error = id;
+ 		goto no_id;
+@@ -442,7 +444,7 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
+ }
+ 
+-SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
++int do_shmget(key_t key, size_t size, int shmflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops shm_ops;
+@@ -458,7 +460,12 @@ SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
+ 	shm_params.flg = shmflg;
+ 	shm_params.u.size = size;
+ 
+-	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params);
++	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params, req_id);
++}
 +
- 	if (ctx->root_nsproxy)
- 		put_nsproxy(ctx->root_nsproxy);
- 	if (ctx->root_task)
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 3a6cef9..c946320 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -31,6 +31,9 @@ struct cr_ctx {
- 	void *hbuf;		/* temporary buffer for headers */
- 	int hpos;		/* position in headers buffer */
++SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
++{
++	return do_shmget(key, size, shmflg, -1);
+ }
  
-+	struct task_struct **tasks_arr;	/* array of all tasks in container */
-+	int tasks_nr;			/* size of tasks array */
+ static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
+diff --git a/ipc/util.c b/ipc/util.c
+index 7585a72..58eaa0b 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -256,10 +256,12 @@ int ipc_get_maxid(struct ipc_ids *ids)
+  *	Called with ipc_ids.rw_mutex held as a writer.
+  */
+  
+-int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
++int
++ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
+ {
+ 	uid_t euid;
+ 	gid_t egid;
++	int lid = 0;
+ 	int id, err;
+ 
+ 	if (size > IPCMNI)
+@@ -268,28 +270,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+ 	if (ids->in_use >= size)
+ 		return -ENOSPC;
+ 
++	if (req_id >= 0)
++		lid = ipcid_to_idx(req_id);
 +
- 	struct cr_objhash *objhash;	/* hash for shared objects */
+ 	spin_lock_init(&new->lock);
+ 	new->deleted = 0;
+ 	rcu_read_lock();
+ 	spin_lock(&new->lock);
  
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index a6b6dce..18c9f5d 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -44,7 +44,8 @@ enum {
- 	CR_HDR_STRING,
- 	CR_HDR_FNAME,
+-	err = idr_get_new(&ids->ipcs_idr, new, &id);
++	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
+ 	if (err) {
+ 		spin_unlock(&new->lock);
+ 		rcu_read_unlock();
+ 		return err;
+ 	}
  
--	CR_HDR_TASK = 101,
-+	CR_HDR_TREE = 101,
-+	CR_HDR_TASK,
- 	CR_HDR_THREAD,
- 	CR_HDR_CPU,
- 
-@@ -88,6 +89,16 @@ struct cr_hdr_tail {
- 	__u64 magic;
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_tree {
-+	__s32 tasks_nr;
-+} __attribute__((aligned(8)));
++	if (req_id >= 0) {
++		if (id != lid) {
++			idr_remove(&ids->ipcs_idr, id);
++			spin_unlock(&new->lock);
++			rcu_read_unlock();
++			return -EBUSY;
++		}
++		new->seq = req_id / SEQ_MULTIPLIER;
++	} else {
++		new->seq = ids->seq++;
++		if (ids->seq > ids->seq_max)
++			ids->seq = 0;
++	}
 +
-+struct cr_hdr_pids {
-+	__s32 vpid;
-+	__s32 vtgid;
-+	__s32 vppid;
-+} __attribute__((aligned(8)));
+ 	ids->in_use++;
+ 
+ 	current_euid_egid(&euid, &egid);
+ 	new->cuid = new->uid = euid;
+ 	new->gid = new->cgid = egid;
+ 
+-	new->seq = ids->seq++;
+-	if(ids->seq > ids->seq_max)
+-		ids->seq = 0;
+-
+ 	new->id = ipc_buildid(id, new->seq);
+ 	return id;
+ }
+@@ -305,7 +320,7 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+  *	when the key is IPC_PRIVATE.
+  */
+ static int ipcget_new(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	int err;
+ retry:
+@@ -315,7 +330,7 @@ retry:
+ 		return -ENOMEM;
+ 
+ 	down_write(&ids->rw_mutex);
+-	err = ops->getnew(ns, params);
++	err = ops->getnew(ns, params, req_id);
+ 	up_write(&ids->rw_mutex);
+ 
+ 	if (err == -EAGAIN)
+@@ -360,6 +375,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	@ids: IPC identifer set
+  *	@ops: the actual creation routine to call
+  *	@params: its parameters
++ *	@req_id: request desired id if available (-1 if don't care)
+  *
+  *	This routine is called by sys_msgget, sys_semget() and sys_shmget()
+  *	when the key is not IPC_PRIVATE.
+@@ -369,7 +385,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	On success, the ipc id is returned.
+  */
+ static int ipcget_public(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	struct kern_ipc_perm *ipcp;
+ 	int flg = params->flg;
+@@ -390,7 +406,7 @@ retry:
+ 		else if (!err)
+ 			err = -ENOMEM;
+ 		else
+-			err = ops->getnew(ns, params);
++			err = ops->getnew(ns, params, req_id);
+ 	} else {
+ 		/* ipc object has been locked by ipc_findkey() */
+ 
+@@ -751,12 +767,12 @@ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id)
+  * Common routine called by sys_msgget(), sys_semget() and sys_shmget().
+  */
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	if (params->key == IPC_PRIVATE)
+-		return ipcget_new(ns, ids, ops, params);
++		return ipcget_new(ns, ids, ops, params, req_id);
+ 	else
+-		return ipcget_public(ns, ids, ops, params);
++		return ipcget_public(ns, ids, ops, params, req_id);
+ }
+ 
+ /**
+diff --git a/ipc/util.h b/ipc/util.h
+index 3646b45..3bef7ce 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -52,7 +52,7 @@ struct ipc_params {
+  *      . routine to call for an extra check if needed
+  */
+ struct ipc_ops {
+-	int (*getnew) (struct ipc_namespace *, struct ipc_params *);
++	int (*getnew) (struct ipc_namespace *, struct ipc_params *, int);
+ 	int (*associate) (struct kern_ipc_perm *, int);
+ 	int (*more_checks) (struct kern_ipc_perm *, struct ipc_params *);
+ };
+@@ -75,7 +75,7 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
+ #define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
+ 
+ /* must be called with ids->rw_mutex acquired for writing */
+-int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
++int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int, int);
+ 
+ /* must be called with ids->rw_mutex acquired for reading */
+ int ipc_get_maxid(struct ipc_ids *);
+@@ -152,6 +152,11 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
+ 
+ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params);
++		struct ipc_ops *ops, struct ipc_params *params, int req_id);
 +
- struct cr_hdr_task {
- 	__u32 state;
- 	__u32 exit_state;
++/* for checkpoint/restart */
++extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
++extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
++
+ 
+ #endif
 -- 
 1.5.4.3
