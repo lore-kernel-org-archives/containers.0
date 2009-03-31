@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 11/29] add generic checkpoint f_op to ext fses
-Date: Tue, 31 Mar 2009 01:28:51 -0400
-Message-ID: <1238477349-11029-12-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 23/29] s390: Expose a constant for the number of
+	words representing the CRs
+Date: Tue, 31 Mar 2009 01:29:03 -0400
+Message-ID: <1238477349-11029-24-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,101 +19,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+We need to use this value in the checkpoint/restart code and would like to
+have a constant instead of a magic '3'.
 
-This marks ext[234] as being checkpointable.  There will be many
-more to do this to, but this is a start.
+Changelog:
+    Mar 30:
+            . Add CHECKPOINT_SUPPORT in Kconfig (Nathan Lynch)
+    Mar 03:
+            . Picked up additional use of magic '3' in ptrace.h
 
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/ext2/dir.c  |    1 +
- fs/ext2/file.c |    2 ++
- fs/ext3/dir.c  |    1 +
- fs/ext3/file.c |    1 +
- fs/ext4/dir.c  |    1 +
- fs/ext4/file.c |    1 +
- 6 files changed, 7 insertions(+), 0 deletions(-)
+ arch/s390/Kconfig                |    4 ++++
+ arch/s390/include/asm/ptrace.h   |    4 +++-
+ arch/s390/kernel/compat_ptrace.h |    3 ++-
+ 3 files changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
-index 2999d72..4f1dd79 100644
---- a/fs/ext2/dir.c
-+++ b/fs/ext2/dir.c
-@@ -721,4 +721,5 @@ const struct file_operations ext2_dir_operations = {
- 	.compat_ioctl	= ext2_compat_ioctl,
- #endif
- 	.fsync		= ext2_sync_file,
-+	.checkpoint	= generic_file_checkpoint,
- };
-diff --git a/fs/ext2/file.c b/fs/ext2/file.c
-index 45ed071..e1731c5 100644
---- a/fs/ext2/file.c
-+++ b/fs/ext2/file.c
-@@ -58,6 +58,7 @@ const struct file_operations ext2_file_operations = {
- 	.fsync		= ext2_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+	.checkpoint	= generic_file_checkpoint,
- };
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index 6b0a353..98d339e 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -49,6 +49,10 @@ config GENERIC_TIME_VSYSCALL
+ config GENERIC_CLOCKEVENTS
+ 	def_bool y
  
- #ifdef CONFIG_EXT2_FS_XIP
-@@ -73,6 +74,7 @@ const struct file_operations ext2_xip_file_operations = {
- 	.open		= generic_file_open,
- 	.release	= ext2_release_file,
- 	.fsync		= ext2_sync_file,
-+	.checkpoint	= generic_file_checkpoint,
- };
- #endif
++config CHECKPOINT_SUPPORT
++	bool
++	default y if 64BIT
++
+ config GENERIC_BUG
+ 	bool
+ 	depends on BUG
+diff --git a/arch/s390/include/asm/ptrace.h b/arch/s390/include/asm/ptrace.h
+index 8920025..f1b0516 100644
+--- a/arch/s390/include/asm/ptrace.h
++++ b/arch/s390/include/asm/ptrace.h
+@@ -172,6 +172,8 @@
+ #define NUM_CRS		16
+ #define NUM_ACRS	16
  
-diff --git a/fs/ext3/dir.c b/fs/ext3/dir.c
-index 5853f44..aa579e1 100644
---- a/fs/ext3/dir.c
-+++ b/fs/ext3/dir.c
-@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_operations = {
- #endif
- 	.fsync		= ext3_sync_file,	/* BKL held */
- 	.release	= ext3_release_dir,
-+	.checkpoint	= generic_file_checkpoint,
- };
++#define NUM_CR_WORDS	3
++
+ #define FPR_SIZE	8
+ #define FPC_SIZE	4
+ #define FPC_PAD_SIZE	4 /* gcc insists on aligning the fpregs */
+@@ -334,7 +336,7 @@ struct pt_regs
+  */
+ typedef struct
+ {
+-	unsigned long cr[3];
++	unsigned long cr[NUM_CR_WORDS];
+ } per_cr_words;
  
+ #define PER_EM_MASK 0xE8000000UL
+diff --git a/arch/s390/kernel/compat_ptrace.h b/arch/s390/kernel/compat_ptrace.h
+index a2be3a9..123dd66 100644
+--- a/arch/s390/kernel/compat_ptrace.h
++++ b/arch/s390/kernel/compat_ptrace.h
+@@ -1,10 +1,11 @@
+ #ifndef _PTRACE32_H
+ #define _PTRACE32_H
  
-diff --git a/fs/ext3/file.c b/fs/ext3/file.c
-index 3be1e06..45f73fa 100644
---- a/fs/ext3/file.c
-+++ b/fs/ext3/file.c
-@@ -122,6 +122,7 @@ const struct file_operations ext3_file_operations = {
- 	.fsync		= ext3_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+	.checkpoint	= generic_file_checkpoint,
- };
++#include <asm/ptrace.h>    /* needed for NUM_CR_WORDS */
+ #include "compat_linux.h"  /* needed for psw_compat_t */
  
- const struct inode_operations ext3_file_inode_operations = {
-diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
-index 2df2e40..9baf728 100644
---- a/fs/ext4/dir.c
-+++ b/fs/ext4/dir.c
-@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_operations = {
- #endif
- 	.fsync		= ext4_sync_file,
- 	.release	= ext4_release_dir,
-+	.checkpoint	= generic_file_checkpoint,
- };
+ typedef struct {
+-	__u32 cr[3];
++	__u32 cr[NUM_CR_WORDS];
+ } per_cr_words32;
  
- 
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index f731cb5..bd84dce 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -156,6 +156,7 @@ const struct file_operations ext4_file_operations = {
- 	.fsync		= ext4_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+	.checkpoint	= generic_file_checkpoint,
- };
- 
- const struct inode_operations ext4_file_inode_operations = {
+ typedef struct {
 -- 
 1.5.4.3
