@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 1/7] ipc: allow allocation of an ipc object with
-	desired identifier
-Date: Tue, 31 Mar 2009 01:32:26 -0400
-Message-ID: <1238477552-17083-2-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 7/7] sysvipc-shm: correctly handle deleted
+	(active) ipc shared memory
+Date: Tue, 31 Mar 2009 01:32:32 -0400
+Message-ID: <1238477552-17083-8-git-send-email-orenl@cs.columbia.edu>
 References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,367 +22,93 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During restart, we need to allocate ipc objects that with the same
-identifiers as recorded during checkpoint. Modify the allocation
-code allow an in-kernel caller to request a specific ipc identifier.
-The system call interface remains unchanged.
+During restart, an ipc shared region may have SHM_DEST, indicating
+that it has been originally deleted (while still active). In this
+case the task of deleting the region after restoring it is postponed
+until the end of the restart; otherwise, it would be quite silly to
+delete it at that time, because it will be ... gone :o
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- ipc/msg.c  |   17 ++++++++++++-----
- ipc/sem.c  |   17 ++++++++++++-----
- ipc/shm.c  |   19 +++++++++++++------
- ipc/util.c |   42 +++++++++++++++++++++++++++++-------------
- ipc/util.h |   11 ++++++++---
- 5 files changed, 74 insertions(+), 32 deletions(-)
+ ipc/ckpt_shm.c |   44 ++++++++++++++++++++++++++++++++++++++++----
+ 1 files changed, 40 insertions(+), 4 deletions(-)
 
-diff --git a/ipc/msg.c b/ipc/msg.c
-index 2ceab7f..1db7c45 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -73,7 +73,7 @@ struct msg_sender {
- #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
- 
- static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
--static int newque(struct ipc_namespace *, struct ipc_params *);
-+static int newque(struct ipc_namespace *, struct ipc_params *, int);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
- #endif
-@@ -174,10 +174,12 @@ static inline void msg_rmid(struct ipc_namespace *ns, struct msg_queue *s)
-  * newque - Create a new msg queue
-  * @ns: namespace
-  * @params: ptr to the structure that contains the key and msgflg
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with msg_ids.rw_mutex held (writer)
+diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
+index ee9b77a..aa539cf 100644
+--- a/ipc/ckpt_shm.c
++++ b/ipc/ckpt_shm.c
+@@ -145,6 +145,25 @@ int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
+  * ipc restart
   */
--static int newque(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newque(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	struct msg_queue *msq;
- 	int id, retval;
-@@ -201,7 +203,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
- 	/*
- 	 * ipc_addid() locks msq
- 	 */
--	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
-+	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni, req_id);
- 	if (id < 0) {
- 		security_msg_queue_free(msq);
- 		ipc_rcu_putref(msq);
-@@ -309,7 +311,7 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
- 	return security_msg_queue_associate(msq, msgflg);
- }
  
--SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
-+int do_msgget(key_t key, int msgflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops msg_ops;
-@@ -324,7 +326,12 @@ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
- 	msg_params.key = key;
- 	msg_params.flg = msgflg;
- 
--	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params);
-+	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params, req_id);
++struct cr_wq_ipcshm_del {
++	struct ipc_namespace *ipcns;
++	int id;
++};
++
++static int cr_ipc_shm_delete(void *data)
++{
++	struct cr_wq_ipcshm_del *wqdata = (struct cr_wq_ipcshm_del *) data;
++	mm_segment_t old_fs;
++	int ret;
++
++	old_fs = get_fs();
++	set_fs(get_ds());
++	ret = shmctl_down(wqdata->ipcns, wqdata->id, IPC_RMID, NULL, 0);
++	set_fs(old_fs);
++
++	return ret;
 +}
 +
-+SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
-+{
-+	return do_msgget(key, msgflg, -1);
- }
+ int cr_ipc_shm_attach(struct file *file,
+ 		      unsigned long vm_addr,
+ 		      unsigned long vm_flags)
+@@ -224,7 +243,25 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
+ 	if (hh->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
+ 		goto out;
  
- static inline unsigned long
-diff --git a/ipc/sem.c b/ipc/sem.c
-index 16a2189..207dbbb 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -92,7 +92,7 @@
- #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
- #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
- 
--static int newary(struct ipc_namespace *, struct ipc_params *);
-+static int newary(struct ipc_namespace *, struct ipc_params *, int);
- static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
-@@ -227,11 +227,13 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
-  * newary - Create a new semaphore set
-  * @ns: namespace
-  * @params: ptr to the structure that contains key, semflg and nsems
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with sem_ids.rw_mutex held (as a writer)
-  */
- 
--static int newary(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newary(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	int id;
- 	int retval;
-@@ -263,7 +265,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
- 		return retval;
- 	}
- 
--	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
-+	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni, req_id);
- 	if (id < 0) {
- 		security_sem_free(sma);
- 		ipc_rcu_putref(sma);
-@@ -308,7 +310,7 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
-+int do_semget(key_t key, int nsems, int semflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops sem_ops;
-@@ -327,7 +329,12 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
- 	sem_params.flg = semflg;
- 	sem_params.u.nsems = nsems;
- 
--	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params);
-+	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params, req_id);
-+}
+-	/* FIXME: this will fail for deleted ipc shm segments */
++	/*
++	 * SHM_DEST means that the shm is to be deleted after creation.
++	 * However, deleting before it's actually attached is quite silly.
++	 * Instead, we defer this task to until restart has succeeded.
++	 */
++	if (hh->perms.mode & SHM_DEST) {
++		struct cr_wq_ipcshm_del wqdata;
 +
-+SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
-+{
-+	return do_semget(key, nsems, semflg, -1);
- }
- 
- /*
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 05d51d2..4135f28 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -61,7 +61,7 @@ static struct vm_operations_struct shm_vm_ops;
- #define shm_unlock(shp)			\
- 	ipc_unlock(&(shp)->shm_perm)
- 
--static int newseg(struct ipc_namespace *, struct ipc_params *);
-+static int newseg(struct ipc_namespace *, struct ipc_params *, int);
- static void shm_open(struct vm_area_struct *vma);
- static void shm_close(struct vm_area_struct *vma);
- static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
-@@ -82,7 +82,7 @@ void shm_init_ns(struct ipc_namespace *ns)
-  * Called with shm_ids.rw_mutex (writer) and the shp structure locked.
-  * Only shm_ids.rw_mutex remains locked on exit.
-  */
--static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
-+void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
- {
- 	struct shmid_kernel *shp;
- 	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
-@@ -325,11 +325,13 @@ static struct vm_operations_struct shm_vm_ops = {
-  * newseg - Create a new shared memory segment
-  * @ns: namespace
-  * @params: ptr to the structure that contains key, size and shmflg
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with shm_ids.rw_mutex held as a writer.
-  */
- 
--static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newseg(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	key_t key = params->key;
- 	int shmflg = params->flg;
-@@ -384,7 +386,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
- 	if (IS_ERR(file))
- 		goto no_file;
- 
--	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
-+	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni, req_id);
- 	if (id < 0) {
- 		error = id;
- 		goto no_id;
-@@ -442,7 +444,7 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
-+int do_shmget(key_t key, size_t size, int shmflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops shm_ops;
-@@ -458,7 +460,12 @@ SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
- 	shm_params.flg = shmflg;
- 	shm_params.u.size = size;
- 
--	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params);
-+	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params, req_id);
-+}
++		/* to not confuse the rest of the code */
++		hh->perms.mode &= ~SHM_DEST;
 +
-+SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
-+{
-+	return do_shmget(key, size, shmflg, -1);
- }
- 
- static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
-diff --git a/ipc/util.c b/ipc/util.c
-index 7585a72..58eaa0b 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -256,10 +256,12 @@ int ipc_get_maxid(struct ipc_ids *ids)
-  *	Called with ipc_ids.rw_mutex held as a writer.
-  */
-  
--int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-+int
-+ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
- {
- 	uid_t euid;
- 	gid_t egid;
-+	int lid = 0;
- 	int id, err;
- 
- 	if (size > IPCMNI)
-@@ -268,28 +270,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
- 	if (ids->in_use >= size)
- 		return -ENOSPC;
- 
-+	if (req_id >= 0)
-+		lid = ipcid_to_idx(req_id);
++		wqdata.ipcns = current->nsproxy->ipc_ns;
++		wqdata.id = hh->perms.id;
 +
- 	spin_lock_init(&new->lock);
- 	new->deleted = 0;
- 	rcu_read_lock();
- 	spin_lock(&new->lock);
- 
--	err = idr_get_new(&ids->ipcs_idr, new, &id);
-+	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
- 	if (err) {
- 		spin_unlock(&new->lock);
- 		rcu_read_unlock();
- 		return err;
- 	}
- 
-+	if (req_id >= 0) {
-+		if (id != lid) {
-+			idr_remove(&ids->ipcs_idr, id);
-+			spin_unlock(&new->lock);
-+			rcu_read_unlock();
-+			return -EBUSY;
-+		}
-+		new->seq = req_id / SEQ_MULTIPLIER;
-+	} else {
-+		new->seq = ids->seq++;
-+		if (ids->seq > ids->seq_max)
-+			ids->seq = 0;
++		ret = cr_workqueue_add(ctx, cr_ipc_shm_delete, 0,
++				       &wqdata, sizeof(wqdata));
++		if (ret < 0)
++			goto out;
 +	}
-+
- 	ids->in_use++;
  
- 	current_euid_egid(&euid, &egid);
- 	new->cuid = new->uid = euid;
- 	new->gid = new->cgid = egid;
+ 	shmflag = hh->flags | hh->perms.mode | IPC_CREAT | IPC_EXCL;
+ 	cr_debug("shm: do_shmget size %lld flag %#x id %d\n",
+@@ -235,7 +272,6 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
+ 		goto out;
  
--	new->seq = ids->seq++;
--	if(ids->seq > ids->seq_max)
--		ids->seq = 0;
+ 	down_write(&shm_ids->rw_mutex);
 -
- 	new->id = ipc_buildid(id, new->seq);
- 	return id;
- }
-@@ -305,7 +320,7 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-  *	when the key is IPC_PRIVATE.
-  */
- static int ipcget_new(struct ipc_namespace *ns, struct ipc_ids *ids,
--		struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
- {
- 	int err;
- retry:
-@@ -315,7 +330,7 @@ retry:
- 		return -ENOMEM;
- 
- 	down_write(&ids->rw_mutex);
--	err = ops->getnew(ns, params);
-+	err = ops->getnew(ns, params, req_id);
- 	up_write(&ids->rw_mutex);
- 
- 	if (err == -EAGAIN)
-@@ -360,6 +375,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
-  *	@ids: IPC identifer set
-  *	@ops: the actual creation routine to call
-  *	@params: its parameters
-+ *	@req_id: request desired id if available (-1 if don't care)
-  *
-  *	This routine is called by sys_msgget, sys_semget() and sys_shmget()
-  *	when the key is not IPC_PRIVATE.
-@@ -369,7 +385,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
-  *	On success, the ipc id is returned.
-  */
- static int ipcget_public(struct ipc_namespace *ns, struct ipc_ids *ids,
--		struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
- {
- 	struct kern_ipc_perm *ipcp;
- 	int flg = params->flg;
-@@ -390,7 +406,7 @@ retry:
- 		else if (!err)
- 			err = -ENOMEM;
- 		else
--			err = ops->getnew(ns, params);
-+			err = ops->getnew(ns, params, req_id);
- 	} else {
- 		/* ipc object has been locked by ipc_findkey() */
- 
-@@ -751,12 +767,12 @@ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id)
-  * Common routine called by sys_msgget(), sys_semget() and sys_shmget().
-  */
- int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
--			struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
- {
- 	if (params->key == IPC_PRIVATE)
--		return ipcget_new(ns, ids, ops, params);
-+		return ipcget_new(ns, ids, ops, params, req_id);
- 	else
--		return ipcget_public(ns, ids, ops, params);
-+		return ipcget_public(ns, ids, ops, params, req_id);
- }
- 
- /**
-diff --git a/ipc/util.h b/ipc/util.h
-index 3646b45..3bef7ce 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -52,7 +52,7 @@ struct ipc_params {
-  *      . routine to call for an extra check if needed
-  */
- struct ipc_ops {
--	int (*getnew) (struct ipc_namespace *, struct ipc_params *);
-+	int (*getnew) (struct ipc_namespace *, struct ipc_params *, int);
- 	int (*associate) (struct kern_ipc_perm *, int);
- 	int (*more_checks) (struct kern_ipc_perm *, struct ipc_params *);
- };
-@@ -75,7 +75,7 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
- #define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
- 
- /* must be called with ids->rw_mutex acquired for writing */
--int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
-+int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int, int);
- 
- /* must be called with ids->rw_mutex acquired for reading */
- int ipc_get_maxid(struct ipc_ids *);
-@@ -152,6 +152,11 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
- 
- struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
- int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
--			struct ipc_ops *ops, struct ipc_params *params);
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id);
-+
-+/* for checkpoint/restart */
-+extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
-+extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
-+
- 
- #endif
+ 	ret = -EIDRM;
+ 	perms = ipc_lock(shm_ids, hh->perms.id);
+ 	if (IS_ERR(perms)) {	/* this should not happen .. but be safe */
+@@ -261,9 +297,9 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
+ 	/* deposit in objhash and read contents in */
+ 	ret = cr_obj_add_ref(ctx, file, hh->objref, CR_OBJ_FILE, 0);
+ 	if (ret < 0)
+-		goto file;
++		goto fput;
+ 	ret = cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
+- file:
++ fput:
+ 	fput(file);
+  out:
+ 	cr_hbuf_put(ctx, sizeof(*hh));
 -- 
 1.5.4.3
