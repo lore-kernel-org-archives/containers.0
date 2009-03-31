@@ -1,13 +1,11 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 24/29] c/r: Add CR_COPY() macro (v4)
-Date: Tue, 31 Mar 2009 01:29:04 -0400
-Message-ID: <1238477349-11029-25-git-send-email-orenl@cs.columbia.edu>
-References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 00/07] sysv SHM checkpoint/restart
+Date: Tue, 31 Mar 2009 01:32:25 -0400
+Message-ID: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1238477349-11029-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,73 +16,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+This patchset adds support for IPC shared-memory. It applies on top
+of c/r v14-rc2. Tested on x86_32 and verified with the test provided
+in the userspace tools. 
 
-As suggested by Dave[1], this provides us a way to make the copy-in and
-copy-out processes symmetric.  CR_COPY_ARRAY() provides us a way to do
-the same thing but for arrays.  It's not critical, but it helps us unify
-the checkpoint and restart paths for some things.
+Oren Laadan (7):
+      ipc: allow allocation of an ipc object with desired identifier
+      ipc: helpers to save and restore kern_ipc_perm structures
+      sysvipc-shm: checkpoint
+      sysvipc-shm: restart
+      Infrastructure for work postponed to the end of checkpoint/restart
+      sysvipc-shm: export interface from ipc/shm.c to delete ipc shm
+      sysvipc-shm: correctly handle deleted (active) ipc shared memory
 
-Changelog:
-    Mar 04:
-            . Removed semicolons
-            . Added build-time check for __must_be_array in CR_COPY_ARRAY
-    Feb 27:
-            . Changed CR_COPY() to use assignment, eliminating the need
-              for the CR_COPY_BIT() macro
-            . Add CR_COPY_ARRAY() macro to help copying register arrays,
-              etc
-            . Move the macro definitions inside the CR #ifdef
-    Feb 25:
-            . Changed WARN_ON() to BUILD_BUG_ON()
-
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
-1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
----
- include/linux/checkpoint.h |   26 ++++++++++++++++++++++++++
- 1 files changed, 26 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 031e414..59ec563 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -120,6 +120,32 @@ extern int cr_read_mm(struct cr_ctx *ctx);
- extern int cr_read_fd_table(struct cr_ctx *ctx);
- extern int cr_read_file(struct cr_ctx *ctx, int objref);
- 
-+/* useful macros to copy fields and buffers to/from cr_hdr_xxx structures */
-+#define CR_CPT 1
-+#define CR_RST 2
-+
-+#define CR_COPY(op, SAVE, LIVE)				        \
-+	do {							\
-+		if (op == CR_CPT)				\
-+			SAVE = LIVE;				\
-+		else						\
-+			LIVE = SAVE;				\
-+	} while (0)
-+
-+/*
-+ * Copy @count items from @LIVE to @SAVE if op is CR_CPT (otherwise,
-+ * copy in the reverse direction)
-+ */
-+#define CR_COPY_ARRAY(op, SAVE, LIVE, count)				\
-+	do {								\
-+		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
-+		if (op == CR_CPT)					\
-+			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
-+		else							\
-+			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
-+	} while (__must_be_array(SAVE) && __must_be_array(LIVE) && 0)
-+
-+
- #define cr_debug(fmt, args...)  \
- 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
- 
--- 
-1.5.4.3
+ checkpoint/Makefile            |    6 +-
+ checkpoint/checkpoint.c        |    7 +
+ checkpoint/ckpt_mem.c          |    9 +
+ checkpoint/restart.c           |    6 +
+ checkpoint/rstr_mem.c          |   23 +++
+ checkpoint/sys.c               |    7 +
+ checkpoint/util_ipc.c          |   81 ++++++++++
+ checkpoint/workqueue.c         |   62 ++++++++
+ include/linux/checkpoint.h     |   25 +++
+ include/linux/checkpoint_hdr.h |   47 ++++++
+ include/linux/shm.h            |    4 +
+ ipc/Makefile                   |    1 +
+ ipc/ckpt_shm.c                 |  339 ++++++++++++++++++++++++++++++++++++++++
+ ipc/msg.c                      |   17 ++-
+ ipc/sem.c                      |   17 ++-
+ ipc/shm.c                      |   34 +++-
+ ipc/util.c                     |   42 ++++--
+ ipc/util.h                     |   11 +-
+ 18 files changed, 702 insertions(+), 36 deletions(-)
