@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 03/29] Make file_pos_read/write() public
-Date: Tue, 31 Mar 2009 01:28:43 -0400
-Message-ID: <1238477349-11029-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 10/29] actually use f_op in checkpoint code
+Date: Tue, 31 Mar 2009 01:28:50 -0400
+Message-ID: <1238477349-11029-11-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,55 +21,118 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-These two are used in the next patch when calling vfs_read/write()
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Right now, we assume all normal files and directories
+can be checkpointed.  However, as usual in the VFS, there
+are specialized places that will always need an ability
+to override these defaults.  We could do this completely
+in the checkpoint code, but that would bitrot quickly.
+
+This adds a new 'file_operations' function for
+checkpointing a file.  I did this under the assumption
+that we should have a dirt-simple way to make something
+(un)checkpointable that fits in with current code.
+
+As you can see in the ext[234] and /proc patches, all
+that we have to do to make something simple be
+supported is add a single "generic" f_op entry.
+
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/read_write.c    |   10 ----------
- include/linux/fs.h |   10 ++++++++++
- 2 files changed, 10 insertions(+), 10 deletions(-)
+ checkpoint/ckpt_file.c |   31 +++++++++++++++----------------
+ include/linux/fs.h     |   11 +++++++++++
+ 2 files changed, 26 insertions(+), 16 deletions(-)
 
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 400fe81..4f9264a 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -359,16 +359,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
+index 9c344c7..0fe68bf 100644
+--- a/checkpoint/ckpt_file.c
++++ b/checkpoint/ckpt_file.c
+@@ -91,6 +91,11 @@ static int cr_write_file_generic(struct cr_ctx *ctx, struct file *file,
  
- EXPORT_SYMBOL(vfs_write);
+ 	hh->fd_type = CR_FD_GENERIC;
  
--static inline loff_t file_pos_read(struct file *file)
--{
--	return file->f_pos;
--}
--
--static inline void file_pos_write(struct file *file, loff_t pos)
--{
--	file->f_pos = pos;
--}
--
- SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
++	/*
++	 * FIXME: when we'll add support for unlinked files/dirs, we'll
++	 * need to distinguish between unlinked filed and unlinked dirs.
++	 */
++
+ 	ret = cr_write_obj(ctx, &h, hh);
+ 	if (ret < 0)
+ 		return ret;
+@@ -98,12 +103,16 @@ static int cr_write_file_generic(struct cr_ctx *ctx, struct file *file,
+ 	return cr_write_fname(ctx, &file->f_path, &ctx->fs_mnt);
+ }
+ 
++int generic_file_checkpoint(struct cr_ctx *ctx, struct file *file,
++			    struct cr_hdr_file *hh)
++{
++	return cr_write_file_generic(ctx, file, hh);
++}
++
+ /* cr_write_file - dump the state of a given file pointer */
+ static int cr_write_file(struct cr_ctx *ctx, struct file *file)
  {
- 	struct file *file;
+ 	struct cr_hdr_file *hh;
+-	struct dentry *dent = file->f_dentry;
+-	struct inode *inode = dent->d_inode;
+ 	int ret;
+ 
+ 	hh = cr_hbuf_get(ctx, sizeof(*hh));
+@@ -116,21 +125,11 @@ static int cr_write_file(struct cr_ctx *ctx, struct file *file)
+ 	hh->f_version = file->f_version;
+ 	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
+ 
+-	/*
+-	 * FIXME: when we'll add support for unlinked files/dirs, we'll
+-	 * need to distinguish between unlinked filed and unlinked dirs.
+-	 */
+-	switch (inode->i_mode & S_IFMT) {
+-	case S_IFREG:
+-	case S_IFDIR:
+-		ret = cr_write_file_generic(ctx, file, hh);
+-		break;
+-	default:
+-		ret = -EBADF;
+-		break;
+-	}
+-	cr_hbuf_put(ctx, sizeof(*hh));
++	ret = -EBADF;
++	if (file->f_op->checkpoint)
++		ret = file->f_op->checkpoint(ctx, file, hh);
+ 
++	cr_hbuf_put(ctx, sizeof(*hh));
+ 	return ret;
+ }
+ 
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 92734c0..3bf5057 100644
+index 3bf5057..835ee9e 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1372,6 +1372,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
- 				struct iovec *fast_pointer,
- 				struct iovec **ret_pointer);
+@@ -1296,6 +1296,14 @@ int generic_osync_inode(struct inode *, struct address_space *, int);
+ typedef int (*filldir_t)(void *, const char *, int, loff_t, u64, unsigned);
+ struct block_device_operations;
  
-+static inline loff_t file_pos_read(struct file *file)
-+{
-+	return file->f_pos;
-+}
++#ifdef CONFIG_CHECKPOINT
++struct cr_ctx;
++struct cr_hdr_file;
++int generic_file_checkpoint(struct cr_ctx *, struct file *, struct cr_hdr_file *);
++#else
++#define generic_file_checkpoint NULL
++#endif
 +
-+static inline void file_pos_write(struct file *file, loff_t pos)
-+{
-+	file->f_pos = pos;
-+}
-+
- extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
- extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+ /* These macros are for out of kernel modules to test that
+  * the kernel supports the unlocked_ioctl and compat_ioctl
+  * fields in struct file_operations. */
+@@ -1334,6 +1342,9 @@ struct file_operations {
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+ 	int (*setlease)(struct file *, long, struct file_lock **);
++#ifdef CONFIG_CHECKPOINT
++	int (*checkpoint)(struct cr_ctx *, struct file *file, struct cr_hdr_file *);
++#endif
+ };
+ 
+ struct inode_operations {
 -- 
 1.5.4.3
