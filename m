@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 5/7] Infrastructure for work postponed to the end
-	of checkpoint/restart
-Date: Tue, 31 Mar 2009 01:32:30 -0400
-Message-ID: <1238477552-17083-6-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 4/7] sysvipc-shm: restart
+Date: Tue, 31 Mar 2009 01:32:29 -0400
+Message-ID: <1238477552-17083-5-git-send-email-orenl@cs.columbia.edu>
 References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,204 +21,290 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add a interface to postpone an action until the end of the entire
-checkpoint or restart operation. This is useful when during the
-scan of tasks an operation cannot be performed in place, to avoid
-the need for a second scan.
+Like chekcpoint, restart of sysvipc shared memory is also performed in
+two steps: first, the entire ipc namespace is restored as a whole, by
+restoring each shm object read from the checkpoint image. The shmem's
+file pointer is registered in the objhash. Second, for each vma that
+refers to ipc shared memory, we use the objref to find the file in the
+objhash, and use that file in calling do_mmap_pgoff().
 
-One use case is the next patch: when restoring an ipc shared memory
-region that has been deleted (but is still attached), during restart
-it needs to be create, attached and then deleted. However, creation
-and attachment are performed in distinct locations, so deletion can
-not be performed on the spot. Instead, this work (delete) is deferred
-until later.
+Handling of shm objects that have been deleted (via IPC_RMID) is left
+to a later patch in this series.
 
-The interface is as follows:
-
-cr_workqueue_run(ctx):
-  Execute all the pending works in the queue. Returns the number of
-  works executed, or an error.
-
-cr_workqueue_add(ctx, function, flags, data, size):
-  Enqueue a postponed work. @function is the function to do the work,
-  which will be called with @data as an argument. @size tells the
-  size of data. @flags is unused at the moment.
+Handling of ipc shm mappings that are locked (via SHM_MLOCK) is also
+not restored at the moment.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/Makefile        |    3 +-
- checkpoint/checkpoint.c    |    4 +++
- checkpoint/restart.c       |    3 ++
- checkpoint/sys.c           |    7 +++++
- checkpoint/workqueue.c     |   62 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    9 ++++++
- 6 files changed, 87 insertions(+), 1 deletions(-)
- create mode 100644 checkpoint/workqueue.c
+ checkpoint/rstr_mem.c      |   23 ++++++
+ checkpoint/util_ipc.c      |    2 +-
+ include/linux/checkpoint.h |    3 +
+ ipc/ckpt_shm.c             |  167 +++++++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 193 insertions(+), 2 deletions(-)
 
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index 71061de..d14f156 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -2,6 +2,7 @@
- # Makefile for linux checkpoint/restart.
- #
- 
--obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o objhash.o \
-+obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o \
-+	objhash.o workqueue.o \
- 	ckpt_mem.o rstr_mem.o ckpt_file.o rstr_file.o \
- 	util_ipc.o
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 2ebaa05..ffb5d9c 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -584,6 +584,10 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	if (ret < 0)
+diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
+index 414d6a9..a70f02a 100644
+--- a/checkpoint/rstr_mem.c
++++ b/checkpoint/rstr_mem.c
+@@ -342,6 +342,24 @@ static struct file *cr_vma_prep_file(struct cr_ctx *ctx, struct cr_hdr_vma *hh)
+ 		if (!IS_ERR(file))
+ 			get_file(file);
+ 		break;
++#ifdef CONFIG_SYSVIPC
++	case CR_VMA_SHM_IPC_SKIP:	/* shared sysvipc mapping skipped */
++		if (!hh->shm_objref || hh->vma_objref)
++			break;
++		file = cr_obj_get_by_ref(ctx, hh->shm_objref, CR_OBJ_FILE);
++		if (!file)
++			file = ERR_PTR(-EINVAL);
++		if (!IS_ERR(file)) {
++			ret = cr_ipc_shm_attach(file,
++						hh->vm_start,
++						hh->vm_flags);
++			if (ret < 0)
++				file = ERR_PTR(ret);
++		}
++		if (!IS_ERR(file))
++			get_file(file);
++		break;
++#endif
+ 	case CR_VMA_SHM_FILE:		/* shared mapping of a file */
+ 		if (!hh->shm_objref || !hh->vma_objref)
+ 			break;
+@@ -429,6 +447,10 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
  		goto out;
+ 	}
  
-+	ret = cr_workqueue_run(ctx);
-+	if (ret < 0)
-+		goto out;
++	/* yuck: sysvipc shm are already mapped, so skip this */
++	if (vma_type == CR_VMA_SHM_IPC_SKIP)
++		goto contents;
 +
- 	ctx->crid = atomic_inc_return(&cr_ctx_count);
- 
- 	/* on success, return (unique) checkpoint identifier */
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index ed5c725..44f255d 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -530,7 +530,10 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
+ 	/* create a new vma */
+ 	down_write(&mm->mmap_sem);
+ 	addr = do_mmap_pgoff(file, vm_start, vm_size,
+@@ -442,6 +464,7 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
  		goto out;
+ 	}
  
- 	ret = cr_read_tail(ctx);
-+	if (ret < 0)
-+		goto out;
++ contents:
+ 	/* read in the contents of this vma */
+ 	if (shm)
+ 		ret = cr_read_shared_vma_contents(ctx, file, vma_type);
+diff --git a/checkpoint/util_ipc.c b/checkpoint/util_ipc.c
+index a648579..adbb639 100644
+--- a/checkpoint/util_ipc.c
++++ b/checkpoint/util_ipc.c
+@@ -20,7 +20,7 @@ int cr_write_ipc(struct cr_ctx *ctx, struct nsproxy *nsproxy)
  
-+	ret = cr_workqueue_run(ctx);
-  out:
+ int cr_read_ipc(struct cr_ctx *ctx)
+ {
+-	return 0;
++	return cr_read_ipc_shm(ctx);
+ }
+ 
+ void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh, struct kern_ipc_perm *perm)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 8637537..c556511 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -130,6 +130,9 @@ extern void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh,
+ extern int cr_load_ipc_perms(struct cr_hdr_ipc_perms *hh,
+ 			     struct kern_ipc_perm *perm);
+ extern int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns);
++extern int cr_read_ipc_shm(struct cr_ctx *ctx);
++extern int cr_ipc_shm_attach(struct file *file,
++			     unsigned long addr, unsigned long flags);
+ #endif
+ 
+ 
+diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
+index 6a9382a..ee9b77a 100644
+--- a/ipc/ckpt_shm.c
++++ b/ipc/ckpt_shm.c
+@@ -14,6 +14,7 @@
+ #include <linux/hugetlb.h>
+ #include <linux/rwsem.h>
+ #include <linux/sched.h>
++#include <linux/file.h>
+ #include <linux/syscalls.h>
+ #include <linux/nsproxy.h>
+ #include <linux/ipc_namespace.h>
+@@ -45,7 +46,10 @@ static int cr_fill_ipc_shm_hdr(struct cr_ctx *ctx,
+ 	hh->shm_cprid = shp->shm_cprid;
+ 	hh->shm_lprid = shp->shm_lprid;
+ 
+-	hh->mlock_uid = (shp->mlock_user ? shp->mlock_user->uid : UINT_MAX);
++	if (shp->mlock_user)
++		hh->mlock_uid = shp->mlock_user->uid;
++	else
++		hh->mlock_uid = (unsigned int) -1;
+ 
+ 	hh->flags = 0;
+ 	/* check if shm was setup with SHM_NORESERVE */
+@@ -136,3 +140,164 @@ int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
+ 	up_read(&shm_ids->rw_mutex);
  	return ret;
  }
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 3a925ae..36486cc 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -167,8 +167,14 @@ static void cr_task_arr_free(struct cr_ctx *ctx)
- 
- static void cr_ctx_free(struct cr_ctx *ctx)
- {
-+	int ret;
 +
- 	BUG_ON(atomic_read(&ctx->refcount));
- 
-+	ret = cr_workqueue_run(ctx);
-+	if (ret != 0)
-+		cr_debug("deferred workqueue had %d entries", ret);
-+
- 	if (ctx->file)
- 		fput(ctx->file);
- 
-@@ -206,6 +212,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
- 	atomic_set(&ctx->refcount, 0);
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
-+	INIT_LIST_HEAD(&ctx->workqueue);
- 	init_waitqueue_head(&ctx->waitq);
- 
- 	err = -EBADF;
-diff --git a/checkpoint/workqueue.c b/checkpoint/workqueue.c
-new file mode 100644
-index 0000000..e278202
---- /dev/null
-+++ b/checkpoint/workqueue.c
-@@ -0,0 +1,62 @@
-+/*
-+ *  Checkpoint-restart - work queue infrastructure to manage deferred work
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
++/************************************************************************
++ * ipc restart
 + */
 +
-+#include <linux/list.h>
-+#include <linux/checkpoint.h>
-+
-+struct cr_workqueue {
-+	cr_workqueue_func_t function;
-+	unsigned int flags;
-+	struct list_head list;
-+	char data[0];
-+};
-+
-+int cr_workqueue_add(struct cr_ctx *ctx, cr_workqueue_func_t function,
-+		     unsigned int flags, void *data, int size)
++int cr_ipc_shm_attach(struct file *file,
++		      unsigned long vm_addr,
++		      unsigned long vm_flags)
 +{
-+	struct cr_workqueue *wq;
++	mm_segment_t old_fs;
++	unsigned long addr;
++	int shmid, shmflg = 0;
++	int ret;
 +
-+	wq = kmalloc(sizeof(wq) + size, GFP_KERNEL);
-+	if (!wq)
-+		return -ENOMEM;
++	shmid = file->f_dentry->d_inode->i_ino;
 +
-+	wq->function = function;
-+	wq->flags = flags;
-+	memcpy(wq->data, data, size);
++	if (!(vm_flags & VM_WRITE))
++		shmflg |= SHM_RDONLY;
 +
-+	cr_debug("adding work %p function %p\n", wq, wq->function);
-+	list_add_tail(&ctx->workqueue, &wq->list);
++	old_fs = get_fs();
++	set_fs(get_ds());
++	ret = do_shmat(shmid, (char __user *) vm_addr, shmflg, &addr);
++	set_fs(old_fs);
++
++	BUG_ON(ret >= 0 && addr != vm_addr);
++	return ret;
++}
++
++static int cr_load_ipc_shm_hdr(struct cr_ctx *ctx,
++			       struct cr_hdr_ipc_shm *hh,
++			       struct shmid_kernel *shp)
++{
++	int ret;
++
++	ret = cr_load_ipc_perms(&hh->perms, &shp->shm_perm);
++	if (ret < 0)
++		return ret;
++
++	cr_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
++		 hh->shm_cprid, hh->shm_lprid, hh->shm_segsz, hh->mlock_uid);
++
++	if (hh->shm_cprid < 0 || hh->shm_lprid < 0)
++		return -EINVAL;
++
++	shp->shm_segsz = hh->shm_segsz;
++	shp->shm_atim = hh->shm_atim;
++	shp->shm_dtim = hh->shm_dtim;
++	shp->shm_ctim = hh->shm_ctim;
++	shp->shm_cprid = hh->shm_cprid;
++	shp->shm_lprid = hh->shm_lprid;
++
 +	return 0;
 +}
 +
-+/*
-+ * cr_workqueue_run - perform all work in the work queue
-+ * @ctx: checkpoint context
-+ *
-+ * returns: number of works performed, or < 0 on error
-+ */
-+int cr_workqueue_run(struct cr_ctx *ctx)
++static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
 +{
-+	struct cr_workqueue *wq, *n;
-+	int nr = 0;
++	struct cr_hdr_ipc_shm *hh;
++	struct kern_ipc_perm *perms;
++	struct shmid_kernel *shp;
++	struct ipc_ids *shm_ids = &current->nsproxy->ipc_ns->ids[IPC_SHM_IDS];
++	struct file *file;
++	int shmflag;
 +	int ret;
 +
-+	list_for_each_entry_safe(wq, n, &ctx->workqueue, list) {
-+		cr_debug("doing work %p function %p\n", wq, wq->function);
-+		ret = wq->function(wq->data);
-+		if (ret < 0)
-+			cr_debug("wq function failed %d\n", ret);
-+		list_del(&wq->list);
-+		kfree(wq);
-+		nr++;
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC_SHM);
++	if (ret < 0)
++		goto out;
++	ret = -EINVAL;
++	if (hh->perms.id < 0)
++		goto out;
++
++#define CR_SHMFL_MASK  (SHM_NORESERVE | SHM_HUGETLB)
++	if (hh->flags & ~CR_SHMFL_MASK)
++		goto out;
++
++	ret = -ENOSYS;
++	if (hh->mlock_uid != (unsigned int) -1)	/* FIXME: support SHM_LOCK */
++		goto out;
++	if (hh->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
++		goto out;
++
++	/* FIXME: this will fail for deleted ipc shm segments */
++
++	shmflag = hh->flags | hh->perms.mode | IPC_CREAT | IPC_EXCL;
++	cr_debug("shm: do_shmget size %lld flag %#x id %d\n",
++		 hh->shm_segsz, shmflag, hh->perms.id);
++	ret = do_shmget(hh->perms.key, hh->shm_segsz, shmflag, hh->perms.id);
++	cr_debug("shm: do_shmget ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	down_write(&shm_ids->rw_mutex);
++
++	ret = -EIDRM;
++	perms = ipc_lock(shm_ids, hh->perms.id);
++	if (IS_ERR(perms)) {	/* this should not happen .. but be safe */
++		up_write(&shm_ids->rw_mutex);
++		ret = PTR_ERR(perms);
++		goto out;
 +	}
 +
-+	return nr;
++	shp = container_of(perms, struct shmid_kernel, shm_perm);
++	ret = cr_load_ipc_shm_hdr(ctx, hh, shp);
++	if (ret < 0) {
++		cr_debug("shm: need to remove (%d)\n", ret);
++		do_shm_rmid(current->nsproxy->ipc_ns, perms);
++		up_write(&shm_ids->rw_mutex);
++		goto out;
++	}
++
++	file = shp->shm_file;
++	get_file(file);
++	ipc_unlock(perms);
++	up_write(&shm_ids->rw_mutex);
++
++	/* deposit in objhash and read contents in */
++	ret = cr_obj_add_ref(ctx, file, hh->objref, CR_OBJ_FILE, 0);
++	if (ret < 0)
++		goto file;
++	ret = cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
++ file:
++	fput(file);
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
 +}
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index c556511..ba218b6 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -38,6 +38,7 @@ struct cr_ctx {
- 	atomic_t refcount;
- 
- 	struct cr_objhash *objhash;	/* hash for shared objects */
-+	struct list_head workqueue;	/* list of deferred tasks */
- 
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
- 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
-@@ -71,6 +72,14 @@ extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
- extern void cr_ctx_get(struct cr_ctx *ctx);
- extern void cr_ctx_put(struct cr_ctx *ctx);
- 
-+/* deferred tasks */
 +
-+typedef int (*cr_workqueue_func_t)(void *);
++int cr_read_ipc_shm(struct cr_ctx *ctx)
++{
++	struct cr_hdr_ipc *hh;
++	int n, ret;
 +
-+extern int cr_workqueue_run(struct cr_ctx *ctx);
-+extern int cr_workqueue_add(struct cr_ctx *ctx, cr_workqueue_func_t func,
-+			    unsigned int flags, void *data, int size);
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
 +
- /* shared objects handling */
- 
- enum {
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC);
++	if (ret < 0)
++		goto out;
++
++	cr_debug("shm: count %d\n", hh->ipc_count);
++
++	ret = -EINVAL;
++	if (hh->ipc_type != CR_HDR_IPC_SHM)
++		goto out;
++
++	ret = 0;
++	for (n = 0; n < hh->ipc_count; n++) {
++		ret = cr_do_read_ipc_shm(ctx);
++		if (ret < 0)
++			goto out;
++	}
++
++ out:
++	cr_debug("shm: ret %d\n", ret);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
 -- 
 1.5.4.3
