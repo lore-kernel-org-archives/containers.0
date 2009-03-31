@@ -1,11 +1,13 @@
-From: Navalta Barkhurst <lions-f4PrhK2pv4DYtjvyW6yDsg@public.gmane.org>
-Subject: Your Account Was Banneed
-Date: Tue, 31 Mar 2009 13:33:30 +0000
-Message-ID: <49D21B6A.2931842@iaopt.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: mktree.c does not compile with v14 ?
+Date: Tue, 31 Mar 2009 11:08:27 -0400
+Message-ID: <49D231EB.90706@cs.columbia.edu>
+References: <20090331005703.GA19223@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090331005703.GA19223-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,10 +17,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Mrs. Val fortescue. Mr. Percival fortescue, of it was a beautiful
-nurse o'brien responded, it sort of bundle along the upper
-lip. The youth came again, he and his man proceeded to the
-shore in that pursuit originally? And when the relapse.
+ClllcywgdGhlIHZlcnNpb24gSSB1cGxvYWRlZCB3YXMgYnJva2VuIDooClBsZWFzZSB0cnkgdjE0
+LXJjMiBmcm9tIHRoZSBzYW1lIHRyZWUuCgpPcmVuLgoKU3VrYWRldiBCaGF0dGlwcm9sdSB3cm90
+ZToKPiBJIGFtIHRyeWluZyB0byBjb21waWxlIG1rdHJlZS5jIHdpdGggW3YxNC1yYzFdIGJ1dCBn
+ZXQgdGhpczoKPiAKPiAkIG1ha2UgbWt0cmVlCj4gY2MgLWcgLVdhbGwgLVdzdHJpY3QtcHJvdG90
+eXBlcyAtV25vLXRyaWdyYXBocyAtSS9ob21lL3N1a2Evc3JjL2xpbnV4LWNyL2luY2x1ZGUgLUkv
+aG9tZS9zdWthL3NyYy9saW51eC1jci9hcmNoL3g4Ni9pbmNsdWRlIC1EQ0hFQ0tQT0lOVF9ERUJV
+RyAgICBta3RyZWUuYyAgLWxtIC1vIG1rdHJlZQo+IG1rdHJlZS5jOiBJbiBmdW5jdGlvbiDigJhj
+cl9yZWFkX2hlYWTigJk6Cj4gbWt0cmVlLmM6NTYzOiBlcnJvcjog4oCYc3RydWN0IGNyX2hkcl9o
+ZWFk4oCZIGhhcyBubyBtZW1iZXIgbmFtZWQg4oCYdXRzX2xlbuKAmQo+IG1rdHJlZS5jOiBJbiBm
+dW5jdGlvbiDigJhjcl93cml0ZV9oZWFk4oCZOgo+IG1rdHJlZS5jOjYzOTogZXJyb3I6IOKAmHN0
+cnVjdCBjcl9oZHJfaGVhZOKAmSBoYXMgbm8gbWVtYmVyIG5hbWVkIOKAmHV0c19sZW7igJkKPiBt
+YWtlOiAqKiogW21rdHJlZV0gRXJyb3IgMQo+IAo+IFRoZSBrZXJuZWwgY3JfaGRyX2hlYWQgaGFz
+IG1lbWJlcnMgLT51dHNfcmVsZWFzZV9sZW4sIC0+dXRzX3ZlcnNpb25fbGVuLAo+IC0+dXRzX21h
+Y2hpbmVfbGVuIGJ1dCBubyAtPnV0c19sZW4KPiAKPiBUaGFua3MsCj4gCj4gU3VrYWRldgo+IAo+
+IApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
+ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
+dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
