@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 18/29] Restore open pipes
-Date: Tue, 31 Mar 2009 01:28:58 -0400
-Message-ID: <1238477349-11029-19-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 16/29] A new file type (CR_FD_OBJREF) for a file
+	descriptor already setup
+Date: Tue, 31 Mar 2009 01:28:56 -0400
+Message-ID: <1238477349-11029-17-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,211 +22,318 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When seeing a CR_FD_PIPE file type, we create a new pipe and thus
-have two file pointers (read- and write- ends). We only use one of
-them, depending on which side was checkpointed first. We register the
-file pointer of the other end in the hash table, with the 'objref'
-given for this pipe from the checkpoint, deposited for later use. At
-this point we also restore the contents of the pipe buffers.
+While file pointers are shared objects, they may share an underlying
+object themselves. For instance, file pointers of both ends of a pipe
+that share the same pipe inode. In this case, the shared entity to
+handle is the inode that is shared among two file pointers (e.g read-
+and write- ends). In this sort of "nested sharing" we need only save
+the underlying object once (upon first encounter) on checkpoint, and
+restore it only once during restart.
 
-When the other end arrives, it will have file type CR_FD_OBJREF. We
-will then use the corresponding 'objref' to retrieve the file pointer
-from the hash table, and attach it to the process.
+To checkpoint a file descriptor of this sort, we first lookup the
+inode in the hash table:
 
-Note the difference from the checkpoint logic: during checkpoint we
-placed the _inode_ of the pipe in the hash table, while during restart
-we place the resulting _file_ in the hash table.
+If not found, it is the first encounter of this inode. Here, Besides
+the file descriptor data, we also (a) register the inode in the hash
+and save the corresponding 'objref' of this inode in '->fd_objref' of
+the file descriptor. We then also (b) save the inode data, as per the
+inode type (this is not implemented in this patch, as it depends on
+the object). The file descriptor type will indicate the type of that
+object (e.g. for a pipe, when supported, CR_FD_PIPE).
 
-We restore the pipe contents we manually allocation and attaching
-buffers to the pipe; (alternatively we could read the data from the
-image file and then write it into the pipe, or use splice() syscall).
+If found, it is the second encounter of this inode, e.g. in the case
+of a pipe, as we hit the other end of the same pipe. At this point we
+need only record the reference ('objref') to the inode that we had
+saved before, and the file descriptor type is changed to CR_FD_OBJREF.
+
+The logic during restart is similar: the '->fd_objref' is looked up in
+the hash table. Unlike checkpoint, during restart the object that is
+placed (and sought) in the hash table is the _file_ pointer, rather
+than the _inode_.
+
+If not found, it is the first encounter of this inode. Therefore we
+(a) restore the inode data. Specifically, we construct a matching
+object and end up with multiple file pointers (e.g. if the object is a
+pipe, we will have both read- and write- ends). One of those is used
+for the file descriptor in question; the other(s) will be deposited in
+the hash table, to be retrieved and used later on. We also (b) register
+the newly created inode in the hash table using the given 'objref'.
+
+If found, then we can skip the setup of the underlying object that
+is represented by the inode.
+
+The type CR_FD_OBJREF indicates, on restart, that the corresponding
+file descriptor is already setup and registered in the hash under the
+'->fd_objref' that it had been assigned.
+
+The next two patches use CR_FD_OBJREF to implement support for pipes.
 
 Changelog[v14]:
-  - Discard the 'h.parent' field
-  - Check whether calls to cr_hbuf_get() fail
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint_file.h |    2 +
- checkpoint/rstr_file.c       |  124 +++++++++++++++++++++++++++++++++++++++++-
- fs/pipe.c                    |    2 +-
- 3 files changed, 125 insertions(+), 3 deletions(-)
+ checkpoint/objhash.c           |   30 +++++++++++---
+ checkpoint/rstr_file.c         |   84 ++++++++++++++++++++++++++++++---------
+ include/linux/checkpoint.h     |    1 +
+ include/linux/checkpoint_hdr.h |    9 +++-
+ 4 files changed, 94 insertions(+), 30 deletions(-)
 
-diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
-index 9dc3eba..cac1a5d 100644
---- a/checkpoint/checkpoint_file.h
-+++ b/checkpoint/checkpoint_file.h
-@@ -14,4 +14,6 @@
- 
- int cr_scan_fds(struct files_struct *files, int **fdtable);
- 
-+extern const struct pipe_buf_operations anon_pipe_buf_ops;
-+
- #endif /* _CHECKPOINT_CKPT_FILE_H_ */
-diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
-index af9756b..db2fcf2 100644
---- a/checkpoint/rstr_file.c
-+++ b/checkpoint/rstr_file.c
-@@ -14,6 +14,8 @@
- #include <linux/file.h>
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
-+#include <linux/pagemap.h>
-+#include <linux/pipe_fs_i.h>
- #include <linux/syscalls.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
-@@ -86,6 +88,121 @@ static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
- 	return (ret < 0 ? ERR_PTR(ret) : file);
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 17f43fc..25916c1 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -35,20 +35,31 @@ static void cr_obj_ref_drop(struct cr_objref *obj)
+ 	case CR_OBJ_FILE:
+ 		fput((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_INODE:
++		iput((struct inode *) obj->ptr);
++		break;
+ 	default:
+ 		BUG();
+ 	}
  }
  
-+/* cr_read_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
-+static int
-+cr_read_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe, int nbufs)
-+{
-+	void *kbuf, *addr;
-+	int i, ret = 0;
+-static void cr_obj_ref_grab(struct cr_objref *obj)
++static int cr_obj_ref_grab(struct cr_objref *obj)
+ {
++	int ret = 0;
 +
-+	kbuf = (void *) __get_free_page(GFP_KERNEL);
-+	if (!kbuf)
-+		return -ENOMEM;
+ 	switch (obj->type) {
+ 	case CR_OBJ_FILE:
+ 		get_file((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_INODE:
++		if (!igrab((struct inode *) obj->ptr))
++			ret = -EBADF;
++		break;
+ 	default:
+ 		BUG();
+ 	}
 +
-+	for (i = 0; i < nbufs; i++) {
-+		struct pipe_buffer *pbuf = pipe->bufs + i;
-+		struct page *page;
-+		int len = PAGE_SIZE;
-+
-+		ret = cr_read_buffer(ctx, kbuf, &len);
-+		if (ret < 0)
-+			break;
-+		page = alloc_page(GFP_HIGHUSER);
-+		if (!page) {
-+			ret = -ENOMEM;
-+			break;
-+		}
-+
-+		addr = kmap_atomic(page, KM_USER0);
-+		memcpy(addr, kbuf, len);
-+		kunmap_atomic(addr, KM_USER0);
-+
-+		pbuf->page = page;
-+		pbuf->ops = &anon_pipe_buf_ops;
-+		pbuf->offset = 0;
-+		pbuf->len = len;
-+		pipe->nrbufs++;
-+		pipe->tmp_page = NULL;
++	return ret;
+ }
+ 
+ static void cr_objhash_clear(struct cr_objhash *objhash)
+@@ -144,16 +155,22 @@ static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
+ 				    unsigned short type, unsigned short flags)
+ {
+ 	struct cr_objref *obj;
+-	int i;
++	int i, ret;
+ 
+ 	obj = kmalloc(sizeof(*obj), GFP_KERNEL);
+ 	if (!obj)
+-		return NULL;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	obj->ptr = ptr;
+ 	obj->type = type;
+ 	obj->flags = flags;
+ 
++	ret = cr_obj_ref_grab(obj);
++	if (ret < 0) {
++		kfree(obj);
++		return ERR_PTR(ret);
 +	}
 +
-+	free_page((unsigned long) kbuf);
-+	return ret;
-+}
-+
-+/* cr_read_pipe - restore pipe (assume i_mutex taken) */
-+static int cr_read_pipe(struct cr_ctx *ctx, int pipefd)
+ 	if (objref) {
+ 		/* use @objref to index (restart) */
+ 		obj->objref = objref;
+@@ -165,7 +182,6 @@ static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
+ 	}
+ 
+ 	hlist_add_head(&obj->hash, &ctx->objhash->head[i]);
+-	cr_obj_ref_grab(obj);
+ 	return obj;
+ }
+ 
+@@ -198,8 +214,8 @@ int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
+ 	obj = cr_obj_find_by_ptr(ctx, ptr);
+ 	if (!obj) {
+ 		obj = cr_obj_new(ctx, ptr, 0, type, flags);
+-		if (!obj)
+-			return -ENOMEM;
++		if (IS_ERR(obj))
++			return PTR_ERR(obj);
+ 		else
+ 			ret = 1;
+ 	} else if (obj->type != type)	/* sanity check */
+@@ -229,7 +245,7 @@ int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
+ 	struct cr_objref *obj;
+ 
+ 	obj = cr_obj_new(ctx, ptr, objref, type, flags);
+-	return obj ? 0 : -ENOMEM;
++	return IS_ERR(obj) ? PTR_ERR(obj) : 0;
+ }
+ 
+ /**
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
+index 1031915..af9756b 100644
+--- a/checkpoint/rstr_file.c
++++ b/checkpoint/rstr_file.c
+@@ -65,6 +65,53 @@ static int cr_attach_get_file(struct file *file)
+ 	return fd;
+ }
+ 
++/**
++ * cr_obj_add_file - register a file pointer of a given fd in hash table
++ * @ctx: checkpoint context
++ * @fd: file descriptor
++ * @objref: objrect reference
++ *
++ * Return the file pointer (will be safely referenced in the hash table)
++ */
++static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
 +{
-+	struct cr_hdr_fd_pipe *hh;
 +	struct file *file;
-+	struct inode *inode;
-+	int nbufs, ret;
++	int ret;
 +
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_PIPE);
-+	nbufs = hh->nr_bufs;
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	if (ret < 0)
-+		return ret;
-+	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
-+		return -EINVAL;
-+
-+	file = fget(pipefd);
++	file = fget(fd);
 +	if (!file)
-+		return -EIO;
-+
-+	inode = file->f_dentry->d_inode;
-+	mutex_lock(&inode->i_mutex);
-+	ret = cr_read_pipebuf(ctx, inode->i_pipe, nbufs);
-+	mutex_unlock(&inode->i_mutex);
-+
++		return ERR_PTR(-EBADF);
++	ret = cr_obj_add_ref(ctx, file, objref, CR_OBJ_FILE, 0);
 +	fput(file);
-+	return ret;
++	return (ret < 0 ? ERR_PTR(ret) : file);
 +}
 +
-+/* restore a pipe */
-+static int cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++/* return a new fd associated with a the file referenced by @hh->objref */
++static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
 +{
 +	struct file *file;
-+	int fds[2], which, ret;
 +
 +	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
 +	if (IS_ERR(file))
 +		return PTR_ERR(file);
-+	else if (file)
-+		return cr_attach_get_file(file);
-+
-+	/* first encounter of this pipe: create it */
-+	ret = do_pipe(fds);
-+	if (ret < 0)
-+		return ret;
-+
-+	which = (hh->f_flags & O_WRONLY ? 1 : 0);
-+
-+	/*
-+	 * Below we return the fd corersponding to one side of the pipe
-+	 * for our caller to use. Now register the other side of the pipe
-+	 * in the hash, to be picked up when that side is to be restored.
-+	 */
-+	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	ret = cr_read_pipe(ctx, fds[which]);
-+ out:
-+	sys_close(fds[1-which]);	/* this side isn't used anymore */
-+	if (ret < 0)
-+		sys_close(fds[which]);
-+	else
-+		ret = fds[which];
-+	return ret;
++	return cr_attach_get_file(file);
 +}
 +
- /* return a new fd associated with a the file referenced by @hh->objref */
- static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++/* return a new fd associated with a new open file/directory */
++static int cr_read_fd_generic(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++{
++	struct file *file;
++	int fd;
++
++	file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++	fd = cr_attach_file(file);
++	if (fd < 0)
++		filp_close(file, NULL);
++	return fd;
++}
++
+ #define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
+ 
+ /* cr_read_file - restore the state of a given file pointer */
+@@ -72,8 +119,7 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
  {
-@@ -138,11 +255,14 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
+ 	struct cr_hdr_file *hh;
+ 	struct file *file;
+-	int fd = 0;	/* pacify gcc warning */
+-	int ret;
++	int fd, ret;
+ 
+ 	hh = cr_hbuf_get(ctx, sizeof(*hh));
+ 	if (!hh)
+@@ -86,46 +132,44 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
+ 		goto out;
+ 
+ 	ret = -EINVAL;
++	if (hh->fd_objref < 0)
++		goto out;
+ 
  	/* FIX: more sanity checks on f_flags, f_mode etc */
  
  	switch (hh->fd_type) {
+ 	case CR_FD_GENERIC:
+-		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++		fd = cr_read_fd_generic(ctx, hh);
++		break;
 +	case CR_FD_OBJREF:
 +		fd = cr_read_fd_objref(ctx, hh);
-+		break;
- 	case CR_FD_GENERIC:
- 		fd = cr_read_fd_generic(ctx, hh);
- 		break;
--	case CR_FD_OBJREF:
--		fd = cr_read_fd_objref(ctx, hh);
-+	case CR_FD_PIPE:
-+		fd = cr_read_fd_pipe(ctx, hh);
  		break;
  	default:
  		goto out;
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 0c3f391..0636f5f 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -271,7 +271,7 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *info,
- 	return 0;
- }
+ 	}
  
--static const struct pipe_buf_operations anon_pipe_buf_ops = {
-+const struct pipe_buf_operations anon_pipe_buf_ops = {
- 	.can_merge = 1,
- 	.map = generic_pipe_buf_map,
- 	.unmap = generic_pipe_buf_unmap,
+-	if (IS_ERR(file)) {
+-		ret = PTR_ERR(file);
++	if (fd < 0) {
++		ret = fd;
+ 		goto out;
+ 	}
+ 
+ 	/* FIX: need to restore uid, gid, owner etc */
+ 
+-	/* adding <objref,file> to the hash will keep a reference to it */
+-	ret = cr_obj_add_ref(ctx, file, objref, CR_OBJ_FILE, 0);
+-	if (ret < 0) {
+-		filp_close(file, NULL);
+-		goto out;
+-	}
+-
+-	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
+-	if (fd < 0) {
+-		ret = fd;
+-		filp_close(file, NULL);
++	/* register new <objref, file> tuple in hash table */
++	file = cr_obj_add_file(ctx, fd, objref);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
+ 		goto out;
+ 	}
+ 
+-	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+-	if (ret < 0)
+-		goto out;
+ 	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
+ 	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
+ 		ret = 0;
+ 
+-	ret = 0;
++	if (ret < 0)
++		goto out;
++
++	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+  out:
+ 	cr_hbuf_put(ctx, sizeof(*hh));
+ 	return ret < 0 ? ret : fd;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index cede30e..3be3902 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -74,6 +74,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
+ 
+ enum {
+ 	CR_OBJ_FILE = 1,
++	CR_OBJ_INODE,
+ 	CR_OBJ_MAX
+ };
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 18c9f5d..9ad845d 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -151,12 +151,15 @@ struct cr_hdr_fd_ent {
+ 
+ /* fd types */
+ enum  fd_type {
+-	CR_FD_GENERIC = 1
++	CR_FD_OBJREF = 1,
++	CR_FD_GENERIC
+ };
+ 
+ struct cr_hdr_file {
+-	__u16 fd_type;
+-	__u16 f_mode;
++	__u32 fd_type;
++	__s32 fd_objref;
++
++	__u32 f_mode;
+ 	__u32 f_flags;
+ 	__u64 f_pos;
+ 	__u64 f_version;
 -- 
 1.5.4.3
