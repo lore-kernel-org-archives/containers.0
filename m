@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 28/29] powerpc: wire up checkpoint and restart
-	syscalls
-Date: Tue, 31 Mar 2009 01:29:08 -0400
-Message-ID: <1238477349-11029-29-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 26/29] powerpc: provide APIs for validating and
+	updating DABR
+Date: Tue, 31 Mar 2009 01:29:06 -0400
+Message-ID: <1238477349-11029-27-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,39 +24,182 @@ List-Id: containers.vger.kernel.org
 
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
+A checkpointed task image may specify a value for the DABR (Data
+Access Breakpoint Register).  The restart code needs to validate this
+value before making any changes to the current task.
+
+ptrace_set_debugreg encapsulates the bounds checking and platform
+dependencies of programming the DABR.  Split this into "validate"
+(debugreg_valid) and "update" (debugreg_update) functions, and make
+them available for use outside of the ptrace code.
+
+Also ptrace_set_debugreg has extern linkage, but no users outside of
+ptrace.c.  Make it static.
+
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/include/asm/systbl.h |    2 ++
- arch/powerpc/include/asm/unistd.h |    4 +++-
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ arch/powerpc/include/asm/ptrace.h |    7 +++
+ arch/powerpc/kernel/ptrace.c      |   88 +++++++++++++++++++++++++------------
+ 2 files changed, 66 insertions(+), 29 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/systbl.h b/arch/powerpc/include/asm/systbl.h
-index 72353f6..8d8dd68 100644
---- a/arch/powerpc/include/asm/systbl.h
-+++ b/arch/powerpc/include/asm/systbl.h
-@@ -322,3 +322,5 @@ SYSCALL_SPU(epoll_create1)
- SYSCALL_SPU(dup3)
- SYSCALL_SPU(pipe2)
- SYSCALL(inotify_init1)
-+SYSCALL(checkpoint)
-+SYSCALL(restart)
-diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
-index e07d0c7..2e333a1 100644
---- a/arch/powerpc/include/asm/unistd.h
-+++ b/arch/powerpc/include/asm/unistd.h
-@@ -341,10 +341,12 @@
- #define __NR_dup3		316
- #define __NR_pipe2		317
- #define __NR_inotify_init1	318
-+#define __NR_checkpoint		319
-+#define __NR_restart		320
+diff --git a/arch/powerpc/include/asm/ptrace.h b/arch/powerpc/include/asm/ptrace.h
+index c9c678f..79bc816 100644
+--- a/arch/powerpc/include/asm/ptrace.h
++++ b/arch/powerpc/include/asm/ptrace.h
+@@ -81,6 +81,8 @@ struct pt_regs {
  
- #ifdef __KERNEL__
+ #ifndef __ASSEMBLY__
  
--#define __NR_syscalls		319
-+#define __NR_syscalls		321
++#include <linux/types.h>
++
+ #define instruction_pointer(regs) ((regs)->nip)
+ #define user_stack_pointer(regs) ((regs)->gpr[1])
+ #define regs_return_value(regs) ((regs)->gpr[3])
+@@ -138,6 +140,11 @@ do {									      \
+ extern void user_enable_single_step(struct task_struct *);
+ extern void user_disable_single_step(struct task_struct *);
  
- #define __NR__exit __NR_exit
- #define NR_syscalls	__NR_syscalls
++/* for reprogramming DABR/DAC during restart of a checkpointed task */
++extern bool debugreg_valid(unsigned long val, unsigned int index);
++extern void debugreg_update(struct task_struct *task, unsigned long val,
++			    unsigned int index);
++
+ #endif /* __ASSEMBLY__ */
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/powerpc/kernel/ptrace.c b/arch/powerpc/kernel/ptrace.c
+index 3635be6..0b6cf84 100644
+--- a/arch/powerpc/kernel/ptrace.c
++++ b/arch/powerpc/kernel/ptrace.c
+@@ -735,22 +735,25 @@ void user_disable_single_step(struct task_struct *task)
+ 	clear_tsk_thread_flag(task, TIF_SINGLESTEP);
+ }
+ 
+-int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
+-			       unsigned long data)
++/**
++ * debugreg_valid() - validate the value to be written to a debug register
++ * @val:	The prospective contents of the register.
++ * @index:	Must be zero.
++ *
++ * Returns true if @val is an acceptable value for the register indicated by
++ * @index, false otherwise.
++ */
++bool debugreg_valid(unsigned long val, unsigned int index)
+ {
+-	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
+-	 *  For embedded processors we support one DAC and no IAC's at the
+-	 *  moment.
+-	 */
+-	if (addr > 0)
+-		return -EINVAL;
++	/* We support only one debug register for now */
++	if (index != 0)
++		return false;
+ 
+ 	/* The bottom 3 bits in dabr are flags */
+-	if ((data & ~0x7UL) >= TASK_SIZE)
+-		return -EIO;
++	if ((val & ~0x7UL) >= TASK_SIZE)
++		return false;
+ 
+ #ifndef CONFIG_BOOKE
+-
+ 	/* For processors using DABR (i.e. 970), the bottom 3 bits are flags.
+ 	 *  It was assumed, on previous implementations, that 3 bits were
+ 	 *  passed together with the data address, fitting the design of the
+@@ -764,47 +767,74 @@ int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
+ 	 */
+ 
+ 	/* Ensure breakpoint translation bit is set */
+-	if (data && !(data & DABR_TRANSLATION))
+-		return -EIO;
+-
+-	/* Move contents to the DABR register */
+-	task->thread.dabr = data;
+-
+-#endif
+-#if defined(CONFIG_BOOKE)
+-
++	if (val && !(val & DABR_TRANSLATION))
++		return false;
++#else
+ 	/* As described above, it was assumed 3 bits were passed with the data
+ 	 *  address, but we will assume only the mode bits will be passed
+ 	 *  as to not cause alignment restrictions for DAC-based processors.
+ 	 */
+ 
++	/* Read or Write bits must be set */
++	if (!(val & 0x3UL))
++		return -EINVAL;
++#endif
++	return true;
++}
++
++/**
++ * debugreg_update() - update a debug register associated with a task
++ * @task:	The task whose register state is to be modified.
++ * @val:	The value to be written to the debug register.
++ * @index:	Specifies the debug register.  Currently unused.
++ *
++ * Set a task's DABR/DAC to @val, which should be validated with
++ * debugreg_valid() beforehand.
++ */
++void debugreg_update(struct task_struct *task, unsigned long val,
++		     unsigned int index)
++{
++#ifndef CONFIG_BOOKE
++	task->thread.dabr = val;
++#else
+ 	/* DAC's hold the whole address without any mode flags */
+-	task->thread.dabr = data & ~0x3UL;
++	task->thread.dabr = val & ~0x3UL;
+ 
+ 	if (task->thread.dabr == 0) {
+ 		task->thread.dbcr0 &= ~(DBSR_DAC1R | DBSR_DAC1W | DBCR0_IDM);
+ 		task->thread.regs->msr &= ~MSR_DE;
+-		return 0;
+ 	}
+ 
+-	/* Read or Write bits must be set */
+-
+-	if (!(data & 0x3UL))
+-		return -EINVAL;
+-
+ 	/* Set the Internal Debugging flag (IDM bit 1) for the DBCR0
+ 	   register */
+ 	task->thread.dbcr0 = DBCR0_IDM;
+ 
+ 	/* Check for write and read flags and set DBCR0
+ 	   accordingly */
+-	if (data & 0x1UL)
++	if (val & 0x1UL)
+ 		task->thread.dbcr0 |= DBSR_DAC1R;
+-	if (data & 0x2UL)
++	if (val & 0x2UL)
+ 		task->thread.dbcr0 |= DBSR_DAC1W;
+ 
+ 	task->thread.regs->msr |= MSR_DE;
+ #endif
++}
++
++static int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
++			       unsigned long data)
++{
++	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
++	 * For embedded processors we support one DAC and no IAC's at the
++	 * moment.
++	 */
++	if (addr > 0)
++		return -EINVAL;
++
++	if (!debugreg_valid(data, 0))
++		return -EIO;
++
++	debugreg_update(task, data, 0);
++
+ 	return 0;
+ }
+ 
 -- 
 1.5.4.3
