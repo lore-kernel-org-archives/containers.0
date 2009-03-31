@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc2][PATCH 13/29] External checkpoint of a task other than
-	ourself
-Date: Tue, 31 Mar 2009 01:28:53 -0400
-Message-ID: <1238477349-11029-14-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc2][PATCH 24/29] c/r: Add CR_COPY() macro (v4)
+Date: Tue, 31 Mar 2009 01:29:04 -0400
+Message-ID: <1238477349-11029-25-git-send-email-orenl@cs.columbia.edu>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,217 +18,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Now we can do "external" checkpoint, i.e. act on another task.
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-sys_checkpoint() now looks up the target pid (in our namespace) and
-checkpoints that corresponding task. That task should be the root of
-a container.
+As suggested by Dave[1], this provides us a way to make the copy-in and
+copy-out processes symmetric.  CR_COPY_ARRAY() provides us a way to do
+the same thing but for arrays.  It's not critical, but it helps us unify
+the checkpoint and restart paths for some things.
 
-sys_restart() remains the same, as the restart is always done in the
-context of the restarting task.
+Changelog:
+    Mar 04:
+            . Removed semicolons
+            . Added build-time check for __must_be_array in CR_COPY_ARRAY
+    Feb 27:
+            . Changed CR_COPY() to use assignment, eliminating the need
+              for the CR_COPY_BIT() macro
+            . Add CR_COPY_ARRAY() macro to help copying register arrays,
+              etc
+            . Move the macro definitions inside the CR #ifdef
+    Feb 25:
+            . Changed WARN_ON() to BUILD_BUG_ON()
 
-Changelog[v14]:
-  - Refuse non-self checkpoint if target task isn't frozen
-
-Changelog[v12]:
-  - Replace obsolete cr_debug() with pr_debug()
-
-Changelog[v11]:
-  - Copy contents of 'init->fs->root' instead of pointing to them
-
-Changelog[v10]:
-  - Grab vfs root of container init, rather than current process
-
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/checkpoint.c    |   73 ++++++++++++++++++++++++++++++++++++++++++-
- checkpoint/restart.c       |    4 +-
- checkpoint/sys.c           |    6 +++
- include/linux/checkpoint.h |    2 +
- 4 files changed, 81 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index d4e0007..25229d3 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -10,6 +10,8 @@
- 
- #include <linux/version.h>
- #include <linux/sched.h>
-+#include <linux/freezer.h>
-+#include <linux/ptrace.h>
- #include <linux/time.h>
- #include <linux/fs.h>
- #include <linux/file.h>
-@@ -242,6 +244,11 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- {
- 	int ret;
- 
-+	if (t->state == TASK_DEAD) {
-+		pr_warning("c/r: task may not be in state TASK_DEAD\n");
-+		return -EAGAIN;
-+	}
-+
- 	ret = cr_write_task_struct(ctx, t);
- 	cr_debug("task_struct: ret %d\n", ret);
- 	if (ret < 0)
-@@ -264,22 +271,84 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- 	return ret;
- }
- 
-+static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
-+{
-+	struct task_struct *task = NULL;
-+	struct nsproxy *nsproxy = NULL;
-+	int err = -ESRCH;
-+
-+	ctx->root_pid = pid;
-+
-+	read_lock(&tasklist_lock);
-+	task = find_task_by_vpid(pid);
-+	if (task)
-+		get_task_struct(task);
-+	read_unlock(&tasklist_lock);
-+
-+	if (!task)
-+		goto out;
-+
-+#if 0	/* enable to use containers */
-+	if (!is_container_init(task)) {
-+		err = -EINVAL;
-+		goto out;
-+	}
-+#endif
-+
-+	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
-+		err = -EPERM;
-+		goto out;
-+	}
-+
-+	/* verify that the task is frozen (unless self) */
-+	if (task != current && !frozen(task))
-+		return -EBUSY;
-+
-+	rcu_read_lock();
-+	if (task_nsproxy(task)) {
-+		nsproxy = task_nsproxy(task);
-+		get_nsproxy(nsproxy);
-+	}
-+	rcu_read_unlock();
-+
-+	if (!nsproxy)
-+		goto out;
-+
-+	ctx->root_task = task;
-+	ctx->root_nsproxy = nsproxy;
-+
-+	return 0;
-+
-+ out:
-+	if (task)
-+		put_task_struct(task);
-+	return err;
-+}
-+
-+/* setup checkpoint-specific parts of ctx */
- static int cr_ctx_checkpoint(struct cr_ctx *ctx, pid_t pid)
- {
- 	struct fs_struct *fs;
-+	int ret;
- 
- 	ctx->root_pid = pid;
- 
-+	ret = cr_get_container(ctx, pid);
-+	if (ret < 0)
-+		return ret;
-+
- 	/*
- 	 * assume checkpointer is in container's root vfs
- 	 * FIXME: this works for now, but will change with real containers
- 	 */
- 
--	fs = current->fs;
-+	task_lock(ctx->root_task);
-+	fs = ctx->root_task->fs;
- 	read_lock(&fs->lock);
- 	ctx->fs_mnt = fs->root;
- 	path_get(&ctx->fs_mnt);
- 	read_unlock(&fs->lock);
-+	task_unlock(ctx->root_task);
- 
- 	return 0;
- }
-@@ -294,7 +363,7 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	ret = cr_write_head(ctx);
- 	if (ret < 0)
- 		goto out;
--	ret = cr_write_task(ctx, current);
-+	ret = cr_write_task(ctx, ctx->root_task);
- 	if (ret < 0)
- 		goto out;
- 	ret = cr_write_tail(ctx);
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index da239fd..96d4d45 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -302,7 +302,7 @@ static int cr_read_task(struct cr_ctx *ctx)
- }
- 
- /* setup restart-specific parts of ctx */
--static int cr_ctx_restart(struct cr_ctx *ctx)
-+static int cr_ctx_restart(struct cr_ctx *ctx, pid_t pid)
- {
- 	return 0;
- }
-@@ -311,7 +311,7 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
--	ret = cr_ctx_restart(ctx);
-+	ret = cr_ctx_restart(ctx, pid);
- 	if (ret < 0)
- 		goto out;
- 	ret = cr_read_head(ctx);
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index eef774e..b1c60b1 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -9,6 +9,7 @@
-  */
- 
- #include <linux/sched.h>
-+#include <linux/nsproxy.h>
- #include <linux/kernel.h>
- #include <linux/fs.h>
- #include <linux/file.h>
-@@ -163,6 +164,11 @@ static void cr_ctx_free(struct cr_ctx *ctx)
- 	cr_pgarr_free(ctx);
- 	cr_objhash_free(ctx);
- 
-+	if (ctx->root_nsproxy)
-+		put_nsproxy(ctx->root_nsproxy);
-+	if (ctx->root_task)
-+		put_task_struct(ctx->root_task);
-+
- 	kfree(ctx);
- }
- 
+1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
+---
+ include/linux/checkpoint.h |   26 ++++++++++++++++++++++++++
+ 1 files changed, 26 insertions(+), 0 deletions(-)
+
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index ad4322d..3a6cef9 100644
+index 031e414..59ec563 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -19,6 +19,8 @@ struct cr_ctx {
- 	int crid;		/* unique checkpoint id */
+@@ -120,6 +120,32 @@ extern int cr_read_mm(struct cr_ctx *ctx);
+ extern int cr_read_fd_table(struct cr_ctx *ctx);
+ extern int cr_read_file(struct cr_ctx *ctx, int objref);
  
- 	pid_t root_pid;		/* container identifier */
-+	struct task_struct *root_task;	/* container root task */
-+	struct nsproxy *root_nsproxy;	/* container root nsproxy */
++/* useful macros to copy fields and buffers to/from cr_hdr_xxx structures */
++#define CR_CPT 1
++#define CR_RST 2
++
++#define CR_COPY(op, SAVE, LIVE)				        \
++	do {							\
++		if (op == CR_CPT)				\
++			SAVE = LIVE;				\
++		else						\
++			LIVE = SAVE;				\
++	} while (0)
++
++/*
++ * Copy @count items from @LIVE to @SAVE if op is CR_CPT (otherwise,
++ * copy in the reverse direction)
++ */
++#define CR_COPY_ARRAY(op, SAVE, LIVE, count)				\
++	do {								\
++		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
++		if (op == CR_CPT)					\
++			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
++		else							\
++			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
++	} while (__must_be_array(SAVE) && __must_be_array(LIVE) && 0)
++
++
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
  
- 	unsigned long flags;
- 	unsigned long oflags;	/* restart: old flags */
 -- 
 1.5.4.3
