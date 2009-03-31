@@ -1,15 +1,16 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/7] [RFC] Support named cgroups hierarchies
-Date: Tue, 31 Mar 2009 01:12:32 -0700
-Message-ID: <6599ad830903310112x626252c4je760a80eb1eaa1d@mail.gmail.com>
+Subject: Re: [PATCH 4/7] [RFC] Allow cgroup hierarchies to be created with no
+	bound subsystems
+Date: Tue, 31 Mar 2009 01:45:57 -0700
+Message-ID: <6599ad830903310145l7b24ad0vb4462f94390ac264@mail.gmail.com>
 References: <20090312104507.24154.71691.stgit@menage.corp.google.com>
-	<20090312105122.24154.73633.stgit@menage.corp.google.com>
-	<49BF46BC.4080302@cn.fujitsu.com>
+	<20090312105137.24154.34890.stgit@menage.corp.google.com>
+	<49BF470D.8080600@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49BF46BC.4080302-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49BF470D.8080600-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,85 +24,88 @@ To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 16, 2009 at 11:44 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+On Mon, Mar 16, 2009 at 11:45 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 >>
->> - should the specification be via a name= option as in this patch, or
->>   should we simply use the "device name" as passed to the mount()
->>   system call?  Using the device name is more conceptually clean and
->>   consistent with the filesystem API; however, given that the device
->>   name is currently ignored by cgroups, this would lead to a
->>   user-visible behaviour change.
->>
+>> +static void init_root_id(struct cgroupfs_root *root)
+>> +{
+>> +     BUG_ON(!ida_pre_get(&hierarchy_ida, GFP_KERNEL));
 >
-> If we use "device name" and don't allow it to be changed on remount,
-> this seems a change that may break/suprise existing users?
+> we should return -errno, BUG_ON() on this is wrong
 
-Potentially, yes.
+Hmm. Fair enough in the new root case, since it's possible we'd not
+get the memory then - I've changed init_root_id() to return false on
+failure. But I think that in cgroup_init(), we need to
+BUG_ON(!init_root_id()) - we shouldn't be able to fail that early in
+boot and there's no sensible way to handle it if it happens.
 
 >
-> And another issue is, using "device name" won't allow us to use NULL
-> name, which is also user-visible in /proc/pid/cgroups/.
-
-Hmm. We could treat "none" specially, but I guess that's a bit ugly.
-
->> +
->> +     /* The name for this hierarchy - may be empty */
->> +     char name[PATH_MAX];
+>> +     spin_lock(&hierarchy_id_lock);
+>> +     if (ida_get_new_above(&hierarchy_ida, next_hierarchy_id,
+>> +                           &root->hierarchy_id)) {
+>> +             BUG_ON(ida_get_new(&hierarchy_ida, &root->hierarchy_id));
+>> +     }
 >
-> I think 32 or 64 is sufficient. How about reuse MAX_CGROUP_TYPE_NAMELEN
-> which is the length limit of cgroup_subsys.name?
+> next_hierarchy_id is redundant, just use ida_get_new() instead of
+> ida_get_new_above()
 
-I've added a new define MAX_CGROUP_ROOT_NAMELEN, value 64
->> +             } else if (!strncmp(token, "name=", 5)) {
->> +                     /* Specifying two names is forbidden */
->> +                     if (opts->name)
->> +                             return -EINVAL;
->> +                     opts->name = kzalloc(PATH_MAX, GFP_KERNEL);
->> +                     if (!opts->name)
->> +                             return -ENOMEM;
->> +                     strncpy(opts->name, token + 5, PATH_MAX - 1);
->> +                     opts->name[PATH_MAX - 1] = 0;
+From the idr.c code it looks as though ida_get_new() always returns
+the smallest unused ID. I want to cycle through increasing IDs until
+we hit the end of the range, and then start again at 0.
+
 >
-> kstrndup()
+> and I think we should check EAGAIN:
 
-Good idea.
+OK, I've changed this to handle EAGAIN. I don't see any value in
+handling ENOSPC though - we're not going to fill up a 31-bit IDR.
 
 >>
->> -     /* Next check flags */
->> -     if (new->flags != root->flags)
+>> -     if (!opts->subsys_bits)
+>> +     if (!opts->subsys_bits && !opts->none)
+>>               return ERR_PTR(-EINVAL);
+>>
 >
-> Is this change intended or unintended? With this change we allow:
->  # mount -t cgroup -o cpu xxx /mnt1
->  # mount -t cgroup -o cpu,noprefix xxx /mnt2
-> But files in /mnt2 still prefix with 'cpu.'
+> Shouldn't we check this in parse_cgroupfs_options() instead?
 
-That fits in better with existing semantics for other filesystems - if
-you mount an already-mounted device with different superblock mount
-options, the new mount still has the superblock options associated
-with the old mount.
+No, becase at that point it's valid - we can request the root named X
+without specifying what subsystems X is already mounted with. But if
+we don't find a root named X, then we're creating a new root, and we
+have to have specified a set of subsystems, or else explicitly "none".
 
-Arguably this might mean that we should ignore all options when
-mounting a hierarchy by name that already exists, even if you specify
-a different set of subsystems from what is mounted.
+>>
+>> +static void cgroup_drop_root(struct cgroupfs_root *root)
+>> +{
+>> +     BUG_ON(!root->hierarchy_id);
+>
+> I think this BUG_ON() is redundant, if root->hierarchy_id == 0,
+> we are freeing the dummy root, and kfree(root) should trigger
+> kernel oops.
+
+It's more obvious this way.
+
+>> +             seq_printf(seq, "css_set %p\n", cg);
+>> +             list_for_each_entry_safe(task, saved_task, &cg->tasks,
+>> +                                      cg_list) {
+>> +                     if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
+>
+> actually this prints at most 26 tasks but not 25
+
+Not really a big deal :-)
 
 >
->> +     /* If we asked for subsystems then they must match */
->> +     if (new->subsys_bits && new->subsys_bits != root->subsys_bits)
->>               return 0;
->
-> This has already been checked.
+> and what's the concern to not print out all the tasks? the buffer
+> limit of seqfile?
 
-Where?
->> -     init_cgroup_root(root);
->> -     root->subsys_bits = opts.subsys_bits;
->> -     root->flags = opts.flags;
->> -     if (opts.release_agent) {
->> -             strcpy(root->release_agent_path, opts.release_agent);
->> -             kfree(opts.release_agent);
->> -     }
->
-> leaking opts.release_agent and opts.name with every successful mount.
+Yes.
 
-Good point, fixed.
+>
+>> +                             seq_puts(seq, "  ...\n");
+>> +                             break;
+>> +                     } else {
+>> +                             seq_printf(seq, "  task %d\n", task->pid);
+>
+> I guess we should call task_pid_vnr(tsk) instead of accessing task->pid
+> directly.
+
+Changed.
 
 Paul
