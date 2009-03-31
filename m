@@ -1,16 +1,19 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/7] [RFC] Allow cgroup hierarchies to be created with no
-	bound subsystems
-Date: Tue, 31 Mar 2009 01:45:57 -0700
-Message-ID: <6599ad830903310145l7b24ad0vb4462f94390ac264@mail.gmail.com>
+Subject: Re: [PATCH 6/7] [RFC] Support multiply-bindable cgroup subsystems
+Date: Tue, 31 Mar 2009 02:02:05 -0700
+Message-ID: <6599ad830903310202p1c268237lff283b2676f78864@mail.gmail.com>
 References: <20090312104507.24154.71691.stgit@menage.corp.google.com>
-	<20090312105137.24154.34890.stgit@menage.corp.google.com>
-	<49BF470D.8080600@cn.fujitsu.com>
+	<20090312105147.24154.62638.stgit@menage.corp.google.com>
+	<49BF4744.5060309@cn.fujitsu.com> <49C057EB.1000307@cn.fujitsu.com>
+	<6599ad830903171916x7364ec7cw76975d71d5125d82@mail.gmail.com>
+	<49C05EDF.5010607@cn.fujitsu.com>
+	<6599ad830903171943x7884cb03w8f22fa1629d667b3@mail.gmail.com>
+	<49C065E7.8060901@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49BF470D.8080600-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49C065E7.8060901-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,91 +24,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 16, 2009 at 11:45 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->>
->> +static void init_root_id(struct cgroupfs_root *root)
->> +{
->> +     BUG_ON(!ida_pre_get(&hierarchy_ida, GFP_KERNEL));
+On Tue, Mar 17, 2009 at 8:09 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> we should return -errno, BUG_ON() on this is wrong
-
-Hmm. Fair enough in the new root case, since it's possible we'd not
-get the memory then - I've changed init_root_id() to return false on
-failure. But I think that in cgroup_init(), we need to
-BUG_ON(!init_root_id()) - we shouldn't be able to fail that early in
-boot and there's no sensible way to handle it if it happens.
-
+> I don't see what's wrong with this behavior:
 >
->> +     spin_lock(&hierarchy_id_lock);
->> +     if (ida_get_new_above(&hierarchy_ida, next_hierarchy_id,
->> +                           &root->hierarchy_id)) {
->> +             BUG_ON(ida_get_new(&hierarchy_ida, &root->hierarchy_id));
->> +     }
->
-> next_hierarchy_id is redundant, just use ida_get_new() instead of
-> ida_get_new_above()
+> multi subsys sits in rootnode if it's unbound, and is removed from
+> rootnode if it's binded at least in one hierarchy.
 
-From the idr.c code it looks as though ida_get_new() always returns
-the smallest unused ID. I want to cycle through increasing IDs until
-we hit the end of the range, and then start again at 0.
+You mean just for the purposes of /proc/cgroup, or in reality?
 
->
-> and I think we should check EAGAIN:
+Singleton (traditional) subsystems generally have some meaning outside
+of the cgroups framework, e.g. the "cpu" subsystem corresponds to CFS
+scheduler nodes for tasks; "cpuset" corresponds to the permitted
+cpus/mems for a task. For every task there's a single unique state
+object for each singleton subsystem.
 
-OK, I've changed this to handle EAGAIN. I don't see any value in
-handling ENOSPC though - we're not going to fill up a 31-bit IDR.
+But multi-bindable subsystems don't really have any meaning outside
+the cgroup framework, since there's no unique mapping from a task to
+its subsystem state. So instantiating a root cgroup object for that
+subsystem in the unbound hierarchy is a bit pointless - it can't
+really do anything. So it wouldn't really make sense to keep one
+instance of a multi-bindable subsystem attached to rootnote until the
+first bind for that subsystem, and then create fresh ones on the fly
+later if the subsystem is bound to more hierarchies. In particular,
+which one would you return to the rootnode later?
 
->>
->> -     if (!opts->subsys_bits)
->> +     if (!opts->subsys_bits && !opts->none)
->>               return ERR_PTR(-EINVAL);
->>
->
-> Shouldn't we check this in parse_cgroupfs_options() instead?
-
-No, becase at that point it's valid - we can request the root named X
-without specifying what subsystems X is already mounted with. But if
-we don't find a root named X, then we're creating a new root, and we
-have to have specified a set of subsystems, or else explicitly "none".
-
->>
->> +static void cgroup_drop_root(struct cgroupfs_root *root)
->> +{
->> +     BUG_ON(!root->hierarchy_id);
->
-> I think this BUG_ON() is redundant, if root->hierarchy_id == 0,
-> we are freeing the dummy root, and kfree(root) should trigger
-> kernel oops.
-
-It's more obvious this way.
-
->> +             seq_printf(seq, "css_set %p\n", cg);
->> +             list_for_each_entry_safe(task, saved_task, &cg->tasks,
->> +                                      cg_list) {
->> +                     if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
->
-> actually this prints at most 26 tasks but not 25
-
-Not really a big deal :-)
-
->
-> and what's the concern to not print out all the tasks? the buffer
-> limit of seqfile?
-
-Yes.
-
->
->> +                             seq_puts(seq, "  ...\n");
->> +                             break;
->> +                     } else {
->> +                             seq_printf(seq, "  task %d\n", task->pid);
->
-> I guess we should call task_pid_vnr(tsk) instead of accessing task->pid
-> directly.
-
-Changed.
+But I guess we could just pretend in /proc/cgroup, and add a new
+column such as "multi-bindable".
 
 Paul
