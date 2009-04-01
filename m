@@ -1,15 +1,18 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 24/29] c/r: Add CR_COPY() macro (v4)
-Date: Wed, 1 Apr 2009 18:20:13 -0500
-Message-ID: <20090401232013.GA31361@us.ibm.com>
+Subject: Re: [RFC v14-rc2][PATCH 21/29] Dump anonymous- and file-mapped-
+	shared memory
+Date: Wed, 1 Apr 2009 18:32:48 -0500
+Message-ID: <20090401233248.GA31598@us.ibm.com>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477349-11029-25-git-send-email-orenl@cs.columbia.edu>
+	<1238477349-11029-22-git-send-email-orenl@cs.columbia.edu>
+	<20090401230657.GB27725@us.ibm.com>
+	<49D3F636.1070303@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1238477349-11029-25-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <49D3F636.1070303-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,95 +23,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> As suggested by Dave[1], this provides us a way to make the copy-in and
-> copy-out processes symmetric.  CR_COPY_ARRAY() provides us a way to do
-> the same thing but for arrays.  It's not critical, but it helps us unify
-> the checkpoint and restart paths for some things.
+> Thanks for the review ...
 > 
-> Changelog:
->     Mar 04:
->             . Removed semicolons
->             . Added build-time check for __must_be_array in CR_COPY_ARRAY
->     Feb 27:
->             . Changed CR_COPY() to use assignment, eliminating the need
->               for the CR_COPY_BIT() macro
->             . Add CR_COPY_ARRAY() macro to help copying register arrays,
->               etc
->             . Move the macro definitions inside the CR #ifdef
->     Feb 25:
->             . Changed WARN_ON() to BUILD_BUG_ON()
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> >> We now handle anonymous and file-mapped shared memory. Support for IPC
+> >> shared memory requires support for IPC first. We extend cr_write_vma()
+> >> to detect shared memory VMAs and handle it separately than private
+> >> memory.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> [...]
 > 
-> 1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
-> ---
->  include/linux/checkpoint.h |   26 ++++++++++++++++++++++++++
->  1 files changed, 26 insertions(+), 0 deletions(-)
+> >> +	switch (vma_type) {
+> >> +	case CR_VMA_SHM_FILE:
+> >> +		/* no need for contents that are stored in the file system */
+> >> +		ret = vfs_fsync(vma->vm_file, vma->vm_file->f_path.dentry, 0);
+> >> +		break;
+> >> +	case CR_VMA_SHM_ANON:
+> >> +		/* save the contents of this resgion */
+> >> +		inode = vma->vm_file->f_dentry->d_inode;
+> >> +		ret = cr_write_shmem_contents(ctx, inode);
+> >> +		break;
+> >> +	case CR_VMA_SHM_ANON_SKIP:
+> >> +	case CR_VMA_SHM_FILE_SKIP:
+> >> +		/* already saved before .. skip now */
+> >> +		break;
+> >> +	default:
+> >> +		BUG();
+> > 
+> > Well, no - since the user can feed in whatever crap they want,
+> > this isn't a *bug*, right?
 > 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 031e414..59ec563 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -120,6 +120,32 @@ extern int cr_read_mm(struct cr_ctx *ctx);
->  extern int cr_read_fd_table(struct cr_ctx *ctx);
->  extern int cr_read_file(struct cr_ctx *ctx, int objref);
+> ... this is during checkpoint
+
+Oh, heh. never mind then.
+
+> , no user input; it makes sure we don't
+> add a new type of VMA that we don't handle. On restart we complain
+> with -EINVAL.
 > 
-> +/* useful macros to copy fields and buffers to/from cr_hdr_xxx structures */
-> +#define CR_CPT 1
-> +#define CR_RST 2
-> +
-> +#define CR_COPY(op, SAVE, LIVE)				        \
-> +	do {							\
-> +		if (op == CR_CPT)				\
-> +			SAVE = LIVE;				\
-> +		else						\
-> +			LIVE = SAVE;				\
-> +	} while (0)
-
-Yes the above (SAVE+LIVE) is so much more useful to future coders,
-thanks.
-
-> +
-> +/*
-> + * Copy @count items from @LIVE to @SAVE if op is CR_CPT (otherwise,
-> + * copy in the reverse direction)
-> + */
-> +#define CR_COPY_ARRAY(op, SAVE, LIVE, count)				\
-> +	do {								\
-> +		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
-> +		if (op == CR_CPT)					\
-> +			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
-> +		else							\
-> +			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
-> +	} while (__must_be_array(SAVE) && __must_be_array(LIVE) && 0)
-
-It doesn't really matter I guess, but I'd prefer to see:
-
-#define CR_COPY_ARRAY(op, SAVE, LIVE, count)				\
-	do {								\
-		__must_be_array(SAVE);					\
-		__must_be_array(LIVE);					\
-		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
-		if (op == CR_CPT)					\
-			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
-		else							\
-			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
-	} while (0)
-
-Putting the __must_be_array()s inside the condition seems really weird.
-
-
-> +
-> +
->  #define cr_debug(fmt, args...)  \
->  	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
+> [...]
 > 
-> -- 
-> 1.5.4.3
+> > 
+> >>  struct cr_hdr_vma {
+> >>  	__u32 vma_type;
+> >> -	__u32 vma_objref;	/* for vma->vm_file */
+> >> +	__s32 vma_objref;	/* objref of backing file */
+> >> +	__s32 shm_objref;	/* objref of shared segment */
+> > 
+> > You're going to upset Alexey again with the signeds, aren't you?
+> 
+> Yes, I put a comment about signed values somewhere. I cleaned up most of
+> the unsigned instances following Alexey's comment, but I think in some
+> cases it makes sense.
+> 
+> In particular, assume I take a pid, or an objref, which is an 'int' in
+> the code, and save it with __u32. During restart I need to test for a
+> valid value before blindly converting back to (signed) int, like:
+> 	
+> 	ret = -EINVAL;
+> 	if (hh->pid > INT_MAX)
+> 		goto out;
+> 
+> in that case, I can just as well leave it signed and test
+> 
+> 	ret = -EINVAL;
+> 	if (hh->pid < 0)
+> 		goto out;
+> 
+> which is much more readable, and less error-prone if sometime later
+> we change objref type from (signed) int to (signed) long and forget
+> to change INT_MAX to LONG_MAX everywhere ...
+> 
+> Oren.
+
+Makes sense.  Just wanted to make sure it didn't accidentally slip
+in.
+
+thanks,
+-serge
