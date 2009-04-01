@@ -1,16 +1,17 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/7] [RFC] Support named cgroups hierarchies
-Date: Wed, 01 Apr 2009 14:24:36 +0800
-Message-ID: <49D308A4.3030302@cn.fujitsu.com>
+Subject: Re: [PATCH 4/7] [RFC] Allow cgroup hierarchies to be created with
+	no 	bound subsystems
+Date: Wed, 01 Apr 2009 14:40:04 +0800
+Message-ID: <49D30C44.8050802@cn.fujitsu.com>
 References: <20090312104507.24154.71691.stgit@menage.corp.google.com>	
-	<20090312105122.24154.73633.stgit@menage.corp.google.com>	
-	<49BF46BC.4080302@cn.fujitsu.com>
-	<6599ad830903310112x626252c4je760a80eb1eaa1d@mail.gmail.com>
+	<20090312105137.24154.34890.stgit@menage.corp.google.com>	
+	<49BF470D.8080600@cn.fujitsu.com>
+	<6599ad830903310145l7b24ad0vb4462f94390ac264@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830903310112x626252c4je760a80eb1eaa1d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830903310145l7b24ad0vb4462f94390ac264-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,31 +25,61 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->>> -     /* Next check flags */
->>> -     if (new->flags != root->flags)
->> Is this change intended or unintended? With this change we allow:
->>  # mount -t cgroup -o cpu xxx /mnt1
->>  # mount -t cgroup -o cpu,noprefix xxx /mnt2
->> But files in /mnt2 still prefix with 'cpu.'
+Paul Menage wrote:
+> On Mon, Mar 16, 2009 at 11:45 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>>> +static void init_root_id(struct cgroupfs_root *root)
+>>> +{
+>>> +     BUG_ON(!ida_pre_get(&hierarchy_ida, GFP_KERNEL));
+>> we should return -errno, BUG_ON() on this is wrong
 > 
-> That fits in better with existing semantics for other filesystems - if
-> you mount an already-mounted device with different superblock mount
-> options, the new mount still has the superblock options associated
-> with the old mount.
-> 
-> Arguably this might mean that we should ignore all options when
-> mounting a hierarchy by name that already exists, even if you specify
-> a different set of subsystems from what is mounted.
+> Hmm. Fair enough in the new root case, since it's possible we'd not
+> get the memory then - I've changed init_root_id() to return false on
+> failure. But I think that in cgroup_init(), we need to
+> BUG_ON(!init_root_id()) - we shouldn't be able to fail that early in
+> boot and there's no sensible way to handle it if it happens.
 > 
 
-Then I think it's better to make it a different patch, but not hiding
-this change in this patch.
+agreed
 
->>> +     /* If we asked for subsystems then they must match */
->>> +     if (new->subsys_bits && new->subsys_bits != root->subsys_bits)
->>>               return 0;
->> This has already been checked.
+>>> +     spin_lock(&hierarchy_id_lock);
+>>> +     if (ida_get_new_above(&hierarchy_ida, next_hierarchy_id,
+>>> +                           &root->hierarchy_id)) {
+>>> +             BUG_ON(ida_get_new(&hierarchy_ida, &root->hierarchy_id));
+>>> +     }
+>> next_hierarchy_id is redundant, just use ida_get_new() instead of
+>> ida_get_new_above()
 > 
-> Where?
+>>From the idr.c code it looks as though ida_get_new() always returns
+> the smallest unused ID. I want to cycle through increasing IDs until
+> we hit the end of the range, and then start again at 0.
+> 
 
-My mistake, please ignore. :)
+Makes sense, but it would be better to add a comment.
+
+>> and I think we should check EAGAIN:
+> 
+> OK, I've changed this to handle EAGAIN. I don't see any value in
+> handling ENOSPC though - we're not going to fill up a 31-bit IDR.
+> 
+>>> -     if (!opts->subsys_bits)
+>>> +     if (!opts->subsys_bits && !opts->none)
+>>>               return ERR_PTR(-EINVAL);
+>>>
+>> Shouldn't we check this in parse_cgroupfs_options() instead?
+> 
+> No, becase at that point it's valid - we can request the root named X
+> without specifying what subsystems X is already mounted with. But if
+> we don't find a root named X, then we're creating a new root, and we
+> have to have specified a set of subsystems, or else explicitly "none".
+> 
+
+I see your poing. Again, better to have a comment in the code.
+
+>> and what's the concern to not print out all the tasks? the buffer
+>> limit of seqfile?
+> 
+> Yes.
+> 
+
+Hmm, I just had a try, and I found we don't need to worry about this,
+seqfile can handle output that larger than PAGE_SIZE well.
