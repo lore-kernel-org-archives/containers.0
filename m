@@ -1,7 +1,7 @@
-From: "Manuel Y Robyn" <octtdg-e6Jf5UuNRGVHxvSeX3Bw5A@public.gmane.org>
-Subject: *** SPAM *** Our lists are good to promote your kind of business
-Date: 3 Apr 2009 08:08:09 +1000
-Message-ID: <SGSCC-DC0191cEFGjnE000060b9@sgscc-dc01.sgscc.sgscc.nsw.edu.au>
+From: "Maricela stefan" <jnqgjelskbemoDelmer-UeDcaix7C9VVtazZjgo0Tw@public.gmane.org>
+Subject: Tight advertising budget? Our lists are high quality and cheap
+Date: Thu, 2 Apr 2009 21:13:04 GMT
+Message-ID: <QQaiae04690.200904022113@chi6sosrv13.alter.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,42 +15,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: yjean-LItQLbtS5XbFDZrREk9nIw@public.gmane.org, sojnlrvfx-/E1597aS9LT10XsdtD+oqA@public.gmane.org, tta-W45X8A759TzNvy9tFN6x7g@public.gmane.org, wfhltnbq-rWWDMe+hw8hWk0Htik3J/w@public.gmane.org, linkexchange-cEpX3NS+KUuz0EaLfWI6GA34GpD2sERS@public.gmane.org
+To: nemzeticsarda-HyIDttPoDxZ2poxzlbSaDg@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, 16279-eEcwUQgL9sbwazV7GutX/w@public.gmane.org, dunatecnologia-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, q8kxfuipl-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, tickets-2fUMjZcQLPI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Fully Licensed Doctors in America 
+Certified Doctors in the US 
 
-788,317 in total <> 17,020 emails
+788,983 in total <> 17,108 emails
 
-Doctors in many different specialties
+Featuring coverage for more than 30 specialties like Internal Medicine, Family Practice, Opthalmology, Anesthesiologists, Cardiologists and more
 
 Can easily be sorted by 16 different fields
 
-Now priced at: $391
+This week only you pay only: $399
 
 
-=== If you order by the end of the week you can take all the items below for fr ee ===
+### Get These Fr EE with every order this week ###
 
-Pharmaceutical Companies in the US
-Names and email addresses of 47,000 employees in high-ranking positions
+<> US Pharmaceutical Company Executives List
+  Names and email addresses of 47,000 employees in high-ranking positions
 
-Database of US Hospitals
-complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
+<> Hospital Facilities in the US
+  complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
 
-Dentists in the United States
-Practically every dentist in the USA is listed here
+<> Dentists in the US
+  597,000 dentists and dental services ( a $350 value!) 
 
-American Chiropractors Contact List
-100k Chiropractors offices with full contact data including email, postal address, phone and fax
+<> List of US Chiropractors
+  100k Chiropractors offices with full contact data including email, postal address, phone and fax
 
-send and email to:      Bill-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
+send and email to:      Inez-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
 
   
 
-exp. mar  April 04 
+valid until  April 04 
 
 
-to get off please email stopping-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
+Forward email to stopping-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org to purge you from our records
