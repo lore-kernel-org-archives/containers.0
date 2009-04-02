@@ -1,15 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] Stub implementation of IPC namespace c/r (v2)
-Date: Thu, 2 Apr 2009 13:06:59 -0500
-Message-ID: <20090402180659.GD21178@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] c/r: Add UTS support (v6)
+Date: Thu, 02 Apr 2009 11:06:04 -0700
+Message-ID: <87skkr2ann.fsf@caffeine.danplanet.com>
 References: <1238533107-11796-1-git-send-email-danms@us.ibm.com>
-	<1238533107-11796-4-git-send-email-danms@us.ibm.com>
+	<1238533107-11796-3-git-send-email-danms@us.ibm.com>
+	<20090402175804.GC21178@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1238533107-11796-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090402175804.GC21178-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Thu, 2 Apr 2009 12:58:04 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,28 +20,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Changes:
->  - Update to match UTS changes
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> +	uts = cr_obj_add_ptr(ctx, nsp->uts_ns, &hh->uts_ref, CR_OBJ_UTSNS, 0);
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+SH> I would prefer this be called 'uts_was_new' or something, though.
 
-Oren, I will wait until you rebase your IPC patches on top of these
-patches before reviewing them more, if that's ok.
+Fair enough.  I was trying to avoid wrapping that line :)
 
-> +static int cr_write_ipcns(struct cr_ctx *ctx, struct ipc_namespace *ipc)
-> +{
-> +	struct cr_hdr h;
-> +	struct cr_hdr_ipcns *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	int ret;
+SH> Should probably memset them to 0 first.  I realize it doesn't
+SH> really seem like security-relevant information leakage, but
+SH> sys_hostname() does it, so it seems like we ought to as well.
 
-Note that Oren has taken to checking the return values of all
-his cr_hbuf_gets()s...
+Okay.
 
--serge
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
