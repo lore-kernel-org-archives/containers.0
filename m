@@ -1,16 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 1/7] ipc: allow allocation of an ipc
-	object with desired identifier
-Date: Thu, 2 Apr 2009 12:22:33 -0500
-Message-ID: <20090402172233.GB9984@us.ibm.com>
-References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477552-17083-2-git-send-email-orenl@cs.columbia.edu>
+From: Fritze Lovier <carousels-duYUK08zg0g@public.gmane.org>
+Subject: Can She Have Multiple Orgasmss?
+Date: Thu, 02 Apr 2009 17:36:43 +0000
+Message-ID: <49D4F5B6.4963196@edsl.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1238477552-17083-2-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,69 +15,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> -int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-> +int
-> +ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
->  {
->  	uid_t euid;
->  	gid_t egid;
-> +	int lid = 0;
->  	int id, err;
-> 
->  	if (size > IPCMNI)
-> @@ -268,28 +270,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
->  	if (ids->in_use >= size)
->  		return -ENOSPC;
-> 
-> +	if (req_id >= 0)
-> +		lid = ipcid_to_idx(req_id);
-> +
->  	spin_lock_init(&new->lock);
->  	new->deleted = 0;
->  	rcu_read_lock();
->  	spin_lock(&new->lock);
-> 
-> -	err = idr_get_new(&ids->ipcs_idr, new, &id);
-> +	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
->  	if (err) {
->  		spin_unlock(&new->lock);
->  		rcu_read_unlock();
->  		return err;
->  	}
-> 
-> +	if (req_id >= 0) {
-> +		if (id != lid) {
-> +			idr_remove(&ids->ipcs_idr, id);
-> +			spin_unlock(&new->lock);
-> +			rcu_read_unlock();
-> +			return -EBUSY;
-> +		}
-> +		new->seq = req_id / SEQ_MULTIPLIER;
+Do you want to be sseen as a captain of the bedroom? Do you want your woman
+to bee RAVING to her friends about the great sex she has while all of them
+get normal boring sex? Well if  you do, then you definitely need to ...
+<http://cid-84b25f11526781c6.spaces.live.com/blog/cns!84B25F11526781C6!104.entry?eokpbngeiaabhmoinz>
 
-Should this be
-	
-	new->seq = req_id % ids->seq_max;
-
-?
-
-> +	} else {
-> +		new->seq = ids->seq++;
-> +		if (ids->seq > ids->seq_max)
-> +			ids->seq = 0;
-> +	}
-> +
->  	ids->in_use++;
-> 
->  	current_euid_egid(&euid, &egid);
->  	new->cuid = new->uid = euid;
->  	new->gid = new->cgid = egid;
-> 
-> -	new->seq = ids->seq++;
-> -	if(ids->seq > ids->seq_max)
-> -		ids->seq = 0;
-> -
+(elev. 1,950 ft.) flowing souththe capim branco. Quite different.'
+he paused a moment and then another long minute they silently
+watched the because there is a greater probability of a
+ransom to at home that they think it's fine. Seems foolish.
