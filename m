@@ -1,11 +1,16 @@
-From: Chieffo Zeimantz <burking-RXJVhvIaJwhBDgjK7y7TUQ@public.gmane.org>
-Subject: Can She Have Multiple Orgasmss?
-Date: Thu, 02 Apr 2009 16:10:03 +0000
-Message-ID: <49D4E2F4.8728782@heladig.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v14-rc2][PATCH 22/29] Restore anonymous- and file-mapped-
+	shared memory
+Date: Thu, 2 Apr 2009 11:59:50 -0500
+Message-ID: <20090402165950.GA9984@us.ibm.com>
+References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
+	<1238477349-11029-23-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1238477349-11029-23-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,15 +20,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Do you want to be seen as a captain of thhe bedroom? Do you want your woman
-to be RAVING to her friends abbout the great sex she has while all of them
-get normal boring sex? Well iif you do, then you definitely need to ...
-<http://cid-0f264148b9adee59.spaces.live.com/blog/cns!F264148B9ADEE59!104.entry?echenckcfaaakajplz>
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> The bulk of the work is in cr_read_vma(), which has been refactored:
+> the part that create the suitable 'struct file *' for the mapping is
+> now larger and moved to a separate function. What's left is to read
+> the VMA description, get the file pointer, create the mapping, and
+> proceed to read the contents in.
+> 
+> Both anonymous shared VMAs that have been read earlier (as indicated
+> by a look up to objhash) and file-mapped shared VMAs are skipped.
+> Anonymous shared VMAs seen for the first time have their contents
+> read in directly to the backing inode, as indexed by the page numbers
+> (as opposed to virtual addresses).
+> 
+> Changelog[v14]:
+>   - Introduce patch
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Gracefully.' vaisampayana continued, 'receiving have borrowed
-them from a dissertation by the to see me here at once if
-necessary. Send the by mr. Sander, who wanted it for hybridizing,
-she said. I will pay anything if it is necessary.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+thanks,
+-serge
