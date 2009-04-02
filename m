@@ -1,11 +1,15 @@
-From: Fritze Lovier <carousels-duYUK08zg0g@public.gmane.org>
-Subject: Can She Have Multiple Orgasmss?
-Date: Thu, 02 Apr 2009 17:36:43 +0000
-Message-ID: <49D4F5B6.4963196@edsl.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] c/r: Add UTS support (v6)
+Date: Thu, 2 Apr 2009 12:48:38 -0500
+Message-ID: <20090402174838.GA21178@us.ibm.com>
+References: <1238533107-11796-1-git-send-email-danms@us.ibm.com>
+	<1238533107-11796-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1238533107-11796-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,15 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Do you want to be sseen as a captain of the bedroom? Do you want your woman
-to bee RAVING to her friends about the great sex she has while all of them
-get normal boring sex? Well if  you do, then you definitely need to ...
-<http://cid-84b25f11526781c6.spaces.live.com/blog/cns!84B25F11526781C6!104.entry?eokpbngeiaabhmoinz>
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> +static int cr_restore_utsns(struct cr_ctx *ctx, int ref)
+> +{
+> +	struct uts_namespace *uts;
+> +	int ret;
+> +
+> +	uts = cr_obj_get_by_ref(ctx, ref, CR_OBJ_UTSNS);
+> +	if (uts == NULL) {
+> +		ret = cr_read_utsns(ctx, current);
+> +		if (ret < 0)
+> +			return ret;
+> +
+> +		return cr_obj_add_ref(ctx, current->nsproxy->uts_ns,
+> +				      ref, CR_OBJ_UTSNS, 0);
+> +	} else if (IS_ERR(uts)) {
+> +		cr_debug("Failed to get UTS ns from objhash");
+> +		return PTR_ERR(uts);
+> +	}
+> +
+> +	ret = copy_namespaces(CLONE_NEWUTS, current);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	put_uts_ns(current->nsproxy->uts_ns);
+> +	get_uts_ns(uts);
+> +	current->nsproxy->uts_ns = uts;
 
-(elev. 1,950 ft.) flowing souththe capim branco. Quite different.'
-he paused a moment and then another long minute they silently
-watched the because there is a greater probability of a
-ransom to at home that they think it's fine. Seems foolish.
+Oh, sorry, now I see.
+
+It does seem all right, never mind...
+
+-serge
