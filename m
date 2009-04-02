@@ -1,12 +1,14 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [C/R] sleepers don't wake up on restart
-Date: Wed, 1 Apr 2009 17:20:06 -0700
-Message-ID: <20090402002005.GA22375@us.ibm.com>
+From: Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 02/10] Common flat fair queuing code in elevaotor layer
+Date: Wed, 1 Apr 2009 21:06:40 -0700
+Message-ID: <af41c7c40904012106h41d3cb50i2eeab2a02277a4c9__7664.34367183155$1238645404$gmane$org@mail.gmail.com>
+References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
+	<1236823015-4183-3-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1236823015-4183-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,83 +18,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Wed, Mar 11, 2009 at 6:56 PM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> +/*
+> + * elv_exit_fq_data is called before we call elevator_exit_fn. Before
+> + * we ask elevator to cleanup its queues, we do the cleanup here so
+> + * that all the group and idle tree references to ioq are dropped. Later
+> + * during elevator cleanup, ioc reference will be dropped which will lead
+> + * to removal of ioscheduler queue as well as associated ioq object.
+> + */
+> +void elv_exit_fq_data(struct elevator_queue *e)
+> +{
+> +       struct elv_fq_data *efqd = &e->efqd;
+> +       struct request_queue *q = efqd->queue;
+> +
+> +       if (!elv_iosched_fair_queuing_enabled(e))
+> +               return;
+> +
+> +       elv_shutdown_timer_wq(e);
+> +
+> +       spin_lock_irq(q->queue_lock);
+> +       /* This should drop all the idle tree references of ioq */
+> +       elv_free_idle_ioq_list(e);
+> +       spin_unlock_irq(q->queue_lock);
+> +
+> +       elv_shutdown_timer_wq(e);
+> +
+> +       BUG_ON(timer_pending(&efqd->idle_slice_timer));
+> +       io_free_root_group(e);
+> +}
+>
 
-Tried this with v14-rc2. This is probably not implemented yet...
+Hi Vivek,
+        When cleaning up the elv_fq_data and ioqs for the iogs
+associated with a device on elv_exit(), I don't see any iogs except
+the root group being freed. In io_disconnect_groups() you remove the
+ioqs from each of the iog and move them to the root iog and then
+delete the root iog. Am I missing something here or are there leftover
+iogs at elv_exit?
 
-I created a simple 1-level process tree (parent with 10 children). The 
-parent just waits for the children to exit. The children do (error
-checks removed). 
-
-do_child():
-        sprintf(cfile, "child-log-%d", cnum);
-
-        i = 0;
-        while (!test_done()) {
-                cfp = fopen(cfile, "a");
-                fprintf(cfp, "i = %d\n", i++);
-                fflush(cfp);
-                fclose(cfp);
-                sleep(1);
-        }
-
-test_done():
-
-	rc = access("test-done", F_OK)
-	return rc == 0;
-
-After freezing and restarting (using mktree), only one off 10 children makes
-progress. Others are stuck in:
-
-	ptree1        S f63ef170     0  8272      1
-	 f5f17780 00000082 c2b1d5c8 f63ef170 f63ef2dc c2b20260 f5e0ff44 1c18de95
-	 00000282 c0233594 c2b1d5c8 00000000 00000282 0000c350 00000001 0000c350
-	 00000001 f5e0ff44 0000c350 c051b229 00000000 00000001 0000c350 bff32f44
-	Call Trace:
-	 [<c0233594>] hrtimer_start_range_ns+0x105/0x111
-	 [<c051b229>] do_nanosleep+0x54/0x8c
-	 [<c023362f>] hrtimer_nanosleep+0x8f/0xee
-	 [<c0233210>] hrtimer_wakeup+0x0/0x18
-	 [<c051b20f>] do_nanosleep+0x3a/0x8c
-	 [<c02336cf>] sys_nanosleep+0x41/0x51
-	 [<c0202ce5>] sysenter_do_call+0x12/0x25
-
-One of them, (the 8th child) makes progress and continues to write to
-its file
-
-	ptree1        D f6bb7170     0  8280      1
-	 f5de8b00 00000086 00000000 f6bb7170 f6bb72dc c2b17260 c0288ead 000165a5
-	 c05322de c02dde8a ffffffff f6b34800 00000000 00000000 00000000 f6255d94
-	 f5dd0700 c2b02314 f552d208 c02de045 00000000 f6e21478 00000000 f6b14600
-	Call Trace:
-	 [<c0288ead>] __find_get_block+0x121/0x12b
-	 [<c02dde8a>] journal_stop+0x231/0x23d
-	 [<c02de045>] do_get_write_access+0x1af/0x33b
-	 [<c02310a9>] wake_bit_function+0x0/0x3c
-	 [<c02de1e9>] journal_get_write_access+0x18/0x26
-	 [<c02d3653>] __ext3_journal_get_write_access+0x13/0x32
-	 [<c02c9285>] ext3_reserve_inode_write+0x2d/0x5d
-	 [<c02c92cf>] ext3_mark_inode_dirty+0x1a/0x30
-	 [<c02cb891>] ext3_dirty_inode+0x50/0x63
-	 [<c0285d85>] __mark_inode_dirty+0x21/0x129
-	 [<c027f7fa>] file_update_time+0x7e/0xa7
-	 [<c0251c45>] __generic_file_aio_write_nolock+0x32a/0x4a1
-	 [<c0281589>] mntput_no_expire+0x13/0xd7
-	 [<c0251ffd>] generic_file_aio_write+0x4f/0xa6
-	 [<c02c7bf9>] ext3_file_write+0x19/0x83
-	 [<c0270a4d>] do_sync_write+0xbf/0x100
-	 [<c023107c>] autoremove_wake_function+0x0/0x2d
-	 [<c026672f>] page_add_new_anon_rmap+0x20/0x3b
-	 [<c0260df9>] handle_mm_fault+0x1df/0x50c
-	 [<c031d42d>] security_file_permission+0xc/0xd
-	 [<c027098e>] do_sync_write+0x0/0x100
-	 [<c02710dd>] vfs_write+0x83/0xf6
-	 [<c02715a2>] sys_write+0x3c/0x63
-
-When I create the 'test-done' file, this (8th child) exits but others are
-still sleeping (confirms they never woke up from the sleep(1))
-
-Sukadev
+-Divyesh
