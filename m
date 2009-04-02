@@ -1,16 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 1/7] ipc: allow allocation of an ipc	object
-	with desired identifier
-Date: Thu, 02 Apr 2009 18:26:57 -0400
-Message-ID: <49D53BB1.7000501@cs.columbia.edu>
-References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477552-17083-2-git-send-email-orenl@cs.columbia.edu>
-	<20090402172233.GB9984@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [C/R] sleepers don't wake up on restart
+Date: Thu, 2 Apr 2009 15:43:42 -0700
+Message-ID: <20090402224342.GA7613@us.ibm.com>
+References: <20090402002005.GA22375@us.ibm.com>
+	<49D539B5.7060305@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="wac7ysb48OaltWcw"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090402172233.GB9984-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <49D539B5.7060305-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,84 +18,184 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+--wac7ysb48OaltWcw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->> -int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
->> +int
->> +ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
->>  {
->>  	uid_t euid;
->>  	gid_t egid;
->> +	int lid = 0;
->>  	int id, err;
->>
->>  	if (size > IPCMNI)
->> @@ -268,28 +270,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
->>  	if (ids->in_use >= size)
->>  		return -ENOSPC;
->>
->> +	if (req_id >= 0)
->> +		lid = ipcid_to_idx(req_id);
->> +
->>  	spin_lock_init(&new->lock);
->>  	new->deleted = 0;
->>  	rcu_read_lock();
->>  	spin_lock(&new->lock);
->>
->> -	err = idr_get_new(&ids->ipcs_idr, new, &id);
->> +	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
->>  	if (err) {
->>  		spin_unlock(&new->lock);
->>  		rcu_read_unlock();
->>  		return err;
->>  	}
->>
->> +	if (req_id >= 0) {
->> +		if (id != lid) {
->> +			idr_remove(&ids->ipcs_idr, id);
->> +			spin_unlock(&new->lock);
->> +			rcu_read_unlock();
->> +			return -EBUSY;
->> +		}
->> +		new->seq = req_id / SEQ_MULTIPLIER;
-> 
-> Should this be
-> 	
-> 	new->seq = req_id % ids->seq_max;
-> 
-> ?
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| 
+| Suka,
+| 
+| can you please post the entire test program so I can try to reproduce
+| it here ?
 
-This is how the user-visible IPC id is constructed:
+Sure. Attached.
 
-	static inline int ipc_buildid(int id, int seq)
-	{
-	        return SEQ_MULTIPLIER * seq + id;
+Suka
+
+--wac7ysb48OaltWcw
+Content-Type: text/x-csrc; charset=us-ascii
+Content-Description: ptree1.c
+Content-Disposition: attachment; filename="ptree1.c"
+
+#include <stdio.h>
+#include <unistd.h>
+#include <wait.h>
+#include <errno.h>
+
+#define NUM_PROCS	10
+#define CKPT_READY	"ckpt-ready"
+#define CKPT_DONE	"ckpt-done"
+#define TEST_DONE	"test-done"
+#define LOG_FILE	"log.ptree1"
+
+FILE *logfp;
+
+void do_exit(int status)
+{
+	if (logfp) {
+		fflush(logfp);
+		fclose(logfp);
+	}
+	_Exit(status);
+}
+
+int test_done()
+{
+	int rc;
+
+	rc = access(TEST_DONE, F_OK);
+	if (rc == 0)
+		return 1;
+	else if (errno == ENOENT)
+		return 0;
+
+	fprintf(logfp, "access(%s) failed, %s\n", TEST_DONE, strerror(errno));
+	do_exit(1);
+}
+
+int checkpoint_done()
+{
+	int rc;
+
+	rc = access(CKPT_DONE, F_OK);
+	if (rc == 0)
+		return 1;
+	else if (errno == ENOENT)
+		return 0;
+
+	fprintf(logfp, "access(%s) failed, %s\n", CKPT_DONE, strerror(errno));
+	do_exit(1);
+}
+
+void checkpoint_ready()
+{
+	int fd;
+
+	fd = creat(CKPT_READY, 0666, 0);
+	if (fd < 0) {
+		fprintf(logfp, "creat(%s) failed, %s\n", CKPT_READY,
+				strerror(errno));
+		do_exit(1);
+	}
+	close(fd);
+}
+
+do_child(int cnum)
+{
+	int i;
+	FILE *cfp;
+	char cfile[256];
+
+	sprintf(cfile, "child-log-%d", cnum);
+
+	i = 0;
+	while (!test_done()) {
+		cfp = fopen(cfile, "a");
+		if (!cfp) {
+			fprintf(logfp, "fopen(%s) failed, error %s\n", cfile,
+					strerror(errno));
+			do_exit(1);
+		}
+		fprintf(cfp, "i = %d\n", i++);
+		fflush(cfp);
+		fclose(cfp);
+		sleep(1);
 	}
 
-and I want to get the original 'seq' ....  (the 'id' in this function is
-an in-kernel identifier)
+	do_exit(0);
+}
 
-> 
->> +	} else {
->> +		new->seq = ids->seq++;
->> +		if (ids->seq > ids->seq_max)
->> +			ids->seq = 0;
->> +	}
->> +
->>  	ids->in_use++;
->>
->>  	current_euid_egid(&euid, &egid);
->>  	new->cuid = new->uid = euid;
->>  	new->gid = new->cgid = egid;
->>
->> -	new->seq = ids->seq++;
->> -	if(ids->seq > ids->seq_max)
->> -		ids->seq = 0;
->> -
-> 
+print_exit_status(int pid, int status)
+{
+	fprintf(logfp, "Pid %d unexpected exit - ", pid);
+	if (WIFEXITED(status)) {
+		fprintf(logfp, "exit status %d\n", WEXITSTATUS(status));
+	} else if (WIFSIGNALED(status)) {
+		fprintf(logfp, "got signal %d\n", WTERMSIG(status));
+	} else {
+		fprintf(logfp, "stopped/continued ?\n");
+	}
+}
+
+main(int argc, char *argv[])
+{
+	int i;
+	int status;
+	int pid_list[NUM_PROCS];
+
+	if (test_done()) {
+		printf("Remove %s before running test\n", TEST_DONE);
+		do_exit(1);
+	}
+
+	logfp = fopen(LOG_FILE, "w");
+	if (!logfp) {
+		fprintf(stderr, "fopen(%s) failed, %s\n", LOG_FILE,
+					strerror(errno));
+		fflush(stderr);
+		do_exit(1);
+	}
+	close(0);close(1);close(2);
+
+	for (i = 0; i < NUM_PROCS; i++) {
+		if ((pid_list[i] = fork()) == 0)
+			do_child(i);
+	}
+
+	/*
+ 	 * Now that we closed the special files and created process tree
+	 * tell any wrapper scripts, we are ready for checkpoint
+	 */
+	checkpoint_ready();
+
+	while(!checkpoint_done())
+		sleep(1);
+
+	for (i = 0; i < NUM_PROCS; i++) {
+		if (waitpid(pid_list[i], &status, 0) < 0) {
+			fprintf(logfp, "waitpid(%d) failed, error %s\n",
+					pid_list[i], strerror(errno));
+		}
+
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+			print_exit_status(pid_list[i], status);	
+	}
+}
+
+--wac7ysb48OaltWcw
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--wac7ysb48OaltWcw--
