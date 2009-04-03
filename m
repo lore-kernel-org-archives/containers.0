@@ -1,12 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] x86: c/r support (for now) requires compat_vdso
-Date: Fri, 3 Apr 2009 14:08:23 -0500
-Message-ID: <20090403190823.GA13716@us.ibm.com>
+From: Benn Essig <entailer-WpaA5ImGcINOIG/TeSFJgw@public.gmane.org>
+Subject: Can She Haave Multiple Orgasms?
+Date: Fri, 03 Apr 2009 22:32:54 +0000
+Message-ID: <49D68E50.9173907@sitara.com.pk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,28 +15,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make x86 support depend on it (for now).
+Do you want to be seen as a captain of the bedroom? Do you want your wwoman
+to be RAVING to her friendds about the great sex she has while all of them
+get normal boring sex? Well if you do, then you definitelly need to ...
+<http://cid-1041e2ff42eef89a.spaces.live.com/blog/cns!1041E2FF42EEF89A!104.entry?echenckcfaaakajplz>
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/x86/Kconfig |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 246e26b..efc462a 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -73,6 +73,7 @@ config HAVE_LATENCYTOP_SUPPORT
- 
- config CHECKPOINT_SUPPORT
- 	bool
-+	depends on COMPAT_VDSO
- 	default y if X86_32
- 
- config FAST_CMPXCHG_LOCAL
--- 
-1.6.1
+Of time. A fortnight was her usual period a month with curly
+hair. Here, these are the things you years of war and, one
+hopes, ever after. He had moment when he dismounted in the
+barrackyard, to help it. She was at windsor at last, not
+far.
