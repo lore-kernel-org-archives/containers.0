@@ -1,18 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 1/7] ipc: allow allocation of an ipc
-	object with desired identifier
-Date: Thu, 2 Apr 2009 17:49:17 -0500
-Message-ID: <20090402224917.GA313@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v14-rc2][PATCH 6/7] sysvipc-shm: export interface from
+	ipc/shm.c to delete ipc shm
+Date: Thu, 2 Apr 2009 20:32:00 -0700
+Message-ID: <20090403033200.GG4083@us.ibm.com>
 References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477552-17083-2-git-send-email-orenl@cs.columbia.edu>
-	<20090402172233.GB9984@us.ibm.com>
-	<49D53BB1.7000501@cs.columbia.edu>
+	<1238477552-17083-7-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49D53BB1.7000501-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1238477552-17083-7-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,84 +24,55 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >> -int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-> >> +int
-> >> +ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
-> >>  {
-> >>  	uid_t euid;
-> >>  	gid_t egid;
-> >> +	int lid = 0;
-> >>  	int id, err;
-> >>
-> >>  	if (size > IPCMNI)
-> >> @@ -268,28 +270,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-> >>  	if (ids->in_use >= size)
-> >>  		return -ENOSPC;
-> >>
-> >> +	if (req_id >= 0)
-> >> +		lid = ipcid_to_idx(req_id);
-> >> +
-> >>  	spin_lock_init(&new->lock);
-> >>  	new->deleted = 0;
-> >>  	rcu_read_lock();
-> >>  	spin_lock(&new->lock);
-> >>
-> >> -	err = idr_get_new(&ids->ipcs_idr, new, &id);
-> >> +	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
-> >>  	if (err) {
-> >>  		spin_unlock(&new->lock);
-> >>  		rcu_read_unlock();
-> >>  		return err;
-> >>  	}
-> >>
-> >> +	if (req_id >= 0) {
-> >> +		if (id != lid) {
-> >> +			idr_remove(&ids->ipcs_idr, id);
-> >> +			spin_unlock(&new->lock);
-> >> +			rcu_read_unlock();
-> >> +			return -EBUSY;
-> >> +		}
-> >> +		new->seq = req_id / SEQ_MULTIPLIER;
-> > 
-> > Should this be
-> > 	
-> > 	new->seq = req_id % ids->seq_max;
-> > 
-> > ?
-> 
-> This is how the user-visible IPC id is constructed:
-> 
-> 	static inline int ipc_buildid(int id, int seq)
-> 	{
-> 	        return SEQ_MULTIPLIER * seq + id;
-> 	}
-> 
-> and I want to get the original 'seq' ....  (the 'id' in this function is
-> an in-kernel identifier)
+On Tue, Mar 31, 2009 at 01:32:31AM -0400, Oren Laadan wrote:
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Hmm, yeah, I guess...  I misunderstood what seq was doing.  In
-fact, now I just don't understand what it's doing at all...
-Weird.
+The description is empty and this patch is rather pointless without 7/7.
+Any reason you kept it separate from 7/7? At the very least this patch
+needs a brief description.
 
-> >> +	} else {
-> >> +		new->seq = ids->seq++;
-> >> +		if (ids->seq > ids->seq_max)
-> >> +			ids->seq = 0;
-> >> +	}
-> >> +
-> >>  	ids->in_use++;
-> >>
-> >>  	current_euid_egid(&euid, &egid);
-> >>  	new->cuid = new->uid = euid;
-> >>  	new->gid = new->cgid = egid;
-> >>
-> >> -	new->seq = ids->seq++;
-> >> -	if(ids->seq > ids->seq_max)
-> >> -		ids->seq = 0;
-> >> -
-> > 
+Cheers,
+	-Matt Helsley
+
+> ---
+>  include/linux/shm.h |    4 ++++
+>  ipc/shm.c           |    4 ++--
+>  2 files changed, 6 insertions(+), 2 deletions(-)
+> 
+> diff --git a/include/linux/shm.h b/include/linux/shm.h
+> index eca6235..ec36e99 100644
+> --- a/include/linux/shm.h
+> +++ b/include/linux/shm.h
+> @@ -118,6 +118,10 @@ static inline int is_file_shm_hugepages(struct file *file)
+>  }
+>  #endif
+> 
+> +struct ipc_namespace;
+> +extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+> +		       struct shmid_ds __user *buf, int version);
+> +
+>  #endif /* __KERNEL__ */
+> 
+>  #endif /* _LINUX_SHM_H_ */
+> diff --git a/ipc/shm.c b/ipc/shm.c
+> index 5ac6aec..28a8b57 100644
+> --- a/ipc/shm.c
+> +++ b/ipc/shm.c
+> @@ -605,8 +605,8 @@ static void shm_get_stat(struct ipc_namespace *ns, unsigned long *rss,
+>   * to be held in write mode.
+>   * NOTE: no locks must be held, the rw_mutex is taken inside this function.
+>   */
+> -static int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+> -		       struct shmid_ds __user *buf, int version)
+> +int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+> +		struct shmid_ds __user *buf, int version)
+>  {
+>  	struct kern_ipc_perm *ipcp;
+>  	struct shmid64_ds shmid64;
+> -- 
+> 1.5.4.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
