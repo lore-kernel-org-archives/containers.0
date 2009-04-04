@@ -1,30 +1,26 @@
-From: Benn Essig <entailer-WpaA5ImGcINOIG/TeSFJgw@public.gmane.org>
-Subject: Can She Haave Multiple Orgasms?
-Date: Fri, 03 Apr 2009 22:32:54 +0000
-Message-ID: <49D68E50.9173907@sitara.com.pk>
+From: Greg KH <gregkh@suse.de>
+Subject: Re: sysfs tagged directory support status (was:. Re: [PATCH 1/8]
+	sysfs: Implement sysfs tagged directory support)
+Date: Fri, 3 Apr 2009 20:05:51 -0700
+Message-ID: <20090404030551.GC23516@suse.de>
+References: <dac45060904010300y7fe8a09dxb582929fc8018ec1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <dac45060904010300y7fe8a09dxb582929fc8018ec1@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: Mark Ryden <markryde@gmail.com>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Do you want to be seen as a captain of the bedroom? Do you want your wwoman
-to be RAVING to her friendds about the great sex she has while all of them
-get normal boring sex? Well if you do, then you definitelly need to ...
-<http://cid-1041e2ff42eef89a.spaces.live.com/blog/cns!1041E2FF42EEF89A!104.entry?echenckcfaaakajplz>
+On Wed, Apr 01, 2009 at 01:00:53PM +0300, Mark Ryden wrote:
+> Hello,
+>   I am back to it and I just want to ask if there are any news with
+> sysfs tagged directory support patch. Is it merged now ?
 
-Of time. A fortnight was her usual period a month with curly
-hair. Here, these are the things you years of war and, one
-hopes, ever after. He had moment when he dismounted in the
-barrackyard, to help it. She was at windsor at last, not
-far.
+Not that I know of.
+
+thanks,
+
+greg k-h
