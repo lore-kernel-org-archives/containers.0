@@ -1,15 +1,11 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: c/r: Add UTS support
-Date: Mon, 06 Apr 2009 11:01:41 -0700
-Message-ID: <87hc11wtiy.fsf@caffeine.danplanet.com>
-References: <1239033956-25898-1-git-send-email-danms@us.ibm.com>
-	<49DA42F9.10604@cs.columbia.edu>
+From: Chimenti <fabliau-CGtK9ZFxadtUq1AO9QMCaQ@public.gmane.org>
+Subject: How to be Irresistiblee to Women - Sexually
+Date: Mon, 06 Apr 2009 18:05:34 +0100
+Message-ID: <49DA4430.9019736@sadt.od.ua>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49DA42F9.10604-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of "Mon,
-	06 Apr 2009 13:59:21 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,24 +15,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OL> Hmm.. I already integrated the previous version to the current dev
-OL> branch (see branch ckpt-v14-rc3-dev ; there are several changed
-OL> untested so I didn't release yet, but you can take a look at the
-OL> three corresponding patches.
+Guys - do your woomen always want more and more sex from you? If not - 
+yoou could be in trouble
+<http://cid-3d9a4a8bf7bcb9e2.spaces.live.com/blog/cns!3D9A4A8BF7BCB9E2!107.entry?elgbemiekaabjanihz>
 
-Okay, I can send a delta against rc3.
-
-OL> BTW, in branch v14-rc3-dev of the userspace tool there is a
-OL> version of 'mktree' with the full algorithm for userspace task
-OL> creation.
-
-Cool.
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Taylor was one of the many he and bayard taylor room, until
+the whole floor was absolutely covered.
