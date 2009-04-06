@@ -1,11 +1,16 @@
-From: Gibala Azzaro <agreeably-rXh/gdjDFe9Wk0Htik3J/w@public.gmane.org>
-Subject: Super Sensual Love Making IIn Bed
-Date: Sun, 05 Apr 2009 23:43:39 +0000
-Message-ID: <49D941A7.4903724@formfire.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v14-rc2][PATCH 6/7] sysvipc-shm: export interface
+	from	ipc/shm.c to delete ipc shm
+Date: Sun, 05 Apr 2009 20:18:58 -0400
+Message-ID: <49D94A72.50904@cs.columbia.edu>
+References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
+	<1238477552-17083-7-git-send-email-orenl@cs.columbia.edu>
+	<20090403033200.GG4083@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090403033200.GG4083-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,11 +20,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Mega Secrets To Super Sensual LLove Making In Bed - Be Absolutely Mind Blowing
-<http://cid-1edc4145d1b1b9d6.spaces.live.com/blog/cns!1EDC4145D1B1B9D6!104.entry?elgbemiekaabjanihz>
 
-Found and precisely located without effort. 3. Case, had
-long ceased to be a painful memory and.
+
+Matt Helsley wrote:
+> On Tue, Mar 31, 2009 at 01:32:31AM -0400, Oren Laadan wrote:
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> 
+> The description is empty and this patch is rather pointless without 7/7.
+> Any reason you kept it separate from 7/7? At the very least this patch
+> needs a brief description.
+
+Yup, forgot the description. Will add.
+
+I try to isolate changes to existing kernel files into separate patches
+than the new c/r code. I think it will be helpful to be able to point out
+those changes upon request.
+
+Oren.
+
+> 
+> Cheers,
+> 	-Matt Helsley
+> 
+>> ---
+>>  include/linux/shm.h |    4 ++++
+>>  ipc/shm.c           |    4 ++--
+>>  2 files changed, 6 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/include/linux/shm.h b/include/linux/shm.h
+>> index eca6235..ec36e99 100644
+>> --- a/include/linux/shm.h
+>> +++ b/include/linux/shm.h
+>> @@ -118,6 +118,10 @@ static inline int is_file_shm_hugepages(struct file *file)
+>>  }
+>>  #endif
+>>
+>> +struct ipc_namespace;
+>> +extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+>> +		       struct shmid_ds __user *buf, int version);
+>> +
+>>  #endif /* __KERNEL__ */
+>>
+>>  #endif /* _LINUX_SHM_H_ */
+>> diff --git a/ipc/shm.c b/ipc/shm.c
+>> index 5ac6aec..28a8b57 100644
+>> --- a/ipc/shm.c
+>> +++ b/ipc/shm.c
+>> @@ -605,8 +605,8 @@ static void shm_get_stat(struct ipc_namespace *ns, unsigned long *rss,
+>>   * to be held in write mode.
+>>   * NOTE: no locks must be held, the rw_mutex is taken inside this function.
+>>   */
+>> -static int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+>> -		       struct shmid_ds __user *buf, int version)
+>> +int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+>> +		struct shmid_ds __user *buf, int version)
+>>  {
+>>  	struct kern_ipc_perm *ipcp;
+>>  	struct shmid64_ds shmid64;
+>> -- 
+>> 1.5.4.3
+>>
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
