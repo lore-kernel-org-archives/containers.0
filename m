@@ -1,25 +1,37 @@
-From: Daehler Marchio <tightened-aeIMd8gvGbPcqV2Q6a4srg@public.gmane.org>
-Subject: Super Sensuual Love Making In Bed
-Date: Mon, 06 Apr 2009 03:25:40 +0000
-Message-ID: <49D975CC.8735980@vitaecare.nl>
+From: Mark Ryden <markryde@gmail.com>
+Subject: Re: sysfs tagged directory support status (was:. Re: [PATCH 1/8]
+	sysfs: Implement sysfs tagged directory support)
+Date: Mon, 6 Apr 2009 07:28:22 +0300
+Message-ID: <dac45060904052128p6c539fe4p199a03f47a43a96b@mail.gmail.com>
+References: <dac45060904010300y7fe8a09dxb582929fc8018ec1@mail.gmail.com>
+	 <20090404030551.GC23516@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20090404030551.GC23516@suse.de>
+Sender: netdev-owner@vger.kernel.org
+To: Greg KH <gregkh@suse.de>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Mega Secrets To Supeer Sensual Love Making In Bed - Be Absolutely Mind Blowing
-<http://cid-3000c95857fca1aa.spaces.live.com/blog/cns!3000C95857FCA1AA!104.entry?eokpbngeiaabhmoinz>
+Hello,
+I am sorry to hear that it is not merged yet.I hoped to try to start a
+project with network namespaces.
 
-Like an ox jumped half over a fence he could not nearly four
-months. For that time, therefore,.
+Regards,
+Mark
+
+On Sat, Apr 4, 2009 at 6:05 AM, Greg KH <gregkh@suse.de> wrote:
+> On Wed, Apr 01, 2009 at 01:00:53PM +0300, Mark Ryden wrote:
+>> Hello,
+>> =A0 I am back to it and I just want to ask if there are any news wit=
+h
+>> sysfs tagged directory support patch. Is it merged now ?
+>
+> Not that I know of.
+>
+> thanks,
+>
+> greg k-h
+>
