@@ -1,11 +1,14 @@
-From: Chimenti <fabliau-CGtK9ZFxadtUq1AO9QMCaQ@public.gmane.org>
-Subject: How to be Irresistiblee to Women - Sexually
-Date: Mon, 06 Apr 2009 18:05:34 +0100
-Message-ID: <49DA4430.9019736@sadt.od.ua>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Remove READ_IMPLIES_EXEC during restart
+Date: Mon, 6 Apr 2009 13:17:48 -0500
+Message-ID: <20090406181748.GA24751@us.ibm.com>
+References: <1239039694-22332-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1239039694-22332-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,12 +18,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Guys - do your woomen always want more and more sex from you? If not - 
-yoou could be in trouble
-<http://cid-3d9a4a8bf7bcb9e2.spaces.live.com/blog/cns!3D9A4A8BF7BCB9E2!107.entry?elgbemiekaabjanihz>
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> On s390, all tasks have READ_IMPLIES_EXEC set in current->personality,
+> which causes the restart process to map things like the stack and heap as
+> executable.  During the restart process, remove this bit and restore the
+> original personality afterwards.
+> 
+> This seems a little ugly, but I don't know that there's a better place for
+> it.
 
-Taylor was one of the many he and bayard taylor room, until
-the whole floor was absolutely covered.
+Well imo the only other thing to do would be to do the same thing but
+just around the main restart_memory function.
+
+> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+> ---
+>  checkpoint/restart.c |    7 +++++++
+>  1 files changed, 7 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index adebc1c..8958ec7 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -13,6 +13,7 @@
+>  #include <linux/wait.h>
+>  #include <linux/file.h>
+>  #include <linux/magic.h>
+> +#include <linux/personality.h>
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+> 
+> @@ -535,12 +536,18 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
+>  int do_restart(struct cr_ctx *ctx, pid_t pid)
+>  {
+>  	int ret;
+> +	unsigned int original_personality;
+> +	
+> +	original_personality = current->personality;
+> +	current->personality &= ~READ_IMPLIES_EXEC;
+> 
+>  	if (ctx)
+>  		ret = do_restart_root(ctx, pid);
+>  	else
+>  		ret = do_restart_task(pid);
+> 
+> +	current->personality = original_personality;
+> +
+>  	/* on success, adjust the return value if needed [TODO] */
+>  	return ret;
+>  }
+> -- 
+> 1.6.1
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
