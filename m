@@ -1,37 +1,31 @@
-From: Mark Ryden <markryde@gmail.com>
+From: "Serge E. Hallyn" <serge@hallyn.com>
 Subject: Re: sysfs tagged directory support status (was:. Re: [PATCH 1/8]
 	sysfs: Implement sysfs tagged directory support)
-Date: Mon, 6 Apr 2009 07:28:22 +0300
-Message-ID: <dac45060904052128p6c539fe4p199a03f47a43a96b@mail.gmail.com>
-References: <dac45060904010300y7fe8a09dxb582929fc8018ec1@mail.gmail.com>
-	 <20090404030551.GC23516@suse.de>
+Date: Sun, 5 Apr 2009 23:49:58 -0500
+Message-ID: <20090406044958.GA8644@hallyn.com>
+References: <dac45060904010300y7fe8a09dxb582929fc8018ec1@mail.gmail.com> <20090404030551.GC23516@suse.de> <dac45060904052128p6c539fe4p199a03f47a43a96b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20090404030551.GC23516@suse.de>
+Content-Disposition: inline
+In-Reply-To: <dac45060904052128p6c539fe4p199a03f47a43a96b@mail.gmail.com>
 Sender: netdev-owner@vger.kernel.org
-To: Greg KH <gregkh@suse.de>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+To: Mark Ryden <markryde@gmail.com>
+Cc: Greg KH <gregkh@suse.de>, David Shwatrz <dshwatrz@gmail.com>, Tejun Heo <htejun@gmail.com>, Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Hello,
-I am sorry to hear that it is not merged yet.I hoped to try to start a
-project with network namespaces.
+Quoting Mark Ryden (markryde@gmail.com):
+> Hello,
+> I am sorry to hear that it is not merged yet.I hoped to try to start a
+> project with network namespaces.
 
-Regards,
-Mark
+Sysfs tagged directories are not supported, but with 2.6.29 you
+can use network namespaces.  There are some limits - you can't
+move a physical network device out of the initial network
+namespace, and (veth) devices which are not in the initial
+network namespace just don't show up in /sys/class/net (since
+we can't tag them).
 
-On Sat, Apr 4, 2009 at 6:05 AM, Greg KH <gregkh@suse.de> wrote:
-> On Wed, Apr 01, 2009 at 01:00:53PM +0300, Mark Ryden wrote:
->> Hello,
->> =A0 I am back to it and I just want to ask if there are any news wit=
-h
->> sysfs tagged directory support patch. Is it merged now ?
->
-> Not that I know of.
->
-> thanks,
->
-> greg k-h
->
+But you can use network namespaces.
+
+-serge
