@@ -1,16 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 6/7] sysvipc-shm: export interface
-	from	ipc/shm.c to delete ipc shm
-Date: Sun, 05 Apr 2009 20:18:58 -0400
-Message-ID: <49D94A72.50904@cs.columbia.edu>
-References: <1238477552-17083-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477552-17083-7-git-send-email-orenl@cs.columbia.edu>
-	<20090403033200.GG4083@us.ibm.com>
+Subject: Re: [PATCH 2/3] c/r: Add UTS support (v6)
+Date: Sun, 05 Apr 2009 22:33:05 -0400
+Message-ID: <49D969E1.5060605@cs.columbia.edu>
+References: <1238533107-11796-1-git-send-email-danms@us.ibm.com>	<1238533107-11796-3-git-send-email-danms@us.ibm.com>	<20090402174451.GC9984@us.ibm.com>
+	<87wsa32b7h.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090403033200.GG4083-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87wsa32b7h.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,72 +18,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Matt Helsley wrote:
-> On Tue, Mar 31, 2009 at 01:32:31AM -0400, Oren Laadan wrote:
->> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Dan Smith wrote:
+> SH> One thing to note is that this will drive the ns cgroup bananas.
+> SH> It might still be worthwhile collecting the flags for all the
+> SH> to-be-unshared namespaces, and then doing all of the unsharing at
+> SH> once.
 > 
-> The description is empty and this patch is rather pointless without 7/7.
-> Any reason you kept it separate from 7/7? At the very least this patch
-> needs a brief description.
+> Okay, that's fair.
+> 
+> SH> Futhermore, you do sys_unshare here, then further down you do
+> SH> another copy_namespaces(CLONE_NEWUTS)?
+> 
+> That's in the case where our UTS namespace has already been created by
+> a previous task.  We need to copy_namespaces() in order to get a new
+> nsproxy (since our nsproxy must be copied if we no longer share all
+> namespaces with our parent).  I have to pass a clone flag to it to get
+> it to do anything.  I promptly drop my hold on that new UTS namespace
+> and replace it in my new nsproxy with the one from the objhash that my
+> predecessor created (which is kinda ugly).
+> 
+> SH> Finally, it seems to me every task will unshare(CLONE_NEWUTS), no?
+> SH> Where is the check done (and stored) for whether this task has a
+> SH> different utsns from its parent?
+> 
+> No, tasks only unshare() if their UTS namespace objref is not found in
+> the objhash (thus indicating that they're the first of that namespace
+> to be restarted).
+> 
+> Perhaps you're referring to the fact that all tasks call
+> copy_namespaces() (if they're not the first).  You're correct there,
+> but I'm not sure that a check to see if we need to
+> (i.e. task->nsproxy->uts == uts) because at the time that the tasks
+> were created, none of them had done their unshare() yet).
+> 
+> SH> Save identifiers for all of the namespaces at the top of the
+> SH> checkpoint image; have restart create a set of dummy tasks, enough
+> SH> to contain all of the new namespaces; have each unshare their
+> SH> namespaces; then, as each real new task is restarted, manually
+> SH> create a new nsproxy and link it to all of the required new
+> SH> namespaces.
+> 
+> Well, that's an option I suppose.  Oren said he wanted to avoid an
+> additional loop over all tasks during checkpoint and preferred that it
+> all be stored with the task itself.  Oren?
 
-Yup, forgot the description. Will add.
+First off, that's totally possible without a second loop: while filling
+the pids_arr[] we can already collect the namespaces information and
+fill the data in additional fields in pids_arr[]. That will make it also
+available to userspace easily, and also in the kernel just as well.
 
-I try to isolate changes to existing kernel files into separate patches
-than the new c/r code. I think it will be helpful to be able to point out
-those changes upon request.
+I suppose you're aiming at doing the unshare() in userspace because you
+anticipate headaches with net_ns, right ?
+
+In that case, you don't even need to fork that many dummy tasks. You
+could use a single task that would repeatedly unshare() and then call
+[light bulb appears...] some form of cr_advise() to tell the kernel
+that your current nsproxy (or uts_ns) should be used with objref X in
+an upcoming restart.
 
 Oren.
-
-> 
-> Cheers,
-> 	-Matt Helsley
-> 
->> ---
->>  include/linux/shm.h |    4 ++++
->>  ipc/shm.c           |    4 ++--
->>  2 files changed, 6 insertions(+), 2 deletions(-)
->>
->> diff --git a/include/linux/shm.h b/include/linux/shm.h
->> index eca6235..ec36e99 100644
->> --- a/include/linux/shm.h
->> +++ b/include/linux/shm.h
->> @@ -118,6 +118,10 @@ static inline int is_file_shm_hugepages(struct file *file)
->>  }
->>  #endif
->>
->> +struct ipc_namespace;
->> +extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
->> +		       struct shmid_ds __user *buf, int version);
->> +
->>  #endif /* __KERNEL__ */
->>
->>  #endif /* _LINUX_SHM_H_ */
->> diff --git a/ipc/shm.c b/ipc/shm.c
->> index 5ac6aec..28a8b57 100644
->> --- a/ipc/shm.c
->> +++ b/ipc/shm.c
->> @@ -605,8 +605,8 @@ static void shm_get_stat(struct ipc_namespace *ns, unsigned long *rss,
->>   * to be held in write mode.
->>   * NOTE: no locks must be held, the rw_mutex is taken inside this function.
->>   */
->> -static int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
->> -		       struct shmid_ds __user *buf, int version)
->> +int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
->> +		struct shmid_ds __user *buf, int version)
->>  {
->>  	struct kern_ipc_perm *ipcp;
->>  	struct shmid64_ds shmid64;
->> -- 
->> 1.5.4.3
->>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
