@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 15/36] c/r of restart-blocks
-Date: Tue,  7 Apr 2009 08:27:23 -0400
-Message-ID: <1239107264-21775-16-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 23/36] Dump anonymous- and file-mapped- shared
+	memory
+Date: Tue,  7 Apr 2009 08:27:31 -0400
+Message-ID: <1239107264-21775-24-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,546 +22,568 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(Paraphrasing what's said this message:
-http://lists.openwall.net/linux-kernel/2007/12/05/64)
+We now handle anonymous and file-mapped shared memory. Support for IPC
+shared memory requires support for IPC first. We extend cr_write_vma()
+to detect shared memory VMAs and handle it separately than private
+memory.
 
-Restart blocks are callbacks used cause a system call to be restarted
-with the arguments specified in the system call restart block. It is
-useful for system call that are not idempotent, i.e. the argument(s)
-might be a relative timeout, where some adjustments are required when
-restarting the system call. It relies on the system call itself to set
-up its restart point and the argument save area.  They are rare: an
-actual signal would turn that it an EINTR. The only case that should
-ever trigger this is some kernel action that interrupts the system
-call, but does not actually result in any user-visible state changes -
-like freeze and thaw.
+There is not much to do for file-mapped shared memory, except to force
+msync() on the region to ensure that the file system is consistent
+with the checkpoint image. Use our internal type CR_VMA_SHM_FILE.
 
-So restart blocks are about time remaining for the system call to
-sleep/wait. Generally in c/r, there are two possible time models that
-we can follow: absolute, relative. Here, I chose to save the relative
-timeout, measured from the beginning of the checkpoint. The time when
-the checkpoint (and restart) begin is also saved. This information is
-sufficient to restart in either model (absolute or negative).
+Anonymous shared memory is always backed by inode in shmem filesystem.
+We use that inode to look up the VMA in the objhash and register it if
+not found (on first encounter). In this case, the type of the VMA is
+CR_VMA_SHM_ANON, and we dump the contents. On the other hand, if it is
+found there, we must have already saved it before, so we change the
+type to CR_VMA_SHM_ANON_SKIP and skip it.
 
-Which model to use should eventually be a per application choice (and
-possible configurable via cradvise() or some sort). For now, we adopt
-the relative model, namely, at restart the timeout is set relative to
-the beginning of the restart.
+To dump the contents of a shmem VMA, we loop through the pages of the
+inode in the shmem filesystem, and dump the contents of each dirty
+(allocated) page - unallocated pages must be clean.
 
-To checkpoint, we check if a task has a valid restart block, and if so
-we save the *remaining* time that is has to wait/sleep, and the type
-of the restart block.
+Note that we save the original size of a shmem VMA because it may have
+been re-mapped partially. The format itself remains like with private
+VMAs, except that instead of addresses we record _indices_ (page nr)
+into the backing inode.
 
-To restart, we fill in the data required at the proper place in the
-thread information. If the system call return an error (which is
-possibly an -ERESTARTSYS eg), we not only use that error as our own
-return value, but also arrange for the task to execute the signal
-handler (by faking a signal). The handler, in turn, already has the
-code to handle these restart request gracefully.
+Changelog[v14]:
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/mm/checkpoint.c       |    6 +-
- arch/x86/mm/restart.c          |   32 ++++++++++-
- checkpoint/checkpoint.c        |    1 +
- checkpoint/checkpoint_arch.h   |    2 +
- checkpoint/ckpt_task.c         |  120 ++++++++++++++++++++++++++++++++++++++++
- checkpoint/restart.c           |   12 ++--
- checkpoint/rstr_task.c         |  113 +++++++++++++++++++++++++++++++++++++-
- checkpoint/sys.c               |    2 +
- include/linux/checkpoint.h     |    4 +
- include/linux/checkpoint_hdr.h |   20 +++++++
- 10 files changed, 300 insertions(+), 12 deletions(-)
+ checkpoint/ckpt_mem.c          |  283 ++++++++++++++++++++++++++++++++++------
+ checkpoint/rstr_mem.c          |    2 +-
+ include/linux/checkpoint.h     |    2 +
+ include/linux/checkpoint_hdr.h |   16 ++-
+ mm/shmem.c                     |   11 ++
+ 5 files changed, 273 insertions(+), 41 deletions(-)
 
-diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-index d13d7f4..64e6635 100644
---- a/arch/x86/mm/checkpoint.c
-+++ b/arch/x86/mm/checkpoint.c
-@@ -59,10 +59,10 @@ int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t)
- 	 * not tied to the in-kernel representation.
- 	 */
- 	ret = cr_kwrite(ctx, thread->tls_array, sizeof(thread->tls_array));
-+	if (ret < 0)
-+		return ret;
- 
--	/* IGNORE RESTART BLOCKS FOR NOW ... */
--
--	return ret;
-+	return cr_write_restart_block(ctx, t);
- }
- 
- #ifdef CONFIG_X86_64
-diff --git a/arch/x86/mm/restart.c b/arch/x86/mm/restart.c
-index fca5cd8..70a0609 100644
---- a/arch/x86/mm/restart.c
-+++ b/arch/x86/mm/restart.c
-@@ -11,6 +11,7 @@
- #include <asm/desc.h>
- #include <asm/i387.h>
- #include <asm/elf.h>
-+#include <asm/syscall.h>
- 
+diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
+index fc93cf9..92a3edc 100644
+--- a/checkpoint/ckpt_mem.c
++++ b/checkpoint/ckpt_mem.c
+@@ -13,6 +13,7 @@
+ #include <linux/slab.h>
+ #include <linux/file.h>
+ #include <linux/pagemap.h>
++#include <linux/swap.h>
+ #include <linux/mm_types.h>
  #include <linux/checkpoint.h>
  #include <linux/checkpoint_hdr.h>
-@@ -70,7 +71,7 @@ int cr_read_thread(struct cr_ctx *ctx)
- 		kfree(desc);
- 	}
- 
--	ret = 0;
-+	ret = cr_read_restart_block(ctx);
-  out:
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	return ret;
-@@ -194,6 +195,7 @@ int cr_read_cpu(struct cr_ctx *ctx)
- 
- 	if (hh->used_math)
- 		ret = cr_read_cpu_fpu(ctx, t);
-+
-  out:
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	return ret;
-@@ -287,3 +289,31 @@ int cr_read_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	return ret;
+@@ -136,7 +137,8 @@ static struct cr_pgarr *cr_pgarr_alloc_one(unsigned long flags)
+ 	return NULL;
  }
-+
-+int cr_retval_restart(struct cr_ctx *ctx)
+ 
+-/* cr_pgarr_current - return the next available page-array in the chain
++/**
++ * cr_pgarr_current - return the next available page-array in the chain
+  * @ctx: checkpoint context
+  *
+  * Returns the first page-array in the list that has space. Otherwise,
+@@ -182,11 +184,11 @@ void cr_pgarr_reset_all(struct cr_ctx *ctx)
+ 
+ 
+ /**
+- * cr_private_follow_page - return page pointer for dirty pages
++ * cr_consider_private_page - return page pointer for dirty pages
+  * @vma - target vma
+  * @addr - page address
+  *
+- * Looks up the page that correspond to the address in the vma, and
++ * Looks up the page that corresponds to the address in the vma, and
+  * returns the page if it was modified (and grabs a reference to it),
+  * or otherwise returns NULL (or error).
+  *
+@@ -252,25 +254,81 @@ cr_consider_private_page(struct vm_area_struct *vma, unsigned long addr)
+ }
+ 
+ /**
+- * cr_private_vma_fill_pgarr - fill a page-array with addr/page tuples
++ * cr_consider_shared_page - return page pointer for dirty pages
++ * @ino - inode of shmem object
++ * @idx - page index in shmem object
++ *
++ * Looks up the page that corresponds to the index in the shmem object,
++ * and returns the page if it was modified (and grabs a reference to it),
++ * or otherwise returns NULL (or error).
++ *
++ * This function should _only_ called for shared vma's.
++ */
++static struct page *
++cr_consider_shared_page(struct inode *inode, unsigned long idx)
 +{
-+	struct pt_regs *regs = task_pt_regs(current);
++	struct page *page = NULL;
++	int ret;
++
++	/*
++	 * Inspired by do_shmem_file_read(): very simplified version.
++	 *
++	 * FIXME: consolidate with do_shmem_file_read()
++	 */
++
++	ret = shmem_getpage(inode, idx, &page, SGP_READ, NULL);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	/*
++	 * Only care about dirty pages; shmem_getpage() only returns
++	 * pages that have been allocated, so they must be dirty. The
++	 * pages returned are locked and referenced.
++	 */
++
++	if (page) {
++		unlock_page(page);
++		/*
++		 * If users can be writing to this page using arbitrary
++		 * virtual addresses, take care about potential aliasing
++		 * before reading the page on the kernel side.
++		 */
++		if (mapping_writably_mapped(inode->i_mapping))
++			flush_dcache_page(page);
++		/*
++		 * Mark the page accessed if we read the beginning.
++		 */
++		mark_page_accessed(page);
++	}
++
++	return page;
++}
++
++/**
++ * cr_vma_fill_pgarr - fill a page-array with addr/page tuples
+  * @ctx - checkpoint context
++ * @shm - pages are from shared memory
+  * @vma - vma to scan
++ * @ino - inode of shared memory
+  * @start - start address (updated)
++ * @start - end address (updated)
+  *
++ * For private vma, records addr/page tuples. For shared vma, records
++ * index/page (index is the index of the page in the shmem object).
+  * Returns the number of pages collected
+  */
+-static int
+-cr_private_vma_fill_pgarr(struct cr_ctx *ctx, struct vm_area_struct *vma,
+-			  unsigned long *start)
++static int cr_vma_fill_pgarr(struct cr_ctx *ctx, int shm,
++			     struct vm_area_struct *vma, struct inode *ino,
++			     unsigned long *start, unsigned long end)
+ {
+-	unsigned long end = vma->vm_end;
+ 	unsigned long addr = *start;
+ 	struct cr_pgarr *pgarr;
+ 	int nr_used;
+ 	int cnt = 0;
+ 
+ 	/* this function is only for private memory (anon or file-mapped) */
+-	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
++	BUG_ON((vma && ino) || (ino && !shm) || (vma && shm));
++	BUG_ON(vma && (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)));
+ 
+ 	do {
+ 		pgarr = cr_pgarr_current(ctx);
+@@ -282,7 +340,11 @@ cr_private_vma_fill_pgarr(struct cr_ctx *ctx, struct vm_area_struct *vma,
+ 		while (addr < end) {
+ 			struct page *page;
+ 
+-			page = cr_consider_private_page(vma, addr);
++			if (shm)
++				page = cr_consider_shared_page(ino, addr);
++			else
++				page = cr_consider_private_page(vma, addr);
++
+ 			if (IS_ERR(page))
+ 				return PTR_ERR(page);
+ 
+@@ -292,7 +354,10 @@ cr_private_vma_fill_pgarr(struct cr_ctx *ctx, struct vm_area_struct *vma,
+ 				pgarr->nr_used++;
+ 			}
+ 
+-			addr += PAGE_SIZE;
++			if (shm)
++				addr++;
++			else
++				addr += PAGE_SIZE;
+ 
+ 			if (cr_pgarr_is_full(pgarr))
+ 				break;
+@@ -359,25 +424,30 @@ static int cr_vma_dump_pages(struct cr_ctx *ctx, int total)
+ }
+ 
+ /**
+- * cr_write_private_vma_contents - dump contents of a VMA with private memory
++ * cr_write_vma_contents - dump contents of a VMA
+  * @ctx - checkpoint context
++ * @shm - pages are from shared memory
+  * @vma - vma to scan
++ * @ino - inode of shared memory
++ * @start - start address (updated)
++ * @start - end address (updated)
+  *
+  * Collect lists of pages that needs to be dumped, and corresponding
+  * virtual addresses into ctx->pgarr_list page-array chain. Then dump
+  * the addresses, followed by the page contents.
+  */
+-static int
+-cr_write_private_vma_contents(struct cr_ctx *ctx, struct vm_area_struct *vma)
++static int cr_write_vma_contents(struct cr_ctx *ctx, int shm,
++				 struct vm_area_struct *vma, struct inode *ino,
++				 unsigned long start, unsigned long end)
+ {
+ 	struct cr_hdr h;
+ 	struct cr_hdr_pgarr *hh;
+-	unsigned long addr = vma->vm_start;
++	unsigned long addr = start;
+ 	int cnt, ret;
+ 
+ 	/*
+ 	 * Work iteratively, collecting and dumping at most CR_PGARR_CHUNK
+-	 * in each round. Each iterations is divided into two steps:
++	 * in each round. Each iteration is divided into two steps:
+ 	 *
+ 	 * (1) scan: scan through the PTEs of the vma to collect the pages
+ 	 * to dump (later we'll also make them COW), while keeping a list
+@@ -394,15 +464,16 @@ cr_write_private_vma_contents(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 	 * the actual write-out of the data to after the application is
+ 	 * allowed to resume execution).
+ 	 *
+-	 * After dumpting the entire contents, conclude with a header that
++	 * After dumping the entire contents, conclude with a header that
+ 	 * specifies 0 pages to mark the end of the contents.
+ 	 */
+ 
+ 	h.type = CR_HDR_PGARR;
+ 	h.len = sizeof(*hh);
+ 
+-	while (addr < vma->vm_end) {
+-		cnt = cr_private_vma_fill_pgarr(ctx, vma, &addr);
++	while (addr < end) {
++
++		cnt = cr_vma_fill_pgarr(ctx, shm, vma, ino, &addr, end);
+ 		if (cnt == 0)
+ 			break;
+ 		else if (cnt < 0)
+@@ -437,6 +508,102 @@ cr_write_private_vma_contents(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ }
+ 
+ /**
++ * cr_write_private_vma_contents - dump contents of a VMA with private memory
++ * @ctx - checkpoint context
++ * @vma - vma to scan
++ */
++static int cr_write_private_vma_contents(struct cr_ctx *ctx,
++					 struct vm_area_struct *vma)
++{
++	return cr_write_vma_contents(ctx, 0, vma, NULL,
++				     vma->vm_start, vma->vm_end);
++}
++
++int cr_write_shmem_contents(struct cr_ctx *ctx, struct inode *inode)
++{
++	unsigned long end;
++
++	end = PAGE_ALIGN(i_size_read(inode)) >> PAGE_CACHE_SHIFT;
++	return cr_write_vma_contents(ctx, 1, NULL, inode, 0, end);
++}
++
++/**
++ * cr_write_shared_vma_contents - dump contents of a VMA with shared memory
++ * @ctx - checkpoint context
++ * @vma - vma to scan
++ * @vma_type - type of vma
++ */
++static int cr_write_shared_vma_contents(struct cr_ctx *ctx,
++					struct vm_area_struct *vma,
++					enum cr_vma_type vma_type)
++{
++	struct inode *inode;
 +	int ret = 0;
 +
 +	/*
-+	 * The retval should be either zero if the checkpointed task
-+	 * had been in user-space when frozen, or the retval from the
-+	 * syscall that had been interrupted then.
++	 * Citing mmap(2): "Updates to the mapping are visible to other
++	 * processes that map this file, and are carried through to the
++	 * underlying file. The file may not actually be updated until
++	 * msync(2) or munmap(2) is called"
 +	 *
-+	 * In the latter, if the syscall succeeded (perhaps partially)
-+	 * then the retval is non-negative. If it failed, the error
-+	 * may be one of -ERESTART... gang, interpreted in the signal
-+	 * handling code. In restart it must happen, too.
++	 * Citing msync(2): "Without use of this call there is no guarantee
++	 * that changes are written back before munmap(2) is called."
 +	 *
-+	 * To force execution of the signal handler now, too, we fake
-+	 * a signal to ourselves (a la freeze/thaw) when ret < 0.
++	 * Force msync for region of shared mapped files, to ensure that
++	 * that the file system is consistent with the checkpoint image.
++	 * (inspired by sys_msync).
++	 *
++	 * [FIXME: call vfs_sync only once per shared segment]
 +	 */
 +
-+	/* were we from a system call?  if so, get old error/retval */
-+	if (syscall_get_nr(current, regs) >= 0)
-+		ret = syscall_get_error(current, regs);
-+	/* old error ?  if so, make sure signal handling kicks in */
-+	if (ret < 0)
-+		set_tsk_thread_flag(current, TIF_SIGPENDING);
-+	return ret;
-+}
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 3e26dd0..12b0d5b 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -20,6 +20,7 @@
- #include <linux/mount.h>
- #include <linux/utsname.h>
- #include <linux/magic.h>
-+#include <linux/hrtimer.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-diff --git a/checkpoint/checkpoint_arch.h b/checkpoint/checkpoint_arch.h
-index e43b7fe..0afe666 100644
---- a/checkpoint/checkpoint_arch.h
-+++ b/checkpoint/checkpoint_arch.h
-@@ -1,5 +1,7 @@
- #include <linux/checkpoint.h>
- 
-+extern int cr_retval_restart(struct cr_ctx *ctx);
-+
- extern int cr_write_head_arch(struct cr_ctx *ctx);
- extern int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
-diff --git a/checkpoint/ckpt_task.c b/checkpoint/ckpt_task.c
-index b23bc87..5d17ade 100644
---- a/checkpoint/ckpt_task.c
-+++ b/checkpoint/ckpt_task.c
-@@ -9,6 +9,9 @@
-  */
- 
- #include <linux/sched.h>
-+#include <linux/posix-timers.h>
-+#include <linux/futex.h>
-+#include <linux/poll.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-@@ -45,6 +48,123 @@ static int cr_write_task_struct(struct cr_ctx *ctx, struct task_struct *t)
- 	return cr_write_string(ctx, t->comm, TASK_COMM_LEN);
- }
- 
-+/* dump the task_struct of a given task */
-+int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_restart_block *hh;
-+	struct restart_block *restart_block;
-+	long (*fn)(struct restart_block *);
-+	s64 base, expire = 0;
-+	int ret;
-+
-+	h.type = CR_HDR_RESTART_BLOCK;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+	memset(hh, 0, sizeof(*hh));
-+
-+	base = ktime_to_ns(ctx->ktime_beg);
-+	restart_block = &task_thread_info(t)->restart_block;
-+	fn = restart_block->fn;
-+
-+	/* FIX: enumerate clockid_t so we're immune to changes */
-+
-+	if (fn == do_no_restart_syscall) {
-+
-+		hh->fn = CR_RESTART_BLOCK_NONE;
-+		cr_debug("restart_block: non\n");
-+
-+	} else if (fn == hrtimer_nanosleep_restart) {
-+
-+		hh->fn = CR_RESTART_BLOCK_HRTIMER_NANOSLEEP;
-+		hh->arg_0 = restart_block->nanosleep.index;
-+		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		cr_debug("restart_block: hrtimer expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == posix_cpu_nsleep_restart) {
-+		struct timespec ts;
-+
-+		hh->fn = CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP;
-+		hh->arg_0 = restart_block->arg0;
-+		hh->arg_1 = restart_block->arg1;
-+		ts.tv_sec = restart_block->arg2;
-+		ts.tv_nsec = restart_block->arg3;
-+		expire = timespec_to_ns(&ts);
-+		cr_debug("restart_block: posix_cpu expire %lld now %lld\n",
-+			 expire, base);
-+
-+#ifdef CONFIG_COMPAT
-+	} else if (fn == compat_nanosleep_restart) {
-+
-+		hh->fn = CR_RESTART_BLOCK_NANOSLEEP;
-+		hh->arg_0 = restart_block->nanosleep.index;
-+		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-+		hh->arg_2 = (unsigned long)
-+			restart_block->nanosleep.compat_rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		cr_debug("restart_block: compat expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == compat_clock_nanosleep_restart) {
-+
-+		hh->fn = CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP;
-+		hh->arg_0 = restart_block->nanosleep.index;
-+		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-+		hh->arg_2 = (unsigned long)
-+			restart_block->nanosleep.compat_rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		cr_debug("restart_block: compat_clock expire %lld now %lld\n",
-+			 expire, base);
-+
-+#endif
-+	} else if (fn == futex_wait_restart) {
-+
-+		hh->fn = CR_RESTART_BLOCK_FUTEX;
-+		hh->arg_0 = (unsigned long) restart_block->futex.uaddr;
-+		hh->arg_1 = restart_block->futex.val;
-+		hh->arg_2 = restart_block->futex.flags;
-+		hh->arg_3 = restart_block->futex.bitset;
-+		expire = restart_block->futex.time;
-+		cr_debug("restart_block: futex expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == do_restart_poll) {
-+		struct timespec ts;
-+
-+		hh->fn = CR_RESTART_BLOCK_POLL;
-+		hh->arg_0 = (unsigned long) restart_block->poll.ufds;
-+		hh->arg_1 = restart_block->poll.nfds;
-+		hh->arg_2 = restart_block->poll.has_timeout;
-+		ts.tv_sec = restart_block->poll.tv_sec;
-+		ts.tv_nsec = restart_block->poll.tv_nsec;
-+		expire = timespec_to_ns(&ts);
-+		cr_debug("restart_block: poll expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else {
-+
-+		BUG();
-+
-+	}
-+
-+	/* common to all restart blocks: */
-+	if (base < expire)
-+		hh->arg_4 = (expire - base);
-+
-+	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-+		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	return ret;
-+}
-+
- /* dump the entire state of a given task */
- int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- {
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 234cc92..daaaeec 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -264,18 +264,16 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
- 
- 	ret = cr_ctx_restart(ctx, pid);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	ret = cr_read_head(ctx);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	ret = cr_read_task(ctx);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	ret = cr_read_tail(ctx);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
--	/* on success, adjust the return value if needed [TODO] */
-- out:
--	return ret;
-+	return cr_retval_restart(ctx);
- }
-diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
-index 93c86ab..52206d8 100644
---- a/checkpoint/rstr_task.c
-+++ b/checkpoint/rstr_task.c
-@@ -9,6 +9,9 @@
-  */
- 
- #include <linux/sched.h>
-+#include <linux/posix-timers.h>
-+#include <linux/futex.h>
-+#include <linux/poll.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-@@ -52,6 +55,115 @@ static int cr_read_task_struct(struct cr_ctx *ctx)
- 	return ret;
- }
- 
-+int cr_read_restart_block(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_restart_block *hh;
-+	struct restart_block restart_block;
-+	struct timespec ts;
-+	clockid_t clockid;
-+	s64 expire;
-+	int ret;
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_RESTART_BLOCK);
-+	if (ret < 0)
-+		goto out;
-+
-+	expire = ktime_to_ns(ctx->ktime_beg) + hh->arg_4;
-+	restart_block.fn = NULL;
-+
-+	cr_debug("restart_block: expire %lld begin %lld\n",
-+		 expire, ktime_to_ns(ctx->ktime_beg));
-+	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-+		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
-+
-+	switch (hh->fn) {
-+	case CR_RESTART_BLOCK_NONE:
-+		restart_block.fn = do_no_restart_syscall;
++	switch (vma_type) {
++	case CR_VMA_SHM_FILE:
++		/* no need for contents that are stored in the file system */
++		ret = vfs_fsync(vma->vm_file, vma->vm_file->f_path.dentry, 0);
 +		break;
-+	case CR_RESTART_BLOCK_HRTIMER_NANOSLEEP:
-+		clockid = hh->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = hrtimer_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) hh->arg_1;
-+		restart_block.nanosleep.expires = expire;
++	case CR_VMA_SHM_ANON:
++		/* save the contents of this resgion */
++		inode = vma->vm_file->f_dentry->d_inode;
++		ret = cr_write_shmem_contents(ctx, inode);
 +		break;
-+	case CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP:
-+		clockid = hh->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = posix_cpu_nsleep_restart;
-+		restart_block.arg0 = clockid;
-+		restart_block.arg1 = hh->arg_1;
-+		ts = ns_to_timespec(expire);
-+		restart_block.arg2 = ts.tv_sec;
-+		restart_block.arg3 = ts.tv_nsec;
-+		break;
-+#ifdef CONFIG_COMPAT
-+	case CR_RESTART_BLOCK_COMPAT_NANOSLEEP:
-+		clockid = hh->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = compat_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) hh->arg_1;
-+		restart_block.nanosleep.compat_rmtp =
-+			(struct compat_timespec __user *)
-+				(unsigned long) hh->arg_2;
-+		resatrt_block.nanosleep.expires = expire;
-+		break;
-+	case CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
-+		clockid = hh->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = compat_clock_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) hh->arg_1;
-+		restart_block.nanosleep.compat_rmtp =
-+			(struct compat_timespec __user *)
-+				(unsigned long) hh->arg_2;
-+		resatrt_block.nanosleep.expires = expire;
-+		break;
-+#endif
-+	case CR_RESTART_BLOCK_FUTEX:
-+		restart_block.fn = futex_wait_restart;
-+		restart_block.futex.uaddr = (u32 *) (unsigned long) hh->arg_0;
-+		restart_block.futex.val = hh->arg_1;
-+		restart_block.futex.flags = hh->arg_2;
-+		restart_block.futex.bitset = hh->arg_3;
-+		restart_block.futex.time = expire;
-+		break;
-+	case CR_RESTART_BLOCK_POLL:
-+		restart_block.fn = do_restart_poll;
-+		restart_block.poll.ufds =
-+			(struct pollfd __user *) (unsigned long) hh->arg_0;
-+		restart_block.poll.nfds = hh->arg_1;
-+		restart_block.poll.has_timeout = hh->arg_2;
-+		ts = ns_to_timespec(expire);
-+		restart_block.poll.tv_sec = ts.tv_sec;
-+		restart_block.poll.tv_nsec = ts.tv_nsec;
++	case CR_VMA_SHM_ANON_SKIP:
++	case CR_VMA_SHM_FILE_SKIP:
++		/* already saved before .. skip now */
 +		break;
 +	default:
-+		break;
++		BUG();
 +	}
 +
-+	if (restart_block.fn)
-+		task_thread_info(current)->restart_block = restart_block;
-+	else
-+		ret = -EINVAL;
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
 +	return ret;
 +}
 +
- /* read the entire state of the current task */
- int cr_read_task(struct cr_ctx *ctx)
- {
-@@ -76,6 +188,5 @@ int cr_read_task(struct cr_ctx *ctx)
- 	ret = cr_read_cpu(ctx);
- 	cr_debug("cpu: ret %d\n", ret);
-  out:
--
- 	return ret;
- }
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 8652c5c..863cb63 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -186,6 +186,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
- 		return ERR_PTR(-ENOMEM);
- 
- 	ctx->flags = flags;
-+	ctx->ktime_beg = ktime_get();
- 
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
-@@ -203,6 +204,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
- 	if (cr_objhash_alloc(ctx) < 0)
- 		goto err;
- 
++/* return the subtype of a private vma segment */
++static enum cr_vma_type cr_private_vma_type(struct vm_area_struct *vma)
++{
++	if (vma->vm_file)
++		return CR_VMA_FILE;
++	else
++		return CR_VMA_ANON;
++}
 +
- 	return ctx;
++/*
++ * cr_shared_vma_type - return the subtype of a shared vma
++ * @vma: target vma
++ * @old: 0 if shared segment seen first time, else 1
++ */
++static enum cr_vma_type cr_shared_vma_type(struct vm_area_struct *vma, int old)
++{
++	enum cr_vma_type vma_type = CR_VMA_UNKNOWN;
++
++	if (vma->vm_ops && vma->vm_ops->cr_vma_type) {
++		vma_type = (*vma->vm_ops->cr_vma_type)(vma);
++		if (old)
++			vma_type = cr_vma_type_skip(vma_type);
++	}
++	return vma_type;
++}
++
++/**
+  * cr_write_vma - classify the vma and dump its contents
+  * @ctx: checkpoint context
+  * @vma: vma object
+@@ -448,9 +615,8 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 	struct cr_hdr h;
+ 	struct cr_hdr_vma *hh;
+ 	const char *vma_name;
+-	int vma_type;
+-	int objref = 0;
+-	int new = 0;
++	enum cr_vma_type vma_type;
++	int objref, new;
+ 	int ret;
  
-  err:
+ 	h.type = CR_HDR_VMA;
+@@ -458,7 +624,7 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 
+ 	hh = cr_hbuf_get(ctx, sizeof(*hh));
+ 	if (!hh)
+-		return -EBUSY;
++		return -ENOMEM;
+ 
+ 	hh->vm_start = vma->vm_start;
+ 	hh->vm_end = vma->vm_end;
+@@ -475,8 +641,7 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 		return ret;
+ 	}
+ 
+-#define CR_BAD_VM_FLAGS  \
+-	(VM_SHARED | VM_MAYSHARE | VM_IO | VM_HUGETLB | VM_NONLINEAR)
++#define CR_BAD_VM_FLAGS  (VM_IO | VM_HUGETLB | VM_NONLINEAR)
+ 
+ 	if (vma->vm_flags & CR_BAD_VM_FLAGS) {
+ 		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
+@@ -484,38 +649,78 @@ static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+ 		goto out;
+ 	}
+ 
+-	vma_type = CR_VMA_ANON;  /* by default assume anon memory */
++	/*
++	 * Categorize the vma whether shared or private. If shared, deposit
++	 * the backing inode in the objhash, so that the contents are only
++	 * dumped once.
++	 */
++	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
++		struct inode *inode = vma->vm_file->f_dentry->d_inode;;
++		new = cr_obj_add_ptr(ctx, inode, &objref, CR_OBJ_INODE, 0);
++		if (new < 0) {
++			ret = new;
++			goto out;
++		}
++		hh->shm_objref = objref;
++		hh->shm_size = i_size_read(inode);
++		vma_type = cr_shared_vma_type(vma, !new);
++	} else {
++		hh->shm_objref = 0;
++		hh->shm_size = 0;
++		vma_type = cr_private_vma_type(vma);
++	}
+ 
+-	if (vma->vm_file)
+-		vma_type = CR_VMA_FILE;		/* assume private-mapped */
+-
+-	/* if file-backed, add 'file' to the hash (will keep a reference) */
+-	if (vma->vm_file) {
+-		new = cr_obj_add_ptr(ctx, vma->vm_file,
+-				     &objref, CR_OBJ_FILE, 0);
+-		cr_debug("vma %p objref %d file %p)\n",
+-			 vma, objref, vma->vm_file);
++	if (vma_type == CR_VMA_UNKNOWN) {
++		ret = -ENOSYS;
++		goto out;
++	}
++
++	hh->vma_type = vma_type;
++
++	/*
++	 * If the vma is file-backed (private or shared) we need to save
++	 * the corresponding file object. As the file object can be shared,
++	 * we follow the same logic as when handling file descriptors.
++	 */
++	if (vma_type == CR_VMA_FILE || vma_type == CR_VMA_SHM_FILE) {
++		struct file *file = vma->vm_file;
++		new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
++		cr_debug("vma %p objref %d file %p)\n", vma, objref, file);
+ 		if (new < 0) {
+ 			ret  = new;
+ 			goto out;
+ 		}
++		hh->vma_objref = objref;
++	} else {
++		hh->vma_objref = 0;
++		new = 0;
+ 	}
+ 
+-	hh->vma_type = vma_type;
+-	hh->vma_objref = objref;
++	cr_debug("vma %#lx-%#lx flags %#lx f_objref %d s_objref %d type %d\n",
++		 (unsigned long) hh->vm_start, (unsigned long) hh->vm_end,
++		 (unsigned long) hh->vm_flags, (int) hh->vma_objref,
++		 (int) hh->shm_objref, (int) hh->vma_type);
+ 
++	/* at last, the vma header is ready: write it out */
+ 	ret = cr_write_obj(ctx, &h, hh);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	/* new==1 if-and-only-if file was newly added to hash */
++	/*
++	 * new==1 if-and-only-if file was newly added to hash; in that
++	 * case we need to dump its state as well
++	 */
+ 	if (new) {
+ 		ret = cr_write_file(ctx, vma->vm_file);
+ 		if (ret < 0)
+ 			goto out;
+ 	}
+ 
+-	ret = cr_write_private_vma_contents(ctx, vma);
++	/* finally, dump the actual contents of this vma */
++	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE))
++		ret = cr_write_shared_vma_contents(ctx, vma, vma_type);
++	else
++		ret = cr_write_private_vma_contents(ctx, vma);
+ 
+  out:
+ 	cr_hbuf_put(ctx, sizeof(*hh));
+diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
+index e3eb42c..1e33e51 100644
+--- a/checkpoint/rstr_mem.c
++++ b/checkpoint/rstr_mem.c
+@@ -337,7 +337,7 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 		ret = cr_read_private_vma_contents(ctx);
+ 		break;
+ 	default:
+-		/* otherwise the compiler isn't happy ... */
++		/* pacify gcc (the default is caught above) ... */
+ 		ret = -EINVAL;
+ 		break;
+ 	}
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 3a514fc..a94ce98 100644
+index 50f2cd6..7a73608 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -18,6 +18,8 @@
- struct cr_ctx {
- 	int crid;		/* unique checkpoint id */
- 
-+	ktime_t ktime_beg;	/* checkpoint start time */
-+
- 	pid_t root_pid;		/* container identifier */
- 	struct task_struct *root_task;	/* container root task */
- 	struct nsproxy *root_nsproxy;	/* container root nsproxy */
-@@ -87,10 +89,12 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
+@@ -110,6 +110,8 @@ extern int cr_read_fname(struct cr_ctx *ctx, char *fname, int n);
+ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
  				       int flags, int mode);
  
++extern int cr_write_shmem_contents(struct cr_ctx *ctx, struct inode *inode);
++
  extern int cr_write_task(struct cr_ctx *ctx, struct task_struct *t);
-+extern int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t);
+ extern int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t);
  extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
- 
- extern int cr_read_task(struct cr_ctx *ctx);
-+extern int cr_read_restart_block(struct cr_ctx *ctx);
- extern int cr_read_mm(struct cr_ctx *ctx);
- extern int cr_read_fd_table(struct cr_ctx *ctx);
- 
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 30e649b..8821a30 100644
+index 59c4463..b55e85d 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -45,6 +45,7 @@ enum {
- 	CR_HDR_FNAME,
+@@ -145,11 +145,25 @@ enum cr_vma_type {
+ 	CR_VMA_VDSO = 1,	/* special vdso vma */
+ 	CR_VMA_ANON,		/* private anonymous */
+ 	CR_VMA_FILE,		/* private mapped file */
++	CR_VMA_SHM_ANON,	/* shared anonymous */
++	CR_VMA_SHM_ANON_SKIP,	/* shared anonymous, skip contents */
++	CR_VMA_SHM_FILE,	/* shared mapped file, only msync */
++	CR_VMA_SHM_FILE_SKIP,	/* shared mapped file, skip msync */
++	CR_VMA_UNKNOWN,		/* unkown (unsupported) vma type */
+ };
  
- 	CR_HDR_TASK = 101,
-+	CR_HDR_RESTART_BLOCK,
- 	CR_HDR_THREAD,
- 	CR_HDR_CPU,
- 
-@@ -97,6 +98,25 @@ struct cr_hdr_task {
- 	__u32 task_comm_len;
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_restart_block {
-+	__u64 fn;
-+	__u64 arg_0;
-+	__u64 arg_1;
-+	__u64 arg_2;
-+	__u64 arg_3;
-+	__u64 arg_4;
-+} __attribute__((aligned(8)));
++/* ATTN! for a shared vma type X above, the matching X_SKIP must follow */
++static inline enum cr_vma_type cr_vma_type_skip(enum cr_vma_type vma_type)
++{
++	return vma_type + 1;
++}
 +
-+enum restart_block_type {
-+	CR_RESTART_BLOCK_NONE = 1,
-+	CR_RESTART_BLOCK_HRTIMER_NANOSLEEP,
-+	CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP,
-+	CR_RESTART_BLOCK_COMPAT_NANOSLEEP,
-+	CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP,
-+	CR_RESTART_BLOCK_POLL,
-+	CR_RESTART_BLOCK_FUTEX
-+};
+ struct cr_hdr_vma {
+ 	__u32 vma_type;
+-	__u32 vma_objref;	/* for vma->vm_file */
++	__s32 vma_objref;	/* objref of backing file */
++	__s32 shm_objref;	/* objref of shared segment */
++	__u32 _padding;
++	__u64 shm_size;		/* size of shared segment */
+ 
+ 	__u64 vm_start;
+ 	__u64 vm_end;
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 53118f0..06aeda5 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -28,6 +28,7 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/swap.h>
++#include <linux/checkpoint_hdr.h>
+ 
+ static struct vfsmount *shm_mnt;
+ 
+@@ -1470,6 +1471,13 @@ static struct mempolicy *shmem_get_policy(struct vm_area_struct *vma,
+ }
+ #endif
+ 
++#ifdef CONFIG_CHECKPOINT
++static int shmem_cr_vma_type(struct vm_area_struct *vma)
++{
++	return CR_VMA_SHM_ANON;
++}
++#endif
 +
- struct cr_hdr_mm {
- 	__s32 objref;		/* identifier for shared objects */
- 	__u32 map_count;
+ int shmem_lock(struct file *file, int lock, struct user_struct *user)
+ {
+ 	struct inode *inode = file->f_path.dentry->d_inode;
+@@ -2477,6 +2485,9 @@ static struct vm_operations_struct shmem_vm_ops = {
+ 	.set_policy     = shmem_set_policy,
+ 	.get_policy     = shmem_get_policy,
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	.cr_vma_type	= shmem_cr_vma_type,
++#endif
+ };
+ 
+ 
 -- 
 1.5.4.3
