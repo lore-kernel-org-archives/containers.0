@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 33/36] Support for share memory address spaces
-Date: Tue,  7 Apr 2009 08:27:41 -0400
-Message-ID: <1239107264-21775-34-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 20/36] Restore open pipes
+Date: Tue,  7 Apr 2009 08:27:28 -0400
+Message-ID: <1239107264-21775-21-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,172 +21,217 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The task address space (task->mm) may be shared between processes if
-CLONE_VM is used, and particularly among threads. Accordingly, treat
-'task->mm' as a shared object: during checkpoint check against the
-objhash and only dump the contents if seen for the first time. During
-restart, likewise, only restore if it's a new instance, otherwise use
-the one already registered in the objhash.
+When seeing a CR_FD_PIPE file type, we create a new pipe and thus
+have two file pointers (read- and write- ends). We only use one of
+them, depending on which side was checkpointed first. We register the
+file pointer of the other end in the hash table, with the 'objref'
+given for this pipe from the checkpoint, deposited for later use. At
+this point we also restore the contents of the pipe buffers.
+
+When the other end arrives, it will have file type CR_FD_OBJREF. We
+will then use the corresponding 'objref' to retrieve the file pointer
+from the hash table, and attach it to the process.
+
+Note the difference from the checkpoint logic: during checkpoint we
+placed the _inode_ of the pipe in the hash table, while during restart
+we place the resulting _file_ in the hash table.
+
+We restore the pipe contents we manually allocation and attaching
+buffers to the pipe; (alternatively we could read the data from the
+image file and then write it into the pipe, or use splice() syscall).
+
+Changelog[v14]:
+  - Discard the 'h.parent' field
+  - Check whether calls to cr_hbuf_get() fail
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/ckpt_mem.c      |   36 +++++++++++++++++++++++-------------
- checkpoint/objhash.c       |    6 ++++++
- checkpoint/rstr_mem.c      |   31 +++++++++++++++++++++++++++----
- include/linux/checkpoint.h |    1 +
- 4 files changed, 57 insertions(+), 17 deletions(-)
+ checkpoint/checkpoint_file.h |    2 +
+ checkpoint/rstr_file.c       |  129 +++++++++++++++++++++++++++++++++++++++++-
+ fs/pipe.c                    |    2 +-
+ 3 files changed, 130 insertions(+), 3 deletions(-)
 
-diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
-index 92a3edc..0df3cda 100644
---- a/checkpoint/ckpt_mem.c
-+++ b/checkpoint/ckpt_mem.c
-@@ -733,22 +733,29 @@ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
- 	struct cr_hdr_mm *hh;
- 	struct mm_struct *mm;
- 	struct vm_area_struct *vma;
--	int objref, ret;
-+	int objref, new;
-+	int ret;
+diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
+index 9dc3eba..cac1a5d 100644
+--- a/checkpoint/checkpoint_file.h
++++ b/checkpoint/checkpoint_file.h
+@@ -14,4 +14,6 @@
+ 
+ int cr_scan_fds(struct files_struct *files, int **fdtable);
+ 
++extern const struct pipe_buf_operations anon_pipe_buf_ops;
 +
-+	mm = get_task_mm(t);
-+
-+	new = cr_obj_add_ptr(ctx, mm, &objref, CR_OBJ_MM, 0);
-+	if (new < 0) {
-+		ret = new;
-+		goto mmput;
-+	}
- 
- 	h.type = CR_HDR_MM;
- 	h.len = sizeof(*hh);
- 
-+	ret = -ENOMEM;
- 	hh = cr_hbuf_get(ctx, sizeof(*hh));
- 	if (!hh)
--		return -ENOMEM;
-+		goto mmput;
- 
--	mm = get_task_mm(t);
-+	down_read(&mm->mmap_sem);
- 
--	objref = 0;	/* will be meaningful with multiple processes */
- 	hh->objref = objref;
- 
--	down_read(&mm->mmap_sem);
--
- 	hh->start_code = mm->start_code;
- 	hh->end_code = mm->end_code;
- 	hh->start_data = mm->start_data;
-@@ -770,17 +777,20 @@ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
- 	if (ret < 0)
- 		goto out;
- 
--	/* write the vma's */
--	for (vma = mm->mmap; vma; vma = vma->vm_next) {
--		ret = cr_write_vma(ctx, vma);
--		if (ret < 0)
--			goto out;
--	}
-+	if (new) {
-+		/* write the vma's */
-+		for (vma = mm->mmap; vma; vma = vma->vm_next) {
-+			ret = cr_write_vma(ctx, vma);
-+			if (ret < 0)
-+				goto out;
-+		}
- 
--	ret = cr_write_mm_context(ctx, mm);
-+		ret = cr_write_mm_context(ctx, mm);
-+	}
- 
-  out:
- 	up_read(&mm->mmap_sem);
-+ mmput:
- 	mmput(mm);
- 	return ret;
+ #endif /* _CHECKPOINT_CKPT_FILE_H_ */
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
+index 78004ca..883744d 100644
+--- a/checkpoint/rstr_file.c
++++ b/checkpoint/rstr_file.c
+@@ -14,6 +14,8 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
++#include <linux/pagemap.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/syscalls.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+@@ -86,6 +88,126 @@ static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
+ 	return (ret < 0 ? ERR_PTR(ret) : file);
  }
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 25916c1..6584579 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -38,6 +38,9 @@ static void cr_obj_ref_drop(struct cr_objref *obj)
- 	case CR_OBJ_INODE:
- 		iput((struct inode *) obj->ptr);
- 		break;
-+	case CR_OBJ_MM:
-+		mmput((struct mm_struct *) obj->ptr);
-+		break;
- 	default:
- 		BUG();
- 	}
-@@ -55,6 +58,9 @@ static int cr_obj_ref_grab(struct cr_objref *obj)
- 		if (!igrab((struct inode *) obj->ptr))
- 			ret = -EBADF;
- 		break;
-+	case CR_OBJ_MM:
-+		atomic_inc(&((struct mm_struct *) obj->ptr)->mm_users);
-+		break;
- 	default:
- 		BUG();
- 	}
-diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
-index da3eb0e..7e73129 100644
---- a/checkpoint/rstr_mem.c
-+++ b/checkpoint/rstr_mem.c
-@@ -505,16 +505,39 @@ int cr_read_mm(struct cr_ctx *ctx)
- 	if (ret < 0)
- 		goto out;
  
--	cr_debug("map_count %d\n", hh->map_count);
-+	cr_debug("map_count %d objref %d\n", hh->map_count, hh->objref);
- 
--	/* XXX need more sanity checks */
-+	/* FIX need more sanity checks */
- 
- 	ret = -EINVAL;
--	if ((hh->start_code > hh->end_code) ||
--	    (hh->start_data > hh->end_data))
-+	if (hh->objref < 0)
- 		goto out;
-+	if ((hh->start_code > hh->end_code) || (hh->start_data > hh->end_data))
-+		goto out;
++/* cr_read_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
++static int
++cr_read_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe, int nbufs)
++{
++	void *kbuf, *addr;
++	int i, ret = 0;
 +
-+	/* if the mm's objref is in the objhash, use that instance */
-+	mm = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_MM);
-+	if (IS_ERR(mm)) {
-+		ret = PTR_ERR(mm);
-+		goto out;
-+	}
- 
-+	if (mm) {
-+		if (mm != current->mm) {
-+			ret = exec_mmap(mm);
-+			if (ret < 0)
-+				goto out;
-+			atomic_inc(&mm->mm_users);
++	kbuf = (void *) __get_free_page(GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
++
++	for (i = 0; i < nbufs; i++) {
++		struct pipe_buffer *pbuf = pipe->bufs + i;
++		struct page *page;
++		int len = PAGE_SIZE;
++
++		ret = cr_read_buffer(ctx, kbuf, &len);
++		if (ret < 0)
++			break;
++		page = alloc_page(GFP_HIGHUSER);
++		if (!page) {
++			ret = -ENOMEM;
++			break;
 +		}
-+		ret = 0;
++
++		addr = kmap_atomic(page, KM_USER0);
++		memcpy(addr, kbuf, len);
++		kunmap_atomic(addr, KM_USER0);
++
++		pbuf->page = page;
++		pbuf->ops = &anon_pipe_buf_ops;
++		pbuf->offset = 0;
++		pbuf->len = len;
++		pipe->nrbufs++;
++		pipe->tmp_page = NULL;
++	}
++
++	free_page((unsigned long) kbuf);
++	return ret;
++}
++
++/* cr_read_pipe - restore pipe (assume i_mutex taken) */
++static int cr_read_pipe(struct cr_ctx *ctx, int pipefd)
++{
++	struct cr_hdr_fd_pipe *hh;
++	struct file *file;
++	struct inode *inode;
++	int nbufs, ret;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_PIPE);
++	nbufs = hh->nr_bufs;
++	cr_hbuf_put(ctx, sizeof(*hh));
++
++	if (ret < 0)
++		return ret;
++	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
++		return -EINVAL;
++
++	file = fget(pipefd);
++	if (!file)
++		return -EIO;
++
++	inode = file->f_dentry->d_inode;
++	mutex_lock(&inode->i_mutex);
++	ret = cr_read_pipebuf(ctx, inode->i_pipe, nbufs);
++	mutex_unlock(&inode->i_mutex);
++
++	fput(file);
++	return ret;
++}
++
++/* restore a pipe */
++static int cr_read_fd_pipe(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++{
++	struct file *file;
++	int fds[2], which, ret;
++
++	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++	/*
++	 * If cr_obj_get_by_ref() returned a file, then the other end
++	 * of the pipe has been restored, so cr_attach_get_file() will
++	 * attach the other end to a new fd, and we return that fd.
++	 */
++	if (file)
++		return cr_attach_get_file(file);
++
++	/* first encounter of this pipe: create it */
++	ret = do_pipe(fds);
++	if (ret < 0)
++		return ret;
++
++	which = (hh->f_flags & O_WRONLY ? 1 : 0);
++
++	/*
++	 * Below we return the fd corersponding to one side of the pipe
++	 * for our caller to use. Now register the other side of the pipe
++	 * in the hash, to be picked up when that side is to be restored.
++	 */
++	file = cr_obj_add_file(ctx, fds[1-which], hh->fd_objref);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
 +		goto out;
 +	}
 +
-+	/* otherwise, add our mm to the objhash for future generations */
- 	mm = current->mm;
-+	ret = cr_obj_add_ref(ctx, mm, hh->objref, CR_OBJ_MM, 0);
++	ret = cr_read_pipe(ctx, fds[which]);
++ out:
++	sys_close(fds[1-which]);	/* this side isn't used anymore */
 +	if (ret < 0)
-+		goto out;
++		sys_close(fds[which]);
++	else
++		ret = fds[which];
++	return ret;
++}
++
+ /* return a new fd associated with a the file referenced by @hh->objref */
+ static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
+ {
+@@ -139,11 +261,14 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
+ 	/* FIX: more sanity checks on f_flags, f_mode etc */
  
- 	/* point of no return -- destruct current mm */
- 	down_write(&mm->mmap_sem);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 043535c..1bfe284 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -77,6 +77,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
- enum {
- 	CR_OBJ_FILE = 1,
- 	CR_OBJ_INODE,
-+	CR_OBJ_MM,
- 	CR_OBJ_MAX
- };
+ 	switch (hh->fd_type) {
++	case CR_FD_OBJREF:
++		fd = cr_read_fd_objref(ctx, hh);
++		break;
+ 	case CR_FD_GENERIC:
+ 		fd = cr_read_fd_generic(ctx, hh);
+ 		break;
+-	case CR_FD_OBJREF:
+-		fd = cr_read_fd_objref(ctx, hh);
++	case CR_FD_PIPE:
++		fd = cr_read_fd_pipe(ctx, hh);
+ 		break;
+ 	default:
+ 		goto out;
+diff --git a/fs/pipe.c b/fs/pipe.c
+index c2a2ff1..55f5cc7 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -271,7 +271,7 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *info,
+ 	return 0;
+ }
  
+-static const struct pipe_buf_operations anon_pipe_buf_ops = {
++const struct pipe_buf_operations anon_pipe_buf_ops = {
+ 	.can_merge = 1,
+ 	.map = generic_pipe_buf_map,
+ 	.unmap = generic_pipe_buf_unmap,
 -- 
 1.5.4.3
