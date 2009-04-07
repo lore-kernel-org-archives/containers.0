@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 16/36] Checkpoint multiple processes
-Date: Tue,  7 Apr 2009 08:27:24 -0400
-Message-ID: <1239107264-21775-17-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 18/36] A new file type (CR_FD_OBJREF) for a file
+	descriptor already setup
+Date: Tue,  7 Apr 2009 08:27:26 -0400
+Message-ID: <1239107264-21775-19-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,440 +22,318 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpointing of multiple processes works by recording the tasks tree
-structure below a given task (usually this task is the container init).
+While file pointers are shared objects, they may share an underlying
+object themselves. For instance, file pointers of both ends of a pipe
+that share the same pipe inode. In this case, the shared entity to
+handle is the inode that is shared among two file pointers (e.g read-
+and write- ends). In this sort of "nested sharing" we need only save
+the underlying object once (upon first encounter) on checkpoint, and
+restore it only once during restart.
 
-For a given task, do a DFS scan of the tasks tree and collect them
-into an array (keeping a reference to each task). Using DFS simplifies
-the recreation of tasks either in user space or kernel space. For each
-task collected, test if it can be checkpointed, and save its pid, tgid,
-and ppid.
+To checkpoint a file descriptor of this sort, we first lookup the
+inode in the hash table:
 
-The actual work is divided into two passes: a first scan counts the
-tasks, then memory is allocated and a second scan fills the array.
+If not found, it is the first encounter of this inode. Here, Besides
+the file descriptor data, we also (a) register the inode in the hash
+and save the corresponding 'objref' of this inode in '->fd_objref' of
+the file descriptor. We then also (b) save the inode data, as per the
+inode type (this is not implemented in this patch, as it depends on
+the object). The file descriptor type will indicate the type of that
+object (e.g. for a pipe, when supported, CR_FD_PIPE).
 
-The logic is suitable for creation of processes during restart either
-in userspace or by the kernel.
+If found, it is the second encounter of this inode, e.g. in the case
+of a pipe, as we hit the other end of the same pipe. At this point we
+need only record the reference ('objref') to the inode that we had
+saved before, and the file descriptor type is changed to CR_FD_OBJREF.
 
-Currently we ignore threads and zombies, as well as session ids.
+The logic during restart is similar: the '->fd_objref' is looked up in
+the hash table. Unlike checkpoint, during restart the object that is
+placed (and sought) in the hash table is the _file_ pointer, rather
+than the _inode_.
+
+If not found, it is the first encounter of this inode. Therefore we
+(a) restore the inode data. Specifically, we construct a matching
+object and end up with multiple file pointers (e.g. if the object is a
+pipe, we will have both read- and write- ends). One of those is used
+for the file descriptor in question; the other(s) will be deposited in
+the hash table, to be retrieved and used later on. We also (b) register
+the newly created inode in the hash table using the given 'objref'.
+
+If found, then we can skip the setup of the underlying object that
+is represented by the inode.
+
+The type CR_FD_OBJREF indicates, on restart, that the corresponding
+file descriptor is already setup and registered in the hash under the
+'->fd_objref' that it had been assigned.
+
+The next two patches use CR_FD_OBJREF to implement support for pipes.
 
 Changelog[v14]:
-  - Refuse non-self checkpoint if target task isn't frozen
-  - Revert change to pr_debug(), back to cr_debug()
-  - Use only unsigned fields in checkpoint headers
-  - Check retval of cr_tree_count_tasks() in cr_build_tree()
-  - Discard 'h.parent' field
-  - Check whether calls to cr_hbuf_get() fail
-  - Disallow threads or siblings to container init
-
-Changelog[v13]:
-  - Release tasklist_lock in error path in cr_tree_count_tasks()
-  - Use separate index for 'tasks_arr' and 'hh' in cr_write_pids()
-
-Changelog[v12]:
-  - Replace obsolete cr_debug() with pr_debug()
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |  256 ++++++++++++++++++++++++++++++++++++++--
- checkpoint/sys.c               |   16 +++
- include/linux/checkpoint.h     |   10 +-
- include/linux/checkpoint_hdr.h |   15 ++-
- 4 files changed, 281 insertions(+), 16 deletions(-)
+ checkpoint/objhash.c           |   30 +++++++++++---
+ checkpoint/rstr_file.c         |   83 ++++++++++++++++++++++++++++++---------
+ include/linux/checkpoint.h     |    1 +
+ include/linux/checkpoint_hdr.h |    9 +++-
+ 4 files changed, 94 insertions(+), 29 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 12b0d5b..67baff4 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -210,6 +210,238 @@ static int cr_write_tail(struct cr_ctx *ctx)
- 	return ret;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 17f43fc..25916c1 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -35,20 +35,31 @@ static void cr_obj_ref_drop(struct cr_objref *obj)
+ 	case CR_OBJ_FILE:
+ 		fput((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_INODE:
++		iput((struct inode *) obj->ptr);
++		break;
+ 	default:
+ 		BUG();
+ 	}
  }
  
-+/* dump all tasks in ctx->tasks_arr[] */
-+static int cr_write_all_tasks(struct cr_ctx *ctx)
-+{
-+	int n, ret = 0;
-+
-+	for (n = 0; n < ctx->nr_tasks; n++) {
-+		cr_debug("dumping task #%d\n", n);
-+		ret = cr_write_task(ctx, ctx->tasks_arr[n]);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	return ret;
-+}
-+
-+static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
-+{
-+	struct pid_namespace *ns = ctx->root_nsproxy->pid_ns;
-+
-+	cr_debug("check %d\n", task_pid_nr_ns(t, ns));
-+
-+	if (t->state == TASK_DEAD) {
-+		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-+		return -EAGAIN;
-+	}
-+
-+	if (!ptrace_may_access(t, PTRACE_MODE_READ))
-+		return -EPERM;
-+
-+	/* verify that the task is frozen (unless self) */
-+	if (t != current && !frozen(t))
-+		return -EBUSY;
-+
-+	/*
-+	 * FIX: for now, disallow siblings of container init created
-+	 * via CLONE_PARENT (unclear if they will remain possible)
-+	 */
-+	if (ctx->root_init && t != ctx->root_task &&
-+	    t->real_parent == ctx->root_task->real_parent)
-+		return -EINVAL;
-+
-+	/* FIX: change this for nested containers */
-+	if (task_nsproxy(t) != ctx->root_nsproxy)
-+		return -EPERM;
-+
-+	return 0;
-+}
-+
-+#define CR_HDR_PIDS_CHUNK	256
-+
-+static int cr_write_pids(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_pids *hh;
-+	struct pid_namespace *ns;
-+	struct task_struct *task;
-+	struct task_struct **tasks_arr;
-+	int nr_tasks, n, pos = 0, ret = 0;
-+
-+	ns = ctx->root_nsproxy->pid_ns;
-+	tasks_arr = ctx->tasks_arr;
-+	nr_tasks = ctx->nr_tasks;
-+	BUG_ON(nr_tasks <= 0);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh) * CR_HDR_PIDS_CHUNK);
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	do {
-+		rcu_read_lock();
-+		for (n = 0; n < min(nr_tasks, CR_HDR_PIDS_CHUNK); n++) {
-+			task = tasks_arr[pos];
-+
-+			hh[n].vpid = task_pid_nr_ns(task, ns);
-+			hh[n].vtgid = task_tgid_nr_ns(task, ns);
-+			hh[n].vpgid = task_pgrp_nr_ns(task, ns);
-+			hh[n].vsid = task_session_nr_ns(task, ns);
-+			hh[n].vppid = task_tgid_nr_ns(task->real_parent, ns);
-+			cr_debug("task[%d]: vpid %d vtgid %d parent %d\n", pos,
-+				 hh[n].vpid, hh[n].vtgid, hh[n].vppid);
-+			pos++;
-+		}
-+		rcu_read_unlock();
-+
-+		n = min(nr_tasks, CR_HDR_PIDS_CHUNK);
-+		ret = cr_kwrite(ctx, hh, n * sizeof(*hh));
-+		if (ret < 0)
-+			break;
-+
-+		nr_tasks -= n;
-+	} while (nr_tasks > 0);
-+
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
-+
-+/* count number of tasks in tree (and optionally fill pid's in array) */
-+static int cr_tree_count_tasks(struct cr_ctx *ctx)
-+{
-+	struct task_struct *root;
-+	struct task_struct *task;
-+	struct task_struct *parent;
-+	struct task_struct **tasks_arr = ctx->tasks_arr;
-+	int nr_tasks = ctx->nr_tasks;
-+	int nr = 0;
-+	int ret;
-+
-+	read_lock(&tasklist_lock);
-+
-+	/* we hold the lock, so root_task->real_parent can't change */
-+	task = ctx->root_task;
-+	if (ctx->root_init) {
-+		/* container-init: start from container parent */
-+		parent = task->real_parent;
-+		root = parent;
-+	} else {
-+		/* non-container-init: start from root task and down */
-+		parent = NULL;
-+		root = task;
-+	}
-+
-+	/* count tasks via DFS scan of the tree */
-+	while (1) {
-+
-+		/* is this task cool ? */
-+		ret = cr_may_checkpoint_task(task, ctx);
-+		if (ret < 0) {
-+			nr = ret;
-+			break;
-+		}
-+
-+		if (tasks_arr) {
-+			/* unlikely... but if so then try again later */
-+			if (nr == nr_tasks) {
-+				nr = -EAGAIN;	/* cleanup in cr_ctx_free() */
-+				break;
-+			}
-+			tasks_arr[nr] = task;
-+			get_task_struct(task);
-+		}
-+
-+		nr++;
-+
-+		/* if has children - proceed with child */
-+		if (!list_empty(&task->children)) {
-+			parent = task;
-+			task = list_entry(task->children.next,
-+					  struct task_struct, sibling);
-+			continue;
-+		}
-+
-+		while (task != root) {
-+			/* if has sibling - proceed with sibling */
-+			if (!list_is_last(&task->sibling, &parent->children)) {
-+				task = list_entry(task->sibling.next,
-+						  struct task_struct, sibling);
-+				break;
-+			}
-+
-+			/* else, trace back to parent and proceed */
-+			task = parent;
-+			parent = parent->real_parent;
-+		}
-+
-+		if (task == root)
-+			break;
-+	}
-+
-+	read_unlock(&tasklist_lock);
-+	return nr;
-+}
-+
-+/*
-+ * cr_build_tree - scan the tasks tree in DFS order and fill in array
-+ * @ctx: checkpoint context
-+ *
-+ * Using DFS order simplifies the restart logic to re-create the tasks.
-+ *
-+ * On success, ctx->tasks_arr will be allocated and populated with all
-+ * tasks (reference taken), and ctx->nr_tasks will hold the total count.
-+ * The array is cleaned up by cr_ctx_free().
-+ */
-+static int cr_build_tree(struct cr_ctx *ctx)
-+{
-+	int n, m;
-+
-+	/* count tasks (no side effects) */
-+	n = cr_tree_count_tasks(ctx);
-+	if (n < 0)
-+		return n;
-+
-+	ctx->nr_tasks = n;
-+	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
-+	if (!ctx->tasks_arr)
-+		return -ENOMEM;
-+
-+	/* count again (now will fill array) */
-+	m = cr_tree_count_tasks(ctx);
-+
-+	/* unlikely, but ... (cleanup in cr_ctx_free) */
-+	if (m < 0)
-+		return m;
-+	else if (m != n)
-+		return -EBUSY;
-+
-+	return 0;
-+}
-+
-+/* dump the array that describes the tasks tree */
-+static int cr_write_tree(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_tree *hh;
-+	int ret;
-+
-+	h.type = CR_HDR_TREE;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+
-+	hh->nr_tasks = ctx->nr_tasks;
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cr_write_pids(ctx);
-+	return ret;
-+}
-+
- static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+-static void cr_obj_ref_grab(struct cr_objref *obj)
++static int cr_obj_ref_grab(struct cr_objref *obj)
  {
- 	struct task_struct *task = NULL;
-@@ -227,22 +459,11 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
- 	if (!task)
++	int ret = 0;
++
+ 	switch (obj->type) {
+ 	case CR_OBJ_FILE:
+ 		get_file((struct file *) obj->ptr);
+ 		break;
++	case CR_OBJ_INODE:
++		if (!igrab((struct inode *) obj->ptr))
++			ret = -EBADF;
++		break;
+ 	default:
+ 		BUG();
+ 	}
++
++	return ret;
+ }
+ 
+ static void cr_objhash_clear(struct cr_objhash *objhash)
+@@ -144,16 +155,22 @@ static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
+ 				    unsigned short type, unsigned short flags)
+ {
+ 	struct cr_objref *obj;
+-	int i;
++	int i, ret;
+ 
+ 	obj = kmalloc(sizeof(*obj), GFP_KERNEL);
+ 	if (!obj)
+-		return NULL;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	obj->ptr = ptr;
+ 	obj->type = type;
+ 	obj->flags = flags;
+ 
++	ret = cr_obj_ref_grab(obj);
++	if (ret < 0) {
++		kfree(obj);
++		return ERR_PTR(ret);
++	}
++
+ 	if (objref) {
+ 		/* use @objref to index (restart) */
+ 		obj->objref = objref;
+@@ -165,7 +182,6 @@ static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
+ 	}
+ 
+ 	hlist_add_head(&obj->hash, &ctx->objhash->head[i]);
+-	cr_obj_ref_grab(obj);
+ 	return obj;
+ }
+ 
+@@ -198,8 +214,8 @@ int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
+ 	obj = cr_obj_find_by_ptr(ctx, ptr);
+ 	if (!obj) {
+ 		obj = cr_obj_new(ctx, ptr, 0, type, flags);
+-		if (!obj)
+-			return -ENOMEM;
++		if (IS_ERR(obj))
++			return PTR_ERR(obj);
+ 		else
+ 			ret = 1;
+ 	} else if (obj->type != type)	/* sanity check */
+@@ -229,7 +245,7 @@ int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
+ 	struct cr_objref *obj;
+ 
+ 	obj = cr_obj_new(ctx, ptr, objref, type, flags);
+-	return obj ? 0 : -ENOMEM;
++	return IS_ERR(obj) ? PTR_ERR(obj) : 0;
+ }
+ 
+ /**
+diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
+index 4a2b47e..78004ca 100644
+--- a/checkpoint/rstr_file.c
++++ b/checkpoint/rstr_file.c
+@@ -65,6 +65,53 @@ static int cr_attach_get_file(struct file *file)
+ 	return fd;
+ }
+ 
++/**
++ * cr_obj_add_file - register a file pointer of a given fd in hash table
++ * @ctx: checkpoint context
++ * @fd: file descriptor
++ * @objref: objrect reference
++ *
++ * Return the file pointer (will be safely referenced in the hash table)
++ */
++static struct file *cr_obj_add_file(struct cr_ctx *ctx, int fd, int objref)
++{
++	struct file *file;
++	int ret;
++
++	file = fget(fd);
++	if (!file)
++		return ERR_PTR(-EBADF);
++	ret = cr_obj_add_ref(ctx, file, objref, CR_OBJ_FILE, 0);
++	fput(file);
++	return (ret < 0 ? ERR_PTR(ret) : file);
++}
++
++/* return a new fd associated with a the file referenced by @hh->objref */
++static int cr_read_fd_objref(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++{
++	struct file *file;
++
++	file = cr_obj_get_by_ref(ctx, hh->fd_objref, CR_OBJ_FILE);
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++	return cr_attach_get_file(file);
++}
++
++/* return a new fd associated with a new open file/directory */
++static int cr_read_fd_generic(struct cr_ctx *ctx, struct cr_hdr_file *hh)
++{
++	struct file *file;
++	int fd;
++
++	file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++	fd = cr_attach_file(file);
++	if (fd < 0)
++		filp_close(file, NULL);
++	return fd;
++}
++
+ #define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
+ 
+ /* cr_read_file - restore the state of a given file pointer */
+@@ -72,7 +119,7 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
+ {
+ 	struct cr_hdr_file *hh;
+ 	struct file *file;
+-	int fd = 0;	/* pacify gcc warning */
++	int fd = -EINVAL;
+ 	int ret;
+ 
+ 	hh = cr_hbuf_get(ctx, sizeof(*hh));
+@@ -86,46 +133,44 @@ static int cr_read_file(struct cr_ctx *ctx, int objref)
  		goto out;
  
--#if 0	/* enable to use containers */
--	if (!is_container_init(task)) {
--		err = -EINVAL;
--		goto out;
--	}
--#endif
--
- 	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
- 		err = -EPERM;
+ 	ret = -EINVAL;
++	if (hh->fd_objref < 0)
++		goto out;
+ 
+ 	/* FIX: more sanity checks on f_flags, f_mode etc */
+ 
+ 	switch (hh->fd_type) {
+ 	case CR_FD_GENERIC:
+-		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++		fd = cr_read_fd_generic(ctx, hh);
++		break;
++	case CR_FD_OBJREF:
++		fd = cr_read_fd_objref(ctx, hh);
+ 		break;
+ 	default:
  		goto out;
  	}
  
--	/* verify that the task is frozen (unless self) */
--	if (task != current && !frozen(task))
--		return -EBUSY;
+-	if (IS_ERR(file)) {
+-		ret = PTR_ERR(file);
++	if (fd < 0) {
++		ret = fd;
+ 		goto out;
+ 	}
+ 
+ 	/* FIX: need to restore uid, gid, owner etc */
+ 
+-	/* adding <objref,file> to the hash will keep a reference to it */
+-	ret = cr_obj_add_ref(ctx, file, objref, CR_OBJ_FILE, 0);
+-	if (ret < 0) {
+-		filp_close(file, NULL);
+-		goto out;
+-	}
 -
- 	rcu_read_lock();
- 	nsproxy = task_nsproxy(task);
- 	get_nsproxy(nsproxy);
-@@ -253,6 +474,7 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
- 
- 	ctx->root_task = task;
- 	ctx->root_nsproxy = nsproxy;
-+	ctx->root_init = is_container_init(task);
- 
- 	return 0;
- 
-@@ -297,12 +519,22 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	ret = cr_ctx_checkpoint(ctx, pid);
- 	if (ret < 0)
+-	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
+-	if (fd < 0) {
+-		ret = fd;
+-		filp_close(file, NULL);
++	/* register new <objref, file> tuple in hash table */
++	file = cr_obj_add_file(ctx, fd, objref);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
  		goto out;
-+
-+	ret = cr_build_tree(ctx);
+ 	}
+ 
+-	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+-	if (ret < 0)
+-		goto out;
+ 	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
+ 	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
+ 		ret = 0;
+ 
+-	ret = 0;
 +	if (ret < 0)
 +		goto out;
 +
- 	ret = cr_write_head(ctx);
- 	if (ret < 0)
- 		goto out;
--	ret = cr_write_task(ctx, ctx->root_task);
-+	ret = cr_write_tree(ctx);
- 	if (ret < 0)
- 		goto out;
-+
-+	ret = cr_write_all_tasks(ctx);
-+	if (ret < 0)
-+		goto out;
-+
- 	ret = cr_write_tail(ctx);
- 	if (ret < 0)
- 		goto out;
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 863cb63..92e73f2 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -156,6 +156,19 @@ void cr_hbuf_put(struct cr_ctx *ctx, int n)
-  * restart operation, and persists until the operation is completed.
-  */
- 
-+static void cr_task_arr_free(struct cr_ctx *ctx)
-+{
-+	int n;
-+
-+	for (n = 0; n < ctx->nr_tasks; n++) {
-+		if (ctx->tasks_arr[n]) {
-+			put_task_struct(ctx->tasks_arr[n]);
-+			ctx->tasks_arr[n] = NULL;
-+		}
-+	}
-+	kfree(ctx->tasks_arr);
-+}
-+
- static void cr_ctx_free(struct cr_ctx *ctx)
- {
- 	if (ctx->file)
-@@ -168,6 +181,9 @@ static void cr_ctx_free(struct cr_ctx *ctx)
- 	cr_pgarr_free(ctx);
- 	cr_objhash_free(ctx);
- 
-+	if (ctx->tasks_arr)
-+		cr_task_arr_free(ctx);
-+
- 	if (ctx->root_nsproxy)
- 		put_nsproxy(ctx->root_nsproxy);
- 	if (ctx->root_task)
++	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+  out:
+ 	cr_hbuf_put(ctx, sizeof(*hh));
+ 	return ret < 0 ? ret : fd;
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a94ce98..cd84a7d 100644
+index 0d9daad..24601bb 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -20,9 +20,10 @@ struct cr_ctx {
+@@ -76,6 +76,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
  
- 	ktime_t ktime_beg;	/* checkpoint start time */
+ enum {
+ 	CR_OBJ_FILE = 1,
++	CR_OBJ_INODE,
+ 	CR_OBJ_MAX
+ };
  
--	pid_t root_pid;		/* container identifier */
--	struct task_struct *root_task;	/* container root task */
--	struct nsproxy *root_nsproxy;	/* container root nsproxy */
-+	int root_init;		/* is root a container init ? */
-+	pid_t root_pid;		/* (container) root identifier */
-+	struct task_struct *root_task;	/* (container) root task */
-+	struct nsproxy *root_nsproxy;	/* (container) root nsproxy */
- 
- 	unsigned long flags;
- 	unsigned long oflags;	/* restart: old flags */
-@@ -33,6 +34,9 @@ struct cr_ctx {
- 	void *hbuf;		/* temporary buffer for headers */
- 	int hpos;		/* position in headers buffer */
- 
-+	struct task_struct **tasks_arr;	/* array of all tasks in container */
-+	int nr_tasks;			/* size of tasks array */
-+
- 	struct cr_objhash *objhash;	/* hash for shared objects */
- 
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 8821a30..cbfbb60 100644
+index cbfbb60..1bf1509 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -44,7 +44,8 @@ enum {
- 	CR_HDR_STRING,
- 	CR_HDR_FNAME,
+@@ -174,12 +174,15 @@ struct cr_hdr_fd_ent {
  
--	CR_HDR_TASK = 101,
-+	CR_HDR_TREE = 101,
-+	CR_HDR_TASK,
- 	CR_HDR_RESTART_BLOCK,
- 	CR_HDR_THREAD,
- 	CR_HDR_CPU,
-@@ -89,6 +90,18 @@ struct cr_hdr_tail {
- 	__u64 magic;
- } __attribute__((aligned(8)));
+ /* fd types */
+ enum  fd_type {
+-	CR_FD_GENERIC = 1
++	CR_FD_OBJREF = 1,
++	CR_FD_GENERIC
+ };
  
-+struct cr_hdr_tree {
-+	__s32 nr_tasks;
-+} __attribute__((aligned(8)));
+ struct cr_hdr_file {
+-	__u16 fd_type;
+-	__u16 f_mode;
++	__u32 fd_type;
++	__s32 fd_objref;
 +
-+struct cr_hdr_pids {
-+	__s32 vpid;
-+	__s32 vppid;
-+	__s32 vtgid;
-+	__s32 vpgid;
-+	__s32 vsid;
-+} __attribute__((aligned(8)));
-+
- struct cr_hdr_task {
- 	__u32 state;
- 	__u32 exit_state;
++	__u32 f_mode;
+ 	__u32 f_flags;
+ 	__u64 f_pos;
+ 	__u64 f_version;
 -- 
 1.5.4.3
