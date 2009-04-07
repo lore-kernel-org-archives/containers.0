@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 03/36] Make file_pos_read/write() public
-Date: Tue,  7 Apr 2009 08:27:11 -0400
-Message-ID: <1239107264-21775-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 11/36] add generic checkpoint f_op to ext fses
+Date: Tue,  7 Apr 2009 08:27:19 -0400
+Message-ID: <1239107264-21775-12-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,55 +21,98 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-These two are used in the next patch when calling vfs_read/write()
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+This marks ext[234] as being checkpointable.  There will be many
+more to do this to, but this is a start.
+
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/read_write.c    |   10 ----------
- include/linux/fs.h |   10 ++++++++++
- 2 files changed, 10 insertions(+), 10 deletions(-)
+ fs/ext2/dir.c  |    1 +
+ fs/ext2/file.c |    2 ++
+ fs/ext3/dir.c  |    1 +
+ fs/ext3/file.c |    1 +
+ fs/ext4/dir.c  |    1 +
+ fs/ext4/file.c |    1 +
+ 6 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 400fe81..4f9264a 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -359,16 +359,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
+index 2999d72..4f1dd79 100644
+--- a/fs/ext2/dir.c
++++ b/fs/ext2/dir.c
+@@ -721,4 +721,5 @@ const struct file_operations ext2_dir_operations = {
+ 	.compat_ioctl	= ext2_compat_ioctl,
+ #endif
+ 	.fsync		= ext2_sync_file,
++	.checkpoint	= generic_file_checkpoint,
+ };
+diff --git a/fs/ext2/file.c b/fs/ext2/file.c
+index 45ed071..e1731c5 100644
+--- a/fs/ext2/file.c
++++ b/fs/ext2/file.c
+@@ -58,6 +58,7 @@ const struct file_operations ext2_file_operations = {
+ 	.fsync		= ext2_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
  
- EXPORT_SYMBOL(vfs_write);
+ #ifdef CONFIG_EXT2_FS_XIP
+@@ -73,6 +74,7 @@ const struct file_operations ext2_xip_file_operations = {
+ 	.open		= generic_file_open,
+ 	.release	= ext2_release_file,
+ 	.fsync		= ext2_sync_file,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ #endif
  
--static inline loff_t file_pos_read(struct file *file)
--{
--	return file->f_pos;
--}
--
--static inline void file_pos_write(struct file *file, loff_t pos)
--{
--	file->f_pos = pos;
--}
--
- SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
- {
- 	struct file *file;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 92734c0..3bf5057 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1372,6 +1372,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
- 				struct iovec *fast_pointer,
- 				struct iovec **ret_pointer);
+diff --git a/fs/ext3/dir.c b/fs/ext3/dir.c
+index 5853f44..aa579e1 100644
+--- a/fs/ext3/dir.c
++++ b/fs/ext3/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_operations = {
+ #endif
+ 	.fsync		= ext3_sync_file,	/* BKL held */
+ 	.release	= ext3_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
  
-+static inline loff_t file_pos_read(struct file *file)
-+{
-+	return file->f_pos;
-+}
-+
-+static inline void file_pos_write(struct file *file, loff_t pos)
-+{
-+	file->f_pos = pos;
-+}
-+
- extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
- extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+ 
+diff --git a/fs/ext3/file.c b/fs/ext3/file.c
+index 3be1e06..45f73fa 100644
+--- a/fs/ext3/file.c
++++ b/fs/ext3/file.c
+@@ -122,6 +122,7 @@ const struct file_operations ext3_file_operations = {
+ 	.fsync		= ext3_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext3_file_inode_operations = {
+diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
+index 2df2e40..9baf728 100644
+--- a/fs/ext4/dir.c
++++ b/fs/ext4/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_operations = {
+ #endif
+ 	.fsync		= ext4_sync_file,
+ 	.release	= ext4_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index f731cb5..bd84dce 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -156,6 +156,7 @@ const struct file_operations ext4_file_operations = {
+ 	.fsync		= ext4_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext4_file_inode_operations = {
 -- 
 1.5.4.3
