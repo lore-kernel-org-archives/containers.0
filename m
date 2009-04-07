@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 26/36] c/r: Add CR_COPY() macro (v4)
-Date: Tue,  7 Apr 2009 08:27:34 -0400
-Message-ID: <1239107264-21775-27-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 25/36] s390: Expose a constant for the number of
+	words representing the CRs
+Date: Tue,  7 Apr 2009 08:27:33 -0400
+Message-ID: <1239107264-21775-26-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,72 +22,75 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-As suggested by Dave[1], this provides us a way to make the copy-in and
-copy-out processes symmetric.  CR_COPY_ARRAY() provides us a way to do
-the same thing but for arrays.  It's not critical, but it helps us unify
-the checkpoint and restart paths for some things.
+We need to use this value in the checkpoint/restart code and would like to
+have a constant instead of a magic '3'.
 
 Changelog:
-    Mar 04:
-            . Removed semicolons
-            . Added build-time check for __must_be_array in CR_COPY_ARRAY
-    Feb 27:
-            . Changed CR_COPY() to use assignment, eliminating the need
-              for the CR_COPY_BIT() macro
-            . Add CR_COPY_ARRAY() macro to help copying register arrays,
-              etc
-            . Move the macro definitions inside the CR #ifdef
-    Feb 25:
-            . Changed WARN_ON() to BUILD_BUG_ON()
+    Mar 30:
+            . Add CHECKPOINT_SUPPORT in Kconfig (Nathan Lynch)
+    Mar 03:
+            . Picked up additional use of magic '3' in ptrace.h
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
-1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
 ---
- include/linux/checkpoint.h |   28 ++++++++++++++++++++++++++++
- 1 files changed, 28 insertions(+), 0 deletions(-)
+ arch/s390/Kconfig                |    4 ++++
+ arch/s390/include/asm/ptrace.h   |    4 +++-
+ arch/s390/kernel/compat_ptrace.h |    3 ++-
+ 3 files changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index c83e448..043535c 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -129,6 +129,34 @@ extern int do_checkpoint(struct cr_ctx *ctx, pid_t pid);
- extern int do_restart(struct cr_ctx *ctx, pid_t pid);
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index 6b0a353..98d339e 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -49,6 +49,10 @@ config GENERIC_TIME_VSYSCALL
+ config GENERIC_CLOCKEVENTS
+ 	def_bool y
  
++config CHECKPOINT_SUPPORT
++	bool
++	default y if 64BIT
++
+ config GENERIC_BUG
+ 	bool
+ 	depends on BUG
+diff --git a/arch/s390/include/asm/ptrace.h b/arch/s390/include/asm/ptrace.h
+index 8920025..f1b0516 100644
+--- a/arch/s390/include/asm/ptrace.h
++++ b/arch/s390/include/asm/ptrace.h
+@@ -172,6 +172,8 @@
+ #define NUM_CRS		16
+ #define NUM_ACRS	16
  
-+/* useful macros to copy fields and buffers to/from cr_hdr_xxx structures */
-+#define CR_CPT 1
-+#define CR_RST 2
++#define NUM_CR_WORDS	3
 +
-+#define CR_COPY(op, SAVE, LIVE)				        \
-+	do {							\
-+		if (op == CR_CPT)				\
-+			SAVE = LIVE;				\
-+		else						\
-+			LIVE = SAVE;				\
-+	} while (0)
-+
-+/*
-+ * Copy @count items from @LIVE to @SAVE if op is CR_CPT (otherwise,
-+ * copy in the reverse direction)
-+ */
-+#define CR_COPY_ARRAY(op, SAVE, LIVE, count)				\
-+	do {								\
-+		(void)__must_be_array(SAVE);				\
-+		(void)__must_be_array(LIVE);				\
-+		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
-+		if (op == CR_CPT)					\
-+			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
-+		else							\
-+			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
-+	} while (0)
-+
-+
- #define cr_debug(fmt, args...)  \
- 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
+ #define FPR_SIZE	8
+ #define FPC_SIZE	4
+ #define FPC_PAD_SIZE	4 /* gcc insists on aligning the fpregs */
+@@ -334,7 +336,7 @@ struct pt_regs
+  */
+ typedef struct
+ {
+-	unsigned long cr[3];
++	unsigned long cr[NUM_CR_WORDS];
+ } per_cr_words;
  
+ #define PER_EM_MASK 0xE8000000UL
+diff --git a/arch/s390/kernel/compat_ptrace.h b/arch/s390/kernel/compat_ptrace.h
+index a2be3a9..123dd66 100644
+--- a/arch/s390/kernel/compat_ptrace.h
++++ b/arch/s390/kernel/compat_ptrace.h
+@@ -1,10 +1,11 @@
+ #ifndef _PTRACE32_H
+ #define _PTRACE32_H
+ 
++#include <asm/ptrace.h>    /* needed for NUM_CR_WORDS */
+ #include "compat_linux.h"  /* needed for psw_compat_t */
+ 
+ typedef struct {
+-	__u32 cr[3];
++	__u32 cr[NUM_CR_WORDS];
+ } per_cr_words32;
+ 
+ typedef struct {
 -- 
 1.5.4.3
