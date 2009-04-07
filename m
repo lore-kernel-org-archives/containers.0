@@ -1,14 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 14/36] c/r of restart-blocks: export
-	functionality used in next patch
-Date: Tue,  7 Apr 2009 08:27:22 -0400
-Message-ID: <1239107264-21775-15-git-send-email-orenl@cs.columbia.edu>
-References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v2][PATCH 05/10] sysvipc-shm: restart
+Date: Tue,  7 Apr 2009 08:31:38 -0400
+Message-ID: <1239107503-21941-6-git-send-email-orenl@cs.columbia.edu>
+References: <1239107503-21941-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1239107264-21775-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1239107503-21941-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,124 +21,284 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-To support c/r of restart-blocks (system call that need to be
-restarted because they were interrupted but there was no userspace
-visible side-effect), export restart-block callbacks for poll()
-and futex() syscalls.
+Like chekcpoint, restart of sysvipc shared memory is also performed in
+two steps: first, the entire ipc namespace is restored as a whole, by
+restoring each shm object read from the checkpoint image. The shmem's
+file pointer is registered in the objhash. Second, for each vma that
+refers to ipc shared memory, we use the objref to find the file in the
+objhash, and use that file in calling do_mmap_pgoff().
 
-More details on c/r of restart-blocks and how it works in the
-following patch.
+Handling of shm objects that have been deleted (via IPC_RMID) is left
+to a later patch in this series.
+
+Handling of ipc shm mappings that are locked (via SHM_MLOCK) is also
+not restored at the moment.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- fs/select.c                  |    2 +-
- include/linux/futex.h        |   10 ++++++++++
- include/linux/poll.h         |    3 +++
- include/linux/posix-timers.h |    2 ++
- kernel/futex.c               |   11 +----------
- kernel/posix-timers.c        |    2 +-
- 6 files changed, 18 insertions(+), 12 deletions(-)
+ checkpoint/rstr_mem.c      |   23 ++++++
+ checkpoint/rstr_task.c     |    2 +-
+ checkpoint/util_ipc.c      |    2 +-
+ include/linux/checkpoint.h |    3 +
+ ipc/ckpt_shm.c             |  161 ++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 189 insertions(+), 2 deletions(-)
 
-diff --git a/fs/select.c b/fs/select.c
-index 0fe0e14..e64ddc6 100644
---- a/fs/select.c
-+++ b/fs/select.c
-@@ -833,7 +833,7 @@ out_fds:
- 	return err;
+diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
+index 7e73129..9de770d 100644
+--- a/checkpoint/rstr_mem.c
++++ b/checkpoint/rstr_mem.c
+@@ -342,6 +342,24 @@ static struct file *cr_vma_prep_file(struct cr_ctx *ctx, struct cr_hdr_vma *hh)
+ 		if (!IS_ERR(file))
+ 			get_file(file);
+ 		break;
++#ifdef CONFIG_SYSVIPC
++	case CR_VMA_SHM_IPC_SKIP:	/* shared sysvipc mapping skipped */
++		if (!hh->shm_objref || hh->vma_objref)
++			break;
++		file = cr_obj_get_by_ref(ctx, hh->shm_objref, CR_OBJ_FILE);
++		if (!file)
++			file = ERR_PTR(-EINVAL);
++		if (!IS_ERR(file)) {
++			ret = cr_ipc_shm_attach(file,
++						hh->vm_start,
++						hh->vm_flags);
++			if (ret < 0)
++				file = ERR_PTR(ret);
++		}
++		if (!IS_ERR(file))
++			get_file(file);
++		break;
++#endif
+ 	case CR_VMA_SHM_FILE:		/* shared mapping of a file */
+ 		if (!hh->shm_objref || !hh->vma_objref)
+ 			break;
+@@ -438,6 +456,10 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 		goto out;
+ 	}
+ 
++	/* yuck: sysvipc shm are already mapped, so skip this */
++	if (vma_type == CR_VMA_SHM_IPC_SKIP)
++		goto contents;
++
+ 	/* create a new vma */
+ 	down_write(&mm->mmap_sem);
+ 	addr = do_mmap_pgoff(file, vm_start, vm_size,
+@@ -451,6 +473,7 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
+ 		goto out;
+ 	}
+ 
++ contents:
+ 	/* read in the contents of this vma */
+ 	if (shm)
+ 		ret = cr_read_shared_vma_contents(ctx, file, vma_type);
+diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
+index 520c15a..fe5c059 100644
+--- a/checkpoint/rstr_task.c
++++ b/checkpoint/rstr_task.c
+@@ -249,7 +249,7 @@ static int cr_restore_ipcns(struct cr_ctx *ctx, int ref, int flags)
+ 		return -EINVAL;
+ 
+ 	if (!ipc_ns) {
+-		/* ret = cr_read_ipcns(ctx, current); */ ret = 0;
++		ret = cr_read_ipcns(ctx);
+ 		if (ret < 0)
+ 			return ret;
+ 
+diff --git a/checkpoint/util_ipc.c b/checkpoint/util_ipc.c
+index c2d2944..1b791f9 100644
+--- a/checkpoint/util_ipc.c
++++ b/checkpoint/util_ipc.c
+@@ -20,7 +20,7 @@ int cr_write_ipcns(struct cr_ctx *ctx, struct ipc_namespace *ipc_ns)
+ 
+ int cr_read_ipcns(struct cr_ctx *ctx)
+ {
+-	return 0;
++	return cr_read_ipc_shm(ctx);
  }
  
--static long do_restart_poll(struct restart_block *restart_block)
-+long do_restart_poll(struct restart_block *restart_block)
- {
- 	struct pollfd __user *ufds = restart_block->poll.ufds;
- 	int nfds = restart_block->poll.nfds;
-diff --git a/include/linux/futex.h b/include/linux/futex.h
-index 3bf5bb5..dd0e06b 100644
---- a/include/linux/futex.h
-+++ b/include/linux/futex.h
-@@ -130,6 +130,16 @@ extern int
- handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
- 
- /*
-+ * In case we must use restart_block to restart a futex_wait,
-+ * we encode in the 'flags' shared capability
-+ */
-+#define FLAGS_SHARED		0x01
-+#define FLAGS_CLOCKRT		0x02
-+
-+/* referenced by checkpoint/restart */
-+extern long futex_wait_restart(struct restart_block *restart);
-+
-+/*
-  * Futexes are matched on equal values of this key.
-  * The key type depends on whether it's a shared or private mapping.
-  * Don't rearrange members without looking at hash_futex().
-diff --git a/include/linux/poll.h b/include/linux/poll.h
-index 8c24ef8..97f95a7 100644
---- a/include/linux/poll.h
-+++ b/include/linux/poll.h
-@@ -131,6 +131,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
- 
- extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
- 
-+/* used by checkpoint/restart */
-+extern long do_restart_poll(struct restart_block *restart_block);
-+
- #endif /* KERNEL */
- 
- #endif /* _LINUX_POLL_H */
-diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
-index 4f71bf4..3d0e946 100644
---- a/include/linux/posix-timers.h
-+++ b/include/linux/posix-timers.h
-@@ -119,4 +119,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
- 
- void update_rlimit_cpu(unsigned long rlim_new);
- 
-+int invalid_clockid(const clockid_t which_clock);
-+
+ void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh, struct kern_ipc_perm *perm)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 97565f8..0f49b68 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -152,6 +152,9 @@ extern void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh,
+ extern int cr_load_ipc_perms(struct cr_hdr_ipc_perms *hh,
+ 			     struct kern_ipc_perm *perm);
+ extern int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns);
++extern int cr_read_ipc_shm(struct cr_ctx *ctx);
++extern int cr_ipc_shm_attach(struct file *file,
++			     unsigned long addr, unsigned long flags);
  #endif
-diff --git a/kernel/futex.c b/kernel/futex.c
-index 438701a..0c78ffe 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
-@@ -1152,15 +1152,6 @@ handle_fault:
- 	goto retry;
+ 
+ 
+diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
+index a473cc3..ee9b77a 100644
+--- a/ipc/ckpt_shm.c
++++ b/ipc/ckpt_shm.c
+@@ -140,3 +140,164 @@ int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
+ 	up_read(&shm_ids->rw_mutex);
+ 	return ret;
  }
- 
--/*
-- * In case we must use restart_block to restart a futex_wait,
-- * we encode in the 'flags' shared capability
-- */
--#define FLAGS_SHARED		0x01
--#define FLAGS_CLOCKRT		0x02
--
--static long futex_wait_restart(struct restart_block *restart);
--
- static int futex_wait(u32 __user *uaddr, int fshared,
- 		      u32 val, ktime_t *abs_time, u32 bitset, int clockrt)
- {
-@@ -1324,7 +1315,7 @@ out:
- }
- 
- 
--static long futex_wait_restart(struct restart_block *restart)
-+long futex_wait_restart(struct restart_block *restart)
- {
- 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
- 	int fshared = 0;
-diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
-index 052ec4d..a734f4e 100644
---- a/kernel/posix-timers.c
-+++ b/kernel/posix-timers.c
-@@ -205,7 +205,7 @@ static int no_timer_create(struct k_itimer *new_timer)
- /*
-  * Return nonzero if we know a priori this clockid_t value is bogus.
-  */
--static inline int invalid_clockid(const clockid_t which_clock)
-+inline int invalid_clockid(const clockid_t which_clock)
- {
- 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
- 		return 0;
++
++/************************************************************************
++ * ipc restart
++ */
++
++int cr_ipc_shm_attach(struct file *file,
++		      unsigned long vm_addr,
++		      unsigned long vm_flags)
++{
++	mm_segment_t old_fs;
++	unsigned long addr;
++	int shmid, shmflg = 0;
++	int ret;
++
++	shmid = file->f_dentry->d_inode->i_ino;
++
++	if (!(vm_flags & VM_WRITE))
++		shmflg |= SHM_RDONLY;
++
++	old_fs = get_fs();
++	set_fs(get_ds());
++	ret = do_shmat(shmid, (char __user *) vm_addr, shmflg, &addr);
++	set_fs(old_fs);
++
++	BUG_ON(ret >= 0 && addr != vm_addr);
++	return ret;
++}
++
++static int cr_load_ipc_shm_hdr(struct cr_ctx *ctx,
++			       struct cr_hdr_ipc_shm *hh,
++			       struct shmid_kernel *shp)
++{
++	int ret;
++
++	ret = cr_load_ipc_perms(&hh->perms, &shp->shm_perm);
++	if (ret < 0)
++		return ret;
++
++	cr_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
++		 hh->shm_cprid, hh->shm_lprid, hh->shm_segsz, hh->mlock_uid);
++
++	if (hh->shm_cprid < 0 || hh->shm_lprid < 0)
++		return -EINVAL;
++
++	shp->shm_segsz = hh->shm_segsz;
++	shp->shm_atim = hh->shm_atim;
++	shp->shm_dtim = hh->shm_dtim;
++	shp->shm_ctim = hh->shm_ctim;
++	shp->shm_cprid = hh->shm_cprid;
++	shp->shm_lprid = hh->shm_lprid;
++
++	return 0;
++}
++
++static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
++{
++	struct cr_hdr_ipc_shm *hh;
++	struct kern_ipc_perm *perms;
++	struct shmid_kernel *shp;
++	struct ipc_ids *shm_ids = &current->nsproxy->ipc_ns->ids[IPC_SHM_IDS];
++	struct file *file;
++	int shmflag;
++	int ret;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC_SHM);
++	if (ret < 0)
++		goto out;
++	ret = -EINVAL;
++	if (hh->perms.id < 0)
++		goto out;
++
++#define CR_SHMFL_MASK  (SHM_NORESERVE | SHM_HUGETLB)
++	if (hh->flags & ~CR_SHMFL_MASK)
++		goto out;
++
++	ret = -ENOSYS;
++	if (hh->mlock_uid != (unsigned int) -1)	/* FIXME: support SHM_LOCK */
++		goto out;
++	if (hh->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
++		goto out;
++
++	/* FIXME: this will fail for deleted ipc shm segments */
++
++	shmflag = hh->flags | hh->perms.mode | IPC_CREAT | IPC_EXCL;
++	cr_debug("shm: do_shmget size %lld flag %#x id %d\n",
++		 hh->shm_segsz, shmflag, hh->perms.id);
++	ret = do_shmget(hh->perms.key, hh->shm_segsz, shmflag, hh->perms.id);
++	cr_debug("shm: do_shmget ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	down_write(&shm_ids->rw_mutex);
++
++	ret = -EIDRM;
++	perms = ipc_lock(shm_ids, hh->perms.id);
++	if (IS_ERR(perms)) {	/* this should not happen .. but be safe */
++		up_write(&shm_ids->rw_mutex);
++		ret = PTR_ERR(perms);
++		goto out;
++	}
++
++	shp = container_of(perms, struct shmid_kernel, shm_perm);
++	ret = cr_load_ipc_shm_hdr(ctx, hh, shp);
++	if (ret < 0) {
++		cr_debug("shm: need to remove (%d)\n", ret);
++		do_shm_rmid(current->nsproxy->ipc_ns, perms);
++		up_write(&shm_ids->rw_mutex);
++		goto out;
++	}
++
++	file = shp->shm_file;
++	get_file(file);
++	ipc_unlock(perms);
++	up_write(&shm_ids->rw_mutex);
++
++	/* deposit in objhash and read contents in */
++	ret = cr_obj_add_ref(ctx, file, hh->objref, CR_OBJ_FILE, 0);
++	if (ret < 0)
++		goto file;
++	ret = cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
++ file:
++	fput(file);
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++int cr_read_ipc_shm(struct cr_ctx *ctx)
++{
++	struct cr_hdr_ipc *hh;
++	int n, ret;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++
++	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC);
++	if (ret < 0)
++		goto out;
++
++	cr_debug("shm: count %d\n", hh->ipc_count);
++
++	ret = -EINVAL;
++	if (hh->ipc_type != CR_HDR_IPC_SHM)
++		goto out;
++
++	ret = 0;
++	for (n = 0; n < hh->ipc_count; n++) {
++		ret = cr_do_read_ipc_shm(ctx);
++		if (ret < 0)
++			goto out;
++	}
++
++ out:
++	cr_debug("shm: ret %d\n", ret);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
 -- 
 1.5.4.3
