@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v2][PATCH 04/10] sysvipc-shm: checkpoint
-Date: Tue,  7 Apr 2009 08:31:37 -0400
-Message-ID: <1239107503-21941-5-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v2][PATCH 01/10] Infrastructure for work postponed to the end of
+	checkpoint/restart
+Date: Tue,  7 Apr 2009 08:31:34 -0400
+Message-ID: <1239107503-21941-2-git-send-email-orenl@cs.columbia.edu>
 References: <1239107503-21941-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,206 +22,90 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint of sysvipc shared memory is performed in two steps: first,
-the entire ipc namespace is dumped as a whole by iterating through all
-shm objects and dumping the contents of each one. The shmem inode is
-registered in the objhash. Second, for each vma that refers to ipc
-shared memory we find the inode in the objhash, and save the objref.
+Add a interface to postpone an action until the end of the entire
+checkpoint or restart operation. This is useful when during the
+scan of tasks an operation cannot be performed in place, to avoid
+the need for a second scan.
 
-(If we find a new inode, that indicates that the ipc namespace is not
-entirely frozen and someone must have manipulated it since step 1).
+One use case is when restoring an ipc shared memory region that has
+been deleted (but is still attached), during restart it needs to be
+create, attached and then deleted. However, creation and attachment
+are performed in distinct locations, so deletion can not be performed
+on the spot. Instead, this work (delete) is deferred until later.
+(This example is in one of the following patches).
 
-Handling of shm objects that have been deleted (via IPC_RMID) is left
-to a later patch in this series.
+The interface is as follows:
+
+cr_deferqueue_run(ctx):
+  Execute all the pending works in the queue. Returns the number of
+  works executed, or an error.
+
+cr_deferqueue_add(ctx, function, flags, data, size):
+  Enqueue a postponed work. @function is the function to do the work,
+  which will be called with @data as an argument. @size tells the
+  size of data. @flags is unused at the moment.
+
+Why aren't we using the existing kernel workqueue mechanism?  We need
+to defer to work until the end of the operation: not earlier, since we
+need other things to be in place; not later, to not block waiting for
+it. However, the workqueue schedules the work for 'some time later'.
+Also, the kernel workqueue may run in any task context, but we require
+many times that an operation be run in the context of some specific
+restarting task (e.g., restoring IPC state of a certain ipc_ns).
+
+Instead, this mechanism is a simple way for the c/r operation as a
+whole, and later a task in particular, to defer some action until
+later (but not arbitrarily later) _in the restart_ operation.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |    3 -
- checkpoint/ckpt_mem.c          |    9 +++
- checkpoint/ckpt_task.c         |    2 +-
- checkpoint/restart.c           |    4 -
- checkpoint/util_ipc.c          |    7 +-
- include/linux/checkpoint.h     |    6 +-
- include/linux/checkpoint_hdr.h |   15 ++++
- ipc/Makefile                   |    1 +
- ipc/ckpt_shm.c                 |  142 ++++++++++++++++++++++++++++++++++++++++
- ipc/shm.c                      |   11 +++
- 10 files changed, 186 insertions(+), 14 deletions(-)
- create mode 100644 ipc/ckpt_shm.c
+ checkpoint/Makefile        |    4 +-
+ checkpoint/checkpoint.c    |    4 +++
+ checkpoint/deferqueue.c    |   62 ++++++++++++++++++++++++++++++++++++++++++++
+ checkpoint/restart.c       |    4 +++
+ checkpoint/sys.c           |    7 +++++
+ include/linux/checkpoint.h |    9 ++++++
+ 6 files changed, 88 insertions(+), 2 deletions(-)
+ create mode 100644 checkpoint/deferqueue.c
 
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index 420c2e6..fc0f766 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -2,8 +2,8 @@
+ # Makefile for linux checkpoint/restart.
+ #
+ 
+-obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o \
++obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o deferqueue.o \
+ 		checkpoint.o restart.o \
+ 		ckpt_task.o rstr_task.o \
+ 		ckpt_mem.o rstr_mem.o \
+-		ckpt_file.o rstr_file.o
++		ckpt_file.o rstr_file.o \
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 1c6c946..47d5bd1 100644
+index 7382cc3..47d5bd1 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -541,9 +541,6 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
- 	ret = cr_write_tree(ctx);
+@@ -550,6 +550,10 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
  	if (ret < 0)
  		goto out;
--	ret = cr_write_ipc(ctx, ctx->root_nsproxy);
--	if (ret < 0)
--		goto out;
  
- 	ret = cr_write_all_tasks(ctx);
- 	if (ret < 0)
-diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
-index 0df3cda..54b2674 100644
---- a/checkpoint/ckpt_mem.c
-+++ b/checkpoint/ckpt_mem.c
-@@ -566,7 +566,16 @@ static int cr_write_shared_vma_contents(struct cr_ctx *ctx,
- 		inode = vma->vm_file->f_dentry->d_inode;
- 		ret = cr_write_shmem_contents(ctx, inode);
- 		break;
-+	case CR_VMA_SHM_IPC:
-+		/*
-+		 * This doesn't happen, because all IPC regions should have
-+		 * been already dumped by now via ipc namespaces; It means
-+		 * the ipc_ns has been modified recently during checkpoint.
-+		 */
-+		ret = -EBUSY;
-+		break;
- 	case CR_VMA_SHM_ANON_SKIP:
-+	case CR_VMA_SHM_IPC_SKIP:
- 	case CR_VMA_SHM_FILE_SKIP:
- 		/* already saved before .. skip now */
- 		break;
-diff --git a/checkpoint/ckpt_task.c b/checkpoint/ckpt_task.c
-index b5e330b..4d19e31 100644
---- a/checkpoint/ckpt_task.c
-+++ b/checkpoint/ckpt_task.c
-@@ -250,7 +250,7 @@ static int cr_write_namespaces(struct cr_ctx *ctx, struct task_struct *t)
- 			goto out;
- 	}
- 	if (new_ipc) {
--		/* ret = cr_write_ipcns(ctx, nsproxy->ipc_ns); */ ret = 0;
-+		ret = cr_write_ipcns(ctx, nsproxy->ipc_ns);
- 		if (ret < 0)
- 			goto out;
- 	}
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index c6ac1e4..dad257e 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -466,10 +466,6 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		return ret;
- 
--	ret = cr_read_ipc(ctx);
--	if (ret < 0)
--		return ret;
--
- 	ret = cr_ctx_restart(ctx, pid);
- 	if (ret < 0)
- 		return ret;
-diff --git a/checkpoint/util_ipc.c b/checkpoint/util_ipc.c
-index 70c4b18..c2d2944 100644
---- a/checkpoint/util_ipc.c
-+++ b/checkpoint/util_ipc.c
-@@ -10,16 +10,15 @@
- 
- #ifdef CONFIG_SYSVIPC
- 
--#include <linux/version.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
--int cr_write_ipc(struct cr_ctx *ctx, struct nsproxy *nsproxy)
-+int cr_write_ipcns(struct cr_ctx *ctx, struct ipc_namespace *ipc_ns)
- {
--	return 0;
-+	return cr_write_ipc_shm(ctx, ipc_ns);
- }
- 
--int cr_read_ipc(struct cr_ctx *ctx)
-+int cr_read_ipcns(struct cr_ctx *ctx)
- {
- 	return 0;
- }
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 9d6710b..97565f8 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -15,6 +15,7 @@
- #include <linux/path.h>
- #include <linux/sched.h>
- #include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
- #include <asm/atomic.h>
- 
- #define CR_VERSION  3
-@@ -126,14 +127,14 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
- extern int cr_write_shmem_contents(struct cr_ctx *ctx, struct inode *inode);
- extern int cr_read_shmem_contents(struct cr_ctx *ctx, struct inode *inode);
- 
--extern int cr_write_ipc(struct cr_ctx *ctx, struct nsproxy *nsproxy);
-+extern int cr_write_ipcns(struct cr_ctx *ctx, struct ipc_namespace *ipc_ns);
- extern int cr_write_task(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_file(struct cr_ctx *ctx, struct file *file);
- 
--extern int cr_read_ipc(struct cr_ctx *ctx);
-+extern int cr_read_ipcns(struct cr_ctx *ctx);
- extern int cr_read_task(struct cr_ctx *ctx);
- extern int cr_read_restart_block(struct cr_ctx *ctx);
- extern int cr_read_mm(struct cr_ctx *ctx);
-@@ -150,6 +151,7 @@ extern void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh,
- 			      struct kern_ipc_perm *perm);
- extern int cr_load_ipc_perms(struct cr_hdr_ipc_perms *hh,
- 			     struct kern_ipc_perm *perm);
-+extern int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns);
- #endif
- 
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 3a2c4af..b93b2fc 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -175,6 +175,8 @@ enum cr_vma_type {
- 	CR_VMA_FILE,		/* private mapped file */
- 	CR_VMA_SHM_ANON,	/* shared anonymous */
- 	CR_VMA_SHM_ANON_SKIP,	/* shared anonymous, skip contents */
-+	CR_VMA_SHM_IPC,		/* shared sysvipc */
-+	CR_VMA_SHM_IPC_SKIP,	/* shared sysvipc, skip contents */
- 	CR_VMA_SHM_FILE,	/* shared mapped file, only msync */
- 	CR_VMA_SHM_FILE_SKIP,	/* shared mapped file, skip msync */
- 	CR_VMA_UNKNOWN,		/* unkown (unsupported) vma type */
-@@ -254,4 +256,17 @@ struct cr_hdr_ipc_perms {
- 	__u64 seq;
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_ipc_shm {
-+	struct cr_hdr_ipc_perms perms;
-+	__u64 shm_segsz;
-+	__u64 shm_atim;
-+	__u64 shm_dtim;
-+	__u64 shm_ctim;
-+	__s32 shm_cprid;
-+	__s32 shm_lprid;
-+	__u32 mlock_uid;
-+	__u32 flags;
-+	__u32 objref;
-+} __attribute__((aligned(8)));
++	ret = cr_deferqueue_run(ctx);
++	if (ret < 0)
++		goto out;
 +
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
-diff --git a/ipc/Makefile b/ipc/Makefile
-index 65c3843..0789ec8 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -8,4 +8,5 @@ obj-$(CONFIG_SYSVIPC_SYSCTL) += ipc_sysctl.o
- obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
-+obj-$(CONFIG_CHECKPOINT) += ckpt_shm.o
+ 	ctx->crid = atomic_inc_return(&cr_ctx_count);
  
-diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
+ 	/* on success, return (unique) checkpoint identifier */
+diff --git a/checkpoint/deferqueue.c b/checkpoint/deferqueue.c
 new file mode 100644
-index 0000000..a473cc3
+index 0000000..a02d577
 --- /dev/null
-+++ b/ipc/ckpt_shm.c
-@@ -0,0 +1,142 @@
++++ b/checkpoint/deferqueue.c
+@@ -0,0 +1,62 @@
 +/*
-+ *  Checkpoint/restart - dump state of sysvipc shm
++ *  Checkpoint-restart - infrastructure to manage deferred work
 + *
 + *  Copyright (C) 2009 Oren Laadan
 + *
@@ -229,173 +114,126 @@ index 0000000..a473cc3
 + *  distribution for more details.
 + */
 +
-+#include <linux/mm.h>
-+#include <linux/shm.h>
-+#include <linux/shmem_fs.h>
-+#include <linux/hugetlb.h>
-+#include <linux/rwsem.h>
-+#include <linux/sched.h>
-+#include <linux/file.h>
-+#include <linux/syscalls.h>
-+#include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
-+
-+#include <linux/msg.h>	/* needed for util.h that uses 'struct msg_msg' */
-+#include "util.h"
-+
++#include <linux/list.h>
 +#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
 +
-+/************************************************************************
-+ * ipc checkpoint
-+ */
++struct cr_deferqueue {
++	cr_deferqueue_func_t function;
++	unsigned int flags;
++	struct list_head list;
++	char data[0];
++};
 +
-+static int cr_fill_ipc_shm_hdr(struct cr_ctx *ctx,
-+			       struct cr_hdr_ipc_shm *hh,
-+			       struct shmid_kernel *shp)
++int cr_deferqueue_add(struct cr_ctx *ctx, cr_deferqueue_func_t function,
++		     unsigned int flags, void *data, int size)
 +{
-+	int ret = 0;
++	struct cr_deferqueue *wq;
 +
-+	ipc_lock_by_ptr(&shp->shm_perm);
-+
-+	cr_fill_ipc_perms(&hh->perms, &shp->shm_perm);
-+
-+	hh->shm_segsz = shp->shm_segsz;
-+	hh->shm_atim = shp->shm_atim;
-+	hh->shm_dtim = shp->shm_dtim;
-+	hh->shm_ctim = shp->shm_ctim;
-+	hh->shm_cprid = shp->shm_cprid;
-+	hh->shm_lprid = shp->shm_lprid;
-+
-+	if (shp->mlock_user)
-+		hh->mlock_uid = shp->mlock_user->uid;
-+	else
-+		hh->mlock_uid = (unsigned int) -1;
-+
-+	hh->flags = 0;
-+	/* check if shm was setup with SHM_NORESERVE */
-+	if (SHMEM_I(shp->shm_file->f_dentry->d_inode)->flags & VM_NORESERVE)
-+		hh->flags |= SHM_NORESERVE;
-+	/* check if shm was setup with SHM_HUGETLB (unsupported yet) */
-+	if (is_file_hugepages(shp->shm_file)) {
-+		pr_warning("c/r: unsupported SHM_HUGETLB\n");
-+		ret = -ENOSYS;
-+	}
-+
-+	ipc_unlock(&shp->shm_perm);
-+	cr_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
-+		 hh->shm_cprid, hh->shm_lprid, hh->shm_segsz, hh->mlock_uid);
-+
-+	return ret;
-+}
-+
-+static int cr_do_write_ipc_shm(int id, void *p, void *data)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_ipc_shm *hh;
-+	struct cr_ctx *ctx = (struct cr_ctx *) data;
-+	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
-+	struct shmid_kernel *shp;
-+	struct inode *inode;
-+	int ret;
-+
-+	shp = container_of(perm, struct shmid_kernel, shm_perm);
-+	inode = shp->shm_file->f_dentry->d_inode;
-+
-+	h.type = CR_HDR_IPC_SHM;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
++	wq = kmalloc(sizeof(wq) + size, GFP_KERNEL);
++	if (!wq)
 +		return -ENOMEM;
 +
-+	ret = cr_fill_ipc_shm_hdr(ctx, hh, shp);
-+	if (ret < 0)
-+		goto out;
++	wq->function = function;
++	wq->flags = flags;
++	memcpy(wq->data, data, size);
 +
-+	ret = cr_obj_add_ptr(ctx, inode, &hh->objref, CR_OBJ_INODE, 0);
-+	if (ret < 0)
-+		goto out;
-+	BUG_ON(ret != 1);	/* must be first time always */
-+
-+	cr_debug("shm: objref %d\n", hh->objref);
-+	ret = cr_write_obj(ctx, &h, hh);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = cr_write_shmem_contents(ctx, inode);
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
++	cr_debug("adding work %p function %p\n", wq, wq->function);
++	list_add_tail(&ctx->deferqueue, &wq->list);
++	return 0;
 +}
 +
-+int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
++/*
++ * cr_deferqueue_run - perform all work in the work queue
++ * @ctx: checkpoint context
++ *
++ * returns: number of works performed, or < 0 on error
++ */
++int cr_deferqueue_run(struct cr_ctx *ctx)
 +{
-+	struct cr_hdr h;
-+	struct cr_hdr_ipc *hh;
-+	struct ipc_ids *shm_ids = &ipcns->ids[IPC_SHM_IDS];
-+	int ret = -ENOMEM;
++	struct cr_deferqueue *wq, *n;
++	int nr = 0;
++	int ret;
 +
-+	down_read(&shm_ids->rw_mutex);
++	list_for_each_entry_safe(wq, n, &ctx->deferqueue, list) {
++		cr_debug("doing work %p function %p\n", wq, wq->function);
++		ret = wq->function(wq->data);
++		if (ret < 0)
++			cr_debug("wq function failed %d\n", ret);
++		list_del(&wq->list);
++		kfree(wq);
++		nr++;
++	}
 +
-+	h.type = CR_HDR_IPC;
-+	h.len = sizeof(*hh);
-+
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		goto out;
-+
-+	hh->ipc_type = CR_HDR_IPC_SHM;
-+	hh->ipc_count = shm_ids->in_use;
-+	cr_debug("shm: count %d\n", hh->ipc_count);
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = idr_for_each(&shm_ids->ipcs_idr, cr_do_write_ipc_shm, ctx);
-+	cr_debug("shm: ret %d\n", ret);
-+
-+ out:
-+	up_read(&shm_ids->rw_mutex);
-+	return ret;
++	return nr;
 +}
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 4135f28..5ac6aec 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -39,6 +39,7 @@
- #include <linux/nsproxy.h>
- #include <linux/mount.h>
- #include <linux/ipc_namespace.h>
-+#include <linux/checkpoint_hdr.h>
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index f9b6ca1..d5c5ce2 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -483,6 +483,10 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		return ret;
  
- #include <asm/uaccess.h>
- 
-@@ -244,6 +245,13 @@ static struct mempolicy *shm_get_policy(struct vm_area_struct *vma,
++	ret = cr_deferqueue_run(ctx);
++	if (ret < 0)
++		return ret;
++
+ 	return cr_read_tail(ctx);
  }
- #endif
  
-+#ifdef CONFIG_CHECKPOINT
-+static int shm_cr_vma_type(struct vm_area_struct *vma)
-+{
-+	return CR_VMA_SHM_IPC;
-+}
-+#endif
-+
- static int shm_mmap(struct file * file, struct vm_area_struct * vma)
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 63ee55e..afcbf75 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -171,8 +171,14 @@ static void cr_task_arr_free(struct cr_ctx *ctx)
+ 
+ static void cr_ctx_free(struct cr_ctx *ctx)
  {
- 	struct shm_file_data *sfd = shm_file_data(file);
-@@ -319,6 +327,9 @@ static struct vm_operations_struct shm_vm_ops = {
- 	.set_policy = shm_set_policy,
- 	.get_policy = shm_get_policy,
- #endif
-+#if defined(CONFIG_CHECKPOINT)
-+	.cr_vma_type = shm_cr_vma_type,
-+#endif
- };
++	int ret;
++
+ 	BUG_ON(atomic_read(&ctx->refcount));
  
- /**
++	ret = cr_deferqueue_run(ctx);
++	if (ret != 0)
++		cr_debug("deferred deferqueue had %d entries", ret);
++
+ 	if (ctx->file)
+ 		fput(ctx->file);
+ 
+@@ -211,6 +217,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
+ 	atomic_set(&ctx->refcount, 0);
+ 	INIT_LIST_HEAD(&ctx->pgarr_list);
+ 	INIT_LIST_HEAD(&ctx->pgarr_pool);
++	INIT_LIST_HEAD(&ctx->deferqueue);
+ 	init_waitqueue_head(&ctx->waitq);
+ 
+ 	err = -EBADF;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 1999639..9ca6960 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -40,6 +40,7 @@ struct cr_ctx {
+ 	atomic_t refcount;
+ 
+ 	struct cr_objhash *objhash;	/* hash for shared objects */
++	struct list_head deferqueue;	/* list of deferred works */
+ 
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+ 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+@@ -72,6 +73,14 @@ extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
+ extern void cr_ctx_get(struct cr_ctx *ctx);
+ extern void cr_ctx_put(struct cr_ctx *ctx);
+ 
++/* deferred tasks */
++
++typedef int (*cr_deferqueue_func_t)(void *);
++
++extern int cr_deferqueue_run(struct cr_ctx *ctx);
++extern int cr_deferqueue_add(struct cr_ctx *ctx, cr_deferqueue_func_t func,
++			     unsigned int flags, void *data, int size);
++
+ /* shared objects handling */
+ 
+ enum {
 -- 
 1.5.4.3
