@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v2][PATCH 05/10] sysvipc-shm: restart
-Date: Tue,  7 Apr 2009 08:31:38 -0400
-Message-ID: <1239107503-21941-6-git-send-email-orenl@cs.columbia.edu>
-References: <1239107503-21941-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 19/36] Checkpoint open pipes
+Date: Tue,  7 Apr 2009 08:27:27 -0400
+Message-ID: <1239107264-21775-20-git-send-email-orenl@cs.columbia.edu>
+References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1239107503-21941-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1239107264-21775-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,284 +21,267 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Like chekcpoint, restart of sysvipc shared memory is also performed in
-two steps: first, the entire ipc namespace is restored as a whole, by
-restoring each shm object read from the checkpoint image. The shmem's
-file pointer is registered in the objhash. Second, for each vma that
-refers to ipc shared memory, we use the objref to find the file in the
-objhash, and use that file in calling do_mmap_pgoff().
+A pipe is essentially a double-headed inode with a buffer attached to
+it. We checkpoint the pipe buffer only once, as soon as we hit one
+side of the pipe, regardless whether it is read- or write- end.
 
-Handling of shm objects that have been deleted (via IPC_RMID) is left
-to a later patch in this series.
+To checkpoint a file descriptor that refers to a pipe (either end), we
+first lookup the inode in the hash table:
 
-Handling of ipc shm mappings that are locked (via SHM_MLOCK) is also
-not restored at the moment.
+If not found, it is the first encounter of this pipe. Besides the file
+descriptor, we also (a) save the pipe data, and (b) register the pipe
+inode in the hash. We save the 'objref' of the inode 'in ->fd_objref'
+of the file descriptor. The file descriptor type becomes CR_FD_PIPE.
+
+If found, it is the second encounter of this pipe, namely, as we hit
+the other end of the same pipe. In this case we need only record the
+reference ('objref') to the inode that we had saved before, and the
+file descriptor type is changed to CR_FD_OBJREF.
+
+The type CR_FD_PIPE will indicate to the kernel to create a new pipe;
+since both ends are created at the same time, one end will be used,
+and the other end will be deposited in the hash table for later use.
+The type CR_FD_OBJREF will indicate that the corresponding file
+descriptor is already setup and registered in the hash using the
+'->fd_objref' that it had been assigned.
+
+The format of the pipe data is as follows:
+
+struct cr_hdr_fd_pipe {
+       __u32 nr_bufs;
+}
+
+cr_hdr + cr_hdr_fd_ent
+	cr_hdr + cr_hdr_fd_data
+		cr_hdr + cr_hdr_fd_pipe		-> # buffers
+			cr_hdr + cr_hdr_buffer	-> 1st buffer
+			cr_hdr + cr_hdr_buffer	-> 2nd buffer
+			cr_hdr + cr_hdr_buffer	-> 3rd buffer
+			...
+
+Changelog[v14]:
+  - Use 'fd_type' instead of 'hh->fd_objref' in cr_write_fd_data()
+  - Revert change to pr_debug(), back to cr_debug()
+  - Discard the 'h.parent' field
+  - Check whether calls to cr_hbuf_get() fail
+  - Test that a pipe's inode != ctx->file's inode to prevent deadlock
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/rstr_mem.c      |   23 ++++++
- checkpoint/rstr_task.c     |    2 +-
- checkpoint/util_ipc.c      |    2 +-
- include/linux/checkpoint.h |    3 +
- ipc/ckpt_shm.c             |  161 ++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 189 insertions(+), 2 deletions(-)
+ checkpoint/ckpt_file.c         |    2 +
+ fs/pipe.c                      |  119 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint_hdr.h |    8 ++-
+ 3 files changed, 128 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
-index 7e73129..9de770d 100644
---- a/checkpoint/rstr_mem.c
-+++ b/checkpoint/rstr_mem.c
-@@ -342,6 +342,24 @@ static struct file *cr_vma_prep_file(struct cr_ctx *ctx, struct cr_hdr_vma *hh)
- 		if (!IS_ERR(file))
- 			get_file(file);
- 		break;
-+#ifdef CONFIG_SYSVIPC
-+	case CR_VMA_SHM_IPC_SKIP:	/* shared sysvipc mapping skipped */
-+		if (!hh->shm_objref || hh->vma_objref)
-+			break;
-+		file = cr_obj_get_by_ref(ctx, hh->shm_objref, CR_OBJ_FILE);
-+		if (!file)
-+			file = ERR_PTR(-EINVAL);
-+		if (!IS_ERR(file)) {
-+			ret = cr_ipc_shm_attach(file,
-+						hh->vm_start,
-+						hh->vm_flags);
-+			if (ret < 0)
-+				file = ERR_PTR(ret);
-+		}
-+		if (!IS_ERR(file))
-+			get_file(file);
-+		break;
-+#endif
- 	case CR_VMA_SHM_FILE:		/* shared mapping of a file */
- 		if (!hh->shm_objref || !hh->vma_objref)
- 			break;
-@@ -438,6 +456,10 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 		goto out;
- 	}
+diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
+index f813d02..688cff7 100644
+--- a/checkpoint/ckpt_file.c
++++ b/checkpoint/ckpt_file.c
+@@ -12,6 +12,7 @@
+ #include <linux/sched.h>
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
-+	/* yuck: sysvipc shm are already mapped, so skip this */
-+	if (vma_type == CR_VMA_SHM_IPC_SKIP)
-+		goto contents;
+@@ -72,6 +73,7 @@ int cr_scan_fds(struct files_struct *files, int **fdtable)
+ 	return n;
+ }
+ 
 +
- 	/* create a new vma */
- 	down_write(&mm->mmap_sem);
- 	addr = do_mmap_pgoff(file, vm_start, vm_size,
-@@ -451,6 +473,7 @@ static int cr_read_vma(struct cr_ctx *ctx, struct mm_struct *mm)
- 		goto out;
- 	}
- 
-+ contents:
- 	/* read in the contents of this vma */
- 	if (shm)
- 		ret = cr_read_shared_vma_contents(ctx, file, vma_type);
-diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
-index 520c15a..fe5c059 100644
---- a/checkpoint/rstr_task.c
-+++ b/checkpoint/rstr_task.c
-@@ -249,7 +249,7 @@ static int cr_restore_ipcns(struct cr_ctx *ctx, int ref, int flags)
- 		return -EINVAL;
- 
- 	if (!ipc_ns) {
--		/* ret = cr_read_ipcns(ctx, current); */ ret = 0;
-+		ret = cr_read_ipcns(ctx);
- 		if (ret < 0)
- 			return ret;
- 
-diff --git a/checkpoint/util_ipc.c b/checkpoint/util_ipc.c
-index c2d2944..1b791f9 100644
---- a/checkpoint/util_ipc.c
-+++ b/checkpoint/util_ipc.c
-@@ -20,7 +20,7 @@ int cr_write_ipcns(struct cr_ctx *ctx, struct ipc_namespace *ipc_ns)
- 
- int cr_read_ipcns(struct cr_ctx *ctx)
+ static int cr_write_file_generic(struct cr_ctx *ctx, struct file *file,
+ 				 struct cr_hdr_file *hh)
  {
--	return 0;
-+	return cr_read_ipc_shm(ctx);
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 14f502b..c2a2ff1 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -22,6 +22,9 @@
+ #include <asm/uaccess.h>
+ #include <asm/ioctls.h>
+ 
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
+ /*
+  * We use a start+len construction, which provides full use of the 
+  * allocated memory.
+@@ -771,6 +774,119 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
+ 	return 0;
  }
  
- void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh, struct kern_ipc_perm *perm)
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 97565f8..0f49b68 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -152,6 +152,9 @@ extern void cr_fill_ipc_perms(struct cr_hdr_ipc_perms *hh,
- extern int cr_load_ipc_perms(struct cr_hdr_ipc_perms *hh,
- 			     struct kern_ipc_perm *perm);
- extern int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns);
-+extern int cr_read_ipc_shm(struct cr_ctx *ctx);
-+extern int cr_ipc_shm_attach(struct file *file,
-+			     unsigned long addr, unsigned long flags);
- #endif
- 
- 
-diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
-index a473cc3..ee9b77a 100644
---- a/ipc/ckpt_shm.c
-+++ b/ipc/ckpt_shm.c
-@@ -140,3 +140,164 @@ int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
- 	up_read(&shm_ids->rw_mutex);
- 	return ret;
- }
-+
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+int cr_ipc_shm_attach(struct file *file,
-+		      unsigned long vm_addr,
-+		      unsigned long vm_flags)
++/* cr_write_pipebuf - dump contents of a pipe/fifo (assume i_mutex taken) */
++static int cr_write_pipebuf(struct cr_ctx *ctx, struct pipe_inode_info *pipe)
 +{
-+	mm_segment_t old_fs;
-+	unsigned long addr;
-+	int shmid, shmflg = 0;
-+	int ret;
++	struct cr_hdr h;
++	void *kbuf, *addr;
++	int i, ret = 0;
 +
-+	shmid = file->f_dentry->d_inode->i_ino;
++	kbuf = (void *) __get_free_page(GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
 +
-+	if (!(vm_flags & VM_WRITE))
-+		shmflg |= SHM_RDONLY;
++	/* this is a simplified pipe_read() */
 +
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	ret = do_shmat(shmid, (char __user *) vm_addr, shmflg, &addr);
-+	set_fs(old_fs);
++	for (i = 0; i < pipe->nrbufs; i++) {
++		int nn = (pipe->curbuf + i) & (PIPE_BUFFERS-1);
++		struct pipe_buffer *pbuf = pipe->bufs + nn;
++		const struct pipe_buf_operations *ops = pbuf->ops;
 +
-+	BUG_ON(ret >= 0 && addr != vm_addr);
++		ret = ops->confirm(pipe, pbuf);
++		if (ret < 0)
++			break;
++
++		addr = ops->map(pipe, pbuf, 1);
++		memcpy(kbuf, addr + pbuf->offset, pbuf->len);
++		ops->unmap(pipe, pbuf, addr);
++
++		h.type = CR_HDR_BUFFER;
++		h.len = pbuf->len;
++
++		ret = cr_write_obj(ctx, &h, kbuf);
++		if (ret < 0)
++			break;
++	}
++
++	free_page((unsigned long) kbuf);
 +	return ret;
 +}
 +
-+static int cr_load_ipc_shm_hdr(struct cr_ctx *ctx,
-+			       struct cr_hdr_ipc_shm *hh,
-+			       struct shmid_kernel *shp)
++/* cr_write_pipe - dump pipe (assume i_mutex taken) */
++static int cr_write_pipe(struct cr_ctx *ctx, struct inode *inode)
 +{
++	struct cr_hdr h;
++	struct cr_hdr_fd_pipe *hh;
++	struct pipe_inode_info *pipe = inode->i_pipe;
 +	int ret;
 +
-+	ret = cr_load_ipc_perms(&hh->perms, &shp->shm_perm);
++	h.type = CR_HDR_FD_PIPE;
++	h.len = sizeof(*hh);
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	if (!hh)
++		return -ENOMEM;
++
++	hh->nr_bufs = pipe->nrbufs;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
 +	if (ret < 0)
 +		return ret;
 +
-+	cr_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
-+		 hh->shm_cprid, hh->shm_lprid, hh->shm_segsz, hh->mlock_uid);
-+
-+	if (hh->shm_cprid < 0 || hh->shm_lprid < 0)
-+		return -EINVAL;
-+
-+	shp->shm_segsz = hh->shm_segsz;
-+	shp->shm_atim = hh->shm_atim;
-+	shp->shm_dtim = hh->shm_dtim;
-+	shp->shm_ctim = hh->shm_ctim;
-+	shp->shm_cprid = hh->shm_cprid;
-+	shp->shm_lprid = hh->shm_lprid;
-+
-+	return 0;
++	return cr_write_pipebuf(ctx, pipe);
 +}
 +
-+static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
++static int pipe_file_checkpoint(struct cr_ctx *ctx,
++				struct file *file, struct cr_hdr_file *hh)
 +{
-+	struct cr_hdr_ipc_shm *hh;
-+	struct kern_ipc_perm *perms;
-+	struct shmid_kernel *shp;
-+	struct ipc_ids *shm_ids = &current->nsproxy->ipc_ns->ids[IPC_SHM_IDS];
-+	struct file *file;
-+	int shmflag;
++	struct cr_hdr h;
++	struct inode *inode = file->f_dentry->d_inode;
++	int new, objref;
 +	int ret;
 +
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC_SHM);
-+	if (ret < 0)
-+		goto out;
-+	ret = -EINVAL;
-+	if (hh->perms.id < 0)
-+		goto out;
-+
-+#define CR_SHMFL_MASK  (SHM_NORESERVE | SHM_HUGETLB)
-+	if (hh->flags & ~CR_SHMFL_MASK)
-+		goto out;
-+
-+	ret = -ENOSYS;
-+	if (hh->mlock_uid != (unsigned int) -1)	/* FIXME: support SHM_LOCK */
-+		goto out;
-+	if (hh->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
-+		goto out;
-+
-+	/* FIXME: this will fail for deleted ipc shm segments */
-+
-+	shmflag = hh->flags | hh->perms.mode | IPC_CREAT | IPC_EXCL;
-+	cr_debug("shm: do_shmget size %lld flag %#x id %d\n",
-+		 hh->shm_segsz, shmflag, hh->perms.id);
-+	ret = do_shmget(hh->perms.key, hh->shm_segsz, shmflag, hh->perms.id);
-+	cr_debug("shm: do_shmget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	down_write(&shm_ids->rw_mutex);
-+
-+	ret = -EIDRM;
-+	perms = ipc_lock(shm_ids, hh->perms.id);
-+	if (IS_ERR(perms)) {	/* this should not happen .. but be safe */
-+		up_write(&shm_ids->rw_mutex);
-+		ret = PTR_ERR(perms);
-+		goto out;
++	/*
++	 * We take the inode's mutex and later will call vfs_write(),
++	 * which also takes an inode's mutex. To avoid deadlock, make
++	 * sure that the two inodes are distinct.
++	 */
++	if (ctx->file->f_dentry->d_inode == inode) {
++		pr_warning("c/r: writing to pipe that is checkpointed "
++			   "may result in a deadlock ... aborting\n");
++		return -EDEADLK;
 +	}
 +
-+	shp = container_of(perms, struct shmid_kernel, shm_perm);
-+	ret = cr_load_ipc_shm_hdr(ctx, hh, shp);
-+	if (ret < 0) {
-+		cr_debug("shm: need to remove (%d)\n", ret);
-+		do_shm_rmid(current->nsproxy->ipc_ns, perms);
-+		up_write(&shm_ids->rw_mutex);
-+		goto out;
++	h.type = CR_HDR_FILE;
++	h.len = sizeof(*hh);
++
++	new = cr_obj_add_ptr(ctx, inode, &objref, CR_OBJ_INODE, 0);
++	cr_debug("objref %d inode %p new %d\n", objref, inode, new);
++	if (new < 0)
++		return new;
++
++	/*
++	 * On the first instance save this end as CR_FD_PIPE together
++	 * with the state of the pipe. On the second instance skip the
++	 * state and save the other end as CR_FD_OBJREF (to indicate
++	 * on restart that the corresponding pipe has been created).
++	 */
++	hh->fd_type = (new ? CR_FD_PIPE : CR_FD_OBJREF);
++	hh->fd_objref = objref;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	if (ret < 0)
++		return ret;
++
++	if (new) {
++		mutex_lock(&inode->i_mutex);
++		ret = cr_write_pipe(ctx, inode);
++		mutex_unlock(&inode->i_mutex);
 +	}
 +
-+	file = shp->shm_file;
-+	get_file(file);
-+	ipc_unlock(perms);
-+	up_write(&shm_ids->rw_mutex);
-+
-+	/* deposit in objhash and read contents in */
-+	ret = cr_obj_add_ref(ctx, file, hh->objref, CR_OBJ_FILE, 0);
-+	if (ret < 0)
-+		goto file;
-+	ret = cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
-+ file:
-+	fput(file);
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
 +	return ret;
 +}
 +
-+int cr_read_ipc_shm(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_ipc *hh;
-+	int n, ret;
 +
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	if (!hh)
-+		return -ENOMEM;
+ /*
+  * The file_operations structs are not static because they
+  * are also used in linux/fs/fifo.c to do operations on FIFOs.
+@@ -787,6 +903,7 @@ const struct file_operations read_pipefifo_fops = {
+ 	.open		= pipe_read_open,
+ 	.release	= pipe_read_release,
+ 	.fasync		= pipe_read_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations write_pipefifo_fops = {
+@@ -799,6 +916,7 @@ const struct file_operations write_pipefifo_fops = {
+ 	.open		= pipe_write_open,
+ 	.release	= pipe_write_release,
+ 	.fasync		= pipe_write_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations rdwr_pipefifo_fops = {
+@@ -812,6 +930,7 @@ const struct file_operations rdwr_pipefifo_fops = {
+ 	.open		= pipe_rdwr_open,
+ 	.release	= pipe_rdwr_release,
+ 	.fasync		= pipe_rdwr_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ struct pipe_inode_info * alloc_pipe_info(struct inode *inode)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 1bf1509..d61f0b4 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -58,6 +58,7 @@ enum {
+ 	CR_HDR_FD_TABLE = 301,
+ 	CR_HDR_FD_ENT,
+ 	CR_HDR_FILE,
++	CR_HDR_FD_PIPE,
+ 
+ 	CR_HDR_TAIL = 5001
+ };
+@@ -175,7 +176,8 @@ struct cr_hdr_fd_ent {
+ /* fd types */
+ enum  fd_type {
+ 	CR_FD_OBJREF = 1,
+-	CR_FD_GENERIC
++	CR_FD_GENERIC,
++	CR_FD_PIPE,
+ };
+ 
+ struct cr_hdr_file {
+@@ -188,4 +190,8 @@ struct cr_hdr_file {
+ 	__u64 f_version;
+ } __attribute__((aligned(8)));
+ 
++struct cr_hdr_fd_pipe {
++	__s32 nr_bufs;
++} __attribute__((aligned(8)));
 +
-+	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_IPC);
-+	if (ret < 0)
-+		goto out;
-+
-+	cr_debug("shm: count %d\n", hh->ipc_count);
-+
-+	ret = -EINVAL;
-+	if (hh->ipc_type != CR_HDR_IPC_SHM)
-+		goto out;
-+
-+	ret = 0;
-+	for (n = 0; n < hh->ipc_count; n++) {
-+		ret = cr_do_read_ipc_shm(ctx);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+ out:
-+	cr_debug("shm: ret %d\n", ret);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
 -- 
 1.5.4.3
