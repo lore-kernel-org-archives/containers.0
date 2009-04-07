@@ -1,15 +1,15 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14-rc2][PATCH 06/29] Dump memory address space
-Date: Mon, 6 Apr 2009 20:26:36 -0700
-Message-ID: <20090407032636.GD12316@us.ibm.com>
+Subject: Re: [RFC v14-rc2][PATCH 09/29] Dump open file descriptors
+Date: Mon, 6 Apr 2009 20:28:23 -0700
+Message-ID: <20090407032823.GE12316@us.ibm.com>
 References: <1238477349-11029-1-git-send-email-orenl@cs.columbia.edu>
-	<1238477349-11029-7-git-send-email-orenl@cs.columbia.edu>
+	<1238477349-11029-10-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1238477349-11029-7-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1238477349-11029-10-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,193 +24,434 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dav
 List-Id: containers.vger.kernel.org
 
 
-One comment below.
+A few minor comments.
 
 Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| From eed3f074ed035c93eb49d05cc1491ee680956906 Mon Sep 17 00:00:00 2001
+| From 6f0a1dc1db8fdac766b00f90e04e06a5827af459 Mon Sep 17 00:00:00 2001
 | From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-| Date: Mon, 30 Mar 2009 13:57:11 -0400
-| Subject: [PATCH 06/29] Dump memory address space
+| Date: Mon, 30 Mar 2009 13:59:34 -0400
+| Subject: [PATCH 09/29] Dump open file descriptors
 | 
-| For each VMA, there is a 'struct cr_vma'; if the VMA is file-mapped,
-| it will be followed by the file name. Then comes the actual contents,
-| in one or more chunk: each chunk begins with a header that specifies
-| how many pages it holds, then the virtual addresses of all the dumped
-| pages in that chunk, followed by the actual contents of all dumped
-| pages. A header with zero number of pages marks the end of the contents.
-| Then comes the next VMA and so on.
+| Dump the files_struct of a task with 'struct cr_hdr_files', followed by
+| all open file descriptors. Because the 'struct file' corresponding to an
+| FD can be shared, each they are assigned an objref and registered in the
+| object hash. A reference to the 'file *' is kept for as long as it lives
+| in the hash (the hash is only cleaned up at the end of the checkpoint).
+| 
+| For each open FD there is a 'struct cr_hdr_fd_ent' with the FD, its
+| close-on-exec property, and the objref of the corresponding 'file *'.
+| If the FD is to be saved (first time) then this is followed by a
+| 'struct cr_hdr_fd_data' with the FD state. Then will come the next FD
+| and so on.
+| 
+| Recall that it is assumed that all tasks possibly sharing the file table
+| are frozen. If this assumption breaks, then the behavior is *undefined*:
+| checkpoint may fail, or restart from the resulting image file will fail.
+| 
+| This patch only handles basic FDs - regular files, directories.
 | 
 | Changelog[v14]:
 |   - Revert change to pr_debug(), back to cr_debug()
-|   - Save new field 'vdso' in mm_context
+|   - Use only unsigned fields in checkpoint headers
+|   - Rename:  cr_write_files() => cr_write_fd_table()
+|   - Rename:  cr_write_fd_data() => cr_write_file()
 |   - Discard field 'h->parent'
 |   - Check whether calls to cr_hbuf_get() fail
-| 
-| Changelog[v13]:
-|   - pgprot_t is an abstract type; use the proper accessor (fix for
-|     64-bit powerpc (Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>)
+|   - Use one CR_FD_GENERIC for both regular files and dirs
+|   - Put code for generic file descriptors in a separate function
 | 
 | Changelog[v12]:
-|   - Hide pgarr management inside cr_private_vma_fill_pgarr()
-|   - Fix management of pgarr chain reset and alloc/expand: keep empty
-|     pgarr in a pool chain
 |   - Replace obsolete cr_debug() with pr_debug()
 | 
 | Changelog[v11]:
-|   - Copy contents of 'init->fs->root' instead of pointing to them.
-|   - Add missing test for VM_MAYSHARE when dumping memory
-| 
-| Changelog[v10]:
-|   - Acquire dcache_lock around call to __d_path() in cr_fill_name()
+|   - Discard handling of opened symlinks (there is no such thing)
+|   - cr_scan_fds() retries from scratch if hits size limits
 | 
 | Changelog[v9]:
-|   - Introduce cr_ctx_checkpoint() for checkpoint-specific ctx setup
-|   - Test if __d_path() changes mnt/dentry (when crossing filesystem
-|     namespace boundary). for now cr_fill_fname() fails the checkpoint.
+|   - Fix a couple of leaks in cr_write_files()
+|   - Drop useless kfree from cr_scan_fds()
 | 
-| Changelog[v7]:
-|   - Fix argument given to kunmap_atomic() in memory dump/restore
+| Changelog[v8]:
+|   - initialize 'coe' to workaround gcc false warning
 | 
 | Changelog[v6]:
 |   - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
 |     (even though it's not really needed)
 | 
-| Changelog[v5]:
-|   - Improve memory dump code (following Dave Hansen's comments)
-|   - Change dump format (and code) to allow chunks of <vaddrs, pages>
-|     instead of one long list of each
-|   - Fix use of follow_page() to avoid faulting in non-present pages
-| 
-| Changelog[v4]:
-|   - Use standard list_... for cr_pgarr
-| 
 | Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 | Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 | Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 | ---
-|  arch/x86/include/asm/checkpoint_hdr.h |    6 +
-|  arch/x86/mm/checkpoint.c              |   31 ++
-|  checkpoint/Makefile                   |    3 +-
-|  checkpoint/checkpoint.c               |   87 +++++
-|  checkpoint/checkpoint_arch.h          |    1 +
-|  checkpoint/checkpoint_mem.h           |   41 +++
-|  checkpoint/ckpt_mem.c                 |  558 +++++++++++++++++++++++++++++++++
-|  checkpoint/sys.c                      |   11 +
-|  include/linux/checkpoint.h            |   13 +
-|  include/linux/checkpoint_hdr.h        |   32 ++
-|  10 files changed, 782 insertions(+), 1 deletions(-)
-|  create mode 100644 checkpoint/checkpoint_mem.h
-|  create mode 100644 checkpoint/ckpt_mem.c
+|  arch/x86/include/asm/checkpoint_hdr.h |    2 +-
+|  checkpoint/Makefile                   |    2 +-
+|  checkpoint/checkpoint.c               |    4 +
+|  checkpoint/checkpoint_file.h          |   17 +++
+|  checkpoint/ckpt_file.c                |  247 +++++++++++++++++++++++++++++++++
+|  include/linux/checkpoint.h            |    3 +-
+|  include/linux/checkpoint_hdr.h        |   30 ++++-
+|  7 files changed, 301 insertions(+), 4 deletions(-)
+|  create mode 100644 checkpoint/checkpoint_file.h
+|  create mode 100644 checkpoint/ckpt_file.c
 | 
 | diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
-| index ffdb5f5..54d3a41 100644
+| index e9eb40c..1efdf24 100644
 | --- a/arch/x86/include/asm/checkpoint_hdr.h
 | +++ b/arch/x86/include/asm/checkpoint_hdr.h
-| @@ -95,4 +95,10 @@ struct cr_hdr_cpu {
-|  	/* thread_xstate contents follow (if used_math) */
-|  } __attribute__((aligned(8)));
+| @@ -15,7 +15,7 @@
+|  /*
+|   * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+|   * keep data 64-bit aligned: use padding for structure members, and use
+| - * __attribute__ ((aligned (8))) for the entire structure.
+| + * __attribute__((aligned (8))) for the entire structure.
+|   *
+|   * Quoting Arnd Bergmann:
+|   *   "This structure has an odd multiple of 32-bit members, which means
+| diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+| index 8368a03..1d92ed2 100644
+| --- a/checkpoint/Makefile
+| +++ b/checkpoint/Makefile
+| @@ -3,4 +3,4 @@
+|  #
 |  
-| +struct cr_hdr_mm_context {
-| +	__u64 vdso;
-| +	__u32 ldt_entry_size;
-| +	__u32 nldt;
-| +} __attribute__((aligned(8)));
+|  obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o objhash.o \
+| -		ckpt_mem.o rstr_mem.o
+| +		ckpt_mem.o rstr_mem.o ckpt_file.o
+| diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+| index 422e1a3..d4e0007 100644
+| --- a/checkpoint/checkpoint.c
+| +++ b/checkpoint/checkpoint.c
+| @@ -250,6 +250,10 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+|  	cr_debug("memory: ret %d\n", ret);
+|  	if (ret < 0)
+|  		goto out;
+| +	ret = cr_write_fd_table(ctx, t);
+| +	cr_debug("files: ret %d\n", ret);
+| +	if (ret < 0)
+| +		goto out;
+|  	ret = cr_write_thread(ctx, t);
+|  	cr_debug("thread: ret %d\n", ret);
+|  	if (ret < 0)
+| diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
+| new file mode 100644
+| index 0000000..9dc3eba
+| --- /dev/null
+| +++ b/checkpoint/checkpoint_file.h
+| @@ -0,0 +1,17 @@
+| +#ifndef _CHECKPOINT_CKPT_FILE_H_
+| +#define _CHECKPOINT_CKPT_FILE_H_
+| +/*
+| + *  Checkpoint file descriptors
+| + *
+| + *  Copyright (C) 2008 Oren Laadan
+| + *
+| + *  This file is subject to the terms and conditions of the GNU General Public
+| + *  License.  See the file COPYING in the main directory of the Linux
+| + *  distribution for more details.
+| + */
 | +
-|  #endif /* __ASM_X86_CKPT_HDR__H */
-| diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-| index 946fac1..92926e1 100644
-| --- a/arch/x86/mm/checkpoint.c
-| +++ b/arch/x86/mm/checkpoint.c
-| @@ -240,3 +240,34 @@ int cr_write_head_arch(struct cr_ctx *ctx)
-|  
-|  	return ret;
-|  }
+| +#include <linux/fdtable.h>
 | +
-| +/* dump the mm->context state */
-| +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm)
+| +int cr_scan_fds(struct files_struct *files, int **fdtable);
+| +
+| +#endif /* _CHECKPOINT_CKPT_FILE_H_ */
+| diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
+| new file mode 100644
+| index 0000000..9c344c7
+| --- /dev/null
+| +++ b/checkpoint/ckpt_file.c
+| @@ -0,0 +1,247 @@
+| +/*
+| + *  Checkpoint file descriptors
+| + *
+| + *  Copyright (C) 2008-2009 Oren Laadan
+| + *
+| + *  This file is subject to the terms and conditions of the GNU General Public
+| + *  License.  See the file COPYING in the main directory of the Linux
+| + *  distribution for more details.
+| + */
+| +
+| +#include <linux/kernel.h>
+| +#include <linux/sched.h>
+| +#include <linux/file.h>
+| +#include <linux/fdtable.h>
+| +#include <linux/checkpoint.h>
+| +#include <linux/checkpoint_hdr.h>
+| +
+| +#include "checkpoint_file.h"
+| +
+| +#define CR_DEFAULT_FDTABLE  256		/* an initial guess */
+| +
+| +/**
+| + * cr_scan_fds - scan file table and construct array of open fds
+| + * @files: files_struct pointer
+| + * @fdtable: (output) array of open fds
+| + *
+| + * Returns the number of open fds found, and also the file table
+| + * array via *fdtable. The caller should free the array.
+| + *
+| + * The caller must validate the file descriptors collected in the
+| + * array before using them, e.g. by using fcheck_files(), in case
+| + * the task's fdtable changes in the meantime.
+| + */
+| +int cr_scan_fds(struct files_struct *files, int **fdtable)
+| +{
+| +	struct fdtable *fdt;
+| +	int *fds = NULL;
+| +	int i, n;
+| +	int tot = CR_DEFAULT_FDTABLE;
+| +
+| +	/*
+| +	 * We assume that all tasks possibly sharing the file table are
+| +	 * frozen (or we our a single process and we checkpoint ourselves).
+
+Nit: s/our/are/
+
+| +	 * Therefore, we can safely proceed after krealloc() from where we
+| +	 * left off. Otherwise the file table may be modified by another
+| +	 * task after we scan it. The behavior is this case is undefined,
+| +	 * and either and either checkpoint or restart will likely fail.
+
+Nit: s/and either//
+
+| +	 */
+| + retry:
+| +	fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+| +	if (!fds)
+| +		return -ENOMEM;
+| +
+| +	spin_lock(&files->file_lock);
+| +	rcu_read_lock();
+| +	fdt = files_fdtable(files);
+| +	for (n = 0, i = 0; i < fdt->max_fds; i++) {
+
+Hmm, if we want to start where we left-off before the krealloc, shouldn't
+we initialize 'i' and 'n' to 0 before the 'retry:' ? Or maybe I misunderstand
+what you mean by "where we left-off" comment above.
+
+
+
+| +		if (!fcheck_files(files, i))
+| +			continue;
+| +		if (n == tot) {
+| +			spin_unlock(&files->file_lock);
+| +			rcu_read_unlock();
+| +			tot *= 2;	/* won't overflow: kmalloc will fail */
+| +			goto retry;
+| +		}
+| +		fds[n++] = i;
+| +	}
+| +	rcu_read_unlock();
+| +	spin_unlock(&files->file_lock);
+| +
+| +	*fdtable = fds;
+| +	return n;
+| +}
+| +
+| +static int cr_write_file_generic(struct cr_ctx *ctx, struct file *file,
+| +				 struct cr_hdr_file *hh)
 | +{
 | +	struct cr_hdr h;
-| +	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
 | +	int ret;
 | +
-| +	h.type = CR_HDR_MM_CONTEXT;
+| +	/*
+| +	 * FIX: check if the file/dir/link is unlinked
+| +	 *
+| +	 * Or, pass up somthing like in hh->flags to tell
+| +	 * the higher-level code that it needs to bring
+| +	 * along the file contents too.
+| +	 */
+| +
+| +	h.type = CR_HDR_FILE;
 | +	h.len = sizeof(*hh);
 | +
-| +	mutex_lock(&mm->context.lock);
+| +	hh->fd_type = CR_FD_GENERIC;
 | +
-| +	hh->vdso = (unsigned long) mm->context.vdso;
-| +	hh->ldt_entry_size = LDT_ENTRY_SIZE;
-| +	hh->nldt = mm->context.size;
+| +	ret = cr_write_obj(ctx, &h, hh);
+| +	if (ret < 0)
+| +		return ret;
 | +
-| +	cr_debug("nldt %d vdso %#llx\n", hh->nldt, hh->vdso);
+| +	return cr_write_fname(ctx, &file->f_path, &ctx->fs_mnt);
+| +}
+| +
+| +/* cr_write_file - dump the state of a given file pointer */
+| +static int cr_write_file(struct cr_ctx *ctx, struct file *file)
+| +{
+| +	struct cr_hdr_file *hh;
+| +	struct dentry *dent = file->f_dentry;
+| +	struct inode *inode = dent->d_inode;
+| +	int ret;
+| +
+| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
+| +	if (!hh)
+| +		return -ENOMEM;
+| +
+| +	hh->f_flags = file->f_flags;
+| +	hh->f_mode = file->f_mode;
+| +	hh->f_pos = file->f_pos;
+| +	hh->f_version = file->f_version;
+| +	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
+| +
+| +	/*
+| +	 * FIXME: when we'll add support for unlinked files/dirs, we'll
+| +	 * need to distinguish between unlinked filed and unlinked dirs.
+| +	 */
+| +	switch (inode->i_mode & S_IFMT) {
+| +	case S_IFREG:
+| +	case S_IFDIR:
+| +		ret = cr_write_file_generic(ctx, file, hh);
+| +		break;
+| +	default:
+| +		ret = -EBADF;
+| +		break;
+| +	}
+| +	cr_hbuf_put(ctx, sizeof(*hh));
+| +
+| +	return ret;
+| +}
+| +
+| +/**
+| + * cr_write_fd_ent - dump the state of a given file descriptor
+| + * @ctx: checkpoint context
+| + * @files: files_struct pointer
+| + * @fd: file descriptor
+| + *
+| + * Saves the state of the file descriptor; looks up the actual file
+| + * pointer in the hash table, and if found saves the matching objref,
+| + * otherwise calls cr_write_file to dump the file pointer too.
+| + */
+| +static int
+| +cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
+| +{
+| +	struct cr_hdr h;
+| +	struct cr_hdr_fd_ent *hh;
+| +	struct file *file;
+| +	struct fdtable *fdt;
+| +	int objref, new, ret;
+| +	int coe = 0;	/* avoid gcc warning */
+| +
+| +	rcu_read_lock();
+| +	fdt = files_fdtable(files);
+| +	file = fcheck_files(files, fd);
+| +	if (file) {
+| +		coe = FD_ISSET(fd, fdt->close_on_exec);
+| +		get_file(file);
+| +	}
+| +	rcu_read_unlock();
+| +
+| +	/* sanity check (although this shouldn't happen) */
+| +	if (!file)
+| +		return -EBADF;
+| +
+| +	/* adding 'file' to the hash will keep a reference to it */
+| +	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
+| +	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
+| +
+| +	if (new < 0)
+| +		return new;
+| +
+| +	h.type = CR_HDR_FD_ENT;
+| +	h.len = sizeof(*hh);
+| +
+| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
+| +	if (!hh) {
+| +		fput(file);
+| +		return -ENOMEM;
+| +	}
+| +
+| +	hh->objref = objref;
+| +	hh->fd = fd;
+| +	hh->close_on_exec = coe;
+| +
+| +	ret = cr_write_obj(ctx, &h, hh);
+| +	if (ret < 0)
+| +		goto out;
+| +
+| +	/* new==1 if-and-only-if file was newly added to hash */
+| +	if (new)
+| +		ret = cr_write_file(ctx, file);
+| +
+| +out:
+| +	cr_hbuf_put(ctx, sizeof(*hh));
+| +	if (file)
+| +		fput(file);
+| +	return ret;
+| +}
+| +
+| +int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t)
+| +{
+| +	struct cr_hdr h;
+| +	struct cr_hdr_fd_table *hh;
+| +	struct files_struct *files;
+| +	int *fdtable = NULL;
+| +	int nfds, n, ret;
+| +
+| +	h.type = CR_HDR_FD_TABLE;
+| +	h.len = sizeof(*hh);
+| +
+| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
+| +	if (!hh)
+| +		return -ENOMEM;
+| +
+| +	files = get_files_struct(t);
+| +
+| +	nfds = cr_scan_fds(files, &fdtable);
+| +	if (nfds < 0) {
+| +		ret = nfds;
+| +		goto out;
+| +	}
+| +
+| +	hh->objref = 0;	/* will be meaningful with multiple processes */
+| +	hh->nfds = nfds;
 | +
 | +	ret = cr_write_obj(ctx, &h, hh);
 | +	cr_hbuf_put(ctx, sizeof(*hh));
 | +	if (ret < 0)
 | +		goto out;
 | +
-| +	ret = cr_kwrite(ctx, mm->context.ldt,
-| +			mm->context.size * LDT_ENTRY_SIZE);
+| +	cr_debug("nfds %d\n", nfds);
+| +	for (n = 0; n < nfds; n++) {
+| +		ret = cr_write_fd_ent(ctx, files, fdtable[n]);
+| +		if (ret < 0)
+| +			break;
+| +	}
 | +
 | + out:
-| +	mutex_unlock(&mm->context.lock);
+| +	kfree(fdtable);
+| +	put_files_struct(files);
 | +	return ret;
 | +}
-| diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-| index 364c326..6924ef4 100644
-| --- a/checkpoint/Makefile
-| +++ b/checkpoint/Makefile
-| @@ -2,4 +2,5 @@
-|  # Makefile for linux checkpoint/restart.
-|  #
-|  
-| -obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o
-| +obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o \
-| +	 ckpt_mem.o
-| diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-| index 422ceff..422e1a3 100644
-| --- a/checkpoint/checkpoint.c
-| +++ b/checkpoint/checkpoint.c
-| @@ -13,6 +13,7 @@
-|  #include <linux/time.h>
+| diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+| index 88854a9..9489ea5 100644
+| --- a/include/linux/checkpoint.h
+| +++ b/include/linux/checkpoint.h
+| @@ -13,7 +13,7 @@
+|  #include <linux/path.h>
 |  #include <linux/fs.h>
-|  #include <linux/file.h>
-| +#include <linux/fdtable.h>
-|  #include <linux/dcache.h>
-|  #include <linux/mount.h>
-|  #include <linux/utsname.h>
-| @@ -73,6 +74,65 @@ int cr_write_string(struct cr_ctx *ctx, char *str, int len)
-|  	return cr_write_obj(ctx, &h, str);
-|  }
 |  
-| +/**
-| + * cr_fill_fname - return pathname of a given file
-| + * @path: path name
-| + * @root: relative root
-| + * @buf: buffer for pathname
-| + * @n: buffer length (in) and pathname length (out)
-| + */
-| +static char *
-| +cr_fill_fname(struct path *path, struct path *root, char *buf, int *n)
-| +{
-| +	struct path tmp = *root;
-| +	char *fname;
-| +
-| +	BUG_ON(!buf);
-| +	spin_lock(&dcache_lock);
-| +	fname = __d_path(path, &tmp, buf, *n);
-| +	spin_unlock(&dcache_lock);
-| +	if (!IS_ERR(fname))
-| +		*n = (buf + (*n) - fname);
-| +	/*
-| +	 * FIXME: if __d_path() changed these, it must have stepped out of
-| +	 * init's namespace. Since currently we require a unified namespace
-| +	 * within the container: simply fail.
-| +	 */
-| +	if (tmp.mnt != root->mnt || tmp.dentry != root->dentry)
-| +		fname = ERR_PTR(-EBADF);
-| 
+| -#define CR_VERSION  1
+| +#define CR_VERSION  2
+|  
+|  struct cr_ctx {
+|  	int crid;		/* unique checkpoint id */
+| @@ -85,6 +85,7 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
+|  
+|  extern int do_checkpoint(struct cr_ctx *ctx, pid_t pid);
+|  extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+| +extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
+|  
+|  extern int do_restart(struct cr_ctx *ctx, pid_t pid);
+|  extern int cr_read_mm(struct cr_ctx *ctx);
+| diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+| index 2a06a2f..a6b6dce 100644
+| --- a/include/linux/checkpoint_hdr.h
+| +++ b/include/linux/checkpoint_hdr.h
+| @@ -17,7 +17,7 @@
+|  /*
+|   * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+|   * keep data 64-bit aligned: use padding for structure members, and use
+| - * __attribute__ ((aligned (8))) for the entire structure.
+| + * __attribute__((aligned (8))) for the entire structure.
 
-Shouldn't this be under if (!IS_ERR(fname)) ? 'tmp' may be uninitialized
-if __d_path() fails with ENAMETOOLONG. Even otherwise, it may be better
-to report the error from __dpath() first ?
+Nit: Fix in earlier patch ?
+
+Sukadev
