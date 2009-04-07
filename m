@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v2][PATCH 07/10] sysvipc-shm: correctly handle deleted (active)
-	ipc shared memory
-Date: Tue,  7 Apr 2009 08:31:40 -0400
-Message-ID: <1239107503-21941-8-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v2][PATCH 08/10] sysvipc-msg: make 'struct msg_msgseg' visible
+	in ipc/util.h
+Date: Tue,  7 Apr 2009 08:31:41 -0400
+Message-ID: <1239107503-21941-9-git-send-email-orenl@cs.columbia.edu>
 References: <1239107503-21941-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,93 +22,83 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During restart, an ipc shared region may have SHM_DEST, indicating
-that it has been originally deleted (while still active). In this
-case the task of deleting the region after restoring it is postponed
-until the end of the restart; otherwise, it would be quite silly to
-delete it at that time, because it will be ... gone :o
+Move the definition of 'struct msg_msgseg' and constants DATALEN_*
+to ipc/util.h, where they are visible to ipc/ckpt_msg.c
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- ipc/ckpt_shm.c |   44 ++++++++++++++++++++++++++++++++++++++++----
- 1 files changed, 40 insertions(+), 4 deletions(-)
+ ipc/msg.c     |    3 +--
+ ipc/msgutil.c |    8 --------
+ ipc/util.h    |   11 ++++++++++-
+ 3 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/ipc/ckpt_shm.c b/ipc/ckpt_shm.c
-index ee9b77a..c5b7f60 100644
---- a/ipc/ckpt_shm.c
-+++ b/ipc/ckpt_shm.c
-@@ -145,6 +145,25 @@ int cr_write_ipc_shm(struct cr_ctx *ctx, struct ipc_namespace *ipcns)
-  * ipc restart
-  */
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 1db7c45..1d5d087 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -72,7 +72,6 @@ struct msg_sender {
  
-+struct cr_dq_ipcshm_del {
-+	struct ipc_namespace *ipcns;
-+	int id;
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
+ 
+-static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+ static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+@@ -278,7 +277,7 @@ static void expunge_all(struct msg_queue *msq, int res)
+  * msg_ids.rw_mutex (writer) and the spinlock for this message queue are held
+  * before freeque() is called. msg_ids.rw_mutex remains locked on exit.
+  */
+-static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ {
+ 	struct list_head *tmp;
+ 	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
+diff --git a/ipc/msgutil.c b/ipc/msgutil.c
+index c82c215..a546e3e 100644
+--- a/ipc/msgutil.c
++++ b/ipc/msgutil.c
+@@ -17,14 +17,6 @@
+ 
+ #include "util.h"
+ 
+-struct msg_msgseg {
+-	struct msg_msgseg* next;
+-	/* the next part of the message follows immediately */
+-};
+-
+-#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
+-#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
+-
+ struct msg_msg *load_msg(const void __user *src, int len)
+ {
+ 	struct msg_msg *msg;
+diff --git a/ipc/util.h b/ipc/util.h
+index 3bef7ce..b6ef57f 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -121,6 +121,14 @@ extern void free_msg(struct msg_msg *msg);
+ extern struct msg_msg *load_msg(const void __user *src, int len);
+ extern int store_msg(void __user *dest, struct msg_msg *msg, int len);
+ 
++struct msg_msgseg {
++	struct msg_msgseg *next;
++	/* the next part of the message follows immediately */
 +};
 +
-+static int cr_ipc_shm_delete(void *data)
-+{
-+	struct cr_dq_ipcshm_del *dq = (struct cr_dq_ipcshm_del *) data;
-+	mm_segment_t old_fs;
-+	int ret;
++#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
++#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
 +
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	ret = shmctl_down(dq->ipcns, dq->id, IPC_RMID, NULL, 0);
-+	set_fs(old_fs);
-+
-+	return ret;
-+}
-+
- int cr_ipc_shm_attach(struct file *file,
- 		      unsigned long vm_addr,
- 		      unsigned long vm_flags)
-@@ -224,7 +243,25 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
- 	if (hh->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
- 		goto out;
+ extern void recompute_msgmni(struct ipc_namespace *);
  
--	/* FIXME: this will fail for deleted ipc shm segments */
-+	/*
-+	 * SHM_DEST means that the shm is to be deleted after creation.
-+	 * However, deleting before it's actually attached is quite silly.
-+	 * Instead, we defer this task to until restart has succeeded.
-+	 */
-+	if (hh->perms.mode & SHM_DEST) {
-+		struct cr_dq_ipcshm_del dq;
-+
-+		/* to not confuse the rest of the code */
-+		hh->perms.mode &= ~SHM_DEST;
-+
-+		dq.ipcns = current->nsproxy->ipc_ns;
-+		dq.id = hh->perms.id;
-+
-+		ret = cr_deferqueue_add(ctx, cr_ipc_shm_delete,
-+				       0, &dq, sizeof(dq));
-+		if (ret < 0)
-+			goto out;
-+	}
- 
- 	shmflag = hh->flags | hh->perms.mode | IPC_CREAT | IPC_EXCL;
- 	cr_debug("shm: do_shmget size %lld flag %#x id %d\n",
-@@ -235,7 +272,6 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
- 		goto out;
- 
- 	down_write(&shm_ids->rw_mutex);
+ static inline int ipc_buildid(int id, int seq)
+@@ -157,6 +165,7 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+ /* for checkpoint/restart */
+ extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
+ extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
 -
- 	ret = -EIDRM;
- 	perms = ipc_lock(shm_ids, hh->perms.id);
- 	if (IS_ERR(perms)) {	/* this should not happen .. but be safe */
-@@ -261,9 +297,9 @@ static int cr_do_read_ipc_shm(struct cr_ctx *ctx)
- 	/* deposit in objhash and read contents in */
- 	ret = cr_obj_add_ref(ctx, file, hh->objref, CR_OBJ_FILE, 0);
- 	if (ret < 0)
--		goto file;
-+		goto fput;
- 	ret = cr_read_shmem_contents(ctx, file->f_dentry->d_inode);
-- file:
-+ fput:
- 	fput(file);
-  out:
- 	cr_hbuf_put(ctx, sizeof(*hh));
++extern int do_msgget(key_t key, int msgflg, int req_id);
++extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
+ #endif
 -- 
 1.5.4.3
