@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14-rc3][PATCH 31/36] powerpc: enable checkpoint support in
-	Kconfig
-Date: Tue,  7 Apr 2009 08:27:39 -0400
-Message-ID: <1239107264-21775-32-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14-rc3][PATCH 30/36] powerpc: wire up checkpoint and restart
+	syscalls
+Date: Tue,  7 Apr 2009 08:27:38 -0400
+Message-ID: <1239107264-21775-31-git-send-email-orenl@cs.columbia.edu>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -26,22 +26,37 @@ From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/Kconfig |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ arch/powerpc/include/asm/systbl.h |    2 ++
+ arch/powerpc/include/asm/unistd.h |    4 +++-
+ 2 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 74cc312..ff7d598 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -26,6 +26,9 @@ config MMU
- 	bool
- 	default y
+diff --git a/arch/powerpc/include/asm/systbl.h b/arch/powerpc/include/asm/systbl.h
+index 72353f6..8d8dd68 100644
+--- a/arch/powerpc/include/asm/systbl.h
++++ b/arch/powerpc/include/asm/systbl.h
+@@ -322,3 +322,5 @@ SYSCALL_SPU(epoll_create1)
+ SYSCALL_SPU(dup3)
+ SYSCALL_SPU(pipe2)
+ SYSCALL(inotify_init1)
++SYSCALL(checkpoint)
++SYSCALL(restart)
+diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
+index e07d0c7..2e333a1 100644
+--- a/arch/powerpc/include/asm/unistd.h
++++ b/arch/powerpc/include/asm/unistd.h
+@@ -341,10 +341,12 @@
+ #define __NR_dup3		316
+ #define __NR_pipe2		317
+ #define __NR_inotify_init1	318
++#define __NR_checkpoint		319
++#define __NR_restart		320
  
-+config CHECKPOINT_SUPPORT
-+	def_bool y
-+
- config GENERIC_CMOS_UPDATE
- 	def_bool y
+ #ifdef __KERNEL__
  
+-#define __NR_syscalls		319
++#define __NR_syscalls		321
+ 
+ #define __NR__exit __NR_exit
+ #define NR_syscalls	__NR_syscalls
 -- 
 1.5.4.3
