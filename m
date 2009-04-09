@@ -1,8 +1,9 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: Nigel Cunningham <ncunningham-lkml-VWkGxi2CTS+6c6uEtOJ/EA@public.gmane.org>
 Subject: Re: [PATCH/RFC] do not count frozen tasks toward load
-Date: Wed, 8 Apr 2009 17:57:02 -0700
-Message-ID: <20090408175702.8a99c803.akpm__48125.6142179065$1239239279$gmane$org@linux-foundation.org>
+Date: Thu, 09 Apr 2009 11:21:43 +1000
+Message-ID: <1239240103.9869.1.camel__40588.5855354883$1239240315$gmane$org@nigel-laptop>
 References: <20090408194512.47a99b95@manatee.lan>
+Reply-To: ncunningham-lkml-VWkGxi2CTS+6c6uEtOJ/EA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,11 +19,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Matt-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 8 Apr 2009 19:45:12 -0500 Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org> wrote:
+Hi again.
 
+On Wed, 2009-04-08 at 19:45 -0500, Nathan Lynch wrote:
 > Freezing tasks via the cgroup freezer causes the load average to climb
 > because the freezer's current implementation puts frozen tasks in
 > uninterruptible sleep (D state).
@@ -59,7 +61,13 @@ On Wed, 8 Apr 2009 19:45:12 -0500 Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@publi
 >  #define __set_task_state(tsk, state_value)		\
 >  	do { (tsk)->state = (state_value); } while (0)
 
-Looks OK to me.  It should perhaps use !frozen(task), but the includes
-are mucked up.
+Tested-by: Nigel Cunningham <nigel-jrkICu/7yk3k1uMJSBkQmQ@public.gmane.org>
 
-I suppose we should fix this in -stable too.
+Looks good to me (though I like Andrew's point about using task_frozen).
+
+nigel@nigel-laptop:~$ cat /proc/loadavg 
+0.34 0.27 0.12 1/251 9001
+nigel@nigel-laptop:~$ sudo hibernate
+nigel@nigel-laptop:~$ cat /proc/loadavg 
+0.52 0.33 0.14 2/250 9807
+nigel@nigel-laptop:~$ 
