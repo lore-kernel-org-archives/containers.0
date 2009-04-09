@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc3][PATCH 33/36] Support for share memory address spaces
-Date: Thu, 9 Apr 2009 16:03:02 -0500
-Message-ID: <20090409210302.GA5115@us.ibm.com>
+Subject: Re: [RFC v14-rc3][PATCH 32/36] Export fs/exec.c:exec_mmap()
+Date: Thu, 9 Apr 2009 16:06:57 -0500
+Message-ID: <20090409210657.GB5115@us.ibm.com>
 References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
-	<1239107264-21775-34-git-send-email-orenl@cs.columbia.edu>
+	<1239107264-21775-33-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1239107264-21775-34-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1239107264-21775-33-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,61 +24,44 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dav
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> The task address space (task->mm) may be shared between processes if
-> CLONE_VM is used, and particularly among threads. Accordingly, treat
-> 'task->mm' as a shared object: during checkpoint check against the
-> objhash and only dump the contents if seen for the first time. During
-> restart, likewise, only restore if it's a new instance, otherwise use
-> the one already registered in the objhash.
+> Used in the next patch to attach an existing mm descriptor to a
+> restarting process.
 > 
 > Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Cool.
-
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Although:
-
-> +	/* if the mm's objref is in the objhash, use that instance */
-> +	mm = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_MM);
-> +	if (IS_ERR(mm)) {
-> +		ret = PTR_ERR(mm);
-> +		goto out;
-> +	}
+> ---
+>  fs/exec.c          |    2 +-
+>  include/linux/mm.h |    3 +++
+>  2 files changed, 4 insertions(+), 1 deletions(-)
 > 
-> +	if (mm) {
-> +		if (mm != current->mm) {
-
-In what twisted world could mm == current->mm at restart?
-
-> +			ret = exec_mmap(mm);
-> +			if (ret < 0)
-> +				goto out;
-> +			atomic_inc(&mm->mm_users);
-> +		}
-> +		ret = 0;
-> +		goto out;
-> +	}
+> diff --git a/fs/exec.c b/fs/exec.c
+> index 929b580..40f8d44 100644
+> --- a/fs/exec.c
+> +++ b/fs/exec.c
+> @@ -714,7 +714,7 @@ int kernel_read(struct file *file, unsigned long offset,
+> 
+>  EXPORT_SYMBOL(kernel_read);
+> 
+> -static int exec_mmap(struct mm_struct *mm)
+> +int exec_mmap(struct mm_struct *mm)
+>  {
+>  	struct task_struct *tsk;
+>  	struct mm_struct * old_mm, *active_mm;
+> diff --git a/include/linux/mm.h b/include/linux/mm.h
+> index e9bdc00..bc73f18 100644
+> --- a/include/linux/mm.h
+> +++ b/include/linux/mm.h
+> @@ -1175,6 +1175,9 @@ extern int do_munmap(struct mm_struct *, unsigned long, size_t);
+> 
+>  extern unsigned long do_brk(unsigned long, unsigned long);
+> 
+> +/* fs/exec.c */
+> +extern int exec_mmap(struct mm_struct *mm);
 > +
-> +	/* otherwise, add our mm to the objhash for future generations */
->  	mm = current->mm;
-> +	ret = cr_obj_add_ref(ctx, mm, hh->objref, CR_OBJ_MM, 0);
-> +	if (ret < 0)
-> +		goto out;
-> 
->  	/* point of no return -- destruct current mm */
->  	down_write(&mm->mmap_sem);
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 043535c..1bfe284 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -77,6 +77,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
->  enum {
->  	CR_OBJ_FILE = 1,
->  	CR_OBJ_INODE,
-> +	CR_OBJ_MM,
->  	CR_OBJ_MAX
->  };
-> 
+>  /* filemap.c */
+>  extern unsigned long page_unuse(struct page *);
+>  extern void truncate_inode_pages(struct address_space *, loff_t);
 > -- 
 > 1.5.4.3
