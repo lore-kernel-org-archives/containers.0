@@ -1,14 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Add a multi-process IPC test
-Date: Thu, 09 Apr 2009 10:51:26 -0700
-Message-ID: <87tz4xyau9.fsf@caffeine.danplanet.com>
+Date: Thu, 9 Apr 2009 13:51:59 -0500
+Message-ID: <20090409185159.GA32610@us.ibm.com>
 References: <1239299170-14827-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1239299170-14827-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Dan Smith's
-	message of "Thu, 9 Apr 2009 10:46:10 -0700")
+Content-Disposition: inline
+In-Reply-To: <1239299170-14827-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,18 +18,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-DS> This test forks off several children in various states to ensure
-DS> that the IPC namespace information is properly restored after
-DS> restart.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> This test forks off several children in various states to ensure that the
+> IPC namespace information is properly restored after restart.
 
-I should have mentioned that this test behaves as expected with the
-latest IPC patches from Oren.  If I run it and wait about ten seconds
-to checkpoint it, on restart everything gets hooked back up properly.
+Thanks, Dan.  I've got a few other simple c/r tests collected which I
+want to automate in the next few days so one can just run 'check_cr' and
+get a list of pass/fails.  I'll also add some tests which Nathan had
+written for IPC.  Hmm, I suppose the easiest thing for now will be to
+put a tarball on lxc.sf.net.
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+-serge
