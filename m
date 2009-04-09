@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: container-to-host virtual or loopback kind of interface support
-Date: Thu, 9 Apr 2009 14:14:02 -0500
-Message-ID: <20090409191402.GA561@us.ibm.com>
-References: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
-	<20090409135724.GA26467@us.ibm.com>
-	<D02204CF-796A-45F5-B9A2-5B581EB52A2F@gmail.com>
+Subject: Re: [RFC v14-rc3][PATCH 33/36] Support for share memory address spaces
+Date: Thu, 9 Apr 2009 16:03:02 -0500
+Message-ID: <20090409210302.GA5115@us.ibm.com>
+References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
+	<1239107264-21775-34-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <D02204CF-796A-45F5-B9A2-5B581EB52A2F-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1239107264-21775-34-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,48 +19,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Elwin Stelzer Eliazer (stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->
-> On Apr 9, 2009, at 6:57 AM, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->
->> Quoting Elwin Stelzer Eliazer (stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->>> Hi,
->>>
->>> I am trying to use network namespace for virtualizing some socket
->>> applications i already have.
->>> These applications interact with Apache through 'lo' 127.0.0.1:nnn  
->>> sockets
->>> now.
->>> When i virtualize, i do not want to run Apache inside the container, 
->>> and has
->>> to be outside.
->>> I can not use any non-127.x.x.x IP address for this purpose, or have 
->>> any
->>> separate "host-only" kind of internal network.
->>> I would appreciate if someone can let me know the options i have to
->>> accomplish this, with network namespace, and 2.6.29 or 2.6.30.
->>
->> So to be clear, what you want is to have an application in a separate
->> network namespace from apache, but talking over a shared loopback?
->>
->
-> Yes. But I am not very specific about the loopback.
->
->> Can you use a veth tunnel pair?  You don't have to tie them to a
->> bridge so the socket app won't be on the public net.
->>
->> -serge
->
-> Yes I can do without the bridge. But what IP address for the veth? Can  
-> it be a 127.x.x.x? My solution cannot have a regular public or private  
-> ip that can interfere with external network. The reason I mentioned  
-> bridge was it will reduce the ip subnet needed to one. If you can  
-> suggest a solution that leverages 127.x.x.x it will be useful.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> The task address space (task->mm) may be shared between processes if
+> CLONE_VM is used, and particularly among threads. Accordingly, treat
+> 'task->mm' as a shared object: during checkpoint check against the
+> objhash and only dump the contents if seen for the first time. During
+> restart, likewise, only restore if it's a new instance, otherwise use
+> the one already registered in the objhash.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Actually is there any reason you can't use a unix socket?
+Cool.
 
--serge
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Although:
+
+> +	/* if the mm's objref is in the objhash, use that instance */
+> +	mm = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_MM);
+> +	if (IS_ERR(mm)) {
+> +		ret = PTR_ERR(mm);
+> +		goto out;
+> +	}
+> 
+> +	if (mm) {
+> +		if (mm != current->mm) {
+
+In what twisted world could mm == current->mm at restart?
+
+> +			ret = exec_mmap(mm);
+> +			if (ret < 0)
+> +				goto out;
+> +			atomic_inc(&mm->mm_users);
+> +		}
+> +		ret = 0;
+> +		goto out;
+> +	}
+> +
+> +	/* otherwise, add our mm to the objhash for future generations */
+>  	mm = current->mm;
+> +	ret = cr_obj_add_ref(ctx, mm, hh->objref, CR_OBJ_MM, 0);
+> +	if (ret < 0)
+> +		goto out;
+> 
+>  	/* point of no return -- destruct current mm */
+>  	down_write(&mm->mmap_sem);
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 043535c..1bfe284 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -77,6 +77,7 @@ extern void cr_ctx_put(struct cr_ctx *ctx);
+>  enum {
+>  	CR_OBJ_FILE = 1,
+>  	CR_OBJ_INODE,
+> +	CR_OBJ_MM,
+>  	CR_OBJ_MAX
+>  };
+> 
+> -- 
+> 1.5.4.3
