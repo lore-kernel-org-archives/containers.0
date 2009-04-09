@@ -1,14 +1,11 @@
-From: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: container-to-host virtual or loopback kind of interface support
-Date: Thu, 9 Apr 2009 09:00:56 -0700
-Message-ID: <D02204CF-796A-45F5-B9A2-5B581EB52A2F@gmail.com>
-References: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
-	<20090409135724.GA26467@us.ibm.com>
-Mime-Version: 1.0 (iPhone Mail 5H11)
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Add a multi-process IPC test
+Date: Thu,  9 Apr 2009 10:46:10 -0700
+Message-ID: <1239299170-14827-1-git-send-email-danms@us.ibm.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090409135724.GA26467-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +15,304 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This test forks off several children in various states to ensure that the
+IPC namespace information is properly restored after restart.
 
-On Apr 9, 2009, at 6:57 AM, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ Makefile           |    2 +-
+ tst_ipcshm_multi.c |  266 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 267 insertions(+), 1 deletions(-)
+ create mode 100644 tst_ipcshm_multi.c
 
-> Quoting Elwin Stelzer Eliazer (stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->> Hi,
->>
->> I am trying to use network namespace for virtualizing some socket
->> applications i already have.
->> These applications interact with Apache through 'lo' 127.0.0.1:nnn  
->> sockets
->> now.
->> When i virtualize, i do not want to run Apache inside the  
->> container, and has
->> to be outside.
->> I can not use any non-127.x.x.x IP address for this purpose, or  
->> have any
->> separate "host-only" kind of internal network.
->> I would appreciate if someone can let me know the options i have to
->> accomplish this, with network namespace, and 2.6.29 or 2.6.30.
->
-> So to be clear, what you want is to have an application in a separate
-> network namespace from apache, but talking over a shared loopback?
->
-
-Yes. But I am not very specific about the loopback.
-
-> Can you use a veth tunnel pair?  You don't have to tie them to a
-> bridge so the socket app won't be on the public net.
->
-> -serge
-
-Yes I can do without the bridge. But what IP address for the veth? Can  
-it be a 127.x.x.x? My solution cannot have a regular public or private  
-ip that can interfere with external network. The reason I mentioned  
-bridge was it will reduce the ip subnet needed to one. If you can  
-suggest a solution that leverages 127.x.x.x it will be useful.
-
-Thanks,
-Elwin.
+diff --git a/Makefile b/Makefile
+index c847a0c..2da03bb 100644
+--- a/Makefile
++++ b/Makefile
+@@ -19,7 +19,7 @@ CFLAGS += -g $(WARNS) $(PATHS) $(DEBUG)
+ 
+ PROGS =	self ckpt rstr mktree
+ TESTS=	tst_onetask tst_multitask tst_bigmem tst_pipes tst_pipes2 tst_shmem \
+-	tst_ipcshm tst_ipcmsq
++	tst_ipcshm tst_ipcmsq tst_ipcshm_multi
+ 
+ LDLIBS = -lm
+ 
+diff --git a/tst_ipcshm_multi.c b/tst_ipcshm_multi.c
+new file mode 100644
+index 0000000..1ef31f7
+--- /dev/null
++++ b/tst_ipcshm_multi.c
+@@ -0,0 +1,266 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <errno.h>
++#include <sys/ipc.h>
++#include <sys/shm.h>
++
++#include <linux/sched.h>
++#include <sched.h>
++
++#define OUTFILE  "/tmp/cr-test.out"
++#define SEG_SIZE (20 * 4096)
++#define DELAY 20
++
++int attach(unsigned char **seg, int num)
++{
++	int id;
++
++	id = shmget(123, SEG_SIZE, 0700|IPC_EXCL);
++	if (id < 0) {
++		printf("[CHILD %i] shmget: %m\n", num);
++		return -1;
++	}
++
++	*seg = shmat(id, NULL, 0);
++	if (!*seg) {
++		printf("[CHILD %i] shmat: %m\n", num);
++		return -1;
++	}
++
++	printf("[CHILD %i] Attached\n", num);
++
++	return 0;
++}
++
++int validate(unsigned char *seg, int num)
++{
++	int i;
++
++	for (i = 1; i < SEG_SIZE; i++) {
++		if (seg[i] != (unsigned char)(i % 256)) {
++			printf("[CHILD %i] Mismatch at %hhu: %hhu\n",
++			       num, i, seg[i]);
++			return -1;
++		}
++	}
++
++	printf("[CHILD %i] Validated\n", num);
++
++	return 0;
++}
++
++void track(unsigned char *seg, int num)
++{
++	int i;
++
++	for (i = 0; i < 20; i++) {
++		printf("[CHILD %i] Seg[0]: %i\n", num, seg[0]);
++		sleep(1);
++	}
++}
++
++/*
++ * Attach to the shared segment *before* the checkpoint and then track
++ * the changing seg[0] position afterwards.
++ */
++int child1(void)
++{
++	unsigned char *seg;
++	int num = 1;
++
++	printf("[CHILD %i] Running\n", num);
++
++	sleep(1); /* Allow master to finish initializing the array */
++
++	if (attach(&seg, num))
++		return -1;
++
++	if (validate(seg, num))
++		return -1;
++
++	sleep(DELAY - 1); /* Wait until after the checkpoint */
++
++	track(seg, num);
++
++	return 0;
++}
++
++/*
++ * Attempt to attach to the shared segment *after* the checkpoint to
++ * verify that things are hooked up properly after restart by tracking
++ * seg[0].
++ */
++int child2(void)
++{
++	unsigned char *seg;
++	int num = 2;
++  
++	printf("[CHILD %i] Running\n", num);
++
++	sleep(DELAY); /* Wait until after the checkpoint */
++
++	if (attach(&seg, num))
++		return -1;
++
++	if (validate(seg, num))
++		return -1;
++
++	track(seg, num);
++
++	return 0;
++}
++
++int child4(void);
++
++/*
++ * Detach from the parent's IPC namespace and verify that:
++ * 1. We can't attach to the parent's segment
++ * 2. We can create our own of the same ID without conflict
++ * 3. We do not see the parent's changing seg[0] after restart
++ */
++int child3(void)
++{
++	unsigned char *seg;
++	int num = 3;
++
++	if (unshare(CLONE_NEWIPC) != 0) {
++		printf("[CHILD %i] unshare(CLONE_NEWIPC): %m", num);
++		return -1;
++	}
++
++	if (fork() == 0)
++		return child4();
++
++	printf("[CHILD %i] Running (new IPC NS)\n", num);
++
++	printf("[CHILD %i] Attempting parent attach (should fail)\n", num);
++	if (!attach(&seg, num)) {
++		printf("[CHILD %i] Attached to parent's IPC!\n", num);
++		return -1;
++	}
++
++	if (shmget(123, SEG_SIZE, 0700|IPC_CREAT|IPC_EXCL) < 0) {
++		printf("[CHILD %i] Failed to create shm in namespace: %m\n",
++		       num);
++		return -1;
++	}
++
++	if (attach(&seg, num))
++		return -1;
++
++	seg[0] = 123;
++
++	sleep(DELAY); /* Wait until after checkpoint, then attach */
++
++	track(seg, num);
++  
++	return 0;
++}
++
++/*
++ * This child is forked from child3 under the new IPC namespace.
++ * Verify that post-restart, we do not see the changing seg[0]
++ */
++int child4(void)
++{
++	unsigned char *seg;
++	int num = 4;
++
++	printf("[CHILD %i] Running (new IPC NS)\n", num);
++
++	sleep(DELAY); /* Wait past my parent creating the IPC */
++
++	if (attach(&seg, num))
++		return -1;
++
++	track(seg, num);
++
++	return 0;
++}
++
++void shm_destroy(void)
++{
++	int id;
++
++	id = shmget(123, SEG_SIZE, 0700);
++	if (id < 0)
++		return;
++
++	if (shmctl(id, IPC_RMID, NULL) == 0)
++		printf("Deleted SHM %i\n", id);
++}
++
++int main(int argc, char *argv[])
++{
++	int id;
++	unsigned char *seg;
++	int i;
++	int pid1, pid2, pid3;
++#ifndef TEST
++	FILE *file;
++
++	close(0);
++	close(1);
++	close(2);
++
++	unlink(OUTFILE);
++	file = fopen(OUTFILE, "w+");
++	if (!file) {
++		perror("open");
++		exit(1);
++	}
++	if (dup2(0,2) < 0) {
++		perror("dup2");
++		exit(2);
++	}
++	stdout = file;
++	setlinebuf(file);
++#endif
++	shm_destroy();
++
++	pid1 = fork();
++	if (pid1 == 0)
++		return child1();
++
++	pid2 = fork();
++	if (pid2 == 0)
++		return child2();
++
++	pid3 = fork();
++	if (pid3 == 0)
++		return child3();
++
++	id = shmget(123, SEG_SIZE, 0700|IPC_CREAT|IPC_EXCL);
++	if (id < 0) {
++		perror("shmget");
++		exit(1);
++	}
++
++	seg = (unsigned char *) shmat(id, NULL, 0);
++	if(seg == ((void *) -1)) {
++		perror("shmat");
++		exit(1);
++	}
++	
++	for (i = 0; i < SEG_SIZE; i++)
++		seg[i] = i;
++
++	printf("[MSTER] Waiting for checkpoint\n");
++	sleep(DELAY);
++	printf("[MSTER] Woke\n");
++
++	for (i = 0; i < 15; i++) {
++		seg[0] = i;
++		sleep(1);
++	}
++
++	if (shmdt(seg) < 0)
++		perror("shmdt");
++
++	shm_destroy();
++
++	printf("[MSTER] Completed\n");
++
++	return 0;
++}
+-- 
+1.6.0.3
