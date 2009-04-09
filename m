@@ -1,7 +1,7 @@
-From: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: container-to-host virtual or loopback kind of interface support
-Date: Wed, 8 Apr 2009 15:49:49 -0700
-Message-ID: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
+From: Gullatte <baubee-xm8FX1EwbbYrGTiHhg/gcg@public.gmane.org>
+Subject: How To Get A Girl To Do Anything And Everythiing In Bed
+Date: Thu, 09 Apr 2009 00:16:37 +0000
+Message-ID: <49DD3E24.3627322@therandymon.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,23 +15,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+How To Get A Girl To Do Anything And Everything In Bed - Be Absoluutely Mind Blowing
+<http://patricetdiya.livejournal.com/744.html?echenckcfaaakajplz>
 
-I am trying to use network namespace for virtualizing some socket
-applications i already have.
-These applications interact with Apache through 'lo' 127.0.0.1:nnn sockets
-now.
-When i virtualize, i do not want to run Apache inside the container, and has
-to be outside.
-I can not use any non-127.x.x.x IP address for this purpose, or have any
-separate "host-only" kind of internal network.
-I would appreciate if someone can let me know the options i have to
-accomplish this, with network namespace, and 2.6.29 or 2.6.30.
-
-Thanks.
-
-cheers,
-Elwin.
+In that plight, the ascetic said unto her, 'without i would
+promote him on the spot. Poor shortridge! Should adore the
+deities (according to the rituals.
