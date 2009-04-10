@@ -1,19 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc3][PATCH 33/36] Support for share memory address spaces
-Date: Thu, 9 Apr 2009 19:09:27 -0500
-Message-ID: <20090410000927.GA9912@us.ibm.com>
-References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
-	<1239107264-21775-34-git-send-email-orenl@cs.columbia.edu>
-	<20090409210302.GA5115@us.ibm.com>
-	<49DE72F7.9040001@cs.columbia.edu>
-	<20090409225212.GA8386@us.ibm.com>
-	<Pine.LNX.4.64.0904091912440.12600@takamine.ncl.cs.columbia.edu>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] devcgroup: skip superfluous checks when found the DEV_ALL
+	elem
+Date: Fri, 10 Apr 2009 08:20:15 +0800
+Message-ID: <49DE90BF.1010800__6197.72501891038$1239322995$gmane$org@cn.fujitsu.com>
+References: <49DAE8E4.2030106@cn.fujitsu.com>
+	<20090409170610.9ee6e8e4.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0904091912440.12600-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <20090409170610.9ee6e8e4.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,23 +19,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> On Thu, 9 Apr 2009, Serge E. Hallyn wrote:
-> During task creation, the algorithm implies that the thread group
-> leader is created first, and it in turn clones all the other threads
-> in the thread group. 
+Andrew Morton wrote:
+> On Tue, 07 Apr 2009 13:47:16 +0800
+> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 > 
-> So now they all share the same MM, and no other task shares that mm.
+>> While walking through the whitelist, if the DEV_ALL item is found,
+>> no more check is needed.
+>>
 > 
-> One arbitrary thread is restarted first (depending on the checkpoint
-> order) - it will destory the VMAs in that MM and reconstruct new ones
-> within that MM.  When other threads get to cr_read_mm() they will
+> It's unobvious whether this is a behavioural change, a bugfix or just a
+> speedup?
+> 
 
-Oooh.  I had it in my mind that a new mm was being created altogether.
-
-thanks,
--serge
+It's a speedup. I thought it's obvious by saying "skip superfluous checks"..
