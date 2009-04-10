@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 27/30] cr: deal with netns
-Date: Fri, 10 Apr 2009 06:40:19 +0400
-Message-ID: <20090410024019.GB27788__3387.84898999638$1239332026$gmane$org@x200.localdomain>
+Subject: [PATCH 28/30] cr: sockets
+Date: Fri, 10 Apr 2009 06:40:37 +0400
+Message-ID: <20090410024037.GC27788__19226.2844917879$1239332027$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,156 +20,166 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwB
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-netns is full of questions too.
+Nothing will be dumped because socket file_operations aren't ready.
 
-Restore netns itself, and core.somaxconn, unix.max_dgram_qlen for start.
+This is one big FIXME item.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- include/linux/cr.h     |   13 +++++
- kernel/cr/Kconfig      |    1 
- kernel/cr/Makefile     |    1 
- kernel/cr/cpt-sys.c    |    6 ++
- kernel/cr/cr-net.c     |  115 +++++++++++++++++++++++++++++++++++++++++++++++++
- kernel/cr/cr-nsproxy.c |   21 ++++++++
- kernel/cr/cr.h         |   27 +++++++++++
- 7 files changed, 183 insertions(+), 1 deletion(-)
+ include/linux/cr.h    |    8 ++++
+ kernel/cr/Makefile    |    1 
+ kernel/cr/cpt-sys.c   |    6 +++
+ kernel/cr/cr-net.c    |    7 +++
+ kernel/cr/cr-socket.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/cr/cr.h        |   19 ++++++++++
+ 6 files changed, 131 insertions(+)
 
 --- a/include/linux/cr.h
 +++ b/include/linux/cr.h
-@@ -49,6 +49,7 @@ struct cr_object_header {
- #define CR_OBJ_USER_STRUCT	18
+@@ -50,6 +50,7 @@ struct cr_object_header {
  #define CR_OBJ_USER_NS		19
  #define CR_OBJ_MNT_NS		20
-+#define CR_OBJ_NET_NS		21
+ #define CR_OBJ_NET_NS		21
++#define CR_OBJ_SOCK		22
  	__u32	cr_type;	/* object type */
  	__u32	cr_len;		/* object length in bytes including header */
  } __packed;
-@@ -179,6 +180,7 @@ struct cr_image_nsproxy {
- 	cr_pos_t	cr_pos_uts_ns;
- 	cr_pos_t	cr_pos_mnt_ns;
- 	cr_pos_t	cr_pos_pid_ns;
-+	cr_pos_t	cr_pos_net_ns;	/* CR_POS_UNDEF if CONFIG_NET=n */
- } __packed;
- 
- struct cr_image_uts_ns {
-@@ -360,4 +362,15 @@ struct cr_image_pid {
- 	__u32		cr_level;
- 	__u32		cr_nr[1];	/* cr_nr[cr_level + 1] */
+@@ -373,4 +374,11 @@ struct cr_image_net_ns {
+ 		__u32	cr_sysctl_max_dgram_qlen;
+ 	} cr_unx;
  } __packed;
 +
-+struct cr_image_net_ns {
++struct cr_image_sock {
 +	struct cr_object_header cr_hdr;
 +
-+	struct {
-+		__u32	cr_sysctl_somaxconn;
-+	} cr_core;
-+	struct {
-+		__u32	cr_sysctl_max_dgram_qlen;
-+	} cr_unx;
++	cr_pos_t	cr_pos_sk_net;
++	__u16		cr_sk_family;
 +} __packed;
  #endif
---- a/kernel/cr/Kconfig
-+++ b/kernel/cr/Kconfig
-@@ -1,5 +1,6 @@
- config CR
- 	bool "Container checkpoint/restart"
-+	depends on NET_NS || (NET = n)
- 	depends on PID_NS
- 	depends on USER_NS
- 	depends on UTS_NS
 --- a/kernel/cr/Makefile
 +++ b/kernel/cr/Makefile
-@@ -6,6 +6,7 @@ cr-y += cr-file.o
- cr-y += cr-fs.o
- cr-y += cr-mm.o
- cr-y += cr-mnt.o
-+cr-$(CONFIG_NET) += cr-net.o
+@@ -10,6 +10,7 @@ cr-$(CONFIG_NET) += cr-net.o
  cr-y += cr-nsproxy.o
  cr-y += cr-pid.o
  cr-y += cr-signal.o
++cr-$(CONFIG_NET) += cr-socket.o
+ cr-y += cr-task.o
+ cr-y += cr-uts.o
+ cr-$(CONFIG_X86_32) += cr-x86_32.o
 --- a/kernel/cr/cpt-sys.c
 +++ b/kernel/cr/cpt-sys.c
 @@ -86,6 +86,9 @@ static int cr_collect(struct cr_context *ctx)
  	rv = cr_collect_all_file(ctx);
  	if (rv < 0)
  		return rv;
-+	rv = cr_collect_all_net_ns(ctx);
++	rv = cr_collect_all_sock(ctx);
 +	if (rv < 0)
 +		return rv;
- 	rv = cr_collect_all_fs_struct(ctx);
+ 	rv = cr_collect_all_net_ns(ctx);
  	if (rv < 0)
  		return rv;
-@@ -176,6 +179,9 @@ static int cr_dump(struct cr_context *ctx)
- 	rv = cr_dump_all_uts_ns(ctx);
+@@ -182,6 +185,9 @@ static int cr_dump(struct cr_context *ctx)
+ 	rv = cr_dump_all_net_ns(ctx);
  	if (rv < 0)
  		return rv;
-+	rv = cr_dump_all_net_ns(ctx);
++	rv = cr_dump_all_sock(ctx);
 +	if (rv < 0)
 +		return rv;
  	rv = cr_dump_all_sighand_struct(ctx);
  	if (rv < 0)
  		return rv;
+--- a/kernel/cr/cr-net.c
++++ b/kernel/cr/cr-net.c
+@@ -27,6 +27,13 @@ int cr_collect_all_net_ns(struct cr_context *ctx)
+ 		if (rv < 0)
+ 			return rv;
+ 	}
++	for_each_cr_object(ctx, obj, CR_CTX_SOCK) {
++		struct sock *sk = obj->o_obj;
++
++		rv = cr_collect_net_ns(ctx, sock_net(sk));
++		if (rv < 0)
++			return rv;
++	}
+ 	for_each_cr_object(ctx, obj, CR_CTX_NET_NS) {
+ 		struct net *net_ns = obj->o_obj;
+ 		unsigned int cnt = atomic_read(&net_ns->count);
 new file mode 100644
 --- /dev/null
-+++ b/kernel/cr/cr-net.c
-@@ -0,0 +1,115 @@
++++ b/kernel/cr/cr-socket.c
+@@ -0,0 +1,90 @@
 +/* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
-+#include <linux/nsproxy.h>
-+#include <net/net_namespace.h>
 +#include <net/sock.h>
 +
 +#include <linux/cr.h>
 +#include "cr.h"
 +
-+static int cr_collect_net_ns(struct cr_context *ctx, struct net *net_ns)
++static int cr_check_sock(struct sock *sk)
++{
++#ifdef CONFIG_XFRM
++	if (sk->sk_policy[0] || sk->sk_policy[1]) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++#endif
++#ifdef CONFIG_SECURITY
++	if (sk->sk_security) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++#endif
++	return 0;
++}
++
++static int cr_collect_sock(struct cr_context *ctx, struct sock *sk)
 +{
 +	int rv;
 +
-+	rv = cr_collect_object(ctx, net_ns, CR_CTX_NET_NS);
-+	printk("collect net_ns %p: rv %d\n", net_ns, rv);
++	rv = cr_check_sock(sk);
++	if (rv < 0)
++		return rv;
++	rv = cr_collect_object(ctx, sk, CR_CTX_SOCK);
++	printk("collect sock %p: rv %d, family %u\n", sk, rv, sk->sk_family);
 +	return rv;
 +}
 +
-+int cr_collect_all_net_ns(struct cr_context *ctx)
++int cr_collect_all_sock(struct cr_context *ctx)
 +{
 +	struct cr_object *obj;
 +	int rv;
 +
-+	for_each_cr_object(ctx, obj, CR_CTX_NSPROXY) {
-+		struct nsproxy *nsproxy = obj->o_obj;
++	for_each_cr_object(ctx, obj, CR_CTX_FILE) {
++		struct file *file = obj->o_obj;
++		struct inode *inode = file->f_path.dentry->d_inode;
 +
-+		rv = cr_collect_net_ns(ctx, nsproxy->net_ns);
++		if (!S_ISSOCK(inode->i_mode))
++			continue;
++
++		rv = cr_collect_sock(ctx, SOCKET_I(inode)->sk);
 +		if (rv < 0)
 +			return rv;
-+	}
-+	for_each_cr_object(ctx, obj, CR_CTX_NET_NS) {
-+		struct net *net_ns = obj->o_obj;
-+		unsigned int cnt = atomic_read(&net_ns->count);
-+
-+		if (obj->o_count != cnt) {
-+			printk("%s: net_ns %p has external references %lu:%u\n", __func__, net_ns, obj->o_count, cnt);
-+			return -EINVAL;
-+		}
 +	}
 +	return 0;
 +}
 +
-+static int cr_dump_net_ns(struct cr_context *ctx, struct cr_object *obj)
++static int cr_dump_sock(struct cr_context *ctx, struct cr_object *obj)
 +{
-+	struct net *net = obj->o_obj;
-+	struct cr_image_net_ns *i;
++	struct sock *sk = obj->o_obj;
++	struct cr_image_sock *i;
++	struct cr_object *tmp;
 +	int rv;
 +
-+	printk("dump net_ns %p\n", net);
++	printk("dump socket %p\n", sk);
 +
-+	i = cr_prepare_image(CR_OBJ_NET_NS, sizeof(*i));
++	i = cr_prepare_image(CR_OBJ_SOCK, sizeof(*i));
 +	if (!i)
 +		return -ENOMEM;
 +
-+	i->cr_core.cr_sysctl_somaxconn = net->core.sysctl_somaxconn;
-+	i->cr_unx.cr_sysctl_max_dgram_qlen = net->unx.sysctl_max_dgram_qlen;
++	tmp = cr_find_obj_by_ptr(ctx, sock_net(sk), CR_CTX_NET_NS);
++	i->cr_pos_sk_net = tmp->o_pos;
++
++	i->cr_sk_family = sk->sk_family;
 +
 +	obj->o_pos = ctx->cr_dump_file->f_pos;
 +	rv = cr_write(ctx, i, sizeof(*i));
@@ -177,157 +187,57 @@ new file mode 100644
 +	return rv;
 +}
 +
-+int cr_dump_all_net_ns(struct cr_context *ctx)
++int cr_dump_all_sock(struct cr_context *ctx)
 +{
 +	struct cr_object *obj;
 +	int rv;
 +
-+	for_each_cr_object(ctx, obj, CR_CTX_NET_NS) {
-+		rv = cr_dump_net_ns(ctx, obj);
++	for_each_cr_object(ctx, obj, CR_CTX_SOCK) {
++		rv = cr_dump_sock(ctx, obj);
 +		if (rv < 0)
 +			return rv;
 +	}
 +	return 0;
 +}
-+
-+int cr_restore_net_ns(struct cr_context *ctx, loff_t pos)
-+{
-+	struct cr_image_net_ns *i;
-+	struct net *net;
-+	struct cr_object *obj;
-+	int rv;
-+
-+	i = kzalloc(sizeof(*i), GFP_KERNEL);
-+	if (!i)
-+		return -ENOMEM;
-+	rv = cr_pread(ctx, i, sizeof(*i), pos);
-+	if (rv < 0) {
-+		kfree(i);
-+		return rv;
-+	}
-+	if (i->cr_hdr.cr_type != CR_OBJ_NET_NS) {
-+		kfree(i);
-+		return -EINVAL;
-+	}
-+
-+	net = net_create();
-+	if (IS_ERR(net)) {
-+		kfree(i);
-+		return PTR_ERR(net);
-+	}
-+
-+	net->core.sysctl_somaxconn = i->cr_core.cr_sysctl_somaxconn;
-+	net->unx.sysctl_max_dgram_qlen = i->cr_unx.cr_sysctl_max_dgram_qlen;
-+	kfree(i);
-+
-+	obj = cr_object_create(net);
-+	if (!obj) {
-+		put_net(net);
-+		return -ENOMEM;
-+	}
-+	obj->o_pos = pos;
-+	list_add(&obj->o_list, &ctx->cr_obj[CR_CTX_NET_NS]);
-+	printk("restore net_ns %p, pos %lld\n", net, (long long)pos);
-+	return 0;
-+}
---- a/kernel/cr/cr-nsproxy.c
-+++ b/kernel/cr/cr-nsproxy.c
-@@ -63,6 +63,12 @@ static int cr_dump_nsproxy(struct cr_context *ctx, struct cr_object *obj)
- 	i->cr_pos_mnt_ns = tmp->o_pos;
- 	tmp = cr_find_obj_by_ptr(ctx, nsproxy->pid_ns, CR_CTX_PID_NS);
- 	i->cr_pos_pid_ns = tmp->o_pos;
-+#ifdef CONFIG_NET
-+	tmp = cr_find_obj_by_ptr(ctx, nsproxy->net_ns, CR_CTX_NET_NS);
-+	i->cr_pos_net_ns = tmp->o_pos;
-+#else
-+	i->cr_pos_net_ns = CR_POS_UNDEF;
-+#endif
- 
- 	obj->o_pos = ctx->cr_dump_file->f_pos;
- 	rv = cr_write(ctx, i, sizeof(*i));
-@@ -89,6 +95,9 @@ static int __cr_restore_nsproxy(struct cr_context *ctx, loff_t pos)
- 	struct nsproxy *nsproxy;
- 	struct uts_namespace *uts_ns;
- 	struct pid_namespace *pid_ns;
-+#ifdef CONFIG_NET
-+	struct net *net;
-+#endif
- 	struct cr_object *obj, *tmp;
- 	int rv;
- 
-@@ -145,7 +154,17 @@ static int __cr_restore_nsproxy(struct cr_context *ctx, loff_t pos)
- 	nsproxy->pid_ns = get_pid_ns(pid_ns);
- 
- #ifdef CONFIG_NET
--	nsproxy->net_ns = get_net(&init_net);
-+	tmp = cr_find_obj_by_pos(ctx, i->cr_pos_net_ns, CR_CTX_NET_NS);
-+	if (!tmp) {
-+		rv = cr_restore_net_ns(ctx, i->cr_pos_net_ns);
-+		if (rv < 0) {
-+			kfree(i);
-+			return rv;
-+		}
-+		tmp = cr_find_obj_by_pos(ctx, i->cr_pos_net_ns, CR_CTX_NET_NS);
-+	}
-+	net = tmp->o_obj;
-+	nsproxy->net_ns = get_net(net);
- #endif
- 	kfree(i);
- 
 --- a/kernel/cr/cr.h
 +++ b/kernel/cr/cr.h
-@@ -29,6 +29,9 @@ enum cr_context_obj_type {
- 	CR_CTX_GROUP_INFO,
- 	CR_CTX_MM_STRUCT,
- 	CR_CTX_MNT_NS,
-+#ifdef CONFIG_NET
-+	CR_CTX_NET_NS,
-+#endif
- 	CR_CTX_NSPROXY,
- 	CR_CTX_PID,
+@@ -37,6 +37,9 @@ enum cr_context_obj_type {
  	CR_CTX_PID_NS,
-@@ -97,6 +100,14 @@ int cr_collect_all_fs_struct(struct cr_context *ctx);
- int cr_collect_all_group_info(struct cr_context *ctx);
- int cr_collect_all_mm_struct(struct cr_context *ctx);
- int cr_collect_all_mnt_ns(struct cr_context *ctx);
+ 	CR_CTX_SIGHAND_STRUCT,
+ 	CR_CTX_SIGNAL_STRUCT,
 +#ifdef CONFIG_NET
-+int cr_collect_all_net_ns(struct cr_context *ctx);
-+#else
-+static inline int cr_collect_all_net_ns(struct cr_context *ctx)
-+{
-+	return 0;
-+}
++	CR_CTX_SOCK,
 +#endif
- int cr_collect_all_nsproxy(struct cr_context *ctx);
- int cr_collect_all_pid_ns(struct cr_context *ctx);
+ 	CR_CTX_TASK_STRUCT,
+ 	CR_CTX_USER_NS,
+ 	CR_CTX_USER_STRUCT,
+@@ -113,6 +116,14 @@ int cr_collect_all_pid_ns(struct cr_context *ctx);
  int cr_collect_all_pid(struct cr_context *ctx);
-@@ -114,6 +125,14 @@ int cr_dump_all_fs_struct(struct cr_context *ctx);
- int cr_dump_all_group_info(struct cr_context *ctx);
- int cr_dump_all_mm_struct(struct cr_context *ctx);
- int cr_dump_all_mnt_ns(struct cr_context *ctx);
+ int cr_collect_all_sighand_struct(struct cr_context *ctx);
+ int cr_collect_all_signal_struct(struct cr_context *ctx);
 +#ifdef CONFIG_NET
-+int cr_dump_all_net_ns(struct cr_context *ctx);
++int cr_collect_all_sock(struct cr_context *ctx);
 +#else
-+static inline int cr_dump_all_net_ns(struct cr_context *ctx)
++static inline int cr_collect_all_sock(struct cr_context *ctx)
 +{
 +	return 0;
 +}
 +#endif
- int cr_dump_all_nsproxy(struct cr_context *ctx);
- int cr_dump_all_pid_ns(struct cr_context *ctx);
+ int cr_collect_all_task_struct(struct cr_context *ctx);
+ int cr_collect_all_user_ns(struct cr_context *ctx);
+ int cr_collect_all_user_struct(struct cr_context *ctx);
+@@ -138,6 +149,14 @@ int cr_dump_all_pid_ns(struct cr_context *ctx);
  int cr_dump_all_pid(struct cr_context *ctx);
-@@ -131,6 +150,14 @@ int cr_restore_fs_struct(struct cr_context *ctx, loff_t pos);
- int cr_restore_group_info(struct cr_context *ctx, loff_t pos);
- int cr_restore_mm_struct(struct cr_context *ctx, loff_t pos);
- int cr_restore_mnt_ns(struct cr_context *ctx, loff_t pos);
+ int cr_dump_all_sighand_struct(struct cr_context *ctx);
+ int cr_dump_all_signal_struct(struct cr_context *ctx);
 +#ifdef CONFIG_NET
-+int cr_restore_net_ns(struct cr_context *ctx, loff_t pos);
++int cr_dump_all_sock(struct cr_context *ctx);
 +#else
-+static inline int cr_restore_net_ns(struct cr_context *ctx, loff_t pos)
++static inline int cr_dump_all_sock(struct cr_context *ctx)
 +{
 +	return 0;
 +}
 +#endif
- int cr_restore_nsproxy(struct cr_context *ctx, loff_t pos);
- int cr_restore_pid_ns(struct cr_context *ctx, loff_t pos);
- int cr_restore_pid(struct cr_context *ctx, struct cr_image_task_struct *i);
+ int cr_dump_all_task_struct(struct cr_context *ctx);
+ int cr_dump_all_user_ns(struct cr_context *ctx);
+ int cr_dump_all_user_struct(struct cr_context *ctx);
