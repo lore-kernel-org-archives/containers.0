@@ -1,14 +1,14 @@
 From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: [PATCH 02/30] Remove struct mm_struct::exe_file et al
-Date: Fri, 10 Apr 2009 10:53:05 +0200
-Message-ID: <20090410085305.GC17962__12893.142438452$1239353865$gmane$org@elte.hu>
-References: <20090410023312.GC27788@x200.localdomain>
+Subject: Re: [PATCH 04/30] ipcns: add create_ipc_ns()
+Date: Fri, 10 Apr 2009 11:01:49 +0200
+Message-ID: <20090410090149.GD17962@elte.hu>
+References: <20090410023358.GE27788@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090410023312.GC27788-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090410023358.GE27788-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,42 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 * Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-> Commit 925d1c401fa6cfd0df5d2e37da8981494ccdec07 aka "procfs task 
-> exe symlink". introduced struct mm_struct::exe_file and struct 
-> mm_struct::num_exe_file_vmas.
-> 
-> The rationale is weak: unifying MMU and no-MMU version of 
-> /proc/*/exe code. For this a) struct mm_struct becomes bigger, b) 
-> mmap/munmap/exit become slower, c) patch adds more code than 
-> removes in fact.
+> --- a/include/linux/ipc_namespace.h
+> +++ b/include/linux/ipc_namespace.h
+> @@ -97,6 +97,7 @@ static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
+>  
+>  #if defined(CONFIG_IPC_NS)
+>  extern void free_ipc_ns(struct ipc_namespace *ns);
+> +struct ipc_namespace *create_ipc_ns(void);
+>  extern struct ipc_namespace *copy_ipcs(unsigned long flags,
+>  				       struct ipc_namespace *ns);
+>  extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
 
-Hm, nommu unification was not the only effect of that original 
-patch.
+Hm, doesnt the existing, correct pattern strike your eyes out:
 
-The other effect was to introduce a managed 'which is the first 
-executable vma in the mm' abstraction in struct mm. Your patch 
-removes that abstraction and re-introduces a linear ->vma_next walk:
+  extern foo1();
+  extern foo2();
+  extern foo3();
 
-> +	down_read(&mm->mmap_sem);
-> +	for (vma = mm->mmap; vma; vma = vma->vm_next) {
-> +		if ((vma->vm_flags & VM_EXECUTABLE) && vma->vm_file) {
+and then you add a new method in this inconsistent way:
 
-Which can walk along thousands (or tens of thousands) of vmas until 
-it finds the first executable vma. For example on PIE binaries it's 
-quite possible to have a lot of non-PROT_EXEC vmas before the first 
-EXEC vma is met.
+  extern foo1();
+  foox();
+  extern foo2();
+  extern foo3();
 
-So your revert reintroduces that linear walk. It might not matter 
-much (/proc/*/exe might be sufficiently uninteresting in practice to 
-not deserve an optimization), but it's still worth a mention and a 
-discussion in the changelog.
+Instead of continuing the existing pattern via:
+
+  extern foo1();
+  extern foox();
+  extern foo2();
+  extern foo3();
+
+?
+
+I think we need a new checkpatch warning for such things. It might 
+be a small detail in the big picture, but a thousand small details 
+create a big mess easily so we have to try to get all the small 
+details right, all the time - that is the only way to create a 
+better kernel in the end.
 
 Thanks,
 
