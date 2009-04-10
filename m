@@ -1,14 +1,14 @@
 From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
-Date: Fri, 10 Apr 2009 10:28:15 +0200
-Message-ID: <20090410082815.GA17962@elte.hu>
-References: <20090410023207.GA27788@x200.localdomain>
+Subject: Re: [PATCH 01/30] headers: fixup cred.h, ipc_namespace.h
+Date: Fri, 10 Apr 2009 10:47:47 +0200
+Message-ID: <20090410084747.GB17962@elte.hu>
+References: <20090410023248.GB27788@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090410023207.GA27788-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090410023248.GB27788-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,26 +25,79 @@ List-Id: containers.vger.kernel.org
 
 * Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-> This is to show how we see C/R and to provoke discussion on number 
-> of important issues (mounts, ...).
+> cred.h uses __init
+> ipc_namespace.h uses kern_ipc_perm.
 > 
-> This is small part of long-awaited to be cleanuped code.
+> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
 > 
-> It's able to restore busyloop on i386 and x86_64 and restore i386 
-> busyloop on x86_64. It wasn't tested much more than that.
+>  include/linux/cred.h          |    1 +
+>  include/linux/ipc_namespace.h |    2 ++
+>  2 files changed, 3 insertions(+)
 > 
-> I'm currently starting formal testsuite, otherwise it's 
-> whack-a-mole game and formal TODO list (a huge one).
+> --- a/include/linux/cred.h
+> +++ b/include/linux/cred.h
+> @@ -13,6 +13,7 @@
+>  #define _LINUX_CRED_H
+>  
+>  #include <linux/capability.h>
+> +#include <linux/init.h>
+>  #include <linux/key.h>
+>  #include <asm/atomic.h>
+>  
+> --- a/include/linux/ipc_namespace.h
+> +++ b/include/linux/ipc_namespace.h
+> @@ -6,6 +6,8 @@
+>  #include <linux/rwsem.h>
+>  #include <linux/notifier.h>
+>  
+> +struct kern_ipc_perm;
+> +
 
-One simple patch-submission request: if you start sending large 
-series of patches then please post it like others do: by using 
-git-format-patch or some other tool that preserves the threading of 
-the discussion and links all the 1/30..30/30 patches back to the 
-0/30 mail.
+Please, not yet another forward declaration...
 
-This submission has created 31 separate threads on lkml, intermixed 
-with other threads - making it more difficult to review it as a 
-coherent unit.
+I believe this should be cleaned up properly, instead of sprinkling 
+the kernel with random placed forward declarations.
+
+In a cleanly structured piace of code there's rarely any need for 
+forward declarations like this. There's two basic header types 
+needed:
+
+   foo_types.h       declares all the data types and constants
+                     [no complex inline functions]
+
+   foo.h             externs, complex inlines
+
+foo.h includes all foo_types.h and bar_types.h headers it needs.
+
+The foo_types.h file includes all other bar_types.h headers it 
+depends on for its data type definitions.
+
+foo_types.h never includes a bar.h file.
+
+The end result will be a clean hieararchy of data types, separated 
+from methods. Complex inlines dont create the incestous 
+cross-dependency hell anymore and dont contaminate the foo_types.h 
+files.
+
+Yes, this is quite a bit of work, but this has been done before for 
+several complex headers so it's possible to do it. Also, you 
+namespace guys compounded this particular IPC headers sub-problem to 
+begin with:
+
+ | commit ae5e1b22f17983da929a0d0178896269e19da186
+ | Author: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+ | Date:   Fri Feb 8 04:18:22 2008 -0800
+ |
+ |     namespaces: move the IPC namespace under IPC_NS option
+
+So when touching the IPC header code please clean it up all 
+properly. We need separate ipc_types.h and ipc.h headers with clean 
+rules and a clean, consistent looking total presentation.
+
+To borrow a recent phrase of hch, right now when i look at all the 
+ipc related headers it looks like as if a cat barfed all over the 
+place ;-)
 
 Thanks,
 
