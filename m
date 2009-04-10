@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 15/30] cr: x86_64 xstate support
-Date: Fri, 10 Apr 2009 06:37:05 +0400
-Message-ID: <20090410023705.GP27788__38569.8117585436$1239331974$gmane$org@x200.localdomain>
+Subject: [PATCH 17/30] cr: extend arch_setup_additional_pages()
+Date: Fri, 10 Apr 2009 06:37:39 +0400
+Message-ID: <20090410023739.GR27788__6355.57906139201$1239331975$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,171 +20,119 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwB
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Add "start" argument, it will be used to map vDSO to exactly same place
+on restart(2).
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- include/linux/cr.h    |    3 ++
- kernel/cr/cr-x86_64.c |   72 ++++++++++++++++++++++++++++++++++++++++++++------
- 2 files changed, 67 insertions(+), 8 deletions(-)
+ arch/powerpc/include/asm/elf.h     |    1 +
+ arch/powerpc/kernel/vdso.c         |    2 +-
+ arch/s390/include/asm/elf.h        |    2 +-
+ arch/s390/kernel/vdso.c            |    2 +-
+ arch/sh/include/asm/elf.h          |    1 +
+ arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
+ arch/x86/include/asm/elf.h         |    3 ++-
+ arch/x86/vdso/vdso32-setup.c       |    2 +-
+ fs/binfmt_elf.c                    |    2 +-
+ 9 files changed, 10 insertions(+), 7 deletions(-)
 
---- a/include/linux/cr.h
-+++ b/include/linux/cr.h
-@@ -140,6 +140,9 @@ struct cr_image_arch_x86_64 {
- 	__u64		cr_dr7;
+--- a/arch/powerpc/include/asm/elf.h
++++ b/arch/powerpc/include/asm/elf.h
+@@ -269,6 +269,7 @@ extern int ucache_bsize;
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ #define VDSO_AUX_ENT(a,b) NEW_AUX_ENT(a,b);
  
- 	__u64		cr_tls_array[3];
-+
-+	__u32		cr_len_xstate;
-+	/* __u8	cr_xstate[cr_len_xstate]; */
- } __packed;
- 
- struct cr_image_mm_struct {
---- a/kernel/cr/cr-x86_64.c
-+++ b/kernel/cr/cr-x86_64.c
-@@ -32,11 +32,27 @@ __u32 cr_task_struct_arch(struct task_struct *tsk)
- 
- int cr_arch_check_image_task_struct(struct cr_image_task_struct *i)
+--- a/arch/powerpc/kernel/vdso.c
++++ b/arch/powerpc/kernel/vdso.c
+@@ -184,7 +184,7 @@ static void dump_vdso_pages(struct vm_area_struct * vma)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
+  */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
  {
--	if (i->cr_tsk_arch == CR_ARCH_X86_64)
-+	if (i->cr_tsk_arch == CR_ARCH_X86_64) {
-+		struct cr_image_arch_x86_64 *arch_i = (struct cr_image_arch_x86_64 *)(i + 1);
-+		unsigned int len_xstate = arch_i->cr_len_xstate;
-+
-+		if (len_xstate > 0 && len_xstate != xstate_size) {
-+			WARN(1, "xstate size mismatch %u:%u, tsk '%s'\n", len_xstate, xstate_size, i->cr_comm);
-+			return -EINVAL;
-+		}
- 		return 0;
-+	}
- #ifdef CONFIG_COMPAT
--	if (i->cr_tsk_arch == CR_ARCH_X86_32)
-+	if (i->cr_tsk_arch == CR_ARCH_X86_32) {
-+		struct cr_image_arch_x86_32 *arch_i = (struct cr_image_arch_x86_32 *)(i + 1);
-+		unsigned int len_xstate = arch_i->cr_len_xstate;
-+
-+		if (len_xstate > 0 && len_xstate != xstate_size) {
-+			WARN(1, "xstate size mismatch %u:%u, tsk '%s'\n", len_xstate, xstate_size, i->cr_comm);
-+			return -EINVAL;
-+		}
- 		return 0;
-+	}
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+--- a/arch/s390/include/asm/elf.h
++++ b/arch/s390/include/asm/elf.h
+@@ -205,6 +205,6 @@ do {									    \
+ struct linux_binprm;
+ 
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+-int arch_setup_additional_pages(struct linux_binprm *, int);
++int arch_setup_additional_pages(struct linux_binprm *, unsigned long, int);
+ 
  #endif
- 	return -EINVAL;
- }
-@@ -50,15 +66,13 @@ unsigned int cr_arch_len_task_struct(struct task_struct *tsk)
- 	if (test_tsk_thread_flag(tsk, TIF_IA32))
- 		len = sizeof(struct cr_image_arch_x86_32);
- #endif
-+	if (tsk->thread.xstate)
-+		len += xstate_size;
- 	return len;
- }
- 
- int cr_arch_check_task_struct(struct task_struct *tsk)
+--- a/arch/s390/kernel/vdso.c
++++ b/arch/s390/kernel/vdso.c
+@@ -182,7 +182,7 @@ static void vdso_init_cr5(void)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
+  */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
  {
--	if (tsk->thread.xstate) {
--		WARN_ON(1);
--		return -EINVAL;
--	}
- 	if (tsk->thread.io_bitmap_ptr) {
- 		WARN_ON(1);
- 		return -EINVAL;
-@@ -125,6 +139,26 @@ static u16 decode_segment(__u16 reg)
- 	BUG();
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+--- a/arch/sh/include/asm/elf.h
++++ b/arch/sh/include/asm/elf.h
+@@ -202,6 +202,7 @@ do {									\
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ 
+ extern unsigned int vdso_enabled;
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -59,7 +59,7 @@ int __init vsyscall_init(void)
  }
  
-+static int cr_dump_xstate(struct cr_context *ctx, struct task_struct *tsk)
-+{
-+	if (tsk->thread.xstate)
-+		return cr_write(ctx, tsk->thread.xstate, xstate_size);
-+	return 0;
-+}
-+
-+static int cr_restore_xstate(struct task_struct *tsk, void *xstate, unsigned int len)
-+{
-+	int rv;
-+
-+	if (len == 0)
-+		return 0;
-+
-+	rv = init_fpu(tsk);
-+	if (rv == 0)
-+		memcpy(tsk->thread.xstate, xstate, len);
-+	return rv;
-+}
-+
- #ifdef CONFIG_COMPAT
- static int cr_dump_task_struct_x86_32(struct cr_context *ctx, struct task_struct *tsk)
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
  {
-@@ -166,9 +200,15 @@ static int cr_dump_task_struct_x86_32(struct cr_context *ctx, struct task_struct
- 	BUILD_BUG_ON(sizeof(tsk->thread.tls_array) != 3 * 8);
- 	memcpy(i->cr_tls_array, tsk->thread.tls_array, sizeof(i->cr_tls_array));
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+--- a/arch/x86/include/asm/elf.h
++++ b/arch/x86/include/asm/elf.h
+@@ -336,9 +336,10 @@ struct linux_binprm;
  
-+	i->cr_len_xstate = 0;
-+	if (tsk->thread.xstate)
-+		i->cr_len_xstate = xstate_size;
-+
- 	rv = cr_write(ctx, i, sizeof(*i));
- 	kfree(i);
--	return rv;
-+	if (rv < 0)
-+		return rv;
-+	return cr_dump_xstate(ctx, tsk);
- }
- #endif
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
  
-@@ -218,9 +258,15 @@ static int cr_dump_task_struct_x86_64(struct cr_context *ctx, struct task_struct
- 	i->cr_dr6 = tsk->thread.debugreg6;
- 	i->cr_dr7 = tsk->thread.debugreg7;
+-extern int syscall32_setup_pages(struct linux_binprm *, int exstack);
++extern int syscall32_setup_pages(struct linux_binprm *, unsigned long start, int exstack);
+ #define compat_arch_setup_additional_pages	syscall32_setup_pages
  
-+	i->cr_len_xstate = 0;
-+	if (tsk->thread.xstate)
-+		i->cr_len_xstate = xstate_size;
-+
- 	rv = cr_write(ctx, i, sizeof(*i));
- 	kfree(i);
--	return rv;
-+	if (rv < 0)
-+		return rv;
-+	return cr_dump_xstate(ctx, tsk);
+ extern unsigned long arch_randomize_brk(struct mm_struct *mm);
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -310,7 +310,7 @@ int __init sysenter_setup(void)
  }
  
- int cr_arch_dump_task_struct(struct cr_context *ctx, struct task_struct *tsk)
-@@ -236,6 +282,7 @@ int cr_arch_dump_task_struct(struct cr_context *ctx, struct task_struct *tsk)
- static int cr_restore_task_struct_x86_32(struct task_struct *tsk, struct cr_image_arch_x86_32 *i)
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
  {
- 	struct pt_regs *regs = task_pt_regs(tsk);
-+	int rv;
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -945,7 +945,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
+ 	set_binfmt(&elf_format);
  
- 	tsk->thread.sp = (unsigned long)regs;
- 	tsk->thread.sp0 = (unsigned long)(regs + 1);
-@@ -271,6 +318,10 @@ static int cr_restore_task_struct_x86_32(struct task_struct *tsk, struct cr_imag
- 
- 	memcpy(tsk->thread.tls_array, i->cr_tls_array, 3 * 8);
- 
-+	rv = cr_restore_xstate(tsk, i + 1, i->cr_len_xstate);
-+	if (rv < 0)
-+		return rv;
-+
- 	set_tsk_thread_flag(tsk, TIF_FORK);
- 	set_tsk_thread_flag(tsk, TIF_IA32);
- 	return 0;
-@@ -280,6 +331,7 @@ static int cr_restore_task_struct_x86_32(struct task_struct *tsk, struct cr_imag
- static int cr_restore_task_struct_x86_64(struct task_struct *tsk, struct cr_image_arch_x86_64 *i)
- {
- 	struct pt_regs *regs = task_pt_regs(tsk);
-+	int rv;
- 
- 	tsk->thread.sp = (unsigned long)regs;
- 	tsk->thread.sp0 = (unsigned long)(regs + 1);
-@@ -321,6 +373,10 @@ static int cr_restore_task_struct_x86_64(struct task_struct *tsk, struct cr_imag
- 	tsk->thread.debugreg6 = i->cr_dr6;
- 	tsk->thread.debugreg7 = i->cr_dr7;
- 
-+	rv = cr_restore_xstate(tsk, i + 1, i->cr_len_xstate);
-+	if (rv < 0)
-+		return rv;
-+
- 	set_tsk_thread_flag(tsk, TIF_FORK);
- 	return 0;
- }
+ #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+-	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
++	retval = arch_setup_additional_pages(bprm, 0, !!elf_interpreter);
+ 	if (retval < 0) {
+ 		send_sig(SIGKILL, current, 0);
+ 		goto out;
