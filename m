@@ -1,16 +1,15 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 09/30] x86_64: ifdef out struct thread_struct::ip
-Date: Fri, 10 Apr 2009 15:17:33 +0400
-Message-ID: <20090410111733.GA3311__43857.6684952297$1239362497$gmane$org@x200.localdomain>
-References: <20090410023522.GJ27788@x200.localdomain>
-	<20090410035328.GB29496@us.ibm.com>
-	<20090410091931.GF17962@elte.hu>
+Subject: Re: [PATCH 04/30] ipcns: add create_ipc_ns()
+Date: Fri, 10 Apr 2009 15:25:32 +0400
+Message-ID: <20090410112532.GB3311__33811.0036952004$1239362949$gmane$org@x200.localdomain>
+References: <20090410023358.GE27788@x200.localdomain>
+	<20090410090149.GD17962@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090410091931.GF17962-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <20090410090149.GD17962-X9Un+BFzKDI@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,70 +20,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 10, 2009 at 11:19:31AM +0200, Ingo Molnar wrote:
+On Fri, Apr 10, 2009 at 11:01:49AM +0200, Ingo Molnar wrote:
 > 
-> * Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> * Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 > 
-> > On Fri, Apr 10, 2009 at 06:35:22AM +0400, Alexey Dobriyan wrote:
-> > > struct thread_struct::ip isn't used on x86_64, struct pt_regs::ip is used
-> > > instead. 
-> > > 
-> > > kgdb should be reading 0, but I can't check it.
-> > > 
-> > > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> > > ---
-> > > 
-> > >  arch/x86/include/asm/processor.h |    2 ++
-> > >  arch/x86/kernel/kgdb.c           |    2 +-
-> > >  2 files changed, 3 insertions(+), 1 deletion(-)
-> > > 
-> > > --- a/arch/x86/include/asm/processor.h
-> > > +++ b/arch/x86/include/asm/processor.h
-> > > @@ -421,7 +421,9 @@ struct thread_struct {
-> > >  	unsigned short		fsindex;
-> > >  	unsigned short		gsindex;
-> > >  #endif
-> > > +#ifdef CONFIG_X86_32
-> > >  	unsigned long		ip;
-> > > +#endif
-> > >  #ifdef CONFIG_X86_64
-> > >  	unsigned long		fs;
-> > >  #endif
-> > 
-> > Do these make struct thread_struct behave better in cachelines 
-> > (smaller, less aliasing)? Can we really fit more in the slab du 
-> > jour?
-> > 
-> > Otherwise it seems like we're littering these structs with #ifdefs 
-> > and not really saving anything. [...]
+> > --- a/include/linux/ipc_namespace.h
+> > +++ b/include/linux/ipc_namespace.h
+> > @@ -97,6 +97,7 @@ static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
+> >  
+> >  #if defined(CONFIG_IPC_NS)
+> >  extern void free_ipc_ns(struct ipc_namespace *ns);
+> > +struct ipc_namespace *create_ipc_ns(void);
+> >  extern struct ipc_namespace *copy_ipcs(unsigned long flags,
+> >  				       struct ipc_namespace *ns);
+> >  extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
 > 
-> Removing fields always saves memory (even if it does not show up 
-> currently due to allocators cache-aligning sizes).
+> Hm, doesnt the existing, correct pattern strike your eyes out:
 > 
-> But the #ifdef ugliness is a real worry.
+>   extern foo1();
+>   extern foo2();
+>   extern foo3();
+> 
+> and then you add a new method in this inconsistent way:
+> 
+>   extern foo1();
+>   foox();
+>   extern foo2();
+>   extern foo3();
+> 
+> Instead of continuing the existing pattern via:
+> 
+>   extern foo1();
+>   extern foox();
+>   extern foo2();
+>   extern foo3();
+> 
+> ?
+> 
+> I think we need a new checkpatch warning for such things. It might 
+> be a small detail in the big picture, but a thousand small details 
+> create a big mess easily so we have to try to get all the small 
+> details right, all the time - that is the only way to create a 
+> better kernel in the end.
 
-You should have thought about it when i386/x86_64 unification was
-introduced.
+We (OK, I don't care anyway) should remove extern in front of prototypes.
 
-pagefault code was full of ifdefs (it's less now), and this is trivial
-ifdef in a header.
-
-> > [...] If these #ifdefs don't save any 
-> > space why not just put in a comment:
-> > 
-> > >  	unsigned long		ip; /* Used only on i386 */
-> 
-> Yes.
-> 
-> > Or maybe even:
-> > 
-> > 	union {
-> > 	  	unsigned long		ip; /* Used only on i386 */
-> > 	  	unsigned long		fs; /* Used only on x86_64 */
-> > 	};
-> 
-> Maybe. If this ever gets misunderstood somewhere in platform code we 
-> will get ugly failure modes and zero compiler help.
+They slow down compilation, they make easier to overcome 80-column limit resulting in
+multiline prototypes which are ugly.
