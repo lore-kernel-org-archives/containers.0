@@ -1,7 +1,7 @@
 From: "Elwin Stelzer Eliazer" <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: netfilter/iptables under namespace
-Date: Thu, 9 Apr 2009 16:59:20 -0700
-Message-ID: <000001c9b96f$33a1f410$9ae5dc30$@com>
+Subject: /dev/tun PPP interfaces under network namespace
+Date: Thu, 9 Apr 2009 17:03:40 -0700
+Message-ID: <000501c9b96f$ce4e82d0$6aeb8870$@com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,7 +23,12 @@ Hi,
 
  
 
-Are netfilter/iptables properly isolated under namespace in 2.6.29?
+Can I have /dev/tun based PPP interfaces under network namespace, associated
+with a container?
+
+What config type will this be? Veth? Or vppp?
+
+Is this available in 2.6.29?
 
  
 
