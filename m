@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
-Date: Fri, 10 Apr 2009 06:32:07 +0400
-Message-ID: <20090410023207.GA27788__46187.6386347741$1239330885$gmane$org@x200.localdomain>
+Subject: [PATCH 01/30] headers: fixup cred.h, ipc_namespace.h
+Date: Fri, 10 Apr 2009 06:32:48 +0400
+Message-ID: <20090410023248.GB27788__4714.26573717526$1239330913$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,13 +20,34 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwB
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is to show how we see C/R and to provoke discussion on number of
-important issues (mounts, ...).
+cred.h uses __init
+ipc_namespace.h uses kern_ipc_perm.
 
-This is small part of long-awaited to be cleanuped code.
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
 
-It's able to restore busyloop on i386 and x86_64 and restore i386
-busyloop on x86_64. It wasn't tested much more than that.
+ include/linux/cred.h          |    1 +
+ include/linux/ipc_namespace.h |    2 ++
+ 2 files changed, 3 insertions(+)
 
-I'm currently starting formal testsuite, otherwise it's whack-a-mole
-game and formal TODO list (a huge one).
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -13,6 +13,7 @@
+ #define _LINUX_CRED_H
+ 
+ #include <linux/capability.h>
++#include <linux/init.h>
+ #include <linux/key.h>
+ #include <asm/atomic.h>
+ 
+--- a/include/linux/ipc_namespace.h
++++ b/include/linux/ipc_namespace.h
+@@ -6,6 +6,8 @@
+ #include <linux/rwsem.h>
+ #include <linux/notifier.h>
+ 
++struct kern_ipc_perm;
++
+ /*
+  * ipc namespace events
+  */
