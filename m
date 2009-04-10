@@ -1,16 +1,16 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+From: Jaswinder Singh Rajput <jaswinder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH 09/30] x86_64: ifdef out struct thread_struct::ip
-Date: Fri, 10 Apr 2009 11:47:38 +0200
-Message-ID: <20090410094738.GA11770__13401.8162069426$1239357093$gmane$org@elte.hu>
+Date: Fri, 10 Apr 2009 16:22:08 +0530
+Message-ID: <1239360728.3012.6.camel__25298.1677921072$1239361109$gmane$org@ht.satnam>
 References: <20090410023522.GJ27788@x200.localdomain>
 	<20090410035328.GB29496@us.ibm.com>
-	<20090410091931.GF17962@elte.hu>
+	<1239336639.3036.20.camel@ht.satnam>
+	<20090410092000.GG17962@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090410091931.GF17962-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <20090410092000.GG17962-X9Un+BFzKDI@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,62 +20,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>
+To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-* Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org> wrote:
-
+On Fri, 2009-04-10 at 11:20 +0200, Ingo Molnar wrote:
+> * Jaswinder Singh Rajput <jaswinder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
 > 
-> * Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > On Fri, Apr 10, 2009 at 06:35:22AM +0400, Alexey Dobriyan wrote:
-> > > struct thread_struct::ip isn't used on x86_64, struct pt_regs::ip is used
-> > > instead. 
+> > On Thu, 2009-04-09 at 20:53 -0700, Matt Helsley wrote:
+> > > On Fri, Apr 10, 2009 at 06:35:22AM +0400, Alexey Dobriyan wrote:
+> > > > struct thread_struct::ip isn't used on x86_64, struct pt_regs::ip is used
+> > > > instead. 
+> > > > 
+> > > > kgdb should be reading 0, but I can't check it.
+> > > > 
+> > > > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > > > ---
+> > > > 
+> > > >  arch/x86/include/asm/processor.h |    2 ++
+> > > >  arch/x86/kernel/kgdb.c           |    2 +-
+> > > >  2 files changed, 3 insertions(+), 1 deletion(-)
+> > > > 
+> > > > --- a/arch/x86/include/asm/processor.h
+> > > > +++ b/arch/x86/include/asm/processor.h
+> > > > @@ -421,7 +421,9 @@ struct thread_struct {
+> > > >  	unsigned short		fsindex;
+> > > >  	unsigned short		gsindex;
+> > > >  #endif
+> > > > +#ifdef CONFIG_X86_32
+> > > >  	unsigned long		ip;
+> > > > +#endif
+> > > >  #ifdef CONFIG_X86_64
+> > > >  	unsigned long		fs;
+> > > >  #endif
 > > > 
-> > > kgdb should be reading 0, but I can't check it.
+> > > Do these make struct thread_struct behave better in cachelines (smaller,
+> > > less aliasing)? Can we really fit more in the slab du jour?
 > > > 
-> > > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> > > ---
+> > > Otherwise it seems like we're littering these structs with #ifdefs
+> > > and not really saving anything. If these #ifdefs don't save any space why not 
+> > > just put in a comment:
 > > > 
-> > >  arch/x86/include/asm/processor.h |    2 ++
-> > >  arch/x86/kernel/kgdb.c           |    2 +-
-> > >  2 files changed, 3 insertions(+), 1 deletion(-)
+> > > >  	unsigned long		ip; /* Used only on i386 */
 > > > 
-> > > --- a/arch/x86/include/asm/processor.h
-> > > +++ b/arch/x86/include/asm/processor.h
-> > > @@ -421,7 +421,9 @@ struct thread_struct {
-> > >  	unsigned short		fsindex;
-> > >  	unsigned short		gsindex;
-> > >  #endif
-> > > +#ifdef CONFIG_X86_32
-> > >  	unsigned long		ip;
-> > > +#endif
-> > >  #ifdef CONFIG_X86_64
-> > >  	unsigned long		fs;
-> > >  #endif
+> > > Or maybe even:
+> > > 
+> > > 	union {
+> > > 	  	unsigned long		ip; /* Used only on i386 */
+> > > 	  	unsigned long		fs; /* Used only on x86_64 */
+> > > 	};
+> > > 
 > > 
-> > Do these make struct thread_struct behave better in cachelines 
-> > (smaller, less aliasing)? Can we really fit more in the slab du 
-> > jour?
+> > Can we do it like this:
+> >   	unsigned long		ip_fs; /* ip: i386, fs: x86_64 */
 > > 
-> > Otherwise it seems like we're littering these structs with #ifdefs 
-> > and not really saving anything. [...]
+> > I am using same variable for both cases, or we can use some better 
+> > name than ip_fs. I am assuming either it is i386 or x86_64 machine 
+> > ;-)
 > 
-> Removing fields always saves memory (even if it does not show up 
-> currently due to allocators cache-aligning sizes).
+> This is the least clean variant amongst all the suggestions.
+> 
 
-I mean: we always try to consider structure size reductions as if 
-they saved real memory, even if they dont do so in the current 
-layout and allocation patterns.
+Yes, this was a wakeful call for you.
 
-In reality only every 8th 8-byte reduction will result in a true 
-64-byte cacheline reduction - but still we have to continue small 
-reductions otherwise we wont ever get to the larger reductions in 
-the first place.
+I send dozen of emails in last 24 hours to you for your feedback.
 
-I.e. Alexey's patch shows a real item worth checking, regardless of 
-the current size and alignment scenario.
+I do not need reply for this email. Please send reply for other emails.
 
-	Ingo
+Thanks,
+
+--
+JSR
