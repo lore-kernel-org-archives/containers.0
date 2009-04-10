@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 28/30] cr: sockets
-Date: Fri, 10 Apr 2009 06:40:37 +0400
-Message-ID: <20090410024037.GC27788__19226.2844917879$1239332027$gmane$org@x200.localdomain>
+Subject: [PATCH 29/30] cr: tty/pty
+Date: Fri, 10 Apr 2009 06:40:50 +0400
+Message-ID: <20090410024050.GD27788__15374.6108328507$1239332031$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,131 +20,191 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwB
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Nothing will be dumped because socket file_operations aren't ready.
+FIXME: opened tty won't passed ->checkpoint check.
 
-This is one big FIXME item.
+currently in desperate need on how to test it.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- include/linux/cr.h    |    8 ++++
- kernel/cr/Makefile    |    1 
- kernel/cr/cpt-sys.c   |    6 +++
- kernel/cr/cr-net.c    |    7 +++
- kernel/cr/cr-socket.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++++++
- kernel/cr/cr.h        |   19 ++++++++++
- 6 files changed, 131 insertions(+)
+ include/linux/cr.h  |   37 ++++++++++++
+ kernel/cr/Kconfig   |    1 
+ kernel/cr/Makefile  |    1 
+ kernel/cr/cpt-sys.c |    6 +
+ kernel/cr/cr-pid.c  |   14 ++++
+ kernel/cr/cr-tty.c  |  160 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/cr/cr.h      |    4 +
+ 7 files changed, 223 insertions(+)
 
 --- a/include/linux/cr.h
 +++ b/include/linux/cr.h
-@@ -50,6 +50,7 @@ struct cr_object_header {
- #define CR_OBJ_USER_NS		19
+@@ -51,6 +51,7 @@ struct cr_object_header {
  #define CR_OBJ_MNT_NS		20
  #define CR_OBJ_NET_NS		21
-+#define CR_OBJ_SOCK		22
+ #define CR_OBJ_SOCK		22
++#define CR_OBJ_TTY		23
  	__u32	cr_type;	/* object type */
  	__u32	cr_len;		/* object length in bytes including header */
  } __packed;
-@@ -373,4 +374,11 @@ struct cr_image_net_ns {
- 		__u32	cr_sysctl_max_dgram_qlen;
- 	} cr_unx;
+@@ -381,4 +382,40 @@ struct cr_image_sock {
+ 	cr_pos_t	cr_pos_sk_net;
+ 	__u16		cr_sk_family;
  } __packed;
 +
-+struct cr_image_sock {
++struct cr_image_tty {
 +	struct cr_object_header cr_hdr;
 +
-+	cr_pos_t	cr_pos_sk_net;
-+	__u16		cr_sk_family;
++	__u16		cr_driver_type;
++	__u16		cr_driver_subtype;
++	__u32		cr_driver_flags;
++	__u32		cr_index;
++	__u32		cr_link_index;
++	struct {
++		__u32	cr_c_iflag;
++		__u32	cr_c_oflag;
++		__u32	cr_c_cflag;
++		__u32	cr_c_lflag;
++		__u8	cr_c_line;
++		__u8	cr_c_cc[23];
++		__u32	cr_c_ispeed;
++		__u32	cr_c_ospeed;
++	} cr_termios;
++	__u8		cr_name[64];
++	cr_pos_t	cr_pos_pgrp;	/* CR_POS_UNDEF if tty->pgrp == NULL */
++	cr_pos_t	cr_pos_session;	/* CR_POS_UNDEF if tty->session == NULL */
++	__u64		cr_flags;
++	struct {
++		__u16	cr_ws_row;
++		__u16	cr_ws_col;
++		__u16	cr_ws_xpixel;
++		__u16	cr_ws_ypixel;
++	} cr_winsize;
++	__u8		cr_stopped;
++	__u8		cr_hw_stopped;
++	__u8		cr_flow_stopped;
++	__u8		cr_packet;
++	__u8		cr_low_latency;
++	__u8		cr_ctrl_status;
 +} __packed;
  #endif
+--- a/kernel/cr/Kconfig
++++ b/kernel/cr/Kconfig
+@@ -1,5 +1,6 @@
+ config CR
+ 	bool "Container checkpoint/restart"
++	depends on DEVPTS_MULTIPLE_INSTANCES
+ 	depends on NET_NS || (NET = n)
+ 	depends on PID_NS
+ 	depends on USER_NS
 --- a/kernel/cr/Makefile
 +++ b/kernel/cr/Makefile
-@@ -10,6 +10,7 @@ cr-$(CONFIG_NET) += cr-net.o
- cr-y += cr-nsproxy.o
- cr-y += cr-pid.o
+@@ -12,6 +12,7 @@ cr-y += cr-pid.o
  cr-y += cr-signal.o
-+cr-$(CONFIG_NET) += cr-socket.o
+ cr-$(CONFIG_NET) += cr-socket.o
  cr-y += cr-task.o
++cr-y += cr-tty.o
  cr-y += cr-uts.o
  cr-$(CONFIG_X86_32) += cr-x86_32.o
+ cr-$(CONFIG_X86_64) += cr-x86_64.o
 --- a/kernel/cr/cpt-sys.c
 +++ b/kernel/cr/cpt-sys.c
-@@ -86,6 +86,9 @@ static int cr_collect(struct cr_context *ctx)
- 	rv = cr_collect_all_file(ctx);
+@@ -101,6 +101,9 @@ static int cr_collect(struct cr_context *ctx)
+ 	rv = cr_collect_all_sighand_struct(ctx);
  	if (rv < 0)
  		return rv;
-+	rv = cr_collect_all_sock(ctx);
++	rv = cr_collect_all_tty_struct(ctx);
 +	if (rv < 0)
 +		return rv;
- 	rv = cr_collect_all_net_ns(ctx);
+ 	rv = cr_collect_all_cred(ctx);
  	if (rv < 0)
  		return rv;
-@@ -182,6 +185,9 @@ static int cr_dump(struct cr_context *ctx)
- 	rv = cr_dump_all_net_ns(ctx);
+@@ -179,6 +182,9 @@ static int cr_dump(struct cr_context *ctx)
+ 	rv = cr_dump_all_fs_struct(ctx);
  	if (rv < 0)
  		return rv;
-+	rv = cr_dump_all_sock(ctx);
++	rv = cr_dump_all_tty(ctx);
 +	if (rv < 0)
 +		return rv;
- 	rv = cr_dump_all_sighand_struct(ctx);
+ 	rv = cr_dump_all_uts_ns(ctx);
  	if (rv < 0)
  		return rv;
---- a/kernel/cr/cr-net.c
-+++ b/kernel/cr/cr-net.c
-@@ -27,6 +27,13 @@ int cr_collect_all_net_ns(struct cr_context *ctx)
- 		if (rv < 0)
- 			return rv;
+--- a/kernel/cr/cr-pid.c
++++ b/kernel/cr/cr-pid.c
+@@ -226,6 +226,20 @@ int cr_collect_all_pid(struct cr_context *ctx)
+ 				return rv;
+ 		}
  	}
-+	for_each_cr_object(ctx, obj, CR_CTX_SOCK) {
-+		struct sock *sk = obj->o_obj;
++	for_each_cr_object(ctx, obj, CR_CTX_TTY) {
++		struct tty_struct *tty = obj->o_obj;
 +
-+		rv = cr_collect_net_ns(ctx, sock_net(sk));
-+		if (rv < 0)
-+			return rv;
++		if (tty->pgrp) {
++			rv = cr_collect_pid(ctx, tty->pgrp);
++			if (rv < 0)
++				return rv;
++		}
++		if (tty->session) {
++			rv = cr_collect_pid(ctx, tty->session);
++			if (rv < 0)
++				return rv;
++		}
 +	}
- 	for_each_cr_object(ctx, obj, CR_CTX_NET_NS) {
- 		struct net *net_ns = obj->o_obj;
- 		unsigned int cnt = atomic_read(&net_ns->count);
+ 	/* FIXME pid refcount check should account references from proc inodes */
+ 	return 0;
+ }
 new file mode 100644
 --- /dev/null
-+++ b/kernel/cr/cr-socket.c
-@@ -0,0 +1,90 @@
++++ b/kernel/cr/cr-tty.c
+@@ -0,0 +1,160 @@
 +/* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
-+#include <net/sock.h>
++#include <linux/tty.h>
 +
 +#include <linux/cr.h>
 +#include "cr.h"
 +
-+static int cr_check_sock(struct sock *sk)
++static int cr_check_tty(struct tty_struct *tty)
 +{
-+#ifdef CONFIG_XFRM
-+	if (sk->sk_policy[0] || sk->sk_policy[1]) {
-+		WARN_ON(1);
++	if (!tty->link) {
++		WARN(1, "tty %p, tty->link %p\n", tty, tty->link);
 +		return -EINVAL;
 +	}
-+#endif
-+#ifdef CONFIG_SECURITY
-+	if (sk->sk_security) {
-+		WARN_ON(1);
++	if (tty->link->link != tty) {
++		WARN(1, "tty %p, tty->link %p, tty->link->link %p\n", tty, tty->link, tty->link->link);
 +		return -EINVAL;
 +	}
-+#endif
 +	return 0;
 +}
 +
-+static int cr_collect_sock(struct cr_context *ctx, struct sock *sk)
++static int __cr_collect_tty(struct cr_context *ctx, struct tty_struct *tty)
 +{
 +	int rv;
 +
-+	rv = cr_check_sock(sk);
-+	if (rv < 0)
-+		return rv;
-+	rv = cr_collect_object(ctx, sk, CR_CTX_SOCK);
-+	printk("collect sock %p: rv %d, family %u\n", sk, rv, sk->sk_family);
++	rv = cr_collect_object(ctx, tty, CR_CTX_TTY);
++	printk("collect tty %p: rv %d\n", tty, rv);
 +	return rv;
 +}
 +
-+int cr_collect_all_sock(struct cr_context *ctx)
++static int cr_collect_tty(struct cr_context *ctx, struct tty_struct *tty)
++{
++	int rv;
++
++	rv = cr_check_tty(tty);
++	if (rv < 0)
++		return rv;
++	rv = __cr_collect_tty(ctx, tty);
++	if (rv < 0)
++		return rv;
++	if (tty->link) {
++		rv = cr_check_tty(tty->link);
++		if (rv < 0)
++			return rv;
++		rv = __cr_collect_tty(ctx, tty->link);
++		if (rv < 0)
++			return rv;
++	}
++	return 0;
++}
++
++int cr_collect_all_tty_struct(struct cr_context *ctx)
 +{
 +	struct cr_object *obj;
 +	int rv;
@@ -153,33 +213,89 @@ new file mode 100644
 +		struct file *file = obj->o_obj;
 +		struct inode *inode = file->f_path.dentry->d_inode;
 +
-+		if (!S_ISSOCK(inode->i_mode))
++		if (!S_ISCHR(inode->i_mode))
 +			continue;
 +
-+		rv = cr_collect_sock(ctx, SOCKET_I(inode)->sk);
-+		if (rv < 0)
-+			return rv;
++		switch (imajor(inode)) {
++		case UNIX98_PTY_SLAVE_MAJOR:
++			rv = cr_collect_tty(ctx, file->private_data);
++			if (rv < 0)
++				return rv;
++			break;
++		}
++	}
++	for_each_cr_object(ctx, obj, CR_CTX_TTY) {
++		struct tty_struct *tty = obj->o_obj;
++
++		if (tty->driver->type == TTY_DRIVER_TYPE_PTY && tty->driver->subtype == PTY_TYPE_SLAVE) {
++			if (tty->link && tty->link->count)
++				obj->o_count++;
++		}
++	}
++	for_each_cr_object(ctx, obj, CR_CTX_TTY) {
++		struct tty_struct *tty = obj->o_obj;
++		unsigned int cnt = tty->count;
++
++		if (obj->o_count != cnt) {
++			printk("%s: tty %p has external references %lu:%u\n", __func__, tty, obj->o_count, cnt);
++			return -EINVAL;
++		}
 +	}
 +	return 0;
 +}
 +
-+static int cr_dump_sock(struct cr_context *ctx, struct cr_object *obj)
++static int cr_dump_tty(struct cr_context *ctx, struct cr_object *obj)
 +{
-+	struct sock *sk = obj->o_obj;
-+	struct cr_image_sock *i;
++	struct tty_struct *tty = obj->o_obj;
++	struct cr_image_tty *i;
 +	struct cr_object *tmp;
++	int n;
 +	int rv;
 +
-+	printk("dump socket %p\n", sk);
++	printk("dump tty = %p, type = %d, subtype = %d\n", tty, tty->driver->type, tty->driver->subtype);
 +
-+	i = cr_prepare_image(CR_OBJ_SOCK, sizeof(*i));
++	i = cr_prepare_image(CR_OBJ_TTY, sizeof(*i));
 +	if (!i)
 +		return -ENOMEM;
 +
-+	tmp = cr_find_obj_by_ptr(ctx, sock_net(sk), CR_CTX_NET_NS);
-+	i->cr_pos_sk_net = tmp->o_pos;
-+
-+	i->cr_sk_family = sk->sk_family;
++	i->cr_driver_type = tty->driver->type;
++	i->cr_driver_subtype = tty->driver->subtype;
++	i->cr_driver_flags = tty->driver->flags;
++	i->cr_index = tty->index;
++	i->cr_link_index = tty->link->index;
++	i->cr_termios.cr_c_iflag = tty->termios->c_iflag;
++	i->cr_termios.cr_c_oflag = tty->termios->c_oflag;
++	i->cr_termios.cr_c_cflag = tty->termios->c_cflag;
++	i->cr_termios.cr_c_lflag = tty->termios->c_lflag;
++	i->cr_termios.cr_c_line = tty->termios->c_line;
++	BUILD_BUG_ON(NCCS > 23);
++	for (n = 0; n < NCCS; n++)
++		i->cr_termios.cr_c_cc[n] = tty->termios->c_cc[n];
++	i->cr_termios.cr_c_ispeed = tty->termios->c_ispeed;
++	i->cr_termios.cr_c_ospeed = tty->termios->c_ospeed;
++	BUILD_BUG_ON(sizeof(tty->name) > 64);
++	strlcpy(i->cr_name, tty->name, 64);
++	if (tty->pgrp) {
++		tmp = cr_find_obj_by_ptr(ctx, tty->pgrp, CR_CTX_PID);
++		i->cr_pos_pgrp = tmp->o_pos;
++	} else
++		i->cr_pos_pgrp = CR_POS_UNDEF;
++	if (tty->session) {
++		tmp = cr_find_obj_by_ptr(ctx, tty->session, CR_CTX_PID);
++		i->cr_pos_session = tmp->o_pos;
++	} else
++		i->cr_pos_session = CR_POS_UNDEF;
++	i->cr_flags = tty->flags;
++	i->cr_winsize.cr_ws_row = tty->winsize.ws_row;
++	i->cr_winsize.cr_ws_col = tty->winsize.ws_col;
++	i->cr_winsize.cr_ws_xpixel = tty->winsize.ws_xpixel;
++	i->cr_winsize.cr_ws_ypixel = tty->winsize.ws_ypixel;
++	i->cr_stopped = tty->stopped;
++	i->cr_hw_stopped = tty->hw_stopped;
++	i->cr_flow_stopped = tty->flow_stopped;
++	i->cr_packet = tty->packet;
++	i->cr_low_latency = tty->low_latency;
++	i->cr_ctrl_status = tty->ctrl_status;
 +
 +	obj->o_pos = ctx->cr_dump_file->f_pos;
 +	rv = cr_write(ctx, i, sizeof(*i));
@@ -187,13 +303,13 @@ new file mode 100644
 +	return rv;
 +}
 +
-+int cr_dump_all_sock(struct cr_context *ctx)
++int cr_dump_all_tty(struct cr_context *ctx)
 +{
 +	struct cr_object *obj;
 +	int rv;
 +
-+	for_each_cr_object(ctx, obj, CR_CTX_SOCK) {
-+		rv = cr_dump_sock(ctx, obj);
++	for_each_cr_object(ctx, obj, CR_CTX_TTY) {
++		rv = cr_dump_tty(ctx, obj);
 +		if (rv < 0)
 +			return rv;
 +	}
@@ -201,43 +317,35 @@ new file mode 100644
 +}
 --- a/kernel/cr/cr.h
 +++ b/kernel/cr/cr.h
-@@ -37,6 +37,9 @@ enum cr_context_obj_type {
- 	CR_CTX_PID_NS,
- 	CR_CTX_SIGHAND_STRUCT,
- 	CR_CTX_SIGNAL_STRUCT,
-+#ifdef CONFIG_NET
-+	CR_CTX_SOCK,
-+#endif
+@@ -3,6 +3,7 @@
+ #define __KERNEL_CR_CR_H
+ #include <linux/list.h>
+ #include <linux/slab.h>
++#include <asm/signal.h>
+ 
+ #include <linux/cr.h>
+ 
+@@ -41,6 +42,7 @@ enum cr_context_obj_type {
+ 	CR_CTX_SOCK,
+ #endif
  	CR_CTX_TASK_STRUCT,
++	CR_CTX_TTY,
  	CR_CTX_USER_NS,
  	CR_CTX_USER_STRUCT,
-@@ -113,6 +116,14 @@ int cr_collect_all_pid_ns(struct cr_context *ctx);
- int cr_collect_all_pid(struct cr_context *ctx);
- int cr_collect_all_sighand_struct(struct cr_context *ctx);
- int cr_collect_all_signal_struct(struct cr_context *ctx);
-+#ifdef CONFIG_NET
-+int cr_collect_all_sock(struct cr_context *ctx);
-+#else
-+static inline int cr_collect_all_sock(struct cr_context *ctx)
-+{
-+	return 0;
-+}
-+#endif
+ 	CR_CTX_UTS_NS,
+@@ -125,6 +127,7 @@ static inline int cr_collect_all_sock(struct cr_context *ctx)
+ }
+ #endif
  int cr_collect_all_task_struct(struct cr_context *ctx);
++int cr_collect_all_tty_struct(struct cr_context *ctx);
  int cr_collect_all_user_ns(struct cr_context *ctx);
  int cr_collect_all_user_struct(struct cr_context *ctx);
-@@ -138,6 +149,14 @@ int cr_dump_all_pid_ns(struct cr_context *ctx);
- int cr_dump_all_pid(struct cr_context *ctx);
- int cr_dump_all_sighand_struct(struct cr_context *ctx);
- int cr_dump_all_signal_struct(struct cr_context *ctx);
-+#ifdef CONFIG_NET
-+int cr_dump_all_sock(struct cr_context *ctx);
-+#else
-+static inline int cr_dump_all_sock(struct cr_context *ctx)
-+{
-+	return 0;
-+}
-+#endif
+ int cr_collect_all_uts_ns(struct cr_context *ctx);
+@@ -158,6 +161,7 @@ static inline int cr_dump_all_sock(struct cr_context *ctx)
+ }
+ #endif
  int cr_dump_all_task_struct(struct cr_context *ctx);
++int cr_dump_all_tty(struct cr_context *ctx);
  int cr_dump_all_user_ns(struct cr_context *ctx);
  int cr_dump_all_user_struct(struct cr_context *ctx);
+ int cr_dump_all_uts_ns(struct cr_context *ctx);
