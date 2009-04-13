@@ -1,16 +1,11 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Mon, 13 Apr 2009 12:10:50 +0400
-Message-ID: <20090413081050.GA4687__39270.6475257457$1239610406$gmane$org@x200.localdomain>
-References: <20090410023539.GK27788@x200.localdomain>
-	<20090410093520.GH17962@elte.hu>
-	<20090410114326.GC3311@x200.localdomain> <49DF718B.9050809@hp.com>
+From: Guofu Xiang <whxgf1984-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: How to enable SYSENTER/SYSEXIT in glibc-2.7?
+Date: Mon, 13 Apr 2009 17:10:20 +0800
+Message-ID: <d15b2c7b0904130210j7ff25665h539546d239db5697@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49DF718B.9050809-VXdhtT5mjnY@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,21 +15,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: brian.haley-VXdhtT5mjnY@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 10, 2009 at 12:19:23PM -0400, Brian Haley wrote:
-> Alexey Dobriyan wrote:
-> > And of course, I don't want to see multiline
-> > 
-> > 	vmflags &= ~(VM_READ|VM_WRITE|
-> > 			[5 lines skipped]
-> 
-> Then why don't you:
-> 
-> #define VM_CR_FOO (VM_READ|VM_WRITE|...)
-> 
-> 	vmflags &= ~VM_CR_FOO;
+I have known that from glibc-2.3.1-25, SYSENTER is supported as the default.
+Now, My OS is Fedora 8(kernel version:
+linux-2.6.23), and glibc-2.7-2 is the default. When I compile C program,
+this is the debug result by gdb:
 
-This won't fix "multiline" part.
+     (gdb) disas __kernel_vsyscall
+     Dump of assembler code for function __kernel_vsyscall:
+     0xb7f7a400 <__kernel_vsyscall+0>:       int    $0x80
+     0xb7f7a402 <__kernel_vsyscall+2>:       ret
+     End of assembler dump.
+
+     The system call is implemented by int $80h, rather than SYSENTER. What
+is the reason? How to set SYSENTER as the default implementation of system
+call? Thank you for your response!
