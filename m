@@ -1,14 +1,18 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Mon, 13 Apr 2009 09:20:38 -0500
-Message-ID: <20090413142038.GB13007@us.ibm.com>
-References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v14-rc3][PATCH 36/36] Stub implementation of IPC namespace
+	c/r
+Date: Mon, 13 Apr 2009 07:23:37 -0700
+Message-ID: <877i1oeiom.fsf@caffeine.danplanet.com>
+References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
+	<1239107264-21775-37-git-send-email-orenl@cs.columbia.edu>
+	<20090409212939.GD5115@us.ibm.com> <49E163FC.4080306@cs.columbia.edu>
+	<20090413141022.GA13007@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
+In-Reply-To: <20090413141022.GA13007-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Mon, 13 Apr 2009 09:10:22 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,42 +22,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?iso-8859-1?Q?M=F4she?= van der Sterre <me-A/3C56C7qwM@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting M=F4she van der Sterre (me-A/3C56C7qwM@public.gmane.org):
-> Hello,
-> =
+SH> But actually I think it's better if you move that into an
+SH> appropriately named little static inline helper (commented).  Then
+SH> the reader can verify it once separately, and then ignore how it
+SH> works while verifying the surrounding code.  Not just here but,
+SH> other places where you do this.
 
-> I am working on the lxc userspace tools, and got this BUG a couple of
-> times.
-> Here are the reports:
-> =
+Seconded-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> http://moshe.nl/tty-bugshot1.png
-> http://moshe.nl/tty-bugshot2.png
-> =
+:)
 
-> I am running 2.6.29.1 from kernel.org in a virtual machine under kvm.
-> I have not been able to reliably reproduce it, but it happens only after
-> the container is setup and ptrace is active on lxc-start.
-> I think the first screen shot is while all ttys where allowed in
-> cgroup.devices, the second one while only tty1 was allowed.
-
-Which distro is this - an uptodate F10, fresh F11, something else?
-
-Since it also happens when all ttys are allowed it probably isn't the
-devices cgroup...  Actually the devpts code seems the most likely
-cause.  Suka, can you take a look at the 2.6.29.1 source for anything
-suspect?
-
-M=F4she, can you send me tty_io.S after doing:
-	'objdump -d drivers/char/tty_io.o > tty_io.S'
-
-as well as strace_output after doing:
-	'strace -f -ostrace_output <your_lxc_start_command_here>'
-?
-
-thanks,
--serge
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
