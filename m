@@ -1,18 +1,16 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v14-rc3][PATCH 36/36] Stub implementation of IPC namespace
-	c/r
-Date: Mon, 13 Apr 2009 07:23:37 -0700
-Message-ID: <877i1oeiom.fsf@caffeine.danplanet.com>
-References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
-	<1239107264-21775-37-git-send-email-orenl@cs.columbia.edu>
-	<20090409212939.GD5115@us.ibm.com> <49E163FC.4080306@cs.columbia.edu>
-	<20090413141022.GA13007@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v2][PATCH 01/10] Infrastructure for work postponed to the
+	end of checkpoint/restart
+Date: Mon, 13 Apr 2009 10:35:04 -0500
+Message-ID: <20090413153504.GA15846@us.ibm.com>
+References: <1239107503-21941-1-git-send-email-orenl@cs.columbia.edu>
+	<1239107503-21941-2-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090413141022.GA13007-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Mon, 13 Apr 2009 09:10:22 -0500")
+Content-Disposition: inline
+In-Reply-To: <1239107503-21941-2-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,21 +20,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SH> But actually I think it's better if you move that into an
-SH> appropriately named little static inline helper (commented).  Then
-SH> the reader can verify it once separately, and then ignore how it
-SH> works while verifying the surrounding code.  Not just here but,
-SH> other places where you do this.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> --- a/checkpoint/Makefile
+> +++ b/checkpoint/Makefile
+> @@ -2,8 +2,8 @@
+>  # Makefile for linux checkpoint/restart.
+>  #
+> 
+> -obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o \
+> +obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o deferqueue.o \
+>  		checkpoint.o restart.o \
+>  		ckpt_task.o rstr_task.o \
+>  		ckpt_mem.o rstr_mem.o \
+> -		ckpt_file.o rstr_file.o
+> +		ckpt_file.o rstr_file.o \
 
-Seconded-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+?
 
-:)
+> +int cr_deferqueue_add(struct cr_ctx *ctx, cr_deferqueue_func_t function,
+> +		     unsigned int flags, void *data, int size)
+> +{
+> +	struct cr_deferqueue *wq;
+> +
+> +	wq = kmalloc(sizeof(wq) + size, GFP_KERNEL);
+> +	if (!wq)
+> +		return -ENOMEM;
+> +
+> +	wq->function = function;
+> +	wq->flags = flags;
+> +	memcpy(wq->data, data, size);
+> +
+> +	cr_debug("adding work %p function %p\n", wq, wq->function);
+> +	list_add_tail(&ctx->deferqueue, &wq->list);
+> +	return 0;
+> +}
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Shouldn't the deferqueue be protected by a spinlock here?
+
+-serge
