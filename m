@@ -1,119 +1,152 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: Re: Creating tasks on restart: userspace vs kernel
-Date: Tue, 14 Apr 2009 23:59:09 +0400
-Message-ID: <20090414195909.GA28353@x200.localdomain>
-References: <49E40662.2040508@cs.columbia.edu> <20090414163633.GE27461@x200.localdomain> <49E4D89D.9060903@cs.columbia.edu>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
+Date: Wed, 15 Apr 2009 00:08:18 +0400
+Message-ID: <20090414200818.GA28406@x200.localdomain>
+References: <20090410023207.GA27788@x200.localdomain>
+	<1239340031.24083.21.camel@nimitz>
+	<20090413091423.GA19236@x200.localdomain>
+	<49E4108A.8050201@cs.columbia.edu>
+	<20090414145830.GA27461@x200.localdomain>
+	<49E4D115.5080601@cs.columbia.edu>
+	<20090414183435.GA28233@x200.localdomain>
+	<49E4E4AB.1030803@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755168AbZDNT7K@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49E4D89D.9060903@cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: containers@lists.osdl.org, Dave Hansen <dave@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@elte.hu>
+In-Reply-To: <49E4E4AB.1030803-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> > In the end correctness of chopping will be equal to how good user
-> > understands that two task_struct's are independent of each other.
-> > 
-> >> But it will still be a useful tool for many use cases, like batch cpu jobs,
-> >> some servers, vnc sessions (if you want graphics) etc. Imagine you run
-> >> 'octave' for a week and must reboot now - 'octave' wouldn't care if
-> >> you checkpointed it and then restart with a different pid !
+On Tue, Apr 14, 2009 at 03:31:55PM -0400, Oren Laadan wrote:
+> 
+> 
+> Alexey Dobriyan wrote:
+> > On Tue, Apr 14, 2009 at 02:08:21PM -0400, Oren Laadan wrote:
 > >>
-> >> <3> Clone with pid:
+> >> Alexey Dobriyan wrote:
+> >>> On Tue, Apr 14, 2009 at 12:26:50AM -0400, Oren Laadan wrote:
+> >>>> Alexey Dobriyan wrote:
+> >>>>> On Thu, Apr 09, 2009 at 10:07:11PM -0700, Dave Hansen wrote:
+> >>>>>> I'm curious how you see these fitting in with the work that we've been
+> >>>>>> doing with Oren.  Do you mean to just start a discussion or are you
+> >>>>>> really proposing these as an alternative to what Oren has been posting?
+> >>>>> Yes, this is posted as alternative.
+> >>>>>
+> >>>>> Some design decisions are seen as incorrect from here like:
+> >>>> A definition of "design" would help; I find most of your comments
+> >>>> below either vague, cryptic, or technical nits...
+> >>>>
+> >>>>> * not rejecting checkpoint with possible "leaks" from container
+> >>>> ...like this, for example.
+> >>> Like checkpointing one process out of many living together.
+> >> See the thread on creating tasks in userspace vs. kernel space:
+> >> the argument here is that is an interesting enough use case for
+> >> a checkpoint of not-an-entire-container.
 > >>
-> >> To restart processes from userspace, there needs to be a way to
-> >> request a specific pid--in the current pid_ns--for the child process
-> >> (clearly, if it isn't in use).
+> >> Of course it will require more logic to it, so the user can choose
+> >> what she cares or does not care about, and the kernel could alert
+> >> the user about it.
 > >>
-> >> Why is it a disadvantage ?  to Linus, a syscall clone_with_pid()
-> >> "sounds like a _wonderful_ attack vector against badly written
-> >> user-land software...".  Actually, getting a specific pid is possible
-> >> without this syscall.  But the point is that it's undesirable to have
-> >> this functionality unrestricted.
+> >> The point is, that it is, IMHO, a desirable capability.
 > >>
-> >> So one option is to require root privileges. Another option is to
-> >> restrict such action in pid_ns created by the same user. Even more so,
-> >> restrict to only containers that are being restarted.
+> >>> If you allow this you consequently drop checks (e.g. refcount checks)
+> >>> for "somebody else is using structure to be checkpointed".
+> >>>
+> >> From this point below, I totally agree with you that for the purpose
+> >> of a whole-container-checkpoint this is certainly desirable. My point
+> >> was that it can be easily added the existing patchset (not yours).
+> >> Why not add it there ?
+> >>
+> >>> If you drop these checks, you can't decipher legal sutiations like
+> >>> "process genuinely doesn't care about routing table of netns it lives in"
+> >>> from "illegal" situations like "process created shm segment but currently
+> >>> doesn't use it so not checkpointing ipcns will result in breakagenlater".
+> >>>
+> >>> You'll have to move responsibility to user, so user exactly knows what
+> >>> app relies on and on what. And probably add flags like CKPT_SHM,
+> >>> CKPT_NETNS_ROUTE ad infinitum.
+> >>>
+> >>> And user will screw it badly and complain: "after restart my app
+> >>> segfaulted". And user himself is screwed now: old running process is
+> >>> already killed (it was checkpointed on purpose) and new process in image
+> >>> segfaults every time it's restarted.
+> >>>
+> >>> All of this in out opinion results in doing C/R unreliably and badly.
+> >>>
+> >>> We are going to do it well and dig from the other side.
+> >>>
+> >>> If "leak" (any "leak") is detected, C/R is aborted because kernel
+> >>> doesn't know what app relies on and what app doesn't care about.
+> >>>
+> >>> This protected from situations and failure modes described above.
+> >>>
+> >>> This also protects to some extent from in-kernel changes where C/R code
+> >>> should have been updated but wasn't. Person doing incomplete change won't
+> >>> notice e.g refcount checks and won't try to "fix" them. But we'll notice it,
+> >>> e.g. when running testsuite (amen) and update C/R code accordingly.
+> >>>
+> >>> I'm talking about these checks so that everyone understands:
+> >>>
+> >>> 	for_each_cr_object(ctx, obj, CR_CTX_MM_STRUCT) {
+> >>>                 struct mm_struct *mm = obj->o_obj;
+> >>>                 unsigned int cnt = atomic_read(&mm->mm_users);
+> >>>
+> >>>                 if (obj->o_count != cnt) {
+> >>>                         printk("%s: mm_struct %p has external references %lu:%u\n", __func__, mm, obj->o_count, cnt);
+> >>>                         return -EINVAL;
+> >>>                 }
+> >>>         }
+> >>>
+> >>> They are like moving detectors, small, invisible, something moved, you don't
+> >>> know what, but you don't care because you have to investigate anyway.
+> >>>
+> >>> In this scheme, if user wants to checkpoint just one process, he should
+> >>> start it alone in separate container. Right now, in posted patchset
+> >>> as cloned process with
+> >>> CLONE_NEWNS|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET
+> >> So you suggest that to checkpoint a single process, say a cpu job that
+> >> would run a week, which runs in the topmost pid_ns, I will need to
+> >> checkpoint the entire topmost pid_ns (as a container, if at all possible
+> >> - surely there will non-checkpointable tasks there) and then in
+> >> user-space filter out the data and leave only one task, and then to
+> >> restart I'll use a container again ?
 > > 
-> > You want to do small part in userspace and consequently end up with hacks
-> > both userspace-visible and in-kernel.
+> > No, you do little preparations and start CPU job in container from the very
+> > beginning.
 > 
-> I want to extend existing kernel interface to leverage fork/clone
-> from user space, AND to allow the flexibility mentioned above (which
-> you conveniently ignored).
+> So you are denying all those other users that don't want to do that
+> the joy of checkpointing and restarting their stuff ... :(
+
+That's the price for a feature. In return kernel promises to not create
+surprises after restart(2).
+
+> Or, for users who do run everything in container, but some task is not
+> checkpointable - it is using this electronic microscope device attached
+> to their handheld.
+
+Why this example?
+
+If code for opened file will register checkpoint/restart hooks, everything
+will be fine.
+
+> Alas, they do want to checkpoint that useful program they are running there
+> that calculates fibonacci numbers ...
 > 
-> All hacks are in-kernel, aren't they ?
+> Or, a nested container that shares something with the parent container,
+> so is not checkpointable by itself...
+>
+> Ok, you probably got the idea.
 
-mktree.c can be vieved as hack, why not?
-
-The whole existence of these requirements. You want new syscall or SET_NEX_PID
-or /proc file or something.
-
-> As for asking for a specific pid from user space, it can be done by:
-> * a new syscall (restricted to user-owned-namespace or CAP_SYS_ADMIN)
-> * a sys_restart(... SET_NEXT_PID) interface specific for restart (ugh)
-> * setting a special /proc/PID/next_id  file which is consulted by fork
-
-/proc/*/next_id was disscussed and hopefully died, but no.
-
-> and in all cases, limit this so it can only allowed in a restarting
-> container, under the proper security model (again, e.g., Serge's
-> suggestion).
-> 
-> > 
-> > Pids aren't special, they are struct pid, dynamically allocated and
-> > refcounted just like any other structtures.
-> > 
-> > They _become_ special for you intended method of restart.
-> 
-> They are special. And I allow them not to be restored, as well, if
-> the use case so wishes.
-
-The use case is to restore as much as possible to the same state as
-equal as possible. Not going with fork_with_pid() in any form helps
-kernel to ensure correctness of restore and helps to avoid surprise
-failure modes from user POV.
-
-> > You also have flags in nsproxy image (or where?) like "do clone with
-> > CLONE_NEWUTS".
-> 
-> Nope. Read the code.
-
-Which code?
-
-	static int cr_write_namespaces(struct cr_ctx *ctx, struct task_struct *t)
-	{
-		...
-
-		new_uts = cr_obj_add_ptr(ctx, nsproxy->uts_ns,
-					&hh->uts_ref, CR_OBJ_UTSNS, 0);
-		if (new_uts < 0) {
-			ret = new_uts;
-			goto out;
-		}
-
-		hh->flags = 0;
-		if (new_uts)
-	===>		hh->flags |= CLONE_NEWUTS;
-
-		ret = cr_write_obj(ctx, &h, hh);
-			...
-
-> > This is unneeded!
-> > 
-> > nsproxy (or task_struct) image have reference (objref/position) to uts_ns image.
-> > 
-> > On restart, one lookups object by reference or restore it if needed,
-> > takes refcount and glue. Just like with every other two structures.
-> 
-> That's exactly how it's done.
-
-Not for uts_ns and future namespaces.
-
-	ret = cr_restore_utsns(ctx, hh->uts_ref, hh->flags);
-						 ^^^^^^^^^
-						 comes from disk
-
-> > No "what to do, what to do" logic.
+You should too.
