@@ -1,7 +1,7 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
-Date: Tue, 14 Apr 2009 14:11:26 -0700
-Message-ID: <1239743486.32604.132.camel__30742.3815051608$1239743741$gmane$org@nimitz>
+Date: Tue, 14 Apr 2009 16:39:34 -0500
+Message-ID: <20090414213934.GB17986__18900.8230147467$1239745337$gmane$org@us.ibm.com>
 References: <20090410023207.GA27788@x200.localdomain>
 	<1239340031.24083.21.camel@nimitz>
 	<20090413091423.GA19236@x200.localdomain>
@@ -13,6 +13,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <20090414204912.GA28458-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -24,10 +25,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-04-15 at 00:49 +0400, Alexey Dobriyan wrote:
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > >>> * not having CAP_SYS_ADMIN on restart(2)
+> > >> Surely you have read already on the containers mailing list that
+> > >> for the *time being* we attempt to get as far as possible without
+> > >> requiring root privileges, to identify security hot-spots.
+> > > 
+> > > More or less everything is hotspot.
+> > 
 > > Going back to my example of a subtree above: what sort of security
 > > issues you would have here, assuming all restart operations go via
 > > the usual security checks just like syscalls, and we take special
@@ -36,28 +44,65 @@ On Wed, 2009-04-15 at 00:49 +0400, Alexey Dobriyan wrote:
 > This is like asking if everything goes through correct security checks
 > how will you screw something up. Everything won't go via usual security
 > checks.
-> 
+
+(Everything which doesn't go through usual security checks gets special
+security checks...)
+
+You are asking an administrator to give users setuid-root programs when
+they wouldn't otherwise need it.  So now not only is there potential of
+security holes in kernel code which was written under the assumption
+that 'hey you have privilege when you run this so are trusted'.  You
+also have more people running probably even less-vetted userspace code
+with privilege.
+
 > Just for giggles, writing exploit for localhost hole becomes easier --
 > you very effectively turn off all randomization kernel does because VMA
 > boundaries comes from disk.
 
-Alexey, I think there's a bit of a misunderstanding here.  We're
-proposing that whatever gets done during the restart would not be able
-to elevate above the privilege level of the user doing the restart.  For
-instance, a user would not be able to restart a suid application -- that
-would require privilege.
+Hmm, interesting point.
 
-In the same way, at checkpoint time, we should deny users the ability to
-checkpoint things that are privileged.  We need to pay very close
-attention to the kernel interfaces that we use to ensure that all the
-normal security checks are observed, of course.  
+But again you're going on a naive assumption that if restart requires
+privilege, only trusted users will use it.  Rather, in the real world,
+I claim that unprivileged users will be given more privilege than they
+need.
 
-There's no new hole.  A restore operation is just a pieced-together set
-of operations that the user would have already been able to perform.
+> > BTW, the checks for cpu registers and other values for sanity is
+> > needed anyway to ensure that the kernel freak out if wrong input
+> > is fed (maliciously or by mistake).
+> 
+> Out of head, mucking with registers of setuid program is no-no.
+> As well as mucking with dirty data of setuid program.
 
-Again, I think this stems from some of us that think that c/r should be
-used outside exclusively checkpointing whole containers.  I think we'll
-find some expanded use for c/r on things that aren't strict system
-containers.
+No argument there, no idea why you bring this up.
 
--- Dave
+> Capabilities will come from disk.
+
+Sure.
+
+> Many EPERM checks are suspect.
+
+No idea what you're saying.
+
+> do_arch_prctl(ARCH_SET_GS) has TASK_SIZE check, do you?
+
+We don't support x86_64 yet :)
+
+> > >> And surely you have read there the observation that for the general
+> > >> case root privileges will probably be inevitable.
+> > >>
+> > >> And surely you don't seriously think that adding this check changes
+> > >> the "design"...
+> > > 
+> > > This is not about design now, this is about if you allow restart(2) for
+> > > everyone, you open kernel to very very high number of holes of all
+> > > types. I wrote about it in reply to your code.
+> > > 
+> > 
+> > And there are many examples where this is not the case. The current
+> > patchset (v14-rc3), for example, to the best of my knowledge, does
+> > not have such issues (well, need to add checks for validity of regs
+> > but there is a FIXME comment :)
+> 
+> And such an obvious issue like segmentt RPL is fixed? :-)
+
+-serge
