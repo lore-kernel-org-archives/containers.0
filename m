@@ -1,13 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Make tst_ipcshm_multi automatable
-Date: Mon, 13 Apr 2009 23:44:59 -0400
-Message-ID: <49E406BB.3060507@cs.columbia.edu>
-References: <1239650808-22254-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
+Date: Tue, 14 Apr 2009 00:26:50 -0400
+Message-ID: <49E4108A.8050201__28279.2021208026$1239683595$gmane$org@cs.columbia.edu>
+References: <20090410023207.GA27788@x200.localdomain>
+	<1239340031.24083.21.camel@nimitz>
+	<20090413091423.GA19236@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1239650808-22254-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090413091423.GA19236-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,205 +19,92 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-thanks ... added.
 
-Dan Smith wrote:
-> Add a little to tst_ipcshm_multi to make it automatically validate the
-> results and return a pass/fail status indication for automated runs.
+Alexey Dobriyan wrote:
+> On Thu, Apr 09, 2009 at 10:07:11PM -0700, Dave Hansen wrote:
+>> I'm curious how you see these fitting in with the work that we've been
+>> doing with Oren.  Do you mean to just start a discussion or are you
+>> really proposing these as an alternative to what Oren has been posting?
 > 
-> Since Oren said he applied my previous patch to his repository, I'm
-> sending this as a delta from the last one I sent[1].  Since the public
-> user-cr is not updated yet, you'll need to apply that first to try this.
+> Yes, this is posted as alternative.
 > 
-> 1: https://lists.linux-foundation.org/pipermail/containers/2009-April/016827.html
+> Some design decisions are seen as incorrect from here like:
+
+A definition of "design" would help; I find most of your comments
+below either vague, cryptic, or technical nits...
+
+> * not rejecting checkpoint with possible "leaks" from container
+
+...like this, for example.
+Anything in the current design makes it impossible ?
+
+Anything prohibiting your from adding this feature to the current
+patch-set ?
+
+> * not having CAP_SYS_ADMIN on restart(2)
+
+Surely you have read already on the containers mailing list that
+for the *time being* we attempt to get as far as possible without
+requiring root privileges, to identify security hot-spots.
+
+And surely you have read there the observation that for the general
+case root privileges will probably be inevitable.
+
+And surely you don't seriously think that adding this check changes
+the "design"...
+
+> * having small (TASK_COMM_LEN) and bigger (objref[1]) image format
+>   misdesigns.
+
+Eh ?
+
+> * doing fork(2)+restart(2) per restarted task and whole orchestration
+>   done from userspace/future init task.
+
+Why is it "incorrect" ?
+What makes it "better" to do it in the kernel ?
+Only because you say so is not convincing.
+
+(also see my other post in this matter).
+
+> * not seeing bigger picture (note, this is not equivalent to supporting
+>   everything at once, nobody is asking for everything at once) wrt shared
+>   objects and format and code changes because of that (note again, image
+>   format will change, but it's easy to design high level structure which
+>   won't change)
+
+Why don't you describe the bigger picture so that the rest of can
+finally see it, too ?!
+(what a waste to have spent all this effort in vain...)
+
+> * checking of unsupported features done at wrong place and wrong time
+>   and runtime overhead because of that on CR=y kernels.
+
+Eh ?   Did you follow the code recently ?
+
 > 
-> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-> Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  tst_ipcshm_multi.c |   86 ++++++++++++++++++++++++++++++++++++++++++----------
->  1 files changed, 70 insertions(+), 16 deletions(-)
+> There are also low-level things, but it's cumulative effect.
 > 
-> diff --git a/tst_ipcshm_multi.c b/tst_ipcshm_multi.c
-> index 1ef31f7..1bc0cd2 100644
-> --- a/tst_ipcshm_multi.c
-> +++ b/tst_ipcshm_multi.c
-> @@ -4,6 +4,8 @@
->  #include <errno.h>
->  #include <sys/ipc.h>
->  #include <sys/shm.h>
-> +#include <sys/types.h>
-> +#include <sys/wait.h>
->  
->  #include <linux/sched.h>
->  #include <sched.h>
-> @@ -11,6 +13,7 @@
->  #define OUTFILE  "/tmp/cr-test.out"
->  #define SEG_SIZE (20 * 4096)
->  #define DELAY 20
-> +#define COUNT_MAX 15
->  
->  int attach(unsigned char **seg, int num)
->  {
-> @@ -50,14 +53,45 @@ int validate(unsigned char *seg, int num)
->  	return 0;
->  }
->  
-> -void track(unsigned char *seg, int num)
-> +int track_incr(unsigned char *seg, int num)
->  {
->  	int i;
-> +	int last = seg[0];
->  
->  	for (i = 0; i < 20; i++) {
-> +		if (seg[0] == COUNT_MAX)
-> +			break;
-> +
-> +		if (abs(last - (int)seg[0]) > 1) {
-> +			printf("[CHILD %i] Expected +/-%i (got %i) %i\n",
-> +			       num, last, seg[0], abs(last - seg[0]));
-> +			return 1;
-> +		}
-> +
-> +		last = seg[0] + 1;
-> +
->  		printf("[CHILD %i] Seg[0]: %i\n", num, seg[0]);
->  		sleep(1);
->  	}
-> +
-> +	return !(seg[0] == COUNT_MAX);
-> +}
-> +
-> +int track_const(unsigned char *seg, int num, int val)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < 20; i++) {
-> +		if (seg[0] != val) {
-> +			printf("[CHILD %i] Expected %i not %i\n",
-> +			       num, val, seg[0]);
-> +			return 1;
-> +		}
-> +		printf("[CHILD %i] Seg[0]: %i\n", num, seg[0]);
-> +		sleep(1);
-> +	}
-> +
-> +	return 0;
->  }
->  
->  /*
-> @@ -81,9 +115,7 @@ int child1(void)
->  
->  	sleep(DELAY - 1); /* Wait until after the checkpoint */
->  
-> -	track(seg, num);
-> -
-> -	return 0;
-> +	return track_incr(seg, num);
->  }
->  
->  /*
-> @@ -106,12 +138,10 @@ int child2(void)
->  	if (validate(seg, num))
->  		return -1;
->  
-> -	track(seg, num);
-> -
-> -	return 0;
-> +	return track_incr(seg, num);
->  }
->  
-> -int child4(void);
-> +int child4(int constval);
->  
->  /*
->   * Detach from the parent's IPC namespace and verify that:
-> @@ -123,14 +153,20 @@ int child3(void)
->  {
->  	unsigned char *seg;
->  	int num = 3;
-> +	int cpid;
-> +	int ret;
-> +	int status;
->  
->  	if (unshare(CLONE_NEWIPC) != 0) {
->  		printf("[CHILD %i] unshare(CLONE_NEWIPC): %m", num);
->  		return -1;
->  	}
->  
-> -	if (fork() == 0)
-> -		return child4();
-> +	cpid = fork();
-> +	if (cpid < 0)
-> +		return 1;
-> +	else if (cpid == 0)
-> +		return child4(123);
->  
->  	printf("[CHILD %i] Running (new IPC NS)\n", num);
->  
-> @@ -153,16 +189,22 @@ int child3(void)
->  
->  	sleep(DELAY); /* Wait until after checkpoint, then attach */
->  
-> -	track(seg, num);
-> -  
-> -	return 0;
-> +	ret = track_const(seg, num, 123);
-> +
-> +	printf("[CHILD %i] Waiting for child %i\n", num, cpid);
-> +	wait(&status);
-> +
-> +	if (ret == 0)
-> +		return WEXITSTATUS(status);
-> +	else
-> +		return ret;
->  }
->  
->  /*
->   * This child is forked from child3 under the new IPC namespace.
->   * Verify that post-restart, we do not see the changing seg[0]
->   */
-> -int child4(void)
-> +int child4(int constval)
->  {
->  	unsigned char *seg;
->  	int num = 4;
-> @@ -174,7 +216,7 @@ int child4(void)
->  	if (attach(&seg, num))
->  		return -1;
->  
-> -	track(seg, num);
-> +	return track_const(seg, num, constval);
->  
->  	return 0;
->  }
-> @@ -250,11 +292,23 @@ int main(int argc, char *argv[])
->  	sleep(DELAY);
->  	printf("[MSTER] Woke\n");
->  
-> -	for (i = 0; i < 15; i++) {
-> +	for (i = 0; i <= COUNT_MAX; i++) {
->  		seg[0] = i;
->  		sleep(1);
->  	}
->  
-> +	for (i = 0; i < 3; i++) {
-> +		int status;
-> +
-> +		printf("[MSTER] Waiting on child %i\n", i+1);
-> +		wait(&status);
-> +		if (WEXITSTATUS(status)) {
-> +			printf("[MSTER] child exited with %i\n",
-> +			       WEXITSTATUS(status));
-> +			return WEXITSTATUS(status);
-> +		}
-> +	}
-> +
->  	if (shmdt(seg) < 0)
->  		perror("shmdt");
->  
+> [1] Do I inderstand correctly that cookie for shared object is an
+> address on kernel stack? This is obviously unreliable, if yes :-)
+
+Ah... I see... you didn't look at it that hard, not even read the
+documentation with the code.
+
+> 
+> 	int objref;
+> 		...
+> 	/* adding 'file' to the hash will keep a reference to it */
+> 	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
+> 					^^^^^^^
+
+That said, there are more similarities than differences between your
+suggested template and the current patchset. With your expertise you
+can contribute tremendously if you decide to work together.
+
+Oren.
