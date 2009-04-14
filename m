@@ -1,127 +1,221 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: Creating tasks on restart: userspace vs kernel
-Date: Mon, 13 Apr 2009 23:43:30 -0400
-Message-ID: <49E40662.2040508@cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Make tst_ipcshm_multi automatable
+Date: Mon, 13 Apr 2009 23:44:59 -0400
+Message-ID: <49E406BB.3060507@cs.columbia.edu>
+References: <1239650808-22254-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754799AbZDNDqs@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: containers@lists.osdl.org, Alexey Dobriyan <adobriyan@gmail.com>
-Cc: Dave Hansen <dave@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@elte.hu>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1239650808-22254-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-For checkpoint/restart (c/r) we need a method to (re)create the tasks
-tree during restart. There are basically two approaches: in userspace
-(zap approach) or in the kernel (openvz approach).
+thanks ... added.
 
-Once tasks have been created both approaches are similar in that all
-restarting tasks end up calling the equivalent of "do_restart()" in
-the kernel to perform the gory details of restoring its state.
-
-In terms of performance, both approaches are similar, and both can
-optimize to avoid duplicating resources unnecessarily during the
-clone (e.g. mm, etc) knowing that they will be reconstructed soon
-after.
-
-So the question is what's better - user-space or kernel ?
-
-Too bad that Alexey chose to ignore what's been discussed in
-linux-containers mailing list in his recent post.  Here is my take on
-cons/pros.
-
-Task creation in the kernel
----------------------------
-* how: the user program calls sys_restart() which, for each task to
-  restore, creates a kernel thread which is demoted to a regular
-  process manually.
-
-* pro: a single task that calls sys_restart()
-* pro: restarting tasks are in full control of kernel at all times
-
-* con: arch-dependent, harder to port across architectures
-* con: can only restart a full container
-
-Task creation in user space
----------------------------
-* how: the user programs calls fork/clone to recreate a suitable
-  task tree in userspace, and each task calls sys_restart() to restore
-  its state; some kernel glue is necessary to synchronize restarting
-  tasks when in the kernel.
-
-* pro: allows important flexibility during restart (see <1>)
-* pro: code leverages existing well-understood syscalls (fork, clone)
-* pro: allows restart of a only subtree (see <2>)
-
-* con: requires a way to creates tasks with specific pid (see <3>)
-
-<1> Flexibility:
-
-In the spirit of madvise() that lets tasks advise the kernel because
-they know better, there should be cradvise() for checkpoint/restart
-purposes. During checkpoint it can tell the kernel "don't save this
-piece of memory, it's scratch", or "ignore this file-descriptor" etc.
-During restart, it will can tell the kernel "use this file-descriptor"
-or "use this network namespace" (instead of trying to restore).
-
-Offering cradvise() capability during restart is especially important
-in cases where the kernel (inevitably) won't know how to restore a
-resource (e.g. think special devices), when the application wants to
-override (e.g. think of a c/r aware server that would like to change
-the port on which it is listening), or when it's that much simpler to
-do it in userspace (e.g. think setting up network namespaces).
-
-Another important example is distributed checkpoint, where the
-restarting tasks could (re)create all their network connections in
-user space, before invoking sys_restart() and tell the kernel, via
-cradvise(), to use the newly created sockets.
-
-The need for this sort of flexibility has been stressed multiple times
-and by multiple stake-holders interested in checkpoint/restart.
-
-<2> Restarting a subtree:
-
-The primary c/r effort is directed towards providing c/r functionality
-for containers.
-
-Wouldn't it be nice if, while doing so and at minimal added effort, we
-also gain a method to checkpoint and restart an arbitrary subtree of
-tasks, which isn't necessarily an entire container ?
-
-Sure, it will be more constrained (e.g. resulting pid in restart won't
-match the original pids), and won't work for all applications. But it
-will still be a useful tool for many use cases, like batch cpu jobs,
-some servers, vnc sessions (if you want graphics) etc. Imagine you run
-'octave' for a week and must reboot now - 'octave' wouldn't care if
-you checkpointed it and then restart with a different pid !
-
-<3> Clone with pid:
-
-To restart processes from userspace, there needs to be a way to
-request a specific pid--in the current pid_ns--for the child process
-(clearly, if it isn't in use).
-
-Why is it a disadvantage ?  to Linus, a syscall clone_with_pid()
-"sounds like a _wonderful_ attack vector against badly written
-user-land software...".  Actually, getting a specific pid is possible
-without this syscall.  But the point is that it's undesirable to have
-this functionality unrestricted.
-
-So one option is to require root privileges. Another option is to
-restrict such action in pid_ns created by the same user. Even more so,
-restrict to only containers that are being restarted.
-
----
-
-Either way we go, it should be fairly easy to switch from one method
-to the other, should we need to.
-
-All in all, there isn't a strong reason in favor of kernel method.
-
-In contrast, it's at least as simple in userspace (reusing existing
-syscalls). More importantly, the flexibility that we gain with restart
-of tasks in userspace, no cost incurred (in terms of implementation or
-runtime overhead).
-
-Oren.
+Dan Smith wrote:
+> Add a little to tst_ipcshm_multi to make it automatically validate the
+> results and return a pass/fail status indication for automated runs.
+> 
+> Since Oren said he applied my previous patch to his repository, I'm
+> sending this as a delta from the last one I sent[1].  Since the public
+> user-cr is not updated yet, you'll need to apply that first to try this.
+> 
+> 1: https://lists.linux-foundation.org/pipermail/containers/2009-April/016827.html
+> 
+> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+> Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  tst_ipcshm_multi.c |   86 ++++++++++++++++++++++++++++++++++++++++++----------
+>  1 files changed, 70 insertions(+), 16 deletions(-)
+> 
+> diff --git a/tst_ipcshm_multi.c b/tst_ipcshm_multi.c
+> index 1ef31f7..1bc0cd2 100644
+> --- a/tst_ipcshm_multi.c
+> +++ b/tst_ipcshm_multi.c
+> @@ -4,6 +4,8 @@
+>  #include <errno.h>
+>  #include <sys/ipc.h>
+>  #include <sys/shm.h>
+> +#include <sys/types.h>
+> +#include <sys/wait.h>
+>  
+>  #include <linux/sched.h>
+>  #include <sched.h>
+> @@ -11,6 +13,7 @@
+>  #define OUTFILE  "/tmp/cr-test.out"
+>  #define SEG_SIZE (20 * 4096)
+>  #define DELAY 20
+> +#define COUNT_MAX 15
+>  
+>  int attach(unsigned char **seg, int num)
+>  {
+> @@ -50,14 +53,45 @@ int validate(unsigned char *seg, int num)
+>  	return 0;
+>  }
+>  
+> -void track(unsigned char *seg, int num)
+> +int track_incr(unsigned char *seg, int num)
+>  {
+>  	int i;
+> +	int last = seg[0];
+>  
+>  	for (i = 0; i < 20; i++) {
+> +		if (seg[0] == COUNT_MAX)
+> +			break;
+> +
+> +		if (abs(last - (int)seg[0]) > 1) {
+> +			printf("[CHILD %i] Expected +/-%i (got %i) %i\n",
+> +			       num, last, seg[0], abs(last - seg[0]));
+> +			return 1;
+> +		}
+> +
+> +		last = seg[0] + 1;
+> +
+>  		printf("[CHILD %i] Seg[0]: %i\n", num, seg[0]);
+>  		sleep(1);
+>  	}
+> +
+> +	return !(seg[0] == COUNT_MAX);
+> +}
+> +
+> +int track_const(unsigned char *seg, int num, int val)
+> +{
+> +	int i;
+> +
+> +	for (i = 0; i < 20; i++) {
+> +		if (seg[0] != val) {
+> +			printf("[CHILD %i] Expected %i not %i\n",
+> +			       num, val, seg[0]);
+> +			return 1;
+> +		}
+> +		printf("[CHILD %i] Seg[0]: %i\n", num, seg[0]);
+> +		sleep(1);
+> +	}
+> +
+> +	return 0;
+>  }
+>  
+>  /*
+> @@ -81,9 +115,7 @@ int child1(void)
+>  
+>  	sleep(DELAY - 1); /* Wait until after the checkpoint */
+>  
+> -	track(seg, num);
+> -
+> -	return 0;
+> +	return track_incr(seg, num);
+>  }
+>  
+>  /*
+> @@ -106,12 +138,10 @@ int child2(void)
+>  	if (validate(seg, num))
+>  		return -1;
+>  
+> -	track(seg, num);
+> -
+> -	return 0;
+> +	return track_incr(seg, num);
+>  }
+>  
+> -int child4(void);
+> +int child4(int constval);
+>  
+>  /*
+>   * Detach from the parent's IPC namespace and verify that:
+> @@ -123,14 +153,20 @@ int child3(void)
+>  {
+>  	unsigned char *seg;
+>  	int num = 3;
+> +	int cpid;
+> +	int ret;
+> +	int status;
+>  
+>  	if (unshare(CLONE_NEWIPC) != 0) {
+>  		printf("[CHILD %i] unshare(CLONE_NEWIPC): %m", num);
+>  		return -1;
+>  	}
+>  
+> -	if (fork() == 0)
+> -		return child4();
+> +	cpid = fork();
+> +	if (cpid < 0)
+> +		return 1;
+> +	else if (cpid == 0)
+> +		return child4(123);
+>  
+>  	printf("[CHILD %i] Running (new IPC NS)\n", num);
+>  
+> @@ -153,16 +189,22 @@ int child3(void)
+>  
+>  	sleep(DELAY); /* Wait until after checkpoint, then attach */
+>  
+> -	track(seg, num);
+> -  
+> -	return 0;
+> +	ret = track_const(seg, num, 123);
+> +
+> +	printf("[CHILD %i] Waiting for child %i\n", num, cpid);
+> +	wait(&status);
+> +
+> +	if (ret == 0)
+> +		return WEXITSTATUS(status);
+> +	else
+> +		return ret;
+>  }
+>  
+>  /*
+>   * This child is forked from child3 under the new IPC namespace.
+>   * Verify that post-restart, we do not see the changing seg[0]
+>   */
+> -int child4(void)
+> +int child4(int constval)
+>  {
+>  	unsigned char *seg;
+>  	int num = 4;
+> @@ -174,7 +216,7 @@ int child4(void)
+>  	if (attach(&seg, num))
+>  		return -1;
+>  
+> -	track(seg, num);
+> +	return track_const(seg, num, constval);
+>  
+>  	return 0;
+>  }
+> @@ -250,11 +292,23 @@ int main(int argc, char *argv[])
+>  	sleep(DELAY);
+>  	printf("[MSTER] Woke\n");
+>  
+> -	for (i = 0; i < 15; i++) {
+> +	for (i = 0; i <= COUNT_MAX; i++) {
+>  		seg[0] = i;
+>  		sleep(1);
+>  	}
+>  
+> +	for (i = 0; i < 3; i++) {
+> +		int status;
+> +
+> +		printf("[MSTER] Waiting on child %i\n", i+1);
+> +		wait(&status);
+> +		if (WEXITSTATUS(status)) {
+> +			printf("[MSTER] child exited with %i\n",
+> +			       WEXITSTATUS(status));
+> +			return WEXITSTATUS(status);
+> +		}
+> +	}
+> +
+>  	if (shmdt(seg) < 0)
+>  		perror("shmdt");
+>  
