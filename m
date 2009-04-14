@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Tue, 14 Apr 2009 21:00:04 +0400
-Message-ID: <20090414170004.GC27923__39784.618598833$1239728627$gmane$org@x200.localdomain>
+Date: Tue, 14 Apr 2009 21:04:19 +0400
+Message-ID: <20090414170419.GD27923__1887.63152477822$1239729149$gmane$org@x200.localdomain>
 References: <20090410023539.GK27788@x200.localdomain>
 	<20090413214701.GA24509@us.ibm.com>
 	<20090414152752.GC27461@x200.localdomain>
@@ -44,29 +44,18 @@ On Tue, Apr 14, 2009 at 10:41:39AM -0500, Serge E. Hallyn wrote:
 > sys_checkpoint() in this patch still finds the child_reaper of the
 > passed-in pid, doesn't it?  Or are you saying that a later patch in
 > this set removes that?
+> 
+> > > 2. kernel freezes tasks
+> > > 3. no objhash taking references
+> > 
+> > That's because none needed.
+> 
+> Right while I have opinions on some things in this list, I didn't
+> mean to imply positions on these items.  My question was:  are
+> there are differences you want to call out?
 
-I posted with auto-selecting?
+Sorry? "none needed" is relevant to only item 3. If tasks don't
+dissapear during checkpoint, why would netns dissapear.
+Taking refcount on checkpoint(2) is likely unneeded.
 
-Code now looks like this:
-
-	rcu_read_lock();
-        tsk = find_task_by_vpid(pid);
-        if (tsk) {
-                struct nsproxy *nsproxy;
-
-                nsproxy = task_nsproxy(tsk);
-                if (nsproxy) {
-                        init_tsk = nsproxy->pid_ns->child_reaper;
-                        if (init_tsk != tsk)
-                                init_tsk = NULL;
-                } else
-                        init_tsk = NULL;
-                if (init_tsk)
-                        get_task_struct(init_tsk);
-        }
-        rcu_read_unlock();
-
-This is to buy as little semantics on checkpoint(2) as possible.
-
-If users later will complain that it's for some reason hard to see who is
-root of container, it could be added.
+But it's low-level detail anyway.
