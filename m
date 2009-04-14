@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Network Namespace-1000 networks with Overlap Addresses
-Date: Tue, 14 Apr 2009 09:37:12 -0500
-Message-ID: <20090414143712.GC6072@us.ibm.com>
-References: <B2EBF6E450E65C4F8CFEE8947E1905600298E2FF@az33exm24.fsl.freescale.net>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Remove READ_IMPLIES_EXEC during restart
+Date: Tue, 14 Apr 2009 10:40:00 -0400
+Message-ID: <49E4A040.6030307@cs.columbia.edu>
+References: <1239039694-22332-1-git-send-email-danms@us.ibm.com>	<20090406181748.GA24751@us.ibm.com>
+	<49E42646.4040703@cs.columbia.edu>	<49E4278C.3060500@cs.columbia.edu>
+	<87y6u3cqd0.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <B2EBF6E450E65C4F8CFEE8947E1905600298E2FF-ofAVchDyotZeePcQ0jRo1pjmvxFtTJ+o0e7PPNI6Mm0@public.gmane.org>
+In-Reply-To: <87y6u3cqd0.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,49 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Krishna Vamsi-B22174 <avamsi-KZfg59tc24xl57MIdRCFDg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Krishna Vamsi-B22174 (avamsi-KZfg59tc24xl57MIdRCFDg@public.gmane.org):
+
+Probably best is to (a) save and restore the task's personality
+(regardless), and (b) in do_restart() (re)set the personality as
+we wish, with a clear comment about why and the fact that the
+'real' personality is restore later.
+
+Oren.
+
+Dan Smith wrote:
+> OL> In fact, if elsewhere we restore current->personality of the task,
+> OL> then unless we move it to cr_read_mm(), it will overwrite it :(
 > 
+> Should we move it or just remove RIE before we start the restart and
+> let the task regain the flag if it had it before?
 > 
-> Hi,
-> 
-> I am a newbie  to this list.  Here is my use case , we have  Loadable
-> Kernel Module which applies security to
-> the packets arriving from 1000 networks with overlap addresses. There
-> are 3 different  user space process which handles 
-> control traffic  from these 1000 networks .   
-> 
-> Please let me know
-> 
-> 1)How to create a Network Namespace Object ?
-
-clone(CLONE_NEWNET)
-
-> 2)How to delete a Network Namespace Object ?
-
-exit
-
-> 3)Can these 3  user space process see all the Network Namespace objects
-> created in the kernel ?
-
-No, network namespaces are fully isolated.  A virtual nic can only exist
-in one network namespace, and physical nics can only exist in the
-initial network namespace.
-
->  If so, how can they access these objects?
-> 4)How to group 2-3 interfaces under a particular Network Namespace ?
-
-I don't understand the question, but you pass a veth endpoint into a
-network namespace using
-
-	/sbin/ip link set veth1 netns $pid_in_other_netns
-
-> Is there any patch available to achieve the above use case ?
-
-You can use liblxc (available from lxc.sf.net) or libvirt-lxc
-(libvirt.org).
-
--serge
