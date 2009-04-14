@@ -1,17 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
-Date: Tue, 14 Apr 2009 14:08:21 -0400
-Message-ID: <49E4D115.5080601@cs.columbia.edu>
-References: <20090410023207.GA27788@x200.localdomain>
-	<1239340031.24083.21.camel@nimitz>
-	<20090413091423.GA19236@x200.localdomain>
-	<49E4108A.8050201@cs.columbia.edu>
-	<20090414145830.GA27461@x200.localdomain>
+Subject: Re: [PATCH 10/30] cr: core stuff
+Date: Tue, 14 Apr 2009 14:19:21 -0400
+Message-ID: <49E4D3A9.6020100__8960.51497334174$1239734101$gmane$org@cs.columbia.edu>
+References: <20090410023539.GK27788@x200.localdomain>
+	<49E41D7B.8030003@cs.columbia.edu>
+	<20090414160003.GD27461@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090414145830.GA27461-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090414160003.GD27461-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,244 +20,303 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
 Alexey Dobriyan wrote:
-> On Tue, Apr 14, 2009 at 12:26:50AM -0400, Oren Laadan wrote:
+> On Tue, Apr 14, 2009 at 01:22:03AM -0400, Oren Laadan wrote:
 >> Alexey Dobriyan wrote:
->>> On Thu, Apr 09, 2009 at 10:07:11PM -0700, Dave Hansen wrote:
->>>> I'm curious how you see these fitting in with the work that we've been
->>>> doing with Oren.  Do you mean to just start a discussion or are you
->>>> really proposing these as an alternative to what Oren has been posting?
->>> Yes, this is posted as alternative.
+>>> * add struct file_operations::checkpoint
 >>>
->>> Some design decisions are seen as incorrect from here like:
->> A definition of "design" would help; I find most of your comments
->> below either vague, cryptic, or technical nits...
+>>>   The point of hook is to serialize enough information to allow restoration
+>>>   of an opened file.
+>>>
+>>>   The idea (good one!) is that the code which supplies struct file_operations
+>>>   know better what to do with file.
+>> Actually, credit is due to Dave Hansen (or Christoph Hellwig, or both?).
 >>
->>> * not rejecting checkpoint with possible "leaks" from container
->> ...like this, for example.
-> 
-> Like checkpointing one process out of many living together.
-
-See the thread on creating tasks in userspace vs. kernel space:
-the argument here is that is an interesting enough use case for
-a checkpoint of not-an-entire-container.
-
-Of course it will require more logic to it, so the user can choose
-what she cares or does not care about, and the kernel could alert
-the user about it.
-
-The point is, that it is, IMHO, a desirable capability.
-
-> 
-> If you allow this you consequently drop checks (e.g. refcount checks)
-> for "somebody else is using structure to be checkpointed".
-> 
-
-From this point below, I totally agree with you that for the purpose
-of a whole-container-checkpoint this is certainly desirable. My point
-was that it can be easily added the existing patchset (not yours).
-Why not add it there ?
-
-> If you drop these checks, you can't decipher legal sutiations like
-> "process genuinely doesn't care about routing table of netns it lives in"
-> from "illegal" situations like "process created shm segment but currently
-> doesn't use it so not checkpointing ipcns will result in breakagenlater".
-> 
-> You'll have to move responsibility to user, so user exactly knows what
-> app relies on and on what. And probably add flags like CKPT_SHM,
-> CKPT_NETNS_ROUTE ad infinitum.
-> 
-> And user will screw it badly and complain: "after restart my app
-> segfaulted". And user himself is screwed now: old running process is
-> already killed (it was checkpointed on purpose) and new process in image
-> segfaults every time it's restarted.
-> 
-> All of this in out opinion results in doing C/R unreliably and badly.
-> 
-> We are going to do it well and dig from the other side.
-> 
-> If "leak" (any "leak") is detected, C/R is aborted because kernel
-> doesn't know what app relies on and what app doesn't care about.
-> 
-> This protected from situations and failure modes described above.
-> 
-> This also protects to some extent from in-kernel changes where C/R code
-> should have been updated but wasn't. Person doing incomplete change won't
-> notice e.g refcount checks and won't try to "fix" them. But we'll notice it,
-> e.g. when running testsuite (amen) and update C/R code accordingly.
-> 
-> I'm talking about these checks so that everyone understands:
-> 
-> 	for_each_cr_object(ctx, obj, CR_CTX_MM_STRUCT) {
->                 struct mm_struct *mm = obj->o_obj;
->                 unsigned int cnt = atomic_read(&mm->mm_users);
-> 
->                 if (obj->o_count != cnt) {
->                         printk("%s: mm_struct %p has external references %lu:%u\n", __func__, mm, obj->o_count, cnt);
->                         return -EINVAL;
->                 }
->         }
-> 
-> They are like moving detectors, small, invisible, something moved, you don't
-> know what, but you don't care because you have to investigate anyway.
-> 
-> In this scheme, if user wants to checkpoint just one process, he should
-> start it alone in separate container. Right now, in posted patchset
-> as cloned process with
-> CLONE_NEWNS|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET
-
-So you suggest that to checkpoint a single process, say a cpu job that
-would run a week, which runs in the topmost pid_ns, I will need to
-checkpoint the entire topmost pid_ns (as a container, if at all possible
-- surely there will non-checkpointable tasks there) and then in
-user-space filter out the data and leave only one task, and then to
-restart I'll use a container again ?
-
-Pffff ... why not just allow subtree checkpoint, not in a container,
-with its well known limitations -- would work the same, for very little
-additional implementation cost.
-
-> 
-> All of this by definition won't create situation "mom, where did my shm segment go?".
-> 
->> Anything in the current design makes it impossible ?
+>>>   Hook gets C/R context (a cookie more or less) on which dump code can
+>>>   cr_write() and small restrictions on what to write: globally unique object id
+>>>   and correct object length to allow jumping through objects.
+>>>
+>>>   For usual files on on-disk filesystem add generic_file_checkpoint()
+>>>
+>>>   Add ext3 opened regular files and directories for start.
+>>>
+>>>   No ->checkpoint, checkpointing is aborted -- deny by default.
+>>>
+>>> FIXME: unlinked, but opened files aren't supported yet.
+>>>
+>>> * C/R image design
+>>>
+>>>   The thing should be flexible -- kernel internals changes every day, so we can't
+>>>   really afford a format with much enforced structure.
+>>>
+>>>   Image consists of header, object images and terminator.
+>>>
+>>>   Image header consists of immutable part and mutable part (for future).
+>>>
+>>>   Immutable header part is magic and image version: "LinuxC/R" + __le32
+>>>
+>>>   Image version determines everything including image header's mutable part.
+>>>   Image version is going to be bumped at earliest opportunity following changes
+>>>   in kernel internals.
+>>>
+>>>   So far image header mutable part consists of arch of the kernel which dumped
+>>>   the image (i386, x86_64, ...) and kernel version as found in utsname.
+>>>
+>>>   Kernel version as string is for distributions. Distro can support C/R for
+>>>   their own kernels, but can't realistically be expected to bump image version --
+>>>   this will conflict with mainline kernels having used same version. We also don't
+>>>   want requests for private parts of image version space.
+>> So far so good, like in our patch-set.
 >>
->> Anything prohibiting your from adding this feature to the current
->> patch-set ?
+>> You also need to address differences in configuration (kernel could
+>> have been recompiled) and runtime environment (boot params, etc).
 >>
->>> * not having CAP_SYS_ADMIN on restart(2)
->> Surely you have read already on the containers mailing list that
->> for the *time being* we attempt to get as far as possible without
->> requiring root privileges, to identify security hot-spots.
-> 
-> More or less everything is hotspot.
-
-Going back to my example of a subtree above: what sort of security
-issues you would have here, assuming all restart operations go via
-the usual security checks just like syscalls, and we take special
-care about values we allow as input, e.g. cpu debug registers etc ?
-
-BTW, the checks for cpu registers and other values for sanity is
-needed anyway to ensure that the kernel freak out if wrong input
-is fed (maliciously or by mistake).
-
-> 
->> And surely you have read there the observation that for the general
->> case root privileges will probably be inevitable.
+>> We deferred this issue to a later time.
 >>
->> And surely you don't seriously think that adding this check changes
->> the "design"...
+>>>   Distro expected to keep image version alone and on restart(2) check utsname
+>>>   version and compare it against previously release kernel versions and based
+>>>   on that turn on compatibility code.
+>> Are you suggesting that conversion of a checkpoint image from an older
+>> version to a newer version be done in the kernel ?
 > 
-> This is not about design now, this is about if you allow restart(2) for
-> everyone, you open kernel to very very high number of holes of all
-> types. I wrote about it in reply to your code.
+> For mainline kernel it's completely unrealistic to support all backwards
+> compatibility code for previous versions. Some mythical userspace
+> program will convert images.
 > 
+> But it's completely realistic and much easier for distro kernel because
+> distro kernel doesn't generally include patches with significant in-kernel
+> internals changes, so they simply can support
+> '2.6.26-1-amd64' => '2.6.26-2-amd64' situation.
+> 
+> Distros can write conversion program too, but I don't expect they will.
+> 
+>> It may work for a few versions, and then you'll get a spaghetti of
+>> #ifdef's in the code, together with a plethora of legacy code.
+> 
+> Expectation is for one kernel branch like RHEL5 kernel updates during
+> RHEL5 lifecycle.
+> 
+> For RHEL5 => RHEL6, it's up to them what to do.
+> 
+> Anyway distro can add compat code _anyway_, for this we help them with
+> this image format tweak, so they won't bug mainline with "reserve bit 31
+> for Red Hat".
+> 
+> Image version is kept small (__le32) for this reason too :-)
+> 
+>> It is much better/easier to handle checkpoint image transformations
+>> in user space. The kernel will only understand its "current" version
+>> (for some definition of version).
+>>
+>>>   Object image is very flexible, the only required parts are a) object type (u32)
+>>>   and b) object total length (u32, [knocks wood]) which must be at the beginning
+>>>   of an image. The rest is not generic C/R code problem.
+>>>
+>>>   Object images follow one another without holes. Holes are in theory possible but
+>>>   unneeded.
+>>>
+>> When would you need holes ?
+>>
+>>>   Image ends with terminator object. This is mostly to be sure, that, yes, image
+>>>   wasn't truncated for some reason.
+>>>
+>>>
+>>> * Objects subject to C/R
+>>>
+>>>   The idea is to not be very smart but directly dump core kernel data structures
+>>>   related to processes. This includes in this patch:
+>>>
+>>> 	struct task_struct
+>>> 	struct mm_struct
+>>> 	VMAs
+>>> 	dirty pages
+>>> 	struct file
+>>>
+>>>   Relations between objects (task_struct has pointer to mm_struct) are fullfilled
+>>>   by dumping pointed to object first, keeping it's position in dumpfile and saving
+>>>   position in a image of pointe? object:
+>> Unless you use the physical position to actually lseek to there to
+>> re-read the data, there is no reason to use the actual position. In
+>> fact it is easier to debug when the shared object identifier is a
+>> simple counter.
+>>
+>> If you do use it to lseek, then it's a poor decision -- sounds fragile:
+>> what if we change the file (legitimately) adding data in the middle -
+>> the whole concept breaks.
+> 
+> Adder of data is expected to understand image format and update all references
+> just like surgeon is expected to understand human anatomy.
+> 
+>>> 	struct cr_image_task_struct {
+>>> 		cr_pos_t	cr_pos_mm;
+>>> 			...
+>>> 	};
+>>>
+>>>   Code so far tries hard to dump objects in certain order so there won't be any loops.
+>>>   This property of process that dumpfile can in theory be O_APPEND, will likely be
+>>>   sacrifised (read: child can ptrace parent)
+>> The ability to streamline the checkpoint image IMHO is invaluable.
+>> It's the unix way (TM) of doing things; it makes the process pipe-able.
+>>
+>> You can do many nice things when the checkpoint can be streamed: you
+>> can compress, sign, encrypt etc on the fly without taking additional
+>> diskspace. You can transfer over the network (e.g. for migration),
+>> or store remotely without explicit file system support. You can easily
+>> transform the stream from one c/r version to another etc.
+>>
+>> This should be a design principle. In my experience I never hit a wall
+>> that forced me to "sacrifice" this decision.
+>>
+>>>   sacrifised (read: child can ptrace parent)
+>> Hmmm... if all tasks are created in user space, then this specific
+>> becomes a no-brainer !
+> 
+> No!
 
-And there are many examples where this is not the case. The current
-patchset (v14-rc3), for example, to the best of my knowledge, does
-not have such issues (well, need to add checks for validity of regs
-but there is a FIXME comment :)
-
-> Numbers of states described by any valid image as described by header
-> files is very much higher than number of states that can validly end up
-> in an image. Reducing set of states to only valid ones will require
-> many checks.
-> 
-> For example, just one structure: struct cr_hdr_cpu.
-> 
-> Segments are directly loaded regardless of RPL.
-> 
-> Debug registers are directly loaded regardless of to where breakpoint
-> points to.
-> 
-> If you don't understand scale of problem and insist on restart(2) not
-> having CAP_SYS_ADMIN, we'll just drop from discussion and write email
-> to bugtraq to warn sysadmins at least.
-
-I humbly suggest that for many useful use-cases restart(2) can succeed
-and work well without requiring CAP_SYS_ADMIN. I'm also citing Serge
-saying that it's a good exercise to identify all those specific points
-where CAP_SYS_ADMIN is needed and make sure we understand them well.
-
-For this purpose, _starting_ with not requiring CAP_SYS_ADMIN is
-actually a good idea.  Then we can isolate where it's strictly needed,
-what are the security implications, and add the requirement there.
+Actually yes :)
 
 > 
-> restart(2) for everyone sounds like excellent feature and is excellent
-> feature but simultaneusly is completely unrealistic for Unix-like kernel.
+> A ptraces B. Container is checkpointed.
 > 
->>> * having small (TASK_COMM_LEN) and bigger (objref[1]) image format
->>>   misdesigns.
->> Eh ?
+> Kernel realizes ptrace is going on. A and B in theory can have any
+> realitionship.
 > 
-> TASK_COMM_LEN is 16 bytes and is not going to change, so you do
+> Consequently, kernel doesn't know in which order to dump A and B.
 > 
-> 	__u8 cr_comm[16];
-> 
-> and forget. If TASK_COMM_LEN changes you'll just bump size of
-> task_struct image and image version.
+> And there is no such order:
+> *) A can be parent of B (you dump A, B),
+> *) A can be child of B (you want to dump B, A, but this conflicts with
+>    ->real_parent order)
+> *) A and B just tasks (any order).
 
-That's an extra safety check. So that kernel doesn't _crash_ if a new
-image is fed to an older kernel (and for some reason the image altered).
+Current code does not support ptrace() - which has a multitude
+if tidy-bits issues to solve during restart regardless.
 
-And also needed when you support non-CAP_SYS_ADMIN restart(2) (yeah,
-yeah, I got the point, limited version only).
+However, creating tasks in userspace uses (and will uses) only
+"real" process relationships, not ptrace-relationships, when it
+comes to decide on the fork/clone order.
+
+Technically, that can be done in checkpoint (dumping the task tree)
+or in restart-user-space (rearranging the data before fork/clone).
+
+> 
+> I'm showing that whole issue can be avoided:
+
+If the issue can be avoided, then why would you need to sacrifice
+the stream-ability of the checkpoint image ?
+
+> *) all tasks are simply created regardless of who is parent of whom
+>    (see kernel_thread())
+> *) Every task_struct image among other things contains references to
+>    ->real_parent and ->parent.
+> *) After every task is created it's time to change references:
+> 	**) lookup who is ->real_parent, change ->real_parent _by hand_
+> 		not with some "correct clone(2)" order.
+> 	**) lookup who is ->parent, change ->parent.
+> 
+> You're probably escaping all of this with object numbers?
+
+(Will be) escaping this by arranging to fork/clone in the proper order.
+
+> 	
+>>> * add struct vm_operations_struct::checkpoint
+>>>
+>>>   just like with files, code that creates special VMAs should know what to do with them
+>>>   used.
+>>>
+>>>   just like with files, deny checkpointing by default
+>>>
+>>>   So far used to install vDSO to same place.
+>> VDSO can be a troublemaker; in recent kernels its location in the MM
+>> can be randomized.
+> 
+> See arch_setup_additional_pages() patch.
+> 
+>>  It is not necessarily immutable - it can reflect
+>> ynamic kernel data. It may contain different code on newer versions,
+>> so must be compared or worked around during restart etc.
+> 
+> i386 if I'm not mistaken only contain syscall entry code, but, yes,
+> generally one should check if PC is inside such page.
+
+If you up restart on a different kernel that has a different VDSO,
+then you need to bring the old VDSO with you, and tweak it so it
+pulls the dynamic kernel data from the right place. Ugh ... :(
 
 Oren.
 
 > 
-> Saving ->comm as variable-sized string is complication out of nowhere.
-> 
-> As for objref, my apoligies, objection dropped, I understood how it can be useful.
-> 
->>> * doing fork(2)+restart(2) per restarted task and whole orchestration
->>>   done from userspace/future init task.
->> Why is it "incorrect" ?
->> What makes it "better" to do it in the kernel ?
->> Only because you say so is not convincing.
->>
->> (also see my other post in this matter).
->>
->>> * not seeing bigger picture (note, this is not equivalent to supporting
->>>   everything at once, nobody is asking for everything at once) wrt shared
->>>   objects and format and code changes because of that (note again, image
->>>   format will change, but it's easy to design high level structure which
->>>   won't change)
->> Why don't you describe the bigger picture so that the rest of can
->> finally see it, too ?!
->> (what a waste to have spent all this effort in vain...)
-> 
-> Sit and graph down all structures that you will eventually checkpoint and
-> relations about them. Things like "struct cr_hdr_pids" won't even be on
-> the radar.
-> 
->>> * checking of unsupported features done at wrong place and wrong time
->>>   and runtime overhead because of that on CR=y kernels.
->> Eh ?   Did you follow the code recently ?
-> 
-> Checks during dup_fd() were dropped? Good.
-> 
->>> There are also low-level things, but it's cumulative effect.
+>>> * add checkpoint(2)
 >>>
->>> [1] Do I inderstand correctly that cookie for shared object is an
->>> address on kernel stack? This is obviously unreliable, if yes :-)
->> Ah... I see... you didn't look at it that hard, not even read the
->> documentation with the code.
+>>>   Done by determining which tasks are subject to checkpointing, freezeing them,
+>>>   collecting pointers to necessary kernel internals (task_struct, mm_struct, ...),
+>>>   doing that checking supported/unsupported status and aborting if necessary,
+>>>   actual dumping, unfreezeing/killing set of tasks.
+>>>
+>>>   Also in-checkpoint refcount is maintained to abort on possible invisible changes.
+>>>   Now it works:
+>>>
+>>> 	For every collected object (mm_struct) keep numbers of references from
+>>> 	other collected objects. It should match object's own refcount.
+>>> 	If there is a mismatch, something is likely pinning object, which means
+>>> 	there is "leak" to outside which means checkpoint(2) can't realistically and
+>>> 	without consequences proceed.
+>>>
+>>> 	This is in some sense independent check. It's designed to protect from internals
+>>> 	change when C/R code was forgotten to be updated.
+>>>
+>>>   Userpsace supplies pid of root task and opened file descriptor of future dump file.
+>>>   Kernel reports 0/-E as usual.
+>>>
+>>>   Runtime tracking of "checkpointable" property is explicitly not done.
+>>>   This introduces overhead even if checkpoint(2) is not done as shown by proponents.
+>>>   Instead any check is done at checkpoint(2) time and -E is returned if something is
+>>>   suspicious or known to be unsupported.
+>>>
+>>>   FIXME: more checks especially in cr_check_task_struct().
+>>>
+>>> * add restart(2)
+>>>
+>>>   Recreate tasks and evething dumped by checkpoint(2) as if nothing happened.
+>>>
+>>>   The focus is on correct recreating, checking every possibility that target kernel
+>>>   can be on different arch (i386 => x86_64) and target kernel can be very different
+>>>   from source kernel by mistake (i386 => x86_64 COMPAT=n) kernel.
+>>>
+>>>   restart(2) is done first by creating kernel thread and that demoting it to usual
+>>>   process by adding mm_struct, VMAs, et al. This saves time against method when
+>>>   userspace does fork(2)+restart(2) -- forked mm_struct will be thrown out anyway
+>>>   or at least everything will be unmapped in any case.
+>> Do have figures to support your claims about "saves time" ?
 >>
->>> 	int objref;
->>> 		...
->>> 	/* adding 'file' to the hash will keep a reference to it */
->>> 	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
->>> 					^^^^^^^
->> That said, there are more similarities than differences between your
->> suggested template and the current patchset. With your expertise you
->> can contribute tremendously if you decide to work together.
+>> The *largest* component of the restart time, as you probably know,
+>> is the time it takes to restore the memory address space (pages, pages)
+>> of the tasks.
+>>
+>> If you do show that this optimization is worth our attention, then it
+>> takes < 10 lines to change current mktree.c to use CLONE_VM ... voila.
+>>
+>> I'm interested in hearing more convincing arguments in favor of kernel
+>> creations of restarting tasks (see my other post about it).
 > 
-> OK, totally misread code.
+> OK, in another post.
+> 
+>>>   Restoration is done in current context except CPU registers at last stage.
+>>>   This is because "creation is done by current" is in many, many places,
+>>>    e.g. mmap(2) code.
+>>>
+>>>   It's expected that filesystem state will be the same. Kernel can't do anything
+>>>   about it expect probably virtual filesystems. If a file is not there anymore,
+>>>   it's not kernel fault, -E will be returned, restart aborted.
+>>>
+>>>   FIXME: errors aren't propagated correctly out of kernel thread context
+>> Heh .. I guess they always propagate correctly out of regular task
+>> context ;)
+> 
+> :-) 
 > 
