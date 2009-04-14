@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH 26/30] cr: mount namespace
-Date: Tue, 14 Apr 2009 11:48:10 -0700
-Message-ID: <1239734890.32604.102.camel__42216.7737772272$1239735148$gmane$org@nimitz>
+Date: Tue, 14 Apr 2009 11:53:31 -0700
+Message-ID: <1239735211.32604.107.camel__12809.8156340004$1239735462$gmane$org@nimitz>
 References: <20090410024004.GA27788@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,45 +22,37 @@ Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7
 List-Id: containers.vger.kernel.org
 
 On Fri, 2009-04-10 at 06:40 +0400, Alexey Dobriyan wrote:
-> 
-> +struct mnt_namespace *alloc_mnt_ns(void)
+> +int cr_collect_all_mnt_ns(struct cr_context *ctx)
 > +{
-> +       struct mnt_namespace *mnt_ns;
+> +       struct cr_object *obj;
+> +       int rv;
 > +
-> +       mnt_ns = kmalloc(sizeof(struct mnt_namespace), GFP_KERNEL);
-> +       if (mnt_ns) {
-> +               atomic_set(&mnt_ns->count, 1);
-> +               mnt_ns->root = NULL;
-> +               INIT_LIST_HEAD(&mnt_ns->list);
-> +               init_waitqueue_head(&mnt_ns->poll);
-> +               mnt_ns->event = 0;
+> +       for_each_cr_object(ctx, obj, CR_CTX_NSPROXY) {
+> +               struct nsproxy *nsproxy = obj->o_obj;
+> +
+> +               rv = cr_collect_mnt_ns(ctx, nsproxy->mnt_ns);
+> +               if (rv < 0)
+> +                       return rv;
 > +       }
-> +       return mnt_ns;
-> +}
+> +       for_each_cr_object(ctx, obj, CR_CTX_MNT_NS) {
+> +               struct mnt_namespace *mnt_ns = obj->o_obj;
+> +               unsigned int cnt = atomic_read(&mnt_ns->count);
 > +
->  /*
->   * Allocate a new namespace structure and populate it with contents
->   * copied from the namespace of the passed in task structure.
-> @@ -1981,15 +1996,10 @@ static struct mnt_namespace *dup_mnt_ns(struct
-> mnt_namespace *mnt_ns,
->         struct vfsmount *rootmnt = NULL, *pwdmnt = NULL;
->         struct vfsmount *p, *q;
-> 
-> -       new_ns = kmalloc(sizeof(struct mnt_namespace), GFP_KERNEL);
-> +       new_ns = alloc_mnt_ns();
->         if (!new_ns)
->                 return ERR_PTR(-ENOMEM);
-> 
-> -       atomic_set(&new_ns->count, 1);
-> -       INIT_LIST_HEAD(&new_ns->list);
-> -       init_waitqueue_head(&new_ns->poll);
-> -       new_ns->event = 0;
-> -
->         down_write(&namespace_sem);
->         /* First pass: copy the tree topology */
->         new_ns->root = copy_tree(mnt_ns->root, mnt_ns->root->mnt_root,
-> --- a/include/linux/cr.h
+> +               if (obj->o_count != cnt) {
+> +                       printk("%s: mnt_ns %p has external references %lu:%u\n", __func__, mnt_ns, obj->o_count, cnt);
+> +                       return -EINVAL;
+> +               }
+> +       }
+> +       return 0;
+> +}
 
-This bit should be broken out, and stuck at the beginning of the series.
+I worry about depending on refcounts like this, especially when
+userspace has an interface that can elevate them.  If someone is holding
+open /proc/$pid/mounts, this will get elevated and trip the check.  This
+check is also naturally racy.  You check once if there are references,
+but there is no locking to keep new references from coming in.  
+
+That said, I do like how this for_each_cr_object() stuff looks.  It's
+pretty clean.
 
 -- Dave
