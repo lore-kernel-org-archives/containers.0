@@ -1,7 +1,7 @@
 From: "Elwin Stelzer Eliazer" <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: RE: netfilter/iptables under namespace
-Date: Mon, 13 Apr 2009 18:15:06 -0700
-Message-ID: <000001c9bc9e$72eab990$58c02cb0$@com>
+Subject: RE: /dev/tun PPP interfaces under network namespace
+Date: Mon, 13 Apr 2009 18:20:19 -0700
+Message-ID: <000501c9bc9f$2d848010$888d8030$@com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,24 +21,15 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-I am posting this again, since I did not get response.
+Posting this again, since I did not get any response.
 
  
 
-Some of the older status (Mar 28, 2008) on LXC/namespace indicate
-netfilter+lxc is partially completed, based on the link below:
-
-http://lxc.sourceforge.net/network/status.php
+Any pointers?
 
  
 
-In 2.6.29 is it fully supported for IPv4?
-
-If not is there any workaround for now?
-
- 
-
-Regards,
+Thanks,
 
 Elwin.
 
@@ -46,12 +37,10 @@ Elwin.
 
  
 
- 
-
 From: Elwin Stelzer Eliazer [mailto:stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org] 
-Sent: Thursday, April 09, 2009 4:59 PM
+Sent: Thursday, April 09, 2009 5:04 PM
 To: 'containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org'
-Subject: netfilter/iptables under namespace
+Subject: /dev/tun PPP interfaces under network namespace
 
  
 
@@ -59,7 +48,12 @@ Hi,
 
  
 
-Are netfilter/iptables properly isolated under namespace in 2.6.29?
+Can I have /dev/tun based PPP interfaces under network namespace, associated
+with a container?
+
+What config type will this be? Veth? Or vppp?
+
+Is this available in 2.6.29?
 
  
 
