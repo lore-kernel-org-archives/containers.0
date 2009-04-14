@@ -1,304 +1,200 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Tue, 14 Apr 2009 20:00:03 +0400
-Message-ID: <20090414160003.GD27461__11572.1005517573$1239726639$gmane$org@x200.localdomain>
-References: <20090410023539.GK27788@x200.localdomain>
-	<49E41D7B.8030003@cs.columbia.edu>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: Re: Creating tasks on restart: userspace vs kernel
+Date: Tue, 14 Apr 2009 20:36:33 +0400
+Message-ID: <20090414163633.GE27461@x200.localdomain>
+References: <49E40662.2040508@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756892AbZDNQgg@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <49E41D7B.8030003-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+In-Reply-To: <49E40662.2040508@cs.columbia.edu>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oren Laadan <orenl@cs.columbia.edu>
+Cc: containers@lists.osdl.org, Dave Hansen <dave@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@elte.hu>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 14, 2009 at 01:22:03AM -0400, Oren Laadan wrote:
+On Mon, Apr 13, 2009 at 11:43:30PM -0400, Oren Laadan wrote:
+> For checkpoint/restart (c/r) we need a method to (re)create the tasks
+> tree during restart. There are basically two approaches: in userspace
+> (zap approach) or in the kernel (openvz approach).
 > 
-> Alexey Dobriyan wrote:
-> > * add struct file_operations::checkpoint
-> > 
-> >   The point of hook is to serialize enough information to allow restoration
-> >   of an opened file.
-> > 
-> >   The idea (good one!) is that the code which supplies struct file_operations
-> >   know better what to do with file.
+> Once tasks have been created both approaches are similar in that all
+> restarting tasks end up calling the equivalent of "do_restart()" in
+> the kernel to perform the gory details of restoring its state.
 > 
-> Actually, credit is due to Dave Hansen (or Christoph Hellwig, or both?).
+> In terms of performance, both approaches are similar, and both can
+> optimize to avoid duplicating resources unnecessarily during the
+> clone (e.g. mm, etc) knowing that they will be reconstructed soon
+> after.
 > 
-> > 
-> >   Hook gets C/R context (a cookie more or less) on which dump code can
-> >   cr_write() and small restrictions on what to write: globally unique object id
-> >   and correct object length to allow jumping through objects.
-> > 
-> >   For usual files on on-disk filesystem add generic_file_checkpoint()
-> > 
-> >   Add ext3 opened regular files and directories for start.
-> > 
-> >   No ->checkpoint, checkpointing is aborted -- deny by default.
-> > 
-> > FIXME: unlinked, but opened files aren't supported yet.
-> > 
-> > * C/R image design
-> > 
-> >   The thing should be flexible -- kernel internals changes every day, so we can't
-> >   really afford a format with much enforced structure.
-> > 
-> >   Image consists of header, object images and terminator.
-> > 
-> >   Image header consists of immutable part and mutable part (for future).
-> > 
-> >   Immutable header part is magic and image version: "LinuxC/R" + __le32
-> > 
-> >   Image version determines everything including image header's mutable part.
-> >   Image version is going to be bumped at earliest opportunity following changes
-> >   in kernel internals.
-> > 
-> >   So far image header mutable part consists of arch of the kernel which dumped
-> >   the image (i386, x86_64, ...) and kernel version as found in utsname.
-> > 
-> >   Kernel version as string is for distributions. Distro can support C/R for
-> >   their own kernels, but can't realistically be expected to bump image version --
-> >   this will conflict with mainline kernels having used same version. We also don't
-> >   want requests for private parts of image version space.
+> So the question is what's better - user-space or kernel ?
 > 
-> So far so good, like in our patch-set.
+> Too bad that Alexey chose to ignore what's been discussed in
+> linux-containers mailing list in his recent post.  Here is my take on
+> cons/pros.
 > 
-> You also need to address differences in configuration (kernel could
-> have been recompiled) and runtime environment (boot params, etc).
+> Task creation in the kernel
+> ---------------------------
+> * how: the user program calls sys_restart() which, for each task to
+>   restore, creates a kernel thread which is demoted to a regular
+>   process manually.
 > 
-> We deferred this issue to a later time.
+> * pro: a single task that calls sys_restart()
+> * pro: restarting tasks are in full control of kernel at all times
 > 
-> > 
-> >   Distro expected to keep image version alone and on restart(2) check utsname
-> >   version and compare it against previously release kernel versions and based
-> >   on that turn on compatibility code.
+> * con: arch-dependent, harder to port across architectures
+
+Not a "con" at all.
+
+For the usage purposes, kernel_thread() is arch-independent.
+Filesystems create kernel threads and not have a single bit of
+arch-specific code.
+
+> * con: can only restart a full container
+
+This is by design.
+
+Granularity of whole damn thing is one container both on checkpoint and
+restart.
+
+You want to chop pieces, fine, do surgery on _image_.
+
+> Task creation in user space
+> ---------------------------
+> * how: the user programs calls fork/clone to recreate a suitable
+>   task tree in userspace, and each task calls sys_restart() to restore
+>   its state; some kernel glue is necessary to synchronize restarting
+>   tasks when in the kernel.
+
+> * pro: allows important flexibility during restart (see <1>)
+> * pro: code leverages existing well-understood syscalls (fork, clone)
+
+kernel_thread() is effectively clone(2).
+
+> * pro: allows restart of a only subtree (see <2>)
 > 
-> Are you suggesting that conversion of a checkpoint image from an older
-> version to a newer version be done in the kernel ?
-
-For mainline kernel it's completely unrealistic to support all backwards
-compatibility code for previous versions. Some mythical userspace
-program will convert images.
-
-But it's completely realistic and much easier for distro kernel because
-distro kernel doesn't generally include patches with significant in-kernel
-internals changes, so they simply can support
-'2.6.26-1-amd64' => '2.6.26-2-amd64' situation.
-
-Distros can write conversion program too, but I don't expect they will.
-
-> It may work for a few versions, and then you'll get a spaghetti of
-> #ifdef's in the code, together with a plethora of legacy code.
-
-Expectation is for one kernel branch like RHEL5 kernel updates during
-RHEL5 lifecycle.
-
-For RHEL5 => RHEL6, it's up to them what to do.
-
-Anyway distro can add compat code _anyway_, for this we help them with
-this image format tweak, so they won't bug mainline with "reserve bit 31
-for Red Hat".
-
-Image version is kept small (__le32) for this reason too :-)
-
-> It is much better/easier to handle checkpoint image transformations
-> in user space. The kernel will only understand its "current" version
-> (for some definition of version).
+> * con: requires a way to creates tasks with specific pid (see <3>)
 > 
-> > 
-> >   Object image is very flexible, the only required parts are a) object type (u32)
-> >   and b) object total length (u32, [knocks wood]) which must be at the beginning
-> >   of an image. The rest is not generic C/R code problem.
-> > 
-> >   Object images follow one another without holes. Holes are in theory possible but
-> >   unneeded.
-> > 
+> <1> Flexibility:
 > 
-> When would you need holes ?
+> In the spirit of madvise() that lets tasks advise the kernel because
+> they know better, there should be cradvise() for checkpoint/restart
+> purposes. During checkpoint it can tell the kernel "don't save this
+> piece of memory, it's scratch", or "ignore this file-descriptor" etc.
+> During restart, it will can tell the kernel "use this file-descriptor"
+> or "use this network namespace" (instead of trying to restore).
 > 
-> >   Image ends with terminator object. This is mostly to be sure, that, yes, image
-> >   wasn't truncated for some reason.
-> > 
-> > 
-> > * Objects subject to C/R
-> > 
-> >   The idea is to not be very smart but directly dump core kernel data structures
-> >   related to processes. This includes in this patch:
-> > 
-> > 	struct task_struct
-> > 	struct mm_struct
-> > 	VMAs
-> > 	dirty pages
-> > 	struct file
-> > 
-> >   Relations between objects (task_struct has pointer to mm_struct) are fullfilled
-> >   by dumping pointed to object first, keeping it's position in dumpfile and saving
-> >   position in a image of pointe? object:
+> Offering cradvise() capability during restart is especially important
+> in cases where the kernel (inevitably) won't know how to restore a
+> resource (e.g. think special devices), when the application wants to
+> override (e.g. think of a c/r aware server that would like to change
+> the port on which it is listening), or when it's that much simpler to
+> do it in userspace (e.g. think setting up network namespaces).
 > 
-> Unless you use the physical position to actually lseek to there to
-> re-read the data, there is no reason to use the actual position. In
-> fact it is easier to debug when the shared object identifier is a
-> simple counter.
+> Another important example is distributed checkpoint, where the
+> restarting tasks could (re)create all their network connections in
+> user space, before invoking sys_restart() and tell the kernel, via
+> cradvise(), to use the newly created sockets.
 > 
-> If you do use it to lseek, then it's a poor decision -- sounds fragile:
-> what if we change the file (legitimately) adding data in the middle -
-> the whole concept breaks.
-
-Adder of data is expected to understand image format and update all references
-just like surgeon is expected to understand human anatomy.
-
-> > 	struct cr_image_task_struct {
-> > 		cr_pos_t	cr_pos_mm;
-> > 			...
-> > 	};
-> > 
-> >   Code so far tries hard to dump objects in certain order so there won't be any loops.
-> >   This property of process that dumpfile can in theory be O_APPEND, will likely be
-> >   sacrifised (read: child can ptrace parent)
+> The need for this sort of flexibility has been stressed multiple times
+> and by multiple stake-holders interested in checkpoint/restart.
 > 
-> The ability to streamline the checkpoint image IMHO is invaluable.
-> It's the unix way (TM) of doing things; it makes the process pipe-able.
+> <2> Restarting a subtree:
 > 
-> You can do many nice things when the checkpoint can be streamed: you
-> can compress, sign, encrypt etc on the fly without taking additional
-> diskspace. You can transfer over the network (e.g. for migration),
-> or store remotely without explicit file system support. You can easily
-> transform the stream from one c/r version to another etc.
+> The primary c/r effort is directed towards providing c/r functionality
+> for containers.
 > 
-> This should be a design principle. In my experience I never hit a wall
-> that forced me to "sacrifice" this decision.
+> Wouldn't it be nice if, while doing so and at minimal added effort, we
+> also gain a method to checkpoint and restart an arbitrary subtree of
+> tasks, which isn't necessarily an entire container ?
+
+Do this in userspace.
+
+> Sure, it will be more constrained (e.g. resulting pid in restart won't
+> match the original pids), and won't work for all applications.
+
+Given correctly written image chopper, all pids will be fine and
+correctness will be bounded by how good user understands what can be
+chopped and can't.
+
+Besides, if such chopper can only chop task_struct's, you'll get correct
+image.
+
+In the end correctness of chopping will be equal to how good user
+understands that two task_struct's are independent of each other.
+
+> But it will still be a useful tool for many use cases, like batch cpu jobs,
+> some servers, vnc sessions (if you want graphics) etc. Imagine you run
+> 'octave' for a week and must reboot now - 'octave' wouldn't care if
+> you checkpointed it and then restart with a different pid !
 > 
-> >   sacrifised (read: child can ptrace parent)
+> <3> Clone with pid:
 > 
-> Hmmm... if all tasks are created in user space, then this specific
-> becomes a no-brainer !
-
-No!
-
-A ptraces B. Container is checkpointed.
-
-Kernel realizes ptrace is going on. A and B in theory can have any
-realitionship.
-
-Consequently, kernel doesn't know in which order to dump A and B.
-
-And there is no such order:
-*) A can be parent of B (you dump A, B),
-*) A can be child of B (you want to dump B, A, but this conflicts with
-   ->real_parent order)
-*) A and B just tasks (any order).
-
-I'm showing that whole issue can be avoided:
-*) all tasks are simply created regardless of who is parent of whom
-   (see kernel_thread())
-*) Every task_struct image among other things contains references to
-   ->real_parent and ->parent.
-*) After every task is created it's time to change references:
-	**) lookup who is ->real_parent, change ->real_parent _by hand_
-		not with some "correct clone(2)" order.
-	**) lookup who is ->parent, change ->parent.
-
-You're probably escaping all of this with object numbers?
-	
-> > * add struct vm_operations_struct::checkpoint
-> > 
-> >   just like with files, code that creates special VMAs should know what to do with them
-> >   used.
-> > 
-> >   just like with files, deny checkpointing by default
-> > 
-> >   So far used to install vDSO to same place.
+> To restart processes from userspace, there needs to be a way to
+> request a specific pid--in the current pid_ns--for the child process
+> (clearly, if it isn't in use).
 > 
-> VDSO can be a troublemaker; in recent kernels its location in the MM
-> can be randomized.
-
-See arch_setup_additional_pages() patch.
-
->  It is not necessarily immutable - it can reflect
-> ynamic kernel data. It may contain different code on newer versions,
-> so must be compared or worked around during restart etc.
-
-i386 if I'm not mistaken only contain syscall entry code, but, yes,
-generally one should check if PC is inside such page.
-
-> > * add checkpoint(2)
-> > 
-> >   Done by determining which tasks are subject to checkpointing, freezeing them,
-> >   collecting pointers to necessary kernel internals (task_struct, mm_struct, ...),
-> >   doing that checking supported/unsupported status and aborting if necessary,
-> >   actual dumping, unfreezeing/killing set of tasks.
-> > 
-> >   Also in-checkpoint refcount is maintained to abort on possible invisible changes.
-> >   Now it works:
-> > 
-> > 	For every collected object (mm_struct) keep numbers of references from
-> > 	other collected objects. It should match object's own refcount.
-> > 	If there is a mismatch, something is likely pinning object, which means
-> > 	there is "leak" to outside which means checkpoint(2) can't realistically and
-> > 	without consequences proceed.
-> > 
-> > 	This is in some sense independent check. It's designed to protect from internals
-> > 	change when C/R code was forgotten to be updated.
-> > 
-> >   Userpsace supplies pid of root task and opened file descriptor of future dump file.
-> >   Kernel reports 0/-E as usual.
-> > 
-> >   Runtime tracking of "checkpointable" property is explicitly not done.
-> >   This introduces overhead even if checkpoint(2) is not done as shown by proponents.
-> >   Instead any check is done at checkpoint(2) time and -E is returned if something is
-> >   suspicious or known to be unsupported.
-> > 
-> >   FIXME: more checks especially in cr_check_task_struct().
-> > 
-> > * add restart(2)
-> > 
-> >   Recreate tasks and evething dumped by checkpoint(2) as if nothing happened.
-> > 
-> >   The focus is on correct recreating, checking every possibility that target kernel
-> >   can be on different arch (i386 => x86_64) and target kernel can be very different
-> >   from source kernel by mistake (i386 => x86_64 COMPAT=n) kernel.
-> > 
-> >   restart(2) is done first by creating kernel thread and that demoting it to usual
-> >   process by adding mm_struct, VMAs, et al. This saves time against method when
-> >   userspace does fork(2)+restart(2) -- forked mm_struct will be thrown out anyway
-> >   or at least everything will be unmapped in any case.
+> Why is it a disadvantage ?  to Linus, a syscall clone_with_pid()
+> "sounds like a _wonderful_ attack vector against badly written
+> user-land software...".  Actually, getting a specific pid is possible
+> without this syscall.  But the point is that it's undesirable to have
+> this functionality unrestricted.
 > 
-> Do have figures to support your claims about "saves time" ?
-> 
-> The *largest* component of the restart time, as you probably know,
-> is the time it takes to restore the memory address space (pages, pages)
-> of the tasks.
-> 
-> If you do show that this optimization is worth our attention, then it
-> takes < 10 lines to change current mktree.c to use CLONE_VM ... voila.
-> 
-> I'm interested in hearing more convincing arguments in favor of kernel
-> creations of restarting tasks (see my other post about it).
+> So one option is to require root privileges. Another option is to
+> restrict such action in pid_ns created by the same user. Even more so,
+> restrict to only containers that are being restarted.
 
-OK, in another post.
+You want to do small part in userspace and consequently end up with hacks
+both userspace-visible and in-kernel.
 
-> >   Restoration is done in current context except CPU registers at last stage.
-> >   This is because "creation is done by current" is in many, many places,
-> >    e.g. mmap(2) code.
-> > 
-> >   It's expected that filesystem state will be the same. Kernel can't do anything
-> >   about it expect probably virtual filesystems. If a file is not there anymore,
-> >   it's not kernel fault, -E will be returned, restart aborted.
-> > 
-> >   FIXME: errors aren't propagated correctly out of kernel thread context
+Pids aren't special, they are struct pid, dynamically allocated and
+refcounted just like any other structtures.
+
+They _become_ special for you intended method of restart.
+
+You also have flags in nsproxy image (or where?) like "do clone with
+CLONE_NEWUTS".
+
+This is unneeded!
+
+nsproxy (or task_struct) image have reference (objref/position) to uts_ns image.
+
+On restart, one lookups object by reference or restore it if needed,
+takes refcount and glue. Just like with every other two structures.
+
+No "what to do, what to do" logic.
+
+> Either way we go, it should be fairly easy to switch from one method
+> to the other, should we need to.
 > 
-> Heh .. I guess they always propagate correctly out of regular task
-> context ;)
+> All in all, there isn't a strong reason in favor of kernel method.
+> 
+> In contrast, it's at least as simple in userspace (reusing existing
+> syscalls). More importantly, the flexibility that we gain with restart
+> of tasks in userspace, no cost incurred (in terms of implementation or
+> runtime overhead).
 
-:-) 
+Regarding of who should orchestrate restart(2).
+
+Special process who calls restart(2) should do it. It doesn't relate to
+restarted process at all. It isn't, for example, init of future container.
+
+Reasons:
+1) somebody should write registers before final jump to userspace.
+   Task itself can't generally do it: struct pt_regs is in the same place
+   as kernel stack.
+
+   cr_load_cpu_regs() does exactly this: as current writes to it's own
+   pt_regs. Oren, why don't you see crashes?
+
+   I first tried to do it and was greeted with horrible crashes because
+   e.g current becoming NULL under current. That's why 
+   cr_arch_restore_task_struct() is not done in current context.
+
+2) Somebody should restore who is parent of whom, who ptraces whom,
+   resolved all possible loops and so on. Intuition tells me that it
+   should be context which is not involved into restart(2) other than
+   doing this post-restart-before-thaw part.
+
+   Consequently, it should not be init of futire container. It's just
+   another task after all, from the POV of reparenting code.
