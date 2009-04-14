@@ -1,17 +1,17 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Tue, 14 Apr 2009 20:57:34 +0400
-Message-ID: <20090414165734.GB27923__2860.8129745864$1239728495$gmane$org@x200.localdomain>
+Date: Tue, 14 Apr 2009 21:00:04 +0400
+Message-ID: <20090414170004.GC27923__39784.618598833$1239728627$gmane$org@x200.localdomain>
 References: <20090410023539.GK27788@x200.localdomain>
 	<20090413214701.GA24509@us.ibm.com>
 	<20090414152752.GC27461@x200.localdomain>
-	<1239723694.32604.62.camel@nimitz>
+	<20090414154139.GA8085@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1239723694.32604.62.camel@nimitz>
+In-Reply-To: <20090414154139.GA8085-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,38 +21,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 14, 2009 at 08:41:34AM -0700, Dave Hansen wrote:
-> On Tue, 2009-04-14 at 19:27 +0400, Alexey Dobriyan wrote:
-> > > Also, since Dave introduced the fops->checkpoint(), we (or at least I)
-> > > have been struck by the ugly assymetry with checkpoint() being in fops,
-> > > and restart() not.  Do you have an idea for fixing that?
+On Tue, Apr 14, 2009 at 10:41:39AM -0500, Serge E. Hallyn wrote:
+> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > On Mon, Apr 13, 2009 at 04:47:01PM -0500, Serge E. Hallyn wrote:
+> > > Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > 
+> > > Hi Alexey,
+> > > 
+> > > as far as I can see, the main differences between this patch and the
+> > > equivalent in Oren's tree are:
+> > > 
+> > > 1. kernel auto-selects container init to freeze
 > > 
-> > Module can legally support C/R for its files.
-> > 
-> > In the end it most certainly will end up with module registering restart
-> > hook for file type N.
-> > 
-> > Or module registering hook to restart object type N.
+> > Note, auto-select part was dropped, userspace is required to pass pid of
+> > container init exactly. This was done to keep semantic of checkpoint(2)
+> > small and extendable.
 > 
-> Yeah, that was my expectation as well.  There's a point when we just
-> have too many kinds of checkpoint objects and the switch statements get
-> out of hand.  Oversimplified, of course, but:
-> 
-> 	init_restart_handler(CR_FD_GENERIC, restore_generic_fd);
-> 	init_restart_handler(CR_FD_SOCKET, restore_socket);
-> 	init_restart_handler(CR_FD_PIPE, restore_pipe);
-> 
-> The only question to me is whether we allow the handler functions to do
-> further reading of the checkpoint image or whether the higher-level code
-> should be feeding them all the data they'll need in some way.
+> sys_checkpoint() in this patch still finds the child_reaper of the
+> passed-in pid, doesn't it?  Or are you saying that a later patch in
+> this set removes that?
 
-It depends, but since you don't know what it's in dumped state, it's
-better to leave freedom for restart hook.
+I posted with auto-selecting?
 
-It gets restart context as cookie, position of start of an object, and
-exported functions cr_read/cr_pread/whatever which accept cooked
-context.
+Code now looks like this:
+
+	rcu_read_lock();
+        tsk = find_task_by_vpid(pid);
+        if (tsk) {
+                struct nsproxy *nsproxy;
+
+                nsproxy = task_nsproxy(tsk);
+                if (nsproxy) {
+                        init_tsk = nsproxy->pid_ns->child_reaper;
+                        if (init_tsk != tsk)
+                                init_tsk = NULL;
+                } else
+                        init_tsk = NULL;
+                if (init_tsk)
+                        get_task_struct(init_tsk);
+        }
+        rcu_read_unlock();
+
+This is to buy as little semantics on checkpoint(2) as possible.
+
+If users later will complain that it's for some reason hard to see who is
+root of container, it could be added.
