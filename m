@@ -1,15 +1,19 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Tue, 14 Apr 2009 15:26:11 -0400
-Message-ID: <49E4E353.9090508__13803.9670106538$1239737534$gmane$org@cs.columbia.edu>
-References: <20090410023539.GK27788@x200.localdomain>
-	<49E41D7B.8030003@cs.columbia.edu>
-	<20090414160003.GD27461@x200.localdomain>
+Subject: Re: [PATCH 00/30] C/R OpenVZ/Virtuozzo style
+Date: Tue, 14 Apr 2009 15:31:55 -0400
+Message-ID: <49E4E4AB.1030803__34090.5970115729$1239737919$gmane$org@cs.columbia.edu>
+References: <20090410023207.GA27788@x200.localdomain>
+	<1239340031.24083.21.camel@nimitz>
+	<20090413091423.GA19236@x200.localdomain>
+	<49E4108A.8050201@cs.columbia.edu>
+	<20090414145830.GA27461@x200.localdomain>
+	<49E4D115.5080601@cs.columbia.edu>
+	<20090414183435.GA28233@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090414160003.GD27461-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090414183435.GA28233-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,117 +24,116 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
 Alexey Dobriyan wrote:
-> On Tue, Apr 14, 2009 at 01:22:03AM -0400, Oren Laadan wrote:
+> On Tue, Apr 14, 2009 at 02:08:21PM -0400, Oren Laadan wrote:
+>>
 >> Alexey Dobriyan wrote:
->>> * add struct file_operations::checkpoint
->>>
->>>   The point of hook is to serialize enough information to allow restoration
->>>   of an opened file.
->>>
->>>   The idea (good one!) is that the code which supplies struct file_operations
->>>   know better what to do with file.
->> Actually, credit is due to Dave Hansen (or Christoph Hellwig, or both?).
+>>> On Tue, Apr 14, 2009 at 12:26:50AM -0400, Oren Laadan wrote:
+>>>> Alexey Dobriyan wrote:
+>>>>> On Thu, Apr 09, 2009 at 10:07:11PM -0700, Dave Hansen wrote:
+>>>>>> I'm curious how you see these fitting in with the work that we've been
+>>>>>> doing with Oren.  Do you mean to just start a discussion or are you
+>>>>>> really proposing these as an alternative to what Oren has been posting?
+>>>>> Yes, this is posted as alternative.
+>>>>>
+>>>>> Some design decisions are seen as incorrect from here like:
+>>>> A definition of "design" would help; I find most of your comments
+>>>> below either vague, cryptic, or technical nits...
+>>>>
+>>>>> * not rejecting checkpoint with possible "leaks" from container
+>>>> ...like this, for example.
+>>> Like checkpointing one process out of many living together.
+>> See the thread on creating tasks in userspace vs. kernel space:
+>> the argument here is that is an interesting enough use case for
+>> a checkpoint of not-an-entire-container.
 >>
->>>   Hook gets C/R context (a cookie more or less) on which dump code can
->>>   cr_write() and small restrictions on what to write: globally unique object id
->>>   and correct object length to allow jumping through objects.
->>>
->>>   For usual files on on-disk filesystem add generic_file_checkpoint()
->>>
->>>   Add ext3 opened regular files and directories for start.
->>>
->>>   No ->checkpoint, checkpointing is aborted -- deny by default.
->>>
->>> FIXME: unlinked, but opened files aren't supported yet.
->>>
->>> * C/R image design
->>>
->>>   The thing should be flexible -- kernel internals changes every day, so we can't
->>>   really afford a format with much enforced structure.
->>>
->>>   Image consists of header, object images and terminator.
->>>
->>>   Image header consists of immutable part and mutable part (for future).
->>>
->>>   Immutable header part is magic and image version: "LinuxC/R" + __le32
->>>
->>>   Image version determines everything including image header's mutable part.
->>>   Image version is going to be bumped at earliest opportunity following changes
->>>   in kernel internals.
->>>
->>>   So far image header mutable part consists of arch of the kernel which dumped
->>>   the image (i386, x86_64, ...) and kernel version as found in utsname.
->>>
->>>   Kernel version as string is for distributions. Distro can support C/R for
->>>   their own kernels, but can't realistically be expected to bump image version --
->>>   this will conflict with mainline kernels having used same version. We also don't
->>>   want requests for private parts of image version space.
->> So far so good, like in our patch-set.
+>> Of course it will require more logic to it, so the user can choose
+>> what she cares or does not care about, and the kernel could alert
+>> the user about it.
 >>
->> You also need to address differences in configuration (kernel could
->> have been recompiled) and runtime environment (boot params, etc).
+>> The point is, that it is, IMHO, a desirable capability.
 >>
->> We deferred this issue to a later time.
+>>> If you allow this you consequently drop checks (e.g. refcount checks)
+>>> for "somebody else is using structure to be checkpointed".
+>>>
+>> From this point below, I totally agree with you that for the purpose
+>> of a whole-container-checkpoint this is certainly desirable. My point
+>> was that it can be easily added the existing patchset (not yours).
+>> Why not add it there ?
 >>
->>>   Distro expected to keep image version alone and on restart(2) check utsname
->>>   version and compare it against previously release kernel versions and based
->>>   on that turn on compatibility code.
->> Are you suggesting that conversion of a checkpoint image from an older
->> version to a newer version be done in the kernel ?
+>>> If you drop these checks, you can't decipher legal sutiations like
+>>> "process genuinely doesn't care about routing table of netns it lives in"
+>>> from "illegal" situations like "process created shm segment but currently
+>>> doesn't use it so not checkpointing ipcns will result in breakagenlater".
+>>>
+>>> You'll have to move responsibility to user, so user exactly knows what
+>>> app relies on and on what. And probably add flags like CKPT_SHM,
+>>> CKPT_NETNS_ROUTE ad infinitum.
+>>>
+>>> And user will screw it badly and complain: "after restart my app
+>>> segfaulted". And user himself is screwed now: old running process is
+>>> already killed (it was checkpointed on purpose) and new process in image
+>>> segfaults every time it's restarted.
+>>>
+>>> All of this in out opinion results in doing C/R unreliably and badly.
+>>>
+>>> We are going to do it well and dig from the other side.
+>>>
+>>> If "leak" (any "leak") is detected, C/R is aborted because kernel
+>>> doesn't know what app relies on and what app doesn't care about.
+>>>
+>>> This protected from situations and failure modes described above.
+>>>
+>>> This also protects to some extent from in-kernel changes where C/R code
+>>> should have been updated but wasn't. Person doing incomplete change won't
+>>> notice e.g refcount checks and won't try to "fix" them. But we'll notice it,
+>>> e.g. when running testsuite (amen) and update C/R code accordingly.
+>>>
+>>> I'm talking about these checks so that everyone understands:
+>>>
+>>> 	for_each_cr_object(ctx, obj, CR_CTX_MM_STRUCT) {
+>>>                 struct mm_struct *mm = obj->o_obj;
+>>>                 unsigned int cnt = atomic_read(&mm->mm_users);
+>>>
+>>>                 if (obj->o_count != cnt) {
+>>>                         printk("%s: mm_struct %p has external references %lu:%u\n", __func__, mm, obj->o_count, cnt);
+>>>                         return -EINVAL;
+>>>                 }
+>>>         }
+>>>
+>>> They are like moving detectors, small, invisible, something moved, you don't
+>>> know what, but you don't care because you have to investigate anyway.
+>>>
+>>> In this scheme, if user wants to checkpoint just one process, he should
+>>> start it alone in separate container. Right now, in posted patchset
+>>> as cloned process with
+>>> CLONE_NEWNS|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET
+>> So you suggest that to checkpoint a single process, say a cpu job that
+>> would run a week, which runs in the topmost pid_ns, I will need to
+>> checkpoint the entire topmost pid_ns (as a container, if at all possible
+>> - surely there will non-checkpointable tasks there) and then in
+>> user-space filter out the data and leave only one task, and then to
+>> restart I'll use a container again ?
 > 
-> For mainline kernel it's completely unrealistic to support all backwards
-> compatibility code for previous versions. Some mythical userspace
-> program will convert images.
-> 
-> But it's completely realistic and much easier for distro kernel because
-> distro kernel doesn't generally include patches with significant in-kernel
-> internals changes, so they simply can support
-> '2.6.26-1-amd64' => '2.6.26-2-amd64' situation.
-> 
-> Distros can write conversion program too, but I don't expect they will.
-> 
->> It may work for a few versions, and then you'll get a spaghetti of
->> #ifdef's in the code, together with a plethora of legacy code.
-> 
-> Expectation is for one kernel branch like RHEL5 kernel updates during
-> RHEL5 lifecycle.
-> 
-> For RHEL5 => RHEL6, it's up to them what to do.
-> 
-> Anyway distro can add compat code _anyway_, for this we help them with
-> this image format tweak, so they won't bug mainline with "reserve bit 31
-> for Red Hat".
-> 
-> Image version is kept small (__le32) for this reason too :-)
-> 
+> No, you do little preparations and start CPU job in container from the very
+> beginning.
 
-So a simple kernel version won't suffice. For instance, even with the
-same (distro) kernel, a user can choose vdso-compat at boot time.
-Not to mention that a monotonically increasing version number can't
-possible be a catch-all.
+So you are denying all those other users that don't want to do that
+the joy of checkpointing and restarting their stuff ... :(
 
-(while your favorite libc doesn't use it, in non-compat mode the
-syscall gettimeofday() gets the data off the vdso page; besides
-possibly breaking an application that migrates from non-compat to
-compat, it is also impossible to check vdso page validity by a
-simple memcmp() of old and new !).
+Or, for users who do run everything in container, but some task is not
+checkpointable - it is using this electronic microscope device attached
+to their handheld. Alas, they do want to checkpoint that useful program
+they are running there that calculates fibonacci numbers ...
 
-We need (at least) some sort of kernel-hardware-capabilities-vector
-that will encapsulate such dependencies. There will also be per
-task vector, possibly (e.g. if never used math we don't care about
-FPU capabilities, otherwise we do).
+Or, a nested container that shares something with the parent container,
+so is not checkpointable by itself...
 
-I don't expect to get that sorted out anytime soon - it will be a
-long gradual process in which we gradually add what's needed to
-describe the "environment" in which the tasks are running.
-
-We do need to make the format of this vector easily extensible for
-exactly this reason.
+Ok, you probably got the idea.
 
 Oren.
