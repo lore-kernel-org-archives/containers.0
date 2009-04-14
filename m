@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 10/30] cr: core stuff
-Date: Tue, 14 Apr 2009 01:52:35 -0400
-Message-ID: <49E424A3.60606@cs.columbia.edu>
-References: <20090410023539.GK27788@x200.localdomain>
-	<20090413214701.GA24509@us.ibm.com>
+Subject: Re: [PATCH] Remove READ_IMPLIES_EXEC during restart
+Date: Tue, 14 Apr 2009 01:59:34 -0400
+Message-ID: <49E42646.4040703@cs.columbia.edu>
+References: <1239039694-22332-1-git-send-email-danms@us.ibm.com>
+	<20090406181748.GA24751@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090413214701.GA24509-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090406181748.GA24751-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,38 +19,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Hi,
 
 Serge E. Hallyn wrote:
-> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>> On s390, all tasks have READ_IMPLIES_EXEC set in current->personality,
+>> which causes the restart process to map things like the stack and heap as
+>> executable.  During the restart process, remove this bit and restore the
+>> original personality afterwards.
+>>
+>> This seems a little ugly, but I don't know that there's a better place for
+>> it.
 > 
-> Hi Alexey,
+> Well imo the only other thing to do would be to do the same thing but
+> just around the main restart_memory function.
 > 
-> as far as I can see, the main differences between this patch and the
-> equivalent in Oren's tree are:
-> 
-> 1. kernel auto-selects container init to freeze
 
-Actually, this eliminates the possibility to checkpoint a subtree of
-tasks, which (under some obvious constraints) can be a handy feature.
-
-> 2. kernel freezes tasks
-
-IMHO better to do it in userspace - that way userspace can accomplish
-other tasks while tasks are frozen, such as snapshot the filesystem,
-or block/unblock the network.
-
-Is there a good argument to do it kernel ?
-
-> 3. no objhash taking references
-> 4. no hbuf
-> 5. always require CAP_SYS_ADMIN
-
-I'm now convinced (thanks, Serge!) that it's better not to require
-this unless we strictly have to.
+I second that. Added.
 
 Oren.
+
+
+>> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+>> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+>> ---
+>>  checkpoint/restart.c |    7 +++++++
+>>  1 files changed, 7 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+>> index adebc1c..8958ec7 100644
+>> --- a/checkpoint/restart.c
+>> +++ b/checkpoint/restart.c
+>> @@ -13,6 +13,7 @@
+>>  #include <linux/wait.h>
+>>  #include <linux/file.h>
+>>  #include <linux/magic.h>
+>> +#include <linux/personality.h>
+>>  #include <linux/checkpoint.h>
+>>  #include <linux/checkpoint_hdr.h>
+>>
+>> @@ -535,12 +536,18 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
+>>  int do_restart(struct cr_ctx *ctx, pid_t pid)
+>>  {
+>>  	int ret;
+>> +	unsigned int original_personality;
+>> +	
+>> +	original_personality = current->personality;
+>> +	current->personality &= ~READ_IMPLIES_EXEC;
+>>
+>>  	if (ctx)
+>>  		ret = do_restart_root(ctx, pid);
+>>  	else
+>>  		ret = do_restart_task(pid);
+>>
+>> +	current->personality = original_personality;
+>> +
+>>  	/* on success, adjust the return value if needed [TODO] */
+>>  	return ret;
+>>  }
+>> -- 
+>> 1.6.1
+>>
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
