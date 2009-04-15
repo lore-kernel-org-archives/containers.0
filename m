@@ -1,17 +1,15 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 3/9] bio-cgroup controller
-Date: Wed, 15 Apr 2009 15:23:57 +0200
-Message-ID: <20090415132356.GA19270__27785.2565436207$1239802254$gmane$org@linux>
-References: <1239740480-28125-4-git-send-email-righi.andrea@gmail.com>
-	<20090415111528.b796519a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090415093716.GA5968@linux>
-	<20090415.213850.226770691.ryov@valinux.co.jp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/4] Revert "Infrastructure for work postponed to the end
+	of checkpoint/restart"
+Date: Wed, 15 Apr 2009 11:02:44 -0500
+Message-ID: <20090415160244.GA31983@us.ibm.com>
+References: <20090415160221.GA31929@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090415.213850.226770691.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090415160221.GA31929-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,184 +19,189 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 15, 2009 at 09:38:50PM +0900, Ryo Tsuruta wrote:
-> Hi Andrea and Kamezawa-san,
-> 
-> > Ryo, it would be great if you can look at this and fix/integrate into
-> > the mainstream bio-cgroup. Otherwise I can try to to schedule this in my
-> > work.
-> 
-> O.K. I'll apply those fixes and post patches as soon as I can.
-> 
+This reverts commit cf909e388fc45c3c462ce5f0dbf9b83988a5c1ea.
 
-Very good! I've just tested the bio_cgroup_id inclusion in
-page_cgroup->flags. I'm posting the patch on-top-of my patchset.
+Conflicts:
 
-If you're interested, it should apply cleanly to the original
-bio-cgroup, except for the get/put_cgroup_from_page() part.
-
-Thanks,
--Andrea
+	checkpoint/Makefile
 ---
-bio-cgroup: encode bio_cgroup_id in page_cgroup->flags
+ checkpoint/Makefile        |    2 +-
+ checkpoint/checkpoint.c    |    4 ---
+ checkpoint/deferqueue.c    |   62 --------------------------------------------
+ checkpoint/restart.c       |    4 ---
+ checkpoint/sys.c           |    7 -----
+ include/linux/checkpoint.h |    9 ------
+ 6 files changed, 1 insertions(+), 87 deletions(-)
+ delete mode 100644 checkpoint/deferqueue.c
 
-Encode the bio_cgroup_id into the flags argument of page_cgroup as
-suggested by Kamezawa.
-
-Lower 16-bits of the flags attribute are used for the actual page_cgroup
-flags. The rest is reserved to store the bio-cgroup id.
-
-This allows to save 4 bytes (in 32-bit architectures) or 8 bytes (in
-64-bit) for each page_cgroup element.
-
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- include/linux/biotrack.h    |    2 +-
- include/linux/page_cgroup.h |   24 +++++++++++++++++++++---
- mm/biotrack.c               |   26 ++++++++++++--------------
- 3 files changed, 34 insertions(+), 18 deletions(-)
-
-diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
-index 25b8810..4bd0242 100644
---- a/include/linux/biotrack.h
-+++ b/include/linux/biotrack.h
-@@ -28,7 +28,7 @@ struct bio_cgroup {
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index e64784e..23b1e3c 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -2,7 +2,7 @@
+ # Makefile for linux checkpoint/restart.
+ #
  
- static inline void __init_bio_page_cgroup(struct page_cgroup *pc)
- {
--	pc->bio_cgroup_id = 0;
-+	page_cgroup_set_bio_id(pc, 0);
- }
- 
- extern struct cgroup *get_cgroup_from_page(struct page *page);
-diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-index 00a49c5..af780a4 100644
---- a/include/linux/page_cgroup.h
-+++ b/include/linux/page_cgroup.h
-@@ -16,12 +16,30 @@ struct page_cgroup {
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR
- 	struct mem_cgroup *mem_cgroup;
- #endif
--#ifdef CONFIG_CGROUP_BIO
--	int bio_cgroup_id;
--#endif
- 	struct list_head lru;		/* per cgroup LRU list */
- };
- 
-+#ifdef CONFIG_CGROUP_BIO
-+/*
-+ * use lower 16 bits for flags and reserve the rest for the bio-cgroup id
-+ */
-+#define BIO_CGROUP_ID_SHIFT	(16)
-+#define BIO_CGROUP_ID_BITS (8 * sizeof(unsigned long) - BIO_CGROUP_ID_SHIFT)
-+
-+static inline unsigned long page_cgroup_get_bio_id(struct page_cgroup *pc)
-+{
-+	return pc->flags >> BIO_CGROUP_ID_SHIFT;
-+}
-+
-+static inline void page_cgroup_set_bio_id(struct page_cgroup *pc,
-+				unsigned long id)
-+{
-+	WARN_ON(id >= (1UL << BIO_CGROUP_ID_BITS));
-+	pc->flags &= (1UL << BIO_CGROUP_ID_SHIFT) - 1;
-+	pc->flags |= (unsigned long)(id << BIO_CGROUP_ID_SHIFT);
-+}
-+#endif
-+
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
- void __init page_cgroup_init(void);
- struct page_cgroup *lookup_page_cgroup(struct page *page);
-diff --git a/mm/biotrack.c b/mm/biotrack.c
-index 431056c..4cca3bf 100644
---- a/mm/biotrack.c
-+++ b/mm/biotrack.c
-@@ -74,7 +74,7 @@ void bio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
- 	struct bio_cgroup *biog;
- 	struct page_cgroup *pc;
- 
--	WARN_ON_ONCE(test_bit(PG_locked, &page->flags));
-+	WARN_ON_ONCE(!test_bit(PG_locked, &page->flags));
- 
- 	if (bio_cgroup_disabled())
- 		return;
-@@ -82,7 +82,7 @@ void bio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
- 	if (unlikely(!pc))
- 		return;
- 
--	pc->bio_cgroup_id = 0;	/* 0: default bio_cgroup id */
-+	__init_bio_page_cgroup(pc);
- 	if (!mm)
- 		return;
- 	/*
-@@ -95,11 +95,11 @@ void bio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
+-obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o deferqueue.o \
++obj-$(CONFIG_CHECKPOINT) += sys.o objhash.o \
+ 		checkpoint.o restart.o \
+ 		ckpt_task.o rstr_task.o \
+ 		ckpt_mem.o rstr_mem.o \
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 47d5bd1..7382cc3 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -550,10 +550,6 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
  		goto out;
- 	/*
- 	 * css_get(&bio->css) isn't called to increment the reference
--	 * count of this bio_cgroup "biog" so pc->bio_cgroup_id might turn
--	 * invalid even if this page is still active.
--	 * This approach is chosen to minimize the overhead.
-+	 * count of this bio_cgroup "biog" so the bio-cgroup id might turn
-+	 * invalid even if this page is still active. This approach is chosen
-+	 * to minimize the overhead.
- 	 */
--	pc->bio_cgroup_id = biog->id;
-+	page_cgroup_set_bio_id(pc, biog->id);
- out:
- 	rcu_read_unlock();
- }
-@@ -112,7 +112,7 @@ void bio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
- 	/*
- 	 * A little trick:
- 	 * Just call bio_cgroup_set_owner() for pages which are already
--	 * active since the bio_cgroup_id member of page_cgroup can be
-+	 * active since the bio-cgroup id member of page_cgroup can be
- 	 * updated without any locks. This is because an integer type of
- 	 * variable can be set a new value at once on modern cpus.
- 	 */
-@@ -148,12 +148,10 @@ void bio_cgroup_copy_owner(struct page *npage, struct page *opage)
- 	opc = lookup_page_cgroup(opage);
- 	if (unlikely(!opc))
- 		return;
+ 
+-	ret = cr_deferqueue_run(ctx);
+-	if (ret < 0)
+-		goto out;
 -
- 	/*
--	 * Do this without any locks. The reason is the same as
--	 * bio_cgroup_reset_owner().
-+	 * XXX: is it safe to do this without locking?
- 	 */
--	npc->bio_cgroup_id = opc->bio_cgroup_id;
-+	page_cgroup_set_bio_id(npc, page_cgroup_get_bio_id(opc));
+ 	ctx->crid = atomic_inc_return(&cr_ctx_count);
+ 
+ 	/* on success, return (unique) checkpoint identifier */
+diff --git a/checkpoint/deferqueue.c b/checkpoint/deferqueue.c
+deleted file mode 100644
+index a02d577..0000000
+--- a/checkpoint/deferqueue.c
++++ /dev/null
+@@ -1,62 +0,0 @@
+-/*
+- *  Checkpoint-restart - infrastructure to manage deferred work
+- *
+- *  Copyright (C) 2009 Oren Laadan
+- *
+- *  This file is subject to the terms and conditions of the GNU General Public
+- *  License.  See the file COPYING in the main directory of the Linux
+- *  distribution for more details.
+- */
+-
+-#include <linux/list.h>
+-#include <linux/checkpoint.h>
+-
+-struct cr_deferqueue {
+-	cr_deferqueue_func_t function;
+-	unsigned int flags;
+-	struct list_head list;
+-	char data[0];
+-};
+-
+-int cr_deferqueue_add(struct cr_ctx *ctx, cr_deferqueue_func_t function,
+-		     unsigned int flags, void *data, int size)
+-{
+-	struct cr_deferqueue *wq;
+-
+-	wq = kmalloc(sizeof(wq) + size, GFP_KERNEL);
+-	if (!wq)
+-		return -ENOMEM;
+-
+-	wq->function = function;
+-	wq->flags = flags;
+-	memcpy(wq->data, data, size);
+-
+-	cr_debug("adding work %p function %p\n", wq, wq->function);
+-	list_add_tail(&ctx->deferqueue, &wq->list);
+-	return 0;
+-}
+-
+-/*
+- * cr_deferqueue_run - perform all work in the work queue
+- * @ctx: checkpoint context
+- *
+- * returns: number of works performed, or < 0 on error
+- */
+-int cr_deferqueue_run(struct cr_ctx *ctx)
+-{
+-	struct cr_deferqueue *wq, *n;
+-	int nr = 0;
+-	int ret;
+-
+-	list_for_each_entry_safe(wq, n, &ctx->deferqueue, list) {
+-		cr_debug("doing work %p function %p\n", wq, wq->function);
+-		ret = wq->function(wq->data);
+-		if (ret < 0)
+-			cr_debug("wq function failed %d\n", ret);
+-		list_del(&wq->list);
+-		kfree(wq);
+-		nr++;
+-	}
+-
+-	return nr;
+-}
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index dad257e..5293b9a 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -484,10 +484,6 @@ static int do_restart_root(struct cr_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = cr_deferqueue_run(ctx);
+-	if (ret < 0)
+-		return ret;
+-
+ 	return cr_read_tail(ctx);
  }
  
- /* Create a new bio-cgroup. */
-@@ -250,7 +248,7 @@ struct cgroup *get_cgroup_from_page(struct page *page)
- 	if (!pc)
- 		return NULL;
- 	lock_page_cgroup(pc);
--	biog = find_bio_cgroup(pc->bio_cgroup_id);
-+	biog = find_bio_cgroup(page_cgroup_get_bio_id(pc));
- 	if (biog) {
- 		css_get(&biog->css);
- 		cgrp = biog->css.cgroup;
-@@ -268,7 +266,7 @@ void put_cgroup_from_page(struct page *page)
- 	if (!pc)
- 		return;
- 	lock_page_cgroup(pc);
--	biog = find_bio_cgroup(pc->bio_cgroup_id);
-+	biog = find_bio_cgroup(page_cgroup_get_bio_id(pc));
- 	if (biog)
- 		css_put(&biog->css);
- 	unlock_page_cgroup(pc);
-@@ -283,7 +281,7 @@ int get_bio_cgroup_id(struct bio *bio)
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index afcbf75..63ee55e 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -171,14 +171,8 @@ static void cr_task_arr_free(struct cr_ctx *ctx)
  
- 	pc = lookup_page_cgroup(page);
- 	if (pc)
--		id = pc->bio_cgroup_id;
-+		id = page_cgroup_get_bio_id(pc);
- 	return id;
- }
- EXPORT_SYMBOL(get_bio_cgroup_id);
+ static void cr_ctx_free(struct cr_ctx *ctx)
+ {
+-	int ret;
+-
+ 	BUG_ON(atomic_read(&ctx->refcount));
+ 
+-	ret = cr_deferqueue_run(ctx);
+-	if (ret != 0)
+-		cr_debug("deferred deferqueue had %d entries", ret);
+-
+ 	if (ctx->file)
+ 		fput(ctx->file);
+ 
+@@ -217,7 +211,6 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
+ 	atomic_set(&ctx->refcount, 0);
+ 	INIT_LIST_HEAD(&ctx->pgarr_list);
+ 	INIT_LIST_HEAD(&ctx->pgarr_pool);
+-	INIT_LIST_HEAD(&ctx->deferqueue);
+ 	init_waitqueue_head(&ctx->waitq);
+ 
+ 	err = -EBADF;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 898176c..7e8d4e0 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -42,7 +42,6 @@ struct cr_ctx {
+ 	atomic_t refcount;
+ 
+ 	struct cr_objhash *objhash;	/* hash for shared objects */
+-	struct list_head deferqueue;	/* list of deferred works */
+ 
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+ 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+@@ -75,14 +74,6 @@ extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
+ extern void cr_ctx_get(struct cr_ctx *ctx);
+ extern void cr_ctx_put(struct cr_ctx *ctx);
+ 
+-/* deferred tasks */
+-
+-typedef int (*cr_deferqueue_func_t)(void *);
+-
+-extern int cr_deferqueue_run(struct cr_ctx *ctx);
+-extern int cr_deferqueue_add(struct cr_ctx *ctx, cr_deferqueue_func_t func,
+-			     unsigned int flags, void *data, int size);
+-
+ /* shared objects handling */
+ 
+ enum {
+-- 
+1.5.4.3
