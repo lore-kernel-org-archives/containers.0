@@ -1,93 +1,49 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: C/R without "leaks" (was: Re: Creating tasks on restart: userspace
-	vs kernel)
-Date: Wed, 15 Apr 2009 23:56:29 +0400
-Message-ID: <20090415195629.GD26994@x200.localdomain>
-References: <49E40662.2040508@cs.columbia.edu> <20090414163633.GE27461@x200.localdomain> <49E4D89D.9060903@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: CAP_SYS_ADMIN on restart(2) (was: Re: [PATCH 00/30] C/R
+	OpenVZ/Virtuozzo style)
+Date: Wed, 15 Apr 2009 15:22:20 -0500
+Message-ID: <20090415202220.GA5228__27968.2036526085$1239827145$gmane$org@us.ibm.com>
+References: <20090410023207.GA27788@x200.localdomain>
+	<1239340031.24083.21.camel@nimitz>
+	<20090413091423.GA19236@x200.localdomain>
+	<49E4108A.8050201@cs.columbia.edu>
+	<20090414145830.GA27461@x200.localdomain>
+	<49E4D115.5080601@cs.columbia.edu>
+	<20090414204912.GA28458@x200.localdomain>
+	<20090414213934.GB17986@us.ibm.com>
+	<20090415192150.GC26994@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756242AbZDOT4b@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <49E4D89D.9060903@cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: containers@lists.osdl.org, Dave Hansen <dave@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Ingo Molnar <mingo@elte.hu>
+In-Reply-To: <20090415192150.GC26994-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> Again, so to checkpoint one task in the topmost pid-ns you need to
-> checkpoint (if at all possible) the entire system ?!
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> Is sysctl to control CAP_SYS_ADMIN on restart(2) OK?
 
-One more argument to not allow "leaks" and checkpoint whole container,
-no ifs, buts and woulditbenices.
+You mean a sysctl to specify whether to require CAP_SYS_ADMIN for
+restart(2)?
 
-Just to clarify, C/R with "leak" is for example when process has separate
-pidns, but shares, for example, netns with other process not involved in
-checkpoint.
+Yeah I wouldn't object to that - it certainly seems like something
+sane for an admin to use depending on their users.
 
-If you allow this, you lose one important property of checkpoint part,
-namely, almost everything is frozen. Losing this property means suddenly
-much more stuff is alive during dump and you has to account to more stuff
-when checkpointing. You effectively checkpointing on live data structures
-and there is no guarantee you'll get it right.
+Though I think the bigger fish to fry first is whether we only support
+whole-container checkpoint/restart.  If that is the case, then
+CAP_SYS_ADMIN will always be needed for restart since it will always
+unshare some namespaces.
 
-Example 1: utsns is shared with the rest of the world.
-
-utsns content is modifiable only by tasks (current->nsproxy->uts_ns).
-Consequently, someone can modify utsns content while you're dumping it
-if you allow "leaks".
-
-Did you take precautions? Where?
-
-	static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
-	{
-	        struct cr_hdr h;
-	        struct cr_hdr_utsns *hh;
-	        int domainname_len;
-	        int nodename_len;
-	        int ret;
-
-	        h.type = CR_HDR_UTSNS;
-	        h.len = sizeof(*hh);
-
-	        hh = cr_hbuf_get(ctx, sizeof(*hh));
-	        if (!hh)
-	                return -ENOMEM;
-
-	        nodename_len = strlen(uts_ns->name.nodename) + 1;
-	        domainname_len = strlen(uts_ns->name.domainname) + 1;
-
-	        hh->nodename_len = nodename_len;
-	        hh->domainname_len = domainname_len;
-
-	        ret = cr_write_obj(ctx, &h, hh);
-	        cr_hbuf_put(ctx, sizeof(*hh));
-	        if (ret < 0)
-	                return ret;
-
-	        ret = cr_write_string(ctx, uts_ns->name.nodename, nodename_len);
-	        if (ret < 0)
-	                return ret;
-
-	        ret = cr_write_string(ctx, uts_ns->name.domainname, domainname_len);
-	        return ret;
-	}
-
-You should take uts_sem.
-
-
-Example 2: ipcns is shared with the rest of the world
-
-Consequently, shm segment is visible outside and live. Someone already
-shmatted to it. What will end up in shm segment content? Anything.
-
-You should check struct file refcount or something and disable attaching
-while dumping or something.
-
-
-Moral: Every time you do dump on something live you get complications.
-Every single time.
-
-
-There are sockets and live netns as the most complex example. I'm not
-prepared to describe it exactly, but people wishing to do C/R with
-"leaks" should be very careful with their wishes.
+thanks,
+-serge
