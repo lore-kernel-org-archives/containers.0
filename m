@@ -1,11 +1,13 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 1/5] bio-cgroup: Introduction
-Date: Thu, 16 Apr 2009 21:28:36 +0900 (JST)
-Message-ID: <20090416.212836.226792104.ryov__32318.9413561069$1239885205$gmane$org@valinux.co.jp>
+Subject: [PATCH 2/5] bio-cgroup: The new page_cgroup framework
+Date: Thu, 16 Apr 2009 21:29:31 +0900 (JST)
+Message-ID: <20090416.212931.71100972.ryov__7695.45382722772$1239885458$gmane$org@valinux.co.jp>
+References: <20090416.212836.226792104.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090416.212836.226792104.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,80 +20,159 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi all,
+This patch makes the page_cgroup framework be able to be used even if
+the compile option of the cgroup memory controller is off.
+So bio-cgroup can use this framework without the memory controller.
 
-This is a new release of bio-cgroup which provides an IO tracking
-mechanism. The patches can be applied to the kernel 2.6.30-rc1 and you
-can also download them from the following site.
-http://people.valinux.co.jp/~ryov/bio-cgroup/
+Based on 2.6.30-rc1
+Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
-What's bio-cgroup all about?
-============================
+---
+ include/linux/memcontrol.h  |    6 ++++++
+ include/linux/mmzone.h      |    4 ++--
+ include/linux/page_cgroup.h |    8 +++++---
+ init/Kconfig                |    4 ++++
+ mm/Makefile                 |    3 ++-
+ mm/memcontrol.c             |    6 ++++++
+ mm/page_cgroup.c            |    3 +--
+ 7 files changed, 26 insertions(+), 8 deletions(-)
 
-With this feature, you can determine the owners of any type of
-I/Os. This makes dm-ioband_--_I/O_bandwidth_controller_-- be able to
-control the Block I/O bandwidths even when it accepts delayed write
-requests. Dm-ioband can find the owner cgroup of each request. It is
-also possible that the other people who work on the i/o bandwidth
-throttling use this functionality to control asynchronous I/Os with a
-little enhancement.
-
-Setting up bio-cgroup
-=====================
-
-You have to apply the patch dm-ioband_v1.9.0 before applying this
-series of bio-cgroup patches.
-And you have to select the following config options when compiling
-kernel.
-
-      CONFIG_CGROUPS=y
-      CONFIG_CGROUP_BIO=y
-
-And I recommend you should also select the options for cgroup memory
-subsystem, because it makes it possible to give some I/O bandwidth and
-some memory to a certain cgroup to control delayed write requests and
-the processes in the cgroup will be able to make pages dirty only
-inside the cgroup even when the given bandwidth is narrow.
-
-      CONFIG_RESOURCE_COUNTERS=y
-      CONFIG_CGROUP_MEM_RES_CTLR=y
-
-Using bio-cgroup
-================
-
-The following shows how to use dm-ioband with cgroups. Please assume
-that you want make two cgroups, which we call "bio cgroup" here, to
-track down block I/Os and assign them to ioband device "ioband1".
-
-First, mount the bio cgroup filesystem.
-
-      # mount -t cgroup -o bio none /cgroup/bio
-
-Then, make new bio cgroups and put some processes in them.
-
-      # mkdir /cgroup/bio/bgroup1
-      # mkdir /cgroup/bio/bgroup2
-      # echo 1234 > /cgroup/bio/bgroup1/tasks
-      # echo 5678 > /cgroup/bio/bgroup1/tasks
-
-Now, check the ID of each bio cgroup which is just created.
-
-      # cat /cgroup/bio/bgroup1/bio.id
-      2
-      # cat /cgroup/bio/bgroup2/bio.id
-      3
-
-Finally, attach the cgroups to "ioband1" and assign them weights.
-
-      # dmsetup message ioband1 0 type cgroup
-      # dmsetup message ioband1 0 attach 2
-      # dmsetup message ioband1 0 attach 3
-      # dmsetup message ioband1 0 weight 2:30
-      # dmsetup message ioband1 0 weight 3:60
-
-You can also make use of the dm-ioband administration tool
-iobandctl.py. You can set up the device with the tool as follows.
-In this case, you don't need to know the IDs of the cgroups.
-
-      # iobandctl.py group /dev/mapper/ioband1 cgroup \
-        /cgroup/bio/bgroup1:30 /cgroup/bio/bgroup2:60
+Index: linux-2.6.30-rc1/include/linux/memcontrol.h
+===================================================================
+--- linux-2.6.30-rc1.orig/include/linux/memcontrol.h
++++ linux-2.6.30-rc1/include/linux/memcontrol.h
+@@ -37,6 +37,8 @@ struct mm_struct;
+  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
+  */
+ 
++extern void __init_mem_page_cgroup(struct page_cgroup *pc);
++
+ extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
+ 				gfp_t gfp_mask);
+ /* for swap handling */
+@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct
+ #else /* CONFIG_CGROUP_MEM_RES_CTLR */
+ struct mem_cgroup;
+ 
++static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++}
++
+ static inline int mem_cgroup_newpage_charge(struct page *page,
+ 					struct mm_struct *mm, gfp_t gfp_mask)
+ {
+Index: linux-2.6.30-rc1/include/linux/mmzone.h
+===================================================================
+--- linux-2.6.30-rc1.orig/include/linux/mmzone.h
++++ linux-2.6.30-rc1/include/linux/mmzone.h
+@@ -607,7 +607,7 @@ typedef struct pglist_data {
+ 	int nr_zones;
+ #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
+ 	struct page *node_mem_map;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_CGROUP_PAGE
+ 	struct page_cgroup *node_page_cgroup;
+ #endif
+ #endif
+@@ -958,7 +958,7 @@ struct mem_section {
+ 
+ 	/* See declaration of similar field in struct zone */
+ 	unsigned long *pageblock_flags;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_CGROUP_PAGE
+ 	/*
+ 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
+ 	 * section. (see memcontrol.h/page_cgroup.h about this.)
+Index: linux-2.6.30-rc1/include/linux/page_cgroup.h
+===================================================================
+--- linux-2.6.30-rc1.orig/include/linux/page_cgroup.h
++++ linux-2.6.30-rc1/include/linux/page_cgroup.h
+@@ -1,7 +1,7 @@
+ #ifndef __LINUX_PAGE_CGROUP_H
+ #define __LINUX_PAGE_CGROUP_H
+ 
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_CGROUP_PAGE
+ #include <linux/bit_spinlock.h>
+ /*
+  * Page Cgroup can be considered as an extended mem_map.
+@@ -12,9 +12,11 @@
+  */
+ struct page_cgroup {
+ 	unsigned long flags;
+-	struct mem_cgroup *mem_cgroup;
+ 	struct page *page;
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct mem_cgroup *mem_cgroup;
+ 	struct list_head lru;		/* per cgroup LRU list */
++#endif
+ };
+ 
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
+@@ -71,7 +73,7 @@ static inline void unlock_page_cgroup(st
+ 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+ }
+ 
+-#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++#else /* CONFIG_CGROUP_PAGE */
+ struct page_cgroup;
+ 
+ static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+Index: linux-2.6.30-rc1/init/Kconfig
+===================================================================
+--- linux-2.6.30-rc1.orig/init/Kconfig
++++ linux-2.6.30-rc1/init/Kconfig
+@@ -608,6 +608,10 @@ config CGROUP_MEM_RES_CTLR_SWAP
+ 
+ endif # CGROUPS
+ 
++config CGROUP_PAGE
++	def_bool y
++	depends on CGROUP_MEM_RES_CTLR
++
+ config MM_OWNER
+ 	bool
+ 
+Index: linux-2.6.30-rc1/mm/Makefile
+===================================================================
+--- linux-2.6.30-rc1.orig/mm/Makefile
++++ linux-2.6.30-rc1/mm/Makefile
+@@ -37,4 +37,5 @@ else
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ endif
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+-obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
++obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
++obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
+Index: linux-2.6.30-rc1/mm/memcontrol.c
+===================================================================
+--- linux-2.6.30-rc1.orig/mm/memcontrol.c
++++ linux-2.6.30-rc1/mm/memcontrol.c
+@@ -128,6 +128,12 @@ struct mem_cgroup_lru_info {
+ 	struct mem_cgroup_per_node *nodeinfo[MAX_NUMNODES];
+ };
+ 
++void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++	pc->mem_cgroup = NULL;
++	INIT_LIST_HEAD(&pc->lru);
++}
++
+ /*
+  * The memory controller data structure. The memory controller controls both
+  * page cache and RSS per cgroup. We would eventually like to provide
+Index: linux-2.6.30-rc1/mm/page_cgroup.c
+===================================================================
+--- linux-2.6.30-rc1.orig/mm/page_cgroup.c
++++ linux-2.6.30-rc1/mm/page_cgroup.c
+@@ -14,9 +14,8 @@ static void __meminit
+ __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
+ {
+ 	pc->flags = 0;
+-	pc->mem_cgroup = NULL;
+ 	pc->page = pfn_to_page(pfn);
+-	INIT_LIST_HEAD(&pc->lru);
++	__init_mem_page_cgroup(pc);
+ }
+ static unsigned long total_usage;
