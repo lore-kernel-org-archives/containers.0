@@ -1,15 +1,11 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 3/9] bio-cgroup controller
-Date: Thu, 16 Apr 2009 21:00:02 +0900 (JST)
-Message-ID: <20090416.210002.193701676.ryov__4945.94730339504$1239883378$gmane$org@valinux.co.jp>
-References: <20090415132356.GA19270@linux>
-	<20090416085814.8b6d077f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090416104234.GA6656@linux>
+Subject: [PATCH 1/5] bio-cgroup: Introduction
+Date: Thu, 16 Apr 2009 21:28:36 +0900 (JST)
+Message-ID: <20090416.212836.226792104.ryov__32318.9413561069$1239885205$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090416104234.GA6656@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,45 +15,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Andrea and Kamezawa-san,
+Hi all,
 
-> > > +#ifdef CONFIG_CGROUP_BIO
-> > > +/*
-> > > + * use lower 16 bits for flags and reserve the rest for the bio-cgroup id
-> > > + */
-> > > +#define BIO_CGROUP_ID_SHIFT	(16)
-> > > +#define BIO_CGROUP_ID_BITS (8 * sizeof(unsigned long) - BIO_CGROUP_ID_SHIFT)
-> > > +
-> > > +static inline unsigned long page_cgroup_get_bio_id(struct page_cgroup *pc)
-> > > +{
-> > > +	return pc->flags >> BIO_CGROUP_ID_SHIFT;
-> > > +}
-> > > +
-> > > +static inline void page_cgroup_set_bio_id(struct page_cgroup *pc,
-> > > +				unsigned long id)
-> > > +{
-> > > +	WARN_ON(id >= (1UL << BIO_CGROUP_ID_BITS));
-> > > +	pc->flags &= (1UL << BIO_CGROUP_ID_SHIFT) - 1;
-> > > +	pc->flags |= (unsigned long)(id << BIO_CGROUP_ID_SHIFT);
-> > > +}
-> > > +#endif
-> > > +
-> > Ah, there is "Lock" bit in pc->flags and above "set" code does read-modify-write
-> > without lock_page_cgroup().
-> > 
-> > Could you use lock_page_cgroup() or cmpxchg ? (or using something magical technique ?)
-> 
-> If I'm not wrong this should guarantee atomicity without using
-> lock_page_cgroup().
+This is a new release of bio-cgroup which provides an IO tracking
+mechanism. The patches can be applied to the kernel 2.6.30-rc1 and you
+can also download them from the following site.
+http://people.valinux.co.jp/~ryov/bio-cgroup/
 
-I'll consider carefully how is the best way to minimize the overhead
-as far as possible.
-First, I'll post the new bio-cgroup patches that use css_id as
-bio_cgroup_id soon.
+What's bio-cgroup all about?
+============================
 
-Thanks,
-Ryo Tsuruta
+With this feature, you can determine the owners of any type of
+I/Os. This makes dm-ioband_--_I/O_bandwidth_controller_-- be able to
+control the Block I/O bandwidths even when it accepts delayed write
+requests. Dm-ioband can find the owner cgroup of each request. It is
+also possible that the other people who work on the i/o bandwidth
+throttling use this functionality to control asynchronous I/Os with a
+little enhancement.
+
+Setting up bio-cgroup
+=====================
+
+You have to apply the patch dm-ioband_v1.9.0 before applying this
+series of bio-cgroup patches.
+And you have to select the following config options when compiling
+kernel.
+
+      CONFIG_CGROUPS=y
+      CONFIG_CGROUP_BIO=y
+
+And I recommend you should also select the options for cgroup memory
+subsystem, because it makes it possible to give some I/O bandwidth and
+some memory to a certain cgroup to control delayed write requests and
+the processes in the cgroup will be able to make pages dirty only
+inside the cgroup even when the given bandwidth is narrow.
+
+      CONFIG_RESOURCE_COUNTERS=y
+      CONFIG_CGROUP_MEM_RES_CTLR=y
+
+Using bio-cgroup
+================
+
+The following shows how to use dm-ioband with cgroups. Please assume
+that you want make two cgroups, which we call "bio cgroup" here, to
+track down block I/Os and assign them to ioband device "ioband1".
+
+First, mount the bio cgroup filesystem.
+
+      # mount -t cgroup -o bio none /cgroup/bio
+
+Then, make new bio cgroups and put some processes in them.
+
+      # mkdir /cgroup/bio/bgroup1
+      # mkdir /cgroup/bio/bgroup2
+      # echo 1234 > /cgroup/bio/bgroup1/tasks
+      # echo 5678 > /cgroup/bio/bgroup1/tasks
+
+Now, check the ID of each bio cgroup which is just created.
+
+      # cat /cgroup/bio/bgroup1/bio.id
+      2
+      # cat /cgroup/bio/bgroup2/bio.id
+      3
+
+Finally, attach the cgroups to "ioband1" and assign them weights.
+
+      # dmsetup message ioband1 0 type cgroup
+      # dmsetup message ioband1 0 attach 2
+      # dmsetup message ioband1 0 attach 3
+      # dmsetup message ioband1 0 weight 2:30
+      # dmsetup message ioband1 0 weight 3:60
+
+You can also make use of the dm-ioband administration tool
+iobandctl.py. You can set up the device with the tool as follows.
+In this case, you don't need to know the IDs of the cgroups.
+
+      # iobandctl.py group /dev/mapper/ioband1 cgroup \
+        /cgroup/bio/bgroup1:30 /cgroup/bio/bgroup2:60
