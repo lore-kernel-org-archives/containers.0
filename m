@@ -1,19 +1,23 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: C/R without "leaks" (was: Re: Creating tasks on restart:
-	userspace vs kernel)
-Date: Thu, 16 Apr 2009 20:12:15 +0400
-Message-ID: <20090416161215.GA8505@x200.localdomain>
-References: <49E40662.2040508@cs.columbia.edu>
-	<20090414163633.GE27461@x200.localdomain>
-	<49E4D89D.9060903@cs.columbia.edu>
-	<20090415195629.GD26994@x200.localdomain>
-	<1239835337.6610.6.camel@bahia>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: CAP_SYS_ADMIN on restart(2)
+Date: Thu, 16 Apr 2009 11:29:10 -0500
+Message-ID: <20090416162910.GA20736__18631.6014770002$1239899536$gmane$org@us.ibm.com>
+References: <20090414145830.GA27461@x200.localdomain>
+	<49E4D115.5080601@cs.columbia.edu>
+	<20090414204912.GA28458@x200.localdomain>
+	<20090414213934.GB17986@us.ibm.com>
+	<20090415192150.GC26994@x200.localdomain>
+	<1239827033.32604.167.camel@nimitz>
+	<20090415203920.GA5475@us.ibm.com>
+	<49E64BFF.5080002@cs.columbia.edu>
+	<20090415211609.GA6704@us.ibm.com>
+	<20090416153513.GA7876@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1239835337.6610.6.camel@bahia>
+In-Reply-To: <20090416153513.GA7876-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,19 +27,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 16, 2009 at 12:42:17AM +0200, Greg Kurz wrote:
-> On Wed, 2009-04-15 at 23:56 +0400, Alexey Dobriyan wrote:
-
-> > There are sockets and live netns as the most complex example. I'm not
-> > prepared to describe it exactly, but people wishing to do C/R with
-> > "leaks" should be very careful with their wishes.
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > What Alexey wants, I believe, is for users to be able to not have
+> > to worry about there being exploitable bugs in restart(2) which
+> > unprivileged users can play with.  And for the usual distro-kernel
+> > reasons, saying use 'CONFIG_CHECKPOINT=n' is not an option.
 > 
-> They should close their sockets before checkpoint and find/have some way
-> to reconnect after. This implies some kind of C/R awareness in the code
-> to be checkpointed.
+> This is correct, yes. If I would be a sysadmin who knows a bit about
+> kernel internals, I'd never trust restart(2) to get it right.
 
-How do you imagine sshd closing sockets and reconnecting?
+Now I suppose what we could do is define a new CAP_SYS_RESTART
+capability and require that.  Then the admin to whom I'm trying
+to cater could simply 'capset cap_sys_restart=pe /bin/restart'.
+Then all users could use restart without being granted the
+extra privilege implied by CAP_SYS_ADMIN.
+
+-serge
