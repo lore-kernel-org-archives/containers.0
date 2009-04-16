@@ -1,15 +1,19 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14-rc3][PATCH 15/36] c/r of restart-blocks
-Date: Wed, 15 Apr 2009 23:02:21 -0700
-Message-ID: <20090416060220.GB14934@us.ibm.com>
-References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
-	<1239107264-21775-16-git-send-email-orenl@cs.columbia.edu>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 3/9] bio-cgroup controller
+Date: Thu, 16 Apr 2009 12:42:36 +0200
+Message-ID: <20090416104234.GA6656__6936.69005199826$1239878745$gmane$org@linux>
+References: <1239740480-28125-4-git-send-email-righi.andrea@gmail.com>
+	<20090415111528.b796519a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090415093716.GA5968@linux>
+	<20090415.213850.226770691.ryov@valinux.co.jp>
+	<20090415132356.GA19270@linux>
+	<20090416085814.8b6d077f.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1239107264-21775-16-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20090416085814.8b6d077f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,409 +23,261 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+On Thu, Apr 16, 2009 at 08:58:14AM +0900, KAMEZAWA Hiroyuki wrote:
+> On Wed, 15 Apr 2009 15:23:57 +0200
+> Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> 
+> > On Wed, Apr 15, 2009 at 09:38:50PM +0900, Ryo Tsuruta wrote:
+> > > Hi Andrea and Kamezawa-san,
+> > > 
+> > > > Ryo, it would be great if you can look at this and fix/integrate into
+> > > > the mainstream bio-cgroup. Otherwise I can try to to schedule this in my
+> > > > work.
+> > > 
+> > > O.K. I'll apply those fixes and post patches as soon as I can.
+> > > 
+> > 
+> > Very good! I've just tested the bio_cgroup_id inclusion in
+> > page_cgroup->flags. I'm posting the patch on-top-of my patchset.
+> > 
+> > If you're interested, it should apply cleanly to the original
+> > bio-cgroup, except for the get/put_cgroup_from_page() part.
+> > 
+> > Thanks,
+> > -Andrea
+> > ---
+> > bio-cgroup: encode bio_cgroup_id in page_cgroup->flags
+> > 
+> > Encode the bio_cgroup_id into the flags argument of page_cgroup as
+> > suggested by Kamezawa.
+> > 
+> > Lower 16-bits of the flags attribute are used for the actual page_cgroup
+> > flags. The rest is reserved to store the bio-cgroup id.
+> > 
+> > This allows to save 4 bytes (in 32-bit architectures) or 8 bytes (in
+> > 64-bit) for each page_cgroup element.
+> > 
+> > Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > ---
+> >  include/linux/biotrack.h    |    2 +-
+> >  include/linux/page_cgroup.h |   24 +++++++++++++++++++++---
+> >  mm/biotrack.c               |   26 ++++++++++++--------------
+> >  3 files changed, 34 insertions(+), 18 deletions(-)
+> > 
+> > diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
+> > index 25b8810..4bd0242 100644
+> > --- a/include/linux/biotrack.h
+> > +++ b/include/linux/biotrack.h
+> > @@ -28,7 +28,7 @@ struct bio_cgroup {
+> >  
+> >  static inline void __init_bio_page_cgroup(struct page_cgroup *pc)
+> >  {
+> > -	pc->bio_cgroup_id = 0;
+> > +	page_cgroup_set_bio_id(pc, 0);
+> >  }
+> >  
+> >  extern struct cgroup *get_cgroup_from_page(struct page *page);
+> > diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+> > index 00a49c5..af780a4 100644
+> > --- a/include/linux/page_cgroup.h
+> > +++ b/include/linux/page_cgroup.h
+> > @@ -16,12 +16,30 @@ struct page_cgroup {
+> >  #ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> >  	struct mem_cgroup *mem_cgroup;
+> >  #endif
+> > -#ifdef CONFIG_CGROUP_BIO
+> > -	int bio_cgroup_id;
+> > -#endif
+> >  	struct list_head lru;		/* per cgroup LRU list */
+> >  };
+> >  
+> > +#ifdef CONFIG_CGROUP_BIO
+> > +/*
+> > + * use lower 16 bits for flags and reserve the rest for the bio-cgroup id
+> > + */
+> > +#define BIO_CGROUP_ID_SHIFT	(16)
+> > +#define BIO_CGROUP_ID_BITS (8 * sizeof(unsigned long) - BIO_CGROUP_ID_SHIFT)
+> > +
+> > +static inline unsigned long page_cgroup_get_bio_id(struct page_cgroup *pc)
+> > +{
+> > +	return pc->flags >> BIO_CGROUP_ID_SHIFT;
+> > +}
+> > +
+> > +static inline void page_cgroup_set_bio_id(struct page_cgroup *pc,
+> > +				unsigned long id)
+> > +{
+> > +	WARN_ON(id >= (1UL << BIO_CGROUP_ID_BITS));
+> > +	pc->flags &= (1UL << BIO_CGROUP_ID_SHIFT) - 1;
+> > +	pc->flags |= (unsigned long)(id << BIO_CGROUP_ID_SHIFT);
+> > +}
+> > +#endif
+> > +
+> Ah, there is "Lock" bit in pc->flags and above "set" code does read-modify-write
+> without lock_page_cgroup().
+> 
+> Could you use lock_page_cgroup() or cmpxchg ? (or using something magical technique ?)
 
-| +/* dump the task_struct of a given task */
-| +int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t)
-| +{
-| +	struct cr_hdr h;
-| +	struct cr_hdr_restart_block *hh;
-| +	struct restart_block *restart_block;
-| +	long (*fn)(struct restart_block *);
-| +	s64 base, expire = 0;
-| +	int ret;
-| +
-| +	h.type = CR_HDR_RESTART_BLOCK;
-| +	h.len = sizeof(*hh);
-| +
-| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
-| +	if (!hh)
-| +		return -ENOMEM;
-| +	memset(hh, 0, sizeof(*hh));
-| +
-| +	base = ktime_to_ns(ctx->ktime_beg);
-| +	restart_block = &task_thread_info(t)->restart_block;
-| +	fn = restart_block->fn;
+If I'm not wrong this should guarantee atomicity without using
+lock_page_cgroup().
 
-Can we define another operation in 'struct restart_block' and replace
-the following 'fn == xyz' checks with:
+Thanks,
+-Andrea
+---
+bio-cgroup: encode bio_cgroup_id in page_cgroup->flags
 
-	if (!restart_block->checkpoint)
-		BUG(1);
+Encode the bio_cgroup_id into the flags argument of page_cgroup as
+suggested by Kamezawa.
 
-	expires = restart_block->checkpoint(restart_block, &hh);
+Lower 16 bits (in 32-bit archs) or lower 32 bits (in 64-bit archs) of
+the flags attribute are used for the actual page_cgroup flags. The upper
+bits are reserved to store the bio-cgroup id.
 
-It would touch other files and require ifdef CONFIG_CHECKPOINT in them
-though.
+This allows to save 4 bytes (in 32-bit architectures) or 8 bytes (in
+64-bit) for each page_cgroup element.
 
-| +
-| +	/* FIX: enumerate clockid_t so we're immune to changes */
-| +
-| +	if (fn == do_no_restart_syscall) {
-| +
-| +		hh->fn = CR_RESTART_BLOCK_NONE;
-| +		cr_debug("restart_block: non\n");
-| +
-| +	} else if (fn == hrtimer_nanosleep_restart) {
-| +
-| +		hh->fn = CR_RESTART_BLOCK_HRTIMER_NANOSLEEP;
-| +		hh->arg_0 = restart_block->nanosleep.index;
-| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-| +		expire = restart_block->nanosleep.expires;
-| +		cr_debug("restart_block: hrtimer expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +	} else if (fn == posix_cpu_nsleep_restart) {
-| +		struct timespec ts;
-| +
-| +		hh->fn = CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP;
-| +		hh->arg_0 = restart_block->arg0;
-| +		hh->arg_1 = restart_block->arg1;
-| +		ts.tv_sec = restart_block->arg2;
-| +		ts.tv_nsec = restart_block->arg3;
-| +		expire = timespec_to_ns(&ts);
-| +		cr_debug("restart_block: posix_cpu expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +#ifdef CONFIG_COMPAT
-| +	} else if (fn == compat_nanosleep_restart) {
-| +
-| +		hh->fn = CR_RESTART_BLOCK_NANOSLEEP;
-| +		hh->arg_0 = restart_block->nanosleep.index;
-| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-| +		hh->arg_2 = (unsigned long)
-| +			restart_block->nanosleep.compat_rmtp;
-| +		expire = restart_block->nanosleep.expires;
-| +		cr_debug("restart_block: compat expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +	} else if (fn == compat_clock_nanosleep_restart) {
-| +
-| +		hh->fn = CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP;
-| +		hh->arg_0 = restart_block->nanosleep.index;
-| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-| +		hh->arg_2 = (unsigned long)
-| +			restart_block->nanosleep.compat_rmtp;
-| +		expire = restart_block->nanosleep.expires;
-| +		cr_debug("restart_block: compat_clock expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +#endif
-| +	} else if (fn == futex_wait_restart) {
-| +
-| +		hh->fn = CR_RESTART_BLOCK_FUTEX;
-| +		hh->arg_0 = (unsigned long) restart_block->futex.uaddr;
-| +		hh->arg_1 = restart_block->futex.val;
-| +		hh->arg_2 = restart_block->futex.flags;
-| +		hh->arg_3 = restart_block->futex.bitset;
-| +		expire = restart_block->futex.time;
-| +		cr_debug("restart_block: futex expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +	} else if (fn == do_restart_poll) {
-| +		struct timespec ts;
-| +
-| +		hh->fn = CR_RESTART_BLOCK_POLL;
-| +		hh->arg_0 = (unsigned long) restart_block->poll.ufds;
-| +		hh->arg_1 = restart_block->poll.nfds;
-| +		hh->arg_2 = restart_block->poll.has_timeout;
-| +		ts.tv_sec = restart_block->poll.tv_sec;
-| +		ts.tv_nsec = restart_block->poll.tv_nsec;
-| +		expire = timespec_to_ns(&ts);
-| +		cr_debug("restart_block: poll expire %lld now %lld\n",
-| +			 expire, base);
-| +
-| +	} else {
-| +
-| +		BUG();
-| +
-| +	}
-| +
-| +	/* common to all restart blocks: */
-| +	if (base < expire)
-| +		hh->arg_4 = (expire - base);
-| +
-| +	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-| +		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
-| +
-| +	ret = cr_write_obj(ctx, &h, hh);
-| +	cr_hbuf_put(ctx, sizeof(*hh));
-| +
-| +	return ret;
-| +}
-| +
-|  /* dump the entire state of a given task */
-|  int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
-|  {
-| diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-| index 234cc92..daaaeec 100644
-| --- a/checkpoint/restart.c
-| +++ b/checkpoint/restart.c
-| @@ -264,18 +264,16 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
-| 
-|  	ret = cr_ctx_restart(ctx, pid);
-|  	if (ret < 0)
-| -		goto out;
-| +		return ret;
-|  	ret = cr_read_head(ctx);
-|  	if (ret < 0)
-| -		goto out;
-| +		return ret;
-|  	ret = cr_read_task(ctx);
-|  	if (ret < 0)
-| -		goto out;
-| +		return ret;
-|  	ret = cr_read_tail(ctx);
-|  	if (ret < 0)
-| -		goto out;
-| +		return ret;
+Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/page_cgroup.h |   42 +++++++++++++++++++++++++++++++++++++-----
+ mm/biotrack.c               |   24 +++++++++++-------------
+ 2 files changed, 48 insertions(+), 18 deletions(-)
 
-Nit, would this patch be simpler if we left the 'goto out' lines above
-and added the 'return cr_retval_restart(ctx);' here (i.e just before the
-'out:' label) ?
-
-| 
-| -	/* on success, adjust the return value if needed [TODO] */
-| - out:
-| -	return ret;
-| +	return cr_retval_restart(ctx);
-|  }
-| diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
-| index 93c86ab..52206d8 100644
-| --- a/checkpoint/rstr_task.c
-| +++ b/checkpoint/rstr_task.c
-| @@ -9,6 +9,9 @@
-|   */
-| 
-|  #include <linux/sched.h>
-| +#include <linux/posix-timers.h>
-| +#include <linux/futex.h>
-| +#include <linux/poll.h>
-|  #include <linux/checkpoint.h>
-|  #include <linux/checkpoint_hdr.h>
-| 
-| @@ -52,6 +55,115 @@ static int cr_read_task_struct(struct cr_ctx *ctx)
-|  	return ret;
-|  }
-| 
-| +int cr_read_restart_block(struct cr_ctx *ctx)
-| +{
-| +	struct cr_hdr_restart_block *hh;
-| +	struct restart_block restart_block;
-| +	struct timespec ts;
-| +	clockid_t clockid;
-| +	s64 expire;
-| +	int ret;
-| +
-| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
-| +	if (!hh)
-| +		return -ENOMEM;
-| +
-| +	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_RESTART_BLOCK);
-| +	if (ret < 0)
-| +		goto out;
-| +
-| +	expire = ktime_to_ns(ctx->ktime_beg) + hh->arg_4;
-| +	restart_block.fn = NULL;
-| +
-| +	cr_debug("restart_block: expire %lld begin %lld\n",
-| +		 expire, ktime_to_ns(ctx->ktime_beg));
-| +	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-| +		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
-| +
-| +	switch (hh->fn) {
-| +	case CR_RESTART_BLOCK_NONE:
-| +		restart_block.fn = do_no_restart_syscall;
-| +		break;
-| +	case CR_RESTART_BLOCK_HRTIMER_NANOSLEEP:
-| +		clockid = hh->arg_0;
-| +		if (clockid < 0 || invalid_clockid(clockid))
-| +			break;
-| +		restart_block.fn = hrtimer_nanosleep_restart;
-| +		restart_block.nanosleep.index = clockid;
-| +		restart_block.nanosleep.rmtp =
-| +			(struct timespec __user *) (unsigned long) hh->arg_1;
-| +		restart_block.nanosleep.expires = expire;
-| +		break;
-| +	case CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP:
-| +		clockid = hh->arg_0;
-| +		if (clockid < 0 || invalid_clockid(clockid))
-| +			break;
-| +		restart_block.fn = posix_cpu_nsleep_restart;
-| +		restart_block.arg0 = clockid;
-| +		restart_block.arg1 = hh->arg_1;
-| +		ts = ns_to_timespec(expire);
-| +		restart_block.arg2 = ts.tv_sec;
-| +		restart_block.arg3 = ts.tv_nsec;
-| +		break;
-| +#ifdef CONFIG_COMPAT
-| +	case CR_RESTART_BLOCK_COMPAT_NANOSLEEP:
-| +		clockid = hh->arg_0;
-| +		if (clockid < 0 || invalid_clockid(clockid))
-| +			break;
-| +		restart_block.fn = compat_nanosleep_restart;
-| +		restart_block.nanosleep.index = clockid;
-| +		restart_block.nanosleep.rmtp =
-| +			(struct timespec __user *) (unsigned long) hh->arg_1;
-| +		restart_block.nanosleep.compat_rmtp =
-| +			(struct compat_timespec __user *)
-| +				(unsigned long) hh->arg_2;
-| +		resatrt_block.nanosleep.expires = expire;
-| +		break;
-| +	case CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
-| +		clockid = hh->arg_0;
-| +		if (clockid < 0 || invalid_clockid(clockid))
-| +			break;
-| +		restart_block.fn = compat_clock_nanosleep_restart;
-| +		restart_block.nanosleep.index = clockid;
-| +		restart_block.nanosleep.rmtp =
-| +			(struct timespec __user *) (unsigned long) hh->arg_1;
-| +		restart_block.nanosleep.compat_rmtp =
-| +			(struct compat_timespec __user *)
-| +				(unsigned long) hh->arg_2;
-| +		resatrt_block.nanosleep.expires = expire;
-| +		break;
-| +#endif
-| +	case CR_RESTART_BLOCK_FUTEX:
-| +		restart_block.fn = futex_wait_restart;
-| +		restart_block.futex.uaddr = (u32 *) (unsigned long) hh->arg_0;
-| +		restart_block.futex.val = hh->arg_1;
-| +		restart_block.futex.flags = hh->arg_2;
-| +		restart_block.futex.bitset = hh->arg_3;
-| +		restart_block.futex.time = expire;
-| +		break;
-| +	case CR_RESTART_BLOCK_POLL:
-| +		restart_block.fn = do_restart_poll;
-| +		restart_block.poll.ufds =
-| +			(struct pollfd __user *) (unsigned long) hh->arg_0;
-| +		restart_block.poll.nfds = hh->arg_1;
-| +		restart_block.poll.has_timeout = hh->arg_2;
-| +		ts = ns_to_timespec(expire);
-| +		restart_block.poll.tv_sec = ts.tv_sec;
-| +		restart_block.poll.tv_nsec = ts.tv_nsec;
-| +		break;
-| +	default:
-| +		break;
-| +	}
-| +
-| +	if (restart_block.fn)
-| +		task_thread_info(current)->restart_block = restart_block;
-| +	else
-| +		ret = -EINVAL;
-| + out:
-| +	cr_hbuf_put(ctx, sizeof(*hh));
-| +	return ret;
-| +}
-| +
-|  /* read the entire state of the current task */
-|  int cr_read_task(struct cr_ctx *ctx)
-|  {
-| @@ -76,6 +188,5 @@ int cr_read_task(struct cr_ctx *ctx)
-|  	ret = cr_read_cpu(ctx);
-|  	cr_debug("cpu: ret %d\n", ret);
-|   out:
-| -
-|  	return ret;
-|  }
-| diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-| index 8652c5c..863cb63 100644
-| --- a/checkpoint/sys.c
-| +++ b/checkpoint/sys.c
-| @@ -186,6 +186,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
-|  		return ERR_PTR(-ENOMEM);
-| 
-|  	ctx->flags = flags;
-| +	ctx->ktime_beg = ktime_get();
-| 
-|  	INIT_LIST_HEAD(&ctx->pgarr_list);
-|  	INIT_LIST_HEAD(&ctx->pgarr_pool);
-| @@ -203,6 +204,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
-|  	if (cr_objhash_alloc(ctx) < 0)
-|  		goto err;
-| 
-| +
-|  	return ctx;
-| 
-|   err:
-| diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-| index 3a514fc..a94ce98 100644
-| --- a/include/linux/checkpoint.h
-| +++ b/include/linux/checkpoint.h
-| @@ -18,6 +18,8 @@
-|  struct cr_ctx {
-|  	int crid;		/* unique checkpoint id */
-| 
-| +	ktime_t ktime_beg;	/* checkpoint start time */
-
-Nit: spell out 'begin' fully ? :-) 
-
-| +
-|  	pid_t root_pid;		/* container identifier */
-|  	struct task_struct *root_task;	/* container root task */
-|  	struct nsproxy *root_nsproxy;	/* container root nsproxy */
-| @@ -87,10 +89,12 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
-|  				       int flags, int mode);
-| 
-|  extern int cr_write_task(struct cr_ctx *ctx, struct task_struct *t);
-| +extern int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t);
-|  extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
-|  extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
-| 
-|  extern int cr_read_task(struct cr_ctx *ctx);
-| +extern int cr_read_restart_block(struct cr_ctx *ctx);
-|  extern int cr_read_mm(struct cr_ctx *ctx);
-|  extern int cr_read_fd_table(struct cr_ctx *ctx);
-| 
-| diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-| index 30e649b..8821a30 100644
-| --- a/include/linux/checkpoint_hdr.h
-| +++ b/include/linux/checkpoint_hdr.h
-| @@ -45,6 +45,7 @@ enum {
-|  	CR_HDR_FNAME,
-| 
-|  	CR_HDR_TASK = 101,
-| +	CR_HDR_RESTART_BLOCK,
-|  	CR_HDR_THREAD,
-|  	CR_HDR_CPU,
-| 
-| @@ -97,6 +98,25 @@ struct cr_hdr_task {
-|  	__u32 task_comm_len;
-|  } __attribute__((aligned(8)));
-| 
-| +struct cr_hdr_restart_block {
-| +	__u64 fn;
-
-Nit: This a function-type rather than the function itself ? A bit misleading
-considering restart_block->fn refers to a function.
-
-| +	__u64 arg_0;
-| +	__u64 arg_1;
-| +	__u64 arg_2;
-| +	__u64 arg_3;
-| +	__u64 arg_4;
-| +} __attribute__((aligned(8)));
-| +
-| +enum restart_block_type {
-| +	CR_RESTART_BLOCK_NONE = 1,
-| +	CR_RESTART_BLOCK_HRTIMER_NANOSLEEP,
-| +	CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP,
-| +	CR_RESTART_BLOCK_COMPAT_NANOSLEEP,
-| +	CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP,
-| +	CR_RESTART_BLOCK_POLL,
-| +	CR_RESTART_BLOCK_FUTEX
-| +};
-| +
-|  struct cr_hdr_mm {
-|  	__s32 objref;		/* identifier for shared objects */
-|  	__u32 map_count;
-| -- 
-| 1.5.4.3
-| 
-| _______________________________________________
-| Containers mailing list
-| Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-| https://lists.linux-foundation.org/mailman/listinfo/containers
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index a7249bb..864ad6f 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -16,14 +16,46 @@ struct page_cgroup {
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR
+ 	struct mem_cgroup *mem_cgroup;
+ #endif
+-#ifdef CONFIG_CGROUP_BIO
+-	int bio_cgroup_id;
+-#endif
+-#if defined(CONFIG_CGROUP_MEM_RES_CTLR) || defined(CONFIG_CGROUP_BIO)
+ 	struct list_head lru;		/* per cgroup LRU list */
+-#endif
+ };
+ 
++#ifdef CONFIG_CGROUP_BIO
++/*
++ * Use the lower 16 bits (in 32-bit archs) or lower 32 bits (in 64-bit archs)
++ * of page_cgroup->flags for the actual flags and reserve the rest for the
++ * bio-cgroup id.
++ *
++ * This allows to atomically read and write the bio-cgroup id without using
++ * lock/unlock_page_cgroup().
++ */
++#if defined(CONFIG_64BIT)
++typedef uint32_t bio_cgroup_id_t;
++#elif defined(CONFIG_32BIT)
++typedef uint16_t bio_cgroup_id_t;
++#else
++#error "unsupported architecture"
++#endif
++
++#define BIO_CGROUP_ID_SHIFT	(sizeof(bio_cgroup_id_t) * 8)
++#define BIO_CGROUP_ID_BITS	(sizeof(bio_cgroup_id_t) * 8)
++#define BIO_CGROUP_ID_MASK	((1UL << BIO_CGROUP_ID_BITS) - 1)
++
++static inline unsigned long page_cgroup_get_bio_id(struct page_cgroup *pc)
++{
++	return (pc->flags >> BIO_CGROUP_ID_SHIFT) & BIO_CGROUP_ID_MASK;
++}
++
++static inline void page_cgroup_set_bio_id(struct page_cgroup *pc,
++				unsigned long id)
++{
++	bio_cgroup_id_t *ptr = (bio_cgroup_id_t *)((unsigned char *)&pc->flags +
++					(BIO_CGROUP_ID_SHIFT / 8));
++
++	WARN_ON(id >= (1UL << BIO_CGROUP_ID_BITS));
++	*ptr = (bio_cgroup_id_t)id;
++}
++#endif /* CONFIG_CGROUP_BIO */
++
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
+ void __init page_cgroup_init(void);
+ struct page_cgroup *lookup_page_cgroup(struct page *page);
+diff --git a/mm/biotrack.c b/mm/biotrack.c
+index d3a35f1..01f83ba 100644
+--- a/mm/biotrack.c
++++ b/mm/biotrack.c
+@@ -80,7 +80,7 @@ void bio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
+ 	if (unlikely(!pc))
+ 		return;
+ 
+-	pc->bio_cgroup_id = 0;	/* 0: default bio_cgroup id */
++	__init_bio_page_cgroup(pc);
+ 	if (!mm)
+ 		return;
+ 	/*
+@@ -93,11 +93,11 @@ void bio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
+ 		goto out;
+ 	/*
+ 	 * css_get(&bio->css) isn't called to increment the reference
+-	 * count of this bio_cgroup "biog" so pc->bio_cgroup_id might turn
+-	 * invalid even if this page is still active.
+-	 * This approach is chosen to minimize the overhead.
++	 * count of this bio_cgroup "biog" so the bio-cgroup id might turn
++	 * invalid even if this page is still active. This approach is chosen
++	 * to minimize the overhead.
+ 	 */
+-	pc->bio_cgroup_id = biog->id;
++	page_cgroup_set_bio_id(pc, biog->id);
+ out:
+ 	rcu_read_unlock();
+ }
+@@ -110,7 +110,7 @@ void bio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
+ 	/*
+ 	 * A little trick:
+ 	 * Just call bio_cgroup_set_owner() for pages which are already
+-	 * active since the bio_cgroup_id member of page_cgroup can be
++	 * active since the bio-cgroup id member of page_cgroup can be
+ 	 * updated without any locks. This is because an integer type of
+ 	 * variable can be set a new value at once on modern cpus.
+ 	 */
+@@ -146,12 +146,10 @@ void bio_cgroup_copy_owner(struct page *npage, struct page *opage)
+ 	opc = lookup_page_cgroup(opage);
+ 	if (unlikely(!opc))
+ 		return;
+-
+ 	/*
+-	 * Do this without any locks. The reason is the same as
+-	 * bio_cgroup_reset_owner().
++	 * XXX: is it safe to do this without locking?
+ 	 */
+-	npc->bio_cgroup_id = opc->bio_cgroup_id;
++	page_cgroup_set_bio_id(npc, page_cgroup_get_bio_id(opc));
+ }
+ 
+ /* Create a new bio-cgroup. */
+@@ -248,7 +246,7 @@ struct cgroup *get_cgroup_from_page(struct page *page)
+ 	if (!pc)
+ 		return NULL;
+ 	lock_page_cgroup(pc);
+-	biog = find_bio_cgroup(pc->bio_cgroup_id);
++	biog = find_bio_cgroup(page_cgroup_get_bio_id(pc));
+ 	if (biog) {
+ 		css_get(&biog->css);
+ 		cgrp = biog->css.cgroup;
+@@ -266,7 +264,7 @@ void put_cgroup_from_page(struct page *page)
+ 	if (!pc)
+ 		return;
+ 	lock_page_cgroup(pc);
+-	biog = find_bio_cgroup(pc->bio_cgroup_id);
++	biog = find_bio_cgroup(page_cgroup_get_bio_id(pc));
+ 	if (biog)
+ 		css_put(&biog->css);
+ 	unlock_page_cgroup(pc);
+@@ -281,7 +279,7 @@ int get_bio_cgroup_id(struct bio *bio)
+ 
+ 	pc = lookup_page_cgroup(page);
+ 	if (pc)
+-		id = pc->bio_cgroup_id;
++		id = page_cgroup_get_bio_id(pc);
+ 	return id;
+ }
+ EXPORT_SYMBOL(get_bio_cgroup_id);
