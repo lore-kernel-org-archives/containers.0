@@ -1,46 +1,33 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Take uts_sem during checkpoint and restart
-Date: Thu, 16 Apr 2009 11:51:54 -0500
-Message-ID: <20090416165154.GD20736@us.ibm.com>
-References: <1239897585-19246-1-git-send-email-danms@us.ibm.com>
-	<20090416163340.GB20736@us.ibm.com>
-	<87bpqwa6ku.fsf@caffeine.danplanet.com>
+From: "Chris Friesen" <cfriesen@nortel.com>
+Subject: Re: C/R without "leaks"
+Date: Thu, 16 Apr 2009 12:10:57 -0600
+Message-ID: <49E774B1.5060505@nortel.com>
+References: <49E40662.2040508@cs.columbia.edu> <20090414163633.GE27461@x200.localdomain> <49E4D89D.9060903@cs.columbia.edu> <20090415195629.GD26994@x200.localdomain> <1239835337.6610.6.camel@bahia> <20090416161215.GA8505@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87bpqwa6ku.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757676AbZDPSMa@vger.kernel.org>
+In-Reply-To: <20090416161215.GA8505@x200.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: Greg Kurz <gkurz@fr.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux-Kernel <linux-kernel@vger.kernel.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Ingo Molnar <mingo@elte.hu>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> SH> At checkpoint, you only need the uts_sem right around the reading
-> SH> (and length-checking) of uts_ns->name.  You're keeping it around
-> SH> writing into the checkpoint image (and cr_hbuf_get).
+Alexey Dobriyan wrote:
+> On Thu, Apr 16, 2009 at 12:42:17AM +0200, Greg Kurz wrote:
+>> On Wed, 2009-04-15 at 23:56 +0400, Alexey Dobriyan wrote:
 > 
-> Right, okay.
+>>> There are sockets and live netns as the most complex example. I'm not
+>>> prepared to describe it exactly, but people wishing to do C/R with
+>>> "leaks" should be very careful with their wishes.
+>> They should close their sockets before checkpoint and find/have some way
+>> to reconnect after. This implies some kind of C/R awareness in the code
+>> to be checkpointed.
 > 
-> SH> At restart, you shouldn't actually need uts_sem - the nsproxy is
-> SH> not yet available to anyone else, so there is no chance of a race,
-> SH> right?  Hmm, well maybe I'm being overly optimistic, since restart
-> SH> is coordinated by userspace which could mess up and somehow run
-> SH> sethostname(2) while it's supposed to be running sys_restart().
-> SH> But then sys_restart() wouldn't yet have hooked up the task to the
-> SH> new nsproxy.
-> 
-> Good, you passed the test.  Yeah, that's it... :)
+> How do you imagine sshd closing sockets and reconnecting?
 
-woohoo
+Don't you already have to handle the case where an sshd connection is 
+checkpointed, then the system is shutdown and the restore doesn't happen 
+until after the TCP timeout?
 
--serge
+Chris
