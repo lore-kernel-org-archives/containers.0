@@ -1,14 +1,15 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] IO-Controller: Fix kernel panic after moving a task
-Date: Thu, 16 Apr 2009 13:25:35 +0800
-Message-ID: <49E6C14F.3090009__38982.0810560652$1239859734$gmane$org@cn.fujitsu.com>
-References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
-	<1236823015-4183-6-git-send-email-vgoyal@redhat.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v14-rc3][PATCH 15/36] c/r of restart-blocks
+Date: Wed, 15 Apr 2009 23:02:21 -0700
+Message-ID: <20090416060220.GB14934@us.ibm.com>
+References: <1239107264-21775-1-git-send-email-orenl@cs.columbia.edu>
+	<1239107264-21775-16-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1236823015-4183-6-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1239107264-21775-16-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,177 +19,409 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> +#ifdef CONFIG_IOSCHED_CFQ_HIER
-> +static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
-> +{
-> +	struct cfq_queue *async_cfqq = cic_to_cfqq(cic, 0);
-> +	struct cfq_queue *sync_cfqq = cic_to_cfqq(cic, 1);
-> +	struct cfq_data *cfqd = cic->key;
-> +	struct io_group *iog, *__iog;
-> +	unsigned long flags;
-> +	struct request_queue *q;
-> +
-> +	if (unlikely(!cfqd))
-> +		return;
-> +
-> +	q = cfqd->q;
-> +
-> +	spin_lock_irqsave(q->queue_lock, flags);
-> +
-> +	iog = io_lookup_io_group_current(q);
-> +
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
 
-  Hi Vivek,
+| +/* dump the task_struct of a given task */
+| +int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t)
+| +{
+| +	struct cr_hdr h;
+| +	struct cr_hdr_restart_block *hh;
+| +	struct restart_block *restart_block;
+| +	long (*fn)(struct restart_block *);
+| +	s64 base, expire = 0;
+| +	int ret;
+| +
+| +	h.type = CR_HDR_RESTART_BLOCK;
+| +	h.len = sizeof(*hh);
+| +
+| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
+| +	if (!hh)
+| +		return -ENOMEM;
+| +	memset(hh, 0, sizeof(*hh));
+| +
+| +	base = ktime_to_ns(ctx->ktime_beg);
+| +	restart_block = &task_thread_info(t)->restart_block;
+| +	fn = restart_block->fn;
 
-  I triggered another kernel panic when testing. When moving a task to another 
-  cgroup, the corresponding iog may not be setup properly all the time. "iog"
-  might be NULL here. io_ioq_move() receives a NULL iog, kernel crash.
+Can we define another operation in 'struct restart_block' and replace
+the following 'fn == xyz' checks with:
 
-  Consider the following piece of code:
+	if (!restart_block->checkpoint)
+		BUG(1);
 
- 941 int elv_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- 942 {
- 943         struct elevator_queue *e = q->elevator;
- 944 
- 945         elv_fq_set_request_io_group(q, rq);
- 
- -->task moving to a new group is happenning here.
+	expires = restart_block->checkpoint(restart_block, &hh);
 
- 946 
- 947         /*
- 948          * Optimization for noop, deadline and AS which maintain only single
- 949          * ioq per io group
- 950          */
- 951         if (elv_iosched_single_ioq(e))
- 952                 return elv_fq_set_request_ioq(q, rq, gfp_mask);
- 953 
- 954         if (e->ops->elevator_set_req_fn)
- 955                 return e->ops->elevator_set_req_fn(q, rq, gfp_mask);
+It would touch other files and require ifdef CONFIG_CHECKPOINT in them
+though.
 
-cfq_set_request() will finally call io_ioq_move(), but the iog is NULL, beacause the iogs in the 
-hierarchy are not built yet. So kernel crashes.
+| +
+| +	/* FIX: enumerate clockid_t so we're immune to changes */
+| +
+| +	if (fn == do_no_restart_syscall) {
+| +
+| +		hh->fn = CR_RESTART_BLOCK_NONE;
+| +		cr_debug("restart_block: non\n");
+| +
+| +	} else if (fn == hrtimer_nanosleep_restart) {
+| +
+| +		hh->fn = CR_RESTART_BLOCK_HRTIMER_NANOSLEEP;
+| +		hh->arg_0 = restart_block->nanosleep.index;
+| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
+| +		expire = restart_block->nanosleep.expires;
+| +		cr_debug("restart_block: hrtimer expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +	} else if (fn == posix_cpu_nsleep_restart) {
+| +		struct timespec ts;
+| +
+| +		hh->fn = CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP;
+| +		hh->arg_0 = restart_block->arg0;
+| +		hh->arg_1 = restart_block->arg1;
+| +		ts.tv_sec = restart_block->arg2;
+| +		ts.tv_nsec = restart_block->arg3;
+| +		expire = timespec_to_ns(&ts);
+| +		cr_debug("restart_block: posix_cpu expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +#ifdef CONFIG_COMPAT
+| +	} else if (fn == compat_nanosleep_restart) {
+| +
+| +		hh->fn = CR_RESTART_BLOCK_NANOSLEEP;
+| +		hh->arg_0 = restart_block->nanosleep.index;
+| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
+| +		hh->arg_2 = (unsigned long)
+| +			restart_block->nanosleep.compat_rmtp;
+| +		expire = restart_block->nanosleep.expires;
+| +		cr_debug("restart_block: compat expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +	} else if (fn == compat_clock_nanosleep_restart) {
+| +
+| +		hh->fn = CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP;
+| +		hh->arg_0 = restart_block->nanosleep.index;
+| +		hh->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
+| +		hh->arg_2 = (unsigned long)
+| +			restart_block->nanosleep.compat_rmtp;
+| +		expire = restart_block->nanosleep.expires;
+| +		cr_debug("restart_block: compat_clock expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +#endif
+| +	} else if (fn == futex_wait_restart) {
+| +
+| +		hh->fn = CR_RESTART_BLOCK_FUTEX;
+| +		hh->arg_0 = (unsigned long) restart_block->futex.uaddr;
+| +		hh->arg_1 = restart_block->futex.val;
+| +		hh->arg_2 = restart_block->futex.flags;
+| +		hh->arg_3 = restart_block->futex.bitset;
+| +		expire = restart_block->futex.time;
+| +		cr_debug("restart_block: futex expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +	} else if (fn == do_restart_poll) {
+| +		struct timespec ts;
+| +
+| +		hh->fn = CR_RESTART_BLOCK_POLL;
+| +		hh->arg_0 = (unsigned long) restart_block->poll.ufds;
+| +		hh->arg_1 = restart_block->poll.nfds;
+| +		hh->arg_2 = restart_block->poll.has_timeout;
+| +		ts.tv_sec = restart_block->poll.tv_sec;
+| +		ts.tv_nsec = restart_block->poll.tv_nsec;
+| +		expire = timespec_to_ns(&ts);
+| +		cr_debug("restart_block: poll expire %lld now %lld\n",
+| +			 expire, base);
+| +
+| +	} else {
+| +
+| +		BUG();
+| +
+| +	}
+| +
+| +	/* common to all restart blocks: */
+| +	if (base < expire)
+| +		hh->arg_4 = (expire - base);
+| +
+| +	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
+| +		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
+| +
+| +	ret = cr_write_obj(ctx, &h, hh);
+| +	cr_hbuf_put(ctx, sizeof(*hh));
+| +
+| +	return ret;
+| +}
+| +
+|  /* dump the entire state of a given task */
+|  int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+|  {
+| diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+| index 234cc92..daaaeec 100644
+| --- a/checkpoint/restart.c
+| +++ b/checkpoint/restart.c
+| @@ -264,18 +264,16 @@ int do_restart(struct cr_ctx *ctx, pid_t pid)
+| 
+|  	ret = cr_ctx_restart(ctx, pid);
+|  	if (ret < 0)
+| -		goto out;
+| +		return ret;
+|  	ret = cr_read_head(ctx);
+|  	if (ret < 0)
+| -		goto out;
+| +		return ret;
+|  	ret = cr_read_task(ctx);
+|  	if (ret < 0)
+| -		goto out;
+| +		return ret;
+|  	ret = cr_read_tail(ctx);
+|  	if (ret < 0)
+| -		goto out;
+| +		return ret;
 
- 956 
- 957         rq->elevator_private = NULL;
- 958         return 0;
- 959 }
+Nit, would this patch be simpler if we left the 'goto out' lines above
+and added the 'return cr_retval_restart(ctx);' here (i.e just before the
+'out:' label) ?
 
-BUG: unable to handle kernel NULL pointer dereference at 000000bc
-IP: [<c04ebf8f>] io_ioq_move+0xf2/0x109
-*pde = 6cc00067
-Oops: 0000 [#1] SMP
-last sysfs file: /sys/block/hdb/queue/slice_idle
-Modules linked in: ipv6 cpufreq_ondemand acpi_cpufreq dm_mirror dm_multipath sbs sbshc battery ac lp snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss snd_pcm serio_raw snd_timer rtc_cmos parport_pc snd r8169 button rtc_core parport soundcore mii i2c_i801 rtc_lib snd_page_alloc pcspkr i2c_core dm_region_hash dm_log dm_mod ext3 jbd mbcache uhci_hcd ohci_hcd ehci_hcd
+| 
+| -	/* on success, adjust the return value if needed [TODO] */
+| - out:
+| -	return ret;
+| +	return cr_retval_restart(ctx);
+|  }
+| diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
+| index 93c86ab..52206d8 100644
+| --- a/checkpoint/rstr_task.c
+| +++ b/checkpoint/rstr_task.c
+| @@ -9,6 +9,9 @@
+|   */
+| 
+|  #include <linux/sched.h>
+| +#include <linux/posix-timers.h>
+| +#include <linux/futex.h>
+| +#include <linux/poll.h>
+|  #include <linux/checkpoint.h>
+|  #include <linux/checkpoint_hdr.h>
+| 
+| @@ -52,6 +55,115 @@ static int cr_read_task_struct(struct cr_ctx *ctx)
+|  	return ret;
+|  }
+| 
+| +int cr_read_restart_block(struct cr_ctx *ctx)
+| +{
+| +	struct cr_hdr_restart_block *hh;
+| +	struct restart_block restart_block;
+| +	struct timespec ts;
+| +	clockid_t clockid;
+| +	s64 expire;
+| +	int ret;
+| +
+| +	hh = cr_hbuf_get(ctx, sizeof(*hh));
+| +	if (!hh)
+| +		return -ENOMEM;
+| +
+| +	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_RESTART_BLOCK);
+| +	if (ret < 0)
+| +		goto out;
+| +
+| +	expire = ktime_to_ns(ctx->ktime_beg) + hh->arg_4;
+| +	restart_block.fn = NULL;
+| +
+| +	cr_debug("restart_block: expire %lld begin %lld\n",
+| +		 expire, ktime_to_ns(ctx->ktime_beg));
+| +	cr_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
+| +		 hh->arg_0, hh->arg_1, hh->arg_2, hh->arg_3, hh->arg_4);
+| +
+| +	switch (hh->fn) {
+| +	case CR_RESTART_BLOCK_NONE:
+| +		restart_block.fn = do_no_restart_syscall;
+| +		break;
+| +	case CR_RESTART_BLOCK_HRTIMER_NANOSLEEP:
+| +		clockid = hh->arg_0;
+| +		if (clockid < 0 || invalid_clockid(clockid))
+| +			break;
+| +		restart_block.fn = hrtimer_nanosleep_restart;
+| +		restart_block.nanosleep.index = clockid;
+| +		restart_block.nanosleep.rmtp =
+| +			(struct timespec __user *) (unsigned long) hh->arg_1;
+| +		restart_block.nanosleep.expires = expire;
+| +		break;
+| +	case CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP:
+| +		clockid = hh->arg_0;
+| +		if (clockid < 0 || invalid_clockid(clockid))
+| +			break;
+| +		restart_block.fn = posix_cpu_nsleep_restart;
+| +		restart_block.arg0 = clockid;
+| +		restart_block.arg1 = hh->arg_1;
+| +		ts = ns_to_timespec(expire);
+| +		restart_block.arg2 = ts.tv_sec;
+| +		restart_block.arg3 = ts.tv_nsec;
+| +		break;
+| +#ifdef CONFIG_COMPAT
+| +	case CR_RESTART_BLOCK_COMPAT_NANOSLEEP:
+| +		clockid = hh->arg_0;
+| +		if (clockid < 0 || invalid_clockid(clockid))
+| +			break;
+| +		restart_block.fn = compat_nanosleep_restart;
+| +		restart_block.nanosleep.index = clockid;
+| +		restart_block.nanosleep.rmtp =
+| +			(struct timespec __user *) (unsigned long) hh->arg_1;
+| +		restart_block.nanosleep.compat_rmtp =
+| +			(struct compat_timespec __user *)
+| +				(unsigned long) hh->arg_2;
+| +		resatrt_block.nanosleep.expires = expire;
+| +		break;
+| +	case CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
+| +		clockid = hh->arg_0;
+| +		if (clockid < 0 || invalid_clockid(clockid))
+| +			break;
+| +		restart_block.fn = compat_clock_nanosleep_restart;
+| +		restart_block.nanosleep.index = clockid;
+| +		restart_block.nanosleep.rmtp =
+| +			(struct timespec __user *) (unsigned long) hh->arg_1;
+| +		restart_block.nanosleep.compat_rmtp =
+| +			(struct compat_timespec __user *)
+| +				(unsigned long) hh->arg_2;
+| +		resatrt_block.nanosleep.expires = expire;
+| +		break;
+| +#endif
+| +	case CR_RESTART_BLOCK_FUTEX:
+| +		restart_block.fn = futex_wait_restart;
+| +		restart_block.futex.uaddr = (u32 *) (unsigned long) hh->arg_0;
+| +		restart_block.futex.val = hh->arg_1;
+| +		restart_block.futex.flags = hh->arg_2;
+| +		restart_block.futex.bitset = hh->arg_3;
+| +		restart_block.futex.time = expire;
+| +		break;
+| +	case CR_RESTART_BLOCK_POLL:
+| +		restart_block.fn = do_restart_poll;
+| +		restart_block.poll.ufds =
+| +			(struct pollfd __user *) (unsigned long) hh->arg_0;
+| +		restart_block.poll.nfds = hh->arg_1;
+| +		restart_block.poll.has_timeout = hh->arg_2;
+| +		ts = ns_to_timespec(expire);
+| +		restart_block.poll.tv_sec = ts.tv_sec;
+| +		restart_block.poll.tv_nsec = ts.tv_nsec;
+| +		break;
+| +	default:
+| +		break;
+| +	}
+| +
+| +	if (restart_block.fn)
+| +		task_thread_info(current)->restart_block = restart_block;
+| +	else
+| +		ret = -EINVAL;
+| + out:
+| +	cr_hbuf_put(ctx, sizeof(*hh));
+| +	return ret;
+| +}
+| +
+|  /* read the entire state of the current task */
+|  int cr_read_task(struct cr_ctx *ctx)
+|  {
+| @@ -76,6 +188,5 @@ int cr_read_task(struct cr_ctx *ctx)
+|  	ret = cr_read_cpu(ctx);
+|  	cr_debug("cpu: ret %d\n", ret);
+|   out:
+| -
+|  	return ret;
+|  }
+| diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+| index 8652c5c..863cb63 100644
+| --- a/checkpoint/sys.c
+| +++ b/checkpoint/sys.c
+| @@ -186,6 +186,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
+|  		return ERR_PTR(-ENOMEM);
+| 
+|  	ctx->flags = flags;
+| +	ctx->ktime_beg = ktime_get();
+| 
+|  	INIT_LIST_HEAD(&ctx->pgarr_list);
+|  	INIT_LIST_HEAD(&ctx->pgarr_pool);
+| @@ -203,6 +204,7 @@ static struct cr_ctx *cr_ctx_alloc(int fd, unsigned long flags)
+|  	if (cr_objhash_alloc(ctx) < 0)
+|  		goto err;
+| 
+| +
+|  	return ctx;
+| 
+|   err:
+| diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+| index 3a514fc..a94ce98 100644
+| --- a/include/linux/checkpoint.h
+| +++ b/include/linux/checkpoint.h
+| @@ -18,6 +18,8 @@
+|  struct cr_ctx {
+|  	int crid;		/* unique checkpoint id */
+| 
+| +	ktime_t ktime_beg;	/* checkpoint start time */
 
-Pid: 5431, comm: dd Not tainted (2.6.29-rc7-vivek #19) Veriton M460
-EIP: 0060:[<c04ebf8f>] EFLAGS: 00010046 CPU: 0
-EIP is at io_ioq_move+0xf2/0x109
-EAX: f6203a88 EBX: f6792c94 ECX: f6203a84 EDX: 00000006
-ESI: 00000000 EDI: 00000000 EBP: f6203a60 ESP: f6304c28
- DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-Process dd (pid: 5431, ti=f6304000 task=f669dae0 task.ti=f6304000)
-Stack:
- f62478c0 0100dd40 f6247908 f62d995c 00000000 00000000 f675b54c c04e9182
- f638e9b0 00000282 f62d99a4 f6325a2c c04e9113 f5a707c0 c04e7ae0 f675b000
- f62d95fc f6325a2c c04e8501 00000010 f631e4e8 f675b000 00080000 ffffff10
-Call Trace:
- [<c04e9182>] changed_cgroup+0x6f/0x8d
- [<c04e9113>] changed_cgroup+0x0/0x8d
- [<c04e7ae0>] __call_for_each_cic+0x1b/0x25
- [<c04e8501>] cfq_set_request+0x158/0x2c7
- [<c06316e6>] _spin_unlock_irqrestore+0x5/0x6
- [<c04eb106>] elv_fq_set_request_io_group+0x2b/0x3e
- [<c04e83a9>] cfq_set_request+0x0/0x2c7
- [<c04dddcb>] elv_set_request+0x3e/0x4e
- [<c04df3da>] get_request+0x1ed/0x29b
- [<c04df9bb>] get_request_wait+0xdf/0xf2
- [<c04dfd89>] __make_request+0x2c6/0x372
- [<c049bd76>] do_mpage_readpage+0x4fe/0x5e3
- [<c04deba5>] generic_make_request+0x2d0/0x355
- [<c04dff47>] submit_bio+0x92/0x97
- [<c045bfcb>] add_to_page_cache_locked+0x8a/0xb7
- [<c049bfa4>] mpage_end_io_read+0x0/0x50
- [<c049b1b6>] mpage_bio_submit+0x19/0x1d
- [<c049bf9a>] mpage_readpages+0x9b/0xa5
- [<f7dd18c7>] ext3_readpages+0x0/0x15 [ext3]
- [<c0462192>] __do_page_cache_readahead+0xea/0x154
- [<f7dd2286>] ext3_get_block+0x0/0xbe [ext3]
- [<c045d34d>] generic_file_aio_read+0x276/0x569
- [<c047cdd9>] do_sync_read+0xbf/0xfe
- [<c043a3f2>] getnstimeofday+0x51/0xdb
- [<c0434d3c>] autoremove_wake_function+0x0/0x2d
- [<c041bdc3>] sched_slice+0x61/0x6a
- [<c0423114>] task_tick_fair+0x3d/0x60
- [<c04c1d79>] security_file_permission+0xc/0xd
- [<c047cd1a>] do_sync_read+0x0/0xfe
- [<c047d35a>] vfs_read+0x6c/0x8b
- [<c047d67e>] sys_read+0x3c/0x63
- [<c0402fc1>] sysenter_do_call+0x12/0x21
- [<c0630000>] schedule+0x551/0x830
-Code: 08 31 c9 89 da e8 77 fc ff ff 8b 86 bc 00 00 00 85 ff 89 43 38 8d 46 60 89 43 40 74 1d 83 c4 0c 89 d8 5b 5e 5f 5d e9 aa f9 ff ff <8b> 86 bc 00 00 00 89 43 38 8d 46 60 89 43 40 83 c4 0c 5b 5e 5f
-EIP: [<c04ebf8f>] io_ioq_move+0xf2/0x109 SS:ESP 0068:f6304c28
+Nit: spell out 'begin' fully ? :-) 
 
-Changelog:
+| +
+|  	pid_t root_pid;		/* container identifier */
+|  	struct task_struct *root_task;	/* container root task */
+|  	struct nsproxy *root_nsproxy;	/* container root nsproxy */
+| @@ -87,10 +89,12 @@ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
+|  				       int flags, int mode);
+| 
+|  extern int cr_write_task(struct cr_ctx *ctx, struct task_struct *t);
+| +extern int cr_write_restart_block(struct cr_ctx *ctx, struct task_struct *t);
+|  extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+|  extern int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t);
+| 
+|  extern int cr_read_task(struct cr_ctx *ctx);
+| +extern int cr_read_restart_block(struct cr_ctx *ctx);
+|  extern int cr_read_mm(struct cr_ctx *ctx);
+|  extern int cr_read_fd_table(struct cr_ctx *ctx);
+| 
+| diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+| index 30e649b..8821a30 100644
+| --- a/include/linux/checkpoint_hdr.h
+| +++ b/include/linux/checkpoint_hdr.h
+| @@ -45,6 +45,7 @@ enum {
+|  	CR_HDR_FNAME,
+| 
+|  	CR_HDR_TASK = 101,
+| +	CR_HDR_RESTART_BLOCK,
+|  	CR_HDR_THREAD,
+|  	CR_HDR_CPU,
+| 
+| @@ -97,6 +98,25 @@ struct cr_hdr_task {
+|  	__u32 task_comm_len;
+|  } __attribute__((aligned(8)));
+| 
+| +struct cr_hdr_restart_block {
+| +	__u64 fn;
 
-Make sure iogs in the hierarchy are built properly after moving a task to a new cgroup.
+Nit: This a function-type rather than the function itself ? A bit misleading
+considering restart_block->fn refers to a function.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- block/cfq-iosched.c |    4 +++-
- block/elevator-fq.c |    1 +
- block/elevator-fq.h |    1 +
- 3 files changed, 5 insertions(+), 1 deletions(-)
-
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 0ecf7c7..6d7bb8a 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -12,6 +12,8 @@
- #include <linux/rbtree.h>
- #include <linux/ioprio.h>
- #include <linux/blktrace_api.h>
-+#include "elevator-fq.h"
-+
- /*
-  * tunables
-  */
-@@ -1086,7 +1088,7 @@ static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
- 
- 	spin_lock_irqsave(q->queue_lock, flags);
- 
--	iog = io_lookup_io_group_current(q);
-+	iog = io_get_io_group(q);
- 
- 	if (async_cfqq != NULL) {
- 		__iog = cfqq_to_io_group(async_cfqq);
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index df53418..f81cf6a 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -1191,6 +1191,7 @@ struct io_group *io_get_io_group(struct request_queue *q)
- 
- 	return iog;
- }
-+EXPORT_SYMBOL(io_get_io_group);
- 
- void io_free_root_group(struct elevator_queue *e)
- {
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index fc4110d..f17e425 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -459,6 +459,7 @@ static inline struct io_group *ioq_to_io_group(struct io_queue *ioq)
- }
- 
- #ifdef CONFIG_GROUP_IOSCHED
-+extern struct io_group *io_get_io_group(struct request_queue *q);
- extern int io_group_allow_merge(struct request *rq, struct bio *bio);
- extern void io_ioq_move(struct elevator_queue *e, struct io_queue *ioq,
- 					struct io_group *iog);
--- 
-1.5.4.rc3
+| +	__u64 arg_0;
+| +	__u64 arg_1;
+| +	__u64 arg_2;
+| +	__u64 arg_3;
+| +	__u64 arg_4;
+| +} __attribute__((aligned(8)));
+| +
+| +enum restart_block_type {
+| +	CR_RESTART_BLOCK_NONE = 1,
+| +	CR_RESTART_BLOCK_HRTIMER_NANOSLEEP,
+| +	CR_RESTART_BLOCK_POSIX_CPU_NANOSLEEP,
+| +	CR_RESTART_BLOCK_COMPAT_NANOSLEEP,
+| +	CR_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP,
+| +	CR_RESTART_BLOCK_POLL,
+| +	CR_RESTART_BLOCK_FUTEX
+| +};
+| +
+|  struct cr_hdr_mm {
+|  	__s32 objref;		/* identifier for shared objects */
+|  	__u32 map_count;
+| -- 
+| 1.5.4.3
+| 
+| _______________________________________________
+| Containers mailing list
+| Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+| https://lists.linux-foundation.org/mailman/listinfo/containers
