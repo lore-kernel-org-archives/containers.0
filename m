@@ -1,14 +1,10 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Take uts_sem during checkpoint and restart
-Date: Thu, 16 Apr 2009 11:33:40 -0500
-Message-ID: <20090416163340.GB20736@us.ibm.com>
-References: <1239897585-19246-1-git-send-email-danms@us.ibm.com>
+From: "perversion" <commandant-qo6d1ncm3q6qW4srt7yxFeTW4wlIGRCZ@public.gmane.org>
+Subject: Our lists are good to promote your kind of business
+Date: Thu, 16 Apr 2009 11:35:57 -0500 (PET)
+Message-ID: <20090416163558.3D56565328@mail.notogu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6680674572719536002=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1239897585-19246-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,135 +12,71 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: fbzsan-VInPYn6yXxRWk0Htik3J/w@public.gmane.org, goodfuture-cyW24ERXg6m9C0PGq/gqbg@public.gmane.org, imudd-vygXAhXhwyqCjQd/q70wJmyrf/U2vnZa930Pai70D+E@public.gmane.org, tomi6230i-4VW9nwAotmI@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dengsong7-P7k094vF+J6IzHhAn6we0eUyf7ibTod0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Fix the potential for breakage if our UTS changes during checkpoint or
-> restart by grabbing uts_sem during these operations.
+--===============6680674572719536002==
+Content-Type: text/plain;
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n3GGbDMl029996
 
-Thanks, but I think you're waving too big a stick here.
+Special Package for this week
 
-At checkpoint, you only need the uts_sem right around the reading
-(and length-checking) of uts_ns->name.  You're keeping it around
-writing into the checkpoint image (and cr_hbuf_get).
+Certified Medical Doctors in the United States=20
 
-At restart, you shouldn't actually need uts_sem - the nsproxy is
-not yet available to anyone else, so there is no chance of a
-race, right?  Hmm, well maybe I'm being overly optimistic, since restart
-is coordinated by userspace which could mess up and somehow run
-sethostname(2) while it's supposed to be running sys_restart().
-But then sys_restart() wouldn't yet have hooked up the task to the
-new nsproxy.
+788,381 in total * 17,829 emails
 
-So yeah, I don't think you need uts_sem at restart.
+Many different medical specialties
 
-thanks,
--serge
+Sort by over a dozen different fields
 
-> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/ckpt_task.c |   12 ++++++++----
->  checkpoint/rstr_task.c |   17 +++++++++++------
->  2 files changed, 19 insertions(+), 10 deletions(-)
-> 
-> diff --git a/checkpoint/ckpt_task.c b/checkpoint/ckpt_task.c
-> index 4d19e31..589f304 100644
-> --- a/checkpoint/ckpt_task.c
-> +++ b/checkpoint/ckpt_task.c
-> @@ -173,14 +173,16 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
->  	struct cr_hdr_utsns *hh;
->  	int domainname_len;
->  	int nodename_len;
-> -	int ret;
-> +	int ret = -ENOMEM;
-> +
-> + 	down_read(&uts_sem);
-> 
->  	h.type = CR_HDR_UTSNS;
->  	h.len = sizeof(*hh);
-> 
->  	hh = cr_hbuf_get(ctx, sizeof(*hh));
->  	if (!hh)
-> -		return -ENOMEM;
-> +		goto out;
-> 
->  	nodename_len = strlen(uts_ns->name.nodename) + 1;
->  	domainname_len = strlen(uts_ns->name.domainname) + 1;
-> @@ -191,13 +193,15 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
->  	ret = cr_write_obj(ctx, &h, hh);
->  	cr_hbuf_put(ctx, sizeof(*hh));
->  	if (ret < 0)
-> -		return ret;
-> +		goto out;
-> 
->  	ret = cr_write_string(ctx, uts_ns->name.nodename, nodename_len);
->  	if (ret < 0)
-> -		return ret;
-> +		goto out;
-> 
->  	ret = cr_write_string(ctx, uts_ns->name.domainname, domainname_len);
-> + out:
-> +	up_read(&uts_sem);
->  	return ret;
->  }
-> 
-> diff --git a/checkpoint/rstr_task.c b/checkpoint/rstr_task.c
-> index fe5c059..ccf60f8 100644
-> --- a/checkpoint/rstr_task.c
-> +++ b/checkpoint/rstr_task.c
-> @@ -171,32 +171,37 @@ static int cr_read_utsns(struct cr_ctx *ctx)
->  {
->  	struct cr_hdr_utsns *hh;
->  	struct uts_namespace *ns;
-> -	int ret;
-> +	int ret = -ENOMEM;
-> +
-> +	down_write(&uts_sem);
-> 
->  	hh = cr_hbuf_get(ctx, sizeof(*hh));
->  	if (!hh)
-> -		return -ENOMEM;
-> +		goto out;
-> 
->  	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_UTSNS);
->  	if (ret < 0)
-> -		goto out;
-> +		goto out_hbuf;
-> 
->  	ret = -EINVAL;
->  	if (hh->nodename_len > sizeof(ns->name.nodename) ||
->  	    hh->domainname_len > sizeof(ns->name.domainname))
-> -		goto out;
-> +		goto out_hbuf;
-> 
->  	ns = current->nsproxy->uts_ns;
-> 
->  	memset(ns->name.nodename, 0, sizeof(ns->name.nodename));
->  	ret = cr_read_string(ctx, ns->name.nodename, hh->nodename_len);
->  	if (ret < 0)
-> -		goto out;
-> +		goto out_hbuf;
-> 
->  	memset(ns->name.domainname, 0, sizeof(ns->name.domainname));
->  	ret = cr_read_string(ctx, ns->name.domainname, hh->domainname_len);
-> +
-> + out_hbuf:
-> + 	cr_hbuf_put(ctx, sizeof(*hh));
->   out:
-> -	cr_hbuf_put(ctx, sizeof(*hh));
-> +	up_write(&uts_sem);
->  	return ret;
->  }
-> 
-> -- 
-> 1.5.6.3
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+
+Database of US Pharma Companies
+47,000 personal emails and names of decision makers
+
+Contact List of US Hospitals
+23,000 Admins in more than 7,000 hospitals {a $399 value]
+
+Complete and Accurate Listing for Dental Service Providers
+Practically every dentist in the US is listed here
+
+Listing of US Chiropractors
+Complete data for all chiropractors in the USA (a $250 value)
+
+
+This week only you pay only:=20
+$392 for all 5 datasets
+
+Email us at:      Dena-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
+
+ =20
+
+good until April 18=20
+
+
+Send email to stopping-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org to ensure no further communicat=
+ion
+
+
+
+--=20
+Este mensaje ha sido analizado por MailScanner
+en busca de virus y otros contenidos peligrosos,
+y se considera que est=E1 limpio.
+For all your IT requirements visit: http://www.transtec.co.uk
+
+
+--===============6680674572719536002==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============6680674572719536002==--
