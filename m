@@ -1,19 +1,11 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: IO controller discussion (Was: Re: [PATCH 01/10] Documentation)
-Date: Fri, 17 Apr 2009 10:13:58 -0400
-Message-ID: <20090417141358.GD29086__25127.6775532917$1239978001$gmane$org@redhat.com>
-References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
-	<1236823015-4183-2-git-send-email-vgoyal@redhat.com>
-	<20090312001146.74591b9d.akpm@linux-foundation.org>
-	<20090312180126.GI10919@redhat.com> <49D8CB17.7040501@gmail.com>
-	<20090407064046.GB20498@redhat.com> <20090408203756.GB10077@linux>
-	<20090416183753.GE8896@redhat.com> <20090417093656.GA5246@linux>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] c/r: Take uts_sem during checkpoint (v2)
+Date: Fri, 17 Apr 2009 07:27:18 -0700
+Message-ID: <1239978438-5719-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090417093656.GA5246@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,137 +15,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fch
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 17, 2009 at 11:37:28AM +0200, Andrea Righi wrote:
-> On Thu, Apr 16, 2009 at 02:37:53PM -0400, Vivek Goyal wrote:
-> > > I think it would be possible to implement both proportional and limiting
-> > > rules at the same level (e.g., the IO scheduler), but we need also to
-> > > address the memory consumption problem (I still need to review your
-> > > patchset in details and I'm going to test it soon :), so I don't know if
-> > > you already addressed this issue).
-> > > 
-> > 
-> > Can you please elaborate a bit on this? Are you concerned about that data
-> > structures created to solve the problem consume a lot of memory?
-> 
-> Sorry I was not very clear here. With memory consumption I mean wasting
-> the memory with hard/slow reclaimable dirty pages or pending IO
-> requests.
-> 
-> If there's only a global limit on dirty pages, any cgroup can exhaust
-> that limit and cause other cgroups/processes to block when they try to
-> write to disk.
-> 
-> But, ok, the IO controller is not probably the best place to implement
-> such functionality. I should rework on the per cgroup dirty_ratio:
-> 
-> https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
-> 
-> Last time we focused too much on the best interfaces to define dirty
-> pages limit, and I never re-posted an updated version of this patchset.
-> Now I think we can simply provide the same dirty_ratio/dirty_bytes
-> interface that we provide globally, but per cgroup.
-> 
-> > 
-> > > IOW if we simply don't dispatch requests and we don't throttle the tasks
-> > > in the cgroup that exceeds its limit, how do we avoid the waste of
-> > > memory due to the succeeding IO requests and the increasingly dirty
-> > > pages in the page cache (that are also hard to reclaim)? I may be wrong,
-> > > but I think we talked about this problem in a previous email... sorry I
-> > > don't find the discussion in my mail archives.
-> > > 
-> > > IMHO a nice approach would be to measure IO consumption at the IO
-> > > scheduler level, and control IO applying proportional weights / absolute
-> > > limits _both_ at the IO scheduler / elevator level _and_ at the same
-> > > time block the tasks from dirtying memory that will generate additional
-> > > IO requests.
-> > > 
-> > > Anyway, there's no need to provide this with a single IO controller, we
-> > > could split the problem in two parts: 1) provide a proportional /
-> > > absolute IO controller in the IO schedulers and 2) allow to set, for
-> > > example, a maximum limit of dirty pages for each cgroup.
-> > > 
-> > 
-> > I think setting a maximum limit on dirty pages is an interesting thought.
-> > It sounds like as if memory controller can handle it?
-> 
-> Exactly, the same above.
+Fix the potential for breakage if our UTS changes during checkpoint
+by grabbing uts_sem and copying those strings to temporary buffers.
 
-Thinking more about it. Memory controller can probably enforce the higher
-limit but it would not easily translate into a fixed upper async write
-rate. Till the process hits the page cache limit or is slowed down by
-dirty page writeout, it can get a very high async write BW.
+Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-So memory controller page cache limit will help but it would not direclty
-translate into what max bw limit patches are doing.
+Changes in v2:
+  - Be less stupid about holding the system-wide uts_sem during
+    checkpoint (!)
+  - Don't hold it during restart
+  - Hold uts_sem only while copying out the strings
+  - Calculate the length of the saved buffers outside of the semaphore and
+    avoid the duplicate _len variables by cleaning up the cr_hdr_utsns
+    after the cr_write_string() of the two buffers
+---
+ checkpoint/ckpt_task.c |   25 ++++++++++++++-----------
+ 1 files changed, 14 insertions(+), 11 deletions(-)
 
-Even if we do max bw control at IO scheduler level, async writes are
-problematic again. IO controller will not be able to throttle the process
-until it sees actuall write request. In big memory systems, writeout might
-not happen for some time and till then it will see a high throughput.
-
-So doing async write throttling at higher layer and not at IO scheduler
-layer gives us the opprotunity to produce more accurate results.
-
-For sync requests, I think IO scheduler max bw control should work fine.
-
-BTW, andrea, what is the use case of your patches? Andrew had mentioned
-that some people are already using it. I am curious to know will a
-proportional BW controller will solve the issues/requirements of these
-people or they have specific requirement of traffic shaping and max bw
-controller only.
-
-[..]
-> > > > Can you please give little more details here regarding how QoS requirements
-> > > > are not met with proportional weight?
-> > > 
-> > > With proportional weights the whole bandwidth is allocated if no one
-> > > else is using it. When IO is submitted other tasks with a higher weight
-> > > can be forced to sleep until the IO generated by the low weight tasks is
-> > > not completely dispatched. Or any extent of the priority inversion
-> > > problems.
-> > 
-> > Hmm..., I am not very sure here. When admin is allocating the weights, he
-> > has the whole picture. He knows how many groups are conteding for the disk
-> > and what could be the worst case scenario. So if I have got two groups
-> > with A and B with weight 1 and 2 and both are contending, then as an 
-> > admin one would expect to get 33% of BW for group A in worst case (if
-> > group B is continuously backlogged). If B is not contending than A can get
-> > 100% of BW. So while configuring the system, will one not plan for worst
-> > case (33% for A, and 66 % for B)?
-> 
-> OK, I'm quite convinced.. :)
-> 
-> To a large degree, if we want to provide a BW reservation strategy we
-> must provide an interface that allows cgroups to ask for time slices
-> such as max/min 5 IO requests every 50ms or something like that.
-> Probably the same functionality can be achieved translating time slices
-> from weights, percentages or absolute BW limits.
-
-Ok, I would like to split it in two parts.
-
-I think providng minimum gurantee in absolute terms like 5 IO request
-every 50ms will be very hard because IO scheduler has no control over
-how many competitors are there. An easier thing will be to have minimum
-gurantees on share basis. For minimum BW (disk time slice) gurantee, admin
-shall have to create right cgroup hierarchy and assign weights properly and
-then admin can calculate what % of disk slice a particular group will get
-as minimum gurantee. (This is more complicated than this as there are
-time slices which are not accounted to any groups. During queue switch
-cfq starts the time slice counting only after first request has completed
-to offset the impact of seeking and i guess also NCQ).
-
-I think it should be possible to give max bandwidth gurantees in absolute
-terms, like io/s or sectors/sec or MB/sec etc, because only thing IO
-scheduler has to do is to not allow dispatch from a particular queue if
-it has crossed its limit and then either let the disk idle or move onto
-next eligible queue.
-
-The only issue here will be async writes. max bw gurantee for async writes
-at IO scheduler level might not mean much to application because of page
-cache.
-
-Thanks
-Vivek
+diff --git a/checkpoint/ckpt_task.c b/checkpoint/ckpt_task.c
+index 4d19e31..30858d2 100644
+--- a/checkpoint/ckpt_task.c
++++ b/checkpoint/ckpt_task.c
+@@ -171,8 +171,8 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
+ {
+ 	struct cr_hdr h;
+ 	struct cr_hdr_utsns *hh;
+-	int domainname_len;
+-	int nodename_len;
++	char nodename[__NEW_UTS_LEN + 1];
++	char domainname[__NEW_UTS_LEN + 1];
+ 	int ret;
+ 
+ 	h.type = CR_HDR_UTSNS;
+@@ -182,22 +182,25 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
+ 	if (!hh)
+ 		return -ENOMEM;
+ 
+-	nodename_len = strlen(uts_ns->name.nodename) + 1;
+-	domainname_len = strlen(uts_ns->name.domainname) + 1;
++	down_read(&uts_sem);
++	memcpy(nodename, uts_ns->name.nodename, sizeof(nodename));
++	memcpy(domainname, uts_ns->name.domainname, sizeof(nodename));
++	up_read(&uts_sem);
+ 
+-	hh->nodename_len = nodename_len;
+-	hh->domainname_len = domainname_len;
++	hh->nodename_len = strlen(nodename) + 1;
++	hh->domainname_len = strlen(domainname) + 1;
+ 
+ 	ret = cr_write_obj(ctx, &h, hh);
+-	cr_hbuf_put(ctx, sizeof(*hh));
+ 	if (ret < 0)
+-		return ret;
++		goto out;
+ 
+-	ret = cr_write_string(ctx, uts_ns->name.nodename, nodename_len);
++	ret = cr_write_string(ctx, nodename, hh->nodename_len);
+ 	if (ret < 0)
+-		return ret;
++		goto out;
+ 
+-	ret = cr_write_string(ctx, uts_ns->name.domainname, domainname_len);
++	ret = cr_write_string(ctx, domainname, hh->domainname_len);
++ out:
++ 	cr_hbuf_put(ctx, sizeof(*hh));
+ 	return ret;
+ }
+ 
+-- 
+1.5.6.3
