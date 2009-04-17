@@ -1,68 +1,83 @@
-From: Greg Kurz <gkurz@fr.ibm.com>
-Subject: Re: C/R without "leaks"
-Date: Fri, 17 Apr 2009 11:15:46 +0200
-Message-ID: <1239959746.6143.66.camel@bahia>
-References: <49E40662.2040508@cs.columbia.edu>
-	 <20090414163633.GE27461@x200.localdomain>
-	 <49E4D89D.9060903@cs.columbia.edu>
-	 <20090415195629.GD26994@x200.localdomain> <1239835337.6610.6.camel@bahia>
-	 <20090416161215.GA8505@x200.localdomain> <49E774B1.5060505@nortel.com>
-	 <49E77B49.3020102@cs.columbia.edu>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/9] io-throttle documentation
+Date: Fri, 17 Apr 2009 17:29:25 +0800
+Message-ID: <49E84BF5.4070604__41331.835758365$1239960860$gmane$org@cn.fujitsu.com>
+References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>	<1239740480-28125-2-git-send-email-righi.andrea@gmail.com>	<20090417102417.88a0ef93.kamezawa.hiroyu@jp.fujitsu.com>	<49E8311D.5030901@cn.fujitsu.com>
+	<20090417164351.ea85012d.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760013AbZDQJQR@vger.kernel.org>
-In-Reply-To: <49E77B49.3020102@cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Chris Friesen <cfriesen@nortel.com>, Alexey Dobriyan <adobriyan@gmail.com>, Linux-Kernel <linux-kernel@vger.kernel.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Ingo Molnar <mingo@elte.hu>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090417164351.ea85012d.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-04-16 at 14:39 -0400, Oren Laadan wrote:
-> Any connection in that case is, of course, lost, and it's up to the
-> application to do something about it. If the application relies on
-> the state of the connection, it will have to give up (e.g. sshd, and
-> ssh, die).
+KAMEZAWA Hiroyuki wrote:
+> On Fri, 17 Apr 2009 15:34:53 +0800
+> Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> 
+>> KAMEZAWA Hiroyuki wrote:
+>>> On Tue, 14 Apr 2009 22:21:12 +0200
+>>> Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>>
+>>>> +Example:
+>>>> +* Create an association between an io-throttle group and a bio-cgroup group
+>>>> +  with "bio" and "blockio" subsystems mounted in different mount points:
+>>>> +  # mount -t cgroup -o bio bio-cgroup /mnt/bio-cgroup/
+>>>> +  # cd /mnt/bio-cgroup/
+>>>> +  # mkdir bio-grp
+>>>> +  # cat bio-grp/bio.id
+>>>> +  1
+>>>> +  # mount -t cgroup -o blockio blockio /mnt/io-throttle
+>>>> +  # cd /mnt/io-throttle
+>>>> +  # mkdir foo
+>>>> +  # echo 1 > foo/blockio.bio_id
+>>> Why do we need multiple cgroups at once to track I/O ?
+>>> Seems complicated to me.
+>>   Hi Kamezawa-san,
+>>
+>>   The original thought to implement this function is for sharing a bio-cgroup
+>>   with other subsystems, such as dm-ioband. If the bio-cgroup is already mounted,
+>>   and used by dm-ioband or others, we just need to create a association between 
+>>   io-throttle and bio-cgroup by echo a bio-cgroup id, just like what dm-ioband does.
+>>
+> 
+> - Why we need multiple I/O controller ? 
+> - Why bio-cgroup cannot be a _pure_ infrastructe as page_cgroup ?
+> - Why we need extra mount ?
+> 
+> I have no answer but, IMHO, 
+>  - only one I/O controller should be enabled at once.
+>  - bio cgroup should be tightly coupled with I/O controller and should work as
+>    infrastructure i.e. naming/tagging I/O should be automatically done by
+>    I/O controller. not by the user's hand.
+
+  It seems dm-ioband has to make use of bio-cgroup by the user's hand. Because dm-ioband
+  is not cgroup based. :(
+
+  Is that possible that another subsystem(not cgroup based, and not an IO Controller) also 
+  would like to use bio-cgroup in the future? There's no such case at least now, so i don't 
+  object to get rid of this part. :)
+
+> 
+> Thanks,
+> -Kame
+> 
+> 
+> 
+> 
 > 
 
-And that's a good thing since that's exactly what users expect from
-sshd : to give up the connection when something goes wrong. I wouldn't
-trust a sshd with the ability to initiate connections on its own...
-
-And anyway, I still don't see the scenario where C/R a sshd is useful...
-Please someone (Alexey ?), provide a detailed use case where people
-would want to checkpoint or migrate live TCP connections... Discussion
-on containers@ is very interesting but really lacks of
-what-is-the-bigger-picture arguments... These huge patchsets are very
-tricky and intrusive... who wants them mainline ? what's the use of
-C/R ?
-
-> However, there are many application that can withstand connection
-> lost without crashing. They simply retry (web browser, irc client,
-> db clients). With time, there may be more applications that are
-> 'c/r-aware'.
-> 
-
-HPC jobs are definitely good candidates.
-
-> Moreover, in some cases you could, on restart, use a wrapper to
-> create a new connection to somewhere (*), then ask restart(2) to
-> use that socket instead of the original, such that from the user
-> point of view things continue to work well, transparently.
-> 
-
-Yes.
-
-> (*) that somewhere, could be the original peer, or another server,
-> if it has a way to somehow continue a cut connection, or a special
-> wrapper server that you right for that purpose.
-> 
-> Oren.
-> 
 -- 
-Gregory Kurz                                     gkurz@fr.ibm.com
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
-
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+Regards
+Gui Jianfeng
