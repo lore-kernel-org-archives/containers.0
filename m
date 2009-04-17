@@ -1,15 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] c/r: Take uts_sem during checkpoint (v2)
-Date: Fri, 17 Apr 2009 08:11:52 -0700
-Message-ID: <87ab6fiabr.fsf@caffeine.danplanet.com>
+Date: Fri, 17 Apr 2009 10:05:29 -0500
+Message-ID: <20090417150529.GB19129@us.ibm.com>
 References: <1239978438-5719-1-git-send-email-danms@us.ibm.com>
-	<20090417150529.GB19129@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090417150529.GB19129-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri\, 17 Apr 2009 10\:05\:29 -0500")
+Content-Disposition: inline
+In-Reply-To: <1239978438-5719-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,22 +18,98 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SH> So it would be robust to future code changes if you
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Fix the potential for breakage if our UTS changes during checkpoint
+> by grabbing uts_sem and copying those strings to temporary buffers.
+> 
+> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-SH> #define MAX_UTS_LEN (__NEW_UTS_LEN+1)
+Looks good.  The only thing I'd add is that you are depending on
+__NEW_UTS_LEN+1 being something very specific, so if utsname.h
+gets a change, checkpoint/ckpt_task.c needs a corresponding
+change.  So it would be robust to future code changes if you
 
-SH> in utsname.h, so that anyone expanding the size of hostname
-SH> doesn't need to look for this usage.
+#define MAX_UTS_LEN (__NEW_UTS_LEN+1)
 
-Yeah, I think that came up in a prior round of comments on the UTS
-stuff, but got dropped when we started depending on strlen() of the
-names instead.  I suppose I should actually do it now... :)
+in utsname.h, so that anyone expanding the size of hostname
+doesn't need to look for this usage.
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Still,
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+-serge
+
+> Changes in v2:
+>   - Be less stupid about holding the system-wide uts_sem during
+>     checkpoint (!)
+>   - Don't hold it during restart
+>   - Hold uts_sem only while copying out the strings
+>   - Calculate the length of the saved buffers outside of the semaphore and
+>     avoid the duplicate _len variables by cleaning up the cr_hdr_utsns
+>     after the cr_write_string() of the two buffers
+> ---
+>  checkpoint/ckpt_task.c |   25 ++++++++++++++-----------
+>  1 files changed, 14 insertions(+), 11 deletions(-)
+> 
+> diff --git a/checkpoint/ckpt_task.c b/checkpoint/ckpt_task.c
+> index 4d19e31..30858d2 100644
+> --- a/checkpoint/ckpt_task.c
+> +++ b/checkpoint/ckpt_task.c
+> @@ -171,8 +171,8 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
+>  {
+>  	struct cr_hdr h;
+>  	struct cr_hdr_utsns *hh;
+> -	int domainname_len;
+> -	int nodename_len;
+> +	char nodename[__NEW_UTS_LEN + 1];
+> +	char domainname[__NEW_UTS_LEN + 1];
+>  	int ret;
+> 
+>  	h.type = CR_HDR_UTSNS;
+> @@ -182,22 +182,25 @@ static int cr_write_utsns(struct cr_ctx *ctx, struct uts_namespace *uts_ns)
+>  	if (!hh)
+>  		return -ENOMEM;
+> 
+> -	nodename_len = strlen(uts_ns->name.nodename) + 1;
+> -	domainname_len = strlen(uts_ns->name.domainname) + 1;
+> +	down_read(&uts_sem);
+> +	memcpy(nodename, uts_ns->name.nodename, sizeof(nodename));
+> +	memcpy(domainname, uts_ns->name.domainname, sizeof(nodename));
+> +	up_read(&uts_sem);
+> 
+> -	hh->nodename_len = nodename_len;
+> -	hh->domainname_len = domainname_len;
+> +	hh->nodename_len = strlen(nodename) + 1;
+> +	hh->domainname_len = strlen(domainname) + 1;
+> 
+>  	ret = cr_write_obj(ctx, &h, hh);
+> -	cr_hbuf_put(ctx, sizeof(*hh));
+>  	if (ret < 0)
+> -		return ret;
+> +		goto out;
+> 
+> -	ret = cr_write_string(ctx, uts_ns->name.nodename, nodename_len);
+> +	ret = cr_write_string(ctx, nodename, hh->nodename_len);
+>  	if (ret < 0)
+> -		return ret;
+> +		goto out;
+> 
+> -	ret = cr_write_string(ctx, uts_ns->name.domainname, domainname_len);
+> +	ret = cr_write_string(ctx, domainname, hh->domainname_len);
+> + out:
+> + 	cr_hbuf_put(ctx, sizeof(*hh));
+>  	return ret;
+>  }
+> 
+> -- 
+> 1.5.6.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
