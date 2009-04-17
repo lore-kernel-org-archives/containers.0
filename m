@@ -1,85 +1,84 @@
-From: Greg Kurz <gkurz@fr.ibm.com>
-Subject: Re: C/R without "leaks"
-Date: Fri, 17 Apr 2009 14:25:21 +0200
-Message-ID: <1239971121.6143.217.camel@bahia>
-References: <49E40662.2040508@cs.columbia.edu>
-	 <20090414163633.GE27461@x200.localdomain>
-	 <49E4D89D.9060903@cs.columbia.edu>
-	 <20090415195629.GD26994@x200.localdomain> <1239835337.6610.6.camel@bahia>
-	 <20090416161215.GA8505@x200.localdomain> <49E774B1.5060505@nortel.com>
-	 <49E77B49.3020102@cs.columbia.edu> <1239959746.6143.66.camel@bahia>
-	 <49E85059.8070400@cs.columbia.edu>
+From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Fri, 17 Apr 2009 14:50:04 +0200
+Message-ID: <20090417125004.GY4593__26965.7603618272$1239972838$gmane$org@kernel.dk>
+References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
+	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
+	<20090417123805.GC7117@mit.edu>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760635AbZDQMfj@vger.kernel.org>
-In-Reply-To: <49E85059.8070400@cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Chris Friesen <cfriesen@nortel.com>, Alexey Dobriyan <adobriyan@gmail.com>, Linux-Kernel <linux-kernel@vger.kernel.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Ingo Molnar <mingo@elte.hu>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090417123805.GC7117-3s7WtUTddSA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-04-17 at 05:48 -0400, Oren Laadan wrote:
-> You mean an sshd with an open connection probably; the server itself
-> is clearly useful to be able to c/r.
+On Fri, Apr 17 2009, Theodore Tso wrote:
+> On Tue, Apr 14, 2009 at 10:21:20PM +0200, Andrea Righi wrote:
+> > Delaying journal IO can unnecessarily delay other independent IO
+> > operations from different cgroups.
+> > 
+> > Add BIO_RW_META flag to the ext3 journal IO that informs the io-throttle
+> > subsystem to account but not delay journal IO and avoid potential
+> > priority inversion problems.
 > 
+> So this worries me for two reasons.  First of all, the meaning of
+> BIO_RW_META is not well defined, but I'm concerned that you are using
+> the flag in a manner that in a way that wasn't its original intent.
+> I've included Jens on the cc list so he can comment on that score.
 
-Yes I mean C/R of sshd with active connections.
+I was actually already on the cc, though with my private mail address! I
+did read the patch this morning and initially thought it was a bad idea
+as well, but then I thought that perhaps it's not that different to view
+journal IO as a form of meta data to some extent.
 
+But still, putting any sort of value into the meta flag is a bad idea.
+It's assuming that it will get you some sort of extra guarantee, which
+isn't the case. If journal IO is that much more important than other IO,
+it should be prioritized explicitly. I'm not sure there's a good
+solution to this problem.
+
+> Secondly, there are many more locations than these which can end up
+> causing I/O which will ending up causing the journal commit to block
+> until they are completed.  I've done a lot of work in the past few
+> weeks to make sure those writes get marked using BIO_RW_SYNC.  In
+> data=ordered mode, the journal commit will block waiting for data
+> blocks to be written out, and that implies you really need to treat as
+> high priority all of the block writes that are marked with the
+> BIO_RW_SYNC flag.
 > 
-> A canonical example would a virtual-private-server: instead of doing
-> server consolidation with a virtual machine, your do with containers.
-> In a sense, containers lets you chop the OS into independent isolated
-> pieces. You ca use a linux box to run multiple virtual execution
-> environments (containers), each running services of your choice. They
-> could range from a sshd for users, to apache servers, to database
-> servers to users' vnc sessions, etc.
+> The flip side of this is it may end up making your I/O controller to
+> leaky; that is, someone might be able to evade your I/O controller's
+> attempt to impose limits by using fsync() all the time.  This is a
+> hard problem, though, because filesystem I/O is almost always
+> intertwined.
 > 
+> What sort of scenarios and workloads are you envisioning might use
+> this I/O controller?  And can you say more about the specifics about
+> the priority inversion problem you are concerned about?
 
-Indeed, containers allow to implement VPS just like virtual machines: we
-call them system containers. Not much to say about that since they don't
-introduce new concepts to users.
+I'm assuming it's the "usual" problem with lower priority IO getting
+access to fs exclusive data. It's quite trivial to cause problems with
+higher IO priority tasks then getting stuck waiting for the low priority
+process, since they also need to access that fs exclusive data.
 
-> Now comes the that you really need to take the machine down, for
-> whatever reason. With c/r of live connections you can live-migrate
-> these containers to another machine (on the same subnet) that will
-> "steal" the IP as well, and voila - no service disruption.
-> 
-
-Theorically, yes. Practicaly, you need a lot more than *simply* capturing
-and restoring socket states for such a migration to be usable in the real
-world.
-
-> 
-> Such scenarios are the focus of Alexey.
-> 
-
-So Alexey should provide some realistic examples, with several hosts,
-routers, switches and overall network infrastructure.
-
-> I'm also very interested in these scenarios, and I'm _also_ thinking
-> of other scenarios, where either (a) an entire container is not
-> necessary (example: user running long computation on laptop and wants
-> to save it before a reboot), or (b) the program would like to make
-> adjustments to its state compared to the time it was saved (example:
-> change the location of an output log file depending on the machine
-> on which your are running).
-> 
-
-I'm _only_ interested in these other scenarios for the moment.
-
-> Unfortunately, if we plan for and require, as per Alexey, that c/r
-> would only work for whole-containers, these two cases will not be
-> addressed.
-> 
-
-Discussion must go on then. There's no hurry in getting C/R
-mainlined. :)
+CFQ includes a vain attempt at boosting the priority of such a low
+priority process if that happens, see the get_fs_excl() stuff in
+lock_super(). reiserfs also marks the process as holding fs exclusive
+resources, but it was never added to any of the other file systems. But
+we could improve that situation. The file system is really the only one
+that can inform us of such an issue.
 
 -- 
-Gregory Kurz                                     gkurz@fr.ibm.com
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
-
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+Jens Axboe
