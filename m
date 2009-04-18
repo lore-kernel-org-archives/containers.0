@@ -1,14 +1,11 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/7] page_cgroup: provide a generic page tracking
-	infrastructure
-Date: Sat, 18 Apr 2009 23:38:28 +0200
-Message-ID: <1240090712-1058-4-git-send-email-righi.andrea__3070.20196128196$1240091336$gmane$org@gmail.com>
-References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
+Subject: [PATCH 0/7] cgroup: io-throttle controller (v14)
+Date: Sat, 18 Apr 2009 23:38:25 +0200
+Message-ID: <1240090712-1058-1-git-send-email-righi.andrea__26941.5202703842$1240091534$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240090712-1058-1-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,359 +16,132 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dirty pages in the page cache can be processed asynchronously by kernel
-threads (pdflush) using a writeback policy. For this reason the real
-writes to the underlying block devices occur in a different IO context
-respect to the task that originally generated the dirty pages involved
-in the IO operation. This makes the tracking and throttling of writeback
-IO more complicate respect to the synchronous IO.
+Objective
+~~~~~~~~~
+The objective of the io-throttle controller is to improve IO performance
+predictability of different cgroups that share the same block devices.
 
-The page_cgroup infrastructure, currently available only for the memory
-cgroup controller, can be used to store the owner of each page and
-opportunely track the writeback IO. This information is encoded in
-page_cgroup->flags.
+State of the art (quick overview)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A recent work made by Vivek propose a weighted BW solution introducing
+fair queuing support in the elevator layer and modifying the existent IO
+schedulers to use that functionality
+(https://lists.linux-foundation.org/pipermail/containers/2009-March/016129.html).
 
-A owner can be identified using a generic ID number and the following
-interfaces are provided to store a retrieve this information:
+For the fair queuing part Vivek's IO controller makes use of the BFQ
+code as posted by Paolo and Fabio (http://lkml.org/lkml/2008/11/11/148).
 
-  unsigned long page_cgroup_get_owner(struct page *page);
-  int page_cgroup_set_owner(struct page *page, unsigned long id);
-  int page_cgroup_copy_owner(struct page *npage, struct page *opage);
+The dm-ioband controller by the valinux guys is also proposing a
+proportional ticket-based solution fully implemented at the device
+mapper level (http://people.valinux.co.jp/~ryov/dm-ioband/).
 
-The io-throttle controller uses the cgroup css_id() as the owner's ID
-number.
+The bio-cgroup patch (http://people.valinux.co.jp/~ryov/bio-cgroup/) is
+a BIO tracking mechanism for cgroups, implemented in the cgroup memory
+subsystem. It is maintained by Ryo and it allows dm-ioband to track
+writeback requests issued by kernel threads (pdflush).
 
-A big part of this code is taken from the Ryo and Hirokazu's bio-cgroup
-controller (http://people.valinux.co.jp/~ryov/bio-cgroup/).
+Another work by Satoshi implements the cgroup awareness in CFQ, mapping
+per-cgroup priority to CFQ IO priorities and this also provide only the
+proportional BW support (http://lwn.net/Articles/306772/).
 
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
----
- include/linux/memcontrol.h  |    6 +++
- include/linux/mmzone.h      |    4 +-
- include/linux/page_cgroup.h |   33 +++++++++++++-
- init/Kconfig                |    4 ++
- mm/Makefile                 |    3 +-
- mm/memcontrol.c             |    6 +++
- mm/page_cgroup.c            |   95 ++++++++++++++++++++++++++++++++++++++-----
- 7 files changed, 135 insertions(+), 16 deletions(-)
+Please correct me or integrate if I missed someone or something. :)
 
-diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 18146c9..f3e0e64 100644
---- a/include/linux/memcontrol.h
-+++ b/include/linux/memcontrol.h
-@@ -37,6 +37,8 @@ struct mm_struct;
-  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
-  */
- 
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
-+
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct task_struct *task);
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 186ec6a..b178eb9 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -607,7 +607,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -958,7 +958,7 @@ struct mem_section {
- 
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
-diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-index 7339c7b..f24d081 100644
---- a/include/linux/page_cgroup.h
-+++ b/include/linux/page_cgroup.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- #include <linux/bit_spinlock.h>
- /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -12,11 +12,38 @@
-  */
- struct page_cgroup {
- 	unsigned long flags;
--	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
-+#endif
- };
- 
-+/*
-+ * use lower 16 bits for flags and reserve the rest for the page tracking id
-+ */
-+#define PAGE_TRACKING_ID_SHIFT	(16)
-+#define PAGE_TRACKING_ID_BITS \
-+		(8 * sizeof(unsigned long) - PAGE_TRACKING_ID_SHIFT)
-+
-+/* NOTE: must be called with page_cgroup() held */
-+static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
-+{
-+	return pc->flags >> PAGE_TRACKING_ID_SHIFT;
-+}
-+
-+/* NOTE: must be called with page_cgroup() held */
-+static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
-+{
-+	WARN_ON(id >= (1UL << PAGE_TRACKING_ID_BITS));
-+	pc->flags &= (1UL << PAGE_TRACKING_ID_SHIFT) - 1;
-+	pc->flags |= (unsigned long)(id << PAGE_TRACKING_ID_SHIFT);
-+}
-+
-+unsigned long page_cgroup_get_owner(struct page *page);
-+int page_cgroup_set_owner(struct page *page, unsigned long id);
-+int page_cgroup_copy_owner(struct page *npage, struct page *opage);
-+
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
- void __init page_cgroup_init(void);
- struct page_cgroup *lookup_page_cgroup(struct page *page);
-@@ -71,7 +98,7 @@ static inline void unlock_page_cgroup(struct page_cgroup *pc)
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
- }
- 
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_PAGE_TRACKING */
- struct page_cgroup;
- 
- static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-diff --git a/init/Kconfig b/init/Kconfig
-index 7be4d38..5428ac7 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -569,6 +569,7 @@ config CGROUP_MEM_RES_CTLR
- 	bool "Memory Resource Controller for Control Groups"
- 	depends on CGROUPS && RESOURCE_COUNTERS
- 	select MM_OWNER
-+	select PAGE_TRACKING
- 	help
- 	  Provides a memory resource controller that manages both anonymous
- 	  memory and page cache. (See Documentation/cgroups/memory.txt)
-@@ -611,6 +612,9 @@ endif # CGROUPS
- config MM_OWNER
- 	bool
- 
-+config PAGE_TRACKING
-+	bool
-+
- config SYSFS_DEPRECATED
- 	bool
- 
-diff --git a/mm/Makefile b/mm/Makefile
-index ec73c68..b94e074 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -37,4 +37,5 @@ else
- obj-$(CONFIG_SMP) += allocpercpu.o
- endif
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_PAGE_TRACKING) += page_cgroup.o
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index e44fb0f..69d1c31 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2524,6 +2524,12 @@ struct cgroup_subsys mem_cgroup_subsys = {
- 	.use_id = 1,
- };
- 
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+	pc->mem_cgroup = NULL;
-+	INIT_LIST_HEAD(&pc->lru);
-+}
-+
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
- 
- static int __init disable_swap_account(char *s)
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 791905c..b3b394c 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -3,6 +3,7 @@
- #include <linux/bootmem.h>
- #include <linux/bit_spinlock.h>
- #include <linux/page_cgroup.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/hash.h>
- #include <linux/slab.h>
- #include <linux/memory.h>
-@@ -14,9 +15,8 @@ static void __meminit
- __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
- {
- 	pc->flags = 0;
--	pc->mem_cgroup = NULL;
- 	pc->page = pfn_to_page(pfn);
--	INIT_LIST_HEAD(&pc->lru);
-+	__init_mem_page_cgroup(pc);
- }
- static unsigned long total_usage;
- 
-@@ -74,7 +74,7 @@ void __init page_cgroup_init(void)
- 
- 	int nid, fail;
- 
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && iothrottle_disabled())
- 		return;
- 
- 	for_each_online_node(nid)  {
-@@ -83,12 +83,13 @@ void __init page_cgroup_init(void)
- 			goto fail;
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you"
--	" don't want\n");
-+	printk(KERN_INFO
-+		"try cgroup_disable=memory,blockio option if you don't want\n");
- 	return;
- fail:
- 	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
--	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
-+	printk(KERN_CRIT
-+		"try cgroup_disable=memory,blockio boot option\n");
- 	panic("Out of memory");
- }
- 
-@@ -243,12 +244,85 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
- 
- #endif
- 
-+/**
-+ * page_cgroup_get_owner() - get the owner ID of a page
-+ * @page:	the page we want to find the owner
-+ *
-+ * Returns the owner ID of the page, 0 means that the owner cannot be
-+ * retrieved.
-+ **/
-+unsigned long page_cgroup_get_owner(struct page *page)
-+{
-+	struct page_cgroup *pc;
-+	unsigned long ret;
-+
-+	pc = lookup_page_cgroup(page);
-+	if (unlikely(!pc))
-+		return 0;
-+
-+	lock_page_cgroup(pc);
-+	ret = page_cgroup_get_id(pc);
-+	unlock_page_cgroup(pc);
-+	return ret;
-+}
-+
-+/**
-+ * page_cgroup_set_owner() - set the owner ID of a page
-+ * @page:	the page we want to tag
-+ * @id:		the ID number that will be associated to page
-+ *
-+ * Returns 0 if the owner is correctly associated to the page. Returns a
-+ * negative value in case of failure.
-+ **/
-+int page_cgroup_set_owner(struct page *page, unsigned long id)
-+{
-+	struct page_cgroup *pc;
-+
-+	pc = lookup_page_cgroup(page);
-+	if (unlikely(!pc))
-+		return -ENOENT;
-+
-+	lock_page_cgroup(pc);
-+	page_cgroup_set_id(pc, id);
-+	unlock_page_cgroup(pc);
-+	return 0;
-+}
-+
-+/**
-+ * page_cgroup_copy_owner() - copy the owner ID of a page into another page
-+ * @npage:	the page where we want to copy the owner
-+ * @opage:	the page from which we want to copy the ID
-+ *
-+ * Returns 0 if the owner is correctly associated to npage. Returns a negative
-+ * value in case of failure.
-+ **/
-+int page_cgroup_copy_owner(struct page *npage, struct page *opage)
-+{
-+	struct page_cgroup *npc, *opc;
-+	unsigned long id;
-+
-+	npc = lookup_page_cgroup(npage);
-+	if (unlikely(!npc))
-+		return -ENOENT;
-+	opc = lookup_page_cgroup(opage);
-+	if (unlikely(!opc))
-+		return -ENOENT;
-+	lock_page_cgroup(opc);
-+	lock_page_cgroup(npc);
-+	id = page_cgroup_get_id(opc);
-+	page_cgroup_set_id(npc, id);
-+	unlock_page_cgroup(npc);
-+	unlock_page_cgroup(opc);
-+
-+	return 0;
-+}
-+
- void __init page_cgroup_init(void)
- {
- 	unsigned long pfn;
- 	int fail = 0;
- 
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && iothrottle_disabled())
- 		return;
- 
- 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
-@@ -257,14 +331,15 @@ void __init page_cgroup_init(void)
- 		fail = init_section_page_cgroup(pfn);
- 	}
- 	if (fail) {
--		printk(KERN_CRIT "try cgroup_disable=memory boot option\n");
-+		printk(KERN_CRIT
-+			"try cgroup_disable=memory,blockio boot option\n");
- 		panic("Out of memory");
- 	} else {
- 		hotplug_memory_notifier(page_cgroup_callback, 0);
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
--	" want\n");
-+	printk(KERN_INFO
-+		"try cgroup_disable=memory,blockio option if you don't want\n");
- }
- 
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
--- 
-1.5.6.3
+Proposed solution
+~~~~~~~~~~~~~~~~~
+Respect to other priority/weight-based solutions the approach used by
+this controller is to explicitly choke applications' requests that
+directly or indirectly generate IO activity in the system (this
+controller addresses both synchronous IO and writeback/buffered IO).
+
+The bandwidth and iops limiting method has the advantage of improving
+the performance predictability at the cost of reducing, in general, the
+overall performance of the system in terms of throughput.
+
+IO throttling and accounting is performed during the submission of IO
+requests and it is independent of the particular IO scheduler.
+
+Detailed informations about design, goal and usage are described in the
+documentation (see [PATCH 1/7]).
+
+Implementation
+~~~~~~~~~~~~~~
+Patchset against latest Linus' git:
+
+  [PATCH 0/7] cgroup: block device IO controller (v14)
+  [PATCH 1/7] io-throttle documentation
+  [PATCH 2/7] res_counter: introduce ratelimiting attributes
+  [PATCH 3/7] page_cgroup: provide a generic page tracking infrastructure
+  [PATCH 4/7] io-throttle controller infrastructure
+  [PATCH 5/7] kiothrottled: throttle buffered (writeback) IO
+  [PATCH 6/7] io-throttle instrumentation
+  [PATCH 7/7] export per-task io-throttle statistics to userspace
+
+The v14 all-in-one patch, along with the previous versions, can be found at:
+http://download.systemimager.org/~arighi/linux/patches/io-throttle/
+
+What's new
+~~~~~~~~~~
+In this new version I've embedded the bio-cgroup code inside
+io-throttle, providing the page_cgroup page tracking infrastructure.
+
+This completely removes the complexity and the overhead of associating
+multiple IO controllers (bio-cgroup groups and io-throttle groups) from
+userspace, preserving the same tracking and throttling functionalities
+for writeback IO. And it is also possibel to bind other cgroup
+subsystems with io-throttle.
+
+I've removed the tracking of IO generated by anonymous pages (swap), to
+reduce the overhead of the page tracking functionality (and probably is
+not a good idea to delay IO requests that come from swap-in/swap-out
+operations).
+
+I've also removed the ext3 specific patch to tag journal IO with
+BIO_RW_META to never throttle such IO requests.
+
+As suggested by Ted and Jens we need a more specific solution, where
+filesystems inform the IO subsystem which IO requests come from tasks
+that are holding filesystem exclusive resources (journal IO, metadata,
+etc.). Then, the IO subsystem (both the IO scheduler and the IO
+controller) will be able to dispatched those "special" requests at the
+highest priority to avoid the classic priority inversion problems.
+
+Changelog (v13 -> v14)
+~~~~~~~~~~~~~~~~~~~~~~
+* implemented the bio-cgroup functionality as pure infrastructure for page
+  tracking capability
+* removed the tracking and throttling of IO generated by anonymous pages (swap)
+* updated documentation
+
+Overall diffstat
+~~~~~~~~~~~~~~~~
+ Documentation/cgroups/io-throttle.txt |  417 +++++++++++++++++
+ block/Makefile                        |    1 +
+ block/blk-core.c                      |    8 +
+ block/blk-io-throttle.c               |  822 +++++++++++++++++++++++++++++++++
+ block/kiothrottled.c                  |  341 ++++++++++++++
+ fs/aio.c                              |   12 +
+ fs/buffer.c                           |    2 +
+ fs/proc/base.c                        |   18 +
+ include/linux/blk-io-throttle.h       |  144 ++++++
+ include/linux/cgroup_subsys.h         |    6 +
+ include/linux/memcontrol.h            |    6 +
+ include/linux/mmzone.h                |    4 +-
+ include/linux/page_cgroup.h           |   33 ++-
+ include/linux/res_counter.h           |   69 ++-
+ include/linux/sched.h                 |    7 +
+ init/Kconfig                          |   16 +
+ kernel/fork.c                         |    7 +
+ kernel/res_counter.c                  |   72 +++
+ mm/Makefile                           |    3 +-
+ mm/bounce.c                           |    2 +
+ mm/filemap.c                          |    2 +
+ mm/memcontrol.c                       |    6 +
+ mm/page-writeback.c                   |    2 +
+ mm/page_cgroup.c                      |   95 ++++-
+ mm/readahead.c                        |    3 +
+ 25 files changed, 2065 insertions(+), 33 deletions(-)
+
+-Andrea
