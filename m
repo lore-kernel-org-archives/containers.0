@@ -1,7 +1,8 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 6/7] io-throttle instrumentation
-Date: Sat, 18 Apr 2009 23:38:31 +0200
-Message-ID: <1240090712-1058-7-git-send-email-righi.andrea@gmail.com>
+Subject: [PATCH 3/7] page_cgroup: provide a generic page tracking
+	infrastructure
+Date: Sat, 18 Apr 2009 23:38:28 +0200
+Message-ID: <1240090712-1058-4-git-send-email-righi.andrea__3070.20196128196$1240091336$gmane$org@gmail.com>
 References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,253 +22,356 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Apply the io-throttle control and page tracking to the opportune kernel
-functions.
+Dirty pages in the page cache can be processed asynchronously by kernel
+threads (pdflush) using a writeback policy. For this reason the real
+writes to the underlying block devices occur in a different IO context
+respect to the task that originally generated the dirty pages involved
+in the IO operation. This makes the tracking and throttling of writeback
+IO more complicate respect to the synchronous IO.
+
+The page_cgroup infrastructure, currently available only for the memory
+cgroup controller, can be used to store the owner of each page and
+opportunely track the writeback IO. This information is encoded in
+page_cgroup->flags.
+
+A owner can be identified using a generic ID number and the following
+interfaces are provided to store a retrieve this information:
+
+  unsigned long page_cgroup_get_owner(struct page *page);
+  int page_cgroup_set_owner(struct page *page, unsigned long id);
+  int page_cgroup_copy_owner(struct page *npage, struct page *opage);
+
+The io-throttle controller uses the cgroup css_id() as the owner's ID
+number.
+
+A big part of this code is taken from the Ryo and Hirokazu's bio-cgroup
+controller (http://people.valinux.co.jp/~ryov/bio-cgroup/).
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 ---
- block/blk-core.c      |    8 ++++++++
- fs/aio.c              |   12 ++++++++++++
- fs/buffer.c           |    2 ++
- include/linux/sched.h |    7 +++++++
- kernel/fork.c         |    7 +++++++
- mm/bounce.c           |    2 ++
- mm/filemap.c          |    2 ++
- mm/page-writeback.c   |    2 ++
- mm/readahead.c        |    3 +++
- 9 files changed, 45 insertions(+), 0 deletions(-)
+ include/linux/memcontrol.h  |    6 +++
+ include/linux/mmzone.h      |    4 +-
+ include/linux/page_cgroup.h |   33 +++++++++++++-
+ init/Kconfig                |    4 ++
+ mm/Makefile                 |    3 +-
+ mm/memcontrol.c             |    6 +++
+ mm/page_cgroup.c            |   95 ++++++++++++++++++++++++++++++++++++++-----
+ 7 files changed, 135 insertions(+), 16 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index 07ab754..4d7f9f6 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -26,6 +26,7 @@
- #include <linux/swap.h>
- #include <linux/writeback.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/blktrace_api.h>
- #include <linux/fault-inject.h>
- #include <trace/block.h>
-@@ -1547,11 +1548,16 @@ void submit_bio(int rw, struct bio *bio)
- 	 * go through the normal accounting stuff before submission.
- 	 */
- 	if (bio_has_data(bio)) {
-+		unsigned long sleep = 0;
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index 18146c9..f3e0e64 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -37,6 +37,8 @@ struct mm_struct;
+  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
+  */
+ 
++extern void __init_mem_page_cgroup(struct page_cgroup *pc);
 +
- 		if (rw & WRITE) {
- 			count_vm_events(PGPGOUT, count);
-+			sleep = cgroup_io_throttle(bio,
-+					bio->bi_bdev, bio->bi_size);
- 		} else {
- 			task_io_account_read(bio->bi_size);
- 			count_vm_events(PGPGIN, count);
-+			cgroup_io_throttle(NULL, bio->bi_bdev, bio->bi_size);
- 		}
+ extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
+ 				gfp_t gfp_mask);
+ /* for swap handling */
+@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct task_struct *task);
+ #else /* CONFIG_CGROUP_MEM_RES_CTLR */
+ struct mem_cgroup;
  
- 		if (unlikely(block_dump)) {
-@@ -1562,6 +1568,8 @@ void submit_bio(int rw, struct bio *bio)
- 				(unsigned long long)bio->bi_sector,
- 				bdevname(bio->bi_bdev, b));
- 		}
-+		if (sleep && !iothrottle_make_request(bio, jiffies + sleep))
-+			return;
- 	}
- 
- 	generic_make_request(bio);
-diff --git a/fs/aio.c b/fs/aio.c
-index 76da125..ab6c457 100644
---- a/fs/aio.c
-+++ b/fs/aio.c
-@@ -22,6 +22,7 @@
- #include <linux/sched.h>
- #include <linux/fs.h>
- #include <linux/file.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/mm.h>
- #include <linux/mman.h>
- #include <linux/slab.h>
-@@ -1587,6 +1588,7 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
- {
- 	struct kiocb *req;
- 	struct file *file;
-+	struct block_device *bdev;
- 	ssize_t ret;
- 
- 	/* enforce forwards compatibility on users */
-@@ -1609,6 +1611,14 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
- 	if (unlikely(!file))
- 		return -EBADF;
- 
-+	/* check if we're exceeding the IO throttling limits */
-+	bdev = as_to_bdev(file->f_mapping);
-+	ret = cgroup_io_throttle(NULL, bdev, 0);
-+	if (unlikely(ret)) {
-+		fput(file);
-+		return -EAGAIN;
-+	}
++static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++}
 +
- 	req = aio_get_req(ctx);		/* returns with 2 references to req */
- 	if (unlikely(!req)) {
- 		fput(file);
-@@ -1652,12 +1662,14 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
- 		goto out_put_req;
- 
- 	spin_lock_irq(&ctx->ctx_lock);
-+	set_in_aio();
- 	aio_run_iocb(req);
- 	if (!list_empty(&ctx->run_list)) {
- 		/* drain the run list */
- 		while (__aio_run_iocbs(ctx))
- 			;
- 	}
-+	unset_in_aio();
- 	spin_unlock_irq(&ctx->ctx_lock);
- 	aio_put_req(req);	/* drop extra ref to req */
- 	return 0;
-diff --git a/fs/buffer.c b/fs/buffer.c
-index b3e5be7..2eb581f 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -36,6 +36,7 @@
- #include <linux/buffer_head.h>
- #include <linux/task_io_accounting_ops.h>
- #include <linux/bio.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/notifier.h>
- #include <linux/cpu.h>
- #include <linux/bitops.h>
-@@ -668,6 +669,7 @@ static void __set_page_dirty(struct page *page,
- 	if (page->mapping) {	/* Race with truncate? */
- 		WARN_ON_ONCE(warn && !PageUptodate(page));
- 		account_page_dirtied(page, mapping);
-+		iothrottle_set_pagedirty_owner(page, current->mm);
- 		radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
- 	}
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b4c38bc..e0cd710 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1356,6 +1356,13 @@ struct task_struct {
- 	unsigned long ptrace_message;
- 	siginfo_t *last_siginfo; /* For ptrace use.  */
- 	struct task_io_accounting ioac;
-+#ifdef CONFIG_CGROUP_IO_THROTTLE
-+	atomic_t in_aio;
-+	unsigned long long io_throttle_bw_cnt;
-+	unsigned long long io_throttle_bw_sleep;
-+	unsigned long long io_throttle_iops_cnt;
-+	unsigned long long io_throttle_iops_sleep;
-+#endif
- #if defined(CONFIG_TASK_XACCT)
- 	u64 acct_rss_mem1;	/* accumulated rss usage */
- 	u64 acct_vm_mem1;	/* accumulated virtual memory usage */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index b9e2edd..272c461 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1043,6 +1043,13 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	task_io_accounting_init(&p->ioac);
- 	acct_clear_integrals(p);
- 
-+#ifdef CONFIG_CGROUP_IO_THROTTLE
-+	atomic_set(&p->in_aio, 0);
-+	p->io_throttle_bw_cnt = 0;
-+	p->io_throttle_bw_sleep = 0;
-+	p->io_throttle_iops_cnt = 0;
-+	p->io_throttle_iops_sleep = 0;
-+#endif
- 	posix_cpu_timers_init(p);
- 
- 	p->lock_depth = -1;		/* -1 = no lock */
-diff --git a/mm/bounce.c b/mm/bounce.c
-index e590272..80bf52c 100644
---- a/mm/bounce.c
-+++ b/mm/bounce.c
-@@ -10,6 +10,7 @@
- #include <linux/pagemap.h>
- #include <linux/mempool.h>
- #include <linux/blkdev.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/init.h>
- #include <linux/hash.h>
- #include <linux/highmem.h>
-@@ -212,6 +213,7 @@ static void __blk_queue_bounce(struct request_queue *q, struct bio **bio_orig,
- 		to->bv_len = from->bv_len;
- 		to->bv_offset = from->bv_offset;
- 		inc_zone_page_state(to->bv_page, NR_BOUNCE);
-+		iothrottle_copy_page_owner(to->bv_page, page);
- 
- 		if (rw == WRITE) {
- 			char *vto, *vfrom;
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 379ff0b..5498d1d 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -28,6 +28,7 @@
- #include <linux/backing-dev.h>
- #include <linux/pagevec.h>
- #include <linux/blkdev.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/security.h>
- #include <linux/syscalls.h>
- #include <linux/cpuset.h>
-@@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page *page, struct address_space *mapping,
- 					gfp_mask & GFP_RECLAIM_MASK);
- 	if (error)
- 		goto out;
-+	iothrottle_set_page_owner(page, current->mm);
- 
- 	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
- 	if (error == 0) {
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 30351f0..46cf92e 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -24,6 +24,7 @@
- #include <linux/backing-dev.h>
- #include <linux/task_io_accounting_ops.h>
- #include <linux/blkdev.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/mpage.h>
- #include <linux/rmap.h>
- #include <linux/percpu.h>
-@@ -1243,6 +1244,7 @@ int __set_page_dirty_nobuffers(struct page *page)
- 			BUG_ON(mapping2 != mapping);
- 			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
- 			account_page_dirtied(page, mapping);
-+			iothrottle_set_pagedirty_owner(page, current->mm);
- 			radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
- 		}
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 133b6d5..25cae4c 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -14,6 +14,7 @@
- #include <linux/blkdev.h>
- #include <linux/backing-dev.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/pagevec.h>
- #include <linux/pagemap.h>
- 
-@@ -81,6 +82,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
- 			int (*filler)(void *, struct page *), void *data)
+ static inline int mem_cgroup_newpage_charge(struct page *page,
+ 					struct mm_struct *mm, gfp_t gfp_mask)
  {
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 186ec6a..b178eb9 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -607,7 +607,7 @@ typedef struct pglist_data {
+ 	int nr_zones;
+ #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
+ 	struct page *node_mem_map;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
+ 	struct page_cgroup *node_page_cgroup;
+ #endif
+ #endif
+@@ -958,7 +958,7 @@ struct mem_section {
+ 
+ 	/* See declaration of similar field in struct zone */
+ 	unsigned long *pageblock_flags;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
+ 	/*
+ 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
+ 	 * section. (see memcontrol.h/page_cgroup.h about this.)
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index 7339c7b..f24d081 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -1,7 +1,7 @@
+ #ifndef __LINUX_PAGE_CGROUP_H
+ #define __LINUX_PAGE_CGROUP_H
+ 
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
+ #include <linux/bit_spinlock.h>
+ /*
+  * Page Cgroup can be considered as an extended mem_map.
+@@ -12,11 +12,38 @@
+  */
+ struct page_cgroup {
+ 	unsigned long flags;
+-	struct mem_cgroup *mem_cgroup;
  	struct page *page;
-+	struct block_device *bdev = as_to_bdev(mapping);
- 	int ret = 0;
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct mem_cgroup *mem_cgroup;
+ 	struct list_head lru;		/* per cgroup LRU list */
++#endif
+ };
  
- 	while (!list_empty(pages)) {
-@@ -99,6 +101,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
- 			break;
- 		}
- 		task_io_account_read(PAGE_CACHE_SIZE);
-+		cgroup_io_throttle(NULL, bdev, PAGE_CACHE_SIZE);
- 	}
- 	return ret;
++/*
++ * use lower 16 bits for flags and reserve the rest for the page tracking id
++ */
++#define PAGE_TRACKING_ID_SHIFT	(16)
++#define PAGE_TRACKING_ID_BITS \
++		(8 * sizeof(unsigned long) - PAGE_TRACKING_ID_SHIFT)
++
++/* NOTE: must be called with page_cgroup() held */
++static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
++{
++	return pc->flags >> PAGE_TRACKING_ID_SHIFT;
++}
++
++/* NOTE: must be called with page_cgroup() held */
++static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
++{
++	WARN_ON(id >= (1UL << PAGE_TRACKING_ID_BITS));
++	pc->flags &= (1UL << PAGE_TRACKING_ID_SHIFT) - 1;
++	pc->flags |= (unsigned long)(id << PAGE_TRACKING_ID_SHIFT);
++}
++
++unsigned long page_cgroup_get_owner(struct page *page);
++int page_cgroup_set_owner(struct page *page, unsigned long id);
++int page_cgroup_copy_owner(struct page *npage, struct page *opage);
++
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
+ void __init page_cgroup_init(void);
+ struct page_cgroup *lookup_page_cgroup(struct page *page);
+@@ -71,7 +98,7 @@ static inline void unlock_page_cgroup(struct page_cgroup *pc)
+ 	bit_spin_unlock(PCG_LOCK, &pc->flags);
  }
+ 
+-#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++#else /* CONFIG_PAGE_TRACKING */
+ struct page_cgroup;
+ 
+ static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+diff --git a/init/Kconfig b/init/Kconfig
+index 7be4d38..5428ac7 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -569,6 +569,7 @@ config CGROUP_MEM_RES_CTLR
+ 	bool "Memory Resource Controller for Control Groups"
+ 	depends on CGROUPS && RESOURCE_COUNTERS
+ 	select MM_OWNER
++	select PAGE_TRACKING
+ 	help
+ 	  Provides a memory resource controller that manages both anonymous
+ 	  memory and page cache. (See Documentation/cgroups/memory.txt)
+@@ -611,6 +612,9 @@ endif # CGROUPS
+ config MM_OWNER
+ 	bool
+ 
++config PAGE_TRACKING
++	bool
++
+ config SYSFS_DEPRECATED
+ 	bool
+ 
+diff --git a/mm/Makefile b/mm/Makefile
+index ec73c68..b94e074 100644
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -37,4 +37,5 @@ else
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ endif
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+-obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
++obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
++obj-$(CONFIG_PAGE_TRACKING) += page_cgroup.o
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index e44fb0f..69d1c31 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -2524,6 +2524,12 @@ struct cgroup_subsys mem_cgroup_subsys = {
+ 	.use_id = 1,
+ };
+ 
++void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++	pc->mem_cgroup = NULL;
++	INIT_LIST_HEAD(&pc->lru);
++}
++
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ 
+ static int __init disable_swap_account(char *s)
+diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
+index 791905c..b3b394c 100644
+--- a/mm/page_cgroup.c
++++ b/mm/page_cgroup.c
+@@ -3,6 +3,7 @@
+ #include <linux/bootmem.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/page_cgroup.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/hash.h>
+ #include <linux/slab.h>
+ #include <linux/memory.h>
+@@ -14,9 +15,8 @@ static void __meminit
+ __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
+ {
+ 	pc->flags = 0;
+-	pc->mem_cgroup = NULL;
+ 	pc->page = pfn_to_page(pfn);
+-	INIT_LIST_HEAD(&pc->lru);
++	__init_mem_page_cgroup(pc);
+ }
+ static unsigned long total_usage;
+ 
+@@ -74,7 +74,7 @@ void __init page_cgroup_init(void)
+ 
+ 	int nid, fail;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && iothrottle_disabled())
+ 		return;
+ 
+ 	for_each_online_node(nid)  {
+@@ -83,12 +83,13 @@ void __init page_cgroup_init(void)
+ 			goto fail;
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try cgroup_disable=memory option if you"
+-	" don't want\n");
++	printk(KERN_INFO
++		"try cgroup_disable=memory,blockio option if you don't want\n");
+ 	return;
+ fail:
+ 	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
+-	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
++	printk(KERN_CRIT
++		"try cgroup_disable=memory,blockio boot option\n");
+ 	panic("Out of memory");
+ }
+ 
+@@ -243,12 +244,85 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
+ 
+ #endif
+ 
++/**
++ * page_cgroup_get_owner() - get the owner ID of a page
++ * @page:	the page we want to find the owner
++ *
++ * Returns the owner ID of the page, 0 means that the owner cannot be
++ * retrieved.
++ **/
++unsigned long page_cgroup_get_owner(struct page *page)
++{
++	struct page_cgroup *pc;
++	unsigned long ret;
++
++	pc = lookup_page_cgroup(page);
++	if (unlikely(!pc))
++		return 0;
++
++	lock_page_cgroup(pc);
++	ret = page_cgroup_get_id(pc);
++	unlock_page_cgroup(pc);
++	return ret;
++}
++
++/**
++ * page_cgroup_set_owner() - set the owner ID of a page
++ * @page:	the page we want to tag
++ * @id:		the ID number that will be associated to page
++ *
++ * Returns 0 if the owner is correctly associated to the page. Returns a
++ * negative value in case of failure.
++ **/
++int page_cgroup_set_owner(struct page *page, unsigned long id)
++{
++	struct page_cgroup *pc;
++
++	pc = lookup_page_cgroup(page);
++	if (unlikely(!pc))
++		return -ENOENT;
++
++	lock_page_cgroup(pc);
++	page_cgroup_set_id(pc, id);
++	unlock_page_cgroup(pc);
++	return 0;
++}
++
++/**
++ * page_cgroup_copy_owner() - copy the owner ID of a page into another page
++ * @npage:	the page where we want to copy the owner
++ * @opage:	the page from which we want to copy the ID
++ *
++ * Returns 0 if the owner is correctly associated to npage. Returns a negative
++ * value in case of failure.
++ **/
++int page_cgroup_copy_owner(struct page *npage, struct page *opage)
++{
++	struct page_cgroup *npc, *opc;
++	unsigned long id;
++
++	npc = lookup_page_cgroup(npage);
++	if (unlikely(!npc))
++		return -ENOENT;
++	opc = lookup_page_cgroup(opage);
++	if (unlikely(!opc))
++		return -ENOENT;
++	lock_page_cgroup(opc);
++	lock_page_cgroup(npc);
++	id = page_cgroup_get_id(opc);
++	page_cgroup_set_id(npc, id);
++	unlock_page_cgroup(npc);
++	unlock_page_cgroup(opc);
++
++	return 0;
++}
++
+ void __init page_cgroup_init(void)
+ {
+ 	unsigned long pfn;
+ 	int fail = 0;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && iothrottle_disabled())
+ 		return;
+ 
+ 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+@@ -257,14 +331,15 @@ void __init page_cgroup_init(void)
+ 		fail = init_section_page_cgroup(pfn);
+ 	}
+ 	if (fail) {
+-		printk(KERN_CRIT "try cgroup_disable=memory boot option\n");
++		printk(KERN_CRIT
++			"try cgroup_disable=memory,blockio boot option\n");
+ 		panic("Out of memory");
+ 	} else {
+ 		hotplug_memory_notifier(page_cgroup_callback, 0);
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
+-	" want\n");
++	printk(KERN_INFO
++		"try cgroup_disable=memory,blockio option if you don't want\n");
+ }
+ 
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
 -- 
 1.5.6.3
