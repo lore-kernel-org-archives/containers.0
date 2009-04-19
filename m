@@ -1,13 +1,19 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/7] res_counter: introduce ratelimiting attributes
-Date: Sat, 18 Apr 2009 23:38:27 +0200
-Message-ID: <1240090712-1058-3-git-send-email-righi.andrea__1244.6352783174$1240096987$gmane$org@gmail.com>
-References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
+From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: IO controller discussion (Was: Re: [PATCH 01/10] Documentation)
+Date: Sat, 18 Apr 2009 21:35:16 -0700
+Message-ID: <e98e18940904182135k7069e839vb749188647145bd4__15204.1791858666$1240116036$gmane$org@mail.gmail.com>
+References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
+	<1236823015-4183-2-git-send-email-vgoyal@redhat.com>
+	<20090312001146.74591b9d.akpm@linux-foundation.org>
+	<20090312180126.GI10919@redhat.com> <49D8CB17.7040501@gmail.com>
+	<20090407064046.GB20498@redhat.com> <20090408203756.GB10077@linux>
+	<20090416183753.GE8896@redhat.com> <20090417093656.GA5246@linux>
+	<20090417141358.GD29086@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240090712-1058-1-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090417141358.GD29086-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,245 +23,146 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, John Wilkes <johnwilkes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Introduce attributes and functions in res_counter to implement throttling-based
-cgroup subsystems.
+On Fri, Apr 17, 2009 at 7:13 AM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Fri, Apr 17, 2009 at 11:37:28AM +0200, Andrea Righi wrote:
+>> On Thu, Apr 16, 2009 at 02:37:53PM -0400, Vivek Goyal wrote:
+>> > > I think it would be possible to implement both proportional and limiting
+>> > > rules at the same level (e.g., the IO scheduler), but we need also to
+>> > > address the memory consumption problem (I still need to review your
+>> > > patchset in details and I'm going to test it soon :), so I don't know if
+>> > > you already addressed this issue).
+>> > >
+>> >
+>> > Can you please elaborate a bit on this? Are you concerned about that data
+>> > structures created to solve the problem consume a lot of memory?
+>>
+>> Sorry I was not very clear here. With memory consumption I mean wasting
+>> the memory with hard/slow reclaimable dirty pages or pending IO
+>> requests.
+>>
+>> If there's only a global limit on dirty pages, any cgroup can exhaust
+>> that limit and cause other cgroups/processes to block when they try to
+>> write to disk.
+>>
+>> But, ok, the IO controller is not probably the best place to implement
+>> such functionality. I should rework on the per cgroup dirty_ratio:
+>>
+>> https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
+>>
+>> Last time we focused too much on the best interfaces to define dirty
+>> pages limit, and I never re-posted an updated version of this patchset.
+>> Now I think we can simply provide the same dirty_ratio/dirty_bytes
+>> interface that we provide globally, but per cgroup.
+>>
+>> >
+>> > > IOW if we simply don't dispatch requests and we don't throttle the tasks
+>> > > in the cgroup that exceeds its limit, how do we avoid the waste of
+>> > > memory due to the succeeding IO requests and the increasingly dirty
+>> > > pages in the page cache (that are also hard to reclaim)? I may be wrong,
+>> > > but I think we talked about this problem in a previous email... sorry I
+>> > > don't find the discussion in my mail archives.
+>> > >
+>> > > IMHO a nice approach would be to measure IO consumption at the IO
+>> > > scheduler level, and control IO applying proportional weights / absolute
+>> > > limits _both_ at the IO scheduler / elevator level _and_ at the same
+>> > > time block the tasks from dirtying memory that will generate additional
+>> > > IO requests.
+>> > >
+>> > > Anyway, there's no need to provide this with a single IO controller, we
+>> > > could split the problem in two parts: 1) provide a proportional /
+>> > > absolute IO controller in the IO schedulers and 2) allow to set, for
+>> > > example, a maximum limit of dirty pages for each cgroup.
+>> > >
+>> >
+>> > I think setting a maximum limit on dirty pages is an interesting thought.
+>> > It sounds like as if memory controller can handle it?
+>>
+>> Exactly, the same above.
+>
+> Thinking more about it. Memory controller can probably enforce the higher
+> limit but it would not easily translate into a fixed upper async write
+> rate. Till the process hits the page cache limit or is slowed down by
+> dirty page writeout, it can get a very high async write BW.
+>
+> So memory controller page cache limit will help but it would not direclty
+> translate into what max bw limit patches are doing.
+>
+> Even if we do max bw control at IO scheduler level, async writes are
+> problematic again. IO controller will not be able to throttle the process
+> until it sees actuall write request. In big memory systems, writeout might
+> not happen for some time and till then it will see a high throughput.
+>
+> So doing async write throttling at higher layer and not at IO scheduler
+> layer gives us the opprotunity to produce more accurate results.
+>
+> For sync requests, I think IO scheduler max bw control should work fine.
+>
+> BTW, andrea, what is the use case of your patches? Andrew had mentioned
+> that some people are already using it. I am curious to know will a
+> proportional BW controller will solve the issues/requirements of these
+> people or they have specific requirement of traffic shaping and max bw
+> controller only.
+>
+> [..]
+>> > > > Can you please give little more details here regarding how QoS requirements
+>> > > > are not met with proportional weight?
+>> > >
+>> > > With proportional weights the whole bandwidth is allocated if no one
+>> > > else is using it. When IO is submitted other tasks with a higher weight
+>> > > can be forced to sleep until the IO generated by the low weight tasks is
+>> > > not completely dispatched. Or any extent of the priority inversion
+>> > > problems.
+>> >
+>> > Hmm..., I am not very sure here. When admin is allocating the weights, he
+>> > has the whole picture. He knows how many groups are conteding for the disk
+>> > and what could be the worst case scenario. So if I have got two groups
+>> > with A and B with weight 1 and 2 and both are contending, then as an
+>> > admin one would expect to get 33% of BW for group A in worst case (if
+>> > group B is continuously backlogged). If B is not contending than A can get
+>> > 100% of BW. So while configuring the system, will one not plan for worst
+>> > case (33% for A, and 66 % for B)?
+>>
+>> OK, I'm quite convinced.. :)
+>>
+>> To a large degree, if we want to provide a BW reservation strategy we
+>> must provide an interface that allows cgroups to ask for time slices
+>> such as max/min 5 IO requests every 50ms or something like that.
+>> Probably the same functionality can be achieved translating time slices
+>> from weights, percentages or absolute BW limits.
+>
+> Ok, I would like to split it in two parts.
+>
+> I think providng minimum gurantee in absolute terms like 5 IO request
+> every 50ms will be very hard because IO scheduler has no control over
+> how many competitors are there. An easier thing will be to have minimum
+> gurantees on share basis. For minimum BW (disk time slice) gurantee, admin
+> shall have to create right cgroup hierarchy and assign weights properly and
+> then admin can calculate what % of disk slice a particular group will get
+> as minimum gurantee. (This is more complicated than this as there are
+> time slices which are not accounted to any groups. During queue switch
+> cfq starts the time slice counting only after first request has completed
+> to offset the impact of seeking and i guess also NCQ).
 
-The following attributes have been added to struct res_counter:
- * @policy:     the limiting policy / algorithm
- * @capacity:   the maximum capacity of the resource
- * @timestamp:  timestamp of the last accounted resource request
+I agree with Vivek that absolute metrics like 5 IO requests every 50ms
+might be hard to offer. But 'x ms of disk time every y ms, for a given
+cgroup' might be a desirable goal. That said, for now we can focus on
+weight based allocation of disk time, and leave such goals for future.
 
-Currently the available policies are: token-bucket and leaky-bucket and the
-attribute @capacity is only used by token-bucket policy (to represent the
-bucket size).
-
-The following function has been implemented to return the amount of time a
-cgroup should sleep to remain within the defined resource limits.
-
-  unsigned long long
-  res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-
-[ Note: only the interfaces needed by the cgroup IO controller are implemented
-right now ]
-
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- include/linux/res_counter.h |   69 +++++++++++++++++++++++++++++++----------
- kernel/res_counter.c        |   72 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 124 insertions(+), 17 deletions(-)
-
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 4c5bcf6..9bed6af 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -14,30 +14,36 @@
-  */
- 
- #include <linux/cgroup.h>
-+#include <linux/jiffies.h>
- 
--/*
-- * The core object. the cgroup that wishes to account for some
-- * resource may include this counter into its structures and use
-- * the helpers described beyond
-- */
-+/* The various policies that can be used for ratelimiting resources */
-+#define	RATELIMIT_LEAKY_BUCKET	0
-+#define	RATELIMIT_TOKEN_BUCKET	1
- 
-+/**
-+ * struct res_counter - the core object to account cgroup resources
-+ *
-+ * @usage:	the current resource consumption level
-+ * @max_usage:	the maximal value of the usage from the counter creation
-+ * @limit:	the limit that usage cannot be exceeded
-+ * @failcnt:	the number of unsuccessful attempts to consume the resource
-+ * @policy:	the limiting policy / algorithm
-+ * @capacity:	the maximum capacity of the resource
-+ * @timestamp:	timestamp of the last accounted resource request
-+ * @lock:	the lock to protect all of the above.
-+ *		The routines below consider this to be IRQ-safe
-+ *
-+ * The cgroup that wishes to account for some resource may include this counter
-+ * into its structures and use the helpers described beyond.
-+ */
- struct res_counter {
--	/*
--	 * the current resource consumption level
--	 */
- 	unsigned long long usage;
--	/*
--	 * the maximal value of the usage from the counter creation
--	 */
- 	unsigned long long max_usage;
--	/*
--	 * the limit that usage cannot exceed
--	 */
- 	unsigned long long limit;
--	/*
--	 * the number of unsuccessful attempts to consume the resource
--	 */
- 	unsigned long long failcnt;
-+	unsigned long long policy;
-+	unsigned long long capacity;
-+	unsigned long long timestamp;
- 	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
-@@ -84,6 +90,9 @@ enum {
- 	RES_USAGE,
- 	RES_MAX_USAGE,
- 	RES_LIMIT,
-+	RES_POLICY,
-+	RES_TIMESTAMP,
-+	RES_CAPACITY,
- 	RES_FAILCNT,
- };
- 
-@@ -130,6 +139,15 @@ static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
- 	return false;
- }
- 
-+static inline unsigned long long
-+res_counter_ratelimit_delta_t(struct res_counter *res)
-+{
-+	return (long long)get_jiffies_64() - (long long)res->timestamp;
-+}
-+
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-+
- /*
-  * Helper function to detect if the cgroup is within it's limit or
-  * not. It's currently called from cgroup_rss_prepare()
-@@ -163,6 +181,23 @@ static inline void res_counter_reset_failcnt(struct res_counter *cnt)
- 	spin_unlock_irqrestore(&cnt->lock, flags);
- }
- 
-+static inline int
-+res_counter_ratelimit_set_limit(struct res_counter *cnt,
-+			unsigned long long policy,
-+			unsigned long long limit, unsigned long long max)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&cnt->lock, flags);
-+	cnt->limit = limit;
-+	cnt->capacity = max;
-+	cnt->policy = policy;
-+	cnt->timestamp = get_jiffies_64();
-+	cnt->usage = 0;
-+	spin_unlock_irqrestore(&cnt->lock, flags);
-+	return 0;
-+}
-+
- static inline int res_counter_set_limit(struct res_counter *cnt,
- 		unsigned long long limit)
- {
-diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index bf8e753..b62319c 100644
---- a/kernel/res_counter.c
-+++ b/kernel/res_counter.c
-@@ -9,6 +9,7 @@
- 
- #include <linux/types.h>
- #include <linux/parser.h>
-+#include <linux/jiffies.h>
- #include <linux/fs.h>
- #include <linux/slab.h>
- #include <linux/res_counter.h>
-@@ -20,6 +21,8 @@ void res_counter_init(struct res_counter *counter, struct res_counter *parent)
- 	spin_lock_init(&counter->lock);
- 	counter->limit = (unsigned long long)LLONG_MAX;
- 	counter->parent = parent;
-+	counter->capacity = (unsigned long long)LLONG_MAX;
-+	counter->timestamp = get_jiffies_64();
- }
- 
- int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
-@@ -99,6 +102,12 @@ res_counter_member(struct res_counter *counter, int member)
- 		return &counter->max_usage;
- 	case RES_LIMIT:
- 		return &counter->limit;
-+	case RES_POLICY:
-+		return &counter->policy;
-+	case RES_TIMESTAMP:
-+		return &counter->timestamp;
-+	case RES_CAPACITY:
-+		return &counter->capacity;
- 	case RES_FAILCNT:
- 		return &counter->failcnt;
- 	};
-@@ -163,3 +172,66 @@ int res_counter_write(struct res_counter *counter, int member,
- 	spin_unlock_irqrestore(&counter->lock, flags);
- 	return 0;
- }
-+
-+static unsigned long long
-+ratelimit_leaky_bucket(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long delta, t;
-+
-+	res->usage += val;
-+	delta = res_counter_ratelimit_delta_t(res);
-+	if (!delta)
-+		return 0;
-+	t = res->usage * USEC_PER_SEC;
-+	t = usecs_to_jiffies(div_u64(t, res->limit));
-+	if (t > delta)
-+		return t - delta;
-+	/* Reset i/o statistics */
-+	res->usage = 0;
-+	res->timestamp = get_jiffies_64();
-+	return 0;
-+}
-+
-+static unsigned long long
-+ratelimit_token_bucket(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long delta;
-+	long long tok;
-+
-+	res->usage -= val;
-+	delta = jiffies_to_msecs(res_counter_ratelimit_delta_t(res));
-+	res->timestamp = get_jiffies_64();
-+	tok = (long long)res->usage * MSEC_PER_SEC;
-+	if (delta) {
-+		long long max = (long long)res->capacity * MSEC_PER_SEC;
-+
-+		tok += delta * res->limit;
-+		if (tok > max)
-+			tok = max;
-+		res->usage = (unsigned long long)div_s64(tok, MSEC_PER_SEC);
-+	}
-+	return (tok < 0) ? msecs_to_jiffies(div_u64(-tok, res->limit)) : 0;
-+}
-+
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long sleep = 0;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&res->lock, flags);
-+	if (res->limit)
-+		switch (res->policy) {
-+		case RATELIMIT_LEAKY_BUCKET:
-+			sleep = ratelimit_leaky_bucket(res, val);
-+			break;
-+		case RATELIMIT_TOKEN_BUCKET:
-+			sleep = ratelimit_token_bucket(res, val);
-+			break;
-+		default:
-+			WARN_ON(1);
-+			break;
-+		}
-+	spin_unlock_irqrestore(&res->lock, flags);
-+	return sleep;
-+}
--- 
-1.5.6.3
+>
+> I think it should be possible to give max bandwidth gurantees in absolute
+> terms, like io/s or sectors/sec or MB/sec etc, because only thing IO
+> scheduler has to do is to not allow dispatch from a particular queue if
+> it has crossed its limit and then either let the disk idle or move onto
+> next eligible queue.
+>
+> The only issue here will be async writes. max bw gurantee for async writes
+> at IO scheduler level might not mean much to application because of page
+> cache.
+>
+> Thanks
+> Vivek
+>
