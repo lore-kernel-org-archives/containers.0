@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/9] io-throttle documentation
-Date: Sun, 19 Apr 2009 09:42:01 -0400
-Message-ID: <20090419134201.GF8493@redhat.com>
+Date: Sun, 19 Apr 2009 09:54:28 -0400
+Message-ID: <20090419135428.GH8493@redhat.com>
 References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
 	<1239740480-28125-2-git-send-email-righi.andrea@gmail.com>
 	<20090417173955.GF29086@redhat.com> <20090417231244.GB6972@linux>
@@ -82,11 +82,6 @@ On Sat, Apr 18, 2009 at 01:12:45AM +0200, Andrea Righi wrote:
 > cgroup BW and iops/sec limits, then kiothrottled periodically selects
 > and dispatches the requests with an elapsed deadline.
 > 
-
-Ok, i will look into the logic of translating cgroup BW limits into
-deadline. But as Nauman pointed out that we probably will run into 
-issues of tasks with in cgroup as we loose that notion of class and prio.
-
 > > 
 > > If that's the case, will a process not see an increased rate of writes
 > > till we are not hitting dirty_background_ratio?
@@ -95,19 +90,6 @@ issues of tasks with in cgroup as we loose that notion of class and prio.
 > smooth BW usage (according to the cgroup limits I mean) even in presence
 > of writeback IO only.
 > 
-
-Hmm.., I am not able to understand this. The very fact that you will see
-a high rate of async writes (more than specified by cgroup max BW), till
-you hit dirty_background_ratio, isn't it against the goals of max bw
-controller? You wanted to see a consistent view of rate even if spare BW
-is available, and this scenario goes against that? 
-
-Think of an hypothetical configuration of 10G RAM with dirty ratio say
-set to 20%. Assume not much of write out is taking place in the system.
-So for first 2G of writes, application will be able to write it at cpu
-speed and no throttling will kick in and a cgroup will easily cross it
-max BW? 
-  
 > > 
 > > Secondly, if above is giving acceptable performance resutls, then we
 > > should be able to provide max bw control at IO scheduler level (along
@@ -131,22 +113,9 @@ max BW?
 > or select the best from ours patchsets.
 > 
 
-Are we not already controlling submission of request (at crude level).
-If application is doing writeout at high rate, then it hits vm_dirty_ratio
-hits and this application is forced to do write out and hence it is slowed
-down and is not allowed to submit writes at high rate.
-
-Just that it is not a very fair scheme right now as during right out
-a high prio/high weight cgroup application can start writing out some
-other cgroups' pages.
-
-For this we probably need to have some combination of solutions like
-per cgroup upper limit on dirty pages. Secondly probably if an application
-is slowed down because of hitting vm_drity_ratio, it should try to
-write out the inode it is dirtying first instead of picking any random
-inode and associated pages. This will ensure that a high weight
-application can quickly get through the write outs and see higher
-throughput from the disk.
+Hmm..., thinking more about it, it reminded me of one problem though
+of doing it at IO scheduler level. Its very hard to provide max bw control
+at intermediate logical devices (ex, software raid configurations).
 
 Thanks
 Vivek
