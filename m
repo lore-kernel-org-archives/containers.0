@@ -1,19 +1,19 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/9] bio-cgroup controller
-Date: Tue, 21 Apr 2009 21:01:37 +0530
-Message-ID: <20090421153137.GL19637__45784.2873562642$1240328244$gmane$org@balbir.in.ibm.com>
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Tue, 21 Apr 2009 12:35:37 -0400
+Message-ID: <20090421163537.GI19186__22306.9718610079$1240332199$gmane$org@mit.edu>
 References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
-	<1239740480-28125-4-git-send-email-righi.andrea@gmail.com>
-	<20090417102214.GC3896@balbir.in.ibm.com>
-	<20090420.203540.104031006.ryov@valinux.co.jp>
-	<20090420145658.GB13307@linux>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
+	<20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
+	<20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
+	<20090421083001.GA8441@linux> <20090421140631.GF19186@mit.edu>
+	<20090421143130.GA22626@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090420145658.GB13307@linux>
+In-Reply-To: <20090421143130.GA22626@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,50 +23,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.orgl
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2009-04-20 16:56:59]:
-
-> On Mon, Apr 20, 2009 at 08:35:40PM +0900, Ryo Tsuruta wrote:
-> > > > +/*
-> > > > + * Assign "page" the same owner as "opage."
-> > > > + */
-> > > > +void bio_cgroup_copy_owner(struct page *npage, struct page *opage)
-> > > > +{
-> > > > +	struct page_cgroup *npc, *opc;
-> > > > +
-> > > > +	if (bio_cgroup_disabled())
-> > > > +		return;
-> > > > +	npc = lookup_page_cgroup(npage);
-> > > > +	if (unlikely(!npc))
-> > > > +		return;
-> > > > +	opc = lookup_page_cgroup(opage);
-> > > > +	if (unlikely(!opc))
-> > > > +		return;
-> > > > +
-> > > > +	/*
-> > > > +	 * Do this without any locks. The reason is the same as
-> > > > +	 * bio_cgroup_reset_owner().
-> > > > +	 */
-> > > > +	npc->bio_cgroup_id = opc->bio_cgroup_id;
-> > > 
-> > > What protects npc and opc?
-> > 
-> > As the same reason mentioned above, bio_cgroup_id can be updated
-> > without any locks, and npc and opc always point to page_cgroups.
-> > An integer variable can be set a new value at once on a system which
-> > can use RCU lock.
+On Tue, Apr 21, 2009 at 04:31:31PM +0200, Andrea Righi wrote:
 > 
-> mmmh... I'm not sure about this. Actually you read opc->bio_cgroup_id
-> first and then write to npc->bio_cgroup_id, so it is not atomic at all.
-> So, you can read or set a wrong ID, but at least it should be always
-> consistent (the single read or write itself is atomic).
+> Some months ago I posted a proposal to account, track and limit per
+> cgroup dirty pages in the memory cgroup subsystem:
+> 
+> https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
+> 
+> At the moment I'm reworking on a similar and updated version. I know
+> that Kamezawa is also implementing something to account per cgroup dirty
+> pages in memory cgroup.
+> 
+> Moreover, io-throttle v14 already uses the page_cgroup structure to
+> encode into page_cgroup->flags the cgroup ID (io-throttle css_id()
+> actually) that originally dirtied the page.
+> 
+> This should be enough to track dirty pages and charge the right cgroup.
 
-Quick concern here, how long does it take for the data to become
-consistent? Can we have a group misuse the bandwidth during that time?
-What about conditions where you have a wrong ID, but the group
-associated with the wrong ID is gone?
+I'm not convinced this will work that well.  Right now the associating
+a page with a cgroup is done on a very rough basis --- basically,
+whoever touches a page last "owns" the page.  That means if one
+process first tries reading from the cgroup, it will "own" the page.
+This can get quite arbitrary for shared libraries, for example.
+However, while it may be the best that you can do for RSS accounting,
+it gets worse for tracking dirties pages.
 
--- 
-	Balbir
+Now if you have processes from one cgroup that always reading from
+some data file, and a process from another cgroup which is updating
+said data file, the writes won't be charged to the correct cgroup.
+
+So using the same data structures to assign page ownership for RSS
+accounting and page dirtying accounting might not be such a great
+idea.  On the other hand, using a completely different set of data
+structures increases your overhead.
+
+That being said, it's not obvious to me that trying to track RSS
+ownership on a per-page basis makes sense.  It may not be worth the
+overhead, particularly on a machine with a truly large amount of
+memory.  So for example, tracking on a per vm_area_struct, and
+splitting the cost across cgroups, might be a better way of tracking
+RSS accounting.  But for dirty pages, where there will be much fewer
+such pages, maybe using a per-page scheme makes more sense.  The
+take-home here is that using different mechanisms for tracking RSS
+accounting and dirty page accounting on a per-cgroup basis, with the
+understanding that this will all be horribly rough and non-exact, may
+make a lot of sense.
+
+Best,
+
+					- Ted
