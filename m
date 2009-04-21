@@ -1,20 +1,19 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
 Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
-Date: Tue, 21 Apr 2009 22:53:17 +0530
-Message-ID: <20090421172317.GM19637__10977.8292746798$1240334920$gmane$org@balbir.in.ibm.com>
-References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
-	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
+Date: Tue, 21 Apr 2009 13:46:20 -0400
+Message-ID: <20090421174620.GD15541__38657.9534657814$1240336491$gmane$org@mit.edu>
+References: <1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
 	<20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
 	<20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
 	<20090421083001.GA8441@linux> <20090421140631.GF19186@mit.edu>
 	<20090421143130.GA22626@linux> <20090421163537.GI19186@mit.edu>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<20090421172317.GM19637@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090421163537.GI19186-3s7WtUTddSA@public.gmane.org>
+In-Reply-To: <20090421172317.GM19637-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,72 +23,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Gui Jianfeng <guijianfeng-LZPS87bAVCA@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org> [2009-04-21 12:35:37]:
+On Tue, Apr 21, 2009 at 10:53:17PM +0530, Balbir Singh wrote:
+> Coming to the dirty page tracking issue, the issue that is being
+> brought about is the same issue that we have shared page accounting. I
+> am working on estimates for shared page accounting and it should be
+> possible to extend it to dirty shared page accounting. Using the
+> shared ratios for decisions might be a better strategy.
 
-> On Tue, Apr 21, 2009 at 04:31:31PM +0200, Andrea Righi wrote:
-> > 
-> > Some months ago I posted a proposal to account, track and limit per
-> > cgroup dirty pages in the memory cgroup subsystem:
-> > 
-> > https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
-> > 
-> > At the moment I'm reworking on a similar and updated version. I know
-> > that Kamezawa is also implementing something to account per cgroup dirty
-> > pages in memory cgroup.
-> > 
-> > Moreover, io-throttle v14 already uses the page_cgroup structure to
-> > encode into page_cgroup->flags the cgroup ID (io-throttle css_id()
-> > actually) that originally dirtied the page.
-> > 
-> > This should be enough to track dirty pages and charge the right cgroup.
-> 
-> I'm not convinced this will work that well.  Right now the associating
-> a page with a cgroup is done on a very rough basis --- basically,
-> whoever touches a page last "owns" the page.  That means if one
-> process first tries reading from the cgroup, it will "own" the page.
-> This can get quite arbitrary for shared libraries, for example.
-> However, while it may be the best that you can do for RSS accounting,
-> it gets worse for tracking dirties pages.
-> 
-> Now if you have processes from one cgroup that always reading from
-> some data file, and a process from another cgroup which is updating
-> said data file, the writes won't be charged to the correct cgroup.
-> 
-> So using the same data structures to assign page ownership for RSS
-> accounting and page dirtying accounting might not be such a great
-> idea.  On the other hand, using a completely different set of data
-> structures increases your overhead.
-> 
-> That being said, it's not obvious to me that trying to track RSS
-> ownership on a per-page basis makes sense.  It may not be worth the
-> overhead, particularly on a machine with a truly large amount of
-> memory.  So for example, tracking on a per vm_area_struct, and
-> splitting the cost across cgroups, might be a better way of tracking
-> RSS accounting.  But for dirty pages, where there will be much fewer
-> such pages, maybe using a per-page scheme makes more sense.  The
-> take-home here is that using different mechanisms for tracking RSS
-> accounting and dirty page accounting on a per-cgroup basis, with the
-> understanding that this will all be horribly rough and non-exact, may
-> make a lot of sense.
-> 
+It's the same issue, but again, consider the use case where the
+readers and the writers are in different cgroups.  This can happen
+quite often in database workloads, where you might have many readers,
+and a single process doing the database update.  Or the case where you
+have one process in one cgroup doing a tail -f of some log file, and
+another process doing writing to the log file.
 
-We need to do this tracking for per cgroup reclaim, we need to track
-pages in their own LRU. I've been working on some optimizations not to
-track LRU pages for the largest cgroup (or root cgroup mostly) to help
-optimize the memory resource controller, but I've not posted them out
-yet. We also have a mechanism by which a page reclaimed from one
-cgroup, might stay back in the global LRU and get reassigned depending
-on usage.
+Using a shared ratio is certainly better than charging 100% of the
+write to whichever unfortunate process happened to first read the
+page, but it will still not be terribly accurate.  A lot really
+depends on how you expect these cgroup limits will be used, and what
+the requirements actually will be with respect to accuracy.  If the
+requirements for accuracy are different for RSS tracking and dirty
+page tracking --- which could easily be the case, since memory is
+usually much cheaper than I/O bandwidth, and there is generally far
+more clean memory pages than there are dirty memory pages, so a small
+numberical error in dirty page accounting translates to a much larger
+percentage error than read-only RSS page accounting --- it may make
+sense to use different mechanisms for tracking the two, given the
+different requirements and differring overhead implications.
 
-Coming to the dirty page tracking issue, the issue that is being
-brought about is the same issue that we have shared page accounting. I
-am working on estimates for shared page accounting and it should be
-possible to extend it to dirty shared page accounting. Using the
-shared ratios for decisions might be a better strategy.
+Anyway, something for you to think about.
 
+Regards,
 
--- 
-	Balbir
+						- Ted
