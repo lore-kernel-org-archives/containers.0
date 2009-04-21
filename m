@@ -1,17 +1,19 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
-Date: Tue, 21 Apr 2009 10:30:02 +0200
-Message-ID: <20090421083001.GA8441__31189.0573510484$1240302869$gmane$org@linux>
+Subject: Re: [PATCH 1/9] io-throttle documentation
+Date: Tue, 21 Apr 2009 10:37:03 +0200
+Message-ID: <20090421083702.GC8441__32805.6707549424$1240303190$gmane$org@linux>
 References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
-	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
-	<20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
-	<20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
+	<1239740480-28125-2-git-send-email-righi.andrea@gmail.com>
+	<20090417173955.GF29086@redhat.com> <20090417231244.GB6972@linux>
+	<20090419134201.GF8493@redhat.com> <20090419154717.GB5514@linux>
+	<20090420212827.GA9080@redhat.com> <20090420220511.GA8740@linux>
+	<20090421010846.GA15850@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090421001822.GB19186-3s7WtUTddSA@public.gmane.org>
+In-Reply-To: <20090421010846.GA15850-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,85 +23,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 20, 2009 at 08:18:22PM -0400, Theodore Tso wrote:
-> On Fri, Apr 17, 2009 at 04:39:05PM +0200, Andrea Righi wrote:
+On Mon, Apr 20, 2009 at 09:08:46PM -0400, Vivek Goyal wrote:
+> On Tue, Apr 21, 2009 at 12:05:12AM +0200, Andrea Righi wrote:
+> 
+> [..]
+> > > > > Are we not already controlling submission of request (at crude level).
+> > > > > If application is doing writeout at high rate, then it hits vm_dirty_ratio
+> > > > > hits and this application is forced to do write out and hence it is slowed
+> > > > > down and is not allowed to submit writes at high rate.
+> > > > > 
+> > > > > Just that it is not a very fair scheme right now as during right out
+> > > > > a high prio/high weight cgroup application can start writing out some
+> > > > > other cgroups' pages.
+> > > > > 
+> > > > > For this we probably need to have some combination of solutions like
+> > > > > per cgroup upper limit on dirty pages. Secondly probably if an application
+> > > > > is slowed down because of hitting vm_drity_ratio, it should try to
+> > > > > write out the inode it is dirtying first instead of picking any random
+> > > > > inode and associated pages. This will ensure that a high weight
+> > > > > application can quickly get through the write outs and see higher
+> > > > > throughput from the disk.
+> > > > 
+> > > > For the first, I submitted a patchset some months ago to provide this
+> > > > feature in the memory controller:
+> > > > 
+> > > > https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
+> > > > 
+> > > > We focused on the best interface to use for setting the dirty pages
+> > > > limit, but we didn't finalize it. I can rework on that and repost an
+> > > > updated version. Now that we have the dirty_ratio/dirty_bytes to set the
+> > > > global limit I think we can use the same interface and the same semantic
+> > > > within the cgroup fs, something like:
+> > > > 
+> > > >   memory.dirty_ratio
+> > > >   memory.dirty_bytes
+> > > > 
+> > > > For the second point something like this should be enough to force tasks
+> > > > to write out only the inode they're actually dirtying when they hit the
+> > > > vm_dirty_ratio limit. But it should be tested carefully and may cause
+> > > > heavy performance regressions.
+> > > > 
+> > > > Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > > > ---
+> > > >  mm/page-writeback.c |    2 +-
+> > > >  1 files changed, 1 insertions(+), 1 deletions(-)
+> > > > 
+> > > > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> > > > index 2630937..1e07c9d 100644
+> > > > --- a/mm/page-writeback.c
+> > > > +++ b/mm/page-writeback.c
+> > > > @@ -543,7 +543,7 @@ static void balance_dirty_pages(struct address_space *mapping)
+> > > >  		 * been flushed to permanent storage.
+> > > >  		 */
+> > > >  		if (bdi_nr_reclaimable) {
+> > > > -			writeback_inodes(&wbc);
+> > > > +			sync_inode(mapping->host, &wbc);
+> > > >  			pages_written += write_chunk - wbc.nr_to_write;
+> > > >  			get_dirty_limits(&background_thresh, &dirty_thresh,
+> > > >  				       &bdi_thresh, bdi);
+> > > 
+> > > This patch seems to be helping me a bit in getting more service
+> > > differentiation between two writer dd of different weights. But strangely
+> > > it is helping only for ext3 and not ext4. Debugging is on.
 > > 
-> > Exactly, the purpose here is is to prioritize the dispatching of journal
-> > IO requests in the IO controller. I may have used an inappropriate flag
-> > or a quick&dirty solution, but without this, any cgroup/process that
-> > generates a lot of journal activity may be throttled and cause other
-> > cgroups/processes to be incorrectly blocked when they try to write to
-> > disk.
+> > Are you explicitly mounting ext3 with data=ordered?
 > 
-> With ext3 and ext4, all journal I/O requests end up going through
-> kjournald.  So the question is what I/O control group do you put
-> kjournald in?  If you unrestrict it, it makes the problem go away
-> entirely.  On the other hand, it is doing work on behalf of other
-> processes, and there is no real way to separate out on whose behalf
-> kjournald is doing said work.  So I'm not sure fundamentally you'll be
-> able to do much with any filesystem journalling activity --- and ext3
-> makes life especially bad because of data=ordered mode. 
-
-OK, I've just removed the ext3/ext4 patch from io-throttle v14 and
-results are pretty the same. BTW I can't even prioritize all the
-BIO_RW_SYNC, because in this way all the direct IO would be never
-limited at all. Or at least I should add something like a
-is_in_direct_io() check or kind of.
-
-Anyway, I agree and I think it's reasonable to always leave kiojournald
-into the root cgroup, and doesn't set any IO limit for that cgroup.
-
-But I wouldn't add additional checks for this, at the end we know that
-"Unix gives you just enough rope to hang yourself".
-
+> Yes. Still using 29-rc8 and data=ordered was the default then.
 > 
-> > > I'm assuming it's the "usual" problem with lower priority IO getting
-> > > access to fs exclusive data. It's quite trivial to cause problems with
-> > > higher IO priority tasks then getting stuck waiting for the low priority
-> > > process, since they also need to access that fs exclusive data.
-> > 
-> > Right. I thought about using the BIO_RW_SYNC flag instead, but as Ted
-> > pointed out, some cgroups/processes might be able to evade the IO
-> > control issuing a lot of fsync()s. We could also limit the fsync()-rate
-> > into the IO controller, but it sounds like a dirty workaround...
+> I got two partitions on same disk and created one ext3 filesystem on each
+> partition (just to take journaling intereference out of two dd threads 
+> for the time being).
 > 
-> Well, if you use data=writeback or Chris Mason's proposed data=guarded
-> mode, then at least all of the data blocks will be written process
-> context of the application, and not kjournald's process context.  So
-> one solution that might be the best that we have for now is to treat
-> kjournald as special from an I/O controller point of view (i.e., give
-> it its own cgroup), and then use a filesystem mode which avoids data
-> blocks getting written in kjournald (i.e., ext3 data=wirteback or
-> data=guarded, ext4's delayed allocation, etc.)
+> Two dd threads doing writes to each partition. 
 
-Agree.
+...and if you're using data=writeback with ext4 sync_inode() should sync
+the metadata only. If this is the case, could you check data=ordered
+also for ext4?
 
-> 
-> One major form of leakage that you're still going to have is pdflush;
-> which again, is more I/O happening in somebody else's process context.
-> Ultimately I think trying to throttle I/O at write submission time
-> whether at entry into block layer or in the elevators, is going to be
-> highly problematic.  Suppose someone dirties a large number of pages?
-> That's a system resource, and delaying the writes because a particular
-> container has used more than its fair share will cause the entire
-> system to run out of memory, which is not a good thing.
-> 
-> Ultimately, I think you'll need to do is write throttling, and suspend
-> processes that are dirtying too many pages, instad of trying to
-> control the I/O.
-
-We're trying to address also this issue, setting max dirty pages limit
-per cgroup, and force a direct writeback when these limits are exceeded.
-
-In this case dirty ratio throttling should happen automatically because
-the process will be throttled by the IO controller when it tries to
-writeback the dirty pages and submit IO requests.
-
-What's your opinion?
-
-Thanks,
 -Andrea
