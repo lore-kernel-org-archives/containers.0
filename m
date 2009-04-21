@@ -1,14 +1,17 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/7] res_counter: introduce ratelimiting attributes
-Date: Tue, 21 Apr 2009 09:15:34 +0900
-Message-ID: <20090421091534.971f676f.kamezawa.hiroyu__36744.6882105016$1240273257$gmane$org@jp.fujitsu.com>
-References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
-	<1240090712-1058-3-git-send-email-righi.andrea@gmail.com>
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Mon, 20 Apr 2009 20:18:22 -0400
+Message-ID: <20090421001822.GB19186__21019.2178762101$1240273469$gmane$org@mit.edu>
+References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
+	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
+	<20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
+	<20090417143903.GA30365@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240090712-1058-3-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090417143903.GA30365@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,100 +21,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, KAMEZAWA
 List-Id: containers.vger.kernel.org
 
-On Sat, 18 Apr 2009 23:38:27 +0200
-Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+On Fri, Apr 17, 2009 at 04:39:05PM +0200, Andrea Righi wrote:
+> 
+> Exactly, the purpose here is is to prioritize the dispatching of journal
+> IO requests in the IO controller. I may have used an inappropriate flag
+> or a quick&dirty solution, but without this, any cgroup/process that
+> generates a lot of journal activity may be throttled and cause other
+> cgroups/processes to be incorrectly blocked when they try to write to
+> disk.
 
-> Introduce attributes and functions in res_counter to implement throttling-based
-> cgroup subsystems.
-> 
-> The following attributes have been added to struct res_counter:
->  * @policy:     the limiting policy / algorithm
->  * @capacity:   the maximum capacity of the resource
->  * @timestamp:  timestamp of the last accounted resource request
-> 
-> Currently the available policies are: token-bucket and leaky-bucket and the
-> attribute @capacity is only used by token-bucket policy (to represent the
-> bucket size).
-> 
-> The following function has been implemented to return the amount of time a
-> cgroup should sleep to remain within the defined resource limits.
-> 
->   unsigned long long
->   res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-> 
-> [ Note: only the interfaces needed by the cgroup IO controller are implemented
-> right now ]
-> 
-> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  include/linux/res_counter.h |   69 +++++++++++++++++++++++++++++++----------
->  kernel/res_counter.c        |   72 +++++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 124 insertions(+), 17 deletions(-)
-> 
-> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-> index 4c5bcf6..9bed6af 100644
-> --- a/include/linux/res_counter.h
-> +++ b/include/linux/res_counter.h
-> @@ -14,30 +14,36 @@
->   */
->  
->  #include <linux/cgroup.h>
-> +#include <linux/jiffies.h>
->  
-> -/*
-> - * The core object. the cgroup that wishes to account for some
-> - * resource may include this counter into its structures and use
-> - * the helpers described beyond
-> - */
-> +/* The various policies that can be used for ratelimiting resources */
-> +#define	RATELIMIT_LEAKY_BUCKET	0
-> +#define	RATELIMIT_TOKEN_BUCKET	1
->  
-> +/**
-> + * struct res_counter - the core object to account cgroup resources
-> + *
-> + * @usage:	the current resource consumption level
-> + * @max_usage:	the maximal value of the usage from the counter creation
-> + * @limit:	the limit that usage cannot be exceeded
-> + * @failcnt:	the number of unsuccessful attempts to consume the resource
-> + * @policy:	the limiting policy / algorithm
-> + * @capacity:	the maximum capacity of the resource
-> + * @timestamp:	timestamp of the last accounted resource request
-> + * @lock:	the lock to protect all of the above.
-> + *		The routines below consider this to be IRQ-safe
-> + *
-> + * The cgroup that wishes to account for some resource may include this counter
-> + * into its structures and use the helpers described beyond.
-> + */
->  struct res_counter {
-> -	/*
-> -	 * the current resource consumption level
-> -	 */
->  	unsigned long long usage;
-> -	/*
-> -	 * the maximal value of the usage from the counter creation
-> -	 */
->  	unsigned long long max_usage;
-> -	/*
-> -	 * the limit that usage cannot exceed
-> -	 */
->  	unsigned long long limit;
-> -	/*
-> -	 * the number of unsuccessful attempts to consume the resource
-> -	 */
->  	unsigned long long failcnt;
-> +	unsigned long long policy;
-> +	unsigned long long capacity;
-> +	unsigned long long timestamp;
->  
-Andrea, sizeof(struct res_counter) is getting close to 128bytes. (maybe someone adds more)
-Then, could you check "unsigned long or unsigned int" is allowed or not, again ?
+With ext3 and ext4, all journal I/O requests end up going through
+kjournald.  So the question is what I/O control group do you put
+kjournald in?  If you unrestrict it, it makes the problem go away
+entirely.  On the other hand, it is doing work on behalf of other
+processes, and there is no real way to separate out on whose behalf
+kjournald is doing said work.  So I'm not sure fundamentally you'll be
+able to do much with any filesystem journalling activity --- and ext3
+makes life especially bad because of data=ordered mode. 
 
-It's very bad if cacheline of spinlock is different from data field, in future.
+> > I'm assuming it's the "usual" problem with lower priority IO getting
+> > access to fs exclusive data. It's quite trivial to cause problems with
+> > higher IO priority tasks then getting stuck waiting for the low priority
+> > process, since they also need to access that fs exclusive data.
+> 
+> Right. I thought about using the BIO_RW_SYNC flag instead, but as Ted
+> pointed out, some cgroups/processes might be able to evade the IO
+> control issuing a lot of fsync()s. We could also limit the fsync()-rate
+> into the IO controller, but it sounds like a dirty workaround...
 
-Thanks,
--Kame
+Well, if you use data=writeback or Chris Mason's proposed data=guarded
+mode, then at least all of the data blocks will be written process
+context of the application, and not kjournald's process context.  So
+one solution that might be the best that we have for now is to treat
+kjournald as special from an I/O controller point of view (i.e., give
+it its own cgroup), and then use a filesystem mode which avoids data
+blocks getting written in kjournald (i.e., ext3 data=wirteback or
+data=guarded, ext4's delayed allocation, etc.)
+
+One major form of leakage that you're still going to have is pdflush;
+which again, is more I/O happening in somebody else's process context.
+Ultimately I think trying to throttle I/O at write submission time
+whether at entry into block layer or in the elevators, is going to be
+highly problematic.  Suppose someone dirties a large number of pages?
+That's a system resource, and delaying the writes because a particular
+container has used more than its fair share will cause the entire
+system to run out of memory, which is not a good thing.
+
+Ultimately, I think you'll need to do is write throttling, and suspend
+processes that are dirtying too many pages, instad of trying to
+control the I/O.
+
+					- Ted
