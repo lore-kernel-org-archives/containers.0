@@ -1,20 +1,18 @@
-From: "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 4/7] io-throttle controller infrastructure
-Date: Tue, 21 Apr 2009 07:03:23 -0700
-Message-ID: <20090421140323.GA6642__26520.8540288315$1240322920$gmane$org@linux.vnet.ibm.com>
-References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
-	<1240090712-1058-5-git-send-email-righi.andrea@gmail.com>
-	<20090420175904.GD6822@linux.vnet.ibm.com>
-	<20090420212225.GA5819@linux>
-	<20090421041524.GB6939@linux.vnet.ibm.com>
-	<20090421125829.GD13699@linux>
-Reply-To: paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Tue, 21 Apr 2009 10:06:31 -0400
+Message-ID: <20090421140631.GF19186__45200.7724009038$1240323027$gmane$org@mit.edu>
+References: <1239740480-28125-1-git-send-email-righi.andrea@gmail.com>
+	<1239740480-28125-10-git-send-email-righi.andrea@gmail.com>
+	<20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
+	<20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
+	<20090421083001.GA8441@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090421125829.GD13699@linux>
+In-Reply-To: <20090421083001.GA8441@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,65 +23,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 21, 2009 at 02:58:30PM +0200, Andrea Righi wrote:
-> On Mon, Apr 20, 2009 at 09:15:24PM -0700, Paul E. McKenney wrote:
-> > > > How does the above lock relate to the iot->lock called out in the comment
-> > > > headers in the earlier functions?  Hmmm...  Come to think of it, I don't
-> > > > see an acquisition of iot->lock anywhere.
-> > > > 
-> > > > So, what is the story here?
-> > > 
-> > > As said before, only the comment in struct iothrottle is correct, we use
-> > > cgroup_lock() to protect iot->list, so there's no need to introduce
-> > > another lock inside struct iothrottle.
-> > > 
-> > > And the other comments about iot->lock must be fixed.
-> > 
-> > Sounds good!
-> > 
-> > So this code is compiled into the kernel only when cgroups are defined,
-> > correct?  Otherwise, cgroup_lock() seems to be an empty function.
+On Tue, Apr 21, 2009 at 10:30:02AM +0200, Andrea Righi wrote:
 > 
-> Right, from init/Kconfig:
+> We're trying to address also this issue, setting max dirty pages limit
+> per cgroup, and force a direct writeback when these limits are exceeded.
 > 
-> config CGROUP_IO_THROTTLE
->         bool "Enable cgroup I/O throttling"
->         depends on CGROUPS && RESOURCE_COUNTERS && EXPERIMENTAL
-> ...
+> In this case dirty ratio throttling should happen automatically because
+> the process will be throttled by the IO controller when it tries to
+> writeback the dirty pages and submit IO requests.
 
-Fair enough!
+The challenge here will be the accounting; consider that you may have
+a file that had some of its pages in its page cache dirtied by a
+process in cgroup A.  Now another process in cgroup B dirties some
+more pages.  This could happen either via a mmap'ed file or via the
+standard read/write system calls.  How do you track which dirty pages
+should be charged against which cgroup?
 
-> > > > > +int iothrottle_set_page_owner(struct page *page, struct mm_struct *mm)
-> > > > > +{
-> > > > > +	struct iothrottle *iot;
-> > > > > +	unsigned short id = 0;
-> > > > > +
-> > > > > +	if (iothrottle_disabled())
-> > > > > +		return 0;
-> > > > > +	if (!mm)
-> > > > > +		goto out;
-> > > > > +	rcu_read_lock();
-> > > > > +	iot = task_to_iothrottle(rcu_dereference(mm->owner));
-> > > > 
-> > > > Given that task_to_iothrottle() calls task_subsys_state(), which contains
-> > > > an rcu_dereference(), why is the rcu_dereference() above required?
-> > > > (There might well be a good reason, just cannot see it right offhand.)
-> > > 
-> > > The first rcu_dereference() is required to safely get a task_struct from
-> > > mm_struct. The second rcu_dereference() inside task_to_iothrottle() is
-> > > required to safely get the struct iothrottle from task_struct.
-> > 
-> > Why not put the rcu_dereference() down inside task_to_iothrottle()?
-> 
-> mmmh... it is needed only when task_struct is taken from mm->owner,
-> task_to_iothrottle(current) for example works fine without the
-> rcu_dereference(current).
-
-OK...  But please note that rcu_dereference() is extremely lightweight,
-a couple orders of magnitude cheaper than an uncontended lock.  So there
-is almost no penalty for using it on the task_to_iothrottle() path.
-
-							Thanx, Paul
+							- Ted
