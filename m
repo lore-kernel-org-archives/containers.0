@@ -1,20 +1,19 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
-Date: Tue, 21 Apr 2009 23:44:29 +0530
-Message-ID: <20090421181429.GO19637__31051.2998061769$1240338029$gmane$org@balbir.in.ibm.com>
-References: <20090417123805.GC7117@mit.edu> <20090417125004.GY4593@kernel.dk>
-	<20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
-	<20090421083001.GA8441@linux> <20090421140631.GF19186@mit.edu>
-	<20090421143130.GA22626@linux> <20090421163537.GI19186@mit.edu>
-	<20090421172317.GM19637@balbir.in.ibm.com>
-	<20090421174620.GD15541@mit.edu>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/9] io-throttle documentation
+Date: Tue, 21 Apr 2009 14:29:58 -0400
+Message-ID: <20090421182958.GF22619@redhat.com>
+References: <1239740480-28125-2-git-send-email-righi.andrea@gmail.com>
+	<20090417173955.GF29086@redhat.com> <20090417231244.GB6972@linux>
+	<20090419134201.GF8493@redhat.com> <20090419154717.GB5514@linux>
+	<20090420212827.GA9080@redhat.com> <20090420220511.GA8740@linux>
+	<20090421010846.GA15850@redhat.com> <20090421083702.GC8441@linux>
+	<20090421142305.GB22619@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090421174620.GD15541-3s7WtUTddSA@public.gmane.org>
+In-Reply-To: <20090421142305.GB22619-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,51 +23,111 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Gui Jianfeng <guijianfeng-LZPS87bAVCA@public.gmane.org>
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org> [2009-04-21 13:46:20]:
-
-> On Tue, Apr 21, 2009 at 10:53:17PM +0530, Balbir Singh wrote:
-> > Coming to the dirty page tracking issue, the issue that is being
-> > brought about is the same issue that we have shared page accounting. I
-> > am working on estimates for shared page accounting and it should be
-> > possible to extend it to dirty shared page accounting. Using the
-> > shared ratios for decisions might be a better strategy.
+On Tue, Apr 21, 2009 at 10:23:05AM -0400, Vivek Goyal wrote:
+> On Tue, Apr 21, 2009 at 10:37:03AM +0200, Andrea Righi wrote:
+> > On Mon, Apr 20, 2009 at 09:08:46PM -0400, Vivek Goyal wrote:
+> > > On Tue, Apr 21, 2009 at 12:05:12AM +0200, Andrea Righi wrote:
+> > > 
+> > > [..]
+> > > > > > > Are we not already controlling submission of request (at crude level).
+> > > > > > > If application is doing writeout at high rate, then it hits vm_dirty_ratio
+> > > > > > > hits and this application is forced to do write out and hence it is slowed
+> > > > > > > down and is not allowed to submit writes at high rate.
+> > > > > > > 
+> > > > > > > Just that it is not a very fair scheme right now as during right out
+> > > > > > > a high prio/high weight cgroup application can start writing out some
+> > > > > > > other cgroups' pages.
+> > > > > > > 
+> > > > > > > For this we probably need to have some combination of solutions like
+> > > > > > > per cgroup upper limit on dirty pages. Secondly probably if an application
+> > > > > > > is slowed down because of hitting vm_drity_ratio, it should try to
+> > > > > > > write out the inode it is dirtying first instead of picking any random
+> > > > > > > inode and associated pages. This will ensure that a high weight
+> > > > > > > application can quickly get through the write outs and see higher
+> > > > > > > throughput from the disk.
+> > > > > > 
+> > > > > > For the first, I submitted a patchset some months ago to provide this
+> > > > > > feature in the memory controller:
+> > > > > > 
+> > > > > > https://lists.linux-foundation.org/pipermail/containers/2008-September/013140.html
+> > > > > > 
+> > > > > > We focused on the best interface to use for setting the dirty pages
+> > > > > > limit, but we didn't finalize it. I can rework on that and repost an
+> > > > > > updated version. Now that we have the dirty_ratio/dirty_bytes to set the
+> > > > > > global limit I think we can use the same interface and the same semantic
+> > > > > > within the cgroup fs, something like:
+> > > > > > 
+> > > > > >   memory.dirty_ratio
+> > > > > >   memory.dirty_bytes
+> > > > > > 
+> > > > > > For the second point something like this should be enough to force tasks
+> > > > > > to write out only the inode they're actually dirtying when they hit the
+> > > > > > vm_dirty_ratio limit. But it should be tested carefully and may cause
+> > > > > > heavy performance regressions.
+> > > > > > 
+> > > > > > Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > > > > > ---
+> > > > > >  mm/page-writeback.c |    2 +-
+> > > > > >  1 files changed, 1 insertions(+), 1 deletions(-)
+> > > > > > 
+> > > > > > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> > > > > > index 2630937..1e07c9d 100644
+> > > > > > --- a/mm/page-writeback.c
+> > > > > > +++ b/mm/page-writeback.c
+> > > > > > @@ -543,7 +543,7 @@ static void balance_dirty_pages(struct address_space *mapping)
+> > > > > >  		 * been flushed to permanent storage.
+> > > > > >  		 */
+> > > > > >  		if (bdi_nr_reclaimable) {
+> > > > > > -			writeback_inodes(&wbc);
+> > > > > > +			sync_inode(mapping->host, &wbc);
+> > > > > >  			pages_written += write_chunk - wbc.nr_to_write;
+> > > > > >  			get_dirty_limits(&background_thresh, &dirty_thresh,
+> > > > > >  				       &bdi_thresh, bdi);
+> > > > > 
+> > > > > This patch seems to be helping me a bit in getting more service
+> > > > > differentiation between two writer dd of different weights. But strangely
+> > > > > it is helping only for ext3 and not ext4. Debugging is on.
+> > > > 
+> > > > Are you explicitly mounting ext3 with data=ordered?
+> > > 
+> > > Yes. Still using 29-rc8 and data=ordered was the default then.
+> > > 
+> > > I got two partitions on same disk and created one ext3 filesystem on each
+> > > partition (just to take journaling intereference out of two dd threads 
+> > > for the time being).
+> > > 
+> > > Two dd threads doing writes to each partition. 
+> > 
+> > ...and if you're using data=writeback with ext4 sync_inode() should sync
+> > the metadata only. If this is the case, could you check data=ordered
+> > also for ext4?
 > 
-> It's the same issue, but again, consider the use case where the
-> readers and the writers are in different cgroups.  This can happen
-> quite often in database workloads, where you might have many readers,
-> and a single process doing the database update.  Or the case where you
-> have one process in one cgroup doing a tail -f of some log file, and
-> another process doing writing to the log file.
+> No, even data=ordered mode with ext4 is also not helping. It has to be
+> something else.
 > 
 
-That would be true in general, but only the process writing to the
-file will dirty it. So dirty already accounts for the read/write
-split. I'd assume that the cost is only for the dirty page, since we
-do IO only on write in this case, unless I am missing something very
-obvious.
+Ok, with data=ordered mode with ext4, now I can get significant service
+differentiation between two dd processes. I had to tweak cfq a bit.
 
-> Using a shared ratio is certainly better than charging 100% of the
-> write to whichever unfortunate process happened to first read the
-> page, but it will still not be terribly accurate.  A lot really
-> depends on how you expect these cgroup limits will be used, and what
-> the requirements actually will be with respect to accuracy.  If the
-> requirements for accuracy are different for RSS tracking and dirty
-> page tracking --- which could easily be the case, since memory is
-> usually much cheaper than I/O bandwidth, and there is generally far
-> more clean memory pages than there are dirty memory pages, so a small
-> numberical error in dirty page accounting translates to a much larger
-> percentage error than read-only RSS page accounting --- it may make
-> sense to use different mechanisms for tracking the two, given the
-> different requirements and differring overhead implications.
->
-> Anyway, something for you to think about.
+- Instead of 40ms slice for async queue, do 20ms at a time (tunable).
+- change cfq quantum to 1 from 4 to not dispatch a bunch of requests at
+  one go.
 
-Yep, but I would recommend using the controller we have, if the
-overheads span out to be too large for IO, we think about
-alternatives.
+Above changes help a bit in making sure two continuously backlogged queues
+at IO scheduler so that IO scheduler can offer more disk time to higher
+weight process.
 
--- 
-	Balbir
+Thanks
+Vivek
+
+> BTW, with the above patch, what happens if the address space being dirtied
+> does not have sufficient dirty pages to write back (more than write_chunk).
+> Will the process not be in loop until the number of dirty pages come down
+> (hopefully due to writeout by pdflush or by other processes?)
+> 
+> Thanks
+> Vivek
