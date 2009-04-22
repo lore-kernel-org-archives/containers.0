@@ -1,19 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
-Date: Wed, 22 Apr 2009 09:33:49 +0900
-Message-ID: <20090422093349.1ee9ae82.kamezawa.hiroyu__9623.44973017952$1240360789$gmane$org@jp.fujitsu.com>
-References: <20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
-	<20090421083001.GA8441@linux> <20090421140631.GF19186@mit.edu>
-	<20090421143130.GA22626@linux> <20090421163537.GI19186@mit.edu>
-	<20090421172317.GM19637@balbir.in.ibm.com>
-	<20090421174620.GD15541@mit.edu>
-	<20090421181429.GO19637@balbir.in.ibm.com>
-	<20090421191401.GF15541@mit.edu> <20090421204905.GA5573@linux>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/7] cgroup: io-throttle controller (v14)
+Date: Wed, 22 Apr 2009 09:09:16 +0800
+Message-ID: <49EE6E3C.8050409__30997.5242279053$1240362813$gmane$org@cn.fujitsu.com>
+References: <1240090636-898-1-git-send-email-righi.andrea@gmail.com>
+	<49EC34C1.6010709@cn.fujitsu.com> <20090420144816.GA13307@linux>
+	<49ED1E66.6030604@cn.fujitsu.com> <20090421095848.GB13699@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090421204905.GA5573@linux>
+In-Reply-To: <20090421095848.GB13699@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,59 +20,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Gui-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 21 Apr 2009 22:49:06 +0200
-Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> yep! right. Anyway, it's not completely wrong to account dirty pages in
-> this way. The dirty pages actually belong to cgroup A and providing per
-> cgroup upper limits of dirty pages could help to equally distribute
-> dirty pages, that are hard/slow to reclaim, among cgroups.
+Andrea Righi wrote:
+> On Tue, Apr 21, 2009 at 09:16:22AM +0800, Gui Jianfeng wrote:
+>> Andrea Righi wrote:
+>>> On Mon, Apr 20, 2009 at 04:39:29PM +0800, Gui Jianfeng wrote:
+>>>> Andrea Righi wrote:
+>>>> ...
+>>>>> Implementation
+>>>>> ~~~~~~~~~~~~~~
+>>>>> Patchset against latest Linus' git:
+>>>>>
+>>>>>   [PATCH 0/7] cgroup: block device IO controller (v14)
+>>>>>   [PATCH 1/7] io-throttle documentation
+>>>>>   [PATCH 2/7] res_counter: introduce ratelimiting attributes
+>>>>>   [PATCH 3/7] page_cgroup: provide a generic page tracking infrastructure
+>>>>>   [PATCH 4/7] io-throttle controller infrastructure
+>>>>>   [PATCH 5/7] kiothrottled: throttle buffered (writeback) IO
+>>>>>   [PATCH 6/7] io-throttle instrumentation
+>>>>>   [PATCH 7/7] export per-task io-throttle statistics to userspace
+>>>>   Hi Andrea,
+>>>>
+>>>>   I'd like to have a try this patchset, would you tell what's the kernel version
+>>>>   and bio-cgroup version based on?
+>>>>
+>>> Latest Linus' git is the kernel and bio-cgroup v7 (from
+>>> http://people.valinux.co.jp/~ryov/bio-cgroup/).
+>>   Sorry, I still can't apply it...
+>>
+>> [root@localhost linux-2.6.30-rc1]# patch -p1 --dry-run < ../cgroup-io-throttle-v14.patch                                                                                         patching file Documentation/cgroups/io-throttle.txt
+>> patching file block/Makefile
+>> patching file block/blk-core.c
+>> patching file block/blk-io-throttle.c
+>> patching file block/kiothrottled.c
+>> patching file fs/aio.c
+>> patching file fs/buffer.c
+>> Hunk #1 FAILED at 36.
+>> Hunk #2 FAILED at 669.
+>> 2 out of 2 hunks FAILED -- saving rejects to file fs/buffer.c.rej
+>> patching file fs/proc/base.c
+>> patching file include/linux/blk-io-throttle.h
+>> patching file include/linux/cgroup_subsys.h
+>> Hunk #1 succeeded at 49 (offset 6 lines).
+>> patching file include/linux/memcontrol.h
+>> Reversed (or previously applied) patch detected!  Assume -R? [n] n
+>> Apply anyway? [n] n
+>> Skipping patch.
+>> 2 out of 2 hunks ignored -- saving rejects to file include/linux/memcontrol.h.rej
+>> patching file include/linux/mmzone.h
+>> Hunk #1 FAILED at 607.
+>> Hunk #2 FAILED at 958.
+>> ...
 > 
-> But this is definitely another problem.
+> Could you checkout the latest Linus' git?
 > 
-Hmm, my motivation for dirty accounting in memcg is for supporting dirty_ratio
-to do smooth page reclaiming and to kick background-write-out.
+> $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux-2.6
+> 
+> Or at least try with 2.6.30-rc2. It should apply cleanly also to this
+> version.
 
+  Yes, I tried them all, but didn't work. :(
+  Would you try "cgroup-io-throttle-v14.patch" too?
 
-> And it doesn't help for the problem described by Ted, expecially for the
-> IO controller. The only way I see to correctly handle that case is to
-> limit the rate of dirty pages per cgroup, accounting the dirty activity
-> to the cgroup that firstly touched the page (and not the owner as
-> intended by the memory controller).
 > 
-Owner of the page should know dirty ratio, too.
-
-> And this should be probably strictly connected to the IO controller. If
-> we throttle or delay the dispatching/submission of some IO requests
-> without throttling the dirty pages rate a cgroup could completely waste
-> its own available memory with dirty (hard and slow to reclaim) pages.
+> -Andrea
 > 
-> That is in part the approach I used in io-throttle v12, adding a hook in
-> balance_dirty_pages_ratelimited_nr() to throttle the current task when
-> cgroup's IO limit are exceeded. Argh!
 > 
-> So, another proposal could be to re-add in io-throttle v14 the old hook
-> also in balance_dirty_pages_ratelimited_nr().
-> 
-> In this way io-throttle would:
-> 
-> - use page_cgroup infrastructure and page_cgroup->flags to encode the
->   cgroup id that firstly dirtied a generic page
-> - account and opportunely throttle sync and writeback IO requests in
->   submit_bio()
-> - at the same time throttle the tasks in
->   balance_dirty_pages_ratelimited_nr() if the cgroup they belong has
->   exhausted the IO BW (or quota, share, etc. in case of proportional BW
->   limit)
 > 
 
-IMHO, io-controller should just work as I/O subsystem as bdi. Now, per-bdi dirty_ratio
-is suppoted and it seems to work well.  
-
-Can't we write a function like  bdi_writeout_fraction() ?;
-It will be a simple choice.
-
-Thanks,
--Kame
+-- 
+Regards
+Gui Jianfeng
