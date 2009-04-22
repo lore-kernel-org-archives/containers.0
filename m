@@ -1,15 +1,21 @@
-From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO Controller
-Date: Tue, 21 Apr 2009 20:10:56 -0700
-Message-ID: <e98e18940904212010m5b2e00f9xda32cb2c9594ca29__7373.93220556459$1240370105$gmane$org@mail.gmail.com>
-References: <1236823015-4183-1-git-send-email-vgoyal@redhat.com>
-	<49DF1256.7080403@cn.fujitsu.com> <20090413130958.GB18007@redhat.com>
-	<49EE895A.1060101@cn.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Wed, 22 Apr 2009 09:00:32 +0530
+Message-ID: <20090422033032.GR19637__45677.8581873097$1240371338$gmane$org@balbir.in.ibm.com>
+References: <20090417143903.GA30365@linux> <20090421001822.GB19186@mit.edu>
+	<20090421083001.GA8441@linux> <20090421140631.GF19186@mit.edu>
+	<20090421143130.GA22626@linux> <20090421163537.GI19186@mit.edu>
+	<20090421172317.GM19637@balbir.in.ibm.com>
+	<20090421174620.GD15541@mit.edu>
+	<20090421181429.GO19637@balbir.in.ibm.com>
+	<20090421191401.GF15541@mit.edu>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49EE895A.1060101-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090421191401.GF15541-3s7WtUTddSA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,73 +25,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, oz-kernel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-w0OK63jvRlAuJ+9fw/WgBHgSJqDPrsil@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Gui Jianfeng <guijianfeng-LZPS87bAVCA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 21, 2009 at 8:04 PM, Gui Jianfeng
-<guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> Vivek Goyal wrote:
->> On Fri, Apr 10, 2009 at 05:33:10PM +0800, Gui Jianfeng wrote:
->>> Vivek Goyal wrote:
->>>> Hi All,
->>>>
->>>> Here is another posting for IO controller patches. Last time I had pos=
-ted
->>>> RFC patches for an IO controller which did bio control per cgroup.
->>> =A0 Hi Vivek,
->>>
->>> =A0 I got the following OOPS when testing, can't reproduce again :(
->>>
->>
->> Hi Gui,
->>
->> Thanks for the report. Will look into it and see if I can reproduce it.
->
-> =A0Hi Vivek,
->
-> =A0The following script can reproduce the bug in my box.
->
-> #!/bin/sh
->
-> mkdir /cgroup
-> mount -t cgroup -o io io /cgroup
-> mkdir /cgroup/test1
-> mkdir /cgroup/test2
->
-> echo cfq > /sys/block/sda/queue/scheduler
-> echo 7 > /cgroup/test1/io.ioprio
-> echo 1 > /cgroup/test2/io.ioprio
-> echo 1 > /proc/sys/vm/drop_caches
-> dd if=3D1000M.1 of=3D/dev/null &
-> pid1=3D$!
-> echo $pid1
-> echo $pid1 > /cgroup/test1/tasks
-> dd if=3D1000M.2 of=3D/dev/null
-> pid2=3D$!
-> echo $pid2
-> echo $pid2 > /cgroup/test2/tasks
->
->
-> rmdir /cgroup/test1
-> rmdir /cgroup/test2
-> umount /cgroup
-> rmdir /cgroup
+* Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org> [2009-04-21 15:14:01]:
 
-Yes, this bug happens when we move a task from a cgroup to another
-one, and delete the cgroup. Since the actual move to the new cgroup is
-performed in a delayed fashion, if the cgroup is removed before
-another request from the task is seen (and the actual move is
-performed) , it results in a hit on BUG_ON. I am working on a patch
-that will solve this problem and a few others; basically it would do
-ref counting  for io_group structure. I am having a few problems with
-it at the moment; will post the patch as soon as I can get it to work.
+> On Tue, Apr 21, 2009 at 11:44:29PM +0530, Balbir Singh wrote:
+> > 
+> > That would be true in general, but only the process writing to the
+> > file will dirty it. So dirty already accounts for the read/write
+> > split. I'd assume that the cost is only for the dirty page, since we
+> > do IO only on write in this case, unless I am missing something very
+> > obvious.
+> 
+> Maybe I'm missing something, but the (in development) patches I saw
+> seemed to use the existing infrastructure designed for RSS cost
+> tracking (which is also not yet in mainline, unless I'm mistaken ---
+> but I didn't see page_get_page_cgroup() in the mainline tree yet).
+> 
+> Right?  So if process A in cgroup A reads touches the file first by
+> reading from it, then the pages read by process A will be assigned as
+> being "owned" by cgroup A.   Then when the patch described at
+> 
+>       http://lkml.org/lkml/2008/9/9/245
 
->
-> --
-> Regards
-> Gui Jianfeng
->
->
->
->
+That is correct, but on reclaim (hitting the limit) a page that is frequently
+used by B and not A, can get reclaimed from A and move to B if B is
+heavily using it.
+
+> 
+> ... tries to charge a write done by process B in cgroup B, the code
+> will call page_get_page_cgroup(), see that it is "owned" by cgroup A,
+> and charge the dirty page to cgroup A.  If process A and all of the
+> other processes in cgroup A only access this file read-only, and
+> process B is updating this file very heavily --- and it is a large
+> file --- then cgroup B will get a completely free pass as far as
+> dirtying pages to this file, since it will be all charged 100% to
+> cgroup A, incorrectly.
+> 
+> So what am I missing?
+
+You are right. As long as A is not exceeding its limit, B will get a
+free pass at the page. The page will be inactive on A's LRU and active
+on the global LRU though from the memory controller perspective. We'll
+need to find a way to fix this, if this is a very common scenario for
+the IO controller.
+
+-- 
+	Balbir
