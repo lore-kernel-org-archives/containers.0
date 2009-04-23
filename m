@@ -1,22 +1,18 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
-Date: Thu, 23 Apr 2009 12:03:35 +0200
-Message-ID: <20090423100314.GB9756__7634.53095355562$1240481235$gmane$org@linux>
-References: <20090421163537.GI19186@mit.edu>
-	<20090421172317.GM19637@balbir.in.ibm.com>
-	<20090421174620.GD15541@mit.edu>
-	<20090421181429.GO19637@balbir.in.ibm.com>
-	<20090421191401.GF15541@mit.edu> <20090421204905.GA5573@linux>
-	<20090422093349.1ee9ae82.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090422102153.9aec17b9.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090422102239.GA1935@linux>
-	<20090423090535.ec419269.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH 0/7] cgroup: io-throttle controller (v14)
+Date: Thu, 23 Apr 2009 12:14:01 +0200
+Message-ID: <20090423101400.GA16768__2964.81813206828$1240481925$gmane$org@linux>
+References: <1240090636-898-1-git-send-email-righi.andrea@gmail.com>
+	<49EC34C1.6010709@cn.fujitsu.com> <20090420144816.GA13307@linux>
+	<49ED1E66.6030604@cn.fujitsu.com> <20090421095848.GB13699@linux>
+	<49EE6E3C.8050409@cn.fujitsu.com> <20090422124328.GA32007@linux>
+	<49EFD948.7050803@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090423090535.ec419269.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49EFD948.7050803-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,113 +22,202 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Gui-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 23, 2009 at 09:05:35AM +0900, KAMEZAWA Hiroyuki wrote:
-> On Wed, 22 Apr 2009 12:22:41 +0200
-> Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->  
-> > Actually I was proposing something quite similar, if I've understood
-> > well. Just add a hook in balance_dirty_pages() to throttle tasks in
-> > cgroups that exhausted their IO BW.
+On Thu, Apr 23, 2009 at 10:58:16AM +0800, Gui Jianfeng wrote:
+> Andrea Righi wrote:
+> > On Wed, Apr 22, 2009 at 09:09:16AM +0800, Gui Jianfeng wrote:
+> >> Andrea Righi wrote:
+> >>> On Tue, Apr 21, 2009 at 09:16:22AM +0800, Gui Jianfeng wrote:
+> >>>> Andrea Righi wrote:
+> >>>>> On Mon, Apr 20, 2009 at 04:39:29PM +0800, Gui Jianfeng wrote:
+> >>>>>> Andrea Righi wrote:
+> >>>>>> ...
+> >>>>>>> Implementation
+> >>>>>>> ~~~~~~~~~~~~~~
+> >>>>>>> Patchset against latest Linus' git:
+> >>>>>>>
+> >>>>>>>   [PATCH 0/7] cgroup: block device IO controller (v14)
+> >>>>>>>   [PATCH 1/7] io-throttle documentation
+> >>>>>>>   [PATCH 2/7] res_counter: introduce ratelimiting attributes
+> >>>>>>>   [PATCH 3/7] page_cgroup: provide a generic page tracking infrastructure
+> >>>>>>>   [PATCH 4/7] io-throttle controller infrastructure
+> >>>>>>>   [PATCH 5/7] kiothrottled: throttle buffered (writeback) IO
+> >>>>>>>   [PATCH 6/7] io-throttle instrumentation
+> >>>>>>>   [PATCH 7/7] export per-task io-throttle statistics to userspace
+> >>>>>>   Hi Andrea,
+> >>>>>>
+> >>>>>>   I'd like to have a try this patchset, would you tell what's the kernel version
+> >>>>>>   and bio-cgroup version based on?
+> >>>>>>
+> >>>>> Latest Linus' git is the kernel and bio-cgroup v7 (from
+> >>>>> http://people.valinux.co.jp/~ryov/bio-cgroup/).
+> >>>>   Sorry, I still can't apply it...
+> >>>>
+> >>>> [root@localhost linux-2.6.30-rc1]# patch -p1 --dry-run < ../cgroup-io-throttle-v14.patch                                                                                         patching file Documentation/cgroups/io-throttle.txt
+> >>>> patching file block/Makefile
+> >>>> patching file block/blk-core.c
+> >>>> patching file block/blk-io-throttle.c
+> >>>> patching file block/kiothrottled.c
+> >>>> patching file fs/aio.c
+> >>>> patching file fs/buffer.c
+> >>>> Hunk #1 FAILED at 36.
+> >>>> Hunk #2 FAILED at 669.
+> >>>> 2 out of 2 hunks FAILED -- saving rejects to file fs/buffer.c.rej
+> >>>> patching file fs/proc/base.c
+> >>>> patching file include/linux/blk-io-throttle.h
+> >>>> patching file include/linux/cgroup_subsys.h
+> >>>> Hunk #1 succeeded at 49 (offset 6 lines).
+> >>>> patching file include/linux/memcontrol.h
+> >>>> Reversed (or previously applied) patch detected!  Assume -R? [n] n
+> >>>> Apply anyway? [n] n
+> >>>> Skipping patch.
+> >>>> 2 out of 2 hunks ignored -- saving rejects to file include/linux/memcontrol.h.rej
+> >>>> patching file include/linux/mmzone.h
+> >>>> Hunk #1 FAILED at 607.
+> >>>> Hunk #2 FAILED at 958.
+> >>>> ...
+> >>> Could you checkout the latest Linus' git?
+> >>>
+> >>> $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux-2.6
+> >>>
+> >>> Or at least try with 2.6.30-rc2. It should apply cleanly also to this
+> >>> version.
+> >>   Yes, I tried them all, but didn't work. :(
+> >>   Would you try "cgroup-io-throttle-v14.patch" too?
 > > 
-> > The way to do so will be similar to the per-bdi write throttling, taking
-> > in account the IO requests previously submitted per cgroup, the pages
-> > dirtied per cgroup (considering that are not necessarily dirtied by the
-> > owner of the page) and apply something like congestion_wait() to
-> > throttle the tasks in the cgroups that exceeded the BW limit.
+> > It works for me:
 > > 
-> > Maybe we can just introduce cgroup_dirty_limit() simply replicating what
-> > we're doing for task_dirty_limit(), but using per cgroup statistics of
-> > course.
+> > $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux-2.6
+> > $ cd linux-2.6
+> > $ wget http://download.systemimager.org/~arighi/linux/patches/io-throttle/cgroup-io-throttle-v14.patch
+> > $ git apply cgroup-io-throttle-v14.patch
+> > (no error reported)
 > > 
-> > I can change the io-throttle controller to do so. This feature should be
-> > valid also for the proportional BW approach.
-> > 
-> > BTW Vivek's proposal to also dispatch IO requests according to cgroup
-> > proportional BW limits can be still valid and it is worth to be tested
-> > IMHO. But we must also find a way to say to the right cgroup: hey! stop
-> > to waste the memory with dirty pages, because you've directly or
-> > indirectly generated too much IO in the system and I'm throttling and/or
-> > not scheduling your IO requests.
-> > 
-> > Objections?
-> > 
-> No objections. plz let me know my following understanding is right.
+> > The same for v13.
 > 
->   1. dirty_ratio should be supported per cgroup.
->      - Memory cgroup should support dirty_ratio or dirty_ratio cgroup should be implemented.
->        For doing this, we can make use of page_cgroup.
+>   Ok, so we don't need to apply bio-cgroup.... I made a mistake, i applied bio-cgroup firstly :(
+>   It's Ok now, thanks for the explanation.
 > 
->        One good point of dirty-ratio cgroup is that dirty-ratio accounting is done
->        against a cgroup which made pages dirty not against a owner of the page. But
->        if dirty_ratio cgroup is completely independent from mem_cgroup, it cannot
->        be a help for memory reclaiming.
->        Then,
->          - memcg itself should have dirty_ratio check.
->          - like bdi/task_dirty_limit(), a cgroup (which is not memcg) can be used
->            another filter for dirty_ratio.
-
-Agreed. We probably need two different dirty_ratio statistics: one to
-check the dirty pages inside a memcg for memory reclaim, and another to
-check how many dirty pages a cgroup has generated in the system.
-Something similar to the task_struct->dirties and global dirty
-statistics.
-
+>   I tried to build, but got the following error.
 > 
->   2. dirty_ratio is not I/O BW control.
+> LD      .tmp_vmlinux1
+> block/built-in.o: In function `get_iothrottle_from_page':
+> /kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:670: undefined reference to `page_cgroup_get_owner'
+> block/built-in.o: In function `iothrottle_set_page_owner':
+> /kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:704: undefined reference to `page_cgroup_set_owner'
+> block/built-in.o: In function `iothrottle_copy_page_owner':
+> /kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:720: undefined reference to `page_cgroup_copy_owner'
+> make: *** [.tmp_vmlinux1] Error 1
 
-Agreed. They are two different problems. Maybe they could be connected,
-but the connection can be made in userspace mounting dirty_ratio cgroup
-and blockio subsystems together.
+page_cgroup_*_onwer are defined in mm/page_cgroup.c, that is built if
+CONFIG_PAGE_TRACKING=y. But from init/Kconfig:
 
-For example: give 10MB/s IO BW to cgroup A and also set a upper limit of
-dirty pages this cgroup can generate in the system, i.e. 10% of the
-system-wide reclaimable memory. If the dirty limit is exceeded the tasks
-in this cgroup will start to actively writeback system-wide dirty pages
-at the rate defined by the IO controller.
+  config CGROUP_IO_THROTTLE
+  	bool "Enable cgroup I/O throttling"
+  	depends on CGROUPS && RESOURCE_COUNTERS && EXPERIMENTAL
+  	select MM_OWNER
+  	select PAGE_TRACKING
+	       ^^^^^^^^^^^^^
+mmmh??? it should be correct.
 
-> 
->   3. I/O BW(limit) control cgroup should be implemented and it should be exsiting
->      in I/O scheduling layer or somewhere around. But it's not easy.
+And I don't understand how the following patch can fix this problem...
 
-Agreed. Expecially for the "it's not easy" part. :)
+Could you post your .config?
 
-> 
->   4. To track bufferred I/O, we have to add "tag" to pages which tell us who
->      generated the I/O. Now it's called blockio-cgroup and implementation details
->      are still under discussion.
-
-OK.
-
-> 
-> So, current status is.
-> 
->   A. memcg should support dirty_ratio for its own memory reclaim.
->      in plan.
-> 
->   B. another cgroup can be implemnted to support cgroup_dirty_limit().
->      But relationship with "A" should be discussed.
->      no plan yet.
-> 
->   C. I/O cgroup and bufferred I/O tracking system.
->      Now under patch review.
-
-    D. I/O tracking system must be implemented as a common
-       infrastructure and not a separate cgroup subsystem. This would
-       allow to be easily reused also by other potential cgroup
-       controllers, and avoid to introduce oddity, complexity in
-       userspace (separate mountpoints, etc.)
-
-> 
-> And this I/O throttle is mainly for "C" discussion. 
-> 
-> Right ?
-
-Right. In io-throttle v14 I also merged some of the blockio-cgroup
-functionality, so IO throttle is mainly for C and D, but D should be
-probably considered as a separate patchset.
-
+Thanks,
 -Andrea
+
+> 
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  mm/page_cgroup.c |   65 ++++++++++++++++++++++++++---------------------------
+>  1 files changed, 32 insertions(+), 33 deletions(-)
+> 
+> diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
+> index b3b394c..9c392f1 100644
+> --- a/mm/page_cgroup.c
+> +++ b/mm/page_cgroup.c
+> @@ -244,6 +244,38 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
+>  
+>  #endif
+>  
+> +void __init page_cgroup_init(void)
+> +{
+> +	unsigned long pfn;
+> +	int fail = 0;
+> +
+> +	if (mem_cgroup_disabled() && iothrottle_disabled())
+> +		return;
+> +
+> +	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+> +		if (!pfn_present(pfn))
+> +			continue;
+> +		fail = init_section_page_cgroup(pfn);
+> +	}
+> +	if (fail) {
+> +		printk(KERN_CRIT
+> +			"try cgroup_disable=memory,blockio boot option\n");
+> +		panic("Out of memory");
+> +	} else {
+> +		hotplug_memory_notifier(page_cgroup_callback, 0);
+> +	}
+> +	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+> +	printk(KERN_INFO
+> +		"try cgroup_disable=memory,blockio option if you don't want\n");
+> +}
+> +
+> +void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+> +{
+> +	return;
+> +}
+> +
+> +#endif
+> +
+>  /**
+>   * page_cgroup_get_owner() - get the owner ID of a page
+>   * @page:	the page we want to find the owner
+> @@ -317,39 +349,6 @@ int page_cgroup_copy_owner(struct page *npage, struct page *opage)
+>  	return 0;
+>  }
+>  
+> -void __init page_cgroup_init(void)
+> -{
+> -	unsigned long pfn;
+> -	int fail = 0;
+> -
+> -	if (mem_cgroup_disabled() && iothrottle_disabled())
+> -		return;
+> -
+> -	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+> -		if (!pfn_present(pfn))
+> -			continue;
+> -		fail = init_section_page_cgroup(pfn);
+> -	}
+> -	if (fail) {
+> -		printk(KERN_CRIT
+> -			"try cgroup_disable=memory,blockio boot option\n");
+> -		panic("Out of memory");
+> -	} else {
+> -		hotplug_memory_notifier(page_cgroup_callback, 0);
+> -	}
+> -	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+> -	printk(KERN_INFO
+> -		"try cgroup_disable=memory,blockio option if you don't want\n");
+> -}
+> -
+> -void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+> -{
+> -	return;
+> -}
+> -
+> -#endif
+> -
+> -
+>  #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+>  
+>  static DEFINE_MUTEX(swap_cgroup_mutex);
+> -- 
+> 1.5.4.rc3
