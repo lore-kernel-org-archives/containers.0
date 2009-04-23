@@ -1,16 +1,22 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 0/7] cgroup: io-throttle controller (v14)
-Date: Thu, 23 Apr 2009 10:58:16 +0800
-Message-ID: <49EFD948.7050803__17818.5081728317$1240455775$gmane$org@cn.fujitsu.com>
-References: <1240090636-898-1-git-send-email-righi.andrea@gmail.com>
-	<49EC34C1.6010709@cn.fujitsu.com> <20090420144816.GA13307@linux>
-	<49ED1E66.6030604@cn.fujitsu.com> <20090421095848.GB13699@linux>
-	<49EE6E3C.8050409@cn.fujitsu.com> <20090422124328.GA32007@linux>
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Subject: Re: [PATCH 9/9] ext3: do not throttle metadata and journal IO
+Date: Thu, 23 Apr 2009 00:35:48 -0400
+Message-ID: <20090423043547.GB2723__39080.7507247247$1240461581$gmane$org@mit.edu>
+References: <20090421174620.GD15541@mit.edu>
+	<20090421181429.GO19637@balbir.in.ibm.com>
+	<20090421191401.GF15541@mit.edu> <20090421204905.GA5573@linux>
+	<20090422093349.1ee9ae82.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090422102153.9aec17b9.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090422102239.GA1935@linux>
+	<20090423090535.ec419269.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090423012254.GZ15541@mit.edu>
+	<20090423115419.c493266a.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090422124328.GA32007@linux>
+Content-Disposition: inline
+In-Reply-To: <20090423115419.c493266a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,182 +26,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Gui-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrea Righi wrote:
-> On Wed, Apr 22, 2009 at 09:09:16AM +0800, Gui Jianfeng wrote:
->> Andrea Righi wrote:
->>> On Tue, Apr 21, 2009 at 09:16:22AM +0800, Gui Jianfeng wrote:
->>>> Andrea Righi wrote:
->>>>> On Mon, Apr 20, 2009 at 04:39:29PM +0800, Gui Jianfeng wrote:
->>>>>> Andrea Righi wrote:
->>>>>> ...
->>>>>>> Implementation
->>>>>>> ~~~~~~~~~~~~~~
->>>>>>> Patchset against latest Linus' git:
->>>>>>>
->>>>>>>   [PATCH 0/7] cgroup: block device IO controller (v14)
->>>>>>>   [PATCH 1/7] io-throttle documentation
->>>>>>>   [PATCH 2/7] res_counter: introduce ratelimiting attributes
->>>>>>>   [PATCH 3/7] page_cgroup: provide a generic page tracking infrastructure
->>>>>>>   [PATCH 4/7] io-throttle controller infrastructure
->>>>>>>   [PATCH 5/7] kiothrottled: throttle buffered (writeback) IO
->>>>>>>   [PATCH 6/7] io-throttle instrumentation
->>>>>>>   [PATCH 7/7] export per-task io-throttle statistics to userspace
->>>>>>   Hi Andrea,
->>>>>>
->>>>>>   I'd like to have a try this patchset, would you tell what's the kernel version
->>>>>>   and bio-cgroup version based on?
->>>>>>
->>>>> Latest Linus' git is the kernel and bio-cgroup v7 (from
->>>>> http://people.valinux.co.jp/~ryov/bio-cgroup/).
->>>>   Sorry, I still can't apply it...
->>>>
->>>> [root@localhost linux-2.6.30-rc1]# patch -p1 --dry-run < ../cgroup-io-throttle-v14.patch                                                                                         patching file Documentation/cgroups/io-throttle.txt
->>>> patching file block/Makefile
->>>> patching file block/blk-core.c
->>>> patching file block/blk-io-throttle.c
->>>> patching file block/kiothrottled.c
->>>> patching file fs/aio.c
->>>> patching file fs/buffer.c
->>>> Hunk #1 FAILED at 36.
->>>> Hunk #2 FAILED at 669.
->>>> 2 out of 2 hunks FAILED -- saving rejects to file fs/buffer.c.rej
->>>> patching file fs/proc/base.c
->>>> patching file include/linux/blk-io-throttle.h
->>>> patching file include/linux/cgroup_subsys.h
->>>> Hunk #1 succeeded at 49 (offset 6 lines).
->>>> patching file include/linux/memcontrol.h
->>>> Reversed (or previously applied) patch detected!  Assume -R? [n] n
->>>> Apply anyway? [n] n
->>>> Skipping patch.
->>>> 2 out of 2 hunks ignored -- saving rejects to file include/linux/memcontrol.h.rej
->>>> patching file include/linux/mmzone.h
->>>> Hunk #1 FAILED at 607.
->>>> Hunk #2 FAILED at 958.
->>>> ...
->>> Could you checkout the latest Linus' git?
->>>
->>> $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux-2.6
->>>
->>> Or at least try with 2.6.30-rc2. It should apply cleanly also to this
->>> version.
->>   Yes, I tried them all, but didn't work. :(
->>   Would you try "cgroup-io-throttle-v14.patch" too?
+On Thu, Apr 23, 2009 at 11:54:19AM +0900, KAMEZAWA Hiroyuki wrote:
+> > How much testing has been done in terms of whether the I/O throttling
+> > actually works?  Not just, "the kernel doesn't crash", but that where
+> > you have one process generating a large amount of I/O load, in various
+> > different ways, and whether the right things happens?  If so, how has
+> > this been measured?
 > 
-> It works for me:
+> I/O control people should prove it. And they do, I think.
 > 
-> $ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux-2.6
-> $ cd linux-2.6
-> $ wget http://download.systemimager.org/~arighi/linux/patches/io-throttle/cgroup-io-throttle-v14.patch
-> $ git apply cgroup-io-throttle-v14.patch
-> (no error reported)
+
+Well, with all due respect, the fact that they only tested removing
+the ext3 patch to fs/jbd2/commit.c, and discovered it had no effect,
+only after I asked some questions about how it could possibly work
+from a theoretical basis, makes me wonder exactly how much testing has
+actually been done to date.  Which is why I asked the question....
+
+> > I'm really concerned that given some of the ways that I/O will "leak"
+> > out --- the via pdflush, swap writeout, etc., that without the rest of
+> > the pieces in place, I/O throttling by itself might not prove to be
+> > very effective.  Sure, if the workload is only doing direct I/O, life
+> > is pretty easy and it shouldn't be hard to throttle the cgroup.
 > 
-> The same for v13.
+> It's just a problem of "what we do and what we don't, now".
+> Andrea, Vivek, could you clarify ? As other project, I/O controller
+> will not be 100% at first implementation.
 
-  Ok, so we don't need to apply bio-cgroup.... I made a mistake, i applied bio-cgroup firstly :(
-  It's Ok now, thanks for the explanation.
+Yeah, but if the design hasn't been fully validated, maybe the
+implementation isn't ready for merging yet.  I only came across these
+patch series because of the ext3 patch, and when I started looking at
+it just from a high level point of view, I'm concerned about the
+design gaps and exactly how much high level thinking has gone into the
+patches.  This isn't a NACK per se, because I haven't spent the time
+to look at this code very closely (nor do I have the time).
 
-  I tried to build, but got the following error.
+Consider this more of a yellow flag being thrown on the field, in the
+hopes that the block layer and VM experts will take a much closer
+review of these patches.  I have a vague sense of disquiet that the
+container patches are touching a very large number of subsystems
+across the kernels, and it's not clear to me the maintainers of all of
+the subsystems have been paying very close attention and doing a
+proper high-level review of the design.
 
-LD      .tmp_vmlinux1
-block/built-in.o: In function `get_iothrottle_from_page':
-/kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:670: undefined reference to `page_cgroup_get_owner'
-block/built-in.o: In function `iothrottle_set_page_owner':
-/kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:704: undefined reference to `page_cgroup_set_owner'
-block/built-in.o: In function `iothrottle_copy_page_owner':
-/kernel/linux-2.6.30-rc2/block/blk-io-throttle.c:720: undefined reference to `page_cgroup_copy_owner'
-make: *** [.tmp_vmlinux1] Error 1
+Simply on the strength of a very cursory reivew and asking a few
+questions, it seems to me that the I/O controller was implemented,
+apparently without even thinking about the write throttling problems,
+and this just making me.... very, very, nervous.  
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- mm/page_cgroup.c |   65 ++++++++++++++++++++++++++---------------------------
- 1 files changed, 32 insertions(+), 33 deletions(-)
+I hope someone like akpm is paying very close attention and auditing
+these patches both from an low-level patch cleanliness point of view
+as well as a high-level design review.  Or at least that *someone* is
+doing so and can perhaps document how all of these knobs interact.
+After all, if they are going to be separate, and someone turns the I/O
+throttling knob without bothering to turn the write throttling knob
+--- what's going to happen?  An OOM?  That's not going to be very safe
+or friendly for the sysadmin who plans to be configuring the system.
 
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index b3b394c..9c392f1 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -244,6 +244,38 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
- 
- #endif
- 
-+void __init page_cgroup_init(void)
-+{
-+	unsigned long pfn;
-+	int fail = 0;
-+
-+	if (mem_cgroup_disabled() && iothrottle_disabled())
-+		return;
-+
-+	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
-+		if (!pfn_present(pfn))
-+			continue;
-+		fail = init_section_page_cgroup(pfn);
-+	}
-+	if (fail) {
-+		printk(KERN_CRIT
-+			"try cgroup_disable=memory,blockio boot option\n");
-+		panic("Out of memory");
-+	} else {
-+		hotplug_memory_notifier(page_cgroup_callback, 0);
-+	}
-+	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
-+	printk(KERN_INFO
-+		"try cgroup_disable=memory,blockio option if you don't want\n");
-+}
-+
-+void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-+{
-+	return;
-+}
-+
-+#endif
-+
- /**
-  * page_cgroup_get_owner() - get the owner ID of a page
-  * @page:	the page we want to find the owner
-@@ -317,39 +349,6 @@ int page_cgroup_copy_owner(struct page *npage, struct page *opage)
- 	return 0;
- }
- 
--void __init page_cgroup_init(void)
--{
--	unsigned long pfn;
--	int fail = 0;
--
--	if (mem_cgroup_disabled() && iothrottle_disabled())
--		return;
--
--	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
--		if (!pfn_present(pfn))
--			continue;
--		fail = init_section_page_cgroup(pfn);
--	}
--	if (fail) {
--		printk(KERN_CRIT
--			"try cgroup_disable=memory,blockio boot option\n");
--		panic("Out of memory");
--	} else {
--		hotplug_memory_notifier(page_cgroup_callback, 0);
--	}
--	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO
--		"try cgroup_disable=memory,blockio option if you don't want\n");
--}
--
--void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
--{
--	return;
--}
--
--#endif
--
--
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
- 
- static DEFINE_MUTEX(swap_cgroup_mutex);
--- 
-1.5.4.rc3
+Maybe this high level design considerations is happening, and I just
+haven't have seen it.  I sure hope so.
+
+						- Ted
