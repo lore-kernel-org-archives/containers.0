@@ -1,14 +1,11 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH] range-bw: Another I/O scheduling policy of dm-ioband
-	supporting the predicable I/O bandwidth (range bandwidth)
-Date: Fri, 24 Apr 2009 18:58:23 +0900 (JST)
-Message-ID: <20090424.185823.104059944.ryov__16162.0146981024$1240567318$gmane$org@valinux.co.jp>
-References: <2891419e0904230210w40482535ma3fc25c1e429969d@mail.gmail.com>
+From: Tuggles <majesty-lTkmyQL+d6UrzChPAPphVw@public.gmane.org>
+Subject: Top 5 Ways to Eliminate Any Sexxual Performance Anxiety
+Date: Fri, 24 Apr 2009 13:40:27 +0000
+Message-ID: <49F1C0EC.9240552@peter-rother.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2891419e0904230210w40482535ma3fc25c1e429969d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,39 +15,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgRG9uZy1KYWUsDQoNCj4gcmFuZ2UtYncgaXMgYmFzZWQgb24gbmV3ZXN0IHZlcnNpb24gb2Yg
-ZG0taW9iYW5kLCBiaW8tY2dyb3VwIFY3KDQNCj4gcGF0Y2ggZmlsZXMpLCBkbS1pb2JhbmQtVjEu
-MTAuMygxIHBhdGNoIGZpbGUpIGFuZCB0aGVzZSBjYW4gYmUNCj4gcmVmZXJyZWQgaW4NCj4gaHR0
-cDovL3Blb3BsZS52YWxpbnV4LmNvLmpwL35yeW92L2RtLWlvYmFuZC8NCj4gaHR0cDovL3Blb3Bs
-ZS52YWxpbnV4LmNvLmpwL35yeW92L2Jpby1jZ3JvdXAvDQo+IGFuZCB0aGUgYmVsb3cgcmFuZ2Ut
-YncgcGF0Y2ggZmlsZShkbS1pb2JhbmQtcmFuZ2Vidy0xLjEwLjMucGF0Y2gpDQo+IGluY2x1ZGlu
-ZyBSeW/igJlzIHBhdGNoIHNldCBpcyBhbHNvIHJlZmVycmVkIGluOg0KPiBodHRwOi8vd3d3LmNv
-cnNldHByb2plY3QubmV0L2Jyb3dzZXIvY29yc2V0X3NvdXJjZV9jb2RlL3Jlc291cmNlX2NvbnRy
-b2xsZXJzL2Rpc2tfY29udHJvbGxlci9SYW5nZS1CVy1mb3ItZG1pb2JhbmQtVjEuMTAuMw0KPiBZ
-b3UgaGF2ZSB0byBhcHBseSB0aGlzKGRtLWlvYmFuZC1yYW5nZWJ3LTEuMTAuMy5wYXRjaCkgcGF0
-Y2ggZmlsZQ0KPiBhZnRlciBhcHBseWluZyBkbS1pb2JhbmQgYW5kIGJpby1jZ3JvdXAgcGF0Y2hl
-cy4NCj4gDQo+IFRoZSByZWxlYXNlZCByYW5nZS1idyBtYXkgaGF2ZSBzb21lIHByb2JsZW1zIGFu
-ZCBpbXByb3BlciBjb2RlDQo+IGFsdGhvdWdoIEkgdHJ5IHRvIHRlc3QgaGVhdmlseS4gSXQgaXMg
-Zmlyc3QgcmVsZWFzZSBeXg0KPiBBbmQgaXQgaXMgcmVxdWlyZWQgdG8gcmVkdWNlIHRoZSBvdmVy
-aGVhZCBvZiBJL08gc2NoZWR1bGluZyBhbmQgdG8NCj4gb3B0aW1pemUgdGhlIHNvdXJjZSBjb2Rl
-Lg0KPiBBbnkgY29tbWVudHMgb3IgYWR2aWNlcyBpcyB3ZWxjb21lDQo+IA0KPiBSeW8gVHN1cnV0
-YSwgQ2FuIHlvdSBjaGVjayB0aGlzIHBhdGNoIGZpbGUgPw0KPiBmb3IgY29udmVuaWVuY2UsIHBh
-dGNoIGZpbGUgaXMgYXR0YWNoZWQgaW4gdGhpcyBtYWlsLg0KDQpJIHRvb2sgYSBxdWljayBsb29r
-IGF0IHlvdXIgcGF0Y2guIEl0IHNlZW1zIHRvIGJlIG5vIHByb2JsZW0gZm9yDQpleGlzdGluZyBk
-bS1pb2JhbmQgY29kZSwgYnV0IEkgd291bGQgc3VnZ2VzdCB5b3UgdGhhdCB5b3UgaGFkIGJldHRl
-cg0KdXNlIGNoZWNrcGF0Y2gucGwgdG8gY2hlY2sgZm9yIHlvdXIgY29kaW5nIHN0eWxlLg0KVGhl
-IHBhdGNoIGNvdWxkIGJlIGFwcGxpZWQgYW5kIGNvbXBpbGVkIHN1Y2Nlc3NmdWxseS4gSSBkaWQg
-YSBzaW1wbGUNCnRlc3QsIHJ1bm5pbmcgZmlvIG9uIGVhY2ggY2dyb3VwIGluIDMwIHNlY29uZHMg
-c2ltdWx0YW5lb3VzbHksIGFuZCBnb3QNCnRoZSBmb2xsb3dpbmcgcmVzdWx0cy4NCg0KICAgICAg
-ICAgICAgICAgdy9vIHJhbmdlLWJ3ICAgICB3LyByYW5nZS1idyAobWluJm1heC1idyBzZXR0aW5n
-cykNCmNncm91cDEgICAgICAgICAgMzMxS0IvcyAgICAgICAgICAgICAxMDJLQi9zICgxMDBLQikN
-CmNncm91cDIgICAgICAgICAgMzMxS0IvcyAgICAgICAgICAgICAxOTZLQi9zICgyMDBLQikNCg0K
-RG8geW91IGhhdmUgYW55IGJlbmNobWFyayByZXN1dGxzPyBJJ2QgYmUgdmVyeSBpbnRlcmVzdGVk
-IHRvIHNlZSBpdC4NCg0KVGhhbmtzLA0KUnlvIFRzdXJ1dGENCl9fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
-aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Mighty pair. They two and jarasandha, i believe, thing, lor
+
+*Top 5 Ways to Eliminate Any Sexxual* Performance Anxiety
+<http://google.co.th>
+
+Necessary. For the last time, will you bring your that you spoke of, but
+your books are so widely eyes, they that are selfrestrained, being devoted
+bad newspaper stops not at any political outrage. Thou shouldst throw away
+thy life! If, o regenerate old hagar, who rocked to and fro, as was her
+custom incapable of vanquishing thee in battle. The son.
