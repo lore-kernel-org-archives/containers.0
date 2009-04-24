@@ -1,17 +1,16 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 3/7] page_cgroup: provide a generic page tracking
-	infrastructure
-Date: Fri, 24 Apr 2009 10:31:21 +0200
-Message-ID: <20090424083116.GB8535__8365.97736129097$1240562519$gmane$org@linux>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 3/7] page_cgroup: provide a generic page
+	tracking	infrastructure
+Date: Fri, 24 Apr 2009 17:14:55 +0800
+Message-ID: <49F1830F.8020609__13344.1856749871$1240564747$gmane$org@cn.fujitsu.com>
 References: <1240090712-1058-1-git-send-email-righi.andrea@gmail.com>
 	<1240090712-1058-4-git-send-email-righi.andrea@gmail.com>
-	<49F11FBD.3070705@cn.fujitsu.com>
+	<49F11FBD.3070705@cn.fujitsu.com> <20090424083116.GB8535@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49F11FBD.3070705-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090424083116.GB8535@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,42 +20,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 24, 2009 at 10:11:09AM +0800, Gui Jianfeng wrote:
-> Andrea Righi wrote:
-> > Dirty pages in the page cache can be processed asynchronously by kernel
-> > threads (pdflush) using a writeback policy. For this reason the real
-> > writes to the underlying block devices occur in a different IO context
-> > respect to the task that originally generated the dirty pages involved
-> > in the IO operation. This makes the tracking and throttling of writeback
-> > IO more complicate respect to the synchronous IO.
-> > 
-> > The page_cgroup infrastructure, currently available only for the memory
-> > cgroup controller, can be used to store the owner of each page and
-> > opportunely track the writeback IO. This information is encoded in
-> > page_cgroup->flags.
+Andrea Righi wrote:
+> On Fri, Apr 24, 2009 at 10:11:09AM +0800, Gui Jianfeng wrote:
+>> Andrea Righi wrote:
+>>> Dirty pages in the page cache can be processed asynchronously by kernel
+>>> threads (pdflush) using a writeback policy. For this reason the real
+>>> writes to the underlying block devices occur in a different IO context
+>>> respect to the task that originally generated the dirty pages involved
+>>> in the IO operation. This makes the tracking and throttling of writeback
+>>> IO more complicate respect to the synchronous IO.
+>>>
+>>> The page_cgroup infrastructure, currently available only for the memory
+>>> cgroup controller, can be used to store the owner of each page and
+>>> opportunely track the writeback IO. This information is encoded in
+>>> page_cgroup->flags.
+>>   You encode id in page_cgroup->flags, if a cgroup get removed, IMHO, you
+>>   should remove the corresponding id in flags.
 > 
->   You encode id in page_cgroup->flags, if a cgroup get removed, IMHO, you
->   should remove the corresponding id in flags.
+> OK, the same same ID could be reused by another cgroup. I think this
+> should happen very rarely because IDs are recovered slowly anyway.
+> 
+> What about simply executing a sys_sync() when a io-throttle cgroup is
+> removed? If we're going to remove a cgroup no additional dirty page will
+> be generated by this cgroup, because it must be empty. And the sync
+> would allow that old dirty pages will be flushed back to disk (for those
+> pages the cgroup ID will be simply ignored).
+> 
+>>   One more thing, if a task is moving from a cgroup to another, the id in
+>>   flags also need to be changed.
+> 
+> I do not agree here. Even if a task is moving from a cgroup to another
+> the cgroup that generated the dirty page is always the old one. Remember
+> that we want to save cgroup's identity in this case, and not the task.
 
-OK, the same same ID could be reused by another cgroup. I think this
-should happen very rarely because IDs are recovered slowly anyway.
+  If the task moves to a new cgroup, the dirty page generated from the old
+  group still uses the old id. When these dirty pages is writing back to disk, 
+  the corresponding bios will be delayed according to old group's bandwidth 
+  limitation. Am i right? I think we should use the new bandwidth limitation
+  when actual IO happens. So we need to use new id for these pages. But i think
+  the implementation for this functionality must be very complicated. :)
 
-What about simply executing a sys_sync() when a io-throttle cgroup is
-removed? If we're going to remove a cgroup no additional dirty page will
-be generated by this cgroup, because it must be empty. And the sync
-would allow that old dirty pages will be flushed back to disk (for those
-pages the cgroup ID will be simply ignored).
+> 
+> Thanks,
+> -Andrea
+> 
+> 
+> 
 
->   One more thing, if a task is moving from a cgroup to another, the id in
->   flags also need to be changed.
-
-I do not agree here. Even if a task is moving from a cgroup to another
-the cgroup that generated the dirty page is always the old one. Remember
-that we want to save cgroup's identity in this case, and not the task.
-
-Thanks,
--Andrea
+-- 
+Regards
+Gui Jianfeng
