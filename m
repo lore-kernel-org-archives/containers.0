@@ -1,15 +1,14 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 00/54] Kernel based checkpoint/restart
-Date: Thu, 30 Apr 2009 11:41:06 +0200
-Message-ID: <20090430094106.GC13896@hawkmoon.kerlabs.com>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<20090429081815.GA1813@hawkmoon.kerlabs.com>
-	<49F8D8FC.8010400@cs.columbia.edu>
-Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: define CHECKPOINT_SUBTREE flag and sysctl
+Date: Sat, 25 Apr 2009 01:39:08 -0700
+Message-ID: <20090425083908.GA2767@us.ibm.com>
+References: <20090424210608.GA16973@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1195000496241945978=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49F8D8FC.8010400-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090424210608.GA16973-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,151 +16,384 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Fri, Apr 24, 2009 at 04:06:08PM -0500, Serge E. Hallyn wrote:
+> Hey Alexey and Oren,
+> 
+> here is my proposal for a patch on top of Oren's tree to do the leak
+> checking by default (basically the same way it was done in Alexey's
+> patchset).  It also by default explicitly requires CAP_SYS_ADMIN for
+> both checkpoint and restart.
+> 
+> I think the mm->exe_file save/restore is a separate feature addition,
+> but it was required to cleanly pass the file use count checks...
+> 
+> Any chance this is acceptable to both of you?
+> 
+> thanks,
+> -serge
+> 
+> From 8cbfbbdde1e9eab01766fcfb193846ae12ec07d6 Mon Sep 17 00:00:00 2001
+> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Date: Thu, 23 Apr 2009 11:37:23 -0700
+> Subject: [PATCH 1/1] cr: define CHECKPOINT_SUBTREE flag and sysctl
+> 
+> Define a CHECKPOINT_SUBTREE flag for sys_checkpoint() which
+> says it's ok if the the checkpointed set of tasks are not
+> a fully isolated container without leaks.
+> 
+> Define a sysctl 'ckpt_subtree_allowed' which determines
+> whether subtree checkpoints are ok.  If that sysctl,
+> ckpt_subtree_allowed, is 0, then the CHECKPOINT_SUBTREE flag
+> may not be used.  Also, if that sysctl is 0, then both
+> sys_checkpoint() and sys_restart() always require
+> CAP_SYS_ADMIN.
+> 
+> Finally, add a 'users' count to objhash items, and, for a
+> !CHECKPOINT_SUBTREE checkpoint, return an error code if
+> the actual objects' counts are higher, indicating leaks
+> (references to the objects from a task not being checkpointed).
+> Of course, by this time most of the checkpoint image has been
+> written out to disk, so this is purely advisory.  But then,
+> it's probably naive to argue that anything more than an
+> advisory 'this went wrong' error code is useful.
+> 
+> The comparison of the objhash user counts to object
+> refcounts as a basis for checking for leaks comes from
+> Alexey's OpenVZ-based c/r patchset.
+> 
+> TODO: I still need to figure out what to do about
+> CONFIG_*_NS dependencies in the cr_check_leaks() fn.
 
---===============1195000496241945978==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-2782-1241084454-0001-2"
-Content-Disposition: inline
+I like what you and Nathtan have settled on so far. I have a significant
+note re: exe_file below but otherwise just some minor comments. 
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+<snip> (signoff, diffstat)
 
---=_bohort-2782-1241084454-0001-2
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index 7382cc3..e42d3eb 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -25,6 +25,7 @@
+>  #include <linux/checkpoint_hdr.h>
+> 
+>  #include "checkpoint_arch.h"
+> +#include "objhash.h"
+> 
+>  /* unique checkpoint identifier (FIXME: should be per-container ?) */
+>  static atomic_t cr_ctx_count = ATOMIC_INIT(0);
+> @@ -487,6 +488,9 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+>  	ctx->root_nsproxy = nsproxy;
+>  	ctx->root_init = is_container_init(task);
+> 
+> +	if (!(ctx->flags & CHECKPOINT_SUBTREE) && !ctx->root_init)
+> +		return -EBUSY;
+> +
+>  	return 0;
+> 
+>   out:
+> @@ -523,6 +527,96 @@ static int cr_ctx_checkpoint(struct cr_ctx *ctx, pid_t pid)
+>  	return 0;
+>  }
+> 
+> +static int check_obj_isolated(struct cr_ctx *ctx, struct cr_objref *ref)
+> +{
+> +	struct uts_namespace *utsns;
+> +	struct ipc_namespace *ipcns;
+> +	struct file *file;
+> +	struct mm_struct *mm;
+> +	unsigned long cnt, cnt2;
+> +	int ret = 1;
+> +
+> +	/* note - one might think it worthwhile to put the ns
+> +	 * ones under #ifdefs for the CONFIG_X_NS, but instead
+> +	 * it CONFIG_CHECKPOINT should depend on all of those
+> +	 */
+> +	/* note2: the objhash has taken a reference, so we account
+> +	 * for that */
+> +
+> +	cnt = ref->users + 1;
 
-On 29/04/09 18:47 -0400, Oren Laadan wrote:
-> Hi Louis,
->=20
-> Louis Rilling wrote:
-> > Hi,
-> >=20
-> > On 28/04/09 19:23 -0400, Oren Laadan wrote:
-> >> Here is the latest and greatest of checkpoint/restart (c/r) patchset.
-> >> The logic and image format reworked and simplified, code refactored,
-> >> support for PPC, s390, sysvipc, shared memory of all sorts, namespaces
-> >> (uts and ipc).
-> >=20
-> > I should have asked before, but what are the reasons to checkpoint SYSV=
- IPCs
-> > in the same file/stream as tasks? Would it be better to checkpoint them
-> > independently, like the file system state?
-> >=20
-> > In Kerrighed we chose to checkpoint SYSV IPCs independently, a bit like=
- the file
-> > system state, because SYSV IPCs objects' lifetime do not depend on tasks
-> > lifetime, and we can gain more flexibility this way. In particular we e=
-nvision
-> > cases in which two applications share a state in a SYSV SHM (something =
-like a
-> > producer-consumer scheme), but do not need to be checkpointed together.=
- In such
-> > a case the SYSV SHM itself could even need more high-availability (using
-> > active replication) than a checkpoint/restart facility.
-> >=20
->=20
-> Thanks for the feedback, this is actually an interesting idea.
->=20
-> Indeed in the past I also considered SYSV IPC to be a "global" resource
-> that was checkpointed before iterating through the tasks.
->=20
-> However, in the presence of namespaces, the lifetime of an IPC namespace
-> does depend on on tasks lifetime - when the last task referring to a
-> given namespace exits - that namespace is destroyed. Of course, the
-> root namespace is truly global, because init(1) never exits.
->=20
-> What would 'checkpoint them independently' mean in this case ?
+Perhaps this switch is another candidate for an fops-style function pointer.
 
-I mean that the producer and the consumer could have separate checkpointing
-policies (if any), and the IPC SHM as well.
+> +	switch (ref->type) {
+> +	case CR_OBJ_UTSNS:
+> +		utsns = ref->ptr;
+> +		cnt2 = (unsigned long) atomic_read(&utsns->kref.refcount);
+> +		if (cnt != cnt2) {
+> +			cr_debug("uts namespace leak\n");
+> +			printk(KERN_NOTICE "%s: uts: %lu users count %lu\n",
+> +				__func__, cnt, cnt2);
+> +			ret = 0;
+> +		}
+> +		break;
+> +	case CR_OBJ_IPCNS:
+> +		ipcns = ref->ptr;
+> +		cnt2 = (unsigned long) atomic_read(&ipcns->kref.refcount);
+> +		if (cnt != cnt2) {
+> +			cr_debug("ipc namespace leak\n");
+> +			printk(KERN_NOTICE "%s: ipc: %lu users count %lu\n",
+> +				__func__, cnt, cnt2);
+> +			ret = 0;
+> +		}
+> +		break;
+> +	case CR_OBJ_FILE:
+> +		file = ref->ptr;
+> +		if (file == ctx->file)
+> +			cnt++;
+> +		cnt2 = (unsigned long) atomic_long_read(&file->f_count);
+> +		if (cnt != cnt2) {
+> +			cr_debug("file usage leak\n");
+> +			printk(KERN_NOTICE "%s: file: %lu users count %lu\n",
+> +				__func__, cnt, cnt2);
+> +			printk(KERN_NOTICE "%s: filename is %s (%s)\n",
+> +				__func__, file->f_dentry->d_iname,
+> +				file->f_dentry->d_name.name);
+> +			ret = 0;
+> +		}
+> +		break;
+> +	case CR_OBJ_MM:
+> +		mm = ref->ptr;
+> +		cnt2 = (unsigned long) atomic_read(&mm->mm_users);
+> +		if (cnt != cnt2) {
+> +			cr_debug("mm usage leak\n");
+> +			printk(KERN_NOTICE "%s: mm: %lu users count %lu\n",
+> +				__func__, cnt, cnt2);
+> +			ret = 0;
+> +		}
+> +		break;
+> +	default:
+> +		break;
+> +	}
+> +
+> +	return ret;
+> +}
+> +
+> +static int cr_check_leaks(struct cr_ctx *ctx)
 
->=20
-> In your use-case, can you restart either application without first
-> restoring the relevant SYSVIPC ?
+What are "leaks" ? ;)
 
-Probably not.
+How about cr_find_ref_leaks ? I suggest "find" because "check" confuses with
+"checkpoint". "ref" because we're not looking for memory leaks.
 
->=20
-> Can you think of other use-cases for such a division ?  Am I right to
-> guess that your use case is specific to the distributed (and SSI-)
-> nature of your system ?  (Active-replication of SYSV_SHM sounds
-> awfully related to DSM :)
+> +{
+> +	struct cr_objref *ref;
+> +	struct hlist_node *node;
+> +
+> +	if (ctx->flags & CHECKPOINT_SUBTREE)
+> +		return 0;
+> +
+> +	/* Make sure the uts and ipc namespaces aren't
+> +	 * shared with any tasks not being checkpointed */
+> +	hlist_for_each_entry(ref, node, &ctx->objhash->all_nodes, next) {
+> +		if (!check_obj_isolated(ctx, ref))
+> +			return -EBUSY;
+> +	}
+> +
+> +	/* TODO: check netns, etc */
+> +
+> +	return 0;
+> +}
+> +
+>  int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+>  {
+>  	int ret;
+> @@ -550,6 +644,10 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+>  	if (ret < 0)
+>  		goto out;
+> 
+> +	ret = cr_check_leaks(ctx);
+> +	if (ret < 0)
+> +		goto out;
+> +
+>  	ctx->crid = atomic_inc_return(&cr_ctx_count);
+> 
+>  	/* on success, return (unique) checkpoint identifier */
+> diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
+> index 8be6abe..04ce1a0 100644
+> --- a/checkpoint/ckpt_file.c
+> +++ b/checkpoint/ckpt_file.c
+> @@ -146,7 +146,8 @@ int cr_write_file(struct cr_ctx *ctx, struct file *file)
+>   * otherwise calls cr_write_file to dump the file pointer too.
+>   */
+>  static int
+> -cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
+> +cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd,
+> +		struct task_struct *t)
+>  {
+>  	struct cr_hdr h;
+>  	struct cr_hdr_fd_ent *hh;
+> @@ -236,7 +237,7 @@ int cr_write_fd_table(struct cr_ctx *ctx, struct task_struct *t)
+> 
+>  	cr_debug("nfds %d\n", nfds);
+>  	for (n = 0; n < nfds; n++) {
+> -		ret = cr_write_fd_ent(ctx, files, fdtable[n]);
+> +		ret = cr_write_fd_ent(ctx, files, fdtable[n], t);
+>  		if (ret < 0)
+>  			break;
+>  	}
+> diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
+> index 54b2674..834a78e 100644
+> --- a/checkpoint/ckpt_mem.c
+> +++ b/checkpoint/ckpt_mem.c
+> @@ -616,10 +616,12 @@ static enum cr_vma_type cr_shared_vma_type(struct vm_area_struct *vma, int old)
+>   * cr_write_vma - classify the vma and dump its contents
+>   * @ctx: checkpoint context
+>   * @vma: vma object
+> + * @task: owning task
+>   *
+>   * (see vma subtypes in checkpoint_hdr.h)
+>   */
+> -static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+> +static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma,
+> +			struct task_struct *task)
+>  {
+>  	struct cr_hdr h;
+>  	struct cr_hdr_vma *hh;
+> @@ -742,11 +744,19 @@ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
+>  	struct cr_hdr_mm *hh;
+>  	struct mm_struct *mm;
+>  	struct vm_area_struct *vma;
+> -	int objref, new;
+> +	int objref, new, exe_new;
+> +	int exefile_objref;
+>  	int ret;
+> 
+>  	mm = get_task_mm(t);
+> 
 
-The case of active-replication may be specific to DSM-based systems, but the
-case of independent policies is already interesting in standalone boxes.
+Might add a check for exe_file == NULL here too (see below).
 
->=20
->=20
-> While not focusing on such use cases, I want to keep the design flexible
-> enough to not exclude them a-priori, and be able to address them later
-> on. Indeed, the code is split such that the the function to save a given
-> IPC namespace does not depend on the task that uses it. Future code
-> could easily use the same functionality.
->=20
-> One way to be flexible to support your use case, is by having some
-> mechanism in place to select whether a resource (virtually any) is
-> to be chekcpointed/restored.
->=20
-> For example, you could imagine checkpoint(..., CHECKPOINT_SYSVIPC)
-> to checkpoint (also) IPC, and not checkpoint IPC in its absence.
->=20
-> So normally you'd have checkpoint(..., CHECKPOINT_ALL). When you don't
-> want IPC, you'd use CHECKPOINT_ALL & ~CHECKPOINT_SYSVIPC. When you
-> want only IPC, you'd use CHECKPOINT_SYSVIPC only.
->=20
-> Same thing for restart, only that it will get trickier in the "only IPC"
-> case, since you will need to tell which IPC namespace is affected.
->=20
-> Also, I envision a task saying cradvise(CHECKPOINT_SYSVIPC, false),
-> telling the kernel to not c/r its IPC namespace. (Or any other
-> resource). Again there would need to be a way to add a restored
-> namespace.
->=20
-> Does this address your concerns ?
+> +	exe_new = cr_obj_add_ptr(ctx, mm->exe_file, &exefile_objref,
+> +				CR_OBJ_FILE, 0);
+> +	if (exe_new < 0) {
+> +		ret = exe_new;
+> +		goto mmput;
+> +	}
+> +
+>  	new = cr_obj_add_ptr(ctx, mm, &objref, CR_OBJ_MM, 0);
+>  	if (new < 0) {
+>  		ret = new;
+> @@ -764,6 +774,7 @@ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
+>  	down_read(&mm->mmap_sem);
+> 
+>  	hh->objref = objref;
+> +	hh->exefile_objref = exefile_objref;
+> 
+>  	hh->start_code = mm->start_code;
+>  	hh->end_code = mm->end_code;
+> @@ -786,10 +797,17 @@ int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
+>  	if (ret < 0)
+>  		goto out;
+> 
+> +	if (exe_new) {
+> +		/* write out the exe_file */
+> +		ret = cr_write_file(ctx, mm->exe_file);
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +
+>  	if (new) {
+>  		/* write the vma's */
+>  		for (vma = mm->mmap; vma; vma = vma->vm_next) {
+> -			ret = cr_write_vma(ctx, vma);
+> +			ret = cr_write_vma(ctx, vma, t);
+>  			if (ret < 0)
+>  				goto out;
+>  		}
 
-Yes this sounds flexible enough. Thanks for=A0taking this into account.
+<snip>
+ 
+> diff --git a/checkpoint/rstr_mem.c b/checkpoint/rstr_mem.c
+> index 9de770d..84a7255 100644
+> --- a/checkpoint/rstr_mem.c
+> +++ b/checkpoint/rstr_mem.c
+> @@ -19,6 +19,7 @@
+>  #include <linux/mm.h>
+>  #include <linux/err.h>
+>  #include <linux/syscalls.h>
+> +#include <linux/proc_fs.h>
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+> 
+> @@ -519,6 +520,7 @@ int cr_read_mm(struct cr_ctx *ctx)
+>  	struct mm_struct *mm;
+>  	unsigned int nr;
+>  	int ret;
+> +	struct file *exe_file;
+> 
+>  	hh = cr_hbuf_get(ctx, sizeof(*hh));
+>  	if (!hh)
+> @@ -580,6 +582,24 @@ int cr_read_mm(struct cr_ctx *ctx)
+>  	mm->arg_end = hh->arg_end;
+>  	mm->env_start = hh->env_start;
+>  	mm->env_end = hh->env_end;
+> +	exe_file = cr_obj_get_by_ref(ctx, hh->exefile_objref, CR_OBJ_FILE);
+> +	if (exe_file < 0) {
+> +		ret = -ENOENT;
+> +		up_write(&mm->mmap_sem);
+> +		goto out;
+> +	}
+> +	if (!exe_file) {
+> +		/* really it can't be the case that it NOT be NULL... */
 
-Louis
+This comment isn't correct. Yes, *most* of the time exe_file should be
+non-NULL. 
 
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
+Some tools avoid pinning the filesystem with a reference to its executable file
+by copying the executable into private, anonymous, executable pages,
+and then unmaping the originals. This drops the last VMA reference to the
+file which causes the exe_file reference to be dropped as well.
 
---=_bohort-2782-1241084454-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+It may provide an interesting testcase for checkpoint/restart since it
+would mean the executable couldn't be mapped from a checkpointed file --
+we'd have to rely solely on VMA reconstruction for these.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
+> +		int fd = cr_read_file(ctx, hh->exefile_objref);
+> +		if (fd < 0) {
+> +			ret = fd;
+> +			up_write(&mm->mmap_sem);
+> +			goto out;
+> +		}
+> +		exe_file = fget(fd);
+> +		sys_close(fd);
+> +	}
+> +	set_mm_exe_file(mm, exe_file);
+>  	up_write(&mm->mmap_sem);
+> 
+>  	/* FIX: need also mm->flags */
 
-iD8DBQFJ+XIyVKcRuvQ9Q1QRAjk0AJ4wdlBNqypc5zd+XKossf7Z3cEGsQCgqHJI
-9PDE13csaarGHmoRIHNohEI=
-=0N7O
------END PGP SIGNATURE-----
+<snip>
 
---=_bohort-2782-1241084454-0001-2--
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 82d2a40..175d727 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -33,7 +33,7 @@ struct cr_ctx {
+>  	unsigned long flags;
+>  	unsigned long oflags;	/* restart: old flags */
+> 
+> -	struct file *file;
+> +	struct file *file;	/* file to write image to */
+>  	int total;		/* total read/written */
+> 
+>  	void *hbuf;		/* temporary buffer for headers */
+> @@ -63,8 +63,12 @@ struct cr_ctx {
+>  };
+> 
+>  /* cr_ctx: flags */
+> -#define CR_CTX_CKPT	0x1
+> -#define CR_CTX_RSTR	0x2
+> +#define CR_CTX_CKPT		0x1
+> +#define CR_CTX_RSTR		0x2
+> +#define CHECKPOINT_SUBTREE	0x4
 
---===============1195000496241945978==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+The whitespace change somewhat obscures the introduction of the flag here.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============1195000496241945978==--
+Cheers,
+	-Matt Helsley
