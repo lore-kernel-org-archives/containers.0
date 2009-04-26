@@ -1,11 +1,23 @@
-From: "transcendental Kerr" <cholinesterase-AW+knjHN+AA8mDzVf2S3og@public.gmane.org>
-Subject: Listing of family practice doctors and more
-Date: 27 Apr 2009 08:06:10 +0800
-Message-ID: <FTP-SERVERf3jlHNMQt00009dd9@ftp-server.mail.hysknet.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: container-to-host virtual or loopback kind of interface support
+Date: Sun, 26 Apr 2009 14:37:37 -0700
+Message-ID: <m1fxfvp04e.fsf@fess.ebiederm.org>
+References: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
+	<20090409135724.GA26467@us.ibm.com>
+	<D02204CF-796A-45F5-B9A2-5B581EB52A2F@gmail.com>
+	<20090409191402.GA561@us.ibm.com>
+	<638f07d70904091628o25d11b95oa8614a0585df4cf5@mail.gmail.com>
+	<m1iqktw5uq.fsf@fess.ebiederm.org>
+	<638f07d70904250738j987ed6j685372651346634a@mail.gmail.com>
+	<m1k558va5u.fsf@fess.ebiederm.org>
+	<638f07d70904260108s3ca2eb5cpcbed37d5ba002d42@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <638f07d70904260108s3ca2eb5cpcbed37d5ba002d42-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Elwin Stelzer Eliazer's message of "Sun\,
+	26 Apr 2009 01\:08\:14 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,41 +27,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: info-QHxYkWF1i495tyq9mG57hpkigfUh6rMo@public.gmane.org, diskalu-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, galkaz-gzoq2UBT8r4@public.gmane.org, imudd-vygXAhXhwyqCjQd/q70wJmyrf/U2vnZa930Pai70D+E@public.gmane.org, tomi6230i-4VW9nwAotmI@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dengsong7@yongsa
+To: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
+> Thank you for your response.
+>
+> Let me explain my requirements more, and in this context, i would like to know
+> your response.
+>
+> A reverse web and applications proxy is the user space application that we are
+> virtualizing using network namespace and LXC.
+> Local apache server and other apps are accessed through several sockets on
+> 127.0.0.1 now and this has to be virtualized.
+> The proxy under each LXC must handle hundreds of proxied sessions.
+> The socket connections to local web and other apps server are dynamic, and
+> corresponds to the dynamic external proxy sessions, and these can not be
+> created upfront.
+>
+> I posted two other questions also, for which i never got a response from this
+> list.
+>
+> 1. Can i have netfilter/iptables rules corresponding to each container, that
+> has overlapping IP address space? In other words, are netfilter/iptables rules
+> handling virtualized as part of network namespace. Some preliminary tests seem
+> to work. How do i know the development or proper release status on this
+> feature?
 
-Currently in Practice:  MDs in the US 
+Yes.
 
-788,851 in total <> 17,030 emails
+The easiest way to know the status is to read the code.
+Short of the that the easiest way to know is to try it.
 
-MDs in many different specialties
+In the network namespace either the feature should fail gracefully
+in a network namespace or after the code has been updated it should
+work.
 
-Over a dozen sortable fields
+By and large all of ipv4 and ipv6 and iptables is expected to work.
 
-Cost just slashed -  $391
+> 2. Can the /dev/tun based PPP interface be part of a container? Like veth or
+> macvlan what is the type for this?
 
+Yes.  tun/tap is a well tested path.  ppp looks like it has also been converted.
 
-<><><> If you order by the end of the week you can take all the items below for fr ee <><><>
+> Looking forwards for your suggestions and the options i have for these needs
+> using LXC/namespace, as of 2.6.29. Do you still think i can avoid the relay
+> daemon?
 
-++> Pharmaceutical Companies in the USA
-  Names and email addresses of 47,000 employees in high-ranking positions
+Apache is creating the connections on demand to your client.  Interesting.
 
-++> American Hospital Listing
-  more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+I am too familiar with that setup.  In all honesty the easy thing to
+do would be to have real ip address on something like the 192.168.0.0/16
+network for each virtual machine.
 
-++> US Dentist Contact List
-  A complete Contact List or dentists and related services (valued at $399)
+Baring that it is possible to have your proxy receive the connections
+and pass them via a unix domain socket created at the beginning of
+time to your client.  If you have the proxy already it quite possibly
+isn't worth it.
 
-++> Chiropractors in the USA
-  100k Chiropractors offices with full contact data including email, postal address, phone and fax
-
-Email us at:      Martin-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
-
-  
-
-this offer is only valid until May 02 2009
-
-
-To invoke no further correspondence status please send an email to stopping-fbv2OSvkR8XUmcjTmZvMDdBPR1lH4CV8@public.gmane.org
+Eric
