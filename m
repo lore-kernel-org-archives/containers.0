@@ -1,22 +1,17 @@
-From: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: container-to-host virtual or loopback kind of interface support
-Date: Mon, 27 Apr 2009 15:00:38 -0700
-Message-ID: <638f07d70904271500u1f0a13cbif1c5db64bdb520ab@mail.gmail.com>
-References: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
-	<20090409135724.GA26467@us.ibm.com>
-	<D02204CF-796A-45F5-B9A2-5B581EB52A2F@gmail.com>
-	<20090409191402.GA561@us.ibm.com>
-	<638f07d70904091628o25d11b95oa8614a0585df4cf5@mail.gmail.com>
-	<m1iqktw5uq.fsf@fess.ebiederm.org>
-	<638f07d70904250738j987ed6j685372651346634a@mail.gmail.com>
-	<m1k558va5u.fsf@fess.ebiederm.org>
-	<638f07d70904260108s3ca2eb5cpcbed37d5ba002d42@mail.gmail.com>
-	<m1fxfvp04e.fsf@fess.ebiederm.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: define CHECKPOINT_SUBTREE flag and sysctl
+Date: Mon, 27 Apr 2009 18:13:49 -0400
+Message-ID: <49F62E1D.20003@cs.columbia.edu>
+References: <20090424210608.GA16973@us.ibm.com> <m3vdotk34g.fsf@pobox.com>
+	<20090425024515.GA4534@hallyn.com> <m3y6tmt3wb.fsf@pobox.com>
+	<20090427180717.GA28476@us.ibm.com>
+	<49F61181.9010809@cs.columbia.edu>
+	<20090427203858.GA32290@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1fxfvp04e.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <20090427203858.GA32290-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,93 +21,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Thanks Eric for your detailed response.
-On the PPP interfaces under namespace, how do i configure them under lxc
-config? Are there other types like "veth" and "macvlan" for PPP?
-
-And i believe the container app that opens the /dev/tun gets ownership of
-the file handle, and several container apps can open this in parallel, and
-they do not interfere. Even if the containers do not have separate rootfs,
-this is the case. Please confirm on these.
-
-regards,
-Elwin.
 
 
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>
+>> Serge E. Hallyn wrote:
+>>> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+>>>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+>>>>> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+>>>>>> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+>>>>>>> +	cnt = ref->users + 1;
+>>>>>>> +	switch (ref->type) {
+>>>>>>> +	case CR_OBJ_UTSNS:
+>>>>>>> +		utsns = ref->ptr;
+>>>>>>> +		cnt2 = (unsigned long) atomic_read(&utsns->kref.refcount);
+>>>>>>> +		if (cnt != cnt2) {
+>>>>>>> +			cr_debug("uts namespace leak\n");
+>>>>>> I'm struggling to understand what guarantee a check such as this is
+>>>>>> supposed to be making.  I see that it will catch *some* undesirable
+>>>>>> cases.  But "current refcount equals old refcount" does not imply that
+>>>>>> "refcount has not changed in the meantime".
+>>>>> It's got nothing to do with the refcounts changing.
+>>>>>
+>>>>> It ensures that, at the end of the checkpoint, the resources (utsns
+>>>>> in this case) had no users not accounted for by a checkpointed task.
+>>>>> In other words, there was no information leak.
+>>>> Okay, I had mistakenly believed this code was running in the
+>>>> subtree/non-container case.  I reread your patch description and it
+>>>> indicates that these checks are made only in the case of container
+>>>> checkpoint.  If I'm (finally) understanding the patch correctly, my
+>>>> concern is lessened.  Comparing refcounts is still... unconventional.
+>>> Yes, and there are cases where it won't be usable - for instance if
+>>> opening a procfile increments the resource->use count.  That should
+>>> not be an issue for utsns, ipcns, files, or vmas, afaik.
+>> Actually, one such case is if you have a FIFO - and a task outside the
+>> "container" (for whatever definition we choose) opens that FIFO because
+>> the right thingie is mounted in its (distinct) mounts namespace.
+> 
+> That'll affect the CR_OBJ_INODE object, right?  (Not the CR_OBJ_FILE
+> one).
 
-On Sun, Apr 26, 2009 at 2:37 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>wrote:
+Yes.  And the point is that this leak cannot be reliably detected.
 
-> Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->
-> > Thank you for your response.
-> >
-> > Let me explain my requirements more, and in this context, i would like to
-> know
-> > your response.
-> >
-> > A reverse web and applications proxy is the user space application that
-> we are
-> > virtualizing using network namespace and LXC.
-> > Local apache server and other apps are accessed through several sockets
-> on
-> > 127.0.0.1 now and this has to be virtualized.
-> > The proxy under each LXC must handle hundreds of proxied sessions.
-> > The socket connections to local web and other apps server are dynamic,
-> and
-> > corresponds to the dynamic external proxy sessions, and these can not be
-> > created upfront.
-> >
-> > I posted two other questions also, for which i never got a response from
-> this
-> > list.
-> >
-> > 1. Can i have netfilter/iptables rules corresponding to each container,
-> that
-> > has overlapping IP address space? In other words, are netfilter/iptables
-> rules
-> > handling virtualized as part of network namespace. Some preliminary tests
-> seem
-> > to work. How do i know the development or proper release status on this
-> > feature?
->
-> Yes.
->
-> The easiest way to know the status is to read the code.
-> Short of the that the easiest way to know is to try it.
->
-> In the network namespace either the feature should fail gracefully
-> in a network namespace or after the code has been updated it should
-> work.
->
-> By and large all of ipv4 and ipv6 and iptables is expected to work.
->
-> > 2. Can the /dev/tun based PPP interface be part of a container? Like veth
-> or
-> > macvlan what is the type for this?
->
-> Yes.  tun/tap is a well tested path.  ppp looks like it has also been
-> converted.
->
-> > Looking forwards for your suggestions and the options i have for these
-> needs
-> > using LXC/namespace, as of 2.6.29. Do you still think i can avoid the
-> relay
-> > daemon?
->
-> Apache is creating the connections on demand to your client.  Interesting.
->
-> I am too familiar with that setup.  In all honesty the easy thing to
-> do would be to have real ip address on something like the 192.168.0.0/16
-> network for each virtual machine.
->
-> Baring that it is possible to have your proxy receive the connections
-> and pass them via a unix domain socket created at the beginning of
-> time to your client.  If you have the proxy already it quite possibly
-> isn't worth it.
->
-> Eric
->
+... unless you hide FIFO's in the network namespace :o
+(no !  I'm no suggesting...)
+
+Oren.
+
+> 
+>> Also, unsure if unix domain sockets (those visible through the file
+>> system, not the "abstract" type) are otherwise isolated as well ?
+> 
+> Yes, they are isolated by network namespace, to the chagrin of some
+> people.
+> 
+> -serge
+> 
