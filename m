@@ -1,15 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 7/7] blkio-cgroup: Fast page tracking
-Date: Tue, 28 Apr 2009 21:47:40 +0900 (JST)
-Message-ID: <20090428.214740.183024301.ryov__15922.703248407$1240923547$gmane$org@valinux.co.jp>
-References: <20090428.214604.104034341.ryov@valinux.co.jp>
-	<20090428.214632.189725895.ryov@valinux.co.jp>
-	<20090428.214705.112621770.ryov@valinux.co.jp>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH v15 2/7] res_counter: introduce ratelimiting attributes
+Date: Tue, 28 Apr 2009 16:39:29 +0200
+Message-ID: <20090428143927.GA990__16918.4498642155$1240929667$gmane$org@linux>
+References: <1240908234-15434-1-git-send-email-righi.andrea@gmail.com>
+	<1240908234-15434-3-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090428.214705.112621770.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1240908234-15434-3-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,368 +19,238 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is an extra patch which reduces the overhead of IO tracking but
-increases the size of struct page_cgroup.
+Subject: io-throttle: reduce the size of res_counter
 
-Based on 2.6.30-rc3-git3
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Reduce the size of struct res_counter after the introduction of
+ratelimited resources:
 
+- replace policy with a more generic unsigned long flags and encode the
+  throttling policy using a single bit of flags
+
+- remove the attribute capacity: max_usage is not used in ratelimited
+  resources and capacity is not used in all the other cases (it has been
+  introduced only for token-bucket ratelimited resources), so just merge
+  capacitiy into max_usage
+
+On a 64-bit architecture:
+
+  vanilla:					sizeof(struct res_counter) = 48
+  with-io-throttle:				sizeof(struct res_counter) = 72
+  with-io-throttle-and-reduced-res-counter:	sizeof(struct res_counter) = 64
+
+[ This patch must be applied on top of io-throttle v15. ]
+
+Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/biotrack.h    |    5 -
- include/linux/page_cgroup.h |   26 --------
- mm/biotrack.c               |  134 ++++++++++++++++++++++++++------------------
- 3 files changed, 87 insertions(+), 78 deletions(-)
+ block/blk-io-throttle.c     |   14 ++++++++------
+ include/linux/res_counter.h |   40 +++++++++++++++++++++++++---------------
+ kernel/res_counter.c        |   23 ++++++-----------------
+ 3 files changed, 39 insertions(+), 38 deletions(-)
 
-Index: linux-2.6.30-rc3-git3/mm/biotrack.c
-===================================================================
---- linux-2.6.30-rc3-git3.orig/mm/biotrack.c
-+++ linux-2.6.30-rc3-git3/mm/biotrack.c
-@@ -3,9 +3,6 @@
-  * Copyright (C) VA Linux Systems Japan, 2008-2009
-  * Developed by Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+diff --git a/block/blk-io-throttle.c b/block/blk-io-throttle.c
+index 8dc2c93..a7edc47 100644
+--- a/block/blk-io-throttle.c
++++ b/block/blk-io-throttle.c
+@@ -257,10 +257,11 @@ static void iothrottle_show_limit(struct seq_file *m, dev_t dev,
+ {
+ 	if (!res->limit)
+ 		return;
+-	seq_printf(m, "%u %u %llu %llu %lli %llu %li\n",
++	/* maj min bw-limit ratelimit-policy usage bucket-size delta-time */
++	seq_printf(m, "%u %u %llu %lu %lli %llu %li\n",
+ 		MAJOR(dev), MINOR(dev),
+-		res->limit, res->policy,
+-		(long long)res->usage, res->capacity,
++		res->limit, res_counter_flagged(res, RES_COUNTER_POLICY),
++		(long long)res->usage, res->max_usage,
+ 		jiffies_to_clock_t(res_counter_ratelimit_delta_t(res)));
+ }
+ 
+@@ -361,7 +362,7 @@ static dev_t devname2dev_t(const char *buf)
+  */
+ static int iothrottle_parse_args(char *buf, size_t nbytes, int filetype,
+ 			dev_t *dev, unsigned long long *iolimit,
+-			unsigned long long *strategy,
++			unsigned long *strategy,
+ 			unsigned long long *bucket_size)
+ {
+ 	char *p;
+@@ -396,7 +397,7 @@ static int iothrottle_parse_args(char *buf, size_t nbytes, int filetype,
+ 	/* throttling strategy (leaky bucket / token bucket) */
+ 	if (!s[2])
+ 		return -EINVAL;
+-	ret = strict_strtoull(s[2], 10, strategy);
++	ret = strict_strtoul(s[2], 10, strategy);
+ 	if (ret < 0)
+ 		return ret;
+ 	switch (*strategy) {
+@@ -429,7 +430,8 @@ static int iothrottle_write(struct cgroup *cgrp, struct cftype *cft,
+ 	struct iothrottle *iot;
+ 	struct iothrottle_node *n, *newn = NULL;
+ 	dev_t dev;
+-	unsigned long long iolimit, strategy, bucket_size;
++	unsigned long long iolimit, bucket_size;
++	unsigned long strategy;
+ 	char *buf;
+ 	size_t nbytes = strlen(buffer);
+ 	int ret = 0;
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index 9bed6af..c18cee2 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -16,6 +16,15 @@
+ #include <linux/cgroup.h>
+ #include <linux/jiffies.h>
+ 
++/*
++ * res_counter flags
++ *
++ * bit 0 -- ratelimiting policy: leaky bucket / token bucket
++ */
++#define RES_COUNTER_POLICY	0
++
++#define res_counter_flagged(rc, flag)	((rc)->flags & (1 << (flag)))
++
+ /* The various policies that can be used for ratelimiting resources */
+ #define	RATELIMIT_LEAKY_BUCKET	0
+ #define	RATELIMIT_TOKEN_BUCKET	1
+@@ -23,35 +32,32 @@
+ /**
+  * struct res_counter - the core object to account cgroup resources
   *
-- * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- * Use part of page_cgroup->flags to store blkio-cgroup ID.
-- *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; either version 2 of the License, or
-@@ -20,6 +17,7 @@
- #include <linux/module.h>
- #include <linux/smp.h>
- #include <linux/bit_spinlock.h>
-+#include <linux/idr.h>
- #include <linux/blkdev.h>
- #include <linux/biotrack.h>
- #include <linux/mm_inline.h>
-@@ -45,8 +43,11 @@ static inline struct blkio_cgroup *blkio
- 					struct blkio_cgroup, css);
- }
- 
-+static struct idr blkio_cgroup_id;
-+static DEFINE_SPINLOCK(blkio_cgroup_idr_lock);
- static struct io_context default_blkio_io_context;
- static struct blkio_cgroup default_blkio_cgroup = {
-+	.id		= 0,
- 	.io_context	= &default_blkio_io_context,
- };
- 
-@@ -61,7 +62,6 @@ void blkio_cgroup_set_owner(struct page 
- {
- 	struct blkio_cgroup *biog;
- 	struct page_cgroup *pc;
--	unsigned long id;
- 
- 	if (blkio_cgroup_disabled())
- 		return;
-@@ -69,29 +69,27 @@ void blkio_cgroup_set_owner(struct page 
- 	if (unlikely(!pc))
- 		return;
- 
--	lock_page_cgroup(pc);
--	page_cgroup_set_id(pc, 0);	/* 0: default blkio_cgroup id */
--	unlock_page_cgroup(pc);
-+	pc->blkio_cgroup_id = 0;	/* 0: default blkio_cgroup id */
- 	if (!mm)
- 		return;
- 
-+	/*
-+	 * Locking "pc" isn't necessary here since the current process is
-+	 * the only one that can access the members related to blkio_cgroup.
-+	 */
- 	rcu_read_lock();
- 	biog = blkio_cgroup_from_task(rcu_dereference(mm->owner));
--	if (unlikely(!biog)) {
--		rcu_read_unlock();
--		return;
--	}
-+	if (unlikely(!biog))
-+		goto out;
++ * @flags:	resource counter attributes
+  * @usage:	the current resource consumption level
+- * @max_usage:	the maximal value of the usage from the counter creation
++ * @max_usage:	the maximal value of the usage from the counter creation,
++ *		or the maximum capacity of the resource (for ratelimited
++ *		resources)
+  * @limit:	the limit that usage cannot be exceeded
+  * @failcnt:	the number of unsuccessful attempts to consume the resource
+- * @policy:	the limiting policy / algorithm
+- * @capacity:	the maximum capacity of the resource
+  * @timestamp:	timestamp of the last accounted resource request
+- * @lock:	the lock to protect all of the above.
+- *		The routines below consider this to be IRQ-safe
++ * @lock:	the lock to protect all of the above
++ * @parent:	Parent counter, used for hierarchial resource accounting
+  *
+  * The cgroup that wishes to account for some resource may include this counter
+  * into its structures and use the helpers described beyond.
+  */
+ struct res_counter {
++	unsigned long flags;
+ 	unsigned long long usage;
+ 	unsigned long long max_usage;
+ 	unsigned long long limit;
+ 	unsigned long long failcnt;
+-	unsigned long long policy;
+-	unsigned long long capacity;
+ 	unsigned long long timestamp;
  	/*
- 	 * css_get(&bio->css) isn't called to increment the reference
- 	 * count of this blkio_cgroup "biog" so the css_id might turn
- 	 * invalid even if this page is still active.
- 	 * This approach is chosen to minimize the overhead.
+ 	 * the lock to protect all of the above.
+ 	 * the routines below consider this to be IRQ-safe
  	 */
--	id = css_id(&biog->css);
-+	pc->blkio_cgroup_id = biog->id;
-+out:
- 	rcu_read_unlock();
--	lock_page_cgroup(pc);
--	page_cgroup_set_id(pc, id);
--	unlock_page_cgroup(pc);
- }
+ 	spinlock_t lock;
+-	/*
+-	 * Parent counter, used for hierarchial resource accounting
+-	 */
+ 	struct res_counter *parent;
+ };
  
- /**
-@@ -103,6 +101,13 @@ void blkio_cgroup_set_owner(struct page 
-  */
- void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
+@@ -90,9 +96,7 @@ enum {
+ 	RES_USAGE,
+ 	RES_MAX_USAGE,
+ 	RES_LIMIT,
+-	RES_POLICY,
+ 	RES_TIMESTAMP,
+-	RES_CAPACITY,
+ 	RES_FAILCNT,
+ };
+ 
+@@ -183,15 +187,21 @@ static inline void res_counter_reset_failcnt(struct res_counter *cnt)
+ 
+ static inline int
+ res_counter_ratelimit_set_limit(struct res_counter *cnt,
+-			unsigned long long policy,
++			unsigned long policy,
+ 			unsigned long long limit, unsigned long long max)
  {
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&cnt->lock, flags);
+ 	cnt->limit = limit;
+-	cnt->capacity = max;
+-	cnt->policy = policy;
 +	/*
-+	 * A little trick:
-+	 * Just call blkio_cgroup_set_owner() for pages which are already
-+	 * active since the blkio_cgroup_id member of page_cgroup can be
-+	 * updated without any locks. This is because an integer type of
-+	 * variable can be set a new value at once on modern cpus.
++	 * In ratelimited res_counter max_usage is used to save the token
++	 * bucket capacity.
 +	 */
- 	blkio_cgroup_set_owner(page, mm);
++	cnt->max_usage = max;
++	cnt->flags = 0;
++	if (policy == RATELIMIT_TOKEN_BUCKET)
++		set_bit(RES_COUNTER_POLICY, &cnt->flags);
+ 	cnt->timestamp = get_jiffies_64();
+ 	cnt->usage = 0;
+ 	spin_unlock_irqrestore(&cnt->lock, flags);
+diff --git a/kernel/res_counter.c b/kernel/res_counter.c
+index 6f882c6..f6d97a2 100644
+--- a/kernel/res_counter.c
++++ b/kernel/res_counter.c
+@@ -21,7 +21,6 @@ void res_counter_init(struct res_counter *counter, struct res_counter *parent)
+ 	spin_lock_init(&counter->lock);
+ 	counter->limit = (unsigned long long)LLONG_MAX;
+ 	counter->parent = parent;
+-	counter->capacity = (unsigned long long)LLONG_MAX;
+ 	counter->timestamp = get_jiffies_64();
  }
  
-@@ -133,7 +138,6 @@ void blkio_cgroup_reset_owner_pagedirty(
- void blkio_cgroup_copy_owner(struct page *npage, struct page *opage)
- {
- 	struct page_cgroup *npc, *opc;
--	unsigned long id;
+@@ -102,12 +101,8 @@ res_counter_member(struct res_counter *counter, int member)
+ 		return &counter->max_usage;
+ 	case RES_LIMIT:
+ 		return &counter->limit;
+-	case RES_POLICY:
+-		return &counter->policy;
+ 	case RES_TIMESTAMP:
+ 		return &counter->timestamp;
+-	case RES_CAPACITY:
+-		return &counter->capacity;
+ 	case RES_FAILCNT:
+ 		return &counter->failcnt;
+ 	};
+@@ -205,7 +200,7 @@ ratelimit_token_bucket(struct res_counter *res, ssize_t val)
+ 	res->timestamp = get_jiffies_64();
+ 	tok = (long long)res->usage * MSEC_PER_SEC;
+ 	if (delta) {
+-		long long max = (long long)res->capacity * MSEC_PER_SEC;
++		long long max = (long long)res->max_usage * MSEC_PER_SEC;
  
- 	if (blkio_cgroup_disabled())
- 		return;
-@@ -144,12 +148,11 @@ void blkio_cgroup_copy_owner(struct page
- 	if (unlikely(!opc))
- 		return;
+ 		tok += delta * res->limit;
+ 		tok = max_t(long long, tok, max);
+@@ -221,18 +216,12 @@ res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val)
+ 	unsigned long flags;
  
--	lock_page_cgroup(opc);
--	lock_page_cgroup(npc);
--	id = page_cgroup_get_id(opc);
--	page_cgroup_set_id(npc, id);
--	unlock_page_cgroup(npc);
--	unlock_page_cgroup(opc);
-+	/*
-+	 * Do this without any locks. The reason is the same as
-+	 * blkio_cgroup_reset_owner().
-+	 */
-+	npc->blkio_cgroup_id = opc->blkio_cgroup_id;
- }
- 
- /* Create a new blkio-cgroup. */
-@@ -158,25 +161,44 @@ blkio_cgroup_create(struct cgroup_subsys
- {
- 	struct blkio_cgroup *biog;
- 	struct io_context *ioc;
-+	int ret;
- 
- 	if (!cgrp->parent) {
- 		biog = &default_blkio_cgroup;
- 		init_io_context(biog->io_context);
- 		/* Increment the referrence count not to be released ever. */
- 		atomic_inc(&biog->io_context->refcount);
-+		idr_init(&blkio_cgroup_id);
- 		return &biog->css;
- 	}
- 
- 	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
--	if (!biog)
--		return ERR_PTR(-ENOMEM);
- 	ioc = alloc_io_context(GFP_KERNEL, -1);
--	if (!ioc) {
--		kfree(biog);
--		return ERR_PTR(-ENOMEM);
-+	if (!ioc || !biog) {
-+		ret = -ENOMEM;
-+		goto out_err;
- 	}
- 	biog->io_context = ioc;
-+retry:
-+	if (!idr_pre_get(&blkio_cgroup_id, GFP_KERNEL)) {
-+		ret = -EAGAIN;
-+		goto out_err;
+ 	spin_lock_irqsave(&res->lock, flags);
+-	if (res->limit)
+-		switch (res->policy) {
+-		case RATELIMIT_LEAKY_BUCKET:
+-			sleep = ratelimit_leaky_bucket(res, val);
+-			break;
+-		case RATELIMIT_TOKEN_BUCKET:
++	if (res->limit) {
++		if (res_counter_flagged(res, RES_COUNTER_POLICY))
+ 			sleep = ratelimit_token_bucket(res, val);
+-			break;
+-		default:
+-			WARN_ON(1);
+-			break;
+-		}
++		else
++			sleep = ratelimit_leaky_bucket(res, val);
 +	}
-+	spin_lock_irq(&blkio_cgroup_idr_lock);
-+	ret = idr_get_new_above(&blkio_cgroup_id, (void *)biog, 1, &biog->id);
-+	spin_unlock_irq(&blkio_cgroup_idr_lock);
-+	if (ret == -EAGAIN)
-+		goto retry;
-+	else if (ret)
-+		goto out_err;
-+
- 	return &biog->css;
-+out_err:
-+	if (biog)
-+		kfree(biog);
-+	if (ioc)
-+		put_io_context(ioc);
-+	return ERR_PTR(ret);
+ 	spin_unlock_irqrestore(&res->lock, flags);
+ 	return sleep;
  }
- 
- /* Delete the blkio-cgroup. */
-@@ -185,10 +207,28 @@ static void blkio_cgroup_destroy(struct 
- 	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
- 
- 	put_io_context(biog->io_context);
--	free_css_id(&blkio_cgroup_subsys, &biog->css);
-+
-+	spin_lock_irq(&blkio_cgroup_idr_lock);
-+	idr_remove(&blkio_cgroup_id, biog->id);
-+	spin_unlock_irq(&blkio_cgroup_idr_lock);
-+
- 	kfree(biog);
- }
- 
-+static struct blkio_cgroup *find_blkio_cgroup(int id)
-+{
-+	struct blkio_cgroup *biog;
-+	spin_lock_irq(&blkio_cgroup_idr_lock);
-+	/*
-+	 * It might fail to find A bio-group associated with "id" since it
-+	 * is allowed to remove the bio-cgroup even when some of I/O requests
-+	 * this group issued haven't completed yet.
-+	 */
-+	biog = (struct blkio_cgroup *)idr_find(&blkio_cgroup_id, id);
-+	spin_unlock_irq(&blkio_cgroup_idr_lock);
-+	return biog;
-+}
-+
- /**
-  * get_blkio_cgroup_id() - determine the blkio-cgroup ID
-  * @bio:	the &struct bio which describes the I/O
-@@ -200,14 +240,11 @@ unsigned long get_blkio_cgroup_id(struct
- {
- 	struct page_cgroup *pc;
- 	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
--	unsigned long id = 0;
-+	int	id = 0;
- 
- 	pc = lookup_page_cgroup(page);
--	if (pc) {
--		lock_page_cgroup(pc);
--		id = page_cgroup_get_id(pc);
--		unlock_page_cgroup(pc);
--	}
-+	if (pc)
-+		id = pc->blkio_cgroup_id;
- 	return id;
- }
- 
-@@ -219,21 +256,17 @@ unsigned long get_blkio_cgroup_id(struct
-  */
- struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
- {
--	struct cgroup_subsys_state *css;
--	struct blkio_cgroup *biog;
-+	struct blkio_cgroup *biog = NULL;
- 	struct io_context *ioc;
--	unsigned long id;
-+	int	id = 0;
- 
- 	id = get_blkio_cgroup_id(bio);
--	rcu_read_lock();
--	css = css_lookup(&blkio_cgroup_subsys, id);
--	if (css)
--		biog = container_of(css, struct blkio_cgroup, css);
--	else
-+	if (id)
-+		biog = find_blkio_cgroup(id);
-+	if (!biog)
- 		biog = &default_blkio_cgroup;
- 	ioc = biog->io_context;	/* default io_context for this cgroup */
- 	atomic_inc(&ioc->refcount);
--	rcu_read_unlock();
- 	return ioc;
- }
- 
-@@ -249,17 +282,15 @@ struct io_context *get_blkio_cgroup_ioco
-  */
- struct cgroup *blkio_cgroup_lookup(int id)
- {
--	struct cgroup *cgrp;
--	struct cgroup_subsys_state *css;
-+	struct blkio_cgroup *biog = NULL;
- 
- 	if (blkio_cgroup_disabled())
- 		return NULL;
--
--	css = css_lookup(&blkio_cgroup_subsys, id);
--	if (!css)
-+	if (id)
-+		biog = find_blkio_cgroup(id);
-+	if (!biog)
- 		return NULL;
--	cgrp = css->cgroup;
--	return cgrp;
-+	return biog->css.cgroup;
- }
- EXPORT_SYMBOL(get_blkio_cgroup_iocontext);
- EXPORT_SYMBOL(get_blkio_cgroup_id);
-@@ -273,7 +304,7 @@ static u64 blkio_id_read(struct cgroup *
- 	rcu_read_lock();
- 	id = css_id(&biog->css);
- 	rcu_read_unlock();
--	return (u64)id;
-+	return (u64) biog->id;
- }
- 
- 
-@@ -296,5 +327,4 @@ struct cgroup_subsys blkio_cgroup_subsys
- 	.destroy	= blkio_cgroup_destroy,
- 	.populate	= blkio_cgroup_populate,
- 	.subsys_id	= blkio_cgroup_subsys_id,
--	.use_id		= 1,
- };
-Index: linux-2.6.30-rc3-git3/include/linux/biotrack.h
-===================================================================
---- linux-2.6.30-rc3-git3.orig/include/linux/biotrack.h
-+++ linux-2.6.30-rc3-git3/include/linux/biotrack.h
-@@ -12,6 +12,7 @@ struct block_device;
- 
- struct blkio_cgroup {
- 	struct cgroup_subsys_state css;
-+	int id;
- 	struct io_context *io_context;	/* default io_context */
- /*	struct radix_tree_root io_context_root; per device io_context */
- };
-@@ -24,9 +25,7 @@ struct blkio_cgroup {
-  */
- static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
- {
--	lock_page_cgroup(pc);
--	page_cgroup_set_id(pc, 0);
--	unlock_page_cgroup(pc);
-+	pc->blkio_cgroup_id = 0;
- }
- 
- /**
-Index: linux-2.6.30-rc3-git3/include/linux/page_cgroup.h
-===================================================================
---- linux-2.6.30-rc3-git3.orig/include/linux/page_cgroup.h
-+++ linux-2.6.30-rc3-git3/include/linux/page_cgroup.h
-@@ -17,6 +17,9 @@ struct page_cgroup {
- 	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
- #endif
-+#ifdef CONFIG_CGROUP_BLKIO
-+	int blkio_cgroup_id;
-+#endif
- };
- 
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
-@@ -124,27 +127,4 @@ static inline void swap_cgroup_swapoff(i
- }
- 
- #endif
--
--#ifdef CONFIG_CGROUP_BLKIO
--/*
-- * use lower 16 bits for flags and reserve the rest for the page tracking id
-- */
--#define PCG_TRACKING_ID_SHIFT	(16)
--#define PCG_TRACKING_ID_BITS \
--	(8 * sizeof(unsigned long) - PCG_TRACKING_ID_SHIFT)
--
--/* NOTE: must be called with page_cgroup() held */
--static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
--{
--	return pc->flags >> PCG_TRACKING_ID_SHIFT;
--}
--
--/* NOTE: must be called with page_cgroup() held */
--static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
--{
--	WARN_ON(id >= (1UL << PCG_TRACKING_ID_BITS));
--	pc->flags &= (1UL << PCG_TRACKING_ID_SHIFT) - 1;
--	pc->flags |= (unsigned long)(id << PCG_TRACKING_ID_SHIFT);
--}
--#endif
- #endif
