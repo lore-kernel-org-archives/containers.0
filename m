@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 36/54] Make ckpt_may_checkpoint_task() check each
-	namespace individually
-Date: Tue, 28 Apr 2009 19:24:06 -0400
-Message-ID: <1240961064-13991-37-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 37/54] c/r: Add UTS support (v6)
+Date: Tue, 28 Apr 2009 19:24:07 -0400
+Message-ID: <1240961064-13991-38-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,257 +23,334 @@ List-Id: containers.vger.kernel.org
 
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+This patch adds a "phase" of checkpoint that saves out information about any
+namespaces the task(s) may have.  Do this by tracking the namespace objects
+of the tasks and making sure that tasks with the same namespace that follow
+get properly referenced in the checkpoint stream.
+
+Changes:
+  - Take uts_sem around access to uts data
+  - Remove the kernel restore path
+  - Punt on nested namespaces
+  - Use __NEW_UTS_LEN in nodename and domainname buffers
+  - Add a note to Documentation/checkpoint/internals.txt to indicate where
+    in the save/restore process the UTS information is kept
+  - Store (and track) the objref of the namespace itself instead of the
+    nsproxy (based on comments from Dave on IRC)
+  - Remove explicit check for non-root nsproxy
+  - Store the nodename and domainname lengths and use ckpt_write_string()
+    to store the actual name strings
+  - Catch failure of ckpt_obj_add_ptr() in ckpt_write_namespaces()
+  - Remove "types" bitfield and use the "is this new" flag to determine
+    whether or not we should write out a new ns descriptor
+  - Replace kernel restore path
+  - Move the namespace information to be directly after the task
+    information record
+  - Update Documentation to reflect new location of namespace info
+  - Support checkpoint and restart of nested UTS namespaces
+
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |   24 ++++++++++++--
- checkpoint/objhash.c           |   21 ++++++++++++
- checkpoint/process.c           |   67 ++++++++++++++++++++++++++++++++++++++-
- include/linux/checkpoint.h     |    4 ++
- include/linux/checkpoint_hdr.h |    9 +++++
- 5 files changed, 119 insertions(+), 6 deletions(-)
+ Documentation/checkpoint/internals.txt |    1 +
+ checkpoint/checkpoint.c                |    2 -
+ checkpoint/objhash.c                   |   21 ++++
+ checkpoint/process.c                   |  160 +++++++++++++++++++++++++++++++-
+ include/linux/checkpoint_hdr.h         |    9 ++
+ 5 files changed, 189 insertions(+), 4 deletions(-)
 
+diff --git a/Documentation/checkpoint/internals.txt b/Documentation/checkpoint/internals.txt
+index de2eead..41f0861 100644
+--- a/Documentation/checkpoint/internals.txt
++++ b/Documentation/checkpoint/internals.txt
+@@ -17,6 +17,7 @@ The order of operations, both save and restore, is as follows:
+   -> thread state: elements of thread_struct and thread_info
+   -> CPU state: registers etc, including FPU
+   -> memory state: memory address space layout and contents
++  -> namespace information
+   -> filesystem state: [TBD] filesystem namespace state, chroot, cwd, etc
+   -> files state: open file descriptors and their state
+   -> signals state: [TBD] pending signals and signal handling state
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 6305e5d..64b5b45 100644
+index 64b5b45..88dee51 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -184,6 +184,8 @@ static int checkpoint_all_tasks(struct ckpt_ctx *ctx)
- static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
- {
- 	struct pid_namespace *ns = ctx->root_nsproxy->pid_ns;
-+	struct nsproxy *nsproxy;
-+	int ret = 0;
- 
- 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ns));
- 
-@@ -211,11 +213,25 @@ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
- 	    t->real_parent == ctx->root_task->real_parent)
- 		return -EINVAL;
- 
--	/* FIX: change this for nested containers */
--	if (task_nsproxy(t) != ctx->root_nsproxy)
--		return -EPERM;
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(t);
-+	if (!nsproxy) {
-+		ret = -ENOSYS;
-+	} else {
-+		if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
-+			ret = -EPERM;
-+		if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
-+			ret = -EPERM;
-+		if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
-+			ret = -EPERM;
-+		if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns)
-+			ret = -EPERM;
-+		if (nsproxy->net_ns != ctx->root_nsproxy->net_ns)
-+			ret = -EPERM;
-+	}
-+	rcu_read_unlock();
- 
--	return 0;
-+	return ret;
- }
- 
- #define CKPT_HDR_PIDS_CHUNK	256
+@@ -218,8 +218,6 @@ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
+ 	if (!nsproxy) {
+ 		ret = -ENOSYS;
+ 	} else {
+-		if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
+-			ret = -EPERM;
+ 		if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
+ 			ret = -EPERM;
+ 		if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 4fb5afa..819a1be 100644
+index 819a1be..abf2e47 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -58,6 +58,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
-  *   obj_file_{drop,grab}: for file objects
+@@ -59,6 +59,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
   *   obj_inode_{drop,grab}: for inode objects
   *   obj_mm_{drop,grab}: for mm_struct objects
-+ *   obj_ns_{drop,grab}: for nsproxy objects
+  *   obj_ns_{drop,grab}: for nsproxy objects
++ *   obj_uts_ns_{drop,grab}: for uts_namespace objects
   */
  
  static void obj_no_drop(void *ptr)
-@@ -103,6 +104,17 @@ static void obj_mm_drop(void *ptr)
- 	mmput((struct mm_struct *) ptr);
+@@ -115,6 +116,17 @@ static void obj_ns_drop(void *ptr)
+ 	put_nsproxy((struct nsproxy *) ptr);
  }
  
-+static int obj_ns_grab(void *ptr)
++static int obj_uts_ns_grab(void *ptr)
 +{
-+	get_nsproxy((struct nsproxy *) ptr);
++	get_uts_ns((struct uts_namespace *) ptr);
 +	return 0;
 +}
 +
-+static void obj_ns_drop(void *ptr)
++static void obj_uts_ns_drop(void *ptr)
 +{
-+	put_nsproxy((struct nsproxy *) ptr);
++	put_uts_ns((struct uts_namespace *) ptr);
 +}
 +
  static struct ckpt_obj_ops ckpt_obj_ops[] = {
  	/* ignored object */
  	{
-@@ -138,6 +150,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.checkpoint = checkpoint_mm,
- 		.restore = restore_mm,
+@@ -159,6 +171,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_ns,
+ 		.restore = restore_ns,
  	},
-+	/* ns object */
++	/* uts_ns object */
 +	{
-+		.obj_name = "NSPROXY",
-+		.obj_type = CKPT_OBJ_NS,
-+		.ref_drop = obj_ns_drop,
-+		.ref_grab = obj_ns_grab,
-+		.checkpoint = checkpoint_ns,
-+		.restore = restore_ns,
++		.obj_name = "UTS_NS",
++		.obj_type = CKPT_OBJ_UTS_NS,
++		.ref_drop = obj_uts_ns_drop,
++		.ref_grab = obj_uts_ns_grab,
++		.checkpoint = checkpoint_bad,
++		.restore = restore_bad,
 +	},
  };
  
  
 diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 0bd4845..2c489fd 100644
+index 2c489fd..13dd48b 100644
 --- a/checkpoint/process.c
 +++ b/checkpoint/process.c
-@@ -162,12 +162,43 @@ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
+@@ -15,8 +15,11 @@
+ #include <linux/posix-timers.h>
+ #include <linux/futex.h>
+ #include <linux/poll.h>
++#include <linux/nsproxy.h>
++#include <linux/utsname.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
++#include <linux/syscalls.h>
+ 
+ #include "checkpoint_arch.h"
+ 
+@@ -162,10 +165,69 @@ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
  	return ret;
  }
  
-+
-+static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
++static int checkpoint_uts_ns(struct ckpt_ctx *ctx, struct uts_namespace *uts_ns)
 +{
-+	return 0;
-+}
-+
-+int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	return do_checkpoint_ns(ctx, (struct nsproxy *) ptr);
-+}
-+
-+int checkpoint_ns_obj(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct nsproxy *nsproxy;
++	struct ckpt_hdr_utsns *h;
++	int domainname_len;
++	int nodename_len;
 +	int ret;
 +
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(t);
-+	get_nsproxy(nsproxy);
-+	rcu_read_unlock();
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
++	if (!h)
++		return -ENOMEM;
 +
-+	ret = checkpoint_obj(ctx, nsproxy, CKPT_OBJ_NS);
-+	put_nsproxy(nsproxy);
++	nodename_len = sizeof(uts_ns->name.nodename);
++	domainname_len = sizeof(uts_ns->name.domainname);
++
++	h->nodename_len = nodename_len;
++	h->domainname_len = domainname_len;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	down_read(&uts_sem);
++	ret = ckpt_write_string(ctx, uts_ns->name.nodename, nodename_len);
++	if (ret < 0)
++		goto up;
++	ret = ckpt_write_string(ctx, uts_ns->name.domainname, domainname_len);
++ up:
++	up_read(&uts_sem);
++	return ret;
++}
+ 
+ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+ {
+-	return 0;
++	struct ckpt_hdr_ns *h;
++	int ns_flags = 0;
++	int uts_objref;
++	int first, ret;
++
++	uts_objref = ckpt_obj_lookup_add(ctx, nsproxy->uts_ns,
++					 CKPT_OBJ_UTS_NS, &first);
++	if (uts_objref < 0)
++		return uts_objref;
++	if (first)
++		ns_flags |= CLONE_NEWUTS;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NS);
++	if (!h)
++		return -ENOMEM;
++
++	h->flags = ns_flags;
++	h->uts_ref = uts_objref;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	if (ns_flags & CLONE_NEWUTS)
++		ret = checkpoint_uts_ns(ctx, nsproxy->uts_ns);
++
++	/* FIX: Write other namespaces here */
++	return ret;
+ }
+ 
+ int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
+@@ -376,9 +438,103 @@ int restore_restart_block(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int do_restore_uts_ns(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_utsns *h;
++	struct uts_namespace *ns;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ret = -EINVAL;
++	if (h->nodename_len > sizeof(ns->name.nodename) ||
++	    h->domainname_len > sizeof(ns->name.domainname))
++		goto out;
++
++	ns = current->nsproxy->uts_ns;
++
++	/* no need to take uts_sem because we are the sole users */
++
++	memset(ns->name.nodename, 0, sizeof(ns->name.nodename));
++	ret = _ckpt_read_string(ctx, ns->name.nodename, h->nodename_len);
++	if (ret < 0)
++		goto out;
++	memset(ns->name.domainname, 0, sizeof(ns->name.domainname));
++	ret = _ckpt_read_string(ctx, ns->name.domainname, h->domainname_len);
++ out:
++	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
- static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	struct ckpt_hdr_task_objs *h;
- 	int mm_objref;
-+	int ns_objref;
- 	int ret;
- 
-+	ns_objref = checkpoint_ns_obj(ctx, t);
-+	ckpt_debug("nsproxy: objref %d\n", ns_objref);
-+	if (ns_objref < 0)
-+		return ns_objref;
- 	mm_objref = checkpoint_mm_obj(ctx, t);
- 	ckpt_debug("memory: objref %d\n", mm_objref);
- 	if (mm_objref < 0)
-@@ -178,6 +209,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -ENOMEM;
- 
- 	h->mm_objref = mm_objref;
-+	h->ns_objref = ns_objref;
- 
- 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
- 	ckpt_hdr_put(ctx, h);
-@@ -344,18 +376,49 @@ int restore_restart_block(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
++static int restore_uts_ns(struct ckpt_ctx *ctx, int ns_objref, int flags)
 +{
-+	return task_nsproxy(current);
-+}
++	struct uts_namespace *uts_ns;
++	int ret = 0;
 +
-+void *restore_ns(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_ns(ctx);
-+}
++	uts_ns = ckpt_obj_fetch(ctx, ns_objref, CKPT_OBJ_UTS_NS);
++	if (IS_ERR(uts_ns))
++		return PTR_ERR(uts_ns);
 +
-+static int restore_ns_obj(struct ckpt_ctx *ctx, int ns_objref)
-+{
-+	struct nsproxy *nsproxy;
-+
-+	nsproxy = ckpt_obj_fetch(ctx, ns_objref, CKPT_OBJ_NS);
-+	if (!nsproxy)
++	/* sanity: CLONE_NEWUTS if-and-only-if uts_ns is NULL (first timer) */
++	if (!!uts_ns ^ !(flags & CLONE_NEWUTS))
 +		return -EINVAL;
-+	else if (IS_ERR(nsproxy))
-+		return PTR_ERR(nsproxy);
 +
-+	if (nsproxy != task_nsproxy(current))
-+		switch_task_namespaces(current, nsproxy);
++	if (!uts_ns) {
++		ret = do_restore_uts_ns(ctx);
++		if (ret < 0)
++			return ret;
++		ret = ckpt_obj_insert(ctx, current->nsproxy->uts_ns,
++				    ns_objref, CKPT_OBJ_UTS_NS);
++	} else {
++		struct uts_namespace *old_uts_ns;
 +
-+	return 0;
++		/* safe because nsproxy->count must be 1 ... */
++		BUG_ON(atomic_read(&current->nsproxy->count) != 1);
++
++		old_uts_ns = current->nsproxy->uts_ns;
++		current->nsproxy->uts_ns = uts_ns;
++		get_uts_ns(uts_ns);
++		put_uts_ns(old_uts_ns);
++	}
++
++	return ret;
 +}
 +
- static int restore_task_objs(struct ckpt_ctx *ctx)
+ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
  {
- 	struct ckpt_hdr_task_objs *h;
- 	int ret;
- 
--	h = ckpt_read_obj_type(ctx, CKPT_HDR_TASK_OBJS, sizeof(*h));
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
- 
-+	ret = restore_ns_obj(ctx, h->ns_objref);
-+	ckpt_debug("nsproxy: ret %d\n", ret);
-+	if (ret < 0)
+-	return task_nsproxy(current);
++	struct ckpt_hdr_ns *h;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NS);
++	if (IS_ERR(h))
++		return (struct nsproxy *) h;
++
++	ret = -EINVAL;
++	if (h->uts_ref < 0)
++		goto out;
++	if (h->flags & ~CLONE_NEWUTS)
 +		goto out;
 +
- 	ret = restore_mm_obj(ctx, h->mm_objref);
- 	ckpt_debug("memory: ret %d\n", ret);
--
-+ out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d554776..2cdd94f 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -65,6 +65,10 @@ extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
- 				    struct task_struct *t);
- extern int restore_restart_block(struct ckpt_ctx *ctx);
- 
-+/* namespaces */
-+extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_ns(struct ckpt_ctx *ctx);
++	/* each unseen-before namespace will be un-shared now */
++	ret = sys_unshare(h->flags);
++	if (ret)
++		goto out;
 +
- /* memory */
- extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
++	/*
++	 * For each unseen-before namespace 'xxx', it is now safe to
++	 * modify the nsproxy->xxx_ns without locking because unshare()
++	 * gave a brand new nsproxy and nsproxy->xxx_ns, and we're the
++	 * sole users at this point.
++	 */
++	ret = restore_uts_ns(ctx, h->uts_ref, h->flags);
++	ckpt_debug("uts ns: %d\n", ret);
++
++	/* FIX: add more namespaces here */
++ out:
++	ckpt_hdr_put(ctx, h);
++	return (ret < 0 ? ERR_PTR(ret) : task_nsproxy(current));
+ }
  
+ void *restore_ns(struct ckpt_ctx *ctx)
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 8b00fb8..405d3bc 100644
+index 405d3bc..4945de6 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -80,6 +80,7 @@ enum obj_type {
- 	CKPT_OBJ_FILE,
+@@ -53,6 +53,8 @@ enum {
+ 	CKPT_HDR_RESTART_BLOCK,
+ 	CKPT_HDR_THREAD,
+ 	CKPT_HDR_CPU,
++	CKPT_HDR_NS,
++	CKPT_HDR_UTS_NS,
+ 
+ 	CKPT_HDR_MM = 201,
+ 	CKPT_HDR_VMA,
+@@ -81,6 +83,7 @@ enum obj_type {
  	CKPT_OBJ_INODE,
  	CKPT_OBJ_MM,
-+	CKPT_OBJ_NS,
+ 	CKPT_OBJ_NS,
++	CKPT_OBJ_UTS_NS,
  	CKPT_OBJ_MAX
  };
  
-@@ -144,6 +145,7 @@ struct ckpt_hdr_task {
- struct ckpt_hdr_task_objs {
- 	struct ckpt_hdr h;
- 	__s32 mm_objref;
-+	__s32 ns_objref;
+@@ -176,6 +179,12 @@ struct ckpt_hdr_ns {
+ 	__u32 uts_ref;
  } __attribute__((aligned(8)));
  
- /* (thread) restart blocks */
-@@ -167,6 +169,13 @@ enum restart_block_type {
- 	CKPT_RESTART_BLOCK_FUTEX
- };
- 
-+/* namespaces */
-+struct ckpt_hdr_ns {
++struct ckpt_hdr_utsns {
 +	struct ckpt_hdr h;
-+	__u32 flags;
-+	__u32 uts_ref;
++	__u32 nodename_len;
++	__u32 domainname_len;
 +} __attribute__((aligned(8)));
 +
  /* memory layout */
