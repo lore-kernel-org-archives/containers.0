@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 52/54] sysvipc-sem: restart
-Date: Tue, 28 Apr 2009 19:24:22 -0400
-Message-ID: <1240961064-13991-53-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 16/54] External checkpoint of a task other than
+	ourself
+Date: Tue, 28 Apr 2009 19:23:46 -0400
+Message-ID: <1240961064-13991-17-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,181 +22,215 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The semaphores are restored by creating each 'sem object read from the
-checkpoint image. Each semaphore array (sem->sem_base) is checked for
-validity of contents before copies to the corresponding semaphore.
+Now we can do "external" checkpoint, i.e. act on another task.
 
-TODO: this patch does not handle semaphore-undo -- this data should be
-restored per-task while iterating through the tasks.
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container.
+
+sys_restart() remains the same, as the restart is always done in the
+context of the restarting task.
+
+Changelog[v14]:
+  - Refuse non-self checkpoint if target task isn't frozen
+
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- ipc/checkpoint.c     |    2 -
- ipc/checkpoint_sem.c |  116 ++++++++++++++++++++++++++++++++++++++++++++++++++
- ipc/util.h           |    3 +
- 3 files changed, 119 insertions(+), 2 deletions(-)
+ checkpoint/checkpoint.c          |   77 ++++++++++++++++++++++++++++++++++++--
+ checkpoint/restart.c             |    4 +-
+ checkpoint/sys.c                 |    6 +++
+ include/linux/checkpoint_types.h |    2 +
+ 4 files changed, 83 insertions(+), 6 deletions(-)
 
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index 7a2f4a5..e14dea6 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -213,12 +213,10 @@ static int do_restore_ipc_ns(struct ckpt_ctx *ctx)
- 		goto out;
- 	ret = restore_ipc_any(ctx, IPC_MSG_IDS,
- 			      CKPT_HDR_IPC_MSG, restore_ipc_msg);
--#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		goto out;
- 	ret = restore_ipc_any(ctx, IPC_SEM_IDS,
- 			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
--#endif
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-index fc6ea44..0065202 100644
---- a/ipc/checkpoint_sem.c
-+++ b/ipc/checkpoint_sem.c
-@@ -99,3 +99,119 @@ int checkpoint_ipc_sem(int id, void *p, void *data)
- 	ckpt_hdr_put(ctx, h);
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 9abdf73..b741557 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -12,7 +12,11 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
++#include <linux/fs_struct.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+@@ -161,22 +165,87 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
  	return ret;
  }
-+
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+static int load_ipc_sem_hdr(struct ckpt_ctx *ctx,
-+			       struct ckpt_hdr_ipc_sem *h,
-+			       struct sem_array *sem)
+ 
+-static int ckpt_ctx_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
++static int get_container(struct ckpt_ctx *ctx, pid_t pid)
 +{
-+	int ret = 0;
++	struct task_struct *task = NULL;
++	struct nsproxy *nsproxy = NULL;
++	int err = -ESRCH;
 +
-+	ret = restore_load_ipc_perms(&h->perms, &sem->sem_perm);
++	ctx->root_pid = pid;
++
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
++
++	if (!task)
++		goto out;
++
++#if 0	/* enable to use containers */
++	if (!is_container_init(task)) {
++		err = -EINVAL;
++		goto out;
++	}
++#endif
++
++	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
++		err = -EPERM;
++		goto out;
++	}
++
++	/* verify that the task is frozen (unless self) */
++	if (task != current && !frozen(task))
++		return -EBUSY;
++
++	/* FIX: add support for ptraced tasks */
++	if (task_ptrace(task))
++		return -EBUSY;
++
++	rcu_read_lock();
++	nsproxy = task_nsproxy(task);
++	if (nsproxy)
++		get_nsproxy(nsproxy);
++	rcu_read_unlock();
++
++	if (!nsproxy)
++		goto out;
++
++	ctx->root_task = task;
++	ctx->root_nsproxy = nsproxy;
++
++	return 0;
++
++ out:
++	if (task)
++		put_task_struct(task);
++	return err;
++}
++
++/* setup checkpoint-specific parts of ctx */
++static int ctx_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	struct fs_struct *fs;
++	int ret;
+ 
+ 	ctx->root_pid = pid;
+ 
++	ret = get_container(ctx, pid);
 +	if (ret < 0)
 +		return ret;
 +
-+	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-+
-+	sem->sem_otime = h->sem_otime;
-+	sem->sem_ctime = h->sem_ctime;
-+	sem->sem_nsems = h->sem_nsems;
-+
-+	return 0;
-+}
-+
-+/**
-+ * ckpt_read_sem_array - read the state of a semaphore array
-+ * @ctx: checkpoint context
-+ * @sem: semphore array
-+ *
-+ * Expect the data in an array of 'struct sem': {32 bit, 32 bit}.
-+ * See comment in ckpt_write_sem_array().
-+ *
-+ * The sem-undo information is not restored per ipc_ns, but rather per task.
-+ */
-+static struct sem *restore_sem_array(struct ckpt_ctx *ctx, int nsems)
-+{
-+	struct sem *sma;
-+	int i, ret;
-+
-+	sma = kmalloc(nsems * sizeof(*sma), GFP_KERNEL);
-+	ret = _ckpt_read_buffer(ctx, sma, nsems * sizeof(*sma));
-+	if (ret < 0)
-+		goto out;
-+
-+	/* validate sem array contents */
-+	for (i = 0; i < nsems; i++) {
-+		if (sma[i].semval < 0 || sma[i].sempid < 0) {
-+			ret = -EINVAL;
-+			break;
-+		}
-+	}
-+ out:
-+	if (ret < 0) {
-+		kfree(sma);
-+		sma = ERR_PTR(ret);
-+	}
-+	return sma;
-+}
-+
-+int restore_ipc_sem(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_ipc_sem *h;
-+	struct kern_ipc_perm *perms;
-+	struct sem_array *sem;
-+	struct sem *sma = NULL;
-+	struct ipc_ids *sem_ids = &current->nsproxy->ipc_ns->ids[IPC_SEM_IDS];
-+	int semflag, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = -EINVAL;
-+	if (h->perms.id < 0)
-+		goto out;
-+	if (h->sem_nsems < 0)
-+		goto out;
-+
-+	/* read sempahore array state */
-+	sma = restore_sem_array(ctx, h->sem_nsems);
-+	if (IS_ERR(sma)) {
-+		ret = PTR_ERR(sma);
-+		goto out;
-+	}
-+
-+	/* restore the message queue now */
-+	semflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
-+	ckpt_debug("sem: do_semget key %d flag %#x id %d\n",
-+		 h->perms.key, semflag, h->perms.id);
-+	ret = do_semget(h->perms.key, h->sem_nsems, semflag, h->perms.id);
-+	ckpt_debug("sem: do_msgget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	down_write(&sem_ids->rw_mutex);
-+
-+	/* we are the sole owners/users of this ipc_ns, it can't go away */
-+	perms = ipc_lock(sem_ids, h->perms.id);
-+	BUG_ON(IS_ERR(perms));  /* ipc_ns is private to us */
-+
-+	sem = container_of(perms, struct sem_array, sem_perm);
-+	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
-+
-+	ret = load_ipc_sem_hdr(ctx, h, sem);
-+	ipc_unlock(perms);
-+
-+	if (ret < 0) {
-+		ckpt_debug("sem: need to remove (%d)\n", ret);
-+		freeary(current->nsproxy->ipc_ns, perms);
-+	}
-+	up_write(&sem_ids->rw_mutex);
-+ out:
-+	kfree(sma);
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-diff --git a/ipc/util.h b/ipc/util.h
-index 5b7cead..54f9acb 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -184,6 +184,8 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
- /* for checkpoint/restart */
- extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
- extern int do_msgget(key_t key, int msgflg, int req_id);
-+extern int do_semget(key_t key, int nsems, int semflg, int req_id);
-+
- extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
- extern void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ 	/*
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
  
-@@ -202,6 +204,7 @@ extern int checkpoint_ipc_msg(int id, void *p, void *data);
- extern int restore_ipc_msg(struct ckpt_ctx *ctx);
+-	fs = current->fs;
++	task_lock(ctx->root_task);
++	fs = ctx->root_task->fs;
+ 	read_lock(&fs->lock);
+ 	ctx->fs_mnt = fs->root;
+ 	path_get(&ctx->fs_mnt);
+ 	read_unlock(&fs->lock);
++	task_unlock(ctx->root_task);
  
- extern int checkpoint_ipc_sem(int id, void *p, void *data);
-+extern int restore_ipc_sem(struct ckpt_ctx *ctx);
- #endif
+ 	return 0;
+ }
+@@ -185,13 +254,13 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	int ret;
  
- #endif
+-	ret = ckpt_ctx_checkpoint(ctx, pid);
++	ret = ctx_checkpoint(ctx, pid);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_write_header(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = checkpoint_task(ctx, current);
++	ret = checkpoint_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_write_tail(ctx);
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index ecf2cf0..637de90 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -334,7 +334,7 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
+ }
+ 
+ /* setup restart-specific parts of ctx */
+-static int ckpt_ctx_restart(struct ckpt_ctx *ctx)
++static int ctx_restart(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	return 0;
+ }
+@@ -343,7 +343,7 @@ int do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	int ret;
+ 
+-	ret = ckpt_ctx_restart(ctx);
++	ret = ctx_restart(ctx, pid);
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = restore_read_header(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 76d5d66..0b7245a 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -12,6 +12,7 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -205,6 +206,11 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	ckpt_pgarr_free(ctx);
+ 	ckpt_obj_hash_free(ctx);
+ 
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++
+ 	kfree(ctx);
+ }
+ 
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 12f0ec5..d98ba71 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -22,6 +22,8 @@ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+ 	pid_t root_pid;		/* container identifier */
++	struct task_struct *root_task;	/* container root task */
++	struct nsproxy *root_nsproxy;	/* container root nsproxy */
+ 
+ 	unsigned long flags;
+ 	unsigned long oflags;	/* restart: old flags */
 -- 
 1.5.4.3
