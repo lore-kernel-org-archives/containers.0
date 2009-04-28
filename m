@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 26/54] Restore anonymous- and file-mapped- shared
-	memory
-Date: Tue, 28 Apr 2009 19:23:56 -0400
-Message-ID: <1240961064-13991-27-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 14/54] Restore open file descriptors
+Date: Tue, 28 Apr 2009 19:23:44 -0400
+Message-ID: <1240961064-13991-15-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,315 +21,380 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The bulk of the work is in ckpt_read_vma(), which has been refactored:
-the part that create the suitable 'struct file *' for the mapping is
-now larger and moved to a separate function. What's left is to read
-the VMA description, get the file pointer, create the mapping, and
-proceed to read the contents in.
+Restore open file descriptors: for each FD read 'struct ckpt_hdr_fd_ent'
+and lookup objref in the hash table; if not found (first occurence), read
+in 'struct ckpt_hdr_fd_data', create a new FD and register in the hash.
+Otherwise attach the file pointer from the hash as an FD.
 
-Both anonymous shared VMAs that have been read earlier (as indicated
-by a look up to objhash) and file-mapped shared VMAs are skipped.
-Anonymous shared VMAs seen for the first time have their contents
-read in directly to the backing inode, as indexed by the page numbers
-(as opposed to virtual addresses).
+This patch only handles basic FDs - regular files, directories and also
+symbolic links.
 
 Changelog[v14]:
-  - Introduce patch
+  - Introduce a per file-type restore() callback
+  - Revert change to pr_debug(), back to ckpt_debug()
+  - Rename:  restore_files() => restore_fd_table()
+  - Rename:  ckpt_read_fd_data() => restore_file()
+  - Check whether calls to ckpt_hbuf_get() fail
+  - Discard field 'hh->parent'
+
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+
+Changelog[v6]:
+  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
+    (even though it's not really needed)
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/memory.c        |   66 ++++++++++++++++++++++++++++++++-----------
- include/linux/checkpoint.h |    6 ++++
- include/linux/mm.h         |    2 +
- mm/filemap.c               |   14 ++++++++-
- mm/shmem.c                 |   47 +++++++++++++++++++++++++++++++
- 5 files changed, 116 insertions(+), 19 deletions(-)
+ checkpoint/files.c             |  221 +++++++++++++++++++++++++++++++++++++++-
+ checkpoint/objhash.c           |    2 +
+ checkpoint/process.c           |    4 +
+ checkpoint/restart.c           |    2 +-
+ include/linux/checkpoint.h     |    7 +-
+ include/linux/checkpoint_hdr.h |    3 +-
+ mm/filemap.c                   |    1 -
+ 7 files changed, 232 insertions(+), 8 deletions(-)
 
-diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-index f96a50f..f5f8fcf 100644
---- a/checkpoint/memory.c
-+++ b/checkpoint/memory.c
-@@ -771,13 +771,36 @@ static int restore_read_page(struct ckpt_ctx *ctx, struct page *page, void *p)
- 	return 0;
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 47e5f61..80e1c02 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -15,10 +15,11 @@
+ #include <linux/sched.h>
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
++#include <linux/fsnotify.h>
++#include <linux/syscalls.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
+-
+ /**************************************************************************
+  * Checkpoint
+  */
+@@ -320,8 +321,220 @@ static struct file *read_open_fname(struct ckpt_ctx *ctx, int flags, int mode)
+ 	return file;
  }
  
-+static struct page *bring_private_page(unsigned long addr)
+-struct file *restore_file(struct ckpt_ctx *ctx)
++static int close_all_fds(struct files_struct *files)
 +{
-+	struct page *page;
-+	int ret;
++	int *fdtable;
++	int nfds;
 +
-+	ret = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
-+	if (ret < 0)
-+		page = ERR_PTR(ret);
-+	return page;
++	nfds = scan_fds(files, &fdtable);
++	if (nfds < 0)
++		return nfds;
++	while (nfds--)
++		sys_close(fdtable[nfds]);
++	kfree(fdtable);
++	return 0;
 +}
 +
-+static struct page *bring_shared_page(unsigned long idx, struct inode *ino)
++/**
++ * attach_file - attach a lonely file ptr to a file descriptor
++ * @file: lonely file pointer
++ */
++static int attach_file(struct file *file)
 +{
-+	struct page *page = NULL;
-+	int ret;
++	int fd = get_unused_fd_flags(0);
 +
-+	ret = shmem_getpage(ino, idx, &page, SGP_WRITE, NULL);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
-+	if (page)
-+		unlock_page(page);
-+	return page;
-+}
-+
- /**
-  * read_pages_contents - read in data of pages in page-array chain
-  * @ctx - restart context
-  */
--static int read_pages_contents(struct ckpt_ctx *ctx)
-+static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
- {
--	struct mm_struct *mm = current->mm;
- 	struct ckpt_pgarr *pgarr;
- 	unsigned long *vaddrs;
- 	char *buf;
-@@ -787,17 +810,22 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
- 	if (!buf)
- 		return -ENOMEM;
- 
--	down_read(&mm->mmap_sem);
-+	down_read(&current->mm->mmap_sem);
- 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
- 		vaddrs = pgarr->vaddrs;
- 		for (i = 0; i < pgarr->nr_used; i++) {
- 			struct page *page;
- 
- 			_ckpt_debug(CKPT_DPAGE, "got page %#lx\n", vaddrs[i]);
--			ret = get_user_pages(current, mm, vaddrs[i],
--					     1, 1, 1, &page, NULL);
--			if (ret < 0)
-+			if (inode)
-+				page = bring_shared_page(vaddrs[i], inode);
-+			else
-+				page = bring_private_page(vaddrs[i]);
-+
-+			if (IS_ERR(page)) {
-+				ret = PTR_ERR(page);
- 				goto out;
-+			}
- 
- 			ret = restore_read_page(ctx, page, buf);
- 			page_cache_release(page);
-@@ -808,14 +836,15 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
- 	}
- 
-  out:
--	up_read(&mm->mmap_sem);
-+	up_read(&current->mm->mmap_sem);
- 	kfree(buf);
- 	return 0;
- }
- 
- /**
-- * restore_private_contents - restore contents of a VMA with private memory
-+ * restore_memory_contents - restore contents of a memory region
-  * @ctx - restart context
-+ * @inode - backing inode
-  *
-  * Reads a header that specifies how many pages will follow, then reads
-  * a list of virtual addresses into ctx->pgarr_list page-array chain,
-@@ -823,7 +852,7 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
-  * these steps until reaching a header specifying "0" pages, which marks
-  * the end of the contents.
-  */
--static int restore_private_contents(struct ckpt_ctx *ctx)
-+int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode)
- {
- 	struct ckpt_hdr_pgarr *h;
- 	unsigned long nr_pages;
-@@ -845,7 +874,7 @@ static int restore_private_contents(struct ckpt_ctx *ctx)
- 		ret = read_pages_vaddrs(ctx, nr_pages);
- 		if (ret < 0)
- 			break;
--		ret = read_pages_contents(ctx);
-+		ret = read_pages_contents(ctx, inode);
- 		if (ret < 0)
- 			break;
- 		pgarr_reset_all(ctx);
-@@ -903,9 +932,9 @@ static unsigned long calc_map_flags_bits(unsigned long orig_vm_flags)
-  * @file - file to map (NULL for anonymous)
-  * @h - vma header data
-  */
--static unsigned long generic_vma_restore(struct mm_struct *mm,
--					 struct file *file,
--					 struct ckpt_hdr_vma *h)
-+unsigned long generic_vma_restore(struct mm_struct *mm,
-+				  struct file *file,
-+				  struct ckpt_hdr_vma *h)
- {
- 	unsigned long vm_size, vm_start, vm_flags, vm_prot, vm_pgoff;
- 	unsigned long addr;
-@@ -952,7 +981,7 @@ int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 	if (IS_ERR((void *) addr))
- 		return PTR_ERR((void *) addr);
- 
--	return restore_private_contents(ctx);
-+	return restore_memory_contents(ctx, NULL);
- }
- 
- /**
-@@ -1012,16 +1041,19 @@ static struct restore_vma_ops restore_vma_ops[] = {
- 	{
- 		.vma_name = "ANON SHARED",
- 		.vma_type = CKPT_VMA_SHM_ANON,
-+		.restore = shmem_restore,
- 	},
- 	/* anonymous shared (skipped) */
- 	{
- 		.vma_name = "ANON SHARED (skip)",
- 		.vma_type = CKPT_VMA_SHM_ANON_SKIP,
-+		.restore = shmem_restore,
- 	},
- 	/* file-mapped shared */
- 	{
- 		.vma_name = "FILE SHARED",
- 		.vma_type = CKPT_VMA_SHM_FILE,
-+		.restore = filemap_restore,
- 	},
- };
- 
-@@ -1040,15 +1072,15 @@ static int restore_vma(struct ckpt_ctx *ctx, struct mm_struct *mm)
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
- 
--	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d\n",
-+	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d inoref %d\n",
- 		 (unsigned long) h->vm_start, (unsigned long) h->vm_end,
- 		 (unsigned long) h->vm_flags, (int) h->vma_type,
--		 (int) h->vma_objref);
-+		 (int) h->vma_objref, (int) h->ino_objref);
- 
- 	ret = -EINVAL;
- 	if (h->vm_end < h->vm_start)
- 		goto out;
--	if (h->vma_objref < 0)
-+	if (h->vma_objref < 0 || h->ino_objref < 0)
- 		goto out;
- 	if (h->vma_type >= CKPT_VMA_MAX)
- 		goto out;
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 53399f8..7f359ac 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -81,9 +81,15 @@ extern int shmem_vma_checkpoint(struct ckpt_ctx *ctx,
- 				enum vma_type type,
- 				int ino_objref);
- 
-+extern unsigned long generic_vma_restore(struct mm_struct *mm,
-+					 struct file *file,
-+					 struct ckpt_hdr_vma *hh);
-+
- extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			       struct file *file, struct ckpt_hdr_vma *h);
- 
-+extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
-+
- extern int checkpoint_mm(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int restore_mm(struct ckpt_ctx *ctx);
- 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 7d2f93a..3a40968 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1200,6 +1200,8 @@ extern int filemap_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			   struct ckpt_hdr_vma *hh);
- extern int special_mapping_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 				   struct ckpt_hdr_vma *hh);
-+extern int shmem_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+			 struct ckpt_hdr_vma *hh);
- #endif
- 
- /* readahead.c */
-diff --git a/mm/filemap.c b/mm/filemap.c
-index e9499d9..af83da7 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1694,11 +1694,21 @@ int filemap_restore(struct ckpt_ctx *ctx,
- {
- 	struct file *file;
- 
-+	if (h->vma_type == CKPT_VMA_FILE && (h->vm_flags & VM_SHARED))
-+		return -EINVAL;
-+	if (h->vma_type == CKPT_VMA_SHM_FILE && !(h->vm_flags & VM_SHARED))
-+		return -EINVAL;
-+
- 	file = ckpt_obj_fetch(ctx, h->vma_objref, CKPT_OBJ_FILE);
--	if (IS_ERR(file))
-+	if (!file)
-+		return -EINVAL;
-+	else if (IS_ERR(file))
- 		return PTR_ERR(file);
- 
--	return private_vma_restore(ctx, mm, file, h);
-+	if (h->vma_type == CKPT_VMA_FILE)
-+		return private_vma_restore(ctx, mm, file, h);
-+	else
-+		return generic_vma_restore(mm, file, h);
- }
- #else
- #define filemap_checkpoint NULL
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 17847b0..fbb2528 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -2405,6 +2405,53 @@ static int shmem_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
- 
- 	return shmem_vma_checkpoint(ctx, vma, vma_type, ino_objref);
- }
-+
-+int shmem_restore(struct ckpt_ctx *ctx,
-+		  struct mm_struct *mm, struct ckpt_hdr_vma *h)
-+{
-+	unsigned long addr;
-+	struct file *file;
-+	int ret = 0;
-+
-+	file = ckpt_obj_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file))
-+		return PTR_ERR(file);
-+
-+	/* if file is NULL, this is the premiere - create and insert */
-+	if (!file) {
-+		if (h->vma_type != CKPT_VMA_SHM_ANON)
-+			return -EINVAL;
-+		/*
-+		 * in theory could pass NULL to mmap and let it create
-+		 * the file. But, if 'shm_size != vm_end - vm_start',
-+		 * or if 'vm_pgoff != 0', then the vma reflects only a
-+		 * portion of the shm object and we need to "manually"
-+		 * create the full shm object.
-+		 */
-+		file = shmem_file_setup("/dev/zero", h->ino_size, h->vm_flags);
-+		if (IS_ERR(file))
-+			return PTR_ERR(file);
-+		ret = ckpt_obj_insert(ctx, file, h->ino_objref, CKPT_OBJ_FILE);
-+		if (ret < 0)
-+			goto out;
-+	} else {
-+		if (h->vma_type != CKPT_VMA_SHM_ANON_SKIP)
-+			return -EINVAL;
-+		/* Already need fput() for the file above; keep path simple */
++	if (fd >= 0) {
 +		get_file(file);
++		fsnotify_open(file->f_path.dentry);
++		fd_install(fd, file);
 +	}
++	return fd;
++}
 +
-+	addr = generic_vma_restore(mm, file, h);
-+	if (IS_ERR((void *) addr))
-+		return PTR_ERR((void *) addr);
++#define CKPT_SETFL_MASK  \
++	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
 +
-+	if (h->vma_type == CKPT_VMA_SHM_ANON)
-+		ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
++int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
++			struct ckpt_hdr_file *h)
++{
++	int ret;
++
++	/* FIX: need to restore uid, gid, owner etc */
++
++	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
++	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
++	if (ret < 0)
++		goto out;
++
++	ret = vfs_llseek(file, h->f_pos, SEEK_SET);
++	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
++		ret = 0;
 + out:
-+	fput(file);
 +	return ret;
 +}
 +
- #else
- #define shmem_checkpoint NULL
- #endif /* CONFIG_CHECKPOINT */
++static struct file *generic_file_restore(struct ckpt_ctx *ctx,
++					 struct ckpt_hdr_file *ptr)
++{
++	struct file *file;
++	int ret;
++
++	if (ptr->h.type != CKPT_HDR_FILE  ||
++	    ptr->h.len != sizeof(*ptr) || ptr->f_type != CKPT_FILE_GENERIC)
++		return ERR_PTR(-EINVAL);
++
++	file = read_open_fname(ctx, ptr->f_flags, ptr->f_mode);
++	if (IS_ERR(file))
++		return file;
++
++	ret = restore_file_common(ctx, file, ptr);
++	if (ret < 0) {
++		fput(file);
++		file = ERR_PTR(ret);
++	}
++	return file;
++}
++
++struct restore_file_ops {
++	char *file_name;
++	enum file_type file_type;
++	struct file * (*restore) (struct ckpt_ctx *ctx,
++				  struct ckpt_hdr_file *ptr);
++};
++
++static struct restore_file_ops restore_file_ops[] = {
++	/* ignored file */
++	{
++		.file_name = "IGNORE",
++		.file_type = CKPT_FILE_IGNORE,
++		.restore = NULL,
++	},
++	/* regular file/directory */
++	{
++		.file_name = "GENERIC",
++		.file_type = CKPT_FILE_GENERIC,
++		.restore = generic_file_restore,
++	},
++};
++
++static struct file *do_restore_file(struct ckpt_ctx *ctx)
++{
++	struct restore_file_ops *ops;
++	struct ckpt_hdr_file *h;
++	struct file *file = ERR_PTR(-EINVAL);
++
++	/*
++	 * All 'struct ckpt_hdr_file_...' begin with ckpt_hdr_file,
++	 * but the actual object depends on the file type. The length
++	 * should never be more than page.
++	 */
++	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_FILE);
++	if (IS_ERR(h))
++		return (struct file *) h;
++	ckpt_debug("flags %#x mode %#x type %d\n",
++		 h->f_flags, h->f_mode, h->f_type);
++
++	if (h->f_type >= CKPT_FILE_MAX)
++		goto out;
++
++	ops = &restore_file_ops[h->f_type];
++	BUG_ON(ops->file_type != h->f_type);
++
++	if (file)
++		file = ops->restore(ctx, h);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return file;
++}
++
++void *restore_file(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_file(ctx);
++}
++
++/**
++ * ckpt_read_fd_ent - restore the state of a given file descriptor
++ * @ctx: checkpoint context
++ *
++ * Restores the state of a file descriptor; looks up the objref (in the
++ * header) in the hash table, and if found picks the matching file and
++ * use it; otherwise calls restore_file to restore the file too.
++ */
++static int restore_fd_ent(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_fd_ent *h;
++	struct file *file;
++	int newfd, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FD_ENT);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++	ckpt_debug("ref %d fd %d c.o.e %d\n",
++		 h->fd_objref, h->fd_descriptor, h->fd_close_on_exec);
++
++	ret = -EINVAL;
++	if (h->fd_objref <= 0 || h->fd_descriptor < 0)
++		goto out;
++
++	file = ckpt_obj_fetch(ctx, h->fd_objref, CKPT_OBJ_FILE);
++	if (!file)
++		goto out;
++	else if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
++
++	newfd = attach_file(file);
++	if (newfd < 0) {
++		ret = newfd;
++		goto out;
++	}
++
++	ckpt_debug("newfd got %d wanted %d\n", newfd, h->fd_descriptor);
++
++	/* reposition if newfd isn't desired fd */
++	if (newfd != h->fd_descriptor) {
++		ret = sys_dup2(newfd, h->fd_descriptor);
++		if (ret < 0)
++			goto out;
++		sys_close(newfd);
++	}
++
++	if (h->fd_close_on_exec)
++		set_close_on_exec(h->fd_descriptor, 1);
++
++	ret = 0;
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++int restore_fd_table(struct ckpt_ctx *ctx)
+ {
+-	/* currently only called for mapped files; O_RDONLY works */
+-	return read_open_fname(ctx, O_RDONLY, 0);
++	struct ckpt_hdr_fd_table *h;
++	int i, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FD_TABLE);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ckpt_debug("nfds %d\n", h->fdt_nfds);
++
++	ret = -EMFILE;
++	if (h->fdt_nfds < 0 || h->fdt_nfds > sysctl_nr_open)
++		goto out;
++
++	/* point of no return -- close all file descriptors */
++	ret = close_all_fds(current->files);
++	if (ret < 0)
++		goto out;
++
++	for (i = 0; i < h->fdt_nfds; i++) {
++		ret = restore_fd_ent(ctx);
++		if (ret < 0)
++			break;
++	}
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
+ }
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 9565bcb..5476b0a 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -85,9 +85,11 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.ref_drop = obj_file_drop,
+ 		.ref_grab = obj_file_grab,
+ 		.checkpoint = checkpoint_file,
++		.restore = restore_file,
+ 	},
+ };
+ 
++
+ #define CKPT_OBJ_HASH_NBITS  10
+ #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
+ 
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 640a27c..a0e8163 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -116,6 +116,10 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	ckpt_debug("memory: ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++	ret = restore_fd_table(ctx);
++	ckpt_debug("files: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
+ 	ret = restore_thread(ctx);
+ 	ckpt_debug("thread: ret %d\n", ret);
+ 	if (ret < 0)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 06224fd..ecf2cf0 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -251,7 +251,7 @@ void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type)
+ 
+ 	BUG_ON(!len);
+ 
+-	h = ckpt_read_obj(ctx, len, len);
++	h = ckpt_read_obj(ctx, 0, len);
+ 	if (IS_ERR(h))
+ 		return h;
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index d6644f0..527a84f 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,6 +10,8 @@
+  *  distribution for more details.
+  */
+ 
++struct ckpt_ctx;
++
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
+ 
+@@ -80,12 +82,15 @@ extern int restore_mm(struct ckpt_ctx *ctx);
+ 
+ /* files */
+ extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
+-extern struct file *restore_file(struct ckpt_ctx *ctx);
++extern void *restore_file(struct ckpt_ctx *ctx);
+ 
+ extern int checkpoint_fd_table(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_fd_table(struct ckpt_ctx *ctx);
+ 
+ extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 				  struct ckpt_hdr_file *h);
++extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
++			       struct ckpt_hdr_file *h);
+ 
+ 
+ /* debugging flags */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index a957e6c..7c87bf8 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -176,7 +176,8 @@ struct ckpt_hdr_fd_ent {
+ } __attribute__((aligned(8)));
+ 
+ enum file_type {
+-	CKPT_FILE_GENERIC = 1,
++	CKPT_FILE_IGNORE = 0,
++	CKPT_FILE_GENERIC,
+ 	CKPT_FILE_MAX
+ };
+ 
+diff --git a/mm/filemap.c b/mm/filemap.c
+index ef5680b..f51b537 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1658,7 +1658,6 @@ int filemap_restore(struct ckpt_ctx *ctx,
+ 	struct file *file;
+ 	int ret;
+ 
+-	/* for private mapping using 'read-only' is sufficient */
+ 	file = restore_file(ctx);
+ 	if (IS_ERR(file))
+ 		return PTR_ERR(file);
 -- 
 1.5.4.3
