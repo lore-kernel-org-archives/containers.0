@@ -1,8 +1,7 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v15 3/7] page_cgroup: provide a generic page tracking
-	infrastructure
-Date: Tue, 28 Apr 2009 10:43:50 +0200
-Message-ID: <1240908234-15434-4-git-send-email-righi.andrea__34357.0698671558$1240908929$gmane$org@gmail.com>
+Subject: [PATCH v15 5/7] kiothrottled: throttle buffered (writeback) IO
+Date: Tue, 28 Apr 2009 10:43:52 +0200
+Message-ID: <1240908234-15434-6-git-send-email-righi.andrea__22728.4536850222$1240908941$gmane$org@gmail.com>
 References: <1240908234-15434-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,363 +21,385 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dirty pages in the page cache can be processed asynchronously by kernel
-threads (pdflush) using a writeback policy. For this reason the real
-writes to the underlying block devices occur in a different IO context
-respect to the task that originally generated the dirty pages involved
-in the IO operation. This makes the tracking and throttling of writeback
-IO more complicate respect to the synchronous IO.
+Together with cgroup_io_throttle() the kiothrottled kernel thread
+represents the core of the io-throttle subsystem.
 
-The page_cgroup infrastructure, currently available only for the memory
-cgroup controller, can be used to store the owner of each page and
-opportunely track the writeback IO. This information is encoded in
-page_cgroup->flags.
+All the writeback IO requests that need to be throttled are not
+dispatched immediately in submit_bio(). Instead, they are added into an
+rbtree by iothrottle_make_request() and processed asynchronously by
+kiothrottled.
 
-A owner can be identified using a generic ID number and the following
-interfaces are provided to store a retrieve this information:
-
-  unsigned long page_cgroup_get_owner(struct page *page);
-  int page_cgroup_set_owner(struct page *page, unsigned long id);
-  int page_cgroup_copy_owner(struct page *npage, struct page *opage);
-
-The io-throttle controller uses the cgroup css_id() as the owner's ID
-number.
-
-A big part of this code is taken from the Ryo and Hirokazu's
-bio-cgroup controller (http://people.valinux.co.jp/~ryov/bio-cgroup/).
-
-TODO: try to remove the lock/unlock_page_cgroup() in
-page_cgroup_*_owner().
+A deadline is associated to each request depending on the bandwidth
+usage of the cgroup it belongs. When a request is inserted into the
+rbtree kiothrottled is awakened. This thread selects all the requests
+with an expired deadline and submit the bunch of selected requests to
+the underlying block devices using generic_make_request().
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 ---
- include/linux/memcontrol.h  |    6 +++
- include/linux/mmzone.h      |    4 +-
- include/linux/page_cgroup.h |   33 +++++++++++++-
- init/Kconfig                |    4 ++
- mm/Makefile                 |    3 +-
- mm/memcontrol.c             |    6 +++
- mm/page_cgroup.c            |   96 ++++++++++++++++++++++++++++++++++++++-----
- 7 files changed, 135 insertions(+), 17 deletions(-)
+ block/Makefile       |    2 +-
+ block/kiothrottled.c |  341 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 342 insertions(+), 1 deletions(-)
+ create mode 100644 block/kiothrottled.c
 
-diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index a9e3b76..e80e335 100644
---- a/include/linux/memcontrol.h
-+++ b/include/linux/memcontrol.h
-@@ -37,6 +37,8 @@ struct mm_struct;
-  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
-  */
+diff --git a/block/Makefile b/block/Makefile
+index 42b6a46..5f10a45 100644
+--- a/block/Makefile
++++ b/block/Makefile
+@@ -13,6 +13,6 @@ obj-$(CONFIG_IOSCHED_AS)	+= as-iosched.o
+ obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
+ obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
  
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
-+
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct task_struct *task);
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 186ec6a..b178eb9 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -607,7 +607,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -958,7 +958,7 @@ struct mem_section {
- 
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
-diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-index 7339c7b..f24d081 100644
---- a/include/linux/page_cgroup.h
-+++ b/include/linux/page_cgroup.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_PAGE_TRACKING
- #include <linux/bit_spinlock.h>
- /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -12,11 +12,38 @@
-  */
- struct page_cgroup {
- 	unsigned long flags;
--	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
-+#endif
- };
- 
+-obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o
++obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o kiothrottled.o
+ obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
+ obj-$(CONFIG_BLK_DEV_INTEGRITY)	+= blk-integrity.o
+diff --git a/block/kiothrottled.c b/block/kiothrottled.c
+new file mode 100644
+index 0000000..3df22c1
+--- /dev/null
++++ b/block/kiothrottled.c
+@@ -0,0 +1,341 @@
 +/*
-+ * use lower 16 bits for flags and reserve the rest for the page tracking id
++ * kiothrottled.c
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ *
++ * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 + */
-+#define PAGE_TRACKING_ID_SHIFT	(16)
-+#define PAGE_TRACKING_ID_BITS \
-+		(8 * sizeof(unsigned long) - PAGE_TRACKING_ID_SHIFT)
 +
-+/* NOTE: must be called with page_cgroup() held */
-+static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/sched.h>
++#include <linux/seq_file.h>
++#include <linux/proc_fs.h>
++#include <linux/kthread.h>
++#include <linux/jiffies.h>
++#include <linux/ioprio.h>
++#include <linux/rbtree.h>
++#include <linux/blkdev.h>
++
++/* io-throttle bio element */
++struct iot_bio {
++	struct rb_node node;
++	unsigned long deadline;
++	struct bio *bio;
++};
++
++/* io-throttle bio tree */
++struct iot_bio_tree {
++	/* Protect the iothrottle rbtree */
++	spinlock_t lock;
++	struct rb_root tree;
++};
++
++/*
++ * TODO: create one iothrottle rbtree per block device and many kiothrottled
++ * threads per rbtree, instead of a poor scalable single rbtree / single thread
++ * solution.
++ */
++static struct iot_bio_tree *iot;
++static struct task_struct *kiothrottled_thread;
++
++/* Timer used to periodically wake-up kiothrottled */
++static struct timer_list kiothrottled_timer;
++
++/* Insert a new iot_bio element in the iot_bio_tree */
++static void iot_bio_insert(struct rb_root *root, struct iot_bio *data)
 +{
-+	return pc->flags >> PAGE_TRACKING_ID_SHIFT;
++	struct rb_node **new = &(root->rb_node), *parent = NULL;
++
++	while (*new) {
++		struct iot_bio *this = container_of(*new, struct iot_bio, node);
++		parent = *new;
++		if (data->deadline < this->deadline)
++			new = &((*new)->rb_left);
++		else
++			new = &((*new)->rb_right);
++	}
++	rb_link_node(&data->node, parent, new);
++	rb_insert_color(&data->node, root);
 +}
 +
-+/* NOTE: must be called with page_cgroup() held */
-+static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
++/*
++ * NOTE: no need to care about locking here, we're flushing all the pending
++ * requests, kiothrottled has been stopped and no additional request will be
++ * submitted in the tree.
++ */
++static void iot_bio_cleanup(struct rb_root *root)
 +{
-+	WARN_ON(id >= (1UL << PAGE_TRACKING_ID_BITS));
-+	pc->flags &= (1UL << PAGE_TRACKING_ID_SHIFT) - 1;
-+	pc->flags |= (unsigned long)(id << PAGE_TRACKING_ID_SHIFT);
-+}
++	struct iot_bio *data;
++	struct rb_node *next;
 +
-+unsigned long page_cgroup_get_owner(struct page *page);
-+int page_cgroup_set_owner(struct page *page, unsigned long id);
-+int page_cgroup_copy_owner(struct page *npage, struct page *opage);
-+
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
- void __init page_cgroup_init(void);
- struct page_cgroup *lookup_page_cgroup(struct page *page);
-@@ -71,7 +98,7 @@ static inline void unlock_page_cgroup(struct page_cgroup *pc)
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
- }
- 
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_PAGE_TRACKING */
- struct page_cgroup;
- 
- static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-diff --git a/init/Kconfig b/init/Kconfig
-index 7be4d38..5428ac7 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -569,6 +569,7 @@ config CGROUP_MEM_RES_CTLR
- 	bool "Memory Resource Controller for Control Groups"
- 	depends on CGROUPS && RESOURCE_COUNTERS
- 	select MM_OWNER
-+	select PAGE_TRACKING
- 	help
- 	  Provides a memory resource controller that manages both anonymous
- 	  memory and page cache. (See Documentation/cgroups/memory.txt)
-@@ -611,6 +612,9 @@ endif # CGROUPS
- config MM_OWNER
- 	bool
- 
-+config PAGE_TRACKING
-+	bool
-+
- config SYSFS_DEPRECATED
- 	bool
- 
-diff --git a/mm/Makefile b/mm/Makefile
-index ec73c68..b94e074 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -37,4 +37,5 @@ else
- obj-$(CONFIG_SMP) += allocpercpu.o
- endif
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_PAGE_TRACKING) += page_cgroup.o
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index e44fb0f..69d1c31 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2524,6 +2524,12 @@ struct cgroup_subsys mem_cgroup_subsys = {
- 	.use_id = 1,
- };
- 
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+	pc->mem_cgroup = NULL;
-+	INIT_LIST_HEAD(&pc->lru);
-+}
-+
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
- 
- static int __init disable_swap_account(char *s)
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 791905c..ec9ed05 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -3,6 +3,7 @@
- #include <linux/bootmem.h>
- #include <linux/bit_spinlock.h>
- #include <linux/page_cgroup.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/hash.h>
- #include <linux/slab.h>
- #include <linux/memory.h>
-@@ -14,9 +15,8 @@ static void __meminit
- __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
- {
- 	pc->flags = 0;
--	pc->mem_cgroup = NULL;
- 	pc->page = pfn_to_page(pfn);
--	INIT_LIST_HEAD(&pc->lru);
-+	__init_mem_page_cgroup(pc);
- }
- static unsigned long total_usage;
- 
-@@ -74,7 +74,7 @@ void __init page_cgroup_init(void)
- 
- 	int nid, fail;
- 
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && iothrottle_disabled())
- 		return;
- 
- 	for_each_online_node(nid)  {
-@@ -83,12 +83,13 @@ void __init page_cgroup_init(void)
- 			goto fail;
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you"
--	" don't want\n");
-+	printk(KERN_INFO
-+		"try cgroup_disable=memory,blockio option if you don't want\n");
- 	return;
- fail:
- 	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
--	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
-+	printk(KERN_CRIT
-+		"try cgroup_disable=memory,blockio boot option\n");
- 	panic("Out of memory");
- }
- 
-@@ -248,7 +249,7 @@ void __init page_cgroup_init(void)
- 	unsigned long pfn;
- 	int fail = 0;
- 
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && iothrottle_disabled())
- 		return;
- 
- 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
-@@ -257,14 +258,15 @@ void __init page_cgroup_init(void)
- 		fail = init_section_page_cgroup(pfn);
- 	}
- 	if (fail) {
--		printk(KERN_CRIT "try cgroup_disable=memory boot option\n");
-+		printk(KERN_CRIT
-+			"try cgroup_disable=memory,blockio boot option\n");
- 		panic("Out of memory");
- 	} else {
- 		hotplug_memory_notifier(page_cgroup_callback, 0);
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
--	" want\n");
-+	printk(KERN_INFO
-+		"try cgroup_disable=memory,blockio option if you don't want\n");
- }
- 
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-@@ -272,8 +274,80 @@ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
- 	return;
- }
- 
--#endif
-+#endif /* !defined(CONFIG_SPARSEMEM) */
-+
-+/**
-+ * page_cgroup_get_owner() - get the owner ID of a page
-+ * @page:	the page we want to find the owner
-+ *
-+ * Returns the owner ID of the page, 0 means that the owner cannot be
-+ * retrieved.
-+ **/
-+unsigned long page_cgroup_get_owner(struct page *page)
-+{
-+	struct page_cgroup *pc;
-+	unsigned long ret;
-+
-+	pc = lookup_page_cgroup(page);
-+	if (unlikely(!pc))
-+		return 0;
-+
-+	lock_page_cgroup(pc);
-+	ret = page_cgroup_get_id(pc);
-+	unlock_page_cgroup(pc);
-+	return ret;
++	next = rb_first(root);
++	while (next) {
++		data = rb_entry(next, struct iot_bio, node);
++		pr_debug("%s: dispatching element: %p (%lu)\n",
++				__func__, data->bio, data->deadline);
++		generic_make_request(data->bio);
++		next = rb_next(&data->node);
++		rb_erase(&data->node, root);
++		kfree(data);
++	}
 +}
 +
 +/**
-+ * page_cgroup_set_owner() - set the owner ID of a page
-+ * @page:	the page we want to tag
-+ * @id:		the ID number that will be associated to page
++ * iothrottle_make_request() - submit a delayed IO requests that will be
++ * processed asynchronously by kiothrottled.
 + *
-+ * Returns 0 if the owner is correctly associated to the page. Returns a
-+ * negative value in case of failure.
++ * @bio:	the bio structure that contains the IO request's informations
++ * @deadline:	the request will be actually dispatched only when the deadline
++ *		will expire
++ *
++ * Returns 0 if the request is successfully submitted and inserted into the
++ * iot_bio_tree. Return a negative value in case of failure.
 + **/
-+int page_cgroup_set_owner(struct page *page, unsigned long id)
++int iothrottle_make_request(struct bio *bio, unsigned long deadline)
 +{
-+	struct page_cgroup *pc;
++	struct iot_bio *data;
 +
-+	pc = lookup_page_cgroup(page);
-+	if (unlikely(!pc))
++	BUG_ON(!iot);
++
++	if (unlikely(!kiothrottled_thread))
 +		return -ENOENT;
 +
-+	lock_page_cgroup(pc);
-+	page_cgroup_set_id(pc, id);
-+	unlock_page_cgroup(pc);
++	data = kzalloc(sizeof(*data), GFP_KERNEL);
++	if (unlikely(!data))
++		return -ENOMEM;
++	data->deadline = deadline;
++	data->bio = bio;
++
++	spin_lock_irq(&iot->lock);
++	iot_bio_insert(&iot->tree, data);
++	spin_unlock_irq(&iot->lock);
++
++	wake_up_process(kiothrottled_thread);
 +	return 0;
 +}
- 
-+/**
-+ * page_cgroup_copy_owner() - copy the owner ID of a page into another page
-+ * @npage:	the page where we want to copy the owner
-+ * @opage:	the page from which we want to copy the ID
-+ *
-+ * Returns 0 if the owner is correctly associated to npage. Returns a negative
-+ * value in case of failure.
-+ **/
-+int page_cgroup_copy_owner(struct page *npage, struct page *opage)
-+{
-+	struct page_cgroup *npc, *opc;
-+	unsigned long id;
++EXPORT_SYMBOL(iothrottle_make_request);
 +
-+	npc = lookup_page_cgroup(npage);
-+	if (unlikely(!npc))
-+		return -ENOENT;
-+	opc = lookup_page_cgroup(opage);
-+	if (unlikely(!opc))
-+		return -ENOENT;
-+	lock_page_cgroup(opc);
-+	lock_page_cgroup(npc);
-+	id = page_cgroup_get_id(opc);
-+	page_cgroup_set_id(npc, id);
-+	unlock_page_cgroup(npc);
-+	unlock_page_cgroup(opc);
++static void kiothrottled_timer_expired(unsigned long __unused)
++{
++	wake_up_process(kiothrottled_thread);
++}
++
++static void kiothrottled_sleep(void)
++{
++	set_current_state(TASK_INTERRUPTIBLE);
++	schedule();
++}
++
++/**
++ * kiothrottled() - throttle buffered (writeback) i/o activity
++ *
++ * Together with cgroup_io_throttle() this kernel thread represents the core of
++ * the cgroup-io-throttle subsystem.
++ *
++ * All the writeback IO requests that need to be throttled are not dispatched
++ * immediately in submit_bio(). Instead, they are added into the iot_bio_tree
++ * rbtree by iothrottle_make_request() and processed asynchronously by
++ * kiothrottled.
++ *
++ * A deadline is associated to each request depending on the bandwidth usage of
++ * the cgroup it belongs. When a request is inserted into the rbtree
++ * kiothrottled is awakened. This thread selects all the requests with an
++ * expired deadline and submit the bunch of selected requests to the underlying
++ * block devices using generic_make_request().
++ **/
++static int kiothrottled(void *__unused)
++{
++	/*
++	 * kiothrottled is responsible of dispatching all the writeback IO
++	 * requests with an expired deadline. To dispatch those requests as
++	 * soon as possible and to avoid priority inversion problems set
++	 * maximum IO real-time priority for this thread.
++	 */
++	set_task_ioprio(current, IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 0));
++
++	while (!kthread_should_stop()) {
++		struct iot_bio *data;
++		struct rb_node *req;
++		struct rb_root staging_tree = RB_ROOT;
++		unsigned long now = jiffies;
++		long delta_t = 0;
++
++		/* Select requests to dispatch */
++		spin_lock_irq(&iot->lock);
++		req = rb_first(&iot->tree);
++		while (req) {
++			data = rb_entry(req, struct iot_bio, node);
++			delta_t = (long)data->deadline - (long)now;
++			if (delta_t > 0)
++				break;
++			req = rb_next(&data->node);
++			rb_erase(&data->node, &iot->tree);
++			iot_bio_insert(&staging_tree, data);
++		}
++		spin_unlock_irq(&iot->lock);
++
++		/* Dispatch requests */
++		req = rb_first(&staging_tree);
++		while (req) {
++			data = rb_entry(req, struct iot_bio, node);
++			req = rb_next(&data->node);
++			rb_erase(&data->node, &staging_tree);
++			pr_debug("%s: dispatching request: %p (%lu)\n",
++					__func__, data->bio, data->deadline);
++			generic_make_request(data->bio);
++			kfree(data);
++		}
++
++		/* Wait for new requests ready to be dispatched */
++		if (delta_t > 0)
++			mod_timer(&kiothrottled_timer, jiffies + HZ);
++		kiothrottled_sleep();
++	}
++	return 0;
++}
++
++/* TODO: handle concurrent startup and shutdown */
++static void kiothrottle_shutdown(void)
++{
++	if (!kiothrottled_thread)
++		return;
++	del_timer(&kiothrottled_timer);
++	printk(KERN_INFO "%s: stopping kiothrottled\n", __func__);
++	kthread_stop(kiothrottled_thread);
++	printk(KERN_INFO "%s: flushing pending requests\n", __func__);
++	spin_lock_irq(&iot->lock);
++	kiothrottled_thread = NULL;
++	spin_unlock_irq(&iot->lock);
++	iot_bio_cleanup(&iot->tree);
++}
++
++static int kiothrottle_startup(void)
++{
++	init_timer(&kiothrottled_timer);
++	kiothrottled_timer.function = kiothrottled_timer_expired;
++
++	printk(KERN_INFO "%s: starting kiothrottled\n", __func__);
++	kiothrottled_thread = kthread_run(kiothrottled, NULL, "kiothrottled");
++	if (IS_ERR(kiothrottled_thread))
++		return -PTR_ERR(kiothrottled_thread);
++	return 0;
++}
++
++/*
++ * NOTE: provide this interface only for emergency situations, when we need to
++ * force the immediate flush of pending (writeback) IO throttled requests.
++ */
++int iothrottle_sync(void)
++{
++	kiothrottle_shutdown();
++	return kiothrottle_startup();
++}
++EXPORT_SYMBOL(iothrottle_sync);
++
++/*
++ * Writing in /proc/kiothrottled_debug enforces an immediate flush of throttled
++ * IO requests.
++ */
++static ssize_t kiothrottle_write(struct file *filp, const char __user *buffer,
++				size_t count, loff_t *data)
++{
++	int ret;
++
++	ret = iothrottle_sync();
++	if (ret)
++		return ret;
++	return count;
++}
++
++/*
++ * Export to userspace the list of pending IO throttled requests.
++ * TODO: this can be useful only for debugging, maybe we should make this
++ * interface optionally, depending on an opportune compile-time config option.
++ */
++static int kiothrottle_show(struct seq_file *m, void *v)
++{
++	struct iot_bio *data;
++	struct rb_node *next;
++	unsigned long now = jiffies;
++	long delta_t;
++
++	spin_lock_irq(&iot->lock);
++	next = rb_first(&iot->tree);
++	while (next) {
++		data = rb_entry(next, struct iot_bio, node);
++		delta_t = (long)data->deadline - (long)now;
++		seq_printf(m, "%p %lu %lu %li\n", data->bio,
++				data->deadline, now, delta_t);
++		next = rb_next(&data->node);
++	}
++	spin_unlock_irq(&iot->lock);
 +
 +	return 0;
 +}
- 
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
- 
++
++static int kiothrottle_open(struct inode *inode, struct file *filp)
++{
++	return single_open(filp, kiothrottle_show, NULL);
++}
++
++static const struct file_operations kiothrottle_ops = {
++	.open           = kiothrottle_open,
++	.read           = seq_read,
++	.write		= kiothrottle_write,
++	.llseek         = seq_lseek,
++	.release        = seq_release,
++};
++
++int __init kiothrottled_init(void)
++{
++	struct proc_dir_entry *pe;
++	int ret;
++
++	iot = kzalloc(sizeof(*iot), GFP_KERNEL);
++	if (unlikely(!iot))
++		return -ENOMEM;
++	spin_lock_init(&iot->lock);
++	iot->tree = RB_ROOT;
++
++	pe = create_proc_entry("kiothrottled_debug", 0644, NULL);
++	if (!pe) {
++		kfree(iot);
++		return -ENOMEM;
++	}
++	pe->proc_fops = &kiothrottle_ops;
++
++	ret = kiothrottle_startup();
++	if (ret) {
++		remove_proc_entry("kiothrottled_debug", NULL);
++		kfree(iot);
++		return ret;
++	}
++	printk(KERN_INFO "%s: initialized\n", __func__);
++	return 0;
++}
++
++void __exit kiothrottled_exit(void)
++{
++	kiothrottle_shutdown();
++	remove_proc_entry("kiothrottled_debug", NULL);
++	kfree(iot);
++	printk(KERN_INFO "%s: unloaded\n", __func__);
++}
++
++module_init(kiothrottled_init);
++module_exit(kiothrottled_exit);
++MODULE_LICENSE("GPL");
 -- 
 1.6.0.4
