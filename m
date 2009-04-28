@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 16/54] External checkpoint of a task other than
-	ourself
-Date: Tue, 28 Apr 2009 19:23:46 -0400
-Message-ID: <1240961064-13991-17-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 41/54] ipc: helpers to save and restore kern_ipc_perm
+	structures
+Date: Tue, 28 Apr 2009 19:24:11 -0400
+Message-ID: <1240961064-13991-42-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,215 +22,209 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Now we can do "external" checkpoint, i.e. act on another task.
+Add the helpers to save and restore the contents of 'struct
+kern_ipc_perm'. Add header structures for ipc state. Put
+place-holders to save and restore ipc state.
 
-sys_checkpoint() now looks up the target pid (in our namespace) and
-checkpoints that corresponding task. That task should be the root of
-a container.
-
-sys_restart() remains the same, as the restart is always done in the
-context of the restarting task.
-
-Changelog[v14]:
-  - Refuse non-self checkpoint if target task isn't frozen
-
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-
-Changelog[v11]:
-  - Copy contents of 'init->fs->root' instead of pointing to them
-
-Changelog[v10]:
-  - Grab vfs root of container init, rather than current process
+TODO:
+This patch does _not_ address the issues of users/groups and the
+related security issues. For now, it saves the old user/group of
+ipc objects, but does not restore them during restart.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c          |   77 ++++++++++++++++++++++++++++++++++++--
- checkpoint/restart.c             |    4 +-
- checkpoint/sys.c                 |    6 +++
- include/linux/checkpoint_types.h |    2 +
- 4 files changed, 83 insertions(+), 6 deletions(-)
+ include/linux/checkpoint.h     |    7 +++-
+ include/linux/checkpoint_hdr.h |   29 ++++++++++++++++
+ ipc/Makefile                   |    1 +
+ ipc/checkpoint.c               |   73 ++++++++++++++++++++++++++++++++++++++++
+ ipc/util.h                     |    8 ++++
+ 5 files changed, 117 insertions(+), 1 deletions(-)
+ create mode 100644 ipc/checkpoint.c
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 9abdf73..b741557 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -12,7 +12,11 @@
- #define CKPT_DFLAG  CKPT_DSYS
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 867033c..8a7fe9a 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -12,6 +12,10 @@
  
- #include <linux/version.h>
+ struct ckpt_ctx;
+ 
 +#include <linux/sched.h>
-+#include <linux/freezer.h>
-+#include <linux/ptrace.h>
- #include <linux/time.h>
-+#include <linux/fs_struct.h>
- #include <linux/fs.h>
- #include <linux/file.h>
- #include <linux/fdtable.h>
-@@ -161,22 +165,87 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
- 	return ret;
- }
++#include <linux/nsproxy.h>
++#include <linux/ipc_namespace.h>
++
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
  
--static int ckpt_ctx_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
-+static int get_container(struct ckpt_ctx *ctx, pid_t pid)
+@@ -169,8 +173,9 @@ extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+ #define CKPT_DPAGE	0x10		/* memory pages */
+ #define CKPT_DOBJ	0x20		/* shared objects */
+ #define CKPT_DFILE	0x40		/* files and filesystem */
++#define CKPT_DIPC	0x80		/* sysvipc */
+ 
+-#define CKPT_DDEFAULT	0x4f		/* default debug level */
++#define CKPT_DDEFAULT	0xcf		/* default debug level */
+ 
+ #ifndef CKPT_DFLAG
+ #define CKPT_DFLAG	0x0		/* nothing */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 3051031..0af5532 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -67,6 +67,11 @@ enum {
+ 	CKPT_HDR_FILE,
+ 	CKPT_HDR_FILE_PIPE,
+ 
++	CKPT_HDR_IPC = 401,
++	CKPT_HDR_IPC_SHM,
++	CKPT_HDR_IPC_MSG,
++	CKPT_HDR_IPC_SEM,
++
+ 	CKPT_HDR_TAIL = 5001
+ };
+ 
+@@ -279,4 +284,28 @@ struct ckpt_hdr_file_pipe_state {
+ 	__s32 pipe_nrbufs;
+ } __attribute__((aligned(8)));
+ 
++/* ipc commons */
++struct ckpt_hdr_ipc_perms {
++	__s32 id;
++	__u32 key;
++	__u32 uid;
++	__u32 gid;
++	__u32 cuid;
++	__u32 cgid;
++	__u32 mode;
++	__u32 _padding;
++	__u64 seq;
++} __attribute__((aligned(8)));
++
++
++#define CKPT_TST_OVERFLOW_16(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
++
++#define CKPT_TST_OVERFLOW_32(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > INT_MAX))
++
++#define CKPT_TST_OVERFLOW_64(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > LONG_MAX))
++
++
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff --git a/ipc/Makefile b/ipc/Makefile
+index 4e1955e..aa6c8dd 100644
+--- a/ipc/Makefile
++++ b/ipc/Makefile
+@@ -9,4 +9,5 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
+ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
+ obj-$(CONFIG_IPC_NS) += namespace.o
+ obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
++obj-$(CONFIG_CHECKPOINT) += checkpoint.o
+ 
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
+new file mode 100644
+index 0000000..9a6cd9d
+--- /dev/null
++++ b/ipc/checkpoint.c
+@@ -0,0 +1,73 @@
++/*
++ *  Checkpoint logic and helpers
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DIPC
++
++#include <linux/ipc.h>
++#include <linux/sched.h>
++#include <linux/ipc_namespace.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++int checkpoint_ipcns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
 +{
-+	struct task_struct *task = NULL;
-+	struct nsproxy *nsproxy = NULL;
-+	int err = -ESRCH;
-+
-+	ctx->root_pid = pid;
-+
-+	read_lock(&tasklist_lock);
-+	task = find_task_by_vpid(pid);
-+	if (task)
-+		get_task_struct(task);
-+	read_unlock(&tasklist_lock);
-+
-+	if (!task)
-+		goto out;
-+
-+#if 0	/* enable to use containers */
-+	if (!is_container_init(task)) {
-+		err = -EINVAL;
-+		goto out;
-+	}
-+#endif
-+
-+	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
-+		err = -EPERM;
-+		goto out;
-+	}
-+
-+	/* verify that the task is frozen (unless self) */
-+	if (task != current && !frozen(task))
-+		return -EBUSY;
-+
-+	/* FIX: add support for ptraced tasks */
-+	if (task_ptrace(task))
-+		return -EBUSY;
-+
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(task);
-+	if (nsproxy)
-+		get_nsproxy(nsproxy);
-+	rcu_read_unlock();
-+
-+	if (!nsproxy)
-+		goto out;
-+
-+	ctx->root_task = task;
-+	ctx->root_nsproxy = nsproxy;
-+
 +	return 0;
-+
-+ out:
-+	if (task)
-+		put_task_struct(task);
-+	return err;
 +}
 +
-+/* setup checkpoint-specific parts of ctx */
-+static int ctx_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	struct fs_struct *fs;
-+	int ret;
- 
- 	ctx->root_pid = pid;
- 
-+	ret = get_container(ctx, pid);
-+	if (ret < 0)
-+		return ret;
++int restore_ipcns(struct ckpt_ctx *ctx)
++{
++	return 0;
++}
 +
- 	/*
- 	 * assume checkpointer is in container's root vfs
- 	 * FIXME: this works for now, but will change with real containers
- 	 */
- 
--	fs = current->fs;
-+	task_lock(ctx->root_task);
-+	fs = ctx->root_task->fs;
- 	read_lock(&fs->lock);
- 	ctx->fs_mnt = fs->root;
- 	path_get(&ctx->fs_mnt);
- 	read_unlock(&fs->lock);
-+	task_unlock(ctx->root_task);
- 
- 	return 0;
- }
-@@ -185,13 +254,13 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
--	ret = ckpt_ctx_checkpoint(ctx, pid);
-+	ret = ctx_checkpoint(ctx, pid);
- 	if (ret < 0)
- 		goto out;
- 	ret = checkpoint_write_header(ctx);
- 	if (ret < 0)
- 		goto out;
--	ret = checkpoint_task(ctx, current);
-+	ret = checkpoint_task(ctx, ctx->root_task);
- 	if (ret < 0)
- 		goto out;
- 	ret = checkpoint_write_tail(ctx);
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index ecf2cf0..637de90 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -334,7 +334,7 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
- }
- 
- /* setup restart-specific parts of ctx */
--static int ckpt_ctx_restart(struct ckpt_ctx *ctx)
-+static int ctx_restart(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	return 0;
- }
-@@ -343,7 +343,7 @@ int do_restart(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
--	ret = ckpt_ctx_restart(ctx);
-+	ret = ctx_restart(ctx, pid);
- 	if (ret < 0)
- 		return ret;
- 	ret = restore_read_header(ctx);
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 76d5d66..0b7245a 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -12,6 +12,7 @@
- #define CKPT_DFLAG  CKPT_DSYS
- 
- #include <linux/sched.h>
-+#include <linux/nsproxy.h>
- #include <linux/kernel.h>
- #include <linux/fs.h>
- #include <linux/file.h>
-@@ -205,6 +206,11 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 	ckpt_pgarr_free(ctx);
- 	ckpt_obj_hash_free(ctx);
- 
-+	if (ctx->root_nsproxy)
-+		put_nsproxy(ctx->root_nsproxy);
-+	if (ctx->root_task)
-+		put_task_struct(ctx->root_task);
++void checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++			       struct kern_ipc_perm *perm)
++{
++	h->id = perm->id;
++	h->key = perm->key;
++	h->uid = perm->uid;
++	h->gid = perm->gid;
++	h->cuid = perm->cuid;
++	h->cgid = perm->cgid;
++	h->mode = perm->mode & S_IRWXUGO;
++	h->seq = perm->seq;
++}
 +
- 	kfree(ctx);
- }
++int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++			   struct kern_ipc_perm *perm)
++{
++	if (h->id < 0)
++		return -EINVAL;
++	if (CKPT_TST_OVERFLOW_16(h->uid, perm->uid) ||
++	    CKPT_TST_OVERFLOW_16(h->gid, perm->gid) ||
++	    CKPT_TST_OVERFLOW_16(h->cuid, perm->cuid) ||
++	    CKPT_TST_OVERFLOW_16(h->cgid, perm->cgid) ||
++	    CKPT_TST_OVERFLOW_16(h->mode, perm->mode))
++		return -EINVAL;
++	if (h->seq >= USHORT_MAX)
++		return -EINVAL;
++	if (h->mode & ~S_IRWXUGO)
++		return -EINVAL;
++
++	/* FIX: verify the ->mode field makes sense */
++
++	perm->id = h->id;
++	perm->key = h->key;
++#if 0 /* FIX: requires security checks */
++	perm->uid = h->uid;
++	perm->gid = h->gid;
++	perm->cuid = h->cuid;
++	perm->cgid = h->cgid;
++#endif
++	perm->mode = h->mode;
++	perm->seq = h->seq;
++
++	return 0;
++}
+diff --git a/ipc/util.h b/ipc/util.h
+index c75e3b2..d3f7367 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -11,6 +11,7 @@
+ #define _IPC_UTIL_H
  
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 12f0ec5..d98ba71 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -22,6 +22,8 @@ struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
+ #include <linux/err.h>
++#include <linux/checkpoint_hdr.h>
  
- 	pid_t root_pid;		/* container identifier */
-+	struct task_struct *root_task;	/* container root task */
-+	struct nsproxy *root_nsproxy;	/* container root nsproxy */
+ #define SEQ_MULTIPLIER	(IPCMNI)
  
- 	unsigned long flags;
- 	unsigned long oflags;	/* restart: old flags */
+@@ -177,5 +178,12 @@ extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
+ 
+ extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
++#ifdef CONFIG_CHECKPOINT
++extern void checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *hh,
++				      struct kern_ipc_perm *perm);
++extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *hh,
++				  struct kern_ipc_perm *perm);
++#endif
++
+ 
+ #endif
 -- 
 1.5.4.3
