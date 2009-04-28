@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 44/54] sysvipc-shm: restart
-Date: Tue, 28 Apr 2009 19:24:14 -0400
-Message-ID: <1240961064-13991-45-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 35/54] Support for share memory address spaces
+Date: Tue, 28 Apr 2009 19:24:05 -0400
+Message-ID: <1240961064-13991-36-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,287 +21,310 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Like chekcpoint, restart of sysvipc shared memory is also performed in
-two steps: first, the entire ipc namespace is restored as a whole, by
-restoring each shm object read from the checkpoint image. The shmem's
-file pointer is registered in the objhash. Second, for each vma that
-refers to ipc shared memory, we use the objref to find the file in the
-objhash, and use that file in calling do_mmap_pgoff().
-
-Handling of shm objects that have been deleted (via IPC_RMID) is left
-to a later patch in this series.
-
-Handling of ipc shm mappings that are locked (via SHM_MLOCK) is also
-not restored at the moment.
+The task address space (task->mm) may be shared between processes if
+CLONE_VM is used, and particularly among threads. Accordingly, treat
+'task->mm' as a shared object: during checkpoint check against the
+objhash and only dump the contents if seen for the first time. During
+restart, likewise, only restore if it's a new instance, otherwise use
+the one already registered in the objhash.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/memory.c  |   22 +++++++++++
- include/linux/shm.h  |    9 ++++
- ipc/checkpoint.c     |    2 +-
- ipc/checkpoint_shm.c |  100 ++++++++++++++++++++++++++++++++++++++++++++++++++
- ipc/shm.c            |   46 +++++++++++++++++++++++
- ipc/util.h           |    1 +
- 6 files changed, 179 insertions(+), 1 deletions(-)
+ checkpoint/memory.c            |   59 ++++++++++++++++++++++++++++++++++-----
+ checkpoint/objhash.c           |   21 ++++++++++++++
+ checkpoint/process.c           |   46 ++++++++++++++++++++++++++++---
+ include/linux/checkpoint.h     |    7 +++-
+ include/linux/checkpoint_hdr.h |    7 +++++
+ 5 files changed, 126 insertions(+), 14 deletions(-)
 
 diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-index ee26254..7637c1e 100644
+index f5f8fcf..7a6e3f4 100644
 --- a/checkpoint/memory.c
 +++ b/checkpoint/memory.c
-@@ -20,6 +20,7 @@
- #include <linux/mman.h>
- #include <linux/pagemap.h>
- #include <linux/mm_types.h>
-+#include <linux/shm.h>
- #include <linux/proc_fs.h>
- #include <linux/swap.h>
- #include <linux/checkpoint.h>
-@@ -1016,6 +1017,13 @@ static int anon_private_restore(struct ckpt_ctx *ctx,
- 	return private_vma_restore(ctx, mm, NULL, h);
+@@ -650,10 +650,9 @@ static int anonymous_checkpoint(struct ckpt_ctx *ctx,
+ 	return private_vma_checkpoint(ctx, vma, CKPT_VMA_ANON, 0);
  }
  
-+static int bad_vma_restore(struct ckpt_ctx *ctx,
-+			   struct mm_struct *mm,
-+			   struct ckpt_hdr_vma *h)
-+{
-+	return -EINVAL;
-+}
-+
- /* callbacks to restore vma per its type: */
- struct restore_vma_ops {
- 	char *vma_name;
-@@ -1068,6 +1076,20 @@ static struct restore_vma_ops restore_vma_ops[] = {
- 		.vma_type = CKPT_VMA_SHM_FILE,
- 		.restore = filemap_restore,
- 	},
-+	/* sysvipc shared */
-+	{
-+		.vma_name = "IPC SHARED",
-+		.vma_type = CKPT_VMA_SHM_IPC,
-+		/* ipc inode itself is restore by restore_ipc_ns()... */
-+		.restore = bad_vma_restore,
-+
-+	},
-+	/* sysvipc shared (skip) */
-+	{
-+		.vma_name = "IPC SHARED (skip)",
-+		.vma_type = CKPT_VMA_SHM_IPC_SKIP,
-+		.restore = ipcshm_restore,
-+	},
- };
+-int checkpoint_mm(struct ckpt_ctx *ctx, struct task_struct *t)
++static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ {
+ 	struct ckpt_hdr_mm *h;
+-	struct mm_struct *mm;
+ 	struct vm_area_struct *vma;
+ 	int exe_objref = 0;
+ 	int ret;
+@@ -662,8 +661,6 @@ int checkpoint_mm(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (!h)
+ 		return -ENOMEM;
  
- /**
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index eca6235..1122197 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -118,6 +118,15 @@ static inline int is_file_shm_hugepages(struct file *file)
- }
- #endif
+-	mm = get_task_mm(t);
+-
+ 	down_read(&mm->mmap_sem);
  
-+#ifdef CONFIG_CHECKPOINT
-+#ifdef CONFIG_SYSVIPC
-+extern int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+			  struct ckpt_hdr_vma *h);
-+#else
-+define ipcshm_restart NULL
-+#endif
-+#endif
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_SHM_H_ */
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index 127eb63..f951c1e 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -209,9 +209,9 @@ static int do_restore_ipc_ns(struct ckpt_ctx *ctx)
- 	ipc_ns->sem_ctls[2] = h->sem_ctl_opm;
- 	ipc_ns->sem_ctls[3] = h->sem_ctl_mni;
- 
--#if 0 /* NEXT FEW PATCHES */
- 	ret = restore_ipc_any(ctx, IPC_SHM_IDS,
- 			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
-+#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		goto out;
- 	ret = ckpt_read_ipc_any(ctx, IPC_MSG_IDS,
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-index 16d8c9d..9e0d028 100644
---- a/ipc/checkpoint_shm.c
-+++ b/ipc/checkpoint_shm.c
-@@ -110,3 +110,103 @@ int checkpoint_ipc_shm(int id, void *p, void *data)
+ 	/* FIX: need also mm->flags */
+@@ -715,10 +712,26 @@ int checkpoint_mm(struct ckpt_ctx *ctx, struct task_struct *t)
+  out:
  	ckpt_hdr_put(ctx, h);
+ 	up_read(&mm->mmap_sem);
+-	mmput(mm);
  	return ret;
  }
-+
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+static int load_ipc_shm_hdr(struct ckpt_ctx *ctx,
-+			    struct ckpt_hdr_ipc_shm *h,
-+			    struct shmid_kernel *shp)
+ 
++int checkpoint_mm(struct ckpt_ctx *ctx, void *ptr)
 +{
++	return do_checkpoint_mm(ctx, (struct mm_struct *) ptr);
++}
++
++int checkpoint_mm_obj(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct mm_struct *mm;
++	int objref;
++
++	mm = get_task_mm(t);
++	objref = checkpoint_obj(ctx, mm, CKPT_OBJ_MM);
++	mmput(mm);
++
++	return objref;
++}
++
+ /*
+  * Restart
+  *
+@@ -1120,7 +1133,7 @@ static int destroy_mm(struct mm_struct *mm)
+ 	return 0;
+ }
+ 
+-int restore_mm(struct ckpt_ctx *ctx)
++static struct mm_struct *do_restore_mm(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_mm *h;
+ 	struct mm_struct *mm;
+@@ -1130,7 +1143,7 @@ int restore_mm(struct ckpt_ctx *ctx)
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_MM);
+ 	if (IS_ERR(h))
+-		return PTR_ERR(h);
++		return (struct mm_struct *) h;
+ 
+ 	ckpt_debug("map_count %d\n", h->map_count);
+ 
+@@ -1142,6 +1155,8 @@ int restore_mm(struct ckpt_ctx *ctx)
+ 		goto out;
+ 	if (h->exefile_objref < 0)
+ 		goto out;
++	if (h->map_count <= 0)
++		goto out;
+ 
+ 	mm = current->mm;
+ 
+@@ -1191,5 +1206,33 @@ int restore_mm(struct ckpt_ctx *ctx)
+ 	ret = restore_mm_context(ctx, mm);
+  out:
+ 	ckpt_hdr_put(ctx, h);
+-	return ret;
++	return (ret < 0 ? ERR_PTR(ret) : mm);
+ }
++
++void *restore_mm(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_mm(ctx);
++}
++
++int restore_mm_obj(struct ckpt_ctx *ctx, int mm_objref)
++{
++	struct mm_struct *mm;
 +	int ret;
 +
-+	ret = restore_load_ipc_perms(&h->perms, &shp->shm_perm);
++	mm = ckpt_obj_fetch(ctx, mm_objref, CKPT_OBJ_MM);
++	if (!mm)
++		return -EINVAL;
++	else if (IS_ERR(mm))
++		return -EINVAL;
++
++	if (mm == current->mm)
++		return 0;
++
++	ret = exec_mmap(mm);
 +	if (ret < 0)
 +		return ret;
 +
-+	ckpt_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
-+		 h->shm_cprid, h->shm_lprid, h->shm_segsz, h->mlock_uid);
-+
-+	if (h->shm_cprid < 0 || h->shm_lprid < 0)
-+		return -EINVAL;
-+
-+	shp->shm_segsz = h->shm_segsz;
-+	shp->shm_atim = h->shm_atim;
-+	shp->shm_dtim = h->shm_dtim;
-+	shp->shm_ctim = h->shm_ctim;
-+	shp->shm_cprid = h->shm_cprid;
-+	shp->shm_lprid = h->shm_lprid;
-+
++	atomic_inc(&mm->mm_users);
 +	return 0;
 +}
 +
-+int restore_ipc_shm(struct ckpt_ctx *ctx)
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 8e43432..4fb5afa 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -57,6 +57,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
+  *   obj_no_{drop,grab}: for objects ignored/skipped
+  *   obj_file_{drop,grab}: for file objects
+  *   obj_inode_{drop,grab}: for inode objects
++ *   obj_mm_{drop,grab}: for mm_struct objects
+  */
+ 
+ static void obj_no_drop(void *ptr)
+@@ -91,6 +92,17 @@ static void obj_inode_drop(void *ptr)
+ 	iput((struct inode *) ptr);
+ }
+ 
++static int obj_mm_grab(void *ptr)
 +{
-+	struct ckpt_hdr_ipc_shm *h;
-+	struct kern_ipc_perm *perms;
-+	struct shmid_kernel *shp;
-+	struct ipc_ids *shm_ids = &current->nsproxy->ipc_ns->ids[IPC_SHM_IDS];
-+	struct file *file;
-+	int shmflag;
++	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
++	return 0;
++}
++
++static void obj_mm_drop(void *ptr)
++{
++	mmput((struct mm_struct *) ptr);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -117,6 +129,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_bad,	/* no c/r at inode level */
+ 		.restore = restore_bad,		/* no c/r at inode level */
+ 	},
++	/* mm object */
++	{
++		.obj_name = "MM",
++		.obj_type = CKPT_OBJ_MM,
++		.ref_drop = obj_mm_drop,
++		.ref_grab = obj_mm_grab,
++		.checkpoint = checkpoint_mm,
++		.restore = restore_mm,
++	},
+ };
+ 
+ 
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index d5ee6fd..0bd4845 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -162,6 +162,28 @@ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ret;
+ }
+ 
++static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_task_objs *h;
++	int mm_objref;
 +	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SHM);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
++	mm_objref = checkpoint_mm_obj(ctx, t);
++	ckpt_debug("memory: objref %d\n", mm_objref);
++	if (mm_objref < 0)
++		return mm_objref;
 +
-+	ret = -EINVAL;
-+	if (h->perms.id < 0)
-+		goto out;
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
++	if (!h)
++		return -ENOMEM;
 +
-+#define CKPT_SHMFL_MASK  (SHM_NORESERVE | SHM_HUGETLB)
-+	if (h->flags & ~CKPT_SHMFL_MASK)
-+		goto out;
++	h->mm_objref = mm_objref;
 +
-+	ret = -ENOSYS;
-+	if (h->mlock_uid != (unsigned int) -1)	/* FIXME: support SHM_LOCK */
-+		goto out;
-+	if (h->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
-+		goto out;
-+
-+	/* FIXME: this will fail for deleted ipc shm segments */
-+
-+	shmflag = h->flags | h->perms.mode | IPC_CREAT | IPC_EXCL;
-+	ckpt_debug("shm: do_shmget size %lld flag %#x id %d\n",
-+		 h->shm_segsz, shmflag, h->perms.id);
-+	ret = do_shmget(h->perms.key, h->shm_segsz, shmflag, h->perms.id);
-+	ckpt_debug("shm: do_shmget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	down_write(&shm_ids->rw_mutex);
-+
-+	/* we are the sole owners/users of this ipc_ns, it can't go away */
-+	perms = ipc_lock(shm_ids, h->perms.id);
-+	BUG_ON(IS_ERR(perms));  /* ipc_ns is private to us */
-+
-+	shp = container_of(perms, struct shmid_kernel, shm_perm);
-+	file = shp->shm_file;
-+	get_file(file);
-+
-+	ret = load_ipc_shm_hdr(ctx, h, shp);
-+	ipc_unlock(perms);
-+	if (ret < 0)
-+		goto mutex;
-+
-+	/* deposit in objhash and read contents in */
-+	ret = ckpt_obj_insert(ctx, file, h->objref, CKPT_OBJ_FILE);
-+	if (ret < 0)
-+		goto mutex;
-+	ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
-+ mutex:
-+	fput(file);
-+	if (ret < 0) {
-+		ckpt_debug("shm: need to remove (%d)\n", ret);
-+		do_shm_rmid(current->nsproxy->ipc_ns, perms);
-+	}
-+	up_write(&shm_ids->rw_mutex);
-+ out:
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
 +	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
-diff --git a/ipc/shm.c b/ipc/shm.c
-index c521e95..5625dbf 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -329,6 +329,52 @@ static int ipcshm_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
- 	return generic_vma_checkpoint(ctx, vma, CKPT_VMA_SHM_IPC_SKIP,
- 				      0, ino_objref);
- }
 +
-+int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+		   struct ckpt_hdr_vma *h)
+ /* dump the entire state of a given task */
+ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+@@ -171,8 +193,8 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ckpt_debug("ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = checkpoint_mm(ctx, t);
+-	ckpt_debug("memory: ret %d\n", ret);
++	ret = checkpoint_task_objs(ctx, t);
++	ckpt_debug("objs: ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_fd_table(ctx, t);
+@@ -322,6 +344,22 @@ int restore_restart_block(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int restore_task_objs(struct ckpt_ctx *ctx)
 +{
-+	struct file *file;
-+	int shmid, shmflg = 0;
-+	mm_segment_t old_fs;
-+	unsigned long start;
-+	unsigned long addr;
++	struct ckpt_hdr_task_objs *h;
 +	int ret;
 +
-+	if (!h->ino_objref)
-+		return -EINVAL;
-+	/* FIX: verify the vm_flags too */
++	h = ckpt_read_obj_type(ctx, CKPT_HDR_TASK_OBJS, sizeof(*h));
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	file = ckpt_obj_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
-+	if (!file)
-+		return -EINVAL;
-+	else if (IS_ERR(file))
-+		PTR_ERR(file);
++	ret = restore_mm_obj(ctx, h->mm_objref);
++	ckpt_debug("memory: ret %d\n", ret);
 +
-+	shmid = file->f_dentry->d_inode->i_ino;
-+
-+	if (!(h->vm_flags & VM_WRITE))
-+		shmflg |= SHM_RDONLY;
-+
-+	/*
-+	 * FIX: do_shmat() has limited interface: all-or-nothing
-+	 * mapping. If the vma, however, reflects a partial mapping
-+	 * then we need to modify that function to accomplish the
-+	 * desired outcome.  Partial mapping can exist due to the user
-+	 * call shmat() and then unmapping part of the region.
-+	 * Currently, we at least detect this and call it a foul play.
-+	 */
-+	if (((h->vm_end - h->vm_start) != h->ino_size) || h->vm_pgoff)
-+		return -ENOSYS;
-+
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	start = h->vm_start;
-+	ret = do_shmat(shmid, (char __user *) start, shmflg, &addr);
-+	set_fs(old_fs);
-+
-+	BUG_ON(ret >= 0 && addr != h->vm_start);
++	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
- #else
- define ipcshm_checkpoint NULL
- #endif
-diff --git a/ipc/util.h b/ipc/util.h
-index e4799cb..be2fb94 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -185,6 +185,7 @@ extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *hh,
- 				  struct kern_ipc_perm *perm);
++
+ /* read the entire state of the current task */
+ int restore_task(struct ckpt_ctx *ctx)
+ {
+@@ -331,8 +369,8 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	ckpt_debug("ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = restore_mm(ctx);
+-	ckpt_debug("memory: ret %d\n", ret);
++	ret = restore_task_objs(ctx);
++	ckpt_debug("objs: ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = restore_fd_table(ctx);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index a662ea7..d554776 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -90,8 +90,11 @@ extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
  
- extern int checkpoint_ipc_shm(int id, void *p, void *data);
-+extern int restore_ipc_shm(struct ckpt_ctx *ctx);
- #endif
+ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
  
- #endif
+-extern int checkpoint_mm(struct ckpt_ctx *ctx, struct task_struct *t);
+-extern int restore_mm(struct ckpt_ctx *ctx);
++extern int checkpoint_mm(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_mm(struct ckpt_ctx *ctx);
++
++extern int checkpoint_mm_obj(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_mm_obj(struct ckpt_ctx *ctx, int objref);
+ 
+ #define CKPT_VMA_NOT_SUPPORTED						\
+ 	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 59fab62..8b00fb8 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -49,6 +49,7 @@ enum {
+ 
+ 	CKPT_HDR_TREE = 101,
+ 	CKPT_HDR_TASK,
++	CKPT_HDR_TASK_OBJS,
+ 	CKPT_HDR_RESTART_BLOCK,
+ 	CKPT_HDR_THREAD,
+ 	CKPT_HDR_CPU,
+@@ -78,6 +79,7 @@ enum obj_type {
+ 	CKPT_OBJ_IGNORE = 0,
+ 	CKPT_OBJ_FILE,
+ 	CKPT_OBJ_INODE,
++	CKPT_OBJ_MM,
+ 	CKPT_OBJ_MAX
+ };
+ 
+@@ -139,6 +141,11 @@ struct ckpt_hdr_task {
+ 	__u32 task_comm_len;
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_task_objs {
++	struct ckpt_hdr h;
++	__s32 mm_objref;
++} __attribute__((aligned(8)));
++
+ /* (thread) restart blocks */
+ struct ckpt_hdr_restart_block {
+ 	struct ckpt_hdr h;
 -- 
 1.5.4.3
