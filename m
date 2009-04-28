@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 10/54] Infrastructure for shared objects
-Date: Tue, 28 Apr 2009 19:23:40 -0400
-Message-ID: <1240961064-13991-11-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 11/54] Introduce 'checkpoint' method in 'struct
+	file_operations'
+Date: Tue, 28 Apr 2009 19:23:41 -0400
+Message-ID: <1240961064-13991-12-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,650 +22,125 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Infrastructure to handle objects that may be shared and referenced by
-multiple tasks or other objects, e..g open files, memory address space
-etc.
+While we assume all normal files and directories can be checkpointed,
+there are, as usual in the VFS, specialized places that will always
+need an ability to override these defaults. Although we could do this
+completely in the checkpoint code, that would bitrot quickly.
 
-The state of shared objects is saved once. On the first encounter, the
-state is dumped and the object is assigned a unique identifier (objref)
-and also stored in a hash table (indexed by its physical kenrel address).
-From then on the object will be found in the hash and only its identifier
-is saved.
+This adds a new 'file_operations' function for checkpointing a file.
+It is assumed that there should be a dirt-simple way to make something
+(un)checkpointable that fits in with current code.
 
-On restart the identifier is looked up in the hash table; if not found
-then the state is read, the object is created, and added to the hash
-table (this time indexed by its identifier). Otherwise, the object in
-the hash table is used.
+As you can see in the ext[234] patches down the road, all that we have
+to do to make something simple be supported is add a single "generic"
+f_op entry.
 
-The hash is "one-way": objects added to it are never deleted until the
-hash it discarded. The hash is discarded at the end of checkpoint or
-restart, whether successful or not.
-
-The hash keeps a reference to every object that is added to it, matching
-the object's type, and maintains this reference during its lifetime.
-Therefore, it is always safe to use an object that is stored in the hash.
-
-Changelog[v14]:
-  - Introduce 'struct ckpt_obj_ops' to better modularize shared objs.
-  - Replace long 'switch' statements with table lookups and callbacks.
-  - Introduce checkpoint_obj() and restart_obj() helpers
-  - Shared objects now dumped/saved right before they are referenced
-  - Cleanup interface of shared objects
-
-Changelog[v13]:
-  - Use hash_long() with 'unsigned long' cast to support 64bit archs
-    (Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>)
-
-Changelog[v11]:
-  - Doc: be explicit about grabbing a reference and object lifetime
-
-Changelog[v4]:
-  - Fix calculation of hash table size
-
-Changelog[v3]:
-  - Use standard hlist_... for hash table
+Also introduce vfs_fcntl() so that it can be called from restart (see
+patch adding restart of files).
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/Makefile              |   10 +-
- checkpoint/objhash.c             |  372 ++++++++++++++++++++++++++++++++++++++
- checkpoint/restart.c             |   46 +++++
- checkpoint/sys.c                 |    5 +-
- include/linux/checkpoint.h       |   16 ++
- include/linux/checkpoint_hdr.h   |   14 ++
- include/linux/checkpoint_types.h |    2 +
- 7 files changed, 462 insertions(+), 3 deletions(-)
- create mode 100644 checkpoint/objhash.c
+ fs/fcntl.c                       |   23 +++++++++++++++--------
+ include/linux/checkpoint_types.h |    2 ++
+ include/linux/fs.h               |    6 ++++++
+ 3 files changed, 23 insertions(+), 8 deletions(-)
 
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index a33ab77..2026607 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -2,5 +2,11 @@
- # Makefile for linux checkpoint/restart.
- #
- 
--obj-$(CONFIG_CHECKPOINT) += sys.o checkpoint.o restart.o \
--	process.o memory.o files.o
-+obj-$(CONFIG_CHECKPOINT) += \
-+	sys.o \
-+	objhash.o \
-+	checkpoint.o \
-+	restart.o \
-+	process.o \
-+	memory.o \
-+	files.o
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-new file mode 100644
-index 0000000..076a3a3
---- /dev/null
-+++ b/checkpoint/objhash.c
-@@ -0,0 +1,372 @@
-+/*
-+ *  Checkpoint-restart - object hash infrastructure to manage shared objects
-+ *
-+ *  Copyright (C) 2008-2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DOBJ
-+
-+#include <linux/kernel.h>
-+#include <linux/hash.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+struct ckpt_obj;
-+struct ckpt_obj_ops;
-+
-+/* object operations */
-+struct ckpt_obj_ops {
-+	char *obj_name;
-+	enum obj_type obj_type;
-+	void (*ref_drop)(void *ptr);
-+	int (*ref_grab)(void *ptr);
-+	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
-+	void *(*restore)(struct ckpt_ctx *ctx);
-+};
-+
-+struct ckpt_obj {
-+	int objref;
-+	void *ptr;
-+	struct ckpt_obj_ops *ops;
-+	struct hlist_node hash;
-+};
-+
-+struct ckpt_obj_hash {
-+	struct hlist_head *head;
-+	int next_free_objref;
-+};
-+
-+/*
-+ * helper grab/drop functions:
-+ *   obj_no_{drop,grab}: for objects ignored/skipped
-+ */
-+
-+static void obj_no_drop(void *ptr)
-+{
-+	return;
-+}
-+
-+static int obj_no_grab(void *ptr)
-+{
-+	return 0;
-+}
-+
-+static struct ckpt_obj_ops ckpt_obj_ops[] = {
-+	/* ignored object */
-+	{
-+		.obj_name = "IGNORED",
-+		.obj_type = CKPT_OBJ_IGNORE,
-+		.ref_drop = obj_no_drop,
-+		.ref_grab = obj_no_grab,
-+	},
-+};
-+
-+
-+#define CKPT_OBJ_HASH_NBITS  10
-+#define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
-+
-+static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
-+{
-+	struct hlist_head *h = obj_hash->head;
-+	struct hlist_node *n, *t;
-+	struct ckpt_obj *obj;
-+	int i;
-+
-+	for (i = 0; i < CKPT_OBJ_HASH_TOTAL; i++) {
-+		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
-+			obj->ops->ref_drop(obj->ptr);
-+			kfree(obj);
-+		}
-+	}
-+}
-+
-+void ckpt_obj_hash_free(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
-+
-+	if (obj_hash) {
-+		obj_hash_clear(obj_hash);
-+		kfree(obj_hash->head);
-+		kfree(ctx->obj_hash);
-+		ctx->obj_hash = NULL;
-+	}
-+}
-+
-+int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_obj_hash *obj_hash;
-+	struct hlist_head *head;
-+
-+	obj_hash = kzalloc(sizeof(*obj_hash), GFP_KERNEL);
-+	if (!obj_hash)
-+		return -ENOMEM;
-+	head = kzalloc(CKPT_OBJ_HASH_TOTAL * sizeof(*head), GFP_KERNEL);
-+	if (!head) {
-+		kfree(obj_hash);
-+		return -ENOMEM;
-+	}
-+
-+	obj_hash->head = head;
-+	obj_hash->next_free_objref = 1;
-+
-+	ctx->obj_hash = obj_hash;
-+	return 0;
-+}
-+
-+static struct ckpt_obj *obj_find_by_ptr(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	struct hlist_head *h;
-+	struct hlist_node *n;
-+	struct ckpt_obj *obj;
-+
-+	h = &ctx->obj_hash->head[hash_long((unsigned long) ptr,
-+					   CKPT_OBJ_HASH_NBITS)];
-+	hlist_for_each_entry(obj, n, h, hash)
-+		if (obj->ptr == ptr)
-+			return obj;
-+	return NULL;
-+}
-+
-+static struct ckpt_obj *obj_find_by_objref(struct ckpt_ctx *ctx, int objref)
-+{
-+	struct hlist_head *h;
-+	struct hlist_node *n;
-+	struct ckpt_obj *obj;
-+
-+	h = &ctx->obj_hash->head[hash_long((unsigned long) objref,
-+					   CKPT_OBJ_HASH_NBITS)];
-+	hlist_for_each_entry(obj, n, h, hash)
-+		if (obj->objref == objref)
-+			return obj;
-+	return NULL;
-+}
-+
-+/**
-+ * ckpt_obj_new - add an object to the obj_hash
-+ * @ctx: checkpoint context
-+ * @ptr: pointer to object
-+ * @objref: object unique id
-+ * @ops: object operations
-+ *
-+ * Returns: objref
-+ *
-+ * Add the object to the obj_hash. If @objref is zero, assign a unique
-+ * object id and use @ptr as a hash key [checkpoint]. Else use @objref
-+ * as a key [restart].
-+ */
-+static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
-+		   struct ckpt_obj_ops *ops)
-+{
-+	struct ckpt_obj *obj;
-+	int i, ret;
-+
-+	obj = kmalloc(sizeof(*obj), GFP_KERNEL);
-+	if (!obj)
-+		return -ENOMEM;
-+
-+	obj->ptr = ptr;
-+	obj->ops = ops;
-+
-+	if (objref) {
-+		/* use @obj->objref to index (restart) */
-+		obj->objref = objref;
-+		i = hash_long((unsigned long) objref, CKPT_OBJ_HASH_NBITS);
-+	} else {
-+		/* use @obj->ptr to index, assign objref (checkpoint) */
-+		obj->objref = ctx->obj_hash->next_free_objref++;;
-+		i = hash_long((unsigned long) ptr, CKPT_OBJ_HASH_NBITS);
-+	}
-+
-+	ret = ops->ref_grab(obj->ptr);
-+	if (ret < 0)
-+		kfree(obj);
-+	else
-+		hlist_add_head(&obj->hash, &ctx->obj_hash->head[i]);
-+
-+	return (ret < 0 ? : obj->objref);
-+}
-+
-+/**
-+* ckpt_obj_lookup_add - lookup object and add if not in obj_hash
-+* @ctx: checkpoint context
-+* @ptr: pointer to object
-+* @type: object type
-+* @first: [output] first encoutner (added to table)
-+*
-+* Look up the object pointed to by @ptr in the hash table. If it isn't
-+* already found there, add the object, and allocate a unique object
-+* id. Grab a reference to every object that is added, and maintain the
-+* reference until the entire hash is freed.
-+*
-+* [This is used during checkpoint].
-+*
-+* Return: objref
-+*/
-+int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
-+			enum obj_type type, int *first)
-+{
-+	struct ckpt_obj_ops *ops = &ckpt_obj_ops[type];
-+	struct ckpt_obj *obj;
-+	int objref;
-+
-+	obj = obj_find_by_ptr(ctx, ptr);
-+	if (!obj) {
-+		objref = obj_new(ctx, ptr, 0, ops);
-+		if (objref < 0)
-+			return objref;
-+		*first = 1;
-+	} else if (obj->ops->obj_type != type) {   /* sanity check */
-+		return -EINVAL;
-+	} else {
-+		objref = obj->objref;
-+		*first = 0;
-+	}
-+
-+	ckpt_debug("%s objref %d first %d\n", ops->obj_name, objref, *first);
-+	return objref;
-+}
-+
-+/**
-+ * checkpoint_obj - if not already in hash, add object and checkpoint
-+ * @ctx: checkpoint context
-+ * @ptr: pointer to object
-+ * @type: object type
-+ *
-+ * Look up the object pointed to by @ptr in the hash table. If it
-+ * isn't already there, then add the object to the table, allocate a
-+ * fresh unique id (objref) and save the object's state, and grab a
-+ * reference to every object that is added. (Maintain the reference
-+ * until the entire hash is free).
-+ *
-+ * [This is used during checkpoint].
-+ *
-+ * Returns: objref
-+ */
-+int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
-+{
-+	struct ckpt_obj_ops *ops = &ckpt_obj_ops[type];
-+	struct ckpt_hdr_objref *h;
-+	struct ckpt_obj *obj;
-+	int objref, ret;
-+
-+	/* make sure we don't change this accidentally */
-+	BUG_ON(ops->obj_type != type);
-+
-+	obj = obj_find_by_ptr(ctx, ptr);
-+	if (obj) {
-+		BUG_ON(obj->ops->obj_type != type);
-+		return obj->objref;
-+	}
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_OBJREF);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	objref = obj_new(ctx, ptr, 0, ops);
-+	if (objref < 0)
-+		return objref;
-+
-+	h->objtype = type;
-+	h->objref = objref;
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-+	ckpt_hdr_put(ctx, h);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* invoke callback to actually dump the state */
-+	if (ops->checkpoint)
-+		ret = ops->checkpoint(ctx, ptr);
-+	if (ret < 0)
-+		return ret;
-+
-+	return objref;
-+}
-+
-+/**
-+ * restore_obj - read in and restore a (first seen) shared object
-+ * @ctx: checkpoint context
-+ * @h: ckpt_hdr of shared object
-+ *
-+ * Read in the header payload (struct ckpt_hdr_objref). Lookup the
-+ * object to verify it isn't there.  Then restore the object's state
-+ * and add it to the objash. No need to explicitly grab a reference -
-+ * we hold the initial instance of this object. (Object maintained
-+ * until the entire hash is free).
-+ *
-+ * [This is used during restart].
-+ */
-+int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h)
-+{
-+	struct ckpt_obj_ops *ops;
-+	void *ptr = NULL;
-+	int ret;
-+
-+	ckpt_debug("len %d ref %d type %d\n", h->h.len, h->objref, h->objtype);
-+	if (obj_find_by_objref(ctx, h->objref))
-+		return -EINVAL;
-+
-+	if (h->objtype >= CKPT_OBJ_MAX)
-+		return -EINVAL;
-+
-+	ops = &ckpt_obj_ops[h->objtype];
-+	BUG_ON(ops->obj_type != h->objtype);
-+
-+	if (ops->restore)
-+		ptr = ops->restore(ctx);
-+	if (IS_ERR(ptr))
-+		return PTR_ERR(ptr);
-+
-+	ret = obj_new(ctx, ptr, h->objref, ops);
-+	if (ret < 0)
-+		ops->ref_drop(ptr);
-+
-+	return ret;
-+}
-+
-+/**
-+* ckpt_obj_insert - add an object with a given objref to obj_hash
-+* @ctx: checkpoint context
-+* @ptr: pointer to object
-+* @objref: unique object id
-+* @type: object type
-+*
-+* Add the object pointer to by @ptr and identified by unique object id
-+* @objref to the hash table (indexed by @objref).  Grab a reference to
-+* every object added, and maintain it until the entire hash is freed.
-+*/
-+
-+int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
-+		    enum obj_type type)
-+{
-+	struct ckpt_obj_ops *ops = &ckpt_obj_ops[type];
-+
-+	ckpt_debug("%s objref %d\n", ops->obj_name, objref);
-+	return (obj_new(ctx, ptr, objref, ops) ? : 1);
-+}
-+
-+/**
-+ * ckpt_obj_fetch - fetch an object by its identifier
-+ * @ctx: checkpoint context
-+ * @objref: object id
-+ * @type: object type
-+ *
-+ * Lookup the objref identifier by @objref in the hash table. Return
-+ * an error not found.
-+ *
-+ * [This is used during restart].
-+ */
-+void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
-+{
-+	struct ckpt_obj *obj;
-+
-+	obj = obj_find_by_objref(ctx, objref);
-+	if (!obj)
-+		return NULL;
-+	ckpt_debug("%s ref %d\n", obj->ops->obj_name, obj->objref);
-+	return (obj->ops->obj_type == type ? obj->ptr : ERR_PTR(-EINVAL));
-+}
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index a1ab0a1..06224fd 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -22,6 +22,34 @@
- #include "checkpoint_arch.h"
- 
- /**
-+ * _ckpt_read_objref - dispatch handling of a shared object
-+ * @ctx: checkpoint context
-+ * @hh: objrect descriptor
-+ */
-+static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
-+{
-+	struct ckpt_hdr *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get(ctx, hh->len);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	*h = *hh;	/* yay ! */
-+
-+	_ckpt_debug(CKPT_DOBJ, "shared len %d type %d\n", h->len, h->type);
-+	ret = ckpt_kread(ctx, (h + 1), hh->len - sizeof(struct ckpt_hdr));
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = restore_obj(ctx, (struct ckpt_hdr_objref *) h);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+
-+/**
-  * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
-  * @ctx: checkpoint context
-  * @h: desired ckpt_hdr
-@@ -36,6 +64,7 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
- {
- 	int ret;
- 
-+ again:
- 	ret = ckpt_kread(ctx, h, sizeof(*h));
- 	if (ret < 0)
- 		return ret;
-@@ -43,7 +72,15 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
- 		    h->type, h->len, len, max);
- 	if (h->len < sizeof(*h))
- 		return -EINVAL;
-+
- 	/* if len specified, enforce, else if maximum specified, enforce */
-+	if (h->type == CKPT_HDR_OBJREF) {
-+		ret = _ckpt_read_objref(ctx, h);
-+		if (ret < 0)
-+			return ret;
-+		goto again;
-+	}
-+
- 	if ((len && h->len != len) || (!len && max && h->len > max))
- 		return -EINVAL;
- 
-@@ -135,6 +172,7 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
- 	struct ckpt_hdr *h;
- 	int ret;
- 
-+ again:
- 	ret = ckpt_kread(ctx, &hh, sizeof(hh));
- 	if (ret < 0)
- 		return ERR_PTR(ret);
-@@ -142,6 +180,14 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
- 		    hh.type, hh.len, len, max);
- 	if (hh.len < sizeof(*h))
- 		return ERR_PTR(-EINVAL);
-+
-+	if (hh.type == CKPT_HDR_OBJREF) {
-+		ret = _ckpt_read_objref(ctx, &hh);
-+		if (ret < 0)
-+			return ERR_PTR(ret);
-+		goto again;
-+	}
-+
- 	/* if len specified, enforce, else if maximum specified, enforce */
- 	if ((len && hh.len != len) || (!len && max && hh.len > max))
- 		return ERR_PTR(-EINVAL);
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 5ebbac9..76d5d66 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -203,6 +203,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 	path_put(&ctx->fs_mnt);		/* safe with NULL pointers */
- 
- 	ckpt_pgarr_free(ctx);
-+	ckpt_obj_hash_free(ctx);
- 
- 	kfree(ctx);
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index cc8e4de..2d02259 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -335,6 +335,19 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
+ 	return err;
  }
-@@ -231,8 +232,10 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long flags)
- 	if (!ctx->hbuf)
- 		goto err;
  
--	return ctx;
-+	if (ckpt_obj_hash_alloc(ctx) < 0)
-+		goto err;
- 
-+	return ctx;
-  err:
- 	ckpt_ctx_free(ctx);
- 	return ERR_PTR(err);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 73b34af..7845172 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -29,11 +29,26 @@ extern int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len);
- 
- extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
- 			       void *ptr, int len, int type);
-+extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
++int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
++{
++	int err;
 +
- extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
- extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
- 
-+/* obj_hash */
-+extern void ckpt_obj_hash_free(struct ckpt_ctx *ctx);
-+extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
++	err = security_file_fcntl(filp, cmd, arg);
++	if (err)
++		goto out;
++	err = do_fcntl(fd, cmd, arg, filp);
++ out:
++	return err;
++}
 +
-+extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
-+extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type);
-+extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
-+			    enum obj_type type);
-+extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
-+			       enum obj_type type, int *first);
-+extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
-+			   enum obj_type type);
 +
- extern int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
- extern int do_restart(struct ckpt_ctx *ctx, pid_t pid);
+ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ {	
+ 	struct file *filp;
+@@ -344,19 +357,13 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ 	if (!filp)
+ 		goto out;
  
-@@ -74,6 +89,7 @@ extern struct file *restore_file(struct ckpt_ctx *ctx);
- #define CKPT_DRW	0x4		/* image read/write */
- #define CKPT_DMEM	0x8		/* memory state */
- #define CKPT_DPAGE	0x10		/* memory pages */
-+#define CKPT_DOBJ	0x20		/* shared objects */
+-	err = security_file_fcntl(filp, cmd, arg);
+-	if (err) {
+-		fput(filp);
+-		return err;
+-	}
+-
+-	err = do_fcntl(fd, cmd, arg, filp);
+-
++	err = vfs_fcntl(fd, cmd, arg, filp);
+  	fput(filp);
+ out:
+ 	return err;
+ }
  
- #define CKPT_DDEFAULT	0xf		/* default debug level */
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 5266e4b..0eb4acb 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -45,6 +45,7 @@ enum {
- 	CKPT_HDR_BUFFER,
- 	CKPT_HDR_STRING,
- 	CKPT_HDR_FNAME,
-+	CKPT_HDR_OBJREF,
- 
- 	CKPT_HDR_TASK = 101,
- 	CKPT_HDR_THREAD,
-@@ -58,6 +59,19 @@ enum {
- 	CKPT_HDR_TAIL = 5001
- };
- 
-+/* shared objrects (objref) */
-+struct ckpt_hdr_objref {
-+	struct ckpt_hdr h;
-+	__u32 objtype;
-+	__s32 objref;
-+} __attribute__((aligned(8)));
 +
-+/* shared objects types */
-+enum obj_type {
-+	CKPT_OBJ_IGNORE = 0,
-+	CKPT_OBJ_MAX
-+};
-+
- /* checkpoint image header */
- struct ckpt_hdr_header {
- 	struct ckpt_hdr h;
+ #if BITS_PER_LONG == 32
+ SYSCALL_DEFINE3(fcntl64, unsigned int, fd, unsigned int, cmd,
+ 		unsigned long, arg)
 diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 84b4ef4..5a365a3 100644
+index 5a365a3..12f0ec5 100644
 --- a/include/linux/checkpoint_types.h
 +++ b/include/linux/checkpoint_types.h
-@@ -30,6 +30,8 @@ struct ckpt_ctx {
- 	void *hbuf;		/* temporary buffer for headers */
- 	int hpos;		/* position in headers buffer */
+@@ -10,6 +10,8 @@
+  *  distribution for more details.
+  */
  
-+	struct ckpt_obj_hash *obj_hash;	/* repository for shared objects */
++struct ckpt_ctx;
 +
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
- 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+ #include <linux/list.h>
+ #include <linux/path.h>
+ #include <linux/fs.h>
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 6e00db0..8ff37b3 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -8,6 +8,7 @@
  
+ #include <linux/limits.h>
+ #include <linux/ioctl.h>
++#include <linux/checkpoint_types.h>
+ 
+ /*
+  * It's silly to have NR_OPEN bigger than NR_FILE, but you can change
+@@ -1082,6 +1083,8 @@ struct file_lock {
+ 
+ #include <linux/fcntl.h>
+ 
++extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
++
+ extern void send_sigio(struct fown_struct *fown, int fd, int band);
+ 
+ /* fs/sync.c */
+@@ -1508,6 +1511,7 @@ struct file_operations {
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+ 	int (*setlease)(struct file *, long, struct file_lock **);
++	int (*checkpoint)(struct ckpt_ctx *, struct file *);
+ };
+ 
+ struct inode_operations {
+@@ -2305,6 +2309,8 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
+ loff_t inode_get_bytes(struct inode *inode);
+ void inode_set_bytes(struct inode *inode, loff_t bytes);
+ 
++#define generic_file_checkpoint NULL
++
+ extern int vfs_readdir(struct file *, filldir_t, void *);
+ 
+ extern int vfs_stat(char __user *, struct kstat *);
 -- 
 1.5.4.3
