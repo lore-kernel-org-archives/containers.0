@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 01/54] Create syscalls: sys_checkpoint, sys_restart
-Date: Tue, 28 Apr 2009 19:23:31 -0400
-Message-ID: <1240961064-13991-2-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 05/54] x86 support for checkpoint/restart
+Date: Tue, 28 Apr 2009 19:23:35 -0400
+Message-ID: <1240961064-13991-6-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,214 +21,749 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file descriptor.
+Add logic to save and restore architecture specific state, including
+thread-specific state, CPU registers and FPU state.
 
-The syscalls take a file descriptor (for the image file) and flags as
-arguments. For sys_checkpoint the first argument identifies the target
-container; for sys_restart it will identify the checkpoint image.
+In addition, architecture capabilities are saved in an architecure
+specific extension of the header (ckpt_hdr_head_arch); Currently this
+includes only FPU capabilities.
 
-A checkpoint, much like a process coredump, dumps the state of multiple
-processes at once, including the state of the container. The checkpoint
-image is written to (and read from) the file descriptor directly from
-the kernel. This way the data is generated and then pushed out naturally
-as resources and tasks are scanned to save their state. This is the
-approach taken by, e.g., Zap and OpenVZ.
-
-By using a return value and not a file descriptor, we can distinguish
-between a return from checkpoint, a return from restart (in case of a
-checkpoint that includes self, i.e. a task checkpointing its own
-container, or itself), and an error condition, in a manner analogous
-to a fork() call.
-
-We don't use copy_from_user()/copy_to_user() because it requires
-holding the entire image in user space, and does not make sense for
-restart.  Also, we don't use a pipe, pseudo-fs file and the like,
-because they work by generating data on demand as the user pulls it
-(unless the entire image is buffered in the kernel) and would require
-more complex logic.  They also would significantly complicate
-checkpoint that includes self.
+Currently only x86-32 is supported. Compiling on x86-64 will trigger
+an explicit error.
 
 Changelog[v14]:
-  - Change CONFIG_CHEKCPOINT_RESTART to CONFIG_CHECKPOINT (Ingo)
-  - Remove line 'def_bool n' (default is already 'n')
-  - Add CHECKPOINT_SUPPORT in Kconfig (Nathan Lynch)
+  - Use new interface ckpt_hdr_get/put()
+  - Embed struct ckpt_hdr in struct ckpt_hdr...
+  - Remove preempt_disable/enable() around init_fpu() and fix leak
+  - Revert change to pr_debug(), back to ckpt_debug()
+  - Move code related to task_struct to checkpoint/process.c
+
+Changelog[v12]:
+  - A couple of missed calls to ckpt_hbuf_put()
+  - Replace obsolete ckpt_debug() with pr_debug()
+
+Changelog[v9]:
+  - Add arch-specific header that details architecture capabilities;
+    split FPU restore to send capabilities only once.
+  - Test for zero TLS entries in ckpt_write_thread()
+  - Fix asm/checkpoint_hdr.h so it can be included from user-space
+
+Changelog[v7]:
+  - Fix save/restore state of FPU
 
 Changelog[v5]:
-  - Config is 'def_bool n' by default
+  - Remove preempt_disable() when restoring debug registers
+
+Changelog[v4]:
+  - Fix header structure alignment
+
+Changelog[v2]:
+  - Pad header structures to 64 bits to ensure compatibility
+  - Follow Dave Hansen's refactoring of the original post
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- arch/x86/Kconfig                   |    4 +++
- arch/x86/include/asm/unistd_32.h   |    2 +
- arch/x86/kernel/syscall_table_32.S |    2 +
- checkpoint/Kconfig                 |   14 ++++++++++++
- checkpoint/Makefile                |    5 ++++
- checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
- include/linux/syscalls.h           |    2 +
- init/Kconfig                       |    2 +
- kernel/sys_ni.c                    |    4 +++
- 9 files changed, 76 insertions(+), 0 deletions(-)
- create mode 100644 checkpoint/Kconfig
- create mode 100644 checkpoint/Makefile
- create mode 100644 checkpoint/sys.c
+ arch/x86/include/asm/checkpoint_hdr.h |  100 ++++++++
+ arch/x86/mm/Makefile                  |    2 +
+ arch/x86/mm/checkpoint.c              |  445 +++++++++++++++++++++++++++++++++
+ checkpoint/checkpoint.c               |    7 +-
+ checkpoint/checkpoint_arch.h          |    9 +
+ checkpoint/process.c                  |   22 ++-
+ checkpoint/restart.c                  |    6 +
+ include/linux/checkpoint_hdr.h        |    1 +
+ 8 files changed, 589 insertions(+), 3 deletions(-)
+ create mode 100644 arch/x86/include/asm/checkpoint_hdr.h
+ create mode 100644 arch/x86/mm/checkpoint.c
+ create mode 100644 checkpoint/checkpoint_arch.h
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index c9086e6..8dfe0c0 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -77,6 +77,10 @@ config STACKTRACE_SUPPORT
- config HAVE_LATENCYTOP_SUPPORT
- 	def_bool y
- 
-+config CHECKPOINT_SUPPORT
-+	bool
-+	default y if X86_32
-+
- config FAST_CMPXCHG_LOCAL
- 	bool
- 	default y
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index 6e72d74..48557e1 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -340,6 +340,8 @@
- #define __NR_inotify_init1	332
- #define __NR_preadv		333
- #define __NR_pwritev		334
-+#define __NR_checkpoint		335
-+#define __NR_restart		336
- 
- #ifdef __KERNEL__
- 
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index ff5c873..e70b7ee 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -334,3 +334,5 @@ ENTRY(sys_call_table)
- 	.long sys_inotify_init1
- 	.long sys_preadv
- 	.long sys_pwritev
-+	.long sys_checkpoint
-+	.long sys_restart
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
 new file mode 100644
-index 0000000..1761b0a
+index 0000000..035abbb
 --- /dev/null
-+++ b/checkpoint/Kconfig
-@@ -0,0 +1,14 @@
-+# Architectures should define CHECKPOINT_SUPPORT when they have
-+# implemented the hooks for processor state etc. needed by the
-+# core checkpoint/restart code.
-+
-+config CHECKPOINT
-+	bool "Enable checkpoint/restart (EXPERIMENTAL)"
-+	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
-+	help
-+	  Application checkpoint/restart is the ability to save the
-+	  state of a running application so that it can later resume
-+	  its execution from the time at which it was checkpointed.
-+
-+	  Turning this option on will enable checkpoint and restart
-+	  functionality in the kernel.
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-new file mode 100644
-index 0000000..8a32c6f
---- /dev/null
-+++ b/checkpoint/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for linux checkpoint/restart.
-+#
-+
-+obj-$(CONFIG_CHECKPOINT) += sys.o
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-new file mode 100644
-index 0000000..375129c
---- /dev/null
-+++ b/checkpoint/sys.c
-@@ -0,0 +1,41 @@
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -0,0 +1,100 @@
++#ifndef __ASM_X86_CKPT_HDR_H
++#define __ASM_X86_CKPT_HDR_H
 +/*
-+ *  Generic container checkpoint-restart
++ *  Checkpoint/restart - architecture specific headers x86
 + *
-+ *  Copyright (C) 2008 Oren Laadan
++ *  Copyright (C) 2008-2009 Oren Laadan
 + *
 + *  This file is subject to the terms and conditions of the GNU General Public
 + *  License.  See the file COPYING in the main directory of the Linux
 + *  distribution for more details.
 + */
 +
-+#include <linux/sched.h>
-+#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/checkpoint_hdr.h>
 +
-+/**
-+ * sys_checkpoint - checkpoint a container
-+ * @pid: pid of the container init(1) process
-+ * @fd: file to which dump the checkpoint image
-+ * @flags: checkpoint operation flags
++/*
++ * To maintain compatibility between 32-bit and 64-bit architecture flavors,
++ * keep data 64-bit aligned: use padding for structure members, and use
++ * __attribute__((aligned (8))) for the entire structure.
 + *
-+ * Returns positive identifier on success, 0 when returning from restart
-+ * or negative value on error
++ * Quoting Arnd Bergmann:
++ *   "This structure has an odd multiple of 32-bit members, which means
++ *   that if you put it into a larger structure that also contains 64-bit
++ *   members, the larger structure may get different alignment on x86-32
++ *   and x86-64, which you might want to avoid. I can't tell if this is
++ *   an actual problem here. ... In this case, I'm pretty sure that
++ *   sizeof(ckpt_hdr_task) on x86-32 is different from x86-64, since it
++ *   will be 32-bit aligned on x86-32."
 + */
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
-+{
-+	pr_debug("sys_checkpoint not implemented yet\n");
-+	return -ENOSYS;
-+}
-+/**
-+ * sys_restart - restart a container
-+ * @crid: checkpoint image identifier
-+ * @fd: file from which read the checkpoint image
-+ * @flags: restart operation flags
++
++/* i387 structure seen from kernel/userspace */
++#ifdef __KERNEL__
++#include <asm/processor.h>
++#else
++#include <sys/user.h>
++#endif
++
++struct ckpt_hdr_header_arch {
++	struct ckpt_hdr h;
++	/* FIXME: add HAVE_HWFP */
++	__u16 has_fxsr;
++	__u16 has_xsave;
++	__u16 xstate_size;
++	__u16 _pading;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_thread {
++	struct ckpt_hdr h;
++	/* FIXME: restart blocks */
++	__u16 gdt_entry_tls_entries;
++	__u16 sizeof_tls_array;
++	__u16 ntls;	/* number of TLS entries to follow */
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_cpu {
++	struct ckpt_hdr h;
++	/* see struct pt_regs (x86-64) */
++	__u64 r15;
++	__u64 r14;
++	__u64 r13;
++	__u64 r12;
++	__u64 bp;
++	__u64 bx;
++	__u64 r11;
++	__u64 r10;
++	__u64 r9;
++	__u64 r8;
++	__u64 ax;
++	__u64 cx;
++	__u64 dx;
++	__u64 si;
++	__u64 di;
++	__u64 orig_ax;
++	__u64 ip;
++	__u64 cs;
++	__u64 flags;
++	__u64 sp;
++	__u64 ss;
++
++	/* segment registers */
++	__u64 ds;
++	__u64 es;
++	__u64 fs;
++	__u64 gs;
++
++	/* debug registers */
++	__u64 debugreg0;
++	__u64 debugreg1;
++	__u64 debugreg2;
++	__u64 debugreg3;
++	__u64 debugreg6;
++	__u64 debugreg7;
++
++	__u32 uses_debug;
++	__u32 used_math;
++
++	/* thread_xstate contents follow (if used_math) */
++} __attribute__((aligned(8)));
++
++#endif /* __ASM_X86_CKPT_HDR__H */
+diff --git a/arch/x86/mm/Makefile b/arch/x86/mm/Makefile
+index fdd30d0..7d894a5 100644
+--- a/arch/x86/mm/Makefile
++++ b/arch/x86/mm/Makefile
+@@ -19,3 +19,5 @@ obj-$(CONFIG_K8_NUMA)		+= k8topology_64.o
+ obj-$(CONFIG_ACPI_NUMA)		+= srat_$(BITS).o
+ 
+ obj-$(CONFIG_MEMTEST)		+= memtest.o
++
++obj-$(CONFIG_CHECKPOINT)	+= checkpoint.o
+diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
+new file mode 100644
+index 0000000..86ca916
+--- /dev/null
++++ b/arch/x86/mm/checkpoint.c
+@@ -0,0 +1,445 @@
++/*
++ *  Checkpoint/restart - architecture specific support for x86
 + *
-+ * Returns negative value on error, or otherwise returns in the realm
-+ * of the original checkpoint
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
 + */
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DSYS
++
++#include <asm/desc.h>
++#include <asm/i387.h>
++
++#include <asm/checkpoint_hdr.h>
++#include <linux/checkpoint.h>
++
++/**************************************************************************
++ * Checkpoint
++ */
++
++/* dump the thread_struct of a given task */
++int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	pr_debug("sys_restart not implemented yet\n");
-+	return -ENOSYS;
++	struct ckpt_hdr_thread *h;
++	struct thread_struct *thread;
++	struct desc_struct *desc;
++	int ntls = 0;
++	int n, ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_THREAD);
++	if (!h)
++		return -ENOMEM;
++
++	thread = &t->thread;
++
++	/* calculate no. of TLS entries that follow */
++	desc = thread->tls_array;
++	for (n = GDT_ENTRY_TLS_ENTRIES; n > 0; n--, desc++) {
++		if (desc->a || desc->b)
++			ntls++;
++	}
++
++	h->gdt_entry_tls_entries = GDT_ENTRY_TLS_ENTRIES;
++	h->sizeof_tls_array = sizeof(thread->tls_array);
++	h->ntls = ntls;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	ckpt_debug("ntls %d\n", ntls);
++	if (ntls == 0)
++		return 0;
++
++	/*
++	 * For simplicity dump the entire array, cherry-pick upon restart
++	 * FIXME: the TLS descriptors in the GDT should be called out and
++	 * not tied to the in-kernel representation.
++	 */
++	ret = ckpt_kwrite(ctx, thread->tls_array, sizeof(thread->tls_array));
++
++	/* IGNORE RESTART BLOCKS FOR NOW ... */
++
++	return ret;
 +}
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index 40617c1..2aa0943 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -751,6 +751,8 @@ asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
- 			  size_t);
- asmlinkage long sys_pipe2(int __user *, int);
- asmlinkage long sys_pipe(int __user *);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
- 
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index 7be4d38..adb4260 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1042,6 +1042,8 @@ config SLOW_WORK
- 
- 	  See Documentation/slow-work.txt.
- 
-+source "checkpoint/Kconfig"
 +
- endmenu		# General setup
- 
- config HAVE_GENERIC_DMA_COHERENT
-diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-index 27dad29..e9e749d 100644
---- a/kernel/sys_ni.c
-+++ b/kernel/sys_ni.c
-@@ -175,3 +175,7 @@ cond_syscall(compat_sys_timerfd_settime);
- cond_syscall(compat_sys_timerfd_gettime);
- cond_syscall(sys_eventfd);
- cond_syscall(sys_eventfd2);
++#ifdef CONFIG_X86_64
 +
-+/* checkpoint/restart */
-+cond_syscall(sys_checkpoint);
-+cond_syscall(sys_restart);
++#error "CONFIG_X86_64 unsupported yet."
++
++#else	/* !CONFIG_X86_64 */
++
++static void save_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++	struct pt_regs *regs = task_pt_regs(t);
++
++	h->bp = regs->bp;
++	h->bx = regs->bx;
++	h->ax = regs->ax;
++	h->cx = regs->cx;
++	h->dx = regs->dx;
++	h->si = regs->si;
++	h->di = regs->di;
++	h->orig_ax = regs->orig_ax;
++	h->ip = regs->ip;
++	h->cs = regs->cs;
++	h->flags = regs->flags;
++	h->sp = regs->sp;
++	h->ss = regs->ss;
++
++	h->ds = regs->ds;
++	h->es = regs->es;
++
++	/*
++	 * for checkpoint in process context (from within a container)
++	 * the GS and FS registers should be saved from the hardware;
++	 * otherwise they are already sabed on the thread structure
++	 */
++	if (t == current) {
++		savesegment(gs, h->gs);
++		savesegment(fs, h->fs);
++	} else {
++		h->gs = thread->gs;
++		h->fs = thread->fs;
++	}
++
++	/*
++	 * for checkpoint in process context (from within a container),
++	 * the actual syscall is taking place at this very moment; so
++	 * we (optimistically) subtitute the future return value (0) of
++	 * this syscall into the orig_eax, so that upon restart it will
++	 * succeed (or it will endlessly retry checkpoint...)
++	 */
++	if (t == current) {
++		BUG_ON(h->orig_ax < 0);
++		h->ax = 0;
++	}
++}
++
++static void save_cpu_debug(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++
++	/* debug regs */
++
++	/*
++	 * for checkpoint in process context (from within a container),
++	 * get the actual registers; otherwise get the saved values.
++	 */
++
++	if (t == current) {
++		get_debugreg(h->debugreg0, 0);
++		get_debugreg(h->debugreg1, 1);
++		get_debugreg(h->debugreg2, 2);
++		get_debugreg(h->debugreg3, 3);
++		get_debugreg(h->debugreg6, 6);
++		get_debugreg(h->debugreg7, 7);
++	} else {
++		h->debugreg0 = thread->debugreg0;
++		h->debugreg1 = thread->debugreg1;
++		h->debugreg2 = thread->debugreg2;
++		h->debugreg3 = thread->debugreg3;
++		h->debugreg6 = thread->debugreg6;
++		h->debugreg7 = thread->debugreg7;
++	}
++
++	h->uses_debug = !!(task_thread_info(t)->flags & TIF_DEBUG);
++}
++
++static void save_cpu_fpu(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	h->used_math = tsk_used_math(t) ? 1 : 0;
++}
++
++static int checkpoint_cpu_fpu(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	void *xstate_buf;
++	int ret;
++
++	xstate_buf = ckpt_hdr_get(ctx, xstate_size);
++	if (!xstate_buf)
++		return -ENOMEM;
++
++	/* i387 + MMU + SSE logic */
++	preempt_disable();	/* needed it (t == current) */
++
++	/*
++	 * normally, no need to unlazy_fpu(), since TS_USEDFPU flag
++	 * was cleared when task was context-switched out...
++	 * except if we are in process context, in which case we do
++	 */
++	if (t == current && (task_thread_info(t)->status & TS_USEDFPU))
++		unlazy_fpu(current);
++
++	/*
++	 * For simplicity dump the entire structure.
++	 * FIX: need to be deliberate about what registers we are
++	 * dumping for traceability and compatibility.
++	 */
++	memcpy(xstate_buf, t->thread.xstate, xstate_size);
++	preempt_enable();	/* needed if (t == current) */
++
++	ret = ckpt_kwrite(ctx, xstate_buf, xstate_size);
++	_ckpt_hdr_put(ctx, xstate_buf, xstate_size);
++
++	return ret;
++}
++
++#endif	/* CONFIG_X86_64 */
++
++/* dump the cpu state and registers of a given task */
++int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_cpu *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_CPU);
++	if (!h)
++		return -ENOMEM;
++
++	save_cpu_regs(h, t);
++	save_cpu_debug(h, t);
++	save_cpu_fpu(h, t);
++
++	ckpt_debug("math %d debug %d\n", h->used_math, h->uses_debug);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	if (ret < 0)
++		goto out;
++
++	if (h->used_math)
++		ret = checkpoint_cpu_fpu(ctx, t);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++int checkpoint_write_header_arch(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_header_arch *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (!h)
++		return -ENOMEM;
++
++	/* FPU capabilities */
++	h->has_fxsr = cpu_has_fxsr;
++	h->has_xsave = cpu_has_xsave;
++	h->xstate_size = xstate_size;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++/**************************************************************************
++ * Restart
++ */
++
++/* read the thread_struct into the current task */
++int restore_thread(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_thread *h;
++	struct task_struct *t = current;
++	struct thread_struct *thread = &t->thread;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_THREAD);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ckpt_debug("ntls %d\n", h->ntls);
++
++	ret = -EINVAL;
++	if (h->gdt_entry_tls_entries != GDT_ENTRY_TLS_ENTRIES ||
++	    h->sizeof_tls_array != sizeof(thread->tls_array) ||
++	    h->ntls > GDT_ENTRY_TLS_ENTRIES)
++		goto out;
++
++	if (h->ntls > 0) {
++		struct desc_struct *desc;
++		int size, cpu;
++
++		/*
++		 * restore TLS by hand: why convert to struct user_desc if
++		 * sys_set_thread_entry() will convert it back ?
++		 */
++
++		size = sizeof(*desc) * GDT_ENTRY_TLS_ENTRIES;
++		desc = kmalloc(size, GFP_KERNEL);
++		if (!desc) {
++			ret = -ENOMEM;
++			goto out;
++		}
++
++		ret = ckpt_kread(ctx, desc, size);
++		if (ret == 0) {
++			/*
++			 * FIX: add sanity checks (eg. that values makes
++			 * sense, that we don't overwrite old values, etc
++			 */
++			cpu = get_cpu();
++			memcpy(thread->tls_array, desc, size);
++			load_TLS(thread, cpu);
++			put_cpu();
++		}
++		kfree(desc);
++	}
++
++	ret = 0;
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++#ifdef CONFIG_X86_64
++
++#error "CONFIG_X86_64 unsupported yet."
++
++#else	/* !CONFIG_X86_64 */
++
++static int load_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++	struct pt_regs *regs = task_pt_regs(t);
++
++	regs->bx = h->bx;
++	regs->cx = h->cx;
++	regs->dx = h->dx;
++	regs->si = h->si;
++	regs->di = h->di;
++	regs->bp = h->bp;
++	regs->ax = h->ax;
++	regs->ds = h->ds;
++	regs->es = h->es;
++	regs->orig_ax = h->orig_ax;
++	regs->ip = h->ip;
++	regs->cs = h->cs;
++	regs->flags = h->flags;
++	regs->sp = h->sp;
++	regs->ss = h->ss;
++
++	thread->gs = h->gs;
++	thread->fs = h->fs;
++	loadsegment(gs, h->gs);
++	loadsegment(fs, h->fs);
++
++	return 0;
++}
++
++static int load_cpu_debug(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	/* debug regs */
++
++	if (h->uses_debug) {
++		set_debugreg(h->debugreg0, 0);
++		set_debugreg(h->debugreg1, 1);
++		/* ignore 4, 5 */
++		set_debugreg(h->debugreg2, 2);
++		set_debugreg(h->debugreg3, 3);
++		set_debugreg(h->debugreg6, 6);
++		set_debugreg(h->debugreg7, 7);
++	}
++
++	return 0;
++}
++
++static int load_cpu_fpu(struct ckpt_hdr_cpu *h, struct task_struct *t)
++{
++	preempt_disable();
++
++	__clear_fpu(t);		/* in case we used FPU in user mode */
++
++	if (!h->used_math)
++		clear_used_math();
++
++	preempt_enable();
++	return 0;
++}
++
++static int restore_cpu_fpu(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	void *xstate_buf;
++	int ret;
++
++	xstate_buf = ckpt_hdr_get(ctx, xstate_size);
++	if (!xstate_buf)
++		return -ENOMEM;
++
++	ret = ckpt_kread(ctx, xstate_buf, xstate_size);
++	if (ret < 0)
++		goto out;
++
++	/* init_fpu() eventually also calls set_used_math() */
++	ret = init_fpu(current);
++	if (ret < 0)
++		goto out;
++
++	memcpy(t->thread.xstate, xstate_buf, xstate_size);
++ out:
++	_ckpt_hdr_put(ctx, xstate_buf, xstate_size);
++	return ret;
++}
++
++#endif	/* CONFIG_X86_64 */
++
++/* read the cpu state and registers for the current task */
++int restore_cpu(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_cpu *h;
++	struct task_struct *t = current;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CPU);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ckpt_debug("math %d debug %d\n", h->used_math, h->uses_debug);
++
++	/* FIX: sanity check for sensitive registers (eg. eflags) */
++
++	ret = load_cpu_regs(h, t);
++	if (ret < 0)
++		goto out;
++	ret = load_cpu_debug(h, t);
++	if (ret < 0)
++		goto out;
++	ret = load_cpu_fpu(h, t);
++	if (ret < 0)
++		goto out;
++
++	if (h->used_math)
++		ret = restore_cpu_fpu(ctx, t);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++int restore_read_header_arch(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_header_arch *h;
++	int ret = 0;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	/* FIX: verify compatibility of architecture features */
++
++	/* verify FPU capabilities */
++	if (h->has_fxsr != cpu_has_fxsr ||
++	    h->has_xsave != cpu_has_xsave ||
++	    h->xstate_size != xstate_size)
++		ret = -EINVAL;
++
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 6ac3571..62ba0a6 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -22,6 +22,8 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
++#include "checkpoint_arch.h"
++
+ /* unique checkpoint identifier (FIXME: should be per-container ?) */
+ static atomic_t ctx_count = ATOMIC_INIT(0);
+ 
+@@ -135,7 +137,10 @@ static int checkpoint_write_header(struct ckpt_ctx *ctx)
+ 	ret = ckpt_write_buffer(ctx, uts->machine, sizeof(uts->machine));
+  up:
+ 	up_read(&uts_sem);
+-	return ret;
++	if (ret < 0)
++		return ret;
++
++	return checkpoint_write_header_arch(ctx);
+ }
+ 
+ /* write the checkpoint trailer */
+diff --git a/checkpoint/checkpoint_arch.h b/checkpoint/checkpoint_arch.h
+new file mode 100644
+index 0000000..2ee4d7f
+--- /dev/null
++++ b/checkpoint/checkpoint_arch.h
+@@ -0,0 +1,9 @@
++#include <linux/checkpoint.h>
++
++extern int checkpoint_write_header_arch(struct ckpt_ctx *ctx);
++extern int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t);
++
++extern int restore_read_header_arch(struct ckpt_ctx *ctx);
++extern int restore_thread(struct ckpt_ctx *ctx);
++extern int restore_cpu(struct ckpt_ctx *ctx);
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index bf7545e..0578182 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -15,6 +15,8 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
++#include "checkpoint_arch.h"
++
+ /***********************************************************************
+  * Checkpoint
+  */
+@@ -53,7 +55,15 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	ret = checkpoint_task_struct(ctx, t);
+ 	ckpt_debug("ret %d\n", ret);
+-
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_thread(ctx, t);
++	ckpt_debug("thread: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_cpu(ctx, t);
++	ckpt_debug("cpu: ret %d\n", ret);
++ out:
+ 	return ret;
+ }
+ 
+@@ -92,6 +102,14 @@ int restore_task(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_task_struct(ctx);
+ 	ckpt_debug("ret %d\n", ret);
+-
++	if (ret < 0)
++		goto out;
++	ret = restore_thread(ctx);
++	ckpt_debug("thread: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = restore_cpu(ctx);
++	ckpt_debug("cpu: ret %d\n", ret);
++ out:
+ 	return ret;
+ }
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index d71c0f0..9adcc90 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -19,6 +19,8 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
++#include "checkpoint_arch.h"
++
+ /**
+  * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
+  * @ctx: checkpoint context
+@@ -258,6 +260,10 @@ static int restore_read_header(struct ckpt_ctx *ctx)
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = _ckpt_read_buffer(ctx, uts->machine, sizeof(uts->machine));
++	if (ret < 0)
++		goto out;
++
++	ret = restore_read_header_arch(ctx);
+  out:
+ 	kfree(uts);
+ 	ckpt_hdr_put(ctx, h);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 45378aa..9716f4b 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -41,6 +41,7 @@ struct ckpt_hdr {
+ /* header types */
+ enum {
+ 	CKPT_HDR_HEADER = 1,
++	CKPT_HDR_HEADER_ARCH,
+ 	CKPT_HDR_BUFFER,
+ 	CKPT_HDR_STRING,
+ 
 -- 
 1.5.4.3
