@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 54/54] Report failures during checkpoint as an object
-	in the output stream
-Date: Tue, 28 Apr 2009 19:24:24 -0400
-Message-ID: <1240961064-13991-55-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 47/54] sysvipc-msg: make 'struct msg_msgseg' visible
+	in ipc/util.h
+Date: Tue, 28 Apr 2009 19:24:17 -0400
+Message-ID: <1240961064-13991-48-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,131 +22,83 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-One way to provide some meaningful information about the reason for
-which a checkpoint failed, is to write the information as a regular
-record to the output stream.
-
-Specifically, if an error is detected, then we write a special 'struct
-ckpt_hdr_error' record to the output file, followed by a string that
-describes the details of why the checkpoint failed.
+Move the definition of 'struct msg_msgseg' and constants DATALEN_*
+to ipc/util.h, where they are visible to ipc/ckpt_msg.c
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |   55 ++++++++++++++++++++++++++++++++++++++-
- include/linux/checkpoint_hdr.h |   10 ++++++-
- 2 files changed, 62 insertions(+), 3 deletions(-)
+ ipc/msg.c     |    3 +--
+ ipc/msgutil.c |    8 --------
+ ipc/util.h    |   10 ++++++++++
+ 3 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 32a0a8e..7f5c18c 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -95,6 +95,50 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
- 	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
- }
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 1db7c45..1d5d087 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -72,7 +72,6 @@ struct msg_sender {
  
-+/**
-+ * ckpt_write_err - write an object describing an error
-+ * @ctx: checkpoint context
-+ * @fmt: error string format
-+ * @...: error string arguments
-+ */
-+int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
-+{
-+	va_list args;
-+	char str[128];
-+	char *ptr = NULL;
-+	int len, ret;
-+
-+	ret = ckpt_write_obj_type(ctx, NULL, sizeof(struct ckpt_hdr),
-+				  CKPT_HDR_ERROR);
-+	if (ret < 0)
-+		return ret;
-+
-+	va_start(args, fmt);
-+	len = vsnprintf(str, 128, fmt, args) + 1;
-+	va_end(args);
-+
-+	if (len > 128) {
-+		/* doesn't fit on stack, allocate memory */
-+		ptr = kmalloc(len + 1, GFP_KERNEL);
-+		/* if malloc failed, fallback to truncated string */
-+		if (ptr) {
-+			va_start(args, fmt);
-+			len = vsnprintf(ptr, len, fmt, args) + 1;
-+			va_end(args);
-+		} else {
-+			len = 128;
-+			printk(KERN_NOTICE "c/r: error message truncated\n");
-+		}
-+	}
-+
-+	ckpt_debug("c/r: checkpoint error: %s\n", ptr ? : str);
-+	ret = ckpt_write_string(ctx, ptr ? : str, len);
-+
-+	kfree(ptr);
-+	return ret;
-+}
-+
-+
- /***********************************************************************
-  * Checkpoint
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
+ 
+-static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+ static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+@@ -278,7 +277,7 @@ static void expunge_all(struct msg_queue *msq, int res)
+  * msg_ids.rw_mutex (writer) and the spinlock for this message queue are held
+  * before freeque() is called. msg_ids.rw_mutex remains locked on exit.
   */
-@@ -198,8 +242,11 @@ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
- 		return -EPERM;
+-static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ {
+ 	struct list_head *tmp;
+ 	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
+diff --git a/ipc/msgutil.c b/ipc/msgutil.c
+index f095ee2..e119243 100644
+--- a/ipc/msgutil.c
++++ b/ipc/msgutil.c
+@@ -36,14 +36,6 @@ struct ipc_namespace init_ipc_ns = {
  
- 	/* verify that the task is frozen (unless self) */
--	if (t != current && !frozen(t))
-+	if (t != current && !frozen(t)) {
-+		ckpt_write_err(ctx, "task %d(%s) not frozen\n",
-+			       task_pid_vnr(t), t->comm);
- 		return -EBUSY;
-+	}
+ atomic_t nr_ipc_ns = ATOMIC_INIT(1);
  
- 	/* FIX: add support for ptraced tasks */
- 	if (task_ptrace(t))
-@@ -436,8 +483,11 @@ static int get_container(struct ckpt_ctx *ctx, pid_t pid)
- 	ctx->root_init = is_container_init(task);
+-struct msg_msgseg {
+-	struct msg_msgseg* next;
+-	/* the next part of the message follows immediately */
+-};
+-
+-#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
+-#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
+-
+ struct msg_msg *load_msg(const void __user *src, int len)
+ {
+ 	struct msg_msg *msg;
+diff --git a/ipc/util.h b/ipc/util.h
+index be2fb94..09b9bdf 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -140,6 +140,14 @@ extern void free_msg(struct msg_msg *msg);
+ extern struct msg_msg *load_msg(const void __user *src, int len);
+ extern int store_msg(void __user *dest, struct msg_msg *msg, int len);
  
- 	/* FIX: does this error code makes sense here ? */
--	if (!(ctx->flags & CHECKPOINT_SUBTREE) && !ctx->root_init)
-+	if (!(ctx->flags & CHECKPOINT_SUBTREE) && !ctx->root_init) {
-+		ckpt_write_err(ctx, "task %d(%s) not container init\n",
-+			       task_pid_vnr(task), task->comm);
- 		return -EBUSY;
-+	}
- 
- 	return 0;
- 
-@@ -501,6 +551,7 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 	if (!(ctx->flags & CHECKPOINT_SUBTREE)) {
- 		/* verify that all objects are contained (no leaks) */
- 		if (!ckpt_obj_contained(ctx)) {
-+			ckpt_write_err(ctx, "container is not isolated\n");
- 			ret = -EBUSY;
- 			goto out;
- 		}
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 0e15f3f..058412c 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -73,9 +73,17 @@ enum {
- 	CKPT_HDR_IPC_MSG_MSG,
- 	CKPT_HDR_IPC_SEM,
- 
--	CKPT_HDR_TAIL = 5001
-+	CKPT_HDR_TAIL = 5001,
++struct msg_msgseg {
++	struct msg_msgseg *next;
++	/* the next part of the message follows immediately */
++};
 +
-+	CKPT_HDR_ERROR = 9999
- };
- 
-+/* error report */
-+struct ckpt_hdr_error {
-+	struct ckpt_hdr h;
-+	/* followed by the error string */
-+} __attribute__((aligned(8)));
++#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
++#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
 +
- /* shared objrects (objref) */
- struct ckpt_hdr_objref {
- 	struct ckpt_hdr h;
+ extern void recompute_msgmni(struct ipc_namespace *);
+ 
+ static inline int ipc_buildid(int id, int seq)
+@@ -175,6 +183,8 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+ 
+ /* for checkpoint/restart */
+ extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
++extern int do_msgget(key_t key, int msgflg, int req_id);
++extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
+ extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
 -- 
 1.5.4.3
