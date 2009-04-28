@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 38/54] Stub implementation of IPC namespace c/r
-Date: Tue, 28 Apr 2009 19:24:08 -0400
-Message-ID: <1240961064-13991-39-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 36/54] Make ckpt_may_checkpoint_task() check each
+	namespace individually
+Date: Tue, 28 Apr 2009 19:24:06 -0400
+Message-ID: <1240961064-13991-37-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,206 +24,261 @@ List-Id: containers.vger.kernel.org
 
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Changes:
- - Update to match UTS changes
-
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |    2 --
- checkpoint/objhash.c           |   23 +++++++++++++++++++++++
- checkpoint/process.c           |   21 ++++++++++++++++++++-
- include/linux/checkpoint.h     |   15 +++++++++++++++
- include/linux/checkpoint_hdr.h |    3 +++
- 5 files changed, 61 insertions(+), 3 deletions(-)
+ checkpoint/checkpoint.c        |   24 ++++++++++++--
+ checkpoint/objhash.c           |   21 ++++++++++++
+ checkpoint/process.c           |   67 ++++++++++++++++++++++++++++++++++++++-
+ include/linux/checkpoint.h     |    4 ++
+ include/linux/checkpoint_hdr.h |    9 +++++
+ 5 files changed, 119 insertions(+), 6 deletions(-)
 
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 88dee51..4319976 100644
+index 6305e5d..64b5b45 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -218,8 +218,6 @@ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
- 	if (!nsproxy) {
- 		ret = -ENOSYS;
- 	} else {
--		if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
--			ret = -EPERM;
- 		if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
- 			ret = -EPERM;
- 		if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns)
+@@ -184,6 +184,8 @@ static int checkpoint_all_tasks(struct ckpt_ctx *ctx)
+ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
+ {
+ 	struct pid_namespace *ns = ctx->root_nsproxy->pid_ns;
++	struct nsproxy *nsproxy;
++	int ret = 0;
+ 
+ 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ns));
+ 
+@@ -211,11 +213,25 @@ static int may_checkpoint_task(struct task_struct *t, struct ckpt_ctx *ctx)
+ 	    t->real_parent == ctx->root_task->real_parent)
+ 		return -EINVAL;
+ 
+-	/* FIX: change this for nested containers */
+-	if (task_nsproxy(t) != ctx->root_nsproxy)
+-		return -EPERM;
++	rcu_read_lock();
++	nsproxy = task_nsproxy(t);
++	if (!nsproxy) {
++		ret = -ENOSYS;
++	} else {
++		if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
++			ret = -EPERM;
++		if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
++			ret = -EPERM;
++		if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
++			ret = -EPERM;
++		if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns)
++			ret = -EPERM;
++		if (nsproxy->net_ns != ctx->root_nsproxy->net_ns)
++			ret = -EPERM;
++	}
++	rcu_read_unlock();
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ #define CKPT_HDR_PIDS_CHUNK	256
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index abf2e47..bdc719e 100644
+index 4fb5afa..819a1be 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -14,6 +14,8 @@
- #include <linux/kernel.h>
- #include <linux/hash.h>
- #include <linux/file.h>
-+#include <linux/sched.h>
-+#include <linux/ipc_namespace.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-@@ -60,6 +62,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
+@@ -58,6 +58,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
+  *   obj_file_{drop,grab}: for file objects
+  *   obj_inode_{drop,grab}: for inode objects
   *   obj_mm_{drop,grab}: for mm_struct objects
-  *   obj_ns_{drop,grab}: for nsproxy objects
-  *   obj_uts_ns_{drop,grab}: for uts_namespace objects
-+ *   obj_ipc_ns_{drop,grab}: for ipc_namespace objects
++ *   obj_ns_{drop,grab}: for nsproxy objects
   */
  
  static void obj_no_drop(void *ptr)
-@@ -127,6 +130,17 @@ static void obj_uts_ns_drop(void *ptr)
- 	put_uts_ns((struct uts_namespace *) ptr);
+@@ -103,6 +104,17 @@ static void obj_mm_drop(void *ptr)
+ 	mmput((struct mm_struct *) ptr);
  }
  
-+static int obj_ipc_ns_grab(void *ptr)
++static int obj_ns_grab(void *ptr)
 +{
-+	get_ipc_ns((struct ipc_namespace *) ptr);
++	get_nsproxy((struct nsproxy *) ptr);
 +	return 0;
 +}
 +
-+static void obj_ipc_ns_drop(void *ptr)
++static void obj_ns_drop(void *ptr)
 +{
-+	put_ipc_ns((struct ipc_namespace *) ptr);
++	put_nsproxy((struct nsproxy *) ptr);
 +}
 +
  static struct ckpt_obj_ops ckpt_obj_ops[] = {
  	/* ignored object */
  	{
-@@ -180,6 +194,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.checkpoint = checkpoint_bad,
- 		.restore = restore_bad,
+@@ -138,6 +150,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_mm,
+ 		.restore = restore_mm,
  	},
-+	/* ipc_ns object */
++	/* ns object */
 +	{
-+		.obj_name = "IPC_NS",
-+		.obj_type = CKPT_OBJ_IPC_NS,
-+		.ref_drop = obj_ipc_ns_drop,
-+		.ref_grab = obj_ipc_ns_grab,
-+		.checkpoint = checkpoint_bad,
-+		.restore = restore_bad,
++		.obj_name = "NSPROXY",
++		.obj_type = CKPT_OBJ_NS,
++		.ref_drop = obj_ns_drop,
++		.ref_grab = obj_ns_grab,
++		.checkpoint = checkpoint_ns,
++		.restore = restore_ns,
 +	},
  };
  
  
 diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 13dd48b..966aa93 100644
+index 0bd4845..2c489fd 100644
 --- a/checkpoint/process.c
 +++ b/checkpoint/process.c
-@@ -202,6 +202,7 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
- 	struct ckpt_hdr_ns *h;
- 	int ns_flags = 0;
- 	int uts_objref;
-+	int ipc_objref;
- 	int first, ret;
+@@ -162,12 +162,43 @@ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ret;
+ }
  
- 	uts_objref = ckpt_obj_lookup_add(ctx, nsproxy->uts_ns,
-@@ -211,12 +212,20 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
- 	if (first)
- 		ns_flags |= CLONE_NEWUTS;
- 
-+	ipc_objref = ckpt_obj_lookup_add(ctx, nsproxy->ipc_ns,
-+					 CKPT_OBJ_IPC_NS, &first);
-+	if (ipc_objref < 0)
-+		return ipc_objref;
-+	if (first)
-+		ns_flags |= CLONE_NEWIPC;
 +
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NS);
- 	if (!h)
++static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
++{
++	return 0;
++}
++
++int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_ns(ctx, (struct nsproxy *) ptr);
++}
++
++int checkpoint_ns_obj(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct nsproxy *nsproxy;
++	int ret;
++
++	rcu_read_lock();
++	nsproxy = task_nsproxy(t);
++	get_nsproxy(nsproxy);
++	rcu_read_unlock();
++
++	ret = checkpoint_obj(ctx, nsproxy, CKPT_OBJ_NS);
++	put_nsproxy(nsproxy);
++	return ret;
++}
++
+ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+ 	struct ckpt_hdr_task_objs *h;
+ 	int mm_objref;
++	int ns_objref;
+ 	int ret;
+ 
++	ns_objref = checkpoint_ns_obj(ctx, t);
++	ckpt_debug("nsproxy: objref %d\n", ns_objref);
++	if (ns_objref < 0)
++		return ns_objref;
+ 	mm_objref = checkpoint_mm_obj(ctx, t);
+ 	ckpt_debug("memory: objref %d\n", mm_objref);
+ 	if (mm_objref < 0)
+@@ -178,6 +209,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
  		return -ENOMEM;
  
- 	h->flags = ns_flags;
- 	h->uts_ref = uts_objref;
-+	h->ipc_ref = ipc_objref;
+ 	h->mm_objref = mm_objref;
++	h->ns_objref = ns_objref;
  
  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
  	ckpt_hdr_put(ctx, h);
-@@ -225,6 +234,10 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
- 
- 	if (ns_flags & CLONE_NEWUTS)
- 		ret = checkpoint_uts_ns(ctx, nsproxy->uts_ns);
-+#if 0
-+	if (!ret && (ns_flags & CLONE_NEWIPC))
-+		ret = checkpoint_ipc_ns(ctx, nsproxy->ipc_ns);
-+#endif
- 
- 	/* FIX: Write other namespaces here */
+@@ -344,18 +376,49 @@ int restore_restart_block(struct ckpt_ctx *ctx)
  	return ret;
-@@ -514,7 +527,7 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
- 	ret = -EINVAL;
- 	if (h->uts_ref < 0)
- 		goto out;
--	if (h->flags & ~CLONE_NEWUTS)
-+	if (h->flags & ~(CLONE_NEWUTS | CLONE_NEWIPC))
- 		goto out;
+ }
  
- 	/* each unseen-before namespace will be un-shared now */
-@@ -530,6 +543,12 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
- 	 */
- 	ret = restore_uts_ns(ctx, h->uts_ref, h->flags);
- 	ckpt_debug("uts ns: %d\n", ret);
++static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
++{
++	return task_nsproxy(current);
++}
++
++void *restore_ns(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_ns(ctx);
++}
++
++static int restore_ns_obj(struct ckpt_ctx *ctx, int ns_objref)
++{
++	struct nsproxy *nsproxy;
++
++	nsproxy = ckpt_obj_fetch(ctx, ns_objref, CKPT_OBJ_NS);
++	if (!nsproxy)
++		return -EINVAL;
++	else if (IS_ERR(nsproxy))
++		return PTR_ERR(nsproxy);
++
++	if (nsproxy != task_nsproxy(current))
++		switch_task_namespaces(current, nsproxy);
++
++	return 0;
++}
++
+ static int restore_task_objs(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_task_objs *h;
+ 	int ret;
+ 
+-	h = ckpt_read_obj_type(ctx, CKPT_HDR_TASK_OBJS, sizeof(*h));
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
+ 
++	ret = restore_ns_obj(ctx, h->ns_objref);
++	ckpt_debug("nsproxy: ret %d\n", ret);
 +	if (ret < 0)
 +		goto out;
-+#if 0
-+	ret = restore_ipc_ns(ctx, h->ipc_ref, h->flags);
-+	ckpt_debug("ipc ns: %d\n", ret);
-+#endif
- 
- 	/* FIX: add more namespaces here */
-  out:
++
+ 	ret = restore_mm_obj(ctx, h->mm_objref);
+ 	ckpt_debug("memory: ret %d\n", ret);
+-
++ out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+ }
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 2cdd94f..867033c 100644
+index d554776..2cdd94f 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -69,6 +69,21 @@ extern int restore_restart_block(struct ckpt_ctx *ctx);
- extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_ns(struct ckpt_ctx *ctx);
+@@ -65,6 +65,10 @@ extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
+ 				    struct task_struct *t);
+ extern int restore_restart_block(struct ckpt_ctx *ctx);
  
-+#if 0
-+/* ipc-ns */
-+#ifdef CONFIG_SYSVIPC
-+extern int checkpoint_ipc_ns(struct ckpt_ctx *ctx,
-+			     struct ipc_namespace *ipc_ns);
-+extern int restore_ipc_ns(struct ckpt_ctx *ctx, int ns_objref, int flags);
-+#else
-+static inline int checkpoint_ipc_ns(struct ckpt_ctx *ctx,
-+				    struct ipc_namespace *ipc_ns)
-+{ return 0; }
-+static inline int restore_ipc_ns(struct ckpt_ctx *ctx)
-+{ return 0; }
-+#endif /* CONFIG_SYSVIPC */
-+#endif
++/* namespaces */
++extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_ns(struct ckpt_ctx *ctx);
 +
  /* memory */
  extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
  
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 4945de6..3051031 100644
+index 8b00fb8..405d3bc 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -55,6 +55,7 @@ enum {
- 	CKPT_HDR_CPU,
- 	CKPT_HDR_NS,
- 	CKPT_HDR_UTS_NS,
-+	CKPT_HDR_IPC_NS,
- 
- 	CKPT_HDR_MM = 201,
- 	CKPT_HDR_VMA,
-@@ -84,6 +85,7 @@ enum obj_type {
+@@ -80,6 +80,7 @@ enum obj_type {
+ 	CKPT_OBJ_FILE,
+ 	CKPT_OBJ_INODE,
  	CKPT_OBJ_MM,
- 	CKPT_OBJ_NS,
- 	CKPT_OBJ_UTS_NS,
-+	CKPT_OBJ_IPC_NS,
++	CKPT_OBJ_NS,
  	CKPT_OBJ_MAX
  };
  
-@@ -177,6 +179,7 @@ struct ckpt_hdr_ns {
+@@ -144,6 +145,7 @@ struct ckpt_hdr_task {
+ struct ckpt_hdr_task_objs {
  	struct ckpt_hdr h;
- 	__u32 flags;
- 	__u32 uts_ref;
-+	__u32 ipc_ref;
+ 	__s32 mm_objref;
++	__s32 ns_objref;
  } __attribute__((aligned(8)));
  
- struct ckpt_hdr_utsns {
+ /* (thread) restart blocks */
+@@ -167,6 +169,13 @@ enum restart_block_type {
+ 	CKPT_RESTART_BLOCK_FUTEX
+ };
+ 
++/* namespaces */
++struct ckpt_hdr_ns {
++	struct ckpt_hdr h;
++	__u32 flags;
++	__u32 uts_ref;
++} __attribute__((aligned(8)));
++
+ /* memory layout */
+ struct ckpt_hdr_mm {
+ 	struct ckpt_hdr h;
 -- 
 1.5.4.3
