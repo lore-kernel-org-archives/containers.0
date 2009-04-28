@@ -1,17 +1,25 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: define CHECKPOINT_SUBTREE flag and sysctl
-Date: Mon, 27 Apr 2009 18:13:49 -0400
-Message-ID: <49F62E1D.20003@cs.columbia.edu>
-References: <20090424210608.GA16973@us.ibm.com> <m3vdotk34g.fsf@pobox.com>
-	<20090425024515.GA4534@hallyn.com> <m3y6tmt3wb.fsf@pobox.com>
-	<20090427180717.GA28476@us.ibm.com>
-	<49F61181.9010809@cs.columbia.edu>
-	<20090427203858.GA32290@us.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: container-to-host virtual or loopback kind of interface support
+Date: Mon, 27 Apr 2009 21:19:35 -0700
+Message-ID: <m1iqkpv294.fsf@fess.ebiederm.org>
+References: <638f07d70904081549h442c4bb0l401fa08f4980b217@mail.gmail.com>
+	<20090409135724.GA26467@us.ibm.com>
+	<D02204CF-796A-45F5-B9A2-5B581EB52A2F@gmail.com>
+	<20090409191402.GA561@us.ibm.com>
+	<638f07d70904091628o25d11b95oa8614a0585df4cf5@mail.gmail.com>
+	<m1iqktw5uq.fsf@fess.ebiederm.org>
+	<638f07d70904250738j987ed6j685372651346634a@mail.gmail.com>
+	<m1k558va5u.fsf@fess.ebiederm.org>
+	<638f07d70904260108s3ca2eb5cpcbed37d5ba002d42@mail.gmail.com>
+	<m1fxfvp04e.fsf@fess.ebiederm.org>
+	<638f07d70904271500u1f0a13cbif1c5db64bdb520ab@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090427203858.GA32290-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <638f07d70904271500u1f0a13cbif1c5db64bdb520ab-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Elwin Stelzer Eliazer's message of "Mon\,
+	27 Apr 2009 15\:00\:38 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,64 +29,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Elwin Stelzer Eliazer <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
+> Thanks Eric for your detailed response.
+>
+> On the PPP interfaces under namespace, how do i configure them under lxc
+> config? Are there other types like "veth" and "macvlan" for PPP?
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>
->> Serge E. Hallyn wrote:
->>> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->>>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->>>>> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->>>>>> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->>>>>>> +	cnt = ref->users + 1;
->>>>>>> +	switch (ref->type) {
->>>>>>> +	case CR_OBJ_UTSNS:
->>>>>>> +		utsns = ref->ptr;
->>>>>>> +		cnt2 = (unsigned long) atomic_read(&utsns->kref.refcount);
->>>>>>> +		if (cnt != cnt2) {
->>>>>>> +			cr_debug("uts namespace leak\n");
->>>>>> I'm struggling to understand what guarantee a check such as this is
->>>>>> supposed to be making.  I see that it will catch *some* undesirable
->>>>>> cases.  But "current refcount equals old refcount" does not imply that
->>>>>> "refcount has not changed in the meantime".
->>>>> It's got nothing to do with the refcounts changing.
->>>>>
->>>>> It ensures that, at the end of the checkpoint, the resources (utsns
->>>>> in this case) had no users not accounted for by a checkpointed task.
->>>>> In other words, there was no information leak.
->>>> Okay, I had mistakenly believed this code was running in the
->>>> subtree/non-container case.  I reread your patch description and it
->>>> indicates that these checks are made only in the case of container
->>>> checkpoint.  If I'm (finally) understanding the patch correctly, my
->>>> concern is lessened.  Comparing refcounts is still... unconventional.
->>> Yes, and there are cases where it won't be usable - for instance if
->>> opening a procfile increments the resource->use count.  That should
->>> not be an issue for utsns, ipcns, files, or vmas, afaik.
->> Actually, one such case is if you have a FIFO - and a task outside the
->> "container" (for whatever definition we choose) opens that FIFO because
->> the right thingie is mounted in its (distinct) mounts namespace.
-> 
-> That'll affect the CR_OBJ_INODE object, right?  (Not the CR_OBJ_FILE
-> one).
+veth and macvlan are created with
+ip link add .... type veth ....
+ip link add .... type macvlan ...
 
-Yes.  And the point is that this leak cannot be reliably detected.
+ppp is created normally.
 
-... unless you hide FIFO's in the network namespace :o
-(no !  I'm no suggesting...)
+I have never run lxc and find it's interface inflexible for my needs so I don't
+know the specifics there.
 
-Oren.
+> And i believe the container app that opens the /dev/tun gets ownership of the
+> file handle, and several container apps can open this in parallel, and they do
+> not interfere. Even if the containers do not have separate rootfs, this is the
+> case. Please confirm on these.
 
-> 
->> Also, unsure if unix domain sockets (those visible through the file
->> system, not the "abstract" type) are otherwise isolated as well ?
-> 
-> Yes, they are isolated by network namespace, to the chagrin of some
-> people.
-> 
-> -serge
-> 
+It is the tun SETIFF ioctl that specifies which interface a tun device connect to.
+But yes several tun/tap  work just in a container.
+
+ Eric
