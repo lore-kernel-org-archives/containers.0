@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 14/54] Restore open file descriptors
-Date: Tue, 28 Apr 2009 19:23:44 -0400
-Message-ID: <1240961064-13991-15-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 53/54] Detect resource leaks for whole-container
+	checkpoint
+Date: Tue, 28 Apr 2009 19:24:23 -0400
+Message-ID: <1240961064-13991-54-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,380 +22,334 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Restore open file descriptors: for each FD read 'struct ckpt_hdr_fd_ent'
-and lookup objref in the hash table; if not found (first occurence), read
-in 'struct ckpt_hdr_fd_data', create a new FD and register in the hash.
-Otherwise attach the file pointer from the hash as an FD.
+Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
+checkpoint, return an error code if the actual objects' counts are
+higher, indicating leaks (references to the objects from a task not
+being checkpointed).  Of course, by this time most of the checkpoint
+image has been written out to disk, so this is purely advisory.  But
+then, it's probably naive to argue that anything more than an advisory
+'this went wrong' error code is useful.
 
-This patch only handles basic FDs - regular files, directories and also
-symbolic links.
-
-Changelog[v14]:
-  - Introduce a per file-type restore() callback
-  - Revert change to pr_debug(), back to ckpt_debug()
-  - Rename:  restore_files() => restore_fd_table()
-  - Rename:  ckpt_read_fd_data() => restore_file()
-  - Check whether calls to ckpt_hbuf_get() fail
-  - Discard field 'hh->parent'
-
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-
-Changelog[v6]:
-  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
-    (even though it's not really needed)
+The comparison of the objhash user counts to object refcounts as a
+basis for checking for leaks comes from Alexey's OpenVZ-based c/r
+patchset.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/files.c             |  221 +++++++++++++++++++++++++++++++++++++++-
- checkpoint/objhash.c           |    2 +
- checkpoint/process.c           |    4 +
- checkpoint/restart.c           |    2 +-
- include/linux/checkpoint.h     |    7 +-
- include/linux/checkpoint_hdr.h |    3 +-
- mm/filemap.c                   |    1 -
- 7 files changed, 232 insertions(+), 8 deletions(-)
+ checkpoint/checkpoint.c    |    8 +++
+ checkpoint/memory.c        |    2 +
+ checkpoint/objhash.c       |  108 +++++++++++++++++++++++++++++++++++++++----
+ include/linux/checkpoint.h |    2 +
+ 4 files changed, 110 insertions(+), 10 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 47e5f61..80e1c02 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -15,10 +15,11 @@
- #include <linux/sched.h>
- #include <linux/file.h>
- #include <linux/fdtable.h>
-+#include <linux/fsnotify.h>
-+#include <linux/syscalls.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
--
- /**************************************************************************
-  * Checkpoint
-  */
-@@ -320,8 +321,220 @@ static struct file *read_open_fname(struct ckpt_ctx *ctx, int flags, int mode)
- 	return file;
- }
- 
--struct file *restore_file(struct ckpt_ctx *ctx)
-+static int close_all_fds(struct files_struct *files)
-+{
-+	int *fdtable;
-+	int nfds;
-+
-+	nfds = scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
-+	while (nfds--)
-+		sys_close(fdtable[nfds]);
-+	kfree(fdtable);
-+	return 0;
-+}
-+
-+/**
-+ * attach_file - attach a lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int attach_file(struct file *file)
-+{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		get_file(file);
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+	}
-+	return fd;
-+}
-+
-+#define CKPT_SETFL_MASK  \
-+	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
-+
-+int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			struct ckpt_hdr_file *h)
-+{
-+	int ret;
-+
-+	/* FIX: need to restore uid, gid, owner etc */
-+
-+	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
-+	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = vfs_llseek(file, h->f_pos, SEEK_SET);
-+	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
-+		ret = 0;
-+ out:
-+	return ret;
-+}
-+
-+static struct file *generic_file_restore(struct ckpt_ctx *ctx,
-+					 struct ckpt_hdr_file *ptr)
-+{
-+	struct file *file;
-+	int ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*ptr) || ptr->f_type != CKPT_FILE_GENERIC)
-+		return ERR_PTR(-EINVAL);
-+
-+	file = read_open_fname(ctx, ptr->f_flags, ptr->f_mode);
-+	if (IS_ERR(file))
-+		return file;
-+
-+	ret = restore_file_common(ctx, file, ptr);
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+	return file;
-+}
-+
-+struct restore_file_ops {
-+	char *file_name;
-+	enum file_type file_type;
-+	struct file * (*restore) (struct ckpt_ctx *ctx,
-+				  struct ckpt_hdr_file *ptr);
-+};
-+
-+static struct restore_file_ops restore_file_ops[] = {
-+	/* ignored file */
-+	{
-+		.file_name = "IGNORE",
-+		.file_type = CKPT_FILE_IGNORE,
-+		.restore = NULL,
-+	},
-+	/* regular file/directory */
-+	{
-+		.file_name = "GENERIC",
-+		.file_type = CKPT_FILE_GENERIC,
-+		.restore = generic_file_restore,
-+	},
-+};
-+
-+static struct file *do_restore_file(struct ckpt_ctx *ctx)
-+{
-+	struct restore_file_ops *ops;
-+	struct ckpt_hdr_file *h;
-+	struct file *file = ERR_PTR(-EINVAL);
-+
-+	/*
-+	 * All 'struct ckpt_hdr_file_...' begin with ckpt_hdr_file,
-+	 * but the actual object depends on the file type. The length
-+	 * should never be more than page.
-+	 */
-+	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_FILE);
-+	if (IS_ERR(h))
-+		return (struct file *) h;
-+	ckpt_debug("flags %#x mode %#x type %d\n",
-+		 h->f_flags, h->f_mode, h->f_type);
-+
-+	if (h->f_type >= CKPT_FILE_MAX)
-+		goto out;
-+
-+	ops = &restore_file_ops[h->f_type];
-+	BUG_ON(ops->file_type != h->f_type);
-+
-+	if (file)
-+		file = ops->restore(ctx, h);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return file;
-+}
-+
-+void *restore_file(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_file(ctx);
-+}
-+
-+/**
-+ * ckpt_read_fd_ent - restore the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ *
-+ * Restores the state of a file descriptor; looks up the objref (in the
-+ * header) in the hash table, and if found picks the matching file and
-+ * use it; otherwise calls restore_file to restore the file too.
-+ */
-+static int restore_fd_ent(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_fd_ent *h;
-+	struct file *file;
-+	int newfd, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FD_ENT);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+	ckpt_debug("ref %d fd %d c.o.e %d\n",
-+		 h->fd_objref, h->fd_descriptor, h->fd_close_on_exec);
-+
-+	ret = -EINVAL;
-+	if (h->fd_objref <= 0 || h->fd_descriptor < 0)
-+		goto out;
-+
-+	file = ckpt_obj_fetch(ctx, h->fd_objref, CKPT_OBJ_FILE);
-+	if (!file)
-+		goto out;
-+	else if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	newfd = attach_file(file);
-+	if (newfd < 0) {
-+		ret = newfd;
-+		goto out;
-+	}
-+
-+	ckpt_debug("newfd got %d wanted %d\n", newfd, h->fd_descriptor);
-+
-+	/* reposition if newfd isn't desired fd */
-+	if (newfd != h->fd_descriptor) {
-+		ret = sys_dup2(newfd, h->fd_descriptor);
-+		if (ret < 0)
-+			goto out;
-+		sys_close(newfd);
-+	}
-+
-+	if (h->fd_close_on_exec)
-+		set_close_on_exec(h->fd_descriptor, 1);
-+
-+	ret = 0;
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+int restore_fd_table(struct ckpt_ctx *ctx)
- {
--	/* currently only called for mapped files; O_RDONLY works */
--	return read_open_fname(ctx, O_RDONLY, 0);
-+	struct ckpt_hdr_fd_table *h;
-+	int i, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FD_TABLE);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ckpt_debug("nfds %d\n", h->fdt_nfds);
-+
-+	ret = -EMFILE;
-+	if (h->fdt_nfds < 0 || h->fdt_nfds > sysctl_nr_open)
-+		goto out;
-+
-+	/* point of no return -- close all file descriptors */
-+	ret = close_all_fds(current->files);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < h->fdt_nfds; i++) {
-+		ret = restore_fd_ent(ctx);
-+		if (ret < 0)
-+			break;
-+	}
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
- }
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 9565bcb..5476b0a 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -85,9 +85,11 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_drop = obj_file_drop,
- 		.ref_grab = obj_file_grab,
- 		.checkpoint = checkpoint_file,
-+		.restore = restore_file,
- 	},
- };
- 
-+
- #define CKPT_OBJ_HASH_NBITS  10
- #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
- 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 640a27c..a0e8163 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -116,6 +116,10 @@ int restore_task(struct ckpt_ctx *ctx)
- 	ckpt_debug("memory: ret %d\n", ret);
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 4319976..32a0a8e 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -498,6 +498,14 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
  	if (ret < 0)
  		goto out;
-+	ret = restore_fd_table(ctx);
-+	ckpt_debug("files: ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread: ret %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 06224fd..ecf2cf0 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -251,7 +251,7 @@ void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type)
  
- 	BUG_ON(!len);
- 
--	h = ckpt_read_obj(ctx, len, len);
-+	h = ckpt_read_obj(ctx, 0, len);
- 	if (IS_ERR(h))
- 		return h;
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d6644f0..527a84f 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -10,6 +10,8 @@
-  *  distribution for more details.
-  */
- 
-+struct ckpt_ctx;
++	if (!(ctx->flags & CHECKPOINT_SUBTREE)) {
++		/* verify that all objects are contained (no leaks) */
++		if (!ckpt_obj_contained(ctx)) {
++			ret = -EBUSY;
++			goto out;
++		}
++	}
 +
- #include <linux/checkpoint_types.h>
- #include <linux/checkpoint_hdr.h>
+ 	/* on success, return (unique) checkpoint identifier */
+ 	ctx->crid = atomic_inc_return(&ctx_count);
+ 	ret = ctx->crid;
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 7637c1e..5ae2b41 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -687,6 +687,8 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			ret = exe_objref;
+ 			goto out;
+ 		}
++		/* account for all references through vma/exe_file */
++		ckpt_obj_users_inc(ctx, mm->exe_file, mm->num_exe_file_vmas);
+ 	}
  
-@@ -80,12 +82,15 @@ extern int restore_mm(struct ckpt_ctx *ctx);
- 
- /* files */
- extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
--extern struct file *restore_file(struct ckpt_ctx *ctx);
-+extern void *restore_file(struct ckpt_ctx *ctx);
- 
- extern int checkpoint_fd_table(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int restore_fd_table(struct ckpt_ctx *ctx);
- 
- extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
- 				  struct ckpt_hdr_file *h);
-+extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			       struct ckpt_hdr_file *h);
- 
- 
- /* debugging flags */
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index a957e6c..7c87bf8 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -176,7 +176,8 @@ struct ckpt_hdr_fd_ent {
- } __attribute__((aligned(8)));
- 
- enum file_type {
--	CKPT_FILE_GENERIC = 1,
-+	CKPT_FILE_IGNORE = 0,
-+	CKPT_FILE_GENERIC,
- 	CKPT_FILE_MAX
+ 	h->exefile_objref = exe_objref;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index bdc719e..11522b2 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -28,19 +28,23 @@ struct ckpt_obj_ops {
+ 	enum obj_type obj_type;
+ 	void (*ref_drop)(void *ptr);
+ 	int (*ref_grab)(void *ptr);
++	int (*ref_users)(void *ptr);
+ 	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+ 	void *(*restore)(struct ckpt_ctx *ctx);
  };
  
-diff --git a/mm/filemap.c b/mm/filemap.c
-index ef5680b..f51b537 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1658,7 +1658,6 @@ int filemap_restore(struct ckpt_ctx *ctx,
- 	struct file *file;
- 	int ret;
+ struct ckpt_obj {
++	int users;
+ 	int objref;
+ 	void *ptr;
+ 	struct ckpt_obj_ops *ops;
+ 	struct hlist_node hash;
++	struct hlist_node next;
+ };
  
--	/* for private mapping using 'read-only' is sufficient */
- 	file = restore_file(ctx);
- 	if (IS_ERR(file))
- 		return PTR_ERR(file);
+ struct ckpt_obj_hash {
+ 	struct hlist_head *head;
++	struct hlist_head list;
+ 	int next_free_objref;
+ };
+ 
+@@ -56,13 +60,13 @@ void *restore_bad(struct ckpt_ctx *ctx)
+ 
+ /*
+  * helper grab/drop functions:
+- *   obj_no_{drop,grab}: for objects ignored/skipped
+- *   obj_file_{drop,grab}: for file objects
+- *   obj_inode_{drop,grab}: for inode objects
+- *   obj_mm_{drop,grab}: for mm_struct objects
+- *   obj_ns_{drop,grab}: for nsproxy objects
+- *   obj_uts_ns_{drop,grab}: for uts_namespace objects
+- *   obj_ipc_ns_{drop,grab}: for ipc_namespace objects
++ *   obj_no_{drop,grab,users}: for objects ignored/skipped
++ *   obj_file_{drop,grab,users}: for file objects
++ *   obj_inode_{drop,grab,users}: for inode objects
++ *   obj_mm_{drop,grab,users}: for mm_struct objects
++ *   obj_ns_{drop,grab,users}: for nsproxy objects
++ *   obj_uts_ns_{drop,grab,users}: for uts_namespace objects
++ *   obj_ipc_ns_{drop,grab,users}: for ipc_namespace objects
+  */
+ 
+ static void obj_no_drop(void *ptr)
+@@ -75,7 +79,12 @@ static int obj_no_grab(void *ptr)
+ 	return 0;
+ }
+ 
+-/* helper drop/grab functions */
++
++/*
++ * helper drop/grab functions
++ */
++
++/* file object */
+ static int obj_file_grab(void *ptr)
+ {
+ 	get_file((struct file *) ptr);
+@@ -87,6 +96,12 @@ static void obj_file_drop(void *ptr)
+ 	fput((struct file *) ptr);
+ }
+ 
++static int obj_file_users(void *ptr)
++{
++	return atomic_long_read(&((struct file *) ptr)->f_count);
++}
++
++/* inode object */
+ static int obj_inode_grab(void *ptr)
+ {
+ 	return (igrab((struct inode *) ptr) ? 0 : -EBADF);
+@@ -97,6 +112,7 @@ static void obj_inode_drop(void *ptr)
+ 	iput((struct inode *) ptr);
+ }
+ 
++/* inode object */
+ static int obj_mm_grab(void *ptr)
+ {
+ 	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
+@@ -108,6 +124,12 @@ static void obj_mm_drop(void *ptr)
+ 	mmput((struct mm_struct *) ptr);
+ }
+ 
++static int obj_mm_users(void *ptr)
++{
++	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
++}
++
++/* nsproxy object */
+ static int obj_ns_grab(void *ptr)
+ {
+ 	get_nsproxy((struct nsproxy *) ptr);
+@@ -119,6 +141,7 @@ static void obj_ns_drop(void *ptr)
+ 	put_nsproxy((struct nsproxy *) ptr);
+ }
+ 
++/* uts_namespace object */
+ static int obj_uts_ns_grab(void *ptr)
+ {
+ 	get_uts_ns((struct uts_namespace *) ptr);
+@@ -130,6 +153,12 @@ static void obj_uts_ns_drop(void *ptr)
+ 	put_uts_ns((struct uts_namespace *) ptr);
+ }
+ 
++static int obj_uts_ns_users(void *ptr)
++{
++	return atomic_read(&((struct uts_namespace *) ptr)->kref.refcount);
++}
++
++/* ipc_namespace object */
+ static int obj_ipc_ns_grab(void *ptr)
+ {
+ 	get_ipc_ns((struct ipc_namespace *) ptr);
+@@ -141,6 +170,11 @@ static void obj_ipc_ns_drop(void *ptr)
+ 	put_ipc_ns((struct ipc_namespace *) ptr);
+ }
+ 
++static int obj_ipc_ns_users(void *ptr)
++{
++	return atomic_read(&((struct ipc_namespace *) ptr)->count);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -155,6 +189,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_FILE,
+ 		.ref_drop = obj_file_drop,
+ 		.ref_grab = obj_file_grab,
++		.ref_users = obj_file_users,
+ 		.checkpoint = checkpoint_file,
+ 		.restore = restore_file,
+ 	},
+@@ -173,6 +208,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_MM,
+ 		.ref_drop = obj_mm_drop,
+ 		.ref_grab = obj_mm_grab,
++		.ref_users = obj_mm_users,
+ 		.checkpoint = checkpoint_mm,
+ 		.restore = restore_mm,
+ 	},
+@@ -191,6 +227,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_UTS_NS,
+ 		.ref_drop = obj_uts_ns_drop,
+ 		.ref_grab = obj_uts_ns_grab,
++		.ref_users = obj_uts_ns_users,
+ 		.checkpoint = checkpoint_bad,
+ 		.restore = restore_bad,
+ 	},
+@@ -200,6 +237,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_IPC_NS,
+ 		.ref_drop = obj_ipc_ns_drop,
+ 		.ref_grab = obj_ipc_ns_grab,
++		.ref_users = obj_ipc_ns_users,
+ 		.checkpoint = checkpoint_bad,
+ 		.restore = restore_bad,
+ 	},
+@@ -252,6 +290,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
+ 
+ 	obj_hash->head = head;
+ 	obj_hash->next_free_objref = 1;
++	INIT_HLIST_HEAD(&obj_hash->list);
+ 
+ 	ctx->obj_hash = obj_hash;
+ 	return 0;
+@@ -310,6 +349,7 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 
+ 	obj->ptr = ptr;
+ 	obj->ops = ops;
++	obj->users = 2;  /* extra reference that objhash itself takes */
+ 
+ 	if (objref) {
+ 		/* use @obj->objref to index (restart) */
+@@ -322,10 +362,12 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 	}
+ 
+ 	ret = ops->ref_grab(obj->ptr);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		kfree(obj);
+-	else
++	} else {
+ 		hlist_add_head(&obj->hash, &ctx->obj_hash->head[i]);
++		hlist_add_head(&obj->next, &ctx->obj_hash->list);
++	}
+ 
+ 	return (ret < 0 ? : obj->objref);
+ }
+@@ -363,6 +405,7 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 		return -EINVAL;
+ 	} else {
+ 		objref = obj->objref;
++		obj->users++;
+ 		*first = 0;
+ 	}
+ 
+@@ -370,6 +413,50 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 	return objref;
+ }
+ 
++/* increment the 'users' count of an object */
++void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_ptr(ctx, ptr);
++	if (obj)
++		obj->users += increment;
++}
++
++/**
++ * ckpt_obj_contained - test if shared objects are "contained" in checkpoint
++ * @ctx: checkpoint
++ *
++ * Loops through all objects in the table and compares the number of
++ * references accumulated during checkpoint, with the reference count
++ * reported by the kernel.
++ *
++ * Return 1 if respective counts match for all objects, 0 otherwise.
++ */
++int ckpt_obj_contained(struct ckpt_ctx *ctx)
++{
++	struct ckpt_obj *obj;
++	struct hlist_node *node;
++
++	/* account for ctx->file reference (if in the table already) */
++	ckpt_obj_users_inc(ctx, ctx->file, 1);
++
++	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
++		if (!obj->ops->ref_users)
++			continue;
++		if (obj->ops->ref_users(obj->ptr) != obj->users) {
++			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
++			printk(KERN_NOTICE "c/r: %s users %d != count %d\n",
++			       obj->ops->obj_name,
++			       obj->ops->ref_users(obj->ptr),
++			       obj->users);
++			return 0;
++		}
++	}
++
++	return 1;
++}
++
+ /**
+  * checkpoint_obj - if not already in hash, add object and checkpoint
+  * @ctx: checkpoint context
+@@ -399,6 +486,7 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ 	obj = obj_find_by_ptr(ctx, ptr);
+ 	if (obj) {
+ 		BUG_ON(obj->ops->obj_type != type);
++		obj->users++;
+ 		return obj->objref;
+ 	}
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 65838b4..2a09244 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -48,10 +48,12 @@ extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+ 
+ extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
+ extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type);
++extern int ckpt_obj_contained(struct ckpt_ctx *ctx);
+ extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
+ 			    enum obj_type type);
+ extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 			       enum obj_type type, int *first);
++extern void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment);
+ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 			   enum obj_type type);
+ 
 -- 
 1.5.4.3
