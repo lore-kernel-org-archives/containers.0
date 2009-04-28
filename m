@@ -1,7 +1,7 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v15 5/7] kiothrottled: throttle buffered (writeback) IO
-Date: Tue, 28 Apr 2009 10:43:52 +0200
-Message-ID: <1240908234-15434-6-git-send-email-righi.andrea__22728.4536850222$1240908941$gmane$org@gmail.com>
+Subject: [PATCH v15 4/7] io-throttle controller infrastructure
+Date: Tue, 28 Apr 2009 10:43:51 +0200
+Message-ID: <1240908234-15434-5-git-send-email-righi.andrea__4504.9503249631$1240908943$gmane$org@gmail.com>
 References: <1240908234-15434-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,47 +21,43 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Together with cgroup_io_throttle() the kiothrottled kernel thread
-represents the core of the io-throttle subsystem.
+This is the core of the io-throttle kernel infrastructure. It creates
+the basic interfaces to the cgroup subsystem and implements the I/O
+measurement and throttling functionality.
 
-All the writeback IO requests that need to be throttled are not
-dispatched immediately in submit_bio(). Instead, they are added into an
-rbtree by iothrottle_make_request() and processed asynchronously by
-kiothrottled.
-
-A deadline is associated to each request depending on the bandwidth
-usage of the cgroup it belongs. When a request is inserted into the
-rbtree kiothrottled is awakened. This thread selects all the requests
-with an expired deadline and submit the bunch of selected requests to
-the underlying block devices using generic_make_request().
-
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- block/Makefile       |    2 +-
- block/kiothrottled.c |  341 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 342 insertions(+), 1 deletions(-)
- create mode 100644 block/kiothrottled.c
+ block/Makefile                  |    1 +
+ block/blk-io-throttle.c         |  851 +++++++++++++++++++++++++++++++++++++++
+ include/linux/blk-io-throttle.h |  168 ++++++++
+ include/linux/cgroup.h          |    1 +
+ include/linux/cgroup_subsys.h   |    6 +
+ init/Kconfig                    |   12 +
+ kernel/cgroup.c                 |    9 +
+ 7 files changed, 1048 insertions(+), 0 deletions(-)
+ create mode 100644 block/blk-io-throttle.c
+ create mode 100644 include/linux/blk-io-throttle.h
 
 diff --git a/block/Makefile b/block/Makefile
-index 42b6a46..5f10a45 100644
+index e9fa4dd..42b6a46 100644
 --- a/block/Makefile
 +++ b/block/Makefile
-@@ -13,6 +13,6 @@ obj-$(CONFIG_IOSCHED_AS)	+= as-iosched.o
+@@ -13,5 +13,6 @@ obj-$(CONFIG_IOSCHED_AS)	+= as-iosched.o
  obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
  obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
  
--obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o
-+obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o kiothrottled.o
++obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o
  obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
  obj-$(CONFIG_BLK_DEV_INTEGRITY)	+= blk-integrity.o
-diff --git a/block/kiothrottled.c b/block/kiothrottled.c
+diff --git a/block/blk-io-throttle.c b/block/blk-io-throttle.c
 new file mode 100644
-index 0000000..3df22c1
+index 0000000..380a21a
 --- /dev/null
-+++ b/block/kiothrottled.c
-@@ -0,0 +1,341 @@
++++ b/block/blk-io-throttle.c
+@@ -0,0 +1,851 @@
 +/*
-+ * kiothrottled.c
++ * blk-io-throttle.c
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public
@@ -83,323 +79,1079 @@ index 0000000..3df22c1
 +
 +#include <linux/init.h>
 +#include <linux/module.h>
-+#include <linux/sched.h>
++#include <linux/res_counter.h>
++#include <linux/memcontrol.h>
++#include <linux/slab.h>
++#include <linux/gfp.h>
++#include <linux/err.h>
++#include <linux/genhd.h>
++#include <linux/hardirq.h>
++#include <linux/list.h>
 +#include <linux/seq_file.h>
-+#include <linux/proc_fs.h>
-+#include <linux/kthread.h>
-+#include <linux/jiffies.h>
-+#include <linux/ioprio.h>
-+#include <linux/rbtree.h>
-+#include <linux/blkdev.h>
++#include <linux/spinlock.h>
++#include <linux/blk-io-throttle.h>
++#include <linux/mm.h>
++#include <linux/page_cgroup.h>
++#include <linux/sched.h>
++#include <linux/bio.h>
 +
-+/* io-throttle bio element */
-+struct iot_bio {
-+	struct rb_node node;
-+	unsigned long deadline;
-+	struct bio *bio;
++/*
++ * Statistics for I/O bandwidth controller.
++ */
++enum iothrottle_stat_index {
++	/* # of times the cgroup has been throttled for bw limit */
++	IOTHROTTLE_STAT_BW_COUNT,
++	/* # of jiffies spent to sleep for throttling for bw limit */
++	IOTHROTTLE_STAT_BW_SLEEP,
++	/* # of times the cgroup has been throttled for iops limit */
++	IOTHROTTLE_STAT_IOPS_COUNT,
++	/* # of jiffies spent to sleep for throttling for iops limit */
++	IOTHROTTLE_STAT_IOPS_SLEEP,
++	/* total number of bytes read and written */
++	IOTHROTTLE_STAT_BYTES_TOT,
++	/* total number of I/O operations */
++	IOTHROTTLE_STAT_IOPS_TOT,
++
++	IOTHROTTLE_STAT_NSTATS,
 +};
 +
-+/* io-throttle bio tree */
-+struct iot_bio_tree {
-+	/* Protect the iothrottle rbtree */
-+	spinlock_t lock;
-+	struct rb_root tree;
++struct iothrottle_stat_cpu {
++	unsigned long long count[IOTHROTTLE_STAT_NSTATS];
++} ____cacheline_aligned_in_smp;
++
++struct iothrottle_stat {
++	struct iothrottle_stat_cpu cpustat[NR_CPUS];
++};
++
++static void iothrottle_stat_add(struct iothrottle_stat *stat,
++			enum iothrottle_stat_index type, unsigned long long val)
++{
++	int cpu = get_cpu();
++
++	stat->cpustat[cpu].count[type] += val;
++	put_cpu();
++}
++
++static void iothrottle_stat_add_sleep(struct iothrottle_stat *stat,
++			int type, unsigned long long sleep)
++{
++	int cpu = get_cpu();
++
++	switch (type) {
++	case IOTHROTTLE_BANDWIDTH:
++		stat->cpustat[cpu].count[IOTHROTTLE_STAT_BW_COUNT]++;
++		stat->cpustat[cpu].count[IOTHROTTLE_STAT_BW_SLEEP] += sleep;
++		break;
++	case IOTHROTTLE_IOPS:
++		stat->cpustat[cpu].count[IOTHROTTLE_STAT_IOPS_COUNT]++;
++		stat->cpustat[cpu].count[IOTHROTTLE_STAT_IOPS_SLEEP] += sleep;
++		break;
++	}
++	put_cpu();
++}
++
++static unsigned long long iothrottle_read_stat(struct iothrottle_stat *stat,
++				enum iothrottle_stat_index idx)
++{
++	int cpu;
++	unsigned long long ret = 0;
++
++	for_each_possible_cpu(cpu)
++		ret += stat->cpustat[cpu].count[idx];
++	return ret;
++}
++
++struct iothrottle_sleep {
++	unsigned long long bw_sleep;
++	unsigned long long iops_sleep;
 +};
 +
 +/*
-+ * TODO: create one iothrottle rbtree per block device and many kiothrottled
-+ * threads per rbtree, instead of a poor scalable single rbtree / single thread
-+ * solution.
++ * struct iothrottle_node - throttling rule of a single block device
++ * @node: list of per block device throttling rules
++ * @dev: block device number, used as key in the list
++ * @bw: max i/o bandwidth (in bytes/s)
++ * @iops: max i/o operations per second
++ * @stat: throttling statistics
++ *
++ * Define a i/o throttling rule for a single block device.
++ *
++ * NOTE: limiting rules always refer to dev_t; if a block device is unplugged
++ * the limiting rules defined for that device persist and they are still valid
++ * if a new device is plugged and it uses the same dev_t number.
 + */
-+static struct iot_bio_tree *iot;
-+static struct task_struct *kiothrottled_thread;
-+
-+/* Timer used to periodically wake-up kiothrottled */
-+static struct timer_list kiothrottled_timer;
-+
-+/* Insert a new iot_bio element in the iot_bio_tree */
-+static void iot_bio_insert(struct rb_root *root, struct iot_bio *data)
-+{
-+	struct rb_node **new = &(root->rb_node), *parent = NULL;
-+
-+	while (*new) {
-+		struct iot_bio *this = container_of(*new, struct iot_bio, node);
-+		parent = *new;
-+		if (data->deadline < this->deadline)
-+			new = &((*new)->rb_left);
-+		else
-+			new = &((*new)->rb_right);
-+	}
-+	rb_link_node(&data->node, parent, new);
-+	rb_insert_color(&data->node, root);
-+}
-+
-+/*
-+ * NOTE: no need to care about locking here, we're flushing all the pending
-+ * requests, kiothrottled has been stopped and no additional request will be
-+ * submitted in the tree.
-+ */
-+static void iot_bio_cleanup(struct rb_root *root)
-+{
-+	struct iot_bio *data;
-+	struct rb_node *next;
-+
-+	next = rb_first(root);
-+	while (next) {
-+		data = rb_entry(next, struct iot_bio, node);
-+		pr_debug("%s: dispatching element: %p (%lu)\n",
-+				__func__, data->bio, data->deadline);
-+		generic_make_request(data->bio);
-+		next = rb_next(&data->node);
-+		rb_erase(&data->node, root);
-+		kfree(data);
-+	}
-+}
++struct iothrottle_node {
++	struct list_head node;
++	dev_t dev;
++	struct res_counter bw;
++	struct res_counter iops;
++	struct iothrottle_stat stat;
++};
 +
 +/**
-+ * iothrottle_make_request() - submit a delayed IO requests that will be
-+ * processed asynchronously by kiothrottled.
++ * struct iothrottle - throttling rules for a cgroup
++ * @css: pointer to the cgroup state
++ * @list: list of iothrottle_node elements
 + *
-+ * @bio:	the bio structure that contains the IO request's informations
-+ * @deadline:	the request will be actually dispatched only when the deadline
-+ *		will expire
-+ *
-+ * Returns 0 if the request is successfully submitted and inserted into the
-+ * iot_bio_tree. Return a negative value in case of failure.
-+ **/
-+int iothrottle_make_request(struct bio *bio, unsigned long deadline)
++ * Define multiple per-block device i/o throttling rules.
++ * Note: the list of the throttling rules is protected by RCU locking:
++ *	 - hold cgroup_lock() for update.
++ *	 - hold rcu_read_lock() for read.
++ */
++struct iothrottle {
++	struct cgroup_subsys_state css;
++	struct list_head list;
++};
++static struct iothrottle init_iothrottle;
++
++static inline struct iothrottle *cgroup_to_iothrottle(struct cgroup *cgrp)
 +{
-+	struct iot_bio *data;
++	return container_of(cgroup_subsys_state(cgrp, iothrottle_subsys_id),
++			    struct iothrottle, css);
++}
++
++/*
++ * Note: called with rcu_read_lock() held.
++ */
++static inline struct iothrottle *task_to_iothrottle(struct task_struct *task)
++{
++	return container_of(task_subsys_state(task, iothrottle_subsys_id),
++			    struct iothrottle, css);
++}
++
++/*
++ * Note: called with rcu_read_lock() or cgroup_lock() held.
++ */
++static struct iothrottle_node *
++iothrottle_search_node(const struct iothrottle *iot, dev_t dev)
++{
++	struct iothrottle_node *n;
++
++	if (list_empty(&iot->list))
++		return NULL;
++	list_for_each_entry_rcu(n, &iot->list, node)
++		if (n->dev == dev)
++			return n;
++	return NULL;
++}
++
++/*
++ * Note: called with cgroup_lock() held.
++ */
++static void iothrottle_insert_node(struct iothrottle *iot,
++					struct iothrottle_node *n)
++{
++	WARN_ON_ONCE(!cgroup_is_locked());
++	list_add_rcu(&n->node, &iot->list);
++}
++
++/*
++ * Note: called with cgroup_lock() held.
++ */
++static void
++iothrottle_replace_node(struct iothrottle *iot, struct iothrottle_node *old,
++			struct iothrottle_node *new)
++{
++	WARN_ON_ONCE(!cgroup_is_locked());
++	list_replace_rcu(&old->node, &new->node);
++}
++
++/*
++ * Note: called with cgroup_lock() held.
++ */
++static void
++iothrottle_delete_node(struct iothrottle *iot, struct iothrottle_node *n)
++{
++	WARN_ON_ONCE(!cgroup_is_locked());
++	list_del_rcu(&n->node);
++}
++
++/*
++ * Note: called from kernel/cgroup.c with cgroup_lock() held.
++ */
++static struct cgroup_subsys_state *
++iothrottle_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	struct iothrottle *iot;
++
++	if (unlikely((cgrp->parent) == NULL)) {
++		iot = &init_iothrottle;
++	} else {
++		iot = kzalloc(sizeof(*iot), GFP_KERNEL);
++		if (unlikely(!iot))
++			return ERR_PTR(-ENOMEM);
++	}
++	INIT_LIST_HEAD(&iot->list);
++
++	return &iot->css;
++}
++
++/*
++ * Note: called from kernel/cgroup.c with cgroup_lock() held.
++ */
++static void iothrottle_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	struct iothrottle_node *n, *p;
++	struct iothrottle *iot = cgroup_to_iothrottle(cgrp);
++
++	free_css_id(&iothrottle_subsys, &iot->css);
++	/*
++	 * don't worry about locking here, at this point there must be not any
++	 * reference to the list.
++	 */
++	if (!list_empty(&iot->list))
++		list_for_each_entry_safe(n, p, &iot->list, node)
++			kfree(n);
++	kfree(iot);
++}
++
++/*
++ * NOTE: called with rcu_read_lock() held.
++ *
++ * do not care too much about locking for single res_counter values here.
++ */
++static void iothrottle_show_limit(struct seq_file *m, dev_t dev,
++			struct res_counter *res)
++{
++	if (!res->limit)
++		return;
++	seq_printf(m, "%u %u %llu %llu %lli %llu %li\n",
++		MAJOR(dev), MINOR(dev),
++		res->limit, res->policy,
++		(long long)res->usage, res->capacity,
++		jiffies_to_clock_t(res_counter_ratelimit_delta_t(res)));
++}
++
++/*
++ * NOTE: called with rcu_read_lock() held.
++ *
++ */
++static void iothrottle_show_failcnt(struct seq_file *m, dev_t dev,
++				struct iothrottle_stat *stat)
++{
++	unsigned long long bw_count, bw_sleep, iops_count, iops_sleep;
++
++	bw_count = iothrottle_read_stat(stat, IOTHROTTLE_STAT_BW_COUNT);
++	bw_sleep = iothrottle_read_stat(stat, IOTHROTTLE_STAT_BW_SLEEP);
++	iops_count = iothrottle_read_stat(stat, IOTHROTTLE_STAT_IOPS_COUNT);
++	iops_sleep = iothrottle_read_stat(stat, IOTHROTTLE_STAT_IOPS_SLEEP);
++
++	seq_printf(m, "%u %u %llu %li %llu %li\n", MAJOR(dev), MINOR(dev),
++		bw_count, jiffies_to_clock_t(bw_sleep),
++		iops_count, jiffies_to_clock_t(iops_sleep));
++}
++
++/*
++ * NOTE: called with rcu_read_lock() held.
++ */
++static void iothrottle_show_stat(struct seq_file *m, dev_t dev,
++				struct iothrottle_stat *stat)
++{
++	unsigned long long bytes, iops;
++
++	bytes = iothrottle_read_stat(stat, IOTHROTTLE_STAT_BYTES_TOT);
++	iops = iothrottle_read_stat(stat, IOTHROTTLE_STAT_IOPS_TOT);
++
++	seq_printf(m, "%u %u %llu %llu\n", MAJOR(dev), MINOR(dev), bytes, iops);
++}
++
++static int iothrottle_read(struct cgroup *cgrp, struct cftype *cft,
++				struct seq_file *m)
++{
++	struct iothrottle *iot = cgroup_to_iothrottle(cgrp);
++	struct iothrottle_node *n;
++
++	rcu_read_lock();
++	if (list_empty(&iot->list))
++		goto unlock_and_return;
++	list_for_each_entry_rcu(n, &iot->list, node) {
++		BUG_ON(!n->dev);
++		switch (cft->private) {
++		case IOTHROTTLE_BANDWIDTH:
++			iothrottle_show_limit(m, n->dev, &n->bw);
++			break;
++		case IOTHROTTLE_IOPS:
++			iothrottle_show_limit(m, n->dev, &n->iops);
++			break;
++		case IOTHROTTLE_FAILCNT:
++			iothrottle_show_failcnt(m, n->dev, &n->stat);
++			break;
++		case IOTHROTTLE_STAT:
++			iothrottle_show_stat(m, n->dev, &n->stat);
++			break;
++		}
++	}
++unlock_and_return:
++	rcu_read_unlock();
++	return 0;
++}
++
++static dev_t devname2dev_t(const char *buf)
++{
++	struct block_device *bdev;
++	dev_t dev = 0;
++	struct gendisk *disk;
++	int part;
++
++	/* use a lookup to validate the block device */
++	bdev = lookup_bdev(buf);
++	if (IS_ERR(bdev))
++		return 0;
++	/* only entire devices are allowed, not single partitions */
++	disk = get_gendisk(bdev->bd_dev, &part);
++	if (disk && !part) {
++		BUG_ON(!bdev->bd_inode);
++		dev = bdev->bd_inode->i_rdev;
++	}
++	bdput(bdev);
++
++	return dev;
++}
++
++/*
++ * The userspace input string must use one of the following syntaxes:
++ *
++ * dev:0			<- delete an i/o limiting rule
++ * dev:io-limit:0		<- set a leaky bucket throttling rule
++ * dev:io-limit:1:bucket-size	<- set a token bucket throttling rule
++ * dev:io-limit:1		<- set a token bucket throttling rule using
++ *				   bucket-size == io-limit
++ */
++static int iothrottle_parse_args(char *buf, size_t nbytes, int filetype,
++			dev_t *dev, unsigned long long *iolimit,
++			unsigned long long *strategy,
++			unsigned long long *bucket_size)
++{
++	char *p;
++	int count = 0;
++	char *s[4];
++	int ret;
++
++	memset(s, 0, sizeof(s));
++	*dev = 0;
++	*iolimit = 0;
++	*strategy = 0;
++	*bucket_size = 0;
++
++	/* split the colon-delimited input string into its elements */
++	while (count < ARRAY_SIZE(s)) {
++		p = strsep(&buf, ":");
++		if (!p)
++			break;
++		if (!*p)
++			continue;
++		s[count++] = p;
++	}
++
++	/* i/o limit */
++	if (!s[1])
++		return -EINVAL;
++	ret = strict_strtoull(s[1], 10, iolimit);
++	if (ret < 0)
++		return ret;
++	if (!*iolimit)
++		goto out;
++	/* throttling strategy (leaky bucket / token bucket) */
++	if (!s[2])
++		return -EINVAL;
++	ret = strict_strtoull(s[2], 10, strategy);
++	if (ret < 0)
++		return ret;
++	switch (*strategy) {
++	case RATELIMIT_LEAKY_BUCKET:
++		goto out;
++	case RATELIMIT_TOKEN_BUCKET:
++		break;
++	default:
++		return -EINVAL;
++	}
++	/* bucket size */
++	if (!s[3])
++		*bucket_size = *iolimit;
++	else {
++		ret = strict_strtoll(s[3], 10, bucket_size);
++		if (ret < 0)
++			return ret;
++	}
++	if (*bucket_size <= 0)
++		return -EINVAL;
++out:
++	/* block device number */
++	*dev = devname2dev_t(s[0]);
++	return *dev ? 0 : -EINVAL;
++}
++
++static int iothrottle_write(struct cgroup *cgrp, struct cftype *cft,
++				const char *buffer)
++{
++	struct iothrottle *iot;
++	struct iothrottle_node *n, *newn = NULL;
++	dev_t dev;
++	unsigned long long iolimit, strategy, bucket_size;
++	char *buf;
++	size_t nbytes = strlen(buffer);
++	int ret = 0;
++
++	/*
++	 * We need to allocate a new buffer here, because
++	 * iothrottle_parse_args() can modify it and the buffer provided by
++	 * write_string is supposed to be const.
++	 */
++	buf = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++	memcpy(buf, buffer, nbytes + 1);
++
++	ret = iothrottle_parse_args(buf, nbytes, cft->private, &dev, &iolimit,
++				&strategy, &bucket_size);
++	if (ret)
++		goto out1;
++	newn = kzalloc(sizeof(*newn), GFP_KERNEL);
++	if (!newn) {
++		ret = -ENOMEM;
++		goto out1;
++	}
++	newn->dev = dev;
++	res_counter_init(&newn->bw, NULL);
++	res_counter_init(&newn->iops, NULL);
++
++	switch (cft->private) {
++	case IOTHROTTLE_BANDWIDTH:
++		res_counter_ratelimit_set_limit(&newn->iops, 0, 0, 0);
++		res_counter_ratelimit_set_limit(&newn->bw, strategy,
++				ALIGN(iolimit, 1024), ALIGN(bucket_size, 1024));
++		break;
++	case IOTHROTTLE_IOPS:
++		res_counter_ratelimit_set_limit(&newn->bw, 0, 0, 0);
++		/*
++		 * scale up iops cost by a factor of 1000, this allows to apply
++		 * a more fine grained sleeps, and throttling results more
++		 * precise this way.
++		 */
++		res_counter_ratelimit_set_limit(&newn->iops, strategy,
++				iolimit * 1000, bucket_size * 1000);
++		break;
++	default:
++		WARN_ON(1);
++		break;
++	}
++
++	if (!cgroup_lock_live_group(cgrp)) {
++		ret = -ENODEV;
++		goto out1;
++	}
++	iot = cgroup_to_iothrottle(cgrp);
++
++	n = iothrottle_search_node(iot, dev);
++	if (!n) {
++		if (iolimit) {
++			/* Add a new block device limiting rule */
++			iothrottle_insert_node(iot, newn);
++			newn = NULL;
++		}
++		goto out2;
++	}
++	switch (cft->private) {
++	case IOTHROTTLE_BANDWIDTH:
++		if (!iolimit && !n->iops.limit) {
++			/* Delete a block device limiting rule */
++			iothrottle_delete_node(iot, n);
++			goto out2;
++		}
++		if (!n->iops.limit)
++			break;
++		/* Update a block device limiting rule */
++		newn->iops = n->iops;
++		break;
++	case IOTHROTTLE_IOPS:
++		if (!iolimit && !n->bw.limit) {
++			/* Delete a block device limiting rule */
++			iothrottle_delete_node(iot, n);
++			goto out2;
++		}
++		if (!n->bw.limit)
++			break;
++		/* Update a block device limiting rule */
++		newn->bw = n->bw;
++		break;
++	}
++	iothrottle_replace_node(iot, n, newn);
++	newn = NULL;
++out2:
++	cgroup_unlock();
++	if (n) {
++		synchronize_rcu();
++		kfree(n);
++	}
++out1:
++	kfree(newn);
++	kfree(buf);
++	return ret;
++}
++
++static struct cftype files[] = {
++	{
++		.name = "bandwidth-max",
++		.read_seq_string = iothrottle_read,
++		.write_string = iothrottle_write,
++		.max_write_len = 256,
++		.private = IOTHROTTLE_BANDWIDTH,
++	},
++	{
++		.name = "iops-max",
++		.read_seq_string = iothrottle_read,
++		.write_string = iothrottle_write,
++		.max_write_len = 256,
++		.private = IOTHROTTLE_IOPS,
++	},
++	{
++		.name = "throttlecnt",
++		.read_seq_string = iothrottle_read,
++		.private = IOTHROTTLE_FAILCNT,
++	},
++	{
++		.name = "stat",
++		.read_seq_string = iothrottle_read,
++		.private = IOTHROTTLE_STAT,
++	},
++};
++
++static int iothrottle_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	return cgroup_add_files(cgrp, ss, files, ARRAY_SIZE(files));
++}
++
++struct cgroup_subsys iothrottle_subsys = {
++	.name = "blockio",
++	.create = iothrottle_create,
++	.destroy = iothrottle_destroy,
++	.populate = iothrottle_populate,
++	.subsys_id = iothrottle_subsys_id,
++	.early_init = 1,
++	.use_id = 1,
++};
++
++/*
++ * NOTE: called with rcu_read_lock() held.
++ */
++static void iothrottle_evaluate_sleep(struct iothrottle_sleep *sleep,
++				struct iothrottle *iot,
++				struct block_device *bdev, ssize_t bytes)
++{
++	struct iothrottle_node *n;
++	dev_t dev;
 +
 +	BUG_ON(!iot);
 +
-+	if (unlikely(!kiothrottled_thread))
-+		return -ENOENT;
++	/* accounting and throttling is done only on entire block devices */
++	dev = MKDEV(MAJOR(bdev->bd_inode->i_rdev), bdev->bd_disk->first_minor);
++	n = iothrottle_search_node(iot, dev);
++	if (!n)
++		return;
 +
-+	data = kzalloc(sizeof(*data), GFP_KERNEL);
-+	if (unlikely(!data))
-+		return -ENOMEM;
-+	data->deadline = deadline;
-+	data->bio = bio;
++	/* Update statistics */
++	iothrottle_stat_add(&n->stat, IOTHROTTLE_STAT_BYTES_TOT, bytes);
++	if (bytes)
++		iothrottle_stat_add(&n->stat, IOTHROTTLE_STAT_IOPS_TOT, 1);
 +
-+	spin_lock_irq(&iot->lock);
-+	iot_bio_insert(&iot->tree, data);
-+	spin_unlock_irq(&iot->lock);
-+
-+	wake_up_process(kiothrottled_thread);
-+	return 0;
++	/* Evaluate sleep values */
++	sleep->bw_sleep = res_counter_ratelimit_sleep(&n->bw, bytes);
++	/*
++	 * scale up iops cost by a factor of 1000, this allows to apply
++	 * a more fine grained sleeps, and throttling works better in
++	 * this way.
++	 *
++	 * Note: do not account any i/o operation if bytes is negative or zero.
++	 */
++	sleep->iops_sleep = res_counter_ratelimit_sleep(&n->iops,
++						bytes ? 1000 : 0);
 +}
-+EXPORT_SYMBOL(iothrottle_make_request);
 +
-+static void kiothrottled_timer_expired(unsigned long __unused)
++/*
++ * NOTE: called with rcu_read_lock() held.
++ */
++static void iothrottle_acct_stat(struct iothrottle *iot,
++			struct block_device *bdev, int type,
++			unsigned long long sleep)
 +{
-+	wake_up_process(kiothrottled_thread);
++	struct iothrottle_node *n;
++	dev_t dev = MKDEV(MAJOR(bdev->bd_inode->i_rdev),
++			bdev->bd_disk->first_minor);
++
++	n = iothrottle_search_node(iot, dev);
++	if (!n)
++		return;
++	iothrottle_stat_add_sleep(&n->stat, type, sleep);
 +}
 +
-+static void kiothrottled_sleep(void)
++static void iothrottle_acct_task_stat(int type, unsigned long long sleep)
 +{
-+	set_current_state(TASK_INTERRUPTIBLE);
-+	schedule();
++	/*
++	 * XXX: per-task statistics may be inaccurate (this is not a
++	 * critical issue, anyway, respect to introduce locking
++	 * overhead or increase the size of task_struct).
++	 */
++	switch (type) {
++	case IOTHROTTLE_BANDWIDTH:
++		current->io_throttle_bw_cnt++;
++		current->io_throttle_bw_sleep += sleep;
++		break;
++
++	case IOTHROTTLE_IOPS:
++		current->io_throttle_iops_cnt++;
++		current->io_throttle_iops_sleep += sleep;
++		break;
++	}
++}
++
++/*
++ * A helper function to get iothrottle from css id.
++ *
++ * NOTE: must be called under rcu_read_lock(). The caller must check
++ * css_is_removed() or some if it's concern.
++ */
++static struct iothrottle *iothrottle_lookup(unsigned long id)
++{
++	struct cgroup_subsys_state *css;
++
++	if (!id)
++		return NULL;
++	css = css_lookup(&iothrottle_subsys, id);
++	if (!css)
++		return NULL;
++	return container_of(css, struct iothrottle, css);
++}
++
++static struct iothrottle *get_iothrottle_from_page(struct page *page)
++{
++	struct iothrottle *iot;
++	unsigned long id;
++
++	BUG_ON(!page);
++	id = page_cgroup_get_owner(page);
++
++	rcu_read_lock();
++	iot = iothrottle_lookup(id);
++	if (!iot)
++		goto out;
++	css_get(&iot->css);
++out:
++	rcu_read_unlock();
++	return iot;
++}
++
++static struct iothrottle *get_iothrottle_from_bio(struct bio *bio)
++{
++	if (!bio)
++		return NULL;
++	return get_iothrottle_from_page(bio_page(bio));
++}
++
++int iothrottle_set_page_owner(struct page *page, struct mm_struct *mm)
++{
++	struct iothrottle *iot;
++	unsigned short id = 0;
++
++	if (iothrottle_disabled())
++		return 0;
++	if (!mm)
++		goto out;
++	rcu_read_lock();
++	iot = task_to_iothrottle(rcu_dereference(mm->owner));
++	if (likely(iot))
++		id = css_id(&iot->css);
++	rcu_read_unlock();
++out:
++	return page_cgroup_set_owner(page, id);
++}
++
++int iothrottle_set_pagedirty_owner(struct page *page, struct mm_struct *mm)
++{
++	if (PageSwapCache(page) || PageAnon(page))
++		return 0;
++	if (current->flags & PF_MEMALLOC)
++		return 0;
++	return iothrottle_set_page_owner(page, mm);
++}
++
++int iothrottle_copy_page_owner(struct page *npage, struct page *opage)
++{
++	if (iothrottle_disabled())
++		return 0;
++	return page_cgroup_copy_owner(npage, opage);
++}
++
++static inline int is_kthread_io(void)
++{
++	return current->flags & (PF_KTHREAD | PF_FLUSHER | PF_KSWAPD);
++}
++
++static bool is_urgent_io(struct bio *bio)
++{
++	if (bio && (bio_rw_meta(bio) || bio_noidle(bio)))
++		return true;
++	if (has_fs_excl())
++		return true;
++	return false;
++}
++
++static void iothrottle_force_sleep(int type, unsigned long long sleep)
++{
++	pr_debug("io-throttle: task %p (%s) must sleep %llu jiffies\n",
++			current, current->comm, sleep);
++	iothrottle_acct_task_stat(type, sleep);
++	schedule_timeout_killable(sleep);
 +}
 +
 +/**
-+ * kiothrottled() - throttle buffered (writeback) i/o activity
++ * cgroup_io_throttle() - account and throttle synchronous i/o activity
++ * @bio:	the bio structure used to retrieve the owner of the i/o
++ *		operation.
++ * @bdev:	block device involved for the i/o.
++ * @bytes:	size in bytes of the i/o operation.
 + *
-+ * Together with cgroup_io_throttle() this kernel thread represents the core of
-+ * the cgroup-io-throttle subsystem.
++ * This is the core of the block device i/o bandwidth controller. This function
++ * must be called by any function that generates i/o activity (directly or
++ * indirectly). It provides both i/o accounting and throttling functionalities;
++ * throttling is disabled if @can_sleep is set to 0.
 + *
-+ * All the writeback IO requests that need to be throttled are not dispatched
-+ * immediately in submit_bio(). Instead, they are added into the iot_bio_tree
-+ * rbtree by iothrottle_make_request() and processed asynchronously by
-+ * kiothrottled.
-+ *
-+ * A deadline is associated to each request depending on the bandwidth usage of
-+ * the cgroup it belongs. When a request is inserted into the rbtree
-+ * kiothrottled is awakened. This thread selects all the requests with an
-+ * expired deadline and submit the bunch of selected requests to the underlying
-+ * block devices using generic_make_request().
++ * Returns the value of sleep in jiffies if it was not possible to schedule the
++ * timeout.
 + **/
-+static int kiothrottled(void *__unused)
++unsigned long long
++cgroup_io_throttle(struct bio *bio, struct block_device *bdev, ssize_t bytes)
 +{
++	struct iothrottle *iot = NULL, *curr_iot;
++	struct iothrottle_sleep s = {};
++	unsigned long long sleep;
++	int type, can_sleep = 1;
++
++	if (iothrottle_disabled())
++		return 0;
++	if (unlikely(!bdev))
++		return 0;
++	BUG_ON(!bdev->bd_inode || !bdev->bd_disk);
 +	/*
-+	 * kiothrottled is responsible of dispatching all the writeback IO
-+	 * requests with an expired deadline. To dispatch those requests as
-+	 * soon as possible and to avoid priority inversion problems set
-+	 * maximum IO real-time priority for this thread.
++	 * Never throttle kernel threads directly, since they may completely
++	 * block other cgroups, the i/o on other block devices or even the
++	 * whole system.
++	 *
++	 * For the same reason never throttle IO that comes from tasks that are
++	 * holding exclusive access resources (urgent IO).
++	 *
++	 * And never sleep if we're inside an AIO context; just account the i/o
++	 * activity. Throttling is performed in io_submit_one() returning
++	 * -EAGAIN when the limits are exceeded.
 +	 */
-+	set_task_ioprio(current, IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 0));
-+
-+	while (!kthread_should_stop()) {
-+		struct iot_bio *data;
-+		struct rb_node *req;
-+		struct rb_root staging_tree = RB_ROOT;
-+		unsigned long now = jiffies;
-+		long delta_t = 0;
-+
-+		/* Select requests to dispatch */
-+		spin_lock_irq(&iot->lock);
-+		req = rb_first(&iot->tree);
-+		while (req) {
-+			data = rb_entry(req, struct iot_bio, node);
-+			delta_t = (long)data->deadline - (long)now;
-+			if (delta_t > 0)
-+				break;
-+			req = rb_next(&data->node);
-+			rb_erase(&data->node, &iot->tree);
-+			iot_bio_insert(&staging_tree, data);
-+		}
-+		spin_unlock_irq(&iot->lock);
-+
-+		/* Dispatch requests */
-+		req = rb_first(&staging_tree);
-+		while (req) {
-+			data = rb_entry(req, struct iot_bio, node);
-+			req = rb_next(&data->node);
-+			rb_erase(&data->node, &staging_tree);
-+			pr_debug("%s: dispatching request: %p (%lu)\n",
-+					__func__, data->bio, data->deadline);
-+			generic_make_request(data->bio);
-+			kfree(data);
-+		}
-+
-+		/* Wait for new requests ready to be dispatched */
-+		if (delta_t > 0)
-+			mod_timer(&kiothrottled_timer, jiffies + HZ);
-+		kiothrottled_sleep();
++	if (is_kthread_io() || is_urgent_io(bio) || is_in_aio())
++		can_sleep = 0;
++	/*
++	 * WARNING: in_atomic() do not know about held spinlocks in
++	 * non-preemptible kernels, but we want to check it here to raise
++	 * potential bugs when a preemptible kernel is used.
++	 */
++	WARN_ON_ONCE(can_sleep &&
++		(irqs_disabled() || in_interrupt() || in_atomic()));
++	/*
++	 * Evaluate the IO context of bio.
++	 *
++	 * In O_DIRECT mode the context of bio always refers to the current
++	 * task. Otherwise, to differentiate writeback IO from synchronous IO
++	 * we compare the bio's io-throttle cgroup with the current task's
++	 * cgroup. If they're different we're doing writeback IO and we can't
++	 * throttle the current task directly.
++	 */
++	if (!is_in_dio())
++		iot = get_iothrottle_from_bio(bio);
++	rcu_read_lock();
++	curr_iot = task_to_iothrottle(current);
++	if (curr_iot != iot) {
++		css_get(&curr_iot->css);
++		/*
++		 * IO occurs in a different context of the current task
++		 * (writeback IO).
++		 *
++		 * Do not throttle current task directly in this case, just
++		 * delay the submission of the IO request (that will be
++		 * dispatched by kiothrottled).
++		 */
++		can_sleep = 0;
 +	}
++	if (iot == NULL) {
++		/* IO occurs in the same context of the current task */
++		iot = curr_iot;
++	}
++	/* Apply IO throttling */
++	iothrottle_evaluate_sleep(&s, iot, bdev, bytes);
++	sleep = max(s.bw_sleep, s.iops_sleep);
++	type = (s.bw_sleep < s.iops_sleep) ?
++			IOTHROTTLE_IOPS : IOTHROTTLE_BANDWIDTH;
++	if (unlikely(sleep && can_sleep))
++		iothrottle_acct_stat(iot, bdev, type, sleep);
++	css_put(&iot->css);
++	if (curr_iot != iot)
++		css_put(&curr_iot->css);
++	rcu_read_unlock();
++	if (unlikely(sleep && can_sleep)) {
++		/* Throttle the current task directly */
++		iothrottle_force_sleep(type, sleep);
++		return 0;
++	}
++	/*
++	 * Account, but do not throttle async filesystems' metadata IO or IO
++	 * that is explicitly marked to not wait or being anticipated, i.e.
++	 * writes with wbc->sync_mode set to WBC_SYNC_ALL - fsync() - or
++	 * journal activity.
++	 */
++	if (is_urgent_io(bio))
++		sleep = 0;
++	return sleep;
++}
+diff --git a/include/linux/blk-io-throttle.h b/include/linux/blk-io-throttle.h
+new file mode 100644
+index 0000000..e448130
+--- /dev/null
++++ b/include/linux/blk-io-throttle.h
+@@ -0,0 +1,168 @@
++#ifndef BLK_IO_THROTTLE_H
++#define BLK_IO_THROTTLE_H
++
++#include <linux/fs.h>
++#include <linux/jiffies.h>
++#include <linux/sched.h>
++#include <linux/cgroup.h>
++#include <asm/atomic.h>
++#include <asm/current.h>
++
++#define IOTHROTTLE_BANDWIDTH	0
++#define IOTHROTTLE_IOPS		1
++#define IOTHROTTLE_FAILCNT	2
++#define IOTHROTTLE_STAT		3
++
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++
++static inline bool iothrottle_disabled(void)
++{
++	if (iothrottle_subsys.disabled)
++		return true;
++	return false;
++}
++
++extern unsigned long long
++cgroup_io_throttle(struct bio *bio, struct block_device *bdev, ssize_t bytes);
++
++extern int iothrottle_make_request(struct bio *bio, unsigned long deadline);
++
++int iothrottle_set_page_owner(struct page *page, struct mm_struct *mm);
++int iothrottle_set_pagedirty_owner(struct page *page, struct mm_struct *mm);
++int iothrottle_copy_page_owner(struct page *npage, struct page *opage);
++
++extern int iothrottle_sync(void);
++
++static inline void set_in_aio(void)
++{
++	atomic_set(&current->in_aio, 1);
++}
++
++static inline void unset_in_aio(void)
++{
++	atomic_set(&current->in_aio, 0);
++}
++
++static inline int is_in_aio(void)
++{
++	return atomic_read(&current->in_aio);
++}
++
++static inline void set_in_dio(void)
++{
++	atomic_set(&current->in_dio, 1);
++}
++
++static inline void unset_in_dio(void)
++{
++	atomic_set(&current->in_dio, 0);
++}
++
++static inline int is_in_dio(void)
++{
++	return atomic_read(&current->in_dio);
++}
++
++static inline unsigned long long
++get_io_throttle_cnt(struct task_struct *t, int type)
++{
++	switch (type) {
++	case IOTHROTTLE_BANDWIDTH:
++		return t->io_throttle_bw_cnt;
++	case IOTHROTTLE_IOPS:
++		return t->io_throttle_iops_cnt;
++	}
++	BUG();
++}
++
++static inline unsigned long long
++get_io_throttle_sleep(struct task_struct *t, int type)
++{
++	switch (type) {
++	case IOTHROTTLE_BANDWIDTH:
++		return jiffies_to_clock_t(t->io_throttle_bw_sleep);
++	case IOTHROTTLE_IOPS:
++		return jiffies_to_clock_t(t->io_throttle_iops_sleep);
++	}
++	BUG();
++}
++#else /* CONFIG_CGROUP_IO_THROTTLE */
++
++static inline bool iothrottle_disabled(void)
++{
++	return true;
++}
++
++static inline unsigned long long
++cgroup_io_throttle(struct bio *bio, struct block_device *bdev, ssize_t bytes)
++{
 +	return 0;
 +}
 +
-+/* TODO: handle concurrent startup and shutdown */
-+static void kiothrottle_shutdown(void)
++static inline int
++iothrottle_make_request(struct bio *bio, unsigned long deadline)
 +{
-+	if (!kiothrottled_thread)
-+		return;
-+	del_timer(&kiothrottled_timer);
-+	printk(KERN_INFO "%s: stopping kiothrottled\n", __func__);
-+	kthread_stop(kiothrottled_thread);
-+	printk(KERN_INFO "%s: flushing pending requests\n", __func__);
-+	spin_lock_irq(&iot->lock);
-+	kiothrottled_thread = NULL;
-+	spin_unlock_irq(&iot->lock);
-+	iot_bio_cleanup(&iot->tree);
-+}
-+
-+static int kiothrottle_startup(void)
-+{
-+	init_timer(&kiothrottled_timer);
-+	kiothrottled_timer.function = kiothrottled_timer_expired;
-+
-+	printk(KERN_INFO "%s: starting kiothrottled\n", __func__);
-+	kiothrottled_thread = kthread_run(kiothrottled, NULL, "kiothrottled");
-+	if (IS_ERR(kiothrottled_thread))
-+		return -PTR_ERR(kiothrottled_thread);
 +	return 0;
 +}
 +
-+/*
-+ * NOTE: provide this interface only for emergency situations, when we need to
-+ * force the immediate flush of pending (writeback) IO throttled requests.
++static inline int iothrottle_set_page_owner(struct page *page,
++				struct mm_struct *mm)
++{
++	return 0;
++}
++
++static inline int iothrottle_set_pagedirty_owner(struct page *page,
++				struct mm_struct *mm)
++{
++	return 0;
++}
++
++static inline int iothrottle_copy_page_owner(struct page *npage,
++				struct page *opage)
++{
++	return 0;
++}
++
++static inline int iothrottle_sync(void)
++{
++	return 0;
++}
++
++static inline void set_in_aio(void) { }
++
++static inline void unset_in_aio(void) { }
++
++static inline int is_in_aio(void)
++{
++	return 0;
++}
++
++static inline void set_in_dio(void) { }
++
++static inline void unset_in_dio(void) { }
++
++static inline int is_in_dio(void)
++{
++	return 0;
++}
++
++static inline unsigned long long
++get_io_throttle_cnt(struct task_struct *t, int type)
++{
++	return 0;
++}
++
++static inline unsigned long long
++get_io_throttle_sleep(struct task_struct *t, int type)
++{
++	return 0;
++}
++#endif /* CONFIG_CGROUP_IO_THROTTLE */
++
++static inline struct block_device *as_to_bdev(struct address_space *mapping)
++{
++	return (mapping->host && mapping->host->i_sb->s_bdev) ?
++		mapping->host->i_sb->s_bdev : NULL;
++}
++
++#endif /* BLK_IO_THROTTLE_H */
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 665fa70..40cb412 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -28,6 +28,7 @@ struct css_id;
+ extern int cgroup_init_early(void);
+ extern int cgroup_init(void);
+ extern void cgroup_lock(void);
++extern int cgroup_is_locked(void);
+ extern bool cgroup_lock_live_group(struct cgroup *cgrp);
+ extern void cgroup_unlock(void);
+ extern void cgroup_fork(struct task_struct *p);
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 9c8d31b..c37cc4b 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -43,6 +43,12 @@ SUBSYS(mem_cgroup)
+ 
+ /* */
+ 
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++SUBSYS(iothrottle)
++#endif
++
++/* */
++
+ #ifdef CONFIG_CGROUP_DEVICE
+ SUBSYS(devices)
+ #endif
+diff --git a/init/Kconfig b/init/Kconfig
+index 5428ac7..d496c5f 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -565,6 +565,18 @@ config RESOURCE_COUNTERS
+ 	  infrastructure that works with cgroups.
+ 	depends on CGROUPS
+ 
++config CGROUP_IO_THROTTLE
++	bool "Enable cgroup I/O throttling"
++	depends on CGROUPS && RESOURCE_COUNTERS && EXPERIMENTAL
++	select MM_OWNER
++	select PAGE_TRACKING
++	help
++	  This allows to limit the maximum I/O bandwidth for specific
++	  cgroup(s).
++	  See Documentation/cgroups/io-throttle.txt for more information.
++
++	  If unsure, say N.
++
+ config CGROUP_MEM_RES_CTLR
+ 	bool "Memory Resource Controller for Control Groups"
+ 	depends on CGROUPS && RESOURCE_COUNTERS
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 382109b..5dbb2a7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -584,6 +584,15 @@ void cgroup_unlock(void)
+ 	mutex_unlock(&cgroup_mutex);
+ }
+ 
++/**
++ * cgroup_is_locked - check if the cgroup mutex is locked
++ *
 + */
-+int iothrottle_sync(void)
++int cgroup_is_locked(void)
 +{
-+	kiothrottle_shutdown();
-+	return kiothrottle_startup();
-+}
-+EXPORT_SYMBOL(iothrottle_sync);
-+
-+/*
-+ * Writing in /proc/kiothrottled_debug enforces an immediate flush of throttled
-+ * IO requests.
-+ */
-+static ssize_t kiothrottle_write(struct file *filp, const char __user *buffer,
-+				size_t count, loff_t *data)
-+{
-+	int ret;
-+
-+	ret = iothrottle_sync();
-+	if (ret)
-+		return ret;
-+	return count;
++	return mutex_is_locked(&cgroup_mutex);
 +}
 +
-+/*
-+ * Export to userspace the list of pending IO throttled requests.
-+ * TODO: this can be useful only for debugging, maybe we should make this
-+ * interface optionally, depending on an opportune compile-time config option.
-+ */
-+static int kiothrottle_show(struct seq_file *m, void *v)
-+{
-+	struct iot_bio *data;
-+	struct rb_node *next;
-+	unsigned long now = jiffies;
-+	long delta_t;
-+
-+	spin_lock_irq(&iot->lock);
-+	next = rb_first(&iot->tree);
-+	while (next) {
-+		data = rb_entry(next, struct iot_bio, node);
-+		delta_t = (long)data->deadline - (long)now;
-+		seq_printf(m, "%p %lu %lu %li\n", data->bio,
-+				data->deadline, now, delta_t);
-+		next = rb_next(&data->node);
-+	}
-+	spin_unlock_irq(&iot->lock);
-+
-+	return 0;
-+}
-+
-+static int kiothrottle_open(struct inode *inode, struct file *filp)
-+{
-+	return single_open(filp, kiothrottle_show, NULL);
-+}
-+
-+static const struct file_operations kiothrottle_ops = {
-+	.open           = kiothrottle_open,
-+	.read           = seq_read,
-+	.write		= kiothrottle_write,
-+	.llseek         = seq_lseek,
-+	.release        = seq_release,
-+};
-+
-+int __init kiothrottled_init(void)
-+{
-+	struct proc_dir_entry *pe;
-+	int ret;
-+
-+	iot = kzalloc(sizeof(*iot), GFP_KERNEL);
-+	if (unlikely(!iot))
-+		return -ENOMEM;
-+	spin_lock_init(&iot->lock);
-+	iot->tree = RB_ROOT;
-+
-+	pe = create_proc_entry("kiothrottled_debug", 0644, NULL);
-+	if (!pe) {
-+		kfree(iot);
-+		return -ENOMEM;
-+	}
-+	pe->proc_fops = &kiothrottle_ops;
-+
-+	ret = kiothrottle_startup();
-+	if (ret) {
-+		remove_proc_entry("kiothrottled_debug", NULL);
-+		kfree(iot);
-+		return ret;
-+	}
-+	printk(KERN_INFO "%s: initialized\n", __func__);
-+	return 0;
-+}
-+
-+void __exit kiothrottled_exit(void)
-+{
-+	kiothrottle_shutdown();
-+	remove_proc_entry("kiothrottled_debug", NULL);
-+	kfree(iot);
-+	printk(KERN_INFO "%s: unloaded\n", __func__);
-+}
-+
-+module_init(kiothrottled_init);
-+module_exit(kiothrottled_exit);
-+MODULE_LICENSE("GPL");
+ /*
+  * A couple of forward declarations required, due to cyclic reference loop:
+  * cgroup_mkdir -> cgroup_create -> cgroup_populate_dir ->
 -- 
 1.6.0.4
