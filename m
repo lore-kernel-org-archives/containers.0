@@ -1,7 +1,8 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v15 2/7] res_counter: introduce ratelimiting attributes
-Date: Tue, 28 Apr 2009 10:43:49 +0200
-Message-ID: <1240908234-15434-3-git-send-email-righi.andrea__20164.2550564886$1240908702$gmane$org@gmail.com>
+Subject: [PATCH v15 3/7] page_cgroup: provide a generic page tracking
+	infrastructure
+Date: Tue, 28 Apr 2009 10:43:50 +0200
+Message-ID: <1240908234-15434-4-git-send-email-righi.andrea__34357.0698671558$1240908929$gmane$org@gmail.com>
 References: <1240908234-15434-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,252 +22,363 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Introduce attributes and functions in res_counter to implement
-throttling-based cgroup subsystems.
+Dirty pages in the page cache can be processed asynchronously by kernel
+threads (pdflush) using a writeback policy. For this reason the real
+writes to the underlying block devices occur in a different IO context
+respect to the task that originally generated the dirty pages involved
+in the IO operation. This makes the tracking and throttling of writeback
+IO more complicate respect to the synchronous IO.
 
-The following attributes have been added to struct res_counter:
-  * @policy:     the limiting policy / algorithm
-  * @capacity:   the maximum capacity of the resource (the unit of
-                 measurement depends on the particular resource)
-  * @timestamp:  timestamp of the last accounted resource request
+The page_cgroup infrastructure, currently available only for the memory
+cgroup controller, can be used to store the owner of each page and
+opportunely track the writeback IO. This information is encoded in
+page_cgroup->flags.
 
-Currently the available policies are: token-bucket and leaky-bucket
-and the attribute @capacity is only used by token-bucket policy (to
-represent the bucket size).
+A owner can be identified using a generic ID number and the following
+interfaces are provided to store a retrieve this information:
 
-The following function has been implemented to return the amount of time
-a cgroup should be throttled to remain within the defined resource
-limits.
+  unsigned long page_cgroup_get_owner(struct page *page);
+  int page_cgroup_set_owner(struct page *page, unsigned long id);
+  int page_cgroup_copy_owner(struct page *npage, struct page *opage);
 
-  unsigned long long
-  res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
+The io-throttle controller uses the cgroup css_id() as the owner's ID
+number.
 
-[ Note: only the interfaces needed by the cgroup IO controller are
-implemented right now ]
+A big part of this code is taken from the Ryo and Hirokazu's
+bio-cgroup controller (http://people.valinux.co.jp/~ryov/bio-cgroup/).
 
-TODO (reduce the size of struct res_counter):
- - replace policy with a more generic unsigned int flags and encode the
-   policy using a single bit of flags
- - use int for failcnt (unsigned long long is probably too much)
- - union max_usage and capacity: max_usage is not used in ratelimited
-   resources and capacity is not used in all the other cases (it has
-   been introduced only for ratelimited resources)
+TODO: try to remove the lock/unlock_page_cgroup() in
+page_cgroup_*_owner().
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 ---
- include/linux/res_counter.h |   69 ++++++++++++++++++++++++++++++----------
- kernel/res_counter.c        |   73 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 125 insertions(+), 17 deletions(-)
+ include/linux/memcontrol.h  |    6 +++
+ include/linux/mmzone.h      |    4 +-
+ include/linux/page_cgroup.h |   33 +++++++++++++-
+ init/Kconfig                |    4 ++
+ mm/Makefile                 |    3 +-
+ mm/memcontrol.c             |    6 +++
+ mm/page_cgroup.c            |   96 ++++++++++++++++++++++++++++++++++++++-----
+ 7 files changed, 135 insertions(+), 17 deletions(-)
 
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 4c5bcf6..9bed6af 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -14,30 +14,36 @@
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index a9e3b76..e80e335 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -37,6 +37,8 @@ struct mm_struct;
+  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
   */
  
- #include <linux/cgroup.h>
-+#include <linux/jiffies.h>
++extern void __init_mem_page_cgroup(struct page_cgroup *pc);
++
+ extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
+ 				gfp_t gfp_mask);
+ /* for swap handling */
+@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct task_struct *task);
+ #else /* CONFIG_CGROUP_MEM_RES_CTLR */
+ struct mem_cgroup;
  
--/*
-- * The core object. the cgroup that wishes to account for some
-- * resource may include this counter into its structures and use
-- * the helpers described beyond
-- */
-+/* The various policies that can be used for ratelimiting resources */
-+#define	RATELIMIT_LEAKY_BUCKET	0
-+#define	RATELIMIT_TOKEN_BUCKET	1
++static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++}
++
+ static inline int mem_cgroup_newpage_charge(struct page *page,
+ 					struct mm_struct *mm, gfp_t gfp_mask)
+ {
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 186ec6a..b178eb9 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -607,7 +607,7 @@ typedef struct pglist_data {
+ 	int nr_zones;
+ #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
+ 	struct page *node_mem_map;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
+ 	struct page_cgroup *node_page_cgroup;
+ #endif
+ #endif
+@@ -958,7 +958,7 @@ struct mem_section {
  
-+/**
-+ * struct res_counter - the core object to account cgroup resources
-+ *
-+ * @usage:	the current resource consumption level
-+ * @max_usage:	the maximal value of the usage from the counter creation
-+ * @limit:	the limit that usage cannot be exceeded
-+ * @failcnt:	the number of unsuccessful attempts to consume the resource
-+ * @policy:	the limiting policy / algorithm
-+ * @capacity:	the maximum capacity of the resource
-+ * @timestamp:	timestamp of the last accounted resource request
-+ * @lock:	the lock to protect all of the above.
-+ *		The routines below consider this to be IRQ-safe
-+ *
-+ * The cgroup that wishes to account for some resource may include this counter
-+ * into its structures and use the helpers described beyond.
-+ */
- struct res_counter {
--	/*
--	 * the current resource consumption level
--	 */
- 	unsigned long long usage;
--	/*
--	 * the maximal value of the usage from the counter creation
--	 */
- 	unsigned long long max_usage;
--	/*
--	 * the limit that usage cannot exceed
--	 */
- 	unsigned long long limit;
--	/*
--	 * the number of unsuccessful attempts to consume the resource
--	 */
- 	unsigned long long failcnt;
-+	unsigned long long policy;
-+	unsigned long long capacity;
-+	unsigned long long timestamp;
+ 	/* See declaration of similar field in struct zone */
+ 	unsigned long *pageblock_flags;
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
  	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
-@@ -84,6 +90,9 @@ enum {
- 	RES_USAGE,
- 	RES_MAX_USAGE,
- 	RES_LIMIT,
-+	RES_POLICY,
-+	RES_TIMESTAMP,
-+	RES_CAPACITY,
- 	RES_FAILCNT,
+ 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
+ 	 * section. (see memcontrol.h/page_cgroup.h about this.)
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index 7339c7b..f24d081 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -1,7 +1,7 @@
+ #ifndef __LINUX_PAGE_CGROUP_H
+ #define __LINUX_PAGE_CGROUP_H
+ 
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_PAGE_TRACKING
+ #include <linux/bit_spinlock.h>
+ /*
+  * Page Cgroup can be considered as an extended mem_map.
+@@ -12,11 +12,38 @@
+  */
+ struct page_cgroup {
+ 	unsigned long flags;
+-	struct mem_cgroup *mem_cgroup;
+ 	struct page *page;
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct mem_cgroup *mem_cgroup;
+ 	struct list_head lru;		/* per cgroup LRU list */
++#endif
  };
  
-@@ -130,6 +139,15 @@ static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
- 	return false;
- }
- 
-+static inline unsigned long long
-+res_counter_ratelimit_delta_t(struct res_counter *res)
++/*
++ * use lower 16 bits for flags and reserve the rest for the page tracking id
++ */
++#define PAGE_TRACKING_ID_SHIFT	(16)
++#define PAGE_TRACKING_ID_BITS \
++		(8 * sizeof(unsigned long) - PAGE_TRACKING_ID_SHIFT)
++
++/* NOTE: must be called with page_cgroup() held */
++static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
 +{
-+	return (long long)get_jiffies_64() - (long long)res->timestamp;
++	return pc->flags >> PAGE_TRACKING_ID_SHIFT;
 +}
 +
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-+
- /*
-  * Helper function to detect if the cgroup is within it's limit or
-  * not. It's currently called from cgroup_rss_prepare()
-@@ -163,6 +181,23 @@ static inline void res_counter_reset_failcnt(struct res_counter *cnt)
- 	spin_unlock_irqrestore(&cnt->lock, flags);
- }
- 
-+static inline int
-+res_counter_ratelimit_set_limit(struct res_counter *cnt,
-+			unsigned long long policy,
-+			unsigned long long limit, unsigned long long max)
++/* NOTE: must be called with page_cgroup() held */
++static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
 +{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&cnt->lock, flags);
-+	cnt->limit = limit;
-+	cnt->capacity = max;
-+	cnt->policy = policy;
-+	cnt->timestamp = get_jiffies_64();
-+	cnt->usage = 0;
-+	spin_unlock_irqrestore(&cnt->lock, flags);
-+	return 0;
++	WARN_ON(id >= (1UL << PAGE_TRACKING_ID_BITS));
++	pc->flags &= (1UL << PAGE_TRACKING_ID_SHIFT) - 1;
++	pc->flags |= (unsigned long)(id << PAGE_TRACKING_ID_SHIFT);
 +}
 +
- static inline int res_counter_set_limit(struct res_counter *cnt,
- 		unsigned long long limit)
- {
-diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index bf8e753..6f882c6 100644
---- a/kernel/res_counter.c
-+++ b/kernel/res_counter.c
-@@ -9,6 +9,7 @@
++unsigned long page_cgroup_get_owner(struct page *page);
++int page_cgroup_set_owner(struct page *page, unsigned long id);
++int page_cgroup_copy_owner(struct page *npage, struct page *opage);
++
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
+ void __init page_cgroup_init(void);
+ struct page_cgroup *lookup_page_cgroup(struct page *page);
+@@ -71,7 +98,7 @@ static inline void unlock_page_cgroup(struct page_cgroup *pc)
+ 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+ }
  
- #include <linux/types.h>
- #include <linux/parser.h>
-+#include <linux/jiffies.h>
- #include <linux/fs.h>
+-#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++#else /* CONFIG_PAGE_TRACKING */
+ struct page_cgroup;
+ 
+ static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+diff --git a/init/Kconfig b/init/Kconfig
+index 7be4d38..5428ac7 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -569,6 +569,7 @@ config CGROUP_MEM_RES_CTLR
+ 	bool "Memory Resource Controller for Control Groups"
+ 	depends on CGROUPS && RESOURCE_COUNTERS
+ 	select MM_OWNER
++	select PAGE_TRACKING
+ 	help
+ 	  Provides a memory resource controller that manages both anonymous
+ 	  memory and page cache. (See Documentation/cgroups/memory.txt)
+@@ -611,6 +612,9 @@ endif # CGROUPS
+ config MM_OWNER
+ 	bool
+ 
++config PAGE_TRACKING
++	bool
++
+ config SYSFS_DEPRECATED
+ 	bool
+ 
+diff --git a/mm/Makefile b/mm/Makefile
+index ec73c68..b94e074 100644
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -37,4 +37,5 @@ else
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ endif
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+-obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
++obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
++obj-$(CONFIG_PAGE_TRACKING) += page_cgroup.o
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index e44fb0f..69d1c31 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -2524,6 +2524,12 @@ struct cgroup_subsys mem_cgroup_subsys = {
+ 	.use_id = 1,
+ };
+ 
++void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
++{
++	pc->mem_cgroup = NULL;
++	INIT_LIST_HEAD(&pc->lru);
++}
++
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ 
+ static int __init disable_swap_account(char *s)
+diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
+index 791905c..ec9ed05 100644
+--- a/mm/page_cgroup.c
++++ b/mm/page_cgroup.c
+@@ -3,6 +3,7 @@
+ #include <linux/bootmem.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/page_cgroup.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/hash.h>
  #include <linux/slab.h>
- #include <linux/res_counter.h>
-@@ -20,6 +21,8 @@ void res_counter_init(struct res_counter *counter, struct res_counter *parent)
- 	spin_lock_init(&counter->lock);
- 	counter->limit = (unsigned long long)LLONG_MAX;
- 	counter->parent = parent;
-+	counter->capacity = (unsigned long long)LLONG_MAX;
-+	counter->timestamp = get_jiffies_64();
+ #include <linux/memory.h>
+@@ -14,9 +15,8 @@ static void __meminit
+ __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
+ {
+ 	pc->flags = 0;
+-	pc->mem_cgroup = NULL;
+ 	pc->page = pfn_to_page(pfn);
+-	INIT_LIST_HEAD(&pc->lru);
++	__init_mem_page_cgroup(pc);
+ }
+ static unsigned long total_usage;
+ 
+@@ -74,7 +74,7 @@ void __init page_cgroup_init(void)
+ 
+ 	int nid, fail;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && iothrottle_disabled())
+ 		return;
+ 
+ 	for_each_online_node(nid)  {
+@@ -83,12 +83,13 @@ void __init page_cgroup_init(void)
+ 			goto fail;
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try cgroup_disable=memory option if you"
+-	" don't want\n");
++	printk(KERN_INFO
++		"try cgroup_disable=memory,blockio option if you don't want\n");
+ 	return;
+ fail:
+ 	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
+-	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
++	printk(KERN_CRIT
++		"try cgroup_disable=memory,blockio boot option\n");
+ 	panic("Out of memory");
  }
  
- int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
-@@ -99,6 +102,12 @@ res_counter_member(struct res_counter *counter, int member)
- 		return &counter->max_usage;
- 	case RES_LIMIT:
- 		return &counter->limit;
-+	case RES_POLICY:
-+		return &counter->policy;
-+	case RES_TIMESTAMP:
-+		return &counter->timestamp;
-+	case RES_CAPACITY:
-+		return &counter->capacity;
- 	case RES_FAILCNT:
- 		return &counter->failcnt;
- 	};
-@@ -163,3 +172,67 @@ int res_counter_write(struct res_counter *counter, int member,
- 	spin_unlock_irqrestore(&counter->lock, flags);
- 	return 0;
+@@ -248,7 +249,7 @@ void __init page_cgroup_init(void)
+ 	unsigned long pfn;
+ 	int fail = 0;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && iothrottle_disabled())
+ 		return;
+ 
+ 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+@@ -257,14 +258,15 @@ void __init page_cgroup_init(void)
+ 		fail = init_section_page_cgroup(pfn);
+ 	}
+ 	if (fail) {
+-		printk(KERN_CRIT "try cgroup_disable=memory boot option\n");
++		printk(KERN_CRIT
++			"try cgroup_disable=memory,blockio boot option\n");
+ 		panic("Out of memory");
+ 	} else {
+ 		hotplug_memory_notifier(page_cgroup_callback, 0);
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
+-	" want\n");
++	printk(KERN_INFO
++		"try cgroup_disable=memory,blockio option if you don't want\n");
  }
+ 
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+@@ -272,8 +274,80 @@ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+ 	return;
+ }
+ 
+-#endif
++#endif /* !defined(CONFIG_SPARSEMEM) */
 +
-+/* Note: called with res->lock held */
-+static unsigned long long
-+ratelimit_leaky_bucket(struct res_counter *res, ssize_t val)
++/**
++ * page_cgroup_get_owner() - get the owner ID of a page
++ * @page:	the page we want to find the owner
++ *
++ * Returns the owner ID of the page, 0 means that the owner cannot be
++ * retrieved.
++ **/
++unsigned long page_cgroup_get_owner(struct page *page)
 +{
-+	unsigned long long delta, t;
++	struct page_cgroup *pc;
++	unsigned long ret;
 +
-+	res->usage += val;
-+	delta = res_counter_ratelimit_delta_t(res);
-+	if (!delta)
++	pc = lookup_page_cgroup(page);
++	if (unlikely(!pc))
 +		return 0;
-+	t = res->usage * USEC_PER_SEC;
-+	t = usecs_to_jiffies(div_u64(t, res->limit));
-+	if (t > delta)
-+		return t - delta;
-+	/* Reset i/o statistics */
-+	res->usage = 0;
-+	res->timestamp = get_jiffies_64();
++
++	lock_page_cgroup(pc);
++	ret = page_cgroup_get_id(pc);
++	unlock_page_cgroup(pc);
++	return ret;
++}
++
++/**
++ * page_cgroup_set_owner() - set the owner ID of a page
++ * @page:	the page we want to tag
++ * @id:		the ID number that will be associated to page
++ *
++ * Returns 0 if the owner is correctly associated to the page. Returns a
++ * negative value in case of failure.
++ **/
++int page_cgroup_set_owner(struct page *page, unsigned long id)
++{
++	struct page_cgroup *pc;
++
++	pc = lookup_page_cgroup(page);
++	if (unlikely(!pc))
++		return -ENOENT;
++
++	lock_page_cgroup(pc);
++	page_cgroup_set_id(pc, id);
++	unlock_page_cgroup(pc);
 +	return 0;
 +}
-+
-+/* Note: called with res->lock held */
-+static unsigned long long
-+ratelimit_token_bucket(struct res_counter *res, ssize_t val)
+ 
++/**
++ * page_cgroup_copy_owner() - copy the owner ID of a page into another page
++ * @npage:	the page where we want to copy the owner
++ * @opage:	the page from which we want to copy the ID
++ *
++ * Returns 0 if the owner is correctly associated to npage. Returns a negative
++ * value in case of failure.
++ **/
++int page_cgroup_copy_owner(struct page *npage, struct page *opage)
 +{
-+	unsigned long long delta;
-+	long long tok;
++	struct page_cgroup *npc, *opc;
++	unsigned long id;
 +
-+	res->usage -= val;
-+	delta = jiffies_to_msecs(res_counter_ratelimit_delta_t(res));
-+	res->timestamp = get_jiffies_64();
-+	tok = (long long)res->usage * MSEC_PER_SEC;
-+	if (delta) {
-+		long long max = (long long)res->capacity * MSEC_PER_SEC;
++	npc = lookup_page_cgroup(npage);
++	if (unlikely(!npc))
++		return -ENOENT;
++	opc = lookup_page_cgroup(opage);
++	if (unlikely(!opc))
++		return -ENOENT;
++	lock_page_cgroup(opc);
++	lock_page_cgroup(npc);
++	id = page_cgroup_get_id(opc);
++	page_cgroup_set_id(npc, id);
++	unlock_page_cgroup(npc);
++	unlock_page_cgroup(opc);
 +
-+		tok += delta * res->limit;
-+		tok = max_t(long long, tok, max);
-+		res->usage = (unsigned long long)div_s64(tok, MSEC_PER_SEC);
-+	}
-+	return (tok < 0) ? msecs_to_jiffies(div_u64(-tok, res->limit)) : 0;
++	return 0;
 +}
-+
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long sleep = 0;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&res->lock, flags);
-+	if (res->limit)
-+		switch (res->policy) {
-+		case RATELIMIT_LEAKY_BUCKET:
-+			sleep = ratelimit_leaky_bucket(res, val);
-+			break;
-+		case RATELIMIT_TOKEN_BUCKET:
-+			sleep = ratelimit_token_bucket(res, val);
-+			break;
-+		default:
-+			WARN_ON(1);
-+			break;
-+		}
-+	spin_unlock_irqrestore(&res->lock, flags);
-+	return sleep;
-+}
+ 
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ 
 -- 
 1.6.0.4
