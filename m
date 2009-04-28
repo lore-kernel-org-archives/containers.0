@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 07/54] cr: extend arch_setup_additional_pages()
-Date: Tue, 28 Apr 2009 19:23:37 -0400
-Message-ID: <1240961064-13991-8-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 23/54] Restore open pipes
+Date: Tue, 28 Apr 2009 19:23:53 -0400
+Message-ID: <1240961064-13991-24-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,244 +21,232 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+When seeing a CKPT_FD_PIPE file type, we create a new pipe and thus
+have two file pointers (read- and write- ends). We only use one of
+them, depending on which side was checkpointed first. We register the
+file pointer of the other end in the hash table, with the 'objref'
+given for this pipe from the checkpoint, deposited for later use. At
+this point we also restore the contents of the pipe buffers.
 
-Add "start" argument, to request to map vDSO to a specific place,
-and fail the operation if not.
+When the other end arrives, it will have file type CKPT_FD_OBJREF. We
+will then use the corresponding 'objref' to retrieve the file pointer
+from the hash table, and attach it to the process.
 
-This is useful for restart(2) to ensure that memory layout is restore
-exactly as needed.
+Note the difference from the checkpoint logic: during checkpoint we
+placed the _inode_ of the pipe in the hash table, while during restart
+we place the resulting _file_ in the hash table.
 
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+We restore the pipe contents we manually allocation and attaching
+buffers to the pipe; (alternatively we could read the data from the
+image file and then write it into the pipe, or use splice() syscall).
+
+Changelog[v14]:
+  - Discard the 'h.parent' field
+  - Check whether calls to ckpt_hbuf_get() fail
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/powerpc/include/asm/elf.h     |    1 +
- arch/powerpc/kernel/vdso.c         |   11 ++++++++++-
- arch/s390/include/asm/elf.h        |    2 +-
- arch/s390/kernel/vdso.c            |   11 ++++++++++-
- arch/sh/include/asm/elf.h          |    1 +
- arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
- arch/x86/include/asm/elf.h         |    3 ++-
- arch/x86/vdso/vdso32-setup.c       |    9 +++++++--
- arch/x86/vdso/vma.c                |    9 +++++++--
- fs/binfmt_elf.c                    |    2 +-
- 10 files changed, 41 insertions(+), 10 deletions(-)
+ checkpoint/files.c        |    7 ++
+ fs/pipe.c                 |  136 +++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/pipe_fs_i.h |    9 +++
+ 3 files changed, 152 insertions(+), 0 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/elf.h b/arch/powerpc/include/asm/elf.h
-index 1a856b1..aa020f5 100644
---- a/arch/powerpc/include/asm/elf.h
-+++ b/arch/powerpc/include/asm/elf.h
-@@ -269,6 +269,7 @@ extern int ucache_bsize;
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
- struct linux_binprm;
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- #define VDSO_AUX_ENT(a,b) NEW_AUX_ENT(a,b);
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 835e39c..c6a946b 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -17,6 +17,7 @@
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
+ #include <linux/syscalls.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
-diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
-index ad06d5c..48beff6 100644
---- a/arch/powerpc/kernel/vdso.c
-+++ b/arch/powerpc/kernel/vdso.c
-@@ -184,7 +184,8 @@ static void dump_vdso_pages(struct vm_area_struct * vma)
-  * This is called from binfmt_elf, we create the special vma for the
-  * vDSO and insert it into the mm struct tree
-  */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	struct page **vdso_pagelist;
-@@ -211,6 +212,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	vdso_base = VDSO32_MBASE;
- #endif
+@@ -415,6 +416,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_GENERIC,
+ 		.restore = generic_file_restore,
+ 	},
++	/* pipe */
++	{
++		.file_name = "PIPE",
++		.file_type = CKPT_FILE_PIPE,
++		.restore = pipe_file_restore,
++	},
+ };
  
-+	/* in case restart(2) mandates a specific location */
-+	if (start)
-+		vdso_base = start;
-+
- 	current->mm->context.vdso_base = 0;
- 
- 	/* vDSO has a problem and was disabled, just don't "enable" it for the
-@@ -234,6 +239,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 		goto fail_mmapsem;
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && vdso_base != start)
-+		goto fail_mmapsem;
-+
- 	/*
- 	 * our vma flags don't have VM_WRITE so by default, the process isn't
- 	 * allowed to write those pages.
-diff --git a/arch/s390/include/asm/elf.h b/arch/s390/include/asm/elf.h
-index 74d0bbb..54235bc 100644
---- a/arch/s390/include/asm/elf.h
-+++ b/arch/s390/include/asm/elf.h
-@@ -205,6 +205,6 @@ do {									    \
- struct linux_binprm;
- 
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
--int arch_setup_additional_pages(struct linux_binprm *, int);
-+int arch_setup_additional_pages(struct linux_binprm *, unsigned long, int);
- 
- #endif
-diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
-index 89b2e7f..34b6e0c 100644
---- a/arch/s390/kernel/vdso.c
-+++ b/arch/s390/kernel/vdso.c
-@@ -182,7 +182,8 @@ static void vdso_init_cr5(void)
-  * This is called from binfmt_elf, we create the special vma for the
-  * vDSO and insert it into the mm struct tree
-  */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	struct page **vdso_pagelist;
-@@ -213,6 +214,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	vdso_pages = vdso32_pages;
- #endif
- 
-+	/* in case restart(2) mandates a specific location */
-+	if (start)
-+		vdso_base = start;
-+
- 	/*
- 	 * vDSO has a problem and was disabled, just don't "enable" it for
- 	 * the process
-@@ -235,6 +240,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 		goto out_up;
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && addr != start)
-+		goto out_up;
-+
- 	/*
- 	 * our vma flags don't have VM_WRITE so by default, the process
- 	 * isn't allowed to write those pages.
-diff --git a/arch/sh/include/asm/elf.h b/arch/sh/include/asm/elf.h
-index ccb1d93..6c27b1f 100644
---- a/arch/sh/include/asm/elf.h
-+++ b/arch/sh/include/asm/elf.h
-@@ -202,6 +202,7 @@ do {									\
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
- struct linux_binprm;
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- 
- extern unsigned int vdso_enabled;
-diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
-index 3f7e415..64c70e5 100644
---- a/arch/sh/kernel/vsyscall/vsyscall.c
-+++ b/arch/sh/kernel/vsyscall/vsyscall.c
-@@ -59,7 +59,7 @@ int __init vsyscall_init(void)
+ static struct file *do_restore_file(struct ckpt_ctx *ctx)
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 651a7fc..ab2de3c 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -899,6 +899,142 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
  }
- 
- /* Setup a VMA at program startup for the vsyscall page */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
-diff --git a/arch/x86/include/asm/elf.h b/arch/x86/include/asm/elf.h
-index 83c1bc8..a4398c8 100644
---- a/arch/x86/include/asm/elf.h
-+++ b/arch/x86/include/asm/elf.h
-@@ -336,9 +336,10 @@ struct linux_binprm;
- 
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- 
--extern int syscall32_setup_pages(struct linux_binprm *, int exstack);
-+extern int syscall32_setup_pages(struct linux_binprm *, unsigned long start, int exstack);
- #define compat_arch_setup_additional_pages	syscall32_setup_pages
- 
- extern unsigned long arch_randomize_brk(struct mm_struct *mm);
-diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
-index 1241f11..9c72a23 100644
---- a/arch/x86/vdso/vdso32-setup.c
-+++ b/arch/x86/vdso/vdso32-setup.c
-@@ -310,7 +310,8 @@ int __init sysenter_setup(void)
- }
- 
- /* Setup a VMA at program startup for the vsyscall page */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
-@@ -331,13 +332,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	if (compat)
- 		addr = VDSO_HIGH_BASE;
- 	else {
--		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, 0);
-+		addr = get_unmapped_area(NULL, start, PAGE_SIZE, 0, 0);
- 		if (IS_ERR_VALUE(addr)) {
- 			ret = addr;
- 			goto up_fail;
- 		}
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && addr != start)
-+		goto up_fail;
 +
- 	if (compat_uses_vma || !compat) {
- 		/*
- 		 * MAYWRITE to allow gdb to COW and set breakpoints
-diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
-index 7133cdf..81fce6d 100644
---- a/arch/x86/vdso/vma.c
-+++ b/arch/x86/vdso/vma.c
-@@ -98,7 +98,8 @@ static unsigned long vdso_addr(unsigned long start, unsigned len)
- 
- /* Setup a VMA at program startup for the vsyscall page.
-    Not called for compat tasks */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
-@@ -108,13 +109,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 		return 0;
- 
- 	down_write(&mm->mmap_sem);
--	addr = vdso_addr(mm->start_stack, vdso_size);
-+	addr = start ? : vdso_addr(mm->start_stack, vdso_size);
- 	addr = get_unmapped_area(NULL, addr, vdso_size, 0, 0);
- 	if (IS_ERR_VALUE(addr)) {
- 		ret = addr;
- 		goto up_fail;
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && addr != start)
-+		goto up_fail;
++/* restore_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
++static int restore_pipebuf(struct ckpt_ctx *ctx,
++			   struct pipe_inode_info *pipe, int nbufs)
++{
++	void *kbuf, *addr;
++	int i, len, ret = 0;
 +
- 	ret = install_special_mapping(mm, addr, vdso_size,
- 				      VM_READ|VM_EXEC|
- 				      VM_MAYREAD|VM_MAYWRITE|VM_MAYEXEC|
-diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
-index 40381df..aa9a802 100644
---- a/fs/binfmt_elf.c
-+++ b/fs/binfmt_elf.c
-@@ -945,7 +945,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
- 	set_binfmt(&elf_format);
++	kbuf = (void *) __get_free_page(GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
++
++	for (i = 0; i < nbufs; i++) {
++		struct pipe_buffer *pbuf = pipe->bufs + i;
++		struct page *page;
++
++		len = _ckpt_read_nbuffer(ctx, kbuf, PAGE_SIZE);
++		if (len < 0) {
++			ret = len;
++			break;
++		}
++		page = alloc_page(GFP_HIGHUSER);
++		if (!page) {
++			ret = -ENOMEM;
++			break;
++		}
++
++		addr = kmap_atomic(page, KM_USER0);
++		memcpy(addr, kbuf, len);
++		kunmap_atomic(addr, KM_USER0);
++
++		pbuf->page = page;
++		pbuf->ops = &anon_pipe_buf_ops;
++		pbuf->offset = 0;
++		pbuf->len = len;
++		pipe->nrbufs++;
++		pipe->tmp_page = NULL;
++	}
++
++	free_page((unsigned long) kbuf);
++	return ret;
++}
++
++/* restore_pipe - restore pipe (assume i_mutex taken) */
++static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct ckpt_hdr_file_pipe_state *h;
++	struct inode *inode;
++	int nbufs, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_PIPE);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	nbufs = h->pipe_nrbufs;
++	ckpt_hdr_put(ctx, h);
++
++	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
++		return -EINVAL;
++
++	inode = file->f_dentry->d_inode;
++	mutex_lock(&inode->i_mutex);
++	ret = restore_pipebuf(ctx, inode->i_pipe, nbufs);
++	mutex_unlock(&inode->i_mutex);
++
++	return ret;
++}
++
++/* restore a pipe */
++struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
++{
++	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
++	struct file *file;
++	int fds[2], which, ret;
++
++	if (ptr->h.type != CKPT_HDR_FILE  ||
++	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
++		return ERR_PTR(-EINVAL);
++
++	if (h->pipe_objref <= 0)
++		return ERR_PTR(-EINVAL);
++
++	file = ckpt_obj_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
++	if (IS_ERR(file))
++		return file;
++	/*
++	 * If ckpt_obj_fetch() returned NULL, then this is the first
++	 * time we see this pipe so need to restore the contents.
++	 * Otherwise, use the file pointer skip forward.
++	 */
++	if (!file) {
++		/* first encounter of this pipe: create it */
++		ret = do_pipe_flags(fds, 0);
++		if (ret < 0)
++			return file;
++
++		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
++
++		/*
++		 * Below we return the file corersponding to one side
++		 * of the pipe for our caller to use. Now insert the
++		 * other side of the pipe to the hash, to be picked up
++		 * when that side is restored.
++		 */
++		file = fget(fds[1-which]);	/* the 'other' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++		ret = ckpt_obj_insert(ctx, file,
++				      h->pipe_objref, CKPT_OBJ_FILE);
++		if (ret < 0) {
++			fput(file);
++			return ERR_PTR(ret);
++		}
++
++		ret = restore_pipe(ctx, file);
++		fput(file);
++		if (ret < 0)
++			return ERR_PTR(ret);
++
++		file = fget(fds[which]);	/* 'this' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++
++		/* get rid of the file descriptors (caller sets that) */
++		sys_close(fds[which]);
++		sys_close(fds[1-which]);
++	}
++
++	ret = restore_file_common(ctx, file, ptr);
++	if (ret < 0) {
++		fput(file);
++		file = ERR_PTR(ret);
++	}
++
++	return file;
++}
+ #else
+ #define pipe_file_checkpoint  NULL
+ #endif /* CONFIG_CHECKPOINT */
+diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
+index c8f0385..453d048 100644
+--- a/include/linux/pipe_fs_i.h
++++ b/include/linux/pipe_fs_i.h
+@@ -1,6 +1,8 @@
+ #ifndef _LINUX_PIPE_FS_I_H
+ #define _LINUX_PIPE_FS_I_H
  
- #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
--	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
-+	retval = arch_setup_additional_pages(bprm, 0, !!elf_interpreter);
- 	if (retval < 0) {
- 		send_sig(SIGKILL, current, 0);
- 		goto out;
++#include <linux/checkpoint_hdr.h>
++
+ #define PIPEFS_MAGIC 0x50495045
+ 
+ #define PIPE_BUFFERS (16)
+@@ -153,4 +155,11 @@ void generic_pipe_buf_get(struct pipe_inode_info *, struct pipe_buffer *);
+ int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
+ int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
+ 
++/* checkpoint/restart */
++#ifdef CONFIG_CHECKPOINT
++extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
++				      struct ckpt_hdr_file *ptr);
++#endif
++
+ #endif
++
 -- 
 1.5.4.3
