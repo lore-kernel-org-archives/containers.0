@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 45/54] sysvipc-shm: export interface from ipc/shm.c
-	to delete ipc shm
-Date: Tue, 28 Apr 2009 19:24:15 -0400
-Message-ID: <1240961064-13991-46-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 50/54] sysvipc-sem: export interface from ipc/sem.c
+	to cleanup ipc sem
+Date: Tue, 28 Apr 2009 19:24:20 -0400
+Message-ID: <1240961064-13991-51-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,45 +22,47 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Export shmctl_down() which will be used in the next patch during
-restart to delete an ipc shm (the shm is mapped already, so it
-won't be lost).
+Export freeary() which will be used in the next patch during restart
+to cleanup an ipc sem.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/shm.h |    4 ++++
- ipc/shm.c           |    4 ++--
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ ipc/sem.c  |    3 +--
+ ipc/util.h |    1 +
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index 1122197..524fb3b 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -127,6 +127,10 @@ define ipcshm_restart NULL
- #endif
- #endif
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 207dbbb..c60076e 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -93,7 +93,6 @@
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
  
-+struct ipc_namespace;
-+extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
-+		       struct shmid_ds __user *buf, int version);
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_SHM_H_ */
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 5625dbf..70e0651 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -673,8 +673,8 @@ static void shm_get_stat(struct ipc_namespace *ns, unsigned long *rss,
-  * to be held in write mode.
-  * NOTE: no locks must be held, the rw_mutex is taken inside this function.
+ static int newary(struct ipc_namespace *, struct ipc_params *, int);
+-static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -521,7 +520,7 @@ static void free_un(struct rcu_head *head)
+  * as a writer and the spinlock for this semaphore set hold. sem_ids.rw_mutex
+  * remains locked on exit.
   */
--static int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
--		       struct shmid_ds __user *buf, int version)
-+int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
-+		struct shmid_ds __user *buf, int version)
+-static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
  {
- 	struct kern_ipc_perm *ipcp;
- 	struct shmid64_ds shmid64;
+ 	struct sem_undo *un, *tu;
+ 	struct sem_queue *q, *tq;
+diff --git a/ipc/util.h b/ipc/util.h
+index 1e464fd..a4016e7 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -185,6 +185,7 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+ extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
+ extern int do_msgget(key_t key, int msgflg, int req_id);
+ extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
++extern void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ 
+ extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
 -- 
 1.5.4.3
