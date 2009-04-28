@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 47/54] sysvipc-msg: make 'struct msg_msgseg' visible
-	in ipc/util.h
-Date: Tue, 28 Apr 2009 19:24:17 -0400
-Message-ID: <1240961064-13991-48-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 17/54] c/r of restart-blocks: export functionality
+	used in next patch
+Date: Tue, 28 Apr 2009 19:23:47 -0400
+Message-ID: <1240961064-13991-18-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,83 +22,125 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Move the definition of 'struct msg_msgseg' and constants DATALEN_*
-to ipc/util.h, where they are visible to ipc/ckpt_msg.c
+To support c/r of restart-blocks (system call that need to be
+restarted because they were interrupted but there was no userspace
+visible side-effect), export restart-block callbacks for poll()
+and futex() syscalls.
+
+More details on c/r of restart-blocks and how it works in the
+following patch.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/msg.c     |    3 +--
- ipc/msgutil.c |    8 --------
- ipc/util.h    |   10 ++++++++++
- 3 files changed, 11 insertions(+), 10 deletions(-)
+ fs/select.c                  |    2 +-
+ include/linux/futex.h        |   10 ++++++++++
+ include/linux/poll.h         |    3 +++
+ include/linux/posix-timers.h |    2 ++
+ kernel/futex.c               |   11 +----------
+ kernel/posix-timers.c        |    2 +-
+ 6 files changed, 18 insertions(+), 12 deletions(-)
 
-diff --git a/ipc/msg.c b/ipc/msg.c
-index 1db7c45..1d5d087 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -72,7 +72,6 @@ struct msg_sender {
+diff --git a/fs/select.c b/fs/select.c
+index 0fe0e14..e64ddc6 100644
+--- a/fs/select.c
++++ b/fs/select.c
+@@ -833,7 +833,7 @@ out_fds:
+ 	return err;
+ }
  
- #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
+-static long do_restart_poll(struct restart_block *restart_block)
++long do_restart_poll(struct restart_block *restart_block)
+ {
+ 	struct pollfd __user *ufds = restart_block->poll.ufds;
+ 	int nfds = restart_block->poll.nfds;
+diff --git a/include/linux/futex.h b/include/linux/futex.h
+index 3bf5bb5..dd0e06b 100644
+--- a/include/linux/futex.h
++++ b/include/linux/futex.h
+@@ -130,6 +130,16 @@ extern int
+ handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
  
--static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
- static int newque(struct ipc_namespace *, struct ipc_params *, int);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
-@@ -278,7 +277,7 @@ static void expunge_all(struct msg_queue *msq, int res)
-  * msg_ids.rw_mutex (writer) and the spinlock for this message queue are held
-  * before freeque() is called. msg_ids.rw_mutex remains locked on exit.
+ /*
++ * In case we must use restart_block to restart a futex_wait,
++ * we encode in the 'flags' shared capability
++ */
++#define FLAGS_SHARED		0x01
++#define FLAGS_CLOCKRT		0x02
++
++/* referenced by checkpoint/restart */
++extern long futex_wait_restart(struct restart_block *restart);
++
++/*
+  * Futexes are matched on equal values of this key.
+  * The key type depends on whether it's a shared or private mapping.
+  * Don't rearrange members without looking at hash_futex().
+diff --git a/include/linux/poll.h b/include/linux/poll.h
+index 8c24ef8..97f95a7 100644
+--- a/include/linux/poll.h
++++ b/include/linux/poll.h
+@@ -131,6 +131,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
+ 
+ extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
+ 
++/* used by checkpoint/restart */
++extern long do_restart_poll(struct restart_block *restart_block);
++
+ #endif /* KERNEL */
+ 
+ #endif /* _LINUX_POLL_H */
+diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
+index 4f71bf4..3d0e946 100644
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -119,4 +119,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
+ 
+ void update_rlimit_cpu(unsigned long rlim_new);
+ 
++int invalid_clockid(const clockid_t which_clock);
++
+ #endif
+diff --git a/kernel/futex.c b/kernel/futex.c
+index eef8cd2..4618b36 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -1111,15 +1111,6 @@ handle_fault:
+ 	goto retry;
+ }
+ 
+-/*
+- * In case we must use restart_block to restart a futex_wait,
+- * we encode in the 'flags' shared capability
+- */
+-#define FLAGS_SHARED		0x01
+-#define FLAGS_CLOCKRT		0x02
+-
+-static long futex_wait_restart(struct restart_block *restart);
+-
+ static int futex_wait(u32 __user *uaddr, int fshared,
+ 		      u32 val, ktime_t *abs_time, u32 bitset, int clockrt)
+ {
+@@ -1284,7 +1275,7 @@ out:
+ }
+ 
+ 
+-static long futex_wait_restart(struct restart_block *restart)
++long futex_wait_restart(struct restart_block *restart)
+ {
+ 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
+ 	int fshared = 0;
+diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
+index 052ec4d..a734f4e 100644
+--- a/kernel/posix-timers.c
++++ b/kernel/posix-timers.c
+@@ -205,7 +205,7 @@ static int no_timer_create(struct k_itimer *new_timer)
+ /*
+  * Return nonzero if we know a priori this clockid_t value is bogus.
   */
--static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
-+void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+-static inline int invalid_clockid(const clockid_t which_clock)
++inline int invalid_clockid(const clockid_t which_clock)
  {
- 	struct list_head *tmp;
- 	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
-diff --git a/ipc/msgutil.c b/ipc/msgutil.c
-index f095ee2..e119243 100644
---- a/ipc/msgutil.c
-+++ b/ipc/msgutil.c
-@@ -36,14 +36,6 @@ struct ipc_namespace init_ipc_ns = {
- 
- atomic_t nr_ipc_ns = ATOMIC_INIT(1);
- 
--struct msg_msgseg {
--	struct msg_msgseg* next;
--	/* the next part of the message follows immediately */
--};
--
--#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
--#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
--
- struct msg_msg *load_msg(const void __user *src, int len)
- {
- 	struct msg_msg *msg;
-diff --git a/ipc/util.h b/ipc/util.h
-index be2fb94..09b9bdf 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -140,6 +140,14 @@ extern void free_msg(struct msg_msg *msg);
- extern struct msg_msg *load_msg(const void __user *src, int len);
- extern int store_msg(void __user *dest, struct msg_msg *msg, int len);
- 
-+struct msg_msgseg {
-+	struct msg_msgseg *next;
-+	/* the next part of the message follows immediately */
-+};
-+
-+#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
-+#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
-+
- extern void recompute_msgmni(struct ipc_namespace *);
- 
- static inline int ipc_buildid(int id, int seq)
-@@ -175,6 +183,8 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
- 
- /* for checkpoint/restart */
- extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
-+extern int do_msgget(key_t key, int msgflg, int req_id);
-+extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
- 
- extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
- 
+ 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
+ 		return 0;
 -- 
 1.5.4.3
