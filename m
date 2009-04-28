@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v14][PATCH 23/54] Restore open pipes
-Date: Tue, 28 Apr 2009 19:23:53 -0400
-Message-ID: <1240961064-13991-24-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v14][PATCH 24/54] Prepare to support shared memory
+Date: Tue, 28 Apr 2009 19:23:54 -0400
+Message-ID: <1240961064-13991-25-git-send-email-orenl@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,232 +21,89 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When seeing a CKPT_FD_PIPE file type, we create a new pipe and thus
-have two file pointers (read- and write- ends). We only use one of
-them, depending on which side was checkpointed first. We register the
-file pointer of the other end in the hash table, with the 'objref'
-given for this pipe from the checkpoint, deposited for later use. At
-this point we also restore the contents of the pipe buffers.
+Export functionality to retrieve specific pages from shared memory
+given an inode in shmem-fs; this will be used in the next two patches
+to provide support for c/r of shared memory.
 
-When the other end arrives, it will have file type CKPT_FD_OBJREF. We
-will then use the corresponding 'objref' to retrieve the file pointer
-from the hash table, and attach it to the process.
+Handling of shared memory depends on the type of a vma; to classify a
+vma we extend the 'struct vma_operations_struct' with a new function
+- 'ckpt_vma_type()' - through which a vma will report an integer that
+reflects its type.
 
-Note the difference from the checkpoint logic: during checkpoint we
-placed the _inode_ of the pipe in the hash table, while during restart
-we place the resulting _file_ in the hash table.
-
-We restore the pipe contents we manually allocation and attaching
-buffers to the pipe; (alternatively we could read the data from the
-image file and then write it into the pipe, or use splice() syscall).
+mm/shmem.c:
+- shmem_getpage() and 'enum sgp_type' moved to linux/mm.h
+- 'struct vm_operations_struct' extended with '->ckpt_vma_type' function
 
 Changelog[v14]:
-  - Discard the 'h.parent' field
-  - Check whether calls to ckpt_hbuf_get() fail
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/files.c        |    7 ++
- fs/pipe.c                 |  136 +++++++++++++++++++++++++++++++++++++++++++++
- include/linux/pipe_fs_i.h |    9 +++
- 3 files changed, 152 insertions(+), 0 deletions(-)
+ include/linux/mm.h |   11 +++++++++++
+ mm/shmem.c         |   15 ++-------------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 835e39c..c6a946b 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -17,6 +17,7 @@
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
- #include <linux/syscalls.h>
-+#include <linux/pipe_fs_i.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 585d398..7d2f93a 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -330,6 +330,17 @@ void put_pages_list(struct list_head *pages);
  
-@@ -415,6 +416,12 @@ static struct restore_file_ops restore_file_ops[] = {
- 		.file_type = CKPT_FILE_GENERIC,
- 		.restore = generic_file_restore,
- 	},
-+	/* pipe */
-+	{
-+		.file_name = "PIPE",
-+		.file_type = CKPT_FILE_PIPE,
-+		.restore = pipe_file_restore,
-+	},
- };
+ void split_page(struct page *page, unsigned int order);
  
- static struct file *do_restore_file(struct ckpt_ctx *ctx)
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 651a7fc..ab2de3c 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -899,6 +899,142 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
++/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
++enum sgp_type {
++	SGP_READ,	/* don't exceed i_size, don't allocate page */
++	SGP_CACHE,	/* don't exceed i_size, may allocate page */
++	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
++	SGP_WRITE,	/* may exceed i_size, may allocate page */
++};
++
++extern int shmem_getpage(struct inode *inode, unsigned long idx,
++			 struct page **pagep, enum sgp_type sgp, int *type);
++
+ /*
+  * Compound pages have a destructor function.  Provide a
+  * prototype for that function and accessor functions.
+diff --git a/mm/shmem.c b/mm/shmem.c
+index f9cb20e..e24da02 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -99,14 +99,6 @@ static struct vfsmount *shm_mnt;
+ /* Pretend that each entry is of this size in directory's i_size */
+ #define BOGO_DIRENT_SIZE 20
+ 
+-/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
+-enum sgp_type {
+-	SGP_READ,	/* don't exceed i_size, don't allocate page */
+-	SGP_CACHE,	/* don't exceed i_size, may allocate page */
+-	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
+-	SGP_WRITE,	/* may exceed i_size, may allocate page */
+-};
+-
+ #ifdef CONFIG_TMPFS
+ static unsigned long shmem_default_max_blocks(void)
+ {
+@@ -119,9 +111,6 @@ static unsigned long shmem_default_max_inodes(void)
  }
-+
-+/* restore_pipebuf - restore contents of a pipe/fifo (assume i_mutex taken) */
-+static int restore_pipebuf(struct ckpt_ctx *ctx,
-+			   struct pipe_inode_info *pipe, int nbufs)
-+{
-+	void *kbuf, *addr;
-+	int i, len, ret = 0;
-+
-+	kbuf = (void *) __get_free_page(GFP_KERNEL);
-+	if (!kbuf)
-+		return -ENOMEM;
-+
-+	for (i = 0; i < nbufs; i++) {
-+		struct pipe_buffer *pbuf = pipe->bufs + i;
-+		struct page *page;
-+
-+		len = _ckpt_read_nbuffer(ctx, kbuf, PAGE_SIZE);
-+		if (len < 0) {
-+			ret = len;
-+			break;
-+		}
-+		page = alloc_page(GFP_HIGHUSER);
-+		if (!page) {
-+			ret = -ENOMEM;
-+			break;
-+		}
-+
-+		addr = kmap_atomic(page, KM_USER0);
-+		memcpy(addr, kbuf, len);
-+		kunmap_atomic(addr, KM_USER0);
-+
-+		pbuf->page = page;
-+		pbuf->ops = &anon_pipe_buf_ops;
-+		pbuf->offset = 0;
-+		pbuf->len = len;
-+		pipe->nrbufs++;
-+		pipe->tmp_page = NULL;
-+	}
-+
-+	free_page((unsigned long) kbuf);
-+	return ret;
-+}
-+
-+/* restore_pipe - restore pipe (assume i_mutex taken) */
-+static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
-+{
-+	struct ckpt_hdr_file_pipe_state *h;
-+	struct inode *inode;
-+	int nbufs, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_PIPE);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	nbufs = h->pipe_nrbufs;
-+	ckpt_hdr_put(ctx, h);
-+
-+	if (nbufs < 0 || nbufs > PIPE_BUFFERS)
-+		return -EINVAL;
-+
-+	inode = file->f_dentry->d_inode;
-+	mutex_lock(&inode->i_mutex);
-+	ret = restore_pipebuf(ctx, inode->i_pipe, nbufs);
-+	mutex_unlock(&inode->i_mutex);
-+
-+	return ret;
-+}
-+
-+/* restore a pipe */
-+struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+{
-+	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
-+	struct file *file;
-+	int fds[2], which, ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
-+		return ERR_PTR(-EINVAL);
-+
-+	if (h->pipe_objref <= 0)
-+		return ERR_PTR(-EINVAL);
-+
-+	file = ckpt_obj_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file))
-+		return file;
-+	/*
-+	 * If ckpt_obj_fetch() returned NULL, then this is the first
-+	 * time we see this pipe so need to restore the contents.
-+	 * Otherwise, use the file pointer skip forward.
-+	 */
-+	if (!file) {
-+		/* first encounter of this pipe: create it */
-+		ret = do_pipe_flags(fds, 0);
-+		if (ret < 0)
-+			return file;
-+
-+		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
-+
-+		/*
-+		 * Below we return the file corersponding to one side
-+		 * of the pipe for our caller to use. Now insert the
-+		 * other side of the pipe to the hash, to be picked up
-+		 * when that side is restored.
-+		 */
-+		file = fget(fds[1-which]);	/* the 'other' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+		ret = ckpt_obj_insert(ctx, file,
-+				      h->pipe_objref, CKPT_OBJ_FILE);
-+		if (ret < 0) {
-+			fput(file);
-+			return ERR_PTR(ret);
-+		}
-+
-+		ret = restore_pipe(ctx, file);
-+		fput(file);
-+		if (ret < 0)
-+			return ERR_PTR(ret);
-+
-+		file = fget(fds[which]);	/* 'this' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+
-+		/* get rid of the file descriptors (caller sets that) */
-+		sys_close(fds[which]);
-+		sys_close(fds[1-which]);
-+	}
-+
-+	ret = restore_file_common(ctx, file, ptr);
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+
-+	return file;
-+}
- #else
- #define pipe_file_checkpoint  NULL
- #endif /* CONFIG_CHECKPOINT */
-diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
-index c8f0385..453d048 100644
---- a/include/linux/pipe_fs_i.h
-+++ b/include/linux/pipe_fs_i.h
-@@ -1,6 +1,8 @@
- #ifndef _LINUX_PIPE_FS_I_H
- #define _LINUX_PIPE_FS_I_H
- 
-+#include <linux/checkpoint_hdr.h>
-+
- #define PIPEFS_MAGIC 0x50495045
- 
- #define PIPE_BUFFERS (16)
-@@ -153,4 +155,11 @@ void generic_pipe_buf_get(struct pipe_inode_info *, struct pipe_buffer *);
- int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
- int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
- 
-+/* checkpoint/restart */
-+#ifdef CONFIG_CHECKPOINT
-+extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
-+				      struct ckpt_hdr_file *ptr);
-+#endif
-+
  #endif
-+
+ 
+-static int shmem_getpage(struct inode *inode, unsigned long idx,
+-			 struct page **pagep, enum sgp_type sgp, int *type);
+-
+ static inline struct page *shmem_dir_alloc(gfp_t gfp_mask)
+ {
+ 	/*
+@@ -1202,8 +1191,8 @@ static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
+  * vm. If we swap it in we mark it dirty since we also free the swap
+  * entry since a page cannot live in both the swap and page cache
+  */
+-static int shmem_getpage(struct inode *inode, unsigned long idx,
+-			struct page **pagep, enum sgp_type sgp, int *type)
++int shmem_getpage(struct inode *inode, unsigned long idx,
++		  struct page **pagep, enum sgp_type sgp, int *type)
+ {
+ 	struct address_space *mapping = inode->i_mapping;
+ 	struct shmem_inode_info *info = SHMEM_I(inode);
 -- 
 1.5.4.3
