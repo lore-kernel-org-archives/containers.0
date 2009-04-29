@@ -1,16 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 08/54] Dump memory address space
-Date: Wed, 29 Apr 2009 16:00:57 -0400
-Message-ID: <49F8B1F9.40709@cs.columbia.edu>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 31/54] powerpc: checkpoint/restart implementation
+Date: Wed, 29 Apr 2009 15:33:40 -0500
+Message-ID: <m3vdonryhn.fsf@pobox.com>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-9-git-send-email-orenl@cs.columbia.edu>
-	<20090429041128.GA28018@us.ibm.com>
-	<20090429064241.GA17482@redback.com>
+	<1240961064-13991-32-git-send-email-orenl@cs.columbia.edu>
+	<m34ow8ueyk.fsf@pobox.com> <49F899E1.2030207@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090429064241.GA17482-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <49F899E1.2030207-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Wed\, 29 Apr 2009 14\:18\:09 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,50 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Guenter Roeck <groeck-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Guenter Roeck wrote:
-> On Tue, Apr 28, 2009 at 09:11:28PM -0700, Serge E. Hallyn wrote:
->> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>> +#if CONFIG_CHEKCPOINT
->                 ^^^^^^^^^^
-> CONFIG_CHECKPOINT ? 
-> 
-
-Hmmm ... :(
-
-Will fix, thanks.
-
-Oren.
-
-> Guenter
-> 
->>> +static int special_mapping_checkpoint(struct ckpt_ctx *ctx,
->>> +				      struct vm_area_struct *vma)
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> Nathan Lynch wrote:
+>> 
+>> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+>>> +/* dump the cpu state and registers of a given task */
+>>> +int checkpoint_write_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
 >>> +{
->>> +	char *name;
+>>> +	struct ckpt_hdr_cpu *cpu_hdr;
+>>> +	int rc;
 >>> +
->>> +	/*
->>> +	 * Currently, we only handle VDSO/vsyscall special handling.
->>> +	 * Even that, is very basic - we just skip the contents and
->>> +	 * hope for the best in terms of compatilibity upon restart.
->>> +	 */
->>> +
->>> +	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED)
->>> +		return -ENOSYS;
->>> +
->>> +	name = arch_vma_name(vma);
->>> +	if (!name || strcmp(vma_name, "[vdso]"))
->> Not important except for bisect-safety, as it's fixed in the next
->> patch, but this should be name, not vma_name.
->>
->> -serge
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+>>> +	rc = -ENOMEM;
+>>> +	cpu_hdr = ckpt_hdr_get(ctx, sizeof(*cpu_hdr), CKPT_HDR_CPU);
+>> 
+>> This won't build (should be ckpt_hdr_get_type?).
+>> 
+>> I didn't write this code (I used kzalloc).
+>> 
+>> In the code I did write, I deliberately preferred the slab allocator to
+>> the checkpoint-specific APIs.  I do not see the advantage of using an
+>> arbitrarily fixed size special allocation stack that is prone to
+>> overflow or, worse, data corruption if someone improperly interleaves
+>> their gets and puts.
+>> 
+>
+> There is a reason I insist on it: I plan to optimize c/r app downtime
+> by buffering data in the kernel while apps are frozen, and write-back
+> the output after the resume execution. To do this efficiently without
+> extra data copy you need something smarted than just kmalloc/kfree().
+>
+> Since some API and implementation will be used later, it makes sense
+> to me to enforce at API requirement already. IOW, I want the code to
+> use ckpt_hdr_get(), ckpt_hdr_put() and ckpt_hdr_get_type().
+>
+> How they are implemented, now, doesn't really matter. Your point about
+> using kmalloc() is correct, in particular at this stage of development.
+>
+> So here's what I'll do:  I'll keep the interface requirement, and
+> change the implementation behind to use kmalloc/kfree().
+
+That sounds reasonable to me, thanks.
