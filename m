@@ -1,13 +1,11 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 00/54] Kernel based checkpoint/restart
-Date: Wed, 29 Apr 2009 10:18:17 +0200
-Message-ID: <20090429081815.GA1813@hawkmoon.kerlabs.com>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: lxc : linux container tools 0.6.2 release
+Date: Wed, 29 Apr 2009 17:46:23 +0200
+Message-ID: <49F8764F.5070906@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6415537879588039526=="
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240961064-13991-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,299 +13,239 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: LXC Development <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Guido Trotter <ultrotter-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Jiri Slaby <jslaby-AlSwsSmVLrQ@public.gmane.org>, "Michael K. Johnson" <johnsonm-bTnYInOZY08AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
 
---===============6415537879588039526==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-26938-1240993084-0001-2"
-Content-Disposition: inline
+http://lxc.sourceforge.net/lxc.html
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Release Name: lxc-0.6.2
 
---=_bohort-26938-1240993084-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Notes:
+  * fixed autogen.sh and reconfigure problem reported by Michael K Johnson
 
-Hi,
+* Guido Trotter fixed the localstate directory to the right path
 
-On 28/04/09 19:23 -0400, Oren Laadan wrote:
-> Here is the latest and greatest of checkpoint/restart (c/r) patchset.
-> The logic and image format reworked and simplified, code refactored,
-> support for PPC, s390, sysvipc, shared memory of all sorts, namespaces
-> (uts and ipc).
+  * Michel Normand fixed O_CLOEXEC definition for distro with older =
 
-I should have asked before, but what are the reasons to checkpoint SYSV IPCs
-in the same file/stream as tasks? Would it be better to checkpoint them
-independently, like the file system state?
+glibc (eg. redhat 5)
 
-In Kerrighed we chose to checkpoint SYSV IPCs independently, a bit like the=
- file
-system state, because SYSV IPCs objects' lifetime do not depend on tasks
-lifetime, and we can gain more flexibility this way. In particular we envis=
-ion
-cases in which two applications share a state in a SYSV SHM (something like=
- a
-producer-consumer scheme), but do not need to be checkpointed together. In =
-such
-a case the SYSV SHM itself could even need more high-availability (using
-active replication) than a checkpoint/restart facility.
+  * Michel Normand fixed libtool copy problem when compiling in a =
 
-Louis
+directory different from the source tree
 
+  * Daniel Lezcano cleaned up some code and improve container creation
 
-> The userspace tool 'mktree' was extended to handle more complicated
-> process tree and correctly account for process relationships and=20
-> session ID (sid). Should correctly handle threads.
-> Hey, it even went through some massive renaming of files and functions...
->=20
-> Signals and timers are not supported yet, so programs that rely on
-> their behavior may fail to oeprate correctly after a restart (e.g.
-> may lose signals pending at time of checkpoint, and so on).
->=20
-> However, this one can actually be used for simple batch jobs (pipes,
-> too), a whole container or just a subtree of tasks. Try it:
->=20
-> create the freezer cgroup:
->   $ mount -t cgroup -ofreezer freezer /freezer
->   $ mkdir /freezer/0
->=20
-> run the test, freeze it: =20
->   $ test/multitask &
->   [1] 2754
->   $ for i in `pidof multitask`; do echo $i > /freezer/0/tasks; done
->   $ echo FROZEN > /freezer/0/freezer.state
->=20
-> checkpoint:
->   $ ./ckpt 2754 > ckpt.out
->=20
-> restart:
->   $ ./mktree < ckpt.out
->=20
-> voila :)
->=20
-> To do all this, you'll need:
->=20
-> The git tree tracking v14, branch 'ckpt-v14' (and past versions):
-> 	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
->=20
-> Restarting multiple processes requires 'mktree' userspace tool with
-> the matching branch (v14):
-> 	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
->=20
->=20
-> Oren.
->=20
->=20
-> Changelog:
->=20
-> [2009-Apr-28] v14
->   - Tested against kernel v2.6.30-rc3 on x86_32.
->   - Refactor files chekpoint to use f_ops (file operations)
->   - Refactor mm/vma to use vma_ops
->   - Explicitly handle VDSO vma (and require compat mode)
->   - Added code to c/r restat-blocks (restart timeout related syscalls)
->   - Added code to c/r namespaces: uts, ipc (with Dan Smith)
->   - Added code to c/r sysvipc (shm, msg, sem)
->   - Support for VM_CLONE shared memory
->   - Added resource leak detection for whole-container checkpoint
->   - Added sysctl gauge to allow unprivileged restart/checkpoint
->   - Improve and simplify the code and logic of shared objects
->   - Rework image format: shared objects appear prior to their use
->   - Merge checkpoint and restart functionality into same files
->   - Massive renaming of functions: prefix "ckpt_" for generics,
->     "checkpoint_" for checkpoint, and "restore_" for restart.
->   - Report checkpoint errors as a valid (string record) in the output
->   - Merged PPC architecture (by Nathan Lunch),
->   - Requires updates to userspace tools too.
->   - Misc nits and bug fixes
->=20
-> [2009-Mar-31] v14-rc2
->   - Change along Dave's suggestion to use f_ops->checkpoint() for files
->   - Merge patch simplifying Kconfig, with CONFIG_CHECKPOINT_SUPPORT
->   - Merge support for PPC arch (Nathan Lynch)
->   - Misc cleanups and fixes in response to comments
->=20
-> [2009-Mar-20] v14-rc1:
->   - The 'h.parent' field of 'struct cr_hdr' isn't used - discard
->   - Check whether calls to cr_hbuf_get() succeed or fail.
->   - Fixed of pipe c/r code
->   - Prevent deadlock by refusing c/r when a pipe inode =3D=3D ctx->file i=
-node
->   - Refuse non-self checkpoint if a task isn't frozen
->   - Use unsigned fields in checkpoint headers unless otherwise required
->   - Rename functions in files c/r to better reflect their role
->   - Add support for anonymous shared memory
->   - Merge support for s390 arch (Dan Smith, Serge Hallyn)
->    =20
-> [2008-Dec-03] v13:
->   - Cleanups of 'struct cr_ctx' - remove unused fields
->   - Misc fixes for comments
->  =20
-> [2008-Dec-17] v12:
->   - Fix re-alloc/reset of pgarr chain to correctly reuse buffers
->     (empty pgarr are saves in a separate pool chain)
->   - Add a couple of missed calls to cr_hbuf_put()
->   - cr_kwrite/cr_kread() again use vfs_read(), vfs_write() (safer)
->   - Split cr_write/cr_read() to two parts: _cr_write/read() helper
->   - Befriend with sparse: explicit conversion to 'void __user *'
->   - Redrefine 'pr_fmt' ind replace cr_debug() with pr_debug()
->=20
-> [2008-Dec-05] v11:
->   - Use contents of 'init->fs->root' instead of pointing to it
->   - Ignore symlinks (there is no such thing as an open symlink)
->   - cr_scan_fds() retries from scratch if it hits size limits
->   - Add missing test for VM_MAYSHARE when dumping memory
->   - Improve documentation about: behavior when tasks aren't fronen,
->     life span of the object hash, references to objects in the hash
-> =20
-> [2008-Nov-26] v10:
->   - Grab vfs root of container init, rather than current process
->   - Acquire dcache_lock around call to __d_path() in cr_fill_name()
->   - Force end-of-string in cr_read_string() (fix possible DoS)
->   - Introduce cr_write_buffer(), cr_read_buffer() and cr_read_buf_type()
->=20
-> [2008-Nov-10] v9:
->   - Support multiple processes c/r
->   - Extend checkpoint header with archtiecture dependent header=20
->   - Misc bug fixes (see individual changelogs)
->   - Rebase to v2.6.28-rc3.
->=20
-> [2008-Oct-29] v8:
->   - Support "external" checkpoint
->   - Include Dave Hansen's 'deny-checkpoint' patch
->   - Split docs in Documentation/checkpoint/..., and improve contents
->=20
-> [2008-Oct-17] v7:
->   - Fix save/restore state of FPU
->   - Fix argument given to kunmap_atomic() in memory dump/restore
->=20
-> [2008-Oct-07] v6:
->   - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
->     (even though it's not really needed)
->   - Add assumptions and what's-missing to documentation
->   - Misc fixes and cleanups
->=20
-> [2008-Sep-11] v5:
->   - Config is now 'def_bool n' by default
->   - Improve memory dump/restore code (following Dave Hansen's comments)
->   - Change dump format (and code) to allow chunks of <vaddrs, pages>
->     instead of one long list of each
->   - Fix use of follow_page() to avoid faulting in non-present pages
->   - Memory restore now maps user pages explicitly to copy data into them,
->     instead of reading directly to user space; got rid of mprotect_fixup()
->   - Remove preempt_disable() when restoring debug registers
->   - Rename headers files s/ckpt/checkpoint/
->   - Fix misc bugs in files dump/restore
->   - Fixes and cleanups on some error paths
->   - Fix misc coding style
->=20
-> [2008-Sep-09] v4:
->   - Various fixes and clean-ups
->   - Fix calculation of hash table size
->   - Fix header structure alignment
->   - Use stand list_... for cr_pgarr
->=20
-> [2008-Aug-29] v3:
->   - Various fixes and clean-ups
->   - Use standard hlist_... for hash table
->   - Better use of standard kmalloc/kfree
->=20
-> [2008-Aug-20] v2:
->   - Added Dump and restore of open files (regular and directories)
->   - Added basic handling of shared objects, and improve handling of
->     'parent tag' concept
->   - Added documentation
->   - Improved ABI, 64bit padding for image data
->   - Improved locking when saving/restoring memory
->   - Added UTS information to header (release, version, machine)
->   - Cleanup extraction of filename from a file pointer
->   - Refactor to allow easier reviewing
->   - Remove requirement for CAPS_SYS_ADMIN until we come up with a
->     security policy (this means that file restore may fail)
->   - Other cleanup and response to comments for v1
->=20
-> [2008-Jul-29] v1:
->   - Initial version: support a single task with address space of only
->     private anonymous or file-mapped VMAs; syscalls ignore pid/crid
->     argument and act on current process.
->=20
-> --
-> At the containers mini-conference before OLS, the consensus among
-> all the stakeholders was that doing checkpoint/restart in the kernel
-> as much as possible was the best approach.  With this approach, the
-> kernel will export a relatively opaque 'blob' of data to userspace
-> which can then be handed to the new kernel at restore time.
->=20
-> This is different than what had been proposed before, which was
-> that a userspace application would be responsible for collecting
-> all of this data.  We were also planning on adding lots of new,
-> little kernel interfaces for all of the things that needed
-> checkpointing.  This unites those into a single, grand interface.
->=20
-> The 'blob' will contain copies of select portions of kernel
-> structures such as vmas and mm_structs.  It will also contain
-> copies of the actual memory that the process uses.  Any changes
-> in this blob's format between kernel revisions can be handled by
-> an in-userspace conversion program.
->=20
-> This is a similar approach to virtually all of the commercial
-> checkpoint/restart products out there, as well as the research
-> project Zap.
->=20
-> These patches basically serialize internel kernel state and write
-> it out to a file descriptor.  The checkpoint and restore are done
-> with two new system calls: sys_checkpoint and sys_restart.
->=20
-> In this incarnation, they can only work checkpoint and restore a
-> single task. The task's address space may consist of only private,
-> simple vma's - anonymous or file-mapped. The open files may consist
-> of only simple files and directories.
-> --
->=20
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+  * Cedric Le Goater added a new logging facility
 
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
+  * M=F4she van der Sterre fixed inherited tty fd in the container
 
---=_bohort-26938-1240993084-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+  * Daniel Lezcano added the mtu size option to fit the jumbo frame =
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
+size, benchmarking was done by Ryousei Takano
 
-iD8DBQFJ+A1HVKcRuvQ9Q1QRAoTaAJ0cPVob1D3KKOROJJtRwXoRG5ya8ACfTb8p
-35fno8/89gh444Q3U84QUaU=
-=Sqpc
------END PGP SIGNATURE-----
+  * Ryousei Takano added support for various mount options
 
---=_bohort-26938-1240993084-0001-2--
+Changes:
+commit 6b9f39176cc9d898d339f8344291b922bfde19a8
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
---===============6415537879588039526==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+     Revert "make the log fd thread safe"
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============6415537879588039526==--
+commit f8dafdbb1591b545edb6a4b6bda889819d619a87
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     rename configure.in to configure.ac
+
+commit 8db2cb8e0d1ee9e6edb0b5e9bd158c8789a5e5b6
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     remove m4 dir usage
+
+commit ccf1319832ffeb8e07fcef9bfe67e96e283fead7
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     add aclocal include in makefile
+
+commit 5b2b6e7e2d5c9b8b28f9ec3864ff5dde223a3669
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     inc the minor version
+
+commit 01f3fe315625c625abd28742cc7a604e75f44c02
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     Setting execution permission for the file
+
+commit 91e1b53961680a77faef97ad00a49adca2cf78d8
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     swap doc compilation order
+
+commit 8cdca6725329850ea5f5574cab472331fc602fab
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     add the autogen script in the dist tarball
+
+commit ba5b25827947a33ce615a177f0a2afb2798da60a
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     rename bootstrap to autogen.sh
+
+commit e0b4037dfad4676d977c147426657fc1406efd2f
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     add the missing header in the log file
+
+commit eabbb2f0c0cc1c0fe15efef514cc37e4c60725ae
+Author: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     locally define O_CLOEXEC
+
+commit 2c9bd0073f29573181dc16a840c674dacc8a33fd
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     make the log fd thread safe
+
+commit dcb7355b2fa4bd63c1d015a943b3d54264709083
+Author: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+
+     lxc: cleanup log
+
+commit 36eb9bdef1123a93f9e441a5df386c4bd0168f27
+Author: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+
+     lxc: use new logging system
+
+commit cb8c5720bdd14249e66060cda0e0f5d2f95c0ecd
+Author: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+
+     lxc: introduce log4c style logging
+
+commit a57cf79e58fa5c28f3d9ea566c4d833db9b91e8b
+Author: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     exclude generated tarball from git managed files
+
+commit 4f916514e8b8f9a79f8b36af11c55515df70d92b
+Author: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     make the libtoolize files to be copy not
+
+commit 998ac6763fa12758ad9bda568ddd29d592e0fc19
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Add support for various mount options
+
+commit b035ad62e6f5f8a706c8e8c21405b5ef6b4d58d6
+Author: M=F4she van der Sterre <me-A/3C56C7qwM@public.gmane.org>
+
+     prevent tty fd to be inherited in the container
+
+commit 8de09ef5560c418d055a531efeabc5adee345ace
+Author: M=F4she van der Sterre <moshevds-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+     check multiple devpts instance
+
+commit f6235d06350d4c58e54a1c1bc478b2da2ecbc119
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     don't remove init file in the stop function
+
+commit 34e7030e83eff25f66bfd6505f2f479a41a4d3b6
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     speed container creation/destruction
+
+commit 3f21c11481b50030bc073a279c8cbe8f03f57138
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Fix compile warnings
+
+commit abf424cf20ee2e3261abf95d17df08ff2a723640
+Author: Guido Trotter <ultrotter-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+     $(localstatedir) !=3D $(prefix)/var
+
+commit 85a3182189e9f8eca79a925618e157774e0e8617
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     add error.h header
+
+commit 089cd8b878d1d2ac78a6ab13878c61cb23213971
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     move lxc_conf_init to conf.c
+
+commit a871ff6bdf3925e7a13f7a1b5ea40ca936654537
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup config.h
+
+commit 35d2c3e71d5e7ada9878e9cb8f6039f0b02b3458
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup state.h
+
+commit 951cc719a3e71a3ac98c92b343f2391af400e830
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup list.h
+
+commit 731cc33fb7e75085e4281f295c6c9d806f8d3ad5
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup log.h
+
+commit 13954cce6335d9a642ebd9859c60a2f01c4513ec
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup conf.h
+
+commit 170d528eeac7c9d5440a6fb6b97c7c24862bee73
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup cgroup.h
+
+commit c6d1536e2b96229cd7935c380c3de2c9e93fb94a
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup lock.h
+
+commit 61ba7fe64ad8f06b6a836bd5d3eddb15dc7c194a
+Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+     cleanup namespace.h
+
+commit e65b846976ddacdce5774bb0ba11c7738e896cf1
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Use 'uname -m' instead of arch
+
+commit b44cb779a10c6c58fbdc4a28990edcd150e9770b
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Add mtu option setting for lxc-fedora
+
+commit 81f6a40acf9a13bb1c5869a8b820a78e4c3ecccc
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Add mtu option setting for lxc-debian
+
+commit eb14c10a414bcbb39cc29ebc82f5299aa36b6c30
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     set the mtu before attaching to the bridge
+
+commit 497353b66b504f12cf8b6e166bba7cb309486dc3
+Author: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+
+     change the api to export the network functions
+
+commit b35f75882eed5fc40e0a0fb2ae2aeaf66c11df0e
+Author: Ryousei Takano <takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+
+     Fix trivial stuff for mtu option setting
