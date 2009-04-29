@@ -1,16 +1,15 @@
-From: Guenter Roeck <groeck-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 08/54] Dump memory address space
-Date: Tue, 28 Apr 2009 23:42:41 -0700
-Message-ID: <20090429064241.GA17482@redback.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 31/54] powerpc: checkpoint/restart implementation
+Date: Wed, 29 Apr 2009 01:54:59 -0500
+Message-ID: <m34ow8ueyk.fsf@pobox.com>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-9-git-send-email-orenl@cs.columbia.edu>
-	<20090429041128.GA28018@us.ibm.com>
+	<1240961064-13991-32-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090429041128.GA28018-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1240961064-13991-32-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren
+	Laadan's message of "Tue\, 28 Apr 2009 19\:24\:01 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,40 +19,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 28, 2009 at 09:11:28PM -0700, Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> > +#if CONFIG_CHEKCPOINT
-                ^^^^^^^^^^
-CONFIG_CHECKPOINT ? 
+Hello Oren,
 
-Guenter
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
 
-> > +static int special_mapping_checkpoint(struct ckpt_ctx *ctx,
-> > +				      struct vm_area_struct *vma)
-> > +{
-> > +	char *name;
-> > +
-> > +	/*
-> > +	 * Currently, we only handle VDSO/vsyscall special handling.
-> > +	 * Even that, is very basic - we just skip the contents and
-> > +	 * hope for the best in terms of compatilibity upon restart.
-> > +	 */
-> > +
-> > +	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED)
-> > +		return -ENOSYS;
-> > +
-> > +	name = arch_vma_name(vma);
-> > +	if (!name || strcmp(vma_name, "[vdso]"))
-> 
-> Not important except for bisect-safety, as it's fixed in the next
-> patch, but this should be name, not vma_name.
-> 
-> -serge
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+>
+> Support for checkpointing and restarting GPRs, FPU state, DABR, and
+> Altivec state.
+
+...
+
+> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+
+...
+
+> +/* dump the cpu state and registers of a given task */
+> +int checkpoint_write_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct ckpt_hdr_cpu *cpu_hdr;
+> +	int rc;
+> +
+> +	rc = -ENOMEM;
+> +	cpu_hdr = ckpt_hdr_get(ctx, sizeof(*cpu_hdr), CKPT_HDR_CPU);
+
+This won't build (should be ckpt_hdr_get_type?).
+
+I didn't write this code (I used kzalloc).
+
+In the code I did write, I deliberately preferred the slab allocator to
+the checkpoint-specific APIs.  I do not see the advantage of using an
+arbitrarily fixed size special allocation stack that is prone to
+overflow or, worse, data corruption if someone improperly interleaves
+their gets and puts.
+
+I don't believe you were acting in bad faith here, and I'm not sure
+there's an established etiquette.  But my signed-off-by line is on this
+patch, and I don't think it belongs there unless I've actually written
+the code or agreed to the modifications.
+
+If you insist on replacing kzalloc with ckpt_hdr_get, then please do so
+in a separate commit with an explanation in the changelog.  I'd have no
+objection to that -- it's your tree, after all.  Or if you want to munge
+my patch in place, just replace my signoff with yours and note "based on
+work by Nathan Lynch" or something.
+
+Which brings me to the subject of tree management... it's rather
+difficult for interested parties to follow development of a tree that is
+frequently rewritten.  It would be much easier to base work on a linear
+"append-only" branch.  The guesswork involved in tracking down
+regressions in C/R function would be reduced because bisection would
+work.  And we would have an accurate history of the changes made over
+time.  The cost would be that the checkpoint/restart work would not have
+an easily-reviewable native form, but I think it would be possible to
+generate comprehensible diffs for review since the majority of the code
+is in self-contained files.
