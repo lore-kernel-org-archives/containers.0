@@ -1,16 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 04/54] General infrastructure for checkpoint
-	restart
-Date: Wed, 29 Apr 2009 13:49:33 -0400
-Message-ID: <49F8932D.4040506@cs.columbia.edu>
+Subject: Re: [RFC v14][PATCH 31/54] powerpc: checkpoint/restart implementation
+Date: Wed, 29 Apr 2009 14:05:28 -0400
+Message-ID: <49F896E8.7020802@cs.columbia.edu>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-5-git-send-email-orenl@cs.columbia.edu>
-	<20090429005826.GA23583@us.ibm.com>
+	<1240961064-13991-32-git-send-email-orenl@cs.columbia.edu>
+	<m34ow8ueyk.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090429005826.GA23583-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m34ow8ueyk.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,59 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+Nathan Lynch wrote:
+> Hello Oren,
+> 
+> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> 
+>> From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+>>
+>> Support for checkpointing and restarting GPRs, FPU state, DABR, and
+>> Altivec state.
+> 
 > ...
->> +static int checkpoint_write_header(struct ckpt_ctx *ctx)
+> 
+>> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> 
+> ...
+> 
+>> +/* dump the cpu state and registers of a given task */
+>> +int checkpoint_write_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
 >> +{
->> +	struct ckpt_hdr_header *h;
->> +	struct new_utsname *uts;
->> +	struct timeval ktv;
->> +	int ret;
+>> +	struct ckpt_hdr_cpu *cpu_hdr;
+>> +	int rc;
 >> +
->> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER);
+>> +	rc = -ENOMEM;
+>> +	cpu_hdr = ckpt_hdr_get(ctx, sizeof(*cpu_hdr), CKPT_HDR_CPU);
 > 
-> ...
->> +	struct ckpt_hdr_tail *h;
->> +	int ret;
->> +
->> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TAIL);
+> This won't build (should be ckpt_hdr_get_type?).
 > 
-> ...
->> +	struct ckpt_hdr_task *h;
->> +	int ret;
->> +
->> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK);
+> I didn't write this code (I used kzalloc).
 > 
-> ...
->> +/**
->> + * ckpt_hdr_get_type - get a hdr of certain size
->> + * @ctx: checkpoint context
->> + * @len: number of bytes to reserve
->> + *
->> + * Returns pointer to reserved space on hbuf
->> + */
->> +void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int len, int type)
->> +{
+> In the code I did write, I deliberately preferred the slab allocator to
+> the checkpoint-specific APIs.  I do not see the advantage of using an
+> arbitrarily fixed size special allocation stack that is prone to
+> overflow or, worse, data corruption if someone improperly interleaves
+> their gets and puts.
 > 
-> Observation (based on all callers in later patches as well): the second
-> argument appears to be superfluous?  You should be able to determine
-> based on type.
+> I don't believe you were acting in bad faith here, and I'm not sure
+> there's an established etiquette.  But my signed-off-by line is on this
+> patch, and I don't think it belongs there unless I've actually written
+> the code or agreed to the modifications.
+> 
+> If you insist on replacing kzalloc with ckpt_hdr_get, then please do so
+> in a separate commit with an explanation in the changelog.  I'd have no
+> objection to that -- it's your tree, after all.  Or if you want to munge
+> my patch in place, just replace my signoff with yours and note "based on
+> work by Nathan Lynch" or something.
 
-Not always: for instance, ckpt_hdr_file_xxxx all use CKPT_HDR_FILE,
-but have different sizes (all share a common 'struct ckpt_hdr_file',
-but actual payload differs).
-
-(Besides, that would require adding a big table to decide the length
-based on a type... which I don't really like).
+You are correct. Originally I was unsure how to modify that, and
+later in the flood of  other changes I forgot to get back to that
+commit message. I apologize for that.
 
 Oren.
-
-> 
-> (The callers would look much friendlier without the 2nd arg imo)
