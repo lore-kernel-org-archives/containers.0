@@ -1,16 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH] range-bw: Another I/O scheduling policy of dm-ioband
-	supporting the predicable I/O bandwidth (range bandwidth)
-Date: Thu, 30 Apr 2009 16:53:10 +0900 (JST)
-Message-ID: <20090430.165310.226796026.ryov__45866.9452266351$1241078129$gmane$org@valinux.co.jp>
-References: <2891419e0904270158n71b25271p6094feba70d0555d@mail.gmail.com>
-	<20090427.201214.39166983.ryov@valinux.co.jp>
-	<2891419e0904292215x240dfeeg71f3eed0066bc112@mail.gmail.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 00/54] Kernel based checkpoint/restart
+Date: Thu, 30 Apr 2009 11:41:06 +0200
+Message-ID: <20090430094106.GC13896@hawkmoon.kerlabs.com>
+References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
+	<20090429081815.GA1813@hawkmoon.kerlabs.com>
+	<49F8D8FC.8010400@cs.columbia.edu>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============1195000496241945978=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2891419e0904292215x240dfeeg71f3eed0066bc112-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <49F8D8FC.8010400-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,89 +17,151 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Dong-Jae, =
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
+--===============1195000496241945978==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-2782-1241084454-0001-2"
+Content-Disposition: inline
 
-From: Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] range-bw: Another I/O scheduling policy of dm-ioband s=
-upporting the predicable I/O bandwidth (range bandwidth)
-Date: Thu, 30 Apr 2009 14:15:24 +0900
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> Hi Ryo
-> =
+--=_bohort-2782-1241084454-0001-2
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> I am sorry for delayed reply.
-> I tested range-bw policy as you send me your configuration
-> and I found some logical bugs in range-bw including big scheduling overhe=
-ad.
-> =
+On 29/04/09 18:47 -0400, Oren Laadan wrote:
+> Hi Louis,
+>=20
+> Louis Rilling wrote:
+> > Hi,
+> >=20
+> > On 28/04/09 19:23 -0400, Oren Laadan wrote:
+> >> Here is the latest and greatest of checkpoint/restart (c/r) patchset.
+> >> The logic and image format reworked and simplified, code refactored,
+> >> support for PPC, s390, sysvipc, shared memory of all sorts, namespaces
+> >> (uts and ipc).
+> >=20
+> > I should have asked before, but what are the reasons to checkpoint SYSV=
+ IPCs
+> > in the same file/stream as tasks? Would it be better to checkpoint them
+> > independently, like the file system state?
+> >=20
+> > In Kerrighed we chose to checkpoint SYSV IPCs independently, a bit like=
+ the file
+> > system state, because SYSV IPCs objects' lifetime do not depend on tasks
+> > lifetime, and we can gain more flexibility this way. In particular we e=
+nvision
+> > cases in which two applications share a state in a SYSV SHM (something =
+like a
+> > producer-consumer scheme), but do not need to be checkpointed together.=
+ In such
+> > a case the SYSV SHM itself could even need more high-availability (using
+> > active replication) than a checkpoint/restart facility.
+> >=20
+>=20
+> Thanks for the feedback, this is actually an interesting idea.
+>=20
+> Indeed in the past I also considered SYSV IPC to be a "global" resource
+> that was checkpointed before iterating through the tasks.
+>=20
+> However, in the presence of namespaces, the lifetime of an IPC namespace
+> does depend on on tasks lifetime - when the last task referring to a
+> given namespace exits - that namespace is destroyed. Of course, the
+> root namespace is truly global, because init(1) never exits.
+>=20
+> What would 'checkpoint them independently' mean in this case ?
 
-> > I used fio 1.22. The below is a script which I actually ran.
-> >
-> > =A0#!/bin/sh
-> > =A0dev1=3D/dev/sdb4 # SATA disk
-> > =A0echo "0 $(sudo blockdev --getsize $dev1) ioband $dev1 share2 0 0
-> > =A0 =A0cgroup range-bw 0" | sudo dmsetup create ioband1
-> >
-> > =A0arg=3D"--time_based --runtime=3D10 --ioengine=3Dlibaio --iodepth=3D5=
-0 \
-> > =A0 =A0 =A0 --direct=3D1 --norandommap"
-> >
-> > =A0dmsetup message ioband1 0 attach 2
-> > =A0dmsetup message ioband1 0 attach 3
-> > =A0dmsetup message ioband1 0 min-bw 2:100
-> > =A0dmsetup message ioband1 0 max-bw 2:100
-> > =A0dmsetup message ioband1 0 min-bw 3:200
-> > =A0dmsetup message ioband1 0 max-bw 3:200
-> =
+I mean that the producer and the consumer could have separate checkpointing
+policies (if any), and the IPC SHM as well.
 
-> I recommend it is better to use different value in min-bw and max-bw
-> because its concept is to support range-bw with the minimum
-> guaranteeing and maximum limitation.
-> exampe - min-bw : 1024 / max-bw : 3072
-> =
+>=20
+> In your use-case, can you restart either application without first
+> restoring the relevant SYSVIPC ?
 
-> > =A0echo $$ > /cgroup/grp1/tasks
-> > =A0fio $arg --rw=3Drandread --name=3Dgrp1 --filename=3D/dev/mapper/ioba=
-nd1 \
-> > =A0 =A0 =A0 =A0 =A0--output=3Dr2-1.log &
-> > =A0echo $$ > /cgroup/grp2/tasks
-> > =A0fio $arg --rw=3Drandread --name=3Dgrp2 --filename=3D/dev/mapper/ioba=
-nd1 \
-> > =A0 =A0 =A0 =A0 =A0--output=3Dr2-2.log &
-> > =A0wait
-> >
-> > Please feel free to ask me if you need more information.
-> >
-> >
-> > I'm look forward to seeing the results.
-> >
-> Thanks for your comments.
-> And I will fix the bugs and re-release it after several days
-> at that time, I inform you about that.
-> =
+Probably not.
 
-> Ryo,
-> now, I am using bio-cgroup.....
-> but, Is there additional things I have to consider to support AIO or
-> dealyed I/O?
+>=20
+> Can you think of other use-cases for such a division ?  Am I right to
+> guess that your use case is specific to the distributed (and SSI-)
+> nature of your system ?  (Active-replication of SYSV_SHM sounds
+> awfully related to DSM :)
 
-bio-cgroup is renamed to bklio-cgroup. :)
-I don't clearly understand about range-bw but I think that you don't
-need to consider to support them and it should be taken care of by
-blkio-cgroup and the common part of dm-ioband, not the policy
-implementation. Do you have any problems with AIO or delayed write?  =
+The case of active-replication may be specific to DSM-based systems, but the
+case of independent policies is already interesting in standalone boxes.
 
+>=20
+>=20
+> While not focusing on such use cases, I want to keep the design flexible
+> enough to not exclude them a-priori, and be able to address them later
+> on. Indeed, the code is split such that the the function to save a given
+> IPC namespace does not depend on the task that uses it. Future code
+> could easily use the same functionality.
+>=20
+> One way to be flexible to support your use case, is by having some
+> mechanism in place to select whether a resource (virtually any) is
+> to be chekcpointed/restored.
+>=20
+> For example, you could imagine checkpoint(..., CHECKPOINT_SYSVIPC)
+> to checkpoint (also) IPC, and not checkpoint IPC in its absence.
+>=20
+> So normally you'd have checkpoint(..., CHECKPOINT_ALL). When you don't
+> want IPC, you'd use CHECKPOINT_ALL & ~CHECKPOINT_SYSVIPC. When you
+> want only IPC, you'd use CHECKPOINT_SYSVIPC only.
+>=20
+> Same thing for restart, only that it will get trickier in the "only IPC"
+> case, since you will need to tell which IPC namespace is affected.
+>=20
+> Also, I envision a task saying cradvise(CHECKPOINT_SYSVIPC, false),
+> telling the kernel to not c/r its IPC namespace. (Or any other
+> resource). Again there would need to be a way to add a restored
+> namespace.
+>=20
+> Does this address your concerns ?
 
-> =
+Yes this sounds flexible enough. Thanks for=A0taking this into account.
 
-> -- =
+Louis
 
-> Best Regards,
-> Dong-Jae Kang
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-2782-1241084454-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFJ+XIyVKcRuvQ9Q1QRAjk0AJ4wdlBNqypc5zd+XKossf7Z3cEGsQCgqHJI
+9PDE13csaarGHmoRIHNohEI=
+=0N7O
+-----END PGP SIGNATURE-----
+
+--=_bohort-2782-1241084454-0001-2--
+
+--===============1195000496241945978==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============1195000496241945978==--
