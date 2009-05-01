@@ -1,14 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 09/54] Restore memory address space
-Date: Fri, 01 May 2009 08:28:38 -0700
-Message-ID: <1241191718.29485.180.camel@nimitz>
+Subject: Re: [RFC v14][PATCH 08/54] Dump memory address space
+Date: Fri, 01 May 2009 08:27:12 -0700
+Message-ID: <1241191632.29485.177.camel@nimitz>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-10-git-send-email-orenl@cs.columbia.edu>
+	<1240961064-13991-9-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240961064-13991-10-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1240961064-13991-9-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,20 +23,19 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ale
 List-Id: containers.vger.kernel.org
 
 On Tue, 2009-04-28 at 19:23 -0400, Oren Laadan wrote:
-> diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
-> index bad7b29..d61653c 100644
-> --- a/arch/x86/include/asm/checkpoint_hdr.h
-> +++ b/arch/x86/include/asm/checkpoint_hdr.h
-> @@ -104,4 +104,9 @@ struct ckpt_hdr_mm_context {
->         __u32 nldt;
->  } __attribute__((aligned(8)));
-> 
-> +#ifdef __KERNEL__
-> +/* misc prototypes from kernel (not defined elsewhere) */
-> +asmlinkage int sys_modify_ldt(int func, void __user *ptr, unsigned long bytecount);
-> +#endif
+> +/* return (and detach) first empty page-array in the pool, if exists */
+> +static inline struct ckpt_pgarr *pgarr_from_pool(struct ckpt_ctx *ctx)
+> +{
+> +       struct ckpt_pgarr *pgarr;
+> +
+> +       if (list_empty(&ctx->pgarr_pool))
+> +               return NULL;
+> +       pgarr = list_first_entry(&ctx->pgarr_pool, struct ckpt_pgarr, list);
+> +       list_del(&pgarr->list);
+> +       return pgarr;
+> +}
 
-This really needs to go somewhere more appropriate.  What about
-asm/ldt.h?
+What's the pool for, again?  If we're alloc/freeing a bunch of these,
+I'd vote for a slab cache rather than managing our own pool.
 
 -- Dave
