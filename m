@@ -1,14 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 07/54] cr: extend arch_setup_additional_pages()
-Date: Fri, 01 May 2009 08:13:10 -0700
-Message-ID: <1241190790.29485.168.camel@nimitz>
+Subject: Re: [RFC v14][PATCH 09/54] Restore memory address space
+Date: Fri, 01 May 2009 08:28:38 -0700
+Message-ID: <1241191718.29485.180.camel@nimitz>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-8-git-send-email-orenl@cs.columbia.edu>
+	<1240961064-13991-10-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240961064-13991-8-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1240961064-13991-10-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,15 +23,20 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ale
 List-Id: containers.vger.kernel.org
 
 On Tue, 2009-04-28 at 19:23 -0400, Oren Laadan wrote:
-> From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+> index bad7b29..d61653c 100644
+> --- a/arch/x86/include/asm/checkpoint_hdr.h
+> +++ b/arch/x86/include/asm/checkpoint_hdr.h
+> @@ -104,4 +104,9 @@ struct ckpt_hdr_mm_context {
+>         __u32 nldt;
+>  } __attribute__((aligned(8)));
 > 
-> Add "start" argument, to request to map vDSO to a specific place,
-> and fail the operation if not.
-> 
-> This is useful for restart(2) to ensure that memory layout is restore
-> exactly as needed.
+> +#ifdef __KERNEL__
+> +/* misc prototypes from kernel (not defined elsewhere) */
+> +asmlinkage int sys_modify_ldt(int func, void __user *ptr, unsigned long bytecount);
+> +#endif
 
-This needs to go up at the start of the series.  It can get merged
-before everything else.
+This really needs to go somewhere more appropriate.  What about
+asm/ldt.h?
 
 -- Dave
