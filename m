@@ -1,14 +1,12 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 08/54] Dump memory address space
-Date: Fri, 01 May 2009 08:27:12 -0700
-Message-ID: <1241191632.29485.177.camel@nimitz>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-9-git-send-email-orenl@cs.columbia.edu>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] s390: fix fallout from major rewrite
+Date: Fri, 01 May 2009 08:42:02 -0700
+Message-ID: <87skjou8xh.fsf@caffeine.danplanet.com>
+References: <20090430225419.GA16782@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240961064-13991-9-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,24 +16,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-04-28 at 19:23 -0400, Oren Laadan wrote:
-> +/* return (and detach) first empty page-array in the pool, if exists */
-> +static inline struct ckpt_pgarr *pgarr_from_pool(struct ckpt_ctx *ctx)
-> +{
-> +       struct ckpt_pgarr *pgarr;
-> +
-> +       if (list_empty(&ctx->pgarr_pool))
-> +               return NULL;
-> +       pgarr = list_first_entry(&ctx->pgarr_pool, struct ckpt_pgarr, list);
-> +       list_del(&pgarr->list);
-> +       return pgarr;
-> +}
+SH> This patch brings the s390 port to where it will compile,
+SH> boot, and checkpoint/restart a simple app.
 
-What's the pool for, again?  If we're alloc/freeing a bunch of these,
-I'd vote for a slab cache rather than managing our own pool.
+SH> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
--- Dave
+
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
