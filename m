@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] utsns: extract creeate_uts_ns()
-Date: Mon, 4 May 2009 03:25:10 +0400
-Message-ID: <20090503232510.GA16631__34686.327892314$1241393232$gmane$org@x200.localdomain>
+Subject: [PATCH 1/2] ipcns 1/2: remove useless get/put while CLONE_NEWIPC
+Date: Mon, 4 May 2009 03:25:42 +0400
+Message-ID: <20090503232542.GB16631__23341.8431984775$1241393262$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,46 +20,32 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-create_uts_ns() will be used by C/R to create fresh uts_ns.
+copy_ipcs() doesn't actually copy anything. If new ipcns is created, it's
+created from scratch, in this case get/put on old ipcns isn't needed.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/utsname.c |   13 +++++++++++--
- 1 files changed, 11 insertions(+), 2 deletions(-)
+ ipc/namespace.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
 
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index 815237a..8a82b4b 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -15,6 +15,16 @@
- #include <linux/err.h>
- #include <linux/slab.h>
- 
-+static struct uts_namespace *create_uts_ns(void)
-+{
-+	struct uts_namespace *uts_ns;
-+
-+	uts_ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
-+	if (uts_ns)
-+		kref_init(&uts_ns->kref);
-+	return uts_ns;
-+}
-+
- /*
-  * Clone a new ns copying an original utsname, setting refcount to 1
-  * @old_ns: namespace to clone
-@@ -24,14 +34,13 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 4a5e752..a56fc59 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -50,15 +50,11 @@ struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
  {
- 	struct uts_namespace *ns;
+ 	struct ipc_namespace *new_ns;
  
--	ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
-+	ns = create_uts_ns();
- 	if (!ns)
- 		return ERR_PTR(-ENOMEM);
+-	BUG_ON(!ns);
+-	get_ipc_ns(ns);
+-
+ 	if (!(flags & CLONE_NEWIPC))
+-		return ns;
++		return get_ipc_ns(ns);
  
- 	down_read(&uts_sem);
- 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
- 	up_read(&uts_sem);
--	kref_init(&ns->kref);
- 	return ns;
+ 	new_ns = clone_ipc_ns(ns);
+ 
+-	put_ipc_ns(ns);
+ 	return new_ns;
  }
