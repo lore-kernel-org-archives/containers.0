@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2] netns 2/2: extract net_create()
-Date: Mon, 4 May 2009 03:28:47 +0400
-Message-ID: <20090503232847.GG16631__16267.143833875$1241393345$gmane$org@x200.localdomain>
+Subject: [PATCH] nsproxy: extract create_nsproxy()
+Date: Mon, 4 May 2009 03:29:22 +0400
+Message-ID: <20090503232922.GH16631__15654.2190038182$1241393381$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,78 +16,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-net_create() will be used by C/R to create fresh netns on restart.
+clone_nsproxy() does useless copying of old nsproxy -- every pointer will be
+rewritten to new ns or to old ns. Remove copying, rename clone_nsproxy(),
+create_nsproxy() will be used by C/R code to create fresh nsproxy on restart.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- net/core/net_namespace.c |   44 ++++++++++++++++++++------------------------
- 1 files changed, 20 insertions(+), 24 deletions(-)
+ kernel/nsproxy.c |   19 +++++++------------
+ 1 files changed, 7 insertions(+), 12 deletions(-)
 
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 4488010..6b3edc9 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -115,38 +115,34 @@ static void net_free(struct net *net)
- 	kmem_cache_free(net_cachep, net);
- }
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 63598dc..09b4ff9 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -26,19 +26,14 @@ static struct kmem_cache *nsproxy_cachep;
  
--struct net *copy_net_ns(unsigned long flags, struct net *old_net)
-+static struct net *net_create(void)
+ struct nsproxy init_nsproxy = INIT_NSPROXY(init_nsproxy);
+ 
+-/*
+- * creates a copy of "orig" with refcount 1.
+- */
+-static inline struct nsproxy *clone_nsproxy(struct nsproxy *orig)
++static inline struct nsproxy *create_nsproxy(void)
  {
--	struct net *new_net = NULL;
--	int err;
--
--	if (!(flags & CLONE_NEWNET))
--		return get_net(old_net);
--
--	err = -ENOMEM;
--	new_net = net_alloc();
--	if (!new_net)
--		goto out_err;
-+	struct net *net;
-+	int rv;
+-	struct nsproxy *ns;
++	struct nsproxy *nsproxy;
  
-+	net = net_alloc();
-+	if (!net)
-+		return ERR_PTR(-ENOMEM);
- 	mutex_lock(&net_mutex);
--	err = setup_net(new_net);
--	if (!err) {
-+	rv = setup_net(net);
-+	if (rv == 0) {
- 		rtnl_lock();
--		list_add_tail(&new_net->list, &net_namespace_list);
-+		list_add_tail(&net->list, &net_namespace_list);
- 		rtnl_unlock();
- 	}
- 	mutex_unlock(&net_mutex);
-+	if (rv < 0) {
-+		net_free(net);
-+		return ERR_PTR(rv);
-+	}
-+	return net;
-+}
- 
--	if (err)
--		goto out_free;
--out:
--	return new_net;
--
--out_free:
--	net_free(new_net);
--out_err:
--	new_net = ERR_PTR(err);
--	goto out;
-+struct net *copy_net_ns(unsigned long flags, struct net *old_net)
-+{
-+	if (!(flags & CLONE_NEWNET))
-+		return get_net(old_net);
-+	return net_create();
+-	ns = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
+-	if (ns) {
+-		memcpy(ns, orig, sizeof(struct nsproxy));
+-		atomic_set(&ns->count, 1);
+-	}
+-	return ns;
++	nsproxy = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
++	if (nsproxy)
++		atomic_set(&nsproxy->count, 1);
++	return nsproxy;
  }
  
- static void cleanup_net(struct work_struct *work)
+ /*
+@@ -52,7 +47,7 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 	struct nsproxy *new_nsp;
+ 	int err;
+ 
+-	new_nsp = clone_nsproxy(tsk->nsproxy);
++	new_nsp = create_nsproxy();
+ 	if (!new_nsp)
+ 		return ERR_PTR(-ENOMEM);
