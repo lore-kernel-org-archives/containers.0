@@ -1,11 +1,12 @@
-From: "barre Irwin" <5-tallyho-BLRgZ0e6Vn5vqeczSxQ3UQ@public.gmane.org>
-Subject: RE: MD Lists
-Date: Sun, 3 May 2009 14:21:33 -0700
-Message-ID: <200905032122.n43LLXvI025367@smtp1.linux-foundation.org>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] utsns: extract creeate_uts_ns()
+Date: Mon, 4 May 2009 03:25:10 +0400
+Message-ID: <20090503232510.GA16631__34686.327892314$1241393232$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,41 +16,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: apple-K1ihLcvFRzc7bu/2PbdMddBPR1lH4CV8@public.gmane.org, imtyd-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, apple-ncvY9PZ0eDucqzYg7KEe8g@public.gmane.org, toshinak-9URKZK3dKld3+QwDJ9on6Q@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, containers-O5WfVfzUwx8@public.gmane.org, yjs16-myJQqMpx5h0nDS1+zs4M5A@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Here's what we're offering for this week:
+create_uts_ns() will be used by C/R to create fresh uts_ns.
 
-Licensed MDs in the US 
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ kernel/utsname.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
 
-788,236 in total * 17,248 emails
-
-Featuring the most complete contact information in many different areas of medicine
-
-Over a dozen sortable fields
-
-
-US Pharmaceutical Company Executives Contact List
-Names and email addresses of 47,000 employees in high-ranking positions
-
-Complete List of Hospitals in the US
-complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
-
-Database of US Dentists
-597,000 dentists and dental services ( a $350 value!) 
-
-US Chiropractor Contact List
-100,000 Chiropractors in the USA (worth $250 alone)
-
-
-Dramatic cost reduction: 
-$391 for everything
-
-Email us at:      Leopoldo-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org
-
-  
-
-good until May 09
-
-
-to terminate please send a blank message to exit-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 815237a..8a82b4b 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -15,6 +15,16 @@
+ #include <linux/err.h>
+ #include <linux/slab.h>
+ 
++static struct uts_namespace *create_uts_ns(void)
++{
++	struct uts_namespace *uts_ns;
++
++	uts_ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
++	if (uts_ns)
++		kref_init(&uts_ns->kref);
++	return uts_ns;
++}
++
+ /*
+  * Clone a new ns copying an original utsname, setting refcount to 1
+  * @old_ns: namespace to clone
+@@ -24,14 +34,13 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+ {
+ 	struct uts_namespace *ns;
+ 
+-	ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
++	ns = create_uts_ns();
+ 	if (!ns)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	down_read(&uts_sem);
+ 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+ 	up_read(&uts_sem);
+-	kref_init(&ns->kref);
+ 	return ns;
+ }
