@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2] ipcns 2/2: extract create_ipc_ns()
-Date: Mon, 4 May 2009 03:26:16 +0400
-Message-ID: <20090503232616.GC16631__28826.9187011339$1241393265$gmane$org@x200.localdomain>
+Subject: [PATCH 1/2] netns 1/2: don't get/put old netns on CLONE_NEWNET
+Date: Mon, 4 May 2009 03:28:25 +0400
+Message-ID: <20090503232825.GF16631__9503.66724650866$1241393323$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,47 +16,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-clone_ipc_ns() is misnamed, it doesn't clone anything and doesn't use passed
-parameter. Rename it.
-
-create_ipc_ns() will be used by C/R to create fresh ipcns.
+copy_net_ns() doesn't copy anything, it creates fresh netns, so get/put of old
+netns isn't needed.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/namespace.c |    9 ++-------
- 1 files changed, 2 insertions(+), 7 deletions(-)
+ net/core/net_namespace.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
 
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index a56fc59..231ee53 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -14,7 +14,7 @@
- 
- #include "util.h"
- 
--static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
-+static struct ipc_namespace *create_ipc_ns(void)
- {
- 	struct ipc_namespace *ns;
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index e3bebd3..4488010 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -120,10 +120,8 @@ struct net *copy_net_ns(unsigned long flags, struct net *old_net)
+ 	struct net *new_net = NULL;
  	int err;
-@@ -48,14 +48,9 @@ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
  
- struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
- {
--	struct ipc_namespace *new_ns;
+-	get_net(old_net);
 -
- 	if (!(flags & CLONE_NEWIPC))
- 		return get_ipc_ns(ns);
--
--	new_ns = clone_ipc_ns(ns);
--
--	return new_ns;
-+	return create_ipc_ns();
- }
+ 	if (!(flags & CLONE_NEWNET))
+-		return old_net;
++		return get_net(old_net);
  
- /*
+ 	err = -ENOMEM;
+ 	new_net = net_alloc();
+@@ -142,7 +140,6 @@ struct net *copy_net_ns(unsigned long flags, struct net *old_net)
+ 	if (err)
+ 		goto out_free;
+ out:
+-	put_net(old_net);
+ 	return new_net;
+ 
+ out_free:
