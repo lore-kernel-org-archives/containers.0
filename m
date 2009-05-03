@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] nsproxy: extract create_nsproxy()
-Date: Mon, 4 May 2009 03:29:22 +0400
-Message-ID: <20090503232922.GH16631__15654.2190038182$1241393381$gmane$org@x200.localdomain>
+Subject: [PATCH 1/2] i386: ifdef out struct thread_struct::fs
+Date: Mon, 4 May 2009 03:29:52 +0400
+Message-ID: <20090503232952.GI16631__46662.6680376523$1241393416$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,55 +16,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: mingo-X9Un+BFzKDI@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-clone_nsproxy() does useless copying of old nsproxy -- every pointer will be
-rewritten to new ns or to old ns. Remove copying, rename clone_nsproxy(),
-create_nsproxy() will be used by C/R code to create fresh nsproxy on restart.
+After commit 464d1a78fbf8cf6c7fd970e7b3e2db50a320ce28 aka
+"[PATCH] i386: Convert i386 PDA code to use %fs"
+%fs saved during context switch moved from thread_struct to pt_regs
+and value on thread_struct became unused.
+
+I don't understand why .fs (OK, .gs first) initializer was added, kernel
+clearly stopped touching it after the patch.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/nsproxy.c |   19 +++++++------------
- 1 files changed, 7 insertions(+), 12 deletions(-)
+ arch/x86/include/asm/processor.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 63598dc..09b4ff9 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -26,19 +26,14 @@ static struct kmem_cache *nsproxy_cachep;
- 
- struct nsproxy init_nsproxy = INIT_NSPROXY(init_nsproxy);
- 
--/*
-- * creates a copy of "orig" with refcount 1.
-- */
--static inline struct nsproxy *clone_nsproxy(struct nsproxy *orig)
-+static inline struct nsproxy *create_nsproxy(void)
- {
--	struct nsproxy *ns;
-+	struct nsproxy *nsproxy;
- 
--	ns = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
--	if (ns) {
--		memcpy(ns, orig, sizeof(struct nsproxy));
--		atomic_set(&ns->count, 1);
--	}
--	return ns;
-+	nsproxy = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
-+	if (nsproxy)
-+		atomic_set(&nsproxy->count, 1);
-+	return nsproxy;
+diff --git a/arch/x86/include/asm/processor.h b/arch/x86/include/asm/processor.h
+index c2cceae..a6732ff 100644
+--- a/arch/x86/include/asm/processor.h
++++ b/arch/x86/include/asm/processor.h
+@@ -428,7 +428,9 @@ struct thread_struct {
+ 	unsigned short		gsindex;
+ #endif
+ 	unsigned long		ip;
++#ifdef CONFIG_X86_64
+ 	unsigned long		fs;
++#endif
+ 	unsigned long		gs;
+ 	/* Hardware debugging registers: */
+ 	unsigned long		debugreg0;
+@@ -874,7 +876,6 @@ static inline void spin_lock_prefetch(const void *x)
+ 	.vm86_info		= NULL,					  \
+ 	.sysenter_cs		= __KERNEL_CS,				  \
+ 	.io_bitmap_ptr		= NULL,					  \
+-	.fs			= __KERNEL_PERCPU,			  \
  }
  
  /*
-@@ -52,7 +47,7 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
- 	struct nsproxy *new_nsp;
- 	int err;
- 
--	new_nsp = clone_nsproxy(tsk->nsproxy);
-+	new_nsp = create_nsproxy();
- 	if (!new_nsp)
- 		return ERR_PTR(-ENOMEM);
