@@ -1,10 +1,10 @@
-From: Crabbe <placate-QJGlcJ5JBdN4cg9Nei1l7Q@public.gmane.org>
-Subject: 4 Incredibly Aroousing Foreplay Tips and Techniques - How to Make Her
-	Want it BAD
-Date: Sat, 02 May 2009 01:13:52 -0100
-Message-ID: <49FB9D1B.8006370@grow-room.org>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 0/7] cgroup: io-throttle controller (v16)
+Date: Sun,  3 May 2009 13:36:16 +0200
+Message-ID: <1241350583-9871-1-git-send-email-righi.andrea__23041.9503096075$1241350795$gmane$org@gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------09FE620F5E69D131384C4A98"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,221 +15,380 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------09FE620F5E69D131384C4A98
-Content-Type: image/png
-Content-Transfer-Encoding: base64
-Content-Disposition: inline
+Objective
+~~~~~~~~~
+The objective of the io-throttle controller is to improve IO performance
+predictability of different cgroups that share the same block devices.
 
-iVBORw0KGgoAAAANSUhEUgAAAXAAAAGqCAMAAAAlYu9EAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
-U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADAUExURVSl2b11dZYtLdQ3NfWpwsLCo9ub
-INXS1OOUlzENPWZbaNxWVWNmnJmZZtWpW7qyu6OlwIHA5I9sjZhkJerm5fz7+vX09P7My5qSmfDE
-Ey0tO+fFeE8zWLxyC7CLOvXmxPvy6bLX7vv58vnr5eHc3drl7qmhq+Ts8u3x9HuOyvv09vbe2OzX
-qyFoBJsDkmaZawAA//3o8vu82qLDovvW6TA/g/b4+fHs6QAAZgAAmf8AAMwAAAAAAP///8zMzP7/
-+FZQ/44AACq/SURBVHja7J2JQuK8FoBFHMG6oEiBqY4Lg8ioXMdZqA5J+/5vdbPvXdiLf8LWNmma
-fj09OUkO6V6axunKQrxk6nitx8vZaYUMCsKeB+6Be+AeuAfugXvgHrgH7oF74B64B+6Be+AeuAfu
-gXvgHrgH7oF74B64B+6Be+AeuAfugXvgHrgH7oF74B64B+6Be+AeuAfugXvgHrgH7oF74B64B+6B
-e+AeuAfugXvgHrgH7oF74B74fMD/oWAuyajMcqt75Z75PxmyzjsrC7o9zkj9T1lQsyCLsXmKWhHS
-nMM5AfGdM3PQIwqB/9MWdhY43TA/cAnAA3cD/yc48HUPXAVepErnA57awM0IG3iuDs8/hYITXAz4
-P+UEjFMxBSoDuGN3GzhjwURS3cPcUYmOTdl0AZdZprYwmwV33CKK+JqCZ52AncNSwI0byNiaBVyJ
-zwf+jwJUD2NnYcbqDIwCZQH/lw9cy0DXSM7LZQN3yMzywO2NWrld8TZwFzxLMzqzM7LWz9r8ygNu
-FU/Z5i6GvbcB/N/qgBtiLSqqf4p6tIHr327gqTPHjCyyMtVrSUPMldsoG7jr+GoxioEbOcwPPEcK
-zSLnSrhVk+cAd0ire9kl4irwNLWtlDzgaZp7uCxAdvJ/jpq7DHDlJnGplCzgDo3qBu5qZy0J3FHA
-XOBWbT8XcIc2WzHwdF3AVyXhWQbVbgJXdZutqbKAu4ucA3weHZ6uAXh5HZ4JXDf+ywNP3dW0Dnxx
-CS+ye8pZKaWAc7HJ0OFu+Sy0UlYu4anbPDPkrLwdngV8NXa4q8NtbuBWy2EuO9zMYRngSrEXbmnm
-AF9BSzMTeDoPcKOdOF9L05VDxfvDS/VQ+AEID9wD98A9cD+m6YF74B64B+6Be+AeuAfugXvg2wAe
-x8N4ZWG4ZOrhWo+Xs9MKGRSEpSS8f3Q04svto6OjDs/q6Oi6bcalVlzsihNLaiCbGu3ro6NgFGbF
-x30Uf93v2OUctAIUFV23G0KalZ2vg35HZdBqX1/TrZVTKa2jozZfRmU8GrGsGmh7YsalVlzsissE
-3uZ8hu74Bo9vWMW8FgmDoQ0ch8SV+Kg9qBjwUErkkJwOy2qEGHbNuNSKi11xnL0I13RjHwNIEvRz
-3RHxiYzvREdH/aSFL4txQnhTMEoaLXwHHLU48Oshy4PcGB01cT9JkhFZ6las0gzE2SEQ7aPrWNls
-xqVWXOyI6zjUVptdmIRdvUCt61g8JtUy7zqOUAj9COfCgMtcIDpuXxxNJO5cm1ltH3ifnSVmFYzE
-yjVGaMYlVlzsjNNDg90oskpAyYcSOI/vCIKBLuIteeOx7IYm8FTcjThaCnX32iEA2wUuFPUTkpGY
-y8mQbC2Oi51xekDn3GC/TKGK5AQ4j5dXO1Fqa7qjCm3EjqEBxxeJ/w71xP1qAQ95uRMspVxA6ckX
-x8XOOC1wPor9gpILVrGIbwu5jrXLlhjMwuujKLSAX4t6V7vig+t+UrGGT8AEr41LjBRFl610y8TF
-7ji1PYLwdFNDIhXFMxTxaMERT/JsmCo9MYEP2OXsq+ZKNVuaI3HHU0XRUkSwMC624q7tOqJvUhxw
-uzsjXs8mkIk1kdeAt1k2KHFYceANWtSY6M0nekd2WPEL42J3XKrWWtdPqaFdWxI4NkufUvMO0Bgf
-mRexQw8m0odxC+1wHTsTV7AvhUrsiNZMASlwi9+YRXGxFdey7p++Ymx0uelwZMdnAw+MVifdord7
-rltmYtEMqBpwyqotdOCQ3KBhqbjYiostEyVWMF63ugPUELwWQBULsDTw0AYejAaxkbir9xpUCDi1
-ilnt3iAaQlgRRXGxFacXRTMTO7zJ3W7z+lGNV7RBvkqJuUohLc0WaxbFhvavLvAh1gMNrgwidDJd
-YQcXxcVWXGxWmYrR8ERa5ujmDzgWNT6r0rQqYrPSbMnmfnpt8g2qB5zYGX3eKsEsWrLxoMW1rbjY
-iouNrM0KrxGrdrjKJwu4ZRayBrDUHn3ZzWklriJwzCpQFEWnL8+3IC624mKjenN1ZYjNWry04fWG
-j9mWwVcptHQ+6wRKzMRVBI4EcyCMBawjAlloLa5jxXWsuNjIWVotSZv3lQpDp6W24WWHTGvepj06
-uLTm9c6TKgJHxZUni1qGfQWTFpdacX0rLjZu/qEDKNIYIY9vmOa13XmVCPnN7LwaiTEQPTGpqCsH
-PFXttLh9pAmJGpeWiIszxavDzQ3ZbaiTDbK6Z9UeV1JDWt2zqeyHxYm5EHT7VbRSWJc9B47P6Nod
-l5aIi1UUep2J7bdWA7cKA3nFYs3cwwMUKFnU0Y3qvnsAItAUPb9/cOLrfqtBhzJ4i6hSwFvKGFmM
-7de2Oy4tEacB19ssg4A3U55km0bTHcxQ5xIqd3cPsQXG1WRVRBIoDdD+U1o94LEyCkzGchJ3XFoi
-Lgc44obNiaClNiK1onfwIPN1u2O3McMWjjoKtEFkNfPukdKP0+hf09StNQxper+UJTLywD1wD9wD
-98A9cA/cA/fAPXAPfFeAe//wHfIP9xLuVcquAz+ufphVPswFvPISXq+8hHvgHrgHvoPAofgiCxBW
-FXi+DXqMvyBEbz1Uxw6vs0VcyHRwh8IgDHOKuHk7fDaPHX7MxAVOH6fT7nT8+Pjw8DDOFJ+tSTgq
-EBzcXpHwcvXy8qKK+66pFM57jMLjw+PD/f199YBj3C/kRcPtLZMKgAL9lTvhZbmuHHgymdBfvp1t
-4Ns3Bpzwxqgx7YuLi/uKAUfK5EoNX8/Ovr5Azllny4C7DjwhL8yX86afiXoNNgF8+ohk+56yxmHv
-Ik2l1KBvfgb5wEz5idnSRAjQ4sBfNNzofXgG1RLSJSLusbGuA5c/WwOewofHRwp772KPBBN4KQm1
-5Cc2b+DFVcqdQhvDPtSAq9ABiJVlnkIDnqbblvCHR4ob8WbQrbPQtCWg2+R3lvxMdN6LA3+5+np1
-9vUQvQ/RF/75dpdawOlvbMDO0eETKh4TRUo2Afzh4Z7R3mPh3gFc+XDU+mlZ8sNUitQoSwA/QyJN
-ZBvTPkO8X1JbwqksZKsUWwYm4qbcJHCJmxOfuiTccQE02crS4coNuzhwypmqE4T722EIU0uHmypF
-ptArTY2uISUbAB7eC8lm4WIq5YZJiqpKVOBA0Snm6cSKJC0J/PYQg/56iFUKBn72BnURUG6+fB0+
-2b4On2Le/EN5Qwdw18dSKesCHp4dyvDt20so2maaHV6kUrR7cLI1O5yaJ/iL1Jz3jxK4fs8C41eu
-5AFfhUpJb78R1Jj2t5vnhTuvluC6QuBjZnwz8FM1gSk+umrRVYopP4odvnxL8xmjxuHsGaY5XVc7
-0bQf8xYPlu8xku+ipr3dlHPJz2q7Z59ezg6bV43vTyV2qjrwED4+MAV+P8XikwdcqyY32h8eTsPF
-Dlu5/nCMGPcUPj6Op1h/wyoOQMA0zeki9AMQqR/x8cA98P8g8Hrlw+fyS5lVXsJnn0vCPfAtAsdj
-mwVmlwe+OuDheHz/8DidhnkNZw98VcDh+IE07e/v78chrKaEE+cf5jeTdyfuBPDx3oUM3Sr5pSin
-A8O725ezq7OXq+5gx4GH93s/9n5cnF/gN5Lz6gFHMv399uzs6svZ1RVijv1SsqR8F4BP8bDDD/SF
-Pudo4al6wCGWbfqi4eo7G2SbwxHIClY/nOhK1sdOJpPsMYpFgD/82GO4yYjP3gOsHHCMWMDG4203
-h3wUubQjkIO3sUEOoohROHU4bmXAxwT0D/w+Ib9QKU9pRyDnWWoyFLu9zSZZIiSB356JgFmj97dv
-3XkcgdThE4ePhwJc46w7Da0M+CPCfLJHvgjxCwP44hJu3tmWt1BqLziAwysq2Hhok+I+/HYZzuMI
-BJjcAKfngQl8YhVrslIdDtnw8Qn3SwnNs0iLHYFKyFDs9jYrBh4e3lDJxh86snn5ks7jCOQc+7Z1
-Dx9VXjPw6QWTbfq5gKkNvNARqIQMxQ5vM0vHOIHfMMnGsn14g8c2b3B7obwjUEngtICTdM3A04cT
-6ZVysveQOoC7LoAhW4WnFDu9zWznHFulIM4337AiIdobyfe3J13pFTkClQPONJ5ao0wKeC/a8NmT
-KvweuvxSCh2BygHPdH7Kl/AzBJmqbhIubwylV+gIJO+/EsDtqmXVwNN7IeJ/L6Bmp5Z2BCoFPNPb
-bJJvFr58U8PlzVMKtRKWUCmK7JjnlWGHT9YI/HHvL7FTTpB8p9C0VEs5ApWQoTjT26wIOLy5FLQv
-v73M75dS0tNgAVehxTqvsFL5i15792NH06CUI1AJGYpzvM0K+lLg2SUL367ecj2BlgO+qd5CpMbv
-L/YuCO7i3kJn6a2N7pbmPCKk9qUMXmrYNjnrPRXvtBsDEGm+B5lsymQ4ApUEvkR/+ODtadf9UvwQ
-mwf+yYH74N0kvErxwD1wD3wDwPFYPf3Q4fsdB07OYTp+eBg+PIYVBT4Y3KLwgl6DFO60hGPa4UPj
-x/l56/z8R/tHK6wWcCzYg+942g4cyJQSt4OsYfvdcAR6PD/5e4LCX/z++/dvxYCn4S2ZKOWWBkT8
-7OwO7i7w8flfHBBw3GGIgEdtba6GJQaR87ZY/5KUGya6SgnJbBJSwL+cnd2cDZROsgXdJPI7DouK
-tzDw4QmhvfcDd4r/wMD/Ro/pSgaR87ZMxHiW0umsddUKCX9BEv1FTuBxhnjf3LzAZd0k8nkXFm9R
-4A0i3X9//N37gcIe5v1OgM83iGyPVgCjp1bpveVnJBbltz7dBynhd+r6gx2vcDjFuC8vb+E886XM
-W7oSxVsQeJfy3mM6nCiXyAZeYhDZ/ABzPS4CPpmkxoQ2uITwCjE+Ix8KG+Mmo2zzuEkUli4tBG4U
-bzHg4Xn01wjv0fs5tCQ8LTGInHOVUiZ8rr8uK9432k3MgWPEp+zDcF/eNCGc002ioHSpXrri4i0G
-HCJxFqg/MOwoin4MLC1RPJtE5gCo2NF0DTKcJibmfcuAP92IcIlg1zDv2tk0nGu+lOLSWZ36RcVb
-DPjg7/vfCL3QzzvSJQj3ezTqpjCfoWMQOU9+WJytUkoBDwlhyvqGjrPdnE6xtTjffCkFpXOolHUA
-hycIMRNs8vX+936cQu1OLTmIXKQlS1optkoh45k3lzLc1OZ3kygsXUkrZVmVko7fGWiG+/zROWpf
-PJuEw4wxxpPz7HDX9CXcShnuX+qhlabWQcuplJzS5drh2bOrzG8Wdv4y2Y6QUvnxOC62rEsNgTsS
-xZYQlWxpnmnEaw9PS/cWljmFcuPdcwOH6TQ5IVr8x++H3LkN5ptNogTw8p1Xo32EnFJvPsAF3CQW
-Ab7OvhQ4Hk+nU94NWrXeQlSizhdsnNRGw8dpusMT1OxSf/iUzi3iByD8iI8HXmHgPng3Ca9SKgIc
-QhgiS2oaQg98MxIOW0mr1Rr1408BnDgghGGY+wSR7QIPEe/z1vno8XMAD1PyUIvbu6rOJpFOW63f
-o9GoP/4EwJFUX119JeHqa3bLecs6/KGRJIh5+CmAf5Xh6q6awMcPw/sEIQ/hJwB+9VUNVVQpMBxi
-2jjk/1Oj0k+q4k9ZgngydBluRQIAXA98wlv1GDVMJhPlR9swmftJVeI5ULCR3LdwrYlsFagXD33T
-kTKyOGQbjIysUqHlxUq1zJOq+NW5U3Ej9tDdixmX6d8UIyWx5c+xlIQn2Co8H41+j1pG8birkmuI
-jWdkjd/wweHJVlTKy6Eu4qGFlbp8iIEsuu6cwWAip2fXZi6YLKdSQmKF/0YSHoz0CeWNYbY470/+
-FvBJuiXgXxXkh4cDEzg7Fwk8dfqm5AKff+J/TcJRk+fktd3v99ujNBu4e8jMBZzPIzKZbEvCGXH0
-dRhmAE8ByH/SCZUcNgSsPr2FSvhkCeCjWr/dCvq1/qtTwsV9Znn0pMo/cm3gS0v5QsBv8RMWvnLq
-h4epDZyPzxY86USRcRWveQkWkfD+KHgN2q81VcJtgc6Q8NQxBl842c/6gA/4E0Toc1teUpeE8zkC
-CnxTcp6WsxzwVj/oj/qj3/0RzAZeutJUpujYAnB4JWmjcJdmqRTH1AWqb4oKfKI+WmSyvEpJWuev
-SMpHrZH2fwFDg8xhpWxTpSC7UHlOzhXUBEiaIjpwkKFSJsLncbLk03JU4FPS6Bmh90iVcAO4KCTQ
-/ARjh5eJnCFvK51XoeT9smzn1WQtLc3W+W9khY+wLb5Q034dz/BZHDiEby+U99VdNXsLB+3gEr2D
-dhC0q9y0n+NfbE/fey+3b/M6NW0IOIRJs9VEVvhp7bTxGYAviHBzEh5OG6RxjzRKN/XAN9E9S0Y0
-u91xF3rgmwC+TCG9X4r3S/ES7lWKB7594BDCTwScP9CiqsBx4WJYyHxXgBNPMmR5wYo6AqFidZ+e
-uk/dLoSfoqWJzdwusnLHcVzFp5xg3AQ4Zh7CHZ8vhUxOw2jHncdO9fxSYIhlW4SdB47kpzvGqDvD
-4cNw2Jkqj41XJvCYF7j5P2+t065E/78CvKsF7SnrYC7gjr5i16Qc6wZOcCPSjUYDMR82TOALSbj1
-1PvYeGqI/kCRHOAw7TqJu/5imQ989e4SC03BBOPOQ2PYwLgbmHcjTCXxuSfwUGJE7IQ/eN0aSCwF
-nIOO+a8JXPvXrv6fVwt4ulJ3iYWeVEWkekhQN/BX4n4KRDzXBB6WhGsqZZJaz7fIBI4EgqCO77qo
-jumgZRW4fmjihWX6FeQBX9ZdYgHgMESoO4h4QvVJozF1AXf9ZV07bQO8BtzS4WL8rQzwuHuHKXdY
-wBIONR2edZ0t4Kt3l1gEOJFrKuKEd1cf1EwXm8BDB850uDk1/qRMpQkxYgSaEme+hkoRM4CrvirG
-vDgrdJdYSMIpcUq7kXSVUXGNYTzXBB7OStMCnncvS+DYXEV3IafN2wquyUVix12YU2ku7S6xUKU5
-TRo0DA3e+gQe8VwTeJQCXsosxJU6Ak54UyHvGJVmBnBQDDxNN69SCPEkaSDq6EfnvfAEHsIsBA4d
-PpnTDocdM4SGHa7MEeJQKVl2+CrcJRZsaYZhNyGhW2qihjKTMZizoyzR0oS4Uh8SGe/g72G4eEtz
-1e4SSzyEGndelegtLDuBxwqb9hAO9bDrj+itfH84qddxFfNMfkMPfO29hYh4D1cy+Dv086VsoD88
-fEp6CX4PoHcE2gBwMlfU4LkR+v/abwg45hwW4vZ+Kd4vZWdVyhKF9CrFA/fAtwC84n4pnwk4ezzO
-29PTE31Wjge+KPCSkxsg2Jj2Gw7YwSlzsoH5piZYan99cgPZEQ7nPez8B17z5AboHChqFP7gAOd4
-YsvGJbzII28HVAri/YfR/vXrAL1+/eHn8z8S8sst45VV9G1sz9jffNC9+vCW2FnL4P9BjPmID7D6
-LuOcbk65xTFfePZTZFYOPCRyjWAfINiY+a/QCXM+4KUkXPyN1vUYcHMaPeaPNx6P4weYRW5B4GXn
-Z18J8Lc/GDOBjWmjxScTJhH0mEp8+j8OlfyyLyWp/IjtZMeYrSqJhduC8UfxidE9q8B+fBg+PAxN
-5zDl37u2c0qsD1dlAU9NvusCTjATXUKJHxy8GcApJgKMfVLnxwSufDhwPfHE9VgFPtmHMgAREtjx
-I6JNBgLFyJTAqk15YTxyINYGYp2PINgk8PAXDwz5QfNN1eEa8Hy4loRr63Gq3QZuHS49oSZyEBnT
-xrCHCaJ9nySt82mqAxerseOBGnHmwzZMHe5yyZqsGviTUCVYi+PwC1oSzlWCoS7EuqZTdFVjAddq
-4sy5JwRwCLEaGQ6JZCf3rd+t8/MH6ABuPAPC9VwIA3iOw4qQ98nKJfyNaxTCGn1qb6lDpaRpnKlK
-tIpTuyscEm6qlELgSLYbTLIv8OSc57/HxhQ6uc4zpSR8kgV8DSrljVSYnDZSKMIqdOhwUy+7oAtD
-RU3zPxX4/zKBq8YBBz5FqoRKNp7WbTwNIUzdwF3SDBYDvkYrJWR6hP40j4UGd1kpbpWiGh4qcKUS
-+J9bpWg63Jjsg+vwaUKnnT3//Tidhpl+M3kqpdBKKfsUmZUA/3MgQrPZ/PW0nr4UDNzV8iluaYaP
-5wh2a8rHe9YzprkaR6AyfSnI6HojqFE4Pvj1Fmd1Vyzel0IFfOG+FNy6nMJwwS6cyvWlkLbPLyLe
-B3/eKtw9Cxc7bDVnV4bh09vbn7e3NIWVBe5HfDxwD9wD98DVxD5s1i8lrbyEp5WX8NQD98A9cA/c
-A/fAPXAP3AP3wBcE3vWhZFgV8MSHUmF1wD/e/avMa2XASW79gL882YzXaiU8YJ6pMOl7tGsGTiVc
-AIee+CZUygli/fMn+sK+BK7jQbiuM0EHXXmO1Vcp7z9//vyAP4mMg493zIB/6GsuKuyM0T7Fu6mH
-gbD0AdVdYEZclSX88CsiTkufAEqMfxaQGsqgnOjSw9ioCg7Io13H2AEJv/yKhPv954cErkq5ucS/
-4YcgC00tQeKg3A0v08V3KyO+maKC5mHorcK3f6gRHC4TDmiX9cNYroaE32D55iKOgb8zRJAz4Gvq
-+oe2qIkYR67uJlPyLfwwuoQr2+XBSD7q0aSEy+v6oZbVseNykl8IvJzXEZbwy+SDCjfkOlys8SWB
-gDFR5P+dp5SiDhWZU3b7UHZQU0gdYGyXB3//+NCPJnU4+tZvQ153yB1lJpKf9pWzTbyKSM4h4ZMb
-VGc2vnxIlfLOWYvKK1fCZUGZ2H3ISlPZTeFpSayq0KUIy4MrB9ZUvFjVd5WJlUw+qqLDb36Cj59K
-pakZD4bF4ZRwqyIU8uqScCU7W8JVMVUP/v6hH01KuKbDHRL+rtQP7/MyV0RplZXmz3dsfvehsFJU
-G4VXjx/vUsfodoxlmknp49Efqs5Raj9xJaBS2XK4UB5cSvi7VHUOHQ7VVOYZVKil+fMU6jp8A69S
-wlV6M4lYX+tsLS1NqEr4Tr7KqulsvbGxluap0vO7MPAKXoP5InLPYbUSHrF/UkdZfSn/nVfW9ajq
-AERVZX2RsmrxfohtV4fYvpyc0lf7Fb1OT/zL9fqSrAz4OfShOJRwkyjZl9L7Db2+KKFR4Mr6Uloe
-+GZ1OJHwnpF9z3+Mz+qAewnftJUCnXLtw7qAn1sSDgqPDqqEAqwozUYlnMg1adwngJfO0mM0Hi+L
-VEYakNC4fH0o83HEOfNVPmxnZRtwpwWJEgcqpMOlhIMCcQDaEshIsez9AebdHeQkA9WTcMUOB+wb
-/XIpsk+ByhhO5UgCtP3FOzMfcYnYssiXZu4sBSMpE2QUl9xDgNxPCc0WVEOlSCuF9BUKdeE4hUgi
-Am6hAUmUiP0zgUf85JWU+FvZN8k6QqIkQOnRh/7ayUjfp5YmqpYd3pMQhKI09KsqxU5dyyjL2sCV
-DggiQF4XHT7dHyTuY5g7gKz6RCsKv/bVscMV4DnKM1fCowRI2QQZ6dR8MoCLeyGjGJGxQ5RxlIhl
-FZWsXjZrh+vAgWWPW8B7SbYWlxxz83EJLL0HQFJQM6vAsy4r0OQDLNHGWJ+Vwio9h2wx3Yt1I02T
-TYPun6E3hUqJJFiqvxOeL12PQLb5ESmVZpRZxQM1TUUqTWmHG9e/V7L96dJ5ScF6Xl5F+Scly+G6
-yr2F+4rWIuEg33Yqii+TYrG0i+wG9JTLWuLrsMMtWVlU5noZ/Y9Zy0Wfee6rvPsm75y2YYf7sGE7
-vKQen0fms/R4Mme/5DJy38uRc98f/t/qD/d6fDv94T6sWcK5O4rjlywpv3Z83r7Z+eWlfS2Zvzt9
-ftqFf88b3i+lan4pS9jhPtgaBXorZaft8DI2cJGdUMZGKWPvFNgpp3DBvpZ1Ay/7t8ENS7irL4T5
-pZfrIzmBVnYbkfCVuboxO7yMDVxk9xa3NQGgzqj6GA3gVZO7x1cMWpL0r0p5AYAJtEc01+F79bST
-djiQDsBqP3kkgMP3PUe/apSAvkjfhsr4EiR94a3TxYQc31fRxnX4F9W3EOTpalCsg5PTvL4SJN5y
-6iHlUFTC+3TyECNPMmIJgEz+KsoLiHQnv5PkogYK9Ljz1qEXeZstTe3etLRjKQ17mifgiPOIvfo2
-8MBx/gBHoi+ZvK3035MitZKkyaKzFTrI7DBXao+8CgGsww4HUJUvYI6TgBJ2wemf18y+EoBxQ9Sw
-hRArFZk3ILhRLAPe03kT4mK7sFJAgjH3MaTXJDgyqLrG8A0fLq1low4yu3T4Wkbt8T1N9BrQhicB
-G0ME2UIuG8IwyZRxMMK6BJ8drThVHY4uBI2KLPmmOCLLSsH7XyRRO/ndBoE6fqqPd7Ky2+OePGv6
-Y+7P1tkySILV94ffHGmXW7k/gToELuRdu//gq/hjbdKXMkoug9C5RKP0iTQzCe/xU++TNzm0rAOA
-Yr+Ia33Ky4sP3wT4uEkQBdIfC6jj4UAZ/gcO4IC8uISDDA8lsEKVIiV8MjOAs2sMmP+SOUyv6zvF
-eAiUWuEVKxBLwkk3E1BPPRD1pkMINd0uJRwSInhiNOF/wl1/1HLnAsf1tKlS2P4J0Pxf1uGXQs0E
-7tvq8P3Q7RRFLyKBxQwRT2yoQEUXnkKo1Jmvfao6MHFgnHpA3qoeJRGAIjHtcGGkYN4JeJV+srr7
-jAlc1+E4b5l/rofSOqyUSJMv3X8vSfJ0eMIFMYD9RDfsocsK1yWc2OEB1SqRKYSAxjvscEI8wMQD
-ebNFVrnzJTxiEi51uO2hhLcHq7fDe4rS6EkdDoQ7q1LoTJu3HyQws70J1L8+KvJGrRSi3pkO76nA
-+0DV7aodToknATGvekqJebmFZgd2O8LU4cTXVqm8jFphPS3NpbslFA3iMFPUv5qadjg1w20dDsSP
-VVmAPlPZ5dsvmVZK0f5r90tJMsb+ivpQYEZfiklctbdFS7MM8FO9oRagl0q8zNhllh2ed547OmoP
-AG3Y6wZPpJx4ZBhCEf9k9BYyf8cFRFzJu0Sfygb8UvL8BIv6wpNMHxeg+Z47GtlFfZGnrjoiAf+D
-yRw+KGX8X/Rt/12/lJPtlHcjfimL6vEkT48v6R/Sy8m76LdMn3nWsbxfSuUkvOwQW65fSpa/x+sK
-fVTm9SUpk1fWb1l/GGtbK1nZEJv3S6n6fCmfaKKf8qe+zflSTnT7dYc/CdyGlTK3X8op2FW9YA27
-waS0LbZFO7zNuj7Ya5eAa2t9l4SfbswOL+uXkiSvgPVe05MIdgm4ijAgwI3zbIOM896iXwqTcHES
-wY4Cd0r4a1afzJr8UhJt3MOtz6SE4wfRAD5GxcKQvKsMnJ9L2wZ+etKH2v+V5XmvvqUJQA5wW8I/
-xINoaD9ng2IfAvzWdWWffvIC7beCsHMNor6y3g0AaK9Jwl9N4K9tWrE6fVxW3x8ufJ4kcHcfA7FS
-Pm6+yqd0yG/MvWEAjxr0UxRw/RsF3U7Ul+tB0B1H/VUC7ymCo+twOnbSJ8rdFriVWyn8v+4RG1CL
-pE8HH2hifcYnCCh9EM0HIc4lvA2iFhPNBuhHIAgJ+zgin2gEQzwJP7AX6MX4EoXo5ujgBbGe4kH5
-EV3vBCAKpg0QgH6MFtt5xmmvmQmc2eC2hJ/A5Hc/SJLzU30+C7Cm/nCQWPNoaOtyzBtLOH8QzYci
-4a9hO2IS3gDXHS6p2NkKfdoBbIEAJpG9wG6EEVZIY3Gv0PWuWL8Oxp2onaBLNA6C8TACWayP6/XZ
-rJ6pUkR/vKHDT8+pFjl9Z2erzs2yhv5wkBh+GGweEjFTjNBoSLYuk3f5IBou4W94iQJPwFBIZtAi
-HyS3/QDA18BcaFMrJzkKIVEpj9dArBPtRPOPaZYNELNFYKNGrGcs1LJ1ONfNmpXSC2htyb1G2bi5
-8GtZuR0OAJAD846ZYhTkyEq5maA6M2HUpQ4nvjkUe8i3h9GAfCAYRqj8WOsYC18IDMp9iCtNINYV
-CWdZ4hUldwG7Vj+eqaGOQg1/NW0dDlx2eJ+P0iuWg8pg1VYKyPbpAEo8l/Cf4P2nXmk2ABT6RJXw
-VkA/qA4EMGgjVvYC0SAtkleKLJpruS51eAdn+fuI1Ap4saUDP5bCTYEf19Am9GmWtMMDY6Ibw69l
-9RIu7yNg+nQoXz1mh/+E8kE0moQ3QJe8gynT4dgllrjFjpC+xh/HAgpdXF0izH3YiH7L9SCIeV1A
-dHhAlAzS4bGtw3s9VaWQy4i+Zk7gth3e7xu+s0CZXm5N86XM09L82YemDiefQQQ62Fk1iECbWClR
-DMkHTtH16YCRvUAYDsGU5BVRO5yvj6kdjpN08GJKDkYMlsxKs6lVmrOSdrjmsL4Jv5Se4y9P7rFD
-2lsYUJvVcLnUrsH6WoxjYTw6Q6iYhTOHHd5z2eHUPTFz/HOLvYUngPnkiX5l64wb6wUetMNuVLIL
-Z1a6pZnvm7Kh+cMX7A9fs4Sjhg8IBgsAP9Wed+HovMr2Y9mehPdOdmoAYqb12GjPK9rSiE/B/OH2
-8ulOuTfM8iJh/txBa/oX27zP8tmtYbXZPINum5Dw7pdz9Gr9Ri/063Lz4I4abJ2kr8Sr1MD8TP1v
-qPPVZv/dCIajRguHxqhBlhpyHX2vDHhaJsTpPCFecv/502fuFM/SDYW9BUvtgXvgHrgH7oF74B64
-B+6Be+AeuAfugXvgHvjOAn/uN2ufLLRny+3fbw7XB7xZO97/dGG2dA61NQGH+5f7tVb82VTKkori
-e6u2vx+uBXhzf7/1CXX48sq5tb//tA7guffOfxl4Wttvrgd46oFnoDlaB/AjDzwrzPbXAXzmgS90
-8/83JXyGvTjxB7cmarN6vWduHWDn5YPFgB95CTfDQfPgy0HzuI7q/e/1WbN5PDugW5tf6Nb0GG2t
-zw4qpFJ2X4cPZ/UBsilm2Kao1e9YRs91vLWHtw6O8aKX8FUBP549o+96nfRSMGGO0VasXo7rOMuD
-xUR8QxJO3O/mAQDIm6bW51UEiwAn5HqzY9wom2WtHBCcVK3MSEOCbEY/tFURs630MtzOhEV9V6vP
-6rU7sgNS+r307rg+O35me29FwoH4yswKuNcs4Ob+wLW7mb6JBbZJ1MRxPXtF7FOnWqROkH3nwPlW
-ku5uxht3d1jT12bH33HVWm82n+/q9doBZr5FCSff7TUCD3KBP2NxRAiQ8NVr2St8lx6DSRXLASPH
-BFzIPefZpLUqzqg+uxMbjuvblnAm50DIJFsiW+RmskBVClpmwIGqUvgGnJTtR/PgOwL1SDGT1btZ
-EzHpIRjZK5oGJ6qm93xQ5/jrz4qGCYWEU4knP7O63NDbvoRTIDFbCxiitqqyJTQkswr51AGc/uj7
-0ctEfli+tOjIpujNYgS3hpRH9gq7J+rH7Hyb+C8+LxTtgAOkknsnBJhtP57xRfo9nVVCwiVwYGAy
-VTLguICmVHTg+n7AzFAAP5i91OrYwMOYsld4lXnAz7f78kzNQLz1iyrRz6LSZDviKoDVqsf0AtWq
-oMPbKKt2DvBAAR4w4IEBPGDpAmDspwMHbSCAp7Pm8THWGkRvZK8wpfyd7vRyQFd7bCvr8SOKWqZX
-VcqxekV2V8LdKiU1VYot4bKSPcZNw++ocT7IXeGyGjO0z1h31IUEsxsAyXYoGz41VmnWuITTK1Tb
-ug5nX8XAgQJ8Hh0uqmVbpWBt/Iz17HHuSrPHVALd6RlbeawzhQsy0dY11OAnGgXvMEC16gGyv++4
-hJMNx7OtWinAsEIU2NwuKbJSgGz4AL4LSKWpo8q5ZaWgG7xOZK+ZuyIqPXa+vTqypl9S3QxMB+ga
-sc4rspE0fJp3son0HW043qqVsoqmPSjR0gSONtDmu2fviLL5Xq/tdl/K7gBvKs2fXe8tBCBnfwDS
-SgDHqh8r9YHvLdwM8LR3zJW67w/fCHDfH14d4F7CP5mEg6xyF3Zjp7yZlHPeoPCZTylYEDgoAK62
-xsAuSHiwAuBBiaIEiwBHhw0KgAcZy44ejWro8FVIOCjHbiHgJSS8uBxg8xJO+7VBqjTbSdOcDSCI
-fm+gDkbYgxR8mCGl++tjFup4hNIRELDIQPa5kBQBSxSk2ugF639n6zHbD6202f5BrJ4FUI6pjpDg
-ybR4uWm+tM8yYik2oMMBcPQW8jIr8fIjTwDQriqJVPQfOvu71B/RNSOOZ+QOMvZgEg5cgxqpui/Q
-l7Wy6P1nSu4bkHB9hCxg/eFta6BApgs0hWD2dUnggcjTHnfgcaz/HdBldlz6UusRo0eS6vBA3cfQ
-goGyT6DXn8B1amBzVopaVgA4QqNUQLu7FZUSi3gbuBQr4DxXJQeg0QCqiuEHB5YONyLNjmB558qb
-Q0/uyH2jEq4OQNhioNc0wMS1DuCpY+jDBG7cX07gukpJXae2FQkHrPMp876zdbjAlSfhBs4i4K6h
-D5AHHDjYF+jwTJWyWR0OALWLAa3L2/Jm4+OW9FcZrWjzQRwVOLMFAuOm4GkDVYcryojny/WzWJdJ
-RF1tpNEMEZY/UJZlfQLMmhKVZ4MSvpmmPVhZ0x74vpRPBvwzSHhBj4rvLfS9hb4/3Eu4l3Av4V7C
-dxF4bT0S3sz7N+J//L/2tXUAv9vf3086HrgeOknteP8yXQdwIuO145oPeti/bKZrAp4Oa5f7Ppjz
-05ScEsjPebU6K8UD98A9cA9848DjeBivLAyXTD1c6/Fydlohg4LgJdyrFA/cA/fAPXAP3AP3wD1w
-D3zzwP8vwABw+Pzxb3GG+gAAAABJRU5ErkJggg==
+State of the art (quick overview)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A recent work made by Vivek propose a weighted BW solution introducing
+fair queuing support in the elevator layer and modifying the existent IO
+schedulers to use that functionality
+(https://lists.linux-foundation.org/pipermail/containers/2009-March/016129.html).
 
---------------09FE620F5E69D131384C4A98
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+For the fair queuing part Vivek's IO controller makes use of the BFQ
+code as posted by Paolo and Fabio (http://lkml.org/lkml/2008/11/11/148).
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------09FE620F5E69D131384C4A98--
+The dm-ioband controller by the valinux guys is also proposing a
+proportional ticket-based solution fully implemented at the device
+mapper level (http://people.valinux.co.jp/~ryov/dm-ioband/).
+
+The bio-cgroup patch (http://people.valinux.co.jp/~ryov/bio-cgroup/) is
+a BIO tracking mechanism for cgroups, implemented in the cgroup memory
+subsystem. It is maintained by Ryo and it allows dm-ioband to track
+writeback requests issued by kernel threads (pdflush).
+
+Another work by Satoshi implements the cgroup awareness in CFQ, mapping
+per-cgroup priority to CFQ IO priorities and this also provide only the
+proportional BW support (http://lwn.net/Articles/306772/).
+
+Proposed solution
+~~~~~~~~~~~~~~~~~
+Respect to other proposed solutions the approach used by this controller
+is to explicitly choke applications' requests that directly or
+indirectly generate IO activity in the system (this controller addresses
+both synchronous IO and writeback/buffered IO).
+
+The bandwidth and iops limiting method has the advantage of improving
+the performance predictability at the cost of reducing, in general, the
+overall performance of the system in terms of throughput.
+
+IO throttling and accounting is performed during the submission of IO
+requests and it is independent of the particular IO scheduler.
+
+Detailed informations about design, goal and usage are described in the
+documentation (see [PATCH 1/7]).
+
+What's new
+~~~~~~~~~~
+The most important change in this patchset (v16) is the IO throttling
+water mark.
+
+A new file blockio.watermark is now available in the cgroupfs. This file
+allows to define a water mark in percentage of the consumed disk I/O
+bandwidth to start/stop I/O throttling: throttling will begin only when
+the percentage of the consumed disk bandwidth hits the watermark. If
+watermark is 0 (default) throttling is applied immediately and the BW
+limits are considered hard limits (that is in practice the old
+io-throttle behaviour).
+
+This allows to always use the whole physical disk bandwidth and maintain
+at the same time a different level of service according to the cgroup
+bandwidth limits.
+
+In practice, with the throttling water mark we can decide to not
+throttle IO requests if the disk is not congested enough.
+
+Implementation
+~~~~~~~~~~~~~~
+Patchset against latest Linus' git:
+
+  [PATCH 0/7] cgroup: block device IO controller (v16)
+  [PATCH 1/7] io-throttle documentation
+  [PATCH 2/7] res_counter: introduce ratelimiting attributes
+  [PATCH 3/7] page_cgroup: provide a generic page tracking infrastructure
+  [PATCH 4/7] io-throttle controller infrastructure
+  [PATCH 5/7] kiothrottled: throttle buffered (writeback) IO
+  [PATCH 6/7] io-throttle instrumentation
+  [PATCH 7/7] io-throttle: export per-task statistics to userspace
+
+The v16 all-in-one patch, along with the previous versions, can be found at:
+http://download.systemimager.org/~arighi/linux/patches/io-throttle/
+
+Changelog (v15 -> v16)
+~~~~~~~~~~~~~~~~~~~~~~
+* added a water mark in percentage of the consumed disk bandwidth to
+  start/stop IO throttling
+* reduce the size of res_counter for ratelimited resources
+* fix a bug for O_DIRECT reads that are correctly accounted but
+  incorrectly throttled
+
+Experimental results
+~~~~~~~~~~~~~~~~~~~~
+Following some results to compare few different BW limiting
+configurations and the new throttling water mark feature.
+
+The testcase consists of two simple parallel write streams (dd), one
+running in cgrp1 and the other in cgrp2; writeback-io and direct-io
+characterize the type of IO workload (buffered in the page cache or with
+O_DIRECT).
+
+In addition to the IO bandwidth as seen by the single applications we
+also measure the consumed overall disk bandwidth.
+
+The following cases have been tested:
+
+ 1) unlimited-bw (writeback-io)
+ 2) unlimited-bw (direct-io)
+ 3) cgrp1=4MB/s, cgrp2=2MB/s (writeback-io)
+ 4) cgrp1=4MB/s, cgrp2=2MB/s (direct-io)
+ 5) cgrp1=4MB/s, cgrp2=2MB/s, watermark=90% (writeback-io)
+ 6) cgrp1=4MB/s, cgrp2=2MB/s, watermark=90% (direct-io)
+ 7) cgrp1=4MB/s, cgrp2=2MB/s, watermark=100% (writeback-io)
+ 8) cgrp1=4MB/s, cgrp2=2MB/s, watermark=100% (direct-io)
+
+Experimental results:
+
+ 1) unlimited-bw (writeback-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 13.6276 s, 19.7 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 12.7431 s, 21.1 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    22M
+    0    19M
+    0    20M
+    0    14M
+    0    17M
+    0    16M
+    0    16M
+    0    16M
+    0    18M
+ ...
+
+ 2) unlimited-bw (direct-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 22.3939 s, 12.0 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 22.9544 s, 11.7 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    23M
+    0    18M
+    0    21M
+    0    21M
+    0    14M
+    0    13M
+    0    15M
+    0    19M
+    0    23M
+    0    22M
+ ...
+
+ 3) cgrp1=4MB/s, cgrp2=2MB/s (writeback-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 42.4277 s, 6.3 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 111.628 s, 2.4 MB/s
+
+ --dsk/sda--
+  read  writ
+    0  6144k
+    0  6176k
+    0  6172k
+    0  6172k
+    0  6176k
+    0  6180k
+    0  6176k
+    0  6176k
+    0  6180k
+    0  6172k
+ ...
+
+ 4) cgrp1=4MB/s, cgrp2=2MB/s (direct-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 64.2583 s, 4.2 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 128.28 s, 2.1 MB/s
+
+ --dsk/sda--
+  read  writ
+    0  6136k
+    0  6108k
+    0  6108k
+    0  6176k
+    0  6104k
+    0  6016k
+    0  6144k
+    0  6272k
+    0  6016k
+    0  6148k
+ ...
+
+ 5) cgrp1=4MB/s, cgrp2=2MB/s, watermark=90% (writeback-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 8.39187 s, 32.0 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 12.5449 s, 21.4 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    21M
+    0    18M
+    0    19M
+    0    18M
+    0    15M
+    0    12M
+    0    15M
+    0    15M
+    0    19M
+    0    17M
+ ...
+
+ 6) cgrp1=4MB/s, cgrp2=2MB/s, watermark=90% (direct-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 19.1814 s, 14.0 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 24.35 s, 11.0 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    18M
+    0    20M
+    0    12M
+    0    14M
+    0    19M
+    0    20M
+    0    24M
+    0    22M
+    0    23M
+    0    24M
+ ...
+
+ 7) cgrp1=4MB/s, cgrp2=2MB/s, watermark=100% (writeback-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 9.51788 s, 28.2 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 11.4759 s, 23.4 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    21M
+    0    19M
+    0    18M
+    0    16M
+    0    15M
+    0    13M
+    0    15M
+    0    13M
+    0    21M
+    0    21M
+ ...
+
+ 8) cgrp1=4MB/s, cgrp2=2MB/s, watermark=100% (direct-io)
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp1 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 18.7106 s, 14.3 MB/s
+
+ $ dd if=/dev/zero bs=1M count=256 of=cgrp2 oflag=direct
+ 256+0 records in
+ 256+0 records out
+ 268435456 bytes (268 MB) copied, 23.0093 s, 11.7 MB/s
+
+ --dsk/sda--
+  read  writ
+    0    18M
+    0    18M
+    0    23M
+    0    18M
+    0    14M
+    0    11M
+    0    16M
+    0    21M
+    0    25M
+    0    20M
+ ...
+
+The results above show the effectiveness of the water mark throttling.
+Water mark throttling allows to use the whole physical disk bandwidth
+and maintain at the same time a different level of service according to
+the cgroup bandwidth limits defined by the user.
+
+If we want to provide a best-effort quality of service without wasting
+the available IO bandwidth with static partitioning, dynamic bandwidth
+partitioning can be a profitable solution.
+
+OTOH absolute limiting rules do not fully exploit the whole physical BW,
+but offer an immediate action on policy enforcement, that can be useful
+in environments where certain critical/low-latency applications must
+respect strict timing constraints.
+
+The io-throttle controller now provides both limiting solutions.
+
+Overall diffstat
+~~~~~~~~~~~~~~~~
+ Documentation/cgroups/io-throttle.txt |  443 ++++++++++++++++
+ block/Makefile                        |    1 +
+ block/blk-core.c                      |    8 +
+ block/blk-io-throttle.c               |  928 +++++++++++++++++++++++++++++++++
+ block/kiothrottled.c                  |  341 ++++++++++++
+ fs/aio.c                              |   12 +
+ fs/block_dev.c                        |    3 +
+ fs/buffer.c                           |    2 +
+ fs/direct-io.c                        |    3 +
+ fs/proc/base.c                        |   18 +
+ include/linux/blk-io-throttle.h       |  168 ++++++
+ include/linux/cgroup.h                |    1 +
+ include/linux/cgroup_subsys.h         |    6 +
+ include/linux/fs.h                    |    4 +
+ include/linux/memcontrol.h            |    6 +
+ include/linux/mmzone.h                |    4 +-
+ include/linux/page_cgroup.h           |   33 ++-
+ include/linux/res_counter.h           |   81 +++-
+ include/linux/sched.h                 |    8 +
+ init/Kconfig                          |   16 +
+ kernel/cgroup.c                       |    9 +
+ kernel/fork.c                         |    8 +
+ kernel/res_counter.c                  |   62 +++
+ mm/Makefile                           |    3 +-
+ mm/bounce.c                           |    2 +
+ mm/filemap.c                          |    2 +
+ mm/memcontrol.c                       |    6 +
+ mm/page-writeback.c                   |   13 +
+ mm/page_cgroup.c                      |   96 +++-
+ mm/readahead.c                        |    3 +
+ 30 files changed, 2255 insertions(+), 35 deletions(-)
+
+-Andrea
