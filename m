@@ -1,13 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroups: make messages more readable
-Date: Mon, 04 May 2009 09:28:26 +0800
-Message-ID: <49FE44BA.7080409__45534.8061550923$1241400603$gmane$org@cn.fujitsu.com>
-References: <49F76CC4.8050200@oracle.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 07/54] cr: extend arch_setup_additional_pages()
+Date: Mon, 04 May 2009 03:25:25 -0400
+Message-ID: <49FE9865.4090600@cs.columbia.edu>
+References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>	<1240961064-13991-8-git-send-email-orenl@cs.columbia.edu>	<1241190790.29485.168.camel@nimitz>	<20090501154220.GA26771@us.ibm.com>	<1241193421.29485.188.camel@nimitz>
+	<20090501161813.GA27516@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49F76CC4.8050200-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090501161813.GA27516-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,92 +18,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(sorry for the delayed reply)
 
-Randy Dunlap wrote:
-> From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+
+Serge E. Hallyn wrote:
+> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>> On Fri, 2009-05-01 at 10:42 -0500, Serge E. Hallyn wrote:
+>>> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>>>> On Tue, 2009-04-28 at 19:23 -0400, Oren Laadan wrote:
+>>>>> From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>>>>>
+>>>>> Add "start" argument, to request to map vDSO to a specific place,
+>>>>> and fail the operation if not.
+>>>>>
+>>>>> This is useful for restart(2) to ensure that memory layout is restore
+>>>>> exactly as needed.
+>>>> This needs to go up at the start of the series.  It can get merged
+>>>> before everything else.
+>>> It does, but now we are sending Oren mixed signals.
+>>>
+>>> I thought we were talking yesterday on irc about Oren doing append-only
+>>> git tree from now on, and someone else (you? :) was going to do patch
+>>> integration and sorting and prettifying?
+>> I was going to just go and start doing these, but I figured I'd have a
+>> run through the patches first.  I probably also shouldn't be doing
+>> anything to which Oren (or anyone else) has really strong objections.
+>> So, I'll give everyone a chance to discuss and object before I go
+>> screwing the patches up. ;)
 > 
-> Fix some cgroup messages to read better.
-> Update MAINTAINERS to include mm/*cgroup* files.
+> True, part of this may be able to go up on its own.  In that case
 > 
-> Signed-off-by: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-> ---
->  MAINTAINERS      |    1 +
->  mm/page_cgroup.c |   14 +++++++-------
->  2 files changed, 8 insertions(+), 7 deletions(-)
+> 	1. please put the part of my s390 fix patch which applies to
+> 	   this patch in
 > 
-> --- lnx-2630-rc3.orig/mm/page_cgroup.c
-> +++ lnx-2630-rc3/mm/page_cgroup.c
-> @@ -83,12 +83,12 @@ void __init page_cgroup_init(void)
->  			goto fail;
->  	}
->  	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
-> -	printk(KERN_INFO "please try cgroup_disable=memory option if you"
-> -	" don't want\n");
-> +	printk(KERN_INFO "please try 'cgroup_disable=memory' option if you"
-> +	" don't want memory cgroups\n");
->  	return;
->  fail:
-> -	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
-> -	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
-> +	printk(KERN_CRIT "allocation of page_cgroup failed.\n");
-> +	printk(KERN_CRIT "please try 'cgroup_disable=memory' boot option\n");
->  	panic("Out of memory");
->  }
->  
-> @@ -257,14 +257,14 @@ void __init page_cgroup_init(void)
->  		fail = init_section_page_cgroup(pfn);
->  	}
->  	if (fail) {
-> -		printk(KERN_CRIT "try cgroup_disable=memory boot option\n");
-> +		printk(KERN_CRIT "try 'cgroup_disable=memory' boot option\n");
->  		panic("Out of memory");
->  	} else {
->  		hotplug_memory_notifier(page_cgroup_callback, 0);
->  	}
->  	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
-> -	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
-> -	" want\n");
-> +	printk(KERN_INFO "please try 'cgroup_disable=memory' option if you don't"
-> +	" want memory cgroups\n");
->  }
->  
->  void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-> --- lnx-2630-rc3.orig/MAINTAINERS
-> +++ lnx-2630-rc3/MAINTAINERS
-> @@ -1519,6 +1519,7 @@ L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->  S:	Maintained
->  F:	include/linux/cgroup*
->  F:	kernel/cgroup*
 
-May be we should fix it like this:
+Fixed.
 
-F: include/linux/cgroup.h
-F: kernel/cgroup.c
-F: kernel/cgroup_debug.c
+> 	2. as I asked when Alexey posted this, can we remove the
+> 	   first argument to arch_setup_additional_pages()?  Noone uses
+> 	   it.
 
-?
+I have no objections.
 
-Since the authors of kernel/cgroup_freezer.c are Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-and Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>.
-
-And the author of net/sched/cls_cgroup.c is Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>,
-
-And the maintainer of kernel/ns_cgroup.c and security/device_cgroup.c is
-Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>.
-
-> +F:	mm/*cgroup*
->  
-
-And this belongs to memory resource controller (grep 'MEMORY RESOURCE CONTROLLER'
-in MAINTAINERS). The maintainers of mm/page_cgroup.c and mm/memcontrol.c are
-Balbir and Kamezawa.
-
->  CORETEMP HARDWARE MONITORING DRIVER
->  P:	Rudolf Marek
-> 
-> 
+Oren.
