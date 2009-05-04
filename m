@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 16/36] nfs: Add checkpoint file operations
+Subject: [RFC][PATCH 31/36] ufs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <2611a002dc0822b95e1cc145a26f638bb7f4315f.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <e9838a1d02da8e501fa13ea3594f45d10bfa0d3c.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,42 +21,34 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for regular nfs files and directories.
- Skip the various /proc files for now.
+Add checkpoint operations for ufs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/nfs/dir.c  |    1 +
- fs/nfs/file.c |    1 +
+ fs/ufs/dir.c  |    1 +
+ fs/ufs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index 370b190..d1e02c5 100644
---- a/fs/nfs/dir.c
-+++ b/fs/nfs/dir.c
-@@ -64,6 +64,7 @@ const struct file_operations nfs_dir_operations = {
- 	.open		= nfs_opendir,
- 	.release	= nfs_release,
- 	.fsync		= nfs_fsync_dir,
+diff --git a/fs/ufs/dir.c b/fs/ufs/dir.c
+index dbbbc46..6842025 100644
+--- a/fs/ufs/dir.c
++++ b/fs/ufs/dir.c
+@@ -668,4 +668,5 @@ const struct file_operations ufs_dir_operations = {
+ 	.readdir	= ufs_readdir,
+ 	.fsync		= file_fsync,
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
- 
- const struct inode_operations nfs_dir_inode_operations = {
-diff --git a/fs/nfs/file.c b/fs/nfs/file.c
-index 5a97bcf..b48da8d 100644
---- a/fs/nfs/file.c
-+++ b/fs/nfs/file.c
-@@ -75,6 +75,7 @@ const struct file_operations nfs_file_operations = {
- 	.splice_read	= nfs_file_splice_read,
- 	.check_flags	= nfs_check_flags,
- 	.setlease	= nfs_setlease,
+diff --git a/fs/ufs/file.c b/fs/ufs/file.c
+index 625ef17..f1139d9 100644
+--- a/fs/ufs/file.c
++++ b/fs/ufs/file.c
+@@ -64,4 +64,5 @@ const struct file_operations ufs_file_operations = {
+ 	.open           = generic_file_open,
+ 	.fsync		= ufs_sync_file,
+ 	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
  };
- 
- const struct inode_operations nfs_file_inode_operations = {
 -- 
 1.5.6.3
