@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 15/36] jfs: Add checkpoint file operations
+Subject: [RFC][PATCH 30/36] omfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <18aef99b5f0c2a6e7845b06a6c2cf871c6801a78.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <6562c45c0c9c02abbdc04f57e8a933d77ccde83b.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,39 +21,36 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for jfs files and directories.
+Add checkpoint operations for omfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Kleikamp <shaggy-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
-Cc: jfs-discussion-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/jfs/file.c  |    1 +
- fs/jfs/namei.c |    1 +
+ fs/omfs/dir.c  |    1 +
+ fs/omfs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/jfs/file.c b/fs/jfs/file.c
-index 7f6063a..90ab090 100644
---- a/fs/jfs/file.c
-+++ b/fs/jfs/file.c
-@@ -116,4 +116,5 @@ const struct file_operations jfs_file_operations = {
- #ifdef CONFIG_COMPAT
- 	.compat_ioctl	= jfs_compat_ioctl,
- #endif
-+	.checkpoint	= generic_file_checkpoint,
+diff --git a/fs/omfs/dir.c b/fs/omfs/dir.c
+index c7275cf..5ed9cb3 100644
+--- a/fs/omfs/dir.c
++++ b/fs/omfs/dir.c
+@@ -502,4 +502,5 @@ struct file_operations omfs_dir_operations = {
+ 	.read = generic_read_dir,
+ 	.readdir = omfs_readdir,
+ 	.llseek = generic_file_llseek,
++	.checkpoint = generic_file_checkpoint,
  };
-diff --git a/fs/jfs/namei.c b/fs/jfs/namei.c
-index 514ee2e..5486db9 100644
---- a/fs/jfs/namei.c
-+++ b/fs/jfs/namei.c
-@@ -1556,6 +1556,7 @@ const struct file_operations jfs_dir_operations = {
- 	.compat_ioctl	= jfs_compat_ioctl,
- #endif
- 	.llseek		= generic_file_llseek,
-+	.checkpoint	= generic_file_checkpoint,
+diff --git a/fs/omfs/file.c b/fs/omfs/file.c
+index 834b233..ee669e5 100644
+--- a/fs/omfs/file.c
++++ b/fs/omfs/file.c
+@@ -346,6 +346,7 @@ struct file_operations omfs_file_operations = {
+ 	.mmap = generic_file_mmap,
+ 	.fsync = omfs_sync_file,
+ 	.splice_read = generic_file_splice_read,
++	.checkpoint = generic_file_checkpoint,
  };
  
- static int jfs_ci_hash(struct dentry *dir, struct qstr *this)
+ struct inode_operations omfs_file_inops = {
 -- 
 1.5.6.3
