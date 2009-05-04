@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 27/36] efs: Add checkpoint file operations
+Subject: [RFC][PATCH 18/36] openpromfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <425243b944309f33cea53de7f4e232397f88d291.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <48fa6037549a09cb037bff757bd742c6912b9612.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,25 +21,35 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add checkpoint operation for efs directories.
+Add the checkpoint operation for openromfs directories.
+ Explicitly skip the properties for now.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/efs/dir.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/openpromfs/inode.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/efs/dir.c b/fs/efs/dir.c
-index 49308a2..3322f56 100644
---- a/fs/efs/dir.c
-+++ b/fs/efs/dir.c
-@@ -13,6 +13,7 @@ static int efs_readdir(struct file *, void *, filldir_t);
- const struct file_operations efs_dir_operations = {
+diff --git a/fs/openpromfs/inode.c b/fs/openpromfs/inode.c
+index ffcd04f..d1f0677 100644
+--- a/fs/openpromfs/inode.c
++++ b/fs/openpromfs/inode.c
+@@ -160,6 +160,7 @@ static const struct file_operations openpromfs_prop_ops = {
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+ 	.release	= seq_release,
++	.checkpoint	= NULL,
+ };
+ 
+ static int openpromfs_readdir(struct file *, void *, filldir_t);
+@@ -168,6 +169,7 @@ static const struct file_operations openprom_operations = {
  	.read		= generic_read_dir,
- 	.readdir	= efs_readdir,
+ 	.readdir	= openpromfs_readdir,
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- const struct inode_operations efs_dir_inode_operations = {
+ static struct dentry *openpromfs_lookup(struct inode *, struct dentry *, struct nameidata *);
 -- 
 1.5.6.3
