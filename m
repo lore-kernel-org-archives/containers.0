@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 02/36] befs: Add checkpoint file operations
+Subject: [RFC][PATCH 15/36] jfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <164fbb3720786d4440a36a29b90303a8f126dd2b.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <18aef99b5f0c2a6e7845b06a6c2cf871c6801a78.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,26 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for befs directories.
+Add the checkpoint operation for jfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Kleikamp <shaggy-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+Cc: jfs-discussion-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/befs/linuxvfs.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/jfs/file.c  |    1 +
+ fs/jfs/namei.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/befs/linuxvfs.c b/fs/befs/linuxvfs.c
-index 76afd0d..7b4a4dc 100644
---- a/fs/befs/linuxvfs.c
-+++ b/fs/befs/linuxvfs.c
-@@ -67,6 +67,7 @@ static const struct file_operations befs_dir_operations = {
- 	.read		= generic_read_dir,
- 	.readdir	= befs_readdir,
+diff --git a/fs/jfs/file.c b/fs/jfs/file.c
+index 7f6063a..90ab090 100644
+--- a/fs/jfs/file.c
++++ b/fs/jfs/file.c
+@@ -116,4 +116,5 @@ const struct file_operations jfs_file_operations = {
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl	= jfs_compat_ioctl,
+ #endif
++	.checkpoint	= generic_file_checkpoint,
+ };
+diff --git a/fs/jfs/namei.c b/fs/jfs/namei.c
+index 514ee2e..5486db9 100644
+--- a/fs/jfs/namei.c
++++ b/fs/jfs/namei.c
+@@ -1556,6 +1556,7 @@ const struct file_operations jfs_dir_operations = {
+ 	.compat_ioctl	= jfs_compat_ioctl,
+ #endif
  	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static const struct inode_operations befs_dir_inode_operations = {
+ static int jfs_ci_hash(struct dentry *dir, struct qstr *this)
 -- 
 1.5.6.3
