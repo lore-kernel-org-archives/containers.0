@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 30/36] omfs: Add checkpoint file operations
+Subject: [RFC][PATCH 23/36] sysv: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <6562c45c0c9c02abbdc04f57e8a933d77ccde83b.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <531e08d2b842173ed387eed8f9c2dc400914bb0d.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,36 +21,41 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add checkpoint operations for omfs files and directories.
+Add the checkpoint operation for sysv filesystem files and
+ directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/omfs/dir.c  |    1 +
- fs/omfs/file.c |    1 +
+ fs/sysv/dir.c  |    1 +
+ fs/sysv/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/omfs/dir.c b/fs/omfs/dir.c
-index c7275cf..5ed9cb3 100644
---- a/fs/omfs/dir.c
-+++ b/fs/omfs/dir.c
-@@ -502,4 +502,5 @@ struct file_operations omfs_dir_operations = {
- 	.read = generic_read_dir,
- 	.readdir = omfs_readdir,
- 	.llseek = generic_file_llseek,
-+	.checkpoint = generic_file_checkpoint,
- };
-diff --git a/fs/omfs/file.c b/fs/omfs/file.c
-index 834b233..ee669e5 100644
---- a/fs/omfs/file.c
-+++ b/fs/omfs/file.c
-@@ -346,6 +346,7 @@ struct file_operations omfs_file_operations = {
- 	.mmap = generic_file_mmap,
- 	.fsync = omfs_sync_file,
- 	.splice_read = generic_file_splice_read,
-+	.checkpoint = generic_file_checkpoint,
+diff --git a/fs/sysv/dir.c b/fs/sysv/dir.c
+index 56f6552..ff0adf1 100644
+--- a/fs/sysv/dir.c
++++ b/fs/sysv/dir.c
+@@ -25,6 +25,7 @@ const struct file_operations sysv_dir_operations = {
+ 	.read		= generic_read_dir,
+ 	.readdir	= sysv_readdir,
+ 	.fsync		= sysv_sync_file,
++	.checkpoint	= generic_file_checkpoint,
  };
  
- struct inode_operations omfs_file_inops = {
+ static inline void dir_put_page(struct page *page)
+diff --git a/fs/sysv/file.c b/fs/sysv/file.c
+index 589be21..139593d 100644
+--- a/fs/sysv/file.c
++++ b/fs/sysv/file.c
+@@ -28,6 +28,7 @@ const struct file_operations sysv_file_operations = {
+ 	.mmap		= generic_file_mmap,
+ 	.fsync		= sysv_sync_file,
+ 	.splice_read	= generic_file_splice_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations sysv_file_inode_operations = {
 -- 
 1.5.6.3
