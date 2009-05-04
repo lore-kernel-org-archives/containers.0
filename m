@@ -1,13 +1,12 @@
-From: =?ISO-8859-1?Q?Matthieu_Fertr=E9?= <matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 00/54] Kernel based checkpoint/restart
-Date: Mon, 04 May 2009 11:17:00 +0200
-Message-ID: <49FEB28C.90301@kerlabs.com>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>	<20090429081815.GA1813@hawkmoon.kerlabs.com>	<49F8D8FC.8010400@cs.columbia.edu>	<20090430094106.GC13896@hawkmoon.kerlabs.com>	<49FEA136.2040406@kerlabs.com>
-	<49FEB01B.208@cs.columbia.edu>
+From: Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 0/2] range-bw : Another I/O scheduling policy of dm-ioband
+	(v1)
+Date: Mon, 4 May 2009 19:56:52 +0900
+Message-ID: <2891419e0905040356x53643144of77eeaa8c210dce7__34546.4962222197$1241434713$gmane$org@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0835226601114741763=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49FEB01B.208-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,210 +14,221 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Hi, all
 
---===============0835226601114741763==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-32715-1241428612-0001-2"
+* Overview
+----------------
+range-bw was implemented as another I/O scheduling policy of dm-ioband
+to support predicable I/O bandwidth between minimum and maximum
+bandwidth defined by administrator. So, basic advantages and defects
+are same with dm-ioband. Here, minimum I/O bandwidth should be
+guaranteed for stable performance or reliability of specific process
+groups and I/O bandwidth over maximum should be throttled to protect
+the limited I/O resource from over-provisioning in unnecessary usage
+or to reserve the I/O bandwidth for another use.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+range-bw has two kinds of operation modes, min-max and max mode.
+Min-max mode is to supports guaranteeing the minimum I/O requirement
+and limitation of unnecessary I/O bandwidth at the same time. And max
+mode is to support only limitation. So in case of min-max mode, you
+need to configure min-bw and max-bw values and in case of max mode,
+configure only max-bw.
+So, range-bw was implemented to include the two concepts, guaranteeing
+of minimum bandwidth and limitation of maximum bandwidth according to
+the importance or priority of specific process groups.
 
---=_bohort-32715-1241428612-0001-2
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+* Attention
+-----------------
+Range-BW supports the predicable I/O bandwidth, but it should be
+configured in the scope of total I/O bandwidth of the I/O system to
+guarantee the minimum I/O requirement. For example, if total I/O
+bandwidth is 40Mbytes/sec, the summary of I/O bandwidth configured in
+each process group should be equal or smaller than 40Mbytes/sec.
+So, we need to check total I/O bandwidth before set it up.
 
-Oren Laadan a =E9crit :
->=20
-> Matthieu Fertr=E9 wrote:
->> Hi,
->>
->> Louis Rilling a =E9crit :
->>> On 29/04/09 18:47 -0400, Oren Laadan wrote:
->>>> Hi Louis,
->>>>
->>>> Louis Rilling wrote:
->>>>> Hi,
->>>>>
->>>>> On 28/04/09 19:23 -0400, Oren Laadan wrote:
->>>>>> Here is the latest and greatest of checkpoint/restart (c/r) patchs=
-et.
->>>>>> The logic and image format reworked and simplified, code refactore=
-d,
->>>>>> support for PPC, s390, sysvipc, shared memory of all sorts, namesp=
-aces
->>>>>> (uts and ipc).
->>>>> I should have asked before, but what are the reasons to checkpoint =
-SYSV IPCs
->>>>> in the same file/stream as tasks? Would it be better to checkpoint =
-them
->>>>> independently, like the file system state?
->>>>>
->>>>> In Kerrighed we chose to checkpoint SYSV IPCs independently, a bit =
-like the file
->>>>> system state, because SYSV IPCs objects' lifetime do not depend on =
-tasks
->>>>> lifetime, and we can gain more flexibility this way. In particular =
-we envision
->>>>> cases in which two applications share a state in a SYSV SHM (someth=
-ing like a
->>>>> producer-consumer scheme), but do not need to be checkpointed toget=
-her. In such
->>>>> a case the SYSV SHM itself could even need more high-availability (=
-using
->>>>> active replication) than a checkpoint/restart facility.
->>>>>
->>>> Thanks for the feedback, this is actually an interesting idea.
->>>>
->>>> Indeed in the past I also considered SYSV IPC to be a "global" resou=
-rce
->>>> that was checkpointed before iterating through the tasks.
->>>>
->>>> However, in the presence of namespaces, the lifetime of an IPC names=
-pace
->>>> does depend on on tasks lifetime - when the last task referring to a=
+* Setup information
+------------------------------
+range-bw is based on newest version of dm-ioband, bio-cgroup V7(4patch
+files), dm-ioband-V1.10.3(1 patch file) and these can be
+referred in
+http://people.valinux.co.jp/~ryov/dm-ioband/
+http://people.valinux.co.jp/~ryov/bio-cgroup/
+and the below range-bw patch file(dm-ioband-rangebw-1.10.3.patch)
+You have to apply this(dm-ioband-rangebw-1.10.3.patch) patch file
+after applying dm-ioband and bio-cgroup patches
 
->>>> given namespace exits - that namespace is destroyed. Of course, the
->>>> root namespace is truly global, because init(1) never exits.
->>>>
->>>> What would 'checkpoint them independently' mean in this case ?
->>> I mean that the producer and the consumer could have separate checkpo=
-inting
->>> policies (if any), and the IPC SHM as well.
->>>
->>>> In your use-case, can you restart either application without first
->>>> restoring the relevant SYSVIPC ?
->>> Probably not.
->>>
->> Well, it depends. It has no sense to restart the application without
->> restoring the relevant SHM but it may have for a message queue (this i=
-s
->> application specific of course). Message queue is not linked to the
->> process, it can disappear during the life of the application.
->=20
-> Agreed - the concern regards mainly the SHM case.
->=20
->>>> Can you think of other use-cases for such a division ?  Am I right t=
-o
->>>> guess that your use case is specific to the distributed (and SSI-)
->>>> nature of your system ?  (Active-replication of SYSV_SHM sounds
->>>> awfully related to DSM :)
->>> The case of active-replication may be specific to DSM-based systems, =
-but the
->>> case of independent policies is already interesting in standalone box=
-es.
->>>
->>>> While not focusing on such use cases, I want to keep the design flex=
-ible
->>>> enough to not exclude them a-priori, and be able to address them lat=
-er
->>>> on. Indeed, the code is split such that the the function to save a g=
-iven
->>>> IPC namespace does not depend on the task that uses it. Future code
->>>> could easily use the same functionality.
->>>>
->>>> One way to be flexible to support your use case, is by having some
->>>> mechanism in place to select whether a resource (virtually any) is
->>>> to be chekcpointed/restored.
->>>>
->>>> For example, you could imagine checkpoint(..., CHECKPOINT_SYSVIPC)
->>>> to checkpoint (also) IPC, and not checkpoint IPC in its absence.
->>>>
->>>> So normally you'd have checkpoint(..., CHECKPOINT_ALL). When you don=
-'t
->>>> want IPC, you'd use CHECKPOINT_ALL & ~CHECKPOINT_SYSVIPC. When you
->>>> want only IPC, you'd use CHECKPOINT_SYSVIPC only.
->>>>
->>>> Same thing for restart, only that it will get trickier in the "only =
-IPC"
->>>> case, since you will need to tell which IPC namespace is affected.
->>>>
->>>> Also, I envision a task saying cradvise(CHECKPOINT_SYSVIPC, false),
->>>> telling the kernel to not c/r its IPC namespace. (Or any other
->>>> resource). Again there would need to be a way to add a restored
->>>> namespace.
->>>>
->>>> Does this address your concerns ?
->>> Yes this sounds flexible enough. Thanks for taking this into account.=
+* Usage
+--------------
+It is very useful to refer the documentation for dm-ioband in
+/Documentation/device-mapper/ioband.txt or
+http://people.valinux.co.jp/~ryov/dm-ioband/, because Range-BW follows
+the basic semantics of dm-ioband.
+This example is for min-max mode.
 
->> I see one drawback with this approach if you allow checkpoint of
->> application that is not isolated in a container. In that case, you may=
+# mount the cgroup for range-bw
+mount -t cgroup -o bio none /root/cgroup/bio
 
->> want to select which IPC objects to dump to not dump all the IPC objec=
-ts
->> living in the system. Indeed, this is why we have chosen in Kerrighed =
-to
->> checkpoint IPC objects independently of tasks, since we have no
->> container/namespaces support currently.
->=20
-> I assume that in this case it will be the application itself that
-> will somehow tell the system which specific sysvipc objects (ids) it
-> cares about.
+# create the process groups (3 groups)
+mkdir /root/cgroup/bio/bgroup1
+mkdir /root/cgroup/bio/bgroup2
+mkdir /root/cgroup/bio/bgroup3
 
-Sure, the system can not know it.
+# create the ioband device ( name : ioband1 )
+echo "0 $(blockdev --getsize /dev/sdb2) ioband /dev/sdb2 1 0 0 none
+range-bw 0 :0" | dmsetup create ioband1
+: device name (/dev/sdb2) should be modified depending on your system
 
->=20
-> (I'm not sure how would the system otherwise know what to dump and
-> what to leave out).
->=20
-> I originally proposed the construct of cradvise() syscall to handle
-> exactly those cases where the application would like to advise the
-> kernel about certain resources. So, extending the previous example,
-> a task may call something like:
->=20
->    cradvise(CHECKPOINT_SYSVIPC_SHM, false);  /* generally skip shm */
->    cradvise(CHECKPOINT_SYSVIPC_SHMID, id, true);  /* but include this *=
-/
->=20
-> or:
->    cradvise(CHECKPOINT_SYSVIPC_SHM, true);  /* generally include shm */=
+# init ioband device ( type and policy )
+dmsetup message ioband1 0 type cgroup
+dmsetup message ioband1 0 policy range-bw
 
->    cradvise(CHECKPOINT_SYSVIPC_SHMID, id, false);  /* but skip this */
->=20
-> Anyway, these are just examples of the concept and what sort of generic=
+# attach the groups to the ioband device
+dmsetup message ioband1 0 attach 2
+dmsetup message ioband1 0 attach 3
+dmsetup message ioband1 0 attach 4
+: group number can be referred in /root/cgroup/bio/bgroup1/bio.id
 
-> interface can be used to implement it; don't pick on the details...
+# allocate the values ( min-bw and max-bw ) : XXX Kbytes
+: the sum of minimum I/O bandwidth in each group should be equal or
+smaller than total bandwidth to be supported by your system
 
+# range : about 100~500 Kbytes
+dmsetup message ioband1 0 min-bw 2:100
+dmsetup message ioband1 0 max-bw 2:500
 
-Ok, seems good :)
+# range : about 700~1000 Kbytes
+dmsetup message ioband1 0 min-bw 3:700
+dmsetup message ioband1 0 max-bw 3:1000
 
-Thanks,
+# range : about 50~60Mbytes
+dmsetup message ioband1 0 min-bw 4:50000
+dmsetup message ioband1 0 max-bw 4:60000
 
-Matthieu
+You can confirm the configuration of range-bw by using this command :
+[root@localhost range-bw]# dmsetup table --target ioband
+ioband1: 0 305235000 ioband 8:18 1 4 128 cgroup range-bw 16384 :0
+2:100:500 3:700:1000 4:30000:60000
 
+* Evaluation
+------------------
 
+range-bw supports the 2 kinds of configuration style, one is min-max
+configuration
+and the other is only-max configuration.
+min-max is to supports guaranteeing the minimum I/O requirement and
+limitation of
+unnecessary I/O bandwidth at the same time. And only-max is to support
+only bandwidth limitation.
+the evaluation result of range-bw is as like below
 
---=_bohort-32715-1241428612-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+-Testing tool : fio-1.26
+-Total bandwidth in my test system :
+  * Sequential read / write : about 60 Mbytes/sec
+  * Random read / write : about 290 Kbytes/sec
+- configuration semantics : X:Y:Z = process group : min-bw : max-bw
+and min-bw, max-bw : Kbytes/sec
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+1. Sequential read / write (total bandwidth : about 60 Mbytes/sec)
 
-iEYEARECAAYFAkn+spIACgkQY7DOPJbNE5uvMQCgheXkmJuE9yR3qjQ4dZmAA0lx
-LeIAmgLMFwX6MZJcXmr/Kv7ojGseqV6s
-=ZUeQ
------END PGP SIGNATURE-----
+1.1 Test1
+* Configuration (min-max)
+[root@localhost range-bw]# dmsetup table --target ioband
+ioband1: 0 305235000 ioband 8:18 1 4 128 cgroup range-bw 16384 :0
+2:500:700 3:3000:5000 4:50000:55000
 
---=_bohort-32715-1241428612-0001-2--
+* Command :
+fio --time_based --runtime=30 --ioengine=libaio --iodepth=50
+--direct=1  --rw=write --name=grp1 --filename=/dev/mapper/ioband1
+--numjobs=1 --norandommap
 
---===============0835226601114741763==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+* Result :
+- Group2
+Run status group 0 (all jobs):
+  WRITE: io=21,008KiB, aggrb=693KiB/s, minb=693KiB/s, maxb=693KiB/s,
+mint=30311msec, maxt=30311msec
+- Group3
+Run status group 0 (all jobs):
+  WRITE: io=147MiB, aggrb=4,979KiB/s, minb=4,979KiB/s,
+maxb=4,979KiB/s, mint=30128msec, maxt=30128msec
+- Group4
+Run status group 0 (all jobs):
+WRITE: io=1,526MiB, aggrb=52,057KiB/s, minb=52,057KiB/s,
+maxb=52,057KiB/s, mint=30010msec, maxt=30010msec
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============0835226601114741763==--
+1.2 Test2
+* Configuration (only-max)
+[root@localhost range-bw]# dmsetup table --target ioband
+ioband1: 0 305235000 ioband 8:18 1 4 128 cgroup range-bw 16384 :0
+2:0:700 3:0:5000 4:0:10000
+
+* Command :
+fio --time_based --runtime=30 --ioengine=libaio --iodepth=50
+--direct=1  --rw=read --name=grp1 --filename=/dev/mapper/ioband1
+--numjobs=1 --norandommap
+
+* Result :
+- Group2
+Run status group 0 (all jobs):
+   READ: io=20,424KiB, aggrb=676KiB/s, minb=676KiB/s, maxb=676KiB/s,
+mint=30169msec, maxt=30169msec
+- Group3
+Run status group 0 (all jobs):
+   READ: io=142MiB, aggrb=4,836KiB/s, minb=4,836KiB/s,
+maxb=4,836KiB/s, mint=30022msec, maxt=30022msec
+- Group4
+Run status group 0 (all jobs):
+   READ: io=293MiB, aggrb=9,755KiB/s, minb=9,755KiB/s,
+maxb=9,755KiB/s, mint=30752msec, maxt=30752msec
+
+2. Random read / write (total bandwidth : about 290 Kbytes/sec)
+
+2.1 Test1 (min-max)
+* Configuration :
+[root@localhost range-bw]# dmsetup table --target ioband
+ioband1: 0 305235000 ioband 8:18 1 4 128 cgroup range-bw 16384 :0
+2:80:90 3:180:200 4:0:0
+
+* Command :
+fio --time_based --runtime=30 --ioengine=libaio --iodepth=50
+--direct=1  --rw=randread --name=grp1 --filename=/dev/mapper/ioband1
+--numjobs=1 --norandommap
+
+* Result :
+Group2
+Run status group 0 (all jobs):
+   READ: io=2,780KiB, aggrb=92KiB/s, minb=92KiB/s, maxb=92KiB/s,
+mint=30175msec, maxt=30175msec
+Group3
+Run status group 0 (all jobs):
+   READ: io=6,008KiB, aggrb=193KiB/s, minb=193KiB/s, maxb=193KiB/s,
+mint=30998msec, maxt=30998msec
+
+2.2 Test2 (min-max)
+* Configuration :
+[root@localhost range-bw]# dmsetup table --target ioband
+ioband1: 0 305235000 ioband 8:18 1 4 128 cgroup range-bw 16384 :0
+2:50:60 3:200:220 4:0:0
+
+* Command :
+fio --time_based --runtime=30 --ioengine=libaio --iodepth=50
+--direct=1  --rw=randwrite --name=grp1 --filename=/dev/mapper/ioband1
+--numjobs=1 --norandommap
+
+* Result :
+- Group2
+Run status group 0 (all jobs):
+  WRITE: io=1,848KiB, aggrb=61KiB/s, minb=61KiB/s, maxb=61KiB/s,
+mint=30158msec, maxt=30158msec
+- Group3
+Run status group 0 (all jobs):
+  WRITE: io=6,612KiB, aggrb=213KiB/s, minb=213KiB/s, maxb=213KiB/s,
+mint=30994msec, maxt=30994msec
+
+-- 
+Best Regards,
+Dong-Jae Kang
