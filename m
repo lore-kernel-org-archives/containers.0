@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 09/36] hfs: Add checkpoint file operations
+Subject: [RFC][PATCH 33/36] adfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <86ae7388ac2df21d3cb0c37564334d6dc9fdaa2d.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <07249b3f593095541716eed3f7150dbfc059b936.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,39 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for hfs files and directories.
+Add the checkpoint operation for adfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/hfs/dir.c   |    1 +
- fs/hfs/inode.c |    1 +
+ fs/adfs/dir.c  |    1 +
+ fs/adfs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/hfs/dir.c b/fs/hfs/dir.c
-index 7c69b98..8d90a24 100644
---- a/fs/hfs/dir.c
-+++ b/fs/hfs/dir.c
-@@ -318,6 +318,7 @@ const struct file_operations hfs_dir_operations = {
- 	.readdir	= hfs_readdir,
+diff --git a/fs/adfs/dir.c b/fs/adfs/dir.c
+index e867ccf..c05783a 100644
+--- a/fs/adfs/dir.c
++++ b/fs/adfs/dir.c
+@@ -200,6 +200,7 @@ const struct file_operations adfs_dir_operations = {
  	.llseek		= generic_file_llseek,
- 	.release	= hfs_dir_release,
-+	.checkpoint	= generic_file_checkpoint,
- };
- 
- const struct inode_operations hfs_dir_inode_operations = {
-diff --git a/fs/hfs/inode.c b/fs/hfs/inode.c
-index a1cbff2..bf8950f 100644
---- a/fs/hfs/inode.c
-+++ b/fs/hfs/inode.c
-@@ -607,6 +607,7 @@ static const struct file_operations hfs_file_operations = {
+ 	.readdir	= adfs_readdir,
  	.fsync		= file_fsync,
- 	.open		= hfs_file_open,
- 	.release	= hfs_file_release,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static const struct inode_operations hfs_file_inode_operations = {
+ static int
+diff --git a/fs/adfs/file.c b/fs/adfs/file.c
+index 36e381c..0d2f552 100644
+--- a/fs/adfs/file.c
++++ b/fs/adfs/file.c
+@@ -34,6 +34,7 @@ const struct file_operations adfs_file_operations = {
+ 	.write		= do_sync_write,
+ 	.aio_write	= generic_file_aio_write,
+ 	.splice_read	= generic_file_splice_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations adfs_file_inode_operations = {
 -- 
 1.5.6.3
