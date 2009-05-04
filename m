@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 07/36] fat: Add checkpoint file operations
+Subject: [RFC][PATCH 03/36] bfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <be7247489a833bc7ca908eb39876a219847aa64d.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <e77bc76e1d90b2761986df1e0b3d6de670c651de.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,39 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for fat files and directories.
+Add the checkpoint operation for bfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/fat/dir.c  |    1 +
- fs/fat/file.c |    1 +
+ fs/bfs/dir.c  |    1 +
+ fs/bfs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/fat/dir.c b/fs/fat/dir.c
-index 3a7f603..3baecf8 100644
---- a/fs/fat/dir.c
-+++ b/fs/fat/dir.c
-@@ -841,6 +841,7 @@ const struct file_operations fat_dir_operations = {
- 	.compat_ioctl	= fat_compat_dir_ioctl,
- #endif
+diff --git a/fs/bfs/dir.c b/fs/bfs/dir.c
+index 4dd1b62..dd34403 100644
+--- a/fs/bfs/dir.c
++++ b/fs/bfs/dir.c
+@@ -81,6 +81,7 @@ const struct file_operations bfs_dir_operations = {
+ 	.readdir	= bfs_readdir,
  	.fsync		= file_fsync,
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static int fat_get_short_entry(struct inode *dir, loff_t *pos,
-diff --git a/fs/fat/file.c b/fs/fat/file.c
-index 0a7f4a9..f2abe6c 100644
---- a/fs/fat/file.c
-+++ b/fs/fat/file.c
-@@ -144,6 +144,7 @@ const struct file_operations fat_file_operations = {
- 	.ioctl		= fat_generic_ioctl,
- 	.fsync		= file_fsync,
+ extern void dump_imap(const char *, struct super_block *);
+diff --git a/fs/bfs/file.c b/fs/bfs/file.c
+index 6a02126..c74d5b9 100644
+--- a/fs/bfs/file.c
++++ b/fs/bfs/file.c
+@@ -30,6 +30,7 @@ const struct file_operations bfs_file_operations = {
+ 	.aio_write	= generic_file_aio_write,
+ 	.mmap		= generic_file_mmap,
  	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static int fat_cont_expand(struct inode *inode, loff_t size)
+ static int bfs_move_block(unsigned long from, unsigned long to,
 -- 
 1.5.6.3
