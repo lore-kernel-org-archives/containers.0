@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 36/36] hostfs: Add checkpoint file operations
+Subject: [RFC][PATCH 22/36] squashfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <f51867bae376dcac1843c254c7b0d1d1265d7db5.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <e47d9a5cb3ce823acf10febb8d76abdf3e006eef.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,35 +21,27 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add checkpoint operations for UML host filesystem files and directories.
+Add the checkpoint operation for squashfs directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>
-Cc: user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+Cc: Phillip Lougher <phillip-cnXvMjJKhjYG2Il/BtU0GPXRex20P6io@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/hostfs/hostfs_kern.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/squashfs/dir.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/hostfs/hostfs_kern.c b/fs/hostfs/hostfs_kern.c
-index fe02ad4..8ae55d8 100644
---- a/fs/hostfs/hostfs_kern.c
-+++ b/fs/hostfs/hostfs_kern.c
-@@ -417,6 +417,7 @@ int hostfs_fsync(struct file *file, struct dentry *dentry, int datasync)
+diff --git a/fs/squashfs/dir.c b/fs/squashfs/dir.c
+index 566b0ea..b0c5336 100644
+--- a/fs/squashfs/dir.c
++++ b/fs/squashfs/dir.c
+@@ -231,5 +231,6 @@ failed_read:
  
- static const struct file_operations hostfs_file_fops = {
- 	.llseek		= generic_file_llseek,
-+	.checkpoint	= generic_file_checkpoint,
- 	.read		= do_sync_read,
- 	.splice_read	= generic_file_splice_read,
- 	.aio_read	= generic_file_aio_read,
-@@ -430,6 +431,7 @@ static const struct file_operations hostfs_file_fops = {
- 
- static const struct file_operations hostfs_dir_fops = {
- 	.llseek		= generic_file_llseek,
-+	.checkpoint	= generic_file_checkpoint,
- 	.readdir	= hostfs_readdir,
- 	.read		= generic_read_dir,
+ const struct file_operations squashfs_dir_ops = {
+ 	.read = generic_read_dir,
+-	.readdir = squashfs_readdir
++	.readdir = squashfs_readdir,
++	.checkpoint = generic_file_checkpoint,
  };
 -- 
 1.5.6.3
