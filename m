@@ -1,13 +1,13 @@
 From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: [RFC][PATCH 6/7] Define do_fork_with_pids()
-Date: Mon,  4 May 2009 01:17:44 -0700
-Message-ID: <12414250652549-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 7/7] Define clone_with_pids syscall
+Date: Mon,  4 May 2009 01:17:45 -0700
+Message-ID: <12414250653426-git-send-email-sukadev@linux.vnet.ibm.com>
 References: <12414250653025-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Resent-Message-ID: <20090504165858.GF31285-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Resent-Message-ID: <20090504165902.GG31285-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Resent-To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <12414250653025-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -25,70 +25,221 @@ List-Id: containers.vger.kernel.org
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-do_fork_with_pids() is same as do_fork(), except that it takes an
-additional, target_pids, parameter. This parameter, currently unused,
-specifies the target_pids of the process in each of its pid namespaces.
+clone_with_pids() is same as clone(), except that it takes a 'target_pid_set'
+paramter which lets caller choose a specific pid number for the child process
+in each of the child process's pid namespace. This system call would be needed
+to implement Checkpoint/Restart (i.e after a checkpoint, restart a process with
+its original pids).
+
+Call clone_with_pids as follows:
+
+	pid_t pids[] = { 0, 77, 99 };
+	struct target_pid_set pid_set;
+
+	pid_set.num_pids = sizeof(pids) / sizeof(int);
+	pid_set.target_pids = &pids;
+
+	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
+
+If a target-pid is 0, the kernel continues to assign a pid for the process in
+that namespace. In the above example, pids[0] is 0, meaning the kernel will
+assign next available pid to the process in init_pid_ns. But kernel will assign
+pid 77 in the child pid namespace 1 and pid 99 in pid namespace 2. If either
+77 or 99 are taken, the system call fails with -EBUSY.
+
+If 'pid_set.num_pids' exceeds the current nesting level of pid namespaces,
+the system call fails with -EINVAL.
+
+Its mostly an exploratory patch seeking feedback on the interface.
+
+NOTE:
+	Compared to clone(), clone_with_pids() needs to pass in two more
+	pieces of information:
+
+		- number of pids in the set
+		- user buffer containing the list of pids.
+
+	But since clone() already takes 5 parameters, use a 'struct
+	target_pid_set'.
+
+TODO:
+	- Gently tested.
+	- May need additional sanity checks in check_target_pids()
+	- Allow CLONE_NEWPID() with clone_with_pids() (ensure target-pid in
+	  the namespace is either 1 or 0).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- include/linux/sched.h |    1 +
- kernel/fork.c         |   17 ++++++++++++++---
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ arch/x86/include/asm/syscalls.h    |    1 +
+ arch/x86/include/asm/unistd_32.h   |    1 +
+ arch/x86/kernel/entry_32.S         |    1 +
+ arch/x86/kernel/process_32.c       |   91 ++++++++++++++++++++++++++++++++++++
+ arch/x86/kernel/syscall_table_32.S |    1 +
+ include/linux/types.h              |    5 ++
+ 6 files changed, 100 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b4c38bc..2173df1 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1995,6 +1995,7 @@ extern int disallow_signal(int);
+diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
+index 7043408..1fdc149 100644
+--- a/arch/x86/include/asm/syscalls.h
++++ b/arch/x86/include/asm/syscalls.h
+@@ -31,6 +31,7 @@ asmlinkage int sys_get_thread_area(struct user_desc __user *);
+ /* kernel/process_32.c */
+ int sys_fork(struct pt_regs *);
+ int sys_clone(struct pt_regs *);
++int sys_clone_with_pids(struct pt_regs *);
+ int sys_vfork(struct pt_regs *);
+ int sys_execve(struct pt_regs *);
 
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *, pid_t *target_pids);
- struct task_struct *fork_idle(int);
+diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+index 6e72d74..90f906f 100644
+--- a/arch/x86/include/asm/unistd_32.h
++++ b/arch/x86/include/asm/unistd_32.h
+@@ -340,6 +340,7 @@
+ #define __NR_inotify_init1	332
+ #define __NR_preadv		333
+ #define __NR_pwritev		334
++#define __NR_clone_with_pids	335
 
- extern void set_task_comm(struct task_struct *tsk, char *from);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 373411e..912d008 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1340,17 +1340,17 @@ struct task_struct * __cpuinit fork_idle(int cpu)
-  * It copies the process, and if successful kick-starts
-  * it and waits for it to finish using the VM if required.
-  */
--long do_fork(unsigned long clone_flags,
-+long do_fork_with_pids(unsigned long clone_flags,
- 	      unsigned long stack_start,
- 	      struct pt_regs *regs,
- 	      unsigned long stack_size,
- 	      int __user *parent_tidptr,
--	      int __user *child_tidptr)
-+	      int __user *child_tidptr,
-+	      pid_t *target_pids)
- {
- 	struct task_struct *p;
- 	int trace = 0;
- 	long nr;
--	pid_t *target_pids = NULL;
+ #ifdef __KERNEL__
 
- 	/*
- 	 * Do some preliminary argument and permissions checking before we
-@@ -1448,6 +1448,17 @@ long do_fork(unsigned long clone_flags,
- 	return nr;
+diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+index c929add..ee92b0d 100644
+--- a/arch/x86/kernel/entry_32.S
++++ b/arch/x86/kernel/entry_32.S
+@@ -707,6 +707,7 @@ ptregs_##name: \
+ PTREGSCALL(iopl)
+ PTREGSCALL(fork)
+ PTREGSCALL(clone)
++PTREGSCALL(clone_with_pids)
+ PTREGSCALL(vfork)
+ PTREGSCALL(execve)
+ PTREGSCALL(sigaltstack)
+diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
+index 76f8f84..66ac6f7 100644
+--- a/arch/x86/kernel/process_32.c
++++ b/arch/x86/kernel/process_32.c
+@@ -445,6 +445,97 @@ int sys_clone(struct pt_regs *regs)
+ 	return do_fork(clone_flags, newsp, regs, 0, parent_tidptr, child_tidptr);
  }
 
-+long do_fork(unsigned long clone_flags,
-+	      unsigned long stack_start,
-+	      struct pt_regs *regs,
-+	      unsigned long stack_size,
-+	      int __user *parent_tidptr,
-+	      int __user *child_tidptr)
++static int check_target_pids(unsigned long clone_flags,
++		struct target_pid_set *pid_setp)
 +{
-+	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, NULL);
++	/*
++	 * CLONE_NEWPID implies pid == 1
++	 *
++	 * TODO: Maybe this should be more fine-grained (i.e would we want
++	 *  	 to have a container-init have a specific pid in ancestor
++	 *  	 namespaces ?)
++	 */
++	if (clone_flags & CLONE_NEWPID)
++		return -EINVAL;
++
++	/* number of pids must match current nesting level of pid ns */
++	if (pid_setp->num_pids > task_pid(current)->level + 1)
++		return -EINVAL;
++
++	/* TODO: More sanity checks ?  */
++
++	return 0;
 +}
 +
- #ifndef ARCH_MIN_MMSTRUCT_ALIGN
- #define ARCH_MIN_MMSTRUCT_ALIGN 0
- #endif
++static pid_t *copy_target_pids(unsigned long clone_flags, void __user *upid_setp)
++{
++	int rc;
++	int size;
++	unsigned long clone_flags;
++	pid_t __user *utarget_pids;
++	pid_t *target_pids;
++	struct target_pid_set pid_set;
++
++	if (copy_from_user(pid_setp, upid_setp, sizeof(*pid_setp)))
++		return ERR_PTR(-EFAULT);
++
++	size = pid_setp->num_pids * sizeof(pid_t);
++	utarget_pids = pid_setp->target_pids;
++
++	target_pids = kzalloc(size, GFP_KERNEL);
++	if (!target_pids)
++		return ERR_PTR(-ENOMEM);
++
++	rc = -EFAULT;
++	if (copy_from_user(target_pids, utarget_pids, size))
++		goto out_free;
++
++	rc = check_target_pids(clone_flags, &pid_set);
++	if (rc)
++		goto out_free;
++
++	printk(KERN_ERR "clone_with_pids() num_pids %d, [ %d, %d ]\n",
++			pid_set.num_pids, target_pids[0], target_pids[1]);
++
++	return target_pids;
++
++out_free:
++	kfree(target_pids);
++	return ERR_PTR(rc);
++}
++
++int sys_clone_with_pids(struct pt_regs *regs)
++{
++	unsigned long clone_flags;
++	unsigned long newsp;
++	int __user *parent_tidptr;
++	int __user *child_tidptr;
++	void __user *upid_setp;
++	int rc;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	clone_flags = regs->bx;
++	newsp = regs->cx;
++	parent_tidptr = (int __user *)regs->dx;
++	child_tidptr = (int __user *)regs->di;
++	upid_setp = (void __user *)regs->bp;
++
++	if (!newsp)
++		newsp = regs->sp;
++
++	target_pids = copy_target_pids(clone_flags, upid_setp)
++	if (IS_ERR(target_pids))
++		return PTR_ERR(target_pids);
++
++	rc = do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
++			child_tidptr, target_pids);
++out_free:
++	kfree(target_pids);
++	return rc;
++}
++
+ /*
+  * sys_execve() executes a new program.
+  */
+diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+index ff5c873..94c1a58 100644
+--- a/arch/x86/kernel/syscall_table_32.S
++++ b/arch/x86/kernel/syscall_table_32.S
+@@ -334,3 +334,4 @@ ENTRY(sys_call_table)
+ 	.long sys_inotify_init1
+ 	.long sys_preadv
+ 	.long sys_pwritev
++	.long ptregs_clone_with_pids	/* 335 */
+diff --git a/include/linux/types.h b/include/linux/types.h
+index 5abe354..17ec186 100644
+--- a/include/linux/types.h
++++ b/include/linux/types.h
+@@ -204,6 +204,11 @@ struct ustat {
+ 	char			f_fpack[6];
+ };
+
++struct target_pid_set {
++	int num_pids;
++	pid_t *target_pids;
++};
++
+ #endif	/* __KERNEL__ */
+ #endif /*  __ASSEMBLY__ */
+ #endif /* _LINUX_TYPES_H */
 -- 
 1.5.2.5
