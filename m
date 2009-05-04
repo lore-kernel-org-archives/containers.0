@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 35/36] nilfs2: Add checkpoint file operations
+Subject: [RFC][PATCH 07/36] fat: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <2b5f78c7241663ed2d1042f5a5bbd4b771e7a909.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <be7247489a833bc7ca908eb39876a219847aa64d.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,40 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation to nilfs2 files and directories.
+Add the checkpoint operation for fat files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: KONISHI Ryusuke <konishi.ryusuke-Zyj7fXuS5i5L9jVzuh4AOg@public.gmane.org>
-Cc: users-JrjvKiOkagjYtjvyW6yDsg@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/nilfs2/dir.c  |    2 +-
- fs/nilfs2/file.c |    1 +
- 2 files changed, 2 insertions(+), 1 deletions(-)
+ fs/fat/dir.c  |    1 +
+ fs/fat/file.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/nilfs2/dir.c b/fs/nilfs2/dir.c
-index 54100ac..38fd744 100644
---- a/fs/nilfs2/dir.c
-+++ b/fs/nilfs2/dir.c
-@@ -707,5 +707,5 @@ struct file_operations nilfs_dir_operations = {
- 	.compat_ioctl	= nilfs_ioctl,
- #endif	/* CONFIG_COMPAT */
- 	.fsync		= nilfs_sync_file,
--
+diff --git a/fs/fat/dir.c b/fs/fat/dir.c
+index 3a7f603..3baecf8 100644
+--- a/fs/fat/dir.c
++++ b/fs/fat/dir.c
+@@ -841,6 +841,7 @@ const struct file_operations fat_dir_operations = {
+ 	.compat_ioctl	= fat_compat_dir_ioctl,
+ #endif
+ 	.fsync		= file_fsync,
 +	.checkpoint	= generic_file_checkpoint,
  };
-diff --git a/fs/nilfs2/file.c b/fs/nilfs2/file.c
-index 6bd84a0..0f27ab5 100644
---- a/fs/nilfs2/file.c
-+++ b/fs/nilfs2/file.c
-@@ -136,6 +136,7 @@ static int nilfs_file_mmap(struct file *file, struct vm_area_struct *vma)
-  */
- struct file_operations nilfs_file_operations = {
- 	.llseek		= generic_file_llseek,
+ 
+ static int fat_get_short_entry(struct inode *dir, loff_t *pos,
+diff --git a/fs/fat/file.c b/fs/fat/file.c
+index 0a7f4a9..f2abe6c 100644
+--- a/fs/fat/file.c
++++ b/fs/fat/file.c
+@@ -144,6 +144,7 @@ const struct file_operations fat_file_operations = {
+ 	.ioctl		= fat_generic_ioctl,
+ 	.fsync		= file_fsync,
+ 	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
- 	.aio_read	= generic_file_aio_read,
+ };
+ 
+ static int fat_cont_expand(struct inode *inode, loff_t size)
 -- 
 1.5.6.3
