@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 00/54] Kernel based checkpoint/restart
-Date: Mon, 04 May 2009 15:13:11 -0400
-Message-ID: <49FF3E47.9060002@cs.columbia.edu>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/7] Add target_pid parameter to alloc_pidmap()
+Date: Mon, 4 May 2009 15:03:18 -0500
+Message-ID: <20090504200318.GA29491@us.ibm.com>
+References: <12414250653025-git-send-email-sukadev@linux.vnet.ibm.com>
+	<12414250651744-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1240961064-13991-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <12414250651744-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,68 +19,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dave,
+Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  kernel/pid.c |   28 ++++++++++++++++++++++++++--
+>  1 files changed, 26 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index fd72ad9..93406c6 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -147,12 +147,36 @@ static int alloc_pidmap_page(struct pidmap *map)
+>  	return 0;
+>  }
+> 
+> -static int alloc_pidmap(struct pid_namespace *pid_ns)
+> +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
+> +{
+> +	int offset;
+> +	struct pidmap *map;
+> +
+> +	if (pid >= pid_max)
+> +		return -EINVAL;
+> +
+> +	offset = pid & BITS_PER_PAGE_MASK;
+> +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+> +
+> +	if (alloc_pidmap_page(map))
+> +		return -ENOMEM;
+> +
+> +	if (test_and_set_bit(offset, map->page))
+> +		return -EBUSY;
+> +
+> +	atomic_dec(&map->nr_free);
+> +	return pid;
+> +}
+> +
+> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+>  {
+>  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+>  	struct pidmap *map;
+>  	int rc = -EAGAIN;
+> 
+> +	if (target_pid)
+> +		return set_pidmap(pid_ns, target_pid);
 
-I've addressed the feedback on ckpt-v14 and pushed it to ckpt-v15.
-(There is no point in reposting the entire chain).
+I think this whole patchset is still NACKed until you tag
+pid_namespaces with a creator uid, and ensure that
+current_uid()==pid_ns->creator_uid() at each level where
+the caller is specifying a pid.
 
-Main changes are use kmalloc/kfree in ckpt_hdr_get/put() implementation
-(discard hbuf/hpos), move vdso patch early, fixes to s390, and added
-support for /dev/null, /dev/zero, /dev/random, /dev/urandom (trivial
-patch). Also, the powerpc patches are still there, however Nathan is
-working or fixing them so eventually they will be replaced.
+I don't see that in this set.
 
-Oren.
+OTOH, your approach of pulling alloc_pidmap_page() out of
+alloc_pidmap() and re-using it may be what Eric wanted to
+see.
 
-Oren Laadan wrote:
-> Here is the latest and greatest of checkpoint/restart (c/r) patchset.
-> The logic and image format reworked and simplified, code refactored,
-> support for PPC, s390, sysvipc, shared memory of all sorts, namespaces
-> (uts and ipc).
-> The userspace tool 'mktree' was extended to handle more complicated
-> process tree and correctly account for process relationships and 
-> session ID (sid). Should correctly handle threads.
-> Hey, it even went through some massive renaming of files and functions...
-> 
-> Signals and timers are not supported yet, so programs that rely on
-> their behavior may fail to oeprate correctly after a restart (e.g.
-> may lose signals pending at time of checkpoint, and so on).
-> 
-> However, this one can actually be used for simple batch jobs (pipes,
-> too), a whole container or just a subtree of tasks. Try it:
-> 
-> create the freezer cgroup:
->   $ mount -t cgroup -ofreezer freezer /freezer
->   $ mkdir /freezer/0
-> 
-> run the test, freeze it:  
->   $ test/multitask &
->   [1] 2754
->   $ for i in `pidof multitask`; do echo $i > /freezer/0/tasks; done
->   $ echo FROZEN > /freezer/0/freezer.state
-> 
-> checkpoint:
->   $ ./ckpt 2754 > ckpt.out
-> 
-> restart:
->   $ ./mktree < ckpt.out
-> 
-> voila :)
-> 
-> To do all this, you'll need:
-> 
-> The git tree tracking v14, branch 'ckpt-v14' (and past versions):
-> 	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
-> 
-> Restarting multiple processes requires 'mktree' userspace tool with
-> the matching branch (v14):
-> 	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
-> 
-> 
-> Oren.
-> 
-> 
+-serge
