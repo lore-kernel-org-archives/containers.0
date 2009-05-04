@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/7] Add target_pid parameter to alloc_pidmap()
-Date: Mon, 4 May 2009 15:03:18 -0500
-Message-ID: <20090504200318.GA29491@us.ibm.com>
-References: <12414250653025-git-send-email-sukadev@linux.vnet.ibm.com>
-	<12414250651744-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: Re: [PATCH] utsns: extract creeate_uts_ns()
+Date: Mon, 4 May 2009 15:05:01 -0500
+Message-ID: <20090504200501.GA29833__34878.5328249962$1241467596$gmane$org@us.ibm.com>
+References: <20090503232510.GA16631@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <12414250651744-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20090503232510.GA16631-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,67 +18,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> create_uts_ns() will be used by C/R to create fresh uts_ns.
 > 
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+thanks,
+-serge
+
 > ---
->  kernel/pid.c |   28 ++++++++++++++++++++++++++--
->  1 files changed, 26 insertions(+), 2 deletions(-)
+>  kernel/utsname.c |   13 +++++++++++--
+>  1 files changed, 11 insertions(+), 2 deletions(-)
 > 
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index fd72ad9..93406c6 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -147,12 +147,36 @@ static int alloc_pidmap_page(struct pidmap *map)
->  	return 0;
->  }
+> diff --git a/kernel/utsname.c b/kernel/utsname.c
+> index 815237a..8a82b4b 100644
+> --- a/kernel/utsname.c
+> +++ b/kernel/utsname.c
+> @@ -15,6 +15,16 @@
+>  #include <linux/err.h>
+>  #include <linux/slab.h>
 > 
-> -static int alloc_pidmap(struct pid_namespace *pid_ns)
-> +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
+> +static struct uts_namespace *create_uts_ns(void)
 > +{
-> +	int offset;
-> +	struct pidmap *map;
+> +	struct uts_namespace *uts_ns;
 > +
-> +	if (pid >= pid_max)
-> +		return -EINVAL;
-> +
-> +	offset = pid & BITS_PER_PAGE_MASK;
-> +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-> +
-> +	if (alloc_pidmap_page(map))
-> +		return -ENOMEM;
-> +
-> +	if (test_and_set_bit(offset, map->page))
-> +		return -EBUSY;
-> +
-> +	atomic_dec(&map->nr_free);
-> +	return pid;
+> +	uts_ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
+> +	if (uts_ns)
+> +		kref_init(&uts_ns->kref);
+> +	return uts_ns;
 > +}
 > +
-> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+>  /*
+>   * Clone a new ns copying an original utsname, setting refcount to 1
+>   * @old_ns: namespace to clone
+> @@ -24,14 +34,13 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
 >  {
->  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
->  	struct pidmap *map;
->  	int rc = -EAGAIN;
+>  	struct uts_namespace *ns;
 > 
-> +	if (target_pid)
-> +		return set_pidmap(pid_ns, target_pid);
-
-I think this whole patchset is still NACKed until you tag
-pid_namespaces with a creator uid, and ensure that
-current_uid()==pid_ns->creator_uid() at each level where
-the caller is specifying a pid.
-
-I don't see that in this set.
-
-OTOH, your approach of pulling alloc_pidmap_page() out of
-alloc_pidmap() and re-using it may be what Eric wanted to
-see.
-
--serge
+> -	ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
+> +	ns = create_uts_ns();
+>  	if (!ns)
+>  		return ERR_PTR(-ENOMEM);
+> 
+>  	down_read(&uts_sem);
+>  	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+>  	up_read(&uts_sem);
+> -	kref_init(&ns->kref);
+>  	return ns;
+>  }
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
