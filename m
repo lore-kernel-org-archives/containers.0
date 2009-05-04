@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 26/36] xfs: Add checkpoint file operations
+Subject: [RFC][PATCH 13/36] isofs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <362386d1176b47198363ab34bc28497d72936f74.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <62c573ba8df236592a2d9c7d1a1da05f4cc0a99f.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,36 +21,26 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for xfs files and directories.
+Add the checkpoint operation for iso directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: xfs-masters-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
-Cc: xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/xfs/linux-2.6/xfs_file.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/isofs/dir.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/fs/xfs/linux-2.6/xfs_file.c b/fs/xfs/linux-2.6/xfs_file.c
-index f4e2554..8e1074b 100644
---- a/fs/xfs/linux-2.6/xfs_file.c
-+++ b/fs/xfs/linux-2.6/xfs_file.c
-@@ -258,6 +258,7 @@ const struct file_operations xfs_file_operations = {
- #ifdef HAVE_FOP_OPEN_EXEC
- 	.open_exec	= xfs_file_open_exec,
- #endif
-+	.checkpoint	= generic_file_checkpoint,
+diff --git a/fs/isofs/dir.c b/fs/isofs/dir.c
+index 2f0dc5a..a9fa99e 100644
+--- a/fs/isofs/dir.c
++++ b/fs/isofs/dir.c
+@@ -274,6 +274,7 @@ const struct file_operations isofs_dir_operations =
+ {
+ 	.read = generic_read_dir,
+ 	.readdir = isofs_readdir,
++	.checkpoint = generic_file_checkpoint,
  };
  
- const struct file_operations xfs_dir_file_operations = {
-@@ -270,6 +271,7 @@ const struct file_operations xfs_dir_file_operations = {
- 	.compat_ioctl	= xfs_file_compat_ioctl,
- #endif
- 	.fsync		= xfs_file_fsync,
-+	.checkpoint	= generic_file_checkpoint,
- };
- 
- static struct vm_operations_struct xfs_file_vm_ops = {
+ /*
 -- 
 1.5.6.3
