@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 05/36] cramfs: Add checkpoint file operations
+Subject: [RFC][PATCH 26/36] xfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <602ec684439ce22a2235e917978489359bf6f211.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <362386d1176b47198363ab34bc28497d72936f74.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,26 +21,36 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for cramfs directories.
+Add the checkpoint operation for xfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: xfs-masters-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
+Cc: xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/cramfs/inode.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/xfs/linux-2.6/xfs_file.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/cramfs/inode.c b/fs/cramfs/inode.c
-index dd3634e..0927503 100644
---- a/fs/cramfs/inode.c
-+++ b/fs/cramfs/inode.c
-@@ -532,6 +532,7 @@ static const struct file_operations cramfs_directory_operations = {
- 	.llseek		= generic_file_llseek,
- 	.read		= generic_read_dir,
- 	.readdir	= cramfs_readdir,
+diff --git a/fs/xfs/linux-2.6/xfs_file.c b/fs/xfs/linux-2.6/xfs_file.c
+index f4e2554..8e1074b 100644
+--- a/fs/xfs/linux-2.6/xfs_file.c
++++ b/fs/xfs/linux-2.6/xfs_file.c
+@@ -258,6 +258,7 @@ const struct file_operations xfs_file_operations = {
+ #ifdef HAVE_FOP_OPEN_EXEC
+ 	.open_exec	= xfs_file_open_exec,
+ #endif
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static const struct inode_operations cramfs_dir_inode_operations = {
+ const struct file_operations xfs_dir_file_operations = {
+@@ -270,6 +271,7 @@ const struct file_operations xfs_dir_file_operations = {
+ 	.compat_ioctl	= xfs_file_compat_ioctl,
+ #endif
+ 	.fsync		= xfs_file_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static struct vm_operations_struct xfs_file_vm_ops = {
 -- 
 1.5.6.3
