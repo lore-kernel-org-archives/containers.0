@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 13/36] isofs: Add checkpoint file operations
+Subject: [RFC][PATCH 09/36] hfs: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <62c573ba8df236592a2d9c7d1a1da05f4cc0a99f.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <86ae7388ac2df21d3cb0c37564334d6dc9fdaa2d.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,26 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for iso directories.
+Add the checkpoint operation for hfs files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/isofs/dir.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/hfs/dir.c   |    1 +
+ fs/hfs/inode.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/isofs/dir.c b/fs/isofs/dir.c
-index 2f0dc5a..a9fa99e 100644
---- a/fs/isofs/dir.c
-+++ b/fs/isofs/dir.c
-@@ -274,6 +274,7 @@ const struct file_operations isofs_dir_operations =
- {
- 	.read = generic_read_dir,
- 	.readdir = isofs_readdir,
-+	.checkpoint = generic_file_checkpoint,
+diff --git a/fs/hfs/dir.c b/fs/hfs/dir.c
+index 7c69b98..8d90a24 100644
+--- a/fs/hfs/dir.c
++++ b/fs/hfs/dir.c
+@@ -318,6 +318,7 @@ const struct file_operations hfs_dir_operations = {
+ 	.readdir	= hfs_readdir,
+ 	.llseek		= generic_file_llseek,
+ 	.release	= hfs_dir_release,
++	.checkpoint	= generic_file_checkpoint,
  };
  
- /*
+ const struct inode_operations hfs_dir_inode_operations = {
+diff --git a/fs/hfs/inode.c b/fs/hfs/inode.c
+index a1cbff2..bf8950f 100644
+--- a/fs/hfs/inode.c
++++ b/fs/hfs/inode.c
+@@ -607,6 +607,7 @@ static const struct file_operations hfs_file_operations = {
+ 	.fsync		= file_fsync,
+ 	.open		= hfs_file_open,
+ 	.release	= hfs_file_release,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ static const struct inode_operations hfs_file_inode_operations = {
 -- 
 1.5.6.3
