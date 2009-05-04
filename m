@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 18/36] openpromfs: Add checkpoint file operations
+Subject: [RFC][PATCH 14/36] jffs2: Add checkpoint file operations
 Date: Mon, 04 May 2009 13:27:50 -0700
-Message-ID: <48fa6037549a09cb037bff757bd742c6912b9612.1241462097.git.matthltc@us.ibm.com>
+Message-ID: <8e71462870851724aa84d3d091ba25de0bb74a77.1241462097.git.matthltc@us.ibm.com>
 References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,35 +21,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the checkpoint operation for openromfs directories.
- Explicitly skip the properties for now.
+Add the checkpoint operation for jffs2 files and directories.
 
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/openpromfs/inode.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/jffs2/dir.c  |    1 +
+ fs/jffs2/file.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/openpromfs/inode.c b/fs/openpromfs/inode.c
-index ffcd04f..d1f0677 100644
---- a/fs/openpromfs/inode.c
-+++ b/fs/openpromfs/inode.c
-@@ -160,6 +160,7 @@ static const struct file_operations openpromfs_prop_ops = {
- 	.read		= seq_read,
- 	.llseek		= seq_lseek,
- 	.release	= seq_release,
-+	.checkpoint	= NULL,
+diff --git a/fs/jffs2/dir.c b/fs/jffs2/dir.c
+index 6f60cc9..c2b6487 100644
+--- a/fs/jffs2/dir.c
++++ b/fs/jffs2/dir.c
+@@ -41,6 +41,7 @@ const struct file_operations jffs2_dir_operations =
+ 	.unlocked_ioctl=jffs2_ioctl,
+ 	.fsync =	jffs2_fsync,
+ 	.llseek =	generic_file_llseek,
++	.checkpoint =	generic_file_checkpoint,
  };
  
- static int openpromfs_readdir(struct file *, void *, filldir_t);
-@@ -168,6 +169,7 @@ static const struct file_operations openprom_operations = {
- 	.read		= generic_read_dir,
- 	.readdir	= openpromfs_readdir,
- 	.llseek		= generic_file_llseek,
-+	.checkpoint	= generic_file_checkpoint,
+ 
+diff --git a/fs/jffs2/file.c b/fs/jffs2/file.c
+index 5edc2bf..6bc2bc6 100644
+--- a/fs/jffs2/file.c
++++ b/fs/jffs2/file.c
+@@ -50,6 +50,7 @@ const struct file_operations jffs2_file_operations =
+ 	.mmap =		generic_file_readonly_mmap,
+ 	.fsync =	jffs2_fsync,
+ 	.splice_read =	generic_file_splice_read,
++	.checkpoint =	generic_file_checkpoint,
  };
  
- static struct dentry *openpromfs_lookup(struct inode *, struct dentry *, struct nameidata *);
+ /* jffs2_file_inode_operations */
 -- 
 1.5.6.3
