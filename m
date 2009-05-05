@@ -1,18 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 04/36] btrfs: Add checkpoint file operations
-Date: Mon, 4 May 2009 18:06:09 -0700
-Message-ID: <20090505010609.GR11734@us.ibm.com>
-References: <63ff4e88102e10e86bffefd5e4445ab433ed51c0.1241462097.git.matthltc@us.ibm.com>
-	<d4c7782efa9f33324f65188dfb480d4ba1af7a27.1241462097.git.matthltc@us.ibm.com>
-	<20090504214146.GA31338@us.ibm.com>
-	<49FF69B4.3010700@cs.columbia.edu>
-	<20090504222513.GA32323@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 1/2] pidns 1/2: make create_pid_namespace() accept
+	parentpidns
+Date: Mon, 4 May 2009 18:58:27 -0700
+Message-ID: <20090505015827.GA6048__43728.8846624599$1241488776$gmane$org@linux.vnet.ibm.com>
+References: <20090503232700.GD16631@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090504222513.GA32323-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090503232700.GD16631-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,85 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, May 04, 2009 at 05:25:13PM -0500, Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> > 
-> > Serge E. Hallyn wrote:
-> > > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > > 
-> > > ...
-> > > 
-> > >> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> > >> index a7acfe6..f16be9d 100644
-> > >> --- a/fs/btrfs/super.c
-> > >> +++ b/fs/btrfs/super.c
-> > >> @@ -686,6 +686,7 @@ static const struct file_operations btrfs_ctl_fops = {
-> > >>  	.unlocked_ioctl	 = btrfs_control_ioctl,
-> > >>  	.compat_ioctl = btrfs_control_ioctl,
-> > >>  	.owner	 = THIS_MODULE,
-> > >> +	.checkpoint = generic_file_checkpoint,
-> > >>  };
-> > > 
-> > > Do we really want this one?
-> > 
-> > We need to checkpoint the open file regardless of whether the underlying
-> > filesystem has snapshot capabilities.
-> 
-> But maybe we need to refuse a checkpoint if a task is talking to the
-> underlying btrfs filesystem?
+Alexey Dobriyan [adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org] wrote:
+| create_pid_namespace() creates everything, but caller has to assign parent
+| pidns by hand, which is unnatural. At the moment of call new ->level has
+| to be taken from somewhere and parent pidns is already available.
+| 
+| Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Good catch. The ctl file is a device node which, as best I can tell, is
-empty. So the only obvious concern are the unlocked_ioctl()s. I expect
-these ioctls() are "special" so generic_file_checkpoint() is probably
-insufficient here.
+Acked-By: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-v2 of the btrfs checkpoint op patch, which removes this hunk, is below.
-
-A non-generic handler which blocks or prevents ioctl() during checkpoint would
-seem to be required. Definitely a topic worthy of discussion on linux-fsdevel if
-/when we add a .checkpoint op for this. 
-
-As best I can tell we don't have anything to handle the generic ioctl() case
-either. Am I wrong?
-
-Cheers,
-	-Matt Helsley
----
-
-Add the checkpoint operation for btrfs files and directories.
-
-
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
----
- fs/btrfs/file.c  |    1 +
- fs/btrfs/inode.c |    1 +
- fs/btrfs/super.c |    1 +
- 3 files changed, 3 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 482f8db..23d5c72 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1334,4 +1334,5 @@ struct file_operations btrfs_file_operations = {
- #ifdef CONFIG_COMPAT
- 	.compat_ioctl	= btrfs_ioctl,
- #endif
-+	.checkpoint	= generic_file_checkpoint,
- };
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 65219f6..583d57e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5158,6 +5158,7 @@ static struct file_operations btrfs_dir_file_operations = {
- #endif
- 	.release        = btrfs_release_file,
- 	.fsync		= btrfs_sync_file,
-+	.checkpoint	= generic_file_checkpoint,
- };
-
- static struct extent_io_ops btrfs_extent_io_ops = {
+| ---
+|  kernel/pid_namespace.c |    8 ++++----
+|  1 files changed, 4 insertions(+), 4 deletions(-)
+| 
+| diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+| index 2d1001b..495d5de 100644
+| --- a/kernel/pid_namespace.c
+| +++ b/kernel/pid_namespace.c
+| @@ -67,9 +67,10 @@ err_alloc:
+|  	return NULL;
+|  }
+| 
+| -static struct pid_namespace *create_pid_namespace(unsigned int level)
+| +static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_pid_ns)
+|  {
+|  	struct pid_namespace *ns;
+| +	unsigned int level = parent_pid_ns->level + 1;
+|  	int i;
+| 
+|  	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
+| @@ -86,6 +87,7 @@ static struct pid_namespace *create_pid_namespace(unsigned int level)
+| 
+|  	kref_init(&ns->kref);
+|  	ns->level = level;
+| +	ns->parent = get_pid_ns(parent_pid_ns);
+| 
+|  	set_bit(0, ns->pidmap[0].page);
+|  	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+| @@ -125,9 +127,7 @@ struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old
+|  	if (flags & CLONE_THREAD)
+|  		goto out_put;
+| 
+| -	new_ns = create_pid_namespace(old_ns->level + 1);
+| -	if (!IS_ERR(new_ns))
+| -		new_ns->parent = get_pid_ns(old_ns);
+| +	new_ns = create_pid_namespace(old_ns);
+| 
+|  out_put:
+|  	put_pid_ns(old_ns);
+| --
+| To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+| the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+| More majordomo info at  http://vger.kernel.org/majordomo-info.html
+| Please read the FAQ at  http://www.tux.org/lkml/
