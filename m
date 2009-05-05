@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 01/18] io-controller: Documentation
-Date: Tue,  5 May 2009 15:58:28 -0400
-Message-ID: <1241553525-28095-2-git-send-email-vgoyal__8401.55734117634$1241555873$gmane$org@redhat.com>
+Subject: [PATCH 13/18] io-controller: anticipatory changes for hierarchical
+	fair queuing
+Date: Tue,  5 May 2009 15:58:40 -0400
+Message-ID: <1241553525-28095-14-git-send-email-vgoyal__23007.6689542786$1241555881$gmane$org@redhat.com>
 References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,297 +22,489 @@ To: nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+Alf
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o Documentation for io-controller.
+This patch changes anticipatory scheduler to use queue scheduling code from
+elevator layer.  One can go back to old as by deselecting
+CONFIG_IOSCHED_AS_HIER.
 
+TODO/Issues
+===========
+- AS anticipation logic does not seem to be sufficient to provide BW difference
+  if two "dd" are going in two different cgroups. Needs to be looked into.
+
+- AS write batch number of request adjustment happens upon every W->R batch
+  direction switch. This automatic adjustment depends on how much time a
+  read is taking after a W->R switch.
+
+  This does not gel very well when hierarhical scheduling is enabled and
+  every io group can have its separate read/write batch. Now if io group
+  switching takes place it creates issues.
+
+  Currently I have disabled write batch length adjustment in hierarchical
+  mode.
+
+- Currently performance seems to be very bad in hierarhical mode. Needs
+  to be looked into.
+
+- I think the whole idea of common layer doing time slice switching between
+  queues and then queue in turn running timed batches is not very good. May
+  be AS can maintain two queues (one for READS and other for WRITES) and let
+  common layer do the time slice switching between these two queues.
+
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/block/00-INDEX          |    2 +
- Documentation/block/io-controller.txt |  264 +++++++++++++++++++++++++++++++++
- 2 files changed, 266 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/block/io-controller.txt
+ block/Kconfig.iosched    |   12 +++
+ block/as-iosched.c       |  177 +++++++++++++++++++++++++++++++++++++++++++++-
+ block/elevator-fq.c      |   76 ++++++++++++++++----
+ include/linux/elevator.h |   16 ++++
+ 4 files changed, 266 insertions(+), 15 deletions(-)
 
-diff --git a/Documentation/block/00-INDEX b/Documentation/block/00-INDEX
-index 961a051..dc8bf95 100644
---- a/Documentation/block/00-INDEX
-+++ b/Documentation/block/00-INDEX
-@@ -10,6 +10,8 @@ capability.txt
- 	- Generic Block Device Capability (/sys/block/<disk>/capability)
- deadline-iosched.txt
- 	- Deadline IO scheduler tunables
-+io-controller.txt
-+	- IO controller for provding hierarchical IO scheduling
- ioprio.txt
- 	- Block io priorities (in CFQ scheduler)
- request.txt
-diff --git a/Documentation/block/io-controller.txt b/Documentation/block/io-controller.txt
-new file mode 100644
-index 0000000..1290ada
---- /dev/null
-+++ b/Documentation/block/io-controller.txt
-@@ -0,0 +1,264 @@
-+				IO Controller
-+				=============
+diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
+index 3a9e7d7..77fc786 100644
+--- a/block/Kconfig.iosched
++++ b/block/Kconfig.iosched
+@@ -45,6 +45,18 @@ config IOSCHED_AS
+ 	  deadline I/O scheduler, it can also be slower in some cases
+ 	  especially some database loads.
+ 
++config IOSCHED_AS_HIER
++	bool "Anticipatory Hierarchical Scheduling support"
++	depends on IOSCHED_AS && CGROUPS
++	select ELV_FAIR_QUEUING
++	select GROUP_IOSCHED
++	default n
++	---help---
++	  Enable hierarhical scheduling in anticipatory. In this mode
++	  anticipatory keeps one IO queue per cgroup instead of a global
++	  queue. Elevator fair queuing logic ensures fairness among various
++	  queues.
 +
-+Overview
-+========
+ config IOSCHED_DEADLINE
+ 	tristate "Deadline I/O scheduler"
+ 	default y
+diff --git a/block/as-iosched.c b/block/as-iosched.c
+index 7158e13..12aea88 100644
+--- a/block/as-iosched.c
++++ b/block/as-iosched.c
+@@ -84,6 +84,19 @@ struct as_queue {
+ 	struct list_head fifo_list[2];
+ 
+ 	struct request *next_rq[2];	/* next in sort order */
 +
-+This patchset implements a proportional weight IO controller. That is one
-+can create cgroups and assign prio/weights to those cgroups and task group
-+will get access to disk proportionate to the weight of the group.
++	/*
++	 * If an as_queue is switched while a batch is running, then we
++	 * store the time left before current batch will expire
++	 */
++	long current_batch_time_left;
 +
-+These patches modify elevator layer and individual IO schedulers to do
-+IO control hence this io controller works only on block devices which use
-+one of the standard io schedulers can not be used with any xyz logical block
-+device.
++	/*
++	 * batch data dir when queue was scheduled out. This will be used
++	 * to setup ad->batch_data_dir when queue is scheduled in.
++	 */
++	int saved_batch_data_dir;
 +
-+The assumption/thought behind modifying IO scheduler is that resource control
-+is needed only on leaf nodes where the actual contention for resources is
-+present and not on intertermediate logical block devices.
+ 	unsigned long last_check_fifo[2];
+ 	int write_batch_count;		/* max # of reqs in a write batch */
+ 	int current_write_count;	/* how many requests left this batch */
+@@ -150,6 +163,141 @@ static DEFINE_SPINLOCK(ioc_gone_lock);
+ 
+ static void as_move_to_dispatch(struct as_data *ad, struct request *rq);
+ static void as_antic_stop(struct as_data *ad);
++static inline int as_batch_expired(struct as_data *ad, struct as_queue *asq);
 +
-+Consider following hypothetical scenario. Lets say there are three physical
-+disks, namely sda, sdb and sdc. Two logical volumes (lv0 and lv1) have been
-+created on top of these. Some part of sdb is in lv0 and some part is in lv1.
++#ifdef CONFIG_IOSCHED_AS_HIER
++static void as_save_batch_context(struct as_data *ad, struct as_queue *asq)
++{
++	/* Save batch data dir */
++	asq->saved_batch_data_dir = ad->batch_data_dir;
 +
-+			    lv0      lv1
-+			  /	\  /     \
-+			sda      sdb      sdc
++	if (ad->changed_batch) {
++		/*
++		 * In case of force expire, we come here. Batch changeover
++		 * has been signalled but we are waiting for all the
++		 * request to finish from previous batch and then start
++		 * the new batch. Can't wait now. Mark that full batch time
++		 * needs to be allocated when this queue is scheduled again.
++		 */
++		asq->current_batch_time_left =
++				ad->batch_expire[ad->batch_data_dir];
++		ad->changed_batch = 0;
++		return;
++	}
 +
-+Also consider following cgroup hierarchy
++	if (ad->new_batch) {
++		/*
++		 * We should come here only when new_batch has been set
++		 * but no read request has been issued or if it is a forced
++		 * expiry.
++		 *
++		 * In both the cases, new batch has not started yet so
++		 * allocate full batch length for next scheduling opportunity.
++		 * We don't do write batch size adjustment in hierarchical
++		 * AS so that should not be an issue.
++		 */
++		asq->current_batch_time_left =
++				ad->batch_expire[ad->batch_data_dir];
++		ad->new_batch = 0;
++		return;
++	}
 +
-+				root
-+				/   \
-+			       A     B
-+			      / \    / \
-+			     T1 T2  T3  T4
++	/* Save how much time is left before current batch expires */
++	if (as_batch_expired(ad, asq))
++		asq->current_batch_time_left = 0;
++	else {
++		asq->current_batch_time_left = ad->current_batch_expires
++							- jiffies;
++		BUG_ON((asq->current_batch_time_left) < 0);
++	}
++}
 +
-+A and B are two cgroups and T1, T2, T3 and T4 are tasks with-in those cgroups.
-+Assuming T1, T2, T3 and T4 are doing IO on lv0 and lv1. These tasks should
-+get their fair share of bandwidth on disks sda, sdb and sdc. There is no
-+IO control on intermediate logical block nodes (lv0, lv1).
++/*
++ * FIXME: In original AS, read batch's time account started only after when
++ * first request had completed (if last batch was a write batch). But here
++ * we might be rescheduling a read batch right away irrespective of the fact
++ * of disk cache state.
++ */
++static void as_restore_batch_context(struct as_data *ad, struct as_queue *asq)
++{
++	/* Adjust the batch expire time */
++	if (asq->current_batch_time_left)
++		ad->current_batch_expires = jiffies +
++						asq->current_batch_time_left;
++	/* restore asq batch_data_dir info */
++	ad->batch_data_dir = asq->saved_batch_data_dir;
++}
 +
-+So if tasks T1 and T2 are doing IO on lv0 and T3 and T4 are doing IO on lv1
-+only, there will not be any contetion for resources between group A and B if
-+IO is going to sda or sdc. But if actual IO gets translated to disk sdb, then
-+IO scheduler associated with the sdb will distribute disk bandwidth to
-+group A and B proportionate to their weight.
++/* ioq has been set. */
++static void as_active_ioq_set(struct request_queue *q, void *sched_queue,
++				int coop)
++{
++	struct as_queue *asq = sched_queue;
++	struct as_data *ad = q->elevator->elevator_data;
 +
-+CFQ already has the notion of fairness and it provides differential disk
-+access based on priority and class of the task. Just that it is flat and
-+with cgroup stuff, it needs to be made hierarchical to achive a good
-+hierarchical control on IO.
++	as_restore_batch_context(ad, asq);
++}
 +
-+Rest of the IO schedulers (noop, deadline and AS) don't have any notion
-+of fairness among various threads. They maintain only one queue where all
-+the IO gets queued (internally this queue is split in read and write queue
-+for deadline and AS). With this patchset, now we maintain one queue per
-+cgropu per device and then try to do fair queuing among those queues.
++/*
++ * This is a notification from common layer that it wishes to expire this
++ * io queue. AS decides whether queue can be expired, if yes, it also
++ * saves the batch context.
++ */
++static int as_expire_ioq(struct request_queue *q, void *sched_queue,
++				int slice_expired, int force)
++{
++	struct as_data *ad = q->elevator->elevator_data;
++	int status = ad->antic_status;
++	struct as_queue *asq = sched_queue;
 +
-+One of the concerns raised with modifying IO schedulers was that we don't
-+want to replicate the code in all the IO schedulers. These patches share
-+the fair queuing code which has been moved to a common layer (elevator
-+layer). Hence we don't end up replicating code across IO schedulers. Following
-+diagram depicts the concept.
++	/* Forced expiry. We don't have a choice */
++	if (force) {
++		as_antic_stop(ad);
++		as_save_batch_context(ad, asq);
++		return 1;
++	}
 +
-+			--------------------------------
-+			| Elevator Layer + Fair Queuing |
-+			--------------------------------
-+			 |	     |	     |       |
-+			NOOP     DEADLINE    AS     CFQ
++	/*
++	 * We are waiting for requests to finish from last
++	 * batch. Don't expire the queue now
++	 */
++	if (ad->changed_batch)
++		goto keep_queue;
 +
-+Design
-+======
-+This patchset primarily uses BFQ (Budget Fair Queuing) code to provide
-+fairness among different IO queues. Fabio and Paolo implemented BFQ which uses
-+B-WF2Q+ algorithm for fair queuing.
++	/*
++	 * Wait for all requests from existing batch to finish before we
++	 * switch the queue. New queue might change the batch direction
++	 * and this is to be consistent with AS philosophy of not dispatching
++	 * new requests to underlying drive till requests from requests
++	 * from previous batch are completed.
++	 */
++	if (ad->nr_dispatched)
++		goto keep_queue;
 +
-+Why BFQ?
++	/*
++	 * If AS anticipation is ON, stop it if slice expired, otherwise
++	 * keep the queue.
++	 */
++	if (status == ANTIC_WAIT_REQ || status == ANTIC_WAIT_NEXT) {
++		if (slice_expired)
++			as_antic_stop(ad);
++		else
++			/*
++			 * We are anticipating and time slice has not expired
++			 * so I would rather prefer waiting than break the
++			 * anticipation and expire the queue.
++			 */
++			goto keep_queue;
++	}
 +
-+- Not sure if weighted round robin logic of CFQ can be easily extended for
-+  hierarchical mode. One of the things is that we can not keep dividing
-+  the time slice of parent group among childrens. Deeper we go in hierarchy
-+  time slice will get smaller.
++	/* We are good to expire the queue. Save batch context */
++	as_save_batch_context(ad, asq);
++	return 1;
 +
-+  One of the ways to implement hierarchical support could be to keep track
-+  of virtual time and service provided to queue/group and select a queue/group
-+  for service based on any of the various available algoriths.
++keep_queue:
++	return 0;
++}
++#endif
+ 
+ /*
+  * IO Context helper functions
+@@ -805,6 +953,7 @@ static void as_update_rq(struct as_data *ad, struct request *rq)
+ 	}
+ }
+ 
++#ifndef CONFIG_IOSCHED_AS_HIER
+ /*
+  * Gathers timings and resizes the write batch automatically
+  */
+@@ -833,6 +982,7 @@ static void update_write_batch(struct as_data *ad)
+ 	if (asq->write_batch_count < 1)
+ 		asq->write_batch_count = 1;
+ }
++#endif /* !CONFIG_IOSCHED_AS_HIER */
+ 
+ /*
+  * as_completed_request is to be called when a request has completed and
+@@ -867,7 +1017,26 @@ static void as_completed_request(struct request_queue *q, struct request *rq)
+ 	 * and writeback caches
+ 	 */
+ 	if (ad->new_batch && ad->batch_data_dir == rq_is_sync(rq)) {
++#ifndef CONFIG_IOSCHED_AS_HIER
++		/*
++		 * Dynamic updation of write batch length is disabled
++		 * for hierarchical scheduling. It is difficult to do
++		 * accurate accounting when queue switch can take place
++		 * in the middle of the batch.
++		 *
++		 * Say, A, B are two groups. Following is the sequence of
++		 * events.
++		 *
++		 * Servicing Write batch of A.
++		 * Queue switch takes place and write batch of B starts.
++		 * Batch switch takes place and read batch of B starts.
++		 *
++		 * In above scenario, writes issued in write batch of A
++		 * might impact the write batch length of B. Which is not
++		 * good.
++		 */
+ 		update_write_batch(ad);
++#endif
+ 		ad->current_batch_expires = jiffies +
+ 				ad->batch_expire[BLK_RW_SYNC];
+ 		ad->new_batch = 0;
+@@ -1516,8 +1685,14 @@ static struct elevator_type iosched_as = {
+ 		.trim =				as_trim,
+ 		.elevator_alloc_sched_queue_fn = as_alloc_as_queue,
+ 		.elevator_free_sched_queue_fn = as_free_as_queue,
++#ifdef CONFIG_IOSCHED_AS_HIER
++		.elevator_expire_ioq_fn =       as_expire_ioq,
++		.elevator_active_ioq_set_fn =   as_active_ioq_set,
+ 	},
+-
++	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ | ELV_IOSCHED_DONT_IDLE,
++#else
++	},
++#endif
+ 	.elevator_attrs = as_attrs,
+ 	.elevator_name = "anticipatory",
+ 	.elevator_owner = THIS_MODULE,
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index f2805e6..02c27ac 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -36,6 +36,8 @@ static inline struct io_queue *elv_close_cooperator(struct request_queue *q,
+ struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
+ 						 int extract);
+ void elv_release_ioq(struct elevator_queue *eq, struct io_queue **ioq_ptr);
++int elv_iosched_expire_ioq(struct request_queue *q, int slice_expired,
++					int force);
+ 
+ static inline int elv_prio_slice(struct elv_fq_data *efqd, int sync,
+ 					unsigned short prio)
+@@ -2230,6 +2232,9 @@ static void elv_ioq_update_idle_window(struct elevator_queue *eq,
+ 	int old_idle, enable_idle;
+ 	struct elv_fq_data *efqd = ioq->efqd;
+ 
++	/* If idling is disabled from ioscheduler, return */
++	if (!elv_gen_idling_enabled(eq))
++		return;
+ 	/*
+ 	 * Don't idle for async or idle io prio class
+ 	 */
+@@ -2303,7 +2308,7 @@ int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
+ 		ioq->pid = current->pid;
+ 
+ 	ioq->sched_queue = sched_queue;
+-	if (is_sync && !elv_ioq_class_idle(ioq))
++	if (elv_gen_idling_enabled(eq) && is_sync && !elv_ioq_class_idle(ioq))
+ 		elv_mark_ioq_idle_window(ioq);
+ 	bfq_init_entity(&ioq->entity, iog);
+ 	ioq->entity.budget = elv_prio_to_slice(efqd, ioq);
+@@ -2718,16 +2723,18 @@ int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
+ static void elv_preempt_queue(struct request_queue *q, struct io_queue *ioq)
+ {
+ 	elv_log_ioq(&q->elevator->efqd, ioq, "preempt");
+-	elv_ioq_slice_expired(q);
++	if (elv_iosched_expire_ioq(q, 0, 1)) {
++		elv_ioq_slice_expired(q);
+ 
+-	/*
+-	 * Put the new queue at the front of the of the current list,
+-	 * so we know that it will be selected next.
+-	 */
++		/*
++		 * Put the new queue at the front of the of the current list,
++		 * so we know that it will be selected next.
++		 */
+ 
+-	elv_activate_ioq(ioq, 1);
+-	elv_ioq_set_slice_end(ioq, 0);
+-	elv_mark_ioq_slice_new(ioq);
++		elv_activate_ioq(ioq, 1);
++		elv_ioq_set_slice_end(ioq, 0);
++		elv_mark_ioq_slice_new(ioq);
++	}
+ }
+ 
+ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+@@ -2906,11 +2913,44 @@ void elv_free_idle_ioq_list(struct elevator_queue *e)
+ 		elv_deactivate_ioq(efqd, ioq, 0);
+ }
+ 
++/*
++ * Call iosched to let that elevator wants to expire the queue. This gives
++ * iosched like AS to say no (if it is in the middle of batch changeover or
++ * it is anticipating). it also allows iosched to do some house keeping
++ *
++ * force--> it is force dispatch and iosched must clean up its state. This
++ * 	     is useful when elevator wants to drain iosched and wants to
++ * 	     expire currnent active queue.
++ *
++ * slice_expired--> if 1, ioq slice expired hence elevator fair queuing logic
++ * 		    wants to switch the queue. iosched should allow that until
++ * 		    and unless necessary. Currently AS can deny the switch if
++ * 		    in the middle of batch switch.
++ *
++ * 		    if 0, time slice is still remaining. It is up to the iosched
++ * 		    whether it wants to wait on this queue or just want to
++ * 		    expire it and move on to next queue.
++ *
++ */
++int elv_iosched_expire_ioq(struct request_queue *q, int slice_expired,
++					int force)
++{
++	struct elevator_queue *e = q->elevator;
++	struct io_queue *ioq = elv_active_ioq(q->elevator);
 +
-+  BFQ already had support for hierarchical scheduling, taking those patches
-+  was easier.
++	if (e->ops->elevator_expire_ioq_fn)
++		return e->ops->elevator_expire_ioq_fn(q, ioq->sched_queue,
++							slice_expired, force);
 +
-+- BFQ was designed to provide tighter bounds/delay w.r.t service provided
-+  to a queue. Delay/Jitter with BFQ is O(1).
++	return 1;
++}
 +
-+  Note: BFQ originally used amount of IO done (number of sectors) as notion
-+        of service provided. IOW, it tried to provide fairness in terms of
-+        actual IO done and not in terms of actual time disk access was
-+	given to a queue.
+ /* Common layer function to select the next queue to dispatch from */
+ void *elv_fq_select_ioq(struct request_queue *q, int force)
+ {
+ 	struct elv_fq_data *efqd = &q->elevator->efqd;
+ 	struct io_queue *new_ioq = NULL, *ioq = elv_active_ioq(q->elevator);
++	int slice_expired = 1;
+ 
+ 	if (!elv_nr_busy_ioq(q->elevator))
+ 		return NULL;
+@@ -2984,8 +3024,14 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
+ 		goto keep_queue;
+ 	}
+ 
++	slice_expired = 0;
+ expire:
+-	elv_ioq_slice_expired(q);
++	if (elv_iosched_expire_ioq(q, slice_expired, force))
++		elv_ioq_slice_expired(q);
++	else {
++		ioq = NULL;
++		goto keep_queue;
++	}
+ new_queue:
+ 	ioq = elv_set_active_ioq(q, new_ioq);
+ keep_queue:
+@@ -3146,7 +3192,8 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 		}
+ 
+ 		if (elv_ioq_class_idle(ioq)) {
+-			elv_ioq_slice_expired(q);
++			if (elv_iosched_expire_ioq(q, 1, 0))
++				elv_ioq_slice_expired(q);
+ 			goto done;
+ 		}
+ 
+@@ -3170,9 +3217,10 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 		 * mean seek distance, give them a chance to run instead
+ 		 * of idling.
+ 		 */
+-		if (elv_ioq_slice_used(ioq))
+-			elv_ioq_slice_expired(q);
+-		else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq, 1)
++		if (elv_ioq_slice_used(ioq)) {
++			if (elv_iosched_expire_ioq(q, 1, 0))
++				elv_ioq_slice_expired(q);
++		} else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq, 1)
+ 			 && sync && !rq_noidle(rq))
+ 			elv_ioq_arm_slice_timer(q, 0);
+ 	}
+diff --git a/include/linux/elevator.h b/include/linux/elevator.h
+index ee38d08..cbfce0b 100644
+--- a/include/linux/elevator.h
++++ b/include/linux/elevator.h
+@@ -42,6 +42,7 @@ typedef int (elevator_update_idle_window_fn) (struct elevator_queue*, void*,
+ 						struct request*);
+ typedef struct io_queue* (elevator_close_cooperator_fn) (struct request_queue*,
+ 						void*, int probe);
++typedef int (elevator_expire_ioq_fn) (struct request_queue*, void *, int, int);
+ #endif
+ 
+ struct elevator_ops
+@@ -81,6 +82,7 @@ struct elevator_ops
+ 	elevator_should_preempt_fn *elevator_should_preempt_fn;
+ 	elevator_update_idle_window_fn *elevator_update_idle_window_fn;
+ 	elevator_close_cooperator_fn *elevator_close_cooperator_fn;
++	elevator_expire_ioq_fn  *elevator_expire_ioq_fn;
+ #endif
+ };
+ 
+@@ -252,6 +254,9 @@ enum {
+ /* iosched maintains only single ioq per group.*/
+ #define ELV_IOSCHED_SINGLE_IOQ        2
+ 
++/* iosched does not need anticipation/idling logic support from common layer */
++#define ELV_IOSCHED_DONT_IDLE	4
 +
-+	This patcheset modified BFQ to provide fairness in time domain because
-+	that's what CFQ does. So idea was try not to deviate too much from
-+	the CFQ behavior initially.
+ static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
+ {
+ 	return (e->elevator_type->elevator_features) & ELV_IOSCHED_NEED_FQ;
+@@ -262,6 +267,12 @@ static inline int elv_iosched_single_ioq(struct elevator_queue *e)
+ 	return (e->elevator_type->elevator_features) & ELV_IOSCHED_SINGLE_IOQ;
+ }
+ 
++/* returns 1 if elevator layer should enable its idling logic, 0 otherwise */
++static inline int elv_gen_idling_enabled(struct elevator_queue *e)
++{
++	return !((e->elevator_type->elevator_features) & ELV_IOSCHED_DONT_IDLE);
++}
 +
-+	Providing fairness in time domain makes accounting trciky because
-+	due to command queueing, at one time there might be multiple requests
-+	from different queues and there is no easy way to find out how much
-+	disk time actually was consumed by the requests of a particular
-+	queue. More about this in comments in source code.
+ #else /* ELV_IOSCHED_FAIR_QUEUING */
+ 
+ static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
+@@ -274,6 +285,11 @@ static inline int elv_iosched_single_ioq(struct elevator_queue *e)
+ 	return 0;
+ }
+ 
++static inline int elv_gen_idling_enabled(struct elevator_queue *e)
++{
++	return 0;
++}
 +
-+We have taken BFQ code as starting point for providing fairness among groups
-+because it already contained lots of features which we required to implement
-+hierarhical IO scheduling. With this patch set, I am not trying to ensure O(1)
-+delay here as my goal is to provide fairness among groups. Most likely that
-+will mean that latencies are not worse than what cfq currently provides (if
-+not improved ones). Once fairness is ensured, one can look into  more in
-+ensuring O(1) latencies.
-+
-+From data structure point of view, one can think of a tree per device, where
-+io groups and io queues are hanging and are being scheduled using B-WF2Q+
-+algorithm. io_queue, is end queue where requests are actually stored and
-+dispatched from (like cfqq).
-+
-+These io queues are primarily created by and managed by end io schedulers
-+depending on its semantics. For example, noop, deadline and AS ioschedulers
-+keep one io queues per cgroup and cfqq keeps one io queue per io_context in
-+a cgroup (apart from async queues).
-+
-+A request is mapped to an io group by elevator layer and which io queue it
-+is mapped to with in group depends on ioscheduler. Currently "current" task
-+is used to determine the cgroup (hence io group) of the request. Down the
-+line we need to make use of bio-cgroup patches to map delayed writes to
-+right group.
-+
-+Going back to old behavior
-+==========================
-+In new scheme of things essentially we are creating hierarchical fair
-+queuing logic in elevator layer and chaning IO schedulers to make use of
-+that logic so that end IO schedulers start supporting hierarchical scheduling.
-+
-+Elevator layer continues to support the old interfaces. So even if fair queuing
-+is enabled at elevator layer, one can have both new hierchical scheduler as
-+well as old non-hierarchical scheduler operating.
-+
-+Also noop, deadline and AS have option of enabling hierarchical scheduling.
-+If it is selected, fair queuing is done in hierarchical manner. If hierarchical
-+scheduling is disabled, noop, deadline and AS should retain their existing
-+behavior.
-+
-+CFQ is the only exception where one can not disable fair queuing as it is
-+needed for provding fairness among various threads even in non-hierarchical
-+mode.
-+
-+Various user visible config options
-+===================================
-+CONFIG_IOSCHED_NOOP_HIER
-+	- Enables hierchical fair queuing in noop. Not selecting this option
-+	  leads to old behavior of noop.
-+
-+CONFIG_IOSCHED_DEADLINE_HIER
-+	- Enables hierchical fair queuing in deadline. Not selecting this
-+	  option leads to old behavior of deadline.
-+
-+CONFIG_IOSCHED_AS_HIER
-+	- Enables hierchical fair queuing in AS. Not selecting this option
-+	  leads to old behavior of AS.
-+
-+CONFIG_IOSCHED_CFQ_HIER
-+	- Enables hierarchical fair queuing in CFQ. Not selecting this option
-+	  still does fair queuing among various queus but it is flat and not
-+	  hierarchical.
-+
-+CGROUP_BLKIO
-+	- This option enables blkio-cgroup controller for IO tracking
-+	  purposes. That means, by this controller one can attribute a write
-+	  to the original cgroup and not assume that it belongs to submitting
-+	  thread.
-+
-+CONFIG_TRACK_ASYNC_CONTEXT
-+	- Currently CFQ attributes the writes to the submitting thread and
-+	  caches the async queue pointer in the io context of the process.
-+	  If this option is set, it tells cfq and elevator fair queuing logic
-+	  that for async writes make use of IO tracking patches and attribute
-+	  writes to original cgroup and not to write submitting thread.
-+
-+CONFIG_DEBUG_GROUP_IOSCHED
-+	- Throws extra debug messages in blktrace output helpful in doing
-+	  doing debugging in hierarchical setup.
-+
-+Config options selected automatically
-+=====================================
-+These config options are not user visible and are selected/deselected
-+automatically based on IO scheduler configurations.
-+
-+CONFIG_ELV_FAIR_QUEUING
-+	- Enables/Disables the fair queuing logic at elevator layer.
-+
-+CONFIG_GROUP_IOSCHED
-+	- Enables/Disables hierarchical queuing and associated cgroup bits.
-+
-+TODO
-+====
-+- Lots of code cleanups, testing, bug fixing, optimizations,
-+  benchmarking etc...
-+
-+- Debug and fix some of the areas where higher weight cgroup async writes
-+  are stuck behind lower weight cgroup async writes.
-+
-+- Anticipatory code will need more work. It is not working properly currently
-+  and needs more thought.
-+
-+- Once things start working, planning to look into core algorithm. It looks
-+  complicated and maintains lots of data structures. Need to spend some time
-+  to see if can be simplified.
-+
-+- Currently a cgroup setting is global, that is it is applicable to all
-+  the block devices in the system. Probably it will make more sense to
-+  make it per cgroup per device setting so that a cgroup can have different
-+  weights on different device etc.
-+
-+HOWTO
-+=====
-+So far I have done very simple testing of running two dd threads in two
-+different cgroups. Here is what you can do.
-+
-+- Enable hierarchical scheduling in io scheuduler of your choice (say cfq).
-+	CONFIG_IOSCHED_CFQ_HIER=y
-+
-+- Enable IO tracking for async writes.
-+	CONFIG_TRACK_ASYNC_CONTEXT=y
-+
-+  (This will automatically select CGROUP_BLKIO)
-+
-+- Compile and boot into kernel and mount IO controller and blkio io tracking
-+  controller.
-+
-+	mount -t cgroup -o io,blkio none /cgroup
-+
-+- Create two cgroups
-+	mkdir -p /cgroup/test1/ /cgroup/test2
-+
-+- Set weights of group test1 and test2
-+	echo 1000 > /cgroup/test1/io.ioprio
-+	echo 500 > /cgroup/test2/io.ioprio
-+
-+- Create two same size files (say 512MB each) on same disk (file1, file2) and
-+  launch two dd threads in different cgroup to read those files. Make sure
-+  right io scheduler is being used for the block device where files are
-+  present (the one you compiled in hierarchical mode).
-+
-+	echo 1 > /proc/sys/vm/drop_caches
-+
-+	dd if=/mnt/lv0/zerofile1 of=/dev/null &
-+	echo $! > /cgroup/test1/tasks
-+	cat /cgroup/test1/tasks
-+
-+	dd if=/mnt/lv0/zerofile2 of=/dev/null &
-+	echo $! > /cgroup/test2/tasks
-+	cat /cgroup/test2/tasks
-+
-+- At macro level, first dd should finish first. To get more precise data, keep
-+  on looking at (with the help of script), at io.disk_time and io.disk_sectors
-+  files of both test1 and test2 groups. This will tell how much disk time
-+  (in milli seconds), each group got and how many secotors each group
-+  dispatched to the disk. We provide fairness in terms of disk time, so
-+  ideally io.disk_time of cgroups should be in proportion to the weight.
-+  (It is hard to achieve though :-)).
+ #endif /* ELV_IOSCHED_FAIR_QUEUING */
+ extern void *elv_get_sched_queue(struct request_queue *q, struct request *rq);
+ extern void *elv_select_sched_queue(struct request_queue *q, int force);
 -- 
 1.6.0.1
