@@ -1,15 +1,12 @@
-From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO Controller V2
-Date: Wed, 6 May 2009 10:59:13 -0700
-Message-ID: <e98e18940905061059l402d6231o8b1446a1c96d2c84__15597.6808433936$1241632987$gmane$org@mail.gmail.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<20090505132441.1705bfad.akpm@linux-foundation.org>
-	<20090506023332.GA1212@redhat.com>
+From: Heagy Bridwell <iterates-EuIjH+IYB2g@public.gmane.org>
+Subject: How to Talk Dirty to Your Partner! - Are You Rgeady to Spice Things
+	Up in the Bedroom?
+Date: Wed, 06 May 2009 18:12:13 +0000
+Message-ID: <4A01D2C81605620@nfz.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed;
+	boundary="----------------010401040103070607040007"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090506023332.GA1212-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,114 +16,213 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, May 5, 2009 at 7:33 PM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On Tue, May 05, 2009 at 01:24:41PM -0700, Andrew Morton wrote:
->> On Tue, =A05 May 2009 15:58:27 -0400
->> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->>
->> >
->> > Hi All,
->> >
->> > Here is the V2 of the IO controller patches generated on top of 2.6.30=
--rc4.
->> > ...
->> > Currently primarily two other IO controller proposals are out there.
->> >
->> > dm-ioband
->> > ---------
->> > This patch set is from Ryo Tsuruta from valinux.
->> > ...
->> > IO-throttling
->> > -------------
->> > This patch set is from Andrea Righi provides max bandwidth controller.
->>
->> I'm thinking we need to lock you guys in a room and come back in 15 minu=
-tes.
->>
->> Seriously, how are we to resolve this? =A0We could lock me in a room and
->> cmoe back in 15 days, but there's no reason to believe that I'd emerge
->> with the best answer.
->>
->> I tend to think that a cgroup-based controller is the way to go.
->> Anything else will need to be wired up to cgroups _anyway_, and that
->> might end up messy.
->
-> Hi Andrew,
->
-> Sorry, did not get what do you mean by cgroup based controller? If you
-> mean that we use cgroups for grouping tasks for controlling IO, then both
-> IO scheduler based controller as well as io throttling proposal do that.
-> dm-ioband also supports that up to some extent but it requires extra step=
- of
-> transferring cgroup grouping information to dm-ioband device using dm-too=
-ls.
->
-> But if you meant that io-throttle patches, then I think it solves only
-> part of the problem and that is max bw control. It does not offer minimum
-> BW/minimum disk share gurantees as offered by proportional BW control.
->
-> IOW, it supports upper limit control and does not support a work conservi=
-ng
-> IO controller which lets a group use the whole BW if competing groups are
-> not present. IMHO, proportional BW control is an important feature which
-> we will need and IIUC, io-throttle patches can't be easily extended to su=
-pport
-> proportional BW control, OTOH, one should be able to extend IO scheduler
-> based proportional weight controller to also support max bw control.
->
-> Andrea, last time you were planning to have a look at my patches and see
-> if max bw controller can be implemented there. I got a feeling that it
-> should not be too difficult to implement it there. We already have the
-> hierarchical tree of io queues and groups in elevator layer and we run
-> BFQ (WF2Q+) algorithm to select next queue to dispatch the IO from. It is
-> just a matter of also keeping track of IO rate per queue/group and we sho=
-uld
-> be easily be able to delay the dispatch of IO from a queue if its group h=
-as
-> crossed the specified max bw.
->
-> This should lead to less code and reduced complextiy (compared with the
-> case where we do max bw control with io-throttling patches and proportion=
-al
-> BW control using IO scheduler based control patches).
->
-> So do you think that it would make sense to do max BW control along with
-> proportional weight IO controller at IO scheduler? If yes, then we can
-> work together and continue to develop this patchset to also support max
-> bw control and meet your requirements and drop the io-throttling patches.
->
-> The only thing which concerns me is the fact that IO scheduler does not
-> have the view of higher level logical device. So if somebody has setup a
-> software RAID and wants to put max BW limit on software raid device, this
-> solution will not work. One shall have to live with max bw limits on
-> individual disks (where io scheduler is actually running). Do your patches
-> allow to put limit on software RAID devices also?
->
-> Ryo, dm-ioband breaks the notion of classes and priority of CFQ because
-> of FIFO dispatch of buffered bios. Apart from that it tries to provide
-> fairness in terms of actual IO done and that would mean a seeky workload
-> will can use disk for much longer to get equivalent IO done and slow down
-> other applications. Implementing IO controller at IO scheduler level gives
-> us tigher control. Will it not meet your requirements? If you got specific
-> concerns with IO scheduler based contol patches, please highlight these a=
-nd
-> we will see how these can be addressed.
+------------------010401040103070607040007
+Content-Type: image/png;
+ name="Heagy.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Heagy.png"
 
-In my opinion, IO throttling and dm-ioband are probably simpler, but
-incomplete solutions to the problem. And for a solution to be
-complete, it would have to be at a IO scheduler layer so it can do
-things like taking an IO as soon as it comes and stick it to the front
-of all the queues so that it can go to the disk right away. This patch
-set is big, but it takes us in the right direction. Our ultimate goal
-should be able to reach the level of control that we can have over CPU
-and network resources. And I don't think IO throttling and dm-ioband
-approaches take us in that direction.
+iVBORw0KGgoAAAANSUhEUgAAAVYAAAGECAMAAABah/iVAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
+U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADAUExURf7LzJYtLbt1deeKkd6dHfWtwmlc
+ZtXR1jsEMcLCo95ZWEyX09UcGZmZZteqVGZmmpFqjZvK555lH6OlwLyxu+bi4/z7+vX09JiYmmA3
+WefGe/DEFL2FIvrZ4audqfHs5/Hetczk8y0uNpiDlEsYQvzp7maZmfv09Ozv8ezy997c3tg7OiFo
+BJsDkmaZZgAA/2a44qLDoig1cPz47ff4+URXqf30+Ojo7AAAZgAAmcwAAP8AAAAAAP///8zMzP7+
+/hNYNQIAACiZSURBVHja7J0JQ9o+H8eZaHFOHSIWdAoKOhHZ5oRZj6R5/+/qydE0dy8owv9JuHqk
+bfrpN7/8crQ0EA0R4kFM1RyiDT1KtIq4DY/VY/VYPVaP1WP1WD1Wj9Vj9Vg9Vo/VY90WrB9qwIuU
+GRbYnLpMiZmxrRr4WmvEj7ylyYqMo6hxsyIZpxNl7Ek7Oe0AH1Ww6vv4qI7VSE95rB/lsdp3Z5zO
+SrEiQwvICvVDm3aByKBqPYoLICqi18yjkNWu5NlOJ8rcUzqPimF1cM1E8ZGhrwJSVRZkwHOJMOso
+KFPYWXPFsFoPYC2yMpLsStVHRrbNVZFm48QccmH9sOq1CFZUCPJHYaz2A9g9gQ8j42RmA5uJyMVq
+JZZjqV2rPipizT6dlWNFhhn+BKyG3VI31u3AJ2BF+h4/pKV5WLNM56qx6uhchZax7qMC1o+lsRY4
+E7U64Mh/a8Rqz2HKLj8+skq1TcTqkMl6sWamI8f6bihW9MlYP4pgRQWo1mlbtwarbUdZu1xGrZuD
+tYrfml/7sXgCHwWxoqWwLum3rg5r+VrWRwmsVt/vI/tSlcS6ylrWCrHmtAkga8tGrtXTmgRcGeDD
+VssthXWlbQKlsX58FKjioLx6Jcqmqpyks5mveItaXkPLyluwUAEnrzhWd3urLaF5DcAfxr7KYkVl
+sa6qvbU0Vt874DtdPFaP1WP1WD1Wj9Vj9Vg9Vo/VY/VYPVaP1WOtH+t4f3/Ap9v7+/tppNv926rr
+xIGG4/P9/fPxJJkN90XQE1Ii6ks3wHFvz9utdJGIfHsrdkJDt31+ixcH42iNWOP9/bYgIli18PJu
+xXXpgVq3yam20pUuViWidm/TNcHUwCrvhEQ+F4vb4dqwLnAikskpTWgyM9jf76Jq6wb8QBE+/3Yc
+YzEnAiYbtpKgnUXxqCRvnA/iVpfI+7bLsZ4nkeMBWdwTmRFH7uKldLPF2mxrsL8/SYm0U1Z48VnF
+dWlmaxP8RDFc2SKaHopHHROCyengI+/HCdYgjRHiNIy1yOTqn0sZrHas4+SECJFzfFYtnrHPK69L
+DhSl58ovwTnZ0HoShaPiI5330tNpcWHuy9Ff+BxefS7sbO9WKgLqxtrilxabg/E9n5nSK1txXSTZ
+Cs5iwJg75FI86nlaIkbJhmNdrSTSPv9tqUcZrwvr4ja5tDFJAxcJO8+K66I0Y09S+bQZ84HTBhSL
+Ggsy9CgQOx6hBeutuP4inMm+Q91+a5BcWmrNcNbuJee5qLwuUk4uNRtEifEYezvn7cjUYLGobaG/
+iNuwWDcCveSKj7nl/YzqwCBJ6Tm54N0kNyYJq7YukgFJ2PBpcjeqq6ahcFSJfyTLV1FrO5E0tgHh
+p2HFRrLPSg2c7UJm06IkYdXWRanToxq7gPiO3VaX/Kq5sXBUiX/EC7u2vIMwItvcTrTIn1B5vaVX
+esCKyYDKIS3ZK61LsQaqobnlBdNgXzvhwlH3dawLtqm1OiBhZS6t4QPXiZURaaf26Izay0X1dS61
+RnGsualOtbqiSvwjXsnVsN4Ggxc9cs9ZEa4P64ASSTyaFs3T5zxBlda5bKu9ylwqaoYRIHrs4otw
+HpuRPwPrGdFDi4uCYOql7k2ldflYJ1RIonKaG7VwkYXNUKpufVdRsE6slAj3kKi/hNM2XWKdy8ES
+gWVdoaDcqFIhP812sIgPMTW8MbbF+VqxEvMY8HSRImgszrLKOlEd6KV5EOfUqDuYispqW8aaG9VV
+HSAX5N4o885Dq6lZs1qxyO5ueXLxaXTPRXKqrBOV11iukXYFkq5WiSoe9Zwa9KzK65lophSRP0Ot
+xPUU+eV8f3wrCt8q62xNLUM6fxum5zt1NrVkRo2NppaJ3tQySFvVY6WpBbXWi5XU6JWsLbf0VFjn
+ahgMRKufUoUvFVVpGEzdW61c43PE0HLHIBzf7q8Xa1tqh6Zl6flS67j2zrS2aTIf4KrTuShV0pyb
+G1VGtR/wZuz9ruH4sp6FWGrGHndbcbd9a6k014u1K/WakHqLbOkrrIv4ScZaT8qUd5ecG7Wd3KgC
+nNSPcj41qwnscielFs34aUVhULzXZRVYibd8JueheKl1wlJGbdrvlx65Nzi/3b8959Ug5Txyokrg
+Qiw9sm7cslXTiK97K7Wstsa0i/C8HZ+ttU1g5cF3aHusHqvH6rF6rB6rx+qxeqweq8fqsXqsHusm
+YD3Y/PC+8cGCdePV+rjxavVYPVaPdS1YYfpFJyDceKw4iVIyIcxL8+dgxYlE8/lwOJ+HIdwOrBA+
+PDwseg8Pk8nNzc0D2jisJEHz4QUP19eydDcTK7nwi8ligck+YKoPNycnm4cVzq8pzxTsMNErwIH9
+im0AiJT5NMxmM/arLcA/q8eK4MOEQMVCPcFMT06ebjYMK87+F0o4/nF8ATlNgyDBagsz+iIU0wX0
+M5NJr06tixvClAJ9eiKfJ5685Nt66fO1kEzNZrPZslivBdIfFz8w1d1jKKeQTSXSTdXKpSxhFT81
+Y0WQUE2gkvDNwFooGFpABubKRmB+zKHuHmOi+HN5oaaNo2WfSJnXsKK1YIUourl54kwJ1G9PlrRK
+VgywZeLbpYWZQbWiWq9Jtv+xS2T6AzP9sXt5eWdiFUmO7NZBz08zdulnshZWhvXmIWXKwH47sUog
+/XCgqh4MLSRTig2oqNZrDJOEXfzCBmB3t3OBoIk1veJ2I2Be6VmawWrAepKolHx9w+HpwaZWC2ZF
+Jy7bqmaximo9xlql7x+Y6e5lZxdCZNhW3QjoJmxmy0CGFlZlW09Yxk/yP36dSGVqctVlKchYgSwI
+I9EzY6KqWjFLIlXy3r3c7RyHUL3QWkZy29bZumwrEiY1gfuwsGC1fQwjUBdWRHCycHl52bkIOVbV
+b80zAkp+mtXrtyLVsj6dLBQXEBlSEGY1ncnCOlsF1uvLXfoiUHeHlb3j2RprWTcnCtgHZMWa5nfJ
+GKhGwNCC8FuXr2Vd73YI0k5nt8EqhpveJgBR4gmcMK3SRo3s4HBlZytOvtIw+HJxfHl8cT2HqIaj
+1NImgMOCW4AHlIMVGF7L2tpbX162qr2VglzgqtbDA20YqrGlpTpWiBAqnDTfjF1CrfUdxWP1WP9/
+sT5ufNjGcQLvG6/W921Uq8daO1banQk91pViDWn34GIRQgShx7oarJD0ujyRjpeTxQJuplrp2ADI
+Ql6u2hCsE9okkICdbNI4ASnRMBxeX1+QXq35fDvUevJ0+u3pFL+e8Gejxgm886orHF4fY6THX+n7
+ahhmXfzNwLr49u3bKe0YOCVcn3obiJVC/Xp8cZyEi3na8qM3qjmHX9jajdR0pY2Yagv8LKNT3o11
+8k0OT6c3cOOMAOYokB6TToLdEJUcfmGhqqVLNMWn/TJyB81SWL99qzb8IkcPqhzk8TozXQ5moofH
+IuxeHl+SbsL7MsMv5EZ4S2+8hFWhqQ7VqGAEFKxQxYqWoKrOzyJjjAYy020kGnKhkn4X+nXZuZyX
+GX4BEnUAa++xjnVmJGtWwba+aFgjaKY1d/hFnh5SrA4RZGFdYIWSrqzj3bRPq3OBygy/sPZsGljT
+PsOVYA1PFKqnC6sEcoZf5OlBxir1Kc9sQ4r0RIdUosdSP2HnknS+Fh9+URArAzpDK8GKbv7JWB+s
+lxjlDL/IS7jdtqb9splY4SUNu5cMKqWqmqm84RfFsCZFlmzpc8eRZWANnwTUfzeinlVm+EUxrJFr
+YEkmVnR8KYUOpnqnHjR3+IXISwWwmia/GlZ0IuQqVwbKDL8ohHXmwjrLdrCuO52U6eVj5/geQWT6
+rZlGQFKIfl4Ov3W2NFb0lGpVqXCXGH6Rpwc71lkxrOFxJwkYauf6vrR3nOfPRJkFZ9WmlijCRP99
++/ftJrSkptDwizw9WGyrPF4npzrwstvBPB/JF6lfwbqwrrYFK0LhzdMTG92eX8WyprGYfxuVGUMm
+V15x7bVz2dk9vt6+3oEidVbn8IuCWKu3YIXz+3A7xgn4ThePdYuw+uA7tL0R8Fg91tVhjWhovUdJ
+aEVrCmUPlKYwgjBiN2bjbzq3wqOU26LlSGFkqpUOa108RNOzaRRupFohmofXw2sShvMQboERgBjr
+Imr1T0nof+93F5uFlQwMmA+vLyhTdvvrdZg1WGBThl9Ep//S8P35+d/9ZmElt2eSxwhgtZIXnjk+
+nm881odTTPIZE/32/RsB+zz6rtz/vFR3ljtJ4q4oY8FM6x1InibAXuTO96Pj457RMJhWo6PSSbZg
+LZK8LKzTf8+UKYb6dPqEwT4/jyZoJV2EWcmfpT0cUqOm3kj4nlAlowQuvrK7tL8eY6qdy2u4bId2
+JlZ38oqpdfrMqP4jYzCYWp9fJ5aW6ewuQrPNG2hthOQnMu7lNNqKZ0aiSXf2ER3NcvyV9L8eHV12
+djpnsMzzBAqlTr5E7uQVwjpkWhUBUx6NegiV7iLUP8CYz8M6m+mZjCaa5vkjChS/L48uL3c6pTu0
+i6QuB6uZPDfW0xHD+kzezzS8jvoQoQpdhBnXQmoLN247lMY86Hf2khTOCcmj40sG9JIotdM5GkBY
+skO7XOrcyYtQAdv6rIXR62j0s2fknPw7tJ0dX3J3QpTxOIqZxRBQrDuX6atzlPS9HM9RqecJFEod
+sj2ExEheMawjiekrgfrc589sKtNFmKUFkWLNCBTDSjB2CFDS6doJiFZ3FsTvKvc8gfzU6UagOtbF
+mKKkb/r1/IxrA1DJOwW7CPOsV0FPwDAC4YD3DwbsZ6ezM1cPWqBDu0jqingCBY1ANEqgUrDPzz/l
+ymuZO7QtroLeW5jht85snmKS6GkKlPzi9wAh46DFjEB26tx+qyN5GQ7WzTMV6jMR6nN/WqBFoJAr
+a48UqYIoVssKj758ITi5WM/Ke6F5qbNtMVumloXze/yTGtj+6U2Yeydx4Tu0C2At3tTytfOFq/Xo
+Ksy9a2Q1WJdvE0CLRZi0r8DNuyUDovnZ4AiDPWq2XtDmP6Zhm5qxw3DxENZ0FN874LH+/2L1wXdo
++y7CWroIUbhYkLtyV3+U2roIt0CtYdzFod+fbFGRRW/PDcMw/ynpn4Z1EXf/nnZPB8OtwsqePj2f
+zzf0Dm20oGI93SK1QhheXPxg4WJeZ0VrmRvfb+I4/tsdbJHfGv6QQriZWCdn0xYG2y3wwINNUev1
+rsx1E40ADIlYT4ghyB+TvSlqxVQlsNc5zVD2dl9rO6W6YLaEWltYqqfdwd9u3IVGczDQWoGd99nJ
+jaVyr38tWIc/FLVeFGhZda7J7v6vjrVL/KvTAfYFusiCFdk7XZyp4l1/sxrVer27K4Hd/TE34Cn9
+g4k87PcLz2w3Xad3kS6F9YR4WH+DATTyTSGsyIJ1hurFirmmYHcNrIInUjqBsp7ur2OluW0JrN1B
+EIzHg/44Cyu7yEWw8jvwZ7NasXK9Er4urAiA7Ke5K+ZL/V8H9lkC63j8Ow76waDdt2FN8wwdO+Oy
+rSbW5FMf1t0f/Ps4NLGqQ4ScT3OX9TpDSNPtElgX3XE/+BmMd8a/B4qJ13r4HGpFFosv3yBakyeQ
+EGVkzSJLxpszViD76f6VsYa4hhWM++O/g/4AurEWLrKkm9trwwrFA+hJmCOXEbDcKCyPFZCxKhZ2
+trwRiLv9cXcwGHQHXWh4JOWxai5KTbUsmeoFVMSgFPcSVuAwArN0BNjM7F9fwraedOPB6eDr6WDg
+xqo5ssDht84Uv7XGppY78X8J13O0XJjVUnntYu+qf9rHP4NKtazZJ9SyIHy5YFSP75alWk/lNWwH
+7aCDP9jL2prKK7nT5eXqunH1UudtLktghehrs9scDI4G4/F0e7CiNYUlxgm0Ylx9Pe0O+nPksa6u
+YZB2ZPV68x7yWFeHtc6j+HECfpzA/69aPVaPtXhn+yZh5Y/z3lSsJGVDVOj5R5uDFQMNyWAcuKHD
+L3Cieve9+/terwDYDRp+gZn2er2HyXAIN/BJ7jBkUMm7h/KekL8pWCEkTCeY6TCKzjZPrZBIVYRw
+O7BCiJlGmGh0NsXvsxAZ7WxVGFruxIz0P7HPaVriKewpwXqEYpAcHduR6+HcS2HtTYhKp2etVuts
+Op22dKyoGlXzX2Bn5vNwC2CFGtZeKD2925I8N1ZXx3aZZx8Wf6jI8OysNW3hN/7BVFuhRqbUre/S
+mnQt74iJjIdiF8HKqQ451iHSsCr34ql3shlYUUbH9iqxhtGUYiUfQnUaIwvWCre+m39cLmE1nu7t
+xIrFOkyQYtt/Rmbk3IT0ey5B5H6IdE7H9gqxwhCzPJtSuZLQihfQplZU8dZ3q21Ne2SKYGVQh2c4
+U0XDs4ioFSq2VTtkZLuTWE6Hs2N7lVgZTsYUs40XaqmDlrz1XU5+ZP4teBGsmCslisOQhMnQPgRD
+wSqPHdDSYXRsRzVgXXCdEqituBdasVa+9V0usgysObmPYY0wR4IUkyVIsR+IoGJbbVidRsDWsV0D
+VjJ+nFgAEqaxQnXJW9/zsRZysHCRipU6xR4gcavpWyuyHFhBPlaE6jICpNCK47gVEwOgUa186ztS
+noGi2dZZWb+VWgD8ioghIMLV/VY1V+lGwOW3zhS/tYZaFlr0YhqK/alTBVd2qRGDGOT0TApLPAxv
+tt4WLHKjyyIMizxwfIk/J6+Glfoq1F1Jgm9vXU1TS9hqNbD9v8IvPBFCj3VFLVitmBSpxE7lUvVY
+i7e3hmHciPG7MUd++MXKsNIm13lrugi3qndg47FCJllYx1H8OAE/TmDFRqDGo/hxAh6rx0pjbvg4
+ge3Dyh7pD+9eXl7oBPRYV4IVwjvC9I4ECOEGq7VQ6jYCK04pA4rDFQk1ynV5tRYZ07QZWNHLFWe6
+h0OjccVT/YuG7KNo69ks/rZuZyTf9qfayc8MWYa2QTIquzfhvQPA2p4WOZre7NNsi4z79StiDalG
+GwTp3lWD/DqQlcJaSBXO8QMzo5ZFAh3R9PAwmUQuPlWxFnpIbzmsd0ylew36Jp8XHVkiWibeXxxd
+skxM8234J12eqF7+TrEivf9V6jd8F0wXIUX6EE2n02gaQpmPMmbBOlgAOJ+EL7AineJyWLFAGVE6
+QcjeaVgFql/JB1k/Olbpw4GqkWe2fxuYiX57bv0Z0gkZesNaBx90rMZgAcfgBnvfYQ1YXyjTKy5W
+HJovsm1FxREaanXEERPmX5MrHfl8+AVmGhGZ0o6hk/jktIdUrNKs/oD8rK5L3bbahrvMKmO9Somy
+AA21/vpl4FGWKVZANQ4GVqUczLqfmyUaoglFymR6Qu7OOj1DFqzas7FdgxuUB+KLP3s2u2S51a+G
+9S5hmYJthshiBDIyuFpCZShcWSEXWZlYo+iGIj0hzxU5PT39250gC1bXv2QUUuvMhbWyEbjbU7V6
+0IAIFcL5y45WOANSnF8y1l9OrFoBTLGGJPNTlf7FTB8WC6N4V8YsaFhBNaxLewIvcvbfazaFWJEt
+Y9uMAFLcW8nH+qW4EBYj4PxTbanICrsxUenf0260sHtNuUYg1xMo+jz8EpXXOwXq3l09lSxK0vYH
+Svm1rAfCNH7gfzNRT1/W6kcMvlxRoCTsXb3UUHdN9VlxnMAC5/ywFKRPqbzqj8WFd41Eqleb+lhc
+ksq6jlLTY3FJJYa2X72gYv/77hsGfe+Ax+qxeqxurD7UMU4Abbxa0carFZkOVrTx/zuwrqO0VhHX
+q7UetXqsHqvH6rF6rB7rdmLt+VAwlMMa+1AolMX69upfRV4lsdJt+gF/eX6OVxW1BsloPBj3PcCV
+YGVqTbFCz3V1RuA7JvrnD/4ivb62vUJYV3rxQVe+x00xAq9//vx5g3+oXsHbKzlT/mGvUueenBfe
+Jn8z+TAQFj6gvAl0rPt8tV7+wFxZGmPAuPBPBQWwMy0mQ3YYE0jOAflq2zE2Rq2zH1ior3/eBFZZ
+sfoU/4ZvKT+o52u6DorNyDSbfDV2xBczIFA/DJM9X/4mr+AIEwlAM61v2vQ61Uq1yuVKsL4mICA/
+Uz4nz78pk4pcOFh5MxGTL+GHUdUqLRcHo/uRjybUKq7em5xWy4bLqbi0WmfxGxMq5LY1neNT6Ykm
+Zy5p+ZXHFLKFkn6kzd6kDeQYItdqy8XBX9/e1KMJ24q/1SzFbbrYUOxEUFK+MpZVV2vnEpdYra9v
+wgi8cqJp0ZGpVpGcREJvosiSNpOoGeqTDa2Qozi4dGDF9Kaz6qYisrSTt/Xa1ss/4O2PVGQpBbRW
+qlvVahRDqfZsapV2Z6pVlpx88Nc39WhCrYpttaj1VbLbr2XJSoIpX2T9eSXuah+mnoDsB/DC6e1V
+WAXVVzCcHKEkvvpNthJS2ZPyhlJRxxFCcXCh1ldhnCy2Fcqx9DNYey3rzxFUbesaXoWEUngxXVFf
+nWWJWhaU1bqVr6Lm053TV1zLOpJaFitj3UDS5VZknkMVtY6Sex1HrjaB/5+Xi/rnNmNvqm6rpFVZ
+7ztdNqHT5ev3I/Zq/8avo+/+ZXt9jUtiPYU+5IeSIwZ7jb/Q5/AiNqDUiMFe3PVY67CtVK0NbScN
+/9E+ZbF6tdbjCUCrRn1YDuupoVaQewywSScMVhRnKay6J8DUSjVKq68x4Gkw7AtbT6bTWFocELN1
+2XZK7Meyzrpf6ZNsLC0D9rggltaB5W1rSU9AqBXkXFqgTAFHjGW1DspuDjKigXWpVccq+a0g+ca/
+XBFmQpleSCxLFKBsn76d+0kvRDKd7pft3JqKhJeI4EguzQ+A5o2Y7Ras07YKT4C2X6UZ3JLQkQAB
+7AIA8ShOt3diHfFTlGKSb2nb2HWEWIqA4+MP+zWj0fY4Jc7oM/zWhjjV1IBpdk9WpNUGJiyFlbbF
+A+l5A0FfRcy2B7H9GPoGwGXnlaTwK7xuv1XCmmHUMtU6ioHQGXDEk/fjwJrq2pGMkbbByHGUUbKr
+UUGzX4ffqmIFhv9qYG3EbusqaGXuxyY+pmcQ55SLMlbXxQOKCsASPnl1v1Upsiw6SWwisVksjvuc
+2fYOe5YagZHAx+xqzPfL5kfAXcSPpCJr5CxggRxnrUWW8Fu1a9koWPey2aI4Zz5rX3n7jwumw3Yt
+G5XbPJZQK8j2QvLWF4lRLW6VzYAac1nPtbrfalz3qvppONrEXNN5nzJ5JCsPZJ1TfX6rD7X4rQXt
+axn9uuxrXLKtbBkNNzI069tbt7e91dvXOttbfViJWvnwAMsvnZJ+zfVZ27r3lxX3d8H92+Nnx638
+e9ry4wQ+YZxAEb/VB7sN8J7AZvitRXzGvLK4iB9QxKfI8QWOYMU2g/V2Ea5ZrbY6fTKutlhd/zs0
+drcWtZbsIkz81iI+Y56fmF/PAoANwFPb8wEvGOxtjWlnFY3/W0ovADCGZk9WHeNaXjbYbwViaKPc
+DjtKscLXJ0uL3igG/TR+G0p9EZC2tXaPqgmW5JFRTbb1qzwGC2TZUJBvG+OjrDo/lqp4zIZ0KKbW
+PrvtXtsn7akCQET/naYXUKXGf+P4bxvk2FdrNmCXsv5alpKbDKtVyPIdZYk1EFT7JtbAcpaArMRf
+Inpbah+mSerG8SBZ7Ta0wNkgK1n1LEMNqvutAMpaAXqbOihQ9h5d/XTW+QHBCXGlDkJiBsS+AYWK
+XwnWhkqVck2Xp54AiAnMPkHxMw72NXa2flhtfIzi78tdiDbbukTPK8mF1N4ApVsKJH1HwC1YUdVD
+sVOvgKODrNiSbSvGzVaNDK2ykx4ZngDZ/iQeteOTNgjkfjO1nytJu9nfxXfNfvTtk/lkGsRB1fbW
+y33l0kk5CsjdmKl2lRwDf6a3y8V9oTcKO7WFQcIVfyVqbfAT7NM3PbSwzUDyEdIresTTSw7fBOS4
+cTAKxFgXIPd2AqkLF1iwAvriagWOcSGgtBEQap29a1iT6wWSsSF6V6tqh6QCOpCs9W+S5Q210kYR
+IJ9gkJZaFkEpNleoFdLzJo/tSccD8AEXcrozsZJSUjcCyfYxUMYjVBkxKIwASMfzWfriVV9AsldY
+fD/bP9uYGnEGoGSjjiBUSiyW2XHcn0A7wYC+ZftGVwB24rrfmjoChGoMfouxgepwBh2ralvJvsX+
+M8eFVB4xiG0c0ApPMYYpjrNsa8xFFcB+rDrC0Oa1/tz52QGq3xowOzDSBQXYeovfSrkGhGsgMs7I
+SHe2WkeJWoVtNceFkOXBEuMEgKwVkI7KSwouKWlOH7EfxNBZ1wLyrU6SdlRPQNqWYe0D2ebKfivj
+GgfUhWlIKebpTi0uMP1u3bbS8YVSoaJZ62VqWUtXr6U8b3EF5BvIdL+Vua2mbQXpj2HEQT8xpcW9
+eqcnkLf9isYJxI4+n7y2AOhoE9C5yv5pWssqgvVIrb4E+CVzLdJn5fJbs85zo3teQeJkqU7FSDq9
+keZsjPjH0YKVjAurIFdp3wXaBlY2TiBrPFVeW2vsHHMAlLGzlmpkXvvYkc12x+AXikuMCSgyHkFd
+9l8fJ/D9c9K7wnECVe1rnGVfl+yvb2TsO++3SJus61h+nMDmjxNw9b//XuGYgbJ9+0X25fotOj7B
+WNb1zxPYznEC/6GHWsByNqBWT+C76u9t8SeG9dnW0uMEjsC25mSjIwbGhf2d2v3WdlKF7wdp++m2
+YFXm+ja1Hq3Yby06TiCOf4OkdZQlNdgmrDKogGLVzrMNHOdd+ziBRK1pUoMtxWpV629X20Ll5wmo
+jYPAaWeEWskj9QHvtUjClL43GSs/l7aJ9eh7Hyr3Gorzrvo8AQAysJpqfUsfqc9a2FoM7hSQtxLG
+Y/bJCr0AjAK6OSmk3ctWqdafOtbfbVasWcccVG1vTceTCKz2ujL1BN52f4hnlItvQrelYR212Ccr
+BOe9sxG2K4Pz7GXLY21I8lBtK2uB78fmmIMlPAF+z+ko6WIZiT523vWQtEl+x9heO+SR+m+UK1cr
+Flc36WNsgTFWWkgJT0b0MxrABXmgMTAnpjAkHaj9ERuakQTbsigAoL0gh+pPiJZzXb1GU8ea+Kym
+Wr/D+G8/iOPTI/UecbBUeyuIjTvQlXnRb0nUyh+p/yapdQyDUaJWfOKTsxHL+IOAfn4HpN8JxiNz
+guTzHtvPaDQCQS8xJ+YyfKkmo3aML8bDedCLRiCT6MHj4/v7o24E0vZezbYenbJ8f/SanK387ILK
+7a0g1vrFk/v00+clpJYG29ZO/Coeqc/VOoG0655gjQHO9F1mD4Ov9BPvwzZW1zgwJxLDTIcL9HvD
+8wCmxlpdNsHChl0wBRGfdADFRPkfMh8YtpXbTMUTaASsrOJj6JJe0XScQUW/FQAgOlctz0uQwGJP
+4LKDS6w4YStsaythir8RX94bLegH5/URTiWxE8aEUCYJX2nXPdCXUdJ0t+xQSKyVke48Hij/c/2I
+wwH5aqa2Fdj81j7vaZXKbZlBtfZW4O5jB9L6RK2zP+D1j1pkEXFJaj3jau0G7INFB2AQAGNiNBd2
+tEcyezftC9WXRVSiI3LACT2CBeuBECrDenCwc4C/Dvay/dZAe9yDNs6gqlqF8oHexy59NRK/9Q8U
+j9TX1Nqj72CR2FY+jgX+xXZ0gD+WCVHqj4LFZBSonoC0bEQMakAPGAS9ocO2NhqSEdjhS99lrKbf
+2u9r4wWB9IijpZ4nUKaW9acPddtKpxYjEJEBem3uCYwmkH6wvvrwDAyMiT7ZHvuogFyF1ghvh1K/
+VV5GDjAkxX9IrW6U5wlgC6sUWe/Zfqsy4HZ14wQalhsm7H1GrAUrYD6eNgBNIV1vjemhyGEkB+td
++K0Nm9/KhnE5+7169be3JmOX0nZL42xa9WMNxovJeZnmiPe8Wlb2WIGVPr+1YnvrGtR6hk1EMCmJ
+9Uh5DrilqcU9rqButTa+b2cz9jsfa57+v0KtvQM5z281p4+2s0f63TZ8NPs5GUvd6VL2vwe2tMfl
+vUA3zOrU2vt6il/dv/iFf23d7rzjPJmn8TfiVaRz9fsRvxfsXb57SX61k3HkQWvQ6pIwHbApPs9+
+S2JFawrRJx/lfQXpKox1TWfrsXqsHqvH6rF6rB6rx/p/inXa3Pnvhvdqmw2ulsWKoX7xwQg7S2EN
+v+x82Rn0vBFQwrCLpRbmY9XGYIkpvHk3qjG0onUE91Heq6ZrgLnmxXWrVVH7f0+tV+9XVdO18z6u
+bgT2v/ynPYFpdawCTQWs7/9trMts8f7Fq7WGLbxavVq9Wr1avVq9WlcXwubh4eMePcrBIQ3mOmRZ
+59WaGQ4Om3sHh3sU6+MeCeY6ZFnn1ZoVGodNhOYHhyE+Cpm0rkPmOq/WHLHe4++9w70IXeno0nXI
+XPcJaqXDlMqcG6DvdFpdUx7r4yOV2gFl4p5ppHEJtYguuTf2w4jq6+6bj4ePzTsi4wNsgBvoDn8f
+sD3XpVZg4kG2KNY5kKkK4Iokh+bhFfkimffg0T1D4zIQ88ODCC/fwYVSU9BL1yF93f0jtbqPeB4X
+as3mfbJAx7patdLvcY1Yg3x7efCINRQeNt0zEjpEsGJMe3vN94NQxUp/tHVNYhiiPbKPQ2op6AIc
+q3a1JpoFqb6SKbpELKYTzAik0xJasjhKFgLAt2P74BsC9Ugk9x6g+8MmPukGPlv3jIZ1rxmmgHSs
+2jpqHiL6c/go24v61aoyChIQY8WUCqaBNA2QBStbrW7HLgb9GctX4+AxbBxeYYTNw3nGjEB3T7Cy
+cIeX3JEgrUPSOrEV0TePxL7DNakVWOeAbiOBQkwzCRJWdTug7zDdEBcwzUdMLnw8yJrRiqykCoDR
+JJ6/VGSJdaWw1mRbx6mNtWMNJKx8OtCwBhGLFwBtOxUrGAsrMD9sYmzYMyKZ1j3DrCR3sO4ZaUKx
+sYdf0jokrTOMwEGGEdgktdqNANKNgKlWyeMkdaP54ePhXeYMhZZWBw6Im5B8q+uQvk4usg6Qu8ha
+vVoBKogVSFjL2Na0UDSNAPGhhlhC/JQdM0SRpILaZJXXBnaVsJPUVCqvTVZ5ldaRrYg/1WwePgoD
+bHewVqtWoJX0MuCkvM/zBOTN+CYACXdC1qzhCeDc+EgRNjNnKIQ5cexZU0vjIG1ZSYxJsg7J69hW
+2Es7TKoDdP3QWh3YuDYBUKCWVaDasa6GwfsX5ik0N7xNYMuwNqmtlnzewmp1Dr94/1LXkAiQ9XB5
+tjICnzbIQ96iRaqwO4ePZ9rIjS/Vh1/43gFue5v3vr11HZ0uvi/L92X9v6kVFCjXC7cWGgcq0DRe
+1S0AOZCs7eyfr9ZgBViDAniCikyDHEiBbTrKT37NtnUVagXFCFXCWkCtKFetoC61snZTgNSKK0jq
++yBtVwVyk7bZ1M0bq5OERkrLNxBVWrmqGyQrA9F2QGMESaQAKW3gSfsun0+2wzPjZPsAyWcBpGOm
+1fCItpul6Wb7Ze1oo2TvK7OtAFgaV3jKpPXiIzXHqK0mwGiPQUb7qnQAeQ/m3oFji3QuMtOL5G2B
+Ok0BaKeHjL2vTK1qS1Ig2ly15map30DJRcCY5NNBuk+z9Zqvk44lptlLtu9GKxmxrWZakZxGIKYB
+0rAapwZW7QnIKTKapEReAsBqBNQmK2QFYesUsEUVfV2yUeAHB4Zt1VbqTZAiFwKBFai9asbea1Cr
+pYXVULPal2IR9Cqx2hrQdazWbKNhVY2Atd+nRrWqNs5lBIB5IeQNbdkWoDJYMy6vHSuwWKMc2+o0
+AnXYVpCUz4CVl2ORPXh/FfuV2rzHQHYd+IHY9oEmcB43kG2rbD6S/QZp31cyL6IAKZ1RgJCtU53v
+H0jTiP+/YAD0cgqAYOVqXU+1Eqxsz8C3CWwl1u1RKwDruXifr9Z934JlDzspmgpYd7588Vhtoful
+s1Mda9j58qU19FjVcBbvSHqr9DyBLrl53gctdL400VJY0ZV/ToPlKQ1naEms3rZWjeux1oPVOfzi
+855L8blHaa0irlerNwIeq8fqsXqsW4L1fwIMAMKCrNadwobxAAAAAElFTkSuQmCC
 
->
-> Thanks
-> Vivek
->
+------------------010401040103070607040007
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------------------010401040103070607040007--
