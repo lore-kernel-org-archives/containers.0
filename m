@@ -1,15 +1,17 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: [PATCH] x86: ptrace debugreg checks rewrite
-Date: Wed, 6 May 2009 11:56:29 +0200
-Message-ID: <20090506095629.GC15323__1600.47794129259$1241603898$gmane$org@elte.hu>
-References: <20090504001601.GL16631@x200.localdomain>
-	<20090504002431.GA17556@x200.localdomain>
+From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: IO scheduler based IO Controller V2
+Date: Wed, 6 May 2009 12:20:30 +0200
+Message-ID: <20090506102030.GB20544__27615.4300933287$1241604986$gmane$org@gandalf.sssup.it>
+References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
+	<20090505132441.1705bfad.akpm@linux-foundation.org>
+	<1241562049.11059.921.camel@twins>
+	<20090506034254.GD4416@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090504002431.GA17556-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090506034254.GD4416-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,24 +21,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi,
 
-* Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Wed, May 06, 2009 09:12:54AM +0530
+>
+> * Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org> [2009-05-06 00:20:49]:
+> 
+> > On Tue, 2009-05-05 at 13:24 -0700, Andrew Morton wrote:
+> > > On Tue,  5 May 2009 15:58:27 -0400
+> > > Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > > 
+> > > > 
+> > > > Hi All,
+> > > > 
+> > > > Here is the V2 of the IO controller patches generated on top of 2.6.30-rc4.
+> > > > ...
+> > > > Currently primarily two other IO controller proposals are out there.
+> > > > 
+> > > > dm-ioband
+> > > > ---------
+> > > > This patch set is from Ryo Tsuruta from valinux.
+> > > > ...
+> > > > IO-throttling
+> > > > -------------
+> > > > This patch set is from Andrea Righi provides max bandwidth controller.
+> > > 
+> > > I'm thinking we need to lock you guys in a room and come back in 15 minutes.
+> > > 
+> > > Seriously, how are we to resolve this?  We could lock me in a room and
+> > > cmoe back in 15 days, but there's no reason to believe that I'd emerge
+> > > with the best answer.
+> > > 
+> > > I tend to think that a cgroup-based controller is the way to go. 
+> > > Anything else will need to be wired up to cgroups _anyway_, and that
+> > > might end up messy.
+> > 
+> > FWIW I subscribe to the io-scheduler faith as opposed to the
+> > device-mapper cult ;-)
+> > 
+> > Also, I don't think a simple throttle will be very useful, a more mature
+> > solution should cater to more use cases.
+> >
+> 
+> I tend to agree, unless Andrea can prove us wrong. I don't think
+> throttling a task (not letting it consume CPU, memory when its IO
+> quota is exceeded) is a good idea. I've asked that question to Andrea
+> a few times, but got no response.
+>  
 
-> On Mon, May 04, 2009 at 04:16:01AM +0400, Alexey Dobriyan wrote:
-> > +static int ptrace_check_debugreg(int _32bit,
-> > +				 unsigned long dr0, unsigned long dr1,
-> > +				 unsigned long dr2, unsigned long dr3,
-> > +				 unsigned long dr6, unsigned long dr7)
-> > +{
-> > +	/* Breakpoint type: 00: --x, 01: -w-, 10: undefined, 11: rw- */
-> > +	unsigned int rw[4];
-> > +	/* Breakpoint length: 00: 1 byte, 01: 2 bytes, 10: 8 bytes, 11: bytes */
-> 								        4 bytes, of course
+  from what I can see, the principle used by io-throttling is not too
+different to what happens when bandwidth differentiation with synchronous
+access patterns is achieved using idling at the io scheduler level.
 
-Roland, Oleg, do you have any pending/planned changes in this area?
+When an io scheduler anticipates requests from a task/cgroup, all the
+other tasks with pending (synchronous) requests are in fact blocked, and
+the fact that the task being anticipated is allowed to submit additional
+io while they remain blocked is what creates the bandwidth differentiation
+among them.
 
-	Ingo
+Of course there are many differences, in particular related to the
+latencies introduced by the two mechanisms, the granularity they use to
+allocate disk service, and to what throttling and proportional share io
+scheduling can or cannot guarantee, but FWIK both of them rely on
+blocking tasks to create bandwidth differentiation.
