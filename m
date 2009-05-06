@@ -1,16 +1,16 @@
-From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] x86: ptrace debugreg checks rewrite
-Date: Wed,  6 May 2009 13:38:52 -0700 (PDT)
-Message-ID: <20090506203852.D9AC9FC39E@magilla.sf.frob.com>
-References: <20090504001601.GL16631@x200.localdomain>
-	<20090504002431.GA17556@x200.localdomain>
-	<20090506095629.GC15323@elte.hu>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 04/54] General infrastructure for checkpoint
+	restart
+Date: Wed, 6 May 2009 13:39:55 -0700
+Message-ID: <20090506203955.GA6003@linux.vnet.ibm.com>
+References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
+	<1240961064-13991-5-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Ingo Molnar's message of  Wednesday,
-	6 May 2009 11:56:29 +0200 <20090506095629.GC15323-X9Un+BFzKDI@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1240961064-13991-5-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,26 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> > On Mon, May 04, 2009 at 04:16:01AM +0400, Alexey Dobriyan wrote:
-> > > +static int ptrace_check_debugreg(int _32bit,
-> > > +				 unsigned long dr0, unsigned long dr1,
-> > > +				 unsigned long dr2, unsigned long dr3,
-> > > +				 unsigned long dr6, unsigned long dr7)
-> > > +{
-> > > +	/* Breakpoint type: 00: --x, 01: -w-, 10: undefined, 11: rw- */
-> > > +	unsigned int rw[4];
-> > > +	/* Breakpoint length: 00: 1 byte, 01: 2 bytes, 10: 8 bytes, 11: bytes */
-> > 								        4 bytes, of course
-> 
-> Roland, Oleg, do you have any pending/planned changes in this area?
-
-I don't.  I expect the only future work on this arch debugreg stuff to be
-via the hw_breakpoint work, extending that and/or building new things on it.
-
-
-Thanks,
-Roland
+T3JlbiBMYWFkYW4gW29yZW5sQGNzLmNvbHVtYmlhLmVkdV0gd3JvdGU6CnwgKwp8ICsvKiAnY2tw
+dF9kZWJ1Z19sZXZlbCcgY29udHJvbHMgdGhlIHZlcmJvc2l0eSBsZXZlbCBvZiBjL3IgY29kZSAq
+Lwp8ICsjaWZkZWYgQ09ORklHX0NIRUNLUE9JTlRfREVCVUcKfCArCnwgKy8qIEZJWDogYWxsb3cg
+dG8gY2hhbmdlIGR1cmluZyBydW50aW1lICovCnwgK3Vuc2lnbmVkIGludCBfX3JlYWRfbW9zdGx5
+IGNrcHRfZGVidWdfbGV2ZWwgPSBDS1BUX0RERUZBVUxUOwp8ICsKfCArc3RhdGljIF9faW5pdCBp
+bnQgY2twdF9kZWJ1Z19zZXR1cChjaGFyICpzKQp8ICt7CnwgKwlja3B0X2RlYnVnX2xldmVsID0g
+c3RyaWN0X3N0cnRvdWwocywgTlVMTCwgMCk7CnwgKwlyZXR1cm4gMDsKfCArfQoKTml0OiBJbnRl
+cmNoYW5nZSBOVUxMIGFuZCAwIHRvIHN1cHByZXNzIHRoaXMgPwoKY2hlY2twb2ludC9zeXMuYzoz
+ODQ6IHdhcm5pbmc6IHBhc3NpbmcgYXJndW1lbnQgMiBvZiDigJhzdHJpY3Rfc3RydG91bOKAmQpt
+YWtlcyBpbnRlZ2VyIGZyb20gcG9pbnRlciB3aXRob3V0IGEgY2FzdAoKX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
+Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
+LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
