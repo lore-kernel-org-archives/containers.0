@@ -1,14 +1,12 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 01/18] io-controller: Documentation
-Date: Wed, 06 May 2009 11:16:04 +0800
-Message-ID: <4A0100F4.4040400__45321.7506212697$1241579894$gmane$org@cn.fujitsu.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-2-git-send-email-vgoyal@redhat.com>
+From: Racette Rummler <stipellate-5cMgeWsAvsYxHbG02/KK1g@public.gmane.org>
+Subject: oHw to Improve Your Foreplay Skills Without Embarrassment - 1 Tip
+	guaranteed to Drive Her Wild
+Date: Wed, 06 May 2009 03:22:17 +0000
+Message-ID: <1519-vermicular__10127.6953043$1241580298$gmane$org@rosalina.fi>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------------2678F55376CCB85257B1"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1241553525-28095-2-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,47 +16,211 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
-> +	mount -t cgroup -o io,blkio none /cgroup
-> +
-> +- Create two cgroups
-> +	mkdir -p /cgroup/test1/ /cgroup/test2
-> +
-> +- Set weights of group test1 and test2
-> +	echo 1000 > /cgroup/test1/io.ioprio
-> +	echo 500 > /cgroup/test2/io.ioprio
+--------------2678F55376CCB85257B1
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Disposition: inline
 
-  Here seems should be /cgroup/test2/io.weight
+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
+/0+AAQA342HzhTnzzgAAAABJRU5ErkJggg==
 
-> +
-> +- Create two same size files (say 512MB each) on same disk (file1, file2) and
-> +  launch two dd threads in different cgroup to read those files. Make sure
-> +  right io scheduler is being used for the block device where files are
-> +  present (the one you compiled in hierarchical mode).
-> +
-> +	echo 1 > /proc/sys/vm/drop_caches
-> +
-> +	dd if=/mnt/lv0/zerofile1 of=/dev/null &
-> +	echo $! > /cgroup/test1/tasks
-> +	cat /cgroup/test1/tasks
-> +
-> +	dd if=/mnt/lv0/zerofile2 of=/dev/null &
-> +	echo $! > /cgroup/test2/tasks
-> +	cat /cgroup/test2/tasks
-> +
-> +- At macro level, first dd should finish first. To get more precise data, keep
-> +  on looking at (with the help of script), at io.disk_time and io.disk_sectors
-> +  files of both test1 and test2 groups. This will tell how much disk time
-> +  (in milli seconds), each group got and how many secotors each group
-> +  dispatched to the disk. We provide fairness in terms of disk time, so
-> +  ideally io.disk_time of cgroups should be in proportion to the weight.
-> +  (It is hard to achieve though :-)).
+--------------2678F55376CCB85257B1
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
--- 
-Regards
-Gui Jianfeng
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------2678F55376CCB85257B1--
