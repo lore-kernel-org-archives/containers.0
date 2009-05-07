@@ -1,21 +1,10 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO Controller V2
-Date: Thu, 7 May 2009 11:42:27 -0400
-Message-ID: <20090507154227.GD9463@redhat.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<20090505132441.1705bfad.akpm@linux-foundation.org>
-	<20090506023332.GA1212@redhat.com>
-	<20090506203228.GH8180@redhat.com> <20090506213453.GC4282@linux>
-	<20090506215235.GJ8180@redhat.com> <20090507090450.GA4613@linux>
-	<20090507141126.GA9463@redhat.com>
-	<20090507144501.GB9463@redhat.com>
-	<20090507153642.GC9463@redhat.com>
+From: Emmitt Hilb <acidulation-yEQiA88wH7PQT0dZR+AlfA@public.gmane.org>
+Subject: Watching Porn Doesn't Have To Be an Event for Jusst One
+Date: Thu, 07 May 2009 18:46:43 +0000
+Message-ID: <1241721948.cuttlebones@twbmex.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="-----j5hKb749J9Z5x7lQPgpGHmlMvapmR1To"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090507153642.GC9463-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,165 +14,212 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, May 07, 2009 at 11:36:42AM -0400, Vivek Goyal wrote:
-> On Thu, May 07, 2009 at 10:45:01AM -0400, Vivek Goyal wrote:
-> > On Thu, May 07, 2009 at 10:11:26AM -0400, Vivek Goyal wrote:
-> > 
-> > [..]
-> > > [root@chilli io-throttle-tests]# ./andrea-test-script.sh 
-> > > RT: 223+1 records in
-> > > RT: 223+1 records out
-> > > RT: 234179072 bytes (234 MB) copied, 0.988448 s, 237 MB/s
-> > > BE: 223+1 records in
-> > > BE: 223+1 records out
-> > > BE: 234179072 bytes (234 MB) copied, 1.93885 s, 121 MB/s
-> > > 
-> > > So I am still seeing the issue with differnt kind of disks also. At this point
-> > > of time I am really not sure why I am seeing such results.
-> > 
-> > Hold on. I think I found the culprit here. I was thinking that what is
-> > the difference between two setups and realized that with vanilla kernels
-> > I had done "make defconfig" and with io-throttle kernels I had used an
-> > old config of my and did "make oldconfig". So basically config files
-> > were differnt.
-> > 
-> > I now used the same config file and issues seems to have gone away. I
-> > will look into why an old config file can force such kind of issues.
-> > 
-> 
-> Hmm.., my old config had "AS" as default scheduler that's why I was seeing
-> the strange issue of RT task finishing after BE. My apologies for that. I
-> somehow assumed that CFQ is default scheduler in my config.
-> 
-> So I have re-run the test to see if we are still seeing the issue of
-> loosing priority and class with-in cgroup. And we still do..
-> 
-> 2.6.30-rc4 with io-throttle patches
-> ===================================
-> Test1
-> =====
-> - Two readers, one BE prio 0 and other BE prio 7 in a cgroup limited with
->   8MB/s BW.
-> 
-> 234179072 bytes (234 MB) copied, 55.8448 s, 4.2 MB/s
-> prio 0 task finished
-> 234179072 bytes (234 MB) copied, 55.8878 s, 4.2 MB/s
-> 
-> Test2
-> =====
-> - Two readers, one RT prio 0 and other BE prio 7 in a cgroup limited with
->   8MB/s BW.
-> 
-> 234179072 bytes (234 MB) copied, 55.8876 s, 4.2 MB/s
-> 234179072 bytes (234 MB) copied, 55.8984 s, 4.2 MB/s
-> RT task finished
-> 
-> Test3
-> =====
-> - Reader Starvation
-> - I created a cgroup with BW limit of 64MB/s. First I just run the reader
->   alone and then I run reader along with 4 writers 4 times. 
-> 
-> Reader alone
-> 234179072 bytes (234 MB) copied, 3.71796 s, 63.0 MB/s
-> 
-> Reader with 4 writers
-> ---------------------
-> First run
-> 234179072 bytes (234 MB) copied, 30.394 s, 7.7 MB/s 
-> 
-> Second run
-> 234179072 bytes (234 MB) copied, 26.9607 s, 8.7 MB/s
-> 
-> Third run
-> 234179072 bytes (234 MB) copied, 37.3515 s, 6.3 MB/s
-> 
-> Fourth run
-> 234179072 bytes (234 MB) copied, 36.817 s, 6.4 MB/s
-> 
-> Note that out of 64MB/s limit of this cgroup, reader does not get even
-> 1/5 of the BW. In normal systems, readers are advantaged and reader gets
-> its job done much faster even in presence of multiple writers.   
-> 
-> Vanilla 2.6.30-rc4
-> ==================
-> 
-> Test3
-> =====
-> Reader alone
-> 234179072 bytes (234 MB) copied, 2.52195 s, 92.9 MB/s
-> 
-> Reader with 4 writers
-> ---------------------
-> First run
-> 234179072 bytes (234 MB) copied, 4.39929 s, 53.2 MB/s
-> 
-> Second run
-> 234179072 bytes (234 MB) copied, 4.55929 s, 51.4 MB/s
-> 
-> Third run
-> 234179072 bytes (234 MB) copied, 4.79855 s, 48.8 MB/s
-> 
-> Fourth run
-> 234179072 bytes (234 MB) copied, 4.5069 s, 52.0 MB/s
-> 
-> Notice, that without any writers we seem to be having BW of 92MB/s and
-> more than 50% of that BW is still assigned to reader in presence of
-> writers. Compare this with io-throttle cgroup of 64MB/s where reader
-> struggles to get 10-15% of BW. 
-> 
-> So any 2nd level control will break the notion and assumptions of
-> underlying IO scheduler. We should probably do control at IO scheduler
-> level to make sure we don't run into such issues while getting
-> hierarchical fair share for groups.
-> 
+-------j5hKb749J9Z5x7lQPgpGHmlMvapmR1To
+Content-Type: image/png;
+ name="Emmitt.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Emmitt.png"
 
-Forgot to attached my reader-writer script last time. Here it is.
+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
 
+-------j5hKb749J9Z5x7lQPgpGHmlMvapmR1To
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-***************************************************************
-#!/bin/bash
-
-mount /dev/sdb1 /mnt/sdb
-
-mount -t cgroup -o blockio blockio /cgroup/iot/
-mkdir -p /cgroup/iot/test1 /cgroup/iot/test2
-
-# Set bw limit of 64 MB/ps on sdb
-echo "/dev/sdb:$((64 * 1024 * 1024)):0:0" > /cgroup/iot/test1/blockio.bandwidth-max
-
-sync
-echo 3 > /proc/sys/vm/drop_caches
-
-echo $$ > /cgroup/iot/test1/tasks
-
-ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile1 bs=4K count=524288 & 
-echo $!
-
-ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile2 bs=4K count=524288 & 
-echo $!
-
-ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile3 bs=4K count=524288 & 
-echo $!
-
-ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile4 bs=4K count=524288 & 
-echo $!
-
-sleep 5
-echo "Launching reader"
-
-ionice -c 2 -n 0 dd if=/mnt/sdb/zerofile2 of=/dev/zero &
-pid2=$!
-echo $pid2
-
-wait $pid2
-echo "Reader Finished"
-killall dd
-**********************************************************************
-
-Thanks
-Vivek
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+-------j5hKb749J9Z5x7lQPgpGHmlMvapmR1To--
