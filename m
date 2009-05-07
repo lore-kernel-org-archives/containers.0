@@ -1,18 +1,18 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC v14][PATCH 53/54] Detect resource leaks for
 	whole-containercheckpoint
-Date: Wed, 6 May 2009 23:13:21 -0700
-Message-ID: <20090507061321.GA13725@linux.vnet.ibm.com>
+Date: Wed, 6 May 2009 23:24:02 -0700
+Message-ID: <20090507062402.GA14208@linux.vnet.ibm.com>
 References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
 	<1240961064-13991-54-git-send-email-orenl@cs.columbia.edu>
 	<20090507035026.GB6003@linux.vnet.ibm.com>
 	<4A025F7D.3050403@cs.columbia.edu>
+	<20090507061321.GA13725@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="C7zPtVaVf+AK4Oqc"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A025F7D.3050403-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20090507061321.GA13725-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,94 +26,274 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+
+--C7zPtVaVf+AK4Oqc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
 | 
+| Attached (ptree2.c).  I ran it as:
 | 
-| Sukadev Bhattiprolu wrote:
-| > Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| > | Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
-| > | checkpoint, return an error code if the actual objects' counts are
-| > | higher, indicating leaks (references to the objects from a task not
-| > | being checkpointed).  Of course, by this time most of the checkpoint
-| > | image has been written out to disk, so this is purely advisory.  But
-| > | then, it's probably naive to argue that anything more than an advisory
-| > | 'this went wrong' error code is useful.
-| > | 
-| > | The comparison of the objhash user counts to object refcounts as a
-| > | basis for checking for leaks comes from Alexey's OpenVZ-based c/r
-| > | patchset.
-| > | 
-| > | Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-| > | ---
-| > |  checkpoint/checkpoint.c    |    8 +++
-| > |  checkpoint/memory.c        |    2 +
-| > |  checkpoint/objhash.c       |  108 +++++++++++++++++++++++++++++++++++++++----
-| > |  include/linux/checkpoint.h |    2 +
-| > |  4 files changed, 110 insertions(+), 10 deletions(-)
-| > | 
-| > | diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-| > | index 4319976..32a0a8e 100644
-| > | --- a/checkpoint/checkpoint.c
-| > | +++ b/checkpoint/checkpoint.c
-| > | @@ -498,6 +498,14 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
-| > |  	if (ret < 0)
-| > |  		goto out;
-| > | 
-| > | +	if (!(ctx->flags & CHECKPOINT_SUBTREE)) {
-| > | +		/* verify that all objects are contained (no leaks) */
-| > | +		if (!ckpt_obj_contained(ctx)) {
-| > | +			ret = -EBUSY;
-| > | +			goto out;
-| > | +		}
-| > | +	}
-| > | +
-| > |  	/* on success, return (unique) checkpoint identifier */
-| > |  	ctx->crid = atomic_inc_return(&ctx_count);
-| > |  	ret = ctx->crid;
-| > | diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-| > | index 7637c1e..5ae2b41 100644
-| > | --- a/checkpoint/memory.c
-| > | +++ b/checkpoint/memory.c
-| > | @@ -687,6 +687,8 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
-| > |  			ret = exe_objref;
-| > |  			goto out;
-| > |  		}
-| > | +		/* account for all references through vma/exe_file */
-| > | +		ckpt_obj_users_inc(ctx, mm->exe_file, mm->num_exe_file_vmas);
-| > 
-| > Do we really need to add num_exe_file_vmas here ?
-| > 
-| > A quick look at all callers for added_exe_file_vma() seems to show that
-| > those callers also do a get_file().
-| 
-| Each vma whose file is the same as mm->exe_file causes the refcount
-| of that file to increase by 2: once by vma->vm_file, and once via
-| added_exe_file_vma(). The c/r code calls ckpt_obj_checkpoint() only
-| once, thus once one obj_file_grab() for that file. The code above
-| accounts for the missing count.
-| 
-| > 
-| > Anyway, when I try to C/R a simple process tree, I get -EBUSY because
-| > ckpt_obj_contained() finds a ref-count mismatch for the executable file.
-| 
-| Are you certain the culprit is this count and not, possibly, some
-| other "leak" ?
+| 	$ ./ptree2 -n 1 -d 2
 
-Well, I will look some more tomorrow.
+Now, really attached :-)
 
-| If so, do you know what's the count difference ?
 
-Yes, dmesg had:
+--C7zPtVaVf+AK4Oqc
+Content-Type: text/x-csrc; charset=us-ascii
+Content-Disposition: attachment; filename="ptree2.c"
 
-	c/r: FILE users 10 != count 16
+#include <stdio.h>
+#include <unistd.h>
+#include <wait.h>
+#include <errno.h>
+#include <string.h>
 
-The process tree had 3 processes (parent, child, grant-child) all executing
-the same file (i.e none of them called exec()). The difference of 6 (or 2
-per process made me suspect the num_file_exe_vmas)
+int max_depth = 3;
+int num_children = 3;
 
-| Posting the test program and a description of what you did would
-| be useful...
+#define CKPT_READY		"checkpoint-ready"
+#define CKPT_DONE		"checkpoint-done"
+#define TEST_DONE		"test-done"
+#define LOG_FILE		"log-ptree2"
 
-Attached (ptree2.c).  I ran it as:
+#define SYS_GETGPID		1
 
-	$ ./ptree2 -n 1 -d 2
+#ifdef SYS_GETGPID
+static inline int sys_getgpid()
+{
+#define	__NR_getgpid	335
+        return syscall(__NR_getgpid);
+}
+#endif
+
+FILE *logfp;
+
+void do_exit(int status)
+{
+	if (logfp) {
+		fflush(logfp);
+		fclose(logfp);
+	}
+	_Exit(status);
+}
+
+int get_my_global_pid()
+{
+}
+
+int test_done()
+{
+	int rc;
+
+	rc = access(TEST_DONE, F_OK);
+	if (rc == 0)
+		return 1;
+	else if (errno == ENOENT)
+		return 0;
+
+	fprintf(logfp, "access(%s) failed, %s\n", TEST_DONE, strerror(errno));
+	do_exit(1);
+}
+
+int checkpoint_done()
+{
+	int rc;
+
+	rc = access(CKPT_DONE, F_OK);
+	if (rc == 0)
+		return 1;
+	else if (errno == ENOENT)
+		return 0;
+
+	fprintf(logfp, "access(%s) failed, %s\n", CKPT_DONE, strerror(errno));
+	do_exit(1);
+}
+
+void checkpoint_ready()
+{
+	int fd;
+
+	fd = creat(CKPT_READY, 0666, 0);
+	if (fd < 0) {
+		fprintf(logfp, "creat(%s) failed, %s\n", CKPT_READY,
+				strerror(errno));
+		do_exit(1);
+	}
+	close(fd);
+}
+
+print_exit_status(int pid, int status)
+{
+	fprintf(logfp, "Pid %d unexpected exit - ", pid);
+	if (WIFEXITED(status)) {
+		fprintf(logfp, "exit status %d\n", WEXITSTATUS(status));
+	} else if (WIFSIGNALED(status)) {
+		fprintf(logfp, "got signal %d\n", WTERMSIG(status));
+	} else {
+		fprintf(logfp, "stopped/continued ?\n");
+	}
+}
+
+void do_wait()
+{
+	int rc;
+	int n;
+	int status;
+
+	n = 0;
+	while(1) {
+		rc = waitpid(-1, &status, 0);
+		if (rc < 0)
+			break;
+
+		n++;
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+			print_exit_status(rc, status);	
+	}
+
+	if (errno != ECHILD) {
+		fprintf(logfp, "waitpid(%d) failed, error %s\n",
+					rc, strerror(errno));
+		do_exit(1);
+	}
+
+	if (getpid() == 1 && n != num_children * max_depth) {
+		fprintf(logfp, "Only %d of %d children exited ?\n",
+			num_children, num_children * max_depth);
+		do_exit(1);
+	}
+
+	do_exit(0);
+}
+
+static do_child(int depth, char *suffix);
+
+create_children(int depth, char *parent_suffix)
+{
+	int i;
+	int child_pid;
+	char suffix[1024];
+
+	for (i = 0; i < num_children; i++) {
+		sprintf(suffix, "%s-%d", parent_suffix, i);
+
+		child_pid = fork();
+		if (child_pid == 0)
+			do_child(depth, suffix);
+		else if (child_pid < 0) {
+			fprintf(logfp, "fork() failed, depth %d, "
+				"child %d, error %s\n", depth, i,
+				strerror(errno));
+			do_exit(1);
+		}
+	}
+}
+
+do_child(int depth, char *suffix)
+{
+	int i;
+	FILE *cfp;
+	char cfile[256];
+	char *mode = "w";
+
+	/*
+	 * Recursively calls do_child() and both parent and child
+	 * execute the code below
+	 */
+	if (depth < max_depth)
+		create_children(depth+1, suffix);
+
+	sprintf(cfile, "%s%s", LOG_FILE, suffix);
+
+	i = 0;
+	while (!test_done()) {
+		/* truncate the first time, append after that */
+		cfp = fopen(cfile, mode);
+		mode = "a";
+		if (!cfp) {
+			fprintf(logfp, "fopen(%s) failed, error %s\n", cfile,
+					strerror(errno));
+			do_exit(1);
+		}
+		fprintf(cfp, "gpid %d, pid %d: i %d\n", sys_getgpid(),
+				getpid(), i++);
+		fflush(cfp);
+		sleep(1);
+		fprintf(cfp, "gpid %d: woke up from sleep(1)\n", sys_getgpid());
+		fflush(cfp);
+		fclose(cfp);
+	}
+
+	/* Wait for any children that pre-deceased us */
+	do_wait();
+
+	do_exit(0);
+}
+
+static void usage(char *argv[])
+{
+	printf("%s [h] [-d max-depth] [-n max-children]\n", argv[0]);
+	printf("\t <max-depth> max depth of process tree, default 3\n");
+	printf("\t <num-children> # of children per process, default 3\n");
+	do_exit(1);
+}
+
+main(int argc, char *argv[])
+{
+	int c;
+	int i;
+	int status;
+
+	if (test_done()) {
+		printf("Remove %s before running test\n", TEST_DONE);
+		do_exit(1);
+	}
+
+	while ((c = getopt(argc, argv, "hd:n:")) != EOF) {
+		switch (c) {
+		case 'd': max_depth = atoi(optarg); break;
+		case 'n': num_children = atoi(optarg); break;
+		case 'h':
+		default:
+			usage(argv);
+		}
+	};
+
+
+	logfp = fopen(LOG_FILE, "w");
+	if (!logfp) {
+		fprintf(stderr, "fopen(%s) failed, %s\n", LOG_FILE,
+					strerror(errno));
+		fflush(stderr);
+		do_exit(1);
+	}
+	close(0);close(1);close(2);
+
+	create_children(1, "");
+
+	/*
+ 	 * Now that we closed the special files and created process tree
+	 * tell any wrapper scripts, we are ready for checkpoint
+	 */
+	checkpoint_ready();
+
+#if 0
+	while(!checkpoint_done())
+		sleep(1);
+#endif
+
+	do_wait();
+}
+
+--C7zPtVaVf+AK4Oqc
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--C7zPtVaVf+AK4Oqc--
