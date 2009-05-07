@@ -1,16 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v14][PATCH 53/54] Detect resource leaks for	whole-container
-	checkpoint
-Date: Thu, 07 May 2009 00:11:41 -0400
-Message-ID: <4A025F7D.3050403@cs.columbia.edu>
-References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
-	<1240961064-13991-54-git-send-email-orenl@cs.columbia.edu>
-	<20090507035026.GB6003@linux.vnet.ibm.com>
+From: Fuscaldo Olecki <unpronounced-HmqbO/o+/QRWk0Htik3J/w@public.gmane.org>
+Subject: A Simple French Kliss Tutorial
+Date: Thu, 07 May 2009 04:56:38 +0000
+Message-ID: <03f82e21385569cc03QPO67rgrEBY@zieh-fix.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="---------_009_5D9A95341A0F7FDA3185DD140D5B194D3Dclaw_"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090507035026.GB6003-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,96 +15,219 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+-----------_009_5D9A95341A0F7FDA3185DD140D5B194D3Dclaw_
+Content-Type: image/png;
+ name="Fuscaldo.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Fuscaldo.png"
 
+iVBORw0KGgoAAAANSUhEUgAAAXcAAAGeCAMAAABYVbGGAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
+U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADAUExURZErJrh0dFtfXP/MzdTT0t6dHRMd
+FcfBqEyX05qZZcijpyJoBPmnzJtZO62ytmZmmp/P6dirUujm5qKjwoqMi/38+/X19NPi5d5VVWaZ
+a+fGefDEFLh8HPHetXZ6eNc7O7W/vBwlUu3x8rqOhKGlpebu8zQ5Ntba25eZmpsDkplmmQAA/2m4
+4v3o8vDs5/j19fzW5y06efz47fj5+t/e3kRXqf3z+OPs7AAAZgAAmcwAAP8AAAAAAP///8zMzPH2
+9rjux5IAACnqSURBVHja7J2JQ9o8FMCxMDwYTtDq5pAxxMou5oRZdUn7//9XX+67B2hL5Uu42iZt
+019fX15fHmkrtVKculJszriL5aQ43XitkkXi9Te/aYpzp4pTy3P33D13z91z99w9d8/dc/fcPXfP
+3XP33D13z91z99w9d8/dc/fcPXfP3XP33D13z91z99w9d8/dc/fcPXfP3XP/f3CPrXQRu9KFOeMu
+lpMu4o3XKlnkYv3Nb5oucqeKk5d3r2c8d8/dc/fcPXfP3XP33D13z91z99w9d8+9JPd/etKW6IVS
+fZlj3di1rp54rraWY3uZe4ndNXQWTvMKpXnVLABj7OBfJdzNnfzbnLtV4fW5/1ufu3tzaTkJqYp7
+am5dymSso0rTf3nk2XZzauLcSwb3nOsqLbkXnG1tL/9wdEhuLukrcc8Ar2M0WP3L5p6WEHZtgaiN
+TVdW2Am+UE7tS6PgcEpwd+5gs3bVdUysXc2q9r9s7nGhHBp6VnJPs7j/c0p8Ge5pqbPwrzR39w42
+tGf+Wdcms2f+ZVb037rcnUhz5D2vAf+3IffCw6mZe2q1FVvgbulOfWVTHW6Be2pu8Z+y9MXc6fbq
+4a7WxiRj2CAOU2VN7v9ezN2wNPKs0JL3TdZlXDt390Wscndpm7fO3RK0bXDPNiUdmTvCPd0y939l
+uKclsFep33eHu3175iTr2t8W2tXauG9ivxffRzrsmX8luccv4v5C+71G7uvfr/5bg7u4b8rYpLYs
+E0Zt96t1ci9yaDjdUIWaV3XPiAPM5q5WK16L+6v6Z16fu32Fx5phnYO1pJfIBJ+lCQq8j7GKo9CL
++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
 
-Sukadev Bhattiprolu wrote:
-> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> | Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
-> | checkpoint, return an error code if the actual objects' counts are
-> | higher, indicating leaks (references to the objects from a task not
-> | being checkpointed).  Of course, by this time most of the checkpoint
-> | image has been written out to disk, so this is purely advisory.  But
-> | then, it's probably naive to argue that anything more than an advisory
-> | 'this went wrong' error code is useful.
-> | 
-> | The comparison of the objhash user counts to object refcounts as a
-> | basis for checking for leaks comes from Alexey's OpenVZ-based c/r
-> | patchset.
-> | 
-> | Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> | ---
-> |  checkpoint/checkpoint.c    |    8 +++
-> |  checkpoint/memory.c        |    2 +
-> |  checkpoint/objhash.c       |  108 +++++++++++++++++++++++++++++++++++++++----
-> |  include/linux/checkpoint.h |    2 +
-> |  4 files changed, 110 insertions(+), 10 deletions(-)
-> | 
-> | diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> | index 4319976..32a0a8e 100644
-> | --- a/checkpoint/checkpoint.c
-> | +++ b/checkpoint/checkpoint.c
-> | @@ -498,6 +498,14 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
-> |  	if (ret < 0)
-> |  		goto out;
-> | 
-> | +	if (!(ctx->flags & CHECKPOINT_SUBTREE)) {
-> | +		/* verify that all objects are contained (no leaks) */
-> | +		if (!ckpt_obj_contained(ctx)) {
-> | +			ret = -EBUSY;
-> | +			goto out;
-> | +		}
-> | +	}
-> | +
-> |  	/* on success, return (unique) checkpoint identifier */
-> |  	ctx->crid = atomic_inc_return(&ctx_count);
-> |  	ret = ctx->crid;
-> | diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-> | index 7637c1e..5ae2b41 100644
-> | --- a/checkpoint/memory.c
-> | +++ b/checkpoint/memory.c
-> | @@ -687,6 +687,8 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
-> |  			ret = exe_objref;
-> |  			goto out;
-> |  		}
-> | +		/* account for all references through vma/exe_file */
-> | +		ckpt_obj_users_inc(ctx, mm->exe_file, mm->num_exe_file_vmas);
-> 
-> Do we really need to add num_exe_file_vmas here ?
-> 
-> A quick look at all callers for added_exe_file_vma() seems to show that
-> those callers also do a get_file().
+-----------_009_5D9A95341A0F7FDA3185DD140D5B194D3Dclaw_
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Each vma whose file is the same as mm->exe_file causes the refcount
-of that file to increase by 2: once by vma->vm_file, and once via
-added_exe_file_vma(). The c/r code calls ckpt_obj_checkpoint() only
-once, thus once one obj_file_grab() for that file. The code above
-accounts for the missing count.
-
-> 
-> Anyway, when I try to C/R a simple process tree, I get -EBUSY because
-> ckpt_obj_contained() finds a ref-count mismatch for the executable file.
-
-Are you certain the culprit is this count and not, possibly, some
-other "leak" ?  If so, do you know what's the count difference ?
-Posting the test program and a description of what you did would
-be useful...
-
-> 
-> I suspect the above increment of 'num_exe_file_vmas' is causing 
-> 'obj->users' to exceed the value returned by the file's ->ref_users().
-> 
-> Or, when incrementing by 'num_exe_file_vmas', should we also call
-> obj_file_grab() ('num_exe_file_vmas' times) to keep the ref counts
-> in sync ?
-> 
-
-The objhash only keeps a single refocunt of the objects that it holds
-(accounted for in the comparison already). It also keeps users count
-that accounts for the number of times it was observed while doing the
-checkpoint. If there are no leaks, then "users + 1 = real-ref-count".
-
-Oren.
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+-----------_009_5D9A95341A0F7FDA3185DD140D5B194D3Dclaw_--
