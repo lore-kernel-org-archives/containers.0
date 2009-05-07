@@ -1,7 +1,7 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: IO scheduler based IO Controller V2
-Date: Thu, 7 May 2009 14:22:55 +0200
-Message-ID: <20090507122254.GA5892__1910.40692520819$1241699063$gmane$org@linux>
+Date: Thu, 7 May 2009 10:11:26 -0400
+Message-ID: <20090507141126.GA9463__45073.1892757632$1241706197$gmane$org@redhat.com>
 References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
 	<20090505132441.1705bfad.akpm@linux-foundation.org>
 	<20090506023332.GA1212@redhat.com>
@@ -22,7 +22,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
@@ -106,181 +106,257 @@ On Thu, May 07, 2009 at 11:04:50AM +0200, Andrea Righi wrote:
 > 
 > And the results on my PC:
 > 
-> 2.6.30-rc4
-> ~~~~~~~~~~
-> $ sudo sh test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 21.3406 s, 11.5 MB/s
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 11.989 s, 20.5 MB/s
-> $ sudo sh test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 23.4436 s, 10.5 MB/s
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 11.9555 s, 20.5 MB/s
-> $ sudo sh test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 21.622 s, 11.3 MB/s
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 11.9856 s, 20.5 MB/s
-> $ sudo sh test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 21.5664 s, 11.4 MB/s
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 11.8522 s, 20.7 MB/s
-> 
-> 2.6.30-rc4 + io-throttle, no BW limit, both tasks in the root cgroup
-> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-> $ sudo sh ./test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 23.6739 s, 10.4 MB/s
-> BE: cgroup 4:blockio:/
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 12.2853 s, 20.0 MB/s
-> RT: 4:blockio:/
-> $ sudo sh ./test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 23.7483 s, 10.3 MB/s
-> BE: cgroup 4:blockio:/
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 12.3597 s, 19.9 MB/s
-> RT: 4:blockio:/
-> $ sudo sh ./test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 23.6843 s, 10.4 MB/s
-> BE: cgroup 4:blockio:/
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 12.4886 s, 19.6 MB/s
-> RT: 4:blockio:/
-> $ sudo sh ./test.sh | sort
-> BE: 234+0 records in
-> BE: 234+0 records out
-> BE: 245366784 bytes (245 MB) copied, 23.8621 s, 10.3 MB/s
-> BE: cgroup 4:blockio:/
-> RT: 234+0 records in
-> RT: 234+0 records out
-> RT: 245366784 bytes (245 MB) copied, 12.6737 s, 19.4 MB/s
-> RT: 4:blockio:/
-> 
+
+[..]
+
 > The difference seems to be just the expected overhead.
 
-BTW, it is possible to reduce the io-throttle overhead even more for non
-io-throttle users (also when CONFIG_CGROUP_IO_THROTTLE is enabled) using
-the trick below.
+Hm..., something is really amiss here. I took your scripts and ran on
+my system and I still see the issue. There is nothing else running on the
+system and it is isolated.
 
-2.6.30-rc4 + io-throttle + following patch, no BW limit, tasks in root cgroup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ sudo sh test.sh | sort
-BE: 234+0 records in
-BE: 234+0 records out
-BE: 245366784 bytes (245 MB) copied, 17.462 s, 14.1 MB/s
-BE: 4:blockio:/
-RT: 234+0 records in
-RT: 234+0 records out
-RT: 245366784 bytes (245 MB) copied, 11.7865 s, 20.8 MB/s
-RT: 4:blockio:/
-$ sudo sh test.sh | sort
-BE: 234+0 records in
-BE: 234+0 records out
-BE: 245366784 bytes (245 MB) copied, 18.8375 s, 13.0 MB/s
-BE: 4:blockio:/
-RT: 234+0 records in
-RT: 234+0 records out
-RT: 245366784 bytes (245 MB) copied, 11.9148 s, 20.6 MB/s
-RT: 4:blockio:/
-$ sudo sh test.sh | sort
-BE: 234+0 records in
-BE: 234+0 records out
-BE: 245366784 bytes (245 MB) copied, 19.6826 s, 12.5 MB/s
-BE: 4:blockio:/
-RT: 234+0 records in
-RT: 234+0 records out
-RT: 245366784 bytes (245 MB) copied, 11.8715 s, 20.7 MB/s
-RT: 4:blockio:/
-$ sudo sh test.sh | sort
-BE: 234+0 records in
-BE: 234+0 records out
-BE: 245366784 bytes (245 MB) copied, 18.9152 s, 13.0 MB/s
-BE: 4:blockio:/
-RT: 234+0 records in
-RT: 234+0 records out
-RT: 245366784 bytes (245 MB) copied, 11.8925 s, 20.6 MB/s
-RT: 4:blockio:/
+2.6.30-rc4 + io-throttle patches V16
+===================================
+It is freshly booted system with nothing extra running on it. This is a
+4 core system.
 
-[ To be applied on top of io-throttle v16 ]
+Disk1
+=====
+This is a fast disk which supports queue depth of 31.
 
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- block/blk-io-throttle.c |   16 ++++++++++++++--
- 1 files changed, 14 insertions(+), 2 deletions(-)
+Following is the output picked from dmesg for my device properties.
+[    3.016099] sd 2:0:0:0: [sdb] 488397168 512-byte hardware sectors: (250
+GB/232 GiB)
+[    3.016188] sd 2:0:0:0: Attached scsi generic sg2 type 0
 
-diff --git a/block/blk-io-throttle.c b/block/blk-io-throttle.c
-index e2dfd24..8b45c71 100644
---- a/block/blk-io-throttle.c
-+++ b/block/blk-io-throttle.c
-@@ -131,6 +131,14 @@ struct iothrottle_node {
- 	struct iothrottle_stat stat;
- };
- 
-+/*
-+ * This is a trick to reduce the unneded overhead when io-throttle is not used
-+ * at all. We use a counter of the io-throttle rules; if the counter is zero,
-+ * we immediately return from the io-throttle hooks, without accounting IO and
-+ * without checking if we need to apply some limiting rules.
-+ */
-+static atomic_t iothrottle_node_count __read_mostly;
-+
- /**
-  * struct iothrottle - throttling rules for a cgroup
-  * @css: pointer to the cgroup state
-@@ -193,6 +201,7 @@ static void iothrottle_insert_node(struct iothrottle *iot,
- {
- 	WARN_ON_ONCE(!cgroup_is_locked());
- 	list_add_rcu(&n->node, &iot->list);
-+	atomic_inc(&iothrottle_node_count);
- }
- 
- /*
-@@ -214,6 +223,7 @@ iothrottle_delete_node(struct iothrottle *iot, struct iothrottle_node *n)
- {
- 	WARN_ON_ONCE(!cgroup_is_locked());
- 	list_del_rcu(&n->node);
-+	atomic_dec(&iothrottle_node_count);
- }
- 
- /*
-@@ -250,8 +260,10 @@ static void iothrottle_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
- 	 * reference to the list.
- 	 */
- 	if (!list_empty(&iot->list))
--		list_for_each_entry_safe(n, p, &iot->list, node)
-+		list_for_each_entry_safe(n, p, &iot->list, node) {
- 			kfree(n);
-+			atomic_dec(&iothrottle_node_count);
-+		}
- 	kfree(iot);
- }
- 
-@@ -836,7 +848,7 @@ cgroup_io_throttle(struct bio *bio, struct block_device *bdev, ssize_t bytes)
- 	unsigned long long sleep;
- 	int type, can_sleep = 1;
- 
--	if (iothrottle_disabled())
-+	if (iothrottle_disabled() || !atomic_read(&iothrottle_node_count))
- 		return 0;
- 	if (unlikely(!bdev))
- 		return 0;
+Following are the results of 4 runs of your script. (Just changed the 
+script to read right file on my system if=/mnt/sdb/zerofile1).
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 4.38435 s, 53.4 MB/s
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 5.20706 s, 45.0 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.12953 s, 45.7 MB/s
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 5.23573 s, 44.7 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 3.54644 s, 66.0 MB/s
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 5.19406 s, 45.1 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 5.21908 s, 44.9 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.23802 s, 44.7 MB/s
+
+Disk2
+=====
+This is a relatively slower disk with no command queuing.
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 7.06471 s, 33.1 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 8.01571 s, 29.2 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 7.89043 s, 29.7 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 8.03428 s, 29.1 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 7.38942 s, 31.7 MB/s
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 8.01146 s, 29.2 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 7.78351 s, 30.1 MB/s
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 8.06292 s, 29.0 MB/s
+
+Disk3
+=====
+This is an Intel SSD.
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 0.993735 s, 236 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.98772 s, 118 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 1.8616 s, 126 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.98499 s, 118 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 1.01174 s, 231 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.99143 s, 118 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 1.96132 s, 119 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.97746 s, 118 MB/s
+
+Results without io-throttle patches (vanilla 2.6.30-rc4)
+========================================================
+
+Disk 1
+======
+This is relatively faster SATA drive with command queuing enabled.
+
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 2.84065 s, 82.4 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.30087 s, 44.2 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 2.69688 s, 86.8 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.18175 s, 45.2 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 2.73279 s, 85.7 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.21803 s, 44.9 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 2.69304 s, 87.0 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 5.17821 s, 45.2 MB/s
+
+Disk 2
+======
+Slower disk with no command queuing.
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 4.29453 s, 54.5 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 8.04978 s, 29.1 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 3.96924 s, 59.0 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 7.74984 s, 30.2 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 4.11254 s, 56.9 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 7.8678 s, 29.8 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 3.95979 s, 59.1 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 7.73976 s, 30.3 MB/s
+
+Disk3
+=====
+Intel SSD
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 0.996762 s, 235 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.93268 s, 121 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 0.98511 s, 238 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.92481 s, 122 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 0.986981 s, 237 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.9312 s, 121 MB/s
+
+[root@chilli io-throttle-tests]# ./andrea-test-script.sh 
+RT: 223+1 records in
+RT: 223+1 records out
+RT: 234179072 bytes (234 MB) copied, 0.988448 s, 237 MB/s
+BE: 223+1 records in
+BE: 223+1 records out
+BE: 234179072 bytes (234 MB) copied, 1.93885 s, 121 MB/s
+
+So I am still seeing the issue with differnt kind of disks also. At this point
+of time I am really not sure why I am seeing such results.
+
+I have following patches applied on 30-rc4 (V16).
+
+3954-vivek.goyal2008-res_counter-introduce-ratelimiting-attributes.patch
+3955-vivek.goyal2008-page_cgroup-provide-a-generic-page-tracking-infrastructure.patch
+3956-vivek.goyal2008-io-throttle-controller-infrastructure.patch
+3957-vivek.goyal2008-kiothrottled-throttle-buffered-io.patch
+3958-vivek.goyal2008-io-throttle-instrumentation.patch
+3959-vivek.goyal2008-io-throttle-export-per-task-statistics-to-userspace.patch
+
+Thanks
+Vivek
