@@ -1,14 +1,14 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/1] s390: cr: fix unterminated #ifndef
-Date: Thu, 07 May 2009 16:17:27 -0500
-Message-ID: <m31vr0395k.fsf@pobox.com>
-References: <20090507203033.GA22542@us.ibm.com>
+Date: Thu, 7 May 2009 16:30:51 -0500
+Message-ID: <20090507213051.GB23955@us.ibm.com>
+References: <20090507203033.GA22542@us.ibm.com> <m31vr0395k.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090507203033.GA22542-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message
-	of "Thu\, 7 May 2009 15\:30\:33 -0500")
+Content-Disposition: inline
+In-Reply-To: <m31vr0395k.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> With this, v15 compiles and does checkpoint/restart just fine
-> on s390.
->
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  arch/s390/include/asm/checkpoint_hdr.h |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
->
-> diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
-> index 292dc33..48ee296 100644
-> --- a/arch/s390/include/asm/checkpoint_hdr.h
-> +++ b/arch/s390/include/asm/checkpoint_hdr.h
-> @@ -80,4 +80,5 @@ struct ckpt_hdr_header_arch {
->  	struct ckpt_hdr h;
->  };
->  
-> +#endif /* __s390x__ */
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> > With this, v15 compiles and does checkpoint/restart just fine
+> > on s390.
+> >
+> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  arch/s390/include/asm/checkpoint_hdr.h |    1 +
+> >  1 files changed, 1 insertions(+), 0 deletions(-)
+> >
+> > diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+> > index 292dc33..48ee296 100644
+> > --- a/arch/s390/include/asm/checkpoint_hdr.h
+> > +++ b/arch/s390/include/asm/checkpoint_hdr.h
+> > @@ -80,4 +80,5 @@ struct ckpt_hdr_header_arch {
+> >  	struct ckpt_hdr h;
+> >  };
+> >  
+> > +#endif /* __s390x__ */
+> 
+> I suggest just removing the #ifdef __s390x__.  32-bit builds may not be
+> supported or tested yet, but just having the declarations isn't going to
+> break things.  And it's one less thing to stumble over if someone does
+> implement 32-bit support.
 
-I suggest just removing the #ifdef __s390x__.  32-bit builds may not be
-supported or tested yet, but just having the declarations isn't going to
-break things.  And it's one less thing to stumble over if someone does
-implement 32-bit support.
+Actually, you're more right than you know - CONFIG_CHECKPOINT already is
+off if not 64bit :)
+
+So yeah, the ifdef should just be removed.
+
+thanks,
+-serge
