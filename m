@@ -1,11 +1,20 @@
-From: Vantrump Requena <packeting-CfNZ3gTbIWdWk0Htik3J/w@public.gmane.org>
-Subject: How Too Satisfy A Man In Bed
-Date: Fri, 08 May 2009 19:33:42 +0000
-Message-ID: <4A0486627503863@codepesa.com>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: IO scheduler based IO Controller V2
+Date: Fri, 8 May 2009 22:05:01 +0200
+Message-ID: <20090508200458.GA3708__32918.9299060546$1241813278$gmane$org@linux>
+References: <20090506023332.GA1212@redhat.com>
+	<20090506203228.GH8180@redhat.com> <20090506213453.GC4282@linux>
+	<20090506215235.GJ8180@redhat.com> <20090507090450.GA4613@linux>
+	<20090507141126.GA9463@redhat.com>
+	<20090507144501.GB9463@redhat.com>
+	<20090507153642.GC9463@redhat.com> <20090507221900.GA29774@linux>
+	<20090508180951.GG7293@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="-------------0c40bd744d00a87c26f1"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090508180951.GG7293-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,217 +24,389 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
----------------0c40bd744d00a87c26f1
-Content-Type: image/png;
- name="Vantrump.png"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="Vantrump.png"
+On Fri, May 08, 2009 at 02:09:51PM -0400, Vivek Goyal wrote:
+> On Fri, May 08, 2009 at 12:19:01AM +0200, Andrea Righi wrote:
+> > On Thu, May 07, 2009 at 11:36:42AM -0400, Vivek Goyal wrote:
+> > > Hmm.., my old config had "AS" as default scheduler that's why I was seeing
+> > > the strange issue of RT task finishing after BE. My apologies for that. I
+> > > somehow assumed that CFQ is default scheduler in my config.
+> > 
+> > ok.
+> > 
+> > > 
+> > > So I have re-run the test to see if we are still seeing the issue of
+> > > loosing priority and class with-in cgroup. And we still do..
+> > > 
+> > > 2.6.30-rc4 with io-throttle patches
+> > > ===================================
+> > > Test1
+> > > =====
+> > > - Two readers, one BE prio 0 and other BE prio 7 in a cgroup limited with
+> > >   8MB/s BW.
+> > > 
+> > > 234179072 bytes (234 MB) copied, 55.8448 s, 4.2 MB/s
+> > > prio 0 task finished
+> > > 234179072 bytes (234 MB) copied, 55.8878 s, 4.2 MB/s
+> > > 
+> > > Test2
+> > > =====
+> > > - Two readers, one RT prio 0 and other BE prio 7 in a cgroup limited with
+> > >   8MB/s BW.
+> > > 
+> > > 234179072 bytes (234 MB) copied, 55.8876 s, 4.2 MB/s
+> > > 234179072 bytes (234 MB) copied, 55.8984 s, 4.2 MB/s
+> > > RT task finished
+> > 
+> > ok, coherent with the current io-throttle implementation.
+> > 
+> > > 
+> > > Test3
+> > > =====
+> > > - Reader Starvation
+> > > - I created a cgroup with BW limit of 64MB/s. First I just run the reader
+> > >   alone and then I run reader along with 4 writers 4 times. 
+> > > 
+> > > Reader alone
+> > > 234179072 bytes (234 MB) copied, 3.71796 s, 63.0 MB/s
+> > > 
+> > > Reader with 4 writers
+> > > ---------------------
+> > > First run
+> > > 234179072 bytes (234 MB) copied, 30.394 s, 7.7 MB/s 
+> > > 
+> > > Second run
+> > > 234179072 bytes (234 MB) copied, 26.9607 s, 8.7 MB/s
+> > > 
+> > > Third run
+> > > 234179072 bytes (234 MB) copied, 37.3515 s, 6.3 MB/s
+> > > 
+> > > Fourth run
+> > > 234179072 bytes (234 MB) copied, 36.817 s, 6.4 MB/s
+> > > 
+> > > Note that out of 64MB/s limit of this cgroup, reader does not get even
+> > > 1/5 of the BW. In normal systems, readers are advantaged and reader gets
+> > > its job done much faster even in presence of multiple writers.   
+> > 
+> > And this is also coherent. The throttling is equally probable for read
+> > and write. But this shouldn't happen if we saturate the physical disk BW
+> > (doing proportional BW control or using a watermark close to 100 in
+> > io-throttle). In this case IO scheduler logic shouldn't be totally
+> > broken.
+> >
+> 
+> Can you please explain the watermark a bit more? So blockio.watermark=90
+> mean 90% of what? total disk BW? But disk BW varies based on work load?
 
-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
-rkJggg==
+The controller starts to apply throttling rules only when the total disk
+BW utilization is greater than 90%.
 
----------------0c40bd744d00a87c26f1
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+The consumed BW is evaluated as (cpu_ticks / io_ticks * 100), where
+cpu_ticks are the ticks (in jiffies) since the last i/o request and
+io_ticks is the difference of ticks accounted to a particular block
+device, retrieved by:
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
----------------0c40bd744d00a87c26f1--
+part_stat_read(bdev->bd_part, io_ticks)
+
+BTW it's the same metric (%util) used by iostat.
+
+> 
+> > Doing a very quick test with io-throttle, using a 10MB/s BW limit and
+> > blockio.watermark=90:
+> > 
+> > Launching reader
+> > 256+0 records in
+> > 256+0 records out
+> > 268435456 bytes (268 MB) copied, 32.2798 s, 8.3 MB/s
+> > 
+> > In the same time the writers wrote ~190MB, so the single reader got
+> > about 1/3 of the total BW.
+> > 
+> > 182M testzerofile4
+> > 198M testzerofile1
+> > 188M testzerofile3
+> > 189M testzerofile2
+> > 
+> 
+> But its now more a max bw controller at all now? I seem to be getting the
+> total BW of (268+182+198+188+189)/32 = 32MB/s and you set the limit to
+> 10MB/s?
+>  
+
+The limit of 10MB/s is applied only when the consumed disk BW hits 90%.
+
+If the disk is not fully saturated no limit is applied. It's nothing
+more than soft limiting, to avoid to waste the unused disk BW that we
+have with hard limits. This is similar to the proportional approach from
+a certain point of view.
+
+But ok, this only reduces the number of times that we block the IO
+requests. The fact is that when we apply throttling the probability to
+block a read or a write it's the same also in this case.
+
+> 
+> [..]
+> > What are the results with your IO scheduler controller (if you already
+> > have them, otherwise I'll repeat this test in my system)? It seems a
+> > very interesting test to compare the advantages of the IO scheduler
+> > solution respect to the io-throttle approach.
+> > 
+> 
+> I had not done any reader writer testing so far. But you forced me to run
+> some now. :-) Here are the results. 
+
+Good! :)
+
+> 
+> Because one is max BW controller and other is proportional BW controller
+> doing exact comparison is hard. Still....
+> 
+> Test1
+> =====
+> Try to run lots of writers (50 random writers using fio and 4 sequential
+> writers with dd if=/dev/zero) and one single reader either in root group
+> or with in one cgroup to show that readers are not starved by writers
+> as opposed to io-throttle controller.
+> 
+> Run test1 with vanilla kernel with CFQ
+> =====================================
+> Launched 50 fio random writers, 4 sequential writers and 1 reader in root
+> and noted how long it takes reader to finish. Also noted the per second output
+> from iostat -d 1 -m /dev/sdb1 to monitor how disk throughput varies.
+> 
+> ***********************************************************************
+> # launch 50 writers fio job
+> 
+> fio_args="--size=64m --rw=write --numjobs=50 --group_reporting"
+> fio $fio_args --name=test2 --directory=/mnt/sdb/fio2/ --output=/mnt/sdb/fio2/test2.log > /dev/null  &
+> 
+> #launch 4 sequential writers
+> ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile1 bs=4K count=524288 &
+> ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile2 bs=4K count=524288 &
+> ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile3 bs=4K count=524288 &
+> ionice -c 2 -n 7 dd if=/dev/zero of=/mnt/sdb/testzerofile4 bs=4K count=524288 &
+> 
+> echo "Sleeping for 5 seconds"
+> sleep 5
+> echo "Launching reader"
+> 
+> ionice -c 2 -n 0 dd if=/mnt/sdb/zerofile2 of=/dev/zero &
+> wait $!
+> echo "Reader Finished"
+> ***************************************************************************
+> 
+> Results
+> -------
+> 234179072 bytes (234 MB) copied, 4.55047 s, 51.5 MB/s
+> 
+> Reader finished in 4.5 seconds. Following are few lines from iostat output
+> 
+> ***********************************************************************
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            151.00         0.04        48.33          0         48
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            120.00         1.78        31.23          1         31
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            504.95        56.75         7.51         57          7
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            547.47        62.71         4.47         62          4
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            441.00        49.80         7.82         49          7
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            441.41        48.28        13.84         47         13
+> 
+> *************************************************************************
+> 
+> Note how, first write picks up and then suddenly reader comes in and CFQ
+> allocates a huge chunk of BW to reader to give it the advantage.
+> 
+> Run Test1 with IO scheduler based io controller patch
+> =====================================================
+> 
+> 234179072 bytes (234 MB) copied, 5.23141 s, 44.8 MB/s 
+> 
+> Reader finishes in 5.23 seconds. Why does it take more time than CFQ,
+> because looks like current algorithm is not punishing writers that hard.
+> This can be fixed and not an issue.
+> 
+> Following is some output from iostat.
+> 
+> **********************************************************************
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            139.60         0.04        43.83          0         44
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            227.72        16.88        29.05         17         29
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            349.00        35.04        16.06         35         16
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            339.00        34.16        21.07         34         21
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            343.56        36.68        12.54         37         12
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            378.00        38.68        19.47         38         19
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            532.00        59.06        10.00         59         10
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            125.00         2.62        38.82          2         38
+> ************************************************************************
+> 
+> Note how read throughput goes up when reader comes in. Also note that
+> writer is still getting some decent IO done and that's why reader took
+> little bit more time as compared to CFQ.
+> 
+> 
+> Run Test1 with IO throttle patches
+> ==================================
+> 
+> Now same test is run with io-throttle patches. The only difference is that
+> it run the test in a cgroup with max limit of 32MB/s. That should mean 
+> that effectvily we got a disk which can support at max 32MB/s of IO rate.
+> If we look at above CFQ and io controller results, it looks like with
+> above load we touched a peak of 70MB/s.  So one can think of same test
+> being run on a disk roughly half the speed of original disk.
+> 
+> 234179072 bytes (234 MB) copied, 144.207 s, 1.6 MB/s
+> 
+> Reader got a disk rate of 1.6MB/s (5 %) out of 32MB/s capacity, as opposed to
+> the case CFQ and io scheduler controller where reader got around 70-80% of
+> disk BW under similar work load.
+> 
+> Test2
+> =====
+> Run test2 with io scheduler based io controller
+> ===============================================
+> Now run almost same test with a little difference. This time I create two
+> cgroups of same weight 1000. I run the 50 fio random writer in one cgroup
+> and 4 sequential writers and 1 reader in second group. This test is more
+> to show that proportional BW IO controller is working and because of
+> reader in group1, group2 writes are not killed (providing isolation) and
+> secondly, reader still gets preference over the writers which are in same
+> group.
+> 
+> 				root
+> 			     /       \		
+> 			  group1     group2
+> 		  (50 fio writers)   ( 4 writers and one reader)
+> 
+> 234179072 bytes (234 MB) copied, 12.8546 s, 18.2 MB/s
+> 
+> Reader finished in almost 13 seconds and got around 18MB/s. Remember when
+> everything was in root group reader got around 45MB/s. This is to account
+> for the fact that half of the disk is now being shared by other cgroup
+> which are running 50 fio writes and reader can't steal the disk from them.
+> 
+> Following is some portion of iostat output when reader became active
+> *********************************************************************
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            103.92         0.03        40.21          0         41
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            240.00        15.78        37.40         15         37
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            206.93        13.17        28.50         13         28
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            224.75        15.39        27.89         15         28
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            270.71        16.85        25.95         16         25
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            215.84         8.81        32.40          8         32
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            216.16        19.11        20.75         18         20
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            211.11        14.67        35.77         14         35
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            208.91        15.04        26.95         15         27
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            277.23        24.30        28.53         24         28
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            202.97        12.29        34.79         12         35
+> **********************************************************************
+> 
+> Total disk throughput is varying a lot, on an average it looks like it
+> is getting 45MB/s. Lets say 50% of that is going to cgroup1 (fio writers),
+> then out of rest of 22 MB/s reader seems to have to 18MB/s. These are
+> highly approximate numbers. I think I need to come up with some kind of 
+> tool to measure per cgroup throughput (like we have for per partition
+> stat) for more accurate comparision.
+> 
+> But the point is that second cgroup got the isolation and read got
+> preference with-in same cgroup. The expected behavior.
+> 
+> Run test2 with io-throttle
+> ==========================
+> Same setup of two groups. The only difference is that I setup two groups
+> with (16MB) limit. So previous 32MB limit got divided between two cgroups
+> 50% each.
+> 
+> - 234179072 bytes (234 MB) copied, 90.8055 s, 2.6 MB/s
+> 
+> Reader took 90 seconds to finish.  It seems to have got around 16% of
+> available disk BW (16MB) to it.
+> 
+> iostat output is long. Will just paste one section.
+> 
+> ************************************************************************
+> [..]
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            141.58        10.16        16.12         10         16
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            174.75         8.06        12.31          7         12
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1             47.52         0.12         6.16          0          6
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1             82.00         0.00        31.85          0         31
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1            141.00         0.00        48.07          0         48
+> 
+> Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+> sdb1             72.73         0.00        26.52          0         26
+>  
+> 
+> ***************************************************************************
+> 
+> Conclusion
+> ==========
+> It just reaffirms that with max BW control, we are not doing a fair job
+> of throttling hence no more hold the IO scheduler properties with-in
+> cgroup.
+> 
+> With proportional BW controller implemented at IO scheduler level, one
+> can do very tight integration with IO controller and hence retain 
+> IO scheduler behavior with-in cgroup.
+
+It is worth to bug you I would say :). Results are interesting,
+definitely. I'll check if it's possible to merge part of the io-throttle
+max BW control in this controller and who knows if finally we'll be able
+to converge to a common proposal...
+
+Thanks,
+-Andrea
