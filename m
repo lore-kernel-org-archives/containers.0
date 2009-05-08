@@ -1,17 +1,17 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO Controller V2
-Date: Fri, 8 May 2009 09:37:40 -0400
-Message-ID: <20090508133740.GD7293@redhat.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<4A014619.1040000@cn.fujitsu.com>
-	<20090506161012.GC8180@redhat.com>
-	<4A027348.6000808@cn.fujitsu.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v14][PATCH 53/54] Detect resource leaks
+	for	whole-containercheckpoint
+Date: Fri, 8 May 2009 09:44:40 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0905080942450.3377@takamine.ncl.cs.columbia.edu>
+References: <1240961064-13991-1-git-send-email-orenl@cs.columbia.edu>
+	<1240961064-13991-54-git-send-email-orenl@cs.columbia.edu>
+	<20090507061321.GA13725@linux.vnet.ibm.com>
+	<20090507214501.GA29671@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A027348.6000808-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090507214501.GA29671-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,180 +21,120 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, May 07, 2009 at 01:36:08PM +0800, Li Zefan wrote:
-> Vivek Goyal wrote:
-> > On Wed, May 06, 2009 at 04:11:05PM +0800, Gui Jianfeng wrote:
-> >> Vivek Goyal wrote:
-> >>> Hi All,
-> >>>
-> >>> Here is the V2 of the IO controller patches generated on top of 2.6.30-rc4.
-> >>> First version of the patches was posted here.
-> >> Hi Vivek,
-> >>
-> >> I did some simple test for V2, and triggered an kernel panic.
-> >> The following script can reproduce this bug. It seems that the cgroup
-> >> is already removed, but IO Controller still try to access into it.
-> >>
-> > 
-> > Hi Gui,
-> > 
-> > Thanks for the report. I use cgroup_path() for debugging. I guess that
-> > cgroup_path() was passed null cgrp pointer that's why it crashed.
-> > 
-> > If yes, then it is strange though. I call cgroup_path() only after
-> > grabbing a refenrece to css object. (I am assuming that if I have a valid
-> > reference to css object then css->cgrp can't be null).
-> > 
+On Thu, 7 May 2009, Matt Helsley wrote:
+
+> On Wed, May 06, 2009 at 11:13:21PM -0700, Sukadev Bhattiprolu wrote:
+> > Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
 > 
-> Yes, css->cgrp shouldn't be NULL.. I doubt we hit a bug in cgroup here.
-> The code dealing with css refcnt and cgroup rmdir has changed quite a lot,
-> and is much more complex than it was.
+> <snip>
 > 
-> > Anyway, can you please try out following patch and see if it fixes your
-> > crash.
-> ...
-> > BTW, I tried following equivalent script and I can't see the crash on 
-> > my system. Are you able to hit it regularly?
-> > 
+> > | > | diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+> > | > | index 7637c1e..5ae2b41 100644
+> > | > | --- a/checkpoint/memory.c
+> > | > | +++ b/checkpoint/memory.c
+> > | > | @@ -687,6 +687,8 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+> > | > |  			ret = exe_objref;
+> > | > |  			goto out;
+> > | > |  		}
+> > | > | +		/* account for all references through vma/exe_file */
+> > | > | +		ckpt_obj_users_inc(ctx, mm->exe_file, mm->num_exe_file_vmas);
+> > | > 
+> > | > Do we really need to add num_exe_file_vmas here ?
+> > | > 
+> > | > A quick look at all callers for added_exe_file_vma() seems to show that
+> > | > those callers also do a get_file().
+> > | 
+> > | Each vma whose file is the same as mm->exe_file causes the refcount
+> > | of that file to increase by 2: once by vma->vm_file, and once via
+> > | added_exe_file_vma(). The c/r code calls ckpt_obj_checkpoint() only
+> > | once, thus once one obj_file_grab() for that file. The code above
+> > | accounts for the missing count.
 > 
-> I modified the script like this:
+> Perhaps I'm misreading Oren's explanation, but the refcount on the file
+> should not be:
 > 
-> ======================
-> #!/bin/sh
-> echo 1 > /proc/sys/vm/drop_caches
-> mkdir /cgroup 2> /dev/null
-> mount -t cgroup -o io,blkio io /cgroup
-> mkdir /cgroup/test1
-> mkdir /cgroup/test2
-> echo 100 > /cgroup/test1/io.weight
-> echo 500 > /cgroup/test2/io.weight
+> 	2*#vmas(vm_file==mm->exe_file) + #fds(filp==mm->exe_file)
+
+I left the #fds from the explanation, but of course they are counted.
+
 > 
-> dd if=/dev/zero bs=4096 count=128000 of=500M.1 &
-> pid1=$!
-> echo $pid1 > /cgroup/test1/tasks
+> It should be:
 > 
-> dd if=/dev/zero bs=4096 count=128000 of=500M.2 &
-> pid2=$!
-> echo $pid2 > /cgroup/test2/tasks
+> 	#vmas(vm_file==mm->exe_file) + #fds(filp==mm->exe_file) + 1(for mm->exe_file).
+
+The current code counts #vmas (twice), #fds (once) and 1 (for 
+mm->exe_file), for each process. Then there is +1 for the copy
+that is kept in the objhash...
+
 > 
-> sleep 5
-> kill -9 $pid1
-> kill -9 $pid2
-> 
-> for ((;count != 2;))
-> {
->         rmdir /cgroup/test1 > /dev/null 2>&1
->         if [ $? -eq 0 ]; then
->                 count=$(( $count + 1 ))
->         fi
-> 
->         rmdir /cgroup/test2 > /dev/null 2>&1
->         if [ $? -eq 0 ]; then
->                 count=$(( $count + 1 ))
->         fi
-> }
-> 
-> umount /cgroup
-> rmdir /cgroup
-> ======================
-> 
-> I ran this script and got lockdep BUG. Full log and my config are attached.
-> 
-> Actually this can be triggered with the following steps on my box:
-> # mount -t cgroup -o blkio,io xxx /mnt
-> # mkdir /mnt/0
-> # echo $$ > /mnt/0/tasks
-> # echo 3 > /proc/sys/vm/drop_cache
-> # echo $$ > /mnt/tasks
-> # rmdir /mnt/0
-> 
-> And when I ran the script for the second time, my box was freezed
-> and I had to reset it.
+> because added_exe_file_vma() increments num_exe_file_vmas but does not
+> change the file reference count. So incrementing the obj count while
+> walking the vmas and fds should bring the count 1 short of matching.
 > 
 
-Thanks Li and Gui for pointing out the problem. With you script, I could
-also produce lock validator warning as well as system freeze. I could
-identify at least two trouble spots. With following patch things seems
-to be fine on my system. Can you please give it a try.
+Duh !  I recall having looked at it :/
 
+The patch below should make it:
 
+From 9574933bbdafcbc6bee9d42fd215e80d0fb25348 Mon Sep 17 00:00:00 2001
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date: Fri, 8 May 2009 02:41:19 -0400
+Subject: [PATCH] c/r: fix users count of files that are pointed to by mm->exe_file
+
+Drop the code that adds mm->num_exe_file_vmas to the users count of
+the mm->exe_file. This is unnecessary because added_exe_file_vma()
+increments num_exe_file_vmas but does not change the file reference
+count. So incrementing the obj count while walking the vmas and fds
+should bring the count 1 short of matching.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- block/elevator-fq.c |   20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
+ checkpoint/memory.c        |    2 --
+ checkpoint/objhash.c       |    2 +-
+ include/linux/checkpoint.h |    1 -
+ 3 files changed, 1 insertions(+), 4 deletions(-)
 
-Index: linux11/block/elevator-fq.c
-===================================================================
---- linux11.orig/block/elevator-fq.c	2009-05-08 08:47:45.000000000 -0400
-+++ linux11/block/elevator-fq.c	2009-05-08 09:27:37.000000000 -0400
-@@ -942,6 +942,7 @@ void entity_served(struct io_entity *ent
- 	struct io_service_tree *st;
- 
- 	for_each_entity(entity) {
-+		BUG_ON(!entity->on_st);
- 		st = io_entity_service_tree(entity);
- 		entity->service += served;
- 		entity->total_service += served;
-@@ -1652,6 +1653,14 @@ static inline int io_group_has_active_en
- 			return 1;
- 	}
- 
-+	/*
-+	 * Also check there are no active entities being served which are
-+	 * not on active tree
-+	 */
-+
-+	if (iog->sched_data.active_entity)
-+		return 1;
-+
- 	return 0;
- }
- 
-@@ -1738,7 +1747,7 @@ void iocg_destroy(struct cgroup_subsys *
- 	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
- 	struct hlist_node *n, *tmp;
- 	struct io_group *iog;
--	unsigned long flags;
-+	unsigned long flags, flags1;
- 	int queue_lock_held = 0;
- 	struct elv_fq_data *efqd;
- 
-@@ -1766,7 +1775,8 @@ retry:
- 		rcu_read_lock();
- 		efqd = rcu_dereference(iog->key);
- 		if (efqd != NULL) {
--			if (spin_trylock_irq(efqd->queue->queue_lock)) {
-+			if (spin_trylock_irqsave(efqd->queue->queue_lock,
-+						flags1)) {
- 				if (iog->key == efqd) {
- 					queue_lock_held = 1;
- 					rcu_read_unlock();
-@@ -1780,7 +1790,8 @@ retry:
- 				 * elevator hence we can proceed safely without
- 				 * queue lock.
- 				 */
--				spin_unlock_irq(efqd->queue->queue_lock);
-+				spin_unlock_irqrestore(efqd->queue->queue_lock,
-+							flags1);
- 			} else {
- 				/*
- 				 * Did not get the queue lock while trying.
-@@ -1803,7 +1814,7 @@ retry:
- locked:
- 		__iocg_destroy(iocg, iog, queue_lock_held);
- 		if (queue_lock_held) {
--			spin_unlock_irq(efqd->queue->queue_lock);
-+			spin_unlock_irqrestore(efqd->queue->queue_lock, flags1);
- 			queue_lock_held = 0;
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index fcf6481..e0ff4c1 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -687,8 +687,6 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			ret = exe_objref;
+ 			goto out;
  		}
+-		/* account for all references through vma/exe_file */
+-		ckpt_obj_users_inc(ctx, mm->exe_file, mm->num_exe_file_vmas);
  	}
-@@ -1811,6 +1822,7 @@ locked:
  
- 	BUG_ON(!hlist_empty(&iocg->group_data));
- 
-+	free_css_id(&io_subsys, &iocg->css);
- 	kfree(iocg);
+ 	h->exefile_objref = exe_objref;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 87bc5e8..dc55047 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -394,7 +394,7 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
  }
+ 
+ /* increment the 'users' count of an object */
+-void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
++static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
+ {
+ 	struct ckpt_obj *obj;
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 8ee6304..d966f19 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -53,7 +53,6 @@ extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
+ 			    enum obj_type type);
+ extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 			       enum obj_type type, int *first);
+-extern void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment);
+ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 			   enum obj_type type);
+ 
+-- 
+1.6.0.4
