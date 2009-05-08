@@ -1,14 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dcache: extrace and use d_unlinked()
-Date: Fri, 8 May 2009 14:28:00 -0500
-Message-ID: <20090508192800.GC28885__16328.5607741729$1241811044$gmane$org@us.ibm.com>
-References: <20090503233203.GK16631@x200.localdomain>
+From: Vantrump Requena <packeting-CfNZ3gTbIWdWk0Htik3J/w@public.gmane.org>
+Subject: How Too Satisfy A Man In Bed
+Date: Fri, 08 May 2009 19:33:42 +0000
+Message-ID: <4A0486627503863@codepesa.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="-------------0c40bd744d00a87c26f1"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090503233203.GK16631-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,116 +15,217 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> d_unlinked() will be used in middle-term to ban checkpointing when opened
-> but unlinked file is detected, and in long term, to detect such situation
-> and special case on it.
-> 
-> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---------------0c40bd744d00a87c26f1
+Content-Type: image/png;
+ name="Vantrump.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Vantrump.png"
 
-Well I see no errors.
+iVBORw0KGgoAAAANSUhEUgAAAVAAAAGPCAMAAAA9XngRAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
+U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADAUExURbh0c1Wk2pk2NCFoBOnTnpqZZmBp
+Wd6dHRc6AtXT0syfnvmjyWNmnJxZO62ystirUorE5qijwubj4nGObpeVl/v7+/X19d5VVejEdfDE
+FPXmxbvArvLs60BZLLh8HNc7O+Ta1szk8ywuOn8PCPrz9aOpnsGHhJOfhujr7vvW6f3o8tq4t+7x
+9P/W1t7Jydvc3//MzJsDkplmmQAA//u82jA+gvz47e3j6AAAZgAAmcwAAP8AAAAAAP///8zMzP/3
++Lp4mLAAAClRSURBVHja7J0JQ+I614AZ0TowggqUcWS5iqBeh0+djbok7f//V1/2vW0oy9T7JgiU
+Jm3Tp+ecJOektZE5UmItuFNJdlE53003TkmVum9Qu0YAGoAGoAFoABqABqABaAAagAagAWgAGoAG
+oAFoABqABqC1BZo4UstacKeS7KJyvptunFpV6r5B7YKEBpUPQAPQAHRToO96StQ1oij9pa5LHNtm
+jm3N+vFcx0G0/bnXsgxnMUfhzF0osU/HAbTo5IwDvK8H1Nz6vTpQqybrA31fH6h7d5l7HxsDNaqQ
+KFJkMNCWkzwERi0TJ07txNw0Mh8ZdSmeVjKveubpOFXerI0lC26gmSmhdE1SBOE9H2im1zDJ4ykr
+mI8tT/Cso+QCzd7zTiDLIVoG1HkAo1EygSrE8urzng80ywGaa5rlrywP6LtTRn2AZl54372Bug9g
+tvLvlprYRtLNzx+ok1WBhBboPD+ttYGWns62gGaWof0LQC37pEMytf4vAM3MPb4ra/OBsoJ7AWpC
+y2uWrLz3CkDfNwZaciaNwnZ030Dd+qTt8v29qN2qF1BbNP4C0PyekyOz7kCzvwz03Qdo5sFzlzb0
+AwB17ahol5tIaB2AVumHvvv3Q7N3p+gVXaONgG7YD90G0PVHSu9rAHWOe96LL9KaQLc5UtoK0JKx
+fOb0ReR4w5xnao1B3/P8AwWSvp+x/BpAHcqWFLtnnLaxuH7a6eU648p9S6WN2668TVlJ180XaL4/
+1FXFMn/tu7WvdYFm6wLdlj90DaDBYx9CIAFoABqABqABaAAagAagAWgAGoAGoAFoABqAuoDeff68
+4Gv6nz9/7vEfnz9P+j55iZ2nVHkUobxosaK/5p9lsirmX3S8iCboMNHiSlk57+KVqGItcY542zv1
+CPgAuwaKDtLna3CFOMEWOnbqk5fYeeIQ44ghmYx5Zh4l/6LzO5ExGYm13YlYG10pQCfKlv19AJ3L
+Y5JziNgPVOvuyicvsfPEIRCkaJTic6XZi8+fRy2WjGp5F8XkJ/1Rmi4i5ToSVndpOrrDYLsSqFQd
+KvQ7B4rPZCxY9IU4RLgqPnmJnccPsWBSvEIrU3baOVX1L4oK9MdiI1oYl56kmbn2s67zo/0ARThG
+vKoRqkyLq/jELy+x8xJhJiZzLt93YkNn8i66UMwQrsOEoZoMxVpkjSY9CjRSd4PquQ+gwhgO0amM
++RVtkbU+eYmdJ/e80I+twtCSf9HPnDxOvQkVRvSV6NDvGNC+1HlkpLr7ADrnVmuEK8ev6ILIn09e
+YudJ2e9ph76ysCmi5le0q7XbyaI/GpPLcac1WwjwnAJtySy06WofQLFRmgur1WeWkX175CV2nrTO
+uBFp9RQjRhqNSb9nG0a/omj/V9a59IXBkaVGFKhiOpDGZ3sBesds+IQp8kgxYR55iZ2XSHOakt7Q
+3ZgfiaeRZUL9ik60tipxraSX444BFTo/xnvaC1CmFT2iZHNqu3rMhOXk3Sl5LTtPdANxY0U7jD0m
+h59Rh4f04FPDMnoW1TuWypXTErXyBJ/Q+S5WqL0ARfWJqPXrkTOZ0KOPCvLS4jylX/150Ztj0Zsw
+SRpxSzsxgHoWlR1e5RT0lfS6Rnw9px1hxvsBSln0hSJfESOUFOTNlbzIzlOAtnjnEve1e6NU2syR
+CdSrqB/QRAHK2jui8XsCioTgSfRTqAZP+PjRnZcV50mgfdFmR2Y3qW8A9Ss6can85wKV5zqPKhvv
+C+gTFooWFwRcF3Q5F0lBXlacJ4GmmdvKjem5iqFladGSRmmS2yjx3Egg3oP7DrfTd3yUidUbVaiV
+FORlxXmy8b3SukWZOqyOmOUkzo/SokqH6Ek5l16/2yvuNjGdH9MrtiegmEWkKHLSl+NHZ15WnCf7
+oS1VsHoj4W+jvQgJtLSoIXv8FO70AZ0ix3MBlOj8gtZsT0ARi7moKDqBUSTHj868rDhPjpQWam+n
+K8+7a4xt/ItOuH8vo31gIooTfaClDD15b4TVbE9AcTdTNWLYBceznXlZcZ7cdKLKVU+OwyfagGed
+oncu50j6WcWM3YmJAhSVarFq7gkovuzScvU/kwueFORlxXnKoPaOC9IT87xxGxdZY0/PohPpvrsT
+bdmd4r7rKu67iHUceLO1L6B9xUNM3IZy/OjMy4rzWDeQOIOiUYrH5HdMDokXGQ9/royueGlRfqT7
+CXMw36mBgjsSPklbI3Ut32QiemX7AjpSqoYbRHz4pCBP3e7OzuNAsxaPS7BtxO+J6bAvLyounQiW
+aCGQkRICaRkd/js+bNgb0LEWKqBjk6QgT92uZecJoNlyQaJpYjQ+vsM0Jou5Xa+yoooutPokSw/S
+rbp9GqRLrRHUlVCrfQHdJNoawsgBaAAagAagAWgAGoAGoAFoABqABqABaAC6ZaBf65/eap80oLWX
+0H9qL6EBaAAagO4AKBQfZAHCGgNFlYNGqiFQXMnVajVereIY1h0ohMP7IUrL++v76+tl/YAifHB1
+eYHSIX4dXqriWjegEMZwuRzGS5wQz+vrs/oBxTgPMcoLmi4vmYwClOi33AYvq79FajabpAJNdYX8
+2hpQOERAGcvrM5SuawYUZqsLLZ2enl7AXHZkheNATfxKMD+xgrybgvG2JPR6OeQsUfr06SyRFcOf
+ZpXdx+XXuamcAVvf3BAoPJQwv12cfjv9dnwK1RrSJSau5m8VKKpAM9st0AxeL5fXDCVLBlAvMWuy
+mjYVhTIAV1b5scB5jITz+OL4eHoBtbpxiK63ATTLdi2hSNkJTv7iEqrXSlorQNfJT1ndTLv+TYtn
+RQk9vDglcklex6fHCOg4s4C6wBba0Ca96E1x7bcDFJnOT1w46bcLqPLmKPVqC5KGymsaX1FCDzFH
+LJ34Dy0eT79ntoTKa+1W+YzZULVR4kq1VaDEbBLJZFhjl4TmXX4pom4b2tRWVZTQU2w1j6nxRDg7
+xxBmlg11Vc9UeR2oXN4i0FixnUxMh4mAJay8efk1/c/R8aa1UFFCL5GSY0WnH9Pp8QoaPSRdefJt
+aHP3NjQ+Y6ou1D6GDqDOmpoqvyugMQFJ03Q6PZQjJa0fWqbymg1t7qwfyjUevcgH6uQnuq03Lj9Q
+gYIyoFtQeSSi0+MpYolpTqeXlZ0jzb2MlFiXibbzSD7VHduXXxUDXeU1G9rU+qGbj5SeKUuk7f+H
+R/V19jahgdI1w4l4Xl9jN0TJjp3jOrODtGX33erwdHp68X1cf/cd9o2gjj23n1kJUGD1RfblD43j
+j+IPxQiXaLSERkxxjB07dXQwwywrdzEFB3Pw2AegAehegf5T+/Sx4vJvtZfQt48loQHoDoGSUCIM
+QLcENMb90Psh7odCGIBuChSyGMjZ9dkSd+3rCJR4mNi8AY8O/t8FuiSuJpZqFZdXJBTG48urUxyb
+X61qDhSenX/6hP/O0B9K9QOKZHJ8dYppnl600fvyskxK/yrQIfWMnBMv8/mns3n9gMJDTBOxbJ/S
+dDGPua/GdIDlTnSwKmD6eRLhatR94009MFYKNBHRjxPiuL+GtQOKCJI/mo5Pj6fHMFtzooNVATss
+KpzkIkqihku8gS4FTfpxHivH857o4Ky8FXc0I3n02ueKAKvhJcbIhPN4ekpc9/N1Jjqo7nFHDFwB
+qnHUJ0V4A73HGAVOlKAOtLqEWjVOrNkQWWGNaQ3hBZVLEpHHODHQeJ2JDoDJBSgO3PMgg1Wt5lo2
+NKYoTxjXk2to17J0ooNDBhI7MJ408y58EdD4+JaQJKJJA3Wdi2ydiQ7O2KIFlNvQjYGenQjhxA0T
+rDLRwSEDbgnVKthsuibsmNVdUsHEKCnOaecWd0v9Jzp4AqUom9mGQLNrJSp/8uk6qzLRwVHlxD0b
+RgOaZa4ZO6aEToloTqc8VNeZrnSjVDbRwQ8oa5RUi94s4ZnXsT/hWo8VHlaZ6OAHNHHMeCoHCk9p
+xJO9Oc81JjpI/fEAapv2dYFmZ0Ll/5wpQ891Jjp4AW3mAS3p5V1NlXTQOV1lUKuhh8orsmF1B9z9
+0OYGQJef/hCkf3AfFGZVJjo4ZMADaNMPaHZ8IHFOD9fvA4uKlIyUmltyjuCu6B8M9XqpHXWNiQ4O
+GUhsGbBmQ4h2tRhofNo5IK/O9GLlM9OhItBteZuQjOLQPMFZ7m1yjuv8+qtJs1J1YRYfEgt6eum5
+YR089vK6V5no4Al0A29T9rCqe1w+hEAC0JoDDWlrYeQEp7dESy1rwZ1KsovK+W7K01tSMbWq1L1V
+4UCshkHlgw0NQLcd9ZQ3TWflXfu/DRTXMY6Xvafe031cU6Cr1SVOh4erVQxrLaGY5vA+HZyfd8/P
+z08G3bheQLFwxgjkIX4fkluSL1clYc+/PNHh/vzkzwlOf/Drz8myXkCzGN/djYBejqmMXpyermB9
+gd6f/8EJ8cRhEAR0dqLd67tBkK5olXmXkLKiafhDyd3Ih4dCQE9Pj05XlvvO8M5vCNSnem6gTyeE
+Jo/T4V+z+2wrQbqiVU0Rb1CcjqYr743zPB3Jxw+cLk6PptMruGkYufhy+1TPCfSJSSeN0Z18Qr9e
+CND1gnS2NxoY3lz8lVh3Mlpe3KZV3TEWSByWxyjx8tG0M+1cwnXul1+3dn7VcwEdEp5/iP08IeKJ
+BNQG6hGkM98gMX5nZUCbTVOl3oiAYp5H5IW+j3AMpDM9Wq0XRrZqlxXWzq96DqDx+eyPkV5mL+cw
+yyoE6YxCiSNm4rr1Tpld0DTUCld3dTS9nR7dIpy3R9MGonmEeHbaEK4ZRi4FD/R7gT2q5wAK/6hA
+X2eI5mw2WFp6Un43sh2ASoRyiQ0S6xELmWWkTKBzRPGIxTs7SNs7WD7bq9Va98vnhsdya+dTPQfQ
+FRJIzPSF/M0wztn5MoPFtXAE6RzXP7EDuobKewGNscVsdKbor4NxYoW/XeHe1Hr3y5eXM1W+ClDY
+x0KJqM7IH6L752yYwCpBujIb6tnKWyoPbwlElCL6NSUG1GiPysLIZTbUt5UvU/nsmkolwzn7M+jB
+ancjO7oBZsy2oB/qun2dV/dygikymghrpx1n1kH9VN6/dl7Vc3aben84UqT6n56GWbUgnaNQ2UjJ
+I2BHahifHkwoS/J1dBlX6gOr692noG/kF0+0gMJsmPaJGR10r8mwvlqQrgJQ7+oiogeE5hTjrBJG
+rgJ0k7F8jG9Epg9ygPW7aQFm8P70iLTtLdy41/cBBB/JH7pajYer4GAOHvsAdCOgIYW7kYPKby2m
+hPohQ/SCAeh2JDQepd1udzEYfwigJEgb05uRa3o3cox5ds8X9x8E6Ory8OLi8HJV17uRs5jgXAyW
+HwAoksqLbywdlo/s/pIN7T2lSEjP448AdCV4orSqJ9Dl03UrTdORX6v0l4EeflNTHe+Xh/FTKyVW
+NB3C2gNdHX87VoBeJsWOusLAt+I2TMwVzepAY6TvhGc3HUG9etSxrHlpc+84U52ZdpR9a0DHGs/j
+b7AYaJIVAC2OZ1eX0HSE7Cd6ob/YATQrfqC1qFWS6XduN3cioYdIQlWksQVU84UzkXDfJd103WDc
+rPpQXimh3bSLm6RuN1pAS1e8gGYOoM1sR0AxUY70+HhlApUkMy0Yk/e0eBdQolvVJbR73j6JBoPb
+wc8ioHpIowgov898k8fFFgE9FmYULcQ5QDMAip8UrpkpbkOlLGxiQ7s/B/1udPfztu8EKvQkZwIR
+Dw2ZQLNNHmicC/SSAqUJfUMbqD4BJ/dJ4aqMNpPMkNXmJhI6WEQ/o59Hg/651j4aApkjoZlpQ5uZ
+4579LbbyDCWFepi4JNQype7YfFNVr+0BjUfdAdL4weJ8oEioxc+7UVJu4d4BUKg81hylVZKn8o7b
+o9XYvApUGEwtnl1dQkfd88H54rbbXWhjJUPD12jld6nyMFN5XsBEFQCtKVeAghyVb4o5VU07nl1d
+QkkvFPeaFl2YC9TomIKcfmhT64fuxDkSk4dPUJ5ZvNlIqbmTkRLuhC4QTSSiPqP5JKdWe/I2odH7
+IcV5+lBPb9OwEXV+dtA7OhjUf+hJH7/98Px8+VBTBzOEo3a7jXqhKLU+gj9U318dnSND6hs5XwyG
+AehW3Hc4ooTe8yEMQLcBdM0U4vIhLh8kNKh8AGo9ZgZ+IKDi1umaAsWVG0Nfpn8dKCTzHOIhrOlE
+B1S9+RC/hn5I//5EBwQT/wPv5Xhcx6eEI+FENFFCH3h6U/3ul9cfkYJ4Dpfz5f0YvXpJDOv2EBcI
+0cWeD4dcSBNY74e44PpilkkPp6deDC1vWJUL6bgPMTH/FXnJzRb8EQkcJYUaQ8cR/IStMJy8PX8o
+woloPvVardZT7+mpFTu9t2sCdf3Xz6b9JFYPoNx+zpfsGypPiV7rhg72eEjVr6yEk7f2iAw47iWt
+J0Kz9YR4cqDVbvBWckQuD4skViDHC+gQWVCkRPPxkL1MoNpdafTJkJlLesVDoDNXOHlbQGOs5ggo
+FtAW5plCB1Dl2cq+N3jb/4paAWo9Pzq3urhFWiKYmOR4nGC06nPMM/OOQyCeXWoHPy2gajh5S0Bh
+jKSy94RFtEfksxW7gMrfifcN3lmuDRXxER+gY4wToRz3eknSS5CkQqjZUMdFz5zWSr3TUAOaVYl4
+5QHFYolAPpGEeA5hZmixfitl4n2Dd2Y+byCx/9GzD1CEs9fDHRD0iVpPlNyTHTSgaqxePpDVnigk
+q7SlbhOMWy1GE+NMh7HsPuCqkC/13RLLckGUt984NckLdUyaCV9B3iSWV9YpgQkiSDogCaU5HtOe
+naNujjqqqdki9WBHT7QKNLfWbYJx2hIJ8VSvlOsG78T3Bm+7lU+sVt7PhiJtf0LVRj27BP2NE6NR
+ckmoGd/Oa+W3r/KEaKrwdANd7wbvTH2Wh2lDm2v2QyHSdIwRv9AiElVo9EMta5PkdFILw8lbjHqi
+gWdK0jD2cY743ZDsuJe72tAT4m6ImjZ4VFtzX94m4huJ43Jvk/+/m97aWB7GVyT1rliq+79Qq70/
+FGatqxb6Qy/03YIB6Mbepvjx8bF19djCX3G4X34L/tAYI318TB/jD+EP/QAhEOxibF3FMNzruR2g
+kIipd1ApxOVDXH7fKr9eCiofgAagZUBrHpf/SEDZI+If5vM5+d/YMADdECiCiWk+4ARr+t+7RVVr
+DxTVkaJE6V+cyir9VyVUmTFUX6DzfxnN37+/oNfvf3l9f5BUfFwjn/5Enz9++AB1/bNk9tV0W/l4
+GC+XEArHl9v3lbjcZFnBwwRZXN71lPW1gcZELn8jmgjm73/RR+yGtRZQLwnNjdc3rZESgRmT6ULL
++57+yNjNgZKKJOXPX/UC+sBh0j/0fjBhMUGlAvuDQ2Pr5DLfhr4TuZ5JuvopziMzY59K4OxN0hQw
+n56e7p/MyS3KHAEitInuyjf+dXPO/5lODH5Vgf7+/Zvp+m8K9YsJVEL6wd6Z820CVfI4Sr1w0/VY
+46a87fpN+EUozHsybQBHFkygruC862nxRf+4e0tAY8bxN0f6pf2g2tDMBJc44LmB5pWRC/Y/m9YC
+5yxIh2limE8poZmedZeZDlT5uc4EDNOGuqaUNNcFmjGQREpJ+g0tCf3xwwKqrdN0nmUnRhlpYJWW
+Lu+fJUugMKYwKct0dNY97/agAyhw3iwNCoBqz63Xbaiwo821JfSBazxhid6Nh8yh8lLaklx1N4E6
+y5kqXwoU4aR6nnbP6HNHlvZjR4of+l8qoc08oBVU/uELaZAYzS9fbkWvKUe1E8MumlC5HCZqmR8q
+0B+5QI3GlUro0zWleY6firNcql5RHSjI/08b6wLdoJWPmZ7Try9fvzwkWW4r71b5TOuuSqCKEf7h
+Vvncf5asNErkMYKEJn5UNLT7QuUqX9rK6/3Q5kb90Pjhi5J+/p7vZiyf0zX1qC687xKaHOZuYkrN
+bQ49M6Lq6O/rF9Sp3z5QIZNV4/LLoX/0ow7uO9S3p0j/ndfYfQc/DFAyEMnwcH7u8+/Qg/sueOwD
+0AA0AM1CXH7rcfms9hKa1V5CswA0AA1AA9AANAANQAPQALQy0GFInskXaBqSV/IH+voSXj4vb6Ck
+9CDir0Au55UPVLtFmUloxGa2wXQQ0LlfuXd5uyVUAIWB6DZU/gSx/PULfeBYq2t/EO6qpuigW9/j
+flXe2Sj9+vXrFf4iMgpeX/A58jd9rXXW7IzQNuWbqYeB0PuA6iYwJ+9vSujxN0SU1i4FlAh/V7jq
+9Bz9RI8exkZRckCe7TpGDSR08g0J58uvVwlUlVJziX/CV0EOmlpM8qDcDC/TxRdrR3w1RQHNw1BR
+5+tf1QwOj118aNf11Vjej4QS+eQiioG+MASQnyP/pf5+1RY1EeFI1c1kSb6GH0aXUGW9PBjZj3o0
+KaHyur2qdXVsuJnkriGhk/SVCifkNlT84kviFNk5K/L7wktKUYWKzCibvSobqCWkjhrr5cFfXl/1
+o0kbij51NeK2W24odyL5aB8F66pI6GSK2qTW6FWq/AtnKRqHQgmVFWFi8yobJWUzhZclcapBlSIo
+D64cWDOx4qe+qSys7OR1XzZ0+gu8/lIaJa3xNVpsp4RaDY2QN5eEKruzJVQVM/XgL6/60aSEajbU
+IaEvin1+WZepIirrjJR+veDu5wCKVl5t43nz8/oibYDeD7C6LlJ6eParahOU1kWQhkpjxuFBeXAp
+oS/SFDlsKFRLmWewx5HSryOo29A9vLyEw3s1ydjd6KPSSAmqEvohX75mMl+vtzZSOlI8f5WB1pDx
+ehmF57CehM7YnX6zvLH8/84rj/ffcjDXVVar1FXL927lQ/ILgXi38qOTI/r62Uevo5Pwcr1GqbfK
+n8OQypN/GPl5BIM+e2h8vIaEBlxbDSMTCX02Nn8Ob+M9DBL6VyXUlsuQqgK1JRSU7h3U6VTBlsps
+3YY+k8FnCvjRLTtC8/GyKGWUASnNK7ZHcj+OPOd+lTfbWFkH3GVBquSBv2JDQcnlBNoSyCmxqXyD
+dTcHBcXA/iVU6YcC9om+uRTYVaQygks5igBte/GXux9xCdiy2C/dubMWjJQskFNdogOA6ENKdwv2
+bUOJr0mos6OKM4kAuC86SGep2D4X6IyfnFISfyrbpnlHSJUCqDx602+7GPGdaWVm+7ah4iSFoTLs
+myqFTlvHKEpr7CoHxBkDyV2HS7cHqfsY5gYgz55rVeHXdt82NFf6UgdQM81SIGUL5JRT95MDVMhy
+TjVmxgaznKPM2K5mnuZ9u/1QHSiw+qMW0Oc034pKToX7cQkclWGQlrR8KtC8ywa06w826GNvJqFI
+URyywWwftk20TP7Z0u1z7JZQ+ZkER+1nyvdLf89AfvM9UxqlWW4TCtQye2qUpA01rt+z5/jJZXPS
+kt9F+yrbf+pZD9dVfK7sq6gkoaC4b1GW71OiWtkqmwG95KY90eEm/lBTrtaVmecc/1Xectl7Hb0o
+kvuic9rlWD6k7drQMju6jszm2dF0Tb/WJnL7XCCnwR/6sfyhwY4GG1pLCeXheMc3WVK+7fyibfP3
+V1S277l/d/nispW/z1shLh/i8rXW+BCXr1srX9xepyXjfN916/QHWTqCFcf6+wK6Zwl1jcXZvFS/
+MfoJtHZXSwn16QOW9fvKx0oA0Mlsuo8dcNPv9giKoBEp31fqCwBMoR1R2sXckXktJRTICYKqn3Qm
+gMKXTw6/2ywFA1H+J1TiA5D4QttH1YQU68VsNxL6XOLk4rGgMhuYHhWN1ZF4ykdHKIeiEjqgN5cb
++yQRIwBk8b6oLyDSmY7S9KwBSuyoU/TpRdylDdV0x7JOXhbuqEhAI8lzYAONHOcHcCb6kMV/Kv5b
+UqXzNG2z7HyDCnIdpor1LjLIoEo/FEBVPoDp5wYe7erRv/3csTrAICEamEGIlV7uGxCc6MWAPus8
+CVGxXrTyIMUYBxhCP43MIJwrBmrMQdF67ur2LhtayWOPdY7YFaCFhwCL4YB8IZUDNZjmyijg0CBt
+mFQbikDTrJkln/R0Z1Yrj7c/S2eN9OwniNT4lR5vYnW340581/TL3J79Zssgjda3odMb7XIp+gPU
+EKKQV00/YF/cOJYOpIwRzMLmIZ7nGBvCyiT0mZ/agPyRQ0sbDJT2X1zLI15ffPg2wMdNo1kk55MA
+Nd4IlPApcAAF5MUlFOTMwABrqLyU0IkJlF0jwOZfmGFO3d4ojW+kWOU+VnBLQokbA6inFol2ySFE
+mm2VEgrJGeMHz4j4O5/aoNa7EChuB02VZ9unQIv/V4nL02aWz41zxL71dl6xS0jgMKO7aIAbeqjY
+oiMItTaJqnYDlQbGqUXkT7VjJAPQUzb7oaKRxzxT0Jfz7PTpAyZQ3Ybifcv9F87AqNLKzzT50OcP
+pWmRDU25IEVwkOodW+jqheoSSvqhEdX6mSlEgOY7+qGEaISJRlJZZla9iyV0xiRU2lB7BgZeH1WK
+KQFVPoCY4caaJqVSuX2+QZTC3PESUG/9UeRFb+WVbSnQAVBtq9oPpURREw+BmBeozMwDcqYesPvR
+pg0lc/WUxsOwytVGShsPixUNdzTz6q1UZj+UdkNtGwrEl2WswYCZTP/+eW4rX7b9xnH5NCf2UjaG
+hzljeZOo2t8UIyUfoEf6QCRCL5WoT+worx9adJ5D73s99+ptAmywpHcYZsqJzYyOxIy/c7xNbL5V
+BRFV9u0xpl/jXk+YFs9N8vMj5cfy9fVAm3vqGASW+bKOXDY6BT9gukYM3if+r6/770Y9T/5OfbcS
+l69qR9MiO7phfPy5YN9l3z4+07xjhbh8PePyefHu/hZj9OvG0n32lfftOx/AWhfi8h8oLv8felCD
+/6nvMi5/ovffPvA7hXts5fPb1SPwUfXWCovA1Lsvs8NW/icberPXRwKq/Rq4JPRo73H5NO0D5r2k
+lYw+ElAVUUSAGuf5E+Sc93znEioqGX1QoE4J7ef5BPydI9YzR4DDkadeMymh+EHtgMcQWHoif3UG
+ys+lYQM9OhlA7X47ed7+zhEuoQAUALUl9FU8qJ36wVoU6xPAf7qtGtB3YYpmYNLDm+MGuGDdFiW0
+bwLt/6QNlzPGv74/VMzZkEDdY1zSyr9Ov8mnYMtPzLVlAJ216Lso9WfjeYSEfjErXrc50GdFMHQb
+Sn3jg9SO8Vdq5fm9ljMW8JjJmDYPBDCf4QkC9tLED2p/JUS5hPbBrMuifOjHDEQxYTuekfdsAWP8
+EF1gL2DgrAEeRKpn1FqXTNBuIexFYBbF5CALJMaLfITPX0ygrA9qS+gJTEeDKE3Pj/T7oUHFuU0g
+te6z1n7LmCGW0Cl7UPurIqH9rD9jEtoCk4f7GQ3VLyLy7kdwhGCkM3sBEQILRGqJIM7Q95xs51o3
+iR56swH6uu/N+uiIDwMwmA/cEvzc/vrPP29v/5gqL/yxP3WgR+dUy49e2Nmq9+ZX8IeC1IhDs/vQ
+xZMAhEVBNnSSvsgHtXMJHeMlCjQFqGHq0hONRuQ9miGmAL3tBbxxNJzPyOyRmHxD57p7vNunhHwt
+ZvSIS5gCSywRS/7vdr9aNpTbRq2Vf45oa8RnpbG4pIjrr90PBQDIwKbjSQAKUtTKTyeoTUoZVWlD
+ydwDijXm6+PZkrwheJqh+s2+Wwsj3O4shRXG37guPWOdbPjY3vG6FoC6zX5u/PNV+//F/6D0FX98
+ETYUuPqhAx7lVFpmlcG6EgryY9pAyecS+gu8/NIbJXZqXEJ7vDH5PqFvJGgARn3Ewl5AtrRH9jOP
+7iGyAwSNY909XtVd3NO9t4C4jArQr1I4KdDG18bXf75+/fqluB8aGQ8yMOL660uolHNgxrSVj2fW
+D/0F5YPaNQltgSH5i5bY2GGO5/QNF8heDnCTYi+gEtF4idUatTU9pvKudWRxgL6W97Oo5ZJQAvXZ
+pfJvKlC7HzoYGHPvgPJ4nt3GlEg/9NcAmjaUvIcz0JsB1NjMQJ+08jMkX/gN54h/gltkcwFvOY9I
+rwC2Jqj9HtL9GutwsSQCeHYY/UpdEqpgvf2iNUpvxf1QbcLqNuLyz45bCtyxG+ptimifzZjSxVKr
+Lg4ppdv0Jvuhz65+KJ0elRt/Gu7SH8rmBAm/Yn2BKumtbKRUHJvf0vNDK/pD05oCPdKeN+1wjuTH
+8Xcnoc8nH9PB/MbnZ4vn9e/eY1/0TAe5fPQx48BvrkmYxc9+qDiWX/ff+X7Q+MebR1BkGxI6HJ2j
+V5t8no9cYW4eqGa/WckavHwCmydH/N6oN/WeHvXVYHOvo9ai1UYk2k8LuvQkf6NPb6D/K/8O/S38
+f/kANAANQAPQADQADUAD0LoCvWrfNv6z6a3SVrftq+pA253GwX833VTd8LYiUHjQ6HTaQeX1dN/u
+HBzElYDeHhy0gw11pPbNwbwK0Bsi2/9ZoP/39n9VT6xxc1sJ6M1/upW/qg6UoQlA16lAABqABqAB
+aAAagAagtQXaPri5uSUd8M4NSVZe4swLQN3p9uag3bgh54ZGfDhZeYkrLwB1p8ebgyGWP3yQm4Y7
+79GRF4Dmjg6/o8/vN0j2rsyBIs+7deTtFSiZ/rPOcQH5o+WAmbM+0IMDwqFD/RO5Px6p3cyy+Zz5
+Mr5nY3U/PC+x85LGzc0BsbxXeKmB82462OQ2sOHlnrttARUfuUBB3q8EFMoAcG1um8VH/HEzx0zy
+f9BT7nxHFDoPZDPc8jQkN56XWHnJwU2j3cFmYIyXGjcHY8zhoIFgoqPcHty0tw406+8QaFRiF29J
+s/yYDW8aOT+4UbxBQL43iJ+tg5qgdkNxufG8xMqjxgBb3gZB18Z7I7tt3WBz3OJ73yZQwLSfr2NL
+ZI1cTRaoypPlBGiA8eqErsDZbDu6D74h0I9ERCsbI2m8Rdr9veAHPeVbIpwIS7sxJKza0gLKvFst
+74Ce8uOcLSH29C0+O7sBKulEDEFfM5mSZsSWE6AJrARKs/Xt6GUgX331OjRu5t9vrg46eKHgBz1l
+YgiJRJFTwIvk1lae12NwRDHJSy5hA0IX1c9dAgUGBtMkclYJ0MyBDlTfDpg7FBt+v3ls3GBmiFzB
+DylrcwIg4YusD6/mZdqiAvRgb0D7yjsPaKQAjRjQyAAaJbRcBIztdKCgL3UeafVBA/eFsIrm/6Ak
+rpjojSnjR7T4HSc1by7zZD8ie+w8siWq8nWVULfKZ6bK2xKqdHhwMztGjUqv8AcR5gZvZA4IP0pR
+y2tbebRRaqCfaqO0W6Ag8wQKFKDr2FDR7Nkqj3tGV5jCQeGPNm2qO6gD1CHyd3OLFm/VjijJS7Q8
+vFVPdJuWN7LbtDugwGjFVbSsXS9r5dXN+CYgk10FVU6tVh6p6UEmYmS5P8hZz1Gn8aBB4r3fUYfq
+QB2us7yEqDfPI1uR7jzdYQN3UHvZLoFuY+gJPEZKoLyPH9x3AegunSNUi3M2BSALQIPHPgANQAPQ
+ADQXKMhvjxOPBgQUAwXl7U/VFgqUAFVHG6AOEhptAWjkASaqSDMqARrlHyMpupo7A7oNCQXekrY+
+UA8JzUolFOxE5SOpmUCOEzFQ8kX9nkB1NutO6ESukP4S1ScN5IBUdQZELDOSY35SImKFokzzTjP/
+K/9Nt8NOgz7bPlLG0ULlVcc2y+wnfPRL90t9XjNWYgtAAXC4QwBzeij58q04UHQ/B7A8KJnl/1S8
+zOoe7L2DnC3UWieG0zpTtwX6slYXo95y79sAqsl+JHyiieEIVnz5ms4Aa5EvR2Kftl+Z5zH/K9CW
+6UvxvWaWRytidl7ZXhv7Rso2kd4+WRdX3ft2gQJVKzWgQNM+yyOlbOhA4HLUu4rKmJNqAvjBgWVD
+qVkytRoorTzIDLeWXtyx960C1WUxcYUqdM+m40pvFajLtW0CdaqKAVQ/XOKKwuwKKMgH6rShims0
+H6iBqwyoy7UNioACh+0psaF7U3kW+0FtIbZPUhl43Ih+K97oPmvlNQlN8PaKrWXb9pnViFQbqhoL
+tt+Ib8t/yyJArSfpK2t9B15HbkMzcSxhzwFI9JYIgGiLErqfoef2HHaeg57/+lg+AN0qULBFj3Lw
+Nn0wb1OjGtBbOe0iAFVTu+SG5Nzbuzs3ncckANVT7/G2c9CJKwHFl6LTCMlIB5128QUseKLDv+hq
+hKSnTqPskQ7/q88cycJDXALQADQADUAD0AA0AA1AA9AANADNTf8vwACd3OOUJB0gXgAAAABJRU5E
+rkJggg==
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---------------0c40bd744d00a87c26f1
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Though is it just me, or  do d_unhashed and d_unlinked seem too close to
-not end up getting confused at some point?
-
--serge
-
-> ---
->  fs/dcache.c            |    7 +++----
->  fs/namespace.c         |    8 ++++----
->  include/linux/dcache.h |    5 +++++
->  3 files changed, 12 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/dcache.c b/fs/dcache.c
-> index 1fcffeb..86cb34f 100644
-> --- a/fs/dcache.c
-> +++ b/fs/dcache.c
-> @@ -1910,7 +1910,7 @@ char *__d_path(const struct path *path, struct path *root,
-> 
->  	spin_lock(&vfsmount_lock);
->  	prepend(&end, &buflen, "\0", 1);
-> -	if (!IS_ROOT(dentry) && d_unhashed(dentry) &&
-> +	if (d_unlinked(dentry) &&
->  		(prepend(&end, &buflen, " (deleted)", 10) != 0))
->  			goto Elong;
-> 
-> @@ -2035,7 +2035,7 @@ char *dentry_path(struct dentry *dentry, char *buf, int buflen)
-> 
->  	spin_lock(&dcache_lock);
->  	prepend(&end, &buflen, "\0", 1);
-> -	if (!IS_ROOT(dentry) && d_unhashed(dentry) &&
-> +	if (d_unlinked(dentry) &&
->  		(prepend(&end, &buflen, "//deleted", 9) != 0))
->  			goto Elong;
->  	if (buflen < 1)
-> @@ -2097,9 +2097,8 @@ SYSCALL_DEFINE2(getcwd, char __user *, buf, unsigned long, size)
->  	read_unlock(&current->fs->lock);
-> 
->  	error = -ENOENT;
-> -	/* Has the current directory has been unlinked? */
->  	spin_lock(&dcache_lock);
-> -	if (IS_ROOT(pwd.dentry) || !d_unhashed(pwd.dentry)) {
-> +	if (!d_unlinked(pwd.dentry)) {
->  		unsigned long len;
->  		struct path tmp = root;
->  		char * cwd;
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 4119620..b2bd687 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -1417,7 +1417,7 @@ static int graft_tree(struct vfsmount *mnt, struct path *path)
->  		goto out_unlock;
-> 
->  	err = -ENOENT;
-> -	if (IS_ROOT(path->dentry) || !d_unhashed(path->dentry))
-> +	if (!d_unlinked(path->dentry))
->  		err = attach_recursive_mnt(mnt, path, NULL);
->  out_unlock:
->  	mutex_unlock(&path->dentry->d_inode->i_mutex);
-> @@ -1599,7 +1599,7 @@ static int do_move_mount(struct path *path, char *old_name)
->  	if (IS_DEADDIR(path->dentry->d_inode))
->  		goto out1;
-> 
-> -	if (!IS_ROOT(path->dentry) && d_unhashed(path->dentry))
-> +	if (d_unlinked(path->dentry))
->  		goto out1;
-> 
->  	err = -EINVAL;
-> @@ -2162,9 +2162,9 @@ SYSCALL_DEFINE2(pivot_root, const char __user *, new_root,
->  	error = -ENOENT;
->  	if (IS_DEADDIR(new.dentry->d_inode))
->  		goto out2;
-> -	if (d_unhashed(new.dentry) && !IS_ROOT(new.dentry))
-> +	if (d_unlinked(new.dentry))
->  		goto out2;
-> -	if (d_unhashed(old.dentry) && !IS_ROOT(old.dentry))
-> +	if (d_unlinked(old.dentry))
->  		goto out2;
->  	error = -EBUSY;
->  	if (new.mnt == root.mnt ||
-> diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-> index 1515636..f8488bd 100644
-> --- a/include/linux/dcache.h
-> +++ b/include/linux/dcache.h
-> @@ -351,6 +351,11 @@ static inline int d_unhashed(struct dentry *dentry)
->  	return (dentry->d_flags & DCACHE_UNHASHED);
->  }
-> 
-> +static inline int d_unlinked(struct dentry *dentry)
-> +{
-> +	return d_unhashed(dentry) && !IS_ROOT(dentry);
-> +}
-> +
->  static inline struct dentry *dget_parent(struct dentry *dentry)
->  {
->  	struct dentry *ret;
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+---------------0c40bd744d00a87c26f1--
