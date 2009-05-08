@@ -1,15 +1,11 @@
-From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] io-controller: Add io group reference handling for
-	request
-Date: Fri, 8 May 2009 10:41:01 -0700
-Message-ID: <e98e18940905081041r386e52a5q5a2b1f13f1e8c634__18336.7105354138$1241804571$gmane$org@mail.gmail.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<4A03FF3C.4020506@cn.fujitsu.com> <20090508135724.GE7293@redhat.com>
+From: Devitis Pattengale <signature-r7efqhDrtc5dz2imjWt+ww@public.gmane.org>
+Subject: Leave the Shyness Att Home When Trying To Pick Up a Woman
+Date: Fri, 08 May 2009 17:49:57 +0000
+Message-ID: <9474709620@rpr.com.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed;
+	boundary="----3753BAA428B17D282134059145477440E452"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090508135724.GE7293-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,143 +15,218 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, May 8, 2009 at 6:57 AM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On Fri, May 08, 2009 at 05:45:32PM +0800, Gui Jianfeng wrote:
->> Hi Vivek,
->>
->> This patch adds io group reference handling when allocating
->> and removing a request.
->>
->
-> Hi Gui,
->
-> Thanks for the patch. We were thinking that requests can take a reference
-> on io queues and io queues can take a reference on io groups. That should
-> make sure that io groups don't go away as long as active requests are
-> present.
->
-> But there seems to be a small window while allocating the new request
-> where request gets allocated from a group first and then later it is
-> mapped to that group and queue is created. IOW, in get_request_wait(),
-> we allocate a request from a particular group and set rq->rl, then
-> drop the queue lock and later call elv_set_request() which again maps
-> the request to the group saves rq->iog and creates new queue. This window
-> is troublesome because request can be mapped to a particular group at the
-> time of allocation and during set_request() it can go to a different
-> group as queue lock was dropped and group might have disappeared.
->
-> In this case probably it might make sense that request also takes a
-> reference on groups. At the same time it looks too much that request takes
-> a reference on queue as well as group object. Ideas are welcome on how
-> to handle it...
+------3753BAA428B17D282134059145477440E452
+Content-Type: image/png;
+ name="Devitis.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Devitis.png"
 
-IMHO a request being allocated on the wrong cgroup should not be a big
-problem as such. All it means is that the request descriptor was
-accounted to the wrong cgroup in this particular corner case. Please
-correct me if I am wrong.
+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
 
-We can also get rid of rq->iog pointer too. What that means is that
-request is associated with ioq (rq->ioq), and we can use
-ioq_to_io_group() function to get the io_group. So the request would
-only be indirectly associated with an io_group i.e. the request is
-associated with an io_queue and the io_group for the request is the
-io_group associated with io_queue. Do you see any problems with that
-approach?
+------3753BAA428B17D282134059145477440E452
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Thanks.
---
-Nauman
-
-
->
-> Thanks
-> Vivek
->
->> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->> ---
->> =A0elevator-fq.c | =A0 15 ++++++++++++++-
->> =A0elevator-fq.h | =A0 =A05 +++++
->> =A0elevator.c =A0 =A0| =A0 =A02 ++
->> =A03 files changed, 21 insertions(+), 1 deletion(-)
->>
->> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
->> index 9500619..e6d6712 100644
->> --- a/block/elevator-fq.c
->> +++ b/block/elevator-fq.c
->> @@ -1968,11 +1968,24 @@ void elv_fq_set_request_io_group(struct request_=
-queue *q, struct request *rq,
->> =A0 =A0 =A0 spin_unlock_irqrestore(q->queue_lock, flags);
->> =A0 =A0 =A0 BUG_ON(!iog);
->>
->> - =A0 =A0 /* Store iog in rq. TODO: take care of referencing */
->> + =A0 =A0 elv_get_iog(iog);
->> =A0 =A0 =A0 rq->iog =3D iog;
->> =A0}
->>
->> =A0/*
->> + * This request has been serviced. Clean up iog info and drop the refer=
-ence.
->> + */
->> +void elv_fq_unset_request_io_group(struct request *rq)
->> +{
->> + =A0 =A0 struct io_group *iog =3D rq->iog;
->> +
->> + =A0 =A0 if (iog) {
->> + =A0 =A0 =A0 =A0 =A0 =A0 rq->iog =3D NULL;
->> + =A0 =A0 =A0 =A0 =A0 =A0 elv_put_iog(iog);
->> + =A0 =A0 }
->> +}
->> +
->> +/*
->> =A0 * Find/Create the io queue the rq should go in. This is an optimizat=
-ion
->> =A0 * for the io schedulers (noop, deadline and AS) which maintain only =
-single
->> =A0 * io queue per cgroup. In this case common layer can just maintain a
->> diff --git a/block/elevator-fq.h b/block/elevator-fq.h
->> index db3a347..96a28e9 100644
->> --- a/block/elevator-fq.h
->> +++ b/block/elevator-fq.h
->> @@ -512,6 +512,7 @@ static inline struct io_group *ioq_to_io_group(struc=
-t io_queue *ioq)
->> =A0extern int io_group_allow_merge(struct request *rq, struct bio *bio);
->> =A0extern void elv_fq_set_request_io_group(struct request_queue *q,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 struct request *rq, struct bio *bio);
->> +extern void elv_fq_unset_request_io_group(struct request *rq);
->> =A0static inline bfq_weight_t iog_weight(struct io_group *iog)
->> =A0{
->> =A0 =A0 =A0 return iog->entity.weight;
->> @@ -571,6 +572,10 @@ static inline void elv_fq_set_request_io_group(stru=
-ct request_queue *q,
->> =A0{
->> =A0}
->>
->> +static inline void elv_fq_unset_request_io_group(struct request *rq)
->> +{
->> +}
->> +
->> =A0static inline bfq_weight_t iog_weight(struct io_group *iog)
->> =A0{
->> =A0 =A0 =A0 /* Just root group is present and weight is immaterial. */
->> diff --git a/block/elevator.c b/block/elevator.c
->> index 44c9fad..d75eec7 100644
->> --- a/block/elevator.c
->> +++ b/block/elevator.c
->> @@ -992,6 +992,8 @@ void elv_put_request(struct request_queue *q, struct=
- request *rq)
->> =A0{
->> =A0 =A0 =A0 struct elevator_queue *e =3D q->elevator;
->>
->> + =A0 =A0 elv_fq_unset_request_io_group(rq);
->> +
->> =A0 =A0 =A0 /*
->> =A0 =A0 =A0 =A0* Optimization for noop, deadline and AS which maintain o=
-nly single
->> =A0 =A0 =A0 =A0* ioq per io group
->>
->
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------3753BAA428B17D282134059145477440E452--
