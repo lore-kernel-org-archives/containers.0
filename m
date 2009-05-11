@@ -1,11 +1,16 @@
-From: Dittrick Bronn <connector-BaQUtKdaJMFpn7uciFS/BA@public.gmane.org>
-Subject: Sex After Pregnancy - How Loong Should You Wait?
-Date: Sat, 09 May 2009 14:11:11 +0000
-Message-ID: <39C7719B742BFE00@agapesociale.it>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] io-controller: Add io group reference handling for request
+Date: Mon, 11 May 2009 09:33:05 +0800
+Message-ID: <4A078051.5060702__7308.33916827596$1242005784$gmane$org@cn.fujitsu.com>
+References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>	
+	<4A03FF3C.4020506@cn.fujitsu.com>
+	<20090508135724.GE7293@redhat.com>
+	<e98e18940905081041r386e52a5q5a2b1f13f1e8c634@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="-_007_0EEADB4053C01A4774259BF34Csuccotash_"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <e98e18940905081041r386e52a5q5a2b1f13f1e8c634-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,216 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
----_007_0EEADB4053C01A4774259BF34Csuccotash_
-Content-Type: image/png;
- name="Dittrick.png"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="Dittrick.png"
+Nauman Rafique wrote:
+> On Fri, May 8, 2009 at 6:57 AM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>> On Fri, May 08, 2009 at 05:45:32PM +0800, Gui Jianfeng wrote:
+>>> Hi Vivek,
+>>>
+>>> This patch adds io group reference handling when allocating
+>>> and removing a request.
+>>>
+>> Hi Gui,
+>>
+>> Thanks for the patch. We were thinking that requests can take a reference
+>> on io queues and io queues can take a reference on io groups. That should
+>> make sure that io groups don't go away as long as active requests are
+>> present.
+>>
+>> But there seems to be a small window while allocating the new request
+>> where request gets allocated from a group first and then later it is
+>> mapped to that group and queue is created. IOW, in get_request_wait(),
+>> we allocate a request from a particular group and set rq->rl, then
+>> drop the queue lock and later call elv_set_request() which again maps
+>> the request to the group saves rq->iog and creates new queue. This window
+>> is troublesome because request can be mapped to a particular group at the
+>> time of allocation and during set_request() it can go to a different
+>> group as queue lock was dropped and group might have disappeared.
+>>
+>> In this case probably it might make sense that request also takes a
+>> reference on groups. At the same time it looks too much that request takes
+>> a reference on queue as well as group object. Ideas are welcome on how
+>> to handle it...
+> 
+> IMHO a request being allocated on the wrong cgroup should not be a big
+> problem as such. All it means is that the request descriptor was
+> accounted to the wrong cgroup in this particular corner case. Please
+> correct me if I am wrong.
+> 
+> We can also get rid of rq->iog pointer too. What that means is that
+> request is associated with ioq (rq->ioq), and we can use
+> ioq_to_io_group() function to get the io_group. So the request would
+> only be indirectly associated with an io_group i.e. the request is
+> associated with an io_queue and the io_group for the request is the
+> io_group associated with io_queue. Do you see any problems with that
+> approach?
 
-iVBORw0KGgoAAAANSUhEUgAAAXsAAAGdCAMAAADE/SOmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
-U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADAUExURf/MzVKf2Lt1dWJfYNWjo96dHdLT
-08LCo9ZXWCsjJfeszpmZZmNmnLW1vHa+5NiqU6Wlt55lH399f+Tk5PX19f38+5lmlOfFefDEFOjY
-4IcODr2FIq7W7tc7O+/dsRwlUps2NrMtM6sRF/3o8u3x897s9Tk3ONnd4NiGmfj5+vH2+K0bIZqY
-mrZESSFoBJsDkmaZawAA/6LDou/q5/v09jA+gvv26evo7wAAZgAAmcwAAP8AAAAAAP///8zMzPX7
-/E3WFGkAAClKSURBVHja7J0LQ9o8F4CZRSYqk1vnGM5NRVBEtn0w6yVp/v+/+nJtkibpBQQLb8Kt
-bdI2fXp6cnpySGtohRTl5kdrrL3+CmW39947KJhqnr1n79l79p69Z+/Ze/aevWfv2Xv2nr1n79l7
-9p69Z+/Ze/aevWfv2Xv2nr1n79l79p69Z+/Ze/aevWfv2Xv2nr1n79l79p79e7J/05O2RC+E9GVF
-19WPVORaC77lLeUZ9r2YhZEoFFkKIfsGCh1cagdvG2Of3tHb6uyNSpdn/1aevX1z6C0b3BbYI0Oq
-kJX8W2raRctWm8jcFEI5lFERyc9hZjlL2YeTsaVkHr0jewd8lMXrLUNSLXWJslbOIJxRR/cRZ14i
-OYdTgL11B6u3tRnH5ar6W4aWcLB3NiNyDrnYv1klvxCxQmfirTB7+w7WsHPejOs086qzaaRc9las
-Oa2HK+ttRfa5h/MB7JHRfnwAe0OX6vVLq50PYI/SW3xTlr4L+yx1/t7s03xdra2R97YC+7e12aMi
-a5W+t3Jc7ltkb7+gtU2+vWU1xzvL3iFw22WfWY+cFmGX2aMPZv9WhD0qgH6T+n6/2Ns2lLXJdeR+
-x9ivYt+/Fbfv0ZtVoLNO51rs17Tvt8y+/H3tWwn2Vhv5Lft8lmT/nve122af5wCxuq4cHlsrFMO5
-8ObyEdkvxS36czbD/u2twE0lyrvdd3qWIhOb0yNc3K+ap6Pf3Y+JCtu578Y+1+FtuyN29lS8Gdsq
-yx6VZf9e/vvNsPf9Vr7P0LP37D17z96z9+w9e8/es/fsPXvP3rP37D17z96zX5P9rNlsi7p2m81m
-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
+  That sounds reasonable to get rid of rq->iog, and rq->rl is also dead.
+  Hope to see the patch soon. ;)
 
----_007_0EEADB4053C01A4774259BF34Csuccotash_
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
----_007_0EEADB4053C01A4774259BF34Csuccotash_--
+-- 
+Regards
+Gui Jianfeng
