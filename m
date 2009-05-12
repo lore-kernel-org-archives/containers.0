@@ -1,82 +1,322 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: use a new capability to authorize c/r
-Date: Tue, 12 May 2009 16:17:03 -0500
-Message-ID: <20090512211703.GA6510@us.ibm.com>
-References: <20090512150713.GA32064@us.ibm.com>
-	<20090512205932.GA4346@x200.localdomain>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC][PATCH] Improve NFS use of network and mount namespaces
+Date: Tue, 12 May 2009 14:51:38 -0700
+Message-ID: <20090512215138.GD3912@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090512205932.GA4346-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Tue, May 12, 2009 at 10:07:13AM -0500, Serge E. Hallyn wrote:
-> > do you object to this patch?  The idea is to not give away any
-> > privilege not otherwise needed.
-> 
-> > --- a/checkpoint/sys.c
-> > +++ b/checkpoint/sys.c
-> > @@ -281,7 +281,7 @@ asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
-> >  	if (flags & ~CKPT_USER_FLAGS)
-> >  		return -EINVAL;
-> >  
-> > -	if (!ckpt_unpriv_allowed && !capable(CAP_SYS_ADMIN))
-> > +	if (!ckpt_unpriv_allowed && !capable(CAP_CHECKPOINT_RESTART))
-> >  		return -EPERM;
-> >  
-> >  	if (pid == 0)
-> > @@ -318,7 +318,7 @@ asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
-> >  	if (flags)
-> >  		return -EINVAL;
-> >  
-> > -	if (!ckpt_unpriv_allowed && !capable(CAP_SYS_ADMIN))
-> > +	if (!ckpt_unpriv_allowed && !capable(CAP_CHECKPOINT_RESTART))
-> >  		return -EPERM;
-> >  
-> >  	/* FIXME: for now, we use 'crid' as a pid */
-> > diff --git a/include/linux/capability.h b/include/linux/capability.h
-> > index 572b5a0..a593391 100644
-> > --- a/include/linux/capability.h
-> > +++ b/include/linux/capability.h
-> > @@ -357,7 +357,9 @@ struct cpu_vfs_cap_data {
-> >  
-> >  #define CAP_MAC_ADMIN        33
-> >  
-> > -#define CAP_LAST_CAP         CAP_MAC_ADMIN
-> > +#define CAP_CHECKPOINT_RESTART      34
-> 
-> I don't know if this is really needed.
-> 
-> If you allow restart(2) for everyone, you can during struct cred
-> restoration check if, say, capabilities coming from image are more
-> strict than capabilities of restorer, that aux groups are a subset of
-> aux groups of restorer and so on.
 
-Yes, I do all of that in the task credentials restore patchset I sent
-yesterday.
+Sun RPC currently opens sockets from the initial network namespace making it
+impossible to restrict which NFS servers a container may interact with.
 
-> You still need these checks, otherwise CAP_CHECKPOINT_RESTART is much
-> more powerful than it suggests.
+For example, the NFS server at 10.0.0.3 reachable from the initial namespace
+will always be used even if an entirely different server with the address
+10.0.0.3 is reachable from a container's network namespace. Hence network
+namespaces cannot be used to restrict the network access of a container as long
+as the RPC code opens sockets using the initial network namespace. This is
+in stark contrast to other protocols like HTTP where the sockets are created in
+their proper namespaces because kernel threads are not used to open sockets for
+client network IO.
 
-Absolutely.  This patch I sent here is for Oren's checkpoint/restart
-tree, which already makes sure (well aims to make sure) that at every
-step of the way the task doing sys_restart() has the appopriate
-privilege.
+We may plausibly end up with namespaces created by:
+I) The administrator may mount 10.0.0.3:/export_foo from init's
+container, clone the mount namespace, and unmount from the original
+mount namespace.
 
-> I'm going to try and see how hard will it be.
+II) The administrator may start a task which clones the mount namespace
+before mounting 10.0.0.3:/export_foo.
 
--serge
+Proposed Solution:
+
+The network namespace of the task that did the mount best defines which server
+the "administrator", whether in a container or not, expects to work with.
+When the mount is done inside a container then that is the network namespace 
+to use. When the mount is done prior to creating the container then that's the 
+namespace that should be used.
+
+This allows system administrators to isolate network traffic generated by NFS
+clients by mounting after creating a container. If partial isolation is desired
+then the administrator may mount before creating a container with a new network
+namespace. In each case the RPC packets would originate from a consistent
+namespace.
+
+One way to ensure consistent namespace usage would be to hold a reference to
+the original network namespace as long as the mount exists. This naturally 
+suggests storing the network namespace reference in the NFS superblock. 
+However, it may be better to store it with the RPC transport itself since
+it is directly responsible for (re)opening the sockets.
+
+This patch adds a reference to the network namespace to the RPC
+transport. When the NFS export is mounted the network namespace of
+the current task establishes which namespace to reference. That
+reference is stored in the RPC transport and used to open sockets
+whenever a new socket is required.
+
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/nfs/client.c             |    5 ++++-
+ include/linux/net.h         |    2 ++
+ include/linux/sunrpc/clnt.h |    1 +
+ include/linux/sunrpc/xprt.h |    1 +
+ net/socket.c                |    5 +++++
+ net/sunrpc/clnt.c           |    1 +
+ net/sunrpc/xprtsock.c       |   26 ++++++++++++++++++++++----
+ 7 files changed, 36 insertions(+), 5 deletions(-)
+
+Index: linux-2.6.29/fs/nfs/client.c
+===================================================================
+--- linux-2.6.29.orig/fs/nfs/client.c
++++ linux-2.6.29/fs/nfs/client.c
+@@ -10,11 +10,11 @@
+  */
+ 
+ 
+ #include <linux/module.h>
+ #include <linux/init.h>
+-#include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/time.h>
+ #include <linux/kernel.h>
+ #include <linux/mm.h>
+ #include <linux/string.h>
+ #include <linux/stat.h>
+@@ -564,10 +564,11 @@ static int nfs_create_rpc_client(struct 
+ 	struct rpc_clnt		*clnt = NULL;
+ 	struct rpc_create_args args = {
+ 		.protocol	= clp->cl_proto,
+ 		.address	= (struct sockaddr *)&clp->cl_addr,
+ 		.addrsize	= clp->cl_addrlen,
++		.net_ns		= current->nsproxy->net_ns,
+ 		.timeout	= timeparms,
+ 		.servername	= clp->cl_hostname,
+ 		.program	= &nfs_program,
+ 		.version	= clp->rpc_ops->version,
+ 		.authflavor	= flavor,
+@@ -579,12 +580,14 @@ static int nfs_create_rpc_client(struct 
+ 		args.flags |= RPC_CLNT_CREATE_NONPRIVPORT;
+ 
+ 	if (!IS_ERR(clp->cl_rpcclient))
+ 		return 0;
+ 
++	get_net(current->nsproxy->net_ns);
+ 	clnt = rpc_create(&args);
+ 	if (IS_ERR(clnt)) {
++		put_net(current->nsproxy->net_ns);
+ 		dprintk("%s: cannot create RPC client. Error = %ld\n",
+ 				__func__, PTR_ERR(clnt));
+ 		return PTR_ERR(clnt);
+ 	}
+ 
+Index: linux-2.6.29/include/linux/net.h
+===================================================================
+--- linux-2.6.29.orig/include/linux/net.h
++++ linux-2.6.29/include/linux/net.h
+@@ -210,10 +210,12 @@ extern int	     sock_register(const stru
+ extern void	     sock_unregister(int family);
+ extern int	     sock_create(int family, int type, int proto,
+ 				 struct socket **res);
+ extern int	     sock_create_kern(int family, int type, int proto,
+ 				      struct socket **res);
++extern int	     net_sock_create_kern(struct net *net, int family, int type,
++					  int proto, struct socket **res);
+ extern int	     sock_create_lite(int family, int type, int proto,
+ 				      struct socket **res); 
+ extern void	     sock_release(struct socket *sock);
+ extern int   	     sock_sendmsg(struct socket *sock, struct msghdr *msg,
+ 				  size_t len);
+Index: linux-2.6.29/include/linux/sunrpc/clnt.h
+===================================================================
+--- linux-2.6.29.orig/include/linux/sunrpc/clnt.h
++++ linux-2.6.29/include/linux/sunrpc/clnt.h
+@@ -100,10 +100,11 @@ struct rpc_procinfo {
+ struct rpc_create_args {
+ 	int			protocol;
+ 	struct sockaddr		*address;
+ 	size_t			addrsize;
+ 	struct sockaddr		*saddress;
++	struct net 		*net_ns;
+ 	const struct rpc_timeout *timeout;
+ 	char			*servername;
+ 	struct rpc_program	*program;
+ 	u32			prognumber;	/* overrides program->number */
+ 	u32			version;
+Index: linux-2.6.29/include/linux/sunrpc/xprt.h
+===================================================================
+--- linux-2.6.29.orig/include/linux/sunrpc/xprt.h
++++ linux-2.6.29/include/linux/sunrpc/xprt.h
+@@ -194,10 +194,11 @@ struct rpc_xprt {
+ 
+ struct xprt_create {
+ 	int			ident;		/* XPRT_TRANSPORT identifier */
+ 	struct sockaddr *	srcaddr;	/* optional local address */
+ 	struct sockaddr *	dstaddr;	/* remote peer address */
++	struct net *		net_ns;		/* net namespace */
+ 	size_t			addrlen;
+ };
+ 
+ struct xprt_class {
+ 	struct list_head	list;
+Index: linux-2.6.29/net/socket.c
+===================================================================
+--- linux-2.6.29.orig/net/socket.c
++++ linux-2.6.29/net/socket.c
+@@ -1212,10 +1212,15 @@ int sock_create(int family, int type, in
+ int sock_create_kern(int family, int type, int protocol, struct socket **res)
+ {
+ 	return __sock_create(&init_net, family, type, protocol, res, 1);
+ }
+ 
++int net_sock_create_kern(struct net *net, int family, int type, int protocol, struct socket **res)
++{
++	return __sock_create(net, family, type, protocol, res, 1);
++}
++
+ SYSCALL_DEFINE3(socket, int, family, int, type, int, protocol)
+ {
+ 	int retval;
+ 	struct socket *sock;
+ 	int flags;
+Index: linux-2.6.29/net/sunrpc/clnt.c
+===================================================================
+--- linux-2.6.29.orig/net/sunrpc/clnt.c
++++ linux-2.6.29/net/sunrpc/clnt.c
+@@ -263,10 +263,11 @@ struct rpc_clnt *rpc_create(struct rpc_c
+ 	struct rpc_clnt *clnt;
+ 	struct xprt_create xprtargs = {
+ 		.ident = args->protocol,
+ 		.srcaddr = args->saddress,
+ 		.dstaddr = args->address,
++		.net_ns  = args->net_ns,
+ 		.addrlen = args->addrsize,
+ 	};
+ 	char servername[48];
+ 
+ 	/*
+Index: linux-2.6.29/net/sunrpc/xprtsock.c
+===================================================================
+--- linux-2.6.29.orig/net/sunrpc/xprtsock.c
++++ linux-2.6.29/net/sunrpc/xprtsock.c
+@@ -234,10 +234,11 @@ struct sock_xprt {
+ 	 * Connection of transports
+ 	 */
+ 	struct delayed_work	connect_worker;
+ 	struct sockaddr_storage	addr;
+ 	unsigned short		port;
++	struct net		*net_ns;
+ 
+ 	/*
+ 	 * UDP socket buffer size parameters
+ 	 */
+ 	size_t			rcvsize,
+@@ -819,10 +820,11 @@ static void xs_destroy(struct rpc_xprt *
+ 	cancel_rearming_delayed_work(&transport->connect_worker);
+ 
+ 	xs_close(xprt);
+ 	xs_free_peer_addresses(xprt);
+ 	kfree(xprt->slot);
++ 	put_net(transport->net_ns);
+ 	kfree(xprt);
+ 	module_put(THIS_MODULE);
+ }
+ 
+ static inline struct rpc_xprt *xprt_from_sock(struct sock *sk)
+@@ -1537,11 +1539,13 @@ static void xs_udp_connect_worker4(struc
+ 		goto out;
+ 
+ 	/* Start by resetting any existing state */
+ 	xs_close(xprt);
+ 
+-	if ((err = sock_create_kern(PF_INET, SOCK_DGRAM, IPPROTO_UDP, &sock)) < 0) {
++ 	err = net_sock_create_kern(transport->net_ns, PF_INET, SOCK_DGRAM,
++ 				   IPPROTO_UDP, &sock);
++	if (err < 0) {
+ 		dprintk("RPC:       can't create UDP transport socket (%d).\n", -err);
+ 		goto out;
+ 	}
+ 	xs_reclassify_socket4(sock);
+ 
+@@ -1578,11 +1582,13 @@ static void xs_udp_connect_worker6(struc
+ 		goto out;
+ 
+ 	/* Start by resetting any existing state */
+ 	xs_close(xprt);
+ 
+-	if ((err = sock_create_kern(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &sock)) < 0) {
++ 	err = net_sock_create_kern(transport->net_ns, PF_INET6, SOCK_DGRAM,
++ 				   IPPROTO_UDP, &sock);
++	if (err < 0) {
+ 		dprintk("RPC:       can't create UDP transport socket (%d).\n", -err);
+ 		goto out;
+ 	}
+ 	xs_reclassify_socket6(sock);
+ 
+@@ -1684,11 +1690,13 @@ static void xs_tcp_connect_worker4(struc
+ 	if (xprt->shutdown)
+ 		goto out;
+ 
+ 	if (!sock) {
+ 		/* start from scratch */
+-		if ((err = sock_create_kern(PF_INET, SOCK_STREAM, IPPROTO_TCP, &sock)) < 0) {
++		err = net_sock_create_kern(transport->net_ns, PF_INET,
++					   SOCK_STREAM, IPPROTO_TCP, &sock);
++		if (err < 0) {
+ 			dprintk("RPC:       can't create TCP transport socket (%d).\n", -err);
+ 			goto out;
+ 		}
+ 		xs_reclassify_socket4(sock);
+ 
+@@ -1744,11 +1752,13 @@ static void xs_tcp_connect_worker6(struc
+ 	if (xprt->shutdown)
+ 		goto out;
+ 
+ 	if (!sock) {
+ 		/* start from scratch */
+-		if ((err = sock_create_kern(PF_INET6, SOCK_STREAM, IPPROTO_TCP, &sock)) < 0) {
++		err = net_sock_create_kern(transport->net_ns, PF_INET6,
++					   SOCK_STREAM, IPPROTO_TCP, &sock);
++		if (err < 0) {
+ 			dprintk("RPC:       can't create TCP transport socket (%d).\n", -err);
+ 			goto out;
+ 		}
+ 		xs_reclassify_socket6(sock);
+ 
+@@ -1988,10 +1998,14 @@ static struct rpc_xprt *xs_setup_udp(str
+ 
+ 	xprt->ops = &xs_udp_ops;
+ 
+ 	xprt->timeout = &xs_udp_default_timeout;
+ 
++	if (args->net_ns)
++		transport->net_ns = args->net_ns;
++	else
++		transport->net_ns = &init_net;
+ 	switch (addr->sa_family) {
+ 	case AF_INET:
+ 		if (((struct sockaddr_in *)addr)->sin_port != htons(0))
+ 			xprt_set_bound(xprt);
+ 
+@@ -2055,10 +2069,14 @@ static struct rpc_xprt *xs_setup_tcp(str
+ 	xprt->idle_timeout = XS_IDLE_DISC_TO;
+ 
+ 	xprt->ops = &xs_tcp_ops;
+ 	xprt->timeout = &xs_tcp_default_timeout;
+ 
++	if (args->net_ns)
++		transport->net_ns = args->net_ns;
++	else
++		transport->net_ns = &init_net;
+ 	switch (addr->sa_family) {
+ 	case AF_INET:
+ 		if (((struct sockaddr_in *)addr)->sin_port != htons(0))
+ 			xprt_set_bound(xprt);
+ 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
