@@ -1,17 +1,16 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 07/18] io-controller: Export disk time used and nr
-	sectors dipatched through cgroups
-Date: Wed, 13 May 2009 10:51:27 -0400
-Message-ID: <20090513145127.GB7696__43437.4195909642$1242226518$gmane$org@redhat.com>
+Subject: Re: [PATCH 08/18] io-controller: idle for sometime on sync queue
+	before expiring it
+Date: Wed, 13 May 2009 11:00:02 -0400
+Message-ID: <20090513150002.GC7696__20310.3997548626$1242227460$gmane$org@redhat.com>
 References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-8-git-send-email-vgoyal@redhat.com>
-	<4A0A32CB.4020609@cn.fujitsu.com>
+	<1241553525-28095-9-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A0A32CB.4020609-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1241553525-28095-9-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,52 +20,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, fer
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, May 13, 2009 at 10:39:07AM +0800, Gui Jianfeng wrote:
-> Vivek Goyal wrote:
-> ...
-> >  
-> > +/*
-> > + * traverse through all the io_groups associated with this cgroup and calculate
-> > + * the aggr disk time received by all the groups on respective disks.
-> > + */
-> > +static u64 calculate_aggr_disk_time(struct io_cgroup *iocg)
-> > +{
-> > +	struct io_group *iog;
-> > +	struct hlist_node *n;
-> > +	u64 disk_time = 0;
-> > +
-> > +	rcu_read_lock();
+On Tue, May 05, 2009 at 03:58:35PM -0400, Vivek Goyal wrote:
+> o When a sync queue expires, in many cases it might be empty and then
+>   it will be deleted from the active tree. This will lead to a scenario
+>   where out of two competing queues, only one is on the tree and when a
+>   new queue is selected, vtime jump takes place and we don't see services
+>   provided in proportion to weight.
 > 
->   This function is in slow-path, so no need to call rcu_read_lock(), just need to ensure
->   that the caller already holds the iocg->lock.
+> o In general this is a fundamental problem with fairness of sync queues
+>   where queues are not continuously backlogged. Looks like idling is
+>   only solution to make sure such kind of queues can get some decent amount
+>   of disk bandwidth in the face of competion from continusouly backlogged
+>   queues. But excessive idling has potential to reduce performance on SSD
+>   and disks with commnad queuing.
 > 
-
-Or can we get rid of requirement of iocg_lock here and just read the io
-group data under rcu read lock? Actually I am wondering why do we require
-an iocg_lock here. We are not modifying the rcu protected list. We are
-just traversing through it and reading the data.
-
-Thanks
-Vivek
-
-> > +	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
-> > +		/*
-> > +		 * There might be groups which are not functional and
-> > +		 * waiting to be reclaimed upon cgoup deletion.
-> > +		 */
-> > +		if (rcu_dereference(iog->key))
-> > +			disk_time += iog->entity.total_service;
-> > +	}
-> > +	rcu_read_unlock();
-> > +
-> > +	return disk_time;
-> > +}
-> > +
+> o This patch experiments with waiting for next request to come before a
+>   queue is expired after it has consumed its time slice. This can ensure
+>   more accurate fairness numbers in some cases.
 > 
-> -- 
-> Regards
-> Gui Jianfeng
+> o Introduced a tunable "fairness". If set, io-controller will put more
+>   focus on getting fairness right than getting throughput right.
+> 
+> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+
+Following is a fix which should go here. This patch helps me get much 
+better fairness numbers for sync queues.
+
+
+o Fix a window where a queue can be expired without doing busy wait for
+  next request. This fix allows better fairness number for sync queues.
+
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ block/elevator-fq.c |   18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+Index: linux14/block/elevator-fq.c
+===================================================================
+--- linux14.orig/block/elevator-fq.c	2009-05-13 10:55:44.000000000 -0400
++++ linux14/block/elevator-fq.c	2009-05-13 10:55:50.000000000 -0400
+@@ -3368,8 +3368,22 @@ void *elv_fq_select_ioq(struct request_q
+ 	/*
+ 	 * The active queue has run out of time, expire it and select new.
+ 	 */
+-	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
+-		goto expire;
++	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq)) {
++		/*
++		 * Queue has used up its slice. Wait busy is not on otherwise
++		 * we wouldn't have been here. There is a chance that after
++		 * slice expiry no request from the queue completed hence
++		 * wait busy timer could not be turned on. If that's the case
++		 * don't expire the queue yet. Next request completion from
++		 * the queue will arm the wait busy timer.
++		 */
++		if (efqd->fairness && !ioq->nr_queued
++		    && elv_ioq_nr_dispatched(ioq)) {
++			ioq = NULL;
++			goto keep_queue;
++		} else
++			goto expire;
++	}
+ 
+ 	/*
+ 	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
