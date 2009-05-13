@@ -1,14 +1,14 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH ckpt-v15] allocate checkpoint headers with kzalloc
-Date: Wed, 13 May 2009 12:25:24 -0500
-Message-ID: <m3my9gx6d7.fsf@pobox.com>
-References: <m3zldhxai8.fsf@pobox.com> <20090513170257.GA18675@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix ckpt_obj_fetch return values
+Date: Wed, 13 May 2009 13:43:58 -0500
+Message-ID: <20090513184358.GA20393@us.ibm.com>
+References: <20090513165251.GA18539@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090513170257.GA18675-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message
-	of "Wed\, 13 May 2009 12\:02\:57 -0500")
+Content-Disposition: inline
+In-Reply-To: <20090513165251.GA18539-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,27 +18,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> ckpt_obj_fetch returned ERR_PTR(error) on some failures, NULL on
+> others.  Not all of its callers were checking for NULL, which
+> would lead to NULL dereferences.
+> 
+> Return -EINVAL if the object is not in the hash table.  Fix up
+> pipe_file_restore to do the right thing.
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/files.c   |    4 +---
+>  checkpoint/memory.c  |    6 +-----
+>  checkpoint/objhash.c |    2 +-
+>  checkpoint/process.c |    4 +---
+>  fs/pipe.c            |    9 ++++-----
+>  5 files changed, 8 insertions(+), 17 deletions(-)
+> 
+> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> index 0ed7cac..7b26005 100644
+> --- a/checkpoint/objhash.c
+> +++ b/checkpoint/objhash.c
+> @@ -692,7 +692,7 @@ void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
+> 
+>  	obj = obj_find_by_objref(ctx, objref);
+>  	if (!obj)
+> -		return NULL;
+> +		ERR_PTR(-EINVAL);
 
-> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->> In a checkpoint image I noticed a lot of 0x6b (POISON_FREE) bytes
->> corresponding to checkpoint_restart_block -- this indicates that we
->> would write uninitialized kernel memory to the image in cases where
->> slab allocator debugging is not enabled[1].
->> 
->> Use kzalloc in ckpt_hdr_get.
->
-> Yikes, yes, that's on par with a recent ecryptfs bug that did the
-> same thing.
->
-> Have you audited for other such potential privileged data leaks?
-> (besides "all sysvipc" which we know about :)
+obvious bug here :)
 
-No, haven't audited other things; the strings of 0x6b just caught my eye
-and this looked like the obvious fix.  As general rule, I'd say the
-checkpoint code should be zeroing any intermediate buffers that could be
-written to the image.
+-serge
