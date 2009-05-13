@@ -1,14 +1,11 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] mktree: long is bigger on 64-bit
-Date: Tue, 12 May 2009 21:48:53 -0700
-Message-ID: <20090513044853.GH3912@us.ibm.com>
-References: <20090513030830.GA11265@us.ibm.com>
+From: Ralph-Gordon Paul <Ralph-Gordon.Paul-4bfl1RV3iZDOEhgYWvzSCYQuADTiUCJX@public.gmane.org>
+Subject: Segmentation fault @ checkpoint
+Date: Wed, 13 May 2009 13:30:15 +0200
+Message-ID: <5B2F91AA-3148-4E5A-A464-773BE9B1E5CE@uni-duesseldorf.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090513030830.GA11265-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,49 +15,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, May 12, 2009 at 10:08:30PM -0500, Serge E. Hallyn wrote:
-> mktree's hash function assumes that long is 32 bits.  Fix.
-> 
-> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  mktree.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/mktree.c b/mktree.c
-> index 7a8cecc..0195974 100644
-> --- a/mktree.c
-> +++ b/mktree.c
-> @@ -724,6 +724,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
->  	struct task *child;
->  	struct pid_swap swap;
->  	pid_t newpid;
-> +	int status;
->  	int ret;
-> 
->  	ckpt_dbg("pid %d: pid %d sid %d parent %d\n",
-> @@ -765,7 +766,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
->  	/* 3rd pass: bring out your deads ... */
->  	for (child = task->children; child; child = child->next_sib) {
->  		if (child->flags & TASK_DEAD) {
-> -			ret = waitpid(child->rpid, NULL, 0);
-> +			ret = waitpid(child->rpid, &status, 0);
->  			if (ret < 0) {
->  				perror("waitpid");
->  				return -1;
-> @@ -1291,7 +1292,8 @@ static void hash_exit(struct ckpt_ctx *ctx)
->  static inline int hash_func(long key)
->  {
->  	unsigned long hash = key * GOLDEN_RATIO_PRIME_32;
-> -	return (hash >> (32 - HASH_BITS));
-> +	//return (hash >> (32 - HASH_BITS));
-> +	return (hash >> (sizeof(long)*8 - HASH_BITS));
+Hi,
 
-I'm guessing the // comment isn't intentional. Also, how about using sizeof(key)
-instead of manually inserting its type?
+i'm trying out the checkpointer (version 15 from http://git.ncl.cs.columbia.edu/?p=linux-cr.git;a=shortlog;h=refs/heads/ckpt-v15) 
+.
 
-Cheers,
-	-Matt Helsley
+i used the the example programs at the checkpointer documentation:  
+test.c and ckpt.c (i had to add #define __NR_checkpoint 333)
+
+after compilation i tried:
+./test &
+kill -STOP 3058                3058 = PID from test
+./ckpt 3058 > ckpt.image
+
+now i get a Segmentation fault (it's at the syscall(__NR_checkpoint.  
+pid, STDOUT_FILENO, 0) line).
+
+dmesg:
+[ 3948.213442] ckpt[3218]: segfault at 46 ip b7e1213d sp bf835e18  
+error 4 in libc-2.7.so[b7db4000+155000]
+
+Any idea what may be the problem?
+Do i have a problem with my libc?
+
+My System spec:
+Debian 5.0 i686
+CPU: AMD Athlon XP 2000+
+
+Regards,
+Gordon
