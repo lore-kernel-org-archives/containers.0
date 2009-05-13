@@ -1,12 +1,16 @@
-From: Dueck Cassis <phrenetic-7t1F8wBB8VZBDgjK7y7TUQ@public.gmane.org>
-Subject: What is She Fantasizing Abfout? Warning! Women's Erotic Fantasies
-	Exposed (Wow is Right)
-Date: Wed, 13 May 2009 13:26:08 +0000
-Message-ID: <1242221077.towkay@cosmode.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] IO Controller: Add per-device weight and ioprio_class
+	handling
+Date: Wed, 13 May 2009 10:44:32 -0400
+Message-ID: <20090513144432.GA7696__2806.19169720939$1242226353$gmane$org@redhat.com>
+References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
+	<4A0A29B5.7030109@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----------------419567BA698A95DA71984A"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A0A29B5.7030109-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,214 +20,391 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-------------------419567BA698A95DA71984A
-Content-Type: image/png;
- name="Dueck.png"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="Dueck.png"
+On Wed, May 13, 2009 at 10:00:21AM +0800, Gui Jianfeng wrote:
+> Hi Vivek,
+> 
+> This patch enables per-cgroup per-device weight and ioprio_class handling.
+> A new cgroup interface "policy" is introduced. You can make use of this 
+> file to configure weight and ioprio_class for each device in a given cgroup.
+> The original "weight" and "ioprio_class" files are still available. If you
+> don't do special configuration for a particular device, "weight" and 
+> "ioprio_class" are used as default values in this device.
+> 
+> You can use the following format to play with the new interface.
+> #echo DEV:weight:ioprio_class > /patch/to/cgroup/policy
+> weight=0 means removing the policy for DEV.
+> 
 
-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
+Thanks for the patch Gui. I will test it out and let you know how does
+it go.
 
-------------------419567BA698A95DA71984A
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Thanks
+Vivek
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
-------------------419567BA698A95DA71984A--
+> Examples:
+> Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
+> # echo /dev/hdb:300:2 > io.policy
+> # cat io.policy
+> dev weight class
+> /dev/hdb 300 2
+> 
+> Configure weight=500 ioprio_class=1 on /dev/hda in this cgroup
+> # echo /dev/hda:500:1 > io.policy
+> # cat io.policy
+> dev weight class
+> /dev/hda 500 1
+> /dev/hdb 300 2
+> 
+> Remove the policy for /dev/hda in this cgroup
+> # echo /dev/hda:0:1 > io.policy
+> # cat io.policy
+> dev weight class
+> /dev/hdb 300 2
+> 
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  block/elevator-fq.c |  239 +++++++++++++++++++++++++++++++++++++++++++++++++-
+>  block/elevator-fq.h |   11 +++
+>  2 files changed, 245 insertions(+), 5 deletions(-)
+> 
+> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+> index 69435ab..7c95d55 100644
+> --- a/block/elevator-fq.c
+> +++ b/block/elevator-fq.c
+> @@ -12,6 +12,9 @@
+>  #include "elevator-fq.h"
+>  #include <linux/blktrace_api.h>
+>  #include <linux/biotrack.h>
+> +#include <linux/seq_file.h>
+> +#include <linux/genhd.h>
+> +
+>  
+>  /* Values taken from cfq */
+>  const int elv_slice_sync = HZ / 10;
+> @@ -1045,12 +1048,30 @@ struct io_group *io_lookup_io_group_current(struct request_queue *q)
+>  }
+>  EXPORT_SYMBOL(io_lookup_io_group_current);
+>  
+> -void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
+> +static struct policy_node *policy_search_node(const struct io_cgroup *iocg,
+> +					      void *key);
+> +
+> +void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog,
+> +			  void *key)
+>  {
+>  	struct io_entity *entity = &iog->entity;
+> +	struct policy_node *pn;
+> +
+> +	spin_lock_irq(&iocg->lock);
+> +	pn = policy_search_node(iocg, key);
+> +	if (pn) {
+> +		entity->weight = pn->weight;
+> +		entity->new_weight = pn->weight;
+> +		entity->ioprio_class = pn->ioprio_class;
+> +		entity->new_ioprio_class = pn->ioprio_class;
+> +	} else {
+> +		entity->weight = iocg->weight;
+> +		entity->new_weight = iocg->weight;
+> +		entity->ioprio_class = iocg->ioprio_class;
+> +		entity->new_ioprio_class = iocg->ioprio_class;
+> +	}
+> +	spin_unlock_irq(&iocg->lock);
+>  
+> -	entity->weight = entity->new_weight = iocg->weight;
+> -	entity->ioprio_class = entity->new_ioprio_class = iocg->ioprio_class;
+>  	entity->ioprio_changed = 1;
+>  	entity->my_sched_data = &iog->sched_data;
+>  }
+> @@ -1263,7 +1284,7 @@ struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
+>  		atomic_set(&iog->ref, 0);
+>  		iog->deleting = 0;
+>  
+> -		io_group_init_entity(iocg, iog);
+> +		io_group_init_entity(iocg, iog, key);
+>  		iog->my_entity = &iog->entity;
+>  #ifdef CONFIG_DEBUG_GROUP_IOSCHED
+>  		iog->iocg_id = css_id(&iocg->css);
+> @@ -1549,8 +1570,208 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
+>  	return iog;
+>  }
+>  
+> +static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
+> +				  struct seq_file *m)
+> +{
+> +	struct io_cgroup *iocg;
+> +	struct policy_node *pn;
+> +
+> +	iocg = cgroup_to_io_cgroup(cgrp);
+> +
+> +	if (list_empty(&iocg->list))
+> +		goto out;
+> +
+> +	seq_printf(m, "dev weight class\n");
+> +
+> +	spin_lock_irq(&iocg->lock);
+> +	list_for_each_entry(pn, &iocg->list, node) {
+> +		seq_printf(m, "%s %lu %lu\n", pn->dev_name,
+> +			   pn->weight, pn->ioprio_class);
+> +	}
+> +	spin_unlock_irq(&iocg->lock);
+> +out:
+> +	return 0;
+> +}
+> +
+> +static inline void policy_insert_node(struct io_cgroup *iocg,
+> +					  struct policy_node *pn)
+> +{
+> +	list_add(&pn->node, &iocg->list);
+> +}
+> +
+> +/* Must be called with iocg->lock held */
+> +static inline void policy_delete_node(struct policy_node *pn)
+> +{
+> +	list_del(&pn->node);
+> +}
+> +
+> +/* Must be called with iocg->lock held */
+> +static struct policy_node *policy_search_node(const struct io_cgroup *iocg,
+> +					      void *key)
+> +{
+> +	struct policy_node *pn;
+> +
+> +	if (list_empty(&iocg->list))
+> +		return NULL;
+> +
+> +	list_for_each_entry(pn, &iocg->list, node) {
+> +		if (pn->key == key)
+> +			return pn;
+> +	}
+> +
+> +	return NULL;
+> +}
+> +
+> +static void *devname_to_efqd(const char *buf)
+> +{
+> +	struct block_device *bdev;
+> +	void *key = NULL;
+> +	struct gendisk *disk;
+> +	int part;
+> +
+> +	bdev = lookup_bdev(buf);
+> +	if (IS_ERR(bdev))
+> +		return NULL;
+> +
+> +	disk = get_gendisk(bdev->bd_dev, &part);
+> +	key = (void *)&disk->queue->elevator->efqd;
+> +	bdput(bdev);
+> +
+> +	return key;
+> +}
+> +
+> +static int policy_parse_and_set(char *buf, struct policy_node *newpn)
+> +{
+> +	char *s[3];
+> +	char *p;
+> +	int ret;
+> +	int i = 0;
+> +
+> +	memset(s, 0, sizeof(s));
+> +	while (i < ARRAY_SIZE(s)) {
+> +		p = strsep(&buf, ":");
+> +		if (!p)
+> +			break;
+> +		if (!*p)
+> +			continue;
+> +		s[i++] = p;
+> +	}
+> +
+> +	newpn->key = devname_to_efqd(s[0]);
+> +	if (!newpn->key)
+> +		return -EINVAL;
+> +
+> +	strcpy(newpn->dev_name, s[0]);
+> +
+> +	ret = strict_strtoul(s[1], 10, &newpn->weight);
+> +	if (ret || newpn->weight > WEIGHT_MAX)
+> +		return -EINVAL;
+> +
+> +	ret = strict_strtoul(s[2], 10, &newpn->ioprio_class);
+> +	if (ret || newpn->ioprio_class < IOPRIO_CLASS_RT ||
+> +	    newpn->ioprio_class > IOPRIO_CLASS_IDLE)
+> +		return -EINVAL;
+> +
+> +	return 0;
+> +}
+> +
+> +static int io_cgroup_policy_write(struct cgroup *cgrp, struct cftype *cft,
+> +			    const char *buffer)
+> +{
+> +	struct io_cgroup *iocg;
+> +	struct policy_node *newpn, *pn;
+> +	char *buf;
+> +	int ret = 0;
+> +	int keep_newpn = 0;
+> +	struct hlist_node *n;
+> +	struct io_group *iog;
+> +
+> +	buf = kstrdup(buffer, GFP_KERNEL);
+> +	if (!buf)
+> +		return -ENOMEM;
+> +
+> +	newpn = kzalloc(sizeof(*newpn), GFP_KERNEL);
+> +	if (!newpn) {
+> +		ret = -ENOMEM;
+> +		goto free_buf;
+> +	}
+> +
+> +	ret = policy_parse_and_set(buf, newpn);
+> +	if (ret)
+> +		goto free_newpn;
+> +
+> +	if (!cgroup_lock_live_group(cgrp)) {
+> +		ret = -ENODEV;
+> +		goto free_newpn;
+> +	}
+> +
+> +	iocg = cgroup_to_io_cgroup(cgrp);
+> +	spin_lock_irq(&iocg->lock);
+> +
+> +	pn = policy_search_node(iocg, newpn->key);
+> +	if (!pn) {
+> +		if (newpn->weight != 0) {
+> +			policy_insert_node(iocg, newpn);
+> +			keep_newpn = 1;
+> +		}
+> +		goto update_io_group;
+> +	}
+> +
+> +	if (newpn->weight == 0) {
+> +		/* weight == 0 means deleteing a policy */
+> +		policy_delete_node(pn);
+> +		goto update_io_group;
+> +	}
+> +
+> +	pn->weight = newpn->weight;
+> +	pn->ioprio_class = newpn->ioprio_class;
+> +
+> +update_io_group:
+> +	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {
+> +		if (iog->key == newpn->key) {
+> +			if (newpn->weight) {
+> +				iog->entity.new_weight = newpn->weight;
+> +				iog->entity.new_ioprio_class =
+> +					newpn->ioprio_class;
+> +				/*
+> +				 * iog weight and ioprio_class updating
+> +				 * actually happens if ioprio_changed is set.
+> +				 * So ensure ioprio_changed is not set until
+> +				 * new weight and new ioprio_class are updated.
+> +				 */
+> +				smp_wmb();
+> +				iog->entity.ioprio_changed = 1;
+> +			} else {
+> +				iog->entity.new_weight = iocg->weight;
+> +				iog->entity.new_ioprio_class =
+> +					iocg->ioprio_class;
+> +
+> +				/* The same as above */
+> +				smp_wmb();
+> +				iog->entity.ioprio_changed = 1;
+> +			}
+> +		}
+> +	}
+> +	spin_unlock_irq(&iocg->lock);
+> +
+> +	cgroup_unlock();
+> +
+> +free_newpn:
+> +	if (!keep_newpn)
+> +		kfree(newpn);
+> +free_buf:
+> +	kfree(buf);
+> +	return ret;
+> +}
+> +
+>  struct cftype bfqio_files[] = {
+>  	{
+> +		.name = "policy",
+> +		.read_seq_string = io_cgroup_policy_read,
+> +		.write_string = io_cgroup_policy_write,
+> +		.max_write_len = 256,
+> +	},
+> +	{
+>  		.name = "weight",
+>  		.read_u64 = io_cgroup_weight_read,
+>  		.write_u64 = io_cgroup_weight_write,
+> @@ -1592,6 +1813,7 @@ struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
+>  	INIT_HLIST_HEAD(&iocg->group_data);
+>  	iocg->weight = IO_DEFAULT_GRP_WEIGHT;
+>  	iocg->ioprio_class = IO_DEFAULT_GRP_CLASS;
+> +	INIT_LIST_HEAD(&iocg->list);
+>  
+>  	return &iocg->css;
+>  }
+> @@ -1750,6 +1972,7 @@ void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+>  	unsigned long flags, flags1;
+>  	int queue_lock_held = 0;
+>  	struct elv_fq_data *efqd;
+> +	struct policy_node *pn, *pntmp;
+>  
+>  	/*
+>  	 * io groups are linked in two lists. One list is maintained
+> @@ -1823,6 +2046,12 @@ locked:
+>  	BUG_ON(!hlist_empty(&iocg->group_data));
+>  
+>  	free_css_id(&io_subsys, &iocg->css);
+> +
+> +	list_for_each_entry_safe(pn, pntmp, &iocg->list, node) {
+> +		policy_delete_node(pn);
+> +		kfree(pn);
+> +	}
+> +
+>  	kfree(iocg);
+>  }
+>  
+> @@ -2137,7 +2366,7 @@ void elv_fq_unset_request_ioq(struct request_queue *q, struct request *rq)
+>  void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
+>  {
+>  	entity->ioprio = entity->new_ioprio;
+> -	entity->weight = entity->new_weight;
+> +	entity->weight = entity->new_weigh;
+>  	entity->ioprio_class = entity->new_ioprio_class;
+>  	entity->sched_data = &iog->sched_data;
+>  }
+> diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+> index db3a347..0407633 100644
+> --- a/block/elevator-fq.h
+> +++ b/block/elevator-fq.h
+> @@ -253,6 +253,14 @@ struct io_group {
+>  #endif
+>  };
+>  
+> +struct policy_node {
+> +	struct list_head node;
+> +	char dev_name[32];
+> +	void *key;
+> +	unsigned long weight;
+> +	unsigned long ioprio_class;
+> +};
+> +
+>  /**
+>   * struct bfqio_cgroup - bfq cgroup data structure.
+>   * @css: subsystem state for bfq in the containing cgroup.
+> @@ -269,6 +277,9 @@ struct io_cgroup {
+>  
+>  	unsigned long weight, ioprio_class;
+>  
+> +	/* list of policy_node */
+> +	struct list_head list;
+> +
+>  	spinlock_t lock;
+>  	struct hlist_head group_data;
+>  };
+> -- 
+> 1.5.4.rc3
+> 
+> 
