@@ -1,16 +1,16 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 08/18] io-controller: idle for sometime on sync queue
-	before expiring it
-Date: Wed, 13 May 2009 11:00:02 -0400
-Message-ID: <20090513150002.GC7696__20310.3997548626$1242227460$gmane$org@redhat.com>
+Subject: Re: [PATCH] IO Controller: Add per-device weight and ioprio_class
+	handling
+Date: Wed, 13 May 2009 11:29:09 -0400
+Message-ID: <20090513152909.GD7696__31110.4021304802$1242233058$gmane$org@redhat.com>
 References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-9-git-send-email-vgoyal@redhat.com>
+	<4A0A29B5.7030109@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1241553525-28095-9-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A0A29B5.7030109-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,72 +20,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, fer
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, May 05, 2009 at 03:58:35PM -0400, Vivek Goyal wrote:
-> o When a sync queue expires, in many cases it might be empty and then
->   it will be deleted from the active tree. This will lead to a scenario
->   where out of two competing queues, only one is on the tree and when a
->   new queue is selected, vtime jump takes place and we don't see services
->   provided in proportion to weight.
-> 
-> o In general this is a fundamental problem with fairness of sync queues
->   where queues are not continuously backlogged. Looks like idling is
->   only solution to make sure such kind of queues can get some decent amount
->   of disk bandwidth in the face of competion from continusouly backlogged
->   queues. But excessive idling has potential to reduce performance on SSD
->   and disks with commnad queuing.
-> 
-> o This patch experiments with waiting for next request to come before a
->   queue is expired after it has consumed its time slice. This can ensure
->   more accurate fairness numbers in some cases.
-> 
-> o Introduced a tunable "fairness". If set, io-controller will put more
->   focus on getting fairness right than getting throughput right.
-> 
-> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
+On Wed, May 13, 2009 at 10:00:21AM +0800, Gui Jianfeng wrote:
 
-Following is a fix which should go here. This patch helps me get much 
-better fairness numbers for sync queues.
+[..]
+> @@ -2137,7 +2366,7 @@ void elv_fq_unset_request_ioq(struct request_queue *q, struct request *rq)
+>  void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
+>  {
+>  	entity->ioprio = entity->new_ioprio;
+> -	entity->weight = entity->new_weight;
+> +	entity->weight = entity->new_weigh;
+>  	entity->ioprio_class = entity->new_ioprio_class;
+>  	entity->sched_data = &iog->sched_data;
+>  }
+> diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+> index db3a347..0407633 100644
+> --- a/block/elevator-fq.h
+> +++ b/block/elevator-fq.h
+> @@ -253,6 +253,14 @@ struct io_group {
+>  #endif
+>  };
+>  
+> +struct policy_node {
 
+Would "io_policy_node" be better?
 
-o Fix a window where a queue can be expired without doing busy wait for
-  next request. This fix allows better fairness number for sync queues.
+> +	struct list_head node;
+> +	char dev_name[32];
+> +	void *key;
+> +	unsigned long weight;
+> +	unsigned long ioprio_class;
+> +};
+> +
+>  /**
+>   * struct bfqio_cgroup - bfq cgroup data structure.
+>   * @css: subsystem state for bfq in the containing cgroup.
+> @@ -269,6 +277,9 @@ struct io_cgroup {
+>  
+>  	unsigned long weight, ioprio_class;
+>  
+> +	/* list of policy_node */
+> +	struct list_head list;
+> +
 
-Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- block/elevator-fq.c |   18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
+How about "struct list_head policy_list" or "struct list_head io_policy"?
 
-Index: linux14/block/elevator-fq.c
-===================================================================
---- linux14.orig/block/elevator-fq.c	2009-05-13 10:55:44.000000000 -0400
-+++ linux14/block/elevator-fq.c	2009-05-13 10:55:50.000000000 -0400
-@@ -3368,8 +3368,22 @@ void *elv_fq_select_ioq(struct request_q
- 	/*
- 	 * The active queue has run out of time, expire it and select new.
- 	 */
--	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
--		goto expire;
-+	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq)) {
-+		/*
-+		 * Queue has used up its slice. Wait busy is not on otherwise
-+		 * we wouldn't have been here. There is a chance that after
-+		 * slice expiry no request from the queue completed hence
-+		 * wait busy timer could not be turned on. If that's the case
-+		 * don't expire the queue yet. Next request completion from
-+		 * the queue will arm the wait busy timer.
-+		 */
-+		if (efqd->fairness && !ioq->nr_queued
-+		    && elv_ioq_nr_dispatched(ioq)) {
-+			ioq = NULL;
-+			goto keep_queue;
-+		} else
-+			goto expire;
-+	}
- 
- 	/*
- 	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
+Thanks
+Vivek
