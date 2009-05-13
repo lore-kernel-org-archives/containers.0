@@ -1,15 +1,12 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 07/18] io-controller: Export disk time used and nr sectors
-	dipatched through cgroups
-Date: Wed, 13 May 2009 10:39:07 +0800
-Message-ID: <4A0A32CB.4020609__14137.0357633152$1242182486$gmane$org@cn.fujitsu.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-8-git-send-email-vgoyal@redhat.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] mktree: long is bigger on 64-bit
+Date: Tue, 12 May 2009 22:08:30 -0500
+Message-ID: <20090513030830.GA11265@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1241553525-28095-8-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,42 +16,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
->  
-> +/*
-> + * traverse through all the io_groups associated with this cgroup and calculate
-> + * the aggr disk time received by all the groups on respective disks.
-> + */
-> +static u64 calculate_aggr_disk_time(struct io_cgroup *iocg)
-> +{
-> +	struct io_group *iog;
-> +	struct hlist_node *n;
-> +	u64 disk_time = 0;
-> +
-> +	rcu_read_lock();
+mktree's hash function assumes that long is 32 bits.  Fix.
 
-  This function is in slow-path, so no need to call rcu_read_lock(), just need to ensure
-  that the caller already holds the iocg->lock.
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ mktree.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-> +	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
-> +		/*
-> +		 * There might be groups which are not functional and
-> +		 * waiting to be reclaimed upon cgoup deletion.
-> +		 */
-> +		if (rcu_dereference(iog->key))
-> +			disk_time += iog->entity.total_service;
-> +	}
-> +	rcu_read_unlock();
-> +
-> +	return disk_time;
-> +}
-> +
-
+diff --git a/mktree.c b/mktree.c
+index 7a8cecc..0195974 100644
+--- a/mktree.c
++++ b/mktree.c
+@@ -724,6 +724,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 	struct task *child;
+ 	struct pid_swap swap;
+ 	pid_t newpid;
++	int status;
+ 	int ret;
+ 
+ 	ckpt_dbg("pid %d: pid %d sid %d parent %d\n",
+@@ -765,7 +766,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 	/* 3rd pass: bring out your deads ... */
+ 	for (child = task->children; child; child = child->next_sib) {
+ 		if (child->flags & TASK_DEAD) {
+-			ret = waitpid(child->rpid, NULL, 0);
++			ret = waitpid(child->rpid, &status, 0);
+ 			if (ret < 0) {
+ 				perror("waitpid");
+ 				return -1;
+@@ -1291,7 +1292,8 @@ static void hash_exit(struct ckpt_ctx *ctx)
+ static inline int hash_func(long key)
+ {
+ 	unsigned long hash = key * GOLDEN_RATIO_PRIME_32;
+-	return (hash >> (32 - HASH_BITS));
++	//return (hash >> (32 - HASH_BITS));
++	return (hash >> (sizeof(long)*8 - HASH_BITS));
+ }
+ 
+ static int hash_insert(struct ckpt_ctx *ctx, long key, void *data)
 -- 
-Regards
-Gui Jianfeng
+1.6.1.1
