@@ -1,16 +1,11 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] IO Controller: Add per-device weight and ioprio_class
-	handling
-Date: Wed, 13 May 2009 11:29:09 -0400
-Message-ID: <20090513152909.GD7696__31110.4021304802$1242233058$gmane$org@redhat.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<4A0A29B5.7030109@cn.fujitsu.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH ckpt-v15] allocate checkpoint headers with kzalloc
+Date: Wed, 13 May 2009 10:55:59 -0500
+Message-ID: <m3zldhxai8.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A0A29B5.7030109-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,53 +15,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, May 13, 2009 at 10:00:21AM +0800, Gui Jianfeng wrote:
+In a checkpoint image I noticed a lot of 0x6b (POISON_FREE) bytes
+corresponding to checkpoint_restart_block -- this indicates that we
+would write uninitialized kernel memory to the image in cases where
+slab allocator debugging is not enabled[1].
 
-[..]
-> @@ -2137,7 +2366,7 @@ void elv_fq_unset_request_ioq(struct request_queue *q, struct request *rq)
->  void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
->  {
->  	entity->ioprio = entity->new_ioprio;
-> -	entity->weight = entity->new_weight;
-> +	entity->weight = entity->new_weigh;
->  	entity->ioprio_class = entity->new_ioprio_class;
->  	entity->sched_data = &iog->sched_data;
->  }
-> diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-> index db3a347..0407633 100644
-> --- a/block/elevator-fq.h
-> +++ b/block/elevator-fq.h
-> @@ -253,6 +253,14 @@ struct io_group {
->  #endif
->  };
->  
-> +struct policy_node {
+Use kzalloc in ckpt_hdr_get.
 
-Would "io_policy_node" be better?
+[1] slub's debug mode apparently initializes allocated buffers to
+POISON_FREE instead of POISON_INUSE, which confused me for a bit.
+Maybe I don't understand the intended meanings of the poison values.
 
-> +	struct list_head node;
-> +	char dev_name[32];
-> +	void *key;
-> +	unsigned long weight;
-> +	unsigned long ioprio_class;
-> +};
-> +
->  /**
->   * struct bfqio_cgroup - bfq cgroup data structure.
->   * @css: subsystem state for bfq in the containing cgroup.
-> @@ -269,6 +277,9 @@ struct io_cgroup {
->  
->  	unsigned long weight, ioprio_class;
->  
-> +	/* list of policy_node */
-> +	struct list_head list;
-> +
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ checkpoint/sys.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-How about "struct list_head policy_list" or "struct list_head io_policy"?
-
-Thanks
-Vivek
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 255ebc1..34a226c 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -117,7 +117,7 @@ int ckpt_kread(struct ckpt_ctx *ctx, void *addr, int count)
+  */
+ void *ckpt_hdr_get(struct ckpt_ctx *ctx, int len)
+ {
+-	return kmalloc(len, GFP_KERNEL);
++	return kzalloc(len, GFP_KERNEL);
+ }
+ 
+ /**
+-- 
+1.6.0.6
