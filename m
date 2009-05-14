@@ -1,17 +1,15 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 07/18] io-controller: Export disk time used and nr	sectors
-	dipatched through cgroups
-Date: Thu, 14 May 2009 15:53:18 +0800
-Message-ID: <4A0BCDEE.5020708__3354.01791749081$1242287790$gmane$org@cn.fujitsu.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-8-git-send-email-vgoyal@redhat.com>
-	<4A0A32CB.4020609@cn.fujitsu.com>
-	<20090513145127.GB7696@redhat.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 4/5] cr: checkpoint and restore task credentials
+Date: Thu, 14 May 2009 12:18:50 +0400
+Message-ID: <20090514081850.GA21115@x200.localdomain>
+References: <20090511160424.GA12234@us.ibm.com>
+	<20090511160539.GD12286@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090513145127.GB7696-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090511160539.GD12286-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,62 +19,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> On Wed, May 13, 2009 at 10:39:07AM +0800, Gui Jianfeng wrote:
->> Vivek Goyal wrote:
->> ...
->>>  
->>> +/*
->>> + * traverse through all the io_groups associated with this cgroup and calculate
->>> + * the aggr disk time received by all the groups on respective disks.
->>> + */
->>> +static u64 calculate_aggr_disk_time(struct io_cgroup *iocg)
->>> +{
->>> +	struct io_group *iog;
->>> +	struct hlist_node *n;
->>> +	u64 disk_time = 0;
->>> +
->>> +	rcu_read_lock();
->>   This function is in slow-path, so no need to call rcu_read_lock(), just need to ensure
->>   that the caller already holds the iocg->lock.
->>
-> 
-> Or can we get rid of requirement of iocg_lock here and just read the io
-> group data under rcu read lock? Actually I am wondering why do we require
-> an iocg_lock here. We are not modifying the rcu protected list. We are
-> just traversing through it and reading the data.
+On Mon, May 11, 2009 at 11:05:39AM -0500, Serge E. Hallyn wrote:
+> --- a/checkpoint/objhash.c
+> +++ b/checkpoint/objhash.c
+> +#define CKPT_MAXGROUPS 15
+> +#define MAX_GROUPINFO_SIZE (sizeof(*h)+CKPT_MAXGROUPS*sizeof(gid_t))
+> +/* move this fn into kernel/sys.c next to group functions? */
+> +static int checkpoint_write_groupinfo(struct ckpt_ctx *ctx,
+> +					struct group_info *g)
+> +{
+> +	int ret, i, size;
+> +	struct ckpt_hdr_groupinfo *h;
+> +
+> +	if (g->ngroups > CKPT_MAXGROUPS) {
+> +		ckpt_debug("Too many groups: %d  (max is %d)\n",
+> +			g->ngroups, CKPT_MAXGROUPS);
+> +		return -E2BIG;
+> +	}
 
-  Yes, i think removing the iocg->lock from caller(io_cgroup_disk_time_read()) 
-  is a better choice.
+Ooh, a hack :-)
 
-> 
-> Thanks
-> Vivek
-> 
->>> +	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
->>> +		/*
->>> +		 * There might be groups which are not functional and
->>> +		 * waiting to be reclaimed upon cgoup deletion.
->>> +		 */
->>> +		if (rcu_dereference(iog->key))
->>> +			disk_time += iog->entity.total_service;
->>> +	}
->>> +	rcu_read_unlock();
->>> +
->>> +	return disk_time;
->>> +}
->>> +
->> -- 
->> Regards
->> Gui Jianfeng
-> 
-> 
-> 
+> +	size = sizeof(*h) + g->ngroups * sizeof(__u32);
+> +	h = ckpt_hdr_get_type(ctx, size, CKPT_HDR_GROUPINFO);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	h->ngroups = g->ngroups;
+> +	for (i = 0; i < g->ngroups; i++)
+> +		h->groups[i] = GROUP_AT(g, i);
+> +
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
 
--- 
-Regards
-Gui Jianfeng
+> +/*
+> + * write the user struct
+> + * TODO keyring will need to be dumped
+> + */
+> +#define UNSAVED_NS_MAX 5
+
+Another hack :-)
+
+This is an invitation to discuss what to do with references to future,
+especially given that object image can be variable-size _and_
+streamability on dump.
+
+In case of user->user_ns->creator, we can avoid the issue and dump creator
+first.
