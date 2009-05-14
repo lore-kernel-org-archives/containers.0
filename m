@@ -1,17 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/5] cr: checkpoint and restore task credentials
-Date: Thu, 14 May 2009 08:58:03 -0500
-Message-ID: <20090514135802.GC3980@us.ibm.com>
-References: <20090511160424.GA12234@us.ibm.com>
-	<20090511160539.GD12286@us.ibm.com>
-	<20090514081850.GA21115@x200.localdomain>
-	<20090514105252.GA31197@x200.localdomain>
+Subject: Re: [PATCH 1/1] cr: fix ckpt_obj_fetch return values (v2)
+Date: Thu, 14 May 2009 09:14:49 -0500
+Message-ID: <20090514141449.GA4972@us.ibm.com>
+References: <20090513210641.GA22784@us.ibm.com>
+	<4A0BF2AD.8030304@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090514105252.GA31197-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <4A0BF2AD.8030304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,68 +19,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Thu, May 14, 2009 at 12:18:50PM +0400, Alexey Dobriyan wrote:
-> > On Mon, May 11, 2009 at 11:05:39AM -0500, Serge E. Hallyn wrote:
-> > > --- a/checkpoint/objhash.c
-> > > +++ b/checkpoint/objhash.c
-> > > +#define CKPT_MAXGROUPS 15
-> > > +#define MAX_GROUPINFO_SIZE (sizeof(*h)+CKPT_MAXGROUPS*sizeof(gid_t))
-> > > +/* move this fn into kernel/sys.c next to group functions? */
-> > > +static int checkpoint_write_groupinfo(struct ckpt_ctx *ctx,
-> > > +					struct group_info *g)
-> > > +{
-> > > +	int ret, i, size;
-> > > +	struct ckpt_hdr_groupinfo *h;
-> > > +
-> > > +	if (g->ngroups > CKPT_MAXGROUPS) {
-> > > +		ckpt_debug("Too many groups: %d  (max is %d)\n",
-> > > +			g->ngroups, CKPT_MAXGROUPS);
-> > > +		return -E2BIG;
-> > > +	}
-> > 
-> > Ooh, a hack :-)
-> > 
-> > > +	size = sizeof(*h) + g->ngroups * sizeof(__u32);
-> > > +	h = ckpt_hdr_get_type(ctx, size, CKPT_HDR_GROUPINFO);
-> > > +	if (!h)
-> > > +		return -ENOMEM;
-> > > +
-> > > +	h->ngroups = g->ngroups;
-> > > +	for (i = 0; i < g->ngroups; i++)
-> > > +		h->groups[i] = GROUP_AT(g, i);
-> > > +
-> > > +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> > > +	ckpt_hdr_put(ctx, h);
-> > > +
-> > > +	return ret;
-> > > +}
-> > 
-> > > +/*
-> > > + * write the user struct
-> > > + * TODO keyring will need to be dumped
-> > > + */
-> > > +#define UNSAVED_NS_MAX 5
-> > 
-> > Another hack :-)
-> > 
-> > This is an invitation to discuss what to do with references to future,
-> > especially given that object image can be variable-size _and_
-> > streamability on dump.
-> > 
-> > In case of user->user_ns->creator, we can avoid the issue and dump creator
-> > first.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> > @@ -1246,9 +1244,7 @@ int restore_mm_obj(struct ckpt_ctx *ctx, int mm_objref)
+> >  	int ret;
+> >  
+> >  	mm = ckpt_obj_fetch(ctx, mm_objref, CKPT_OBJ_MM);
+> > -	if (!mm)
+> > -		return -EINVAL;
+> > -	else if (IS_ERR(mm))
+> > +	if (IS_ERR(mm))
+> >  		return -EINVAL;
+> 			^^^^^^
+> should be:		PTR_ERR(mm);
+
+Oops, right.
+
+> > diff --git a/fs/pipe.c b/fs/pipe.c
+> > index ab2de3c..b284dcb 100644
+> > --- a/fs/pipe.c
+> > +++ b/fs/pipe.c
+> > @@ -982,14 +982,12 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+> >  		return ERR_PTR(-EINVAL);
+> >  
+> >  	file = ckpt_obj_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
+> > -	if (IS_ERR(file))
+> > -		return file;
+> >  	/*
+> > -	 * If ckpt_obj_fetch() returned NULL, then this is the first
+> > +	 * If ckpt_obj_fetch() returned -EINVAL, then this is the first
+> >  	 * time we see this pipe so need to restore the contents.
+> >  	 * Otherwise, use the file pointer skip forward.
+> >  	 */
+> > -	if (!file) {
+> > +	if (PTR_ERR(file) == -EINVAL) {
 > 
-> Aieee, user_ns are also hierarchical and ->creator points to outside of
-> hierarchy.
+> ckpt_obj_fetch() will also fail with -EINVAL if the type of the object
+> found doesn't match the type that was requested. Hence why originally
+> the two return values. So I changed that latter to report -ENOMSG (that
+> is:  /* No message of desired type */)
 
-We don't checkpoint the final, top-most creator, the one which created
-the user namespace in which the top checkpointed task belongs.  Instead
-we mark the user_ns as 'CKPT_USERNS_INIT'.  So every user_struct and
-user_ns which we checkpoint will be in or under that namespace.
+Hmm, yes I was thinking of the checkpoint case where mismatched types
+would be strictly an objhash bug.  You're right, this case can just
+be a bad checkpoint image!
 
+thanks,
 -serge
