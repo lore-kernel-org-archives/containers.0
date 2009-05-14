@@ -1,19 +1,13 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: IO scheduler based IO Controller V2
-Date: Thu, 14 May 2009 12:31:21 +0200
-Message-ID: <20090514103117.GB2828__27340.9650581472$1242297224$gmane$org@linux>
-References: <20090506213453.GC4282@linux> <20090506215235.GJ8180@redhat.com>
-	<20090507090450.GA4613@linux> <20090507141126.GA9463@redhat.com>
-	<20090507144501.GB9463@redhat.com>
-	<20090507153642.GC9463@redhat.com> <20090507221900.GA29774@linux>
-	<20090508180951.GG7293@redhat.com> <20090508200458.GA3708@linux>
-	<20090508215618.GJ7293@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix ckpt_obj_fetch return values (v2)
+Date: Thu, 14 May 2009 06:30:05 -0400
+Message-ID: <4A0BF2AD.8030304@cs.columbia.edu>
+References: <20090513210641.GA22784@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090508215618.GJ7293-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090513210641.GA22784-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,129 +17,144 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, May 08, 2009 at 05:56:18PM -0400, Vivek Goyal wrote:
-> On Fri, May 08, 2009 at 10:05:01PM +0200, Andrea Righi wrote:
+
+This looks clearer - applied after some modifications (see comments
+below).
+
+Serge E. Hallyn wrote:
+> Sorry for the noise, but here is a corrected version of my patch
+> from earlier today.
 > 
-> [..]
-> > > Conclusion
-> > > ==========
-> > > It just reaffirms that with max BW control, we are not doing a fair job
-> > > of throttling hence no more hold the IO scheduler properties with-in
-> > > cgroup.
-> > > 
-> > > With proportional BW controller implemented at IO scheduler level, one
-> > > can do very tight integration with IO controller and hence retain 
-> > > IO scheduler behavior with-in cgroup.
-> > 
-> > It is worth to bug you I would say :). Results are interesting,
-> > definitely. I'll check if it's possible to merge part of the io-throttle
-> > max BW control in this controller and who knows if finally we'll be able
-> > to converge to a common proposal...
+> ckpt_obj_fetch returned ERR_PTR(error) on some failures, NULL on
+> others.  Not all of its callers were checking for NULL, which
+> would lead to NULL dereferences.
 > 
-> Great, Few thoughts though.
+> Return -EINVAL if the object is not in the hash table.  Fix up
+> pipe_file_restore to do the right thing.
 > 
-> - What are your requirements? Do you strictly need max bw control or
->   proportional BW control will satisfy your needs? Or you need both?
-
-The theoretical advantages of max BW control are that they offer an
-immediate action on policy enforcement mitigating the problem before it
-happens (a kind of static partitioning I would say) and that you have
-probably something that provides a more explicit control to contain
-different classes of users in hosted environment (e.g., give BW in
-function on how much they pay). And I can say the io-throttle approach
-at the moment seems to work fine for a production environment
-(http://www.bluehost.com).
-
-Apart the motivations above, I don't have specific requirements to
-provide the max BW control.
-
-But it is also true that the io-controller approach is still in a
-development stage and needs more testing. The design concepts make
-sense, definitely, so maybe only the proportional approach will be
-sufficient to satisfy the requirements of the 90% of users out there.
-
--Andrea
-
+> Changelog: May 13: fix typo in ckpt_obj_fetch.
 > 
-> - With the current algorithm BFQ (modified WF2Q+), we should be able
->   to do proportional BW division while maintaining the properties of
->   IO scheduler with-in cgroup in hiearchical manner.
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/files.c   |    4 +---
+>  checkpoint/memory.c  |    6 +-----
+>  checkpoint/objhash.c |    2 +-
+>  checkpoint/process.c |    4 +---
+>  fs/pipe.c            |    9 ++++-----
+>  5 files changed, 8 insertions(+), 17 deletions(-)
+> 
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> index c6a946b..bc9944c 100644
+> --- a/checkpoint/files.c
+> +++ b/checkpoint/files.c
+> @@ -484,9 +484,7 @@ static int restore_fd_ent(struct ckpt_ctx *ctx)
+>  		goto out;
 >  
->   I think it can be simply enhanced to do max bw control also. That is
->   whenever a queue is selected for dispatch (from fairness point of view)
->   also check the IO rate of that group and if IO rate exceeded, expire
->   the queue immediately and fake as if queue consumed its time slice
->   which will be equivalent to throttling.
-> 
->   But in this simple scheme, I think throttling is still unfair with-in
->   the class. What I mean is following.
-> 
->   if an RT task and an BE task are in same cgroup and cgroup exceeds its
->   max BW, RT task is next to be dispatched from fairness point of view and it
->   will end being throttled. This is still fine because until RT task is
->   finished, BE task will never get to run in that cgroup, so at some point
->   of time, cgroup rate will come down and RT task will get the IO done
->   meeting fairnesss and max bw constraints.
-> 
->   But this simple scheme does not work with-in same class. Say prio 0
->   and prio 7 BE class readers. Now we will end up throttling the guy who
->   is scheduled to go next and there is no mechanism that prio0 and prio7
->   tasks are throttled in proportionate manner.
-> 
->   So, we shall have to come up with something better, I think Dhaval was
->   implementing upper limit for cpu controller. May be PeterZ and Dhaval can
->   give us some pointers how did they manage to implement both proportional
->   and max bw control with the help of a single tree while maintaining the
->   notion of prio with-in cgroup.
-> 
-> PeterZ/Dhaval  ^^^^^^^^
-> 
-> - We should be able to get rid of reader-writer issue even with above
->   simple throttling mechanism for schedulers like deadline and AS, because at
->   elevator we see it as a single queue (for both reads and writes) and we
->   will throttle this queue. With-in queue dispatch are taken care by io
->   scheduler. So as long as IO has been queued in the queue, scheduler
->   will take care of giving advantage to readers even if throttling is
->   taking place on the queue.
-> 
-> Why am I thinking loud? So that we know what are we trying to achieve at the
-> end of the day. So at this point of time what are the advantages/disadvantages
-> of doing max bw control along with proportional bw control?
-> 
-> Advantages
-> ==========
-> - With a combined code base, total code should be less as compared to if
->   both of them are implemented separately. 
-> 
-> - There can be few advantages in terms of maintaining the notion of IO
->   scheduler with-in cgroup. (like RT tasks always goes first in presence
->   of BE and IDLE task etc. But simple throttling scheme will not take
->   care of fair throttling with-in class. We need a better algorithm to
->   achive that goal).
-> 
-> - We probably will get rid of reader writer issue for single queue
->   schedulers like deadline and AS. (Need to run tests and see).
-> 
-> Disadvantages
-> =============
-> - Implementation at IO scheduler/elevator layer does not cover higher
->   level logical devices. So one can do max bw control only at leaf nodes
->   where IO scheduler is running and not at intermediate logical nodes.
->    
-> I personally think that proportional BW control will meet more people's
-> need as compared to max bw contorl. 
-> 
-> So far nobody has come up with a solution where a single proposal covers
-> all the cases without breaking things. So personally, I want to make
-> things work at least at IO scheduler level and cover as much ground as
-> possible without breaking things (hardware RAID, all the direct attached
-> devices etc) and then worry about higher level software devices.
-> 
-> Thoughts?
-> 
-> Thanks
-> Vivek
+>  	file = ckpt_obj_fetch(ctx, h->fd_objref, CKPT_OBJ_FILE);
+> -	if (!file)
+> -		goto out;
+> -	else if (IS_ERR(file)) {
+> +	if (IS_ERR(file)) {
+>  		ret = PTR_ERR(file);
+>  		goto out;
+>  	}
+> diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+> index 92d4485..5f2930f 100644
+> --- a/checkpoint/memory.c
+> +++ b/checkpoint/memory.c
+> @@ -1207,8 +1207,6 @@ static struct mm_struct *do_restore_mm(struct ckpt_ctx *ctx)
+>  	/* restore the ->exe_file */
+>  	if (h->exefile_objref) {
+>  		file = ckpt_obj_fetch(ctx, h->exefile_objref, CKPT_OBJ_FILE);
+> -		if (!file)
+> -			file = ERR_PTR(-EINVAL);
+>  		if (IS_ERR(file)) {
+>  			up_write(&mm->mmap_sem);
+>  			ret = PTR_ERR(file);
+> @@ -1246,9 +1244,7 @@ int restore_mm_obj(struct ckpt_ctx *ctx, int mm_objref)
+>  	int ret;
+>  
+>  	mm = ckpt_obj_fetch(ctx, mm_objref, CKPT_OBJ_MM);
+> -	if (!mm)
+> -		return -EINVAL;
+> -	else if (IS_ERR(mm))
+> +	if (IS_ERR(mm))
+>  		return -EINVAL;
+			^^^^^^
+should be:		PTR_ERR(mm);
+
+>  
+>  	if (mm == current->mm)
+> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> index 3a860aa..09364e2 100644
+> --- a/checkpoint/objhash.c
+> +++ b/checkpoint/objhash.c
+> @@ -575,7 +575,7 @@ void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
+>  
+>  	obj = obj_find_by_objref(ctx, objref);
+>  	if (!obj)
+> -		return NULL;
+> +		return ERR_PTR(-EINVAL);
+>  	ckpt_debug("%s ref %d\n", obj->ops->obj_name, obj->objref);
+>  	return (obj->ops->obj_type == type ? obj->ptr : ERR_PTR(-EINVAL));
+>  }
+> diff --git a/checkpoint/process.c b/checkpoint/process.c
+> index cf7a44a..1c36ae2 100644
+> --- a/checkpoint/process.c
+> +++ b/checkpoint/process.c
+> @@ -595,9 +595,7 @@ static int restore_ns_obj(struct ckpt_ctx *ctx, int ns_objref)
+>  	struct nsproxy *nsproxy;
+>  
+>  	nsproxy = ckpt_obj_fetch(ctx, ns_objref, CKPT_OBJ_NS);
+> -	if (!nsproxy)
+> -		return -EINVAL;
+> -	else if (IS_ERR(nsproxy))
+> +	if (IS_ERR(nsproxy))
+>  		return PTR_ERR(nsproxy);
+>  
+>  	if (nsproxy != task_nsproxy(current))
+> diff --git a/fs/pipe.c b/fs/pipe.c
+> index ab2de3c..b284dcb 100644
+> --- a/fs/pipe.c
+> +++ b/fs/pipe.c
+> @@ -982,14 +982,12 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+>  		return ERR_PTR(-EINVAL);
+>  
+>  	file = ckpt_obj_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
+> -	if (IS_ERR(file))
+> -		return file;
+>  	/*
+> -	 * If ckpt_obj_fetch() returned NULL, then this is the first
+> +	 * If ckpt_obj_fetch() returned -EINVAL, then this is the first
+>  	 * time we see this pipe so need to restore the contents.
+>  	 * Otherwise, use the file pointer skip forward.
+>  	 */
+> -	if (!file) {
+> +	if (PTR_ERR(file) == -EINVAL) {
+
+ckpt_obj_fetch() will also fail with -EINVAL if the type of the object
+found doesn't match the type that was requested. Hence why originally
+the two return values. So I changed that latter to report -ENOMSG (that
+is:  /* No message of desired type */)
+
+>  		/* first encounter of this pipe: create it */
+>  		ret = do_pipe_flags(fds, 0);
+>  		if (ret < 0)
+> @@ -1025,7 +1023,8 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+>  		/* get rid of the file descriptors (caller sets that) */
+>  		sys_close(fds[which]);
+>  		sys_close(fds[1-which]);
+> -	}
+> +	} else if (IS_ERR(file))
+> +		return file;
+>  
+>  	ret = restore_file_common(ctx, file, ptr);
+>  	if (ret < 0) {
+
+Thanks,
+
+Oren.
