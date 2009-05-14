@@ -1,11 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: c/r updates
-Date: Thu, 14 May 2009 11:53:40 -0400
-Message-ID: <4A0C3E84.1040702@cs.columbia.edu>
+Subject: Re: [PATCH] Remove READ_IMPLIES_EXEC during restart
+Date: Thu, 14 May 2009 12:10:53 -0400
+Message-ID: <4A0C428D.6050706@cs.columbia.edu>
+References: <1239039694-22332-1-git-send-email-danms@us.ibm.com>	<20090406181748.GA24751@us.ibm.com>
+	<49E42646.4040703@cs.columbia.edu>	<49E4278C.3060500@cs.columbia.edu>
+	<87y6u3cqd0.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87y6u3cqd0.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,41 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
 
-The current development kernel git:
-  git://git.ncl.cs.columbia.edu/pub/git/linux-cr    [ckpt-v15-dev]
+Dan,
 
-The current development user tools git:
-  git://git.ncl.cs.columbia.edu/pub/git/user-cr     [ckpt-v15-dev]
+Now after the rework of the patchset, it's probably a good time
+to add support for this.
 
-(branch naming will remain consistent from now ...)
+I'm unsure if the personality can affect other restore actions
+that take place elsewhere If so, probably the correct way is to:
 
-Dave: I pushed a series of patches/fixes to current c/r tree, some of
-which are are relevant to the patch series you're preparing.
+1) restore personality as part of the task (in the beginning)
 
-Nathan: patches "tee...", "splice..." and "c/r: redo..." change the
-way pipes are saved/restored, and avoids the lockdep issue.
+2) temporarily change it around those places where we want the
+"native" personality, e.g. the call to do_mmap_pgoff(), or shmat(),
 
-Patches:
- c/r: fix ckpt_obj_fetch return values (v3)
- c/r: redo {checkpoint,restore}_pipe() using splice and tee
- splice: added support for pipe-to-pipe splice()
- tee: don't return 0 when another task drains/fills a pipe
- c/r: fix incorrect 'cond ? : xxx' statemnt
- c/r: set expire value to zero for restart block that expired
- c/r: x86 checkpoint support does not depend on CONFIG_COMPAT_VDSO
- c/r: s390: remove unused variable ret
- c/r: s390: fix unterminated ifdef
- c/r: test for ops->restore method in do_restore_file()
- c/r: grab missing reference to a (pipe) file if not first encounter
- Separate restore of task nxproxy (first) and memory (second)
- Fix leak of objects restored in restore_obj()
- c/r: fix users count of files that are pointed to by mm->exe_file
- c/r: fix incorrect variable type in call to strict_strtoul()
+(The reason not to put it around the entire restore_mm() is to
+be safe in case a personality makes a difference when you open
+files. This way we isolate the effect of changing personality).
+
+Any thoughts ?
 
 Oren.
+
+Dan Smith wrote:
+> OL> In fact, if elsewhere we restore current->personality of the task,
+> OL> then unless we move it to cr_read_mm(), it will overwrite it :(
+> 
+> Should we move it or just remove RIE before we start the restart and
+> let the task regain the flag if it had it before?
+> 
