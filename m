@@ -1,8 +1,7 @@
-From: "junction Stanford" <he'd9germinal-lmTtMILVy1gBxqxtMDOl9Q@public.gmane.org>
-Subject: We have high quality MD and Dentist lists for less than five hundred
-	bucks
-Date: 14 May 2009 22:43:30 -0500
-Message-ID: <MTXMAILuZi0me3abTd900000adc@mtxmail.multitex.local>
+From: "Souza draftee" <shirt4crowd-gQUv7FwR0ZXYeEkGiarDvQ@public.gmane.org>
+Subject: MD List
+Date: Fri, 15 May 2009 07:43:42 +0400 (MSD)
+Message-ID: <200905150343.n4F3hgrg050592@relay.peterstar.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,41 +15,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: sethnsherwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: adt1983-YDxpq3io04c@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, s.answer-Mj/0Miq2reM@public.gmane.org, vmmazer-sDDPhz6Yv00RA9EQCv0AEA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Special Package for this week
+The package below is valued at over $2000 when purchased individually
 
-Currently Practicing MDs in the USA 
+Currently Practicing MDs in America 
 
-788,239 in total * 17,779 emails
+788,957 in total * 17,961 emails
 
-Lots of MDs in specialties like Orthopedics, Surgery, Radiology, Dermatology, Neurology, General Practice etc..
+Many popular specialties like Emergency Medicine, Plastic Surgery, OBGYN, Oncology, Pediatrics and more
 
-Can easily be sorted by 16 different fields
+Sort by over a dozen different fields
 
 
-Pharmaceutical Companies in America
+List of US Pharma Companies
 47,000 names and emails of the major positions
 
-American Hospitals
-more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+Listing of US Hospitals
+Complete contact information for the important jobs held at the hospitals
 
-Complete and Accurate Listing for Dental Service Providers
+List of US Dentists
 More than half a million listings [worth $499 alone!]
 
-American Chiropractors Database
+Chiropractors in the USA
 100,000 Chiropractors in the USA (worth $250 alone)
 
 
-Now priced at: 
-$398 for all lists above
+Now offered at the lower rate:  
+$390 for all above data
 
-send email to:      Bernie-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org
+send and email to:      Milton-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org
 
   
 
-good until May 23
+exp. mar May 23 
 
 
-to adjust your subscription status email to exit-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org
+Send us an email to exit-c8wXk5/mmoV5V+5IkYBVeNBPR1lH4CV8@public.gmane.org we will discontinue from the list
