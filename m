@@ -1,21 +1,11 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] io-controller: Add io group reference handling for request
-Date: Mon, 18 May 2009 16:39:23 +0200
-Message-ID: <20090518143921.GE3113__49716.8440408588$1242657698$gmane$org@linux>
-References: <4A03FF3C.4020506@cn.fujitsu.com>
-	<20090508135724.GE7293@redhat.com>
-	<e98e18940905081041r386e52a5q5a2b1f13f1e8c634@mail.gmail.com>
-	<4A078051.5060702@cn.fujitsu.com>
-	<20090511154127.GD6036@redhat.com>
-	<4A0CFA6C.3080609@cn.fujitsu.com> <20090515074839.GA3340@linux>
-	<20090515140643.GB19350@redhat.com> <20090517102604.GA4255@linux>
-	<20090518140114.GB27080@redhat.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: bugs with ckpt-v15-dev
+Date: Mon, 18 May 2009 14:23:31 -0500
+Message-ID: <m3my9amczw.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090518140114.GB27080-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,161 +15,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, May 18, 2009 at 10:01:14AM -0400, Vivek Goyal wrote:
-> On Sun, May 17, 2009 at 12:26:06PM +0200, Andrea Righi wrote:
-> > On Fri, May 15, 2009 at 10:06:43AM -0400, Vivek Goyal wrote:
-> > > On Fri, May 15, 2009 at 09:48:40AM +0200, Andrea Righi wrote:
-> > > > On Fri, May 15, 2009 at 01:15:24PM +0800, Gui Jianfeng wrote:
-> > > > > Vivek Goyal wrote:
-> > > > > ...
-> > > > > >  }
-> > > > > > @@ -1462,20 +1462,27 @@ struct io_cgroup *get_iocg_from_bio(stru
-> > > > > >  /*
-> > > > > >   * Find the io group bio belongs to.
-> > > > > >   * If "create" is set, io group is created if it is not already present.
-> > > > > > + * If "curr" is set, io group is information is searched for current
-> > > > > > + * task and not with the help of bio.
-> > > > > > + *
-> > > > > > + * FIXME: Can we assume that if bio is NULL then lookup group for current
-> > > > > > + * task and not create extra function parameter ?
-> > > > > >   *
-> > > > > > - * Note: There is a narrow window of race where a group is being freed
-> > > > > > - * by cgroup deletion path and some rq has slipped through in this group.
-> > > > > > - * Fix it.
-> > > > > >   */
-> > > > > > -struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
-> > > > > > -					int create)
-> > > > > > +struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
-> > > > > > +					int create, int curr)
-> > > > > 
-> > > > >   Hi Vivek,
-> > > > > 
-> > > > >   IIUC we can get rid of curr, and just determine iog from bio. If bio is not NULL,
-> > > > >   get iog from bio, otherwise get it from current task.
-> > > > 
-> > > > Consider also that get_cgroup_from_bio() is much more slow than
-> > > > task_cgroup() and need to lock/unlock_page_cgroup() in
-> > > > get_blkio_cgroup_id(), while task_cgroup() is rcu protected.
-> > > > 
-> > > 
-> > > True.
-> > > 
-> > > > BTW another optimization could be to use the blkio-cgroup functionality
-> > > > only for dirty pages and cut out some blkio_set_owner(). For all the
-> > > > other cases IO always occurs in the same context of the current task,
-> > > > and you can use task_cgroup().
-> > > > 
-> > > 
-> > > Yes, may be in some cases we can avoid setting page owner. I will get
-> > > to it once I have got functionality going well. In the mean time if
-> > > you have a patch for it, it will be great.
-> > > 
-> > > > However, this is true only for page cache pages, for IO generated by
-> > > > anonymous pages (swap) you still need the page tracking functionality
-> > > > both for reads and writes.
-> > > > 
-> > > 
-> > > Right now I am assuming that all the sync IO will belong to task
-> > > submitting the bio hence use task_cgroup() for that. Only for async
-> > > IO, I am trying to use page tracking functionality to determine the owner.
-> > > Look at elv_bio_sync(bio).
-> > > 
-> > > You seem to be saying that there are cases where even for sync IO, we
-> > > can't use submitting task's context and need to rely on page tracking
-> > > functionlity? In case of getting page (read) from swap, will it not happen
-> > > in the context of process who will take a page fault and initiate the
-> > > swap read?
-> > 
-> > No, for example in read_swap_cache_async():
-> > 
-> > @@ -308,6 +309,7 @@ struct page *read_swap_cache_async(swp_entry_t entry, gfp_t gfp_mask,
-> >  		 */
-> >  		__set_page_locked(new_page);
-> >  		SetPageSwapBacked(new_page);
-> > +		blkio_cgroup_set_owner(new_page, current->mm);
-> >  		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
-> >  		if (likely(!err)) {
-> >  			/*
-> > 
-> > This is a read, but the current task is not always the owner of this
-> > swap cache page, because it's a readahead operation.
-> > 
-> 
-> But will this readahead be not initiated in the context of the task taking
-> the page fault?
-> 
-> handle_pte_fault()
-> 	do_swap_page()
-> 		swapin_readahead()
-> 			read_swap_cache_async()
-> 
-> If yes, then swap reads issued will still be in the context of process and
-> we should be fine?
+Last commit is ed3b275 "allow error string during checkpoint while
+holding a spinlock".
 
-Right. I was trying to say that the current task may swap-in also pages
-belonging to a different task, so from a certain point of view it's not
-so fair to charge the current task for the whole activity. But ok, I
-think it's a minor issue.
+# bash -c 'exec <&- >&- 2>&- ; while : ; do : ; done' &
+[1] 2269
+# ckpt $! > /tmp/bash.ckpt
 
-> 
-> > Anyway, this is a minor corner case I think. And probably it is safe to
-> > consider this like any other read IO and get rid of the
-> > blkio_cgroup_set_owner().
-> 
-> Agreed.
-> 
-> > 
-> > I wonder if it would be better to attach the blkio_cgroup to the
-> > anonymous page only when swap-out occurs.
-> 
-> Swap seems to be an interesting case in general. Somebody raised this
-> question on lwn io controller article also. A user process never asked
-> for swap activity. It is something enforced by kernel. So while doing
-> some swap outs, it does not seem too fair to charge the write out to
-> the process page belongs to and the fact of the matter may be that there
-> is some other memory hungry application which is forcing these swap outs.
-> 
-> Keeping this in mind, should swap activity be considered as system
-> activity and be charged to root group instead of to user tasks in other
-> cgroups?
+BUG: sleeping function called from invalid context at mm/slub.c:1595
+in_atomic(): 1, irqs_disabled(): 0, pid: 2270, name: ckpt
+1 lock held by ckpt/2270:
+ #0:  (tasklist_lock){.+.+.+}, at: [<c03911e6>] tree_count_tasks+0x2a/0x2a2
+Pid: 2270, comm: ckpt Not tainted 2.6.30-rc3-00074-ged3b275 #30
+Call Trace:
+ [<c024b6f9>] ? __debug_show_held_locks+0x1e/0x20
+ [<c02234da>] __might_sleep+0x100/0x107
+ [<c02a9372>] kmem_cache_alloc+0x35/0x11f
+ [<c039100f>] ? __ckpt_generate_err+0x25/0x12b
+ [<c024a9c7>] ? put_lock_stats+0x1e/0x29
+ [<c039100f>] __ckpt_generate_err+0x25/0x12b
+ [<c0203703>] ? ftrace_call+0x5/0x8
+ [<c03911ba>] __ckpt_write_err+0x16/0x18
+ [<c03912ae>] tree_count_tasks+0xf2/0x2a2
+ [<c03915ae>] do_checkpoint+0x150/0x5f2
+ [<c0390cd8>] ? kzalloc+0x10/0x12
+ [<c0390d0f>] ? ckpt_obj_hash_alloc+0x35/0x60
+ [<c039033d>] ? ckpt_ctx_alloc+0x77/0x99
+ [<c0390465>] sys_checkpoint+0x6c/0x82
+ [<c0202ce5>] syscall_call+0x7/0xb
+------------[ cut here ]------------
+kernel BUG at checkpoint/checkpoint.c:136!
+invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+last sysfs file: /sys/block/sda/size
+Modules linked in:
 
-In this case I assume the swap-in activity should be charged to the root
-cgroup as well.
-
-Anyway, in the logic of the memory and swap control it would seem
-reasonable to provide IO separation also for the swap IO activity.
-
-In the MEMHOG example, it would be unfair if the memory pressure is
-caused by a task in another cgroup, but with memory and swap isolation a
-memory pressure condition can only be caused by a memory hog that runs
-in the same cgroup. From this point of view it seems more fair to
-consider the swap activity as the particular cgroup IO activity, instead
-of charging always the root cgroup.
-
-Otherwise, I suspect, memory pressure would be a simple way to blow away
-any kind of QoS guarantees provided by the IO controller.
-
->   
-> > I mean, just put the
-> > blkio_cgroup_set_owner() hook in try_to_umap() in order to keep track of
-> > the IO generated by direct reclaim of anon memory. For all the other
-> > cases we can simply use the submitting task's context.
-> > 
-> > BTW, O_DIRECT is another case that is possible to optimize, because all
-> > the bios generated by direct IO occur in the same context of the current
-> > task.
-> 
-> Agreed about the direct IO optimization.
-> 
-> Ryo, what do you think? would you like to do include these optimizations
-> by the Andrea in next version of IO tracking patches?
->  
-> Thanks
-> Vivek
-
-Thanks,
--Andrea
+Pid: 2270, comm: ckpt Not tainted (2.6.30-rc3-00074-ged3b275 #30) 
+EIP: 0060:[<c03910dc>] EFLAGS: 00010246 CPU: 0
+EIP is at __ckpt_generate_err+0xf2/0x12b
+EAX: df051300 EBX: deb72f30 ECX: df051530 EDX: 0000001c
+ESI: df051430 EDI: deb72f28 EBP: deb72f10 ESP: deb72ef8
+ DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+Process ckpt (pid: 2270, ti=deb72000 task=df9adf60 task.ti=deb72000)
+Stack:
+ c072ce85 df051300 0000001c deb75600 df9ad1c0 00000000 deb72f18 c03911ba
+ deb72f50 c03912ae df051300 c072ce85 000008dd df9ad4ec df051300 df9ad1c0
+ 00000000 00000000 00000000 deb75600 deb75604 df051300 deb72f98 c03915ae
+Call Trace:
+ [<c03911ba>] ? __ckpt_write_err+0x16/0x18
+ [<c03912ae>] ? tree_count_tasks+0xf2/0x2a2
+ [<c03915ae>] ? do_checkpoint+0x150/0x5f2
+ [<c0390cd8>] ? kzalloc+0x10/0x12
+ [<c0390d0f>] ? ckpt_obj_hash_alloc+0x35/0x60
+ [<c039033d>] ? ckpt_ctx_alloc+0x77/0x99
+ [<c0390465>] ? sys_checkpoint+0x6c/0x82
+ [<c0202ce5>] ? syscall_call+0x7/0xb
+Code: 08 0c 8b c0 03 74 1b f6 05 c2 8f ff c0 20 74 12 f6 05 c9 8f ff c0 10 74 09 80 3d 47 94 83 c0 00 75 1d 8b 45 ec 83 78 2c 00 75 04 <0f> 0b eb fe 8b 55 ec 31 c0 89 72 2c 8d 65 f4 5b 5e 5f 5d c3 31 
+EIP: [<c03910dc>] __ckpt_generate_err+0xf2/0x12b SS:ESP 0068:deb72ef8
+---[ end trace d54433b47f0c4829 ]---
+note: ckpt[2270] exited with preempt_count 1
+BUG: scheduling while atomic: ckpt/2270/0x10000002
+INFO: lockdep is turned off.
+Modules linked in:
+Pid: 2270, comm: ckpt Tainted: G      D    2.6.30-rc3-00074-ged3b275 #30
+Call Trace:
+ [<c0223f6b>] __schedule_bug+0x63/0x6a
+ [<c05ec7dc>] __schedule+0x8f/0x7ac
+ [<c024d299>] ? print_lock_contention_bug+0x14/0xd7
+ [<c0298093>] ? unmap_vmas+0x1e1/0x518
+ [<c0203703>] ? ftrace_call+0x5/0x8
+ [<c0203703>] ? ftrace_call+0x5/0x8
+ [<c05ecf10>] schedule+0x17/0x38
+ [<c0224738>] __cond_resched+0x26/0x3b
+ [<c05ed034>] _cond_resched+0x2c/0x37
+ [<c0298379>] unmap_vmas+0x4c7/0x518
+ [<c029b81b>] exit_mmap+0x6c/0xb7
+ [<c022906a>] mmput+0x3c/0x8f
+ [<c022c8a0>] exit_mm+0xe3/0xeb
+ [<c022e0e2>] do_exit+0x188/0x64b
+ [<c05ec415>] ? printk+0x14/0x16
+ [<c022b08d>] ? oops_exit+0x28/0x2d
+ [<c05efbe7>] oops_end+0x92/0x9a
+ [<c020560f>] die+0x59/0x5f
+ [<c05ef56b>] do_trap+0x89/0xa2
+ [<c02039fc>] ? do_invalid_op+0x0/0x80
+ [<c0203a72>] do_invalid_op+0x76/0x80
+ [<c03910dc>] ? __ckpt_generate_err+0xf2/0x12b
+ [<c0203703>] ? ftrace_call+0x5/0x8
+ [<c039c95d>] ? strnlen+0x8/0x1f
+ [<c039b8bd>] ? string+0x34/0x82
+ [<c039c14a>] ? vsnprintf+0x173/0x311
+ [<c039c05a>] ? vsnprintf+0x83/0x311
+ [<c039c9d0>] ? trace_hardirqs_off_thunk+0xc/0x10
+ [<c05ef322>] error_code+0x72/0x78
+ [<c02039fc>] ? do_invalid_op+0x0/0x80
+ [<c03910dc>] ? __ckpt_generate_err+0xf2/0x12b
+ [<c03911ba>] __ckpt_write_err+0x16/0x18
+ [<c03912ae>] tree_count_tasks+0xf2/0x2a2
+ [<c03915ae>] do_checkpoint+0x150/0x5f2
+ [<c0390cd8>] ? kzalloc+0x10/0x12
+ [<c0390d0f>] ? ckpt_obj_hash_alloc+0x35/0x60
+ [<c039033d>] ? ckpt_ctx_alloc+0x77/0x99
+ [<c0390465>] sys_checkpoint+0x6c/0x82
+ [<c0202ce5>] syscall_call+0x7/0xb
