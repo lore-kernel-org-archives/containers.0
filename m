@@ -1,17 +1,15 @@
-From: "IKEDA, Munehiro" <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
-Subject: Re: [PATCH] IO Controller: Add per-device weight and ioprio_class
-	handling
-Date: Mon, 18 May 2009 18:33:40 -0400
-Message-ID: <4A11E244.2000305__8876.38624194569$1242686396$gmane$org@ds.jp.nec.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<4A0A29B5.7030109@cn.fujitsu.com>
-	<20090513190929.GB18371@redhat.com>
-	<4A0BC7AB.8030703@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: bugs with ckpt-v15-dev
+Date: Mon, 18 May 2009 17:39:19 -0500
+Message-ID: <20090518223919.GA24826@us.ibm.com>
+References: <m3my9amczw.fsf@pobox.com> <20090518211041.GA20781@us.ibm.com>
+	<m3y6suhz5g.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A0BC7AB.8030703-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m3y6suhz5g.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,87 +19,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Gui,
-
-Gui Jianfeng wrote:
-> Hi Vivek,
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> This patch enables per-cgroup per-device weight and ioprio_class handling.
-> A new cgroup interface "policy" is introduced. You can make use of this 
-> file to configure weight and ioprio_class for each device in a given cgroup.
-> The original "weight" and "ioprio_class" files are still available. If you
-> don't do special configuration for a particular device, "weight" and 
-> "ioprio_class" are used as default values in this device.
+> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> >> Last commit is ed3b275 "allow error string during checkpoint while
+> >> holding a spinlock".
+> >> 
+> >> # bash -c 'exec <&- >&- 2>&- ; while : ; do : ; done' &
+> >> [1] 2269
+> >> # ckpt $! > /tmp/bash.ckpt
+> >> 
+> >> BUG: sleeping function called from invalid context at mm/slub.c:1595
+> >
+> > Yeah, not only does ckpt_write_err() get called under task_lock, but
+> > the fn returns without ver doing put_task_struct.  (I'd generate and
+> > send the quick trivial patch, but my git tree is in a bit of a debugme
+> > state right now)
 > 
-> You can use the following format to play with the new interface.
-> #echo DEV:weight:ioprio_class > /patch/to/cgroup/policy
-> weight=0 means removing the policy for DEV.
+> Would prefer to just rip that thing out, it's cost me more trouble then
+> it's worth.
+
+Which thing - CHECKPOINT_SUBTREE, freezer check, or ckpt_write_err?
+
+> > Now mind you this shows that your ckpt program isn't sending
+> > CHECKPOINT_SUBTREE with flags.
 > 
-> Examples:
-> Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
-> # echo /dev/hdb:300:2 > io.policy
-> # cat io.policy
-> dev weight class
-> /dev/hdb 300 2
+> I don't follow.  There is "user error" here in that I'm not freezing the
+> task before checkpointing[1], but my ckpt command is passing the subtree
+> flag (0x4) afaict:
+> 
+> SYS_335(0x9ec, 0x1, 0x4, 0xbfdc6200, 0[2542:c/r:may_checkpoint_task] check 2540
 
-Users can specify a device file of a partition for io.policy.
-In this case, io_policy_node::dev_name is set as a name of the
-partition device like /dev/sda2.
+Oh, it's the freezer test in may_checkpoint_task you're getting the
+error on?  (in my git tree I'd commented that one out temporarily so I
+just assumed it was the subtree check in get_container :)
 
-ex)
-  # cd /mnt/cgroup
-  # cat /dev/sda2:500:2 > io.policy
-  # echo io.policy
-    dev weight class
-    /dev/sda2 500 2
+> > This in turns means you are probably
+> > not using the ckpt-v15-dev version of user-cr, and if that is
+> > the case it makes your problems with gconf shared file mapping more
+> > suspect ask well...?
+> 
+> After updating to the latest user-cr I get the same BUGs.
+> 
+> [1] Should CONFIG_CHECKPOINT depend on CONFIG_CGROUPS and/or
+> CONFIG_CGROUPS_FREEZER?  We require tasks to be put in frozen state
+> before checkpoint, is there any mechanism apart from
+> cgroup/freezer.state to do this?
 
-I believe io_policy_node::dev_name should be set a generic
-device name like /dev/sda.
-What do you think about it?
+A task can self-checkpoint without the freezer though.
 
-Signed-off-by: Munehiro "Muuhh" Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
----
- block/elevator-fq.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
-
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 39fa2a1..5d3d55c 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -1631,11 +1631,12 @@ static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
- 	return NULL;
- }
- 
--static int devname_to_devnum(const char *buf, dev_t *dev)
-+static int devname_to_devnum(char *buf, dev_t *dev)
- {
- 	struct block_device *bdev;
- 	struct gendisk *disk;
- 	int part;
-+	char *c;
- 
- 	bdev = lookup_bdev(buf);
- 	if (IS_ERR(bdev))
-@@ -1645,6 +1646,10 @@ static int devname_to_devnum(const char *buf, dev_t *dev)
- 	*dev = MKDEV(disk->major, disk->first_minor);
- 	bdput(bdev);
- 
-+	c = strrchr(buf, '/');
-+	if (c)
-+		strcpy(c+1, disk->disk_name);
-+
- 	return 0;
- }
- 
--- 
-1.5.4.3
-
-
--- 
-IKEDA, Munehiro
-  NEC Corporation of America
-    m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
+-serge
