@@ -1,16 +1,18 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 4/6] cr: checkpoint and restore task credentials
-Date: Wed, 20 May 2009 12:08:37 -0400
-Message-ID: <4A142B05.4040907@cs.columbia.edu>
+Date: Wed, 20 May 2009 11:13:37 -0500
+Message-ID: <20090520161337.GB29377@us.ibm.com>
 References: <20090519014446.GA28277@us.ibm.com>
 	<20090519014538.GD28312@us.ibm.com>
 	<4A142350.1060308@cs.columbia.edu>
 	<20090520155332.GA28999@us.ibm.com>
+	<4A142B05.4040907@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090520155332.GA28999-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A142B05.4040907-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,38 +22,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->> Serge -
->>
->> The 'creator' makes the 'struct user' recursive because to save
->> an object you need to first save its creator etc. However the
->> implementation may not call checkpoint_obj() recursively, if
->> the depth isn't bound a-priory. You probably need to convert
->> checkpoint_write_user() to do an iterative (loop) implementation
->> of the recursion...
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> It's not done recursively, though.  checkpoint_write_userns() will
-> only be called by checkpoint_write_user().   checkpoint_write_user()
-> will make sure there are only 5 levels deep of unwritten creator
-> user namespace (else bail), then start at the oldest creator, and
-> write it.  That checkpoint_write_user will cause a write of its
-> user_ns, then write the user, then return to the original
-> checkpoint_write_user() which will now write the next-oldest
-> user_struct
 > 
-> So the max recursion depth we get is:
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> >> Serge -
+> >>
+> >> The 'creator' makes the 'struct user' recursive because to save
+> >> an object you need to first save its creator etc. However the
+> >> implementation may not call checkpoint_obj() recursively, if
+> >> the depth isn't bound a-priory. You probably need to convert
+> >> checkpoint_write_user() to do an iterative (loop) implementation
+> >> of the recursion...
+> > 
+> > It's not done recursively, though.  checkpoint_write_userns() will
+> > only be called by checkpoint_write_user().   checkpoint_write_user()
+> > will make sure there are only 5 levels deep of unwritten creator
+> > user namespace (else bail), then start at the oldest creator, and
+> > write it.  That checkpoint_write_user will cause a write of its
+> > user_ns, then write the user, then return to the original
+> > checkpoint_write_user() which will now write the next-oldest
+> > user_struct
+> > 
+> > So the max recursion depth we get is:
+> > 
+> > 	checkpoint_task_struct -> checkpoint_write_cred ->
+> > 	checkpoint_write_user -> checkpoint_write_user ->
+> > 	checkpoint_write_userns (END)
 > 
-> 	checkpoint_task_struct -> checkpoint_write_cred ->
-> 	checkpoint_write_user -> checkpoint_write_user ->
-> 	checkpoint_write_userns (END)
+> Ok. Let's not restrict to 5 levels :)
 
-Ok. Let's not restrict to 5 levels :)
+Will change that, and resend the set hopefully tonight.
 
-Oren.
+thanks,
+-serge
