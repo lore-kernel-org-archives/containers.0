@@ -1,14 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [C/R][PATCH] Export generic_file_checkpoint
-	and	generic_file_restore
-Date: Wed, 20 May 2009 01:30:45 -0400
-Message-ID: <4A139585.3010400@cs.columbia.edu>
-References: <20090520022059.GA30168@us.ibm.com>
+From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: No limitation in physical memory in cgroups
+Date: Wed, 20 May 2009 13:52:29 +0800
+Message-ID: <d95d44a20905192252t6cce5169y730a37184075beb9@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090520022059.GA30168-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +15,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi all,
 
-Applied, thanks.
+I would like to bind given physical memory to specific task group,
+however it does not take effect in my experiments. Are there
+something wrong in my experiments.
 
-Oren.
+My experiment is done under the kernel 2.6.29.3 and I constructed
+my task group by following commands:
 
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 19 May 2009 19:18:25 -0700
-> Subject: [C/R][PATCH] Export generic_file_checkpoint and generic_file_restore
-> 
-> Needed when filesystems are compiled as modules.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/files.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index 7da2cbf..cfea034 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -11,6 +11,7 @@
->  /* default debug level for output */
->  #define CKPT_DFLAG  CKPT_DFILE
->  
-> +#include <linux/module.h>
->  #include <linux/kernel.h>
->  #include <linux/sched.h>
->  #include <linux/file.h>
-> @@ -182,6 +183,7 @@ int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
->  	ckpt_hdr_put(ctx, h);
->  	return ret;
->  }
-> +EXPORT_SYMBOL(generic_file_checkpoint);
->  
->  /* checkpoint_file - dump the state of a given file pointer */
->  int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
-> @@ -401,6 +403,7 @@ struct file *generic_file_restore(struct ckpt_ctx *ctx,
->  	}
->  	return file;
->  }
-> +EXPORT_SYMBOL(generic_file_restore);
->  
->  struct restore_file_ops {
->  	char *file_name;
+a) In shell #1, prepare a bash :
+
+# bash
+# echo $$
+2253
+
+b) In shell #2, prepare the memory control via cgroupfs:
+
+# mount -t cgroup cgroup /mnt/mycgrp
+# cd /mn/mycgrp
+# mkdir mycontainer
+# echo 0 > mycontainer/cpuset.mems
+# echo 0-1 > mycontainer/cpuset.cpus
+# echo 2252 > mycontainer/tasks
+
+# cat mycontainer/memory.usage_in_bytes
+2875392
+# echo 3000000 > mycontainer/memory.max_usage_in_bytes
+# cat mycontainer/memory.max_usage_in_bytes
+3002368
+
+
+c) In Shell #1, run a memory consumer (in which, malloc() is called
+to allocate memory and not free until program is existed) to allocate
+500M memory:
+
+# /tmp/memoy_consumer_program  500
+
+In Shell #2, the used memory ascends from start point 2875392 when
+program begins (from number presented in memory.usage_in_bytes),
+but it return to start point when it touches the maximal boundary.
+
+On the other hand, I also run the top to watch the memory hold by
+memoy_consumer_program. In top, the memory (both virtual and rss
+memory ) is always growing without any limitation.
+
+Is this phenomenon the correct behaviors of memory cgroups?
+
+
+Best Regards,
+
+Anqin
