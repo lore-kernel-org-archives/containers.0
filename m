@@ -1,17 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: bugs with ckpt-v15-dev
-Date: Wed, 20 May 2009 09:21:41 -0400
-Message-ID: <4A1403E5.1020206@cs.columbia.edu>
-References: <m3my9amczw.fsf@pobox.com> <20090518211041.GA20781@us.ibm.com>
-	<m3y6suhz5g.fsf@pobox.com> <20090518225100.GC28083@us.ibm.com>
-	<m3zldagfpp.fsf@pobox.com> <20090519010911.GD28083@us.ibm.com>
-	<4A13955E.2040301@cs.columbia.edu>
-	<20090520131457.GB25989@us.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: No limitation in physical memory in cgroups
+Date: Wed, 20 May 2009 21:59:44 +0800
+Message-ID: <20090520135944.GL4858@balbir.in.ibm.com>
+References: <d95d44a20905192252t6cce5169y730a37184075beb9@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090520131457.GB25989-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <d95d44a20905192252t6cce5169y730a37184075beb9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,58 +19,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+* anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2009-05-20 13:52:29]:
 
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>
->> Matt Helsley wrote:
->>> On Mon, May 18, 2009 at 06:21:22PM -0500, Nathan Lynch wrote:
->>>> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->>>>
->>>>> On Mon, May 18, 2009 at 04:36:11PM -0500, Nathan Lynch wrote:
->>>>>> [1] Should CONFIG_CHECKPOINT depend on CONFIG_CGROUPS and/or
->>>>>> CONFIG_CGROUPS_FREEZER?  We require tasks to be put in frozen state
->>>>>> before checkpoint, is there any mechanism apart from
->>>>>> cgroup/freezer.state to do this?
->>>>> Have you tried sending all of the tasks SIGSTOP? It won't 100% freeze
->>>>> the tasks -- they'd still be capable of responding to some signals
->>>>> (CONT, TERM..). Also they'd presumably be placed in the stopped state
->>>>> upon restart so a SIGCONT will be needed. In the case of bash, at
->>>>> least, that will technically change what happens upon restart. My
->>>>> guess is that in many cases it won't matter but there are some where
->>>>> it will.
->>>> Hmm, I'm having trouble understanding your suggestion.  The current
->>>> checkpoint implementation requires non-self tasks to be frozen (p->flags
->>>> & PF_FROZEN), which is not equivalent to stopped state (task->state &
->>>> __TASK_STOPPED).  That is, it would refuse to checkpoint tasks in
->>>> stopped state.  See may_checkpoint_task().
->>> Oops. You're right. That would require changing may_checkpoint_task() to include
->>> __TASK_STOPPED -- not something we'd want in the final code. I had assumed
->>> you wanted to try a different mechanism for debugging purposes.
->>>
->> Allowing checkpoint of stopped tasks is actually not such a bad
->> idea, IMHO.
+> Hi all,
 > 
-> Well, it might be bad for the same reason that Matt is pursuing the
-> CHECKPOINTING freezer state:  the task might get kicked alive in
-> the middle of the checkpoint.
+> I would like to bind given physical memory to specific task group,
+> however it does not take effect in my experiments. Are there
+> something wrong in my experiments.
+> 
+> My experiment is done under the kernel 2.6.29.3 and I constructed
+> my task group by following commands:
+> 
+> a) In shell #1, prepare a bash :
+> 
+> # bash
+> # echo $$
+> 2253
+> 
+> b) In shell #2, prepare the memory control via cgroupfs:
+> 
+> # mount -t cgroup cgroup /mnt/mycgrp
+> # cd /mn/mycgrp
+> # mkdir mycontainer
+> # echo 0 > mycontainer/cpuset.mems
+> # echo 0-1 > mycontainer/cpuset.cpus
+> # echo 2252 > mycontainer/tasks
 
-Yes, that was my concern and I try to make the code safe with regard
-to such behavior. And if that is achieved, then at worst the checkpoint
-will either fail or yield meaningless results. On the other hand, it
-can allow c/r without requiring cgroups/freezer, with some additional
-restrictions.
+OK, so you setup cpusets
 
 > 
-> So it might be ok so long as we still move the task to CHECKPOINTING
-> state.  But I'm just not sure it's worth worrying about.
+> # cat mycontainer/memory.usage_in_bytes
+> 2875392
+> # echo 3000000 > mycontainer/memory.max_usage_in_bytes
+> # cat mycontainer/memory.max_usage_in_bytes
+> 3002368
 
-Probably not at the moment, except for "lowering the barrier" for
-people to try it out.
+Where did you setup memory.limit_in_bytes?
 
-Oren.
+> 
+> 
+> c) In Shell #1, run a memory consumer (in which, malloc() is called
+> to allocate memory and not free until program is existed) to allocate
+> 500M memory:
+> 
+> # /tmp/memoy_consumer_program  500
+> 
+> In Shell #2, the used memory ascends from start point 2875392 when
+> program begins (from number presented in memory.usage_in_bytes),
+> but it return to start point when it touches the maximal boundary.
+> 
+> On the other hand, I also run the top to watch the memory hold by
+> memoy_consumer_program. In top, the memory (both virtual and rss
+> memory ) is always growing without any limitation.
+> 
+> Is this phenomenon the correct behaviors of memory cgroups?
+> 
+> 
+> Best Regards,
+> 
+> Anqin
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+
+-- 
+	Balbir
