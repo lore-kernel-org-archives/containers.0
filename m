@@ -1,16 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: bugs with ckpt-v15-dev
-Date: Wed, 20 May 2009 01:30:06 -0400
-Message-ID: <4A13955E.2040301@cs.columbia.edu>
-References: <m3my9amczw.fsf@pobox.com>
-	<20090518211041.GA20781@us.ibm.com>	<m3y6suhz5g.fsf@pobox.com>
-	<20090518225100.GC28083@us.ibm.com>	<m3zldagfpp.fsf@pobox.com>
-	<20090519010911.GD28083@us.ibm.com>
+Subject: Re: [C/R][PATCH] Export generic_file_checkpoint
+	and	generic_file_restore
+Date: Wed, 20 May 2009 01:30:45 -0400
+Message-ID: <4A139585.3010400@cs.columbia.edu>
+References: <20090520022059.GA30168@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090519010911.GD28083-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090520022059.GA30168-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,40 +18,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-
-Matt Helsley wrote:
-> On Mon, May 18, 2009 at 06:21:22PM -0500, Nathan Lynch wrote:
->> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> On Mon, May 18, 2009 at 04:36:11PM -0500, Nathan Lynch wrote:
->>>> [1] Should CONFIG_CHECKPOINT depend on CONFIG_CGROUPS and/or
->>>> CONFIG_CGROUPS_FREEZER?  We require tasks to be put in frozen state
->>>> before checkpoint, is there any mechanism apart from
->>>> cgroup/freezer.state to do this?
->>> Have you tried sending all of the tasks SIGSTOP? It won't 100% freeze
->>> the tasks -- they'd still be capable of responding to some signals
->>> (CONT, TERM..). Also they'd presumably be placed in the stopped state
->>> upon restart so a SIGCONT will be needed. In the case of bash, at
->>> least, that will technically change what happens upon restart. My
->>> guess is that in many cases it won't matter but there are some where
->>> it will.
->> Hmm, I'm having trouble understanding your suggestion.  The current
->> checkpoint implementation requires non-self tasks to be frozen (p->flags
->> & PF_FROZEN), which is not equivalent to stopped state (task->state &
->> __TASK_STOPPED).  That is, it would refuse to checkpoint tasks in
->> stopped state.  See may_checkpoint_task().
-> 
-> Oops. You're right. That would require changing may_checkpoint_task() to include
-> __TASK_STOPPED -- not something we'd want in the final code. I had assumed
-> you wanted to try a different mechanism for debugging purposes.
-> 
-
-Allowing checkpoint of stopped tasks is actually not such a bad
-idea, IMHO.
+Applied, thanks.
 
 Oren.
+
+Sukadev Bhattiprolu wrote:
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Tue, 19 May 2009 19:18:25 -0700
+> Subject: [C/R][PATCH] Export generic_file_checkpoint and generic_file_restore
+> 
+> Needed when filesystems are compiled as modules.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/files.c |    3 +++
+>  1 files changed, 3 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> index 7da2cbf..cfea034 100644
+> --- a/checkpoint/files.c
+> +++ b/checkpoint/files.c
+> @@ -11,6 +11,7 @@
+>  /* default debug level for output */
+>  #define CKPT_DFLAG  CKPT_DFILE
+>  
+> +#include <linux/module.h>
+>  #include <linux/kernel.h>
+>  #include <linux/sched.h>
+>  #include <linux/file.h>
+> @@ -182,6 +183,7 @@ int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+>  	ckpt_hdr_put(ctx, h);
+>  	return ret;
+>  }
+> +EXPORT_SYMBOL(generic_file_checkpoint);
+>  
+>  /* checkpoint_file - dump the state of a given file pointer */
+>  int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+> @@ -401,6 +403,7 @@ struct file *generic_file_restore(struct ckpt_ctx *ctx,
+>  	}
+>  	return file;
+>  }
+> +EXPORT_SYMBOL(generic_file_restore);
+>  
+>  struct restore_file_ops {
+>  	char *file_name;
