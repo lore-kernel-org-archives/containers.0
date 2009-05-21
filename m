@@ -1,15 +1,16 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 1/1] dm-ioband: I/O bandwidth controller
-Date: Thu, 21 May 2009 12:22:03 +0900 (JST)
-Message-ID: <20090521.122203.193689175.ryov__37032.3086194277$1242876268$gmane$org@valinux.co.jp>
-References: <20090519.173928.226784958.ryov@valinux.co.jp>
-	<20090519.174352.71107893.ryov@valinux.co.jp>
-	<20090519133753.GA28679@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 4/6] cr: checkpoint and restore task credentials
+Date: Thu, 21 May 2009 02:03:14 -0400
+Message-ID: <4A14EEA2.4030808@cs.columbia.edu>
+References: <20090519014446.GA28277@us.ibm.com>
+	<20090519014538.GD28312@us.ibm.com>
+	<4A1435E0.3010306@cs.columbia.edu>
+	<20090520221600.GA3925@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090519133753.GA28679-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090520221600.GA3925-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,71 +20,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Vivek,
 
-> Anyway, how are you taking care of priorities with-in same class. How will
-> you make sure that a BE prio 0 request is not hidden behind BE prio 7
-> request? Same is true for prio with-in RT class.
 
-I changed io_limit parameter of dm-ioband and ran your test script
-again. io_limit is a parameter which determines how many IO requests
-can be hold in dm-ioband. Its default value is equal to nr_requests of
-the underlying device. I increased the value from 128 to 256 on this
-test, because the writer requests IOs more than nr_requests.
-The following result shows that dm-ioband does not break the notion of
-CFQ priority. I think that the impact of dm-ioband's internal queue on
-CFQ is insignificant, because the queue is not too long. The notion of
-CFQ priority is preserved within each bandwidth group.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>>  /* read the entire state of the current task */
+>>>  int restore_task(struct ckpt_ctx *ctx)
+>>>  {
+>>>  	int ret;
+>>> +	struct cred *realcred, *ecred;
+>>>  
+>>> -	ret = restore_task_struct(ctx);
+>>> +	ret = restore_task_struct(ctx, &realcred, &ecred);
+>> Actually, this is one of several cases where we need to restore some
+>> resources but only apply it to a process at the end of its restart.
+>>
+>> Another example would be restoring pending signals and the blocked
+>> signal mask in the future.
+>>
+>> I suggest that we keep a pointer on the task_struct to a structure
+>> that will hold all that do-later work. The structure can encapsulate
+>> the pending work either explicitly - e.g. a struct with fields like
+>> realcred, ecred, signal mask, etc... - or implicitly, by reusing the
+>> deferqueue framework, per task.
+>>
+>> Actually, that pointer can be kept on the ckpt_ctx structure, to be
+>> used by the current-restarting-task only.
+>>
+>>>  	ckpt_debug("ret %d\n", ret);
+>>>  	if (ret < 0)
+>>>  		goto out;
+>>> @@ -671,6 +1120,10 @@ int restore_task(struct ckpt_ctx *ctx)
+>>>  		goto out;
+>>>  	ret = restore_cpu(ctx);
+>>>  	ckpt_debug("cpu: ret %d\n", ret);
+>>> +	if (ret < 0)
+>>> +		goto out;
+>>> +	ret = restore_creds(ctx, realcred, ecred);
+>> ... and this would then be called from a restore_task_finalize()
+>> function explicitly or implicitly by deferqueue_run().
+> 
+> deferqueue_run() won't do, since that's done only once for the
+> whole container, and we (as you say above) want to reuse one
+> set of fields in the ckpt_ctx for each task's sys_restart() run.
 
-Setting
--------
-ioband1: 0 112455000 ioband 8:18 share1 4 256 user weight 512 :40
-                                          ^^^ io_limit
+I meant to add another deferqueue (either per task or on the
+ckpt_ctx), for this specific purpose.
 
-Script
-------
-#!/bin/bash
-rm /mnt1/aggressivewriter
-sync
-echo 3 >  /proc/sys/vm/drop_caches
-# launch an hostile writer
-ionice -c2 -n7 dd if=/dev/zero of=/mnt1/aggressivewriter bs=4K \
-        count=524288 conv=fdatasync &
-# Reader
-ionice -c2 -n0 dd if=/mnt1/testzerofile1 of=/dev/null &
-wait $!
-echo "reader finished"
+Oren.
 
-Without dm-ioband
------------------
-First run
-2147483648 bytes (2.1 GB) copied, 34.8201 seconds, 61.7 MB/s (Reader)
-reader finished
-2147483648 bytes (2.1 GB) copied, 68.9099 seconds, 31.2 MB/s (Writer)
-
-Second Run
-2147483648 bytes (2.1 GB) copied, 34.8201 seconds, 61.7 MB/s (Reader)
-reader finished
-2147483648 bytes (2.1 GB) copied, 68.9099 seconds, 31.2 MB/s (Writer)
-
-With dm-ioband
---------------
-First run
-2147483648 bytes (2.1 GB) copied, 35.852 seconds, 59.9 MB/s  (Reader)
-reader finished
-2147483648 bytes (2.1 GB) copied, 73.3991 seconds, 29.3 MB/s (Writer)
-
-Second Run
-2147483648 bytes (2.1 GB) copied, 36.0273 seconds, 59.6 MB/s (Reader)
-reader finished
-2147483648 bytes (2.1 GB) copied, 72.8979 seconds, 29.5 MB/s (Writer)
-
-For reference, the previous test results.
-http://linux.derkeiler.com/Mailing-Lists/Kernel/2009-04/msg08345.html
-
-Thanks,
-Ryo Tsuruta
+> 
+> I'll go ahead and put fields in the ckpt_ctx this time around
+> and use those, but won't go further right now as I'd be
+> overgeneralizing before we have the signals and such work
+> done.  When we do that, we can move the restore_creds() fn
+> if appropriate.
+> 
+> -serge
+> 
