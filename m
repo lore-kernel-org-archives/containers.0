@@ -1,16 +1,18 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 4/6] cr: checkpoint and restore task credentials
-Date: Thu, 21 May 2009 10:13:45 -0400
-Message-ID: <4A156199.8020607@cs.columbia.edu>
+Date: Thu, 21 May 2009 09:14:50 -0500
+Message-ID: <20090521141450.GA13835@us.ibm.com>
 References: <20090519014446.GA28277@us.ibm.com>
 	<20090519014538.GD28312@us.ibm.com>
 	<4A1435E0.3010306@cs.columbia.edu>
-	<20090520215250.GB3517@us.ibm.com>
+	<20090520214027.GA3517@us.ibm.com>
+	<4A155EEC.9070509@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090520215250.GB3517-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A155EEC.9070509-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,42 +22,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>>  /* read the task_struct into the current task */
->>> -static int restore_task_struct(struct ckpt_ctx *ctx)
->>> +static int restore_task_struct(struct ckpt_ctx *ctx, struct cred **realcredp,
->>> +				struct cred **ecredp)
->> 				^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^
->> 				
->> This probably belongs to restore_task_shared() ?
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> Why?  The task->cred and task->ecred are task properties, so
-> their reference should be stored in the ckpt_hdr_task->cred_ref
-> and ckpt_hdr_task->ecred_ref, no?
 > 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> >>>  /* dump the task_struct of a given task */
+> >>>  static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+> >>>  {
+> >>>  	struct ckpt_hdr_task *h;
+> >>>  	int ret;
+> >>> +	int realcred_ref, ecred_ref;
+> >>> +
+> >>> +	realcred_ref = checkpoint_obj(ctx, t->real_cred, CKPT_OBJ_CRED);
+> >>> +	if (realcred_ref < 0)
+> >>> +		return realcred_ref;
+> >>> +
+> >>> +	ecred_ref = checkpoint_obj(ctx, t->cred, CKPT_OBJ_CRED);
+> >>> +	if (ecred_ref < 0)
+> >>> +		return ecred_ref;
+> >> Is this safe even if the checkpointed task's state changes ?
+> >> (e.g. unfrozen - yes, I know there is a patch in the works to
+> >> prevent this; but if we ever want to checkpoint STOPPED tasks...
+> >> for instance).
+> >>
+> >> Would incrementing the refcount on t->{cred,real_cred} help ?
+> > 
+> > Doesn't checkpoint_obj already do that through obj_new?
+> > 
+> 
+> No, it does not. There is a (potentially long) window of opportunity
+> between the callback invoked from checkpoint_obj() - where the pointer
+> is used, and when checkpoint_obj() later takes the extra reference.
+> 
+> See for comparison checkpoint_mm_obj(), it safely grabs the task->mm
+> (with a reference) around the invocation of checkpoint_obj().
 
-Because they are shared objects; task->mm is also a task property...
+Hmm, ok.  Will do.
 
-checkpoint,restore}_task_struct() handles c/r of task properties
-that are "private" to the task.
-
-{checkpoint,restore}_task_shared() handles c/r of task properties
-that are shared.
-
-This division makes it easier to see the dependencies between
-shared resources (and themselves, or others), by explicitly
-reordering if necessary. For example, ns precedes mm because
-sysvipc shm depends on that of ns.
-
-In this case, for similar reasons, I'd place the user ns right
-there before the rest of the ns, because sysvipc of ns depends
-on credentials from user-ns.
-
-Oren.
+-serge
