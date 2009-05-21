@@ -1,7 +1,7 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: css_id numbering
-Date: Thu, 21 May 2009 16:30:38 +0900
-Message-ID: <20090521163038.844f7400.kamezawa.hiroyu@jp.fujitsu.com>
+Date: Thu, 21 May 2009 16:33:24 +0900 (JST)
+Message-ID: <20090521163215.63E1.A69D9226@jp.fujitsu.com>
 References: <20090521.162859.226800758.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,22 +21,15 @@ To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 21 May 2009 16:28:59 +0900 (JST)
-Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-
 > Hi Kamezawa-san,
 > 
 > I have a suggestion for css_id numbering. How about using the same
 > numbering scheme as process ID for css_id instead of idr? It prevents
 > the same ID from being reused quickly.
-
-process ID is not "short"(2bytes).
-
 > blkio-cgroup can benefit from it. If some pages still have an old ID,
 > it can somewhat prevents IOs associated with those pages from being
 > charged for a new cgroup which are reusing the old ID.
+> Please condier it.
 
-plz see memcg's code. no reuse if id is still used.
-
-Bye.
--Kame
+it seems bogus solusion.
+pid rule also can make conflict. I think blkio-cgroup should be fixed.
