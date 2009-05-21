@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] Add -P <pid-file> option to ns_exec
-Date: Thu, 21 May 2009 11:35:40 -0500
-Message-ID: <20090521163540.GA18281@us.ibm.com>
+Subject: Re: [PATCH 2/4] Define some common helper functions
+Date: Thu, 21 May 2009 12:04:59 -0500
+Message-ID: <20090521170459.GB18281@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,42 +23,16 @@ List-Id: containers.vger.kernel.org
 Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > 
-> ns_exec knows the pid of the container-init in its own namespace (this
-> is usually the global pid since we normally run ns_exec in init-pid-ns).
-> If ns_exec writes out this "global" pid to a file, wrapper scripts can
-> find the process they created more easily.
+> These include functions that wrapper scripts can use to communicate with
+> test cases like:
 > 
-> killall and pidof assume that all previous instances of the test program
-> have thawed and exited gracefully :-) As such they are not very friendly
-> during early testing and/or complicate the wrapper scripts.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  ns_exec.c |   28 ++++++++++++++++++++++++++--
->  1 files changed, 26 insertions(+), 2 deletions(-)
-> 
-> diff --git a/ns_exec.c b/ns_exec.c
-> index 5d5cca3..d15daa0 100644
-> --- a/ns_exec.c
-> +++ b/ns_exec.c
-> @@ -24,7 +24,7 @@ static const char* procname;
-> 
->  static void usage(const char *name)
->  {
-> -	printf("usage: %s [-h] [-c] [-muip]"
-> +	printf("usage: %s [-h] [-c] [-muip] [-P <pid-file>]"
->  			"[command [arg ..]]\n", name);
->  	printf("\n");
->  	printf("  -h		this message\n");
-> @@ -33,6 +33,7 @@ static void usage(const char *name)
->  	printf("  -m		mount namespace\n");
->  	printf("  -u		utsname namespace\n");
->  	printf("  -i		ipc namespace\n");
-> +	printf("  -P <pid-file>	File in which to write global pid of cinit\n");
+> 	- checkpoint_readY()	- test tells wrapper its ready for C/R
+> 	- checkpoint_done()	- test checks whether checkpoint is done
 
-We probably don't care, but it's not necessarily the global pid.
+In 2 months, how will you remember which to use to set and which to
+test?
 
-Applying as is, bc I can't think of a better adjective.
+How about  'checkpoint_is_ready' and 'is_checkpoint_ready' ?
 
 thanks,
 -serge
