@@ -1,22 +1,17 @@
-From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: No limitation in physical memory in cgroups
-Date: Fri, 22 May 2009 17:25:12 +0800
-Message-ID: <d95d44a20905220225t539b07edk31b61a8e7ffe1c1f@mail.gmail.com>
-References: <d95d44a20905192252t6cce5169y730a37184075beb9@mail.gmail.com>
-	<4A13ABC8.2000907@cn.fujitsu.com>
-	<d95d44a20905200335v6aabfc28qa3958e8404965775@mail.gmail.com>
-	<20090521085857.d4b82cba.kamezawa.hiroyu@jp.fujitsu.com>
-	<d95d44a20905202347y177e9744k1a9817236a102b53@mail.gmail.com>
-	<20090521161556.2eca8fd0.kamezawa.hiroyu@jp.fujitsu.com>
-	<d95d44a20905210456q13b2334avecb0dc6ff0f0d26@mail.gmail.com>
-	<20090521151848.GQ4858@balbir.in.ibm.com>
-	<d95d44a20905211931v3918b5d3p79d47225963c81f3@mail.gmail.com>
-	<20090522115622.30cb514a.kamezawa.hiroyu@jp.fujitsu.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 02/18] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Fri, 22 May 2009 08:32:31 -0400
+Message-ID: <20090522123231.GA14972__16468.4443771423$1242996859$gmane$org@redhat.com>
+References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
+	<1241553525-28095-3-git-send-email-vgoyal@redhat.com>
+	<4A164978.1020604@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090522115622.30cb514a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A164978.1020604-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,50 +21,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-I have recompiled the kernel and tested again.
-When I set the limitation of swap, the test program
-is killed when it want to apply more memory.
+On Fri, May 22, 2009 at 02:43:04PM +0800, Gui Jianfeng wrote:
+> Vivek Goyal wrote:
+> ...
+> > +/* A request got completed from io_queue. Do the accounting. */
+> > +void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+> > +{
+> > +	const int sync = rq_is_sync(rq);
+> > +	struct io_queue *ioq = rq->ioq;
+> > +	struct elv_fq_data *efqd = &q->elevator->efqd;
+> > +
+> > +	if (!elv_iosched_fair_queuing_enabled(q->elevator))
+> > +		return;
+> > +
+> > +	elv_log_ioq(efqd, ioq, "complete");
+> > +
+> > +	elv_update_hw_tag(efqd);
+> > +
+> > +	WARN_ON(!efqd->rq_in_driver);
+> > +	WARN_ON(!ioq->dispatched);
+> > +	efqd->rq_in_driver--;
+> > +	ioq->dispatched--;
+> > +
+> > +	if (sync)
+> > +		ioq->last_end_request = jiffies;
+> > +
+> > +	/*
+> > +	 * If this is the active queue, check if it needs to be expired,
+> > +	 * or if we want to idle in case it has no pending requests.
+> > +	 */
+> > +
+> > +	if (elv_active_ioq(q->elevator) == ioq) {
+> > +		if (elv_ioq_slice_new(ioq)) {
+> > +			elv_ioq_set_prio_slice(q, ioq);
+> 
+>   Hi Vivek,
+> 
+>   Would you explain a bit why slice_end should be set when first request completes.
+>   Why not set it just when an ioq gets active?
+>   
 
-Thanks.
+Hi Gui,
 
+I have kept the behavior same as CFQ. I guess reason behind this is that
+when a new queue is scheduled in, first request completion might take more
+time as head of the disk might be quite a distance away (due to previous
+queue) and one probably does not want to charge the new queue for that
+first seek time. That's the reason we start the queue slice when first
+request has completed.
 
->> hmm.... =A0I am not sure. I just compiled the kernel at default.
->> Where can I check the boot parameter? In /boot/grub/menu.list,
->> no the parameter yet.
->>
-> Hmm. When
->
-> CONFIG_CGROUP_MEM_RES_CTLR=3Dy
-> CONFIG_CGROUP_MEM_RES_CTLR_SWAP=3Dy
->
-> And no special boot option, the memory cgroup directory will be.
-> =3D=3D
-> [root@bluextal cgroup]# ls /cgroups/A/
-> memory.failcnt =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 memory.memsw.usage_in_=
-bytes
-> memory.force_empty =A0 =A0 =A0 =A0 =A0 =A0 =A0 memory.stat
-> memory.limit_in_bytes =A0 =A0 =A0 =A0 =A0 =A0memory.swappiness
-> memory.max_usage_in_bytes =A0 =A0 =A0 =A0memory.usage_in_bytes
-> memory.memsw.failcnt =A0 =A0 =A0 =A0 =A0 =A0 memory.use_hierarchy
-> memory.memsw.limit_in_bytes =A0 =A0 =A0notify_on_release
-> memory.memsw.max_usage_in_bytes =A0tasks
-> =3D=3D
->
-> You can see memory.memsw.* for limiting mem+swap usage.
-> This memory.memsw. files disappears when you set "noswapaccount" boot opt=
-ion...
->
-> I can only say "counld you confirm again ?"
-> =A0config, the kernel version etc...
->
-> Sorry for no help.
->
-> Bye.
-> -Kame
->
->
->
+Thanks
+Vivek
