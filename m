@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 17/38] groups: move code to kernel/groups.c
-Date: Fri, 22 May 2009 08:55:11 +0400
-Message-ID: <1242968132-1044-17-git-send-email-adobriyan__7189.40827432579$1242969465$gmane$org@gmail.com>
+Subject: [PATCH 25/38] C/R: x86_64 xstate
+Date: Fri, 22 May 2009 08:55:19 +0400
+Message-ID: <1242968132-1044-25-git-send-email-adobriyan__38300.8245066323$1242969467$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,619 +21,137 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Move supplementary groups implementation to kernel/groups.c .
-kernel/sys.c already accumulated quite a few random stuff.
-
-Do strictly copy/paste + add required headers to compile.
-Compile-tested on many configs and archs.
+Again, checks aren't enough on all counts.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- kernel/Makefile |    1 +
- kernel/groups.c |  288 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- kernel/sys.c    |  283 ------------------------------------------------------
- 3 files changed, 289 insertions(+), 283 deletions(-)
- create mode 100644 kernel/groups.c
+ include/linux/kstate-image.h  |    3 ++
+ kernel/kstate/kstate-x86_64.c |   44 ++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 42 insertions(+), 5 deletions(-)
 
-diff --git a/kernel/Makefile b/kernel/Makefile
-index 4242366..705ad3d 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -11,6 +11,7 @@ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
- 	    hrtimer.o rwsem.o nsproxy.o srcu.o semaphore.o \
- 	    notifier.o ksysfs.o pm_qos_params.o sched_clock.o cred.o \
- 	    async.o
-+obj-y += groups.o
+diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
+index 7c54711..d956d05 100644
+--- a/include/linux/kstate-image.h
++++ b/include/linux/kstate-image.h
+@@ -151,6 +151,9 @@ struct kstate_image_task_struct_x86_64 {
+ 	__u64		dr7;
  
- ifdef CONFIG_FUNCTION_TRACER
- # Do not trace debug files and internal ftrace files
-diff --git a/kernel/groups.c b/kernel/groups.c
-new file mode 100644
-index 0000000..1b95b2f
---- /dev/null
-+++ b/kernel/groups.c
-@@ -0,0 +1,288 @@
-+/*
-+ * Supplementary group IDs
-+ */
-+#include <linux/cred.h>
-+#include <linux/module.h>
-+#include <linux/slab.h>
-+#include <linux/security.h>
-+#include <linux/syscalls.h>
-+#include <asm/uaccess.h>
+ 	__u64		tls_array[3];
 +
-+/* init to 2 - one for init_task, one to ensure it is never freed */
-+struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
-+
-+struct group_info *groups_alloc(int gidsetsize)
-+{
-+	struct group_info *group_info;
-+	int nblocks;
-+	int i;
-+
-+	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
-+	/* Make sure we always allocate at least one indirect block pointer */
-+	nblocks = nblocks ? : 1;
-+	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
-+	if (!group_info)
-+		return NULL;
-+	group_info->ngroups = gidsetsize;
-+	group_info->nblocks = nblocks;
-+	atomic_set(&group_info->usage, 1);
-+
-+	if (gidsetsize <= NGROUPS_SMALL)
-+		group_info->blocks[0] = group_info->small_block;
-+	else {
-+		for (i = 0; i < nblocks; i++) {
-+			gid_t *b;
-+			b = (void *)__get_free_page(GFP_USER);
-+			if (!b)
-+				goto out_undo_partial_alloc;
-+			group_info->blocks[i] = b;
-+		}
-+	}
-+	return group_info;
-+
-+out_undo_partial_alloc:
-+	while (--i >= 0) {
-+		free_page((unsigned long)group_info->blocks[i]);
-+	}
-+	kfree(group_info);
-+	return NULL;
-+}
-+
-+EXPORT_SYMBOL(groups_alloc);
-+
-+void groups_free(struct group_info *group_info)
-+{
-+	if (group_info->blocks[0] != group_info->small_block) {
-+		int i;
-+		for (i = 0; i < group_info->nblocks; i++)
-+			free_page((unsigned long)group_info->blocks[i]);
-+	}
-+	kfree(group_info);
-+}
-+
-+EXPORT_SYMBOL(groups_free);
-+
-+/* export the group_info to a user-space array */
-+static int groups_to_user(gid_t __user *grouplist,
-+			  const struct group_info *group_info)
-+{
-+	int i;
-+	unsigned int count = group_info->ngroups;
-+
-+	for (i = 0; i < group_info->nblocks; i++) {
-+		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
-+		unsigned int len = cp_count * sizeof(*grouplist);
-+
-+		if (copy_to_user(grouplist, group_info->blocks[i], len))
-+			return -EFAULT;
-+
-+		grouplist += NGROUPS_PER_BLOCK;
-+		count -= cp_count;
-+	}
-+	return 0;
-+}
-+
-+/* fill a group_info from a user-space array - it must be allocated already */
-+static int groups_from_user(struct group_info *group_info,
-+    gid_t __user *grouplist)
-+{
-+	int i;
-+	unsigned int count = group_info->ngroups;
-+
-+	for (i = 0; i < group_info->nblocks; i++) {
-+		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
-+		unsigned int len = cp_count * sizeof(*grouplist);
-+
-+		if (copy_from_user(group_info->blocks[i], grouplist, len))
-+			return -EFAULT;
-+
-+		grouplist += NGROUPS_PER_BLOCK;
-+		count -= cp_count;
-+	}
-+	return 0;
-+}
-+
-+/* a simple Shell sort */
-+static void groups_sort(struct group_info *group_info)
-+{
-+	int base, max, stride;
-+	int gidsetsize = group_info->ngroups;
-+
-+	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
-+		; /* nothing */
-+	stride /= 3;
-+
-+	while (stride) {
-+		max = gidsetsize - stride;
-+		for (base = 0; base < max; base++) {
-+			int left = base;
-+			int right = left + stride;
-+			gid_t tmp = GROUP_AT(group_info, right);
-+
-+			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
-+				GROUP_AT(group_info, right) =
-+				    GROUP_AT(group_info, left);
-+				right = left;
-+				left -= stride;
-+			}
-+			GROUP_AT(group_info, right) = tmp;
-+		}
-+		stride /= 3;
-+	}
-+}
-+
-+/* a simple bsearch */
-+int groups_search(const struct group_info *group_info, gid_t grp)
-+{
-+	unsigned int left, right;
-+
-+	if (!group_info)
-+		return 0;
-+
-+	left = 0;
-+	right = group_info->ngroups;
-+	while (left < right) {
-+		unsigned int mid = (left+right)/2;
-+		int cmp = grp - GROUP_AT(group_info, mid);
-+		if (cmp > 0)
-+			left = mid + 1;
-+		else if (cmp < 0)
-+			right = mid;
-+		else
-+			return 1;
-+	}
-+	return 0;
-+}
-+
-+/**
-+ * set_groups - Change a group subscription in a set of credentials
-+ * @new: The newly prepared set of credentials to alter
-+ * @group_info: The group list to install
-+ *
-+ * Validate a group subscription and, if valid, insert it into a set
-+ * of credentials.
-+ */
-+int set_groups(struct cred *new, struct group_info *group_info)
-+{
-+	int retval;
-+
-+	retval = security_task_setgroups(group_info);
-+	if (retval)
-+		return retval;
-+
-+	put_group_info(new->group_info);
-+	groups_sort(group_info);
-+	get_group_info(group_info);
-+	new->group_info = group_info;
-+	return 0;
-+}
-+
-+EXPORT_SYMBOL(set_groups);
-+
-+/**
-+ * set_current_groups - Change current's group subscription
-+ * @group_info: The group list to impose
-+ *
-+ * Validate a group subscription and, if valid, impose it upon current's task
-+ * security record.
-+ */
-+int set_current_groups(struct group_info *group_info)
-+{
-+	struct cred *new;
-+	int ret;
-+
-+	new = prepare_creds();
-+	if (!new)
-+		return -ENOMEM;
-+
-+	ret = set_groups(new, group_info);
-+	if (ret < 0) {
-+		abort_creds(new);
-+		return ret;
-+	}
-+
-+	return commit_creds(new);
-+}
-+
-+EXPORT_SYMBOL(set_current_groups);
-+
-+SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
-+{
-+	const struct cred *cred = current_cred();
-+	int i;
-+
-+	if (gidsetsize < 0)
++	__u8		len_xstate;
++	/* __u8 xstate[len_xstate]; */
+ } __packed;
+ 
+ struct kstate_image_mm_struct {
+diff --git a/kernel/kstate/kstate-x86_64.c b/kernel/kstate/kstate-x86_64.c
+index 83ed1b5..e18cca1 100644
+--- a/kernel/kstate/kstate-x86_64.c
++++ b/kernel/kstate/kstate-x86_64.c
+@@ -1,5 +1,6 @@
+ /* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
+ #include <linux/sched.h>
++#include <asm/i387.h>
+ 
+ #include <linux/kstate.h>
+ #include <linux/kstate-image.h>
+@@ -74,10 +75,14 @@ static int check_tls(struct desc_struct *desc)
+ static int check_image_task_struct_x86_64(struct kstate_image_task_struct *tsk_i)
+ {
+ 	struct kstate_image_task_struct_x86_64 *i = (void *)(tsk_i + 1);
++	unsigned int len_xstate;
+ 	int rv;
+ 
+ 	if (tsk_i->hdr.obj_len < sizeof(*tsk_i) + sizeof(*i))
+ 		return -EINVAL;
++	len_xstate = i->len_xstate;
++	if (tsk_i->hdr.obj_len - sizeof(*tsk_i) - sizeof(*i) < len_xstate)
 +		return -EINVAL;
-+
-+	/* no need to grab task_lock here; it cannot change */
-+	i = cred->group_info->ngroups;
-+	if (gidsetsize) {
-+		if (i > gidsetsize) {
-+			i = -EINVAL;
-+			goto out;
-+		}
-+		if (groups_to_user(grouplist, cred->group_info)) {
-+			i = -EFAULT;
-+			goto out;
-+		}
-+	}
-+out:
-+	return i;
-+}
-+
-+/*
-+ *	SMP: Our groups are copy-on-write. We can set them safely
-+ *	without another task interfering.
-+ */
-+ 
-+SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
-+{
-+	struct group_info *group_info;
-+	int retval;
-+
-+	if (!capable(CAP_SETGID))
-+		return -EPERM;
-+	if ((unsigned)gidsetsize > NGROUPS_MAX)
+ 
+ 	rv = check_rflags(i->rflags);
+ 	if (rv < 0)
+@@ -129,6 +134,11 @@ static int check_image_task_struct_x86_64(struct kstate_image_task_struct *tsk_i
+ 			return rv;
+ 	}
+ 
++	if (len_xstate > 0 && len_xstate != xstate_size) {
++		WARN(1, "xstate size mismatch %u:%u\n", len_xstate, xstate_size);
 +		return -EINVAL;
-+
-+	group_info = groups_alloc(gidsetsize);
-+	if (!group_info)
-+		return -ENOMEM;
-+	retval = groups_from_user(group_info, grouplist);
-+	if (retval) {
-+		put_group_info(group_info);
-+		return retval;
 +	}
 +
-+	retval = set_current_groups(group_info);
-+	put_group_info(group_info);
-+
-+	return retval;
-+}
-+
-+/*
-+ * Check whether we're fsgid/egid or in the supplemental group..
-+ */
-+int in_group_p(gid_t grp)
-+{
-+	const struct cred *cred = current_cred();
-+	int retval = 1;
-+
-+	if (grp != cred->fsgid)
-+		retval = groups_search(cred->group_info, grp);
-+	return retval;
-+}
-+
-+EXPORT_SYMBOL(in_group_p);
-+
-+int in_egroup_p(gid_t grp)
-+{
-+	const struct cred *cred = current_cred();
-+	int retval = 1;
-+
-+	if (grp != cred->egid)
-+		retval = groups_search(cred->group_info, grp);
-+	return retval;
-+}
-+
-+EXPORT_SYMBOL(in_egroup_p);
-diff --git a/kernel/sys.c b/kernel/sys.c
-index e7998cf..4edcf51 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -1112,289 +1112,6 @@ out:
- 	return err;
+ 	return 0;
  }
  
--/*
-- * Supplementary group IDs
-- */
--
--/* init to 2 - one for init_task, one to ensure it is never freed */
--struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
--
--struct group_info *groups_alloc(int gidsetsize)
--{
--	struct group_info *group_info;
--	int nblocks;
--	int i;
--
--	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
--	/* Make sure we always allocate at least one indirect block pointer */
--	nblocks = nblocks ? : 1;
--	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
--	if (!group_info)
--		return NULL;
--	group_info->ngroups = gidsetsize;
--	group_info->nblocks = nblocks;
--	atomic_set(&group_info->usage, 1);
--
--	if (gidsetsize <= NGROUPS_SMALL)
--		group_info->blocks[0] = group_info->small_block;
--	else {
--		for (i = 0; i < nblocks; i++) {
--			gid_t *b;
--			b = (void *)__get_free_page(GFP_USER);
--			if (!b)
--				goto out_undo_partial_alloc;
--			group_info->blocks[i] = b;
--		}
--	}
--	return group_info;
--
--out_undo_partial_alloc:
--	while (--i >= 0) {
--		free_page((unsigned long)group_info->blocks[i]);
--	}
--	kfree(group_info);
--	return NULL;
--}
--
--EXPORT_SYMBOL(groups_alloc);
--
--void groups_free(struct group_info *group_info)
--{
--	if (group_info->blocks[0] != group_info->small_block) {
--		int i;
--		for (i = 0; i < group_info->nblocks; i++)
--			free_page((unsigned long)group_info->blocks[i]);
--	}
--	kfree(group_info);
--}
--
--EXPORT_SYMBOL(groups_free);
--
--/* export the group_info to a user-space array */
--static int groups_to_user(gid_t __user *grouplist,
--			  const struct group_info *group_info)
--{
--	int i;
--	unsigned int count = group_info->ngroups;
--
--	for (i = 0; i < group_info->nblocks; i++) {
--		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
--		unsigned int len = cp_count * sizeof(*grouplist);
--
--		if (copy_to_user(grouplist, group_info->blocks[i], len))
--			return -EFAULT;
--
--		grouplist += NGROUPS_PER_BLOCK;
--		count -= cp_count;
--	}
--	return 0;
--}
--
--/* fill a group_info from a user-space array - it must be allocated already */
--static int groups_from_user(struct group_info *group_info,
--    gid_t __user *grouplist)
--{
--	int i;
--	unsigned int count = group_info->ngroups;
--
--	for (i = 0; i < group_info->nblocks; i++) {
--		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
--		unsigned int len = cp_count * sizeof(*grouplist);
--
--		if (copy_from_user(group_info->blocks[i], grouplist, len))
--			return -EFAULT;
--
--		grouplist += NGROUPS_PER_BLOCK;
--		count -= cp_count;
--	}
--	return 0;
--}
--
--/* a simple Shell sort */
--static void groups_sort(struct group_info *group_info)
--{
--	int base, max, stride;
--	int gidsetsize = group_info->ngroups;
--
--	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
--		; /* nothing */
--	stride /= 3;
--
--	while (stride) {
--		max = gidsetsize - stride;
--		for (base = 0; base < max; base++) {
--			int left = base;
--			int right = left + stride;
--			gid_t tmp = GROUP_AT(group_info, right);
--
--			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
--				GROUP_AT(group_info, right) =
--				    GROUP_AT(group_info, left);
--				right = left;
--				left -= stride;
--			}
--			GROUP_AT(group_info, right) = tmp;
--		}
--		stride /= 3;
--	}
--}
--
--/* a simple bsearch */
--int groups_search(const struct group_info *group_info, gid_t grp)
--{
--	unsigned int left, right;
--
--	if (!group_info)
--		return 0;
--
--	left = 0;
--	right = group_info->ngroups;
--	while (left < right) {
--		unsigned int mid = (left+right)/2;
--		int cmp = grp - GROUP_AT(group_info, mid);
--		if (cmp > 0)
--			left = mid + 1;
--		else if (cmp < 0)
--			right = mid;
--		else
--			return 1;
--	}
--	return 0;
--}
--
--/**
-- * set_groups - Change a group subscription in a set of credentials
-- * @new: The newly prepared set of credentials to alter
-- * @group_info: The group list to install
-- *
-- * Validate a group subscription and, if valid, insert it into a set
-- * of credentials.
-- */
--int set_groups(struct cred *new, struct group_info *group_info)
--{
--	int retval;
--
--	retval = security_task_setgroups(group_info);
--	if (retval)
--		return retval;
--
--	put_group_info(new->group_info);
--	groups_sort(group_info);
--	get_group_info(group_info);
--	new->group_info = group_info;
--	return 0;
--}
--
--EXPORT_SYMBOL(set_groups);
--
--/**
-- * set_current_groups - Change current's group subscription
-- * @group_info: The group list to impose
-- *
-- * Validate a group subscription and, if valid, impose it upon current's task
-- * security record.
-- */
--int set_current_groups(struct group_info *group_info)
--{
--	struct cred *new;
--	int ret;
--
--	new = prepare_creds();
--	if (!new)
--		return -ENOMEM;
--
--	ret = set_groups(new, group_info);
--	if (ret < 0) {
--		abort_creds(new);
--		return ret;
--	}
--
--	return commit_creds(new);
--}
--
--EXPORT_SYMBOL(set_current_groups);
--
--SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
--{
--	const struct cred *cred = current_cred();
--	int i;
--
--	if (gidsetsize < 0)
--		return -EINVAL;
--
--	/* no need to grab task_lock here; it cannot change */
--	i = cred->group_info->ngroups;
--	if (gidsetsize) {
--		if (i > gidsetsize) {
--			i = -EINVAL;
--			goto out;
--		}
--		if (groups_to_user(grouplist, cred->group_info)) {
--			i = -EFAULT;
--			goto out;
--		}
--	}
--out:
--	return i;
--}
--
--/*
-- *	SMP: Our groups are copy-on-write. We can set them safely
-- *	without another task interfering.
-- */
-- 
--SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
--{
--	struct group_info *group_info;
--	int retval;
--
--	if (!capable(CAP_SETGID))
--		return -EPERM;
--	if ((unsigned)gidsetsize > NGROUPS_MAX)
--		return -EINVAL;
--
--	group_info = groups_alloc(gidsetsize);
--	if (!group_info)
--		return -ENOMEM;
--	retval = groups_from_user(group_info, grouplist);
--	if (retval) {
--		put_group_info(group_info);
--		return retval;
--	}
--
--	retval = set_current_groups(group_info);
--	put_group_info(group_info);
--
--	return retval;
--}
--
--/*
-- * Check whether we're fsgid/egid or in the supplemental group..
-- */
--int in_group_p(gid_t grp)
--{
--	const struct cred *cred = current_cred();
--	int retval = 1;
--
--	if (grp != cred->fsgid)
--		retval = groups_search(cred->group_info, grp);
--	return retval;
--}
--
--EXPORT_SYMBOL(in_group_p);
--
--int in_egroup_p(gid_t grp)
--{
--	const struct cred *cred = current_cred();
--	int retval = 1;
--
--	if (grp != cred->egid)
--		retval = groups_search(cred->group_info, grp);
--	return retval;
--}
--
--EXPORT_SYMBOL(in_egroup_p);
--
- DECLARE_RWSEM(uts_sem);
+@@ -141,7 +151,12 @@ int kstate_arch_check_image_task_struct(struct kstate_image_task_struct *i)
  
- SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
+ unsigned int kstate_arch_len_task_struct(struct task_struct *tsk)
+ {
+-	return sizeof(struct kstate_image_task_struct_x86_64);
++	unsigned int len;
++
++	len = sizeof(struct kstate_image_task_struct_x86_64);
++	if (tsk->thread.xstate)
++		len += xstate_size;
++	return len;
+ }
+ 
+ int kstate_arch_check_task_struct(struct task_struct *tsk)
+@@ -154,10 +169,6 @@ int kstate_arch_check_task_struct(struct task_struct *tsk)
+ 		return -EINVAL;
+ 	}
+ #endif
+-	if (tsk->thread.xstate) {
+-		WARN_ON(1);
+-		return -EINVAL;
+-	}
+ 	rb = &task_thread_info(tsk)->restart_block;
+ 	if (rb->fn != current_thread_info()->restart_block.fn) {
+ 		WARN(1, "rb->fn = %pF\n", rb->fn);
+@@ -261,6 +272,12 @@ static int dump_task_struct_x86_64(struct kstate_context *ctx, struct task_struc
+ 	BUILD_BUG_ON(sizeof(tsk->thread.tls_array) != 3 * 8);
+ 	memcpy(i->tls_array, tsk->thread.tls_array, sizeof(i->tls_array));
+ 
++	i->len_xstate = 0;
++	if (tsk->thread.xstate) {
++		i->len_xstate = xstate_size;
++		memcpy(i + 1, tsk->thread.xstate, xstate_size);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -269,9 +286,20 @@ int kstate_arch_dump_task_struct(struct kstate_context *ctx, struct task_struct
+ 	return dump_task_struct_x86_64(ctx, tsk, arch_i);
+ }
+ 
++static int restore_xstate(struct task_struct *tsk, void *xstate, unsigned int len)
++{
++	int rv;
++
++	rv = init_fpu(tsk);
++	if (rv == 0)
++		memcpy(tsk->thread.xstate, xstate, len);
++	return rv;
++}
++
+ static int restore_task_struct_x86_64(struct task_struct *tsk, struct kstate_image_task_struct_x86_64 *i)
+ {
+ 	struct pt_regs *regs = task_pt_regs(tsk);
++	int rv;
+ 
+ 	tsk->thread.sp = (unsigned long)regs;
+ 	tsk->thread.sp0 = (unsigned long)(regs + 1);
+@@ -319,6 +347,12 @@ static int restore_task_struct_x86_64(struct task_struct *tsk, struct kstate_ima
+ 
+ 	memcpy(tsk->thread.tls_array, i->tls_array, sizeof(i->tls_array));
+ 
++	if (i->len_xstate) {
++		rv = restore_xstate(tsk, i + 1, i->len_xstate);
++		if (rv < 0)
++			return rv;
++	}
++
+ 	set_tsk_thread_flag(tsk, TIF_FORK);
+ 	return 0;
+ }
 -- 
 1.5.6.5
