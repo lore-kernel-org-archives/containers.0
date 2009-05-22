@@ -1,12 +1,15 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2] ipcns: move free_ipcs() proto
-Date: Fri, 22 May 2009 02:13:11 +0400
-Message-ID: <20090521221311.GB13949@x200.localdomain>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: css_id numbering
+Date: Fri, 22 May 2009 09:36:32 +0900
+Message-ID: <20090522093632.951ed052.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20090521.162859.226800758.ryov@valinux.co.jp>
+	<20090521163215.63E1.A69D9226@jp.fujitsu.com>
+	<20090521.193606.189724982.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090521.193606.189724982.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,40 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Function is really private to ipc/ and avoid struct kern_ipc_perm
-forward declaration.
+On Thu, 21 May 2009 19:36:06 +0900 (JST)
+Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
 
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
+> Hi Kamezawa-san and Kosaki-san,
+> 
+> > > I have a suggestion for css_id numbering. How about using the same
+> > > numbering scheme as process ID for css_id instead of idr? It prevents
+> > > the same ID from being reused quickly.
+> > 
+> > process ID is not "short"(2bytes).
+> > 
+> > > blkio-cgroup can benefit from it. If some pages still have an old ID,
+> > > it can somewhat prevents IOs associated with those pages from being
+> > > charged for a new cgroup which are reusing the old ID.
+> > 
+> > plz see memcg's code. no reuse if id is still used.
+> 
+> blkio-cgroup embeds css_id into page_cgroup->flags, and the ID in the
+> flags still remain even after the cgroup which marks up the page is
+> removed.
+> 
+> The current numbering scheme of css_id choose the lowest number from
+> available IDs. When a cgroup is created right after another cgroup is
+> removed (no one referes to the cgroup), the same number will be reused
+> for the new cgroup.
+> 
+> When an IO associated with the page is issued, an IO controller which
+> uses blkio-cgroup charges the new cgroup according to the ID in the
+> page_cgroup->flags, instead of the removed cgroup. If css_id is simply
+> incremented by one like process ID, I think we could avoid such wrong
+> charges in many cases.
+> 
+IDR uses structure lika a radix-tree and it's important to keep the range
+as small as possible.
+And scheme like PID will have reuse issue anyway. 99.9% is not 100%.
+If 1023 of IDs are used under total 1024 IDS, you'll see reuse soon.
+please rewrite css_id by yourself if you have better codes than IDR.
+IIUC, it's keeps footprint small.
 
- include/linux/ipc_namespace.h |    4 ----
- ipc/util.h                    |    3 ++-
- 2 files changed, 2 insertions(+), 5 deletions(-)
+> > it seems bogus solusion.
+> > pid rule also can make conflict. I think blkio-cgroup should be fixed.
+> 
+> This solution is reasonable for accuracy, even conflicts occur.
+> I think keeping down the overhead of blkio-cgroup is more important.
+> 
+please use private refcnt for avoiding reuse. It's the only way to prevent
+reuse of ID in theory.
 
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -96,10 +96,6 @@ static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
- #if defined(CONFIG_IPC_NS)
- extern struct ipc_namespace *copy_ipcs(unsigned long flags,
- 				       struct ipc_namespace *ns);
--extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
--		      void (*free)(struct ipc_namespace *,
--				   struct kern_ipc_perm *));
--
- static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
- {
- 	if (ns)
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -171,5 +171,6 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
- struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
- int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
- 			struct ipc_ops *ops, struct ipc_params *params);
--
-+void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
-+		void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
- #endif
+Thanks,
+-Kame
