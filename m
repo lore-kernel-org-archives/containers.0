@@ -1,8 +1,7 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: handle failure of cgroup_populate_dir() at
-	mount/remount
-Date: Fri, 22 May 2009 11:00:12 +0800
-Message-ID: <4A16153C.2080004@cn.fujitsu.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 01/38] cred: #include init.h in cred.h
+Date: Fri, 22 May 2009 08:54:55 +0400
+Message-ID: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,77 +15,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Now we have 'stat' file in both memory and cpuacct subsystems. If we
-mount these 2 subsystems with option 'noprefix', the creation of 'stat'
-file for cpuacct will fail, but without any notificatin to the user.
+cred.h can't be included as first header because it uses __init and
+doesn't include init.h which is enough to break compilation on at least
+ia64.
 
-With this patch, we fail the mount/remount in this case.
-
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- kernel/cgroup.c |   18 ++++++++++++++++--
- 1 files changed, 16 insertions(+), 2 deletions(-)
+ include/linux/cred.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index a7267bf..eab83f7 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -896,6 +896,7 @@ static int parse_cgroupfs_options(char *data,
- static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- {
- 	int ret = 0;
-+	unsigned long subsys_bits;
- 	struct cgroupfs_root *root = sb->s_fs_info;
- 	struct cgroup *cgrp = &root->top_cgroup;
- 	struct cgroup_sb_opts opts;
-@@ -914,12 +915,17 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 		goto out_unlock;
- 	}
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 3282ee4..4fa9996 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -13,6 +13,7 @@
+ #define _LINUX_CRED_H
  
-+	subsys_bits = root->subsys_bits;
- 	ret = rebind_subsystems(root, opts.subsys_bits);
- 	if (ret)
- 		goto out_unlock;
- 
- 	/* (re)populate subsystem files */
--	cgroup_populate_dir(cgrp);
-+	ret = cgroup_populate_dir(cgrp);
-+	if (ret) {
-+		rebind_subsystems(root, subsys_bits);
-+		goto out_unlock;
-+	}
- 
- 	if (opts.release_agent)
- 		strcpy(root->release_agent_path, opts.release_agent);
-@@ -1122,9 +1128,13 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
- 		BUG_ON(!list_empty(&root_cgrp->children));
- 		BUG_ON(root->number_of_cgroups != 1);
- 
--		cgroup_populate_dir(root_cgrp);
-+		ret = cgroup_populate_dir(root_cgrp);
-+
- 		mutex_unlock(&inode->i_mutex);
- 		mutex_unlock(&cgroup_mutex);
-+
-+		if (ret)
-+			goto drop_new_super;
- 	}
- 
- 	simple_set_mnt(mnt, sb);
-@@ -1803,6 +1813,10 @@ int cgroup_add_file(struct cgroup *cgrp,
- 		dput(dentry);
- 	} else
- 		error = PTR_ERR(dentry);
-+
-+	if (error)
-+		printk(KERN_WARNING "cgroup: Failed to create file '%s': %d\n",
-+		       name, error);
- 	return error;
- }
+ #include <linux/capability.h>
++#include <linux/init.h>
+ #include <linux/key.h>
+ #include <asm/atomic.h>
  
 -- 
-1.5.4.rc3
+1.5.6.5
