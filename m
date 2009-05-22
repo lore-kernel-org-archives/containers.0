@@ -1,11 +1,13 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 01/38] cred: #include init.h in cred.h
-Date: Fri, 22 May 2009 08:54:55 +0400
-Message-ID: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+Subject: [PATCH 11/38] nsproxy: extract create_nsproxy()
+Date: Fri, 22 May 2009 08:55:05 +0400
+Message-ID: <1242968132-1044-11-git-send-email-adobriyan@gmail.com>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1242968132-1044-1-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,26 +21,54 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cred.h can't be included as first header because it uses __init and
-doesn't include init.h which is enough to break compilation on at least
-ia64.
+clone_nsproxy() does useless copying of old nsproxy -- every pointer will be
+rewritten to new ns or to old ns. Remove copying, rename clone_nsproxy(),
+create_nsproxy() will be used by C/R code to create fresh nsproxy on restart.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cred.h |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ kernel/nsproxy.c |   19 +++++++------------
+ 1 files changed, 7 insertions(+), 12 deletions(-)
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 3282ee4..4fa9996 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -13,6 +13,7 @@
- #define _LINUX_CRED_H
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 63598dc..09b4ff9 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -26,19 +26,14 @@ static struct kmem_cache *nsproxy_cachep;
  
- #include <linux/capability.h>
-+#include <linux/init.h>
- #include <linux/key.h>
- #include <asm/atomic.h>
+ struct nsproxy init_nsproxy = INIT_NSPROXY(init_nsproxy);
+ 
+-/*
+- * creates a copy of "orig" with refcount 1.
+- */
+-static inline struct nsproxy *clone_nsproxy(struct nsproxy *orig)
++static inline struct nsproxy *create_nsproxy(void)
+ {
+-	struct nsproxy *ns;
++	struct nsproxy *nsproxy;
+ 
+-	ns = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
+-	if (ns) {
+-		memcpy(ns, orig, sizeof(struct nsproxy));
+-		atomic_set(&ns->count, 1);
+-	}
+-	return ns;
++	nsproxy = kmem_cache_alloc(nsproxy_cachep, GFP_KERNEL);
++	if (nsproxy)
++		atomic_set(&nsproxy->count, 1);
++	return nsproxy;
+ }
+ 
+ /*
+@@ -52,7 +47,7 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 	struct nsproxy *new_nsp;
+ 	int err;
+ 
+-	new_nsp = clone_nsproxy(tsk->nsproxy);
++	new_nsp = create_nsproxy();
+ 	if (!new_nsp)
+ 		return ERR_PTR(-ENOMEM);
  
 -- 
 1.5.6.5
