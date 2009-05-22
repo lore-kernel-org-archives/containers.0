@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 16/38] x86: ptrace debugreg checks rewrite
-Date: Fri, 22 May 2009 08:55:10 +0400
-Message-ID: <1242968132-1044-16-git-send-email-adobriyan__14160.2851952941$1242970661$gmane$org@gmail.com>
+Subject: [PATCH 34/38] C/R: checkpoint/restore struct user
+Date: Fri, 22 May 2009 08:55:28 +0400
+Message-ID: <1242968132-1044-34-git-send-email-adobriyan__48437.4485364698$1242970661$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,270 +21,322 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a mess.
-
-Pre unified-x86 code did check for breakpoint addr
-to be "< TASK_SIZE - 3 (or 7)". This was fine from security POV,
-but banned valid breakpoint usage when address is close to TASK_SIZE.
-E. g. 1-byte breakpoint at TASK_SIZE - 1 should be allowed, but it wasn't.
-
-Then came commit 84929801e14d968caeb84795bfbb88f04283fbd9
-("[PATCH] x86_64: TASK_SIZE fixes for compatibility mode processes")
-which for some reason touched ptrace as well and made effective
-TASK_SIZE of 32-bit process depending on IA32_PAGE_OFFSET
-which is not a constant!:
-
-	#define IA32_PAGE_OFFSET ((current->personality & ADDR_LIMIT_3GB) ? 0xc0000000 : 0xFFFFe000)
-				   ^^^^^^^
-Maximum addr for breakpoint became dependent on personality of ptracer.
-
-Commit also relaxed danger zone for 32-bit processes from 8 bytes to 4
-not taking into account that 8-byte wide breakpoints are possible even
-for 32-bit processes. This was fine, however, because 64-bit kernel
-addresses are too far from 32-bit ones.
-
-Then came utrace with commit 2047b08be67b70875d8765fc81d34ce28041bec3
-("x86: x86 ptrace getreg/putreg merge") which copy-pasted and ifdeffed 32-bit
-part of TASK_SIZE_OF() leaving 8-byte issue as-is.
-
-So, what patch fixes?
-1) Too strict logic near TASK_SIZE boundary -- as long as we don't cross
-   TASK_SIZE_MAX, we're fine.
-2) Too smart logic of using breakpoints over non-existent kernel
-   boundary -- we should only protect against setting up after
-   TASK_SIZE_MAX, the rest is none of kernel business. This fixes
-   IA32_PAGE_OFFSET beartrap as well.
-
-As a bonus, remove uberhack and big comment determining DR7 validness,
-rewrite with clear algorithm when it's obvious what's going on.
-
-Make DR validness checker suitable for C/R. On restart DR registers
-must be checked the same way they are checked on PTRACE_POKEUSR.
-
-Question 1: TIF_DEBUG can set even if none of breakpoints is turned on,
-should this be optimized?
-
-Question 2: Breakpoints are allowed to be globally enabled, is this a
-security risk?
+Note, user_namespace is in next patch as well as ->creator loop issue.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- arch/x86/kernel/ptrace.c |  175 +++++++++++++++++++++++++++-------------------
- 1 files changed, 103 insertions(+), 72 deletions(-)
+ include/linux/kstate-image.h   |    8 +++
+ include/linux/kstate.h         |    5 ++
+ kernel/cred.c                  |   28 +++++++++-
+ kernel/kstate/cpt-sys.c        |    6 ++
+ kernel/kstate/kstate-context.c |    5 ++
+ kernel/kstate/kstate-object.c  |    3 +
+ kernel/user.c                  |  121 ++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 174 insertions(+), 2 deletions(-)
 
-diff --git a/arch/x86/kernel/ptrace.c b/arch/x86/kernel/ptrace.c
-index 23b7c8f..afd2b7d 100644
---- a/arch/x86/kernel/ptrace.c
-+++ b/arch/x86/kernel/ptrace.c
-@@ -135,11 +135,6 @@ static int set_segment_reg(struct task_struct *task,
+diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
+index dfd71ea..605a2b5 100644
+--- a/include/linux/kstate-image.h
++++ b/include/linux/kstate-image.h
+@@ -51,6 +51,7 @@ struct kstate_image_header {
+ #define KSTATE_OBJ_NET_NS	11
+ #define KSTATE_OBJ_CRED		12
+ #define KSTATE_OBJ_GROUP_INFO	13
++#define KSTATE_OBJ_USER_STRUCT	14
+ 
+ struct kstate_object_header {
+ 	__u32		obj_type;
+@@ -277,6 +278,7 @@ struct kstate_image_cred {
+ 	kstate_cap_t	cap_bset;
+ 
+ 	kstate_ref_t	ref_group_info;
++	kstate_ref_t	ref_user;
+ } __packed;
+ 
+ struct kstate_image_group_info {
+@@ -285,4 +287,10 @@ struct kstate_image_group_info {
+ 	__u32		ngroups;
+ 	/* __u32	gid[ngroups]; */
+ } __packed;
++
++struct kstate_image_user_struct {
++	struct kstate_object_header hdr;
++
++	__u32		uid;
++} __packed;
+ #endif
+diff --git a/include/linux/kstate.h b/include/linux/kstate.h
+index 4df3bfa..dd6b982 100644
+--- a/include/linux/kstate.h
++++ b/include/linux/kstate.h
+@@ -35,6 +35,7 @@ enum kstate_context_obj_type {
+ 	KSTATE_CTX_NSPROXY,
+ 	KSTATE_CTX_PID_NS,
+ 	KSTATE_CTX_TASK_STRUCT,
++	KSTATE_CTX_USER_STRUCT,
+ 	KSTATE_CTX_UTS_NS,
+ 	NR_KSTATE_CTX_TYPES
+ };
+@@ -134,6 +135,10 @@ int kstate_collect_all_group_info(struct kstate_context *ctx);
+ int kstate_dump_all_group_info(struct kstate_context *ctx);
+ int kstate_restore_group_info(struct kstate_context *ctx, kstate_ref_t *ref);
+ 
++int kstate_collect_all_user_struct(struct kstate_context *ctx);
++int kstate_dump_all_user_struct(struct kstate_context *ctx);
++int kstate_restore_user_struct(struct kstate_context *ctx, kstate_ref_t *ref);
++
+ #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
+ extern const __u32 kstate_kernel_arch;
+ int kstate_arch_check_image_header(struct kstate_image_header *i);
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 8543360..a16f357 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -687,6 +687,8 @@ static int dump_cred(struct kstate_context *ctx, struct kstate_object *obj)
+ 
+ 	tmp = find_kstate_obj_by_ptr(ctx, cred->group_info, KSTATE_CTX_GROUP_INFO);
+ 	i->ref_group_info = tmp->o_ref;
++	tmp = find_kstate_obj_by_ptr(ctx, cred->user, KSTATE_CTX_USER_STRUCT);
++	i->ref_user = tmp->o_ref;
+ 
+ 	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
+ 	kfree(i);
+@@ -726,6 +728,25 @@ static int restore_group_info(struct kstate_context *ctx, kstate_ref_t *ref, str
  	return 0;
  }
  
--static unsigned long debugreg_addr_limit(struct task_struct *task)
--{
--	return TASK_SIZE - 3;
--}
--
- #else  /* CONFIG_X86_64 */
- 
- #define FLAG_MASK		(FLAG_MASK_32 | X86_EFLAGS_NT)
-@@ -263,16 +258,6 @@ static int set_segment_reg(struct task_struct *task,
- 
- 	return 0;
- }
--
--static unsigned long debugreg_addr_limit(struct task_struct *task)
--{
--#ifdef CONFIG_IA32_EMULATION
--	if (test_tsk_thread_flag(task, TIF_IA32))
--		return IA32_PAGE_OFFSET - 3;
--#endif
--	return TASK_SIZE_MAX - 7;
--}
--
- #endif	/* CONFIG_X86_32 */
- 
- static unsigned long get_flags(struct task_struct *task)
-@@ -480,77 +465,123 @@ static unsigned long ptrace_get_debugreg(struct task_struct *child, int n)
- 	return 0;
- }
- 
-+static int ptrace_check_debugreg(int _32bit,
-+				 unsigned long dr0, unsigned long dr1,
-+				 unsigned long dr2, unsigned long dr3,
-+				 unsigned long dr6, unsigned long dr7)
++static int restore_user(struct kstate_context *ctx, kstate_ref_t *ref, struct cred *cred)
 +{
-+	/* Breakpoint type: 00: --x, 01: -w-, 10: undefined, 11: rw- */
-+	unsigned int rw[4];
-+	/* Breakpoint length: 00: 1 byte, 01: 2 bytes, 10: 8 bytes, 11: 4 bytes */
-+	unsigned int len[4];
-+	int n;
++	struct user_struct *user;
++	struct kstate_object *tmp;
++	int rv;
 +
-+	if (dr0 >= TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr1 >= TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr2 >= TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr3 >= TASK_SIZE_MAX)
-+		return -EINVAL;
-+
-+	for (n = 0; n < 4; n++) {
-+		rw[n] = (dr7 >> (16 + n * 4)) & 0x3;
-+		len[n] = (dr7 >> (16 + n * 4 + 2)) & 0x3;
-+
-+		if (rw[n] == 0x2)
-+			return -EINVAL;
-+		if (rw[n] == 0x0 && len[n] != 0x0)
-+			return -EINVAL;
-+		if (_32bit && len[n] == 0x2)
-+			return -EINVAL;
-+
-+		if (len[n] == 0x0)
-+			len[n] = 1;
-+		else if (len[n] == 0x1)
-+			len[n] = 2;
-+		else if (len[n] == 0x2)
-+			len[n] = 8;
-+		else if (len[n] == 0x3)
-+			len[n] = 4;
-+		/* From now breakpoint length is in bytes. */
++	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_USER_STRUCT);
++	if (!tmp) {
++		rv = kstate_restore_user_struct(ctx, ref);
++		if (rv < 0)
++			return rv;
++		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_USER_STRUCT);
 +	}
++	user = tmp->o_obj;
 +
-+	if (dr6 & ~0xFFFFFFFFUL)
-+		return -EINVAL;
-+	if (dr7 & ~0xFFFFFFFFUL)
-+		return -EINVAL;
-+
-+	if (dr7 == 0)
-+		return 0;
-+
-+	if (dr0 + len[0] > TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr1 + len[1] > TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr2 + len[2] > TASK_SIZE_MAX)
-+		return -EINVAL;
-+	if (dr3 + len[3] > TASK_SIZE_MAX)
-+		return -EINVAL;
-+
++	cred->user = get_uid(user);
 +	return 0;
 +}
 +
- static int ptrace_set_debugreg(struct task_struct *child,
- 			       int n, unsigned long data)
+ int kstate_restore_cred(struct kstate_context *ctx, kstate_ref_t *ref)
  {
--	int i;
-+	unsigned long dr0, dr1, dr2, dr3, dr6, dr7;
-+	int _32bit;
+ 	struct kstate_image_cred *i;
+@@ -761,8 +782,9 @@ int kstate_restore_cred(struct kstate_context *ctx, kstate_ref_t *ref)
+ 	rv = restore_group_info(ctx, &i->ref_group_info, cred);
+ 	if (rv < 0)
+ 		goto out_group_info;
+-	/* FIXME */
+-	cred->user = get_uid(&root_user);
++	rv = restore_user(ctx, &i->ref_user, cred);
++	if (rv < 0)
++		goto out_user;
+ 	kfree(i);
  
- 	if (unlikely(n == 4 || n == 5))
- 		return -EIO;
+ 	rv = kstate_restore_object(ctx, cred, KSTATE_CTX_CRED, ref);
+@@ -771,6 +793,8 @@ int kstate_restore_cred(struct kstate_context *ctx, kstate_ref_t *ref)
+ 	pr_debug("restore cred %p: ref {%llu, %u}, rv %d\n", cred, (unsigned long long)ref->pos, ref->id, rv);
+ 	return rv;
  
--	if (n < 4 && unlikely(data >= debugreg_addr_limit(child)))
--		return -EIO;
--
-+	dr0 = child->thread.debugreg0;
-+	dr1 = child->thread.debugreg1;
-+	dr2 = child->thread.debugreg2;
-+	dr3 = child->thread.debugreg3;
-+	dr6 = child->thread.debugreg6;
-+	dr7 = child->thread.debugreg7;
- 	switch (n) {
--	case 0:		child->thread.debugreg0 = data; break;
--	case 1:		child->thread.debugreg1 = data; break;
--	case 2:		child->thread.debugreg2 = data; break;
--	case 3:		child->thread.debugreg3 = data; break;
--
-+	case 0:
-+		dr0 = data;
-+		break;
-+	case 1:
-+		dr1 = data;
-+		break;
-+	case 2:
-+		dr2 = data;
-+		break;
-+	case 3:
-+		dr3 = data;
-+		break;
- 	case 6:
--		if ((data & ~0xffffffffUL) != 0)
--			return -EIO;
--		child->thread.debugreg6 = data;
-+		dr6 = data;
- 		break;
--
- 	case 7:
--		/*
--		 * Sanity-check data. Take one half-byte at once with
--		 * check = (val >> (16 + 4*i)) & 0xf. It contains the
--		 * R/Wi and LENi bits; bits 0 and 1 are R/Wi, and bits
--		 * 2 and 3 are LENi. Given a list of invalid values,
--		 * we do mask |= 1 << invalid_value, so that
--		 * (mask >> check) & 1 is a correct test for invalid
--		 * values.
--		 *
--		 * R/Wi contains the type of the breakpoint /
--		 * watchpoint, LENi contains the length of the watched
--		 * data in the watchpoint case.
--		 *
--		 * The invalid values are:
--		 * - LENi == 0x10 (undefined), so mask |= 0x0f00.	[32-bit]
--		 * - R/Wi == 0x10 (break on I/O reads or writes), so
--		 *   mask |= 0x4444.
--		 * - R/Wi == 0x00 && LENi != 0x00, so we have mask |=
--		 *   0x1110.
--		 *
--		 * Finally, mask = 0x0f00 | 0x4444 | 0x1110 == 0x5f54.
--		 *
--		 * See the Intel Manual "System Programming Guide",
--		 * 15.2.4
--		 *
--		 * Note that LENi == 0x10 is defined on x86_64 in long
--		 * mode (i.e. even for 32-bit userspace software, but
--		 * 64-bit kernel), so the x86_64 mask value is 0x5454.
--		 * See the AMD manual no. 24593 (AMD64 System Programming)
--		 */
--#ifdef CONFIG_X86_32
--#define	DR7_MASK	0x5f54
--#else
--#define	DR7_MASK	0x5554
--#endif
--		data &= ~DR_CONTROL_RESERVED;
--		for (i = 0; i < 4; i++)
--			if ((DR7_MASK >> ((data >> (16 + 4*i)) & 0xf)) & 1)
--				return -EIO;
--		child->thread.debugreg7 = data;
--		if (data)
--			set_tsk_thread_flag(child, TIF_DEBUG);
--		else
--			clear_tsk_thread_flag(child, TIF_DEBUG);
-+		dr7 = data & ~DR_CONTROL_RESERVED;
- 		break;
- 	}
- 
-+	_32bit = (sizeof(unsigned long) == 4);
-+#ifdef CONFIG_COMPAT
-+	if (test_tsk_thread_flag(child, TIF_IA32))
-+		_32bit = 1;
-+#endif
-+	if (ptrace_check_debugreg(_32bit, dr0, dr1, dr2, dr3, dr6, dr7))
-+		return -EIO;
-+
-+	child->thread.debugreg0 = dr0;
-+	child->thread.debugreg1 = dr1;
-+	child->thread.debugreg2 = dr2;
-+	child->thread.debugreg3 = dr3;
-+	child->thread.debugreg6 = dr6;
-+	child->thread.debugreg7 = dr7;
-+	if (dr7)
-+		set_tsk_thread_flag(child, TIF_DEBUG);
-+	else
-+		clear_tsk_thread_flag(child, TIF_DEBUG);
-+
++out_user:
++	put_group_info(cred->group_info);
+ out_group_info:
+ 	kmem_cache_free(cred_jar, cred);
+ out_free_image:
+diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
+index 1b352c8..a409577 100644
+--- a/kernel/kstate/cpt-sys.c
++++ b/kernel/kstate/cpt-sys.c
+@@ -95,6 +95,9 @@ static int kstate_collect(struct kstate_context *ctx)
+ 	rv = kstate_collect_all_group_info(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_collect_all_user_struct(ctx);
++	if (rv < 0)
++		return rv;
  	return 0;
  }
  
+@@ -148,6 +151,9 @@ static int kstate_dump(struct kstate_context *ctx)
+ 	rv = kstate_dump_all_pid_ns(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_dump_all_user_struct(ctx);
++	if (rv < 0)
++		return rv;
+ 	rv = kstate_dump_all_group_info(ctx);
+ 	if (rv < 0)
+ 		return rv;
+diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
+index 51b28c0..854f971 100644
+--- a/kernel/kstate/kstate-context.c
++++ b/kernel/kstate/kstate-context.c
+@@ -90,6 +90,11 @@ void kstate_context_destroy(struct kstate_context *ctx)
+ 		list_del(&obj->o_list);
+ 		kfree(obj);
+ 	}
++	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_USER_STRUCT) {
++		free_uid((struct user_struct *)obj->o_obj);
++		list_del(&obj->o_list);
++		kfree(obj);
++	}
+ 	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_UTS_NS) {
+ 		put_uts_ns((struct uts_namespace *)obj->o_obj);
+ 		list_del(&obj->o_list);
+diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
+index f6ce7a2..75facda 100644
+--- a/kernel/kstate/kstate-object.c
++++ b/kernel/kstate/kstate-object.c
+@@ -69,6 +69,9 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
+ 	case KSTATE_CTX_TASK_STRUCT:
+ 		get_task_struct((struct task_struct *)obj->o_obj);
+ 		break;
++	case KSTATE_CTX_USER_STRUCT:
++		get_uid((struct user_struct *)obj->o_obj);
++		break;
+ 	case KSTATE_CTX_UTS_NS:
+ 		get_uts_ns((struct uts_namespace *)obj->o_obj);
+ 		break;
+diff --git a/kernel/user.c b/kernel/user.c
+index 850e0ba..9fda1f0 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -2,6 +2,7 @@
+  * The "user cache".
+  *
+  * (C) Copyright 1991-2000 Linus Torvalds
++ * Copyright (C) 2000-2009 Parallels Holdings, Ltd.
+  *
+  * We have a per-user structure to keep track of how many
+  * processes, files etc the user has claimed, in order to be
+@@ -497,3 +498,123 @@ static int __init uid_cache_init(void)
+ }
+ 
+ module_init(uid_cache_init);
++
++#ifdef CONFIG_CHECKPOINT
++#include <linux/kstate.h>
++#include <linux/kstate-image.h>
++
++static int check_user_struct(struct user_struct *user)
++{
++#ifdef CONFIG_INOTIFY_USER
++	if (atomic_read(&user->inotify_watches) != 0) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++	if (atomic_read(&user->inotify_devs) != 0) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++#endif
++#ifdef CONFIG_EPOLL
++	if (atomic_read(&user->epoll_watches) != 0) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++#endif
++#ifdef CONFIG_KEYS
++	if (user->uid_keyring || user->session_keyring) {
++		WARN_ON(1);
++		return -EINVAL;
++	}
++#endif
++	return 0;
++}
++
++static int collect_user_struct(struct kstate_context *ctx, struct user_struct *user)
++{
++	int rv;
++
++	rv = check_user_struct(user);
++	if (rv < 0)
++		return rv;
++	rv = kstate_collect_object(ctx, user, KSTATE_CTX_USER_STRUCT);
++	pr_debug("collect user_struct %p: rv %d\n", user, rv);
++	return rv;
++}
++
++int kstate_collect_all_user_struct(struct kstate_context *ctx)
++{
++	struct kstate_object *obj;
++	int rv;
++
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_CRED) {
++		struct cred *cred = obj->o_obj;
++
++		rv = collect_user_struct(ctx, cred->user);
++		if (rv < 0)
++			return rv;
++	}
++	return 0;
++}
++
++static int dump_user_struct(struct kstate_context *ctx, struct kstate_object *obj)
++{
++	struct user_struct *user = obj->o_obj;
++	struct kstate_image_user_struct *i;
++	int rv;
++
++	i = kstate_prepare_image(KSTATE_OBJ_USER_STRUCT, sizeof(*i));
++	if (!i)
++		return -ENOMEM;
++
++	i->uid = user->uid;
++
++	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
++	kfree(i);
++	pr_debug("dump user_struct %p: ref {%llu, %u}, rv %d\n", user, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
++	return rv;
++}
++
++int kstate_dump_all_user_struct(struct kstate_context *ctx)
++{
++	struct kstate_object *obj;
++	int rv;
++
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_USER_STRUCT) {
++		rv = dump_user_struct(ctx, obj);
++		if (rv < 0)
++			return rv;
++	}
++	return 0;
++}
++
++int kstate_restore_user_struct(struct kstate_context *ctx, kstate_ref_t *ref)
++{
++	struct kstate_image_user_struct *i;
++	struct user_struct *user;
++	int rv;
++
++	i = kstate_read_image(ctx, ref, KSTATE_OBJ_USER_STRUCT, sizeof(*i));
++	if (IS_ERR(i))
++		return PTR_ERR(i);
++
++	/* FIXME */
++	user = alloc_uid(&init_user_ns, i->uid);
++	if (!user) {
++		rv = -ENOMEM;
++		goto out_free_image;
++	}
++	kfree(i);
++
++	rv = kstate_restore_object(ctx, user, KSTATE_CTX_USER_STRUCT, ref);
++	if (rv < 0)
++		free_uid(user);
++	pr_debug("restore user_struct %p: ref {%llu, %u}, rv %d\n", user, (unsigned long long)ref->pos, ref->id, rv);
++	return rv;
++
++out_free_image:
++	kfree(i);
++	pr_debug("%s: return %d, ref {%llu, %u}\n", __func__, rv, (unsigned long long)ref->pos, ref->id);
++	return rv;
++}
++#endif
 -- 
 1.5.6.5
