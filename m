@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 10/38] netns 2/2: extract net_create()
-Date: Fri, 22 May 2009 08:55:04 +0400
-Message-ID: <1242968132-1044-10-git-send-email-adobriyan__2342.6789012321$1242968950$gmane$org@gmail.com>
+Subject: [PATCH 12/38] i386: ifdef out struct thread_struct::fs
+Date: Fri, 22 May 2009 08:55:06 +0400
+Message-ID: <1242968132-1044-12-git-send-email-adobriyan__7266.45499603382$1242969022$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,76 +21,40 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-net_create() will be used by C/R to create fresh netns on restart.
+After commit 464d1a78fbf8cf6c7fd970e7b3e2db50a320ce28 aka
+"[PATCH] i386: Convert i386 PDA code to use %fs"
+%fs saved during context switch moved from thread_struct to pt_regs
+and value on thread_struct became unused.
+
+I don't understand why .fs (OK, .gs first) initializer was added, kernel
+clearly stopped touching it after the patch.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- net/core/net_namespace.c |   44 ++++++++++++++++++++------------------------
- 1 files changed, 20 insertions(+), 24 deletions(-)
+ arch/x86/include/asm/processor.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 4488010..6b3edc9 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -115,38 +115,34 @@ static void net_free(struct net *net)
- 	kmem_cache_free(net_cachep, net);
+diff --git a/arch/x86/include/asm/processor.h b/arch/x86/include/asm/processor.h
+index c2cceae..a6732ff 100644
+--- a/arch/x86/include/asm/processor.h
++++ b/arch/x86/include/asm/processor.h
+@@ -428,7 +428,9 @@ struct thread_struct {
+ 	unsigned short		gsindex;
+ #endif
+ 	unsigned long		ip;
++#ifdef CONFIG_X86_64
+ 	unsigned long		fs;
++#endif
+ 	unsigned long		gs;
+ 	/* Hardware debugging registers: */
+ 	unsigned long		debugreg0;
+@@ -874,7 +876,6 @@ static inline void spin_lock_prefetch(const void *x)
+ 	.vm86_info		= NULL,					  \
+ 	.sysenter_cs		= __KERNEL_CS,				  \
+ 	.io_bitmap_ptr		= NULL,					  \
+-	.fs			= __KERNEL_PERCPU,			  \
  }
  
--struct net *copy_net_ns(unsigned long flags, struct net *old_net)
-+static struct net *net_create(void)
- {
--	struct net *new_net = NULL;
--	int err;
--
--	if (!(flags & CLONE_NEWNET))
--		return get_net(old_net);
--
--	err = -ENOMEM;
--	new_net = net_alloc();
--	if (!new_net)
--		goto out_err;
-+	struct net *net;
-+	int rv;
- 
-+	net = net_alloc();
-+	if (!net)
-+		return ERR_PTR(-ENOMEM);
- 	mutex_lock(&net_mutex);
--	err = setup_net(new_net);
--	if (!err) {
-+	rv = setup_net(net);
-+	if (rv == 0) {
- 		rtnl_lock();
--		list_add_tail(&new_net->list, &net_namespace_list);
-+		list_add_tail(&net->list, &net_namespace_list);
- 		rtnl_unlock();
- 	}
- 	mutex_unlock(&net_mutex);
-+	if (rv < 0) {
-+		net_free(net);
-+		return ERR_PTR(rv);
-+	}
-+	return net;
-+}
- 
--	if (err)
--		goto out_free;
--out:
--	return new_net;
--
--out_free:
--	net_free(new_net);
--out_err:
--	new_net = ERR_PTR(err);
--	goto out;
-+struct net *copy_net_ns(unsigned long flags, struct net *old_net)
-+{
-+	if (!(flags & CLONE_NEWNET))
-+		return get_net(old_net);
-+	return net_create();
- }
- 
- static void cleanup_net(struct work_struct *work)
+ /*
 -- 
 1.5.6.5
