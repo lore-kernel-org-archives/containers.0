@@ -1,16 +1,22 @@
-From: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 07/38] pidns 1/2: make create_pid_namespace() accept
-	parent pidns
-Date: Fri, 22 May 2009 17:20:25 +0800
-Message-ID: <20090522092025.GD22601__36238.6710862212$1242984126$gmane$org@cr0.nay.redhat.com>
-References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-7-git-send-email-adobriyan@gmail.com>
+From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: No limitation in physical memory in cgroups
+Date: Fri, 22 May 2009 17:25:12 +0800
+Message-ID: <d95d44a20905220225t539b07edk31b61a8e7ffe1c1f@mail.gmail.com>
+References: <d95d44a20905192252t6cce5169y730a37184075beb9@mail.gmail.com>
+	<4A13ABC8.2000907@cn.fujitsu.com>
+	<d95d44a20905200335v6aabfc28qa3958e8404965775@mail.gmail.com>
+	<20090521085857.d4b82cba.kamezawa.hiroyu@jp.fujitsu.com>
+	<d95d44a20905202347y177e9744k1a9817236a102b53@mail.gmail.com>
+	<20090521161556.2eca8fd0.kamezawa.hiroyu@jp.fujitsu.com>
+	<d95d44a20905210456q13b2334avecb0dc6ff0f0d26@mail.gmail.com>
+	<20090521151848.GQ4858@balbir.in.ibm.com>
+	<d95d44a20905211931v3918b5d3p79d47225963c81f3@mail.gmail.com>
+	<20090522115622.30cb514a.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1242968132-1044-7-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090522115622.30cb514a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,66 +26,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, May 22, 2009 at 08:55:01AM +0400, Alexey Dobriyan wrote:
->create_pid_namespace() creates everything, but caller has to assign parent
->pidns by hand, which is unnatural. At the moment of call new ->level has
->to be taken from somewhere and parent pidns is already available.
+I have recompiled the kernel and tested again.
+When I set the limitation of swap, the test program
+is killed when it want to apply more memory.
+
+Thanks.
+
+
+>> hmm.... =A0I am not sure. I just compiled the kernel at default.
+>> Where can I check the boot parameter? In /boot/grub/menu.list,
+>> no the parameter yet.
+>>
+> Hmm. When
 >
->Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-Nice cleanup!
-
-Reviewed-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-
->---
-> kernel/pid_namespace.c |    8 ++++----
-> 1 files changed, 4 insertions(+), 4 deletions(-)
+> CONFIG_CGROUP_MEM_RES_CTLR=3Dy
+> CONFIG_CGROUP_MEM_RES_CTLR_SWAP=3Dy
 >
->diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
->index 2d1001b..495d5de 100644
->--- a/kernel/pid_namespace.c
->+++ b/kernel/pid_namespace.c
->@@ -67,9 +67,10 @@ err_alloc:
-> 	return NULL;
-> }
-> 
->-static struct pid_namespace *create_pid_namespace(unsigned int level)
->+static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_pid_ns)
-> {
-> 	struct pid_namespace *ns;
->+	unsigned int level = parent_pid_ns->level + 1;
-> 	int i;
-> 
-> 	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
->@@ -86,6 +87,7 @@ static struct pid_namespace *create_pid_namespace(unsigned int level)
-> 
-> 	kref_init(&ns->kref);
-> 	ns->level = level;
->+	ns->parent = get_pid_ns(parent_pid_ns);
-> 
-> 	set_bit(0, ns->pidmap[0].page);
-> 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
->@@ -125,9 +127,7 @@ struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old
-> 	if (flags & CLONE_THREAD)
-> 		goto out_put;
-> 
->-	new_ns = create_pid_namespace(old_ns->level + 1);
->-	if (!IS_ERR(new_ns))
->-		new_ns->parent = get_pid_ns(old_ns);
->+	new_ns = create_pid_namespace(old_ns);
-> 
-> out_put:
-> 	put_pid_ns(old_ns);
->-- 
->1.5.6.5
+> And no special boot option, the memory cgroup directory will be.
+> =3D=3D
+> [root@bluextal cgroup]# ls /cgroups/A/
+> memory.failcnt =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 memory.memsw.usage_in_=
+bytes
+> memory.force_empty =A0 =A0 =A0 =A0 =A0 =A0 =A0 memory.stat
+> memory.limit_in_bytes =A0 =A0 =A0 =A0 =A0 =A0memory.swappiness
+> memory.max_usage_in_bytes =A0 =A0 =A0 =A0memory.usage_in_bytes
+> memory.memsw.failcnt =A0 =A0 =A0 =A0 =A0 =A0 memory.use_hierarchy
+> memory.memsw.limit_in_bytes =A0 =A0 =A0notify_on_release
+> memory.memsw.max_usage_in_bytes =A0tasks
+> =3D=3D
 >
->--
->To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
->the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->Please read the FAQ at  http://www.tux.org/lkml/
+> You can see memory.memsw.* for limiting mem+swap usage.
+> This memory.memsw. files disappears when you set "noswapaccount" boot opt=
+ion...
+>
+> I can only say "counld you confirm again ?"
+> =A0config, the kernel version etc...
+>
+> Sorry for no help.
+>
+> Bye.
+> -Kame
+>
+>
+>
