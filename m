@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 25/38] C/R: x86_64 xstate
-Date: Fri, 22 May 2009 08:55:19 +0400
-Message-ID: <1242968132-1044-25-git-send-email-adobriyan__38300.8245066323$1242969467$gmane$org@gmail.com>
+Subject: [PATCH 19/38] C/R: multiple tasks
+Date: Fri, 22 May 2009 08:55:13 +0400
+Message-ID: <1242968132-1044-19-git-send-email-adobriyan__11579.2212695398$1242969521$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,137 +21,134 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Again, checks aren't enough on all counts.
+Restore task hierarchy wrt ->real_parent.
+
+First thing soon-to-be-restored task does after birth is to find
+->real_parent and glue itself to parent lists.
+
+For this parent is dumped first and restored first, so that at the time
+child starts restoration, parent is already up and running as task_struct,
+and we get cheap loop-prevention check.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/kstate-image.h  |    3 ++
- kernel/kstate/kstate-x86_64.c |   44 ++++++++++++++++++++++++++++++++++++----
- 2 files changed, 42 insertions(+), 5 deletions(-)
+ include/linux/kstate-image.h  |    2 +
+ kernel/kstate/kstate-object.c |    3 +-
+ kernel/kstate/kstate-task.c   |   53 +++++++++++++++++++++++++++++++++++-----
+ 3 files changed, 50 insertions(+), 8 deletions(-)
 
 diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
-index 7c54711..d956d05 100644
+index ac3c81d..348f59f 100644
 --- a/include/linux/kstate-image.h
 +++ b/include/linux/kstate-image.h
-@@ -151,6 +151,9 @@ struct kstate_image_task_struct_x86_64 {
- 	__u64		dr7;
+@@ -60,6 +60,8 @@ struct kstate_object_header {
+ struct kstate_image_task_struct {
+ 	struct kstate_object_header hdr;
  
- 	__u64		tls_array[3];
++	kstate_ref_t	ref_real_parent;
 +
-+	__u8		len_xstate;
-+	/* __u8 xstate[len_xstate]; */
- } __packed;
+ 	kstate_ref_t	ref_mm;
  
- struct kstate_image_mm_struct {
-diff --git a/kernel/kstate/kstate-x86_64.c b/kernel/kstate/kstate-x86_64.c
-index 83ed1b5..e18cca1 100644
---- a/kernel/kstate/kstate-x86_64.c
-+++ b/kernel/kstate/kstate-x86_64.c
-@@ -1,5 +1,6 @@
- /* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
- #include <linux/sched.h>
-+#include <asm/i387.h>
+ 	__u8		comm[16];
+diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
+index f9f2f33..60ba70d 100644
+--- a/kernel/kstate/kstate-object.c
++++ b/kernel/kstate/kstate-object.c
+@@ -25,7 +25,8 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
+ 	obj->o_ref.pos = 0;	/* not yet dumped */
+ 	obj->o_ref.id = 0;	/* not yet assigned */
+ 	obj->o_obj = p;
+-	list_add(&obj->o_list, &ctx->obj[type]);
++	/* task_struct collecting relies on "_tail" part. */
++	list_add_tail(&obj->o_list, &ctx->obj[type]);
  
- #include <linux/kstate.h>
- #include <linux/kstate-image.h>
-@@ -74,10 +75,14 @@ static int check_tls(struct desc_struct *desc)
- static int check_image_task_struct_x86_64(struct kstate_image_task_struct *tsk_i)
+ 	switch (type) {
+ 	case KSTATE_CTX_FILE:
+diff --git a/kernel/kstate/kstate-task.c b/kernel/kstate/kstate-task.c
+index aec97c2..4f48c32 100644
+--- a/kernel/kstate/kstate-task.c
++++ b/kernel/kstate/kstate-task.c
+@@ -11,11 +11,6 @@
+ static int check_task_struct(struct task_struct *tsk)
  {
- 	struct kstate_image_task_struct_x86_64 *i = (void *)(tsk_i + 1);
-+	unsigned int len_xstate;
- 	int rv;
- 
- 	if (tsk_i->hdr.obj_len < sizeof(*tsk_i) + sizeof(*i))
- 		return -EINVAL;
-+	len_xstate = i->len_xstate;
-+	if (tsk_i->hdr.obj_len - sizeof(*tsk_i) - sizeof(*i) < len_xstate)
-+		return -EINVAL;
- 
- 	rv = check_rflags(i->rflags);
- 	if (rv < 0)
-@@ -129,6 +134,11 @@ static int check_image_task_struct_x86_64(struct kstate_image_task_struct *tsk_i
- 			return rv;
- 	}
- 
-+	if (len_xstate > 0 && len_xstate != xstate_size) {
-+		WARN(1, "xstate size mismatch %u:%u\n", len_xstate, xstate_size);
-+		return -EINVAL;
-+	}
-+
- 	return 0;
- }
- 
-@@ -141,7 +151,12 @@ int kstate_arch_check_image_task_struct(struct kstate_image_task_struct *i)
- 
- unsigned int kstate_arch_len_task_struct(struct task_struct *tsk)
- {
--	return sizeof(struct kstate_image_task_struct_x86_64);
-+	unsigned int len;
-+
-+	len = sizeof(struct kstate_image_task_struct_x86_64);
-+	if (tsk->thread.xstate)
-+		len += xstate_size;
-+	return len;
- }
- 
- int kstate_arch_check_task_struct(struct task_struct *tsk)
-@@ -154,10 +169,6 @@ int kstate_arch_check_task_struct(struct task_struct *tsk)
- 		return -EINVAL;
- 	}
- #endif
--	if (tsk->thread.xstate) {
+ 	read_lock_irq(&tasklist_lock);
+-	if (!list_empty(&tsk->children)) {
+-		read_unlock_irq(&tasklist_lock);
 -		WARN_ON(1);
 -		return -EINVAL;
 -	}
- 	rb = &task_thread_info(tsk)->restart_block;
- 	if (rb->fn != current_thread_info()->restart_block.fn) {
- 		WARN(1, "rb->fn = %pF\n", rb->fn);
-@@ -261,6 +272,12 @@ static int dump_task_struct_x86_64(struct kstate_context *ctx, struct task_struc
- 	BUILD_BUG_ON(sizeof(tsk->thread.tls_array) != 3 * 8);
- 	memcpy(i->tls_array, tsk->thread.tls_array, sizeof(i->tls_array));
+ 	if (!list_empty(&tsk->thread_group)) {
+ 		read_unlock_irq(&tasklist_lock);
+ 		WARN_ON(1);
+@@ -74,8 +69,32 @@ static int collect_task_struct(struct kstate_context *ctx, struct task_struct *t
  
-+	i->len_xstate = 0;
-+	if (tsk->thread.xstate) {
-+		i->len_xstate = xstate_size;
-+		memcpy(i + 1, tsk->thread.xstate, xstate_size);
-+	}
-+
- 	return 0;
- }
- 
-@@ -269,9 +286,20 @@ int kstate_arch_dump_task_struct(struct kstate_context *ctx, struct task_struct
- 	return dump_task_struct_x86_64(ctx, tsk, arch_i);
- }
- 
-+static int restore_xstate(struct task_struct *tsk, void *xstate, unsigned int len)
-+{
-+	int rv;
-+
-+	rv = init_fpu(tsk);
-+	if (rv == 0)
-+		memcpy(tsk->thread.xstate, xstate, len);
-+	return rv;
-+}
-+
- static int restore_task_struct_x86_64(struct task_struct *tsk, struct kstate_image_task_struct_x86_64 *i)
+ int kstate_collect_all_task_struct(struct kstate_context *ctx)
  {
- 	struct pt_regs *regs = task_pt_regs(tsk);
++	struct kstate_object *obj;
 +	int rv;
- 
- 	tsk->thread.sp = (unsigned long)regs;
- 	tsk->thread.sp0 = (unsigned long)(regs + 1);
-@@ -319,6 +347,12 @@ static int restore_task_struct_x86_64(struct task_struct *tsk, struct kstate_ima
- 
- 	memcpy(tsk->thread.tls_array, i->tls_array, sizeof(i->tls_array));
- 
-+	if (i->len_xstate) {
-+		rv = restore_xstate(tsk, i + 1, i->len_xstate);
-+		if (rv < 0)
-+			return rv;
-+	}
 +
- 	set_tsk_thread_flag(tsk, TIF_FORK);
- 	return 0;
+ 	/* Seed task list. */
+-	return collect_task_struct(ctx, ctx->init_tsk);
++	rv = collect_task_struct(ctx, ctx->init_tsk);
++	if (rv < 0)
++		return rv;
++	/*
++	 * Children are added after parent as iteration goes on:
++	 * - parent is dumped before child, child knows position of parent's
++	 *   image and can reference it,
++	 * - task_struct restore is done in the same order: parent first.
++	 *   This is cheap loop prevention wrt "->real_parent": if real_parent
++	 *   reference can't be resolved at the time ->real_parent rewrite is
++	 *   done, image is malformed.
++	 */
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_TASK_STRUCT) {
++		struct task_struct *tsk = obj->o_obj, *child;
++
++		list_for_each_entry(child, &tsk->children, sibling) {
++			rv = collect_task_struct(ctx, child);
++			if (rv < 0)
++				return rv;
++		}
++	}
++	return 0;
  }
+ 
+ static int dump_task_struct(struct kstate_context *ctx, struct kstate_object *obj)
+@@ -91,6 +110,13 @@ static int dump_task_struct(struct kstate_context *ctx, struct kstate_object *ob
+ 	if (!i)
+ 		return -ENOMEM;
+ 
++	tmp = find_kstate_obj_by_ptr(ctx, tsk->real_parent, KSTATE_CTX_TASK_STRUCT);
++	if (tmp)
++		i->ref_real_parent = tmp->o_ref;
++	else
++		/* Root of hierarchy to be checkpointed. */
++		i->ref_real_parent = KSTATE_REF_UNDEF;
++
+ 	tmp = find_kstate_obj_by_ptr(ctx, tsk->mm, KSTATE_CTX_MM_STRUCT);
+ 	i->ref_mm = tmp->o_ref;
+ 
+@@ -206,7 +232,20 @@ static int task_struct_restorer(void *_tsk_ctx)
+ 	pr_debug("%s: ENTER tsk %p/%s\n", __func__, tsk, tsk->comm);
+ 
+ 	write_lock_irq(&tasklist_lock);
+-	real_parent = ctx->init_tsk->nsproxy->pid_ns->child_reaper;
++	if (kstate_ref_undefined(&i->ref_real_parent))
++		real_parent = ctx->init_tsk->nsproxy->pid_ns->child_reaper;
++	else {
++		struct kstate_object *tmp;
++
++		/* Parent as task_struct should be restored already. */
++		tmp = find_kstate_obj_by_ref(ctx, &i->ref_real_parent, KSTATE_CTX_TASK_STRUCT);
++		if (!tmp) {
++			write_unlock_irq(&tasklist_lock);
++			rv = -EINVAL;
++			goto out;
++		}
++		real_parent = tmp->o_obj;
++	}
+ 	tsk->real_parent = tsk->parent = real_parent;
+ 	list_move_tail(&tsk->sibling, &tsk->real_parent->sibling);
+ 	write_unlock_irq(&tasklist_lock);
 -- 
 1.5.6.5
