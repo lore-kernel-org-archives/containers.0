@@ -1,7 +1,8 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 04/38] ipcns 2/4: extract create_ipc_ns()
-Date: Fri, 22 May 2009 08:54:58 +0400
-Message-ID: <1242968132-1044-4-git-send-email-adobriyan__17834.2644511305$1242968774$gmane$org@gmail.com>
+Subject: [PATCH 07/38] pidns 1/2: make create_pid_namespace() accept parent
+	pidns
+Date: Fri, 22 May 2009 08:55:01 +0400
+Message-ID: <1242968132-1044-7-git-send-email-adobriyan__14173.1640710079$1242968844$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,45 +22,49 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-clone_ipc_ns() is misnamed, it doesn't clone anything and doesn't use passed
-parameter. Rename it.
-
-create_ipc_ns() will be used by C/R to create fresh ipcns.
+create_pid_namespace() creates everything, but caller has to assign parent
+pidns by hand, which is unnatural. At the moment of call new ->level has
+to be taken from somewhere and parent pidns is already available.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/namespace.c |    9 ++-------
- 1 files changed, 2 insertions(+), 7 deletions(-)
+ kernel/pid_namespace.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index a56fc59..231ee53 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -14,7 +14,7 @@
- 
- #include "util.h"
- 
--static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
-+static struct ipc_namespace *create_ipc_ns(void)
- {
- 	struct ipc_namespace *ns;
- 	int err;
-@@ -48,14 +48,9 @@ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
- 
- struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
- {
--	struct ipc_namespace *new_ns;
--
- 	if (!(flags & CLONE_NEWIPC))
- 		return get_ipc_ns(ns);
--
--	new_ns = clone_ipc_ns(ns);
--
--	return new_ns;
-+	return create_ipc_ns();
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index 2d1001b..495d5de 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -67,9 +67,10 @@ err_alloc:
+ 	return NULL;
  }
  
- /*
+-static struct pid_namespace *create_pid_namespace(unsigned int level)
++static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_pid_ns)
+ {
+ 	struct pid_namespace *ns;
++	unsigned int level = parent_pid_ns->level + 1;
+ 	int i;
+ 
+ 	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
+@@ -86,6 +87,7 @@ static struct pid_namespace *create_pid_namespace(unsigned int level)
+ 
+ 	kref_init(&ns->kref);
+ 	ns->level = level;
++	ns->parent = get_pid_ns(parent_pid_ns);
+ 
+ 	set_bit(0, ns->pidmap[0].page);
+ 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+@@ -125,9 +127,7 @@ struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old
+ 	if (flags & CLONE_THREAD)
+ 		goto out_put;
+ 
+-	new_ns = create_pid_namespace(old_ns->level + 1);
+-	if (!IS_ERR(new_ns))
+-		new_ns->parent = get_pid_ns(old_ns);
++	new_ns = create_pid_namespace(old_ns);
+ 
+ out_put:
+ 	put_pid_ns(old_ns);
 -- 
 1.5.6.5
