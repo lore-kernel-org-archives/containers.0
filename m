@@ -1,15 +1,19 @@
-From: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 03/38] ipcns 1/4: remove useless get/put while CLONE_NEWIPC
-Date: Fri, 22 May 2009 17:00:51 +0800
-Message-ID: <20090522090051.GB22601__31560.4471638382$1242982860$gmane$org@cr0.nay.redhat.com>
-References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-3-git-send-email-adobriyan@gmail.com>
+From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH] cgroups: handle failure of cgroup_populate_dir() at
+	mount/remount
+Date: Fri, 22 May 2009 14:40:34 +0530
+Message-ID: <20090522091034.GC8696__10895.7087075853$1242983601$gmane$org@linux.vnet.ibm.com>
+References: <4A16153C.2080004@cn.fujitsu.com>
+	<20090522172545.1e5e5f81.kamezawa.hiroyu@jp.fujitsu.com>
+	<4A1663C2.4080401@cn.fujitsu.com>
+	<20090522173421.ecacb40e.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1242968132-1044-3-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090522173421.ecacb40e.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,53 +23,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, May 22, 2009 at 08:54:57AM +0400, Alexey Dobriyan wrote:
->copy_ipcs() doesn't actually copy anything. If new ipcns is created, it's
->created from scratch, in this case get/put on old ipcns isn't needed.
->
->Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-
-Looks good to me!
-
-Reviewed-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-
->---
-> ipc/namespace.c |    6 +-----
-> 1 files changed, 1 insertions(+), 5 deletions(-)
->
->diff --git a/ipc/namespace.c b/ipc/namespace.c
->index 4a5e752..a56fc59 100644
->--- a/ipc/namespace.c
->+++ b/ipc/namespace.c
->@@ -50,15 +50,11 @@ struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
-> {
-> 	struct ipc_namespace *new_ns;
+On Fri, May 22, 2009 at 05:34:21PM +0900, KAMEZAWA Hiroyuki wrote:
+> On Fri, 22 May 2009 16:35:14 +0800
+> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 > 
->-	BUG_ON(!ns);
->-	get_ipc_ns(ns);
->-
-> 	if (!(flags & CLONE_NEWIPC))
->-		return ns;
->+		return get_ipc_ns(ns);
+> > KAMEZAWA Hiroyuki wrote:
+> > > On Fri, 22 May 2009 11:00:12 +0800
+> > > Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> > > 
+> > >> Now we have 'stat' file in both memory and cpuacct subsystems. If we
+> > >> mount these 2 subsystems with option 'noprefix', the creation of 'stat'
+> > >> file for cpuacct will fail, but without any notificatin to the user.
+> > >>
+> > >> With this patch, we fail the mount/remount in this case.
+> > >>
+> > > 
+> > > Hm, shouldn't we allow "noprefix" to be effective only agaisnt cpuset ?
+> > > I think it's just for backward-compatibility of cpuset.
+> > > (I don't like the option at all.)
+> > > 
+> > 
+> > Yes, this mount option was introduced for cpuset. But it has been here for
+> > a long time and people may use it when mounting other cgroup subsystems,
+> > then is it OK to change to restrict its use within cpuset only?
 > 
-> 	new_ns = clone_ipc_ns(ns);
-> 
->-	put_ipc_ns(ns);
-> 	return new_ns;
-> }
-> 
->-- 
->1.5.6.5
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
->the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->Please read the FAQ at  http://www.tux.org/lkml/
+> Asking libcgroup people may be appropriate...added CC.
+
+We just realized that we were not handling the noprefix usage in
+libcgroup. From the pov of the library, the option should either not
+exist for any subsystem or for all of them. Anything else would mean
+having to add special cases.
+
+thanks,
+-- 
+regards,
+Dhaval
