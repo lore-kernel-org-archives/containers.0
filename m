@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 29/38] C/R: formally checkpoint/restore struct mnt_namespace
-Date: Fri, 22 May 2009 08:55:23 +0400
-Message-ID: <1242968132-1044-29-git-send-email-adobriyan__11996.1947588765$1242969386$gmane$org@gmail.com>
+Subject: [PATCH 31/38] C/R: formally checkpoint/restore struct net_namespace
+Date: Fri, 22 May 2009 08:55:25 +0400
+Message-ID: <1242968132-1044-31-git-send-email-adobriyan__43487.3360711665$1242969452$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,46 +23,313 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/namespace.c                 |   70 ++++++++++++++++++++++++++++++++++++++++
- include/linux/kstate-image.h   |    6 +++
- include/linux/kstate.h         |    4 ++
- kernel/kstate/cpt-sys.c        |    6 +++
- kernel/kstate/kstate-context.c |    6 +++
- kernel/kstate/kstate-object.c  |    4 ++
- kernel/nsproxy.c               |   24 +++++++++++---
- 7 files changed, 115 insertions(+), 5 deletions(-)
+ include/linux/kstate-image.h   |    6 ++
+ include/linux/kstate.h         |   19 +++++++
+ include/net/net_namespace.h    |    1 +
+ kernel/kstate/cpt-sys.c        |    6 ++
+ kernel/kstate/kstate-context.c |    8 +++
+ kernel/kstate/kstate-object.c  |    6 ++
+ kernel/nsproxy.c               |   66 +++++++++++++++++++++++---
+ net/core/net_namespace.c       |  102 +++++++++++++++++++++++++++++++++++++++-
+ 8 files changed, 205 insertions(+), 9 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index be33bfc..ccd7b54 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -3,6 +3,7 @@
-  *
-  * (C) Copyright Al Viro 2000, 2001
-  *	Released under GPL v2.
-+ * Copyright (C) 2000-2009 Parallels Holdings, Ltd.
-  *
-  * Based on code from fs/super.c, copyright Linus Torvalds and others.
-  * Heavily rewritten.
-@@ -2309,3 +2310,72 @@ void __put_mnt_ns(struct mnt_namespace *ns)
- 	release_mounts(&umount_list);
- 	kfree(ns);
+diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
+index 64328e1..8119f2b 100644
+--- a/include/linux/kstate-image.h
++++ b/include/linux/kstate-image.h
+@@ -48,6 +48,7 @@ struct kstate_image_header {
+ #define KSTATE_OBJ_IPC_NS	8
+ #define KSTATE_OBJ_MNT_NS	9
+ #define KSTATE_OBJ_PID_NS	10
++#define KSTATE_OBJ_NET_NS	11
+ 
+ struct kstate_object_header {
+ 	__u32		obj_type;
+@@ -217,6 +218,7 @@ struct kstate_image_nsproxy {
+ 	kstate_ref_t	ref_ipc_ns;	/* KSTATE_REF_UNDEF if IPC_NS=n */
+ 	kstate_ref_t	ref_mnt_ns;
+ 	kstate_ref_t	ref_pid_ns;
++	kstate_ref_t	ref_net_ns;	/* KSTATE_REF_UNDEF if NET_NS=n */
+ } __packed;
+ 
+ struct kstate_image_uts_ns {
+@@ -244,4 +246,8 @@ struct kstate_image_pid_ns {
+ 	kstate_ref_t	ref_parent;	/* KSTATE_REF_UNDEF if root pid_ns */
+ 	__u32		last_pid;
+ } __packed;
++
++struct kstate_image_net_ns {
++	struct kstate_object_header hdr;
++} __packed;
+ #endif
+diff --git a/include/linux/kstate.h b/include/linux/kstate.h
+index c925cef..a2bea1a 100644
+--- a/include/linux/kstate.h
++++ b/include/linux/kstate.h
+@@ -27,6 +27,9 @@ enum kstate_context_obj_type {
+ #endif
+ 	KSTATE_CTX_MM_STRUCT,
+ 	KSTATE_CTX_MNT_NS,
++#ifdef CONFIG_NET_NS
++	KSTATE_CTX_NET_NS,
++#endif
+ 	KSTATE_CTX_NSPROXY,
+ 	KSTATE_CTX_PID_NS,
+ 	KSTATE_CTX_TASK_STRUCT,
+@@ -105,6 +108,22 @@ int kstate_collect_all_pid_ns(struct kstate_context *ctx);
+ int kstate_dump_all_pid_ns(struct kstate_context *ctx);
+ int kstate_restore_pid_ns(struct kstate_context *ctx, kstate_ref_t *ref);
+ 
++#ifdef CONFIG_NET_NS
++int kstate_collect_all_net_ns(struct kstate_context *ctx);
++int kstate_dump_all_net_ns(struct kstate_context *ctx);
++int kstate_restore_net_ns(struct kstate_context *ctx, kstate_ref_t *ref);
++#else
++static inline int kstate_collect_all_net_ns(struct kstate_context *ctx)
++{
++	return 0;
++}
++
++static inline int kstate_dump_all_net_ns(struct kstate_context *ctx)
++{
++	return 0;
++}
++#endif
++
+ #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
+ extern const __u32 kstate_kernel_arch;
+ int kstate_arch_check_image_header(struct kstate_image_header *i);
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index ded434b..a48e765 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -107,6 +107,7 @@ static inline struct net *copy_net_ns(unsigned long flags, struct net *net_ns)
+ extern struct list_head net_namespace_list;
+ 
+ #ifdef CONFIG_NET_NS
++extern struct net *net_create(void);
+ extern void __put_net(struct net *net);
+ 
+ static inline struct net *get_net(struct net *net)
+diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
+index cbaf038..620998a 100644
+--- a/kernel/kstate/cpt-sys.c
++++ b/kernel/kstate/cpt-sys.c
+@@ -80,6 +80,9 @@ static int kstate_collect(struct kstate_context *ctx)
+ 	rv = kstate_collect_all_pid_ns(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_collect_all_net_ns(ctx);
++	if (rv < 0)
++		return rv;
+ 	rv = kstate_collect_all_mm_struct(ctx);
+ 	if (rv < 0)
+ 		return rv;
+@@ -145,6 +148,9 @@ static int kstate_dump(struct kstate_context *ctx)
+ 	rv = kstate_dump_all_mm_struct(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_dump_all_net_ns(ctx);
++	if (rv < 0)
++		return rv;
+ 	rv = kstate_dump_all_mnt_ns(ctx);
+ 	if (rv < 0)
+ 		return rv;
+diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
+index 7cd1f45..423b45b 100644
+--- a/kernel/kstate/kstate-context.c
++++ b/kernel/kstate/kstate-context.c
+@@ -8,6 +8,7 @@
+ #include <linux/sched.h>
+ #include <linux/slab.h>
+ #include <linux/utsname.h>
++#include <net/net_namespace.h>
+ 
+ #include <linux/kstate.h>
+ 
+@@ -57,6 +58,13 @@ void kstate_context_destroy(struct kstate_context *ctx)
+ 		list_del(&obj->o_list);
+ 		kfree(obj);
+ 	}
++#ifdef CONFIG_NET_NS
++	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_NET_NS) {
++		put_net((struct net *)obj->o_obj);
++		list_del(&obj->o_list);
++		kfree(obj);
++	}
++#endif
+ 	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_NSPROXY) {
+ 		put_nsproxy((struct nsproxy *)obj->o_obj);
+ 		list_del(&obj->o_list);
+diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
+index 13bb75c..d9b36fa 100644
+--- a/kernel/kstate/kstate-object.c
++++ b/kernel/kstate/kstate-object.c
+@@ -8,6 +8,7 @@
+ #include <linux/sched.h>
+ #include <linux/slab.h>
+ #include <linux/utsname.h>
++#include <net/net_namespace.h>
+ 
+ #include <linux/kstate.h>
+ #include <linux/kstate-image.h>
+@@ -48,6 +49,11 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
+ 	case KSTATE_CTX_MNT_NS:
+ 		get_mnt_ns((struct mnt_namespace *)obj->o_obj);
+ 		break;
++#ifdef CONFIG_NET_NS
++	case KSTATE_CTX_NET_NS:
++		get_net((struct net *)obj->o_obj);
++		break;
++#endif
+ 	case KSTATE_CTX_NSPROXY:
+ 		get_nsproxy((struct nsproxy *)obj->o_obj);
+ 		break;
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 0b1f66d..85c6677 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -290,6 +290,12 @@ static int dump_nsproxy(struct kstate_context *ctx, struct kstate_object *obj)
+ 	i->ref_mnt_ns = tmp->o_ref;
+ 	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->pid_ns, KSTATE_CTX_PID_NS);
+ 	i->ref_pid_ns = tmp->o_ref;
++#ifdef CONFIG_NET_NS
++	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->net_ns, KSTATE_CTX_NET_NS);
++	i->ref_net_ns = tmp->o_ref;
++#else
++	i->ref_net_ns = KSTATE_REF_UNDEF;
++#endif
+ 
+ 	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
+ 	kfree(i);
+@@ -408,13 +414,57 @@ static int restore_pid_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct
+ 	return 0;
  }
+ 
++#ifdef CONFIG_NET_NS
++static int restore_net_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct nsproxy *nsproxy)
++{
++	struct net *net_ns;
++	struct kstate_object *tmp;
++	int rv;
++
++	if (kstate_ref_undefined(ref)) {
++		/*
++		 * NET_NS=n => NET_NS=y case: hope nobody is crazy enough
++		 * to depend on NET_NS absence.
++		 */
++		net_ns = net_create();
++		if (IS_ERR(net_ns))
++			return PTR_ERR(net_ns);
++		rv = kstate_restore_object(ctx, net_ns, KSTATE_CTX_NET_NS, ref);
++		if (rv < 0) {
++			put_net(net_ns);
++			return rv;
++		}
++		nsproxy->net_ns = net_ns;
++		return 0;
++	}
++	/* NET_NS=y => NET_NS=y case. */
++	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_NET_NS);
++	if (!tmp) {
++		rv = kstate_restore_net_ns(ctx, ref);
++		if (rv < 0)
++			return rv;
++		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_NET_NS);
++	}
++	net_ns = tmp->o_obj;
++
++	nsproxy->net_ns = get_net(net_ns);
++	return 0;
++}
++#else
++static int restore_net_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct nsproxy *nsproxy)
++{
++	/* NET_NS=n => NET_NS=n case. */
++	if (kstate_ref_undefined(ref))
++		return 0;
++	/* NET_NS=y => NET_NS=n case. */
++	return -EINVAL;
++}
++#endif
++
+ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ {
+ 	struct kstate_image_nsproxy *i;
+ 	struct nsproxy *nsproxy;
+-#ifdef CONFIG_NET_NS
+-	struct net *net_ns;
+-#endif
+ 	int rv;
+ 
+ 	i = kstate_read_image(ctx, ref,  KSTATE_OBJ_NSPROXY, sizeof(*i));
+@@ -439,11 +489,9 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ 	rv = restore_pid_ns(ctx, &i->ref_pid_ns, nsproxy);
+ 	if (rv < 0)
+ 		goto out_pid_ns;
+-
+-#ifdef CONFIG_NET_NS
+-	net_ns = ctx->init_tsk->nsproxy->net_ns;
+-	nsproxy->net_ns = get_net(net_ns);
+-#endif
++	rv = restore_net_ns(ctx, &i->ref_net_ns, nsproxy);
++	if (rv < 0)
++		goto out_net_ns;
+ 	kfree(i);
+ 
+ 	rv = kstate_restore_object(ctx, nsproxy, KSTATE_CTX_NSPROXY, ref);
+@@ -452,6 +500,8 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ 	pr_debug("restore nsproxy %p, ref {%llu, %u}, rv %d\n", nsproxy, (unsigned long long)ref->pos, ref->id, rv);
+ 	return rv;
+ 
++out_net_ns:
++	put_pid_ns(nsproxy->pid_ns);
+ out_pid_ns:
+ 	put_mnt_ns(nsproxy->mnt_ns);
+ out_mnt_ns:
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 6b3edc9..f0073db 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -1,8 +1,10 @@
++/* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
+ #include <linux/workqueue.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/cache.h>
+ #include <linux/slab.h>
+ #include <linux/list.h>
++#include <linux/nsproxy.h>
+ #include <linux/delay.h>
+ #include <linux/sched.h>
+ #include <linux/idr.h>
+@@ -115,7 +117,7 @@ static void net_free(struct net *net)
+ 	kmem_cache_free(net_cachep, net);
+ }
+ 
+-static struct net *net_create(void)
++struct net *net_create(void)
+ {
+ 	struct net *net;
+ 	int rv;
+@@ -500,3 +502,101 @@ assign:
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(net_assign_generic);
 +
 +#ifdef CONFIG_CHECKPOINT
 +#include <linux/kstate.h>
 +#include <linux/kstate-image.h>
 +
-+static int collect_mnt_ns(struct kstate_context *ctx, struct mnt_namespace *mnt_ns)
++static int collect_net_ns(struct kstate_context *ctx, struct net *net_ns)
 +{
 +	int rv;
 +
-+	rv = kstate_collect_object(ctx, mnt_ns, KSTATE_CTX_MNT_NS);
-+	pr_debug("collect mnt_ns %p: rv %d\n", mnt_ns, rv);
++	rv = kstate_collect_object(ctx, net_ns, KSTATE_CTX_NET_NS);
++	pr_debug("collect net_ns %p: rv %d\n", net_ns, rv);
 +	return rv;
 +}
 +
-+int kstate_collect_all_mnt_ns(struct kstate_context *ctx)
++int kstate_collect_all_net_ns(struct kstate_context *ctx)
 +{
 +	struct kstate_object *obj;
 +	int rv;
@@ -70,233 +337,81 @@ index be33bfc..ccd7b54 100644
 +	for_each_kstate_object(ctx, obj, KSTATE_CTX_NSPROXY) {
 +		struct nsproxy *nsproxy = obj->o_obj;
 +
-+		rv = collect_mnt_ns(ctx, nsproxy->mnt_ns);
++		rv = collect_net_ns(ctx, nsproxy->net_ns);
 +		if (rv < 0)
 +			return rv;
 +	}
-+	for_each_kstate_object(ctx, obj, KSTATE_CTX_MNT_NS) {
-+		struct mnt_namespace *mnt_ns = obj->o_obj;
-+		unsigned int cnt = atomic_read(&mnt_ns->count);
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_NET_NS) {
++		struct net *net_ns = obj->o_obj;
++		unsigned int cnt = atomic_read(&net_ns->count);
 +
 +		if (obj->o_count + 1 != cnt) {
-+			pr_err("mnt_ns %p has external references %lu:%u\n", mnt_ns, obj->o_count, cnt);
++			pr_err("net_ns %p has external references %lu:%u\n", net_ns, obj->o_count, cnt);
 +			return -EINVAL;
 +		}
 +	}
 +	return 0;
 +}
 +
-+static int dump_mnt_ns(struct kstate_context *ctx, struct kstate_object *obj)
++static int dump_net_ns(struct kstate_context *ctx, struct kstate_object *obj)
 +{
-+	struct mnt_namespace *mnt_ns = obj->o_obj;
-+	struct kstate_image_mnt_ns *i;
++	struct net *net_ns = obj->o_obj;
++	struct kstate_image_net_ns *i;
 +	int rv;
 +
-+	i = kstate_prepare_image(KSTATE_OBJ_MNT_NS, sizeof(*i));
++	i = kstate_prepare_image(KSTATE_OBJ_NET_NS, sizeof(*i));
 +	if (!i)
 +		return -ENOMEM;
 +
 +	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
 +	kfree(i);
-+	pr_debug("dump mnt_ns %p: ref {%llu, %u}, rv %d\n", mnt_ns, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
++	pr_debug("dump net_ns %p: ref {%llu, %u}, rv %d\n", net_ns, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
 +	return rv;
 +}
 +
-+int kstate_dump_all_mnt_ns(struct kstate_context *ctx)
++int kstate_dump_all_net_ns(struct kstate_context *ctx)
 +{
 +	struct kstate_object *obj;
 +	int rv;
 +
-+	for_each_kstate_object(ctx, obj, KSTATE_CTX_MNT_NS) {
-+		rv = dump_mnt_ns(ctx, obj);
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_NET_NS) {
++		rv = dump_net_ns(ctx, obj);
 +		if (rv < 0)
 +			return rv;
 +	}
 +	return 0;
 +}
 +
-+/* FIXME kstate_restore_mnt_ns() */
-+#endif
-diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
-index 43a1458..fa4921b 100644
---- a/include/linux/kstate-image.h
-+++ b/include/linux/kstate-image.h
-@@ -46,6 +46,7 @@ struct kstate_image_header {
- #define KSTATE_OBJ_NSPROXY	6
- #define KSTATE_OBJ_UTS_NS	7
- #define KSTATE_OBJ_IPC_NS	8
-+#define KSTATE_OBJ_MNT_NS	9
- 
- struct kstate_object_header {
- 	__u32		obj_type;
-@@ -213,6 +214,7 @@ struct kstate_image_nsproxy {
- 
- 	kstate_ref_t	ref_uts_ns;
- 	kstate_ref_t	ref_ipc_ns;	/* KSTATE_REF_UNDEF if IPC_NS=n */
-+	kstate_ref_t	ref_mnt_ns;
- } __packed;
- 
- struct kstate_image_uts_ns {
-@@ -229,4 +231,8 @@ struct kstate_image_uts_ns {
- struct kstate_image_ipc_ns {
- 	struct kstate_object_header hdr;
- } __packed;
-+
-+struct kstate_image_mnt_ns {
-+	struct kstate_object_header hdr;
-+} __packed;
- #endif
-diff --git a/include/linux/kstate.h b/include/linux/kstate.h
-index 61bed98..43e2556 100644
---- a/include/linux/kstate.h
-+++ b/include/linux/kstate.h
-@@ -26,6 +26,7 @@ enum kstate_context_obj_type {
- 	KSTATE_CTX_IPC_NS,
- #endif
- 	KSTATE_CTX_MM_STRUCT,
-+	KSTATE_CTX_MNT_NS,
- 	KSTATE_CTX_NSPROXY,
- 	KSTATE_CTX_TASK_STRUCT,
- 	KSTATE_CTX_UTS_NS,
-@@ -96,6 +97,9 @@ static inline int kstate_dump_all_ipc_ns(struct kstate_context *ctx)
- }
- #endif
- 
-+int kstate_collect_all_mnt_ns(struct kstate_context *ctx);
-+int kstate_dump_all_mnt_ns(struct kstate_context *ctx);
-+
- #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
- extern const __u32 kstate_kernel_arch;
- int kstate_arch_check_image_header(struct kstate_image_header *i);
-diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
-index 1b03de5..0e3c74c 100644
---- a/kernel/kstate/cpt-sys.c
-+++ b/kernel/kstate/cpt-sys.c
-@@ -74,6 +74,9 @@ static int kstate_collect(struct kstate_context *ctx)
- 	rv = kstate_collect_all_ipc_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_collect_all_mnt_ns(ctx);
-+	if (rv < 0)
-+		return rv;
- 	rv = kstate_collect_all_mm_struct(ctx);
- 	if (rv < 0)
- 		return rv;
-@@ -136,6 +139,9 @@ static int kstate_dump(struct kstate_context *ctx)
- 	rv = kstate_dump_all_mm_struct(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_dump_all_mnt_ns(ctx);
-+	if (rv < 0)
-+		return rv;
- 	rv = kstate_dump_all_ipc_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
-index c2449d5..700c0f4 100644
---- a/kernel/kstate/kstate-context.c
-+++ b/kernel/kstate/kstate-context.c
-@@ -2,6 +2,7 @@
- #include <linux/file.h>
- #include <linux/ipc_namespace.h>
- #include <linux/list.h>
-+#include <linux/mnt_namespace.h>
- #include <linux/nsproxy.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
-@@ -50,6 +51,11 @@ void kstate_context_destroy(struct kstate_context *ctx)
- 		list_del(&obj->o_list);
- 		kfree(obj);
- 	}
-+	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_MNT_NS) {
-+		put_mnt_ns((struct mnt_namespace *)obj->o_obj);
-+		list_del(&obj->o_list);
-+		kfree(obj);
-+	}
- 	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_NSPROXY) {
- 		put_nsproxy((struct nsproxy *)obj->o_obj);
- 		list_del(&obj->o_list);
-diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
-index 0056572..6b1ab4a 100644
---- a/kernel/kstate/kstate-object.c
-+++ b/kernel/kstate/kstate-object.c
-@@ -2,6 +2,7 @@
- #include <linux/fs.h>
- #include <linux/ipc_namespace.h>
- #include <linux/mm_types.h>
-+#include <linux/mnt_namespace.h>
- #include <linux/nsproxy.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
-@@ -43,6 +44,9 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
- 	case KSTATE_CTX_MM_STRUCT:
- 		atomic_inc(&((struct mm_struct *)obj->o_obj)->mm_users);
- 		break;
-+	case KSTATE_CTX_MNT_NS:
-+		get_mnt_ns((struct mnt_namespace *)obj->o_obj);
-+		break;
- 	case KSTATE_CTX_NSPROXY:
- 		get_nsproxy((struct nsproxy *)obj->o_obj);
- 		break;
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 7cb82e3..4e22ec4 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -286,6 +286,8 @@ static int dump_nsproxy(struct kstate_context *ctx, struct kstate_object *obj)
- #else
- 	i->ref_ipc_ns = KSTATE_REF_UNDEF;
- #endif
-+	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->mnt_ns, KSTATE_CTX_MNT_NS);
-+	i->ref_mnt_ns = tmp->o_ref;
- 
- 	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
- 	kfree(i);
-@@ -373,11 +375,22 @@ static int restore_ipc_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct
- }
- #endif
- 
-+static int restore_mnt_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct nsproxy *nsproxy)
++int kstate_restore_net_ns(struct kstate_context *ctx, kstate_ref_t *ref)
 +{
-+	struct mnt_namespace *mnt_ns;
++	struct kstate_image_net_ns *i;
++	struct net *net_ns;
++	int rv;
++
++	i = kstate_read_image(ctx, ref, KSTATE_OBJ_NET_NS, sizeof(*i));
++	if (IS_ERR(i))
++		return PTR_ERR(i);
++
++	net_ns = net_create();
++	if (!net_ns) {
++		rv = -ENOMEM;
++		goto out_free_image;
++	}
 +
 +	/* FIXME */
-+	mnt_ns = ctx->init_tsk->nsproxy->mnt_ns;
++	kfree(i);
 +
-+	get_mnt_ns(mnt_ns);
-+	nsproxy->mnt_ns = mnt_ns;
-+	return 0;
-+}
-+
- int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- {
- 	struct kstate_image_nsproxy *i;
- 	struct nsproxy *nsproxy;
--	struct mnt_namespace *mnt_ns;
- 	struct pid_namespace *pid_ns;
- #ifdef CONFIG_NET_NS
- 	struct net *net_ns;
-@@ -400,10 +413,9 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- 	rv = restore_ipc_ns(ctx, &i->ref_ipc_ns, nsproxy);
- 	if (rv < 0)
- 		goto out_ipc_ns;
--
--	mnt_ns = ctx->init_tsk->nsproxy->mnt_ns;
--	get_mnt_ns(mnt_ns);
--	nsproxy->mnt_ns = mnt_ns;
-+	rv = restore_mnt_ns(ctx, &i->ref_mnt_ns, nsproxy);
++	rv = kstate_restore_object(ctx, net_ns, KSTATE_CTX_NET_NS, ref);
 +	if (rv < 0)
-+		goto out_mnt_ns;
- 
- 	pid_ns = ctx->init_tsk->nsproxy->pid_ns;
- 	nsproxy->pid_ns = get_pid_ns(pid_ns);
-@@ -420,6 +432,8 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- 	pr_debug("restore nsproxy %p, ref {%llu, %u}, rv %d\n", nsproxy, (unsigned long long)ref->pos, ref->id, rv);
- 	return rv;
- 
-+out_mnt_ns:
-+	put_ipc_ns(nsproxy->ipc_ns);
- out_ipc_ns:
- 	put_uts_ns(nsproxy->uts_ns);
- out_uts_ns:
++		put_net(net_ns);
++	pr_debug("restore net_ns %p: ref {%llu, %u}, rv %d\n", net_ns, (unsigned long long)ref->pos, ref->id, rv);
++	return rv;
++
++out_free_image:
++	kfree(i);
++	pr_debug("%s: return %d, ref {%llu, %u}\n", __func__, rv, (unsigned long long)ref->pos, ref->id);
++	return rv;
++}
++#endif
 -- 
 1.5.6.5
