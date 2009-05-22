@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 15/38] dcache: extract and use d_unlinked()
-Date: Fri, 22 May 2009 08:55:09 +0400
-Message-ID: <1242968132-1044-15-git-send-email-adobriyan__47981.0552242727$1242970660$gmane$org@gmail.com>
+Subject: [PATCH 16/38] x86: ptrace debugreg checks rewrite
+Date: Fri, 22 May 2009 08:55:10 +0400
+Message-ID: <1242968132-1044-16-git-send-email-adobriyan__14160.2851952941$1242970661$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,99 +21,270 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-d_unlinked() will be used in middle-term to ban checkpointing when opened
-but unlinked file is detected, and in long term, to detect such situation
-and special case on it.
+This is a mess.
+
+Pre unified-x86 code did check for breakpoint addr
+to be "< TASK_SIZE - 3 (or 7)". This was fine from security POV,
+but banned valid breakpoint usage when address is close to TASK_SIZE.
+E. g. 1-byte breakpoint at TASK_SIZE - 1 should be allowed, but it wasn't.
+
+Then came commit 84929801e14d968caeb84795bfbb88f04283fbd9
+("[PATCH] x86_64: TASK_SIZE fixes for compatibility mode processes")
+which for some reason touched ptrace as well and made effective
+TASK_SIZE of 32-bit process depending on IA32_PAGE_OFFSET
+which is not a constant!:
+
+	#define IA32_PAGE_OFFSET ((current->personality & ADDR_LIMIT_3GB) ? 0xc0000000 : 0xFFFFe000)
+				   ^^^^^^^
+Maximum addr for breakpoint became dependent on personality of ptracer.
+
+Commit also relaxed danger zone for 32-bit processes from 8 bytes to 4
+not taking into account that 8-byte wide breakpoints are possible even
+for 32-bit processes. This was fine, however, because 64-bit kernel
+addresses are too far from 32-bit ones.
+
+Then came utrace with commit 2047b08be67b70875d8765fc81d34ce28041bec3
+("x86: x86 ptrace getreg/putreg merge") which copy-pasted and ifdeffed 32-bit
+part of TASK_SIZE_OF() leaving 8-byte issue as-is.
+
+So, what patch fixes?
+1) Too strict logic near TASK_SIZE boundary -- as long as we don't cross
+   TASK_SIZE_MAX, we're fine.
+2) Too smart logic of using breakpoints over non-existent kernel
+   boundary -- we should only protect against setting up after
+   TASK_SIZE_MAX, the rest is none of kernel business. This fixes
+   IA32_PAGE_OFFSET beartrap as well.
+
+As a bonus, remove uberhack and big comment determining DR7 validness,
+rewrite with clear algorithm when it's obvious what's going on.
+
+Make DR validness checker suitable for C/R. On restart DR registers
+must be checked the same way they are checked on PTRACE_POKEUSR.
+
+Question 1: TIF_DEBUG can set even if none of breakpoints is turned on,
+should this be optimized?
+
+Question 2: Breakpoints are allowed to be globally enabled, is this a
+security risk?
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/dcache.c            |    7 +++----
- fs/namespace.c         |    8 ++++----
- include/linux/dcache.h |    5 +++++
- 3 files changed, 12 insertions(+), 8 deletions(-)
+ arch/x86/kernel/ptrace.c |  175 +++++++++++++++++++++++++++-------------------
+ 1 files changed, 103 insertions(+), 72 deletions(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index 75659a6..9e5cd3c 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -1910,7 +1910,7 @@ char *__d_path(const struct path *path, struct path *root,
- 
- 	spin_lock(&vfsmount_lock);
- 	prepend(&end, &buflen, "\0", 1);
--	if (!IS_ROOT(dentry) && d_unhashed(dentry) &&
-+	if (d_unlinked(dentry) &&
- 		(prepend(&end, &buflen, " (deleted)", 10) != 0))
- 			goto Elong;
- 
-@@ -2035,7 +2035,7 @@ char *dentry_path(struct dentry *dentry, char *buf, int buflen)
- 
- 	spin_lock(&dcache_lock);
- 	prepend(&end, &buflen, "\0", 1);
--	if (!IS_ROOT(dentry) && d_unhashed(dentry) &&
-+	if (d_unlinked(dentry) &&
- 		(prepend(&end, &buflen, "//deleted", 9) != 0))
- 			goto Elong;
- 	if (buflen < 1)
-@@ -2097,9 +2097,8 @@ SYSCALL_DEFINE2(getcwd, char __user *, buf, unsigned long, size)
- 	read_unlock(&current->fs->lock);
- 
- 	error = -ENOENT;
--	/* Has the current directory has been unlinked? */
- 	spin_lock(&dcache_lock);
--	if (IS_ROOT(pwd.dentry) || !d_unhashed(pwd.dentry)) {
-+	if (!d_unlinked(pwd.dentry)) {
- 		unsigned long len;
- 		struct path tmp = root;
- 		char * cwd;
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 134d494..be33bfc 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1430,7 +1430,7 @@ static int graft_tree(struct vfsmount *mnt, struct path *path)
- 		goto out_unlock;
- 
- 	err = -ENOENT;
--	if (IS_ROOT(path->dentry) || !d_unhashed(path->dentry))
-+	if (!d_unlinked(path->dentry))
- 		err = attach_recursive_mnt(mnt, path, NULL);
- out_unlock:
- 	mutex_unlock(&path->dentry->d_inode->i_mutex);
-@@ -1612,7 +1612,7 @@ static int do_move_mount(struct path *path, char *old_name)
- 	if (IS_DEADDIR(path->dentry->d_inode))
- 		goto out1;
- 
--	if (!IS_ROOT(path->dentry) && d_unhashed(path->dentry))
-+	if (d_unlinked(path->dentry))
- 		goto out1;
- 
- 	err = -EINVAL;
-@@ -2175,9 +2175,9 @@ SYSCALL_DEFINE2(pivot_root, const char __user *, new_root,
- 	error = -ENOENT;
- 	if (IS_DEADDIR(new.dentry->d_inode))
- 		goto out2;
--	if (d_unhashed(new.dentry) && !IS_ROOT(new.dentry))
-+	if (d_unlinked(new.dentry))
- 		goto out2;
--	if (d_unhashed(old.dentry) && !IS_ROOT(old.dentry))
-+	if (d_unlinked(old.dentry))
- 		goto out2;
- 	error = -EBUSY;
- 	if (new.mnt == root.mnt ||
-diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index 1515636..f8488bd 100644
---- a/include/linux/dcache.h
-+++ b/include/linux/dcache.h
-@@ -351,6 +351,11 @@ static inline int d_unhashed(struct dentry *dentry)
- 	return (dentry->d_flags & DCACHE_UNHASHED);
+diff --git a/arch/x86/kernel/ptrace.c b/arch/x86/kernel/ptrace.c
+index 23b7c8f..afd2b7d 100644
+--- a/arch/x86/kernel/ptrace.c
++++ b/arch/x86/kernel/ptrace.c
+@@ -135,11 +135,6 @@ static int set_segment_reg(struct task_struct *task,
+ 	return 0;
  }
  
-+static inline int d_unlinked(struct dentry *dentry)
+-static unsigned long debugreg_addr_limit(struct task_struct *task)
+-{
+-	return TASK_SIZE - 3;
+-}
+-
+ #else  /* CONFIG_X86_64 */
+ 
+ #define FLAG_MASK		(FLAG_MASK_32 | X86_EFLAGS_NT)
+@@ -263,16 +258,6 @@ static int set_segment_reg(struct task_struct *task,
+ 
+ 	return 0;
+ }
+-
+-static unsigned long debugreg_addr_limit(struct task_struct *task)
+-{
+-#ifdef CONFIG_IA32_EMULATION
+-	if (test_tsk_thread_flag(task, TIF_IA32))
+-		return IA32_PAGE_OFFSET - 3;
+-#endif
+-	return TASK_SIZE_MAX - 7;
+-}
+-
+ #endif	/* CONFIG_X86_32 */
+ 
+ static unsigned long get_flags(struct task_struct *task)
+@@ -480,77 +465,123 @@ static unsigned long ptrace_get_debugreg(struct task_struct *child, int n)
+ 	return 0;
+ }
+ 
++static int ptrace_check_debugreg(int _32bit,
++				 unsigned long dr0, unsigned long dr1,
++				 unsigned long dr2, unsigned long dr3,
++				 unsigned long dr6, unsigned long dr7)
 +{
-+	return d_unhashed(dentry) && !IS_ROOT(dentry);
++	/* Breakpoint type: 00: --x, 01: -w-, 10: undefined, 11: rw- */
++	unsigned int rw[4];
++	/* Breakpoint length: 00: 1 byte, 01: 2 bytes, 10: 8 bytes, 11: 4 bytes */
++	unsigned int len[4];
++	int n;
++
++	if (dr0 >= TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr1 >= TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr2 >= TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr3 >= TASK_SIZE_MAX)
++		return -EINVAL;
++
++	for (n = 0; n < 4; n++) {
++		rw[n] = (dr7 >> (16 + n * 4)) & 0x3;
++		len[n] = (dr7 >> (16 + n * 4 + 2)) & 0x3;
++
++		if (rw[n] == 0x2)
++			return -EINVAL;
++		if (rw[n] == 0x0 && len[n] != 0x0)
++			return -EINVAL;
++		if (_32bit && len[n] == 0x2)
++			return -EINVAL;
++
++		if (len[n] == 0x0)
++			len[n] = 1;
++		else if (len[n] == 0x1)
++			len[n] = 2;
++		else if (len[n] == 0x2)
++			len[n] = 8;
++		else if (len[n] == 0x3)
++			len[n] = 4;
++		/* From now breakpoint length is in bytes. */
++	}
++
++	if (dr6 & ~0xFFFFFFFFUL)
++		return -EINVAL;
++	if (dr7 & ~0xFFFFFFFFUL)
++		return -EINVAL;
++
++	if (dr7 == 0)
++		return 0;
++
++	if (dr0 + len[0] > TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr1 + len[1] > TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr2 + len[2] > TASK_SIZE_MAX)
++		return -EINVAL;
++	if (dr3 + len[3] > TASK_SIZE_MAX)
++		return -EINVAL;
++
++	return 0;
 +}
 +
- static inline struct dentry *dget_parent(struct dentry *dentry)
+ static int ptrace_set_debugreg(struct task_struct *child,
+ 			       int n, unsigned long data)
  {
- 	struct dentry *ret;
+-	int i;
++	unsigned long dr0, dr1, dr2, dr3, dr6, dr7;
++	int _32bit;
+ 
+ 	if (unlikely(n == 4 || n == 5))
+ 		return -EIO;
+ 
+-	if (n < 4 && unlikely(data >= debugreg_addr_limit(child)))
+-		return -EIO;
+-
++	dr0 = child->thread.debugreg0;
++	dr1 = child->thread.debugreg1;
++	dr2 = child->thread.debugreg2;
++	dr3 = child->thread.debugreg3;
++	dr6 = child->thread.debugreg6;
++	dr7 = child->thread.debugreg7;
+ 	switch (n) {
+-	case 0:		child->thread.debugreg0 = data; break;
+-	case 1:		child->thread.debugreg1 = data; break;
+-	case 2:		child->thread.debugreg2 = data; break;
+-	case 3:		child->thread.debugreg3 = data; break;
+-
++	case 0:
++		dr0 = data;
++		break;
++	case 1:
++		dr1 = data;
++		break;
++	case 2:
++		dr2 = data;
++		break;
++	case 3:
++		dr3 = data;
++		break;
+ 	case 6:
+-		if ((data & ~0xffffffffUL) != 0)
+-			return -EIO;
+-		child->thread.debugreg6 = data;
++		dr6 = data;
+ 		break;
+-
+ 	case 7:
+-		/*
+-		 * Sanity-check data. Take one half-byte at once with
+-		 * check = (val >> (16 + 4*i)) & 0xf. It contains the
+-		 * R/Wi and LENi bits; bits 0 and 1 are R/Wi, and bits
+-		 * 2 and 3 are LENi. Given a list of invalid values,
+-		 * we do mask |= 1 << invalid_value, so that
+-		 * (mask >> check) & 1 is a correct test for invalid
+-		 * values.
+-		 *
+-		 * R/Wi contains the type of the breakpoint /
+-		 * watchpoint, LENi contains the length of the watched
+-		 * data in the watchpoint case.
+-		 *
+-		 * The invalid values are:
+-		 * - LENi == 0x10 (undefined), so mask |= 0x0f00.	[32-bit]
+-		 * - R/Wi == 0x10 (break on I/O reads or writes), so
+-		 *   mask |= 0x4444.
+-		 * - R/Wi == 0x00 && LENi != 0x00, so we have mask |=
+-		 *   0x1110.
+-		 *
+-		 * Finally, mask = 0x0f00 | 0x4444 | 0x1110 == 0x5f54.
+-		 *
+-		 * See the Intel Manual "System Programming Guide",
+-		 * 15.2.4
+-		 *
+-		 * Note that LENi == 0x10 is defined on x86_64 in long
+-		 * mode (i.e. even for 32-bit userspace software, but
+-		 * 64-bit kernel), so the x86_64 mask value is 0x5454.
+-		 * See the AMD manual no. 24593 (AMD64 System Programming)
+-		 */
+-#ifdef CONFIG_X86_32
+-#define	DR7_MASK	0x5f54
+-#else
+-#define	DR7_MASK	0x5554
+-#endif
+-		data &= ~DR_CONTROL_RESERVED;
+-		for (i = 0; i < 4; i++)
+-			if ((DR7_MASK >> ((data >> (16 + 4*i)) & 0xf)) & 1)
+-				return -EIO;
+-		child->thread.debugreg7 = data;
+-		if (data)
+-			set_tsk_thread_flag(child, TIF_DEBUG);
+-		else
+-			clear_tsk_thread_flag(child, TIF_DEBUG);
++		dr7 = data & ~DR_CONTROL_RESERVED;
+ 		break;
+ 	}
+ 
++	_32bit = (sizeof(unsigned long) == 4);
++#ifdef CONFIG_COMPAT
++	if (test_tsk_thread_flag(child, TIF_IA32))
++		_32bit = 1;
++#endif
++	if (ptrace_check_debugreg(_32bit, dr0, dr1, dr2, dr3, dr6, dr7))
++		return -EIO;
++
++	child->thread.debugreg0 = dr0;
++	child->thread.debugreg1 = dr1;
++	child->thread.debugreg2 = dr2;
++	child->thread.debugreg3 = dr3;
++	child->thread.debugreg6 = dr6;
++	child->thread.debugreg7 = dr7;
++	if (dr7)
++		set_tsk_thread_flag(child, TIF_DEBUG);
++	else
++		clear_tsk_thread_flag(child, TIF_DEBUG);
++
+ 	return 0;
+ }
+ 
 -- 
 1.5.6.5
