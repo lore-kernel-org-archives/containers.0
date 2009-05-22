@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 14/38] Remove struct mm_struct::exe_file et al
-Date: Fri, 22 May 2009 08:55:08 +0400
-Message-ID: <1242968132-1044-14-git-send-email-adobriyan__1552.79980176619$1242969238$gmane$org@gmail.com>
+Subject: [PATCH 27/38] C/R: checkpoint/restore struct uts_namespace
+Date: Fri, 22 May 2009 08:55:21 +0400
+Message-ID: <1242968132-1044-27-git-send-email-adobriyan__39252.9025594287$1242969312$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,383 +21,358 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Commit 925d1c401fa6cfd0df5d2e37da8981494ccdec07 aka "procfs task exe symlink".
-introduced struct mm_struct::exe_file and struct mm_struct::num_exe_file_vmas.
+The simplest thing.
 
-The rationale is weak: unifying MMU and no-MMU version of /proc/*/exe code.
-For this a) struct mm_struct becomes bigger, b) mmap/munmap/exit become slower,
-c) patch adds more code than removes in fact.
+Note, no locking is done, because we know:
+a) tasks are frozen and thus can't change it
+b) number of collected references is correct, so nobody else
+   is using uts_namespace and thus can't change it under dump
 
-After commit 8feae13110d60cc6287afabc2887366b0eb226c2 aka
-"NOMMU: Make VMAs per MM as for MMU-mode linux" no-MMU kernels also
-maintain list of VMAs in ->mmap, so we can switch back for MMU version
-of /proc/*/exe.
+If live checkpointing will be done, code will be changed
+to something like:
 
-This also helps C/R, no need to save and restore ->exe_file and to count
-additional references to check if there is a leak of struct file outside
-group of checkpointed resources.
+	if (ctx->dump_live)
+		down_read(&uts_sem);
+		...
+	if (ctx->dump_live)
+		up_read(&uts_sem);
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/exec.c                |    2 -
- fs/proc/base.c           |  105 +++++++++++++---------------------------------
- include/linux/mm.h       |   12 -----
- include/linux/mm_types.h |    6 ---
- include/linux/proc_fs.h  |   20 ---------
- kernel/fork.c            |    3 -
- mm/mmap.c                |   22 ++--------
- mm/nommu.c               |   16 +------
- 8 files changed, 36 insertions(+), 150 deletions(-)
+ include/linux/kstate-image.h   |   14 +++++
+ include/linux/kstate.h         |    5 ++
+ kernel/kstate/cpt-sys.c        |    6 ++
+ kernel/kstate/kstate-context.c |    6 ++
+ kernel/kstate/kstate-object.c  |    4 ++
+ kernel/nsproxy.c               |   33 +++++++++++--
+ kernel/utsname.c               |  106 ++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 170 insertions(+), 4 deletions(-)
+ delete mode 100644 kernel/kstate/kstate-nsproxy.c
+ create mode 100644 kernel/kstate/kstate-uts_ns.c
 
-diff --git a/fs/exec.c b/fs/exec.c
-index 895823d..04fbe3e 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -938,8 +938,6 @@ int flush_old_exec(struct linux_binprm * bprm)
- 	if (retval)
- 		goto out;
+diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
+index b8263c8..2eef50b 100644
+--- a/include/linux/kstate-image.h
++++ b/include/linux/kstate-image.h
+@@ -44,6 +44,7 @@ struct kstate_image_header {
+ #define KSTATE_OBJ_VMA		4
+ #define KSTATE_OBJ_PAGE		5
+ #define KSTATE_OBJ_NSPROXY	6
++#define KSTATE_OBJ_UTS_NS	7
  
--	set_mm_exe_file(bprm->mm, bprm->file);
--
- 	/*
- 	 * Release all of the old mmap stuff
- 	 */
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index fb45615..4284cc6 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -201,6 +201,36 @@ static int proc_root_link(struct inode *inode, struct path *path)
- 	return result;
+ struct kstate_object_header {
+ 	__u32		obj_type;
+@@ -208,5 +209,18 @@ struct kstate_image_file {
+ 
+ struct kstate_image_nsproxy {
+ 	struct kstate_object_header hdr;
++
++	kstate_ref_t	ref_uts_ns;
++} __packed;
++
++struct kstate_image_uts_ns {
++	struct kstate_object_header hdr;
++
++	__u8		sysname[64];
++	__u8		nodename[64];
++	__u8		release[64];
++	__u8		version[64];
++	__u8		machine[64];
++	__u8		domainname[64];
+ } __packed;
+ #endif
+diff --git a/include/linux/kstate.h b/include/linux/kstate.h
+index bd5c9f1..dba4803 100644
+--- a/include/linux/kstate.h
++++ b/include/linux/kstate.h
+@@ -25,6 +25,7 @@ enum kstate_context_obj_type {
+ 	KSTATE_CTX_MM_STRUCT,
+ 	KSTATE_CTX_NSPROXY,
+ 	KSTATE_CTX_TASK_STRUCT,
++	KSTATE_CTX_UTS_NS,
+ 	NR_KSTATE_CTX_TYPES
+ };
+ 
+@@ -72,6 +73,10 @@ int kstate_collect_all_nsproxy(struct kstate_context *ctx);
+ int kstate_dump_all_nsproxy(struct kstate_context *ctx);
+ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref);
+ 
++int kstate_collect_all_uts_ns(struct kstate_context *ctx);
++int kstate_dump_all_uts_ns(struct kstate_context *ctx);
++int kstate_restore_uts_ns(struct kstate_context *ctx, kstate_ref_t *ref);
++
+ #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
+ extern const __u32 kstate_kernel_arch;
+ int kstate_arch_check_image_header(struct kstate_image_header *i);
+diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
+index 1d5e79d..7d4681a 100644
+--- a/kernel/kstate/cpt-sys.c
++++ b/kernel/kstate/cpt-sys.c
+@@ -68,6 +68,9 @@ static int kstate_collect(struct kstate_context *ctx)
+ 	rv = kstate_collect_all_nsproxy(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_collect_all_uts_ns(ctx);
++	if (rv < 0)
++		return rv;
+ 	rv = kstate_collect_all_mm_struct(ctx);
+ 	if (rv < 0)
+ 		return rv;
+@@ -130,6 +133,9 @@ static int kstate_dump(struct kstate_context *ctx)
+ 	rv = kstate_dump_all_mm_struct(ctx);
+ 	if (rv < 0)
+ 		return rv;
++	rv = kstate_dump_all_uts_ns(ctx);
++	if (rv < 0)
++		return rv;
+ 	rv = kstate_dump_all_nsproxy(ctx);
+ 	if (rv < 0)
+ 		return rv;
+diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
+index 8c728f5..98dc0c0 100644
+--- a/kernel/kstate/kstate-context.c
++++ b/kernel/kstate/kstate-context.c
+@@ -4,6 +4,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/utsname.h>
+ 
+ #include <linux/kstate.h>
+ 
+@@ -51,5 +52,10 @@ void kstate_context_destroy(struct kstate_context *ctx)
+ 		list_del(&obj->o_list);
+ 		kfree(obj);
+ 	}
++	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_UTS_NS) {
++		put_uts_ns((struct uts_namespace *)obj->o_obj);
++		list_del(&obj->o_list);
++		kfree(obj);
++	}
+ 	kfree(ctx);
+ }
+diff --git a/kernel/kstate/kstate-nsproxy.c b/kernel/kstate/kstate-nsproxy.c
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
+index 078bd36..aeadd95 100644
+--- a/kernel/kstate/kstate-object.c
++++ b/kernel/kstate/kstate-object.c
+@@ -4,6 +4,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/utsname.h>
+ 
+ #include <linux/kstate.h>
+ #include <linux/kstate-image.h>
+@@ -42,6 +43,9 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
+ 	case KSTATE_CTX_TASK_STRUCT:
+ 		get_task_struct((struct task_struct *)obj->o_obj);
+ 		break;
++	case KSTATE_CTX_UTS_NS:
++		get_uts_ns((struct uts_namespace *)obj->o_obj);
++		break;
+ 	default:
+ 		BUG();
+ 	}
+diff --git a/kernel/kstate/kstate-uts_ns.c b/kernel/kstate/kstate-uts_ns.c
+new file mode 100644
+index 0000000..e69de29
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index b7ccd68..b2a7ed3 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -271,12 +271,16 @@ static int dump_nsproxy(struct kstate_context *ctx, struct kstate_object *obj)
+ {
+ 	struct nsproxy *nsproxy = obj->o_obj;
+ 	struct kstate_image_nsproxy *i;
++	struct kstate_object *tmp;
+ 	int rv;
+ 
+ 	i = kstate_prepare_image(KSTATE_OBJ_NSPROXY, sizeof(*i));
+ 	if (!i)
+ 		return -ENOMEM;
+ 
++	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->uts_ns, KSTATE_CTX_UTS_NS);
++	i->ref_uts_ns = tmp->o_ref;
++
+ 	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
+ 	kfree(i);
+ 	pr_debug("dump nsproxy %p: ref {%llu, %u}, rv %d\n", nsproxy, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
+@@ -296,11 +300,30 @@ int kstate_dump_all_nsproxy(struct kstate_context *ctx)
+ 	return 0;
  }
  
-+static int proc_exe_link(struct inode *inode, struct path *path)
++static int restore_uts_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct nsproxy *nsproxy)
 +{
-+	struct task_struct *tsk;
-+	struct mm_struct *mm;
-+	struct vm_area_struct *vma;
++	struct uts_namespace *uts_ns;
++	struct kstate_object *tmp;
++	int rv;
 +
-+	tsk = get_proc_task(inode);
-+	if (!tsk)
-+		return -ENOENT;
-+	mm = get_task_mm(tsk);
-+	put_task_struct(tsk);
-+	if (!mm)
-+		return -ENOENT;
-+
-+	down_read(&mm->mmap_sem);
-+	for (vma = mm->mmap; vma; vma = vma->vm_next) {
-+		if ((vma->vm_flags & VM_EXECUTABLE) && vma->vm_file) {
-+			*path = vma->vm_file->f_path;
-+			path_get(&vma->vm_file->f_path);
-+
-+			up_read(&mm->mmap_sem);
-+			mmput(mm);
-+			return 0;
-+		}
++	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_UTS_NS);
++	if (!tmp) {
++		rv = kstate_restore_uts_ns(ctx, ref);
++		if (rv < 0)
++			return rv;
++		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_UTS_NS);
 +	}
-+	up_read(&mm->mmap_sem);
-+	mmput(mm);
-+	return -ENOENT;
++	uts_ns = tmp->o_obj;
++
++	get_uts_ns(uts_ns);
++	nsproxy->uts_ns = uts_ns;
++	return 0;
 +}
 +
+ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ {
+ 	struct kstate_image_nsproxy *i;
+ 	struct nsproxy *nsproxy;
+-	struct uts_namespace *uts_ns;
+ #ifdef CONFIG_IPC_NS
+ 	struct ipc_namespace *ipc_ns;
+ #endif
+@@ -321,9 +344,9 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ 		goto out_free_image;
+ 	}
+ 
+-	uts_ns = ctx->init_tsk->nsproxy->uts_ns;
+-	get_uts_ns(uts_ns);
+-	nsproxy->uts_ns = uts_ns;
++	rv = restore_uts_ns(ctx, &i->ref_uts_ns, nsproxy);
++	if (rv < 0)
++		goto out_uts_ns;
+ 
+ #ifdef CONFIG_IPC_NS
+ 	ipc_ns = ctx->init_tsk->nsproxy->ipc_ns;
+@@ -349,6 +372,8 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
+ 	pr_debug("restore nsproxy %p, ref {%llu, %u}, rv %d\n", nsproxy, (unsigned long long)ref->pos, ref->id, rv);
+ 	return rv;
+ 
++out_uts_ns:
++	kmem_cache_free(nsproxy_cachep, nsproxy);
+ out_free_image:
+ 	kfree(i);
+ 	pr_debug("%s: return %d, ref {%llu, %u}\n", __func__, rv, (unsigned long long)ref->pos, ref->id);
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 8a82b4b..5b25e8d 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -1,5 +1,6 @@
  /*
-  * Return zero if current may access user memory in @task, -error if not.
-  */
-@@ -1251,81 +1281,6 @@ static const struct file_operations proc_pid_sched_operations = {
- 
- #endif
- 
--/*
-- * We added or removed a vma mapping the executable. The vmas are only mapped
-- * during exec and are not mapped with the mmap system call.
-- * Callers must hold down_write() on the mm's mmap_sem for these
-- */
--void added_exe_file_vma(struct mm_struct *mm)
--{
--	mm->num_exe_file_vmas++;
--}
--
--void removed_exe_file_vma(struct mm_struct *mm)
--{
--	mm->num_exe_file_vmas--;
--	if ((mm->num_exe_file_vmas == 0) && mm->exe_file){
--		fput(mm->exe_file);
--		mm->exe_file = NULL;
--	}
--
--}
--
--void set_mm_exe_file(struct mm_struct *mm, struct file *new_exe_file)
--{
--	if (new_exe_file)
--		get_file(new_exe_file);
--	if (mm->exe_file)
--		fput(mm->exe_file);
--	mm->exe_file = new_exe_file;
--	mm->num_exe_file_vmas = 0;
--}
--
--struct file *get_mm_exe_file(struct mm_struct *mm)
--{
--	struct file *exe_file;
--
--	/* We need mmap_sem to protect against races with removal of
--	 * VM_EXECUTABLE vmas */
--	down_read(&mm->mmap_sem);
--	exe_file = mm->exe_file;
--	if (exe_file)
--		get_file(exe_file);
--	up_read(&mm->mmap_sem);
--	return exe_file;
--}
--
--void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm)
--{
--	/* It's safe to write the exe_file pointer without exe_file_lock because
--	 * this is called during fork when the task is not yet in /proc */
--	newmm->exe_file = get_mm_exe_file(oldmm);
--}
--
--static int proc_exe_link(struct inode *inode, struct path *exe_path)
--{
--	struct task_struct *task;
--	struct mm_struct *mm;
--	struct file *exe_file;
--
--	task = get_proc_task(inode);
--	if (!task)
--		return -ENOENT;
--	mm = get_task_mm(task);
--	put_task_struct(task);
--	if (!mm)
--		return -ENOENT;
--	exe_file = get_mm_exe_file(mm);
--	mmput(mm);
--	if (exe_file) {
--		*exe_path = exe_file->f_path;
--		path_get(&exe_file->f_path);
--		fput(exe_file);
--		return 0;
--	} else
--		return -ENOENT;
--}
--
- static void *proc_pid_follow_link(struct dentry *dentry, struct nameidata *nd)
- {
- 	struct inode *inode = dentry->d_inode;
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index bff1f0d..b3b61a6 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1121,18 +1121,6 @@ extern void exit_mmap(struct mm_struct *);
- extern int mm_take_all_locks(struct mm_struct *mm);
- extern void mm_drop_all_locks(struct mm_struct *mm);
- 
--#ifdef CONFIG_PROC_FS
--/* From fs/proc/base.c. callers must _not_ hold the mm's exe_file_lock */
--extern void added_exe_file_vma(struct mm_struct *mm);
--extern void removed_exe_file_vma(struct mm_struct *mm);
--#else
--static inline void added_exe_file_vma(struct mm_struct *mm)
--{}
--
--static inline void removed_exe_file_vma(struct mm_struct *mm)
--{}
--#endif /* CONFIG_PROC_FS */
--
- extern int may_expand_vm(struct mm_struct *mm, unsigned long npages);
- extern int install_special_mapping(struct mm_struct *mm,
- 				   unsigned long addr, unsigned long len,
-diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index 0e80e26..90786ea 100644
---- a/include/linux/mm_types.h
-+++ b/include/linux/mm_types.h
-@@ -269,12 +269,6 @@ struct mm_struct {
- 	 */
- 	struct task_struct *owner;
- #endif
--
--#ifdef CONFIG_PROC_FS
--	/* store ref to file /proc/<pid>/exe symlink points to */
--	struct file *exe_file;
--	unsigned long num_exe_file_vmas;
--#endif
- #ifdef CONFIG_MMU_NOTIFIER
- 	struct mmu_notifier_mm *mmu_notifier_mm;
- #endif
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index fbfa3d4..64ed076 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -188,12 +188,6 @@ extern void proc_net_remove(struct net *net, const char *name);
- extern struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
- 	struct proc_dir_entry *parent);
- 
--/* While the {get|set|dup}_mm_exe_file functions are for mm_structs, they are
-- * only needed to implement /proc/<pid>|self/exe so we define them here. */
--extern void set_mm_exe_file(struct mm_struct *mm, struct file *new_exe_file);
--extern struct file *get_mm_exe_file(struct mm_struct *mm);
--extern void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm);
--
- #else
- 
- #define proc_net_fops_create(net, name, mode, fops)  ({ (void)(mode), NULL; })
-@@ -240,20 +234,6 @@ static inline int pid_ns_prepare_proc(struct pid_namespace *ns)
- static inline void pid_ns_release_proc(struct pid_namespace *ns)
- {
+  *  Copyright (C) 2004 IBM Corporation
++ *  Copyright (C) 2009 Parallels Holdings, Ltd.
+  *
+  *  Author: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+  *
+@@ -73,3 +74,108 @@ void free_uts_ns(struct kref *kref)
+ 	ns = container_of(kref, struct uts_namespace, kref);
+ 	kfree(ns);
  }
--
--static inline void set_mm_exe_file(struct mm_struct *mm,
--				   struct file *new_exe_file)
--{}
--
--static inline struct file *get_mm_exe_file(struct mm_struct *mm)
--{
--	return NULL;
--}
--
--static inline void dup_mm_exe_file(struct mm_struct *oldmm,
--	       			   struct mm_struct *newmm)
--{}
--
- #endif /* CONFIG_PROC_FS */
- 
- #if !defined(CONFIG_PROC_KCORE)
-diff --git a/kernel/fork.c b/kernel/fork.c
-index b9e2edd..ed377ad 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -488,7 +488,6 @@ void mmput(struct mm_struct *mm)
- 	if (atomic_dec_and_test(&mm->mm_users)) {
- 		exit_aio(mm);
- 		exit_mmap(mm);
--		set_mm_exe_file(mm, NULL);
- 		if (!list_empty(&mm->mmlist)) {
- 			spin_lock(&mmlist_lock);
- 			list_del(&mm->mmlist);
-@@ -611,8 +610,6 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
- 	if (init_new_context(tsk, mm))
- 		goto fail_nocontext;
- 
--	dup_mm_exe_file(oldmm, mm);
--
- 	err = dup_mmap(mm, oldmm);
- 	if (err)
- 		goto free_pt;
-diff --git a/mm/mmap.c b/mm/mmap.c
-index 6b7b1a9..76faabc 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -232,11 +232,8 @@ static struct vm_area_struct *remove_vma(struct vm_area_struct *vma)
- 	might_sleep();
- 	if (vma->vm_ops && vma->vm_ops->close)
- 		vma->vm_ops->close(vma);
--	if (vma->vm_file) {
-+	if (vma->vm_file)
- 		fput(vma->vm_file);
--		if (vma->vm_flags & VM_EXECUTABLE)
--			removed_exe_file_vma(vma->vm_mm);
--	}
- 	mpol_put(vma_policy(vma));
- 	kmem_cache_free(vm_area_cachep, vma);
- 	return next;
-@@ -633,11 +630,8 @@ again:			remove_next = 1 + (end > next->vm_end);
- 		spin_unlock(&mapping->i_mmap_lock);
- 
- 	if (remove_next) {
--		if (file) {
-+		if (file)
- 			fput(file);
--			if (next->vm_flags & VM_EXECUTABLE)
--				removed_exe_file_vma(mm);
--		}
- 		mm->map_count--;
- 		mpol_put(vma_policy(next));
- 		kmem_cache_free(vm_area_cachep, next);
-@@ -1192,8 +1186,6 @@ munmap_back:
- 		error = file->f_op->mmap(file, vma);
- 		if (error)
- 			goto unmap_and_free_vma;
--		if (vm_flags & VM_EXECUTABLE)
--			added_exe_file_vma(mm);
- 	} else if (vm_flags & VM_SHARED) {
- 		error = shmem_zero_setup(vma);
- 		if (error)
-@@ -1849,11 +1841,8 @@ int split_vma(struct mm_struct * mm, struct vm_area_struct * vma,
- 	}
- 	vma_set_policy(new, pol);
- 
--	if (new->vm_file) {
-+	if (new->vm_file)
- 		get_file(new->vm_file);
--		if (vma->vm_flags & VM_EXECUTABLE)
--			added_exe_file_vma(mm);
--	}
- 
- 	if (new->vm_ops && new->vm_ops->open)
- 		new->vm_ops->open(new);
-@@ -2200,11 +2189,8 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
- 			new_vma->vm_start = addr;
- 			new_vma->vm_end = addr + len;
- 			new_vma->vm_pgoff = pgoff;
--			if (new_vma->vm_file) {
-+			if (new_vma->vm_file)
- 				get_file(new_vma->vm_file);
--				if (vma->vm_flags & VM_EXECUTABLE)
--					added_exe_file_vma(mm);
--			}
- 			if (new_vma->vm_ops && new_vma->vm_ops->open)
- 				new_vma->vm_ops->open(new_vma);
- 			vma_link(mm, new_vma, prev, rb_link, rb_parent);
-diff --git a/mm/nommu.c b/mm/nommu.c
-index b571ef7..352aac5 100644
---- a/mm/nommu.c
-+++ b/mm/nommu.c
-@@ -721,11 +721,8 @@ static void delete_vma(struct mm_struct *mm, struct vm_area_struct *vma)
- 	kenter("%p", vma);
- 	if (vma->vm_ops && vma->vm_ops->close)
- 		vma->vm_ops->close(vma);
--	if (vma->vm_file) {
-+	if (vma->vm_file)
- 		fput(vma->vm_file);
--		if (vma->vm_flags & VM_EXECUTABLE)
--			removed_exe_file_vma(mm);
--	}
- 	put_nommu_region(vma->vm_region);
- 	kmem_cache_free(vm_area_cachep, vma);
- }
-@@ -1218,10 +1215,6 @@ unsigned long do_mmap_pgoff(struct file *file,
- 		get_file(file);
- 		vma->vm_file = file;
- 		get_file(file);
--		if (vm_flags & VM_EXECUTABLE) {
--			added_exe_file_vma(current->mm);
--			vma->vm_mm = current->mm;
--		}
- 	}
- 
- 	down_write(&nommu_region_sem);
-@@ -1359,11 +1352,8 @@ share:
- error_put_region:
- 	__put_nommu_region(region);
- 	if (vma) {
--		if (vma->vm_file) {
-+		if (vma->vm_file)
- 			fput(vma->vm_file);
--			if (vma->vm_flags & VM_EXECUTABLE)
--				removed_exe_file_vma(vma->vm_mm);
--		}
- 		kmem_cache_free(vm_area_cachep, vma);
- 	}
- 	kleave(" = %d [pr]", ret);
-@@ -1375,8 +1365,6 @@ error:
- 	fput(region->vm_file);
- 	kmem_cache_free(vm_region_jar, region);
- 	fput(vma->vm_file);
--	if (vma->vm_flags & VM_EXECUTABLE)
--		removed_exe_file_vma(vma->vm_mm);
- 	kmem_cache_free(vm_area_cachep, vma);
- 	kleave(" = %d", ret);
- 	return ret;
++
++#ifdef CONFIG_CHECKPOINT
++#include <linux/kstate.h>
++#include <linux/kstate-image.h>
++
++static int collect_uts_ns(struct kstate_context *ctx, struct uts_namespace *uts_ns)
++{
++	int rv;
++
++	rv = kstate_collect_object(ctx, uts_ns, KSTATE_CTX_UTS_NS);
++	pr_debug("collect uts_ns %p: rv %d\n", uts_ns, rv);
++	return rv;
++}
++
++int kstate_collect_all_uts_ns(struct kstate_context *ctx)
++{
++	struct kstate_object *obj;
++	int rv;
++
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_NSPROXY) {
++		struct nsproxy *nsproxy = obj->o_obj;
++
++		rv = collect_uts_ns(ctx, nsproxy->uts_ns);
++		if (rv < 0)
++			return rv;
++	}
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_UTS_NS) {
++		struct uts_namespace *uts_ns = obj->o_obj;
++		unsigned int cnt = atomic_read(&uts_ns->kref.refcount);
++
++		if (obj->o_count + 1 != cnt) {
++			pr_err("uts_ns %p has external references %lu:%u\n", uts_ns, obj->o_count, cnt);
++			return -EINVAL;
++		}
++	}
++	return 0;
++}
++
++static int dump_uts_ns(struct kstate_context *ctx, struct kstate_object *obj)
++{
++	struct uts_namespace *uts_ns = obj->o_obj;
++	struct kstate_image_uts_ns *i;
++	int rv;
++
++	i = kstate_prepare_image(KSTATE_OBJ_UTS_NS, sizeof(*i));
++	if (!i)
++		return -ENOMEM;
++
++	strncpy(i->sysname, (const char *)uts_ns->name.sysname, 64);
++	strncpy(i->nodename, (const char *)uts_ns->name.nodename, 64);
++	strncpy(i->release, (const char *)uts_ns->name.release, 64);
++	strncpy(i->version, (const char *)uts_ns->name.version, 64);
++	strncpy(i->machine, (const char *)uts_ns->name.machine, 64);
++	strncpy(i->domainname, (const char *)uts_ns->name.domainname, 64);
++
++	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
++	kfree(i);
++	pr_debug("dump uts_ns %p: ref {%llu, %u}, rv %d\n", uts_ns, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
++	return rv;
++}
++
++int kstate_dump_all_uts_ns(struct kstate_context *ctx)
++{
++	struct kstate_object *obj;
++	int rv;
++
++	for_each_kstate_object(ctx, obj, KSTATE_CTX_UTS_NS) {
++		rv = dump_uts_ns(ctx, obj);
++		if (rv < 0)
++			return rv;
++	}
++	return 0;
++}
++
++int kstate_restore_uts_ns(struct kstate_context *ctx, kstate_ref_t *ref)
++{
++	struct kstate_image_uts_ns *i;
++	struct uts_namespace *uts_ns;
++	int rv;
++
++	i = kstate_read_image(ctx, ref, KSTATE_OBJ_UTS_NS, sizeof(*i));
++	if (IS_ERR(i))
++		return PTR_ERR(i);
++
++	uts_ns = create_uts_ns();
++	if (!uts_ns) {
++		kfree(i);
++		return -ENOMEM;
++	}
++
++	strlcpy(uts_ns->name.sysname, i->sysname, sizeof(uts_ns->name.sysname));
++	strlcpy(uts_ns->name.nodename, i->nodename, sizeof(uts_ns->name.nodename));
++	strlcpy(uts_ns->name.release, i->release, sizeof(uts_ns->name.release));
++	strlcpy(uts_ns->name.version, i->version, sizeof(uts_ns->name.version));
++	strlcpy(uts_ns->name.machine, i->machine, sizeof(uts_ns->name.machine));
++	strlcpy(uts_ns->name.domainname, i->domainname, sizeof(uts_ns->name.domainname));
++	kfree(i);
++
++	rv = kstate_restore_object(ctx, uts_ns, KSTATE_CTX_UTS_NS, ref);
++	if (rv < 0)
++		put_uts_ns(uts_ns);
++	pr_debug("restore uts_ns %p: ref {%llu, %u}, rv %d\n", uts_ns, (unsigned long long)ref->pos, ref->id, rv);
++	return rv;
++}
++#endif
 -- 
 1.5.6.5
