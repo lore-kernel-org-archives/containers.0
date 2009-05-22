@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 30/38] C/R: checkpoint/restore struct pid_namespace
-Date: Fri, 22 May 2009 08:55:24 +0400
-Message-ID: <1242968132-1044-30-git-send-email-adobriyan__25610.2565130734$1242969461$gmane$org@gmail.com>
+Subject: [PATCH 17/38] groups: move code to kernel/groups.c
+Date: Fri, 22 May 2009 08:55:11 +0400
+Message-ID: <1242968132-1044-17-git-send-email-adobriyan__7189.40827432579$1242969465$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,402 +21,619 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-pidns are hierarchical, so we dump parent pidns first.
-On restore, parent task is restored first and restores parent pidns
-for itself, which means that when child restores its pidns,
-parent pidns already exists.
+Move supplementary groups implementation to kernel/groups.c .
+kernel/sys.c already accumulated quite a few random stuff.
 
-This fullfills loop protection and, given, every pidns has init task
-which pins it even works reliably. :-)
+Do strictly copy/paste + add required headers to compile.
+Compile-tested on many configs and archs.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/kstate-image.h   |    9 ++
- include/linux/kstate.h         |    5 +
- kernel/kstate/cpt-sys.c        |    6 ++
- kernel/kstate/kstate-context.c |    6 ++
- kernel/kstate/kstate-object.c  |    4 +
- kernel/nsproxy.c               |   30 ++++++-
- kernel/pid_namespace.c         |  168 +++++++++++++++++++++++++++++++++++++++-
- 7 files changed, 223 insertions(+), 5 deletions(-)
+ kernel/Makefile |    1 +
+ kernel/groups.c |  288 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/sys.c    |  283 ------------------------------------------------------
+ 3 files changed, 289 insertions(+), 283 deletions(-)
+ create mode 100644 kernel/groups.c
 
-diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
-index fa4921b..64328e1 100644
---- a/include/linux/kstate-image.h
-+++ b/include/linux/kstate-image.h
-@@ -47,6 +47,7 @@ struct kstate_image_header {
- #define KSTATE_OBJ_UTS_NS	7
- #define KSTATE_OBJ_IPC_NS	8
- #define KSTATE_OBJ_MNT_NS	9
-+#define KSTATE_OBJ_PID_NS	10
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 4242366..705ad3d 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -11,6 +11,7 @@ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
+ 	    hrtimer.o rwsem.o nsproxy.o srcu.o semaphore.o \
+ 	    notifier.o ksysfs.o pm_qos_params.o sched_clock.o cred.o \
+ 	    async.o
++obj-y += groups.o
  
- struct kstate_object_header {
- 	__u32		obj_type;
-@@ -215,6 +216,7 @@ struct kstate_image_nsproxy {
- 	kstate_ref_t	ref_uts_ns;
- 	kstate_ref_t	ref_ipc_ns;	/* KSTATE_REF_UNDEF if IPC_NS=n */
- 	kstate_ref_t	ref_mnt_ns;
-+	kstate_ref_t	ref_pid_ns;
- } __packed;
- 
- struct kstate_image_uts_ns {
-@@ -235,4 +237,11 @@ struct kstate_image_ipc_ns {
- struct kstate_image_mnt_ns {
- 	struct kstate_object_header hdr;
- } __packed;
+ ifdef CONFIG_FUNCTION_TRACER
+ # Do not trace debug files and internal ftrace files
+diff --git a/kernel/groups.c b/kernel/groups.c
+new file mode 100644
+index 0000000..1b95b2f
+--- /dev/null
++++ b/kernel/groups.c
+@@ -0,0 +1,288 @@
++/*
++ * Supplementary group IDs
++ */
++#include <linux/cred.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/security.h>
++#include <linux/syscalls.h>
++#include <asm/uaccess.h>
 +
-+struct kstate_image_pid_ns {
-+	struct kstate_object_header hdr;
++/* init to 2 - one for init_task, one to ensure it is never freed */
++struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
 +
-+	kstate_ref_t	ref_parent;	/* KSTATE_REF_UNDEF if root pid_ns */
-+	__u32		last_pid;
-+} __packed;
- #endif
-diff --git a/include/linux/kstate.h b/include/linux/kstate.h
-index 43e2556..c925cef 100644
---- a/include/linux/kstate.h
-+++ b/include/linux/kstate.h
-@@ -28,6 +28,7 @@ enum kstate_context_obj_type {
- 	KSTATE_CTX_MM_STRUCT,
- 	KSTATE_CTX_MNT_NS,
- 	KSTATE_CTX_NSPROXY,
-+	KSTATE_CTX_PID_NS,
- 	KSTATE_CTX_TASK_STRUCT,
- 	KSTATE_CTX_UTS_NS,
- 	NR_KSTATE_CTX_TYPES
-@@ -100,6 +101,10 @@ static inline int kstate_dump_all_ipc_ns(struct kstate_context *ctx)
- int kstate_collect_all_mnt_ns(struct kstate_context *ctx);
- int kstate_dump_all_mnt_ns(struct kstate_context *ctx);
- 
-+int kstate_collect_all_pid_ns(struct kstate_context *ctx);
-+int kstate_dump_all_pid_ns(struct kstate_context *ctx);
-+int kstate_restore_pid_ns(struct kstate_context *ctx, kstate_ref_t *ref);
-+
- #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
- extern const __u32 kstate_kernel_arch;
- int kstate_arch_check_image_header(struct kstate_image_header *i);
-diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
-index 0e3c74c..cbaf038 100644
---- a/kernel/kstate/cpt-sys.c
-+++ b/kernel/kstate/cpt-sys.c
-@@ -77,6 +77,9 @@ static int kstate_collect(struct kstate_context *ctx)
- 	rv = kstate_collect_all_mnt_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_collect_all_pid_ns(ctx);
-+	if (rv < 0)
-+		return rv;
- 	rv = kstate_collect_all_mm_struct(ctx);
- 	if (rv < 0)
- 		return rv;
-@@ -133,6 +136,9 @@ static int kstate_dump(struct kstate_context *ctx)
- 	rv = kstate_dump_image_header(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_dump_all_pid_ns(ctx);
-+	if (rv < 0)
-+		return rv;
- 	rv = kstate_dump_all_file(ctx);
- 	if (rv < 0)
- 		return rv;
-diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
-index 700c0f4..7cd1f45 100644
---- a/kernel/kstate/kstate-context.c
-+++ b/kernel/kstate/kstate-context.c
-@@ -4,6 +4,7 @@
- #include <linux/list.h>
- #include <linux/mnt_namespace.h>
- #include <linux/nsproxy.h>
-+#include <linux/pid_namespace.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
- #include <linux/utsname.h>
-@@ -61,6 +62,11 @@ void kstate_context_destroy(struct kstate_context *ctx)
- 		list_del(&obj->o_list);
- 		kfree(obj);
- 	}
-+	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_PID_NS) {
-+		put_pid_ns((struct pid_namespace *)obj->o_obj);
-+		list_del(&obj->o_list);
-+		kfree(obj);
-+	}
- 	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_TASK_STRUCT) {
- 		put_task_struct((struct task_struct *)obj->o_obj);
- 		list_del(&obj->o_list);
-diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
-index 6b1ab4a..13bb75c 100644
---- a/kernel/kstate/kstate-object.c
-+++ b/kernel/kstate/kstate-object.c
-@@ -4,6 +4,7 @@
- #include <linux/mm_types.h>
- #include <linux/mnt_namespace.h>
- #include <linux/nsproxy.h>
-+#include <linux/pid_namespace.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
- #include <linux/utsname.h>
-@@ -50,6 +51,9 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
- 	case KSTATE_CTX_NSPROXY:
- 		get_nsproxy((struct nsproxy *)obj->o_obj);
- 		break;
-+	case KSTATE_CTX_PID_NS:
-+		get_pid_ns((struct pid_namespace *)obj->o_obj);
-+		break;
- 	case KSTATE_CTX_TASK_STRUCT:
- 		get_task_struct((struct task_struct *)obj->o_obj);
- 		break;
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 4e22ec4..0b1f66d 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -288,6 +288,8 @@ static int dump_nsproxy(struct kstate_context *ctx, struct kstate_object *obj)
- #endif
- 	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->mnt_ns, KSTATE_CTX_MNT_NS);
- 	i->ref_mnt_ns = tmp->o_ref;
-+	tmp = find_kstate_obj_by_ptr(ctx, nsproxy->pid_ns, KSTATE_CTX_PID_NS);
-+	i->ref_pid_ns = tmp->o_ref;
- 
- 	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
- 	kfree(i);
-@@ -387,11 +389,29 @@ static int restore_mnt_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct
- 	return 0;
- }
- 
-+static int restore_pid_ns(struct kstate_context *ctx, kstate_ref_t *ref, struct nsproxy *nsproxy)
++struct group_info *groups_alloc(int gidsetsize)
 +{
-+	struct pid_namespace *pid_ns;
-+	struct kstate_object *tmp;
-+	int rv;
++	struct group_info *group_info;
++	int nblocks;
++	int i;
 +
-+	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID_NS);
-+	if (!tmp) {
-+		rv = kstate_restore_pid_ns(ctx, ref);
-+		if (rv < 0)
-+			return rv;
-+		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID_NS);
++	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
++	/* Make sure we always allocate at least one indirect block pointer */
++	nblocks = nblocks ? : 1;
++	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
++	if (!group_info)
++		return NULL;
++	group_info->ngroups = gidsetsize;
++	group_info->nblocks = nblocks;
++	atomic_set(&group_info->usage, 1);
++
++	if (gidsetsize <= NGROUPS_SMALL)
++		group_info->blocks[0] = group_info->small_block;
++	else {
++		for (i = 0; i < nblocks; i++) {
++			gid_t *b;
++			b = (void *)__get_free_page(GFP_USER);
++			if (!b)
++				goto out_undo_partial_alloc;
++			group_info->blocks[i] = b;
++		}
 +	}
-+	pid_ns = tmp->o_obj;
++	return group_info;
 +
-+	nsproxy->pid_ns = get_pid_ns(pid_ns);
++out_undo_partial_alloc:
++	while (--i >= 0) {
++		free_page((unsigned long)group_info->blocks[i]);
++	}
++	kfree(group_info);
++	return NULL;
++}
++
++EXPORT_SYMBOL(groups_alloc);
++
++void groups_free(struct group_info *group_info)
++{
++	if (group_info->blocks[0] != group_info->small_block) {
++		int i;
++		for (i = 0; i < group_info->nblocks; i++)
++			free_page((unsigned long)group_info->blocks[i]);
++	}
++	kfree(group_info);
++}
++
++EXPORT_SYMBOL(groups_free);
++
++/* export the group_info to a user-space array */
++static int groups_to_user(gid_t __user *grouplist,
++			  const struct group_info *group_info)
++{
++	int i;
++	unsigned int count = group_info->ngroups;
++
++	for (i = 0; i < group_info->nblocks; i++) {
++		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
++		unsigned int len = cp_count * sizeof(*grouplist);
++
++		if (copy_to_user(grouplist, group_info->blocks[i], len))
++			return -EFAULT;
++
++		grouplist += NGROUPS_PER_BLOCK;
++		count -= cp_count;
++	}
 +	return 0;
 +}
 +
- int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- {
- 	struct kstate_image_nsproxy *i;
- 	struct nsproxy *nsproxy;
--	struct pid_namespace *pid_ns;
- #ifdef CONFIG_NET_NS
- 	struct net *net_ns;
- #endif
-@@ -416,9 +436,9 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- 	rv = restore_mnt_ns(ctx, &i->ref_mnt_ns, nsproxy);
- 	if (rv < 0)
- 		goto out_mnt_ns;
--
--	pid_ns = ctx->init_tsk->nsproxy->pid_ns;
--	nsproxy->pid_ns = get_pid_ns(pid_ns);
-+	rv = restore_pid_ns(ctx, &i->ref_pid_ns, nsproxy);
-+	if (rv < 0)
-+		goto out_pid_ns;
- 
- #ifdef CONFIG_NET_NS
- 	net_ns = ctx->init_tsk->nsproxy->net_ns;
-@@ -432,6 +452,8 @@ int kstate_restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- 	pr_debug("restore nsproxy %p, ref {%llu, %u}, rv %d\n", nsproxy, (unsigned long long)ref->pos, ref->id, rv);
- 	return rv;
- 
-+out_pid_ns:
-+	put_mnt_ns(nsproxy->mnt_ns);
- out_mnt_ns:
- 	put_ipc_ns(nsproxy->ipc_ns);
- out_ipc_ns:
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index 821722a..104bccb 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -5,11 +5,12 @@
-  *    (C) 2007 Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, OpenVZ, SWsoft Inc.
-  *    (C) 2007 Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, IBM
-  *     Many thanks to Oleg Nesterov for comments and help
-- *
-+ * Copyright (C) 2000-2009 Parallels Holdings, Ltd.
-  */
- 
- #include <linux/pid.h>
- #include <linux/pid_namespace.h>
-+#include <linux/proc_fs.h>
- #include <linux/syscalls.h>
- #include <linux/err.h>
- #include <linux/acct.h>
-@@ -191,3 +192,168 @@ static __init int pid_namespaces_init(void)
- }
- 
- __initcall(pid_namespaces_init);
-+
-+#ifdef CONFIG_CHECKPOINT
-+#include <linux/kstate.h>
-+#include <linux/kstate-image.h>
-+
-+static int check_pid_ns(struct pid_namespace *pid_ns)
++/* fill a group_info from a user-space array - it must be allocated already */
++static int groups_from_user(struct group_info *group_info,
++    gid_t __user *grouplist)
 +{
-+#ifdef CONFIG_BSD_PROCESS_ACCT
-+	if (pid_ns->bacct) {
-+		WARN_ON(1);
-+		return -EINVAL;
++	int i;
++	unsigned int count = group_info->ngroups;
++
++	for (i = 0; i < group_info->nblocks; i++) {
++		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
++		unsigned int len = cp_count * sizeof(*grouplist);
++
++		if (copy_from_user(group_info->blocks[i], grouplist, len))
++			return -EFAULT;
++
++		grouplist += NGROUPS_PER_BLOCK;
++		count -= cp_count;
 +	}
-+#endif
 +	return 0;
 +}
 +
-+static int collect_pid_ns(struct kstate_context *ctx, struct pid_namespace *pid_ns)
++/* a simple Shell sort */
++static void groups_sort(struct group_info *group_info)
 +{
-+	int rv;
++	int base, max, stride;
++	int gidsetsize = group_info->ngroups;
 +
-+	rv = check_pid_ns(pid_ns);
-+	if (rv < 0)
-+		return rv;
-+	rv = kstate_collect_object(ctx, pid_ns, KSTATE_CTX_PID_NS);
-+	pr_debug("collect pid_ns %p: rv %d\n", pid_ns, rv);
-+	return rv;
++	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
++		; /* nothing */
++	stride /= 3;
++
++	while (stride) {
++		max = gidsetsize - stride;
++		for (base = 0; base < max; base++) {
++			int left = base;
++			int right = left + stride;
++			gid_t tmp = GROUP_AT(group_info, right);
++
++			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
++				GROUP_AT(group_info, right) =
++				    GROUP_AT(group_info, left);
++				right = left;
++				left -= stride;
++			}
++			GROUP_AT(group_info, right) = tmp;
++		}
++		stride /= 3;
++	}
 +}
 +
-+int kstate_collect_all_pid_ns(struct kstate_context *ctx)
++/* a simple bsearch */
++int groups_search(const struct group_info *group_info, gid_t grp)
 +{
-+	struct kstate_object *obj;
-+	int rv;
++	unsigned int left, right;
 +
-+	for_each_kstate_object(ctx, obj, KSTATE_CTX_NSPROXY) {
-+		struct nsproxy *nsproxy = obj->o_obj;
++	if (!group_info)
++		return 0;
 +
-+		rv = collect_pid_ns(ctx, nsproxy->pid_ns);
-+		if (rv < 0)
-+			return rv;
++	left = 0;
++	right = group_info->ngroups;
++	while (left < right) {
++		unsigned int mid = (left+right)/2;
++		int cmp = grp - GROUP_AT(group_info, mid);
++		if (cmp > 0)
++			left = mid + 1;
++		else if (cmp < 0)
++			right = mid;
++		else
++			return 1;
 +	}
-+	/* FIXME check for external references */
 +	return 0;
 +}
 +
-+static int dump_pid_ns(struct kstate_context *ctx, struct kstate_object *obj)
++/**
++ * set_groups - Change a group subscription in a set of credentials
++ * @new: The newly prepared set of credentials to alter
++ * @group_info: The group list to install
++ *
++ * Validate a group subscription and, if valid, insert it into a set
++ * of credentials.
++ */
++int set_groups(struct cred *new, struct group_info *group_info)
 +{
-+	struct pid_namespace *pid_ns = obj->o_obj;
-+	struct kstate_image_pid_ns *i;
-+	struct kstate_object *tmp;
-+	int rv;
++	int retval;
 +
-+	i = kstate_prepare_image(KSTATE_OBJ_PID_NS, sizeof(*i));
-+	if (!i)
++	retval = security_task_setgroups(group_info);
++	if (retval)
++		return retval;
++
++	put_group_info(new->group_info);
++	groups_sort(group_info);
++	get_group_info(group_info);
++	new->group_info = group_info;
++	return 0;
++}
++
++EXPORT_SYMBOL(set_groups);
++
++/**
++ * set_current_groups - Change current's group subscription
++ * @group_info: The group list to impose
++ *
++ * Validate a group subscription and, if valid, impose it upon current's task
++ * security record.
++ */
++int set_current_groups(struct group_info *group_info)
++{
++	struct cred *new;
++	int ret;
++
++	new = prepare_creds();
++	if (!new)
 +		return -ENOMEM;
 +
-+	if (pid_ns == ctx->init_tsk->nsproxy->pid_ns)
-+		i->ref_parent = KSTATE_REF_UNDEF;
-+	else {
-+		tmp = find_kstate_obj_by_ptr(ctx, pid_ns->parent, KSTATE_CTX_PID_NS);
-+		i->ref_parent = tmp->o_ref;
++	ret = set_groups(new, group_info);
++	if (ret < 0) {
++		abort_creds(new);
++		return ret;
 +	}
-+	i->last_pid = pid_ns->last_pid;	/* see /proc/loadavg */
 +
-+	rv = kstate_write_image(ctx, i, sizeof(*i), obj);
-+	kfree(i);
-+	pr_debug("dump pid_ns %p: ref {%llu, %u}, rv %d\n", pid_ns, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
-+	return rv;
++	return commit_creds(new);
 +}
 +
-+int kstate_dump_all_pid_ns(struct kstate_context *ctx)
++EXPORT_SYMBOL(set_current_groups);
++
++SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
 +{
-+	struct kstate_object *obj;
-+	unsigned int level, nr_dumped;
-+	int rv;
++	const struct cred *cred = current_cred();
++	int i;
 +
-+	/*
-+	 * Unlike other namespaces, pid_ns are hierarchical via ->parent.
-+	 *
-+	 * Dump pid_ns in certain order to check for loops on restore cheaply:
-+	 * lower ->level one goes first. For every pid_ns being restored
-+	 * (except root one), it's parent pid_ns was restored already.
-+	 * Unresolved ->ref_parent reference is treated like invalid image.
-+	 *
-+	 * pid_ns pins parent one, which means there are no holes in hierarchy
-+	 * wrt ->level, which means loop is finite.
-+	 */
-+	level = ctx->init_tsk->nsproxy->pid_ns->level;
-+	do {
-+		nr_dumped = 0;
-+		for_each_kstate_object(ctx, obj, KSTATE_CTX_PID_NS) {
-+			struct pid_namespace *pid_ns = obj->o_obj;
++	if (gidsetsize < 0)
++		return -EINVAL;
 +
-+			if (pid_ns->level != level)
-+				continue;
-+			rv = dump_pid_ns(ctx, obj);
-+			if (rv < 0)
-+				return rv;
-+			nr_dumped++;
++	/* no need to grab task_lock here; it cannot change */
++	i = cred->group_info->ngroups;
++	if (gidsetsize) {
++		if (i > gidsetsize) {
++			i = -EINVAL;
++			goto out;
 +		}
-+		level++;
-+	} while (nr_dumped > 0);
-+	return 0;
++		if (groups_to_user(grouplist, cred->group_info)) {
++			i = -EFAULT;
++			goto out;
++		}
++	}
++out:
++	return i;
 +}
 +
-+int kstate_restore_pid_ns(struct kstate_context *ctx, kstate_ref_t *ref)
++/*
++ *	SMP: Our groups are copy-on-write. We can set them safely
++ *	without another task interfering.
++ */
++ 
++SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
 +{
-+	struct kstate_image_pid_ns *i;
-+	struct pid_namespace *parent_pid_ns, *pid_ns;
-+	int rv;
++	struct group_info *group_info;
++	int retval;
 +
-+	i = kstate_read_image(ctx, ref, KSTATE_OBJ_PID_NS, sizeof(*i));
-+	if (IS_ERR(i))
-+		return PTR_ERR(i);
++	if (!capable(CAP_SETGID))
++		return -EPERM;
++	if ((unsigned)gidsetsize > NGROUPS_MAX)
++		return -EINVAL;
 +
-+	if (kstate_ref_undefined(&i->ref_parent))
-+		parent_pid_ns = ctx->init_tsk->nsproxy->pid_ns;
-+	else {
-+		struct kstate_object *tmp;
-+
-+		/*
-+		 * Every pid_ns had child reaper alive. Otherwise restore
-+		 * includes restore of parent pid_ns, check for loops,
-+		 * fighting recursion...
-+		 */
-+		tmp = find_kstate_obj_by_ref(ctx, &i->ref_parent, KSTATE_CTX_PID_NS);
-+		if (!tmp) {
-+			rv = -EINVAL;
-+			goto out_free_image;
-+		}
-+		parent_pid_ns = tmp->o_obj;
++	group_info = groups_alloc(gidsetsize);
++	if (!group_info)
++		return -ENOMEM;
++	retval = groups_from_user(group_info, grouplist);
++	if (retval) {
++		put_group_info(group_info);
++		return retval;
 +	}
 +
-+	pid_ns = create_pid_namespace(parent_pid_ns);
-+	if (IS_ERR(pid_ns)) {
-+		rv = PTR_ERR(pid_ns);
-+		goto out_free_image;
-+	}
-+	rv = pid_ns_prepare_proc(pid_ns);
-+	if (rv < 0)
-+		goto out_put_pid_ns;
++	retval = set_current_groups(group_info);
++	put_group_info(group_info);
 +
-+	pid_ns->last_pid = i->last_pid;
-+	/*
-+	 * Depend on child reaper being the first task restoring pid_ns and
-+	 * pid_ns restore being done in current context.
-+	 */
-+	pid_ns->child_reaper = current;
-+	kfree(i);
-+
-+	rv = kstate_restore_object(ctx, pid_ns, KSTATE_CTX_PID_NS, ref);
-+	if (rv < 0)
-+		goto out_release_proc;
-+	pr_debug("restore pid_ns %p: ref {%llu, %u}, rv %d\n", pid_ns, (unsigned long long)ref->pos, ref->id, rv);
-+	return rv;
-+
-+out_release_proc:
-+	pid_ns_release_proc(pid_ns);
-+out_put_pid_ns:
-+	put_pid_ns(pid_ns);
-+out_free_image:
-+	kfree(i);
-+	pr_debug("%s: return %d, ref {%llu, %u}\n", __func__, rv, (unsigned long long)ref->pos, ref->id);
-+	return rv;
++	return retval;
 +}
-+#endif
++
++/*
++ * Check whether we're fsgid/egid or in the supplemental group..
++ */
++int in_group_p(gid_t grp)
++{
++	const struct cred *cred = current_cred();
++	int retval = 1;
++
++	if (grp != cred->fsgid)
++		retval = groups_search(cred->group_info, grp);
++	return retval;
++}
++
++EXPORT_SYMBOL(in_group_p);
++
++int in_egroup_p(gid_t grp)
++{
++	const struct cred *cred = current_cred();
++	int retval = 1;
++
++	if (grp != cred->egid)
++		retval = groups_search(cred->group_info, grp);
++	return retval;
++}
++
++EXPORT_SYMBOL(in_egroup_p);
+diff --git a/kernel/sys.c b/kernel/sys.c
+index e7998cf..4edcf51 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1112,289 +1112,6 @@ out:
+ 	return err;
+ }
+ 
+-/*
+- * Supplementary group IDs
+- */
+-
+-/* init to 2 - one for init_task, one to ensure it is never freed */
+-struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
+-
+-struct group_info *groups_alloc(int gidsetsize)
+-{
+-	struct group_info *group_info;
+-	int nblocks;
+-	int i;
+-
+-	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
+-	/* Make sure we always allocate at least one indirect block pointer */
+-	nblocks = nblocks ? : 1;
+-	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
+-	if (!group_info)
+-		return NULL;
+-	group_info->ngroups = gidsetsize;
+-	group_info->nblocks = nblocks;
+-	atomic_set(&group_info->usage, 1);
+-
+-	if (gidsetsize <= NGROUPS_SMALL)
+-		group_info->blocks[0] = group_info->small_block;
+-	else {
+-		for (i = 0; i < nblocks; i++) {
+-			gid_t *b;
+-			b = (void *)__get_free_page(GFP_USER);
+-			if (!b)
+-				goto out_undo_partial_alloc;
+-			group_info->blocks[i] = b;
+-		}
+-	}
+-	return group_info;
+-
+-out_undo_partial_alloc:
+-	while (--i >= 0) {
+-		free_page((unsigned long)group_info->blocks[i]);
+-	}
+-	kfree(group_info);
+-	return NULL;
+-}
+-
+-EXPORT_SYMBOL(groups_alloc);
+-
+-void groups_free(struct group_info *group_info)
+-{
+-	if (group_info->blocks[0] != group_info->small_block) {
+-		int i;
+-		for (i = 0; i < group_info->nblocks; i++)
+-			free_page((unsigned long)group_info->blocks[i]);
+-	}
+-	kfree(group_info);
+-}
+-
+-EXPORT_SYMBOL(groups_free);
+-
+-/* export the group_info to a user-space array */
+-static int groups_to_user(gid_t __user *grouplist,
+-			  const struct group_info *group_info)
+-{
+-	int i;
+-	unsigned int count = group_info->ngroups;
+-
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_to_user(grouplist, group_info->blocks[i], len))
+-			return -EFAULT;
+-
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
+-	}
+-	return 0;
+-}
+-
+-/* fill a group_info from a user-space array - it must be allocated already */
+-static int groups_from_user(struct group_info *group_info,
+-    gid_t __user *grouplist)
+-{
+-	int i;
+-	unsigned int count = group_info->ngroups;
+-
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_from_user(group_info->blocks[i], grouplist, len))
+-			return -EFAULT;
+-
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
+-	}
+-	return 0;
+-}
+-
+-/* a simple Shell sort */
+-static void groups_sort(struct group_info *group_info)
+-{
+-	int base, max, stride;
+-	int gidsetsize = group_info->ngroups;
+-
+-	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
+-		; /* nothing */
+-	stride /= 3;
+-
+-	while (stride) {
+-		max = gidsetsize - stride;
+-		for (base = 0; base < max; base++) {
+-			int left = base;
+-			int right = left + stride;
+-			gid_t tmp = GROUP_AT(group_info, right);
+-
+-			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
+-				GROUP_AT(group_info, right) =
+-				    GROUP_AT(group_info, left);
+-				right = left;
+-				left -= stride;
+-			}
+-			GROUP_AT(group_info, right) = tmp;
+-		}
+-		stride /= 3;
+-	}
+-}
+-
+-/* a simple bsearch */
+-int groups_search(const struct group_info *group_info, gid_t grp)
+-{
+-	unsigned int left, right;
+-
+-	if (!group_info)
+-		return 0;
+-
+-	left = 0;
+-	right = group_info->ngroups;
+-	while (left < right) {
+-		unsigned int mid = (left+right)/2;
+-		int cmp = grp - GROUP_AT(group_info, mid);
+-		if (cmp > 0)
+-			left = mid + 1;
+-		else if (cmp < 0)
+-			right = mid;
+-		else
+-			return 1;
+-	}
+-	return 0;
+-}
+-
+-/**
+- * set_groups - Change a group subscription in a set of credentials
+- * @new: The newly prepared set of credentials to alter
+- * @group_info: The group list to install
+- *
+- * Validate a group subscription and, if valid, insert it into a set
+- * of credentials.
+- */
+-int set_groups(struct cred *new, struct group_info *group_info)
+-{
+-	int retval;
+-
+-	retval = security_task_setgroups(group_info);
+-	if (retval)
+-		return retval;
+-
+-	put_group_info(new->group_info);
+-	groups_sort(group_info);
+-	get_group_info(group_info);
+-	new->group_info = group_info;
+-	return 0;
+-}
+-
+-EXPORT_SYMBOL(set_groups);
+-
+-/**
+- * set_current_groups - Change current's group subscription
+- * @group_info: The group list to impose
+- *
+- * Validate a group subscription and, if valid, impose it upon current's task
+- * security record.
+- */
+-int set_current_groups(struct group_info *group_info)
+-{
+-	struct cred *new;
+-	int ret;
+-
+-	new = prepare_creds();
+-	if (!new)
+-		return -ENOMEM;
+-
+-	ret = set_groups(new, group_info);
+-	if (ret < 0) {
+-		abort_creds(new);
+-		return ret;
+-	}
+-
+-	return commit_creds(new);
+-}
+-
+-EXPORT_SYMBOL(set_current_groups);
+-
+-SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
+-{
+-	const struct cred *cred = current_cred();
+-	int i;
+-
+-	if (gidsetsize < 0)
+-		return -EINVAL;
+-
+-	/* no need to grab task_lock here; it cannot change */
+-	i = cred->group_info->ngroups;
+-	if (gidsetsize) {
+-		if (i > gidsetsize) {
+-			i = -EINVAL;
+-			goto out;
+-		}
+-		if (groups_to_user(grouplist, cred->group_info)) {
+-			i = -EFAULT;
+-			goto out;
+-		}
+-	}
+-out:
+-	return i;
+-}
+-
+-/*
+- *	SMP: Our groups are copy-on-write. We can set them safely
+- *	without another task interfering.
+- */
+- 
+-SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
+-{
+-	struct group_info *group_info;
+-	int retval;
+-
+-	if (!capable(CAP_SETGID))
+-		return -EPERM;
+-	if ((unsigned)gidsetsize > NGROUPS_MAX)
+-		return -EINVAL;
+-
+-	group_info = groups_alloc(gidsetsize);
+-	if (!group_info)
+-		return -ENOMEM;
+-	retval = groups_from_user(group_info, grouplist);
+-	if (retval) {
+-		put_group_info(group_info);
+-		return retval;
+-	}
+-
+-	retval = set_current_groups(group_info);
+-	put_group_info(group_info);
+-
+-	return retval;
+-}
+-
+-/*
+- * Check whether we're fsgid/egid or in the supplemental group..
+- */
+-int in_group_p(gid_t grp)
+-{
+-	const struct cred *cred = current_cred();
+-	int retval = 1;
+-
+-	if (grp != cred->fsgid)
+-		retval = groups_search(cred->group_info, grp);
+-	return retval;
+-}
+-
+-EXPORT_SYMBOL(in_group_p);
+-
+-int in_egroup_p(gid_t grp)
+-{
+-	const struct cred *cred = current_cred();
+-	int retval = 1;
+-
+-	if (grp != cred->egid)
+-		retval = groups_search(cred->group_info, grp);
+-	return retval;
+-}
+-
+-EXPORT_SYMBOL(in_egroup_p);
+-
+ DECLARE_RWSEM(uts_sem);
+ 
+ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 -- 
 1.5.6.5
