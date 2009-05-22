@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 36/38] C/R: checkpoint/restore struct pid
-Date: Fri, 22 May 2009 08:55:30 +0400
-Message-ID: <1242968132-1044-36-git-send-email-adobriyan__20367.7673860968$1242969688$gmane$org@gmail.com>
+Subject: [PATCH 20/38] C/R: i386 support
+Date: Fri, 22 May 2009 08:55:14 +0400
+Message-ID: <1242968132-1044-20-git-send-email-adobriyan__23175.1657593579$1242969815$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,513 +21,413 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Deal with struct pid in general and task pids in particular.
-
-Guess what, references to outside pids are banned which means
-that if child is created with simple CLONE_NEWPID, it's PIDTYPE_PGID
-and PIDTYPE_SID will be outside of newborn pidns.
-
-On restore we don't know to where glue them and they weren't saved at all.
-So abort checkpointing in this case.
-
-New-born container inits should use setpgrp(2) and setsid(2)!
+Segment registers are abstracted to allow i386 => x86_64
+migration (BTW, I'm not so sure if just making 32-bit selectors
+the same will achieve same effect)
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/kstate-image.h   |   13 +++
- include/linux/kstate.h         |    5 +
- include/linux/pid.h            |    2 +-
- kernel/fork.c                  |    2 +-
- kernel/kstate/cpt-sys.c        |    6 +
- kernel/kstate/kstate-context.c |    5 +
- kernel/kstate/kstate-object.c  |    3 +
- kernel/kstate/kstate-task.c    |   80 ++++++++++++++++
- kernel/pid.c                   |  199 +++++++++++++++++++++++++++++++++++++++-
- 9 files changed, 308 insertions(+), 7 deletions(-)
+ arch/x86/include/asm/unistd_32.h   |    2 +
+ arch/x86/kernel/syscall_table_32.S |    2 +
+ include/linux/kstate-image.h       |   30 ++++
+ include/linux/kstate.h             |    2 +-
+ kernel/kstate/Makefile             |    1 +
+ kernel/kstate/kstate-x86_32.c      |  294 ++++++++++++++++++++++++++++++++++++
+ 6 files changed, 330 insertions(+), 1 deletions(-)
+ create mode 100644 kernel/kstate/kstate-x86_32.c
 
+diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+index 6e72d74..48557e1 100644
+--- a/arch/x86/include/asm/unistd_32.h
++++ b/arch/x86/include/asm/unistd_32.h
+@@ -340,6 +340,8 @@
+ #define __NR_inotify_init1	332
+ #define __NR_preadv		333
+ #define __NR_pwritev		334
++#define __NR_checkpoint		335
++#define __NR_restart		336
+ 
+ #ifdef __KERNEL__
+ 
+diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+index ff5c873..70d5441 100644
+--- a/arch/x86/kernel/syscall_table_32.S
++++ b/arch/x86/kernel/syscall_table_32.S
+@@ -334,3 +334,5 @@ ENTRY(sys_call_table)
+ 	.long sys_inotify_init1
+ 	.long sys_preadv
+ 	.long sys_pwritev
++	.long sys_checkpoint		/* 335 */
++	.long sys_restart
 diff --git a/include/linux/kstate-image.h b/include/linux/kstate-image.h
-index a573833..108bb2d 100644
+index 348f59f..8df5c4a 100644
 --- a/include/linux/kstate-image.h
 +++ b/include/linux/kstate-image.h
-@@ -53,6 +53,7 @@ struct kstate_image_header {
- #define KSTATE_OBJ_GROUP_INFO	13
- #define KSTATE_OBJ_USER_STRUCT	14
- #define KSTATE_OBJ_USER_NS	15
-+#define KSTATE_OBJ_PID		16
+@@ -27,6 +27,7 @@ struct kstate_image_header {
  
- struct kstate_object_header {
- 	__u32		obj_type;
-@@ -80,6 +81,10 @@ struct kstate_image_task_struct {
- 	kstate_ref_t	ref_real_cred;
- 	kstate_ref_t	ref_cred;
- 
-+	kstate_ref_t	ref_pid;
-+	kstate_ref_t	ref_pgid;
-+	kstate_ref_t	ref_sid;
-+
- 	__u8		comm[16];
- 
- 	/* Native arch of task, one of KSTATE_ARCH_*. */
-@@ -305,4 +310,12 @@ struct kstate_image_user_ns {
- 	 */
- 	kstate_ref_t	ref_creator;
+ 	/* Mutable part. */
+ 	/* Arch of the kernel which dumped the image. */
++#define KSTATE_ARCH_I386	1
+ 	__le32	kernel_arch;
+ 	/*
+ 	 * Distributions are expected to leave image version alone and
+@@ -70,6 +71,35 @@ struct kstate_image_task_struct {
+ 	__u32		tsk_arch;
  } __packed;
+ 
++#define KSTATE_SEG_NULL		0
++#define KSTATE_SEG_USER32_CS	1
++#define KSTATE_SEG_USER32_DS	2
++#define KSTATE_SEG_TLS		0x4000	/* 0100 0000 0000 00xx */
++#define KSTATE_SEG_LDT		0x8000	/* 100x xxxx xxxx xxxx */
 +
-+struct kstate_image_pid {
-+	struct kstate_object_header hdr;
++struct kstate_image_task_struct_i386 {
++	__u32		ebx;
++	__u32		ecx;
++	__u32		edx;
++	__u32		esi;
++	__u32		edi;
++	__u32		ebp;
++	__u32		eax;
++	__u32		orig_eax;
++	__u32		eip;
++	__u32		eflags;
++	__u32		esp;
 +
-+	kstate_ref_t	ref_pid_ns;	/* last-level pid_ns */
-+	__u32		level;
-+	__u32		nr[1];
++	__u16		cs;
++	__u16		ds;
++	__u16		es;
++	__u16		fs;
++	__u16		gs;
++	__u16		ss;
++
++	__u64		tls_array[3];
 +} __packed;
- #endif
++
+ struct kstate_image_mm_struct {
+ 	struct kstate_object_header hdr;
+ 
 diff --git a/include/linux/kstate.h b/include/linux/kstate.h
-index f0c8e09..99a4345 100644
+index 3ae9e28..c4b55b6 100644
 --- a/include/linux/kstate.h
 +++ b/include/linux/kstate.h
-@@ -33,6 +33,7 @@ enum kstate_context_obj_type {
- 	KSTATE_CTX_NET_NS,
- #endif
- 	KSTATE_CTX_NSPROXY,
-+	KSTATE_CTX_PID,
- 	KSTATE_CTX_PID_NS,
- 	KSTATE_CTX_TASK_STRUCT,
- 	KSTATE_CTX_USER_NS,
-@@ -144,6 +145,10 @@ int kstate_collect_all_user_ns(struct kstate_context *ctx);
- int kstate_dump_all_user_ns(struct kstate_context *ctx);
- int kstate_restore_user_ns(struct kstate_context *ctx, kstate_ref_t *ref);
+@@ -67,7 +67,7 @@ int kstate_collect_all_file(struct kstate_context *ctx);
+ int kstate_dump_all_file(struct kstate_context *ctx);
+ int kstate_restore_file(struct kstate_context *ctx, kstate_ref_t *ref);
  
-+int kstate_collect_all_pid(struct kstate_context *ctx);
-+int kstate_dump_all_pid(struct kstate_context *ctx);
-+int kstate_restore_pid(struct kstate_context *ctx, kstate_ref_t *ref);
-+
- #if defined(CONFIG_X86_32) || defined(CONFIG_X86_64)
+-#if 0
++#if defined(CONFIG_X86_32)
  extern const __u32 kstate_kernel_arch;
  int kstate_arch_check_image_header(struct kstate_image_header *i);
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index 49f1c2f..f775a85 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, int last);
  
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, int *nr, unsigned int level);
- extern void free_pid(struct pid *pid);
- 
- /*
-diff --git a/kernel/fork.c b/kernel/fork.c
-index ed377ad..97521ab 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1117,7 +1117,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 
- 	if (pid != &init_struct_pid) {
- 		retval = -ENOMEM;
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, NULL, 0);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
- 
-diff --git a/kernel/kstate/cpt-sys.c b/kernel/kstate/cpt-sys.c
-index 3df776e..119940d 100644
---- a/kernel/kstate/cpt-sys.c
-+++ b/kernel/kstate/cpt-sys.c
-@@ -101,6 +101,9 @@ static int kstate_collect(struct kstate_context *ctx)
- 	rv = kstate_collect_all_user_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_collect_all_pid(ctx);
-+	if (rv < 0)
-+		return rv;
- 	return 0;
- }
- 
-@@ -154,6 +157,9 @@ static int kstate_dump(struct kstate_context *ctx)
- 	rv = kstate_dump_all_pid_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-+	rv = kstate_dump_all_pid(ctx);
-+	if (rv < 0)
-+		return rv;
- 	rv = kstate_dump_all_user_ns(ctx);
- 	if (rv < 0)
- 		return rv;
-diff --git a/kernel/kstate/kstate-context.c b/kernel/kstate/kstate-context.c
-index f8168cc..9acb441 100644
---- a/kernel/kstate/kstate-context.c
-+++ b/kernel/kstate/kstate-context.c
-@@ -81,6 +81,11 @@ void kstate_context_destroy(struct kstate_context *ctx)
- 		list_del(&obj->o_list);
- 		kfree(obj);
- 	}
-+	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_PID) {
-+		put_pid((struct pid *)obj->o_obj);
-+		list_del(&obj->o_list);
-+		kfree(obj);
-+	}
- 	for_each_kstate_object_safe(ctx, obj, tmp, KSTATE_CTX_PID_NS) {
- 		put_pid_ns((struct pid_namespace *)obj->o_obj);
- 		list_del(&obj->o_list);
-diff --git a/kernel/kstate/kstate-object.c b/kernel/kstate/kstate-object.c
-index eb77027..ab026f0 100644
---- a/kernel/kstate/kstate-object.c
-+++ b/kernel/kstate/kstate-object.c
-@@ -64,6 +64,9 @@ int kstate_collect_object(struct kstate_context *ctx, void *p, enum kstate_conte
- 	case KSTATE_CTX_NSPROXY:
- 		get_nsproxy((struct nsproxy *)obj->o_obj);
- 		break;
-+	case KSTATE_CTX_PID:
-+		get_pid((struct pid *)obj->o_obj);
-+		break;
- 	case KSTATE_CTX_PID_NS:
- 		get_pid_ns((struct pid_namespace *)obj->o_obj);
- 		break;
-diff --git a/kernel/kstate/kstate-task.c b/kernel/kstate/kstate-task.c
-index dc2387b..4a3524e 100644
---- a/kernel/kstate/kstate-task.c
-+++ b/kernel/kstate/kstate-task.c
-@@ -128,6 +128,13 @@ static int dump_task_struct(struct kstate_context *ctx, struct kstate_object *ob
- 	tmp = find_kstate_obj_by_ptr(ctx, tsk->cred, KSTATE_CTX_CRED);
- 	i->ref_cred = tmp->o_ref;
- 
-+	tmp = find_kstate_obj_by_ptr(ctx, tsk->pids[PIDTYPE_PID].pid, KSTATE_CTX_PID);
-+	i->ref_pid = tmp->o_ref;
-+	tmp = find_kstate_obj_by_ptr(ctx, tsk->pids[PIDTYPE_PGID].pid, KSTATE_CTX_PID);
-+	i->ref_pgid = tmp->o_ref;
-+	tmp = find_kstate_obj_by_ptr(ctx, tsk->pids[PIDTYPE_SID].pid, KSTATE_CTX_PID);
-+	i->ref_sid = tmp->o_ref;
+diff --git a/kernel/kstate/Makefile b/kernel/kstate/Makefile
+index eacd3cf..ca19a22 100644
+--- a/kernel/kstate/Makefile
++++ b/kernel/kstate/Makefile
+@@ -6,3 +6,4 @@ kstate-y += kstate-image.o
+ kstate-y += kstate-mm.o
+ kstate-y += kstate-object.o
+ kstate-y += kstate-task.o
++kstate-$(CONFIG_X86_32) += kstate-x86_32.o
+diff --git a/kernel/kstate/kstate-x86_32.c b/kernel/kstate/kstate-x86_32.c
+new file mode 100644
+index 0000000..809242c
+--- /dev/null
++++ b/kernel/kstate/kstate-x86_32.c
+@@ -0,0 +1,294 @@
++/* Copyright (C) 2000-2009 Parallels Holdings, Ltd. */
++#include <linux/sched.h>
 +
- 	BUILD_BUG_ON(sizeof(i->comm) != sizeof(tsk->comm));
- 	strlcpy((char *)i->comm, (const char *)tsk->comm, sizeof(i->comm));
- 
-@@ -280,6 +287,70 @@ static int restore_nsproxy(struct kstate_context *ctx, kstate_ref_t *ref)
- 	return 0;
- }
- 
-+static int restore_pid(struct kstate_context *ctx, kstate_ref_t *ref)
-+{
-+	struct pid *pid;
-+	struct kstate_object *tmp;
-+	int rv;
-+
-+	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	if (!tmp) {
-+		rv = kstate_restore_pid(ctx, ref);
-+		if (rv < 0)
-+			return rv;
-+		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	}
-+	pid = tmp->o_obj;
-+
-+	write_lock_irq(&tasklist_lock);
-+	change_pid(current, PIDTYPE_PID, get_pid(pid));
-+	current->pid = current->tgid = pid_nr(pid);
-+	write_unlock_irq(&tasklist_lock);
-+	return 0;
-+}
-+
-+static int restore_pgid(struct kstate_context *ctx, kstate_ref_t *ref)
-+{
-+	struct pid *pid;
-+	struct kstate_object *tmp;
-+	int rv;
-+
-+	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	if (!tmp) {
-+		rv = kstate_restore_pid(ctx, ref);
-+		if (rv < 0)
-+			return rv;
-+		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	}
-+	pid = tmp->o_obj;
-+
-+	write_lock_irq(&tasklist_lock);
-+	change_pid(current, PIDTYPE_PGID, pid);
-+	write_unlock_irq(&tasklist_lock);
-+	return 0;
-+}
-+
-+static int restore_sid(struct kstate_context *ctx, kstate_ref_t *ref)
-+{
-+	struct pid *pid;
-+	struct kstate_object *tmp;
-+	int rv;
-+
-+	tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	if (!tmp) {
-+		rv = kstate_restore_pid(ctx, ref);
-+		if (rv < 0)
-+			return rv;
-+		tmp = find_kstate_obj_by_ref(ctx, ref, KSTATE_CTX_PID);
-+	}
-+	pid = tmp->o_obj;
-+
-+	write_lock_irq(&tasklist_lock);
-+	change_pid(current, PIDTYPE_SID, pid);
-+	write_unlock_irq(&tasklist_lock);
-+	return 0;
-+}
-+
- struct task_struct_restore_context {
- 	struct kstate_context *ctx;
- 	struct kstate_image_task_struct *i;
-@@ -334,6 +405,15 @@ static int task_struct_restorer(void *_tsk_ctx)
- 	rv = restore_cred(ctx, &i->ref_cred);
- 	if (rv < 0)
- 		goto out;
-+	rv = restore_pid(ctx, &i->ref_pid);
-+	if (rv < 0)
-+		goto out;
-+	rv = restore_pgid(ctx, &i->ref_pgid);
-+	if (rv < 0)
-+		goto out;
-+	rv = restore_sid(ctx, &i->ref_sid);
-+	if (rv < 0)
-+		goto out;
- 
- out:
- 	tsk_ctx->rv = rv;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index b2e5f78..bacf279 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -23,6 +23,7 @@
-  *    (C) 2007 Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, OpenVZ, SWsoft Inc.
-  *    (C) 2007 Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, IBM
-  *     Many thanks to Oleg Nesterov for comments and help
-+ * Copyright (C) 2000-2009 Parallels Holdings, Ltd.
-  *
-  */
- 
-@@ -182,6 +183,36 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	return -1;
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+static int set_pidmap(struct pid_namespace *pid_ns, pid_t pid)
-+{
-+	int offset;
-+	struct pidmap *map;
-+
-+	offset = pid & BITS_PER_PAGE_MASK;
-+	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-+	if (!map->page) {
-+		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+		/*
-+		 * Free the page if someone raced with us
-+		 * installing it.
-+		 */
-+		spin_lock_irq(&pidmap_lock);
-+		if (map->page)
-+			kfree(page);
-+		else
-+			map->page = page;
-+		spin_unlock_irq(&pidmap_lock);
-+		if (unlikely(!map->page))
-+			return -ENOMEM;
-+	}
-+	if (test_and_set_bit(offset, map->page))
-+		return -EBUSY;
-+	atomic_dec(&map->nr_free);
-+	return pid;
-+}
-+#endif
-+
- int next_pidmap(struct pid_namespace *pid_ns, int last)
- {
- 	int offset;
-@@ -239,11 +270,12 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
- }
- 
--struct pid *alloc_pid(struct pid_namespace *ns)
-+/* Last level + 1 pid numbers are predefined. */
-+struct pid *alloc_pid(struct pid_namespace *ns, int *nr, unsigned int level)
- {
- 	struct pid *pid;
- 	enum pid_type type;
--	int i, nr;
-+	int i, pid_nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
- 
-@@ -253,11 +285,16 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
--		if (nr < 0)
-+#ifdef CONFIG_CHECKPOINT
-+		if (nr && ns->level - i <= level)
-+			pid_nr = set_pidmap(tmp, nr[ns->level - i]);
-+		else
-+#endif
-+			pid_nr = alloc_pidmap(tmp);
-+		if (pid_nr < 0)
- 			goto out_free;
- 
--		pid->numbers[i].nr = nr;
-+		pid->numbers[i].nr = pid_nr;
- 		pid->numbers[i].ns = tmp;
- 		tmp = tmp->parent;
- 	}
-@@ -537,3 +574,155 @@ void __init pidmap_init(void)
- 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
- 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);
- }
-+
-+#ifdef CONFIG_CHECKPOINT
 +#include <linux/kstate.h>
 +#include <linux/kstate-image.h>
 +
-+static int collect_pid(struct kstate_context *ctx, struct pid *pid)
-+{
-+	int rv;
++const __u32 kstate_kernel_arch = KSTATE_ARCH_I386;
 +
-+	rv = kstate_collect_object(ctx, pid, KSTATE_CTX_PID);
-+	pr_debug("collect pid %p: rv %d\n", pid, rv);
-+	return rv;
++int kstate_arch_check_image_header(struct kstate_image_header *i)
++{
++	if (i->kernel_arch == cpu_to_le32(KSTATE_ARCH_I386))
++		return 0;
++	return -EINVAL;
 +}
 +
-+static int collect_task_pid(struct kstate_context *ctx, struct pid *pid)
++__u32 kstate_task_struct_arch(struct task_struct *tsk)
 +{
-+	unsigned int level0, level;
++	return KSTATE_ARCH_I386;
++}
 +
-+	level0 = ctx->init_tsk->nsproxy->pid_ns->level;
-+	if (pid->level < level0) {
++static int check_eflags(__u32 eflags)
++{
++	eflags &= ~X86_EFLAGS_CF;
++	eflags &= ~X86_EFLAGS_PF;
++	eflags &= ~X86_EFLAGS_AF;
++	eflags &= ~X86_EFLAGS_ZF;
++	eflags &= ~X86_EFLAGS_SF;
++	eflags &= ~X86_EFLAGS_TF;
++	eflags &= ~X86_EFLAGS_DF;
++	eflags &= ~X86_EFLAGS_OF;
++	eflags &= ~X86_EFLAGS_NT;
++	eflags &= ~X86_EFLAGS_AC;
++	eflags &= ~X86_EFLAGS_ID;
++	if (eflags != (X86_EFLAGS_IF|0x2)) {
++		pr_debug("%s: eflags %08x\n", __func__, eflags);
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int check_segment(__u16 seg)
++{
++	switch (seg) {
++	case KSTATE_SEG_NULL:
++	case KSTATE_SEG_USER32_CS:
++	case KSTATE_SEG_USER32_DS:
++		return 0;
++	}
++	if (seg & KSTATE_SEG_TLS) {
++		if ((seg & ~KSTATE_SEG_TLS) > GDT_ENTRY_TLS_MAX - GDT_ENTRY_TLS_MIN) {
++			pr_debug("%s: seg %04x, GDT_ENTRY_TLS_MIN %u, GDT_ENTRY_TLS_MAX %u\n", __func__, seg, GDT_ENTRY_TLS_MIN, GDT_ENTRY_TLS_MAX);
++			return -EINVAL;
++		}
++		return 0;
++	}
++	if (seg & KSTATE_SEG_LDT) {
++		if ((seg & ~KSTATE_SEG_LDT) > 0x1fff) {
++			pr_debug("%s: seg %04x\n", __func__, seg);
++			return -EINVAL;
++		}
++		return 0;
++	}
++	pr_debug("%s: seg %04x\n", __func__, seg);
++	return -EINVAL;
++}
++
++static int check_tls(struct desc_struct *desc)
++{
++	if (desc->l != 0 || desc->s != 1 || desc->dpl != 3)
++		return -EINVAL;
++	return 0;
++}
++
++int kstate_arch_check_image_task_struct(struct kstate_image_task_struct *tsk_i)
++{
++	struct kstate_image_task_struct_i386 *i = (void *)(tsk_i + 1);
++	int rv;
++
++	if (tsk_i->tsk_arch != KSTATE_ARCH_I386)
++		return -EINVAL;
++	if (tsk_i->hdr.obj_len < sizeof(*tsk_i) + sizeof(*i))
++		return -EINVAL;
++
++	rv = check_eflags(i->eflags);
++	if (rv < 0)
++		return rv;
++
++	if (i->cs == KSTATE_SEG_NULL)
++		return -EINVAL;
++	rv = check_segment(i->cs);
++	if (rv < 0)
++		return rv;
++	rv = check_segment(i->ds);
++	if (rv < 0)
++		return rv;
++	rv = check_segment(i->es);
++	if (rv < 0)
++		return rv;
++	rv = check_segment(i->fs);
++	if (rv < 0)
++		return rv;
++	rv = check_segment(i->gs);
++	if (rv < 0)
++		return rv;
++	rv = check_segment(i->ss);
++	if (rv < 0)
++		return rv;
++
++	if (i->tls_array[0]) {
++		rv = check_tls((struct desc_struct *)&i->tls_array[0]);
++		if (rv < 0)
++			return rv;
++	}
++	if (i->tls_array[1]) {
++		rv = check_tls((struct desc_struct *)&i->tls_array[1]);
++		if (rv < 0)
++			return rv;
++	}
++	if (i->tls_array[2]) {
++		rv = check_tls((struct desc_struct *)&i->tls_array[2]);
++		if (rv < 0)
++			return rv;
++	}
++
++	return 0;
++}
++
++unsigned int kstate_arch_len_task_struct(struct task_struct *tsk)
++{
++	return sizeof(struct kstate_image_task_struct_i386);
++}
++
++int kstate_arch_check_task_struct(struct task_struct *tsk)
++{
++	struct restart_block *rb;
++
++	if (tsk->thread.xstate) {
 +		WARN_ON(1);
 +		return -EINVAL;
 +	}
-+	for (level = level0; level <= pid->level; level++) {
-+		struct pid_namespace *pid_ns;
-+		struct kstate_object *tmp;
-+
-+		pid_ns = pid->numbers[level].ns;
-+		tmp = find_kstate_obj_by_ptr(ctx, pid_ns, KSTATE_CTX_PID_NS);
-+		if (!tmp) {
-+			WARN_ON(1);
-+			return -EINVAL;
-+		}
++	if (test_tsk_thread_flag(tsk, TIF_DEBUG)) {
++		WARN_ON(1);
++		return -EINVAL;
 +	}
-+	return collect_pid(ctx, pid);
-+}
-+
-+int kstate_collect_all_pid(struct kstate_context *ctx)
-+{
-+	struct kstate_object *obj;
-+	int rv;
-+
-+	for_each_kstate_object(ctx, obj, KSTATE_CTX_TASK_STRUCT) {
-+		struct task_struct *tsk = obj->o_obj;
-+
-+		rv = collect_task_pid(ctx, tsk->pids[PIDTYPE_PID].pid);
-+		if (rv < 0)
-+			return rv;
-+		rv = collect_task_pid(ctx, tsk->pids[PIDTYPE_PGID].pid);
-+		if (rv < 0)
-+			return rv;
-+		rv = collect_task_pid(ctx, tsk->pids[PIDTYPE_SID].pid);
-+		if (rv < 0)
-+			return rv;
++	rb = &task_thread_info(tsk)->restart_block;
++	if (rb->fn != current_thread_info()->restart_block.fn) {
++		WARN(1, "rb->fn = %pF\n", rb->fn);
++		return -EINVAL;
 +	}
-+	return 0;
-+}
-+
-+static int dump_pid(struct kstate_context *ctx, struct kstate_object *obj)
-+{
-+	struct pid *pid = obj->o_obj;
-+	struct kstate_image_pid *i;
-+	struct kstate_object *tmp;
-+	unsigned int level0, level;
-+	unsigned int image_len;
-+	int rv;
-+
-+	level0 = ctx->init_tsk->nsproxy->pid_ns->level;
-+	image_len = sizeof(*i) + (pid->level - level0 + 1) * sizeof(__u32);
-+	i = kstate_prepare_image(KSTATE_OBJ_PID, image_len);
-+	if (!i)
-+		return -ENOMEM;
-+
-+	tmp = find_kstate_obj_by_ptr(ctx, pid->numbers[pid->level].ns, KSTATE_CTX_PID_NS);
-+	i->ref_pid_ns = tmp->o_ref;
-+
-+	i->level = pid->level - level0;
-+	for (level = level0; level <= pid->level; level++)
-+		i->nr[level - level0] = pid->numbers[level].nr;
-+
-+	rv = kstate_write_image(ctx, i, image_len, obj);
-+	kfree(i);
-+	pr_debug("dump pid %p: ref {%llu, %u}, rv %d\n", pid, (unsigned long long)obj->o_ref.pos, obj->o_ref.id, rv);
-+	return rv;
-+}
-+
-+int kstate_dump_all_pid(struct kstate_context *ctx)
-+{
-+	struct kstate_object *obj;
-+	int rv;
-+
-+	for_each_kstate_object(ctx, obj, KSTATE_CTX_PID) {
-+		rv = dump_pid(ctx, obj);
-+		if (rv < 0)
-+			return rv;
++	if (tsk->thread.vm86_info) {
++		WARN_ON(1);
++		return -EINVAL;
 +	}
-+	return 0;
-+}
-+
-+int kstate_restore_pid(struct kstate_context *ctx, kstate_ref_t *ref)
-+{
-+	struct kstate_image_pid *i;
-+	struct pid *pid;
-+	struct pid_namespace *pid_ns;
-+	struct kstate_object *tmp;
-+	unsigned int level0;
-+	int rv;
-+
-+	i = kstate_read_image(ctx, ref, KSTATE_OBJ_PID, sizeof(*i));
-+	if (IS_ERR(i))
-+		return PTR_ERR(i);
-+	if (i->level > ((__u32)-1 - sizeof(*i)) / sizeof(__u32) - 1) {
-+		rv = -EINVAL;
-+		goto out_free_image;
++	if (tsk->thread.io_bitmap_ptr) {
++		WARN_ON(1);
++		return -EINVAL;
 +	}
-+	if (i->hdr.obj_len != sizeof(*i) + (i->level + 1) * sizeof(__u32)) {
-+		rv = -EINVAL;
-+		goto out_free_image;
++#ifdef CONFIG_X86_DS
++	if (tsk->thread.ds_ctx) {
++		WARN_ON(1);
++		return -EINVAL;
 +	}
-+
-+	tmp = find_kstate_obj_by_ref(ctx, &i->ref_pid_ns, KSTATE_CTX_PID_NS);
-+	if (!tmp) {
-+		rv = kstate_restore_pid_ns(ctx, &i->ref_pid_ns);
-+		if (rv < 0)
-+			goto out_free_image;
-+		tmp = find_kstate_obj_by_ref(ctx, &i->ref_pid_ns, KSTATE_CTX_PID_NS);
-+	}
-+	pid_ns = tmp->o_obj;
-+
-+	level0 = ctx->init_tsk->nsproxy->pid_ns->level;
-+	if (i->level >= pid_ns->level - level0) {
-+		rv = -EINVAL;
-+		goto out_free_image;
-+	}
-+
-+	pid = alloc_pid(pid_ns, i->nr, i->level);
-+	kfree(i);
-+	if (!pid)
-+		return -ENOMEM;
-+
-+	rv = kstate_restore_object(ctx, pid, KSTATE_CTX_PID, ref);
-+	if (rv < 0)
-+		put_pid(pid);
-+	pr_debug("restore pid %p: ref {%lld, %u}, rv %d\n", pid, (unsigned long long)ref->pos, ref->id, rv);
-+	return rv;
-+
-+out_free_image:
-+	kfree(i);
-+	pr_debug("%s: return %d, ref {%llu, %u}\n", __func__, rv, (unsigned long long)ref->pos, ref->id);
-+	return rv;
-+}
 +#endif
++	return 0;
++}
++
++static __u16 encode_segment(u16 seg)
++{
++	if (seg == 0)
++		return KSTATE_SEG_NULL;
++	BUG_ON((seg & 3) != 3);
++	if (seg & 4)
++		return KSTATE_SEG_LDT | (seg >> 3);
++
++	if (seg == __USER_CS)
++		return KSTATE_SEG_USER32_CS;
++	if (seg == __USER_DS)
++		return KSTATE_SEG_USER32_DS;
++
++	if (GDT_ENTRY_TLS_MIN <= (seg >> 3) && (seg >> 3) <= GDT_ENTRY_TLS_MAX)
++		return KSTATE_SEG_TLS | ((seg >> 3) - GDT_ENTRY_TLS_MIN);
++	BUG();
++}
++
++static u16 decode_segment(__u16 seg)
++{
++	if (seg == KSTATE_SEG_NULL)
++		return 0;
++	if (seg == KSTATE_SEG_USER32_CS)
++		return __USER_CS;
++	if (seg == KSTATE_SEG_USER32_DS)
++		return __USER_DS;
++
++	if (seg & KSTATE_SEG_TLS) {
++		seg &= ~KSTATE_SEG_TLS;
++		return ((GDT_ENTRY_TLS_MIN + seg) << 3) | 3;
++	}
++	if (seg & KSTATE_SEG_LDT) {
++		seg &= ~KSTATE_SEG_LDT;
++		return (seg << 3) | 7;
++	}
++	BUG();
++}
++
++int kstate_arch_dump_task_struct(struct kstate_context *ctx, struct task_struct *tsk, void *arch_i)
++{
++	struct kstate_image_task_struct_i386 *i = arch_i;
++	struct pt_regs *regs = task_pt_regs(tsk);
++
++	i->ebx = regs->bx;
++	i->ecx = regs->cx;
++	i->edx = regs->dx;
++	i->esi = regs->si;
++	i->edi = regs->di;
++	i->ebp = regs->bp;
++	i->eax = regs->ax;
++	i->orig_eax = regs->orig_ax;
++	i->eip = regs->ip;
++	i->eflags = regs->flags;
++	i->esp = regs->sp;
++
++	i->cs = encode_segment(regs->cs);
++	i->ds = encode_segment(regs->ds);
++	i->es = encode_segment(regs->es);
++	i->fs = encode_segment(regs->fs);
++	i->gs = encode_segment(tsk->thread.gs);
++	i->ss = encode_segment(regs->ss);
++
++	BUILD_BUG_ON(sizeof(tsk->thread.tls_array[0]) != 8);
++	BUILD_BUG_ON(sizeof(tsk->thread.tls_array) != 3 * 8);
++	memcpy(i->tls_array, tsk->thread.tls_array, sizeof(i->tls_array));
++
++	return 0;
++}
++
++asmlinkage void ret_from_fork(void);
++static int restore_task_struct_i386(struct task_struct *tsk, struct kstate_image_task_struct_i386 *i)
++{
++	struct pt_regs *regs = task_pt_regs(tsk);
++
++	tsk->thread.sp = (unsigned long)regs;
++	tsk->thread.sp0 = (unsigned long)(regs + 1);
++	tsk->thread.ip = (unsigned long)ret_from_fork;
++
++	regs->bx = i->ebx;
++	regs->cx = i->ecx;
++	regs->dx = i->edx;
++	regs->si = i->esi;
++	regs->di = i->edi;
++	regs->bp = i->ebp;
++	regs->ax = i->eax;
++	regs->orig_ax = i->orig_eax;
++	regs->ip = i->eip;
++	regs->flags = i->eflags;
++	regs->sp = i->esp;
++
++	regs->cs = decode_segment(i->cs);
++	regs->ds = decode_segment(i->ds);
++	regs->es = decode_segment(i->es);
++	regs->fs = decode_segment(i->fs);
++	tsk->thread.gs = decode_segment(i->gs);
++	regs->ss = decode_segment(i->ss);
++
++	memcpy(tsk->thread.tls_array, i->tls_array, 3 * 8);
++
++	return 0;
++}
++
++int kstate_arch_restore_task_struct(struct task_struct *tsk, struct kstate_image_task_struct *i)
++{
++	return restore_task_struct_i386(tsk, (void *)(i + 1));
++}
++
++int kstate_arch_check_mm_struct(struct mm_struct *mm)
++{
++	mutex_lock(&mm->context.lock);
++	if (mm->context.ldt || mm->context.size != 0) {
++		mutex_unlock(&mm->context.lock);
++		WARN_ON(1);
++		return -EINVAL;
++	}
++	mutex_unlock(&mm->context.lock);
++	return 0;
++}
++
++unsigned int kstate_arch_len_mm_struct(struct mm_struct *mm)
++{
++	return 0;
++}
++
++int kstate_arch_dump_mm_struct(struct kstate_context *ctx, struct mm_struct *mm, void *arch_i)
++{
++	return 0;
++}
 -- 
 1.5.6.5
