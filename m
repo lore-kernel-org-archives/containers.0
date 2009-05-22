@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 02/38] utsns: extract create_uts_ns()
-Date: Fri, 22 May 2009 08:54:56 +0400
-Message-ID: <1242968132-1044-2-git-send-email-adobriyan__28872.2425968901$1242968593$gmane$org@gmail.com>
+Subject: [PATCH 04/38] ipcns 2/4: extract create_ipc_ns()
+Date: Fri, 22 May 2009 08:54:58 +0400
+Message-ID: <1242968132-1044-4-git-send-email-adobriyan__17834.2644511305$1242968774$gmane$org@gmail.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,49 +21,45 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-create_uts_ns() will be used by C/R to create fresh uts_ns.
+clone_ipc_ns() is misnamed, it doesn't clone anything and doesn't use passed
+parameter. Rename it.
+
+create_ipc_ns() will be used by C/R to create fresh ipcns.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/utsname.c |   13 +++++++++++--
- 1 files changed, 11 insertions(+), 2 deletions(-)
+ ipc/namespace.c |    9 ++-------
+ 1 files changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index 815237a..8a82b4b 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -15,6 +15,16 @@
- #include <linux/err.h>
- #include <linux/slab.h>
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index a56fc59..231ee53 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -14,7 +14,7 @@
  
-+static struct uts_namespace *create_uts_ns(void)
-+{
-+	struct uts_namespace *uts_ns;
-+
-+	uts_ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
-+	if (uts_ns)
-+		kref_init(&uts_ns->kref);
-+	return uts_ns;
-+}
-+
- /*
-  * Clone a new ns copying an original utsname, setting refcount to 1
-  * @old_ns: namespace to clone
-@@ -24,14 +34,13 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+ #include "util.h"
+ 
+-static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
++static struct ipc_namespace *create_ipc_ns(void)
  {
- 	struct uts_namespace *ns;
+ 	struct ipc_namespace *ns;
+ 	int err;
+@@ -48,14 +48,9 @@ static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
  
--	ns = kmalloc(sizeof(struct uts_namespace), GFP_KERNEL);
-+	ns = create_uts_ns();
- 	if (!ns)
- 		return ERR_PTR(-ENOMEM);
- 
- 	down_read(&uts_sem);
- 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
- 	up_read(&uts_sem);
--	kref_init(&ns->kref);
- 	return ns;
+ struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
+ {
+-	struct ipc_namespace *new_ns;
+-
+ 	if (!(flags & CLONE_NEWIPC))
+ 		return get_ipc_ns(ns);
+-
+-	new_ns = clone_ipc_ns(ns);
+-
+-	return new_ns;
++	return create_ipc_ns();
  }
  
+ /*
 -- 
 1.5.6.5
