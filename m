@@ -1,18 +1,13 @@
-From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 02/18] io-controller: Common flat fair queuing code in
-	elevaotor layer
-Date: Sat, 23 May 2009 22:04:25 +0200
-Message-ID: <20090523200425.GY11363__3135.87707137248$1243109124$gmane$org@kernel.dk>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-3-git-send-email-vgoyal@redhat.com>
-	<4A164978.1020604@cn.fujitsu.com>
-	<20090522123231.GA14972@redhat.com>
+From: Beavis <pfunix-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Account Re-Activation,
+Date: Sun, 24 May 2009 00:23:41 -0600
+Message-ID: <e02ea4ef0905232323o145102e9m9dc238c86a46bc71__42502.4773496718$1243146297$gmane$org@mail.gmail.com>
+References: <40472.67.159.44.138.1243142243.squirrel@avalon.ula.ve>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090522123231.GA14972-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <40472.67.159.44.138.1243142243.squirrel-83QS9b1UQzFtS8OM9yackA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,65 +17,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: webaccountverification-EMRzualFZlQ@public.gmane.org
+Cc: crimsun-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, contacto-5RZYIdq3tr6ZkjO+N0TKoEEOCMrvLtNR@public.gmane.org, DirectoryD0639E2A-c1MJk9t7dyP6K5Yq9hnKVg@public.gmane.org, cvs-ml-pvxTuuPRbd113CVluIQGPg@public.gmane.org, danbri-Pl0VvzL1eo4@public.gmane.org, debian-devel-spanish-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, dngo-gkcJ3tX5bYHQFUHtdCDX3A@public.gmane.org, comercial-F+ZeOFoU8kkk+I/owrrOrA@public.gmane.org, cssa-4J2/UmuFa6u1Qrn1Bg8BZw@public.gmane.org, csa-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org, david.birch-96ZS/CjkK/yHCRyBVyKX4rVCufUGDwFn@public.gmane.org, debian-sparc-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, divisionlimpieza-tBWFsZJEtQ7lcHVOVdbKLw@public.gmane.org, DeleteThis-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, deres-3DRgB+cFwM0gUU6QZ8RT7w@public.gmane.org, ddadbhawala-CGjvpbf++tc@public.gmane.org, doug-J9FZ2Xj+lwv867DpOYdHzQ@public.gmane.org, divisionclima-tBWFsZJEtQ7lcHVOVdbKLw@public.gmane.org, drago-r68SUBUbXN2/S8/soMbV+MTZYcYFJcmt6qtp775pBPw@public.gmane.org, cyd-iS+aIwYd2teDXAOJFZ9NEwC/G2K4zDHf@public.gmane.org, cpicazo-c1MJk9t7dyP6K5Yq9hnKVg@public.gmane.org, dcripps-gkcJ3tX5bYHQFUHtdCDX3A@public.gmane.org, cs-s0O7E67MbzJBDgjK7y7TUQ@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, dfeathers-Ah/QW/DseRCMSnukX0pBGzPqX+R3x7by@public.gmane.org, crimsunkg-/E1597aS9LQAvxtiuMwx3w@public.gmane.org, d_richard-/ixSogHR0HMEmF9GH6G0tQ@public.gmane.org, djohnson-ZTldlsIzOqameBDvRwP4KkEOCMrvLtNR@public.gmane.org, debian-ia64-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, May 22 2009, Vivek Goyal wrote:
-> On Fri, May 22, 2009 at 02:43:04PM +0800, Gui Jianfeng wrote:
-> > Vivek Goyal wrote:
-> > ...
-> > > +/* A request got completed from io_queue. Do the accounting. */
-> > > +void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
-> > > +{
-> > > +	const int sync = rq_is_sync(rq);
-> > > +	struct io_queue *ioq = rq->ioq;
-> > > +	struct elv_fq_data *efqd = &q->elevator->efqd;
-> > > +
-> > > +	if (!elv_iosched_fair_queuing_enabled(q->elevator))
-> > > +		return;
-> > > +
-> > > +	elv_log_ioq(efqd, ioq, "complete");
-> > > +
-> > > +	elv_update_hw_tag(efqd);
-> > > +
-> > > +	WARN_ON(!efqd->rq_in_driver);
-> > > +	WARN_ON(!ioq->dispatched);
-> > > +	efqd->rq_in_driver--;
-> > > +	ioq->dispatched--;
-> > > +
-> > > +	if (sync)
-> > > +		ioq->last_end_request = jiffies;
-> > > +
-> > > +	/*
-> > > +	 * If this is the active queue, check if it needs to be expired,
-> > > +	 * or if we want to idle in case it has no pending requests.
-> > > +	 */
-> > > +
-> > > +	if (elv_active_ioq(q->elevator) == ioq) {
-> > > +		if (elv_ioq_slice_new(ioq)) {
-> > > +			elv_ioq_set_prio_slice(q, ioq);
-> > 
-> >   Hi Vivek,
-> > 
-> >   Would you explain a bit why slice_end should be set when first request completes.
-> >   Why not set it just when an ioq gets active?
-> >   
-> 
-> Hi Gui,
-> 
-> I have kept the behavior same as CFQ. I guess reason behind this is that
-> when a new queue is scheduled in, first request completion might take more
-> time as head of the disk might be quite a distance away (due to previous
-> queue) and one probably does not want to charge the new queue for that
-> first seek time. That's the reason we start the queue slice when first
-> request has completed.
+wow... ver nice way to go.. crapp... LOL good luck .. social
+engineering others ..
 
-That's exactly why CFQ does it that way. And not just for the seek
-itself, but if have eg writes issued before the switch to a new queue,
-it's not fair to charge the potential cache writeout happening ahead of
-the read to that new queue. So I'd definitely recommend keeping this
-behaviour, as you have.
+On Sat, May 23, 2009 at 11:17 PM,  <elina-vNhNDreCU1U@public.gmane.org> wrote:
+>
+>
+>
+> =A0Account Re-Activation
+>
+> =A0Dear fujitsu. users.
+>
+> =A0Thank you for subscribing to webmail.fujitsu.es. As
+> =A0part of our continuous effort in providing a higher level of service, =
+we
+> =A0are notifying all webmail.fujitsu.es.account owners
+> =A0about the congestions due to the anonymous registration of accounts. To
+> =A0solve this problem, we are shutting down some unused accounts within 24
+> =A0hours.
+>
+> =A0To avoid shutting down your webmail.unimelb.edu.au
+> =A0account, verify and inform us if you still want to use the account by
+> =A0completing the form below. Your username, password, date of birth and =
+your
+> =A0country information are required.
+>
+> =A0* Username: .....
+>
+> =A0* Password: ...
+>
+> =A0* Date of Birth: .....
+>
+> =A0* Country Or Territory: ...
+>
+> =A0After following the instructions in the above, your account will not be
+> =A0interrupted and will continue as normal. Thanks for your attention to =
+this
+> =A0request. We apologize for any inconveniences.
+>
+> =A0Warning! https://webmail.fujitsu.es.src/login.php? account owners that
+> =A0refuses to update his or her account after 3days of receiving this war=
+ning
+> =A0will lose his or her account permanently.
+>
+> =A0Click Reply To Web immediately!!!
+>
+> Authorised By: Systems Manager, Systems & IT Infrastructure, Information
+> Division
+> Maintainer: Systems & IT Infrastructure, Information Division
+>
+> =A0Web Team | Office of Disability Services
+>
+>
+> --
+> To UNSUBSCRIBE, email to debian-sparc-REQUEST-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
+> with a subject of "unsubscribe". Trouble? Contact listmaster-0aAXYlwwYILrGI7VwltZng@public.gmane.org=
+.org
+>
+>
 
--- 
-Jens Axboe
+
+
+-- =
+
+()  ascii ribbon campaign - against html e-mail
+/\  www.asciiribbon.org   - against proprietary attachments
