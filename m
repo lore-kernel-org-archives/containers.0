@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 08/38] pidns 2/2: rewrite copy_pid_ns()
-Date: Sun, 24 May 2009 17:45:22 -0500
-Message-ID: <20090524224522.GD12734__7491.45172671906$1243205126$gmane$org@hallyn.com>
+Subject: Re: [PATCH 06/38] ipcns 4/2: move free_ipcs() proto
+Date: Sun, 24 May 2009 17:49:08 -0500
+Message-ID: <20090524224908.GE12734__9599.95625676147$1243205253$gmane$org@hallyn.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-8-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-6-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1242968132-1044-8-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1242968132-1044-6-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,48 +24,45 @@ Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7
 List-Id: containers.vger.kernel.org
 
 Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> copy_pid_ns() is a perfect example of a case where unwinding leads to more
-> code and makes it less clear. Watch the diffstat.
+> Function is really private to ipc/ and avoid struct kern_ipc_perm
+> forward declaration.
 > 
 > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
 Reviewed-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  kernel/pid_namespace.c |   18 +++---------------
->  1 files changed, 3 insertions(+), 15 deletions(-)
+>  include/linux/ipc_namespace.h |    4 ----
+>  ipc/util.h                    |    3 ++-
+>  2 files changed, 2 insertions(+), 5 deletions(-)
 > 
-> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-> index 495d5de..821722a 100644
-> --- a/kernel/pid_namespace.c
-> +++ b/kernel/pid_namespace.c
-> @@ -116,23 +116,11 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
->  
->  struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
+> diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+> index 804e4e4..e408722 100644
+> --- a/include/linux/ipc_namespace.h
+> +++ b/include/linux/ipc_namespace.h
+> @@ -96,10 +96,6 @@ static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
+>  #if defined(CONFIG_IPC_NS)
+>  extern struct ipc_namespace *copy_ipcs(unsigned long flags,
+>  				       struct ipc_namespace *ns);
+> -extern void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+> -		      void (*free)(struct ipc_namespace *,
+> -				   struct kern_ipc_perm *));
+> -
+>  static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
 >  {
-> -	struct pid_namespace *new_ns;
+>  	if (ns)
+> diff --git a/ipc/util.h b/ipc/util.h
+> index 1187332..7a2861b 100644
+> --- a/ipc/util.h
+> +++ b/ipc/util.h
+> @@ -171,5 +171,6 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
+>  struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
+>  int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+>  			struct ipc_ops *ops, struct ipc_params *params);
 > -
-> -	BUG_ON(!old_ns);
-> -	new_ns = get_pid_ns(old_ns);
->  	if (!(flags & CLONE_NEWPID))
-> -		goto out;
-> -
-> -	new_ns = ERR_PTR(-EINVAL);
-> +		return get_pid_ns(old_ns);
->  	if (flags & CLONE_THREAD)
-> -		goto out_put;
-> -
-> -	new_ns = create_pid_namespace(old_ns);
-> -
-> -out_put:
-> -	put_pid_ns(old_ns);
-> -out:
-> -	return new_ns;
-> +		return ERR_PTR(-EINVAL);
-> +	return create_pid_namespace(old_ns);
->  }
->  
->  void free_pid_ns(struct kref *kref)
+> +void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+> +		void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
+>  #endif
 > -- 
 > 1.5.6.5
 > 
