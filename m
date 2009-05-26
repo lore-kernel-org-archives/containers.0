@@ -1,75 +1,70 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 7/8] cr: restore file->f_cred
-Date: Tue, 26 May 2009 12:34:04 -0500
-Message-ID: <20090526173404.GG13991@us.ibm.com>
-References: <20090526173242.GA13757@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: nsproxy c/r bug?
+Date: Tue, 26 May 2009 13:04:19 -0500
+Message-ID: <20090526180419.GA14372@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090526173242.GA13757@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Restore a file's f_cred.  This is set to the cred of the task doing
-the open, so often it will be the same as that of the restarted task.
+On a ckpt-v15-dev kernel, if I do:
 
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- checkpoint/files.c             |   16 ++++++++++++++--
- include/linux/checkpoint_hdr.h |    2 +-
- 2 files changed, 15 insertions(+), 3 deletions(-)
+	git clone git://git.sr71.net/~hallyn/cr_tests.git
+	cd cr_tests; make; make install
+	mkdir /cgroup
+	mount -t cgroup -o freezer cgroup /cgroup
+	mkdir /cgroup/1
+	cd userns
+	sh run_userns.sh
+	cd ../fileio
+	sh runtests.sh
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 8c7ba9f..3e9ff75 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -152,7 +152,11 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
- 	h->f_pos = file->f_pos;
- 	h->f_version = file->f_version;
- 
--	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
-+	h->f_credref = checkpoint_obj(ctx, file->f_cred, CKPT_OBJ_CRED);
-+	if (h->f_credref < 0)
-+		return h->f_credref;
-+
-+	/* FIX: need also file->f_owner, etc */
- 
- 	return 0;
- }
-@@ -361,8 +365,16 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
- 			struct ckpt_hdr_file *h)
- {
- 	int ret;
-+	struct cred *cred;
-+
-+	/* FIX: need to restore owner etc */
- 
--	/* FIX: need to restore uid, gid, owner etc */
-+	/* restore the cred */
-+	cred = ckpt_obj_fetch(ctx, h->f_credref, CKPT_OBJ_CRED);
-+	if (IS_ERR(cred))
-+		return PTR_ERR(cred);
-+	put_cred(file->f_cred);
-+	file->f_cred = get_cred(cred);
- 
- 	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
- 	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index df35703..0bad447 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -350,7 +350,7 @@ struct ckpt_hdr_file {
- 	__u32 f_type;
- 	__u32 f_mode;
- 	__u32 f_flags;
--	__u32 _padding;
-+	__s32 f_credref;
- 	__u64 f_pos;
- 	__u64 f_version;
- } __attribute__((aligned(8)));
--- 
-1.6.1
+I get something like:
 
+Unable to handle kernel pointer dereference at virtual kernel address fffffffd132b4000
+Oops: 0038 [#4] SMP 
+CPU: 0 Tainted: G      D    2.6.30-rc3-00080-g2b1009c #261
+Process ns_exec (pid: 3842, task: 000000001fdf9d50, ksp: 0000000012d83d90)
+Krnl PSW : 0404100180000000 00000000000ae266 (kmem_cache_alloc+0xa6/0x104)
+           R:0 T:1 IO:0 EX:0 Key:0 M:1 W:0 P:0 AS:0 CC:1 PM:0 EA:3
+Krnl GPRS: 000003ff00000000 0000000000000000 00000000004bf308 000000000000063b
+           00000000000ae20e 0000000000422088 0000000000dc5098 0000000000000030
+           000000000005f0ea 000000001fc19200 00000000000000d0 0000000012d83d58
+           0700000000000400 00000000004075a8 fffffffd132b4090 0000000012d83d58
+Krnl Code: 00000000000ae256: a7f4000e		brc	15,ae272
+           00000000000ae25a: e31060140016	llgf	%r1,20(%r6)
+           00000000000ae260: eb110003000d	sllg	%r1,%r1,3
+          >00000000000ae266: e321e0000004	lg	%r2,0(%r1,%r14)
+           00000000000ae26c: e32060000024	stg	%r2,0(%r6)
+           00000000000ae272: e3c0b0a00024	stg	%r12,160(%r11)
+           00000000000ae278: 8000b0a0		ssm	160(%r11)
+           00000000000ae27c: a7a18000		tmll	%r10,32768
+Call Trace:
+([<00000000000ae20e>] kmem_cache_alloc+0x4e/0x104)
+ [<000000000005f0ea>] create_new_namespaces+0x4e/0x204
+ [<000000000005f4fa>] unshare_nsproxy_namespaces+0x82/0xf8
+ [<000000000003c222>] SyS_unshare+0x11a/0x2f4
+ [<0000000000026b94>] sysc_do_restart+0x20/0x26
+ [<0000004d7db60ce6>] 0x4d7db60ce6
+INFO: lockdep is turned off.
+Last Breaking-Event-Address:
+ [<00000000000ae238>] kmem_cache_alloc+0x78/0x104
+ <4>---[ end trace 3165f2ef06617eea ]---
+
+I have not figured what what is going on.  Is there an nsproxy
+get/put imbalance that could cause this?
+
+-serge
