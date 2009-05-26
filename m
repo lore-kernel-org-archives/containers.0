@@ -1,12 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: nsproxy c/r bug?
-Date: Tue, 26 May 2009 13:04:19 -0500
-Message-ID: <20090526180419.GA14372@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 17/38] groups: move code to kernel/groups.c
+Date: Tue, 26 May 2009 22:34:05 +0400
+Message-ID: <20090526183405.GA11909__49431.7744313323$1243362885$gmane$org@x200.localdomain>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-17-git-send-email-adobriyan@gmail.com>
+	<20090526144819.GA21502@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20090526144819.GA21502-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,55 +20,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On a ckpt-v15-dev kernel, if I do:
+On Tue, May 26, 2009 at 09:48:19AM -0500, Serge E. Hallyn wrote:
+> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > Move supplementary groups implementation to kernel/groups.c .
+> > kernel/sys.c already accumulated quite a few random stuff.
+> > 
+> > Do strictly copy/paste + add required headers to compile.
+> > Compile-tested on many configs and archs.
+> > 
+> > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> 
+> Actually I needed the following change:
 
-	git clone git://git.sr71.net/~hallyn/cr_tests.git
-	cd cr_tests; make; make install
-	mkdir /cgroup
-	mount -t cgroup -o freezer cgroup /cgroup
-	mkdir /cgroup/1
-	cd userns
-	sh run_userns.sh
-	cd ../fileio
-	sh runtests.sh
+This is dealt by first patch:
+"[PATCH 01/38] cred: #include init.h in cred.h"
+which is in -mm already.
 
-I get something like:
+> --- a/kernel/groups.c
+> +++ b/kernel/groups.c
+> @@ -1,6 +1,7 @@
+>  /*
+>   * Supplementary group IDs
+>   */
+> +#include <linux/init.h>
 
-Unable to handle kernel pointer dereference at virtual kernel address fffffffd132b4000
-Oops: 0038 [#4] SMP 
-CPU: 0 Tainted: G      D    2.6.30-rc3-00080-g2b1009c #261
-Process ns_exec (pid: 3842, task: 000000001fdf9d50, ksp: 0000000012d83d90)
-Krnl PSW : 0404100180000000 00000000000ae266 (kmem_cache_alloc+0xa6/0x104)
-           R:0 T:1 IO:0 EX:0 Key:0 M:1 W:0 P:0 AS:0 CC:1 PM:0 EA:3
-Krnl GPRS: 000003ff00000000 0000000000000000 00000000004bf308 000000000000063b
-           00000000000ae20e 0000000000422088 0000000000dc5098 0000000000000030
-           000000000005f0ea 000000001fc19200 00000000000000d0 0000000012d83d58
-           0700000000000400 00000000004075a8 fffffffd132b4090 0000000012d83d58
-Krnl Code: 00000000000ae256: a7f4000e		brc	15,ae272
-           00000000000ae25a: e31060140016	llgf	%r1,20(%r6)
-           00000000000ae260: eb110003000d	sllg	%r1,%r1,3
-          >00000000000ae266: e321e0000004	lg	%r2,0(%r1,%r14)
-           00000000000ae26c: e32060000024	stg	%r2,0(%r6)
-           00000000000ae272: e3c0b0a00024	stg	%r12,160(%r11)
-           00000000000ae278: 8000b0a0		ssm	160(%r11)
-           00000000000ae27c: a7a18000		tmll	%r10,32768
-Call Trace:
-([<00000000000ae20e>] kmem_cache_alloc+0x4e/0x104)
- [<000000000005f0ea>] create_new_namespaces+0x4e/0x204
- [<000000000005f4fa>] unshare_nsproxy_namespaces+0x82/0xf8
- [<000000000003c222>] SyS_unshare+0x11a/0x2f4
- [<0000000000026b94>] sysc_do_restart+0x20/0x26
- [<0000004d7db60ce6>] 0x4d7db60ce6
-INFO: lockdep is turned off.
-Last Breaking-Event-Address:
- [<00000000000ae238>] kmem_cache_alloc+0x78/0x104
- <4>---[ end trace 3165f2ef06617eea ]---
-
-I have not figured what what is going on.  Is there an nsproxy
-get/put imbalance that could cause this?
-
--serge
+Wrong, groups.c doesn't use __init at all.
