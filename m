@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 14/20] blkio_cgroup patches from Ryo to track async bios.
-Date: Tue, 26 May 2009 18:42:03 -0400
-Message-ID: <1243377729-2176-15-git-send-email-vgoyal__38065.6811445535$1243381615$gmane$org@redhat.com>
+Subject: [PATCH 16/20] io-controller: IO group refcounting support
+Date: Tue, 26 May 2009 18:42:05 -0400
+Message-ID: <1243377729-2176-17-git-send-email-vgoyal__44759.6111953773$1243381894$gmane$org@redhat.com>
 References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,924 +21,898 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o blkio_cgroup patches from Ryo to track async bios.
+o In the original BFQ patch once a cgroup is being deleted, it will clean
+  up the associated io groups immediately and if there are any active io
+  queues with that group, these will be moved to root group. This movement
+  of queues is not good from fairness perspective as one can then create
+  a cgroup, dump lots of IO and then delete the cgroup and then potentially
+  get higher share. Apart from there are more issues hence it was felt that
+  we need a io group refcounting mechanism also so that io group can be
+  reclaimed asynchronously.
 
-o Fernando is also working on another IO tracking mechanism. We are not
-  particular about any IO tracking mechanism. This patchset can make use
-  of any mechanism which makes it to upstream. For the time being making
-  use of Ryo's posting.
+o This is V2 of the io group refcounting patch as implemented by Nauman
+  and Divyesh. Currently keeping this patch as a separate one. Once it
+  stablizes, will merge it with other patches instead of being a seprate
+  one.
 
-Based on 2.6.30-rc3-git3
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+o Reference counting for io_group solves many problems, most of which occured
+  when we tried to delete the cgroup. Earlier, ioqs were being moved out of
+  cgroup to root cgroup. That is problematic in many ways, First, the pending
+  requests in queues might get unfair service, and will also cause unfairness
+  for other cgroups at the root level. This problem can become signficant if
+  cgroups are created and destroyed relatively frequently. Second, moving
+  queues to root cgroups was complicated and was causing many BUG_ON's to
+  trigger. Third, there is a single io queue in AS, Deadline and Noop within a
+  cgroup; and it does not make sense to move it to the root cgroup. The same
+  is true of async queues.
+
+o Requests already keep a reference on ioq, so queues keep a reference
+  on cgroup. For async queues in CFQ, and single ioq in other
+  schedulers, io_group also keeps are reference on io_queue. This
+  reference on ioq is dropped when the queue is released
+  (elv_release_ioq). So the queue can be freed.
+
+  When a queue is released, it puts the reference to io_group and the
+  io_group is released after all the queues are released. Child groups
+  also take reference on parent groups, and release it when they are
+  destroyed.
+
+o Also we no longer need to maintain a seprate linked list of idle
+  entities, which was maintained only to help release the ioq references
+  during elevator switch. The code for releasing io_groups is reused for
+  elevator switch, resulting in simpler and tight code.
+
+o Reads of iocg->group_data are not always iocg->lock; so all the operations
+  on that list are still protected by RCU. All modifications to
+  iocg->group_data should always done under iocg->lock.
+
+  Whenever iocg->lock and queue_lock can both be held, queue_lock should
+  be held first. This avoids all deadlocks. In order to avoid race
+  between cgroup deletion and elevator switch the following algorithm is
+  used:
+
+	- Cgroup deletion path holds iocg->lock and removes iog entry
+	  to iocg->group_data list. Then it drops iocg->lock, holds
+	  queue_lock and destroys iog. So in this path, we never hold
+	  iocg->lock and queue_lock at the same time. Also, since we
+	  remove iog from iocg->group_data under iocg->lock, we can't
+	  race with elevator switch.
+
+	- Elevator switch path does not remove iog from
+	  iocg->group_data list directly. It first hold iocg->lock,
+	  scans iocg->group_data again to see if iog is still there;
+	  it removes iog only if it finds iog there. Otherwise, cgroup
+	  deletion must have removed it from the list, and cgroup
+	  deletion is responsible for removing iog.
+
+  So the path which removes iog from iocg->group_data list does
+  the final removal of iog by calling __io_destroy_group()
+  function.
+
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-ioc.c               |   37 +++---
- fs/buffer.c                   |    2 +
- fs/direct-io.c                |    2 +
- include/linux/biotrack.h      |   97 +++++++++++++
- include/linux/cgroup_subsys.h |    6 +
- include/linux/iocontext.h     |    1 +
- include/linux/memcontrol.h    |    6 +
- include/linux/mmzone.h        |    4 +-
- include/linux/page_cgroup.h   |   31 ++++-
- init/Kconfig                  |   15 ++
- mm/Makefile                   |    4 +-
- mm/biotrack.c                 |  300 +++++++++++++++++++++++++++++++++++++++++
- mm/bounce.c                   |    2 +
- mm/filemap.c                  |    2 +
- mm/memcontrol.c               |    6 +
- mm/memory.c                   |    5 +
- mm/page-writeback.c           |    2 +
- mm/page_cgroup.c              |   17 ++-
- mm/swap_state.c               |    2 +
- 19 files changed, 511 insertions(+), 30 deletions(-)
- create mode 100644 include/linux/biotrack.h
- create mode 100644 mm/biotrack.c
+ block/cfq-iosched.c |   18 ++-
+ block/elevator-fq.c |  405 +++++++++++++++++++++++++++++++++------------------
+ block/elevator-fq.h |   38 +++++-
+ 3 files changed, 312 insertions(+), 149 deletions(-)
 
-diff --git a/block/blk-ioc.c b/block/blk-ioc.c
-index 8f0f6cf..ccde40e 100644
---- a/block/blk-ioc.c
-+++ b/block/blk-ioc.c
-@@ -84,27 +84,32 @@ void exit_io_context(void)
- 	}
- }
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 75ed566..9b3c263 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1298,8 +1298,8 @@ static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
  
-+void init_io_context(struct io_context *ioc)
-+{
-+	atomic_set(&ioc->refcount, 1);
-+	atomic_set(&ioc->nr_tasks, 1);
-+	spin_lock_init(&ioc->lock);
-+	ioc->ioprio_changed = 0;
-+	ioc->ioprio = 0;
-+#ifdef CONFIG_GROUP_IOSCHED
-+	ioc->cgroup_changed = 0;
-+#endif
-+	ioc->last_waited = jiffies; /* doesn't matter... */
-+	ioc->nr_batch_requests = 0; /* because this is 0 */
-+	ioc->aic = NULL;
-+	INIT_RADIX_TREE(&ioc->radix_root, GFP_ATOMIC | __GFP_HIGH);
-+	INIT_HLIST_HEAD(&ioc->cic_list);
-+	ioc->ioc_data = NULL;
-+}
-+
-+
- struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
- {
- 	struct io_context *ret;
- 
- 	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
--	if (ret) {
--		atomic_set(&ret->refcount, 1);
--		atomic_set(&ret->nr_tasks, 1);
--		spin_lock_init(&ret->lock);
--		ret->ioprio_changed = 0;
--		ret->ioprio = 0;
--#ifdef CONFIG_GROUP_IOSCHED
--		ret->cgroup_changed = 0;
--#endif
--		ret->last_waited = jiffies; /* doesn't matter... */
--		ret->nr_batch_requests = 0; /* because this is 0 */
--		ret->aic = NULL;
--		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
--		INIT_HLIST_HEAD(&ret->cic_list);
--		ret->ioc_data = NULL;
--	}
-+	if (ret)
-+		init_io_context(ret);
- 
- 	return ret;
- }
-diff --git a/fs/buffer.c b/fs/buffer.c
-index aed2977..cae634d 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -36,6 +36,7 @@
- #include <linux/buffer_head.h>
- #include <linux/task_io_accounting_ops.h>
- #include <linux/bio.h>
-+#include <linux/biotrack.h>
- #include <linux/notifier.h>
- #include <linux/cpu.h>
- #include <linux/bitops.h>
-@@ -668,6 +669,7 @@ static void __set_page_dirty(struct page *page,
- 	if (page->mapping) {	/* Race with truncate? */
- 		WARN_ON_ONCE(warn && !PageUptodate(page));
- 		account_page_dirtied(page, mapping);
-+		blkio_cgroup_reset_owner_pagedirty(page, current->mm);
- 		radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
- 	}
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 05763bb..60b1a99 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -33,6 +33,7 @@
- #include <linux/err.h>
- #include <linux/blkdev.h>
- #include <linux/buffer_head.h>
-+#include <linux/biotrack.h>
- #include <linux/rwsem.h>
- #include <linux/uio.h>
- #include <asm/atomic.h>
-@@ -797,6 +798,7 @@ static int do_direct_IO(struct dio *dio)
- 			ret = PTR_ERR(page);
- 			goto out;
+ 	if (async_cfqq != NULL) {
+ 		__iog = cfqq_to_io_group(async_cfqq);
+-
+ 		if (iog != __iog) {
++			/* cgroup changed, drop the reference to async queue */
+ 			cic_set_cfqq(cic, NULL, 0);
+ 			cfq_put_queue(async_cfqq);
  		}
-+		blkio_cgroup_reset_owner(page, current->mm);
+@@ -1307,8 +1307,18 @@ static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
  
- 		while (block_in_page < blocks_per_page) {
- 			unsigned offset_in_page = block_in_page << blkbits;
-diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
-new file mode 100644
-index 0000000..741a8b5
---- /dev/null
-+++ b/include/linux/biotrack.h
-@@ -0,0 +1,97 @@
-+#include <linux/cgroup.h>
-+#include <linux/mm.h>
-+#include <linux/page_cgroup.h>
+ 	if (sync_cfqq != NULL) {
+ 		__iog = cfqq_to_io_group(sync_cfqq);
+-		if (iog != __iog)
+-			io_ioq_move(q->elevator, sync_cfqq->ioq, iog);
 +
-+#ifndef _LINUX_BIOTRACK_H
-+#define _LINUX_BIOTRACK_H
++		/*
++		 * Drop reference to sync queue. A new sync queue will
++		 * be assigned in new group upon arrival of a fresh request.
++		 * If old queue has got requests, those reuests will be
++		 * dispatched over a period of time and queue will be freed
++		 * automatically.
++		 */
++		if (iog != __iog) {
++			cic_set_cfqq(cic, NULL, 1);
++			cfq_put_queue(sync_cfqq);
++		}
+ 	}
+ 
+ 	spin_unlock_irqrestore(q->queue_lock, flags);
+@@ -1425,6 +1435,8 @@ alloc_ioq:
+ 			elv_mark_ioq_sync(cfqq->ioq);
+ 		}
+ 		cfqq->pid = current->pid;
++		/* ioq reference on iog */
++		elv_get_iog(iog);
+ 		cfq_log_cfqq(cfqd, cfqq, "alloced");
+ 	}
+ 
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index bb959f3..9d36227 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -108,6 +108,12 @@ static inline void bfq_check_next_active(struct io_sched_data *sd,
+ {
+ 	BUG_ON(sd->next_active != entity);
+ }
 +
-+#ifdef	CONFIG_CGROUP_BLKIO
-+
-+struct io_context;
-+struct block_device;
-+
-+struct blkio_cgroup {
-+	struct cgroup_subsys_state css;
-+	struct io_context *io_context;	/* default io_context */
-+/*	struct radix_tree_root io_context_root; per device io_context */
-+};
-+
-+/**
-+ * __init_blkio_page_cgroup() - initialize a blkio_page_cgroup
-+ * @pc:		page_cgroup of the page
-+ *
-+ * Reset the owner ID of a page.
-+ */
-+static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
++static inline int iog_deleting(struct io_group *iog)
 +{
-+	lock_page_cgroup(pc);
-+	page_cgroup_set_id(pc, 0);
-+	unlock_page_cgroup(pc);
++	return iog->deleting;
 +}
 +
-+/**
-+ * blkio_cgroup_disabled - check whether blkio_cgroup is disabled
-+ *
-+ * Returns true if disabled, false if not.
-+ */
-+static inline bool blkio_cgroup_disabled(void)
+ #else /* GROUP_IOSCHED */
+ #define for_each_entity(entity)	\
+ 	for (; entity != NULL; entity = NULL)
+@@ -124,6 +130,12 @@ static inline void bfq_check_next_active(struct io_sched_data *sd,
+ 					 struct io_entity *entity)
+ {
+ }
++
++static inline int iog_deleting(struct io_group *iog)
 +{
-+	if (blkio_cgroup_subsys.disabled)
-+		return true;
-+	return false;
-+}
-+
-+extern void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm);
-+extern void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm);
-+extern void blkio_cgroup_reset_owner_pagedirty(struct page *page,
-+						 struct mm_struct *mm);
-+extern void blkio_cgroup_copy_owner(struct page *page, struct page *opage);
-+
-+extern struct io_context *get_blkio_cgroup_iocontext(struct bio *bio);
-+extern unsigned long get_blkio_cgroup_id(struct bio *bio);
-+extern struct cgroup *blkio_cgroup_lookup(int id);
-+
-+#else	/* CONFIG_CGROUP_BIO */
-+
-+struct blkio_cgroup;
-+
-+static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
-+static inline bool blkio_cgroup_disabled(void)
-+{
-+	return true;
-+}
-+
-+static inline void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
-+{
-+}
-+
-+static inline void blkio_cgroup_reset_owner(struct page *page,
-+						struct mm_struct *mm)
-+{
-+}
-+
-+static inline void blkio_cgroup_reset_owner_pagedirty(struct page *page,
-+						struct mm_struct *mm)
-+{
-+}
-+
-+static inline void blkio_cgroup_copy_owner(struct page *page, struct page *opage)
-+{
-+}
-+
-+static inline struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
-+{
-+	return NULL;
-+}
-+
-+static inline unsigned long get_blkio_cgroup_id(struct bio *bio)
-+{
++	/* In flat mode, root cgroup can't be deleted. */
 +	return 0;
 +}
-+
-+#endif	/* CONFIG_CGROUP_BLKIO */
-+
-+#endif /* _LINUX_BIOTRACK_H */
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index 68ea6bd..f214e6e 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -43,6 +43,12 @@ SUBSYS(mem_cgroup)
- 
- /* */
- 
-+#ifdef CONFIG_CGROUP_BLKIO
-+SUBSYS(blkio_cgroup)
-+#endif
-+
-+/* */
-+
- #ifdef CONFIG_CGROUP_DEVICE
- SUBSYS(devices)
  #endif
-diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
-index 271187f..1fe9d78 100644
---- a/include/linux/iocontext.h
-+++ b/include/linux/iocontext.h
-@@ -105,6 +105,7 @@ int put_io_context(struct io_context *ioc);
- void exit_io_context(void);
- struct io_context *get_io_context(gfp_t gfp_flags, int node);
- struct io_context *alloc_io_context(gfp_t gfp_flags, int node);
-+void init_io_context(struct io_context *ioc);
- void copy_io_context(struct io_context **pdst, struct io_context **psrc);
- #else
- static inline void exit_io_context(void)
-diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 25b9ca9..d74b462 100644
---- a/include/linux/memcontrol.h
-+++ b/include/linux/memcontrol.h
-@@ -37,6 +37,8 @@ struct mm_struct;
-  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
-  */
  
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
-+
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -120,6 +122,10 @@ extern bool mem_cgroup_oom_called(struct task_struct *task);
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index a47c879..14477cb 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -607,7 +607,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -958,7 +958,7 @@ struct mem_section {
- 
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
-diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-index 7339c7b..dd7f71c 100644
---- a/include/linux/page_cgroup.h
-+++ b/include/linux/page_cgroup.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- #include <linux/bit_spinlock.h>
  /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -12,9 +12,11 @@
-  */
- struct page_cgroup {
- 	unsigned long flags;
--	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
-+#endif
- };
+@@ -224,7 +236,6 @@ static void bfq_idle_extract(struct io_service_tree *st,
+ 				struct io_entity *entity)
+ {
+ 	struct rb_node *next;
+-	struct io_queue *ioq = io_entity_to_ioq(entity);
  
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
-@@ -71,7 +73,7 @@ static inline void unlock_page_cgroup(struct page_cgroup *pc)
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+ 	BUG_ON(entity->tree != &st->idle);
+ 
+@@ -239,10 +250,6 @@ static void bfq_idle_extract(struct io_service_tree *st,
+ 	}
+ 
+ 	bfq_extract(&st->idle, entity);
+-
+-	/* Delete queue from idle list */
+-	if (ioq)
+-		list_del(&ioq->queue_list);
  }
  
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_CGROUP_PAGE */
- struct page_cgroup;
+ /**
+@@ -436,7 +443,6 @@ static void bfq_idle_insert(struct io_service_tree *st,
+ {
+ 	struct io_entity *first_idle = st->first_idle;
+ 	struct io_entity *last_idle = st->last_idle;
+-	struct io_queue *ioq = io_entity_to_ioq(entity);
  
- static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-@@ -122,4 +124,27 @@ static inline void swap_cgroup_swapoff(int type)
+ 	if (first_idle == NULL || bfq_gt(first_idle->finish, entity->finish))
+ 		st->first_idle = entity;
+@@ -444,10 +450,6 @@ static void bfq_idle_insert(struct io_service_tree *st,
+ 		st->last_idle = entity;
+ 
+ 	bfq_insert(&st->idle, entity);
+-
+-	/* Add this queue to idle list */
+-	if (ioq)
+-		list_add(&ioq->queue_list, &ioq->efqd->idle_list);
  }
  
- #endif
-+
-+#ifdef CONFIG_CGROUP_BLKIO
-+/*
-+ * use lower 16 bits for flags and reserve the rest for the page tracking id
-+ */
-+#define PCG_TRACKING_ID_SHIFT	(16)
-+#define PCG_TRACKING_ID_BITS \
-+	(8 * sizeof(unsigned long) - PCG_TRACKING_ID_SHIFT)
-+
-+/* NOTE: must be called with page_cgroup() held */
-+static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
-+{
-+	return pc->flags >> PCG_TRACKING_ID_SHIFT;
-+}
-+
-+/* NOTE: must be called with page_cgroup() held */
-+static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
-+{
-+	WARN_ON(id >= (1UL << PCG_TRACKING_ID_BITS));
-+	pc->flags &= (1UL << PCG_TRACKING_ID_SHIFT) - 1;
-+	pc->flags |= (unsigned long)(id << PCG_TRACKING_ID_SHIFT);
-+}
-+#endif
- #endif
-diff --git a/init/Kconfig b/init/Kconfig
-index 1a4686d..ee16d6f 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -616,6 +616,21 @@ config GROUP_IOSCHED
+ /**
+@@ -723,8 +725,26 @@ int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ void bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ {
+ 	struct io_sched_data *sd;
++	struct io_group *iog;
+ 	struct io_entity *parent;
  
- endif # CGROUPS
- 
-+config CGROUP_BLKIO
-+	bool "Block I/O cgroup subsystem"
-+	depends on CGROUPS && BLOCK
-+	select MM_OWNER
-+	help
-+	  Provides a Resource Controller which enables to track the onwner
-+	  of every Block I/O requests.
-+	  The information this subsystem provides can be used from any
-+	  kind of module such as dm-ioband device mapper modules or
-+	  the cfq-scheduler.
++	iog = container_of(entity->sched_data, struct io_group, sched_data);
 +
-+config CGROUP_PAGE
-+	def_bool y
-+	depends on CGROUP_MEM_RES_CTLR || CGROUP_BLKIO
-+
- config MM_OWNER
- 	bool
- 
-diff --git a/mm/Makefile b/mm/Makefile
-index ec73c68..76c3436 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -37,4 +37,6 @@ else
- obj-$(CONFIG_SMP) += allocpercpu.o
- endif
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
-+obj-$(CONFIG_CGROUP_BLKIO) += biotrack.o
-diff --git a/mm/biotrack.c b/mm/biotrack.c
-new file mode 100644
-index 0000000..2baf1f0
---- /dev/null
-+++ b/mm/biotrack.c
-@@ -0,0 +1,300 @@
-+/* biotrack.c - Block I/O Tracking
-+ *
-+ * Copyright (C) VA Linux Systems Japan, 2008-2009
-+ * Developed by Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-+ *
-+ * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-+ * Use part of page_cgroup->flags to store blkio-cgroup ID.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/smp.h>
-+#include <linux/bit_spinlock.h>
-+#include <linux/blkdev.h>
-+#include <linux/biotrack.h>
-+#include <linux/mm_inline.h>
-+
-+/*
-+ * The block I/O tracking mechanism is implemented on the cgroup memory
-+ * controller framework. It helps to find the the owner of an I/O request
-+ * because every I/O request has a target page and the owner of the page
-+ * can be easily determined on the framework.
-+ */
-+
-+/* Return the blkio_cgroup that associates with a cgroup. */
-+static inline struct blkio_cgroup *cgroup_blkio(struct cgroup *cgrp)
-+{
-+	return container_of(cgroup_subsys_state(cgrp, blkio_cgroup_subsys_id),
-+					struct blkio_cgroup, css);
-+}
-+
-+/* Return the blkio_cgroup that associates with a process. */
-+static inline struct blkio_cgroup *blkio_cgroup_from_task(struct task_struct *p)
-+{
-+	return container_of(task_subsys_state(p, blkio_cgroup_subsys_id),
-+					struct blkio_cgroup, css);
-+}
-+
-+static struct io_context default_blkio_io_context;
-+static struct blkio_cgroup default_blkio_cgroup = {
-+	.io_context	= &default_blkio_io_context,
-+};
-+
-+/**
-+ * blkio_cgroup_set_owner() - set the owner ID of a page.
-+ * @page:	the page we want to tag
-+ * @mm:		the mm_struct of a page owner
-+ *
-+ * Make a given page have the blkio-cgroup ID of the owner of this page.
-+ */
-+void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
-+{
-+	struct blkio_cgroup *biog;
-+	struct page_cgroup *pc;
-+	unsigned long id;
-+
-+	if (blkio_cgroup_disabled())
-+		return;
-+	pc = lookup_page_cgroup(page);
-+	if (unlikely(!pc))
-+		return;
-+
-+	lock_page_cgroup(pc);
-+	page_cgroup_set_id(pc, 0);	/* 0: default blkio_cgroup id */
-+	unlock_page_cgroup(pc);
-+	if (!mm)
-+		return;
-+
-+	rcu_read_lock();
-+	biog = blkio_cgroup_from_task(rcu_dereference(mm->owner));
-+	if (unlikely(!biog)) {
-+		rcu_read_unlock();
-+		return;
-+	}
 +	/*
-+	 * css_get(&bio->css) isn't called to increment the reference
-+	 * count of this blkio_cgroup "biog" so the css_id might turn
-+	 * invalid even if this page is still active.
-+	 * This approach is chosen to minimize the overhead.
++	 * Hold a reference to entity's iog until we are done. This function
++	 * travels the hierarchy and we don't want to free up the group yet
++	 * while we are traversing the hiearchy. It is possible that this
++	 * group's cgroup has been removed hence cgroup reference is gone.
++	 * If this entity was active entity, then its group will not be on
++	 * any of the trees and it will be freed up the moment queue is
++	 * freed up in __bfq_deactivate_entity().
++	 *
++	 * Hence, hold a reference, deactivate the hierarhcy of entities and
++	 * then drop the reference which should free up the whole chain of
++	 * groups.
 +	 */
-+	id = css_id(&biog->css);
++	elv_get_iog(iog);
++
+ 	for_each_entity_safe(entity, parent) {
+ 		sd = entity->sched_data;
+ 
+@@ -736,21 +756,28 @@ void bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 			 */
+ 			break;
+ 
+-		if (sd->next_active != NULL)
++		if (sd->next_active != NULL) {
+ 			/*
+ 			 * The parent entity is still backlogged and
+ 			 * the budgets on the path towards the root
+ 			 * need to be updated.
+ 			 */
++			elv_put_iog(iog);
+ 			goto update;
++		}
+ 
+ 		/*
+ 		 * If we reach there the parent is no more backlogged and
+ 		 * we want to propagate the dequeue upwards.
++		 *
++		 * If entity's group has been marked for deletion, don't
++		 * requeue the group in idle tree so that it can be freed.
+ 		 */
+-		requeue = 1;
++		if (!iog_deleting(iog))
++			requeue = 1;
+ 	}
+ 
++	elv_put_iog(iog);
+ 	return;
+ 
+ update:
+@@ -1008,6 +1035,9 @@ void io_group_set_parent(struct io_group *iog, struct io_group *parent)
+ 	entity = &iog->entity;
+ 	entity->parent = parent->my_entity;
+ 	entity->sched_data = &parent->sched_data;
++	if (entity->parent)
++		/* Child group reference on parent group. */
++		elv_get_iog(parent);
+ }
+ 
+ /**
+@@ -1176,12 +1206,24 @@ struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
+ 
+ 		io_group_init_entity(iocg, iog);
+ 		iog->my_entity = &iog->entity;
++		atomic_set(&iog->ref, 0);
++		iog->deleting = 0;
++
++		/*
++		 * Take the initial reference that will be released on destroy
++		 * This can be thought of a joint reference by cgroup and
++		 * elevator which will be dropped by either elevator exit
++		 * or cgroup deletion path depending on who is exiting first.
++		 */
++		elv_get_iog(iog);
+ 
+ 		if (bio) {
+ 			struct gendisk *disk = bio->bi_bdev->bd_disk;
+ 			iog->dev = MKDEV(disk->major, disk->first_minor);
+ 		}
+ 
++		iog->iocg_id = css_id(&iocg->css);
++
+ 		if (leaf == NULL) {
+ 			leaf = iog;
+ 			prev = leaf;
+@@ -1292,14 +1334,24 @@ struct io_group *io_find_alloc_group(struct request_queue *q,
+ 	/* Note: Use efqd as key */
+ 	void *key = efqd;
+ 
++	/*
++	 * Take a refenrece to css object. Don't want to map a bio to
++	 * a group if it has been marked for deletion
++	 */
++
++	if (!css_tryget(&iocg->css))
++		return iog;
++
+ 	iog = io_cgroup_lookup_group(iocg, key);
+ 	if (iog != NULL || !create)
+-		return iog;
++		goto end;
+ 
+ 	iog = io_group_chain_alloc(q, key, cgroup, bio);
+ 	if (iog != NULL)
+ 		io_group_chain_link(q, key, cgroup, iog, efqd);
+ 
++end:
++	css_put(&iocg->css);
+ 	return iog;
+ }
+ 
+@@ -1344,6 +1396,13 @@ static inline struct cgroup *get_cgroup_from_bio(struct bio *bio)
+ /*
+  * Find the io group bio belongs to.
+  * If "create" is set, io group is created if it is not already present.
++ *
++ * Note: This function should be called with queue lock held. It returns
++ * a pointer to io group without taking any reference. That group will
++ * be around as long as queue lock is not dropped (as group reclaim code
++ * needs to get hold of queue lock). So if somebody needs to use group
++ * pointer even after dropping queue lock, take a reference to the group
++ * before dropping queue lock.
+  */
+ struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
+ 					int create)
+@@ -1352,6 +1411,8 @@ struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
+ 	struct io_group *iog;
+ 	struct elv_fq_data *efqd = &q->elevator->efqd;
+ 
++	assert_spin_locked(q->queue_lock);
++
+ 	rcu_read_lock();
+ 
+ 	if (!bio)
+@@ -1390,13 +1451,20 @@ void io_free_root_group(struct elevator_queue *e)
+ 	struct io_cgroup *iocg = &io_root_cgroup;
+ 	struct elv_fq_data *efqd = &e->efqd;
+ 	struct io_group *iog = efqd->root_group;
++	struct io_service_tree *st;
++	int i;
+ 
+ 	BUG_ON(!iog);
+ 	spin_lock_irq(&iocg->lock);
+ 	hlist_del_rcu(&iog->group_node);
+ 	spin_unlock_irq(&iocg->lock);
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
++		io_flush_idle_tree(st);
++	}
+ 	io_put_io_group_queues(e, iog);
+-	kfree(iog);
++	elv_put_iog(iog);
+ }
+ 
+ struct io_group *io_alloc_root_group(struct request_queue *q,
+@@ -1410,6 +1478,7 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
+ 	if (iog == NULL)
+ 		return NULL;
+ 
++	elv_get_iog(iog);
+ 	iog->entity.parent = NULL;
+ 	for (i = 0; i < IO_IOPRIO_CLASSES; i++)
+ 		iog->sched_data.service_tree[i] = IO_SERVICE_TREE_INIT;
+@@ -1418,6 +1487,7 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
+ 	spin_lock_irq(&iocg->lock);
+ 	rcu_assign_pointer(iog->key, key);
+ 	hlist_add_head_rcu(&iog->group_node, &iocg->group_data);
++	iog->iocg_id = css_id(&iocg->css);
+ 	spin_unlock_irq(&iocg->lock);
+ 
+ 	return iog;
+@@ -1513,106 +1583,149 @@ void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
+ }
+ 
+ /*
+- * Move the queue to the root group if it is active. This is needed when
+- * a cgroup is being deleted and all the IO is not done yet. This is not
+- * very good scheme as a user might get unfair share. This needs to be
+- * fixed.
++ * This cleanup function does the last bit of things to destroy cgroup.
++ * It should only get called after io_destroy_group has been invoked.
+  */
+-void io_ioq_move(struct elevator_queue *e, struct io_queue *ioq,
+-				struct io_group *iog)
++void io_group_cleanup(struct io_group *iog)
+ {
+-	int busy, resume;
+-	struct io_entity *entity = &ioq->entity;
+-	struct elv_fq_data *efqd = &e->efqd;
+-	struct io_service_tree *st = io_entity_service_tree(entity);
+-
+-	busy = elv_ioq_busy(ioq);
+-	resume = !!ioq->nr_queued;
++	struct io_service_tree *st;
++	struct io_entity *entity = iog->my_entity;
++	int i;
+ 
+-	BUG_ON(resume && !entity->on_st);
+-	BUG_ON(busy && !resume && entity->on_st && ioq != efqd->active_queue);
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
+ 
+-	/*
+-	 * We could be moving an queue which is on idle tree of previous group
+-	 * What to do? I guess anyway this queue does not have any requests.
+-	 * just forget the entity and free up from idle tree.
+-	 *
+-	 * This needs cleanup. Hackish.
+-	 */
+-	if (entity->tree == &st->idle) {
+-		BUG_ON(atomic_read(&ioq->ref) < 2);
+-		bfq_put_idle_entity(st, entity);
++		BUG_ON(!RB_EMPTY_ROOT(&st->active));
++		BUG_ON(!RB_EMPTY_ROOT(&st->idle));
++		BUG_ON(st->wsum != 0);
+ 	}
+ 
+-	if (busy) {
+-		BUG_ON(atomic_read(&ioq->ref) < 2);
++	BUG_ON(iog->sched_data.next_active != NULL);
++	BUG_ON(iog->sched_data.active_entity != NULL);
++	BUG_ON(entity != NULL && entity->tree != NULL);
+ 
+-		if (!resume)
+-			elv_del_ioq_busy(e, ioq, 0);
+-		else
+-			elv_deactivate_ioq(efqd, ioq, 0);
++	iog->iocg_id = 0;
++	kfree(iog);
++}
++
++void elv_put_iog(struct io_group *iog)
++{
++	struct io_group *parent = NULL;
++	struct io_entity *entity;
++
++	BUG_ON(!iog);
++
++	entity = iog->my_entity;
++
++	BUG_ON(atomic_read(&iog->ref) <= 0);
++	if (!atomic_dec_and_test(&iog->ref))
++		return;
++
++	if (entity)
++		parent = container_of(iog->my_entity->parent,
++					struct io_group, entity);
++
++	io_group_cleanup(iog);
++
++	if (parent)
++		elv_put_iog(parent);
++}
++EXPORT_SYMBOL(elv_put_iog);
++
++/*
++ * check whether a given group has got any active entities on any of the
++ * service tree.
++ */
++static inline int io_group_has_active_entities(struct io_group *iog)
++{
++	int i;
++	struct io_service_tree *st;
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
++		if (!RB_EMPTY_ROOT(&st->active))
++			return 1;
+ 	}
+ 
+ 	/*
+-	 * Here we use a reference to bfqg.  We don't need a refcounter
+-	 * as the cgroup reference will not be dropped, so that its
+-	 * destroy() callback will not be invoked.
++	 * Also check there are no active entities being served which are
++	 * not on active tree
+ 	 */
+-	entity->parent = iog->my_entity;
+-	entity->sched_data = &iog->sched_data;
+ 
+-	if (busy && resume)
+-		elv_activate_ioq(ioq, 0);
++	if (iog->sched_data.active_entity)
++		return 1;
++
++	return 0;
+ }
+-EXPORT_SYMBOL(io_ioq_move);
+ 
++/*
++ * After the group is destroyed, no new sync IO should come to the group.
++ * It might still have pending IOs in some busy queues. It should be able to
++ * send those IOs down to the disk. The async IOs (due to dirty page writeback)
++ * would go in the root group queues after this, as the group does not exist
++ * anymore.
++ */
+ static void __io_destroy_group(struct elv_fq_data *efqd, struct io_group *iog)
+ {
+ 	struct elevator_queue *eq;
+-	struct io_entity *entity = iog->my_entity;
+ 	struct io_service_tree *st;
+ 	int i;
+ 
++	BUG_ON(iog->my_entity == NULL);
++
++	/*
++	 * Mark io group for deletion so that no new entry goes in
++	 * idle tree. Any active queue will be removed from active
++	 * tree and not put in to idle tree.
++	 */
++	iog->deleting = 1;
++
++	/* We flush idle tree now, and don't put things in there any more. */
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
++
++		io_flush_idle_tree(st);
++	}
++
+ 	eq = container_of(efqd, struct elevator_queue, efqd);
+ 	hlist_del(&iog->elv_data_node);
+-	__bfq_deactivate_entity(entity, 0);
+ 	io_put_io_group_queues(eq, iog);
+ 
+-	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
+-		st = iog->sched_data.service_tree + i;
++	/*
++	 * We can come here either through cgroup deletion path or through
++	 * elevator exit path. If we come here through cgroup deletion path
++	 * check if io group has any active entities or not. If not, then
++	 * deactivate this io group to make sure it is removed from idle
++	 * tree it might have been on. If this group was on idle tree, then
++	 * this probably will be the last reference and group will be
++	 * freed upon putting the reference down.
++	 */
+ 
++	if (!io_group_has_active_entities(iog)) {
+ 		/*
+-		 * The idle tree may still contain bfq_queues belonging
+-		 * to exited task because they never migrated to a different
+-		 * cgroup from the one being destroyed now.  Noone else
+-		 * can access them so it's safe to act without any lock.
++		 * io group does not have any active entites. Because this
++		 * group has been decoupled from io_cgroup list and this
++		 * cgroup is being deleted, this group should not receive
++		 * any new IO. Hence it should be safe to deactivate this
++		 * io group and remove from the scheduling tree.
+ 		 */
+-		io_flush_idle_tree(st);
+-
+-		BUG_ON(!RB_EMPTY_ROOT(&st->active));
+-		BUG_ON(!RB_EMPTY_ROOT(&st->idle));
++		__bfq_deactivate_entity(iog->my_entity, 0);
+ 	}
+ 
+-	BUG_ON(iog->sched_data.next_active != NULL);
+-	BUG_ON(iog->sched_data.active_entity != NULL);
+-	BUG_ON(entity->tree != NULL);
++	/*
++	 * Put the reference taken at the time of creation so that when all
++	 * queues are gone, cgroup can be destroyed.
++	 */
++	elv_put_iog(iog);
+ }
+ 
+-/**
+- * bfq_destroy_group - destroy @bfqg.
+- * @bgrp: the bfqio_cgroup containing @bfqg.
+- * @bfqg: the group being destroyed.
+- *
+- * Destroy @bfqg, making sure that it is not referenced from its parent.
+- */
+-static void io_destroy_group(struct io_cgroup *iocg, struct io_group *iog)
++void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+ {
+-	struct elv_fq_data *efqd = NULL;
++	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
++	struct io_group *iog;
++	struct elv_fq_data *efqd;
+ 	unsigned long uninitialized_var(flags);
+ 
+-	/* Remove io group from cgroup list */
+-	hlist_del(&iog->group_node);
+-
+ 	/*
+ 	 * io groups are linked in two lists. One list is maintained
+ 	 * in elevator (efqd->group_list) and other is maintained
+@@ -1622,52 +1735,78 @@ static void io_destroy_group(struct io_cgroup *iocg, struct io_group *iog)
+ 	 * exiting and both might try to cleanup the same io group
+ 	 * so need to be little careful.
+ 	 *
+-	 * Following code first accesses efqd under RCU to make sure
+-	 * iog->key is pointing to valid efqd and then takes the
+-	 * associated queue lock. After gettting the queue lock it
+-	 * again checks whether elevator exit path had alreday got
+-	 * hold of io group (iog->key == NULL). If yes, it does not
+-	 * try to free up async queues again or flush the idle tree.
++	 * (iocg->group_data) is protected by iocg->lock. To avoid deadlock,
++	 * we can't hold the queue lock while holding iocg->lock. So we first
++	 * remove iog from iocg->group_data under iocg->lock. Whoever removes
++	 * iog from iocg->group_data should call __io_destroy_group to remove
++	 * iog.
+ 	 */
+ 
+ 	rcu_read_lock();
+-	efqd = rcu_dereference(iog->key);
+-	if (efqd != NULL) {
+-		spin_lock_irqsave(efqd->queue->queue_lock, flags);
+-		if (iog->key == efqd)
+-			__io_destroy_group(efqd, iog);
+-		spin_unlock_irqrestore(efqd->queue->queue_lock, flags);
++
++remove_entry:
++	spin_lock_irqsave(&iocg->lock, flags);
++
++	if (hlist_empty(&iocg->group_data)) {
++		spin_unlock_irqrestore(&iocg->lock, flags);
++		goto done;
+ 	}
+-	rcu_read_unlock();
++	iog = hlist_entry(iocg->group_data.first, struct io_group,
++			  group_node);
++	efqd = rcu_dereference(iog->key);
++	hlist_del_rcu(&iog->group_node);
++	spin_unlock_irqrestore(&iocg->lock, flags);
+ 
+-	/*
+-	 * No need to defer the kfree() to the end of the RCU grace
+-	 * period: we are called from the destroy() callback of our
+-	 * cgroup, so we can be sure that noone is a) still using
+-	 * this cgroup or b) doing lookups in it.
+-	 */
+-	kfree(iog);
++	spin_lock_irqsave(efqd->queue->queue_lock, flags);
++	__io_destroy_group(efqd, iog);
++	spin_unlock_irqrestore(efqd->queue->queue_lock, flags);
++	goto remove_entry;
++
++done:
++	free_css_id(&io_subsys, &iocg->css);
 +	rcu_read_unlock();
-+	lock_page_cgroup(pc);
-+	page_cgroup_set_id(pc, id);
-+	unlock_page_cgroup(pc);
-+}
-+
-+/**
-+ * blkio_cgroup_reset_owner() - reset the owner ID of a page
-+ * @page:	the page we want to tag
-+ * @mm:		the mm_struct of a page owner
-+ *
-+ * Change the owner of a given page if necessary.
++	BUG_ON(!hlist_empty(&iocg->group_data));
++	kfree(iocg);
+ }
+ 
+-void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++/*
++ * This functions checks if iog is still in iocg->group_data, and removes it.
++ * If iog is not in that list, then cgroup destroy path has removed it, and
++ * we do not need to remove it.
 + */
-+void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
-+{
-+	blkio_cgroup_set_owner(page, mm);
-+}
-+
-+/**
-+ * blkio_cgroup_reset_owner_pagedirty() - reset the owner ID of a pagecache page
-+ * @page:	the page we want to tag
-+ * @mm:		the mm_struct of a page owner
-+ *
-+ * Change the owner of a given page if the page is in the pagecache.
-+ */
-+void blkio_cgroup_reset_owner_pagedirty(struct page *page, struct mm_struct *mm)
-+{
-+	if (!page_is_file_cache(page))
-+		return;
-+	if (current->flags & PF_MEMALLOC)
-+		return;
-+
-+	blkio_cgroup_reset_owner(page, mm);
-+}
-+
-+/**
-+ * blkio_cgroup_copy_owner() - copy the owner ID of a page into another page
-+ * @npage:	the page where we want to copy the owner
-+ * @opage:	the page from which we want to copy the ID
-+ *
-+ * Copy the owner ID of @opage into @npage.
-+ */
-+void blkio_cgroup_copy_owner(struct page *npage, struct page *opage)
-+{
-+	struct page_cgroup *npc, *opc;
-+	unsigned long id;
-+
-+	if (blkio_cgroup_disabled())
-+		return;
-+	npc = lookup_page_cgroup(npage);
-+	if (unlikely(!npc))
-+		return;
-+	opc = lookup_page_cgroup(opage);
-+	if (unlikely(!opc))
-+		return;
-+
-+	lock_page_cgroup(opc);
-+	lock_page_cgroup(npc);
-+	id = page_cgroup_get_id(opc);
-+	page_cgroup_set_id(npc, id);
-+	unlock_page_cgroup(npc);
-+	unlock_page_cgroup(opc);
-+}
-+
-+/* Create a new blkio-cgroup. */
-+static struct cgroup_subsys_state *
-+blkio_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+{
-+	struct blkio_cgroup *biog;
-+	struct io_context *ioc;
-+
-+	if (!cgrp->parent) {
-+		biog = &default_blkio_cgroup;
-+		init_io_context(biog->io_context);
-+		/* Increment the referrence count not to be released ever. */
-+		atomic_inc(&biog->io_context->refcount);
-+		return &biog->css;
-+	}
-+
-+	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
-+	if (!biog)
-+		return ERR_PTR(-ENOMEM);
-+	ioc = alloc_io_context(GFP_KERNEL, -1);
-+	if (!ioc) {
-+		kfree(biog);
-+		return ERR_PTR(-ENOMEM);
-+	}
-+	biog->io_context = ioc;
-+	return &biog->css;
-+}
-+
-+/* Delete the blkio-cgroup. */
-+static void blkio_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+{
-+	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
-+
-+	put_io_context(biog->io_context);
-+	free_css_id(&blkio_cgroup_subsys, &biog->css);
-+	kfree(biog);
-+}
-+
-+/**
-+ * get_blkio_cgroup_id() - determine the blkio-cgroup ID
-+ * @bio:	the &struct bio which describes the I/O
-+ *
-+ * Returns the blkio-cgroup ID of a given bio. A return value zero
-+ * means that the page associated with the bio belongs to default_blkio_cgroup.
-+ */
-+unsigned long get_blkio_cgroup_id(struct bio *bio)
-+{
-+	struct page_cgroup *pc;
-+	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
-+	unsigned long id = 0;
-+
-+	pc = lookup_page_cgroup(page);
-+	if (pc) {
-+		lock_page_cgroup(pc);
-+		id = page_cgroup_get_id(pc);
-+		unlock_page_cgroup(pc);
-+	}
-+	return id;
-+}
-+
-+/**
-+ * get_blkio_cgroup_iocontext() - determine the blkio-cgroup iocontext
-+ * @bio:	the &struct bio which describe the I/O
-+ *
-+ * Returns the iocontext of blkio-cgroup that issued a given bio.
-+ */
-+struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
-+{
++void io_group_check_and_destroy(struct elv_fq_data *efqd, struct io_group *iog)
+ {
+-	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
+-	struct hlist_node *n, *tmp;
+-	struct io_group *iog;
++	struct io_cgroup *iocg;
++	unsigned short id = iog->iocg_id;
++	struct hlist_node *n;
++	struct io_group *__iog;
++	unsigned long flags;
 +	struct cgroup_subsys_state *css;
-+	struct blkio_cgroup *biog;
-+	struct io_context *ioc;
-+	unsigned long id;
-+
-+	id = get_blkio_cgroup_id(bio);
+ 
+-	/*
+-	 * Since we are destroying the cgroup, there are no more tasks
+-	 * referencing it, and all the RCU grace periods that may have
+-	 * referenced it are ended (as the destruction of the parent
+-	 * cgroup is RCU-safe); bgrp->group_data will not be accessed by
+-	 * anything else and we don't need any synchronization.
+-	 */
+-	hlist_for_each_entry_safe(iog, n, tmp, &iocg->group_data, group_node)
+-		io_destroy_group(iocg, iog);
 +	rcu_read_lock();
-+	css = css_lookup(&blkio_cgroup_subsys, id);
-+	if (css)
-+		biog = container_of(css, struct blkio_cgroup, css);
-+	else
-+		biog = &default_blkio_cgroup;
-+	ioc = biog->io_context;	/* default io_context for this cgroup */
-+	atomic_inc(&ioc->refcount);
+ 
+-	BUG_ON(!hlist_empty(&iocg->group_data));
++	BUG_ON(!id);
++	css = css_lookup(&io_subsys, id);
+ 
+-	kfree(iocg);
++	/* css can't go away as associated io group is still around */
++	BUG_ON(!css);
++
++	iocg = container_of(css, struct io_cgroup, css);
++
++	spin_lock_irqsave(&iocg->lock, flags);
++	hlist_for_each_entry_rcu(__iog, n, &iocg->group_data, group_node) {
++		/*
++		 * Remove iog only if it is still in iocg list. Cgroup
++		 * deletion could have deleted it already.
++		 */
++		if (__iog == iog) {
++			hlist_del_rcu(&iog->group_node);
++			__io_destroy_group(efqd, iog);
++			break;
++		}
++	}
++	spin_unlock_irqrestore(&iocg->lock, flags);
 +	rcu_read_unlock();
-+	return ioc;
-+}
-+
-+/**
-+ * blkio_cgroup_lookup() - lookup a cgroup by blkio-cgroup ID
-+ * @id:		blkio-cgroup ID
-+ *
-+ * Returns the cgroup associated with the specified ID, or NULL if lookup
-+ * fails.
-+ *
-+ * Note:
-+ * This function should be called under rcu_read_lock().
-+ */
-+struct cgroup *blkio_cgroup_lookup(int id)
-+{
-+	struct cgroup *cgrp;
-+	struct cgroup_subsys_state *css;
-+
-+	if (blkio_cgroup_disabled())
-+		return NULL;
-+
-+	css = css_lookup(&blkio_cgroup_subsys, id);
-+	if (!css)
-+		return NULL;
-+	cgrp = css->cgroup;
-+	return cgrp;
-+}
-+EXPORT_SYMBOL(get_blkio_cgroup_iocontext);
-+EXPORT_SYMBOL(get_blkio_cgroup_id);
-+EXPORT_SYMBOL(blkio_cgroup_lookup);
-+
-+static u64 blkio_id_read(struct cgroup *cgrp, struct cftype *cft)
-+{
-+	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
-+	unsigned long id;
-+
-+	rcu_read_lock();
-+	id = css_id(&biog->css);
-+	rcu_read_unlock();
-+	return (u64)id;
-+}
-+
-+
-+static struct cftype blkio_files[] = {
-+	{
-+		.name = "id",
-+		.read_u64 = blkio_id_read,
-+	},
-+};
-+
-+static int blkio_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+{
-+	return cgroup_add_files(cgrp, ss, blkio_files,
-+					ARRAY_SIZE(blkio_files));
-+}
-+
-+struct cgroup_subsys blkio_cgroup_subsys = {
-+	.name		= "blkio",
-+	.create		= blkio_cgroup_create,
-+	.destroy	= blkio_cgroup_destroy,
-+	.populate	= blkio_cgroup_populate,
-+	.subsys_id	= blkio_cgroup_subsys_id,
-+	.use_id		= 1,
-+};
-diff --git a/mm/bounce.c b/mm/bounce.c
-index e590272..875380c 100644
---- a/mm/bounce.c
-+++ b/mm/bounce.c
-@@ -14,6 +14,7 @@
- #include <linux/hash.h>
- #include <linux/highmem.h>
- #include <linux/blktrace_api.h>
-+#include <linux/biotrack.h>
- #include <trace/block.h>
- #include <asm/tlbflush.h>
+ }
  
-@@ -212,6 +213,7 @@ static void __blk_queue_bounce(struct request_queue *q, struct bio **bio_orig,
- 		to->bv_len = from->bv_len;
- 		to->bv_offset = from->bv_offset;
- 		inc_zone_page_state(to->bv_page, NR_BOUNCE);
-+		blkio_cgroup_copy_owner(to->bv_page, page);
+ void io_disconnect_groups(struct elevator_queue *e)
+@@ -1678,19 +1817,7 @@ void io_disconnect_groups(struct elevator_queue *e)
  
- 		if (rw == WRITE) {
- 			char *vto, *vfrom;
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 379ff0b..cee1438 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -33,6 +33,7 @@
- #include <linux/cpuset.h>
- #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
- #include <linux/memcontrol.h>
-+#include <linux/biotrack.h>
- #include <linux/mm_inline.h> /* for page_is_file_cache() */
- #include "internal.h"
+ 	hlist_for_each_entry_safe(iog, pos, n, &efqd->group_list,
+ 					elv_data_node) {
+-		hlist_del(&iog->elv_data_node);
+-
+-		__bfq_deactivate_entity(iog->my_entity, 0);
+-
+-		/*
+-		 * Don't remove from the group hash, just set an
+-		 * invalid key.  No lookups can race with the
+-		 * assignment as bfqd is being destroyed; this
+-		 * implies also that new elements cannot be added
+-		 * to the list.
+-		 */
+-		rcu_assign_pointer(iog->key, NULL);
+-		io_put_io_group_queues(e, iog);
++		io_group_check_and_destroy(efqd, iog);
+ 	}
+ }
  
-@@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page *page, struct address_space *mapping,
- 					gfp_mask & GFP_RECLAIM_MASK);
- 	if (error)
- 		goto out;
-+	blkio_cgroup_set_owner(page, current->mm);
+@@ -1821,6 +1948,7 @@ alloc_ioq:
+ 		elv_init_ioq(e, ioq, iog, sched_q, IOPRIO_CLASS_BE, 4, 1);
+ 		io_group_set_ioq(iog, ioq);
+ 		elv_mark_ioq_sync(ioq);
++		elv_get_iog(iog);
+ 	}
  
- 	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
- 	if (error == 0) {
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 01c2d8f..fa82121 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -128,6 +128,12 @@ struct mem_cgroup_lru_info {
- 	struct mem_cgroup_per_node *nodeinfo[MAX_NUMNODES];
+ 	if (new_sched_q)
+@@ -2339,10 +2467,14 @@ void elv_put_ioq(struct io_queue *ioq)
+ 	struct elv_fq_data *efqd = ioq->efqd;
+ 	struct elevator_queue *e = container_of(efqd, struct elevator_queue,
+ 						efqd);
++	struct io_group *iog;
+ 
+ 	BUG_ON(atomic_read(&ioq->ref) <= 0);
+ 	if (!atomic_dec_and_test(&ioq->ref))
+ 		return;
++
++	iog = ioq_to_io_group(ioq);
++
+ 	BUG_ON(ioq->nr_queued);
+ 	BUG_ON(ioq->entity.tree != NULL);
+ 	BUG_ON(elv_ioq_busy(ioq));
+@@ -2354,16 +2486,15 @@ void elv_put_ioq(struct io_queue *ioq)
+ 	e->ops->elevator_free_sched_queue_fn(e, ioq->sched_queue);
+ 	elv_log_ioq(efqd, ioq, "put_queue");
+ 	elv_free_ioq(ioq);
++	elv_put_iog(iog);
+ }
+ EXPORT_SYMBOL(elv_put_ioq);
+ 
+ void elv_release_ioq(struct elevator_queue *e, struct io_queue **ioq_ptr)
+ {
+-	struct io_group *root_group = e->efqd.root_group;
+ 	struct io_queue *ioq = *ioq_ptr;
+ 
+ 	if (ioq != NULL) {
+-		io_ioq_move(e, ioq, root_group);
+ 		/* Drop the reference taken by the io group */
+ 		elv_put_ioq(ioq);
+ 		*ioq_ptr = NULL;
+@@ -2524,6 +2655,8 @@ void elv_deactivate_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
+ 	if (ioq == efqd->active_queue)
+ 		elv_reset_active_ioq(efqd);
+ 
++	requeue = update_requeue(ioq, requeue);
++
+ 	bfq_deactivate_entity(&ioq->entity, requeue);
+ }
+ 
+@@ -2925,15 +3058,6 @@ void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
+ 	}
+ }
+ 
+-void elv_free_idle_ioq_list(struct elevator_queue *e)
+-{
+-	struct io_queue *ioq, *n;
+-	struct elv_fq_data *efqd = &e->efqd;
+-
+-	list_for_each_entry_safe(ioq, n, &efqd->idle_list, queue_list)
+-		elv_deactivate_ioq(efqd, ioq, 0);
+-}
+-
+ /*
+  * Call iosched to let that elevator wants to expire the queue. This gives
+  * iosched like AS to say no (if it is in the middle of batch changeover or
+@@ -3372,7 +3496,6 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ 
+ 	INIT_WORK(&efqd->unplug_work, elv_kick_queue);
+ 
+-	INIT_LIST_HEAD(&efqd->idle_list);
+ 	INIT_HLIST_HEAD(&efqd->group_list);
+ 
+ 	efqd->elv_slice[0] = elv_slice_async;
+@@ -3403,8 +3526,6 @@ void elv_exit_fq_data(struct elevator_queue *e)
+ 	elv_shutdown_timer_wq(e);
+ 
+ 	spin_lock_irq(q->queue_lock);
+-	/* This should drop all the idle tree references of ioq */
+-	elv_free_idle_ioq_list(e);
+ 	/* This should drop all the io group references of async queues */
+ 	io_disconnect_groups(e);
+ 	spin_unlock_irq(q->queue_lock);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 48fb8f1..def533b 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -166,7 +166,6 @@ struct io_queue {
+ 
+ 	/* Pointer to generic elevator data structure */
+ 	struct elv_fq_data *efqd;
+-	struct list_head queue_list;
+ 	pid_t pid;
+ 
+ 	/* Number of requests queued on this io queue */
+@@ -224,6 +223,7 @@ struct io_group {
+ 	struct hlist_node elv_data_node;
+ 	struct hlist_node group_node;
+ 	struct io_sched_data sched_data;
++	atomic_t ref;
+ 
+ 	struct io_entity *my_entity;
+ 
+@@ -244,6 +244,9 @@ struct io_group {
+ 	/* Single ioq per group, used for noop, deadline, anticipatory */
+ 	struct io_queue *ioq;
+ 
++	int deleting;
++	unsigned short iocg_id;
++
  };
  
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
+ /**
+@@ -281,9 +284,6 @@ struct elv_fq_data {
+ 	/* List of io groups hanging on this elevator */
+ 	struct hlist_head group_list;
+ 
+-	/* List of io queues on idle tree. */
+-	struct list_head idle_list;
+-
+ 	struct request_queue *queue;
+ 	unsigned int busy_queues;
+ 	/*
+@@ -519,6 +519,8 @@ extern int elv_fq_set_request_ioq(struct request_queue *q, struct request *rq,
+ 					struct bio *bio, gfp_t gfp_mask);
+ extern void elv_fq_unset_request_ioq(struct request_queue *q,
+ 					struct request *rq);
++extern void elv_put_iog(struct io_group *iog);
++
+ extern struct io_queue *elv_lookup_ioq_current(struct request_queue *q);
+ extern struct io_queue *elv_lookup_ioq_bio(struct request_queue *q,
+ 						struct bio *bio);
+@@ -539,6 +541,21 @@ static inline void io_group_set_ioq(struct io_group *iog, struct io_queue *ioq)
+ 	iog->ioq = ioq;
+ }
+ 
++static inline void elv_get_iog(struct io_group *iog)
 +{
-+	pc->mem_cgroup = NULL;
-+	INIT_LIST_HEAD(&pc->lru);
++	atomic_inc(&iog->ref);
 +}
 +
++static inline int update_requeue(struct io_queue *ioq, int requeue)
++{
++	struct io_group *iog = ioq_to_io_group(ioq);
++
++	if (iog->deleting == 1)
++		return 0;
++
++	return requeue;
++}
++
+ #else /* !GROUP_IOSCHED */
  /*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
-diff --git a/mm/memory.c b/mm/memory.c
-index 4126dd1..0da0e70 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -51,6 +51,7 @@
- #include <linux/init.h>
- #include <linux/writeback.h>
- #include <linux/memcontrol.h>
-+#include <linux/biotrack.h>
- #include <linux/mmu_notifier.h>
- #include <linux/kallsyms.h>
- #include <linux/swapops.h>
-@@ -2064,6 +2065,7 @@ gotten:
- 		 */
- 		ptep_clear_flush_notify(vma, address, page_table);
- 		page_add_new_anon_rmap(new_page, vma, address);
-+		blkio_cgroup_set_owner(new_page, mm);
- 		set_pte_at(mm, address, page_table, entry);
- 		update_mmu_cache(vma, address, entry);
- 		if (old_page) {
-@@ -2529,6 +2531,7 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
- 	flush_icache_page(vma, page);
- 	set_pte_at(mm, address, page_table, pte);
- 	page_add_anon_rmap(page, vma, address);
-+	blkio_cgroup_reset_owner(page, mm);
- 	/* It's better to call commit-charge after rmap is established */
- 	mem_cgroup_commit_charge_swapin(page, ptr);
- 
-@@ -2593,6 +2596,7 @@ static int do_anonymous_page(struct mm_struct *mm, struct vm_area_struct *vma,
- 		goto release;
- 	inc_mm_counter(mm, anon_rss);
- 	page_add_new_anon_rmap(page, vma, address);
-+	blkio_cgroup_set_owner(page, mm);
- 	set_pte_at(mm, address, page_table, entry);
- 
- 	/* No need to invalidate - it was non-present before */
-@@ -2740,6 +2744,7 @@ static int __do_fault(struct mm_struct *mm, struct vm_area_struct *vma,
- 		if (anon) {
- 			inc_mm_counter(mm, anon_rss);
- 			page_add_new_anon_rmap(page, vma, address);
-+			blkio_cgroup_set_owner(page, mm);
- 		} else {
- 			inc_mm_counter(mm, file_rss);
- 			page_add_file_rmap(page);
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index bb553c3..3604c35 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -23,6 +23,7 @@
- #include <linux/init.h>
- #include <linux/backing-dev.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/biotrack.h>
- #include <linux/blkdev.h>
- #include <linux/mpage.h>
- #include <linux/rmap.h>
-@@ -1243,6 +1244,7 @@ int __set_page_dirty_nobuffers(struct page *page)
- 			BUG_ON(mapping2 != mapping);
- 			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
- 			account_page_dirtied(page, mapping);
-+			blkio_cgroup_reset_owner_pagedirty(page, current->mm);
- 			radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
- 		}
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 791905c..e143d04 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -9,14 +9,15 @@
- #include <linux/vmalloc.h>
- #include <linux/cgroup.h>
- #include <linux/swapops.h>
-+#include <linux/biotrack.h>
- 
- static void __meminit
- __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
- {
- 	pc->flags = 0;
--	pc->mem_cgroup = NULL;
- 	pc->page = pfn_to_page(pfn);
--	INIT_LIST_HEAD(&pc->lru);
-+	__init_mem_page_cgroup(pc);
-+	__init_blkio_page_cgroup(pc);
- }
- static unsigned long total_usage;
- 
-@@ -74,7 +75,7 @@ void __init page_cgroup_init(void)
- 
- 	int nid, fail;
- 
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && blkio_cgroup_disabled())
- 		return;
- 
- 	for_each_online_node(nid)  {
-@@ -83,12 +84,12 @@ void __init page_cgroup_init(void)
- 			goto fail;
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you"
-+	printk(KERN_INFO "please try cgroup_disable=memory,blkio option if you"
- 	" don't want\n");
- 	return;
- fail:
- 	printk(KERN_CRIT "allocation of page_cgroup was failed.\n");
--	printk(KERN_CRIT "please try cgroup_disable=memory boot option\n");
-+	printk(KERN_CRIT "please try cgroup_disable=memory,blkio boot options\n");
- 	panic("Out of memory");
+  * No ioq movement is needed in case of flat setup. root io group gets cleaned
+@@ -597,6 +614,19 @@ static inline struct io_queue *elv_lookup_ioq_bio(struct request_queue *q,
+ 	return NULL;
  }
  
-@@ -248,7 +249,7 @@ void __init page_cgroup_init(void)
- 	unsigned long pfn;
- 	int fail = 0;
++static inline void elv_get_iog(struct io_group *iog)
++{
++}
++
++static inline void elv_put_iog(struct io_group *iog)
++{
++}
++
++static inline int update_requeue(struct io_queue *ioq, int requeue)
++{
++	return requeue;
++}
++
+ #endif /* GROUP_IOSCHED */
  
--	if (mem_cgroup_disabled())
-+	if (mem_cgroup_disabled() && blkio_cgroup_disabled())
- 		return;
- 
- 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
-@@ -263,8 +264,8 @@ void __init page_cgroup_init(void)
- 		hotplug_memory_notifier(page_cgroup_callback, 0);
- 	}
- 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
--	printk(KERN_INFO "please try cgroup_disable=memory option if you don't"
--	" want\n");
-+	printk(KERN_INFO "please try cgroup_disable=memory,blkio option"
-+	" if you don't want\n");
- }
- 
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-diff --git a/mm/swap_state.c b/mm/swap_state.c
-index 3ecea98..a6a40e9 100644
---- a/mm/swap_state.c
-+++ b/mm/swap_state.c
-@@ -18,6 +18,7 @@
- #include <linux/pagevec.h>
- #include <linux/migrate.h>
- #include <linux/page_cgroup.h>
-+#include <linux/biotrack.h>
- 
- #include <asm/pgtable.h>
- 
-@@ -308,6 +309,7 @@ struct page *read_swap_cache_async(swp_entry_t entry, gfp_t gfp_mask,
- 		 */
- 		__set_page_locked(new_page);
- 		SetPageSwapBacked(new_page);
-+		blkio_cgroup_set_owner(new_page, current->mm);
- 		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
- 		if (likely(!err)) {
- 			/*
+ /* Functions used by blksysfs.c */
 -- 
 1.6.0.1
