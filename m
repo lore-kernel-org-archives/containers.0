@@ -1,8 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 08/20] io-controller: idle for sometime on sync queue before
-	expiring it
-Date: Tue, 26 May 2009 18:41:57 -0400
-Message-ID: <1243377729-2176-9-git-send-email-vgoyal__10439.9340496913$1243381099$gmane$org@redhat.com>
+Subject: [PATCH 01/20] io-controller: Documentation
+Date: Tue, 26 May 2009 18:41:50 -0400
+Message-ID: <1243377729-2176-2-git-send-email-vgoyal__10363.4236184464$1243381169$gmane$org@redhat.com>
 References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,427 +21,359 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o When a sync queue expires, in many cases it might be empty and then
-  it will be deleted from the active tree. This will lead to a scenario
-  where out of two competing queues, only one is on the tree and when a
-  new queue is selected, vtime jump takes place and we don't see services
-  provided in proportion to weight.
-
-o In general this is a fundamental problem with fairness of sync queues
-  where queues are not continuously backlogged. Looks like idling is
-  only solution to make sure such kind of queues can get some decent amount
-  of disk bandwidth in the face of competion from continusouly backlogged
-  queues. But excessive idling has potential to reduce performance on SSD
-  and disks with commnad queuing.
-
-o This patch experiments with waiting for next request to come before a
-  queue is expired after it has consumed its time slice. This can ensure
-  more accurate fairness numbers in some cases.
-
-o Introduced a tunable "fairness". If set, io-controller will put more
-  focus on getting fairness right than getting throughput right.
+o Documentation for io-controller.
 
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-sysfs.c   |    7 ++
- block/elevator-fq.c |  165 ++++++++++++++++++++++++++++++++++++++++++++++-----
- block/elevator-fq.h |   15 +++++
- 3 files changed, 171 insertions(+), 16 deletions(-)
+ Documentation/block/00-INDEX          |    2 +
+ Documentation/block/io-controller.txt |  326 +++++++++++++++++++++++++++++++++
+ 2 files changed, 328 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/block/io-controller.txt
 
-diff --git a/block/blk-sysfs.c b/block/blk-sysfs.c
-index 082a273..c942ddc 100644
---- a/block/blk-sysfs.c
-+++ b/block/blk-sysfs.c
-@@ -294,6 +294,12 @@ static struct queue_sysfs_entry queue_slice_async_entry = {
- 	.show = elv_slice_async_show,
- 	.store = elv_slice_async_store,
- };
+diff --git a/Documentation/block/00-INDEX b/Documentation/block/00-INDEX
+index 961a051..dc8bf95 100644
+--- a/Documentation/block/00-INDEX
++++ b/Documentation/block/00-INDEX
+@@ -10,6 +10,8 @@ capability.txt
+ 	- Generic Block Device Capability (/sys/block/<disk>/capability)
+ deadline-iosched.txt
+ 	- Deadline IO scheduler tunables
++io-controller.txt
++	- IO controller for provding hierarchical IO scheduling
+ ioprio.txt
+ 	- Block io priorities (in CFQ scheduler)
+ request.txt
+diff --git a/Documentation/block/io-controller.txt b/Documentation/block/io-controller.txt
+new file mode 100644
+index 0000000..5669b81
+--- /dev/null
++++ b/Documentation/block/io-controller.txt
+@@ -0,0 +1,326 @@
++				IO Controller
++				=============
 +
-+static struct queue_sysfs_entry queue_fairness_entry = {
-+	.attr = {.name = "fairness", .mode = S_IRUGO | S_IWUSR },
-+	.show = elv_fairness_show,
-+	.store = elv_fairness_store,
-+};
- #endif
- 
- static struct attribute *default_attrs[] = {
-@@ -311,6 +317,7 @@ static struct attribute *default_attrs[] = {
- 	&queue_slice_idle_entry.attr,
- 	&queue_slice_sync_entry.attr,
- 	&queue_slice_async_entry.attr,
-+	&queue_fairness_entry.attr,
- #endif
- 	NULL,
- };
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 0a99047..201785e 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -359,6 +359,7 @@ static void bfq_active_insert(struct io_service_tree *st,
- 	struct rb_node *node = &entity->rb_node;
- 
- 	bfq_insert(&st->active, entity);
-+	entity->sched_data->nr_active++;
- 	if (node->rb_left != NULL)
- 		node = node->rb_left;
- 	else if (node->rb_right != NULL)
-@@ -417,6 +418,7 @@ static void bfq_active_extract(struct io_service_tree *st,
- 
- 	node = bfq_find_deepest(&entity->rb_node);
- 	bfq_extract(&st->active, entity);
-+	entity->sched_data->nr_active--;
- 	if (node != NULL)
- 		bfq_update_active_tree(node);
- }
-@@ -916,6 +918,21 @@ void io_put_io_group_queues(struct elevator_queue *e, struct io_group *iog)
- 	elv_release_ioq(e, &iog->async_idle_queue);
- }
- 
-+/*
-+ * Returns the number of active entities a particular io group has. This
-+ * includes number of active entities on service tree as well as the active
-+ * entity which is being served currently, if any.
-+ */
++Overview
++========
 +
-+static inline int elv_iog_nr_active(struct io_group *iog)
-+{
-+	struct io_sched_data *sd = &iog->sched_data;
++This patchset implements a proportional weight IO controller. That is one
++can create cgroups and assign prio/weights to those cgroups and task group
++will get access to disk proportionate to the weight of the group.
 +
-+	if (sd->active_entity)
-+		return sd->nr_active + 1;
-+	else
-+		return sd->nr_active;
-+}
- 
- /* Mainly hierarchical grouping code */
- #ifdef CONFIG_GROUP_IOSCHED
-@@ -1759,6 +1776,44 @@ static inline int is_root_group_ioq(struct request_queue *q,
- 	return (ioq->entity.sched_data == &efqd->root_group->sched_data);
- }
- 
-+/* Functions to show and store fairness value through sysfs */
-+ssize_t elv_fairness_show(struct request_queue *q, char *name)
-+{
-+	struct elv_fq_data *efqd;
-+	unsigned int data;
-+	unsigned long flags;
++These patches modify elevator layer and individual IO schedulers to do
++IO control hence this io controller works only on block devices which use
++one of the standard io schedulers can not be used with any xyz logical block
++device.
 +
-+	spin_lock_irqsave(q->queue_lock, flags);
-+	efqd = &q->elevator->efqd;
-+	data = efqd->fairness;
-+	spin_unlock_irqrestore(q->queue_lock, flags);
-+	return sprintf(name, "%d\n", data);
-+}
++The assumption/thought behind modifying IO scheduler is that resource control
++is needed only on leaf nodes where the actual contention for resources is
++present and not on intertermediate logical block devices.
 +
-+ssize_t elv_fairness_store(struct request_queue *q, const char *name,
-+			  size_t count)
-+{
-+	struct elv_fq_data *efqd;
-+	unsigned int data;
-+	unsigned long flags;
++Consider following hypothetical scenario. Lets say there are three physical
++disks, namely sda, sdb and sdc. Two logical volumes (lv0 and lv1) have been
++created on top of these. Some part of sdb is in lv0 and some part is in lv1.
 +
-+	char *p = (char *)name;
++			    lv0      lv1
++			  /	\  /     \
++			sda      sdb      sdc
 +
-+	data = simple_strtoul(p, &p, 10);
++Also consider following cgroup hierarchy
 +
-+	if (data < 0)
-+		data = 0;
-+	else if (data > INT_MAX)
-+		data = INT_MAX;
++				root
++				/   \
++			       A     B
++			      / \    / \
++			     T1 T2  T3  T4
 +
-+	spin_lock_irqsave(q->queue_lock, flags);
-+	efqd = &q->elevator->efqd;
-+	efqd->fairness = data;
-+	spin_unlock_irqrestore(q->queue_lock, flags);
++A and B are two cgroups and T1, T2, T3 and T4 are tasks with-in those cgroups.
++Assuming T1, T2, T3 and T4 are doing IO on lv0 and lv1. These tasks should
++get their fair share of bandwidth on disks sda, sdb and sdc. There is no
++IO control on intermediate logical block nodes (lv0, lv1).
 +
-+	return count;
-+}
++So if tasks T1 and T2 are doing IO on lv0 and T3 and T4 are doing IO on lv1
++only, there will not be any contetion for resources between group A and B if
++IO is going to sda or sdc. But if actual IO gets translated to disk sdb, then
++IO scheduler associated with the sdb will distribute disk bandwidth to
++group A and B proportionate to their weight.
 +
- /* Functions to show and store elv_idle_slice value through sysfs */
- ssize_t elv_slice_idle_show(struct request_queue *q, char *name)
- {
-@@ -1999,7 +2054,7 @@ static void elv_ioq_update_idle_window(struct elevator_queue *eq,
- 	 * io scheduler if it wants to disable idling based on additional
- 	 * considrations like seek pattern.
- 	 */
--	if (enable_idle) {
-+	if (enable_idle && !efqd->fairness) {
- 		if (eq->ops->elevator_update_idle_window_fn)
- 			enable_idle = eq->ops->elevator_update_idle_window_fn(
- 						eq, ioq->sched_queue, rq);
-@@ -2181,6 +2236,7 @@ static void __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
- 
- 		elv_clear_ioq_wait_request(ioq);
- 		elv_clear_ioq_must_dispatch(ioq);
-+		elv_clear_ioq_wait_busy_done(ioq);
- 		elv_mark_ioq_slice_new(ioq);
- 
- 		del_timer(&efqd->idle_slice_timer);
-@@ -2332,10 +2388,12 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 	assert_spin_locked(q->queue_lock);
- 	elv_log_ioq(efqd, ioq, "slice expired");
- 
--	if (elv_ioq_wait_request(ioq))
-+	if (elv_ioq_wait_request(ioq) || elv_ioq_wait_busy(ioq))
- 		del_timer(&efqd->idle_slice_timer);
- 
- 	elv_clear_ioq_wait_request(ioq);
-+	elv_clear_ioq_wait_busy(ioq);
-+	elv_clear_ioq_wait_busy_done(ioq);
- 
- 	/*
- 	 * if ioq->slice_end = 0, that means a queue was expired before first
-@@ -2500,7 +2558,7 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- 		 * has other work pending, don't risk delaying until the
- 		 * idle timer unplug to continue working.
- 		 */
--		if (elv_ioq_wait_request(ioq)) {
-+		if (elv_ioq_wait_request(ioq) && !elv_ioq_wait_busy(ioq)) {
- 			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
- 			    efqd->busy_queues > 1) {
- 				del_timer(&efqd->idle_slice_timer);
-@@ -2508,6 +2566,18 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- 			}
- 			elv_mark_ioq_must_dispatch(ioq);
- 		}
++CFQ already has the notion of fairness and it provides differential disk
++access based on priority and class of the task. Just that it is flat and
++with cgroup stuff, it needs to be made hierarchical to achive a good
++hierarchical control on IO.
 +
-+		/*
-+		 * If we were waiting for a request on this queue, wait is
-+		 * done. Schedule the next dispatch
-+		 */
-+		if (elv_ioq_wait_busy(ioq)) {
-+			del_timer(&efqd->idle_slice_timer);
-+			elv_clear_ioq_wait_busy(ioq);
-+			elv_mark_ioq_wait_busy_done(ioq);
-+			elv_clear_ioq_must_dispatch(ioq);
-+			elv_schedule_dispatch(q);
-+		}
- 	} else if (elv_should_preempt(q, ioq, rq)) {
- 		/*
- 		 * not the active queue - expire current slice if it is
-@@ -2535,6 +2605,9 @@ void elv_idle_slice_timer(unsigned long data)
- 
- 	if (ioq) {
- 
-+		if (elv_ioq_wait_busy(ioq))
-+			goto expire;
++Rest of the IO schedulers (noop, deadline and AS) don't have any notion
++of fairness among various threads. They maintain only one queue where all
++the IO gets queued (internally this queue is split in read and write queue
++for deadline and AS). With this patchset, now we maintain one queue per
++cgropu per device and then try to do fair queuing among those queues.
 +
- 		/*
- 		 * We saw a request before the queue expired, let it through
- 		 */
-@@ -2568,7 +2641,7 @@ out_cont:
- 	spin_unlock_irqrestore(q->queue_lock, flags);
- }
- 
--void elv_ioq_arm_slice_timer(struct request_queue *q)
-+void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
- {
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
- 	struct io_queue *ioq = elv_active_ioq(q->elevator);
-@@ -2581,26 +2654,38 @@ void elv_ioq_arm_slice_timer(struct request_queue *q)
- 	 * for devices that support queuing, otherwise we still have a problem
- 	 * with sync vs async workloads.
- 	 */
--	if (blk_queue_nonrot(q) && efqd->hw_tag)
-+	if (blk_queue_nonrot(q) && efqd->hw_tag && !efqd->fairness)
- 		return;
- 
- 	/*
--	 * still requests with the driver, don't idle
-+	 * idle is disabled, either manually or by past process history
- 	 */
--	if (efqd->rq_in_driver)
-+	if (!efqd->elv_slice_idle || !elv_ioq_idle_window(ioq))
- 		return;
- 
- 	/*
--	 * idle is disabled, either manually or by past process history
-+	 * This queue has consumed its time slice. We are waiting only for
-+	 * it to become busy before we select next queue for dispatch.
- 	 */
--	if (!efqd->elv_slice_idle || !elv_ioq_idle_window(ioq))
-+	if (wait_for_busy) {
-+		elv_mark_ioq_wait_busy(ioq);
-+		sl = efqd->elv_slice_idle;
-+		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
-+		elv_log_ioq(efqd, ioq, "arm idle: %lu wait busy=1", sl);
-+		return;
-+	}
++One of the concerns raised with modifying IO schedulers was that we don't
++want to replicate the code in all the IO schedulers. These patches share
++the fair queuing code which has been moved to a common layer (elevator
++layer). Hence we don't end up replicating code across IO schedulers. Following
++diagram depicts the concept.
 +
-+	/*
-+	 * still requests with the driver, don't idle
-+	 */
-+	if (efqd->rq_in_driver && !efqd->fairness)
- 		return;
- 
- 	/*
- 	 * may be iosched got its own idling logic. In that case io
- 	 * schduler will take care of arming the timer, if need be.
- 	 */
--	if (q->elevator->ops->elevator_arm_slice_timer_fn) {
-+	if (q->elevator->ops->elevator_arm_slice_timer_fn && !efqd->fairness) {
- 		q->elevator->ops->elevator_arm_slice_timer_fn(q,
- 						ioq->sched_queue);
- 	} else {
-@@ -2643,11 +2728,38 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
- 			goto expire;
- 	}
- 
-+	/* We are waiting for this queue to become busy before it expires.*/
-+	if (efqd->fairness && elv_ioq_wait_busy(ioq)) {
-+		ioq = NULL;
-+		goto keep_queue;
-+	}
++			--------------------------------
++			| Elevator Layer + Fair Queuing |
++			--------------------------------
++			 |	     |	     |       |
++			NOOP     DEADLINE    AS     CFQ
 +
- 	/*
- 	 * The active queue has run out of time, expire it and select new.
- 	 */
--	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
--		goto expire;
-+	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq)) {
-+		/*
-+		 * Queue has used up its slice. Wait busy is not on otherwise
-+		 * we wouldn't have been here. There is a chance that after
-+		 * slice expiry no request from the queue completed hence
-+		 * wait busy timer could not be turned on. If that's the case
-+		 * don't expire the queue yet. Next request completion from
-+		 * the queue will arm the wait busy timer.
-+		 *
-+		 * Don't wait if this group has other active queues. This
-+		 * will make sure that we don't loose fairness at group level
-+		 * at the same time in root group we will not see cfq
-+		 * regressions.
-+		 */
-+		if (elv_ioq_sync(ioq) && !ioq->nr_queued
-+		    && elv_ioq_nr_dispatched(ioq)
-+		    && (elv_iog_nr_active(ioq_to_io_group(ioq)) <= 1)
-+		    && !elv_ioq_wait_busy_done(ioq)) {
-+			ioq = NULL;
-+			goto keep_queue;
-+		} else
-+			goto expire;
-+	}
- 
- 	/*
- 	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
-@@ -2824,11 +2936,13 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 	const int sync = rq_is_sync(rq);
- 	struct io_queue *ioq;
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
-+	struct io_group *iog;
- 
- 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
- 		return;
- 
- 	ioq = rq->ioq;
-+	iog = ioq_to_io_group(ioq);
- 
- 	elv_log_ioq(efqd, ioq, "complete");
- 
-@@ -2854,6 +2968,12 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 			elv_ioq_set_prio_slice(q, ioq);
- 			elv_clear_ioq_slice_new(ioq);
- 		}
++Design
++======
++This patchset primarily uses BFQ (Budget Fair Queuing) code to provide
++fairness among different IO queues. Fabio and Paolo implemented BFQ which uses
++B-WF2Q+ algorithm for fair queuing.
 +
-+		if (elv_ioq_class_idle(ioq)) {
-+			elv_ioq_slice_expired(q);
-+			goto done;
-+		}
++Why BFQ?
 +
- 		/*
- 		 * If there are no requests waiting in this queue, and
- 		 * there are other queues ready to issue requests, AND
-@@ -2861,13 +2981,24 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 		 * mean seek distance, give them a chance to run instead
- 		 * of idling.
- 		 */
--		if (elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq))
--			elv_ioq_slice_expired(q);
--		else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq, 1)
-+		if (elv_ioq_slice_used(ioq)) {
-+			if (sync && !ioq->nr_queued
-+			    && (elv_iog_nr_active(iog) <= 1)) {
-+				/*
-+				 * Idle for one extra period in hierarchical
-+				 * setup
-+				 */
-+				elv_ioq_arm_slice_timer(q, 1);
-+			} else {
-+				/* Expire the queue */
-+				elv_ioq_slice_expired(q);
-+			}
-+		} else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq, 1)
- 			 && sync && !rq_noidle(rq))
--			elv_ioq_arm_slice_timer(q);
-+			elv_ioq_arm_slice_timer(q, 0);
- 	}
- 
-+done:
- 	if (!efqd->rq_in_driver)
- 		elv_schedule_dispatch(q);
- }
-@@ -2974,6 +3105,8 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
- 	efqd->elv_slice_idle = elv_slice_idle;
- 	efqd->hw_tag = 1;
- 
-+	/* For the time being keep fairness enabled by default */
-+	efqd->fairness = 1;
- 	return 0;
- }
- 
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 3dbcf73..4f11be3 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -72,6 +72,7 @@ struct io_service_tree {
- struct io_sched_data {
- 	struct io_entity *active_entity;
- 	struct io_entity *next_active;
-+	int nr_active;
- 	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
- };
- 
-@@ -320,6 +321,13 @@ struct elv_fq_data {
- 	unsigned long long rate_sampling_start; /*sampling window start jifies*/
- 	/* number of sectors finished io during current sampling window */
- 	unsigned long rate_sectors_current;
++- Not sure if weighted round robin logic of CFQ can be easily extended for
++  hierarchical mode. One of the things is that we can not keep dividing
++  the time slice of parent group among childrens. Deeper we go in hierarchy
++  time slice will get smaller.
 +
-+	/*
-+	 * If set to 1, will disable many optimizations done for boost
-+	 * throughput and focus more on providing fairness for sync
-+	 * queues.
-+	 */
-+	int fairness;
- };
- 
- extern int elv_slice_idle;
-@@ -344,6 +352,8 @@ enum elv_queue_state_flags {
- 	ELV_QUEUE_FLAG_wait_request,	  /* waiting for a request */
- 	ELV_QUEUE_FLAG_must_dispatch,	  /* must be allowed a dispatch */
- 	ELV_QUEUE_FLAG_slice_new,	  /* no requests dispatched in slice */
-+	ELV_QUEUE_FLAG_wait_busy,	  /* wait for this queue to get busy */
-+	ELV_QUEUE_FLAG_wait_busy_done,	  /* Have already waited on this queue*/
- 	ELV_QUEUE_FLAG_NR,
- };
- 
-@@ -367,6 +377,8 @@ ELV_IO_QUEUE_FLAG_FNS(wait_request)
- ELV_IO_QUEUE_FLAG_FNS(must_dispatch)
- ELV_IO_QUEUE_FLAG_FNS(idle_window)
- ELV_IO_QUEUE_FLAG_FNS(slice_new)
-+ELV_IO_QUEUE_FLAG_FNS(wait_busy)
-+ELV_IO_QUEUE_FLAG_FNS(wait_busy_done)
- 
- static inline struct io_service_tree *
- io_entity_service_tree(struct io_entity *entity)
-@@ -538,6 +550,9 @@ extern ssize_t elv_slice_sync_store(struct request_queue *q, const char *name,
- extern ssize_t elv_slice_async_show(struct request_queue *q, char *name);
- extern ssize_t elv_slice_async_store(struct request_queue *q, const char *name,
- 						size_t count);
-+extern ssize_t elv_fairness_show(struct request_queue *q, char *name);
-+extern ssize_t elv_fairness_store(struct request_queue *q, const char *name,
-+						size_t count);
- 
- /* Functions used by elevator.c */
- extern int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e);
++  One of the ways to implement hierarchical support could be to keep track
++  of virtual time and service provided to queue/group and select a queue/group
++  for service based on any of the various available algoriths.
++
++  BFQ already had support for hierarchical scheduling, taking those patches
++  was easier.
++
++- BFQ was designed to provide tighter bounds/delay w.r.t service provided
++  to a queue. Delay/Jitter with BFQ is O(1).
++
++  Note: BFQ originally used amount of IO done (number of sectors) as notion
++        of service provided. IOW, it tried to provide fairness in terms of
++        actual IO done and not in terms of actual time disk access was
++	given to a queue.
++
++	This patcheset modified BFQ to provide fairness in time domain because
++	that's what CFQ does. So idea was try not to deviate too much from
++	the CFQ behavior initially.
++
++	Providing fairness in time domain makes accounting trciky because
++	due to command queueing, at one time there might be multiple requests
++	from different queues and there is no easy way to find out how much
++	disk time actually was consumed by the requests of a particular
++	queue. More about this in comments in source code.
++
++We have taken BFQ code as starting point for providing fairness among groups
++because it already contained lots of features which we required to implement
++hierarhical IO scheduling. With this patch set, I am not trying to ensure O(1)
++delay here as my goal is to provide fairness among groups. Most likely that
++will mean that latencies are not worse than what cfq currently provides (if
++not improved ones). Once fairness is ensured, one can look into  more in
++ensuring O(1) latencies.
++
++From data structure point of view, one can think of a tree per device, where
++io groups and io queues are hanging and are being scheduled using B-WF2Q+
++algorithm. io_queue, is end queue where requests are actually stored and
++dispatched from (like cfqq).
++
++These io queues are primarily created by and managed by end io schedulers
++depending on its semantics. For example, noop, deadline and AS ioschedulers
++keep one io queues per cgroup and cfqq keeps one io queue per io_context in
++a cgroup (apart from async queues).
++
++A request is mapped to an io group by elevator layer and which io queue it
++is mapped to with in group depends on ioscheduler. Currently "current" task
++is used to determine the cgroup (hence io group) of the request. Down the
++line we need to make use of bio-cgroup patches to map delayed writes to
++right group.
++
++Going back to old behavior
++==========================
++In new scheme of things essentially we are creating hierarchical fair
++queuing logic in elevator layer and chaning IO schedulers to make use of
++that logic so that end IO schedulers start supporting hierarchical scheduling.
++
++Elevator layer continues to support the old interfaces. So even if fair queuing
++is enabled at elevator layer, one can have both new hierchical scheduler as
++well as old non-hierarchical scheduler operating.
++
++Also noop, deadline and AS have option of enabling hierarchical scheduling.
++If it is selected, fair queuing is done in hierarchical manner. If hierarchical
++scheduling is disabled, noop, deadline and AS should retain their existing
++behavior.
++
++CFQ is the only exception where one can not disable fair queuing as it is
++needed for provding fairness among various threads even in non-hierarchical
++mode.
++
++Various user visible config options
++===================================
++CONFIG_IOSCHED_NOOP_HIER
++	- Enables hierchical fair queuing in noop. Not selecting this option
++	  leads to old behavior of noop.
++
++CONFIG_IOSCHED_DEADLINE_HIER
++	- Enables hierchical fair queuing in deadline. Not selecting this
++	  option leads to old behavior of deadline.
++
++CONFIG_IOSCHED_AS_HIER
++	- Enables hierchical fair queuing in AS. Not selecting this option
++	  leads to old behavior of AS.
++
++CONFIG_IOSCHED_CFQ_HIER
++	- Enables hierarchical fair queuing in CFQ. Not selecting this option
++	  still does fair queuing among various queus but it is flat and not
++	  hierarchical.
++
++CGROUP_BLKIO
++	- This option enables blkio-cgroup controller for IO tracking
++	  purposes. That means, by this controller one can attribute a write
++	  to the original cgroup and not assume that it belongs to submitting
++	  thread.
++
++CONFIG_TRACK_ASYNC_CONTEXT
++	- Currently CFQ attributes the writes to the submitting thread and
++	  caches the async queue pointer in the io context of the process.
++	  If this option is set, it tells cfq and elevator fair queuing logic
++	  that for async writes make use of IO tracking patches and attribute
++	  writes to original cgroup and not to write submitting thread.
++
++CONFIG_DEBUG_GROUP_IOSCHED
++	- Throws extra debug messages in blktrace output helpful in doing
++	  doing debugging in hierarchical setup.
++
++	- Also allows for export of extra debug statistics like group queue
++	  and dequeue statistics on device through cgroup interface.
++
++Config options selected automatically
++=====================================
++These config options are not user visible and are selected/deselected
++automatically based on IO scheduler configurations.
++
++CONFIG_ELV_FAIR_QUEUING
++	- Enables/Disables the fair queuing logic at elevator layer.
++
++CONFIG_GROUP_IOSCHED
++	- Enables/Disables hierarchical queuing and associated cgroup bits.
++
++HOWTO
++=====
++So far I have done very simple testing of running two dd threads in two
++different cgroups. Here is what you can do.
++
++- Enable hierarchical scheduling in io scheuduler of your choice (say cfq).
++	CONFIG_IOSCHED_CFQ_HIER=y
++
++- Enable IO tracking for async writes.
++	CONFIG_TRACK_ASYNC_CONTEXT=y
++
++  (This will automatically select CGROUP_BLKIO)
++
++- Compile and boot into kernel and mount IO controller and blkio io tracking
++  controller.
++
++	mount -t cgroup -o io,blkio none /cgroup
++
++- Create two cgroups
++	mkdir -p /cgroup/test1/ /cgroup/test2
++
++- Set weights of group test1 and test2
++	echo 1000 > /cgroup/test1/io.ioprio
++	echo 500 > /cgroup/test2/io.ioprio
++
++- Set "fairness" parameter to 1 at the disk you are testing.
++
++  echo 1 > /sys/block/<disk>/queue/fairness
++
++- Create two same size files (say 512MB each) on same disk (file1, file2) and
++  launch two dd threads in different cgroup to read those files. Make sure
++  right io scheduler is being used for the block device where files are
++  present (the one you compiled in hierarchical mode).
++
++	sync
++	echo 3 > /proc/sys/vm/drop_caches
++
++	dd if=/mnt/sdb/zerofile1 of=/dev/null &
++	echo $! > /cgroup/test1/tasks
++	cat /cgroup/test1/tasks
++
++	dd if=/mnt/sdb/zerofile2 of=/dev/null &
++	echo $! > /cgroup/test2/tasks
++	cat /cgroup/test2/tasks
++
++- At macro level, first dd should finish first. To get more precise data, keep
++  on looking at (with the help of script), at io.disk_time and io.disk_sectors
++  files of both test1 and test2 groups. This will tell how much disk time
++  (in milli seconds), each group got and how many secotors each group
++  dispatched to the disk. We provide fairness in terms of disk time, so
++  ideally io.disk_time of cgroups should be in proportion to the weight.
++  (It is hard to achieve though :-)).
++
++Details of cgroup files
++=======================
++- io.ioprio_class
++	- Specifies class of the cgroup (RT, BE, IDLE). This is default io
++	  class of the group on all the devices until and unless overridden by
++	  per device rule. (See io.policy).
++
++	  1 = RT; 2 = BE, 3 = IDLE
++
++- io.weight
++	- Specifies per cgroup weight. This is default weight of the group
++	  on all the devices until and unless overridden by per device rule.
++	  (See io.policy).
++
++- io.disk_time
++	- disk time allocated to cgroup per device in milliseconds. First
++	  two fields specify the major and minor number of the device and
++	  third field specifies the disk time allocated to group in
++	  milliseconds.
++
++- io.disk_sectors
++	- number of sectors transferred to/from disk by the group. First
++	  two fields specify the major and minor number of the device and
++	  third field specifies the number of sectors transferred by the
++	  group to/from the device.
++
++- io.disk_queue
++	- Debugging aid only enabled if CONFIG_DEBUG_GROUP_IOSCHED=y. This
++	  gives the statistics about how many a times a group was queued
++	  on service tree of the device. First two fields specify the major
++	  and minor number of the device and third field specifies the number
++	  of times a group was queued on a particular device.
++
++- io.disk_queue
++	- Debugging aid only enabled if CONFIG_DEBUG_GROUP_IOSCHED=y. This
++	  gives the statistics about how many a times a group was de-queued
++	  or removed from the service tree of the device. This basically gives
++	  and idea if we can generate enough IO to create continuously
++	  backlogged groups. First two fields specify the major and minor
++	  number of the device and third field specifies the number
++	  of times a group was de-queued on a particular device.
++
++- io.policy
++	- One can specify per cgroup per device rules using this interface.
++	  These rules override the default value of group weight and class as
++	  specified by io.weight and io.ioprio_class.
++
++	  Following is the format.
++
++	#echo DEV:weight:ioprio_class > /patch/to/cgroup/io.policy
++
++	weight=0 means removing a policy.
++
++	Examples:
++
++	Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
++	# echo /dev/hdb:300:2 > io.policy
++	# cat io.policy
++	dev weight class
++	/dev/hdb 300 2
++
++	Configure weight=500 ioprio_class=1 on /dev/hda in this cgroup
++	# echo /dev/hda:500:1 > io.policy
++	# cat io.policy
++	dev weight class
++	/dev/hda 500 1
++	/dev/hdb 300 2
++
++	Remove the policy for /dev/hda in this cgroup
++	# echo /dev/hda:0:1 > io.policy
++	# cat io.policy
++	dev weight class
++	/dev/hdb 300 2
 -- 
 1.6.0.1
