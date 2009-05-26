@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 18/20] io-controller: Support per cgroup per device weights
-	and io class
-Date: Tue, 26 May 2009 18:42:07 -0400
-Message-ID: <1243377729-2176-19-git-send-email-vgoyal__40595.1915811331$1243380803$gmane$org@redhat.com>
+Subject: [PATCH 10/20] io-conroller: Prepare elevator layer for single queue
+	schedulers
+Date: Tue, 26 May 2009 18:41:59 -0400
+Message-ID: <1243377729-2176-11-git-send-email-vgoyal__48953.3022432171$1243380880$gmane$org@redhat.com>
 References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,405 +22,416 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch enables per-cgroup per-device weight and ioprio_class handling.
-A new cgroup interface "policy" is introduced. You can make use of this
-file to configure weight and ioprio_class for each device in a given cgroup.
-The original "weight" and "ioprio_class" files are still available. If you
-don't do special configuration for a particular device, "weight" and
-"ioprio_class" are used as default values in this device.
+Elevator layer now has support for hierarchical fair queuing. cfq has
+been migrated to make use of it and now it is time to do groundwork for
+noop, deadline and AS.
 
-You can use the following format to play with the new interface.
-#echo DEV:weight:ioprio_class > /patch/to/cgroup/policy
-weight=0 means removing the policy for DEV.
+noop deadline and AS don't maintain separate queues for different processes.
+There is only one single queue. Effectively one can think that in hierarchical
+setup, there will be one queue per cgroup where requests from all the
+processes in the cgroup will be queued.
 
-Examples:
-Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
-# echo /dev/hdb:300:2 > io.policy
-# cat io.policy
-dev weight class
-/dev/hdb 300 2
+Generally io scheduler takes care of creating queues. Because there is
+only one queue here, we have modified common layer to take care of queue
+creation and some other functionality. This special casing helps in keeping
+the changes to noop, deadline and AS to the minimum.
 
-Configure weight=500 ioprio_class=1 on /dev/hda in this cgroup
-# echo /dev/hda:500:1 > io.policy
-# cat io.policy
-dev weight class
-/dev/hda 500 1
-/dev/hdb 300 2
-
-Remove the policy for /dev/hda in this cgroup
-# echo /dev/hda:0:1 > io.policy
-# cat io.policy
-dev weight class
-/dev/hdb 300 2
-
-Changelog (v1 -> v2)
-- Rename some structures
-- Use spin_lock_irqsave() and spin_lock_irqrestore() version to prevent
-  from enabling the interrupts unconditionally.
-- Fix policy setup bug when switching to another io scheduler.
-- If a policy is available for a specific device, don't update weight and
-  io class when writing "weight" and "iprio_class".
-- Fix a bug when parsing policy string.
-
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |  245 +++++++++++++++++++++++++++++++++++++++++++++++++-
- block/elevator-fq.h |   11 +++
- 2 files changed, 251 insertions(+), 5 deletions(-)
+ block/elevator-fq.c      |  160 +++++++++++++++++++++++++++++++++++++++++++++-
+ block/elevator-fq.h      |   67 +++++++++++++++++++
+ block/elevator.c         |   35 ++++++++++-
+ include/linux/elevator.h |   14 ++++
+ 4 files changed, 274 insertions(+), 2 deletions(-)
 
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 0650e03..6d97ad9 100644
+index 201785e..10787fd 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -13,6 +13,7 @@
- #include <linux/blktrace_api.h>
- #include <linux/seq_file.h>
- #include <linux/biotrack.h>
-+#include <linux/genhd.h>
+@@ -916,6 +916,12 @@ void io_put_io_group_queues(struct elevator_queue *e, struct io_group *iog)
  
- /* Values taken from cfq */
- const int elv_slice_sync = HZ / 10;
-@@ -1025,12 +1026,31 @@ struct io_group *io_cgroup_lookup_group(struct io_cgroup *iocg, void *key)
- 	return NULL;
+ 	/* Free up async idle queue */
+ 	elv_release_ioq(e, &iog->async_idle_queue);
++
++#ifdef CONFIG_GROUP_IOSCHED
++	/* Optimization for io schedulers having single ioq */
++	if (elv_iosched_single_ioq(e))
++		elv_release_ioq(e, &iog->ioq);
++#endif
  }
  
--void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+						 dev_t dev);
-+
-+void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog,
-+			  dev_t dev)
- {
- 	struct io_entity *entity = &iog->entity;
-+	struct io_policy_node *pn;
+ /*
+@@ -1665,6 +1671,153 @@ int io_group_allow_merge(struct request *rq, struct bio *bio)
+ 	return (iog == __iog);
+ }
+ 
++/*
++ * Find/Create the io queue the rq should go in. This is an optimization
++ * for the io schedulers (noop, deadline and AS) which maintain only single
++ * io queue per cgroup. In this case common layer can just maintain a
++ * pointer in group data structure and keeps track of it.
++ *
++ * For the io schdulers like cfq, which maintain multiple io queues per
++ * cgroup, and decide the io queue  of request based on process, this
++ * function is not invoked.
++ */
++int elv_fq_set_request_ioq(struct request_queue *q, struct request *rq,
++					gfp_t gfp_mask)
++{
++	struct elevator_queue *e = q->elevator;
 +	unsigned long flags;
++	struct io_queue *ioq = NULL, *new_ioq = NULL;
++	struct io_group *iog;
++	void *sched_q = NULL, *new_sched_q = NULL;
 +
-+	spin_lock_irqsave(&iocg->lock, flags);
-+	pn = policy_search_node(iocg, dev);
-+	if (pn) {
-+		entity->weight = pn->weight;
-+		entity->new_weight = pn->weight;
-+		entity->ioprio_class = pn->ioprio_class;
-+		entity->new_ioprio_class = pn->ioprio_class;
-+	} else {
-+		entity->weight = iocg->weight;
-+		entity->new_weight = iocg->weight;
-+		entity->ioprio_class = iocg->ioprio_class;
-+		entity->new_ioprio_class = iocg->ioprio_class;
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return 0;
++
++	might_sleep_if(gfp_mask & __GFP_WAIT);
++	spin_lock_irqsave(q->queue_lock, flags);
++
++retry:
++	/* Determine the io group request belongs to */
++	iog = io_get_io_group(q, 1);
++	BUG_ON(!iog);
++
++	/* Get the iosched queue */
++	ioq = io_group_ioq(iog);
++	if (!ioq) {
++		/* io queue and sched_queue needs to be allocated */
++		BUG_ON(!e->ops->elevator_alloc_sched_queue_fn);
++
++		if (new_sched_q) {
++			goto alloc_ioq;
++		} else if (gfp_mask & __GFP_WAIT) {
++			/*
++			 * Inform the allocator of the fact that we will
++			 * just repeat this allocation if it fails, to allow
++			 * the allocator to do whatever it needs to attempt to
++			 * free memory.
++			 */
++			spin_unlock_irq(q->queue_lock);
++			/* Call io scheduer to create scheduler queue */
++			new_sched_q = e->ops->elevator_alloc_sched_queue_fn(q,
++					e, gfp_mask | __GFP_NOFAIL
++					| __GFP_ZERO);
++			spin_lock_irq(q->queue_lock);
++			goto retry;
++		} else {
++			sched_q = e->ops->elevator_alloc_sched_queue_fn(q, e,
++						gfp_mask | __GFP_ZERO);
++			if (!sched_q)
++				goto queue_fail;
++		}
++
++alloc_ioq:
++		if (new_ioq) {
++			ioq = new_ioq;
++			new_ioq = NULL;
++			sched_q = new_sched_q;
++			new_sched_q = NULL;
++		} else if (gfp_mask & __GFP_WAIT) {
++			/*
++			 * Inform the allocator of the fact that we will
++			 * just repeat this allocation if it fails, to allow
++			 * the allocator to do whatever it needs to attempt to
++			 * free memory.
++			 */
++			spin_unlock_irq(q->queue_lock);
++			new_ioq = elv_alloc_ioq(q, gfp_mask | __GFP_NOFAIL
++							| __GFP_ZERO);
++			spin_lock_irq(q->queue_lock);
++			goto retry;
++		} else {
++			ioq = elv_alloc_ioq(q, gfp_mask | __GFP_ZERO);
++			if (!ioq) {
++				e->ops->elevator_free_sched_queue_fn(e,
++							sched_q);
++				sched_q = NULL;
++				goto queue_fail;
++			}
++		}
++
++		elv_init_ioq(e, ioq, iog, sched_q, IOPRIO_CLASS_BE, 4, 1);
++		io_group_set_ioq(iog, ioq);
++		elv_mark_ioq_sync(ioq);
 +	}
-+	spin_unlock_irqrestore(&iocg->lock, flags);
- 
--	entity->weight = entity->new_weight = iocg->weight;
--	entity->ioprio_class = entity->new_ioprio_class = iocg->ioprio_class;
- 	entity->ioprio_changed = 1;
- 	entity->my_sched_data = &iog->sched_data;
- }
-@@ -1094,6 +1114,7 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	struct io_cgroup *iocg;					\
- 	struct io_group *iog;						\
- 	struct hlist_node *n;						\
-+	struct io_policy_node *pn;					\
- 									\
- 	if (val < (__MIN) || val > (__MAX))				\
- 		return -EINVAL;						\
-@@ -1106,6 +1127,9 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	spin_lock_irq(&iocg->lock);					\
- 	iocg->__VAR = (unsigned long)val;				\
- 	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
-+		pn = policy_search_node(iocg, iog->dev);		\
-+		if (pn)							\
-+			continue;					\
- 		iog->entity.new_##__VAR = (unsigned long)val;		\
- 		smp_wmb();						\
- 		iog->entity.ioprio_changed = 1;				\
-@@ -1214,8 +1238,6 @@ struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
- 		if (!iog)
- 			goto cleanup;
- 
--		io_group_init_entity(iocg, iog);
--		iog->my_entity = &iog->entity;
- 		atomic_set(&iog->ref, 0);
- 		iog->deleting = 0;
- 
-@@ -1233,6 +1255,8 @@ struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
- 		}
- 
- 		iog->iocg_id = css_id(&iocg->css);
-+		io_group_init_entity(iocg, iog, iog->dev);
-+		iog->my_entity = &iog->entity;
- 
- 		blk_init_request_list(&iog->rl);
- 
-@@ -1507,8 +1531,212 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
- 	return iog;
- }
- 
-+static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
-+				  struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *pn;
 +
-+	iocg = cgroup_to_io_cgroup(cgrp);
++	if (new_sched_q)
++		e->ops->elevator_free_sched_queue_fn(q->elevator, sched_q);
 +
-+	if (list_empty(&iocg->policy_list))
-+		goto out;
++	if (new_ioq)
++		elv_free_ioq(new_ioq);
 +
-+	seq_printf(m, "dev weight class\n");
-+
-+	spin_lock_irq(&iocg->lock);
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		seq_printf(m, "%s %lu %lu\n", pn->dev_name,
-+			   pn->weight, pn->ioprio_class);
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+out:
++	/* Request reference */
++	elv_get_ioq(ioq);
++	rq->ioq = ioq;
++	spin_unlock_irqrestore(q->queue_lock, flags);
 +	return 0;
++
++queue_fail:
++	WARN_ON((gfp_mask & __GFP_WAIT) && !ioq);
++	elv_schedule_dispatch(q);
++	spin_unlock_irqrestore(q->queue_lock, flags);
++	return 1;
 +}
 +
-+static inline void policy_insert_node(struct io_cgroup *iocg,
-+					  struct io_policy_node *pn)
++/*
++ * Find out the io queue of current task. Optimization for single ioq
++ * per io group io schedulers.
++ */
++struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
 +{
-+	list_add(&pn->node, &iocg->policy_list);
-+}
++	struct io_group *iog;
 +
-+/* Must be called with iocg->lock held */
-+static inline void policy_delete_node(struct io_policy_node *pn)
-+{
-+	list_del(&pn->node);
-+}
-+
-+/* Must be called with iocg->lock held */
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+						 dev_t dev)
-+{
-+	struct io_policy_node *pn;
-+
-+	if (list_empty(&iocg->policy_list))
++	/* Determine the io group and io queue of the bio submitting task */
++	iog = io_get_io_group(q, 0);
++	if (!iog) {
++		/* May be task belongs to a cgroup for which io group has
++		 * not been setup yet. */
 +		return NULL;
-+
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		if (pn->dev == dev)
-+			return pn;
 +	}
++	return io_group_ioq(iog);
++}
 +
++/*
++ * This request has been serviced. Clean up ioq info and drop the reference.
++ * Again this is called only for single queue per cgroup schedulers (noop,
++ * deadline, AS).
++ */
++void elv_fq_unset_request_ioq(struct request_queue *q, struct request *rq)
++{
++	struct io_queue *ioq = rq->ioq;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return;
++
++	if (ioq) {
++		rq->ioq = NULL;
++		elv_put_ioq(ioq);
++	}
++}
++
+ #else /* GROUP_IOSCHED */
+ void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
+ {
+@@ -2097,7 +2250,12 @@ int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
+ 	ioq->efqd = efqd;
+ 	elv_ioq_set_ioprio_class(ioq, ioprio_class);
+ 	elv_ioq_set_ioprio(ioq, ioprio);
+-	ioq->pid = current->pid;
++
++	if (elv_iosched_single_ioq(eq))
++		ioq->pid = 0;
++	else
++		ioq->pid = current->pid;
++
+ 	ioq->sched_queue = sched_queue;
+ 	if (is_sync && !elv_ioq_class_idle(ioq))
+ 		elv_mark_ioq_idle_window(ioq);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 4f11be3..d79dad7 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -241,6 +241,9 @@ struct io_group {
+ 	/* The device MKDEV(major, minor), this group has been created for */
+ 	dev_t	dev;
+ 
++	/* Single ioq per group, used for noop, deadline, anticipatory */
++	struct io_queue *ioq;
++
+ };
+ 
+ /**
+@@ -512,6 +515,28 @@ static inline bfq_weight_t iog_weight(struct io_group *iog)
+ 	return iog->entity.weight;
+ }
+ 
++extern int elv_fq_set_request_ioq(struct request_queue *q, struct request *rq,
++					gfp_t gfp_mask);
++extern void elv_fq_unset_request_ioq(struct request_queue *q,
++					struct request *rq);
++extern struct io_queue *elv_lookup_ioq_current(struct request_queue *q);
++
++/* Returns single ioq associated with the io group. */
++static inline struct io_queue *io_group_ioq(struct io_group *iog)
++{
++	BUG_ON(!iog);
++	return iog->ioq;
++}
++
++/* Sets the single ioq associated with the io group. (noop, deadline, AS) */
++static inline void io_group_set_ioq(struct io_group *iog, struct io_queue *ioq)
++{
++	BUG_ON(!iog);
++	/* io group reference. Will be dropped when group is destroyed. */
++	elv_get_ioq(ioq);
++	iog->ioq = ioq;
++}
++
+ #else /* !GROUP_IOSCHED */
+ /*
+  * No ioq movement is needed in case of flat setup. root io group gets cleaned
+@@ -538,6 +563,32 @@ static inline bfq_weight_t iog_weight(struct io_group *iog)
+ 	return 0;
+ }
+ 
++/* Returns single ioq associated with the io group. */
++static inline struct io_queue *io_group_ioq(struct io_group *iog)
++{
 +	return NULL;
 +}
 +
-+static int devname_to_devnum(const char *buf, dev_t *dev)
++static inline void io_group_set_ioq(struct io_group *iog, struct io_queue *ioq)
 +{
-+	struct block_device *bdev;
-+	struct gendisk *disk;
-+	int part;
++}
 +
-+	bdev = lookup_bdev(buf);
-+	if (IS_ERR(bdev))
-+		return -ENODEV;
-+
-+	disk = get_gendisk(bdev->bd_dev, &part);
-+	if (part)
-+		return -EINVAL;
-+
-+	*dev = MKDEV(disk->major, disk->first_minor);
-+	bdput(bdev);
-+
++static inline int elv_fq_set_request_ioq(struct request_queue *q,
++					struct request *rq, gfp_t gfp_mask)
++{
 +	return 0;
 +}
 +
-+static int policy_parse_and_set(char *buf, struct io_policy_node *newpn)
++static inline void elv_fq_unset_request_ioq(struct request_queue *q,
++						struct request *rq)
 +{
-+	char *s[3], *p;
-+	int ret;
-+	int i = 0;
-+
-+	memset(s, 0, sizeof(s));
-+	while ((p = strsep(&buf, ":")) != NULL) {
-+		if (!*p)
-+			continue;
-+		s[i++] = p;
-+	}
-+
-+	ret = devname_to_devnum(s[0], &newpn->dev);
-+	if (ret)
-+		return ret;
-+
-+	strcpy(newpn->dev_name, s[0]);
-+
-+	if (s[1] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[1], 10, &newpn->weight);
-+	if (ret || newpn->weight > WEIGHT_MAX)
-+		return -EINVAL;
-+
-+	if (s[2] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[2], 10, &newpn->ioprio_class);
-+	if (ret || newpn->ioprio_class < IOPRIO_CLASS_RT ||
-+	    newpn->ioprio_class > IOPRIO_CLASS_IDLE)
-+		return -EINVAL;
-+
-+	return 0;
 +}
 +
-+static int io_cgroup_policy_write(struct cgroup *cgrp, struct cftype *cft,
-+			    const char *buffer)
++static inline struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
 +{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *newpn, *pn;
-+	char *buf;
-+	int ret = 0;
-+	int keep_newpn = 0;
-+	struct hlist_node *n;
-+	struct io_group *iog;
-+
-+	buf = kstrdup(buffer, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	newpn = kzalloc(sizeof(*newpn), GFP_KERNEL);
-+	if (!newpn) {
-+		ret = -ENOMEM;
-+		goto free_buf;
-+	}
-+
-+	ret = policy_parse_and_set(buf, newpn);
-+	if (ret)
-+		goto free_newpn;
-+
-+	if (!cgroup_lock_live_group(cgrp)) {
-+		ret = -ENODEV;
-+		goto free_newpn;
-+	}
-+
-+	iocg = cgroup_to_io_cgroup(cgrp);
-+	spin_lock_irq(&iocg->lock);
-+
-+	pn = policy_search_node(iocg, newpn->dev);
-+	if (!pn) {
-+		if (newpn->weight != 0) {
-+			policy_insert_node(iocg, newpn);
-+			keep_newpn = 1;
-+		}
-+		goto update_io_group;
-+	}
-+
-+	if (newpn->weight == 0) {
-+		/* weight == 0 means deleteing a policy */
-+		policy_delete_node(pn);
-+		goto update_io_group;
-+	}
-+
-+	pn->weight = newpn->weight;
-+	pn->ioprio_class = newpn->ioprio_class;
-+
-+update_io_group:
-+	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {
-+		if (iog->dev == newpn->dev) {
-+			if (newpn->weight) {
-+				iog->entity.new_weight = newpn->weight;
-+				iog->entity.new_ioprio_class =
-+					newpn->ioprio_class;
-+				/*
-+				 * iog weight and ioprio_class updating
-+				 * actually happens if ioprio_changed is set.
-+				 * So ensure ioprio_changed is not set until
-+				 * new weight and new ioprio_class are updated.
-+				 */
-+				smp_wmb();
-+				iog->entity.ioprio_changed = 1;
-+			} else {
-+				iog->entity.new_weight = iocg->weight;
-+				iog->entity.new_ioprio_class =
-+					iocg->ioprio_class;
-+
-+				/* The same as above */
-+				smp_wmb();
-+				iog->entity.ioprio_changed = 1;
-+			}
-+		}
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+
-+	cgroup_unlock();
-+
-+free_newpn:
-+	if (!keep_newpn)
-+		kfree(newpn);
-+free_buf:
-+	kfree(buf);
-+	return ret;
++	return NULL;
 +}
 +
- struct cftype bfqio_files[] = {
- 	{
-+		.name = "policy",
-+		.read_seq_string = io_cgroup_policy_read,
-+		.write_string = io_cgroup_policy_write,
-+		.max_write_len = 256,
-+	},
-+	{
- 		.name = "weight",
- 		.read_u64 = io_cgroup_weight_read,
- 		.write_u64 = io_cgroup_weight_write,
-@@ -1550,6 +1778,7 @@ struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
- 	INIT_HLIST_HEAD(&iocg->group_data);
- 	iocg->weight = IO_DEFAULT_GRP_WEIGHT;
- 	iocg->ioprio_class = IO_DEFAULT_GRP_CLASS;
-+	INIT_LIST_HEAD(&iocg->policy_list);
+ #endif /* GROUP_IOSCHED */
  
- 	return &iocg->css;
+ /* Functions used by blksysfs.c */
+@@ -651,5 +702,21 @@ static inline int io_group_allow_merge(struct request *rq, struct bio *bio)
+ {
+ 	return 1;
  }
-@@ -1739,6 +1968,7 @@ void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
- 	struct io_group *iog;
- 	struct elv_fq_data *efqd;
- 	unsigned long uninitialized_var(flags);
-+	struct io_policy_node *pn, *pntmp;
++static inline int elv_fq_set_request_ioq(struct request_queue *q,
++					struct request *rq, gfp_t gfp_mask)
++{
++	return 0;
++}
++
++static inline void elv_fq_unset_request_ioq(struct request_queue *q,
++						struct request *rq)
++{
++}
++
++static inline struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
++{
++	return NULL;
++}
++
+ #endif /* CONFIG_ELV_FAIR_QUEUING */
+ #endif /* _BFQ_SCHED_H */
+diff --git a/block/elevator.c b/block/elevator.c
+index 67a0601..8b2206f 100644
+--- a/block/elevator.c
++++ b/block/elevator.c
+@@ -211,6 +211,14 @@ static void *elevator_alloc_sched_queue(struct request_queue *q,
+ {
+ 	void *sched_queue = NULL;
  
- 	/*
- 	 * io groups are linked in two lists. One list is maintained
-@@ -1777,6 +2007,11 @@ remove_entry:
- 	goto remove_entry;
++	/*
++	 * If fair queuing is enabled, then queue allocation takes place
++	 * during set_request() functions when request actually comes
++	 * in.
++	 */
++	if (elv_iosched_fair_queuing_enabled(eq))
++		return NULL;
++
+ 	if (eq->ops->elevator_alloc_sched_queue_fn) {
+ 		sched_queue = eq->ops->elevator_alloc_sched_queue_fn(q, eq,
+ 								GFP_KERNEL);
+@@ -963,6 +971,13 @@ int elv_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
+ {
+ 	struct elevator_queue *e = q->elevator;
  
- done:
-+	list_for_each_entry_safe(pn, pntmp, &iocg->policy_list, node) {
-+		policy_delete_node(pn);
-+		kfree(pn);
++	/*
++	 * Optimization for noop, deadline and AS which maintain only single
++	 * ioq per io group
++	 */
++	if (elv_iosched_single_ioq(e))
++		return elv_fq_set_request_ioq(q, rq, gfp_mask);
++
+ 	if (e->ops->elevator_set_req_fn)
+ 		return e->ops->elevator_set_req_fn(q, rq, gfp_mask);
+ 
+@@ -974,6 +989,15 @@ void elv_put_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct elevator_queue *e = q->elevator;
+ 
++	/*
++	 * Optimization for noop, deadline and AS which maintain only single
++	 * ioq per io group
++	 */
++	if (elv_iosched_single_ioq(e)) {
++		elv_fq_unset_request_ioq(q, rq);
++		return;
 +	}
 +
- 	free_css_id(&io_subsys, &iocg->css);
- 	rcu_read_unlock();
- 	BUG_ON(!hlist_empty(&iocg->group_data));
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 5783f33..9062bfd 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -251,6 +251,14 @@ struct io_group {
- 	struct request_list rl;
- };
+ 	if (e->ops->elevator_put_req_fn)
+ 		e->ops->elevator_put_req_fn(rq);
+ }
+@@ -1345,9 +1369,18 @@ EXPORT_SYMBOL(elv_select_sched_queue);
  
-+struct io_policy_node {
-+	struct list_head node;
-+	char dev_name[32];
-+	dev_t dev;
-+	unsigned long weight;
-+	unsigned long ioprio_class;
-+};
+ /*
+  * Get the io scheduler queue pointer for current task.
++ *
++ * If fair queuing is enabled, determine the io group of task and retrieve
++ * the ioq pointer from that. This is used by only single queue ioschedulers
++ * for retrieving the queue associated with the group to decide whether the
++ * new bio can do a front merge or not.
+  */
+ void *elv_get_sched_queue_current(struct request_queue *q)
+ {
+-	return q->elevator->sched_queue;
++	/* Fair queuing is not enabled. There is only one queue. */
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return q->elevator->sched_queue;
 +
- /**
-  * struct bfqio_cgroup - bfq cgroup data structure.
-  * @css: subsystem state for bfq in the containing cgroup.
-@@ -267,6 +275,9 @@ struct io_cgroup {
++	return ioq_sched_queue(elv_lookup_ioq_current(q));
+ }
+ EXPORT_SYMBOL(elv_get_sched_queue_current);
+diff --git a/include/linux/elevator.h b/include/linux/elevator.h
+index 3729a2f..ee38d08 100644
+--- a/include/linux/elevator.h
++++ b/include/linux/elevator.h
+@@ -249,17 +249,31 @@ enum {
+ /* iosched wants to use fq logic of elevator layer */
+ #define	ELV_IOSCHED_NEED_FQ	1
  
- 	unsigned long weight, ioprio_class;
- 
-+	/* list of io_policy_node */
-+	struct list_head policy_list;
++/* iosched maintains only single ioq per group.*/
++#define ELV_IOSCHED_SINGLE_IOQ        2
 +
- 	spinlock_t lock;
- 	struct hlist_head group_data;
- };
+ static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
+ {
+ 	return (e->elevator_type->elevator_features) & ELV_IOSCHED_NEED_FQ;
+ }
+ 
++static inline int elv_iosched_single_ioq(struct elevator_queue *e)
++{
++	return (e->elevator_type->elevator_features) & ELV_IOSCHED_SINGLE_IOQ;
++}
++
+ #else /* ELV_IOSCHED_FAIR_QUEUING */
+ 
+ static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
+ {
+ 	return 0;
+ }
++
++static inline int elv_iosched_single_ioq(struct elevator_queue *e)
++{
++	return 0;
++}
++
+ #endif /* ELV_IOSCHED_FAIR_QUEUING */
+ extern void *elv_get_sched_queue(struct request_queue *q, struct request *rq);
+ extern void *elv_select_sched_queue(struct request_queue *q, int force);
 -- 
 1.6.0.1
