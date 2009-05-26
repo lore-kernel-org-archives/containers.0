@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 3/8] cr: capabilities: define checkpoint and restore fns
-Date: Tue, 26 May 2009 12:33:24 -0500
-Message-ID: <20090526173324.GC13991@us.ibm.com>
+Subject: [PATCH 4/8] groups: move code to kernel/groups.c
+Date: Tue, 26 May 2009 12:33:33 -0500
+Message-ID: <20090526173333.GD13991@us.ibm.com>
 References: <20090526173242.GA13757@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -13,69 +13,228 @@ To: Oren Laadan <orenl@cs.columbia.edu>
 Cc: Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-An application checkpoint image will store capability sets
-(and the bounding set) as __u64s.  Define checkpoint and
-restart functions to translate between those and kernel_cap_t's.
+Move supplementary groups implementation to kernel/groups.c .
+kernel/sys.c already accumulated quite a few random stuff.
 
-Define a common function do_capset_tocred() which applies capability
-set changes to a passed-in struct cred.
+Do strictly copy/paste + add required headers to compile.
+Compile-tested on many configs and archs.
 
-The restore function uses do_capset_tocred() to apply the restored
-capabilities to the struct cred being crafted, subject to the
-current task's (task executing sys_restart()) permissions.
-
-TODO: one day we'll want to c/r the securebits as well.
-
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
+Acked-by: Serge Hallyn <serue@us.ibm.com>
 ---
- include/linux/capability.h |    5 ++
- kernel/capability.c        |   94 +++++++++++++++++++++++++++++++++++++------
- 2 files changed, 86 insertions(+), 13 deletions(-)
+ kernel/Makefile |    1 +
+ kernel/groups.c |  288 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/sys.c    |  283 ------------------------------------------------------
+ 3 files changed, 289 insertions(+), 283 deletions(-)
+ create mode 100644 kernel/groups.c
 
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index c302110..572b5a0 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -536,6 +536,11 @@ extern const kernel_cap_t __cap_empty_set;
- extern const kernel_cap_t __cap_full_set;
- extern const kernel_cap_t __cap_init_eff_set;
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 6bc638d..4d4f741 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -11,6 +11,7 @@ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
+ 	    hrtimer.o rwsem.o nsproxy.o srcu.o semaphore.o \
+ 	    notifier.o ksysfs.o pm_qos_params.o sched_clock.o cred.o \
+ 	    async.o
++obj-y += groups.o
  
-+extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
-+struct cred;
-+extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x,
-+				struct cred *cred);
+ ifdef CONFIG_FUNCTION_TRACER
+ # Do not trace debug files and internal ftrace files
+diff --git a/kernel/groups.c b/kernel/groups.c
+new file mode 100644
+index 0000000..1b95b2f
+--- /dev/null
++++ b/kernel/groups.c
+@@ -0,0 +1,288 @@
++/*
++ * Supplementary group IDs
++ */
++#include <linux/cred.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/security.h>
++#include <linux/syscalls.h>
++#include <asm/uaccess.h>
 +
- /**
-  * has_capability - Determine if a task has a superior capability available
-  * @t: The task in question
-diff --git a/kernel/capability.c b/kernel/capability.c
-index 4e17041..d2c9bb3 100644
---- a/kernel/capability.c
-+++ b/kernel/capability.c
-@@ -217,6 +217,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, header, cap_user_data_t, dataptr)
- 	return ret;
- }
- 
-+static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted, struct cred *new)
++/* init to 2 - one for init_task, one to ensure it is never freed */
++struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
++
++struct group_info *groups_alloc(int gidsetsize)
 +{
-+	int ret;
++	struct group_info *group_info;
++	int nblocks;
++	int i;
 +
-+	ret = security_capset(new, current_cred(),
-+			      effective, inheritable, permitted);
-+	if (ret < 0)
-+		return ret;
++	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
++	/* Make sure we always allocate at least one indirect block pointer */
++	nblocks = nblocks ? : 1;
++	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
++	if (!group_info)
++		return NULL;
++	group_info->ngroups = gidsetsize;
++	group_info->nblocks = nblocks;
++	atomic_set(&group_info->usage, 1);
 +
-+	/*
-+	 * for checkpoint-restart, do we want to wait until end of restart?
-+	 * not sure we care */
-+	audit_log_capset(current->pid, new, current_cred());
++	if (gidsetsize <= NGROUPS_SMALL)
++		group_info->blocks[0] = group_info->small_block;
++	else {
++		for (i = 0; i < nblocks; i++) {
++			gid_t *b;
++			b = (void *)__get_free_page(GFP_USER);
++			if (!b)
++				goto out_undo_partial_alloc;
++			group_info->blocks[i] = b;
++		}
++	}
++	return group_info;
 +
++out_undo_partial_alloc:
++	while (--i >= 0) {
++		free_page((unsigned long)group_info->blocks[i]);
++	}
++	kfree(group_info);
++	return NULL;
++}
++
++EXPORT_SYMBOL(groups_alloc);
++
++void groups_free(struct group_info *group_info)
++{
++	if (group_info->blocks[0] != group_info->small_block) {
++		int i;
++		for (i = 0; i < group_info->nblocks; i++)
++			free_page((unsigned long)group_info->blocks[i]);
++	}
++	kfree(group_info);
++}
++
++EXPORT_SYMBOL(groups_free);
++
++/* export the group_info to a user-space array */
++static int groups_to_user(gid_t __user *grouplist,
++			  const struct group_info *group_info)
++{
++	int i;
++	unsigned int count = group_info->ngroups;
++
++	for (i = 0; i < group_info->nblocks; i++) {
++		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
++		unsigned int len = cp_count * sizeof(*grouplist);
++
++		if (copy_to_user(grouplist, group_info->blocks[i], len))
++			return -EFAULT;
++
++		grouplist += NGROUPS_PER_BLOCK;
++		count -= cp_count;
++	}
 +	return 0;
 +}
 +
-+static int do_capset(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted)
++/* fill a group_info from a user-space array - it must be allocated already */
++static int groups_from_user(struct group_info *group_info,
++    gid_t __user *grouplist)
++{
++	int i;
++	unsigned int count = group_info->ngroups;
++
++	for (i = 0; i < group_info->nblocks; i++) {
++		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
++		unsigned int len = cp_count * sizeof(*grouplist);
++
++		if (copy_from_user(group_info->blocks[i], grouplist, len))
++			return -EFAULT;
++
++		grouplist += NGROUPS_PER_BLOCK;
++		count -= cp_count;
++	}
++	return 0;
++}
++
++/* a simple Shell sort */
++static void groups_sort(struct group_info *group_info)
++{
++	int base, max, stride;
++	int gidsetsize = group_info->ngroups;
++
++	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
++		; /* nothing */
++	stride /= 3;
++
++	while (stride) {
++		max = gidsetsize - stride;
++		for (base = 0; base < max; base++) {
++			int left = base;
++			int right = left + stride;
++			gid_t tmp = GROUP_AT(group_info, right);
++
++			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
++				GROUP_AT(group_info, right) =
++				    GROUP_AT(group_info, left);
++				right = left;
++				left -= stride;
++			}
++			GROUP_AT(group_info, right) = tmp;
++		}
++		stride /= 3;
++	}
++}
++
++/* a simple bsearch */
++int groups_search(const struct group_info *group_info, gid_t grp)
++{
++	unsigned int left, right;
++
++	if (!group_info)
++		return 0;
++
++	left = 0;
++	right = group_info->ngroups;
++	while (left < right) {
++		unsigned int mid = (left+right)/2;
++		int cmp = grp - GROUP_AT(group_info, mid);
++		if (cmp > 0)
++			left = mid + 1;
++		else if (cmp < 0)
++			right = mid;
++		else
++			return 1;
++	}
++	return 0;
++}
++
++/**
++ * set_groups - Change a group subscription in a set of credentials
++ * @new: The newly prepared set of credentials to alter
++ * @group_info: The group list to install
++ *
++ * Validate a group subscription and, if valid, insert it into a set
++ * of credentials.
++ */
++int set_groups(struct cred *new, struct group_info *group_info)
++{
++	int retval;
++
++	retval = security_task_setgroups(group_info);
++	if (retval)
++		return retval;
++
++	put_group_info(new->group_info);
++	groups_sort(group_info);
++	get_group_info(group_info);
++	new->group_info = group_info;
++	return 0;
++}
++
++EXPORT_SYMBOL(set_groups);
++
++/**
++ * set_current_groups - Change current's group subscription
++ * @group_info: The group list to impose
++ *
++ * Validate a group subscription and, if valid, impose it upon current's task
++ * security record.
++ */
++int set_current_groups(struct group_info *group_info)
 +{
 +	struct cred *new;
 +	int ret;
@@ -84,93 +243,391 @@ index 4e17041..d2c9bb3 100644
 +	if (!new)
 +		return -ENOMEM;
 +
-+	ret = do_capset_tocred(effective, inheritable, permitted, new);
-+	if (ret < 0)
-+		goto error;
++	ret = set_groups(new, group_info);
++	if (ret < 0) {
++		abort_creds(new);
++		return ret;
++	}
 +
 +	return commit_creds(new);
-+
-+error:
-+	abort_creds(new);
-+	return ret;
 +}
 +
- /**
-  * sys_capset - set capabilities for a process or (*) a group of processes
-  * @header: pointer to struct that contains capability version and
-@@ -240,7 +279,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 	struct __user_cap_data_struct kdata[_KERNEL_CAPABILITY_U32S];
- 	unsigned i, tocopy;
- 	kernel_cap_t inheritable, permitted, effective;
++EXPORT_SYMBOL(set_current_groups);
++
++SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
++{
++	const struct cred *cred = current_cred();
++	int i;
++
++	if (gidsetsize < 0)
++		return -EINVAL;
++
++	/* no need to grab task_lock here; it cannot change */
++	i = cred->group_info->ngroups;
++	if (gidsetsize) {
++		if (i > gidsetsize) {
++			i = -EINVAL;
++			goto out;
++		}
++		if (groups_to_user(grouplist, cred->group_info)) {
++			i = -EFAULT;
++			goto out;
++		}
++	}
++out:
++	return i;
++}
++
++/*
++ *	SMP: Our groups are copy-on-write. We can set them safely
++ *	without another task interfering.
++ */
++ 
++SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
++{
++	struct group_info *group_info;
++	int retval;
++
++	if (!capable(CAP_SETGID))
++		return -EPERM;
++	if ((unsigned)gidsetsize > NGROUPS_MAX)
++		return -EINVAL;
++
++	group_info = groups_alloc(gidsetsize);
++	if (!group_info)
++		return -ENOMEM;
++	retval = groups_from_user(group_info, grouplist);
++	if (retval) {
++		put_group_info(group_info);
++		return retval;
++	}
++
++	retval = set_current_groups(group_info);
++	put_group_info(group_info);
++
++	return retval;
++}
++
++/*
++ * Check whether we're fsgid/egid or in the supplemental group..
++ */
++int in_group_p(gid_t grp)
++{
++	const struct cred *cred = current_cred();
++	int retval = 1;
++
++	if (grp != cred->fsgid)
++		retval = groups_search(cred->group_info, grp);
++	return retval;
++}
++
++EXPORT_SYMBOL(in_group_p);
++
++int in_egroup_p(gid_t grp)
++{
++	const struct cred *cred = current_cred();
++	int retval = 1;
++
++	if (grp != cred->egid)
++		retval = groups_search(cred->group_info, grp);
++	return retval;
++}
++
++EXPORT_SYMBOL(in_egroup_p);
+diff --git a/kernel/sys.c b/kernel/sys.c
+index fe5dcfe..0cedec0 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1020,289 +1020,6 @@ out:
+ 	return err;
+ }
+ 
+-/*
+- * Supplementary group IDs
+- */
+-
+-/* init to 2 - one for init_task, one to ensure it is never freed */
+-struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
+-
+-struct group_info *groups_alloc(int gidsetsize)
+-{
+-	struct group_info *group_info;
+-	int nblocks;
+-	int i;
+-
+-	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
+-	/* Make sure we always allocate at least one indirect block pointer */
+-	nblocks = nblocks ? : 1;
+-	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
+-	if (!group_info)
+-		return NULL;
+-	group_info->ngroups = gidsetsize;
+-	group_info->nblocks = nblocks;
+-	atomic_set(&group_info->usage, 1);
+-
+-	if (gidsetsize <= NGROUPS_SMALL)
+-		group_info->blocks[0] = group_info->small_block;
+-	else {
+-		for (i = 0; i < nblocks; i++) {
+-			gid_t *b;
+-			b = (void *)__get_free_page(GFP_USER);
+-			if (!b)
+-				goto out_undo_partial_alloc;
+-			group_info->blocks[i] = b;
+-		}
+-	}
+-	return group_info;
+-
+-out_undo_partial_alloc:
+-	while (--i >= 0) {
+-		free_page((unsigned long)group_info->blocks[i]);
+-	}
+-	kfree(group_info);
+-	return NULL;
+-}
+-
+-EXPORT_SYMBOL(groups_alloc);
+-
+-void groups_free(struct group_info *group_info)
+-{
+-	if (group_info->blocks[0] != group_info->small_block) {
+-		int i;
+-		for (i = 0; i < group_info->nblocks; i++)
+-			free_page((unsigned long)group_info->blocks[i]);
+-	}
+-	kfree(group_info);
+-}
+-
+-EXPORT_SYMBOL(groups_free);
+-
+-/* export the group_info to a user-space array */
+-static int groups_to_user(gid_t __user *grouplist,
+-			  const struct group_info *group_info)
+-{
+-	int i;
+-	unsigned int count = group_info->ngroups;
+-
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_to_user(grouplist, group_info->blocks[i], len))
+-			return -EFAULT;
+-
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
+-	}
+-	return 0;
+-}
+-
+-/* fill a group_info from a user-space array - it must be allocated already */
+-static int groups_from_user(struct group_info *group_info,
+-    gid_t __user *grouplist)
+-{
+-	int i;
+-	unsigned int count = group_info->ngroups;
+-
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_from_user(group_info->blocks[i], grouplist, len))
+-			return -EFAULT;
+-
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
+-	}
+-	return 0;
+-}
+-
+-/* a simple Shell sort */
+-static void groups_sort(struct group_info *group_info)
+-{
+-	int base, max, stride;
+-	int gidsetsize = group_info->ngroups;
+-
+-	for (stride = 1; stride < gidsetsize; stride = 3 * stride + 1)
+-		; /* nothing */
+-	stride /= 3;
+-
+-	while (stride) {
+-		max = gidsetsize - stride;
+-		for (base = 0; base < max; base++) {
+-			int left = base;
+-			int right = left + stride;
+-			gid_t tmp = GROUP_AT(group_info, right);
+-
+-			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
+-				GROUP_AT(group_info, right) =
+-				    GROUP_AT(group_info, left);
+-				right = left;
+-				left -= stride;
+-			}
+-			GROUP_AT(group_info, right) = tmp;
+-		}
+-		stride /= 3;
+-	}
+-}
+-
+-/* a simple bsearch */
+-int groups_search(const struct group_info *group_info, gid_t grp)
+-{
+-	unsigned int left, right;
+-
+-	if (!group_info)
+-		return 0;
+-
+-	left = 0;
+-	right = group_info->ngroups;
+-	while (left < right) {
+-		unsigned int mid = (left+right)/2;
+-		int cmp = grp - GROUP_AT(group_info, mid);
+-		if (cmp > 0)
+-			left = mid + 1;
+-		else if (cmp < 0)
+-			right = mid;
+-		else
+-			return 1;
+-	}
+-	return 0;
+-}
+-
+-/**
+- * set_groups - Change a group subscription in a set of credentials
+- * @new: The newly prepared set of credentials to alter
+- * @group_info: The group list to install
+- *
+- * Validate a group subscription and, if valid, insert it into a set
+- * of credentials.
+- */
+-int set_groups(struct cred *new, struct group_info *group_info)
+-{
+-	int retval;
+-
+-	retval = security_task_setgroups(group_info);
+-	if (retval)
+-		return retval;
+-
+-	put_group_info(new->group_info);
+-	groups_sort(group_info);
+-	get_group_info(group_info);
+-	new->group_info = group_info;
+-	return 0;
+-}
+-
+-EXPORT_SYMBOL(set_groups);
+-
+-/**
+- * set_current_groups - Change current's group subscription
+- * @group_info: The group list to impose
+- *
+- * Validate a group subscription and, if valid, impose it upon current's task
+- * security record.
+- */
+-int set_current_groups(struct group_info *group_info)
+-{
 -	struct cred *new;
- 	int ret;
- 	pid_t pid;
- 
-@@ -271,22 +309,52 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 		i++;
- 	}
- 
+-	int ret;
+-
 -	new = prepare_creds();
 -	if (!new)
 -		return -ENOMEM;
-+	return do_capset(&effective, &inheritable, &permitted);
- 
--	ret = security_capset(new, current_cred(),
--			      &effective, &inheritable, &permitted);
--	if (ret < 0)
--		goto error;
-+}
- 
--	audit_log_capset(pid, new, current_cred());
- 
+-
+-	ret = set_groups(new, group_info);
+-	if (ret < 0) {
+-		abort_creds(new);
+-		return ret;
+-	}
+-
 -	return commit_creds(new);
-+void checkpoint_save_cap(__u64 *dest, kernel_cap_t src)
-+{
-+	*dest = src.cap[0] | (src.cap[1] << sizeof(__u32));
-+}
+-}
+-
+-EXPORT_SYMBOL(set_current_groups);
+-
+-SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
+-{
+-	const struct cred *cred = current_cred();
+-	int i;
+-
+-	if (gidsetsize < 0)
+-		return -EINVAL;
+-
+-	/* no need to grab task_lock here; it cannot change */
+-	i = cred->group_info->ngroups;
+-	if (gidsetsize) {
+-		if (i > gidsetsize) {
+-			i = -EINVAL;
+-			goto out;
+-		}
+-		if (groups_to_user(grouplist, cred->group_info)) {
+-			i = -EFAULT;
+-			goto out;
+-		}
+-	}
+-out:
+-	return i;
+-}
+-
+-/*
+- *	SMP: Our groups are copy-on-write. We can set them safely
+- *	without another task interfering.
+- */
+- 
+-SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
+-{
+-	struct group_info *group_info;
+-	int retval;
+-
+-	if (!capable(CAP_SETGID))
+-		return -EPERM;
+-	if ((unsigned)gidsetsize > NGROUPS_MAX)
+-		return -EINVAL;
+-
+-	group_info = groups_alloc(gidsetsize);
+-	if (!group_info)
+-		return -ENOMEM;
+-	retval = groups_from_user(group_info, grouplist);
+-	if (retval) {
+-		put_group_info(group_info);
+-		return retval;
+-	}
+-
+-	retval = set_current_groups(group_info);
+-	put_group_info(group_info);
+-
+-	return retval;
+-}
+-
+-/*
+- * Check whether we're fsgid/egid or in the supplemental group..
+- */
+-int in_group_p(gid_t grp)
+-{
+-	const struct cred *cred = current_cred();
+-	int retval = 1;
+-
+-	if (grp != cred->fsgid)
+-		retval = groups_search(cred->group_info, grp);
+-	return retval;
+-}
+-
+-EXPORT_SYMBOL(in_group_p);
+-
+-int in_egroup_p(gid_t grp)
+-{
+-	const struct cred *cred = current_cred();
+-	int retval = 1;
+-
+-	if (grp != cred->egid)
+-		retval = groups_search(cred->group_info, grp);
+-	return retval;
+-}
+-
+-EXPORT_SYMBOL(in_egroup_p);
+-
+ DECLARE_RWSEM(uts_sem);
  
--error:
--	abort_creds(new);
--	return ret;
-+static void do_capbset_drop(struct cred *cred, int cap)
-+{
-+	cap_lower(cred->cap_bset, cap);
-+}
-+
-+int checkpoint_restore_cap(__u64 newe, __u64 newi, __u64 newp, __u64 newx,
-+			struct cred *cred)
-+{
-+	kernel_cap_t effective, inheritable, permitted, bset;
-+	int may_dropbcap = capable(CAP_SETPCAP);
-+	int ret, i;
-+
-+	effective.cap[0] = newe;
-+	effective.cap[1] = (newe >> sizeof(__u32));
-+	inheritable.cap[0] = newi;
-+	inheritable.cap[1] = (newi >> sizeof(__u32));
-+	permitted.cap[0] = newp;
-+	permitted.cap[1] = (newp >> sizeof(__u32));
-+	bset.cap[0] = newx;
-+	bset.cap[1] = (newx >> sizeof(__u32));
-+
-+	ret = do_capset_tocred(&effective, &inheritable, &permitted, cred);
-+	if (ret < 0)
-+		return ret;
-+
-+	for (i = 0; i < CAP_LAST_CAP; i++) {
-+		if (cap_raised(bset, i))
-+			continue;
-+		if (!cap_raised(current_cred()->cap_bset, i))
-+			continue;
-+		if (!may_dropbcap)
-+			return -EPERM;
-+		do_capbset_drop(cred, i);
-+	}
-+
-+	return 0;
- }
- 
- /**
+ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 -- 
 1.6.1
 
