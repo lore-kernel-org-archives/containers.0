@@ -1,14 +1,11 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 20/20] io-controller: experimental debug patch for async queue
-	wait before expiry
-Date: Tue, 26 May 2009 18:42:09 -0400
-Message-ID: <1243377729-2176-21-git-send-email-vgoyal__20034.6582722434$1243380734$gmane$org@redhat.com>
-References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
+Subject: [RFC] IO scheduler based IO controller V3
+Date: Tue, 26 May 2009 18:41:49 -0400
+Message-ID: <1243377729-2176-1-git-send-email-vgoyal__26173.9224814393$1243380740$gmane$org@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1243377729-2176-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,208 +19,194 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o A debug patch which does wait for next IO from async queue once it
-  becomes empty.
 
-o For async writes, traffic seen by IO scheduler is not in proportion to
-  the weight of the cgroup task/page belongs to. So if there are two processes
-  doing heavy writeouts in two cgroups with weights 1000 and 500 respectively,
-  then IO scheduler does not see more traffic/IO from higher weight cgroup
-  even if IO scheduler tries to give it higher disk time. Effectively, the
-  async queue belonging to higher weight cgroup becomes empty, and gets out
-  of contention for disk and lower weight cgroup gets to use disk giving
-  an impression in user space that higher weight cgroup did not get higher
-  time to disk.
+Hi All,
 
-o This is more of a problem at page cache level where a higher weight
-  process might be writing out the pages of lower weight process etc and
-  should be fixed there.
+Here is the V3 of the IO controller patches generated on top of 2.6.30-rc7.
 
-o While we fix those issues, introducing this debug patch which allows one
-  to idle on async queue (tunable via /sys/blolc/<disk>/queue/async_slice_idle)  so that once a higher weight queue becomes empty, instead of expiring it
-  we try to wait for next request to come from that queue hence giving it
-  higher disk time. A higher value of async_slice_idle, around 300ms, helps
-  me get some right numbers for my setup. Note: higher disk time would not
-  necessarily translate in more IO done as higher weight group is not pushing
-  enough IO to io scheduler. It is just a debugging aid to prove correctness
-  of IO controller by providing higher disk times to higher weight cgroup.
+Previous versions of the patches was posted here.
 
-Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- block/blk-sysfs.c   |    7 +++++
- block/elevator-fq.c |   67 +++++++++++++++++++++++++++++++++++++++++++++++---
- block/elevator-fq.h |    7 +++++
- 3 files changed, 77 insertions(+), 4 deletions(-)
+http://lkml.org/lkml/2009/3/11/486
+http://lkml.org/lkml/2009/5/5/275
 
-diff --git a/block/blk-sysfs.c b/block/blk-sysfs.c
-index b60b76e..f245f33 100644
---- a/block/blk-sysfs.c
-+++ b/block/blk-sysfs.c
-@@ -314,6 +314,12 @@ static struct queue_sysfs_entry queue_slice_idle_entry = {
- 	.store = elv_slice_idle_store,
- };
+This patchset is still work in progress but I want to keep on getting the
+snapshot of my tree out at regular intervals to get the feedback hence V3.
+
+Changes from V2
+===============
+- Now this patcheset supports per device per cgroup rules. Thanks to Gui for
+  the patch. Previously a cgroup had same weight on all the block devices
+  in the system. Now one can specify different weights on different devices
+  for same cgroup.
+
+- Made disk time and disk sector statistics per device per cgroup. 
+
+- Replaced the old io group refcounting patch with new patch from nauman.
+  Core change being that during cgroup deletion we don't try to hold
+  both io_cgroup lock and queue lock at the same time.
+
+- Fixed few bugs in per cgropup request descriptor infrastructure. There
+  were instances when a process be put to indefinite sleep after frequent
+  elevator switches.
+
+- Did some cleanups like get rid of rq->iog and rq->rl fields. Thanks to
+  the nauman and Gui for ideas and patches. Got rid of some dead code too.
+
+- Introduced some more debugging help in the form of two more cgrop files
+  "io.disk_queue" and "io.disk_dequeue". It gives the information how many
+  a times a group was queued for disk access and how many a times it got
+  out of contention.
+
+- Introduced an experimental debug patch where one can wait for new reuquest
+  on an async queue before it is expired.
+
+Limitations
+===========
+
+- This IO controller provides the bandwidth control at the IO scheduler
+  level (leaf node in stacked hiearchy of logical devices). So there can
+  be cases (depending on configuration) where application does not see
+  proportional BW division at higher logical level device.
+
+  LWN has written an article about the issue here.
+
+	http://lwn.net/Articles/332839/
+
+How to solve the issue of fairness at higher level logical devices
+==================================================================
+Couple of suggestions have come forward.
+
+- Implement IO control at IO scheduler layer and then with the help of
+  some daemon, adjust the weight on underlying devices dynamiclly, depending
+  on what kind of BW gurantees are to be achieved at higher level logical
+  block devices.
+
+- Also implement a higher level IO controller along with IO scheduler
+  based controller and let user choose one depending on his needs.
+
+  A higher level controller does not know about the assumptions/policies
+  of unerldying IO scheduler, hence it has the potential to break down
+  the IO scheduler's policy with-in cgroup. A lower level controller
+  can work with IO scheduler much more closely and efficiently.
  
-+static struct queue_sysfs_entry queue_async_slice_idle_entry = {
-+	.attr = {.name = "async_slice_idle", .mode = S_IRUGO | S_IWUSR },
-+	.show = elv_async_slice_idle_show,
-+	.store = elv_async_slice_idle_store,
-+};
-+
- static struct queue_sysfs_entry queue_slice_sync_entry = {
- 	.attr = {.name = "slice_sync", .mode = S_IRUGO | S_IWUSR },
- 	.show = elv_slice_sync_show,
-@@ -349,6 +355,7 @@ static struct attribute *default_attrs[] = {
- 	&queue_iostats_entry.attr,
- #ifdef CONFIG_ELV_FAIR_QUEUING
- 	&queue_slice_idle_entry.attr,
-+	&queue_async_slice_idle_entry.attr,
- 	&queue_slice_sync_entry.attr,
- 	&queue_slice_async_entry.attr,
- 	&queue_fairness_entry.attr,
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 6dd8683..f1179aa 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -20,6 +20,7 @@ const int elv_slice_sync = HZ / 10;
- int elv_slice_async = HZ / 25;
- const int elv_slice_async_rq = 2;
- int elv_slice_idle = HZ / 125;
-+int elv_async_slice_idle = 0;
- static struct kmem_cache *elv_ioq_pool;
- 
- /* Maximum Window length for updating average disk rate */
-@@ -2677,6 +2678,46 @@ ssize_t elv_slice_idle_store(struct request_queue *q, const char *name,
- 	return count;
- }
- 
-+/* Functions to show and store elv_idle_slice value through sysfs */
-+ssize_t elv_async_slice_idle_show(struct request_queue *q, char *name)
-+{
-+	struct elv_fq_data *efqd;
-+	unsigned int data;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(q->queue_lock, flags);
-+	efqd = &q->elevator->efqd;
-+	data = jiffies_to_msecs(efqd->elv_async_slice_idle);
-+	spin_unlock_irqrestore(q->queue_lock, flags);
-+	return sprintf(name, "%d\n", data);
-+}
-+
-+ssize_t elv_async_slice_idle_store(struct request_queue *q, const char *name,
-+			  size_t count)
-+{
-+	struct elv_fq_data *efqd;
-+	unsigned int data;
-+	unsigned long flags;
-+
-+	char *p = (char *)name;
-+
-+	data = simple_strtoul(p, &p, 10);
-+
-+	if (data < 0)
-+		data = 0;
-+	else if (data > INT_MAX)
-+		data = INT_MAX;
-+
-+	data = msecs_to_jiffies(data);
-+
-+	spin_lock_irqsave(q->queue_lock, flags);
-+	efqd = &q->elevator->efqd;
-+	efqd->elv_async_slice_idle = data;
-+	spin_unlock_irqrestore(q->queue_lock, flags);
-+
-+	return count;
-+}
-+
- /* Functions to show and store elv_slice_sync value through sysfs */
- ssize_t elv_slice_sync_show(struct request_queue *q, char *name)
- {
-@@ -2930,8 +2971,10 @@ int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
- 		ioq->pid = current->pid;
- 
- 	ioq->sched_queue = sched_queue;
--	if (elv_gen_idling_enabled(eq) && is_sync && !elv_ioq_class_idle(ioq))
--		elv_mark_ioq_idle_window(ioq);
-+	if (elv_gen_idling_enabled(eq) && !elv_ioq_class_idle(ioq)) {
-+		if (is_sync || efqd->fairness)
-+			elv_mark_ioq_idle_window(ioq);
-+	}
- 	bfq_init_entity(&ioq->entity, iog);
- 	ioq->entity.budget = elv_prio_to_slice(efqd, ioq);
- 	return 0;
-@@ -3563,7 +3606,12 @@ void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
- 	/*
- 	 * idle is disabled, either manually or by past process history
- 	 */
--	if (!efqd->elv_slice_idle || !elv_ioq_idle_window(ioq))
-+	if ((elv_ioq_sync(ioq) && !efqd->elv_slice_idle) ||
-+			!elv_ioq_idle_window(ioq))
-+		return;
-+
-+	/* If this is async queue and async_slice_idle is disabled, return */
-+	if (!elv_ioq_sync(ioq) && !efqd->elv_async_slice_idle)
- 		return;
- 
- 	/*
-@@ -3572,7 +3620,10 @@ void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
- 	 */
- 	if (wait_for_busy) {
- 		elv_mark_ioq_wait_busy(ioq);
--		sl = efqd->elv_slice_idle;
-+		if (elv_ioq_sync(ioq))
-+			sl = efqd->elv_slice_idle;
-+		else
-+			sl = efqd->elv_async_slice_idle;
- 		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
- 		elv_log_ioq(efqd, ioq, "arm idle: %lu wait busy=1", sl);
- 		return;
-@@ -3913,6 +3964,13 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 			goto done;
- 		}
- 
-+		/* For async queue try to do wait busy */
-+		if (efqd->fairness && !elv_ioq_sync(ioq) && !ioq->nr_queued
-+		    && (elv_iog_nr_active(iog) <= 1)) {
-+			elv_ioq_arm_slice_timer(q, 1);
-+			goto done;
-+		}
-+
- 		/*
- 		 * If there are no requests waiting in this queue, and
- 		 * there are other queues ready to issue requests, AND
-@@ -4042,6 +4100,7 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
- 	efqd->elv_slice[0] = elv_slice_async;
- 	efqd->elv_slice[1] = elv_slice_sync;
- 	efqd->elv_slice_idle = elv_slice_idle;
-+	efqd->elv_async_slice_idle = elv_async_slice_idle;
- 	efqd->hw_tag = 1;
- 
- 	/* For the time being keep fairness enabled by default */
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index de0f6b0..1c99e83 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -339,6 +339,8 @@ struct elv_fq_data {
- 	 * users of this functionality.
- 	 */
- 	unsigned int elv_slice_idle;
-+	/* idle slice for async queue */
-+	unsigned int elv_async_slice_idle;
- 	struct timer_list idle_slice_timer;
- 	struct work_struct unplug_work;
- 
-@@ -665,6 +667,11 @@ extern ssize_t elv_slice_idle_store(struct request_queue *q, const char *name,
- extern ssize_t elv_slice_sync_show(struct request_queue *q, char *name);
- extern ssize_t elv_slice_sync_store(struct request_queue *q, const char *name,
- 						size_t count);
-+
-+extern ssize_t elv_async_slice_idle_show(struct request_queue *q, char *name);
-+extern ssize_t elv_async_slice_idle_store(struct request_queue *q,
-+					const char *name, size_t count);
-+
- extern ssize_t elv_slice_async_show(struct request_queue *q, char *name);
- extern ssize_t elv_slice_async_store(struct request_queue *q, const char *name,
- 						size_t count);
--- 
-1.6.0.1
+Other active IO controller developments
+=======================================
+
+IO throttling
+-------------
+
+  This is a max bandwidth controller and not the proportional one. Secondly
+  it is a second level controller which can break the IO scheduler's
+  policy/assumtions with-in cgroup. 
+
+dm-ioband
+---------
+
+ This is a proportional bandwidth controller implemented as device mapper
+ driver. It is also a second level controller which can break the
+ IO scheduler's policy/assumptions with-in cgroup.
+
+Testing
+=======
+
+Again, I have been able to do only very basic testing of reads and writes.
+
+Test1 (Fairness for synchronous reads)
+======================================
+- Two dd in two cgroups with cgrop weights 1000 and 500. Ran two "dd" in those
+  cgroups (With CFQ scheduler and /sys/block/<device>/queue/fairness = 1)
+
+dd if=/mnt/$BLOCKDEV/zerofile1 of=/dev/null &
+dd if=/mnt/$BLOCKDEV/zerofile2 of=/dev/null &
+
+234179072 bytes (234 MB) copied, 4.0167 s, 58.3 MB/s
+234179072 bytes (234 MB) copied, 5.21889 s, 44.9 MB/s
+
+group1 time=8 16 2483 group1 sectors=8 16 457840
+group2 time=8 16 1317 group2 sectors=8 16 242664
+
+First two fields in time and sectors statistics represent major and minor
+number of the device. Third field represents disk time in milliseconds and
+number of sectors transferred respectively.
+
+This patchset tries to provide fairness in terms of disk time received. group1
+got almost double of group2 disk time (At the time of first dd finish). These
+time and sectors statistics can be read using io.disk_time and io.disk_sector
+files in cgroup. More about it in documentation file.
+
+Test2 (Fairness for async writes)
+=================================
+Fairness for async writes is tricy and biggest reason is that async writes
+are cached in higher layers (page cahe) and are dispatched to lower layers
+not necessarily in proportional manner. For example, consider two dd threads
+reading /dev/zero as input file and doing writes of huge files. Very soon
+we will cross vm_dirty_ratio and dd thread will be forced to write out some
+pages to disk before more pages can be dirtied. But not necessarily dirty
+pages of same thread are picked. It can very well pick the inode of lesser
+priority dd thread and do some writeout. So effectively higher weight dd is
+doing writeouts of lower weight dd pages and we don't see service differentation
+
+IOW, the core problem with async write fairness is that higher weight thread
+does not throw enought IO traffic at IO controller to keep the queue
+continuously backlogged. This are many .2 to .8 second intervals where higher
+weight queue is empty and in that duration lower weight queue get lots of job
+done giving the impression that there was no service differentiation.
+
+In summary, from IO controller point of view async writes support is there. Now
+we need to do some more work in higher layers to make sure higher weight process
+is not blocked behind IO of some lower weight process. This is a TODO item.
+
+So to test async writes I generated lots of write traffic in two cgroups (50
+fio threads) and watched the disk time statistics in respective cgroups at
+the interval of 2 seconds. Thanks to ryo tsuruta for the test case.
+
+*****************************************************************
+sync
+echo 3 > /proc/sys/vm/drop_caches
+
+fio_args="--size=64m --rw=write --numjobs=50 --group_reporting"
+
+echo $$ > /cgroup/bfqio/test1/tasks
+fio $fio_args --name=test1 --directory=/mnt/sdd1/fio/ --output=/mnt/sdd1/fio/test1.log &
+
+echo $$ > /cgroup/bfqio/test2/tasks
+fio $fio_args --name=test2 --directory=/mnt/sdd2/fio/ --output=/mnt/sdd2/fio/test2.log &
+*********************************************************************** 
+
+And watched the disk time and sector statistics for the both the cgroups
+every 2 seconds using a script. How is snippet from output.
+
+test1 statistics: time=8 48 4325   sectors=8 48 226696 dq=8 48 2
+test2 statistics: time=8 48 2163   sectors=8 48 107040 dq=8 48 1
+
+test1 statistics: time=8 48 8460   sectors=8 48 489152 dq=8 48 4
+test2 statistics: time=8 48 4425   sectors=8 48 256984 dq=8 48 3
+
+test1 statistics: time=8 48 12928   sectors=8 48 792192 dq=8 48 6
+test2 statistics: time=8 48 6813   sectors=8 48 384944 dq=8 48 5
+
+test1 statistics: time=8 48 17256   sectors=8 48 1092744 dq=8 48 7
+test2 statistics: time=8 48 8980   sectors=8 48 524840 dq=8 48 6
+
+test1 statistics: time=8 48 20488   sectors=8 48 1300832 dq=8 48 8
+test2 statistics: time=8 48 10920   sectors=8 48 634864 dq=8 48 7
+
+First two fields in time and sectors statistics represent major and minor
+number of the device. Third field represents disk time in milliseconds and
+number of sectors transferred respectively.
+
+So disk time consumed by group1 is almost double of group2.
+
+TODO
+====
+- Lots of code cleanups, testing, bug fixing, optimizations, benchmarking
+  etc...
+
+- Debug and fix some of the areas like page cache where higher weight cgroup
+  async writes are stuck behind lower weight cgroup async writes.
+
+- Anticipatory code will need more work. It is not working properly currently
+  and needs more thought regarding idling etc.
+
+Thanks
+Vivek
