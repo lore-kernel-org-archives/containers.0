@@ -1,72 +1,58 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 5/8] groups: allow compilation on s390x
-Date: Tue, 26 May 2009 18:17:41 -0500
-Message-ID: <20090526231741.GA19730@us.ibm.com>
-References: <20090526173242.GA13757@us.ibm.com> <20090526173344.GE13991@us.ibm.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 17/38] groups: move code to kernel/groups.c
+Date: Tue, 26 May 2009 18:25:11 -0500
+Message-ID: <20090526232511.GA23806@hallyn.com>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-17-git-send-email-adobriyan@gmail.com>
+	<20090526144819.GA21502@hallyn.com>
+	<20090526183405.GA11909@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090526173344.GE13991@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
+In-Reply-To: <20090526183405.GA11909-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
-> ---
->  kernel/groups.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> On Tue, May 26, 2009 at 09:48:19AM -0500, Serge E. Hallyn wrote:
+> > Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > Move supplementary groups implementation to kernel/groups.c .
+> > > kernel/sys.c already accumulated quite a few random stuff.
+> > > 
+> > > Do strictly copy/paste + add required headers to compile.
+> > > Compile-tested on many configs and archs.
+> > > 
+> > > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > 
+> > Actually I needed the following change:
 > 
-> diff --git a/kernel/groups.c b/kernel/groups.c
-> index 1b95b2f..14ebc6a 100644
-> --- a/kernel/groups.c
-> +++ b/kernel/groups.c
-> @@ -1,6 +1,7 @@
->  /*
->   * Supplementary group IDs
->   */
-> +#include <linux/init.h>
->  #include <linux/cred.h>
->  #include <linux/module.h>
->  #include <linux/slab.h>
-> -- 
-> 1.6.1
+> This is dealt by first patch:
+> "[PATCH 01/38] cred: #include init.h in cred.h"
+> which is in -mm already.
+> 
+> > --- a/kernel/groups.c
+> > +++ b/kernel/groups.c
+> > @@ -1,6 +1,7 @@
+> >  /*
+> >   * Supplementary group IDs
+> >   */
+> > +#include <linux/init.h>
+> 
+> Wrong, groups.c doesn't use __init at all.
 
-As noted by Alexey, this is wrong, and the prob was
-actually fixed by the following patch he'd also sent
-last friday, so please replace this patch with the
-following:
+Right you are.
 
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: [PATCH 01/38] cred: #include init.h in cred.h
-
-cred.h can't be included as first header because it uses __init and
-doesn't include init.h which is enough to break compilation on at least
-ia64.
-
-Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
----
- include/linux/cred.h |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 3282ee4..4fa9996 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -13,6 +13,7 @@
- #define _LINUX_CRED_H
- 
- #include <linux/capability.h>
-+#include <linux/init.h>
- #include <linux/key.h>
- #include <asm/atomic.h>
- 
--- 
-1.5.6.5
-
-_______________________________________________
-Containers mailing list
-Containers@lists.linux-foundation.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
+thanks,
+-serge
