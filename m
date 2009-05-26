@@ -1,14 +1,14 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 16/38] x86: ptrace debugreg checks rewrite
-Date: Tue, 26 May 2009 16:25:23 -0700
-Message-ID: <20090526162523.f8ae061c.akpm__26880.5027277724$1243380718$gmane$org@linux-foundation.org>
-References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-16-git-send-email-adobriyan@gmail.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 12/20] io-controller: deadline changes for hierarchical fair
+	queuing
+Date: Tue, 26 May 2009 18:42:01 -0400
+Message-ID: <1243377729-2176-13-git-send-email-vgoyal__5731.94508110664$1243380719$gmane$org@redhat.com>
+References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1242968132-1044-16-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1243377729-2176-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,12 +18,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 22 May 2009 08:55:10 +0400
-Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+This patch changes deadline to use queue scheduling code from elevator layer.
+One can go back to old deadline by selecting CONFIG_IOSCHED_DEADLINE_HIER.
 
-> This is a mess.
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ block/Kconfig.iosched    |   11 +++++++++++
+ block/deadline-iosched.c |    3 +++
+ 2 files changed, 14 insertions(+), 0 deletions(-)
 
-heh.  I'm going to treat it as Ingo's mess :)
+diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
+index 9da6657..3a9e7d7 100644
+--- a/block/Kconfig.iosched
++++ b/block/Kconfig.iosched
+@@ -55,6 +55,17 @@ config IOSCHED_DEADLINE
+ 	  a disk at any one time, its behaviour is almost identical to the
+ 	  anticipatory I/O scheduler and so is a good choice.
+ 
++config IOSCHED_DEADLINE_HIER
++	bool "Deadline Hierarchical Scheduling support"
++	depends on IOSCHED_DEADLINE && CGROUPS
++	select ELV_FAIR_QUEUING
++	select GROUP_IOSCHED
++	default n
++	---help---
++	  Enable hierarhical scheduling in deadline. In this mode deadline keeps
++	  one IO queue per cgroup instead of a global queue. Elevator
++	  fair queuing logic ensures fairness among various queues.
++
+ config IOSCHED_CFQ
+ 	tristate "CFQ I/O scheduler"
+ 	select ELV_FAIR_QUEUING
+diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
+index 5e65041..27b77b9 100644
+--- a/block/deadline-iosched.c
++++ b/block/deadline-iosched.c
+@@ -477,6 +477,9 @@ static struct elevator_type iosched_deadline = {
+ 		.elevator_alloc_sched_queue_fn = deadline_alloc_deadline_queue,
+ 		.elevator_free_sched_queue_fn = deadline_free_deadline_queue,
+ 	},
++#ifdef CONFIG_IOSCHED_DEADLINE_HIER
++	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
++#endif
+ 	.elevator_attrs = deadline_attrs,
+ 	.elevator_name = "deadline",
+ 	.elevator_owner = THIS_MODULE,
+-- 
+1.6.0.1
