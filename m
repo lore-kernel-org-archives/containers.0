@@ -1,11 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 00/43] Kernel based checkpoint/restart
-Date: Wed, 27 May 2009 13:32:26 -0400
-Message-ID: <1243445589-32388-1-git-send-email-orenl__12603.676695335$1243445859$gmane$org@cs.columbia.edu>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] io-controller: Add io group reference handling for request
+Date: Wed, 27 May 2009 13:32:59 -0400
+Message-ID: <20090527173259.GD3425__36668.3175707751$1243446054$gmane$org@redhat.com>
+References: <20090518140114.GB27080@redhat.com> <20090518143921.GE3113@linux>
+	<20090526.203424.39179999.ryov@valinux.co.jp>
+	<20090527.155631.226800550.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090527.155631.226800550.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,265 +20,204 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Application checkpoint/restart (c/r) is the ability to save the state
-of a running application so that it can later resume its execution
-from the time at which it was checkpointed, on the same or a different
-machine.
+On Wed, May 27, 2009 at 03:56:31PM +0900, Ryo Tsuruta wrote:
+> Hi Andrea and Vivek,
+> 
+> Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
+> > Hi Andrea and Vivek,
+> > 
+> > From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> > Subject: Re: [PATCH] io-controller: Add io group reference handling for request
+> > Date: Mon, 18 May 2009 16:39:23 +0200
+> > 
+> > > On Mon, May 18, 2009 at 10:01:14AM -0400, Vivek Goyal wrote:
+> > > > On Sun, May 17, 2009 at 12:26:06PM +0200, Andrea Righi wrote:
+> > > > > On Fri, May 15, 2009 at 10:06:43AM -0400, Vivek Goyal wrote:
+> > > > > > On Fri, May 15, 2009 at 09:48:40AM +0200, Andrea Righi wrote:
+> > > > > > > On Fri, May 15, 2009 at 01:15:24PM +0800, Gui Jianfeng wrote:
+> > > > > > > > Vivek Goyal wrote:
+> > > > > > > > ...
+> > > > > > > > >  }
+> > > > > > > > > @@ -1462,20 +1462,27 @@ struct io_cgroup *get_iocg_from_bio(stru
+> > > > > > > > >  /*
+> > > > > > > > >   * Find the io group bio belongs to.
+> > > > > > > > >   * If "create" is set, io group is created if it is not already present.
+> > > > > > > > > + * If "curr" is set, io group is information is searched for current
+> > > > > > > > > + * task and not with the help of bio.
+> > > > > > > > > + *
+> > > > > > > > > + * FIXME: Can we assume that if bio is NULL then lookup group for current
+> > > > > > > > > + * task and not create extra function parameter ?
+> > > > > > > > >   *
+> > > > > > > > > - * Note: There is a narrow window of race where a group is being freed
+> > > > > > > > > - * by cgroup deletion path and some rq has slipped through in this group.
+> > > > > > > > > - * Fix it.
+> > > > > > > > >   */
+> > > > > > > > > -struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
+> > > > > > > > > -					int create)
+> > > > > > > > > +struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
+> > > > > > > > > +					int create, int curr)
+> > > > > > > > 
+> > > > > > > >   Hi Vivek,
+> > > > > > > > 
+> > > > > > > >   IIUC we can get rid of curr, and just determine iog from bio. If bio is not NULL,
+> > > > > > > >   get iog from bio, otherwise get it from current task.
+> > > > > > > 
+> > > > > > > Consider also that get_cgroup_from_bio() is much more slow than
+> > > > > > > task_cgroup() and need to lock/unlock_page_cgroup() in
+> > > > > > > get_blkio_cgroup_id(), while task_cgroup() is rcu protected.
+> > > > > > > 
+> > > > > > 
+> > > > > > True.
+> > > > > > 
+> > > > > > > BTW another optimization could be to use the blkio-cgroup functionality
+> > > > > > > only for dirty pages and cut out some blkio_set_owner(). For all the
+> > > > > > > other cases IO always occurs in the same context of the current task,
+> > > > > > > and you can use task_cgroup().
+> > > > > > > 
+> > > > > > 
+> > > > > > Yes, may be in some cases we can avoid setting page owner. I will get
+> > > > > > to it once I have got functionality going well. In the mean time if
+> > > > > > you have a patch for it, it will be great.
+> > > > > > 
+> > > > > > > However, this is true only for page cache pages, for IO generated by
+> > > > > > > anonymous pages (swap) you still need the page tracking functionality
+> > > > > > > both for reads and writes.
+> > > > > > > 
+> > > > > > 
+> > > > > > Right now I am assuming that all the sync IO will belong to task
+> > > > > > submitting the bio hence use task_cgroup() for that. Only for async
+> > > > > > IO, I am trying to use page tracking functionality to determine the owner.
+> > > > > > Look at elv_bio_sync(bio).
+> > > > > > 
+> > > > > > You seem to be saying that there are cases where even for sync IO, we
+> > > > > > can't use submitting task's context and need to rely on page tracking
+> > > > > > functionlity? 
+> > 
+> > I think that there are some kernel threads (e.g., dm-crypt, LVM and md
+> > devices) which actually submit IOs instead of tasks which originate the
+> > IOs. When IOs are submitted from such kernel threads, we can't use
+> > submitting task's context to determine to which cgroup the IO belongs.
+> > 
+> > > > > > In case of getting page (read) from swap, will it not happen
+> > > > > > in the context of process who will take a page fault and initiate the
+> > > > > > swap read?
+> > > > > 
+> > > > > No, for example in read_swap_cache_async():
+> > > > > 
+> > > > > @@ -308,6 +309,7 @@ struct page *read_swap_cache_async(swp_entry_t entry, gfp_t gfp_mask,
+> > > > >  		 */
+> > > > >  		__set_page_locked(new_page);
+> > > > >  		SetPageSwapBacked(new_page);
+> > > > > +		blkio_cgroup_set_owner(new_page, current->mm);
+> > > > >  		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
+> > > > >  		if (likely(!err)) {
+> > > > >  			/*
+> > > > > 
+> > > > > This is a read, but the current task is not always the owner of this
+> > > > > swap cache page, because it's a readahead operation.
+> > > > > 
+> > > > 
+> > > > But will this readahead be not initiated in the context of the task taking
+> > > > the page fault?
+> > > > 
+> > > > handle_pte_fault()
+> > > > 	do_swap_page()
+> > > > 		swapin_readahead()
+> > > > 			read_swap_cache_async()
+> > > > 
+> > > > If yes, then swap reads issued will still be in the context of process and
+> > > > we should be fine?
+> > > 
+> > > Right. I was trying to say that the current task may swap-in also pages
+> > > belonging to a different task, so from a certain point of view it's not
+> > > so fair to charge the current task for the whole activity. But ok, I
+> > > think it's a minor issue.
+> > > 
+> > > > 
+> > > > > Anyway, this is a minor corner case I think. And probably it is safe to
+> > > > > consider this like any other read IO and get rid of the
+> > > > > blkio_cgroup_set_owner().
+> > > > 
+> > > > Agreed.
+> > > > 
+> > > > > 
+> > > > > I wonder if it would be better to attach the blkio_cgroup to the
+> > > > > anonymous page only when swap-out occurs.
+> > > > 
+> > > > Swap seems to be an interesting case in general. Somebody raised this
+> > > > question on lwn io controller article also. A user process never asked
+> > > > for swap activity. It is something enforced by kernel. So while doing
+> > > > some swap outs, it does not seem too fair to charge the write out to
+> > > > the process page belongs to and the fact of the matter may be that there
+> > > > is some other memory hungry application which is forcing these swap outs.
+> > > > 
+> > > > Keeping this in mind, should swap activity be considered as system
+> > > > activity and be charged to root group instead of to user tasks in other
+> > > > cgroups?
+> > > 
+> > > In this case I assume the swap-in activity should be charged to the root
+> > > cgroup as well.
+> > > 
+> > > Anyway, in the logic of the memory and swap control it would seem
+> > > reasonable to provide IO separation also for the swap IO activity.
+> > > 
+> > > In the MEMHOG example, it would be unfair if the memory pressure is
+> > > caused by a task in another cgroup, but with memory and swap isolation a
+> > > memory pressure condition can only be caused by a memory hog that runs
+> > > in the same cgroup. From this point of view it seems more fair to
+> > > consider the swap activity as the particular cgroup IO activity, instead
+> > > of charging always the root cgroup.
+> > > 
+> > > Otherwise, I suspect, memory pressure would be a simple way to blow away
+> > > any kind of QoS guarantees provided by the IO controller.
+> > > 
+> > > >   
+> > > > > I mean, just put the
+> > > > > blkio_cgroup_set_owner() hook in try_to_umap() in order to keep track of
+> > > > > the IO generated by direct reclaim of anon memory. For all the other
+> > > > > cases we can simply use the submitting task's context.
+> > 
+> > I think that only putting the hook in try_to_unmap() doesn't work
+> > correctly, because IOs will be charged to reclaiming processes or
+> > kswapd. These IOs should be charged to processes which cause memory
+> > pressure.
+> 
+> Consider the following case:
+> 
+>   (1) There are two processes Proc-A and Proc-B.
+>   (2) Proc-A maps a large file into many pages by mmap() and writes
+>       many data to the file.
+>   (3) After (2), Proc-B try to get a page, but there are no available
+>       pages because Proc-A has used them.
+>   (4) kernel starts to reclaim pages, call try_to_unmap() to unmap
+>       a page which is owned by Proc-A, then blkio_cgroup_set_owner()
+>       sets Proc-B's ID on the page because the task's context is Proc-B.
+>   (5) After (4), kernel writes the page out to a disk. This IO is
+>       charged to Proc-B.
+> 
+> In the above case, I think that the IO should be charged to a Proc-A,
+> because the IO is caused by Proc-A's memory pressure. 
+> I think we should consider in the case without memory and swap
+> isolation.
+> 
 
-Here is another round of the c/r patchset. The patches are reordered
-to reduce size and for easier review, and the code is more stable.
-See the changelog below for details. Hey, it even includes renaming
-of functions and files ...
+But what happens if Proc-B is consuming lots of memory and then process A
+asks for one page of memory and that triggers the memory reclaim. In that
+case we are kind of penalizing process A from IO point of view because
+some other process consumed lots of memory?
 
-Most importantly, it's a working proof-of-concept and has been tested
-with v2.6.30-rc7. And while not everything is supported, it provides
-a glimpse at _how_ things are done.
+So it looks like that if one mounts mem+swap and io controller on same
+hierarchy, then things probably would be fine as swap IO generated due
+to either memory pressure or periodic reclaim by kswapd, will be charged
+to right cgroup.
 
-For more information, check out Documentation/checkpoint/*.txt
+But if they are not mounted on same hiearchy, then I guess it is not too
+bad to charge the owner of the page for swap IO. It is not very accurate
+but at the same time there does not seem to be an easy way out?
 
-Q: How useful is this code as it stands in real-world usage?
-A: Right now, the application can be single- or multi-processes.
-   Supports open files - regular files and directories on ext[234],
-   pipes, and /dev/{null,zero,random,urandom}. All sort of shared
-   memory work. sysv IPC also works (except for semaphore undo).
-   The restart does not yet preserve the original pid(s), but 
-   patches are already circulating. Definitely already suitable
-   for many types of batch jobs. (Note: it is assumed that the fs
-   view is available at restart).
-
-Q: What can it checkpoint and rsetart ?
-A: A (single threaded) process can checkpoint itself, aka "self"
-   checkpoint, if it calls the new system calls. Otherise, for an
-   "external" checkpoint, the caller must first freeze the target
-   process(es). One can either checkpoint an entire container (and
-   we make best effort to ensure that the result is self-contained),
-   or merely a subtree of a process hierarchy.
-
-Q: What about namespaces ?
-A: Currrently, UTS and IPC namespaces are restored. They demonstrate
-   how namespaces are handled. More to come.
-
-Q: What additional work needs to be done to it?
-A: Fill in the gory details following the examples so far. Short
-   term plan is: restore pids, complete work on threads, zombies,
-   signals, and more files types.
-   
-Q: How can I try it ?
-A: This one can actually be used for simple batch jobs (pipes, too),
-   a whole container or just a subtree of tasks. Try it:
-
-   create the freezer cgroup:
-     $ mount -t cgroup -ofreezer freezer /freezer
-     $ mkdir /freezer/0
-   
-   run the test, freeze it:  
-     $ test/multitask &
-     [1] 2754
-     $ for i in `pidof multitask`; do echo $i > /freezer/0/tasks; done
-     $ echo FROZEN > /freezer/0/freezer.state
-   
-   checkpoint:
-     $ ./ckpt 2754 > ckpt.out
-   
-   restart:
-     $ ./mktree < ckpt.out
-   
-   voila :)
-   
-To do all this, you'll need:
-
-The git tree tracking v14, branch 'ckpt-v14' (and past versions):
-	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
-
-Restarting multiple processes requires 'mktree' userspace tool with
-the matching branch (v14):
-	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
-
-Oren.
-
-
-Changelog:
-
-[2009-May-27] v16
-  - Privilege checks for IPC checkpoint
-  - Fix error string generation during checkpoint
-  - Use kzalloc for header allocation
-  - Restart blocks are arch-independent
-  - Redo pipe c/r using splice
-  - Fixes to s390 arch
-  - Remove powerpc arch (temporary)
-  - EXplicitly restore ->nsproxy
-  - All objects in image are precedeed by 'struct ckpt_hdr'
-  - Fix leaks detection (and leaks)
-  - Reorder of patchset
-  - Misc bugs and compilation fixes
-
-[2009-Apr-12] v15
-  - Minor fixes
-
-[2009-Apr-28] v14
-  - Tested against kernel v2.6.30-rc3 on x86_32.
-  - Refactor files chekpoint to use f_ops (file operations)
-  - Refactor mm/vma to use vma_ops
-  - Explicitly handle VDSO vma (and require compat mode)
-  - Added code to c/r restat-blocks (restart timeout related syscalls)
-  - Added code to c/r namespaces: uts, ipc (with Dan Smith)
-  - Added code to c/r sysvipc (shm, msg, sem)
-  - Support for VM_CLONE shared memory
-  - Added resource leak detection for whole-container checkpoint
-  - Added sysctl gauge to allow unprivileged restart/checkpoint
-  - Improve and simplify the code and logic of shared objects
-  - Rework image format: shared objects appear prior to their use
-  - Merge checkpoint and restart functionality into same files
-  - Massive renaming of functions: prefix "ckpt_" for generics,
-    "checkpoint_" for checkpoint, and "restore_" for restart.
-  - Report checkpoint errors as a valid (string record) in the output
-  - Merged PPC architecture (by Nathan Lunch),
-  - Requires updates to userspace tools too.
-  - Misc nits and bug fixes
-
-[2009-Mar-31] v14-rc2
-  - Change along Dave's suggestion to use f_ops->checkpoint() for files
-  - Merge patch simplifying Kconfig, with CONFIG_CHECKPOINT_SUPPORT
-  - Merge support for PPC arch (Nathan Lynch)
-  - Misc cleanups and fixes in response to comments
-
-[2009-Mar-20] v14-rc1:
-  - The 'h.parent' field of 'struct cr_hdr' isn't used - discard
-  - Check whether calls to cr_hbuf_get() succeed or fail.
-  - Fixed of pipe c/r code
-  - Prevent deadlock by refusing c/r when a pipe inode == ctx->file inode
-  - Refuse non-self checkpoint if a task isn't frozen
-  - Use unsigned fields in checkpoint headers unless otherwise required
-  - Rename functions in files c/r to better reflect their role
-  - Add support for anonymous shared memory
-  - Merge support for s390 arch (Dan Smith, Serge Hallyn)
-    
-[2008-Dec-03] v13:
-  - Cleanups of 'struct cr_ctx' - remove unused fields
-  - Misc fixes for comments
-  
-[2008-Dec-17] v12:
-  - Fix re-alloc/reset of pgarr chain to correctly reuse buffers
-    (empty pgarr are saves in a separate pool chain)
-  - Add a couple of missed calls to cr_hbuf_put()
-  - cr_kwrite/cr_kread() again use vfs_read(), vfs_write() (safer)
-  - Split cr_write/cr_read() to two parts: _cr_write/read() helper
-  - Befriend with sparse: explicit conversion to 'void __user *'
-  - Redrefine 'pr_fmt' ind replace cr_debug() with pr_debug()
-
-[2008-Dec-05] v11:
-  - Use contents of 'init->fs->root' instead of pointing to it
-  - Ignore symlinks (there is no such thing as an open symlink)
-  - cr_scan_fds() retries from scratch if it hits size limits
-  - Add missing test for VM_MAYSHARE when dumping memory
-  - Improve documentation about: behavior when tasks aren't fronen,
-    life span of the object hash, references to objects in the hash
- 
-[2008-Nov-26] v10:
-  - Grab vfs root of container init, rather than current process
-  - Acquire dcache_lock around call to __d_path() in cr_fill_name()
-  - Force end-of-string in cr_read_string() (fix possible DoS)
-  - Introduce cr_write_buffer(), cr_read_buffer() and cr_read_buf_type()
-
-[2008-Nov-10] v9:
-  - Support multiple processes c/r
-  - Extend checkpoint header with archtiecture dependent header 
-  - Misc bug fixes (see individual changelogs)
-  - Rebase to v2.6.28-rc3.
-
-[2008-Oct-29] v8:
-  - Support "external" checkpoint
-  - Include Dave Hansen's 'deny-checkpoint' patch
-  - Split docs in Documentation/checkpoint/..., and improve contents
-
-[2008-Oct-17] v7:
-  - Fix save/restore state of FPU
-  - Fix argument given to kunmap_atomic() in memory dump/restore
-
-[2008-Oct-07] v6:
-  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
-    (even though it's not really needed)
-  - Add assumptions and what's-missing to documentation
-  - Misc fixes and cleanups
-
-[2008-Sep-11] v5:
-  - Config is now 'def_bool n' by default
-  - Improve memory dump/restore code (following Dave Hansen's comments)
-  - Change dump format (and code) to allow chunks of <vaddrs, pages>
-    instead of one long list of each
-  - Fix use of follow_page() to avoid faulting in non-present pages
-  - Memory restore now maps user pages explicitly to copy data into them,
-    instead of reading directly to user space; got rid of mprotect_fixup()
-  - Remove preempt_disable() when restoring debug registers
-  - Rename headers files s/ckpt/checkpoint/
-  - Fix misc bugs in files dump/restore
-  - Fixes and cleanups on some error paths
-  - Fix misc coding style
-
-[2008-Sep-09] v4:
-  - Various fixes and clean-ups
-  - Fix calculation of hash table size
-  - Fix header structure alignment
-  - Use stand list_... for cr_pgarr
-
-[2008-Aug-29] v3:
-  - Various fixes and clean-ups
-  - Use standard hlist_... for hash table
-  - Better use of standard kmalloc/kfree
-
-[2008-Aug-20] v2:
-  - Added Dump and restore of open files (regular and directories)
-  - Added basic handling of shared objects, and improve handling of
-    'parent tag' concept
-  - Added documentation
-  - Improved ABI, 64bit padding for image data
-  - Improved locking when saving/restoring memory
-  - Added UTS information to header (release, version, machine)
-  - Cleanup extraction of filename from a file pointer
-  - Refactor to allow easier reviewing
-  - Remove requirement for CAPS_SYS_ADMIN until we come up with a
-    security policy (this means that file restore may fail)
-  - Other cleanup and response to comments for v1
-
-[2008-Jul-29] v1:
-  - Initial version: support a single task with address space of only
-    private anonymous or file-mapped VMAs; syscalls ignore pid/crid
-    argument and act on current process.
-
---
-At the containers mini-conference before OLS, the consensus among
-all the stakeholders was that doing checkpoint/restart in the kernel
-as much as possible was the best approach.  With this approach, the
-kernel will export a relatively opaque 'blob' of data to userspace
-which can then be handed to the new kernel at restore time.
-
-This is different than what had been proposed before, which was
-that a userspace application would be responsible for collecting
-all of this data.  We were also planning on adding lots of new,
-little kernel interfaces for all of the things that needed
-checkpointing.  This unites those into a single, grand interface.
-
-The 'blob' will contain copies of select portions of kernel
-structures such as vmas and mm_structs.  It will also contain
-copies of the actual memory that the process uses.  Any changes
-in this blob's format between kernel revisions can be handled by
-an in-userspace conversion program.
-
-This is a similar approach to virtually all of the commercial
-checkpoint/restart products out there, as well as the research
-project Zap.
-
-These patches basically serialize internel kernel state and write
-it out to a file descriptor.  The checkpoint and restore are done
-with two new system calls: sys_checkpoint and sys_restart.
-
-In this incarnation, they can only work checkpoint and restore a
-single task. The task's address space may consist of only private,
-simple vma's - anonymous or file-mapped. The open files may consist
-of only simple files and directories.
---
+Thanks
+Vivek
