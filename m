@@ -1,17 +1,12 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroups: handle failure of cgroup_populate_dir() at
-	mount/remount
-Date: Wed, 27 May 2009 10:34:04 +0900
-Message-ID: <20090527103404.81d3c1a4.kamezawa.hiroyu__30908.6271598519$1243388240$gmane$org@jp.fujitsu.com>
-References: <4A16153C.2080004@cn.fujitsu.com>
-	<20090522172545.1e5e5f81.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830905261506x480f2167naf1034177bbc7036@mail.gmail.com>
-	<4A1C9253.3060108@cn.fujitsu.com>
+From: "Shebchuk Fanj" <containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Hola, friend
+Date: Tue, 26 May 2009 19:34:47 -0700
+Message-ID: <676059916928113.NHSVWBYLXJFMBSI@rrcs-70-63-105-90.midsouth.biz.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A1C9253.3060108-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline; filename="SpamAssassinReport.txt"
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,43 +16,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 27 May 2009 09:07:31 +0800
-Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+Spam detection software, running on the system "murdock.linux-foundation.org", has
+identified this incoming email as possible spam.  The original message
+has been attached to this so you can view it (if it isn't spam) or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
 
-> Paul Menage wrote:
-> > On Fri, May 22, 2009 at 1:25 AM, KAMEZAWA Hiroyuki
-> > <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> >> Hm, shouldn't we allow "noprefix" to be effective only agaisnt cpuset ?
-> >> I think it's just for backward-compatibility of cpuset.
-> >> (I don't like the option at all.)
-> > 
-> > Yes, exposing the "noprefix" option externally was one of the mistakes
-> > I made when developing cgroups.
-> > 
-> > It seems to me really unlikely that anyone is using "noprefix" for
-> 
-> And "noprefix" is not documented in cgroups.txt, so I guess not
-> many people know this option. Even libcgroup doesn't handle it.
-> 
-> > anything other than implicitly when mounting the "cpuset" filesystem.
-> > So I'd be inclined to just forbid it if we're mounting more than just
-> > the cpuset subsystem. A bit of a nasty abstraction violation, but it
-> > makes more sense overall. The only problem is that someone *might* be
-> > using it - do we have any way to determine how, and how big do they
-> > have to be before we care?
-> > 
-> 
-> I think we can never know..
+Content preview:  Trouble viewing this e-mail? Click here. Hot Pharmacy news
+   You are subscribed as containers-de/tnXTf+JLsfHDXvbKv3VN6ohzGQtmt@public.gmane.org [...] 
 
-How about this method ?
+Content analysis details:   (7.2 points, 5.0 required)
 
- - add "noprefix" to "to-be-removed" list.
- - add "WARNING: noprefix option will be removed in 2.6.32 (or 2.6.31)" now
- - remove "noprefix" in 2.6.31-rc or later
-
-Thanks,
--Kame
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 2.6 HELO_DYNAMIC_IPADDR    Relay HELO'd using suspicious hostname (IP addr
+                            1)
+ 0.6 FH_HELO_EQ_D_D_D_D     Helo is d-d-d-d
+ 0.0 MISSING_DATE           Missing Date: header
+ 0.9 HTML_IMAGE_RATIO_04    BODY: HTML has a low ratio of text to image area
+ 1.0 BAYES_60               BODY: Bayesian spam probability is 60 to 80%
+                            [score: 0.6818]
+ 0.0 HTML_MESSAGE           BODY: HTML included in message
+ 2.0 MIME_HTML_ONLY         BODY: Message only has text/html MIME parts
+ 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
+                            dynamic-looking rDNS
