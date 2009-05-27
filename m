@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 19/43] c/r: external checkpoint of a task other than
-	ourself
-Date: Wed, 27 May 2009 13:32:45 -0400
-Message-ID: <1243445589-32388-20-git-send-email-orenl__3398.46256324581$1243448970$gmane$org@cs.columbia.edu>
-References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 7/7] [PATCH] Define clone_with_pids syscall
+Date: Wed, 27 May 2009 13:19:31 -0500
+Message-ID: <20090527181931.GD780@us.ibm.com>
+References: <20090527154212.GA3107@us.ibm.com>
+	<20090527154507.GG3107@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090527154507.GG3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,220 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Now we can do "external" checkpoint, i.e. act on another task.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Mon, 4 May 2009 01:17:45 -0700
+> Subject: [PATCH 7/7] [PATCH] Define clone_with_pids syscall
+> 
+> clone_with_pids() is same as clone(), except that it takes a 'target_pid_set'
+> paramter which lets caller choose a specific pid number for the child process
+> in each of the child process's pid namespace. This system call would be needed
+> to implement Checkpoint/Restart (i.e after a checkpoint, restart a process with
+> its original pids).
 
-sys_checkpoint() now looks up the target pid (in our namespace) and
-checkpoints that corresponding task. That task should be the root of
-a container, unless CHECKPOINT_SUBTREE flag is given.
+I think you should point out here that CAP_SYS_ADMIN is needed
+to use the syscall, so unprivileged tasks can't use this to try to
+play games with /var/run/*.pid.
 
-sys_restart() remains the same, as the restart is always done in the
-context of the restarting task.
+...
 
-Changelog[v16]:
-  - Use CHECKPOINT_SUBTREE to allow subtree (partial container)
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Changelog[v14]:
-  - Refuse non-self checkpoint if target task isn't frozen
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-
-Changelog[v11]:
-  - Copy contents of 'init->fs->root' instead of pointing to them
-
-Changelog[v10]:
-  - Grab vfs root of container init, rather than current process
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/checkpoint.c          |   79 +++++++++++++++++++++++++++++++++++++-
- checkpoint/restart.c             |    4 +-
- checkpoint/sys.c                 |    6 +++
- include/linux/checkpoint_types.h |    2 +
- 4 files changed, 87 insertions(+), 4 deletions(-)
-
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index a346b7e..086f2d9 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -12,6 +12,9 @@
- #define CKPT_DFLAG  CKPT_DSYS
- 
- #include <linux/version.h>
-+#include <linux/sched.h>
-+#include <linux/freezer.h>
-+#include <linux/ptrace.h>
- #include <linux/time.h>
- #include <linux/fs.h>
- #include <linux/file.h>
-@@ -245,23 +248,95 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	if (t->state == TASK_DEAD) {
-+		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-+		return -EAGAIN;
-+	}
-+
-+	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
-+		__ckpt_write_err(ctx, "access to task %d (%s) denied",
-+				 task_pid_vnr(t), t->comm);
-+		return -EPERM;
-+	}
-+
-+	/* verify that the task is frozen (unless self) */
-+	if (t != current && !frozen(t)) {
-+		__ckpt_write_err(ctx, "task %d (%s) is not frozen",
-+				 task_pid_vnr(t), t->comm);
-+		return -EBUSY;
-+	}
-+
-+	/* FIX: add support for ptraced tasks */
-+	if (task_ptrace(t)) {
-+		__ckpt_write_err(ctx, "task %d (%s) is ptraced",
-+				 task_pid_vnr(t), t->comm);
-+		return -EBUSY;
-+	}
-+
-+	return 0;
-+}
-+
-+static int get_container(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	struct task_struct *task = NULL;
-+	struct nsproxy *nsproxy = NULL;
-+	int ret;
-+
-+	ctx->root_pid = pid;
-+
-+	read_lock(&tasklist_lock);
-+	task = find_task_by_vpid(pid);
-+	if (task)
-+		get_task_struct(task);
-+	read_unlock(&tasklist_lock);
-+
-+	if (!task)
-+		return -ESRCH;
-+
-+	ret = may_checkpoint_task(ctx, task);
-+	if (ret) {
-+		ckpt_write_err(ctx, NULL);
-+		put_task_struct(task);
-+		return ret;
-+	}
-+
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(task);
-+	get_nsproxy(nsproxy);
-+	rcu_read_unlock();
-+
-+	ctx->root_task = task;
-+	ctx->root_nsproxy = nsproxy;
-+
-+	return 0;
-+}
-+
- /* setup checkpoint-specific parts of ctx */
- static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	struct fs_struct *fs;
-+	int ret;
- 
- 	ctx->root_pid = pid;
- 
-+	ret = get_container(ctx, pid);
-+	if (ret < 0)
-+		return ret;
-+
- 	/*
- 	 * assume checkpointer is in container's root vfs
- 	 * FIXME: this works for now, but will change with real containers
- 	 */
- 
--	fs = current->fs;
-+	task_lock(ctx->root_task);
-+	fs = ctx->root_task->fs;
- 	read_lock(&fs->lock);
- 	ctx->fs_mnt = fs->root;
- 	path_get(&ctx->fs_mnt);
- 	read_unlock(&fs->lock);
-+	task_unlock(ctx->root_task);
- 
- 	return 0;
- }
-@@ -276,7 +351,7 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 	ret = checkpoint_write_header(ctx);
- 	if (ret < 0)
- 		goto out;
--	ret = checkpoint_task(ctx, current);
-+	ret = checkpoint_task(ctx, ctx->root_task);
- 	if (ret < 0)
- 		goto out;
- 	ret = checkpoint_write_tail(ctx);
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index d3d6c5e..ca33539 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -352,7 +352,7 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
- }
- 
- /* setup restart-specific parts of ctx */
--static int init_restart_ctx(struct ckpt_ctx *ctx)
-+static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	return 0;
- }
-@@ -361,7 +361,7 @@ int do_restart(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
--	ret = init_restart_ctx(ctx);
-+	ret = init_restart_ctx(ctx, pid);
- 	if (ret < 0)
- 		return ret;
- 	ret = restore_read_header(ctx);
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 7bf70e4..c809120 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -12,6 +12,7 @@
- #define CKPT_DFLAG  CKPT_DSYS
- 
- #include <linux/sched.h>
-+#include <linux/nsproxy.h>
- #include <linux/kernel.h>
- #include <linux/syscalls.h>
- #include <linux/fs.h>
-@@ -173,6 +174,11 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 	path_put(&ctx->fs_mnt);
- 	ckpt_pgarr_free(ctx);
- 
-+	if (ctx->root_nsproxy)
-+		put_nsproxy(ctx->root_nsproxy);
-+	if (ctx->root_task)
-+		put_task_struct(ctx->root_task);
-+
- 	kfree(ctx);
- }
- 
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index a0ea5f6..4369f90 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -28,6 +28,8 @@ struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
- 
- 	pid_t root_pid;		/* container identifier */
-+	struct task_struct *root_task;	/* container root task */
-+	struct nsproxy *root_nsproxy;	/* container root nsproxy */
- 
- 	unsigned long kflags;	/* kerenl flags */
- 	unsigned long uflags;	/* user flags */
--- 
-1.6.0.4
+-serge
