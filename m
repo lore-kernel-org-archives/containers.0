@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 10/43] c/r: restore open file descriptors
-Date: Wed, 27 May 2009 13:32:36 -0400
-Message-ID: <1243445589-32388-11-git-send-email-orenl__34508.418539963$1243451389$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 38/43] c/r: support message-queues sysv-ipc
+Date: Wed, 27 May 2009 13:33:04 -0400
+Message-ID: <1243445589-32388-39-git-send-email-orenl__14676.5853548006$1243451511$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,443 +21,498 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For each fd read 'struct ckpt_hdr_file_desc' and lookup objref in the
-hash table; If not found in the hash table, (first occurence), read in
-'struct ckpt_hdr_file', create a new file and register in the hash.
-Otherwise attach the file pointer from the hash as an FD.
+Checkpoint of sysvipc message-queues is performed by iterating through
+all 'msq' objects and dumping the contents of each one. The message
+queued on each 'msq' are dumped with that object.
 
-Changelog[v16]:
-  - Reorder patch (move earlier in series)
-  - Handle shared files_struct objects
+Message of a specific queue get written one by one. The queue lock
+cannot be held while dumping them, but the loop must be protected from
+someone (who ?) writing or reading. To do that we grab the lock, then
+hijack the entire chain of messages from the queue, drop the lock,
+and then safely dump them in a loop. Finally, with the lock held, we
+re-attach the chain while verifying that there isn't other (new) data
+on that queue.
 
-Changelog[v14]:
-  - Introduce a per file-type restore() callback
-  - Revert change to pr_debug(), back to ckpt_debug()
-  - Rename:  restore_files() => restore_fd_table()
-  - Rename:  ckpt_read_fd_data() => restore_file()
-  - Check whether calls to ckpt_hbuf_get() fail
-  - Discard field 'hh->parent'
-
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-
-Changelog[v6]:
-  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
-    (even though it's not really needed)
+Writing the message contents themselves is straight forward. The code
+is similar to that in ipc/msgutil.c, the main difference being that
+we deal with kernel memory and not user memory.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/files.c         |  285 ++++++++++++++++++++++++++++++++++++++++++++
- checkpoint/objhash.c       |    2 +
- checkpoint/process.c       |   20 +++
- checkpoint/restart.c       |    9 ++
- include/linux/checkpoint.h |    5 +
- 5 files changed, 321 insertions(+), 0 deletions(-)
+ include/linux/checkpoint_hdr.h |   21 +++-
+ ipc/Makefile                   |    2 +-
+ ipc/checkpoint.c               |    6 +-
+ ipc/checkpoint_msg.c           |  362 ++++++++++++++++++++++++++++++++++++++++
+ ipc/util.h                     |    3 +
+ 5 files changed, 389 insertions(+), 5 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index d10dfb6..d7583d3 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -16,6 +16,8 @@
- #include <linux/sched.h>
- #include <linux/file.h>
- #include <linux/fdtable.h>
-+#include <linux/fsnotify.h>
-+#include <linux/syscalls.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index f7e331d..b05f39c 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -73,6 +73,7 @@ enum {
+ 	CKPT_HDR_IPC = 501,
+ 	CKPT_HDR_IPC_SHM,
+ 	CKPT_HDR_IPC_MSG,
++	CKPT_HDR_IPC_MSG_MSG,
+ 	CKPT_HDR_IPC_SEM,
  
-@@ -309,3 +311,286 @@ int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	CKPT_HDR_TAIL = 9001,
+@@ -356,6 +357,25 @@ struct ckpt_hdr_ipc_shm {
+ 	__u32 objref;
+ } __attribute__((aligned(8)));
  
- 	return objref;
- }
++struct ckpt_hdr_ipc_msg {
++	struct ckpt_hdr h;
++	struct ckpt_hdr_ipc_perms perms;
++	__u64 q_stime;
++	__u64 q_rtime;
++	__u64 q_ctime;
++	__u64 q_cbytes;
++	__u64 q_qnum;
++	__u64 q_qbytes;
++	__s32 q_lspid;
++	__s32 q_lrpid;
++} __attribute__((aligned(8)));
 +
-+/**************************************************************************
-+ * Restart
-+ */
++struct ckpt_hdr_ipc_msg_msg {
++	struct ckpt_hdr h;
++	__s32 m_type;
++	__u32 m_ts;
++} __attribute__((aligned(8)));
 +
-+/**
-+ * read_open_fname - read a file name and open a file
-+ * @ctx: checkpoint context
-+ * @flags: file flags
-+ * @mode: file mode
-+ */
-+static struct file *read_open_fname(struct ckpt_ctx *ctx, int flags, int mode)
-+{
-+	struct ckpt_hdr *h;
-+	struct file *file;
-+	char *fname;
-+
-+	h = ckpt_read_buf_type(ctx, PATH_MAX, CKPT_HDR_FILE_NAME);
-+	if (IS_ERR(h))
-+		return (struct file *) h;
-+	fname = (char *) (h + 1);
-+	ckpt_debug("fname '%s' flags %#x mode %#x\n", fname, flags, mode);
-+
-+	file = filp_open(fname, flags, mode);
-+	ckpt_hdr_put(ctx, h);
-+	return file;
-+}
-+
-+static int close_all_fds(struct files_struct *files)
-+{
-+	int *fdtable;
-+	int nfds;
-+
-+	nfds = scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
-+	while (nfds--)
-+		sys_close(fdtable[nfds]);
-+	kfree(fdtable);
-+	return 0;
-+}
-+
-+/**
-+ * attach_file - attach a lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int attach_file(struct file *file)
-+{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		get_file(file);
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+	}
-+	return fd;
-+}
-+
-+#define CKPT_SETFL_MASK  \
-+	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
-+
-+int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			struct ckpt_hdr_file *h)
-+{
-+	int ret;
-+
-+	/* FIX: need to restore uid, gid, owner etc */
-+
-+	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
-+	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = vfs_llseek(file, h->f_pos, SEEK_SET);
-+	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
-+		ret = 0;
-+ out:
-+	return ret;
-+}
-+
-+static struct file *generic_file_restore(struct ckpt_ctx *ctx,
-+					 struct ckpt_hdr_file *ptr)
-+{
-+	struct file *file;
-+	int ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*ptr) || ptr->f_type != CKPT_FILE_GENERIC)
-+		return ERR_PTR(-EINVAL);
-+
-+	file = read_open_fname(ctx, ptr->f_flags, ptr->f_mode);
-+	if (IS_ERR(file))
-+		return file;
-+
-+	ret = restore_file_common(ctx, file, ptr);
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+	return file;
-+}
-+
-+struct restore_file_ops {
-+	char *file_name;
-+	enum file_type file_type;
-+	struct file * (*restore) (struct ckpt_ctx *ctx,
-+				  struct ckpt_hdr_file *ptr);
-+};
-+
-+static struct restore_file_ops restore_file_ops[] = {
-+	/* ignored file */
-+	{
-+		.file_name = "IGNORE",
-+		.file_type = CKPT_FILE_IGNORE,
-+		.restore = NULL,
-+	},
-+	/* regular file/directory */
-+	{
-+		.file_name = "GENERIC",
-+		.file_type = CKPT_FILE_GENERIC,
-+		.restore = generic_file_restore,
-+	},
-+};
-+
-+static struct file *do_restore_file(struct ckpt_ctx *ctx)
-+{
-+	struct restore_file_ops *ops;
-+	struct ckpt_hdr_file *h;
-+	struct file *file = ERR_PTR(-EINVAL);
-+
-+	/*
-+	 * All 'struct ckpt_hdr_file_...' begin with ckpt_hdr_file,
-+	 * but the actual object depends on the file type. The length
-+	 * should never be more than page.
-+	 */
-+	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_FILE);
-+	if (IS_ERR(h))
-+		return (struct file *) h;
-+	ckpt_debug("flags %#x mode %#x type %d\n",
-+		 h->f_flags, h->f_mode, h->f_type);
-+
-+	if (h->f_type >= CKPT_FILE_MAX)
-+		goto out;
-+
-+	ops = &restore_file_ops[h->f_type];
-+	BUG_ON(ops->file_type != h->f_type);
-+
-+	if (ops->restore)
-+		file = ops->restore(ctx, h);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return file;
-+}
-+
-+/* restore callback for file pointer */
-+void *restore_file(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_file(ctx);
-+}
-+
-+/**
-+ * ckpt_read_file_desc - restore the state of a given file descriptor
-+ * @ctx: checkpoint context
+ 
+ #define CKPT_TST_OVERFLOW_16(a, b) \
+ 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
+@@ -366,5 +386,4 @@ struct ckpt_hdr_ipc_shm {
+ #define CKPT_TST_OVERFLOW_64(a, b) \
+ 	((sizeof(a) > sizeof(b)) && ((a) > LONG_MAX))
+ 
+-
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff --git a/ipc/Makefile b/ipc/Makefile
+index 7e23683..ca408ff 100644
+--- a/ipc/Makefile
++++ b/ipc/Makefile
+@@ -9,5 +9,5 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
+ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
+ obj-$(CONFIG_IPC_NS) += namespace.o
+ obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
+-obj-$(CONFIG_CHECKPOINT) += checkpoint.o checkpoint_shm.o
++obj-$(CONFIG_CHECKPOINT) += checkpoint.o checkpoint_shm.o checkpoint_msg.o
+ 
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
+index 25d2277..7eece96 100644
+--- a/ipc/checkpoint.c
++++ b/ipc/checkpoint.c
+@@ -104,11 +104,11 @@ int checkpoint_ipc_ns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
+ 
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
+ 				 CKPT_HDR_IPC_SHM, checkpoint_ipc_shm);
+-#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
+ 				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
++#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
+@@ -216,11 +216,11 @@ static int do_restore_ipc_ns(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_ipc_any(ctx, IPC_SHM_IDS,
+ 			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
+-#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		goto out;
+-	ret = ckpt_read_ipc_any(ctx, IPC_MSG_IDS,
++	ret = restore_ipc_any(ctx, IPC_MSG_IDS,
+ 			      CKPT_HDR_IPC_MSG, restore_ipc_msg);
++#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = restore_ipc_any(ctx, IPC_SEM_IDS,
+diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+new file mode 100644
+index 0000000..a988a9e
+--- /dev/null
++++ b/ipc/checkpoint_msg.c
+@@ -0,0 +1,362 @@
++/*
++ *  Checkpoint/restart - dump state of sysvipc msg
 + *
-+ * Restores the state of a file descriptor; looks up the objref (in the
-+ * header) in the hash table, and if found picks the matching file and
-+ * use it; otherwise calls restore_file to restore the file too.
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
 + */
-+static int restore_file_desc(struct ckpt_ctx *ctx)
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DIPC
++
++#include <linux/mm.h>
++#include <linux/msg.h>
++#include <linux/rwsem.h>
++#include <linux/sched.h>
++#include <linux/syscalls.h>
++#include <linux/nsproxy.h>
++#include <linux/ipc_namespace.h>
++
++#include "util.h"
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/************************************************************************
++ * ipc checkpoint
++ */
++
++static int fill_ipc_msg_hdr(struct ckpt_ctx *ctx,
++			    struct ckpt_hdr_ipc_msg *h,
++			    struct msg_queue *msq)
 +{
-+	struct ckpt_hdr_file_desc *h;
-+	struct file *file;
-+	int newfd, ret;
++	int ret = 0;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+	ckpt_debug("ref %d fd %d c.o.e %d\n",
-+		 h->fd_objref, h->fd_descriptor, h->fd_close_on_exec);
++	ipc_lock_by_ptr(&msq->q_perm);
 +
-+	ret = -EINVAL;
-+	if (h->fd_objref <= 0 || h->fd_descriptor < 0)
-+		goto out;
++	ret = checkpoint_fill_ipc_perms(&h->perms, &msq->q_perm);
++	if (ret < 0)
++		goto unlock;
 +
-+	file = ckpt_obj_fetch(ctx, h->fd_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
++	h->q_stime = msq->q_stime;
++	h->q_rtime = msq->q_rtime;
++	h->q_ctime = msq->q_ctime;
++	h->q_cbytes = msq->q_cbytes;
++	h->q_qnum = msq->q_qnum;
++	h->q_qbytes = msq->q_qbytes;
++	h->q_lspid = msq->q_lspid;
++	h->q_lrpid = msq->q_lrpid;
 +
-+	newfd = attach_file(file);
-+	if (newfd < 0) {
-+		ret = newfd;
-+		goto out;
-+	}
++ unlock:
++	ipc_unlock(&msq->q_perm);
++	ckpt_debug("msg: lspid %d rspid %d qnum %lld qbytes %lld\n",
++		 h->q_lspid, h->q_lrpid, h->q_qnum, h->q_qbytes);
 +
-+	ckpt_debug("newfd got %d wanted %d\n", newfd, h->fd_descriptor);
-+
-+	/* reposition if newfd isn't desired fd */
-+	if (newfd != h->fd_descriptor) {
-+		ret = sys_dup2(newfd, h->fd_descriptor);
-+		if (ret < 0)
-+			goto out;
-+		sys_close(newfd);
-+	}
-+
-+	if (h->fd_close_on_exec)
-+		set_close_on_exec(h->fd_descriptor, 1);
-+
-+	ret = 0;
-+ out:
-+	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
-+/* restore callback for file table */
-+static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
++static int checkpoint_msg_contents(struct ckpt_ctx *ctx, struct msg_msg *msg)
 +{
-+	struct ckpt_hdr_file_table *h;
-+	struct files_struct *files;
-+	int i, ret;
++	struct ckpt_hdr_ipc_msg_msg *h;
++	struct msg_msgseg *seg;
++	int total, len;
++	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_TABLE);
-+	if (IS_ERR(h))
-+		return (struct files_struct *) h;
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG_MSG);
++	if (!h)
++		return -ENOMEM;
 +
-+	ckpt_debug("nfds %d\n", h->fdt_nfds);
++	h->m_type = msg->m_type;
++	h->m_ts = msg->m_ts;
 +
-+	ret = -EMFILE;
-+	if (h->fdt_nfds < 0 || h->fdt_nfds > sysctl_nr_open)
-+		goto out;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	total = msg->m_ts;
++	len = min(total, (int) DATALEN_MSG);
++	ret = ckpt_write_buffer(ctx, (msg + 1), len);
++	if (ret < 0)
++		return ret;
++
++	seg = msg->next;
++	total -= len;
++
++	while (total) {
++		len = min(total, (int) DATALEN_SEG);
++		ret = ckpt_write_buffer(ctx, (seg + 1), len);
++		if (ret < 0)
++			break;
++		seg = seg->next;
++		total -= len;
++	}
++
++	return ret;
++}
++
++static int checkpoint_msg_queue(struct ckpt_ctx *ctx, struct msg_queue *msq)
++{
++	struct list_head messages;
++	struct msg_msg *msg;
++	int ret = -EBUSY;
 +
 +	/*
-+	 * We assume that restarting tasks, as created in user-space,
-+	 * have distinct files_struct objects each. If not, we need to
-+	 * call dup_fd() to make sure we don't overwrite an already
-+	 * restored one.
++	 * Scanning the msq requires the lock, but then we can't write
++	 * data out from inside. Instead, we grab the lock, remove all
++	 * messages to our own list, drop the lock, write the messages,
++	 * and finally re-attach the them to the msq with the lock taken.
 +	 */
++	ipc_lock_by_ptr(&msq->q_perm);
++	if (!list_empty(&msq->q_receivers))
++		goto unlock;
++	if (!list_empty(&msq->q_senders))
++		goto unlock;
++	if (list_empty(&msq->q_messages))
++		goto unlock;
++	/* temporarily take out all messages */
++	INIT_LIST_HEAD(&messages);
++	list_splice_init(&msq->q_messages, &messages);
++ unlock:
++	ipc_unlock(&msq->q_perm);
 +
-+	/* point of no return -- close all file descriptors */
-+	ret = close_all_fds(current->files);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < h->fdt_nfds; i++) {
-+		ret = restore_file_desc(ctx);
++	list_for_each_entry(msg, &messages, m_list) {
++		ret = checkpoint_msg_contents(ctx, msg);
 +		if (ret < 0)
 +			break;
 +	}
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	if (!ret) {
-+		files = current->files;
-+		atomic_inc(&files->count);
-+	} else {
-+		files = ERR_PTR(ret);
-+	}
-+	return files;
++
++	/* put all the messages back in */
++	ipc_lock_by_ptr(&msq->q_perm);
++	list_splice(&messages, &msq->q_messages);
++	ipc_unlock(&msq->q_perm);
++
++	return ret;
 +}
 +
-+void *restore_file_table(struct ckpt_ctx *ctx)
++int checkpoint_ipc_msg(int id, void *p, void *data)
 +{
-+	return (void *) do_restore_file_table(ctx);
-+}
-+
-+int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref)
-+{
-+	struct files_struct *files;
-+
-+	files = ckpt_obj_fetch(ctx, files_objref, CKPT_OBJ_FILE_TABLE);
-+	if (IS_ERR(files))
-+		return PTR_ERR(files);
-+
-+	if (files != current->files) {
-+		task_lock(current);
-+		put_files_struct(current->files);
-+		current->files = files;
-+		task_unlock(current);
-+		atomic_inc(&files->count);
-+	}
-+
-+	return 0;
-+}
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index ea15958..f5c9f7c 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -92,6 +92,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_drop = obj_file_table_drop,
- 		.ref_grab = obj_file_table_grab,
- 		.checkpoint = checkpoint_file_table,
-+		.restore = restore_file_table,
- 	},
- 	/* file object */
- 	{
-@@ -100,6 +101,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_drop = obj_file_drop,
- 		.ref_grab = obj_file_grab,
- 		.checkpoint = checkpoint_file,
-+		.restore = restore_file,
- 	},
- };
- 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 4c922b6..5fd1573 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -121,6 +121,22 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+static int restore_task_objs(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_task_objs *h;
++	struct ckpt_hdr_ipc_msg *h;
++	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
++	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
++	struct msg_queue *msq;
 +	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
++	msq = container_of(perm, struct msg_queue, q_perm);
 +
-+	ret = restore_obj_file_table(ctx, h->files_objref);
-+	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG);
++	if (!h)
++		return -ENOMEM;
 +
++	ret = fill_ipc_msg_hdr(ctx, h, msq);
++	if (ret < 0)
++		goto out;
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	if (ret < 0)
++		goto out;
++
++	if (h->q_qnum)
++		ret = checkpoint_msg_queue(ctx, msq);
++ out:
 +	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
- /* read the entire state of the current task */
- int restore_task(struct ckpt_ctx *ctx)
- {
-@@ -130,6 +146,10 @@ int restore_task(struct ckpt_ctx *ctx)
- 	ckpt_debug("task %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+	ret = restore_task_objs(ctx);
-+	ckpt_debug("shared %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index ce52e30..d3d6c5e 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -351,10 +351,19 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+/* setup restart-specific parts of ctx */
-+static int init_restart_ctx(struct ckpt_ctx *ctx)
++
++/************************************************************************
++ * ipc restart
++ */
++
++static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
++			    struct ckpt_hdr_ipc_msg *h,
++			    struct msg_queue *msq)
 +{
++	int ret = 0;
++
++	ret = restore_load_ipc_perms(&h->perms, &msq->q_perm);
++	if (ret < 0)
++		return ret;
++
++	ckpt_debug("msq: lspid %d lrpid %d qnum %lld qbytes %lld\n",
++		 h->q_lspid, h->q_lrpid, h->q_qnum, h->q_qbytes);
++
++	if (h->q_lspid < 0 || h->q_lrpid < 0)
++		return -EINVAL;
++
++	msq->q_stime = h->q_stime;
++	msq->q_rtime = h->q_rtime;
++	msq->q_ctime = h->q_ctime;
++	msq->q_lspid = h->q_lspid;
++	msq->q_lrpid = h->q_lrpid;
++
 +	return 0;
 +}
 +
- int do_restart(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
-+	ret = init_restart_ctx(ctx);
++static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
++{
++	struct ckpt_hdr_ipc_msg_msg *h;
++	struct msg_msg *msg = NULL;
++	struct msg_msgseg *seg, **pseg;
++	int total, len;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG_MSG);
++	if (IS_ERR(h))
++		return (struct msg_msg *) h;
++
++	ret = -EINVAL;
++	if (h->m_type < 1)
++		goto out;
++	if (h->m_ts > current->nsproxy->ipc_ns->msg_ctlmax)
++		goto out;
++
++	total = h->m_ts;
++	len = min(total, (int) DATALEN_MSG);
++	msg = kmalloc(sizeof(*msg) + len, GFP_KERNEL);
++	if (!msg) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	msg->next = NULL;
++	pseg = &msg->next;
++
++	ret = _ckpt_read_buffer(ctx, (msg + 1), len);
 +	if (ret < 0)
-+		return ret;
- 	ret = restore_read_header(ctx);
- 	if (ret < 0)
- 		return ret;
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d170988..bb14a66 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -70,13 +70,18 @@ extern int restore_cpu(struct ckpt_ctx *ctx);
- /* file table */
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
- 				     struct task_struct *t);
-+extern int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref);
- extern int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_file_table(struct ckpt_ctx *ctx);
++		goto out;
++
++	total -= len;
++	while (total) {
++		len = min(total, (int) DATALEN_SEG);
++		seg = kmalloc(sizeof(*seg) + len, GFP_KERNEL);
++		if (!seg) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		seg->next = NULL;
++		*pseg = seg;
++		pseg = &seg->next;
++
++		ret = _ckpt_read_buffer(ctx, (seg + 1), len);
++		if (ret < 0)
++			goto out;
++		total -= len;
++	}
++
++	msg->m_type = h->m_type;
++	msg->m_ts = h->m_ts;
++	*clen = h->m_ts;
++ out:
++	if (ret < 0 && msg) {
++		free_msg(msg);
++		msg = ERR_PTR(ret);
++	}
++	ckpt_hdr_put(ctx, h);
++	return msg;
++}
++
++static inline void free_msg_list(struct list_head *queue)
++{
++	struct msg_msg *msg, *tmp;
++
++	list_for_each_entry_safe(msg, tmp, queue, m_list)
++		free_msg(msg);
++}
++
++static int restore_msg_contents(struct ckpt_ctx *ctx, struct list_head *queue,
++				unsigned long qnum, unsigned long *cbytes)
++{
++	struct msg_msg *msg;
++	int clen = 0;
++	int ret = 0;
++
++	INIT_LIST_HEAD(queue);
++
++	*cbytes = 0;
++	while (qnum--) {
++		msg = restore_msg_contents_one(ctx, &clen);
++		if (IS_ERR(msg))
++			goto fail;
++		list_add_tail(&msg->m_list, queue);
++		*cbytes += clen;
++	}
++	return 0;
++ fail:
++	ret = PTR_ERR(msg);
++	free_msg_list(queue);
++	return ret;
++}
++
++int restore_ipc_msg(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_ipc_msg *h;
++	struct kern_ipc_perm *perms;
++	struct msg_queue *msq;
++	struct ipc_ids *msg_ids = &current->nsproxy->ipc_ns->ids[IPC_MSG_IDS];
++	struct list_head messages;
++	unsigned long cbytes;
++	int msgflag;
++	int ret;
++
++	INIT_LIST_HEAD(&messages);
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ret = -EINVAL;
++	if (h->perms.id < 0)
++		goto out;
++
++	/* read queued messages into temporary queue */
++	ret = restore_msg_contents(ctx, &messages, h->q_qnum, &cbytes);
++	if (ret < 0)
++		goto out;
++
++	ret = -EINVAL;
++	if (h->q_cbytes != cbytes)
++		goto out;
++
++	/* restore the message queue */
++	msgflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
++	ckpt_debug("msg: do_msgget key %d flag %#x id %d\n",
++		 h->perms.key, msgflag, h->perms.id);
++	ret = do_msgget(h->perms.key, msgflag, h->perms.id);
++	ckpt_debug("msg: do_msgget ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	down_write(&msg_ids->rw_mutex);
++
++	/* we are the sole owners/users of this ipc_ns, it can't go away */
++	perms = ipc_lock(msg_ids, h->perms.id);
++	BUG_ON(IS_ERR(perms));	/* ipc_ns is private to us */
++
++	msq = container_of(perms, struct msg_queue, q_perm);
++	BUG_ON(!list_empty(&msq->q_messages));	/* ipc_ns is private to us */
++
++	/* attach queued messages we read before */
++	list_splice_init(&messages, &msq->q_messages);
++
++	/* adjust msq and namespace statistics */
++	atomic_add(h->q_cbytes, &current->nsproxy->ipc_ns->msg_bytes);
++	atomic_add(h->q_qnum, &current->nsproxy->ipc_ns->msg_hdrs);
++	msq->q_cbytes = h->q_cbytes;
++	msq->q_qbytes = h->q_qbytes;
++	msq->q_qnum = h->q_qnum;
++
++	ret = load_ipc_msg_hdr(ctx, h, msq);
++	ipc_unlock(perms);
++
++	if (ret < 0) {
++		ckpt_debug("msq: need to remove (%d)\n", ret);
++		freeque(current->nsproxy->ipc_ns, perms);
++	}
++	up_write(&msg_ids->rw_mutex);
++ out:
++	free_msg_list(&messages);  /* no-op if all ok, else cleanup msgs */
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
+diff --git a/ipc/util.h b/ipc/util.h
+index db067b0..2a05fb3 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -196,6 +196,9 @@ extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
  
- /* files */
- extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_file(struct ckpt_ctx *ctx);
+ extern int checkpoint_ipc_shm(int id, void *p, void *data);
+ extern int restore_ipc_shm(struct ckpt_ctx *ctx);
++
++extern int checkpoint_ipc_msg(int id, void *p, void *data);
++extern int restore_ipc_msg(struct ckpt_ctx *ctx);
+ #endif
  
- extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
- 				  struct ckpt_hdr_file *h);
-+extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			       struct ckpt_hdr_file *h);
- 
- 
- /* debugging flags */
+ #endif
 -- 
 1.6.0.4
