@@ -1,116 +1,58 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: Re: [PATCH 6/8] cr: checkpoint and restore task credentials
-Date: Wed, 27 May 2009 22:36:10 +0400
-Message-ID: <20090527183610.GA31930@x200.localdomain>
-References: <20090526173242.GA13757@us.ibm.com> <20090526173354.GF13991@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v16][PATCH 41/43] c/r: (s390): expose a constant for the
+	number of words (CRs)
+Date: Wed, 27 May 2009 22:39:31 +0400
+Message-ID: <20090527183837.GB31930__43759.4696566977$1243450028$gmane$org@x200.localdomain>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+	<1243445589-32388-42-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090526173354.GF13991@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+In-Reply-To: <1243445589-32388-42-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, May 26, 2009 at 12:33:54PM -0500, Serge E. Hallyn wrote:
-> +struct ckpt_hdr_cred {
-> +	struct ckpt_hdr h;
-> +	__u32 version; /* especially since capability sets might grow */
-
-Oh, no. Image version should be incremented.
-
-> +	__u32 uid, suid, euid, fsuid;
-> +	__u32 gid, sgid, egid, fsgid;
-> +	__u64 cap_i, cap_p, cap_e;
-> +	__u64 cap_x;  /* bounding set ('X') */
-> +	__s32 user_ref;
-> +	__s32 groupinfo_ref;
-> +	__u32 padding;
-> +} __attribute__((aligned(8)));
-> +
-> +struct ckpt_hdr_groupinfo {
-> +	struct ckpt_hdr h;
-> +	__u32 ngroups;
-> +	/*
-> +	 * This is followed by ngroups __u32s
-> +	 */
-> +	__u32 groups[0];
-> +} __attribute__((aligned(8)));
-
-> --- a/include/linux/sched.h
-> +++ b/include/linux/sched.h
-> @@ -1871,6 +1871,12 @@ static inline struct user_struct *get_uid(struct user_struct *u)
->  extern void free_uid(struct user_struct *);
->  extern void release_uids(struct user_namespace *ns);
+On Wed, May 27, 2009 at 01:33:07PM -0400, Oren Laadan wrote:
+> We need to use this value in the checkpoint/restart code and would like to
+> have a constant instead of a magic '3'.
+> 
+> Changelog:
+>     Mar 30:
+>             . Add CHECKPOINT_SUPPORT in Kconfig (Nathan Lynch)
+>     Mar 03:
+>             . Picked up additional use of magic '3' in ptrace.h
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  arch/s390/Kconfig |    4 ++++
+>  1 files changed, 4 insertions(+), 0 deletions(-)
+> 
+> diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+> index 2eca5fe..bf62cad 100644
+> --- a/arch/s390/Kconfig
+> +++ b/arch/s390/Kconfig
+> @@ -49,6 +49,10 @@ config GENERIC_TIME_VSYSCALL
+>  config GENERIC_CLOCKEVENTS
+>  	def_bool y
 >  
-> +#ifdef CONFIG_CHECKPOINT
-> +struct ckpt_ctx;
-> +int checkpoint_write_user(struct ckpt_ctx *, struct user_struct *);
-> +struct user_struct *restore_read_user(struct ckpt_ctx *);
-> +#endif
+> +config CHECKPOINT_SUPPORT
+> +	bool
+> +	default y if 64BIT
+> +
+>  config GENERIC_BUG
+>  	bool
+>  	depends on BUG
 
-I'll rip credential stuff from sched.h, better not add more.
-
-> --- a/kernel/groups.c
-> +++ b/kernel/groups.c
-> @@ -287,3 +288,58 @@ int in_egroup_p(gid_t grp)
->  }
->  
->  EXPORT_SYMBOL(in_egroup_p);
-> +
-> +#ifdef CONFIG_CHECKPOINT
-> +int checkpoint_write_groupinfo(struct ckpt_ctx *ctx, struct group_info *g)
-> +{
-> +	int ret, i, size;
-> +	struct ckpt_hdr_groupinfo *h;
-> +
-> +	size = sizeof(*h) + g->ngroups * sizeof(__u32);
-> +	h = ckpt_hdr_get_type(ctx, size, CKPT_HDR_GROUPINFO);
-> +	if (!h)
-> +		return -ENOMEM;
-> +
-> +	h->ngroups = g->ngroups;
-> +	for (i = 0; i < g->ngroups; i++)
-> +		h->groups[i] = GROUP_AT(g, i);
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	return ret;
-> +}
-> +
-> +/*
-> + * TODO - switch to reading in blocks, and only return an
-> + * error for truly obscene # groups (like 10000)
-> + */
-> +#define CKPT_MAXGROUPS 100
-> +#define MAX_GROUPINFO_SIZE (sizeof(*h)+CKPT_MAXGROUPS*sizeof(gid_t))
-> +struct group_info *restore_read_groupinfo(struct ckpt_ctx *ctx)
-> +{
-> +	struct group_info *g;
-> +	struct ckpt_hdr_groupinfo *h;
-> +	int i;
-> +
-> +	h = ckpt_read_buf_type(ctx, MAX_GROUPINFO_SIZE, CKPT_HDR_GROUPINFO);
-> +	if (IS_ERR(h))
-> +		return ERR_PTR(PTR_ERR(h));
-> +	if (h->ngroups > CKPT_MAXGROUPS) {
-> +		g = ERR_PTR(-EINVAL);
-> +		goto out;
-> +	}
-> +	g = groups_alloc(h->ngroups);
-> +	if (!g) {
-> +		g = ERR_PTR(-ENOMEM);
-> +		goto out;
-> +	}
-> +	for (i = 0; i < h->ngroups; i++)
-> +		GROUP_AT(g, i) = h->groups[i];
-> +
-> +out:
-> +	ckpt_hdr_put(ctx, h);
-> +	return g;
-> +}
-
-No checks, that groups in image are a) sorted, b) ->ngroups is compatible
-with object image.
+Changelog and content aren't compatible.
