@@ -1,71 +1,101 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 0/8] a start to credentials c/r
-Date: Wed, 27 May 2009 13:24:32 -0500
-Message-ID: <20090527182432.GE780@us.ibm.com>
-References: <20090526173242.GA13757@us.ibm.com> <4A1CAE03.7090005@schaufler-ca.com> <20090527123728.GA27160@us.ibm.com> <4A1D6449.4020906@schaufler-ca.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v16][PATCH 16/43] c/r: export shmem_getpage() to support shared
+	memory
+Date: Wed, 27 May 2009 13:32:42 -0400
+Message-ID: <1243445589-32388-17-git-send-email-orenl__31122.3074015745$1243448877$gmane$org@cs.columbia.edu>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4A1D6449.4020906@schaufler-ca.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Casey Schaufler <casey@schaufler-ca.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Casey Schaufler (casey@schaufler-ca.com):
-> Serge E. Hallyn wrote:
-> > Quoting Casey Schaufler (casey@schaufler-ca.com):
-...
-> > Uh, so yes, bsaed on info in the file as well  :)  Except
-> > of course the LSM would just be fed the checkpointed context
-> > and the checkpoint file context (and can deduce current's context).
-> >   
-> 
-> And SELinux can do whatever calculations it likes based on the
-> three contexts and the loaded policy.  Are you at all concerned
-> about the possibility that the policy may have changed? I can
-> envision scenarios in which it would be impossible for a process
-> to gain a particular context under current policy, but that a
-> checkpointed process may have stored away.
+Export functionality to retrieve specific pages from shared memory
+given an inode in shmem-fs; this will be used in the next two patches
+to provide support for c/r of shared memory.
 
-Good point.  But on the other hand, if the program were running
-the whole time, instead of being checkpointed and restarted, then
-the running program wouldn't be relabeled when the policy changed,
-right?  Now if the domain becomes invalid, then presumably the
-restart would fail.  But if the (source_domain,entry_type)->new_domain
-set changes from (root_t,x_entry_t)->x_t to (root_t,x_entry_t)->y_t,
-a task running as x_t won't be relabeled to y_t.  So I don't thnk
-restarting a task which is checkpointed as x_t, under the x_t
-domain, is wrong.
+mm/shmem.c:
+- shmem_getpage() and 'enum sgp_type' moved to linux/mm.h
 
-> >>>  and one which determines
-> >>> the task->cred->security filed based upon any of:
-> >>> 	1. current_security() of the task calling sys_restart()
-> >>> 	2. the task->cred->security checkpointed in the ckpt file
-> >>> 	3. the ->security of the checkpoint file
-> >>>   
-> >>>       
-> >> For Smack the correct behavior would be:
-> >>
-> >>     1. for sys_restart() callers without CAP_MAC_ADMIN
-> >>     2. for sys_restart() callers with CAP_MAC_ADMIN
-> >>     3. never
-> >>     
-> >
-> > That makes sense, and is basically analagous (if I'm thinking
-> > right) to how I'm doing capabilities.
-> >
-> > So the first (authorization hook) for smack would just always
-> > return TRUE?
-> >   
-> 
-> I suggest that it needs to check for a valid Smack label. Even though
-> they're just text strings they do have limitations, including size
-> (> 0 < 24) and character set. A call to smk_import() is the right
-> way to do it, as it also makes sure the label is in the internal list.
-> If smk_import() returns NULL something's amiss.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ include/linux/mm.h |   11 +++++++++++
+ mm/shmem.c         |   15 ++-------------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
 
-Ok, thanks.
-
--serge
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index ae70b50..53e916a 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -330,6 +330,17 @@ void put_pages_list(struct list_head *pages);
+ 
+ void split_page(struct page *page, unsigned int order);
+ 
++/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
++enum sgp_type {
++	SGP_READ,	/* don't exceed i_size, don't allocate page */
++	SGP_CACHE,	/* don't exceed i_size, may allocate page */
++	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
++	SGP_WRITE,	/* may exceed i_size, may allocate page */
++};
++
++extern int shmem_getpage(struct inode *inode, unsigned long idx,
++			 struct page **pagep, enum sgp_type sgp, int *type);
++
+ /*
+  * Compound pages have a destructor function.  Provide a
+  * prototype for that function and accessor functions.
+diff --git a/mm/shmem.c b/mm/shmem.c
+index b25f95c..f260336 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -99,14 +99,6 @@ static struct vfsmount *shm_mnt;
+ /* Pretend that each entry is of this size in directory's i_size */
+ #define BOGO_DIRENT_SIZE 20
+ 
+-/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
+-enum sgp_type {
+-	SGP_READ,	/* don't exceed i_size, don't allocate page */
+-	SGP_CACHE,	/* don't exceed i_size, may allocate page */
+-	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
+-	SGP_WRITE,	/* may exceed i_size, may allocate page */
+-};
+-
+ #ifdef CONFIG_TMPFS
+ static unsigned long shmem_default_max_blocks(void)
+ {
+@@ -119,9 +111,6 @@ static unsigned long shmem_default_max_inodes(void)
+ }
+ #endif
+ 
+-static int shmem_getpage(struct inode *inode, unsigned long idx,
+-			 struct page **pagep, enum sgp_type sgp, int *type);
+-
+ static inline struct page *shmem_dir_alloc(gfp_t gfp_mask)
+ {
+ 	/*
+@@ -1202,8 +1191,8 @@ static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
+  * vm. If we swap it in we mark it dirty since we also free the swap
+  * entry since a page cannot live in both the swap and page cache
+  */
+-static int shmem_getpage(struct inode *inode, unsigned long idx,
+-			struct page **pagep, enum sgp_type sgp, int *type)
++int shmem_getpage(struct inode *inode, unsigned long idx,
++		  struct page **pagep, enum sgp_type sgp, int *type)
+ {
+ 	struct address_space *mapping = inode->i_mapping;
+ 	struct shmem_inode_info *info = SHMEM_I(inode);
+-- 
+1.6.0.4
