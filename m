@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 13/43] c/r: introduce method '->checkpoint()' in
-	struct vm_operations_struct
-Date: Wed, 27 May 2009 13:32:39 -0400
-Message-ID: <1243445589-32388-14-git-send-email-orenl__42322.1714365811$1243447838$gmane$org@cs.columbia.edu>
-References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/7] [PATCH] Add target_pids parameter to copy_process()
+Date: Wed, 27 May 2009 13:05:31 -0500
+Message-ID: <20090527180531.GB780@us.ibm.com>
+References: <20090527154212.GA3107@us.ibm.com>
+	<20090527154422.GE3107@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090527154422.GE3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +19,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- include/linux/mm.h |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Mon, 4 May 2009 01:17:43 -0700
+> Subject: [PATCH 5/7] [PATCH] Add target_pids parameter to copy_process()
+> 
+> The new parameter will be used in a follow-on patch when clone_with_pids()
+> is implemented.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index bff1f0d..05f0ed9 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -14,6 +14,8 @@
- #include <linux/debug_locks.h>
- #include <linux/mm_types.h>
- 
-+#include <linux/checkpoint_types.h>
-+
- struct mempolicy;
- struct anon_vma;
- struct file_ra_state;
-@@ -220,6 +222,9 @@ struct vm_operations_struct {
- 	int (*migrate)(struct vm_area_struct *vma, const nodemask_t *from,
- 		const nodemask_t *to, unsigned long flags);
- #endif
-+#ifdef CONFIG_CHECKPOINT
-+	int (*checkpoint)(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
-+#endif
- };
- 
- struct mmu_gather;
--- 
-1.6.0.4
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+> ---
+>  kernel/fork.c |    7 ++++---
+>  1 files changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index d2d69d3..373411e 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -949,12 +949,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>  					unsigned long stack_size,
+>  					int __user *child_tidptr,
+>  					struct pid *pid,
+> +					pid_t *target_pids,
+>  					int trace)
+>  {
+>  	int retval;
+>  	struct task_struct *p;
+>  	int cgroup_callbacks_done = 0;
+> -	pid_t *target_pids = NULL;
+> 
+>  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+>  		return ERR_PTR(-EINVAL);
+> @@ -1327,7 +1327,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+>  	struct pt_regs regs;
+> 
+>  	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
+> -			    &init_struct_pid, 0);
+> +			    &init_struct_pid, NULL, 0);
+>  	if (!IS_ERR(task))
+>  		init_idle(task, cpu);
+> 
+> @@ -1350,6 +1350,7 @@ long do_fork(unsigned long clone_flags,
+>  	struct task_struct *p;
+>  	int trace = 0;
+>  	long nr;
+> +	pid_t *target_pids = NULL;
+> 
+>  	/*
+>  	 * Do some preliminary argument and permissions checking before we
+> @@ -1390,7 +1391,7 @@ long do_fork(unsigned long clone_flags,
+>  		trace = tracehook_prepare_clone(clone_flags);
+> 
+>  	p = copy_process(clone_flags, stack_start, regs, stack_size,
+> -			 child_tidptr, NULL, trace);
+> +			 child_tidptr, NULL, target_pids, trace);
+>  	/*
+>  	 * Do this prior waking up the new thread - the thread pointer
+>  	 * might get invalid after that point, if the thread exits quickly.
+> -- 
+> 1.5.2.5
