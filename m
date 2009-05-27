@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 20/43] c/r: export functionality used in next patch
-	for restart-blocks
-Date: Wed, 27 May 2009 13:32:46 -0400
-Message-ID: <1243445589-32388-21-git-send-email-orenl__47927.9618048624$1243448964$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 19/43] c/r: external checkpoint of a task other than
+	ourself
+Date: Wed, 27 May 2009 13:32:45 -0400
+Message-ID: <1243445589-32388-20-git-send-email-orenl__3398.46256324581$1243448970$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,125 +22,216 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-To support c/r of restart-blocks (system call that need to be
-restarted because they were interrupted but there was no userspace
-visible side-effect), export restart-block callbacks for poll()
-and futex() syscalls.
+Now we can do "external" checkpoint, i.e. act on another task.
 
-More details on c/r of restart-blocks and how it works in the
-following patch.
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container, unless CHECKPOINT_SUBTREE flag is given.
+
+sys_restart() remains the same, as the restart is always done in the
+context of the restarting task.
+
+Changelog[v16]:
+  - Use CHECKPOINT_SUBTREE to allow subtree (partial container)
+
+Changelog[v14]:
+  - Refuse non-self checkpoint if target task isn't frozen
+
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/select.c                  |    2 +-
- include/linux/futex.h        |   10 ++++++++++
- include/linux/poll.h         |    3 +++
- include/linux/posix-timers.h |    2 ++
- kernel/futex.c               |   11 +----------
- kernel/posix-timers.c        |    2 +-
- 6 files changed, 18 insertions(+), 12 deletions(-)
+ checkpoint/checkpoint.c          |   79 +++++++++++++++++++++++++++++++++++++-
+ checkpoint/restart.c             |    4 +-
+ checkpoint/sys.c                 |    6 +++
+ include/linux/checkpoint_types.h |    2 +
+ 4 files changed, 87 insertions(+), 4 deletions(-)
 
-diff --git a/fs/select.c b/fs/select.c
-index 0fe0e14..e64ddc6 100644
---- a/fs/select.c
-+++ b/fs/select.c
-@@ -833,7 +833,7 @@ out_fds:
- 	return err;
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index a346b7e..086f2d9 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -12,6 +12,9 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -245,23 +248,95 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
+ 	return ret;
  }
  
--static long do_restart_poll(struct restart_block *restart_block)
-+long do_restart_poll(struct restart_block *restart_block)
++static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
++		return -EAGAIN;
++	}
++
++	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
++		__ckpt_write_err(ctx, "access to task %d (%s) denied",
++				 task_pid_vnr(t), t->comm);
++		return -EPERM;
++	}
++
++	/* verify that the task is frozen (unless self) */
++	if (t != current && !frozen(t)) {
++		__ckpt_write_err(ctx, "task %d (%s) is not frozen",
++				 task_pid_vnr(t), t->comm);
++		return -EBUSY;
++	}
++
++	/* FIX: add support for ptraced tasks */
++	if (task_ptrace(t)) {
++		__ckpt_write_err(ctx, "task %d (%s) is ptraced",
++				 task_pid_vnr(t), t->comm);
++		return -EBUSY;
++	}
++
++	return 0;
++}
++
++static int get_container(struct ckpt_ctx *ctx, pid_t pid)
++{
++	struct task_struct *task = NULL;
++	struct nsproxy *nsproxy = NULL;
++	int ret;
++
++	ctx->root_pid = pid;
++
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
++
++	if (!task)
++		return -ESRCH;
++
++	ret = may_checkpoint_task(ctx, task);
++	if (ret) {
++		ckpt_write_err(ctx, NULL);
++		put_task_struct(task);
++		return ret;
++	}
++
++	rcu_read_lock();
++	nsproxy = task_nsproxy(task);
++	get_nsproxy(nsproxy);
++	rcu_read_unlock();
++
++	ctx->root_task = task;
++	ctx->root_nsproxy = nsproxy;
++
++	return 0;
++}
++
+ /* setup checkpoint-specific parts of ctx */
+ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
  {
- 	struct pollfd __user *ufds = restart_block->poll.ufds;
- 	int nfds = restart_block->poll.nfds;
-diff --git a/include/linux/futex.h b/include/linux/futex.h
-index 3bf5bb5..dd0e06b 100644
---- a/include/linux/futex.h
-+++ b/include/linux/futex.h
-@@ -130,6 +130,16 @@ extern int
- handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
+ 	struct fs_struct *fs;
++	int ret;
  
- /*
-+ * In case we must use restart_block to restart a futex_wait,
-+ * we encode in the 'flags' shared capability
-+ */
-+#define FLAGS_SHARED		0x01
-+#define FLAGS_CLOCKRT		0x02
+ 	ctx->root_pid = pid;
+ 
++	ret = get_container(ctx, pid);
++	if (ret < 0)
++		return ret;
 +
-+/* referenced by checkpoint/restart */
-+extern long futex_wait_restart(struct restart_block *restart);
-+
-+/*
-  * Futexes are matched on equal values of this key.
-  * The key type depends on whether it's a shared or private mapping.
-  * Don't rearrange members without looking at hash_futex().
-diff --git a/include/linux/poll.h b/include/linux/poll.h
-index 8c24ef8..97f95a7 100644
---- a/include/linux/poll.h
-+++ b/include/linux/poll.h
-@@ -131,6 +131,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
+ 	/*
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
  
- extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
+-	fs = current->fs;
++	task_lock(ctx->root_task);
++	fs = ctx->root_task->fs;
+ 	read_lock(&fs->lock);
+ 	ctx->fs_mnt = fs->root;
+ 	path_get(&ctx->fs_mnt);
+ 	read_unlock(&fs->lock);
++	task_unlock(ctx->root_task);
  
-+/* used by checkpoint/restart */
-+extern long do_restart_poll(struct restart_block *restart_block);
-+
- #endif /* KERNEL */
- 
- #endif /* _LINUX_POLL_H */
-diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
-index 4f71bf4..3d0e946 100644
---- a/include/linux/posix-timers.h
-+++ b/include/linux/posix-timers.h
-@@ -119,4 +119,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
- 
- void update_rlimit_cpu(unsigned long rlim_new);
- 
-+int invalid_clockid(const clockid_t which_clock);
-+
- #endif
-diff --git a/kernel/futex.c b/kernel/futex.c
-index d546b2d..f405c73 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
-@@ -1113,15 +1113,6 @@ handle_fault:
- 	goto retry;
+ 	return 0;
+ }
+@@ -276,7 +351,7 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	ret = checkpoint_write_header(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = checkpoint_task(ctx, current);
++	ret = checkpoint_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_write_tail(ctx);
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index d3d6c5e..ca33539 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -352,7 +352,7 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
  }
  
--/*
-- * In case we must use restart_block to restart a futex_wait,
-- * we encode in the 'flags' shared capability
-- */
--#define FLAGS_SHARED		0x01
--#define FLAGS_CLOCKRT		0x02
--
--static long futex_wait_restart(struct restart_block *restart);
--
- static int futex_wait(u32 __user *uaddr, int fshared,
- 		      u32 val, ktime_t *abs_time, u32 bitset, int clockrt)
+ /* setup restart-specific parts of ctx */
+-static int init_restart_ctx(struct ckpt_ctx *ctx)
++static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
  {
-@@ -1286,7 +1277,7 @@ out:
+ 	return 0;
+ }
+@@ -361,7 +361,7 @@ int do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	int ret;
+ 
+-	ret = init_restart_ctx(ctx);
++	ret = init_restart_ctx(ctx, pid);
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = restore_read_header(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 7bf70e4..c809120 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -12,6 +12,7 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
+ #include <linux/syscalls.h>
+ #include <linux/fs.h>
+@@ -173,6 +174,11 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	path_put(&ctx->fs_mnt);
+ 	ckpt_pgarr_free(ctx);
+ 
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++
+ 	kfree(ctx);
  }
  
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index a0ea5f6..4369f90 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -28,6 +28,8 @@ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
  
--static long futex_wait_restart(struct restart_block *restart)
-+long futex_wait_restart(struct restart_block *restart)
- {
- 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
- 	int fshared = 0;
-diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
-index 052ec4d..589aed2 100644
---- a/kernel/posix-timers.c
-+++ b/kernel/posix-timers.c
-@@ -205,7 +205,7 @@ static int no_timer_create(struct k_itimer *new_timer)
- /*
-  * Return nonzero if we know a priori this clockid_t value is bogus.
-  */
--static inline int invalid_clockid(const clockid_t which_clock)
-+int invalid_clockid(const clockid_t which_clock)
- {
- 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
- 		return 0;
+ 	pid_t root_pid;		/* container identifier */
++	struct task_struct *root_task;	/* container root task */
++	struct nsproxy *root_nsproxy;	/* container root nsproxy */
+ 
+ 	unsigned long kflags;	/* kerenl flags */
+ 	unsigned long uflags;	/* user flags */
 -- 
 1.6.0.4
