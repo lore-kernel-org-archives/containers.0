@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/7] [PATCH] Have alloc_pidmap() return actual error code
-Date: Wed, 27 May 2009 12:43:33 -0500
-Message-ID: <20090527174333.GA332@us.ibm.com>
+Subject: Re: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
+Date: Wed, 27 May 2009 12:48:20 -0500
+Message-ID: <20090527174820.GB332@us.ibm.com>
 References: <20090527154212.GA3107@us.ibm.com>
-	<20090527154259.GB3107@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090527154259.GB3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090527154212.GA3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,85 +25,77 @@ List-Id: containers.vger.kernel.org
 Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:40 -0700
-> Subject: [PATCH 2/7] [PATCH] Have alloc_pidmap() return actual error code
-> 
-> alloc_pidmap() can fail either because all pid numbers are in use or
-> we can't allocate memory. With support for setting a specific pid
-> number, alloc_pidmap() would also fail if either the given pid
-> number is invalid or in use.
-> 
-> Rather than have caller assume -ENOMEM, have alloc_pidmap() return
-> the actual error.
+> Date: Mon, 4 May 2009 01:17:39 -0700
+> Subject: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  kernel/fork.c |    5 +++--
->  kernel/pid.c  |    9 ++++++---
->  2 files changed, 9 insertions(+), 5 deletions(-)
+>  kernel/pid.c |   43 ++++++++++++++++++++++++++++---------------
+>  1 files changed, 28 insertions(+), 15 deletions(-)
 > 
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index b9e2edd..f8411a8 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1119,10 +1119,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  		goto bad_fork_cleanup_io;
-> 
->  	if (pid != &init_struct_pid) {
-> -		retval = -ENOMEM;
->  		pid = alloc_pid(p->nsproxy->pid_ns);
-> -		if (!pid)
-> +		if (IS_ERR(pid)) {
-> +			retval = PTR_ERR(pid);
->  			goto bad_fork_cleanup_io;
-> +		}
-> 
->  		if (clone_flags & CLONE_NEWPID) {
->  			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
 > diff --git a/kernel/pid.c b/kernel/pid.c
-> index c0aaebe..fd72ad9 100644
+> index b2e5f78..c0aaebe 100644
 > --- a/kernel/pid.c
 > +++ b/kernel/pid.c
-> @@ -151,6 +151,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+> @@ -122,6 +122,31 @@ static void free_pidmap(struct upid *upid)
+>  	atomic_inc(&map->nr_free);
+>  }
+> 
+> +static int alloc_pidmap_page(struct pidmap *map)
+> +{
+> +	void *page;
+> +
+> +	if (likely(map->page))
+> +		return 0;
+> +
+> +	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+> +
+> +	/*
+> +	 * Free the page if someone raced with us installing it:
+> +	 */
+> +	spin_lock_irq(&pidmap_lock);
+> +	if (map->page)
+> +		kfree(page);
+> +	else
+> +		map->page = page;
+> +	spin_unlock_irq(&pidmap_lock);
+> +
+> +	if (unlikely(!map->page))
+> +		return -1;
+> +
+> +	return 0;
+> +}
+> +
+>  static int alloc_pidmap(struct pid_namespace *pid_ns)
 >  {
 >  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
->  	struct pidmap *map;
-> +	int rc = -EAGAIN;
-> 
->  	pid = last + 1;
->  	if (pid >= pid_max)
-> @@ -159,8 +160,10 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+> @@ -134,21 +159,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
 >  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
 >  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
 >  	for (i = 0; i <= max_scan; ++i) {
-> -		if (alloc_pidmap_page(map))
-> +		if (alloc_pidmap_page(map)) {
-> +			rc = -ENOMEM;
->  			break;
-> +		}
-> 
+> -		if (unlikely(!map->page)) {
+> -			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+> -			/*
+> -			 * Free the page if someone raced with us
+> -			 * installing it:
+> -			 */
+> -			spin_lock_irq(&pidmap_lock);
+> -			if (map->page)
+> -				kfree(page);
+> -			else
+> -				map->page = page;
+> -			spin_unlock_irq(&pidmap_lock);
+> -			if (unlikely(!map->page))
+> -				break;
+> -		}
+> +		if (alloc_pidmap_page(map))
+> +			break;
+> +
 >  		if (likely(atomic_read(&map->nr_free))) {
 >  			do {
-> @@ -192,7 +195,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
->  		}
->  		pid = mk_pid(pid_ns, map, offset);
->  	}
-> -	return -1;
-> +	return rc;
->  }
-> 
->  int next_pidmap(struct pid_namespace *pid_ns, int last)
-> @@ -297,7 +300,7 @@ out_free:
->  		free_pidmap(pid->numbers + i);
-> 
->  	kmem_cache_free(ns->pid_cachep, pid);
-> -	pid = NULL;
-> +	pid = ERR_PTR(nr);
->  	goto out;
->  }
-> 
+>  				if (!test_and_set_bit(offset, map->page)) {
 > -- 
 > 1.5.2.5
