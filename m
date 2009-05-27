@@ -1,92 +1,95 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 0/8] a start to credentials c/r
-Date: Wed, 27 May 2009 07:37:28 -0500
-Message-ID: <20090527123728.GA27160@us.ibm.com>
-References: <20090526173242.GA13757@us.ibm.com> <4A1CAE03.7090005@schaufler-ca.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
+Date: Wed, 27 May 2009 08:42:12 -0700
+Message-ID: <20090527154212.GA3107@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A1CAE03.7090005@schaufler-ca.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Casey Schaufler <casey@schaufler-ca.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Casey Schaufler (casey@schaufler-ca.com):
-> Serge E. Hallyn wrote:
-> > Following is the next version of the credentials c/r patchset,
-> > on top of the c/r patchset at
-> > git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
-> >
-> > It implements checkpoint and restart of user, user namespaces,
-> > groups, supplementary groups, and struct cred.
-> >
-> > There is a question as to what to do about LSM data at
-> > restart.  Right now I'm ignoring it, which means that
-> > prepare_creds() should ensure that the restart tasks get
-> > the context of the task calling sys_restart().  I
-> > suspect the right thing to do is to add two new LSM
-> > hooks, one which checks current's authorization to
-> > restart from the checkpoint file,
-> 
-> How would that work? Based on information in the file?
-> You have to assume that some number of checkpoint files
-> have been hand written by Elbonian ne'er do wells.
 
-Not based on information in the file, but based on the
-credentials of the task which created the file, and
-whether an unprivileged task could have hand-edited the
-file before feeding it to sys_restart().
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 4 May 2009 01:17:39 -0700
+Subject: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
 
-So some example decisions in terms of selinux contexts might be,
-	1. a task of user_u may restart a file of type user_u
-	if the checkpointed context is user_u
-	2. a task of user_u may NOT restart a file of type user_u
-	if the checkpointed context is root_u
-	3. a task of root_u may restart a file of type root_u
-	if the checkpointed context is user_u
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ kernel/pid.c |   43 ++++++++++++++++++++++++++++---------------
+ 1 files changed, 28 insertions(+), 15 deletions(-)
 
-Uh, so yes, bsaed on info in the file as well  :)  Except
-of course the LSM would just be fed the checkpointed context
-and the checkpoint file context (and can deduce current's context).
-
-> >  and one which determines
-> > the task->cred->security filed based upon any of:
-> > 	1. current_security() of the task calling sys_restart()
-> > 	2. the task->cred->security checkpointed in the ckpt file
-> > 	3. the ->security of the checkpoint file
-> >   
-> 
-> For Smack the correct behavior would be:
-> 
->     1. for sys_restart() callers without CAP_MAC_ADMIN
->     2. for sys_restart() callers with CAP_MAC_ADMIN
->     3. never
-
-That makes sense, and is basically analagous (if I'm thinking
-right) to how I'm doing capabilities.
-
-So the first (authorization hook) for smack would just always
-return TRUE?
-
-I can hook that up right now...
-
-> sys_restart() callers running with CAP_MAC_ADMIN would have to be
-> very very careful about the files they restart. But that's nothing
-> new in the MAC world.
-
-Yup.
-
-Mind you eventually I expect a setup where some privileged program
-is asked (by privileged or unprivilegd tasks) to create a checkpoint
-and ask the TPM to sign it.  No unprivileged program can sign an
-image directly, so then a restart of a task with privilege can be
-restricted to anything with a valid signature.  In that case, it
-may be safe to have the checkpointed task's credentials completely
-restored, including LSM labels.
-
-But that's a ways off.
-
-thanks,
--serge
+diff --git a/kernel/pid.c b/kernel/pid.c
+index b2e5f78..c0aaebe 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -122,6 +122,31 @@ static void free_pidmap(struct upid *upid)
+ 	atomic_inc(&map->nr_free);
+ }
+ 
++static int alloc_pidmap_page(struct pidmap *map)
++{
++	void *page;
++
++	if (likely(map->page))
++		return 0;
++
++	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
++
++	/*
++	 * Free the page if someone raced with us installing it:
++	 */
++	spin_lock_irq(&pidmap_lock);
++	if (map->page)
++		kfree(page);
++	else
++		map->page = page;
++	spin_unlock_irq(&pidmap_lock);
++
++	if (unlikely(!map->page))
++		return -1;
++
++	return 0;
++}
++
+ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ {
+ 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+@@ -134,21 +159,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+ 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+ 	for (i = 0; i <= max_scan; ++i) {
+-		if (unlikely(!map->page)) {
+-			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+-			/*
+-			 * Free the page if someone raced with us
+-			 * installing it:
+-			 */
+-			spin_lock_irq(&pidmap_lock);
+-			if (map->page)
+-				kfree(page);
+-			else
+-				map->page = page;
+-			spin_unlock_irq(&pidmap_lock);
+-			if (unlikely(!map->page))
+-				break;
+-		}
++		if (alloc_pidmap_page(map))
++			break;
++
+ 		if (likely(atomic_read(&map->nr_free))) {
+ 			do {
+ 				if (!test_and_set_bit(offset, map->page)) {
+-- 
+1.5.2.5
