@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 18/38] C/R: core stuff
-Date: Thu, 28 May 2009 02:17:53 +0400
-Message-ID: <20090527221753.GB8321@x200.localdomain>
+Date: Thu, 28 May 2009 02:25:47 +0400
+Message-ID: <20090527222547.GC8321__44965.6368852176$1243463750$gmane$org@x200.localdomain>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
 	<20090526131644.GA20920@hallyn.com>
@@ -27,108 +27,84 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akp
 List-Id: containers.vger.kernel.org
 
 On Wed, May 27, 2009 at 04:56:27PM -0400, Oren Laadan wrote:
-> Alexey Dobriyan wrote:
-> > On Tue, May 26, 2009 at 08:16:44AM -0500, Serge E. Hallyn wrote:
-> >> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> >>> Introduction
-> >>> ------------
-> >>> Checkpoint/restart (C/R from now) allows to dump group of processes to disk
-> >>> for various reasons like saving process state in case of box failure or
-> >>> restoration of group of processes on another or same machine later.
-> >>>
-> >>> Unlike, let's say, hypervisor C/R style which only needs to freeze guest kernel
-> >>> and dump more or less raw pages, proposed C/R doesn't require hypervisor.
-> >>> For that C/R code needs to know about all little and big intimate kernel details.
-> >>>
-> >>> The good thing is that not all details needs to be serialized and saved
-> >>> like, say, readahead state. The bad things is still quite a few things
-> >>> need to be.
-> >> Hi Alexey,
-> >>
-> >> the last time you posted this, I went through and tried to discern the
-> >> meaningful differences between yours and Oren's patchsets.  Then I sent some
-> >> patches to Oren to make his set configurable to act more like yours.  And Oren
-> >> took them!  But now you resend this patchset with no real changelog, no
-> >> acknowledgment that Oren's set even exists
-> > 
-> > Is this a requirement? Everybody following topic already knows about
-> > Oren's patchset.
+> > Now here goes second version, with prefixes fixed (kstate_") like Ingo
+> > suggested and so Linus could look at the code and with C/R code moved
+> > close to usual code and with more checks added (which you should have
+> > already!) to not restore null selector in %cs for example.
 > 
-> Some people do ack other people's work. See for example patches #1
-> and #24 in my recent post. You're welcome.
-> 
-> > 
-> >> - or is much farther along and pretty widely reviewed and tested (which is
-> >> only because he started earlier and, when we asked for your counterpatches
-> >> at an earlier stage, you would never reply) - or, most importantly, what
-> >> it is that you think your patchset does that his does not and cannot.
-> > 
-> > There are differences. And they're not small like you're trying to describe
-> > but pretty big compared the scale of the problem.
-> 
-> I've asked before, and I repeat now: can you enumerate these "big"
-> scary differences that make it such a "big" problem ?
-> 
-> So far, we identified two main "design" issues -
+> It is far from perfect. In fact, it's even clearly commented as such,
+> and exactly there.  It would have been helpful if you pointed that
+> out in a review, or even - god forbid - sent a patch to improve it.
 
-Why in "? Yes, they are high-level design issues.
+This is ridiculous.
 
-> 1) Whether or not allow c/r of sub-container (partial hierarchy)
-> 
-> 2) Creation of restarting process hierarchy in kernel or in userspace
-> 
-> As for #1, you are the _only_ one who advocates restricting c/r to
-> a full container only. I guess you have your reasons, but I'm unsure
-> what they may be.
+First, you declare that restart(2) should be allowed for anyone(!).
+and then send patchset for inclusion in -mm which doesn't even check
+if selectors are right!
 
-The reason is that checkpointing half-frozen, half-live container is
-essentially equivalent to live container which adds much complexity
-to code fundamentally preventing kernel from taking coherent snapshot.
+> But it works, and it lets people play with a more-than-a-toy
+> implementation and provide us with important feedback. Oh, and by
+> the way, it doesn't require that people use containers to try it out.
 
-In such situations kernel will do its job badly.
+Setting up container for playing is not hard:
 
-Manpage will be filled with strings like "if $FOO is shared then $BAR is
-not guaranteed".
+	CLONE_NEWUTS=y
+	CLONE_NEWIPC=y
+	CLONE_NEWPID=y
+	CLONE_NEWUSER=y
+	CLONE_NEWNET=y
 
-What to do if user simply doesn't know if container is bounded?
-Checkpoint and to hell with consequences?
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sched.h>
+#include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
-If two tasks share mm_struct you can't even detect that pages you dump
-aren't filled with garbage meanwhile from second task.
+#define CLONE_NEWNS	0x00020000
+#define CLONE_NEWUTS	0x04000000
+#define CLONE_NEWIPC	0x08000000
+#define CLONE_NEWUSER	0x10000000
+#define CLONE_NEWPID	0x20000000
+#define CLONE_NEWNET	0x40000000
 
-If two tasks share mm_struct, other task can issue AIO indefinitely
-preventing from taking even coherent filesystem snapshot.
+static int fn(void *_argv)
+{
+	char **argv = (char **)_argv;
 
-That's why I raise this issue again to hear from people what they think
-and these people shouldn't be containers and C/R people, because the
-latter already made up their minds.
+	setsid();
+	setpgid(getpid(), getpid());
 
-This is super-important issue to get right from the beginning.
+	execve(argv[0], argv, __environ);
+	return 1;
+}
 
-> On the other hand, there has been a handful of use-cases and opinions
-> in favor of allowing both capabilities to co-exist. Not the mention
-> that nearly no additional code is necessary, on the contrary.
-> 
-> As for #2, you didn't even bother to reply to the discussion that I
-> had started about it. This decision is important to allow future
-> flexibility of the mechanism, and to address the needs of several
-> potential users, as seen in that discussion and others. Here, too,
-> you are the _only_ one that advocates that direction.
+int main(int argc, char *argv[])
+{
+	unsigned long flags = 0;
+	int status;
+	pid_t pid;
+	void *p;
 
-Are you going to fork to-become-zombies, make them call restart(2) and
-zombify?
+	flags |= CLONE_NEWNS;
+	flags |= CLONE_NEWUTS;
+	flags |= CLONE_NEWIPC;
+	flags |= CLONE_NEWUSER;
+	flags |= CLONE_NEWPID;
+	flags |= CLONE_NEWNET;
 
-> And the funniest thing -- *both* decisions can be *easily* overturned
-> in my patchset. In fact, regarding #2 - either way can be easily done
-> in it.
-> 
-> So I wonder, what are the "big" issues that bother you so much ?
-> "if there is a will, there is a way".
-
-Oren, don't you really understand?
-
-Users want millions of things, but every thing has price.
-
-Some think hardlinking of directories should be implemented. You can ask
-VFS guys how hard would it be and how hard would it be to do reliably
-without races/deadlocks et al.
+	p = malloc(4 * 4096);
+	if (!p)
+		return 1;
+	argv++;
+	pid = clone(fn, p + 4 * 4096, flags, (void *)argv);
+	fprintf(stderr, "pid = %d\n", pid);
+	if (pid == -1)
+		return 1;
+	waitpid(pid, &status, __WALL);
+	return 0;
+}
