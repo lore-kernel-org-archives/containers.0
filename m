@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 26/43] splice: added support for pipe-to-pipe splice()
-Date: Wed, 27 May 2009 13:32:52 -0400
-Message-ID: <1243445589-32388-27-git-send-email-orenl__26698.3439018533$1243450683$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 01/43] c/r: extend arch_setup_additional_pages()
+Date: Wed, 27 May 2009 13:32:27 -0400
+Message-ID: <1243445589-32388-2-git-send-email-orenl__39696.3937128477$1243450758$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,305 +21,246 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch is a modified version of Max Kellerman patch that allows
-splice() between pipes (see http://patchwork/kernel/org/patch/21042).
-By refactoring link_pipe(), do_tee() and do_splice_pipes() shrink
-considerably. Below is Max's original description:
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
---
-This patch enables the splice() system call to copy buffers from one
-pipe to another.  This obvious and trivial use case for splice() was
-not supported until now.
+Add "start" argument, to request to map vDSO to a specific place,
+and fail the operation if not.
 
-It reuses the functions link_ipipe_prep() and link_opipe_prep() from
-the tee() system call implementation.
---
+This is useful for restart(2) to ensure that memory layout is restore
+exactly as needed.
 
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- fs/splice.c |  203 ++++++++++++++++++++++++++++++++++++++++++++++++-----------
- 1 files changed, 166 insertions(+), 37 deletions(-)
+ arch/powerpc/include/asm/elf.h     |    1 +
+ arch/powerpc/kernel/vdso.c         |   11 ++++++++++-
+ arch/s390/include/asm/elf.h        |    2 +-
+ arch/s390/kernel/vdso.c            |   13 ++++++++++++-
+ arch/sh/include/asm/elf.h          |    1 +
+ arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
+ arch/x86/include/asm/elf.h         |    3 ++-
+ arch/x86/vdso/vdso32-setup.c       |    9 +++++++--
+ arch/x86/vdso/vma.c                |    9 +++++++--
+ fs/binfmt_elf.c                    |    2 +-
+ 10 files changed, 43 insertions(+), 10 deletions(-)
 
-diff --git a/fs/splice.c b/fs/splice.c
-index 92dd63c..96e0d58 100644
---- a/fs/splice.c
-+++ b/fs/splice.c
-@@ -903,13 +903,95 @@ ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe, struct file *out,
- EXPORT_SYMBOL(generic_splice_sendpage);
+diff --git a/arch/powerpc/include/asm/elf.h b/arch/powerpc/include/asm/elf.h
+index d6b4a12..3946e01 100644
+--- a/arch/powerpc/include/asm/elf.h
++++ b/arch/powerpc/include/asm/elf.h
+@@ -271,6 +271,7 @@ extern int ucache_bsize;
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ #define VDSO_AUX_ENT(a,b) NEW_AUX_ENT(a,b);
  
- /*
-+ * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
-+ * location, so checking ->i_pipe is not enough to verify that this is a
-+ * pipe.
-+ */
-+static inline struct pipe_inode_info *pipe_info(struct inode *inode)
-+{
-+	if (S_ISFIFO(inode->i_mode))
-+		return inode->i_pipe;
-+
-+	return NULL;
-+}
-+
-+static int link_pipe_prep(struct pipe_inode_info *ipipe,
-+			  struct pipe_inode_info *opipe,
-+			  unsigned int flags);
-+static long do_link_pipe(struct pipe_inode_info *ipipe,
-+			 struct pipe_inode_info *opipe,
-+			 size_t len, unsigned int flags, int move);
-+
-+/**
-+* Splice pages from one pipe to another.
-+*
-+* @ipipe the input pipe
-+* @opipe the output pipe
-+* @len the maximum number of bytes to move
-+* @flags splice modifier flags
-+*/
-+static long do_splice_pipes(struct pipe_inode_info *ipipe,
-+			    struct pipe_inode_info *opipe,
-+			    size_t len, unsigned int flags)
-+{
-+	int do_wakeup;
-+	long ret;
-+
-+	if (ipipe == opipe)
-+		return -EINVAL;
-+
-+	ret = link_pipe_prep(ipipe, opipe, flags);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* both pipes are now locked */
-+
-+	do_wakeup = ipipe->nrbufs;
-+	ret = do_link_pipe(ipipe, opipe, len, flags, 1);
-+	do_wakeup -= ipipe->nrbufs;
-+
-+	pipe_unlock(ipipe);
-+	pipe_unlock(opipe);
-+
-+	if (do_wakeup) {
-+		/* at least one buffer was removed from the
-+		   input pipe: wake up potential writers */
-+		smp_mb();
-+		if (waitqueue_active(&ipipe->wait))
-+			wake_up_interruptible(&ipipe->wait);
-+		kill_fasync(&ipipe->fasync_writers, SIGIO, POLL_OUT);
-+	}
-+
-+	/*
-+	 * If we put data in the output pipe, wakeup any potential
-+	 * readers.
-+	 */
-+	if (ret > 0) {
-+		smp_mb();
-+		if (waitqueue_active(&opipe->wait))
-+			wake_up_interruptible(&opipe->wait);
-+		kill_fasync(&opipe->fasync_readers, SIGIO, POLL_IN);
-+	}
-+
-+	return ret;
-+}
-+
-+/*
-  * Attempt to initiate a splice from pipe to file.
+diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
+index ad06d5c..48beff6 100644
+--- a/arch/powerpc/kernel/vdso.c
++++ b/arch/powerpc/kernel/vdso.c
+@@ -184,7 +184,8 @@ static void dump_vdso_pages(struct vm_area_struct * vma)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
   */
- static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
- 			   loff_t *ppos, size_t len, unsigned int flags)
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
  {
-+	struct pipe_inode_info *opipe;
- 	int ret;
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+@@ -211,6 +212,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	vdso_base = VDSO32_MBASE;
+ #endif
  
-+	opipe = pipe_info(out->f_dentry->d_inode);
-+	if (opipe) {
-+		if (unlikely(!(out->f_mode & FMODE_WRITE)))
-+			return -EBADF;
-+		return do_splice_pipes(pipe, opipe, len, flags);
-+	}
++	/* in case restart(2) mandates a specific location */
++	if (start)
++		vdso_base = start;
 +
- 	if (unlikely(!out->f_op || !out->f_op->splice_write))
- 		return -EINVAL;
+ 	current->mm->context.vdso_base = 0;
  
-@@ -933,8 +1015,16 @@ static long do_splice_to(struct file *in, loff_t *ppos,
- 			 struct pipe_inode_info *pipe, size_t len,
- 			 unsigned int flags)
- {
-+	struct pipe_inode_info *ipipe;
- 	int ret;
+ 	/* vDSO has a problem and was disabled, just don't "enable" it for the
+@@ -234,6 +239,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 		goto fail_mmapsem;
+ 	}
  
-+	ipipe = pipe_info(in->f_dentry->d_inode);
-+	if (ipipe) {
-+		if (unlikely(!(in->f_mode & FMODE_READ)))
-+			return -EBADF;
-+		return do_splice_pipes(ipipe, pipe, len, flags);
-+	}
++	/* for restart(2), double check that we got we asked for */
++	if (start && vdso_base != start)
++		goto fail_mmapsem;
 +
- 	if (unlikely(!in->f_op || !in->f_op->splice_read))
- 		return -EINVAL;
- 
-@@ -1113,19 +1203,6 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
- }
- 
- /*
-- * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
-- * location, so checking ->i_pipe is not enough to verify that this is a
-- * pipe.
-- */
--static inline struct pipe_inode_info *pipe_info(struct inode *inode)
--{
--	if (S_ISFIFO(inode->i_mode))
--		return inode->i_pipe;
--
--	return NULL;
--}
--
--/*
-  * Determine where to splice to/from.
-  */
- static long do_splice(struct file *in, loff_t __user *off_in,
-@@ -1140,7 +1217,10 @@ static long do_splice(struct file *in, loff_t __user *off_in,
- 	if (pipe) {
- 		if (off_in)
- 			return -ESPIPE;
-+
- 		if (off_out) {
-+			if (pipe_info(out->f_path.dentry->d_inode))
-+				return -ESPIPE;
- 			if (out->f_op->llseek == no_llseek)
- 				return -EINVAL;
- 			if (copy_from_user(&offset, off_out, sizeof(loff_t)))
-@@ -1639,21 +1719,36 @@ static int link_pipe_prep(struct pipe_inode_info *ipipe,
- 	return 0;
- }
- 
--/*
-- * Link contents of ipipe to opipe.
-- */
--static int link_pipe(struct pipe_inode_info *ipipe,
--		     struct pipe_inode_info *opipe,
--		     size_t len, unsigned int flags)
-+/**
-+* Returns the nth pipe buffer after the current one.
-+*
-+* @i the buffer index, relative to the current one
-+*/
-+static inline struct pipe_buffer *
-+pipe_buffer_at(struct pipe_inode_info *pipe, unsigned i)
- {
--	struct pipe_buffer *ibuf, *obuf;
--	int ret, i = 0, nbuf;
-+	BUG_ON(i >= PIPE_BUFFERS);
- 
--	ret = link_pipe_prep(ipipe, opipe, flags);
--	if (ret < 0)
--		return ret;
-+	return pipe->bufs + ((pipe->curbuf + i) & (PIPE_BUFFERS - 1));
-+}
- 
--	/* pipes are now locked */
-+/**
-+ * do_link_pipe - copy or move (splice) contents of ipipe to opipe.
-+ * @ipipe: the input pipe
-+ * @opipe: the output pipe
-+ * @len: the maximum number of byte to copy/move
-+ * @flags: splice modifier flags
-+ * @move: indicates move operation (otherwise copy)
-+ *
-+ * expects both pipes to be locked
-+ */
-+static long do_link_pipe(struct pipe_inode_info *ipipe,
-+			struct pipe_inode_info *opipe,
-+			size_t len, unsigned int flags, int move)
-+{
-+	struct pipe_buffer *ibuf, *obuf;
-+	long ret = 0;
-+	int i = 0;
- 
- 	do {
- 		if (!opipe->readers) {
-@@ -1670,16 +1765,8 @@ static int link_pipe(struct pipe_inode_info *ipipe,
- 		if (i >= ipipe->nrbufs || opipe->nrbufs >= PIPE_BUFFERS)
- 			break;
- 
--		ibuf = ipipe->bufs + ((ipipe->curbuf + i) & (PIPE_BUFFERS - 1));
--		nbuf = (opipe->curbuf + opipe->nrbufs) & (PIPE_BUFFERS - 1);
--
--		/*
--		 * Get a reference to this pipe buffer,
--		 * so we can copy the contents over.
--		 */
--		ibuf->ops->get(ipipe, ibuf);
--
--		obuf = opipe->bufs + nbuf;
-+		ibuf = pipe_buffer_at(ipipe, i);
-+		obuf = pipe_buffer_at(opipe, opipe->nrbufs);
- 		*obuf = *ibuf;
- 
- 		/*
-@@ -1688,13 +1775,35 @@ static int link_pipe(struct pipe_inode_info *ipipe,
- 		 */
- 		obuf->flags &= ~PIPE_BUF_FLAG_GIFT;
- 
--		if (obuf->len > len)
-+		/* increase the reference count */
-+		obuf->ops->get(opipe, obuf);
-+
-+		/* partial or complete copy/move ? */
-+		if (obuf->len > len) {
- 			obuf->len = len;
-+			if (move) {
-+				/* remove portion from ibuf */
-+				ibuf->offset += len;
-+				ibuf->len -= len;
-+			}
-+		} else {
-+			if (move) {
-+				/* remove entirely from ibuf */
-+				ibuf->ops->release(ipipe, ibuf);
-+				ibuf->ops = NULL;
-+
-+				ipipe->curbuf = (ipipe->curbuf + 1) &
-+					(PIPE_BUFFERS - 1);
-+				ipipe->nrbufs--;
-+			} else {
-+				/* advance pointer in ibuf */
-+				i++;
-+			}
-+		}
- 
- 		opipe->nrbufs++;
- 		ret += obuf->len;
- 		len -= obuf->len;
--		i++;
- 	} while (len);
- 
  	/*
-@@ -1704,6 +1813,26 @@ static int link_pipe(struct pipe_inode_info *ipipe,
- 	if (!ret && ipipe->waiting_writers && (flags & SPLICE_F_NONBLOCK))
- 		ret = -EAGAIN;
+ 	 * our vma flags don't have VM_WRITE so by default, the process isn't
+ 	 * allowed to write those pages.
+diff --git a/arch/s390/include/asm/elf.h b/arch/s390/include/asm/elf.h
+index 74d0bbb..54235bc 100644
+--- a/arch/s390/include/asm/elf.h
++++ b/arch/s390/include/asm/elf.h
+@@ -205,6 +205,6 @@ do {									    \
+ struct linux_binprm;
  
-+	return ret;
-+}
-+
-+/*
-+ * Link contents of ipipe to opipe.
-+ */
-+long link_pipe(struct pipe_inode_info *ipipe,
-+	       struct pipe_inode_info *opipe,
-+	       size_t len, unsigned int flags)
-+{
-+	long ret;
-+
-+	ret = link_pipe_prep(ipipe, opipe, flags);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* pipes are now locked */
-+
-+	ret = do_link_pipe(ipipe, opipe, len, flags, 0);
-+
- 	pipe_unlock(ipipe);
- 	pipe_unlock(opipe);
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+-int arch_setup_additional_pages(struct linux_binprm *, int);
++int arch_setup_additional_pages(struct linux_binprm *, unsigned long, int);
  
+ #endif
+diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
+index 89b2e7f..bab43b3 100644
+--- a/arch/s390/kernel/vdso.c
++++ b/arch/s390/kernel/vdso.c
+@@ -182,7 +182,8 @@ static void vdso_init_cr5(void)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
+  */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+@@ -213,6 +214,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	vdso_pages = vdso32_pages;
+ #endif
+ 
++	/* in case restart(2) mandates a specific location */
++	if (start)
++		vdso_base = start;
++
+ 	/*
+ 	 * vDSO has a problem and was disabled, just don't "enable" it for
+ 	 * the process
+@@ -235,6 +240,12 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 		goto out_up;
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && vdso_base != start) {
++		rc = -EINVAL;
++		goto out_up;
++	}
++
+ 	/*
+ 	 * our vma flags don't have VM_WRITE so by default, the process
+ 	 * isn't allowed to write those pages.
+diff --git a/arch/sh/include/asm/elf.h b/arch/sh/include/asm/elf.h
+index ccb1d93..6c27b1f 100644
+--- a/arch/sh/include/asm/elf.h
++++ b/arch/sh/include/asm/elf.h
+@@ -202,6 +202,7 @@ do {									\
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ 
+ extern unsigned int vdso_enabled;
+diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
+index 3f7e415..64c70e5 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -59,7 +59,7 @@ int __init vsyscall_init(void)
+ }
+ 
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+diff --git a/arch/x86/include/asm/elf.h b/arch/x86/include/asm/elf.h
+index 83c1bc8..a4398c8 100644
+--- a/arch/x86/include/asm/elf.h
++++ b/arch/x86/include/asm/elf.h
+@@ -336,9 +336,10 @@ struct linux_binprm;
+ 
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ 
+-extern int syscall32_setup_pages(struct linux_binprm *, int exstack);
++extern int syscall32_setup_pages(struct linux_binprm *, unsigned long start, int exstack);
+ #define compat_arch_setup_additional_pages	syscall32_setup_pages
+ 
+ extern unsigned long arch_randomize_brk(struct mm_struct *mm);
+diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
+index 1241f11..9c72a23 100644
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -310,7 +310,8 @@ int __init sysenter_setup(void)
+ }
+ 
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+@@ -331,13 +332,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	if (compat)
+ 		addr = VDSO_HIGH_BASE;
+ 	else {
+-		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, 0);
++		addr = get_unmapped_area(NULL, start, PAGE_SIZE, 0, 0);
+ 		if (IS_ERR_VALUE(addr)) {
+ 			ret = addr;
+ 			goto up_fail;
+ 		}
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && addr != start)
++		goto up_fail;
++
+ 	if (compat_uses_vma || !compat) {
+ 		/*
+ 		 * MAYWRITE to allow gdb to COW and set breakpoints
+diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
+index 7133cdf..81fce6d 100644
+--- a/arch/x86/vdso/vma.c
++++ b/arch/x86/vdso/vma.c
+@@ -98,7 +98,8 @@ static unsigned long vdso_addr(unsigned long start, unsigned len)
+ 
+ /* Setup a VMA at program startup for the vsyscall page.
+    Not called for compat tasks */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+@@ -108,13 +109,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 		return 0;
+ 
+ 	down_write(&mm->mmap_sem);
+-	addr = vdso_addr(mm->start_stack, vdso_size);
++	addr = start ? : vdso_addr(mm->start_stack, vdso_size);
+ 	addr = get_unmapped_area(NULL, addr, vdso_size, 0, 0);
+ 	if (IS_ERR_VALUE(addr)) {
+ 		ret = addr;
+ 		goto up_fail;
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && addr != start)
++		goto up_fail;
++
+ 	ret = install_special_mapping(mm, addr, vdso_size,
+ 				      VM_READ|VM_EXEC|
+ 				      VM_MAYREAD|VM_MAYWRITE|VM_MAYEXEC|
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index 40381df..aa9a802 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -945,7 +945,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
+ 	set_binfmt(&elf_format);
+ 
+ #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+-	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
++	retval = arch_setup_additional_pages(bprm, 0, !!elf_interpreter);
+ 	if (retval < 0) {
+ 		send_sig(SIGKILL, current, 0);
+ 		goto out;
 -- 
 1.6.0.4
