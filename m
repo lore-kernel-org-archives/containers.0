@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/7] [PATCH] Add target_pids parameter to alloc_pid()
-Date: Wed, 27 May 2009 13:05:15 -0500
-Message-ID: <20090527180515.GA780@us.ibm.com>
-References: <20090527154212.GA3107@us.ibm.com>
-	<20090527154355.GD3107@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v16][PATCH 39/43] c/r (ipc): export interface from ipc/sem.c to
+	cleanup ipc sem
+Date: Wed, 27 May 2009 13:33:05 -0400
+Message-ID: <1243445589-32388-40-git-send-email-orenl__38143.5505849824$1243448542$gmane$org@cs.columbia.edu>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090527154355.GD3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,94 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:42 -0700
-> Subject: [PATCH 4/7] [PATCH] Add target_pids parameter to alloc_pid()
-> 
-> This parameter is currently NULL, but will be used in a follow-on patch.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Export freeary() which will be used in the next patch during restart
+to cleanup an ipc sem.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ ipc/sem.c  |    3 +--
+ ipc/util.h |    1 +
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-> ---
->  include/linux/pid.h |    2 +-
->  kernel/fork.c       |    3 ++-
->  kernel/pid.c        |    9 +++++++--
->  3 files changed, 10 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/pid.h b/include/linux/pid.h
-> index 49f1c2f..914185d 100644
-> --- a/include/linux/pid.h
-> +++ b/include/linux/pid.h
-> @@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
->  extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
->  int next_pidmap(struct pid_namespace *pid_ns, int last);
-> 
-> -extern struct pid *alloc_pid(struct pid_namespace *ns);
-> +extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
->  extern void free_pid(struct pid *pid);
-> 
->  /*
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index f8411a8..d2d69d3 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -954,6 +954,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  	int retval;
->  	struct task_struct *p;
->  	int cgroup_callbacks_done = 0;
-> +	pid_t *target_pids = NULL;
-> 
->  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
->  		return ERR_PTR(-EINVAL);
-> @@ -1119,7 +1120,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  		goto bad_fork_cleanup_io;
-> 
->  	if (pid != &init_struct_pid) {
-> -		pid = alloc_pid(p->nsproxy->pid_ns);
-> +		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
->  		if (IS_ERR(pid)) {
->  			retval = PTR_ERR(pid);
->  			goto bad_fork_cleanup_io;
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index 93406c6..4b2373a 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -279,13 +279,14 @@ void free_pid(struct pid *pid)
->  	call_rcu(&pid->rcu, delayed_put_pid);
->  }
-> 
-> -struct pid *alloc_pid(struct pid_namespace *ns)
-> +struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
->  {
->  	struct pid *pid;
->  	enum pid_type type;
->  	int i, nr;
->  	struct pid_namespace *tmp;
->  	struct upid *upid;
-> +	int tpid;
-> 
->  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
->  	if (!pid)
-> @@ -293,7 +294,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
-> 
->  	tmp = ns;
->  	for (i = ns->level; i >= 0; i--) {
-> -		nr = alloc_pidmap(tmp, 0);
-> +		tpid = 0;
-> +		if (target_pids)
-> +			tpid = target_pids[i];
-> +
-> +		nr = alloc_pidmap(tmp, tpid);
->  		if (nr < 0)
->  			goto out_free;
-> 
-> -- 
-> 1.5.2.5
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 207dbbb..c60076e 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -93,7 +93,6 @@
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
+ 
+ static int newary(struct ipc_namespace *, struct ipc_params *, int);
+-static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -521,7 +520,7 @@ static void free_un(struct rcu_head *head)
+  * as a writer and the spinlock for this semaphore set hold. sem_ids.rw_mutex
+  * remains locked on exit.
+  */
+-static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ {
+ 	struct sem_undo *un, *tu;
+ 	struct sem_queue *q, *tq;
+diff --git a/ipc/util.h b/ipc/util.h
+index 2a05fb3..347ffb2 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -185,6 +185,7 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+ extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
+ extern int do_msgget(key_t key, int msgflg, int req_id);
+ extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
++extern void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ 
+ extern void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
+-- 
+1.6.0.4
