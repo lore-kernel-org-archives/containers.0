@@ -1,14 +1,13 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 2/7] [PATCH] Have alloc_pidmap() return actual error code
-Date: Wed, 27 May 2009 10:27:42 -0700
-Message-ID: <1243445262.8071.54.camel@nimitz>
-References: <20090527154212.GA3107@us.ibm.com>
-	<20090527154259.GB3107@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v16][PATCH 02/43] c/r: make file_pos_read/write() public
+Date: Wed, 27 May 2009 13:32:28 -0400
+Message-ID: <1243445589-32388-3-git-send-email-orenl__9780.38780526749$1243445733$gmane$org@cs.columbia.edu>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090527154259.GB3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,76 +17,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-05-27 at 08:42 -0700, Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:40 -0700
-> Subject: [PATCH 2/7] [PATCH] Have alloc_pidmap() return actual error code
-> 
-> alloc_pidmap() can fail either because all pid numbers are in use or
-> we can't allocate memory. With support for setting a specific pid
-> number, alloc_pidmap() would also fail if either the given pid
-> number is invalid or in use.
-> 
-> Rather than have caller assume -ENOMEM, have alloc_pidmap() return
-> the actual error.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  kernel/fork.c |    5 +++--
->  kernel/pid.c  |    9 ++++++---
->  2 files changed, 9 insertions(+), 5 deletions(-)
-> 
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index b9e2edd..f8411a8 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1119,10 +1119,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  		goto bad_fork_cleanup_io;
-> 
->  	if (pid != &init_struct_pid) {
-> -		retval = -ENOMEM;
->  		pid = alloc_pid(p->nsproxy->pid_ns);
-> -		if (!pid)
-> +		if (IS_ERR(pid)) {
-> +			retval = PTR_ERR(pid);
->  			goto bad_fork_cleanup_io;
-> +		}
-> 
->  		if (clone_flags & CLONE_NEWPID) {
->  			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index c0aaebe..fd72ad9 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -151,6 +151,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
->  {
->  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
->  	struct pidmap *map;
-> +	int rc = -EAGAIN;
-> 
->  	pid = last + 1;
->  	if (pid >= pid_max)
-> @@ -159,8 +160,10 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
->  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
->  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
->  	for (i = 0; i <= max_scan; ++i) {
-> -		if (alloc_pidmap_page(map))
-> +		if (alloc_pidmap_page(map)) {
-> +			rc = -ENOMEM;
->  			break;
-> +		}
+These two are used in the next patch when calling vfs_read/write()
 
-OK, pet peeve time:
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ fs/read_write.c    |   10 ----------
+ include/linux/fs.h |   10 ++++++++++
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-	rc = alloc_pidmap_page(map);
-	if (rc)
-		break;
-
-It saves the bracket and saves a line of assignment, *and* it clarifies
-program flow.
-
--- Dave
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 9d1e76b..ed63ea3 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -359,16 +359,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+ 
+ EXPORT_SYMBOL(vfs_write);
+ 
+-static inline loff_t file_pos_read(struct file *file)
+-{
+-	return file->f_pos;
+-}
+-
+-static inline void file_pos_write(struct file *file, loff_t pos)
+-{
+-	file->f_pos = pos;
+-}
+-
+ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+ {
+ 	struct file *file;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 3b534e5..9c4348a 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1546,6 +1546,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
+ 				struct iovec *fast_pointer,
+ 				struct iovec **ret_pointer);
+ 
++static inline loff_t file_pos_read(struct file *file)
++{
++	return file->f_pos;
++}
++
++static inline void file_pos_write(struct file *file, loff_t pos)
++{
++	file->f_pos = pos;
++}
++
+ extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
+ extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
+ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+-- 
+1.6.0.4
