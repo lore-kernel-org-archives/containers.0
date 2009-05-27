@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
-Date: Wed, 27 May 2009 15:31:29 -0400
-Message-ID: <4A1D9511.80803@cs.columbia.edu>
-References: <20090527154212.GA3107@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v16][PATCH 23/43] c/r: restart multiple processes
+Date: Wed, 27 May 2009 23:37:58 +0400
+Message-ID: <20090527193758.GC31930__15859.6676927575$1243453141$gmane$org@x200.localdomain>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+	<1243445589-32388-24-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090527154212.GA3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1243445589-32388-24-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,83 +19,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:39 -0700
-> Subject: [PATCH 1/7] [PATCH] Factor out code to allocate pidmap page
+On Wed, May 27, 2009 at 01:32:49PM -0400, Oren Laadan wrote:
+> Restarting of multiple processes expects all restarting tasks to call
+> sys_restart(). Once inside the system call, each task will restart
+> itself at the same order that they were saved. The internals of the
+> syscall will take care of in-kernel synchronization bewteen tasks.
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
-
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
->  kernel/pid.c |   43 ++++++++++++++++++++++++++++---------------
->  1 files changed, 28 insertions(+), 15 deletions(-)
+> This patch does _not_ create the task tree in the kernel. Instead it
+> assumes that all tasks are created in some way and then invoke the
+> restart syscall. You can use the userspace mktree.c program to do
+> that.
 > 
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index b2e5f78..c0aaebe 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -122,6 +122,31 @@ static void free_pidmap(struct upid *upid)
->  	atomic_inc(&map->nr_free);
->  }
->  
-> +static int alloc_pidmap_page(struct pidmap *map)
-> +{
-> +	void *page;
-> +
-> +	if (likely(map->page))
-> +		return 0;
-> +
-> +	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-> +
-> +	/*
-> +	 * Free the page if someone raced with us installing it:
-> +	 */
-> +	spin_lock_irq(&pidmap_lock);
-> +	if (map->page)
-> +		kfree(page);
-> +	else
-> +		map->page = page;
-> +	spin_unlock_irq(&pidmap_lock);
-> +
-> +	if (unlikely(!map->page))
-> +		return -1;
-> +
-> +	return 0;
-> +}
-> +
->  static int alloc_pidmap(struct pid_namespace *pid_ns)
->  {
->  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-> @@ -134,21 +159,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
->  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
->  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
->  	for (i = 0; i <= max_scan; ++i) {
-> -		if (unlikely(!map->page)) {
-> -			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-> -			/*
-> -			 * Free the page if someone raced with us
-> -			 * installing it:
-> -			 */
-> -			spin_lock_irq(&pidmap_lock);
-> -			if (map->page)
-> -				kfree(page);
-> -			else
-> -				map->page = page;
-> -			spin_unlock_irq(&pidmap_lock);
-> -			if (unlikely(!map->page))
-> -				break;
-> -		}
-> +		if (alloc_pidmap_page(map))
-> +			break;
-> +
->  		if (likely(atomic_read(&map->nr_free))) {
->  			do {
->  				if (!test_and_set_bit(offset, map->page)) {
+> The init task (*) has a special role: it allocates the restart context
+> (ctx), and coordinates the operation. In particular, it first waits
+> until all participating tasks enter the kernel, and provides them the
+> common restart context. Once everyone in ready, it begins to restart
+> itself.
+> 
+> In contrast, the other tasks enter the kernel, locate the init task (*)
+> and grab its restart context, and then wait for their turn to restore.
+> 
+> When a task (init or not) completes its restart, it hands the control
+> over to the next in line, by waking that task.
+> 
+> An array of pids (the one saved during the checkpoint) is used to
+> synchronize the operation. The first task in the array is the init
+> task (*). The restart context (ctx) maintain a "current position" in
+> the array, which indicates which task is currently active. Once the
+> currently active task completes its own restart, it increments that
+> position and wakes up the next task.
+> 
+> Restart assumes that userspace provides meaningful data, otherwise
+> it's garbage-in-garbage-out. In this case, the syscall may block
+> indefinitely, but in TASK_INTERRUPTIBLE, so the user can ctrl-c or
+> otherwise kill the stray restarting tasks.
+> 
+> In terms of security, restart runs as the user the invokes it, so it
+> will not allow a user to do more than is otherwise permitted by the
+> usual system semantics and policy.
+> 
+> Currently we ignore threads and zombies
+
+Let's discuss threads and zombies.
+
+1. Will zombie end up in a image?
+2. If yes, how it will be restored. Will it be forked, call restart(2)
+   and then somehow zombified inside kernel?
+3. How thread group will be restored, will every thread be CLONE_THREAD'ed?
+   What to do with exited thread group leaders, will they be forked, then
+   CLONE_THREAD thread group?
