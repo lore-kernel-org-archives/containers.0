@@ -1,254 +1,142 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 7/7] [PATCH] Define clone_with_pids syscall
-Date: Wed, 27 May 2009 08:45:07 -0700
-Message-ID: <20090527154507.GG3107@us.ibm.com>
-References: <20090527154212.GA3107@us.ibm.com>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 0/8] a start to credentials c/r
+Date: Wed, 27 May 2009 09:03:21 -0700
+Message-ID: <4A1D6449.4020906@schaufler-ca.com>
+References: <20090526173242.GA13757@us.ibm.com> <4A1CAE03.7090005@schaufler-ca.com> <20090527123728.GA27160@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090527154212.GA3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090527123728.GA27160@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Serge E. Hallyn wrote:
+> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>   
+>> Serge E. Hallyn wrote:
+>>     
+>>> Following is the next version of the credentials c/r patchset,
+>>> on top of the c/r patchset at
+>>> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+>>>
+>>> It implements checkpoint and restart of user, user namespaces,
+>>> groups, supplementary groups, and struct cred.
+>>>
+>>> There is a question as to what to do about LSM data at
+>>> restart.  Right now I'm ignoring it, which means that
+>>> prepare_creds() should ensure that the restart tasks get
+>>> the context of the task calling sys_restart().  I
+>>> suspect the right thing to do is to add two new LSM
+>>> hooks, one which checks current's authorization to
+>>> restart from the checkpoint file,
+>>>       
+>> How would that work? Based on information in the file?
+>> You have to assume that some number of checkpoint files
+>> have been hand written by Elbonian ne'er do wells.
+>>     
+>
+> Not based on information in the file, but based on the
+> credentials of the task which created the file, and
+> whether an unprivileged task could have hand-edited the
+> file before feeding it to sys_restart().
+>
+> So some example decisions in terms of selinux contexts might be,
+> 	1. a task of user_u may restart a file of type user_u
+> 	if the checkpointed context is user_u
+> 	2. a task of user_u may NOT restart a file of type user_u
+> 	if the checkpointed context is root_u
+> 	3. a task of root_u may restart a file of type root_u
+> 	if the checkpointed context is user_u
+>
+> Uh, so yes, bsaed on info in the file as well  :)  Except
+> of course the LSM would just be fed the checkpointed context
+> and the checkpoint file context (and can deduce current's context).
+>   
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:45 -0700
-Subject: [PATCH 7/7] [PATCH] Define clone_with_pids syscall
+And SELinux can do whatever calculations it likes based on the
+three contexts and the loaded policy.  Are you at all concerned
+about the possibility that the policy may have changed? I can
+envision scenarios in which it would be impossible for a process
+to gain a particular context under current policy, but that a
+checkpointed process may have stored away.
 
-clone_with_pids() is same as clone(), except that it takes a 'target_pid_set'
-paramter which lets caller choose a specific pid number for the child process
-in each of the child process's pid namespace. This system call would be needed
-to implement Checkpoint/Restart (i.e after a checkpoint, restart a process with
-its original pids).
+>   
+>>>  and one which determines
+>>> the task->cred->security filed based upon any of:
+>>> 	1. current_security() of the task calling sys_restart()
+>>> 	2. the task->cred->security checkpointed in the ckpt file
+>>> 	3. the ->security of the checkpoint file
+>>>   
+>>>       
+>> For Smack the correct behavior would be:
+>>
+>>     1. for sys_restart() callers without CAP_MAC_ADMIN
+>>     2. for sys_restart() callers with CAP_MAC_ADMIN
+>>     3. never
+>>     
+>
+> That makes sense, and is basically analagous (if I'm thinking
+> right) to how I'm doing capabilities.
+>
+> So the first (authorization hook) for smack would just always
+> return TRUE?
+>   
 
-Call clone_with_pids as follows:
+I suggest that it needs to check for a valid Smack label. Even though
+they're just text strings they do have limitations, including size
+(> 0 < 24) and character set. A call to smk_import() is the right
+way to do it, as it also makes sure the label is in the internal list.
+If smk_import() returns NULL something's amiss.
 
-	pid_t pids[] = { 0, 77, 99 };
-	struct target_pid_set pid_set;
 
-	pid_set.num_pids = sizeof(pids) / sizeof(int);
-	pid_set.target_pids = &pids;
+> I can hook that up right now...
+>   
 
-	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
+I bet you could do it even with the call to smk_import. (smiley here)
 
-If a target-pid is 0, the kernel continues to assign a pid for the process in
-that namespace. In the above example, pids[0] is 0, meaning the kernel will
-assign next available pid to the process in init_pid_ns. But kernel will assign
-pid 77 in the child pid namespace 1 and pid 99 in pid namespace 2. If either
-77 or 99 are taken, the system call fails with -EBUSY.
+>   
+>> sys_restart() callers running with CAP_MAC_ADMIN would have to be
+>> very very careful about the files they restart. But that's nothing
+>> new in the MAC world.
+>>     
+>
+> Yup.
+>
+> Mind you eventually I expect a setup where some privileged program
+> is asked (by privileged or unprivilegd tasks) to create a checkpoint
+> and ask the TPM to sign it.  No unprivileged program can sign an
+> image directly, so then a restart of a task with privilege can be
+> restricted to anything with a valid signature.  In that case, it
+> may be safe to have the checkpointed task's credentials completely
+> restored, including LSM labels.
+>   
 
-If 'pid_set.num_pids' exceeds the current nesting level of pid namespaces,
-the system call fails with -EINVAL.
+All of the current LSMs share the property that the access control
+rules (SELinux policy, Smack access rules, TOMOYO policy) may change
+between the time of checkpoint and the time of restart. If I had a
+silver bullet answer to the concerns that raises I'd pass it along,
+but as I don't I'll stick to the answer I have for Smack (The rules
+of the moment are those that matter, and the architecture of Smack
+supports that) and leave the other LSMs to their own devices.
 
-Its mostly an exploratory patch seeking feedback on the interface.
 
-NOTE:
-	Compared to clone(), clone_with_pids() needs to pass in two more
-	pieces of information:
+> But that's a ways off.
+>   
 
-		- number of pids in the set
-		- user buffer containing the list of pids.
+It does look like a bit of work.
 
-	But since clone() already takes 5 parameters, use a 'struct
-	target_pid_set'.
+Thank you.
 
-TODO:
-	- Gently tested.
-	- May need additional sanity checks in check_target_pids()
-	- Allow CLONE_NEWPID() with clone_with_pids() (ensure target-pid in
-	  the namespace is either 1 or 0).
 
-Changelog[v1]:
-	- Fixed some compile errors (had fixed these errors earlier in my
-	  git tree but had not refreshed patches before emailing them)
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- arch/x86/include/asm/syscalls.h    |    1 +
- arch/x86/include/asm/unistd_32.h   |    1 +
- arch/x86/kernel/entry_32.S         |    1 +
- arch/x86/kernel/process_32.c       |   94 ++++++++++++++++++++++++++++++++++++
- arch/x86/kernel/syscall_table_32.S |    1 +
- include/linux/types.h              |    5 ++
- 6 files changed, 103 insertions(+), 0 deletions(-)
-
-diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
-index 7043408..1fdc149 100644
---- a/arch/x86/include/asm/syscalls.h
-+++ b/arch/x86/include/asm/syscalls.h
-@@ -31,6 +31,7 @@ asmlinkage int sys_get_thread_area(struct user_desc __user *);
- /* kernel/process_32.c */
- int sys_fork(struct pt_regs *);
- int sys_clone(struct pt_regs *);
-+int sys_clone_with_pids(struct pt_regs *);
- int sys_vfork(struct pt_regs *);
- int sys_execve(struct pt_regs *);
- 
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index 6e72d74..90f906f 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -340,6 +340,7 @@
- #define __NR_inotify_init1	332
- #define __NR_preadv		333
- #define __NR_pwritev		334
-+#define __NR_clone_with_pids	335
- 
- #ifdef __KERNEL__
- 
-diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
-index c929add..ee92b0d 100644
---- a/arch/x86/kernel/entry_32.S
-+++ b/arch/x86/kernel/entry_32.S
-@@ -707,6 +707,7 @@ ptregs_##name: \
- PTREGSCALL(iopl)
- PTREGSCALL(fork)
- PTREGSCALL(clone)
-+PTREGSCALL(clone_with_pids)
- PTREGSCALL(vfork)
- PTREGSCALL(execve)
- PTREGSCALL(sigaltstack)
-diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-index 76f8f84..65b27a8 100644
---- a/arch/x86/kernel/process_32.c
-+++ b/arch/x86/kernel/process_32.c
-@@ -445,6 +445,100 @@ int sys_clone(struct pt_regs *regs)
- 	return do_fork(clone_flags, newsp, regs, 0, parent_tidptr, child_tidptr);
- }
- 
-+static int check_target_pids(unsigned long clone_flags,
-+		struct target_pid_set *pid_setp)
-+{
-+	/*
-+	 * CLONE_NEWPID implies pid == 1
-+	 *
-+	 * TODO: Maybe this should be more fine-grained (i.e would we want
-+	 *  	 to have a container-init have a specific pid in ancestor
-+	 *  	 namespaces ?)
-+	 */
-+	if (clone_flags & CLONE_NEWPID)
-+		return -EINVAL;
-+
-+	/* number of pids must match current nesting level of pid ns */
-+	if (pid_setp->num_pids > task_pid(current)->level + 1)
-+		return -EINVAL;
-+
-+	/* TODO: More sanity checks ?  */
-+
-+	return 0;
-+}
-+
-+static pid_t *copy_target_pids(unsigned long clone_flags, void __user *upid_setp)
-+{
-+	int rc;
-+	int size;
-+	pid_t __user *utarget_pids;
-+	pid_t *target_pids;
-+	struct target_pid_set pid_set;
-+
-+	if (copy_from_user(&pid_set, upid_setp, sizeof(pid_set)))
-+		return ERR_PTR(-EFAULT);
-+
-+	size = pid_set.num_pids * sizeof(pid_t);
-+	utarget_pids = pid_set.target_pids;
-+
-+	target_pids = kzalloc(size, GFP_KERNEL);
-+	if (!target_pids)
-+		return ERR_PTR(-ENOMEM);
-+
-+	rc = -EFAULT;
-+	if (copy_from_user(target_pids, utarget_pids, size))
-+		goto out_free;
-+
-+	/* Replace user-copy of target-pids in pid_set with kernel-copy */
-+	pid_set.target_pids = target_pids;
-+
-+	rc = check_target_pids(clone_flags, &pid_set);
-+	if (rc)
-+		goto out_free;
-+
-+	printk(KERN_ERR "clone_with_pids() num_pids %d, [ %d, %d ]\n",
-+			pid_set.num_pids, target_pids[0], target_pids[1]);
-+
-+	return target_pids;
-+
-+out_free:
-+	kfree(target_pids);
-+	return ERR_PTR(rc);
-+}
-+
-+int sys_clone_with_pids(struct pt_regs *regs)
-+{
-+	unsigned long clone_flags;
-+	unsigned long newsp;
-+	int __user *parent_tidptr;
-+	int __user *child_tidptr;
-+	void __user *upid_setp;
-+	pid_t *target_pids;
-+	int rc;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	clone_flags = regs->bx;
-+	newsp = regs->cx;
-+	parent_tidptr = (int __user *)regs->dx;
-+	child_tidptr = (int __user *)regs->di;
-+	upid_setp = (void __user *)regs->bp;
-+
-+	if (!newsp)
-+		newsp = regs->sp;
-+
-+	target_pids = copy_target_pids(clone_flags, upid_setp);
-+	if (IS_ERR(target_pids))
-+		return PTR_ERR(target_pids);
-+
-+	rc = do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
-+			child_tidptr, target_pids);
-+
-+	kfree(target_pids);
-+	return rc;
-+}
-+
- /*
-  * sys_execve() executes a new program.
-  */
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index ff5c873..94c1a58 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -334,3 +334,4 @@ ENTRY(sys_call_table)
- 	.long sys_inotify_init1
- 	.long sys_preadv
- 	.long sys_pwritev
-+	.long ptregs_clone_with_pids	/* 335 */
-diff --git a/include/linux/types.h b/include/linux/types.h
-index 5abe354..17ec186 100644
---- a/include/linux/types.h
-+++ b/include/linux/types.h
-@@ -204,6 +204,11 @@ struct ustat {
- 	char			f_fpack[6];
- };
- 
-+struct target_pid_set {
-+	int num_pids;
-+	pid_t *target_pids;
-+};
-+
- #endif	/* __KERNEL__ */
- #endif /*  __ASSEMBLY__ */
- #endif /* _LINUX_TYPES_H */
--- 
-1.5.2.5
+> thanks,
+> -serge
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>   
