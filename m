@@ -1,275 +1,116 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 24/43] c/r: detect resource leaks for whole-container
-	checkpoint
-Date: Wed, 27 May 2009 13:32:50 -0400
-Message-ID: <1243445589-32388-25-git-send-email-orenl__144.503897945647$1243449192$gmane$org@cs.columbia.edu>
-References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: Re: [PATCH 6/8] cr: checkpoint and restore task credentials
+Date: Wed, 27 May 2009 22:36:10 +0400
+Message-ID: <20090527183610.GA31930@x200.localdomain>
+References: <20090526173242.GA13757@us.ibm.com> <20090526173354.GF13991@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090526173354.GF13991@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
-checkpoint, return an error code if the actual objects' counts are
-higher, indicating leaks (references to the objects from a task not
-being checkpointed).  Of course, by this time most of the checkpoint
-image has been written out to disk, so this is purely advisory.  But
-then, it's probably naive to argue that anything more than an advisory
-'this went wrong' error code is useful.
+On Tue, May 26, 2009 at 12:33:54PM -0500, Serge E. Hallyn wrote:
+> +struct ckpt_hdr_cred {
+> +	struct ckpt_hdr h;
+> +	__u32 version; /* especially since capability sets might grow */
 
-The comparison of the objhash user counts to object refcounts as a
-basis for checking for leaks comes from Alexey's OpenVZ-based c/r
-patchset.
+Oh, no. Image version should be incremented.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/checkpoint.c    |    8 ++++
- checkpoint/objhash.c       |   82 ++++++++++++++++++++++++++++++++++++++++++--
- include/linux/checkpoint.h |    1 +
- 3 files changed, 88 insertions(+), 3 deletions(-)
+> +	__u32 uid, suid, euid, fsuid;
+> +	__u32 gid, sgid, egid, fsgid;
+> +	__u64 cap_i, cap_p, cap_e;
+> +	__u64 cap_x;  /* bounding set ('X') */
+> +	__s32 user_ref;
+> +	__s32 groupinfo_ref;
+> +	__u32 padding;
+> +} __attribute__((aligned(8)));
+> +
+> +struct ckpt_hdr_groupinfo {
+> +	struct ckpt_hdr h;
+> +	__u32 ngroups;
+> +	/*
+> +	 * This is followed by ngroups __u32s
+> +	 */
+> +	__u32 groups[0];
+> +} __attribute__((aligned(8)));
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 92f219e..b70adf4 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -578,6 +578,14 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		goto out;
- 
-+	if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
-+		/* verify that all objects are contained (no leaks) */
-+		if (!ckpt_obj_contained(ctx)) {
-+			ret = -EBUSY;
-+			goto out;
-+		}
-+	}
-+
- 	/* on success, return (unique) checkpoint identifier */
- 	ctx->crid = atomic_inc_return(&ctx_count);
- 	ret = ctx->crid;
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index ff9388d..e481911 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -27,19 +27,23 @@ struct ckpt_obj_ops {
- 	enum obj_type obj_type;
- 	void (*ref_drop)(void *ptr);
- 	int (*ref_grab)(void *ptr);
-+	int (*ref_users)(void *ptr);
- 	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
- 	void *(*restore)(struct ckpt_ctx *ctx);
- };
- 
- struct ckpt_obj {
-+	int users;
- 	int objref;
- 	void *ptr;
- 	struct ckpt_obj_ops *ops;
- 	struct hlist_node hash;
-+	struct hlist_node next;
- };
- 
- struct ckpt_obj_hash {
- 	struct hlist_head *head;
-+	struct hlist_head list;
- 	int next_free_objref;
- };
- 
-@@ -53,7 +57,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
- 	return ERR_PTR(-EINVAL);
- }
- 
--/* helper grab/drop functions: */
-+/* helper grab/drop/users functions */
- 
- static void obj_no_drop(void *ptr)
- {
-@@ -86,6 +90,11 @@ static void obj_file_table_drop(void *ptr)
- 	put_files_struct((struct files_struct *) ptr);
- }
- 
-+static int obj_file_table_users(void *ptr)
-+{
-+	return atomic_read(&((struct files_struct *) ptr)->count);
-+}
-+
- static int obj_file_grab(void *ptr)
- {
- 	get_file((struct file *) ptr);
-@@ -97,6 +106,11 @@ static void obj_file_drop(void *ptr)
- 	fput((struct file *) ptr);
- }
- 
-+static int obj_file_users(void *ptr)
-+{
-+	return atomic_long_read(&((struct file *) ptr)->f_count);
-+}
-+
- static int obj_mm_grab(void *ptr)
- {
- 	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
-@@ -108,6 +122,11 @@ static void obj_mm_drop(void *ptr)
- 	mmput((struct mm_struct *) ptr);
- }
- 
-+static int obj_mm_users(void *ptr)
-+{
-+	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
-+}
-+
- static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 	/* ignored object */
- 	{
-@@ -131,6 +150,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.obj_type = CKPT_OBJ_FILE_TABLE,
- 		.ref_drop = obj_file_table_drop,
- 		.ref_grab = obj_file_table_grab,
-+		.ref_users = obj_file_table_users,
- 		.checkpoint = checkpoint_file_table,
- 		.restore = restore_file_table,
- 	},
-@@ -140,6 +160,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.obj_type = CKPT_OBJ_FILE,
- 		.ref_drop = obj_file_drop,
- 		.ref_grab = obj_file_grab,
-+		.ref_users = obj_file_users,
- 		.checkpoint = checkpoint_file,
- 		.restore = restore_file,
- 	},
-@@ -149,6 +170,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.obj_type = CKPT_OBJ_MM,
- 		.ref_drop = obj_mm_drop,
- 		.ref_grab = obj_mm_grab,
-+		.ref_users = obj_mm_users,
- 		.checkpoint = checkpoint_mm,
- 		.restore = restore_mm,
- 	},
-@@ -201,6 +223,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
- 
- 	obj_hash->head = head;
- 	obj_hash->next_free_objref = 1;
-+	INIT_HLIST_HEAD(&obj_hash->list);
- 
- 	ctx->obj_hash = obj_hash;
- 	return 0;
-@@ -259,6 +282,7 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
- 
- 	obj->ptr = ptr;
- 	obj->ops = ops;
-+	obj->users = 2;  /* extra reference that objhash itself takes */
- 
- 	if (objref) {
- 		/* use @obj->objref to index (restart) */
-@@ -271,10 +295,12 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
- 	}
- 
- 	ret = ops->ref_grab(obj->ptr);
--	if (ret < 0)
-+	if (ret < 0) {
- 		kfree(obj);
--	else
-+	} else {
- 		hlist_add_head(&obj->hash, &ctx->obj_hash->head[i]);
-+		hlist_add_head(&obj->next, &ctx->obj_hash->list);
-+	}
- 
- 	return (ret < 0 ? ret : obj->objref);
- }
-@@ -335,6 +361,7 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
- 		return -EINVAL;
- 	} else {
- 		objref = obj->objref;
-+		obj->users++;
- 		*first = 0;
- 	}
- 
-@@ -342,6 +369,54 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
- 	return objref;
- }
- 
-+/* increment the 'users' count of an object */
-+static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
-+{
-+	struct ckpt_obj *obj;
-+
-+	obj = obj_find_by_ptr(ctx, ptr);
-+	if (obj)
-+		obj->users += increment;
-+}
-+
-+/**
-+ * ckpt_obj_contained - test if shared objects are "contained" in checkpoint
-+ * @ctx: checkpoint
-+ *
-+ * Loops through all objects in the table and compares the number of
-+ * references accumulated during checkpoint, with the reference count
-+ * reported by the kernel.
-+ *
-+ * Return 1 if respective counts match for all objects, 0 otherwise.
-+ */
-+int ckpt_obj_contained(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_obj *obj;
-+	struct hlist_node *node;
-+
-+	/* account for ctx->file reference (if in the table already) */
-+	ckpt_obj_users_inc(ctx, ctx->file, 1);
-+
-+	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
-+		if (!obj->ops->ref_users)
-+			continue;
-+		if (obj->ops->ref_users(obj->ptr) != obj->users) {
-+			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
-+			ckpt_write_err(ctx, "%s leak: users %d != c/r %d\n",
-+				       obj->ops->obj_name,
-+				       obj->ops->ref_users(obj->ptr),
-+				       obj->users);
-+			printk(KERN_NOTICE "c/r: %s users %d != count %d\n",
-+			       obj->ops->obj_name,
-+			       obj->ops->ref_users(obj->ptr),
-+			       obj->users);
-+			return 0;
-+		}
-+	}
-+
-+	return 1;
-+}
-+
- /**
-  * checkpoint_obj - if not already in hash, add object and checkpoint
-  * @ctx: checkpoint context
-@@ -371,6 +446,7 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
- 	obj = obj_find_by_ptr(ctx, ptr);
- 	if (obj) {
- 		BUG_ON(obj->ops->obj_type != type);
-+		obj->users++;
- 		return obj->objref;
- 	}
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index e9efa34..171e92e 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -44,6 +44,7 @@ extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
- 
- extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
- extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type);
-+extern int ckpt_obj_contained(struct ckpt_ctx *ctx);
- extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
- 			    enum obj_type type);
- extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
--- 
-1.6.0.4
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -1871,6 +1871,12 @@ static inline struct user_struct *get_uid(struct user_struct *u)
+>  extern void free_uid(struct user_struct *);
+>  extern void release_uids(struct user_namespace *ns);
+>  
+> +#ifdef CONFIG_CHECKPOINT
+> +struct ckpt_ctx;
+> +int checkpoint_write_user(struct ckpt_ctx *, struct user_struct *);
+> +struct user_struct *restore_read_user(struct ckpt_ctx *);
+> +#endif
+
+I'll rip credential stuff from sched.h, better not add more.
+
+> --- a/kernel/groups.c
+> +++ b/kernel/groups.c
+> @@ -287,3 +288,58 @@ int in_egroup_p(gid_t grp)
+>  }
+>  
+>  EXPORT_SYMBOL(in_egroup_p);
+> +
+> +#ifdef CONFIG_CHECKPOINT
+> +int checkpoint_write_groupinfo(struct ckpt_ctx *ctx, struct group_info *g)
+> +{
+> +	int ret, i, size;
+> +	struct ckpt_hdr_groupinfo *h;
+> +
+> +	size = sizeof(*h) + g->ngroups * sizeof(__u32);
+> +	h = ckpt_hdr_get_type(ctx, size, CKPT_HDR_GROUPINFO);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	h->ngroups = g->ngroups;
+> +	for (i = 0; i < g->ngroups; i++)
+> +		h->groups[i] = GROUP_AT(g, i);
+> +
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
+> +
+> +/*
+> + * TODO - switch to reading in blocks, and only return an
+> + * error for truly obscene # groups (like 10000)
+> + */
+> +#define CKPT_MAXGROUPS 100
+> +#define MAX_GROUPINFO_SIZE (sizeof(*h)+CKPT_MAXGROUPS*sizeof(gid_t))
+> +struct group_info *restore_read_groupinfo(struct ckpt_ctx *ctx)
+> +{
+> +	struct group_info *g;
+> +	struct ckpt_hdr_groupinfo *h;
+> +	int i;
+> +
+> +	h = ckpt_read_buf_type(ctx, MAX_GROUPINFO_SIZE, CKPT_HDR_GROUPINFO);
+> +	if (IS_ERR(h))
+> +		return ERR_PTR(PTR_ERR(h));
+> +	if (h->ngroups > CKPT_MAXGROUPS) {
+> +		g = ERR_PTR(-EINVAL);
+> +		goto out;
+> +	}
+> +	g = groups_alloc(h->ngroups);
+> +	if (!g) {
+> +		g = ERR_PTR(-ENOMEM);
+> +		goto out;
+> +	}
+> +	for (i = 0; i < h->ngroups; i++)
+> +		GROUP_AT(g, i) = h->groups[i];
+> +
+> +out:
+> +	ckpt_hdr_put(ctx, h);
+> +	return g;
+> +}
+
+No checks, that groups in image are a) sorted, b) ->ngroups is compatible
+with object image.
