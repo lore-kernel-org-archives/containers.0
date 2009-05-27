@@ -1,70 +1,92 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH] io-controller: Add io group reference handling for request
-Date: Wed, 27 May 2009 20:53:29 +0900 (JST)
-Message-ID: <20090527.205329.189719252.ryov__49008.708986412$1243425352$gmane$org@valinux.co.jp>
-References: <20090526.203424.39179999.ryov@valinux.co.jp>
-	<20090527.155631.226800550.ryov@valinux.co.jp>
-	<20090527081749.GA7237@linux>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 0/8] a start to credentials c/r
+Date: Wed, 27 May 2009 07:37:28 -0500
+Message-ID: <20090527123728.GA27160@us.ibm.com>
+References: <20090526173242.GA13757@us.ibm.com> <4A1CAE03.7090005@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090527081749.GA7237@linux>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <4A1CAE03.7090005@schaufler-ca.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Casey Schaufler <casey@schaufler-ca.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> On Wed, May 27, 2009 at 03:56:31PM +0900, Ryo Tsuruta wrote:
-> > > I think that only putting the hook in try_to_unmap() doesn't work
-> > > correctly, because IOs will be charged to reclaiming processes or
-> > > kswapd. These IOs should be charged to processes which cause memory
-> > > pressure.
-> > 
-> > Consider the following case:
-> > 
-> >   (1) There are two processes Proc-A and Proc-B.
-> >   (2) Proc-A maps a large file into many pages by mmap() and writes
-> >       many data to the file.
-> >   (3) After (2), Proc-B try to get a page, but there are no available
-> >       pages because Proc-A has used them.
-> >   (4) kernel starts to reclaim pages, call try_to_unmap() to unmap
-> >       a page which is owned by Proc-A, then blkio_cgroup_set_owner()
-> >       sets Proc-B's ID on the page because the task's context is Proc-B.
-> >   (5) After (4), kernel writes the page out to a disk. This IO is
-> >       charged to Proc-B.
-> > 
-> > In the above case, I think that the IO should be charged to a Proc-A,
-> > because the IO is caused by Proc-A's memory pressure. 
-> > I think we should consider in the case without memory and swap
-> > isolation.
+Quoting Casey Schaufler (casey@schaufler-ca.com):
+> Serge E. Hallyn wrote:
+> > Following is the next version of the credentials c/r patchset,
+> > on top of the c/r patchset at
+> > git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+> >
+> > It implements checkpoint and restart of user, user namespaces,
+> > groups, supplementary groups, and struct cred.
+> >
+> > There is a question as to what to do about LSM data at
+> > restart.  Right now I'm ignoring it, which means that
+> > prepare_creds() should ensure that the restart tasks get
+> > the context of the task calling sys_restart().  I
+> > suspect the right thing to do is to add two new LSM
+> > hooks, one which checks current's authorization to
+> > restart from the checkpoint file,
 > 
-> mmmh.. even if they're strictly related I think we're mixing two
-> different problems in this way: memory pressure control and IO control.
+> How would that work? Based on information in the file?
+> You have to assume that some number of checkpoint files
+> have been hand written by Elbonian ne'er do wells.
+
+Not based on information in the file, but based on the
+credentials of the task which created the file, and
+whether an unprivileged task could have hand-edited the
+file before feeding it to sys_restart().
+
+So some example decisions in terms of selinux contexts might be,
+	1. a task of user_u may restart a file of type user_u
+	if the checkpointed context is user_u
+	2. a task of user_u may NOT restart a file of type user_u
+	if the checkpointed context is root_u
+	3. a task of root_u may restart a file of type root_u
+	if the checkpointed context is user_u
+
+Uh, so yes, bsaed on info in the file as well  :)  Except
+of course the LSM would just be fed the checkpointed context
+and the checkpoint file context (and can deduce current's context).
+
+> >  and one which determines
+> > the task->cred->security filed based upon any of:
+> > 	1. current_security() of the task calling sys_restart()
+> > 	2. the task->cred->security checkpointed in the ckpt file
+> > 	3. the ->security of the checkpoint file
+> >   
 > 
-> It seems you're proposing something like the badness() for OOM
-> conditions to charge swap IO depending on how bad is a cgroup in terms
-> of memory consumption. I don't think this is the right way to proceed,
-> also because we already have the memory and swap control.
+> For Smack the correct behavior would be:
+> 
+>     1. for sys_restart() callers without CAP_MAC_ADMIN
+>     2. for sys_restart() callers with CAP_MAC_ADMIN
+>     3. never
 
-cgroups support multiple hierarchy and it allows to have different
-divisions of tasks among hierarchy like below:
+That makes sense, and is basically analagous (if I'm thinking
+right) to how I'm doing capabilities.
 
-                                 PIDs
-   mem+swap /hier1/grp1/tasks <= 1, 2, 3, 4
-   blkio    /hier2/grp2/tasks <= 1, 2
-                   grp3/tasks <= 3, 4
+So the first (authorization hook) for smack would just always
+return TRUE?
 
-Don't we need to consider this case?
+I can hook that up right now...
 
-Thanks,
-Ryo Tsuruta
+> sys_restart() callers running with CAP_MAC_ADMIN would have to be
+> very very careful about the files they restart. But that's nothing
+> new in the MAC world.
+
+Yup.
+
+Mind you eventually I expect a setup where some privileged program
+is asked (by privileged or unprivilegd tasks) to create a checkpoint
+and ask the TPM to sign it.  No unprivileged program can sign an
+image directly, so then a restart of a task with privilege can be
+restricted to anything with a valid signature.  In that case, it
+may be safe to have the checkpointed task's credentials completely
+restored, including LSM labels.
+
+But that's a ways off.
+
+thanks,
+-serge
