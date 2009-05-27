@@ -1,16 +1,18 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v16][PATCH 19/43] c/r: external checkpoint of a task	other
-	than ourself
-Date: Wed, 27 May 2009 18:32:28 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0905271831030.7284__18885.5876135223$1243463871$gmane$org@takamine.ncl.cs.columbia.edu>
-References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
-	<1243445589-32388-20-git-send-email-orenl@cs.columbia.edu>
-	<20090527211950.GA7855@x200.localdomain>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 18/38] C/R: core stuff
+Date: Wed, 27 May 2009 15:40:01 -0700
+Message-ID: <20090527154001.86a5abff.akpm__19649.9674734243$1243464109$gmane$org@linux-foundation.org>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
+	<20090526131644.GA20920@hallyn.com>
+	<20090526193503.GB11909@x200.localdomain>
+	<4A1DA8FB.3000306@cs.columbia.edu>
+	<20090527221753.GB8321@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090527211950.GA7855-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20090527221753.GB8321-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,116 +23,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 28 May 2009, Alexey Dobriyan wrote:
+On Thu, 28 May 2009 02:17:53 +0400
+Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-> On Wed, May 27, 2009 at 01:32:45PM -0400, Oren Laadan wrote:
-> > Now we can do "external" checkpoint, i.e. act on another task.
+> > 1) Whether or not allow c/r of sub-container (partial hierarchy)
+> > 
+> > 2) Creation of restarting process hierarchy in kernel or in userspace
+> > 
+> > As for #1, you are the _only_ one who advocates restricting c/r to
+> > a full container only. I guess you have your reasons, but I'm unsure
+> > what they may be.
 > 
-> > +static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-> > +{
-> > +	if (t->state == TASK_DEAD) {
-> > +		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-> > +		return -EAGAIN;
-> > +	}
-> > +
-> > +	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
-> > +		__ckpt_write_err(ctx, "access to task %d (%s) denied",
-> > +				 task_pid_vnr(t), t->comm);
-> > +		return -EPERM;
-> > +	}
-> > +
-> > +	/* verify that the task is frozen (unless self) */
-> > +	if (t != current && !frozen(t)) {
-> > +		__ckpt_write_err(ctx, "task %d (%s) is not frozen",
-> > +				 task_pid_vnr(t), t->comm);
-> > +		return -EBUSY;
-> > +	}
-> > +
-> > +	/* FIX: add support for ptraced tasks */
-> > +	if (task_ptrace(t)) {
-> > +		__ckpt_write_err(ctx, "task %d (%s) is ptraced",
-> > +				 task_pid_vnr(t), t->comm);
-> > +		return -EBUSY;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> > +static int get_container(struct ckpt_ctx *ctx, pid_t pid)
-> > +{
-> > +	struct task_struct *task = NULL;
-> > +	struct nsproxy *nsproxy = NULL;
-> > +	int ret;
-> > +
-> > +	ctx->root_pid = pid;
-> > +
-> > +	read_lock(&tasklist_lock);
-> > +	task = find_task_by_vpid(pid);
-> > +	if (task)
-> > +		get_task_struct(task);
-> > +	read_unlock(&tasklist_lock);
-> > +
-> > +	if (!task)
-> > +		return -ESRCH;
-> > +
-> > +	ret = may_checkpoint_task(ctx, task);
-> > +	if (ret) {
-> > +		ckpt_write_err(ctx, NULL);
-> > +		put_task_struct(task);
-> > +		return ret;
-> > +	}
-> > +
-> > +	rcu_read_lock();
-> > +	nsproxy = task_nsproxy(task);
-> > +	get_nsproxy(nsproxy);
+> The reason is that checkpointing half-frozen, half-live container is
+> essentially equivalent to live container which adds much complexity
+> to code fundamentally preventing kernel from taking coherent snapshot.
 > 
-> Will oops if init is multi-threaded and thread group leader exited
-> (nsproxy = NULL). I need to think what to do, too.
+> In such situations kernel will do its job badly.
+> 
+> Manpage will be filled with strings like "if $FOO is shared then $BAR is
+> not guaranteed".
+> 
+> What to do if user simply doesn't know if container is bounded?
+> Checkpoint and to hell with consequences?
+> 
+> If two tasks share mm_struct you can't even detect that pages you dump
+> aren't filled with garbage meanwhile from second task.
+> 
+> If two tasks share mm_struct, other task can issue AIO indefinitely
+> preventing from taking even coherent filesystem snapshot.
+> 
+> That's why I raise this issue again to hear from people what they think
+> and these people shouldn't be containers and C/R people, because the
+> latter already made up their minds.
+> 
+> This is super-important issue to get right from the beginning.
 
+<pipes up>
 
-ood catch. Since all threads share same nsproxy (except those
-who exits.. duh) we can test for this case, and get the nsproxy
-from any of the other threads, something like this (untested):
+yeah, checkpointing a partial hierarchy at this stage sounds like
+overreach.  Get full-container working usably first, think about
+sub-containers in version 2.
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index afc7300..b303876 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -522,9 +522,33 @@ static int get_container(struct ckpt_ctx *ctx, pid_t pid)
- 
- 	rcu_read_lock();
- 	nsproxy = task_nsproxy(task);
--	get_nsproxy(nsproxy);
-+	if (nsproxy)
-+		get_nsproxy(nsproxy);
- 	rcu_read_unlock();
- 
-+	/*
-+	 * If we hit a zombie thread-group-leader, nsproxy will be NULL,
-+	 * and we instead grab it from one of the other threads.
-+	 */
-+	if (!nsproxy) {
-+		struct task_struct *p = next_thread(task);
-+
-+		BUG_ON(task->state != TASK_DEAD);
-+		read_lock(&tasklist_lock);
-+		while (p != task && !task_nsproxy(p))
-+			p = next_thread(p);
-+		nsproxy = get_nsproxy(p);
-+		if (nsproxy)
-+			get_nsproxy(nsproxy);
-+		read_unlock(&tasklist_lock);
-+	}
-+
-+	/* still not ... too bad ... */
-+	if (!nsproxy) {
-+		put_task_struct(task);
-+		return -ESRCH;
-+	}
-+
- 	ctx->root_task = task;
- 	ctx->root_nsproxy = nsproxy;
- 	ctx->root_init = is_container_init(task);
+<pipes down again>
