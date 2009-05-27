@@ -1,12 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: sysvipc: don't break compilation with CONFIG_SYSVIPC=n
-Date: Thu, 28 May 2009 14:59:23 -0500
-Message-ID: <20090528195923.GA24595@us.ibm.com>
+From: Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
+Subject: Re: [PATCH 18/38] C/R: core stuff
+Date: Wed, 27 May 2009 11:52:17 -0700
+Message-ID: <1243450337.8071.155.camel__40659.0301929556$1243549120$gmane$org@nimitz>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
+	<20090526131644.GA20920@hallyn.com>
+	<20090526193503.GB11909@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090526193503.GB11909-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,72 +20,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint.h |    2 +-
- include/linux/shm.h        |    2 +-
- init/Kconfig               |    6 ++++++
- ipc/Makefile               |    2 +-
- 4 files changed, 9 insertions(+), 3 deletions(-)
+On Tue, 2009-05-26 at 23:35 +0400, Alexey Dobriyan wrote:
+> The other part, is that I looked at Oren patchset, found quite a lot of
+> suspicious, broken and unclean places and decided that it'd be faster
+> to start from scratch because sending patches will overhaul like 85% of
+> the code.
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 0c03ac7..812a444 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -95,7 +95,7 @@ extern int restore_ipc_ns(struct ckpt_ctx *ctx, int ns_objref, int flags);
- static inline int checkpoint_ipc_ns(struct ckpt_ctx *ctx,
- 				    struct ipc_namespace *ipc_ns)
- { return 0; }
--static inline int restore_ipc_ns(struct ckpt_ctx *ctx)
-+static inline int restore_ipc_ns(struct ckpt_ctx *ctx, int ns_objref, int flags)
- { return 0; }
- #endif /* CONFIG_SYSVIPC */
- 
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index 97972eb..6edc26e 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -127,7 +127,7 @@ extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
- extern int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			  struct ckpt_hdr_vma *h);
- #else
--define ipcshm_restart NULL
-+#define ipcshm_restore NULL
- #endif
- #endif
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index adb4260..3befc07 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -186,6 +186,12 @@ config SYSVIPC
- 	  section 6.4 of the Linux Programmer's Guide, available from
- 	  <http://www.tldp.org/guides.html>.
- 
-+config SYSVIPC_CHECKPOINT
-+	bool
-+	depends on SYSVIPC
-+	depends on CHECKPOINT
-+	default y
-+
- config SYSVIPC_SYSCTL
- 	bool
- 	depends on SYSVIPC
-diff --git a/ipc/Makefile b/ipc/Makefile
-index 81af168..6d4c92e 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -9,6 +9,6 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
- obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
--obj-$(CONFIG_CHECKPOINT) += checkpoint.o \
-+obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o \
- 			checkpoint_shm.o checkpoint_msg.o checkpoint_sem.o
- 
--- 
-1.6.1
+I know the feeling.  I get sudden urges to rewrite the whole patch set,
+but I'm working on getting past them too. :)
+
+As long as we have two patch sets, *nobody* is going to get their
+patches in, that's virtually guaranteed.  Just look at the poor I/O
+controller.
+
+The OpenVZ users are almost certainly the most important container and
+c/r users out there today.  Meeting their needs with whatever we come up
+with should be a top priority and I know I'm counting on you to help us
+do that.
+
+But, I'm having a really hard time culling the OpenVZ user needs from
+your patch set.  If we really need to rewrite 85% of Oren's stuff to
+meet the OpenVZ needs, then by all means let's do it.  I'm even willing
+to help you.  But, I honestly don't know what you need.
+
+Can we talk about specifics?
+
+-- Dave
