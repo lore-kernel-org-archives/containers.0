@@ -1,15 +1,12 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 18/38] C/R: core stuff
-Date: Wed, 27 May 2009 20:28:40 +0400
-Message-ID: <20090527162840.GA30529__42058.9665919126$1243441807$gmane$org@x200.localdomain>
-References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] cr: safely restore a task's securebits
+Date: Wed, 27 May 2009 11:31:12 -0500
+Message-ID: <20090527163112.GA31716@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1242968132-1044-18-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,52 +16,148 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: orenl-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, May 22, 2009 at 08:55:12AM +0400, Alexey Dobriyan wrote:
-> +static int task_struct_restorer(void *_tsk_ctx)
-> +{
-> +	struct task_struct_restore_context *tsk_ctx = _tsk_ctx;
-> +	struct kstate_image_task_struct *i = tsk_ctx->i;
-> +	struct kstate_context *ctx = tsk_ctx->ctx;
-> +	/* In the name of symmetry. */
-> +	struct task_struct *tsk = current, *real_parent;
-> +	int rv;
-> +
-> +	pr_debug("%s: ENTER tsk %p/%s\n", __func__, tsk, tsk->comm);
-> +
-> +	write_lock_irq(&tasklist_lock);
-> +	real_parent = ctx->init_tsk->nsproxy->pid_ns->child_reaper;
-> +	tsk->real_parent = tsk->parent = real_parent;
-> +	list_move_tail(&tsk->sibling, &tsk->real_parent->sibling);
-							 ^^^^^^^
-> +	write_unlock_irq(&tasklist_lock);
+As I started doing c/r of LSM credentials, I realized I wasn't
+handling securebit yet with the current patchet.  This is on
+top of the set I sent out yesterday, and if I'm sendng out another
+full patchset then I'll integrate this back into the previous
+patches.
 
-Eek, what a stupid bug here
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/capability.h     |    2 +
+ include/linux/checkpoint_hdr.h |    1 +
+ kernel/cred.c                  |    4 +++
+ security/commoncap.c           |   52 +++++++++++++++++++++++++++-------------
+ 4 files changed, 42 insertions(+), 17 deletions(-)
 
-
-commit 2c4b5f5d606a1892b702d95a0e4d29f207685381
-Author: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date:   Wed May 27 20:21:59 2009 +0400
-
-    C/R: fix stupid bug in reparenting
-    
-    Child process should be added to ->children list of course
-    
-    Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-diff --git a/kernel/kstate/kstate-task.c b/kernel/kstate/kstate-task.c
-index 9ed5a19..6df7d25 100644
---- a/kernel/kstate/kstate-task.c
-+++ b/kernel/kstate/kstate-task.c
-@@ -490,7 +490,7 @@ static int task_struct_restorer(void *_tsk_ctx)
- 		real_parent = tmp->o_obj;
- 	}
- 	tsk->real_parent = tsk->parent = real_parent;
--	list_move_tail(&tsk->sibling, &tsk->real_parent->sibling);
-+	list_move_tail(&tsk->sibling, &tsk->real_parent->children);
- 	write_unlock_irq(&tasklist_lock);
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index 572b5a0..b3853ca 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -540,6 +540,8 @@ extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
+ struct cred;
+ extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x,
+ 				struct cred *cred);
++extern void checkpoint_save_securebits(unsigned *, unsigned);
++extern int checkpoint_restore_securebits(unsigned, struct cred *);
  
- 	rv = restore_mm(ctx, &i->ref_mm);
+ /**
+  * has_capability - Determine if a task has a superior capability available
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 0bad447..7f65964 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -192,6 +192,7 @@ struct ckpt_hdr_cred {
+ 	__u32 version; /* especially since capability sets might grow */
+ 	__u32 uid, suid, euid, fsuid;
+ 	__u32 gid, sgid, egid, fsgid;
++	__u32 securebits;
+ 	__u64 cap_i, cap_p, cap_e;
+ 	__u64 cap_x;  /* bounding set ('X') */
+ 	__s32 user_ref;
+diff --git a/kernel/cred.c b/kernel/cred.c
+index c05192e..fe2941d 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -739,6 +739,7 @@ int checkpoint_write_cred(struct ckpt_ctx *ctx, const struct cred *cred)
+ 	checkpoint_save_cap(&h->cap_p, cred->cap_permitted);
+ 	checkpoint_save_cap(&h->cap_e, cred->cap_effective);
+ 	checkpoint_save_cap(&h->cap_x, cred->cap_bset);
++	checkpoint_save_securebits(&h->securebits, cred->securebits);
+ 
+ 	h->user_ref = user_ref;
+ 	h->groupinfo_ref = groupinfo_ref;
+@@ -811,6 +812,9 @@ struct cred *restore_read_cred(struct ckpt_ctx *ctx)
+ 				cred);
+ 	if (ret)
+ 		goto err_putcred;
++	ret = checkpoint_restore_securebits(h->securebits, cred);
++	if (ret)
++		goto err_putcred;
+ 
+ 	ckpt_hdr_put(ctx, h);
+ 	return cred;
+diff --git a/security/commoncap.c b/security/commoncap.c
+index beac025..31ecd3d 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -804,6 +804,29 @@ int cap_task_setnice (struct task_struct *p, int nice)
+ }
+ #endif
+ 
++int cap_set_securebits(struct cred *new, unsigned securebits)
++{
++	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
++	     & (new->securebits ^ securebits))				/*[1]*/
++	    || ((new->securebits & SECURE_ALL_LOCKS & ~securebits))	/*[2]*/
++	    || (securebits & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
++	    || (cap_capable(current, current_cred(), CAP_SETPCAP,
++			    SECURITY_CAP_AUDIT) != 0)			/*[4]*/
++		/*
++		 * [1] no changing of bits that are locked
++		 * [2] no unlocking of locks
++		 * [3] no setting of unsupported bits
++		 * [4] doing anything requires privilege (go read about
++		 *     the "sendmail capabilities bug")
++		 */
++	    )
++		/* cannot change a locked bit */
++		return -EPERM;
++	new->securebits = securebits;
++	return 0;
++}
++
++
+ /**
+  * cap_task_prctl - Implement process control functions for this security module
+  * @option: The process control function requested
+@@ -861,24 +884,9 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
+ 	 * capability-based-privilege environment.
+ 	 */
+ 	case PR_SET_SECUREBITS:
+-		error = -EPERM;
+-		if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
+-		     & (new->securebits ^ arg2))			/*[1]*/
+-		    || ((new->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
+-		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
+-		    || (cap_capable(current, current_cred(), CAP_SETPCAP,
+-				    SECURITY_CAP_AUDIT) != 0)		/*[4]*/
+-			/*
+-			 * [1] no changing of bits that are locked
+-			 * [2] no unlocking of locks
+-			 * [3] no setting of unsupported bits
+-			 * [4] doing anything requires privilege (go read about
+-			 *     the "sendmail capabilities bug")
+-			 */
+-		    )
+-			/* cannot change a locked bit */
++		error = cap_set_securebits(new, arg2);
++		if (error)
+ 			goto error;
+-		new->securebits = arg2;
+ 		goto changed;
+ 
+ 	case PR_GET_SECUREBITS:
+@@ -921,6 +929,16 @@ error:
+ 	return error;
+ }
+ 
++void checkpoint_save_securebits(unsigned *b, unsigned cred_securebits)
++{
++	*b = cred_securebits;
++}
++
++int checkpoint_restore_securebits(unsigned b, struct cred *cred)
++{
++	return cap_set_securebits(cred, b);
++}
++
+ /**
+  * cap_syslog - Determine whether syslog function is permitted
+  * @type: Function requested
+-- 
+1.6.1
