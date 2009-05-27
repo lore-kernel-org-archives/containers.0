@@ -1,45 +1,64 @@
-From: "Shebchuk Fanj" <containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Hola, friend
-Date: Tue, 26 May 2009 19:34:47 -0700
-Message-ID: <676059916928113.NHSVWBYLXJFMBSI@rrcs-70-63-105-90.midsouth.biz.rr.com>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 0/8] a start to credentials c/r
+Date: Tue, 26 May 2009 20:05:39 -0700
+Message-ID: <4A1CAE03.7090005@schaufler-ca.com>
+References: <20090526173242.GA13757@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename="SpamAssassinReport.txt"
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090526173242.GA13757@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Spam detection software, running on the system "murdock.linux-foundation.org", has
-identified this incoming email as possible spam.  The original message
-has been attached to this so you can view it (if it isn't spam) or label
-similar future email.  If you have any questions, see
-the administrator of that system for details.
+Serge E. Hallyn wrote:
+> Following is the next version of the credentials c/r patchset,
+> on top of the c/r patchset at
+> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+>
+> It implements checkpoint and restart of user, user namespaces,
+> groups, supplementary groups, and struct cred.
+>
+> There is a question as to what to do about LSM data at
+> restart.  Right now I'm ignoring it, which means that
+> prepare_creds() should ensure that the restart tasks get
+> the context of the task calling sys_restart().  I
+> suspect the right thing to do is to add two new LSM
+> hooks, one which checks current's authorization to
+> restart from the checkpoint file,
 
-Content preview:  Trouble viewing this e-mail? Click here. Hot Pharmacy news
-   You are subscribed as containers-de/tnXTf+JLsfHDXvbKv3VN6ohzGQtmt@public.gmane.org [...] 
+How would that work? Based on information in the file?
+You have to assume that some number of checkpoint files
+have been hand written by Elbonian ne'er do wells.
 
-Content analysis details:   (7.2 points, 5.0 required)
+>  and one which determines
+> the task->cred->security filed based upon any of:
+> 	1. current_security() of the task calling sys_restart()
+> 	2. the task->cred->security checkpointed in the ckpt file
+> 	3. the ->security of the checkpoint file
+>   
 
- pts rule name              description
----- ---------------------- --------------------------------------------------
- 2.6 HELO_DYNAMIC_IPADDR    Relay HELO'd using suspicious hostname (IP addr
-                            1)
- 0.6 FH_HELO_EQ_D_D_D_D     Helo is d-d-d-d
- 0.0 MISSING_DATE           Missing Date: header
- 0.9 HTML_IMAGE_RATIO_04    BODY: HTML has a low ratio of text to image area
- 1.0 BAYES_60               BODY: Bayesian spam probability is 60 to 80%
-                            [score: 0.6818]
- 0.0 HTML_MESSAGE           BODY: HTML included in message
- 2.0 MIME_HTML_ONLY         BODY: Message only has text/html MIME parts
- 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
-                            dynamic-looking rDNS
+For Smack the correct behavior would be:
+
+    1. for sys_restart() callers without CAP_MAC_ADMIN
+    2. for sys_restart() callers with CAP_MAC_ADMIN
+    3. never
+
+sys_restart() callers running with CAP_MAC_ADMIN would have to be
+very very careful about the files they restart. But that's nothing
+new in the MAC world.
+
+> Oren, I think this version has all the changes you asked
+> for except for restoring cred info for sysvipc.
+>
+> thanks,
+> -serge
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>   
