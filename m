@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 03/43] c/r: create syscalls: sys_checkpoint,
-	sys_restart
-Date: Wed, 27 May 2009 13:32:29 -0400
-Message-ID: <1243445589-32388-4-git-send-email-orenl__10991.0323437818$1243449119$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 24/43] c/r: detect resource leaks for whole-container
+	checkpoint
+Date: Wed, 27 May 2009 13:32:50 -0400
+Message-ID: <1243445589-32388-25-git-send-email-orenl__144.503897945647$1243449192$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,216 +22,254 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file descriptor.
+Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
+checkpoint, return an error code if the actual objects' counts are
+higher, indicating leaks (references to the objects from a task not
+being checkpointed).  Of course, by this time most of the checkpoint
+image has been written out to disk, so this is purely advisory.  But
+then, it's probably naive to argue that anything more than an advisory
+'this went wrong' error code is useful.
 
-The syscalls take a pid, a file descriptor (for the image file) and
-flags as arguments. The pid identifies the top-most (root) task in the
-process tree, e.g. the container init: for sys_checkpoint the first
-argument identifies the pid of the target container/subtree; for
-sys_restart it will identify the pid of restarting root task.
-
-A checkpoint, much like a process coredump, dumps the state of multiple
-processes at once, including the state of the container. The checkpoint
-image is written to (and read from) the file descriptor directly from
-the kernel. This way the data is generated and then pushed out naturally
-as resources and tasks are scanned to save their state. This is the
-approach taken by, e.g., Zap and OpenVZ.
-
-By using a return value and not a file descriptor, we can distinguish
-between a return from checkpoint, a return from restart (in case of a
-checkpoint that includes self, i.e. a task checkpointing its own
-container, or itself), and an error condition, in a manner analogous
-to a fork() call.
-
-We don't use copy_from_user()/copy_to_user() because it requires
-holding the entire image in user space, and does not make sense for
-restart.  Also, we don't use a pipe, pseudo-fs file and the like,
-because they work by generating data on demand as the user pulls it
-(unless the entire image is buffered in the kernel) and would require
-more complex logic.  They also would significantly complicate
-checkpoint that includes self.
-
-Changelog[v16]:
-  - Change sys_restart() first argument to be 'pid_t pid'
-
-Changelog[v14]:
-  - Change CONFIG_CHEKCPOINT_RESTART to CONFIG_CHECKPOINT (Ingo)
-  - Remove line 'def_bool n' (default is already 'n')
-  - Add CHECKPOINT_SUPPORT in Kconfig (Nathan Lynch)
-
-Changelog[v5]:
-  - Config is 'def_bool n' by default
+The comparison of the objhash user counts to object refcounts as a
+basis for checking for leaks comes from Alexey's OpenVZ-based c/r
+patchset.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- arch/x86/Kconfig                   |    4 +++
- arch/x86/include/asm/unistd_32.h   |    2 +
- arch/x86/kernel/syscall_table_32.S |    2 +
- checkpoint/Kconfig                 |   14 ++++++++++++
- checkpoint/Makefile                |    5 ++++
- checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
- include/linux/syscalls.h           |    2 +
- init/Kconfig                       |    2 +
- kernel/sys_ni.c                    |    4 +++
- 9 files changed, 76 insertions(+), 0 deletions(-)
+ checkpoint/checkpoint.c    |    8 ++++
+ checkpoint/objhash.c       |   82 ++++++++++++++++++++++++++++++++++++++++++--
+ include/linux/checkpoint.h |    1 +
+ 3 files changed, 88 insertions(+), 3 deletions(-)
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index a6efe0a..2891a26 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -77,6 +77,10 @@ config STACKTRACE_SUPPORT
- config HAVE_LATENCYTOP_SUPPORT
- 	def_bool y
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 92f219e..b70adf4 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -578,6 +578,14 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		goto out;
  
-+config CHECKPOINT_SUPPORT
-+	bool
-+	default y if X86_32
++	if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
++		/* verify that all objects are contained (no leaks) */
++		if (!ckpt_obj_contained(ctx)) {
++			ret = -EBUSY;
++			goto out;
++		}
++	}
 +
- config FAST_CMPXCHG_LOCAL
- 	bool
- 	default y
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index 6e72d74..48557e1 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -340,6 +340,8 @@
- #define __NR_inotify_init1	332
- #define __NR_preadv		333
- #define __NR_pwritev		334
-+#define __NR_checkpoint		335
-+#define __NR_restart		336
+ 	/* on success, return (unique) checkpoint identifier */
+ 	ctx->crid = atomic_inc_return(&ctx_count);
+ 	ret = ctx->crid;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index ff9388d..e481911 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -27,19 +27,23 @@ struct ckpt_obj_ops {
+ 	enum obj_type obj_type;
+ 	void (*ref_drop)(void *ptr);
+ 	int (*ref_grab)(void *ptr);
++	int (*ref_users)(void *ptr);
+ 	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+ 	void *(*restore)(struct ckpt_ctx *ctx);
+ };
  
- #ifdef __KERNEL__
+ struct ckpt_obj {
++	int users;
+ 	int objref;
+ 	void *ptr;
+ 	struct ckpt_obj_ops *ops;
+ 	struct hlist_node hash;
++	struct hlist_node next;
+ };
  
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index ff5c873..e70b7ee 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -334,3 +334,5 @@ ENTRY(sys_call_table)
- 	.long sys_inotify_init1
- 	.long sys_preadv
- 	.long sys_pwritev
-+	.long sys_checkpoint
-+	.long sys_restart
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-new file mode 100644
-index 0000000..1761b0a
---- /dev/null
-+++ b/checkpoint/Kconfig
-@@ -0,0 +1,14 @@
-+# Architectures should define CHECKPOINT_SUPPORT when they have
-+# implemented the hooks for processor state etc. needed by the
-+# core checkpoint/restart code.
-+
-+config CHECKPOINT
-+	bool "Enable checkpoint/restart (EXPERIMENTAL)"
-+	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
-+	help
-+	  Application checkpoint/restart is the ability to save the
-+	  state of a running application so that it can later resume
-+	  its execution from the time at which it was checkpointed.
-+
-+	  Turning this option on will enable checkpoint and restart
-+	  functionality in the kernel.
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-new file mode 100644
-index 0000000..8a32c6f
---- /dev/null
-+++ b/checkpoint/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for linux checkpoint/restart.
-+#
-+
-+obj-$(CONFIG_CHECKPOINT) += sys.o
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-new file mode 100644
-index 0000000..9d4caff
---- /dev/null
-+++ b/checkpoint/sys.c
-@@ -0,0 +1,41 @@
-+/*
-+ *  Generic container checkpoint-restart
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/sched.h>
-+#include <linux/kernel.h>
-+#include <linux/syscalls.h>
-+
-+/**
-+ * sys_checkpoint - checkpoint a container
-+ * @pid: pid of the container init(1) process
-+ * @fd: file to which dump the checkpoint image
-+ * @flags: checkpoint operation flags
-+ *
-+ * Returns positive identifier on success, 0 when returning from restart
-+ * or negative value on error
-+ */
-+SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
+ struct ckpt_obj_hash {
+ 	struct hlist_head *head;
++	struct hlist_head list;
+ 	int next_free_objref;
+ };
+ 
+@@ -53,7 +57,7 @@ void *restore_bad(struct ckpt_ctx *ctx)
+ 	return ERR_PTR(-EINVAL);
+ }
+ 
+-/* helper grab/drop functions: */
++/* helper grab/drop/users functions */
+ 
+ static void obj_no_drop(void *ptr)
+ {
+@@ -86,6 +90,11 @@ static void obj_file_table_drop(void *ptr)
+ 	put_files_struct((struct files_struct *) ptr);
+ }
+ 
++static int obj_file_table_users(void *ptr)
 +{
-+	return -ENOSYS;
++	return atomic_read(&((struct files_struct *) ptr)->count);
++}
++
+ static int obj_file_grab(void *ptr)
+ {
+ 	get_file((struct file *) ptr);
+@@ -97,6 +106,11 @@ static void obj_file_drop(void *ptr)
+ 	fput((struct file *) ptr);
+ }
+ 
++static int obj_file_users(void *ptr)
++{
++	return atomic_long_read(&((struct file *) ptr)->f_count);
++}
++
+ static int obj_mm_grab(void *ptr)
+ {
+ 	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
+@@ -108,6 +122,11 @@ static void obj_mm_drop(void *ptr)
+ 	mmput((struct mm_struct *) ptr);
+ }
+ 
++static int obj_mm_users(void *ptr)
++{
++	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -131,6 +150,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_FILE_TABLE,
+ 		.ref_drop = obj_file_table_drop,
+ 		.ref_grab = obj_file_table_grab,
++		.ref_users = obj_file_table_users,
+ 		.checkpoint = checkpoint_file_table,
+ 		.restore = restore_file_table,
+ 	},
+@@ -140,6 +160,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_FILE,
+ 		.ref_drop = obj_file_drop,
+ 		.ref_grab = obj_file_grab,
++		.ref_users = obj_file_users,
+ 		.checkpoint = checkpoint_file,
+ 		.restore = restore_file,
+ 	},
+@@ -149,6 +170,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.obj_type = CKPT_OBJ_MM,
+ 		.ref_drop = obj_mm_drop,
+ 		.ref_grab = obj_mm_grab,
++		.ref_users = obj_mm_users,
+ 		.checkpoint = checkpoint_mm,
+ 		.restore = restore_mm,
+ 	},
+@@ -201,6 +223,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
+ 
+ 	obj_hash->head = head;
+ 	obj_hash->next_free_objref = 1;
++	INIT_HLIST_HEAD(&obj_hash->list);
+ 
+ 	ctx->obj_hash = obj_hash;
+ 	return 0;
+@@ -259,6 +282,7 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 
+ 	obj->ptr = ptr;
+ 	obj->ops = ops;
++	obj->users = 2;  /* extra reference that objhash itself takes */
+ 
+ 	if (objref) {
+ 		/* use @obj->objref to index (restart) */
+@@ -271,10 +295,12 @@ static int obj_new(struct ckpt_ctx *ctx, void *ptr, int objref,
+ 	}
+ 
+ 	ret = ops->ref_grab(obj->ptr);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		kfree(obj);
+-	else
++	} else {
+ 		hlist_add_head(&obj->hash, &ctx->obj_hash->head[i]);
++		hlist_add_head(&obj->next, &ctx->obj_hash->list);
++	}
+ 
+ 	return (ret < 0 ? ret : obj->objref);
+ }
+@@ -335,6 +361,7 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 		return -EINVAL;
+ 	} else {
+ 		objref = obj->objref;
++		obj->users++;
+ 		*first = 0;
+ 	}
+ 
+@@ -342,6 +369,54 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 	return objref;
+ }
+ 
++/* increment the 'users' count of an object */
++static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_ptr(ctx, ptr);
++	if (obj)
++		obj->users += increment;
 +}
 +
 +/**
-+ * sys_restart - restart a container
-+ * @crid: checkpoint image identifier
-+ * @fd: file from which read the checkpoint image
-+ * @flags: restart operation flags
++ * ckpt_obj_contained - test if shared objects are "contained" in checkpoint
++ * @ctx: checkpoint
 + *
-+ * Returns negative value on error, or otherwise returns in the realm
-+ * of the original checkpoint
++ * Loops through all objects in the table and compares the number of
++ * references accumulated during checkpoint, with the reference count
++ * reported by the kernel.
++ *
++ * Return 1 if respective counts match for all objects, 0 otherwise.
 + */
-+SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
++int ckpt_obj_contained(struct ckpt_ctx *ctx)
 +{
-+	return -ENOSYS;
++	struct ckpt_obj *obj;
++	struct hlist_node *node;
++
++	/* account for ctx->file reference (if in the table already) */
++	ckpt_obj_users_inc(ctx, ctx->file, 1);
++
++	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
++		if (!obj->ops->ref_users)
++			continue;
++		if (obj->ops->ref_users(obj->ptr) != obj->users) {
++			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
++			ckpt_write_err(ctx, "%s leak: users %d != c/r %d\n",
++				       obj->ops->obj_name,
++				       obj->ops->ref_users(obj->ptr),
++				       obj->users);
++			printk(KERN_NOTICE "c/r: %s users %d != count %d\n",
++			       obj->ops->obj_name,
++			       obj->ops->ref_users(obj->ptr),
++			       obj->users);
++			return 0;
++		}
++	}
++
++	return 1;
 +}
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index 3052084..5dc3f9a 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -752,6 +752,8 @@ asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
- 			  size_t);
- asmlinkage long sys_pipe2(int __user *, int);
- asmlinkage long sys_pipe(int __user *);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
- 
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index 7be4d38..adb4260 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1042,6 +1042,8 @@ config SLOW_WORK
- 
- 	  See Documentation/slow-work.txt.
- 
-+source "checkpoint/Kconfig"
 +
- endmenu		# General setup
+ /**
+  * checkpoint_obj - if not already in hash, add object and checkpoint
+  * @ctx: checkpoint context
+@@ -371,6 +446,7 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ 	obj = obj_find_by_ptr(ctx, ptr);
+ 	if (obj) {
+ 		BUG_ON(obj->ops->obj_type != type);
++		obj->users++;
+ 		return obj->objref;
+ 	}
  
- config HAVE_GENERIC_DMA_COHERENT
-diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-index 27dad29..e9e749d 100644
---- a/kernel/sys_ni.c
-+++ b/kernel/sys_ni.c
-@@ -175,3 +175,7 @@ cond_syscall(compat_sys_timerfd_settime);
- cond_syscall(compat_sys_timerfd_gettime);
- cond_syscall(sys_eventfd);
- cond_syscall(sys_eventfd2);
-+
-+/* checkpoint/restart */
-+cond_syscall(sys_checkpoint);
-+cond_syscall(sys_restart);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index e9efa34..171e92e 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -44,6 +44,7 @@ extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+ 
+ extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
+ extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type);
++extern int ckpt_obj_contained(struct ckpt_ctx *ctx);
+ extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
+ 			    enum obj_type type);
+ extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
 -- 
 1.6.0.4
