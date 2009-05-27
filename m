@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/7] [PATCH] Add target_pid parameter to alloc_pidmap()
-Date: Wed, 27 May 2009 12:56:02 -0500
-Message-ID: <20090527175602.GC332@us.ibm.com>
-References: <20090527154212.GA3107@us.ibm.com>
-	<20090527154333.GC3107@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v16][PATCH 13/43] c/r: introduce method '->checkpoint()' in
+	struct vm_operations_struct
+Date: Wed, 27 May 2009 13:32:39 -0400
+Message-ID: <1243445589-32388-14-git-send-email-orenl__42322.1714365811$1243447838$gmane$org@cs.columbia.edu>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090527154333.GC3107-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,82 +18,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:41 -0700
-> Subject: [PATCH 3/7] [PATCH] Add target_pid parameter to alloc_pidmap()
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ include/linux/mm.h |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-How about
-
-#define TARGET_PID_UNSPECIFIED 0
-
-or something to pass to alloc_pidmap() from alloc_pid()?
-Up to you....  More importantly:
-
-> ---
->  kernel/pid.c |   28 ++++++++++++++++++++++++++--
->  1 files changed, 26 insertions(+), 2 deletions(-)
-> 
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index fd72ad9..93406c6 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -147,12 +147,36 @@ static int alloc_pidmap_page(struct pidmap *map)
->  	return 0;
->  }
-> 
-> -static int alloc_pidmap(struct pid_namespace *pid_ns)
-> +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
-> +{
-> +	int offset;
-> +	struct pidmap *map;
-> +
-> +	if (pid >= pid_max)
-> +		return -EINVAL;
-
-what about pid < 0?
-
-> +
-> +	offset = pid & BITS_PER_PAGE_MASK;
-> +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-> +
-> +	if (alloc_pidmap_page(map))
-> +		return -ENOMEM;
-> +
-> +	if (test_and_set_bit(offset, map->page))
-> +		return -EBUSY;
-> +
-> +	atomic_dec(&map->nr_free);
-> +	return pid;
-> +}
-> +
-> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
->  {
->  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
->  	struct pidmap *map;
->  	int rc = -EAGAIN;
-> 
-> +	if (target_pid)
-> +		return set_pidmap(pid_ns, target_pid);
-> +
->  	pid = last + 1;
->  	if (pid >= pid_max)
->  		pid = RESERVED_PIDS;
-> @@ -269,7 +293,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
-> 
->  	tmp = ns;
->  	for (i = ns->level; i >= 0; i--) {
-> -		nr = alloc_pidmap(tmp);
-> +		nr = alloc_pidmap(tmp, 0);
->  		if (nr < 0)
->  			goto out_free;
-> 
-> -- 
-> 1.5.2.5
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index bff1f0d..05f0ed9 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -14,6 +14,8 @@
+ #include <linux/debug_locks.h>
+ #include <linux/mm_types.h>
+ 
++#include <linux/checkpoint_types.h>
++
+ struct mempolicy;
+ struct anon_vma;
+ struct file_ra_state;
+@@ -220,6 +222,9 @@ struct vm_operations_struct {
+ 	int (*migrate)(struct vm_area_struct *vma, const nodemask_t *from,
+ 		const nodemask_t *to, unsigned long flags);
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	int (*checkpoint)(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
++#endif
+ };
+ 
+ struct mmu_gather;
+-- 
+1.6.0.4
