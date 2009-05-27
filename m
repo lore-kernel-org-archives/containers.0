@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 40/43] c/r: support semaphore sysv-ipc
-Date: Wed, 27 May 2009 13:33:06 -0400
-Message-ID: <1243445589-32388-41-git-send-email-orenl__1887.57254877618$1243451137$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 18/43] c/r: restore anonymous- and file-mapped-
+	shared memory
+Date: Wed, 27 May 2009 13:32:44 -0400
+Message-ID: <1243445589-32388-19-git-send-email-orenl__30243.4325022206$1243451251$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,336 +22,323 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint of sysvipc semaphores is performed by iterating through all
-sem objects and dumping the contents of each one. The semaphore array
-of each sem is dumped with that object.
+The bulk of the work is in ckpt_read_vma(), which has been refactored:
+the part that create the suitable 'struct file *' for the mapping is
+now larger and moved to a separate function. What's left is to read
+the VMA description, get the file pointer, create the mapping, and
+proceed to read the contents in.
 
-The semaphore array (sem->sem_base) holds an array of 'struct sem',
-which is a {int, int}. Because this translates into the same format
-on 32- and 64-bit architectures, the checkpoint format is simply the
-dump of this array as is.
+Both anonymous shared VMAs that have been read earlier (as indicated
+by a look up to objhash) and file-mapped shared VMAs are skipped.
+Anonymous shared VMAs seen for the first time have their contents
+read in directly to the backing inode, as indexed by the page numbers
+(as opposed to virtual addresses).
 
-TODO: this patch does not handle semaphore-undo -- this data should be
-saved per-task while iterating through the tasks.
+Changelog[v14]:
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/checkpoint_hdr.h |    8 ++
- ipc/Makefile                   |    3 +-
- ipc/checkpoint.c               |    4 -
- ipc/checkpoint_sem.c           |  220 ++++++++++++++++++++++++++++++++++++++++
- ipc/util.h                     |    5 +
- 5 files changed, 235 insertions(+), 5 deletions(-)
+ checkpoint/memory.c        |   66 ++++++++++++++++++++++++++++++++-----------
+ include/linux/checkpoint.h |    6 ++++
+ include/linux/mm.h         |    2 +
+ mm/filemap.c               |   13 ++++++++-
+ mm/shmem.c                 |   49 ++++++++++++++++++++++++++++++++
+ 5 files changed, 118 insertions(+), 18 deletions(-)
 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index b05f39c..cd427d8 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -376,6 +376,14 @@ struct ckpt_hdr_ipc_msg_msg {
- 	__u32 m_ts;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_ipc_sem {
-+	struct ckpt_hdr h;
-+	struct ckpt_hdr_ipc_perms perms;
-+	__u64 sem_otime;
-+	__u64 sem_ctime;
-+	__u32 sem_nsems;
-+} __attribute__((aligned(8)));
-+
- 
- #define CKPT_TST_OVERFLOW_16(a, b) \
- 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
-diff --git a/ipc/Makefile b/ipc/Makefile
-index ca408ff..81af168 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -9,5 +9,6 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
- obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
--obj-$(CONFIG_CHECKPOINT) += checkpoint.o checkpoint_shm.o checkpoint_msg.o
-+obj-$(CONFIG_CHECKPOINT) += checkpoint.o \
-+			checkpoint_shm.o checkpoint_msg.o checkpoint_sem.o
- 
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index 7eece96..f621226 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -108,12 +108,10 @@ int checkpoint_ipc_ns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
- 		return ret;
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
- 				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
--#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		return ret;
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
- 				 CKPT_HDR_IPC_SEM, checkpoint_ipc_sem);
--#endif
- 	return ret;
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 2b73abc..c163b76 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -785,13 +785,36 @@ static int restore_read_page(struct ckpt_ctx *ctx, struct page *page, void *p)
+ 	return 0;
  }
  
-@@ -220,12 +218,10 @@ static int do_restore_ipc_ns(struct ckpt_ctx *ctx)
- 		goto out;
- 	ret = restore_ipc_any(ctx, IPC_MSG_IDS,
- 			      CKPT_HDR_IPC_MSG, restore_ipc_msg);
--#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		goto out;
- 	ret = restore_ipc_any(ctx, IPC_SEM_IDS,
- 			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
--#endif
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-new file mode 100644
-index 0000000..34dea40
---- /dev/null
-+++ b/ipc/checkpoint_sem.c
-@@ -0,0 +1,220 @@
-+/*
-+ *  Checkpoint/restart - dump state of sysvipc sem
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DIPC
-+
-+#include <linux/mm.h>
-+#include <linux/sem.h>
-+#include <linux/rwsem.h>
-+#include <linux/sched.h>
-+#include <linux/syscalls.h>
-+#include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
-+
-+#include <linux/msg.h>	/* needed for util.h that uses 'struct msg_msg' */
-+#include "util.h"
-+
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+/************************************************************************
-+ * ipc checkpoint
-+ */
-+
-+static int fill_ipc_sem_hdr(struct ckpt_ctx *ctx,
-+			       struct ckpt_hdr_ipc_sem *h,
-+			       struct sem_array *sem)
++static struct page *bring_private_page(unsigned long addr)
 +{
-+	int ret = 0;
-+
-+	ipc_lock_by_ptr(&sem->sem_perm);
-+
-+	ret = checkpoint_fill_ipc_perms(&h->perms, &sem->sem_perm);
-+	if (ret < 0)
-+		goto unlock;
-+
-+	h->sem_otime = sem->sem_otime;
-+	h->sem_ctime = sem->sem_ctime;
-+	h->sem_nsems = sem->sem_nsems;
-+
-+ unlock:
-+	ipc_unlock(&sem->sem_perm);
-+	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-+
-+	return ret;
-+}
-+
-+/**
-+ * ckpt_write_sem_array - dump the state of a semaphore array
-+ * @ctx: checkpoint context
-+ * @sem: semphore array
-+ *
-+ * The state of a sempahore is an array of 'struct sem'. This structure
-+ * is {int, int}, which translates to the same format {32 bits, 32 bits}
-+ * on both 32- and 64-bit architectures. So we simply dump the array.
-+ *
-+ * The sem-undo information is not saved per ipc_ns, but rather per task.
-+ */
-+static int checkpoint_sem_array(struct ckpt_ctx *ctx, struct sem_array *sem)
-+{
-+	/* this is a "best-effort" test, so lock not needed */
-+	if (!list_empty(&sem->sem_pending))
-+		return -EBUSY;
-+
-+	/* our caller holds the mutex, so this is safe */
-+	return ckpt_write_buffer(ctx, sem->sem_base,
-+			       sem->sem_nsems * sizeof(*sem->sem_base));
-+}
-+
-+int checkpoint_ipc_sem(int id, void *p, void *data)
-+{
-+	struct ckpt_hdr_ipc_sem *h;
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
-+	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
-+	struct sem_array *sem;
++	struct page *page;
 +	int ret;
 +
-+	sem = container_of(perm, struct sem_array, sem_perm);
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	ret = fill_ipc_sem_hdr(ctx, h, sem);
++	ret = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
 +	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (h->sem_nsems)
-+		ret = checkpoint_sem_array(ctx, sem);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
++		page = ERR_PTR(ret);
++	return page;
 +}
 +
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+static int load_ipc_sem_hdr(struct ckpt_ctx *ctx,
-+			       struct ckpt_hdr_ipc_sem *h,
-+			       struct sem_array *sem)
++static struct page *bring_shared_page(unsigned long idx, struct inode *ino)
 +{
++	struct page *page = NULL;
++	int ret;
++
++	ret = shmem_getpage(ino, idx, &page, SGP_WRITE, NULL);
++	if (ret < 0)
++		return ERR_PTR(ret);
++	if (page)
++		unlock_page(page);
++	return page;
++}
++
+ /**
+  * read_pages_contents - read in data of pages in page-array chain
+  * @ctx - restart context
+  */
+-static int read_pages_contents(struct ckpt_ctx *ctx)
++static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
+ {
+-	struct mm_struct *mm = current->mm;
+ 	struct ckpt_pgarr *pgarr;
+ 	unsigned long *vaddrs;
+ 	char *buf;
+@@ -801,17 +824,22 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+ 	if (!buf)
+ 		return -ENOMEM;
+ 
+-	down_read(&mm->mmap_sem);
++	down_read(&current->mm->mmap_sem);
+ 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
+ 		vaddrs = pgarr->vaddrs;
+ 		for (i = 0; i < pgarr->nr_used; i++) {
+ 			struct page *page;
+ 
+ 			_ckpt_debug(CKPT_DPAGE, "got page %#lx\n", vaddrs[i]);
+-			ret = get_user_pages(current, mm, vaddrs[i],
+-					     1, 1, 1, &page, NULL);
+-			if (ret < 0)
++			if (inode)
++				page = bring_shared_page(vaddrs[i], inode);
++			else
++				page = bring_private_page(vaddrs[i]);
++
++			if (IS_ERR(page)) {
++				ret = PTR_ERR(page);
+ 				goto out;
++			}
+ 
+ 			ret = restore_read_page(ctx, page, buf);
+ 			page_cache_release(page);
+@@ -822,14 +850,15 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+ 	}
+ 
+  out:
+-	up_read(&mm->mmap_sem);
++	up_read(&current->mm->mmap_sem);
+ 	kfree(buf);
+ 	return 0;
+ }
+ 
+ /**
+- * restore_memory_contents - restore contents of a VMA with private memory
++ * restore_memory_contents - restore contents of a memory region
+  * @ctx - restart context
++ * @inode - backing inode
+  *
+  * Reads a header that specifies how many pages will follow, then reads
+  * a list of virtual addresses into ctx->pgarr_list page-array chain,
+@@ -837,7 +866,7 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+  * these steps until reaching a header specifying "0" pages, which marks
+  * the end of the contents.
+  */
+-static int restore_memory_contents(struct ckpt_ctx *ctx)
++int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode)
+ {
+ 	struct ckpt_hdr_pgarr *h;
+ 	unsigned long nr_pages;
+@@ -864,7 +893,7 @@ static int restore_memory_contents(struct ckpt_ctx *ctx)
+ 		ret = read_pages_vaddrs(ctx, nr_pages);
+ 		if (ret < 0)
+ 			break;
+-		ret = read_pages_contents(ctx);
++		ret = read_pages_contents(ctx, inode);
+ 		if (ret < 0)
+ 			break;
+ 		pgarr_reset_all(ctx);
+@@ -922,9 +951,9 @@ static unsigned long calc_map_flags_bits(unsigned long orig_vm_flags)
+  * @file - file to map (NULL for anonymous)
+  * @h - vma header data
+  */
+-static unsigned long generic_vma_restore(struct mm_struct *mm,
+-					 struct file *file,
+-					 struct ckpt_hdr_vma *h)
++unsigned long generic_vma_restore(struct mm_struct *mm,
++				  struct file *file,
++				  struct ckpt_hdr_vma *h)
+ {
+ 	unsigned long vm_size, vm_start, vm_flags, vm_prot, vm_pgoff;
+ 	unsigned long addr;
+@@ -971,7 +1000,7 @@ int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 	if (IS_ERR((void *) addr))
+ 		return PTR_ERR((void *) addr);
+ 
+-	return restore_memory_contents(ctx);
++	return restore_memory_contents(ctx, NULL);
+ }
+ 
+ /**
+@@ -1031,16 +1060,19 @@ static struct restore_vma_ops restore_vma_ops[] = {
+ 	{
+ 		.vma_name = "ANON SHARED",
+ 		.vma_type = CKPT_VMA_SHM_ANON,
++		.restore = shmem_restore,
+ 	},
+ 	/* anonymous shared (skipped) */
+ 	{
+ 		.vma_name = "ANON SHARED (skip)",
+ 		.vma_type = CKPT_VMA_SHM_ANON_SKIP,
++		.restore = shmem_restore,
+ 	},
+ 	/* file-mapped shared */
+ 	{
+ 		.vma_name = "FILE SHARED",
+ 		.vma_type = CKPT_VMA_SHM_FILE,
++		.restore = filemap_restore,
+ 	},
+ };
+ 
+@@ -1059,15 +1091,15 @@ static int restore_vma(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
+ 
+-	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d\n",
++	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d inoref %d\n",
+ 		   (unsigned long) h->vm_start, (unsigned long) h->vm_end,
+ 		   (unsigned long) h->vm_flags, (int) h->vma_type,
+-		   (int) h->vma_objref);
++		   (int) h->vma_objref, (int) h->ino_objref);
+ 
+ 	ret = -EINVAL;
+ 	if (h->vm_end < h->vm_start)
+ 		goto out;
+-	if (h->vma_objref < 0)
++	if (h->vma_objref < 0 || h->ino_objref < 0)
+ 		goto out;
+ 	if (h->vma_type >= CKPT_VMA_MAX)
+ 		goto out;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 18b4941..169aa70 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -106,9 +106,15 @@ extern int restore_obj_mm(struct ckpt_ctx *ctx, int mm_objref);
+ extern int checkpoint_mm(struct ckpt_ctx *ctx, void *ptr);
+ extern void *restore_mm(struct ckpt_ctx *ctx);
+ 
++extern unsigned long generic_vma_restore(struct mm_struct *mm,
++					 struct file *file,
++					 struct ckpt_hdr_vma *h);
++
+ extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			       struct file *file, struct ckpt_hdr_vma *h);
+ 
++extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
++
+ 
+ #define CKPT_VMA_NOT_SUPPORTED						\
+ 	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 53e916a..c8e8972 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1203,6 +1203,8 @@ extern int filemap_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			   struct ckpt_hdr_vma *hh);
+ extern int special_mapping_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 				   struct ckpt_hdr_vma *hh);
++extern int shmem_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
++			 struct ckpt_hdr_vma *hh);
+ #endif
+ 
+ /* readahead.c */
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 0d28481..d669395 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1691,17 +1691,28 @@ int filemap_restore(struct ckpt_ctx *ctx,
+ 		    struct ckpt_hdr_vma *h)
+ {
+ 	struct file *file;
++	unsigned long addr;
+ 	int ret;
+ 
+ 	if (h->vma_type == CKPT_VMA_FILE &&
+ 	    (h->vm_flags & (VM_SHARED | VM_MAYSHARE)))
+ 		return -EINVAL;
++	if (h->vma_type == CKPT_VMA_SHM_FILE &&
++	    !(h->vm_flags & (VM_SHARED | VM_MAYSHARE)))
++		return -EINVAL;
+ 
+ 	file = ckpt_obj_fetch(ctx, h->vma_objref, CKPT_OBJ_FILE);
+ 	if (IS_ERR(file))
+ 		return PTR_ERR(file);
+ 
+-	ret = private_vma_restore(ctx, mm, file, h);
++	if (h->vma_type == CKPT_VMA_FILE) {
++		/* private mapped file */
++		ret = private_vma_restore(ctx, mm, file, h);
++	} else {
++		/* shared mapped file */
++		addr = generic_vma_restore(mm, file, h);
++		ret = (IS_ERR((void *) addr) ? PTR_ERR((void *) addr) : 0);
++	}
+ 	return ret;
+ }
+ #endif /* CONFIG_CHECKPOINT */
+diff --git a/mm/shmem.c b/mm/shmem.c
+index d349c10..829eefa 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -2409,6 +2409,55 @@ static int shmem_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ 
+ 	return shmem_vma_checkpoint(ctx, vma, vma_type, ino_objref);
+ }
++
++int shmem_restore(struct ckpt_ctx *ctx,
++		  struct mm_struct *mm, struct ckpt_hdr_vma *h)
++{
++	unsigned long addr;
++	struct file *file;
 +	int ret = 0;
 +
-+	ret = restore_load_ipc_perms(&h->perms, &sem->sem_perm);
-+	if (ret < 0)
-+		return ret;
++	file = ckpt_obj_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
++	if (PTR_ERR(file) == -EINVAL)
++		file = NULL;
++	if (IS_ERR(file))
++		return PTR_ERR(file);
 +
-+	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-+
-+	sem->sem_otime = h->sem_otime;
-+	sem->sem_ctime = h->sem_ctime;
-+	sem->sem_nsems = h->sem_nsems;
-+
-+	return 0;
-+}
-+
-+/**
-+ * ckpt_read_sem_array - read the state of a semaphore array
-+ * @ctx: checkpoint context
-+ * @sem: semphore array
-+ *
-+ * Expect the data in an array of 'struct sem': {32 bit, 32 bit}.
-+ * See comment in ckpt_write_sem_array().
-+ *
-+ * The sem-undo information is not restored per ipc_ns, but rather per task.
-+ */
-+static struct sem *restore_sem_array(struct ckpt_ctx *ctx, int nsems)
-+{
-+	struct sem *sma;
-+	int i, ret;
-+
-+	sma = kmalloc(nsems * sizeof(*sma), GFP_KERNEL);
-+	ret = _ckpt_read_buffer(ctx, sma, nsems * sizeof(*sma));
-+	if (ret < 0)
-+		goto out;
-+
-+	/* validate sem array contents */
-+	for (i = 0; i < nsems; i++) {
-+		if (sma[i].semval < 0 || sma[i].sempid < 0) {
-+			ret = -EINVAL;
-+			break;
-+		}
++	/* if file is NULL, this is the premiere - create and insert */
++	if (!file) {
++		if (h->vma_type != CKPT_VMA_SHM_ANON)
++			return -EINVAL;
++		/*
++		 * in theory could pass NULL to mmap and let it create
++		 * the file. But, if 'shm_size != vm_end - vm_start',
++		 * or if 'vm_pgoff != 0', then the vma reflects only a
++		 * portion of the shm object and we need to "manually"
++		 * create the full shm object.
++		 */
++		file = shmem_file_setup("/dev/zero", h->ino_size, h->vm_flags);
++		if (IS_ERR(file))
++			return PTR_ERR(file);
++		ret = ckpt_obj_insert(ctx, file, h->ino_objref, CKPT_OBJ_FILE);
++		if (ret < 0)
++			goto out;
++	} else {
++		if (h->vma_type != CKPT_VMA_SHM_ANON_SKIP)
++			return -EINVAL;
++		/* Already need fput() for the file above; keep path simple */
++		get_file(file);
 +	}
++
++	addr = generic_vma_restore(mm, file, h);
++	if (IS_ERR((void *) addr))
++		return PTR_ERR((void *) addr);
++
++	if (h->vma_type == CKPT_VMA_SHM_ANON)
++		ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
 + out:
-+	if (ret < 0) {
-+		kfree(sma);
-+		sma = ERR_PTR(ret);
-+	}
-+	return sma;
-+}
-+
-+int restore_ipc_sem(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_ipc_sem *h;
-+	struct kern_ipc_perm *perms;
-+	struct sem_array *sem;
-+	struct sem *sma = NULL;
-+	struct ipc_ids *sem_ids = &current->nsproxy->ipc_ns->ids[IPC_SEM_IDS];
-+	int semflag, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = -EINVAL;
-+	if (h->perms.id < 0)
-+		goto out;
-+	if (h->sem_nsems < 0)
-+		goto out;
-+
-+	/* read sempahore array state */
-+	sma = restore_sem_array(ctx, h->sem_nsems);
-+	if (IS_ERR(sma)) {
-+		ret = PTR_ERR(sma);
-+		goto out;
-+	}
-+
-+	/* restore the message queue now */
-+	semflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
-+	ckpt_debug("sem: do_semget key %d flag %#x id %d\n",
-+		 h->perms.key, semflag, h->perms.id);
-+	ret = do_semget(h->perms.key, h->sem_nsems, semflag, h->perms.id);
-+	ckpt_debug("sem: do_msgget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	down_write(&sem_ids->rw_mutex);
-+
-+	/* we are the sole owners/users of this ipc_ns, it can't go away */
-+	perms = ipc_lock(sem_ids, h->perms.id);
-+	BUG_ON(IS_ERR(perms));  /* ipc_ns is private to us */
-+
-+	sem = container_of(perms, struct sem_array, sem_perm);
-+	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
-+
-+	ret = load_ipc_sem_hdr(ctx, h, sem);
-+	ipc_unlock(perms);
-+
-+	if (ret < 0) {
-+		ckpt_debug("sem: need to remove (%d)\n", ret);
-+		freeary(current->nsproxy->ipc_ns, perms);
-+	}
-+	up_write(&sem_ids->rw_mutex);
-+ out:
-+	kfree(sma);
-+	ckpt_hdr_put(ctx, h);
++	fput(file);
 +	return ret;
 +}
-diff --git a/ipc/util.h b/ipc/util.h
-index 347ffb2..020de7b 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -184,6 +184,8 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
- /* for checkpoint/restart */
- extern int do_shmget(key_t key, size_t size, int shmflg, int req_id);
- extern int do_msgget(key_t key, int msgflg, int req_id);
-+extern int do_semget(key_t key, int nsems, int semflg, int req_id);
 +
- extern void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
- extern void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #endif /* CONFIG_CHECKPOINT */
  
-@@ -200,6 +202,9 @@ extern int restore_ipc_shm(struct ckpt_ctx *ctx);
- 
- extern int checkpoint_ipc_msg(int id, void *p, void *data);
- extern int restore_ipc_msg(struct ckpt_ctx *ctx);
-+
-+extern int checkpoint_ipc_sem(int id, void *p, void *data);
-+extern int restore_ipc_sem(struct ckpt_ctx *ctx);
- #endif
- 
- #endif
+ static void init_once(void *foo)
 -- 
 1.6.0.4
