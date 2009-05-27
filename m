@@ -1,16 +1,13 @@
-From: Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
-Subject: Re: [PATCH 18/38] C/R: core stuff
-Date: Wed, 27 May 2009 11:52:17 -0700
-Message-ID: <1243450337.8071.155.camel__19655.3342896097$1243450481$gmane$org@nimitz>
-References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
-	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
-	<20090526131644.GA20920@hallyn.com>
-	<20090526193503.GB11909@x200.localdomain>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v16][PATCH 26/43] splice: added support for pipe-to-pipe splice()
+Date: Wed, 27 May 2009 13:32:52 -0400
+Message-ID: <1243445589-32388-27-git-send-email-orenl__26698.3439018533$1243450683$gmane$org@cs.columbia.edu>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090526193503.GB11909-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <1243445589-32388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,33 +17,309 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-05-26 at 23:35 +0400, Alexey Dobriyan wrote:
-> The other part, is that I looked at Oren patchset, found quite a lot of
-> suspicious, broken and unclean places and decided that it'd be faster
-> to start from scratch because sending patches will overhaul like 85% of
-> the code.
+This patch is a modified version of Max Kellerman patch that allows
+splice() between pipes (see http://patchwork/kernel/org/patch/21042).
+By refactoring link_pipe(), do_tee() and do_splice_pipes() shrink
+considerably. Below is Max's original description:
 
-I know the feeling.  I get sudden urges to rewrite the whole patch set,
-but I'm working on getting past them too. :)
+--
+This patch enables the splice() system call to copy buffers from one
+pipe to another.  This obvious and trivial use case for splice() was
+not supported until now.
 
-As long as we have two patch sets, *nobody* is going to get their
-patches in, that's virtually guaranteed.  Just look at the poor I/O
-controller.
+It reuses the functions link_ipipe_prep() and link_opipe_prep() from
+the tee() system call implementation.
+--
 
-The OpenVZ users are almost certainly the most important container and
-c/r users out there today.  Meeting their needs with whatever we come up
-with should be a top priority and I know I'm counting on you to help us
-do that.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ fs/splice.c |  203 ++++++++++++++++++++++++++++++++++++++++++++++++-----------
+ 1 files changed, 166 insertions(+), 37 deletions(-)
 
-But, I'm having a really hard time culling the OpenVZ user needs from
-your patch set.  If we really need to rewrite 85% of Oren's stuff to
-meet the OpenVZ needs, then by all means let's do it.  I'm even willing
-to help you.  But, I honestly don't know what you need.
-
-Can we talk about specifics?
-
--- Dave
+diff --git a/fs/splice.c b/fs/splice.c
+index 92dd63c..96e0d58 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -903,13 +903,95 @@ ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe, struct file *out,
+ EXPORT_SYMBOL(generic_splice_sendpage);
+ 
+ /*
++ * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
++ * location, so checking ->i_pipe is not enough to verify that this is a
++ * pipe.
++ */
++static inline struct pipe_inode_info *pipe_info(struct inode *inode)
++{
++	if (S_ISFIFO(inode->i_mode))
++		return inode->i_pipe;
++
++	return NULL;
++}
++
++static int link_pipe_prep(struct pipe_inode_info *ipipe,
++			  struct pipe_inode_info *opipe,
++			  unsigned int flags);
++static long do_link_pipe(struct pipe_inode_info *ipipe,
++			 struct pipe_inode_info *opipe,
++			 size_t len, unsigned int flags, int move);
++
++/**
++* Splice pages from one pipe to another.
++*
++* @ipipe the input pipe
++* @opipe the output pipe
++* @len the maximum number of bytes to move
++* @flags splice modifier flags
++*/
++static long do_splice_pipes(struct pipe_inode_info *ipipe,
++			    struct pipe_inode_info *opipe,
++			    size_t len, unsigned int flags)
++{
++	int do_wakeup;
++	long ret;
++
++	if (ipipe == opipe)
++		return -EINVAL;
++
++	ret = link_pipe_prep(ipipe, opipe, flags);
++	if (ret < 0)
++		return ret;
++
++	/* both pipes are now locked */
++
++	do_wakeup = ipipe->nrbufs;
++	ret = do_link_pipe(ipipe, opipe, len, flags, 1);
++	do_wakeup -= ipipe->nrbufs;
++
++	pipe_unlock(ipipe);
++	pipe_unlock(opipe);
++
++	if (do_wakeup) {
++		/* at least one buffer was removed from the
++		   input pipe: wake up potential writers */
++		smp_mb();
++		if (waitqueue_active(&ipipe->wait))
++			wake_up_interruptible(&ipipe->wait);
++		kill_fasync(&ipipe->fasync_writers, SIGIO, POLL_OUT);
++	}
++
++	/*
++	 * If we put data in the output pipe, wakeup any potential
++	 * readers.
++	 */
++	if (ret > 0) {
++		smp_mb();
++		if (waitqueue_active(&opipe->wait))
++			wake_up_interruptible(&opipe->wait);
++		kill_fasync(&opipe->fasync_readers, SIGIO, POLL_IN);
++	}
++
++	return ret;
++}
++
++/*
+  * Attempt to initiate a splice from pipe to file.
+  */
+ static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+ 			   loff_t *ppos, size_t len, unsigned int flags)
+ {
++	struct pipe_inode_info *opipe;
+ 	int ret;
+ 
++	opipe = pipe_info(out->f_dentry->d_inode);
++	if (opipe) {
++		if (unlikely(!(out->f_mode & FMODE_WRITE)))
++			return -EBADF;
++		return do_splice_pipes(pipe, opipe, len, flags);
++	}
++
+ 	if (unlikely(!out->f_op || !out->f_op->splice_write))
+ 		return -EINVAL;
+ 
+@@ -933,8 +1015,16 @@ static long do_splice_to(struct file *in, loff_t *ppos,
+ 			 struct pipe_inode_info *pipe, size_t len,
+ 			 unsigned int flags)
+ {
++	struct pipe_inode_info *ipipe;
+ 	int ret;
+ 
++	ipipe = pipe_info(in->f_dentry->d_inode);
++	if (ipipe) {
++		if (unlikely(!(in->f_mode & FMODE_READ)))
++			return -EBADF;
++		return do_splice_pipes(ipipe, pipe, len, flags);
++	}
++
+ 	if (unlikely(!in->f_op || !in->f_op->splice_read))
+ 		return -EINVAL;
+ 
+@@ -1113,19 +1203,6 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+ }
+ 
+ /*
+- * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
+- * location, so checking ->i_pipe is not enough to verify that this is a
+- * pipe.
+- */
+-static inline struct pipe_inode_info *pipe_info(struct inode *inode)
+-{
+-	if (S_ISFIFO(inode->i_mode))
+-		return inode->i_pipe;
+-
+-	return NULL;
+-}
+-
+-/*
+  * Determine where to splice to/from.
+  */
+ static long do_splice(struct file *in, loff_t __user *off_in,
+@@ -1140,7 +1217,10 @@ static long do_splice(struct file *in, loff_t __user *off_in,
+ 	if (pipe) {
+ 		if (off_in)
+ 			return -ESPIPE;
++
+ 		if (off_out) {
++			if (pipe_info(out->f_path.dentry->d_inode))
++				return -ESPIPE;
+ 			if (out->f_op->llseek == no_llseek)
+ 				return -EINVAL;
+ 			if (copy_from_user(&offset, off_out, sizeof(loff_t)))
+@@ -1639,21 +1719,36 @@ static int link_pipe_prep(struct pipe_inode_info *ipipe,
+ 	return 0;
+ }
+ 
+-/*
+- * Link contents of ipipe to opipe.
+- */
+-static int link_pipe(struct pipe_inode_info *ipipe,
+-		     struct pipe_inode_info *opipe,
+-		     size_t len, unsigned int flags)
++/**
++* Returns the nth pipe buffer after the current one.
++*
++* @i the buffer index, relative to the current one
++*/
++static inline struct pipe_buffer *
++pipe_buffer_at(struct pipe_inode_info *pipe, unsigned i)
+ {
+-	struct pipe_buffer *ibuf, *obuf;
+-	int ret, i = 0, nbuf;
++	BUG_ON(i >= PIPE_BUFFERS);
+ 
+-	ret = link_pipe_prep(ipipe, opipe, flags);
+-	if (ret < 0)
+-		return ret;
++	return pipe->bufs + ((pipe->curbuf + i) & (PIPE_BUFFERS - 1));
++}
+ 
+-	/* pipes are now locked */
++/**
++ * do_link_pipe - copy or move (splice) contents of ipipe to opipe.
++ * @ipipe: the input pipe
++ * @opipe: the output pipe
++ * @len: the maximum number of byte to copy/move
++ * @flags: splice modifier flags
++ * @move: indicates move operation (otherwise copy)
++ *
++ * expects both pipes to be locked
++ */
++static long do_link_pipe(struct pipe_inode_info *ipipe,
++			struct pipe_inode_info *opipe,
++			size_t len, unsigned int flags, int move)
++{
++	struct pipe_buffer *ibuf, *obuf;
++	long ret = 0;
++	int i = 0;
+ 
+ 	do {
+ 		if (!opipe->readers) {
+@@ -1670,16 +1765,8 @@ static int link_pipe(struct pipe_inode_info *ipipe,
+ 		if (i >= ipipe->nrbufs || opipe->nrbufs >= PIPE_BUFFERS)
+ 			break;
+ 
+-		ibuf = ipipe->bufs + ((ipipe->curbuf + i) & (PIPE_BUFFERS - 1));
+-		nbuf = (opipe->curbuf + opipe->nrbufs) & (PIPE_BUFFERS - 1);
+-
+-		/*
+-		 * Get a reference to this pipe buffer,
+-		 * so we can copy the contents over.
+-		 */
+-		ibuf->ops->get(ipipe, ibuf);
+-
+-		obuf = opipe->bufs + nbuf;
++		ibuf = pipe_buffer_at(ipipe, i);
++		obuf = pipe_buffer_at(opipe, opipe->nrbufs);
+ 		*obuf = *ibuf;
+ 
+ 		/*
+@@ -1688,13 +1775,35 @@ static int link_pipe(struct pipe_inode_info *ipipe,
+ 		 */
+ 		obuf->flags &= ~PIPE_BUF_FLAG_GIFT;
+ 
+-		if (obuf->len > len)
++		/* increase the reference count */
++		obuf->ops->get(opipe, obuf);
++
++		/* partial or complete copy/move ? */
++		if (obuf->len > len) {
+ 			obuf->len = len;
++			if (move) {
++				/* remove portion from ibuf */
++				ibuf->offset += len;
++				ibuf->len -= len;
++			}
++		} else {
++			if (move) {
++				/* remove entirely from ibuf */
++				ibuf->ops->release(ipipe, ibuf);
++				ibuf->ops = NULL;
++
++				ipipe->curbuf = (ipipe->curbuf + 1) &
++					(PIPE_BUFFERS - 1);
++				ipipe->nrbufs--;
++			} else {
++				/* advance pointer in ibuf */
++				i++;
++			}
++		}
+ 
+ 		opipe->nrbufs++;
+ 		ret += obuf->len;
+ 		len -= obuf->len;
+-		i++;
+ 	} while (len);
+ 
+ 	/*
+@@ -1704,6 +1813,26 @@ static int link_pipe(struct pipe_inode_info *ipipe,
+ 	if (!ret && ipipe->waiting_writers && (flags & SPLICE_F_NONBLOCK))
+ 		ret = -EAGAIN;
+ 
++	return ret;
++}
++
++/*
++ * Link contents of ipipe to opipe.
++ */
++long link_pipe(struct pipe_inode_info *ipipe,
++	       struct pipe_inode_info *opipe,
++	       size_t len, unsigned int flags)
++{
++	long ret;
++
++	ret = link_pipe_prep(ipipe, opipe, flags);
++	if (ret < 0)
++		return ret;
++
++	/* pipes are now locked */
++
++	ret = do_link_pipe(ipipe, opipe, len, flags, 0);
++
+ 	pipe_unlock(ipipe);
+ 	pipe_unlock(opipe);
+ 
+-- 
+1.6.0.4
