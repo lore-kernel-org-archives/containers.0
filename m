@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v16][PATCH 34/43] c/r: save and restore ipc namespace basics
-Date: Wed, 27 May 2009 13:33:00 -0400
-Message-ID: <1243445589-32388-35-git-send-email-orenl__13883.9105064564$1243450898$gmane$org@cs.columbia.edu>
+Subject: [RFC v16][PATCH 31/43] deferqueue: generic queue to defer work
+Date: Wed, 27 May 2009 13:32:57 -0400
+Message-ID: <1243445589-32388-32-git-send-email-orenl__27485.5731674053$1243450970$gmane$org@cs.columbia.edu>
 References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,327 +21,270 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Save and restores the common state (parameters) of ipc namespace.
+Add a interface to postpone an action until the end of the entire
+checkpoint or restart operation. This is useful when during the
+scan of tasks an operation cannot be performed in place, to avoid
+the need for a second scan.
 
-Also add logic to iterate through the objects of sysvipc shared memory,
-message queues and semaphores. The logic to save and restore the state
-of these objects will be added in the next few patches.
+One use case is when restoring an ipc shared memory region that has
+been deleted (but is still attached), during restart it needs to be
+create, attached and then deleted. However, creation and attachment
+are performed in distinct locations, so deletion can not be performed
+on the spot. Instead, this work (delete) is deferred until later.
+(This example is in one of the following patches).
+
+This interface allows chronic procrastination in the kernel:
+
+deferqueue_create(void):
+    Allocates and returns a new deferqueue.
+
+deferqueue_run(deferqueue):
+    Executes all the pending works in the queue. Returns the number
+    of works executed, or an error upon the first error reported by
+    a deferred work.
+
+deferqueue_add(deferqueue, data, size, func, dtor):
+    Enqueue a deferred work. @function is the callback function to
+    do the work, which will be called with @data as an argument.
+    @size tells the size of data. @dtor is a destructor callback
+    that is invoked for deferred works remaining in the queue when
+    the queue is destroyed. NOTE: for a given deferred work, @dtor
+    is _not_ called if @func was already called (regardless of the
+    return value of the latter).
+
+deferqueue_destroy(deferqueue):
+    Free the deferqueue and any queued items while invoking the
+    @dtor callback for each queued item.
+
+Why aren't we using the existing kernel workqueue mechanism?  We need
+to defer to work until the end of the operation: not earlier, since we
+need other things to be in place; not later, to not block waiting for
+it. However, the workqueue schedules the work for 'some time later'.
+Also, the kernel workqueue may run in any task context, but we require
+many times that an operation be run in the context of some specific
+restarting task (e.g., restoring IPC state of a certain ipc_ns).
+
+Instead, this mechanism is a simple way for the c/r operation as a
+whole, and later a task in particular, to defer some action until
+later (but not arbitrarily later) _in the restore_ operation.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/process.c           |    4 -
- include/linux/checkpoint.h     |    5 +-
- include/linux/checkpoint_hdr.h |   22 +++++
- ipc/checkpoint.c               |  203 ++++++++++++++++++++++++++++++++++++++--
- 4 files changed, 220 insertions(+), 14 deletions(-)
+ checkpoint/Kconfig         |    5 ++
+ include/linux/deferqueue.h |   58 +++++++++++++++++++++++
+ kernel/Makefile            |    1 +
+ kernel/deferqueue.c        |  109 ++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 173 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index eff3d76..b604a85 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -121,10 +121,8 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index 1761b0a..53ed6fa 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -2,9 +2,14 @@
+ # implemented the hooks for processor state etc. needed by the
+ # core checkpoint/restart code.
  
- 	if (ns_flags & CLONE_NEWUTS)
- 		ret = checkpoint_uts_ns(ctx, nsproxy->uts_ns);
--#if 0
- 	if (!ret && (ns_flags & CLONE_NEWIPC))
- 		ret = checkpoint_ipc_ns(ctx, nsproxy->ipc_ns);
--#endif
- 
- 	/* FIX: Write other namespaces here */
- 	return ret;
-@@ -472,10 +470,8 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
- 	ckpt_debug("uts ns: %d\n", ret);
- 	if (ret < 0)
- 		goto out;
--#if 0
- 	ret = restore_ipc_ns(ctx, h->ipc_objref, h->flags);
- 	ckpt_debug("ipc ns: %d\n", ret);
--#endif
- 
- 	/* FIX: add more namespaces here */
-  out:
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 9a7517f..d5498bc 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -85,7 +85,6 @@ extern int restore_restart_block(struct ckpt_ctx *ctx);
- extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_ns(struct ckpt_ctx *ctx);
- 
--#if 0
- /* ipc-ns */
- #ifdef CONFIG_SYSVIPC
- extern int checkpoint_ipc_ns(struct ckpt_ctx *ctx,
-@@ -98,7 +97,9 @@ static inline int checkpoint_ipc_ns(struct ckpt_ctx *ctx,
- static inline int restore_ipc_ns(struct ckpt_ctx *ctx)
- { return 0; }
- #endif /* CONFIG_SYSVIPC */
--#endif
++config DEFERQUEUE
++	bool
++	default n
 +
-+extern int checkpoint_ipcns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns);
-+extern int restore_ipcns(struct ckpt_ctx *ctx);
- 
- /* file table */
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 05769f4..406b5d6 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -305,6 +305,28 @@ struct ckpt_hdr_pgarr {
- 
- 
- /* ipc commons */
-+struct ckpt_hdr_ipcns {
-+	struct ckpt_hdr h;
-+	__u64 shm_ctlmax;
-+	__u64 shm_ctlall;
-+	__s32 shm_ctlmni;
-+
-+	__s32 msg_ctlmax;
-+	__s32 msg_ctlmnb;
-+	__s32 msg_ctlmni;
-+
-+	__s32 sem_ctl_msl;
-+	__s32 sem_ctl_mns;
-+	__s32 sem_ctl_opm;
-+	__s32 sem_ctl_mni;
-+} __attribute__((aligned(8)));
-+
-+struct ckpt_hdr_ipc {
-+	struct ckpt_hdr h;
-+	__u32 ipc_type;
-+	__u32 ipc_count;
-+} __attribute__((aligned(8)));
-+
- struct ckpt_hdr_ipc_perms {
- 	__s32 id;
- 	__u32 key;
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index b7b48b0..436be5e 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -20,15 +20,12 @@
- 
- #include "util.h"
- 
--int checkpoint_ipcns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
--{
--	return 0;
--}
-+/* for ckpt_debug */
-+static char *ipc_ind_to_str[] = { "sem", "msg", "shm" };
- 
--int restore_ipcns(struct ckpt_ctx *ctx)
--{
--	return 0;
--}
-+/**************************************************************************
-+ * Checkpoint
+ config CHECKPOINT
+ 	bool "Enable checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
++	select DEFERQUEUE
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
+diff --git a/include/linux/deferqueue.h b/include/linux/deferqueue.h
+new file mode 100644
+index 0000000..2eb58cf
+--- /dev/null
++++ b/include/linux/deferqueue.h
+@@ -0,0 +1,58 @@
++/*
++ * deferqueue.h --- deferred work queue handling for Linux.
 + */
++
++#ifndef _LINUX_DEFERQUEUE_H
++#define _LINUX_DEFERQUEUE_H
++
++#include <linux/list.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++
++/*
++ * This interface allows chronic procrastination in the kernel:
++ *
++ * deferqueue_create(void):
++ *     Allocates and returns a new deferqueue.
++ *
++ * deferqueue_run(deferqueue):
++ *     Executes all the pending works in the queue. Returns the number
++ *     of works executed, or an error upon the first error reported by
++ *     a deferred work.
++ *
++ * deferqueue_add(deferqueue, data, size, func, dtor):
++ * 	Enqueue a deferred work. @function is the callback function to
++ *      do the work, which will be called with @data as an argument.
++ *      @size tells the size of data. @dtor is a destructor callback
++ *      that is invoked for deferred works remaining in the queue when
++ *      the queue is destroyed. NOTE: for a given deferred work, @dtor
++ *      is _not_ called if @func was already called (regardless of the
++ *      return value of the latter).
++ *
++ * deferqueue_destroy(deferqueue):
++ *      Free the deferqueue and any queued items while invoking the
++ *      @dtor callback for each queued item.
++ */
++
++
++typedef int (*deferqueue_func_t)(void *);
++
++struct deferqueue_entry {
++	deferqueue_func_t function;
++	deferqueue_func_t destructor;
++	struct list_head list;
++	char data[0];
++};
++
++struct deferqueue_head {
++	spinlock_t lock;
++	struct list_head list;
++};
++
++struct deferqueue_head *deferqueue_create(void);
++void deferqueue_destroy(struct deferqueue_head *head);
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor);
++int deferqueue_run(struct deferqueue_head *head);
++
++#endif
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 4242366..6bc638d 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -22,6 +22,7 @@ CFLAGS_REMOVE_cgroup-debug.o = -pg
+ CFLAGS_REMOVE_sched_clock.o = -pg
+ endif
  
- int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 			      struct kern_ipc_perm *perm)
-@@ -48,6 +45,82 @@ int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 	return 0;
- }
- 
-+static int checkpoint_ipc_any(struct ckpt_ctx *ctx,
-+			      struct ipc_namespace *ipc_ns,
-+			      int ipc_ind, int ipc_type,
-+			      int (*func)(int id, void *p, void *data))
++obj-$(CONFIG_DEFERQUEUE) += deferqueue.o
+ obj-$(CONFIG_FREEZER) += freezer.o
+ obj-$(CONFIG_PROFILING) += profile.o
+ obj-$(CONFIG_SYSCTL_SYSCALL_CHECK) += sysctl_check.o
+diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+new file mode 100644
+index 0000000..efd99d5
+--- /dev/null
++++ b/kernel/deferqueue.c
+@@ -0,0 +1,109 @@
++/*
++ *  Infrastructure to manage deferred work
++ *
++ *  This differs from a workqueue in that the work must be deferred
++ *  until specifically run by the caller.
++ *
++ *  As the only user currently is checkpoint/restart, which has
++ *  very simple usage, the locking is kept simple.  Adding rules
++ *  is protected by the head->lock.  But deferqueue_run() is only
++ *  called once, after all entries have been added.  So it is not
++ *  protected.  Similarly, _destroy is only called once when the
++ *  ckpt_ctx is releeased, so it is not locked or refcounted.  These
++ *  can of course be added if needed by other users.
++ *
++ *  Why not use workqueue ?  We need to defer work until the end of an
++ *  operation: not earlier, since we need other things to be in place;
++ *  not later, to not block waiting for it. However, the workqueue
++ *  schedules the work for 'some time later'. Also, workqueue may run
++ *  in any task context, but we require many times that an operation
++ *  be run in the context of some specific restarting task (e.g.,
++ *  restoring IPC state of a certain ipc_ns).
++ *
++ *  Instead, this mechanism is a simple way for the c/r operation as a
++ *  whole, and later a task in particular, to defer some action until
++ *  later (but not arbitrarily later) _in the restore_ operation.
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/deferqueue.h>
++
++struct deferqueue_head *deferqueue_create(void)
 +{
-+	struct ckpt_hdr_ipc *h;
-+	struct ipc_ids *ipc_ids = &ipc_ns->ids[ipc_ind];
-+	int ret = -ENOMEM;
-+
-+	down_read(&ipc_ids->rw_mutex);
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC);
-+	if (!h)
-+		goto out;
-+
-+	h->ipc_type = ipc_type;
-+	h->ipc_count = ipc_ids->in_use;
-+	ckpt_debug("ipc-%s count %d\n", ipc_ind_to_str[ipc_ind], h->ipc_count);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = idr_for_each(&ipc_ids->ipcs_idr, func, ctx);
-+	ckpt_debug("ipc-%s ret %d\n", ipc_ind_to_str[ipc_ind], ret);
-+ out:
-+	up_read(&ipc_ids->rw_mutex);
-+	return ret;
++	struct deferqueue_head *h = kmalloc(sizeof(*h), GFP_KERNEL);
++	if (h) {
++		spin_lock_init(&h->lock);
++		INIT_LIST_HEAD(&h->list);
++	}
++	return h;
 +}
 +
-+int checkpoint_ipc_ns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
++void deferqueue_destroy(struct deferqueue_head *h)
 +{
-+	struct ckpt_hdr_ipcns *h;
-+	int ret;
++	if (!list_empty(&h->list)) {
++		struct deferqueue_entry *dq, *n;
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_NS);
-+	if (!h)
++		pr_debug("%s: freeing non-empty queue\n", __func__);
++		list_for_each_entry_safe(dq, n, &h->list, list) {
++			dq->destructor(dq->data);
++			list_del(&dq->list);
++			kfree(dq);
++		}
++	}
++	kfree(h);
++}
++
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor)
++{
++	struct deferqueue_entry *dq;
++
++	dq = kmalloc(sizeof(dq) + size, GFP_KERNEL);
++	if (!dq)
 +		return -ENOMEM;
 +
-+	h->shm_ctlmax = ipc_ns->shm_ctlmax;
-+	h->shm_ctlall = ipc_ns->shm_ctlall;
-+	h->shm_ctlmni = ipc_ns->shm_ctlmni;
++	dq->function = func;
++	dq->destructor = dtor;
++	memcpy(dq->data, data, size);
 +
-+	h->msg_ctlmax = ipc_ns->msg_ctlmax;
-+	h->msg_ctlmnb = ipc_ns->msg_ctlmnb;
-+	h->msg_ctlmni = ipc_ns->msg_ctlmni;
-+
-+	h->sem_ctl_msl = ipc_ns->sem_ctls[0];
-+	h->sem_ctl_mns = ipc_ns->sem_ctls[1];
-+	h->sem_ctl_opm = ipc_ns->sem_ctls[2];
-+	h->sem_ctl_mni = ipc_ns->sem_ctls[3];
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+	if (ret < 0)
-+		return ret;
-+
-+#if 0 /* NEXT FEW PATCHES */
-+	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
-+				 CKPT_HDR_IPC_SHM, checkpoint_ipc_shm);
-+	if (ret < 0)
-+		return ret;
-+	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
-+				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
-+	if (ret < 0)
-+		return ret;
-+	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
-+				 CKPT_HDR_IPC_SEM, checkpoint_ipc_sem);
-+#endif
-+	return ret;
++	pr_debug("%s: adding work %p func %p dtor %p\n",
++		 __func__, dq, func, dtor);
++	spin_lock(&head->lock);
++	list_add_tail(&head->list, &dq->list);
++	spin_unlock(&head->lock);
++	return 0;
 +}
 +
-+/**************************************************************************
-+ * Restart
++/*
++ * deferqueue_run - perform all work in the work queue
++ * @head: deferqueue_head from which to run
++ *
++ * returns: number of works performed, or < 0 on error
 + */
-+
- int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 			   struct kern_ipc_perm *perm)
- {
-@@ -79,3 +152,117 @@ int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 
- 	return 0;
- }
-+
-+static int restore_ipc_any(struct ckpt_ctx *ctx, int ipc_ind, int ipc_type,
-+			   int (*func)(struct ckpt_ctx *ctx))
++int deferqueue_run(struct deferqueue_head *head)
 +{
-+	struct ckpt_hdr_ipc *h;
-+	int n, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ckpt_debug("ipc-%s: count %d\n", ipc_ind_to_str[ipc_ind], h->ipc_count);
-+
-+	ret = -EINVAL;
-+	if (h->ipc_type != ipc_type)
-+		goto out;
-+
-+	ret = 0;
-+	for (n = 0; n < h->ipc_count; n++) {
-+		ret = (*func)(ctx);
-+		if (ret < 0)
-+			goto out;
-+	}
-+ out:
-+	ckpt_debug("ipc-%s: ret %d\n", ipc_ind_to_str[ipc_ind], ret);
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+static int do_restore_ipc_ns(struct ckpt_ctx *ctx)
-+{
-+	struct ipc_namespace *ipc_ns = current->nsproxy->ipc_ns;
-+	struct ckpt_hdr_ipcns *h;
++	struct deferqueue_entry *dq, *n;
++	int nr = 0;
 +	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_NS);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = -EINVAL;
-+	if (h->shm_ctlmax < 0 || h->shm_ctlall < 0 || h->shm_ctlmni < 0)
-+		goto out;
-+	if (h->msg_ctlmax < 0 || h->msg_ctlmnb < 0 || h->msg_ctlmni < 0)
-+		goto out;
-+	if (h->sem_ctl_msl < 0 || h->sem_ctl_mns < 0 ||
-+	    h->sem_ctl_opm < 0 || h->sem_ctl_mni < 0)
-+		goto out;
-+
-+	/* this is a brand new ipc_ns: safe to rewrite its properties */
-+	ipc_ns->shm_ctlmax = h->shm_ctlmax;
-+	ipc_ns->shm_ctlall = h->shm_ctlall;
-+	ipc_ns->shm_ctlmni = h->shm_ctlmni;
-+
-+	ipc_ns->msg_ctlmax = h->msg_ctlmax;
-+	ipc_ns->msg_ctlmnb = h->msg_ctlmnb;
-+	ipc_ns->msg_ctlmni = h->msg_ctlmni;
-+
-+	ipc_ns->sem_ctls[0] = h->sem_ctl_msl;
-+	ipc_ns->sem_ctls[1] = h->sem_ctl_mns;
-+	ipc_ns->sem_ctls[2] = h->sem_ctl_opm;
-+	ipc_ns->sem_ctls[3] = h->sem_ctl_mni;
-+
-+#if 0 /* NEXT FEW PATCHES */
-+	ret = restore_ipc_any(ctx, IPC_SHM_IDS,
-+			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
-+	if (ret < 0)
-+		goto out;
-+	ret = ckpt_read_ipc_any(ctx, IPC_MSG_IDS,
-+			      CKPT_HDR_IPC_MSG, restore_ipc_msg);
-+	if (ret < 0)
-+		goto out;
-+	ret = restore_ipc_any(ctx, IPC_SEM_IDS,
-+			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
-+#endif
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+int restore_ipc_ns(struct ckpt_ctx *ctx, int ns_objref, int flags)
-+{
-+	struct ipc_namespace *ipc_ns;
-+	int ret = 0;
-+
-+	ipc_ns = ckpt_obj_fetch(ctx, ns_objref, CKPT_OBJ_IPC_NS);
-+	if (PTR_ERR(ipc_ns) == -EINVAL)
-+		ipc_ns = NULL;
-+	if (IS_ERR(ipc_ns))
-+		return PTR_ERR(ipc_ns);
-+
-+	/* sanity: CLONE_NEWIPC if-and-only-if ipc_ns is NULL (first timer) */
-+	if (!!ipc_ns ^ !(flags & CLONE_NEWIPC))
-+		return -EINVAL;
-+
-+	if (!ipc_ns) {
-+		ret = do_restore_ipc_ns(ctx);
++	list_for_each_entry_safe(dq, n, &head->list, list) {
++		pr_debug("doing work %p function %p\n", dq, dq->function);
++		/* don't call destructor - function callback should do it */
++		ret = dq->function(dq->data);
 +		if (ret < 0)
-+			return ret;
-+		ret = ckpt_obj_insert(ctx, current->nsproxy->ipc_ns,
-+				      ns_objref, CKPT_OBJ_IPC_NS);
-+	} else {
-+		struct ipc_namespace *old_ipc_ns;
-+
-+		/* safe because nsproxy->count must be 1 ... */
-+		BUG_ON(atomic_read(&current->nsproxy->count) != 1);
-+
-+		old_ipc_ns = current->nsproxy->ipc_ns;
-+		current->nsproxy->ipc_ns = ipc_ns;
-+		get_ipc_ns(ipc_ns);
-+		put_ipc_ns(old_ipc_ns);
++			pr_debug("wq function failed %d\n", ret);
++		list_del(&dq->list);
++		kfree(dq);
++		nr++;
 +	}
 +
-+	return ret;
++	return nr;
 +}
 -- 
 1.6.0.4
