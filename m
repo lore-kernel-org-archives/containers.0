@@ -1,14 +1,16 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
-Date: Thu, 28 May 2009 19:45:17 -0400
-Message-ID: <4A1F220D.80205@cs.columbia.edu>
-References: <20090528043748.GA16522@us.ibm.com>	<20090528043945.GG16522@us.ibm.com>	<4A1EA73F.1080802@cs.columbia.edu>	<20090528151444.GA17772@us.ibm.com>	<20090528170103.GA26183@us.ibm.com>	<20090528174708.GA2236@hallyn.com>
-	<20090528180057.GA27191@us.ibm.com>
+Date: Thu, 28 May 2009 19:47:24 -0400
+Message-ID: <4A1F228C.2020201@cs.columbia.edu>
+References: <20090528043748.GA16522@us.ibm.com>
+	<20090528043945.GG16522@us.ibm.com>
+	<4A1EA73F.1080802@cs.columbia.edu>
+	<20090528173019.GB26183@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090528180057.GA27191-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090528173019.GB26183-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,28 +27,61 @@ List-Id: containers.vger.kernel.org
 
 
 Sukadev Bhattiprolu wrote:
-> Serge E. Hallyn [serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org] wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> 
+> | > +
+> | > +	if (num_pids < 0 || num_pids > task_pid(current)->level + 1)
+> | > +		return ERR_PTR(-EINVAL);
 > | 
-> | If a container at pidns level 2, with 1 more pidns underneath it,
-> | is checkpointed, then the checkpoint image should only reflect
-> | the base and child pidns.  The two ancestor pidns levels should
-> | not be there.
+> | What happens if (num_pids < task_pid(current->level) + 1) ?
+> | Unless I missed something elsewhere, I suspect it will oops,
 > 
-> Agree. I meant to say that we would need to specify more than 2
-> pids when checkpoint/restarting apps with deeply nested namespaces
-> if any :-)
-
-Just like the checkpoint image should only reflect the nesting
-from some base down, clone_with_pid() should reflect nesting
-from some base down.
-
-(Hmm.. ignore this if it is what you meant already ...)
-
+> Yep. the kzalloc() below this check should use:
 > 
-> Specifying bottom-up may solve the problem I guess.
+> 	task_pid(current)->pid_ns->level+1 * sizeof(pid_t)
+> 
+> | because in patch #4, you had:
+> | 
+> |  	for (i = ns->level; i >= 0; i--) {
+> | -		nr = alloc_pidmap(tmp, 0);
+> | +		tpid = 0;
+> | +		if (target_pids)
+> | +			tpid = target_pids[i];
+> | +
+> | +		nr = alloc_pidmap(tmp, tpid);
+> |  		if (nr < 0)
+> |  			goto out_free;
+> | 
+> | In general, can a task figure out it's depth in the pid-ns hierarchy ?
+> | 
+> | I'm thinking of a case in which a checkpoint was taken of a (flat)
+> | container which is in depth 2 of the global hierarchy, and then it
+> | is restarted in depth 3, or in depth 1.
+> | 
+> | Perhaps the semantics of the syscall should be that target_pids will
+> | indicate the desired pids _from the bottom up_. A value of "0" means
+> 
+> Hmm, I thought bottom up would be confusing, but I guess that would
+> work better :-) Will fix and resend.
+
+(Repeating...)
 
 Perhaps bottom-up is a misleading: I don't care about the order...
 I meant that a N size array should affect the last N levels of
 the hierarchy (if it is deeper than N).
 
+You could actually keep everything else as is, and change the code
+that copies from user to always allocate a ns->level+1 size array,
+and copy the user data to the end of it, zeroing the beginning.
+
 Oren.
+
+> 
+> | "don't care" and let the kernel assign. The remaining levels (upwards)
+> | will be treated as zeros.
+> | 
+> | [...]
+> | 
+> | Oren.
+> | 
+> 
