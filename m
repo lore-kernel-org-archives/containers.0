@@ -1,121 +1,111 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
-Date: Thu, 28 May 2009 07:54:24 -0500
-Message-ID: <20090528125424.GC14253@us.ibm.com>
-References: <20090528043748.GA16522@us.ibm.com>
-	<20090528043929.GF16522@us.ibm.com>
+From: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: [PATCH 6/8] cr: checkpoint and restore task credentials
+Date: Thu, 28 May 2009 09:01:10 -0500
+Message-ID: <20090528140110.GA772@hallyn.com>
+References: <20090526173242.GA13757@us.ibm.com> <20090526173354.GF13991@us.ibm.com> <20090527183610.GA31930@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20090528043929.GF16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090527183610.GA31930@x200.localdomain>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+Quoting Alexey Dobriyan (adobriyan@gmail.com):
+> On Tue, May 26, 2009 at 12:33:54PM -0500, Serge E. Hallyn wrote:
+> > +struct ckpt_hdr_cred {
+> > +	struct ckpt_hdr h;
+> > +	__u32 version; /* especially since capability sets might grow */
 > 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:44 -0700
-> Subject: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
-> 
-> do_fork_with_pids() is same as do_fork(), except that it takes an
-> additional, 'pid_set', parameter. This parameter, currently unused,
-> specifies the set of target pids of the process in each of its pid
-> namespaces.
-> 
-> Changelog[v2]:
-> 	- [v1] of this patch had some architecture-indpendent code in
-> 	  arch/x86/kernel/process_32.c.  To facilitate moving this code
-> 	  to kernel/fork.c, in the next patch, [v2] of the patch passes
-> 	  'struct target_pid_set __user *' to do_fork_with_pids() instead
-> 	  of 'pid_t *'.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Oh, no. Image version should be incremented.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Why?  The format hasn't changed since my last set I don't think...
 
-> ---
->  include/linux/sched.h |    1 +
->  include/linux/types.h |    5 +++++
->  kernel/fork.c         |   16 ++++++++++++++--
->  3 files changed, 20 insertions(+), 2 deletions(-)
+Oh, I added the padding.  Thanks.  I have to bump it again for the
+next set (hopefully out today or tomorrow) as it adds securebits.
+(And hopefully a first stab at LSM, though it's not looking
+likely)
+
+> > +	__u32 uid, suid, euid, fsuid;
+> > +	__u32 gid, sgid, egid, fsgid;
+> > +	__u64 cap_i, cap_p, cap_e;
+> > +	__u64 cap_x;  /* bounding set ('X') */
+> > +	__s32 user_ref;
+> > +	__s32 groupinfo_ref;
+> > +	__u32 padding;
+> > +} __attribute__((aligned(8)));
+> > +
+> > +struct ckpt_hdr_groupinfo {
+> > +	struct ckpt_hdr h;
+> > +	__u32 ngroups;
+> > +	/*
+> > +	 * This is followed by ngroups __u32s
+> > +	 */
+> > +	__u32 groups[0];
+> > +} __attribute__((aligned(8)));
 > 
-> diff --git a/include/linux/sched.h b/include/linux/sched.h
-> index b4c38bc..8468e54 100644
-> --- a/include/linux/sched.h
-> +++ b/include/linux/sched.h
-> @@ -1995,6 +1995,7 @@ extern int disallow_signal(int);
+> > --- a/include/linux/sched.h
+> > +++ b/include/linux/sched.h
+> > @@ -1871,6 +1871,12 @@ static inline struct user_struct *get_uid(struct user_struct *u)
+> >  extern void free_uid(struct user_struct *);
+> >  extern void release_uids(struct user_namespace *ns);
+> >  
+> > +#ifdef CONFIG_CHECKPOINT
+> > +struct ckpt_ctx;
+> > +int checkpoint_write_user(struct ckpt_ctx *, struct user_struct *);
+> > +struct user_struct *restore_read_user(struct ckpt_ctx *);
+> > +#endif
 > 
->  extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
->  extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-> +extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *, struct target_pid_set __user *pid_set);
->  struct task_struct *fork_idle(int);
+> I'll rip credential stuff from sched.h, better not add more.
+
+Yeah I'll move this in cred.h.
+
+...
+
+> > +#define CKPT_MAXGROUPS 100
+> > +#define MAX_GROUPINFO_SIZE (sizeof(*h)+CKPT_MAXGROUPS*sizeof(gid_t))
+> > +struct group_info *restore_read_groupinfo(struct ckpt_ctx *ctx)
+> > +{
+> > +	struct group_info *g;
+> > +	struct ckpt_hdr_groupinfo *h;
+> > +	int i;
+> > +
+> > +	h = ckpt_read_buf_type(ctx, MAX_GROUPINFO_SIZE, CKPT_HDR_GROUPINFO);
+> > +	if (IS_ERR(h))
+> > +		return ERR_PTR(PTR_ERR(h));
+> > +	if (h->ngroups > CKPT_MAXGROUPS) {
+> > +		g = ERR_PTR(-EINVAL);
+> > +		goto out;
+> > +	}
+> > +	g = groups_alloc(h->ngroups);
+> > +	if (!g) {
+> > +		g = ERR_PTR(-ENOMEM);
+> > +		goto out;
+> > +	}
+> > +	for (i = 0; i < h->ngroups; i++)
+> > +		GROUP_AT(g, i) = h->groups[i];
+> > +
+> > +out:
+> > +	ckpt_hdr_put(ctx, h);
+> > +	return g;
+> > +}
 > 
->  extern void set_task_comm(struct task_struct *tsk, char *from);
-> diff --git a/include/linux/types.h b/include/linux/types.h
-> index 5abe354..17ec186 100644
-> --- a/include/linux/types.h
-> +++ b/include/linux/types.h
-> @@ -204,6 +204,11 @@ struct ustat {
->  	char			f_fpack[6];
->  };
-> 
-> +struct target_pid_set {
-> +	int num_pids;
-> +	pid_t *target_pids;
-> +};
-> +
->  #endif	/* __KERNEL__ */
->  #endif /*  __ASSEMBLY__ */
->  #endif /* _LINUX_TYPES_H */
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 373411e..a16ef7b 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1340,12 +1340,13 @@ struct task_struct * __cpuinit fork_idle(int cpu)
->   * It copies the process, and if successful kick-starts
->   * it and waits for it to finish using the VM if required.
->   */
-> -long do_fork(unsigned long clone_flags,
-> +long do_fork_with_pids(unsigned long clone_flags,
->  	      unsigned long stack_start,
->  	      struct pt_regs *regs,
->  	      unsigned long stack_size,
->  	      int __user *parent_tidptr,
-> -	      int __user *child_tidptr)
-> +	      int __user *child_tidptr,
-> +	      struct target_pid_set __user *pid_setp)
->  {
->  	struct task_struct *p;
->  	int trace = 0;
-> @@ -1448,6 +1449,17 @@ long do_fork(unsigned long clone_flags,
->  	return nr;
->  }
-> 
-> +long do_fork(unsigned long clone_flags,
-> +	      unsigned long stack_start,
-> +	      struct pt_regs *regs,
-> +	      unsigned long stack_size,
-> +	      int __user *parent_tidptr,
-> +	      int __user *child_tidptr)
-> +{
-> +	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-> +			parent_tidptr, child_tidptr, NULL);
-> +}
-> +
->  #ifndef ARCH_MIN_MMSTRUCT_ALIGN
->  #define ARCH_MIN_MMSTRUCT_ALIGN 0
->  #endif
-> -- 
-> 1.5.2.5
+> No checks, that groups in image are a) sorted, b) ->ngroups is compatible
+> with object image.
+
+Thanks, will fix.
+
+So I'd like to suggest that we take the pieces that we can both use
+(the code in groups.c, cred.c, security/security.c, and capabilities)
+and get it identical between both versions.  But we would need to
+find a way to ignore API differences for reading and writing the
+checkpoint file.
+
+BTW I have some credentials (users, user namespaces, and securebits)
+testcases under cr_tests/userns/ in git://git.sr71.net/~hallyn/cr_tests.git.
+Maybe you can reuse some of that for your own testing.
+
+thanks,
+-serge
