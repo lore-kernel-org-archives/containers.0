@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 2/7][v2] Have alloc_pidmap() return actual error code
-Date: Wed, 27 May 2009 21:38:16 -0700
-Message-ID: <20090528043816.GB16522@us.ibm.com>
+Subject: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
+Date: Wed, 27 May 2009 21:38:34 -0700
+Message-ID: <20090528043834.GC16522@us.ibm.com>
 References: <20090528043748.GA16522@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,82 +23,72 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-From 991fb474b055d36c4516cf7f79a247b7d79819ae Mon Sep 17 00:00:00 2001
+From a1fdec1036a952359d02a7c667d126bd2fff6804 Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:40 -0700
-Subject: [RFC][PATCH 2/7][v2] Have alloc_pidmap() return actual error code
+Date: Mon, 4 May 2009 01:17:41 -0700
+Subject: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
 
-alloc_pidmap() can fail either because all pid numbers are in use or
-because memory allocation failed.  With support for setting a specific
-pid number, alloc_pidmap() would also fail if either the given pid
-number is invalid or in use.
+With support for setting a specific pid number for a process,
+alloc_pidmap() will need a paramter a 'target_pid' parameter.
 
-Rather than have callers assume -ENOMEM, have alloc_pidmap() return
-the actual error.
+Changelog[v2]:
+	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
+	  actually checks for 'pid <= 0' for completeness).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/fork.c |    5 +++--
- kernel/pid.c  |    9 ++++++---
- 2 files changed, 9 insertions(+), 5 deletions(-)
+ kernel/pid.c |   28 ++++++++++++++++++++++++++--
+ 1 files changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index b9e2edd..f8411a8 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1119,10 +1119,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
- 		pid = alloc_pid(p->nsproxy->pid_ns);
--		if (!pid)
-+		if (IS_ERR(pid)) {
-+			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-+		}
- 
- 		if (clone_flags & CLONE_NEWPID) {
- 			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
 diff --git a/kernel/pid.c b/kernel/pid.c
-index 9ff33cc..b2d6a19 100644
+index b2d6a19..b44dd21 100644
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -158,6 +158,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	offset = pid & BITS_PER_PAGE_MASK;
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-+	rc = -EAGAIN;
- 	for (i = 0; i <= max_scan; ++i) {
- 		rc = alloc_pidmap_page(map);
- 		if (rc)
-@@ -188,12 +189,14 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 		} else {
- 			map = &pid_ns->pidmap[0];
- 			offset = RESERVED_PIDS;
--			if (unlikely(last == offset))
-+			if (unlikely(last == offset)) {
-+				rc = -EAGAIN;
- 				break;
-+			}
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
--	return -1;
-+	return rc;
+@@ -147,11 +147,35 @@ static int alloc_pidmap_page(struct pidmap *map)
+ 	return 0;
  }
  
- int next_pidmap(struct pid_namespace *pid_ns, int last)
-@@ -298,7 +301,7 @@ out_free:
- 		free_pidmap(pid->numbers + i);
+-static int alloc_pidmap(struct pid_namespace *pid_ns)
++static int set_pidmap(struct pid_namespace *pid_ns, int pid)
++{
++	int offset;
++	struct pidmap *map;
++
++	if (pid <= 0 || pid >= pid_max)
++		return -EINVAL;
++
++	offset = pid & BITS_PER_PAGE_MASK;
++	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
++
++	if (alloc_pidmap_page(map))
++		return -ENOMEM;
++
++	if (test_and_set_bit(offset, map->page))
++		return -EBUSY;
++
++	atomic_dec(&map->nr_free);
++	return pid;
++}
++
++static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+ {
+ 	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
+ 	struct pidmap *map;
  
- 	kmem_cache_free(ns->pid_cachep, pid);
--	pid = NULL;
-+	pid = ERR_PTR(nr);
- 	goto out;
- }
++	if (target_pid)
++		return set_pidmap(pid_ns, target_pid);
++
+ 	pid = last + 1;
+ 	if (pid >= pid_max)
+ 		pid = RESERVED_PIDS;
+@@ -270,7 +294,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 
+ 	tmp = ns;
+ 	for (i = ns->level; i >= 0; i--) {
+-		nr = alloc_pidmap(tmp);
++		nr = alloc_pidmap(tmp, 0);
+ 		if (nr < 0)
+ 			goto out_free;
  
 -- 
 1.5.2.5
