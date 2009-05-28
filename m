@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
-Date: Thu, 28 May 2009 07:52:52 -0500
-Message-ID: <20090528125252.GB14253@us.ibm.com>
+Subject: Re: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
+Date: Thu, 28 May 2009 07:54:24 -0500
+Message-ID: <20090528125424.GC14253@us.ibm.com>
 References: <20090528043748.GA16522@us.ibm.com>
-	<20090528043834.GC16522@us.ibm.com>
+	<20090528043929.GF16522@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090528043834.GC16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090528043929.GF16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,75 +25,97 @@ List-Id: containers.vger.kernel.org
 
 Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> >From a1fdec1036a952359d02a7c667d126bd2fff6804 Mon Sep 17 00:00:00 2001
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:41 -0700
-> Subject: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
+> Date: Mon, 4 May 2009 01:17:44 -0700
+> Subject: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
 > 
-> With support for setting a specific pid number for a process,
-> alloc_pidmap() will need a paramter a 'target_pid' parameter.
+> do_fork_with_pids() is same as do_fork(), except that it takes an
+> additional, 'pid_set', parameter. This parameter, currently unused,
+> specifies the set of target pids of the process in each of its pid
+> namespaces.
 > 
 > Changelog[v2]:
-> 	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
-> 	  actually checks for 'pid <= 0' for completeness).
+> 	- [v1] of this patch had some architecture-indpendent code in
+> 	  arch/x86/kernel/process_32.c.  To facilitate moving this code
+> 	  to kernel/fork.c, in the next patch, [v2] of the patch passes
+> 	  'struct target_pid_set __user *' to do_fork_with_pids() instead
+> 	  of 'pid_t *'.
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  kernel/pid.c |   28 ++++++++++++++++++++++++++--
->  1 files changed, 26 insertions(+), 2 deletions(-)
+>  include/linux/sched.h |    1 +
+>  include/linux/types.h |    5 +++++
+>  kernel/fork.c         |   16 ++++++++++++++--
+>  3 files changed, 20 insertions(+), 2 deletions(-)
 > 
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index b2d6a19..b44dd21 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -147,11 +147,35 @@ static int alloc_pidmap_page(struct pidmap *map)
->  	return 0;
+> diff --git a/include/linux/sched.h b/include/linux/sched.h
+> index b4c38bc..8468e54 100644
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -1995,6 +1995,7 @@ extern int disallow_signal(int);
+> 
+>  extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
+>  extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
+> +extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *, struct target_pid_set __user *pid_set);
+>  struct task_struct *fork_idle(int);
+> 
+>  extern void set_task_comm(struct task_struct *tsk, char *from);
+> diff --git a/include/linux/types.h b/include/linux/types.h
+> index 5abe354..17ec186 100644
+> --- a/include/linux/types.h
+> +++ b/include/linux/types.h
+> @@ -204,6 +204,11 @@ struct ustat {
+>  	char			f_fpack[6];
+>  };
+> 
+> +struct target_pid_set {
+> +	int num_pids;
+> +	pid_t *target_pids;
+> +};
+> +
+>  #endif	/* __KERNEL__ */
+>  #endif /*  __ASSEMBLY__ */
+>  #endif /* _LINUX_TYPES_H */
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 373411e..a16ef7b 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1340,12 +1340,13 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+>   * It copies the process, and if successful kick-starts
+>   * it and waits for it to finish using the VM if required.
+>   */
+> -long do_fork(unsigned long clone_flags,
+> +long do_fork_with_pids(unsigned long clone_flags,
+>  	      unsigned long stack_start,
+>  	      struct pt_regs *regs,
+>  	      unsigned long stack_size,
+>  	      int __user *parent_tidptr,
+> -	      int __user *child_tidptr)
+> +	      int __user *child_tidptr,
+> +	      struct target_pid_set __user *pid_setp)
+>  {
+>  	struct task_struct *p;
+>  	int trace = 0;
+> @@ -1448,6 +1449,17 @@ long do_fork(unsigned long clone_flags,
+>  	return nr;
 >  }
 > 
-> -static int alloc_pidmap(struct pid_namespace *pid_ns)
-> +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
+> +long do_fork(unsigned long clone_flags,
+> +	      unsigned long stack_start,
+> +	      struct pt_regs *regs,
+> +	      unsigned long stack_size,
+> +	      int __user *parent_tidptr,
+> +	      int __user *child_tidptr)
 > +{
-> +	int offset;
-> +	struct pidmap *map;
-> +
-> +	if (pid <= 0 || pid >= pid_max)
-> +		return -EINVAL;
-> +
-> +	offset = pid & BITS_PER_PAGE_MASK;
-> +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-> +
-> +	if (alloc_pidmap_page(map))
-> +		return -ENOMEM;
-> +
-> +	if (test_and_set_bit(offset, map->page))
-> +		return -EBUSY;
-> +
-> +	atomic_dec(&map->nr_free);
-> +	return pid;
+> +	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
+> +			parent_tidptr, child_tidptr, NULL);
 > +}
 > +
-> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
->  {
->  	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
->  	struct pidmap *map;
-> 
-> +	if (target_pid)
-> +		return set_pidmap(pid_ns, target_pid);
-> +
->  	pid = last + 1;
->  	if (pid >= pid_max)
->  		pid = RESERVED_PIDS;
-> @@ -270,7 +294,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
-> 
->  	tmp = ns;
->  	for (i = ns->level; i >= 0; i--) {
-> -		nr = alloc_pidmap(tmp);
-> +		nr = alloc_pidmap(tmp, 0);
->  		if (nr < 0)
->  			goto out_free;
-> 
+>  #ifndef ARCH_MIN_MMSTRUCT_ALIGN
+>  #define ARCH_MIN_MMSTRUCT_ALIGN 0
+>  #endif
 > -- 
 > 1.5.2.5
