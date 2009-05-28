@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/3] x86: export checkpoint_hdr.h
-Date: Thu, 28 May 2009 18:10:52 -0500
-Message-ID: <1243552253-7221-2-git-send-email-ntl@pobox.com>
+Subject: [PATCH 3/3] s390: export checkpoint_hdr.h
+Date: Thu, 28 May 2009 18:10:53 -0500
+Message-ID: <1243552253-7221-3-git-send-email-ntl@pobox.com>
 References: <1243552253-7221-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,20 +23,20 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/x86/include/asm/Kbuild |    1 +
+ arch/s390/include/asm/Kbuild |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/x86/include/asm/Kbuild b/arch/x86/include/asm/Kbuild
-index 4a8e80c..f76cb6e 100644
---- a/arch/x86/include/asm/Kbuild
-+++ b/arch/x86/include/asm/Kbuild
-@@ -2,6 +2,7 @@ include include/asm-generic/Kbuild.asm
- 
- header-y += boot.h
- header-y += bootparam.h
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 63a2341..3282a6e 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -8,6 +8,7 @@ header-y += ucontext.h
+ header-y += vtoc.h
+ header-y += zcrypt.h
+ header-y += chsc.h
 +header-y += checkpoint_hdr.h
- header-y += debugreg.h
- header-y += ldt.h
- header-y += msr-index.h
+ 
+ unifdef-y += cmb.h
+ unifdef-y += debug.h
 -- 
 1.6.0.6
