@@ -1,16 +1,18 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
-Date: Thu, 28 May 2009 10:30:19 -0700
-Message-ID: <20090528173019.GB26183@us.ibm.com>
+Date: Thu, 28 May 2009 12:47:08 -0500
+Message-ID: <20090528174708.GA2236@hallyn.com>
 References: <20090528043748.GA16522@us.ibm.com>
 	<20090528043945.GG16522@us.ibm.com>
 	<4A1EA73F.1080802@cs.columbia.edu>
+	<20090528151444.GA17772@us.ibm.com>
+	<20090528170103.GA26183@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A1EA73F.1080802-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20090528170103.GA26183-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +22,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> | > In general, can a task figure out it's depth in the pid-ns hierarchy ?
+> | 
+> | In user-space?  No.
+> 
+> Not from any existing user interface. But hypothetically or in the
+> long-term can/should sys_checkpoint() not be able to figure out if
+> it has to C/R say a bash shell that has nested pid namespaces ?
+> 
+> I am guessing sys_checkpoint() can know if its crossing a pid-ns
+> boundary by comparing or computing the max nesting level while
+> walking a process tree. i.e if task_pid(task)->pid_ns->level is
+> not the same for all process in the tree, then we have nested
+> namespaces. How to checkpoint/restart such a tree is of course a
+> bigger challenge.
+> 
+> But if sys_checkpoint() can find the max nesting level ? If that
+> info is saved in checkpoint image, clone_with_pids() could
+> use that info - no ?
 
-| > +
-| > +	if (num_pids < 0 || num_pids > task_pid(current)->level + 1)
-| > +		return ERR_PTR(-EINVAL);
-| 
-| What happens if (num_pids < task_pid(current->level) + 1) ?
-| Unless I missed something elsewhere, I suspect it will oops,
+If a container at pidns level 2, with 1 more pidns underneath it,
+is checkpointed, then the checkpoint image should only reflect
+the base and child pidns.  The two ancestor pidns levels should
+not be there.
 
-Yep. the kzalloc() below this check should use:
-
-	task_pid(current)->pid_ns->level+1 * sizeof(pid_t)
-
-| because in patch #4, you had:
-| 
-|  	for (i = ns->level; i >= 0; i--) {
-| -		nr = alloc_pidmap(tmp, 0);
-| +		tpid = 0;
-| +		if (target_pids)
-| +			tpid = target_pids[i];
-| +
-| +		nr = alloc_pidmap(tmp, tpid);
-|  		if (nr < 0)
-|  			goto out_free;
-| 
-| In general, can a task figure out it's depth in the pid-ns hierarchy ?
-| 
-| I'm thinking of a case in which a checkpoint was taken of a (flat)
-| container which is in depth 2 of the global hierarchy, and then it
-| is restarted in depth 3, or in depth 1.
-| 
-| Perhaps the semantics of the syscall should be that target_pids will
-| indicate the desired pids _from the bottom up_. A value of "0" means
-
-Hmm, I thought bottom up would be confusing, but I guess that would
-work better :-) Will fix and resend.
-
-| "don't care" and let the kernel assign. The remaining levels (upwards)
-| will be treated as zeros.
-| 
-| [...]
-| 
-| Oren.
-| 
+-serge
