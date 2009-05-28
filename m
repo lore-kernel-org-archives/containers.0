@@ -1,14 +1,17 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 5/7][v2] Add target_pids parameter to copy_process()
-Date: Wed, 27 May 2009 21:39:10 -0700
-Message-ID: <20090528043910.GE16522@us.ibm.com>
-References: <20090528043748.GA16522@us.ibm.com>
+From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 02/20] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Thu, 28 May 2009 10:52:07 +0200
+Message-ID: <20090528085207.GA18909__10634.790096856$1243500891$gmane$org@gandalf.sssup.it>
+References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
+	<1243377729-2176-3-git-send-email-vgoyal@redhat.com>
+	<e98e18940905271353kc6890dbxa1ea63026c8faec1@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090528043748.GA16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <e98e18940905271353kc6890dbxa1ea63026c8faec1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,69 +21,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+> From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Date: Wed, May 27, 2009 01:53:59PM -0700
+>
+> On Tue, May 26, 2009 at 3:41 PM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > This is common fair queuing code in elevator layer. This is controlled by
+...
+> > +/**
+> > + * __bfq_lookup_next_entity - return the first eligible entity in @st.
+> > + * @st: the service tree.
+> > + *
+> > + * Update the virtual time in @st and return the first eligible entity
+> > + * it contains.
+> > + */
+> > +static struct io_entity *__bfq_lookup_next_entity(struct io_service_tree *st)
+> > +{
+> > +	struct io_entity *entity;
+> > +
+> > +	if (RB_EMPTY_ROOT(&st->active))
+> > +		return NULL;
+> > +
+> > +	bfq_update_vtime(st);
+> 
+> Vivek, Paolo, Fabio,
+> Over here we call bfq_update_vtime(), and this function could have
+> been called even when we are just doing a lookup (and not an extract).
+> So vtime is updated while we are not really selecting the next queue
+> for service (for an example, see elv_preempt_queue()). This can result
+> in a call to update_vtime when only an entity with small weight (say
+> weight=1) is backlogged and another entity with bigger weight (say 10)
+> is getting serviced so it is not in the tree (we extract the entity
+> which is getting service). This results in a big vtime jump to the
+> start time of the entity with weight 1 (entity of weight 1 would have
+> big start times, as it has small weight). Now when another entity with
+> bigger weight (say 90) gets backlogged, it is assigned a new vtime
+> from service tree's vtime, causing it to get a big value. In the
+> meanwhile, iog for weight 10 keeps getting service for many quantums,
+> as it was continuously backlogged.
+> 
+> The problem happens because we extract an entity (removing it from the
+> tree) while it is getting service, and do vtime jumps based on what is
+> still in the tree. I think we need to add an extra check on the vtime
+> of the entity in service, before we take a vtime jump.
+> 
+> I have actually seen this happening when trying to debug on of my
+> tests. Please let me know what you think.
+> 
 
-From 432bc68b622661cd4a28379e98e3ecc8f44d915d Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:43 -0700
-Subject: [RFC][PATCH 5/7][v2] Add target_pids parameter to copy_process()
+IIRC this behavior is not coming from bfq, as the original code
+called __bfq_lookup_next_entity() without extraction only if there
+was no entity under service (in bfq_update_next_active() it checked
+for sd->active_entity != NULL).
 
-Add a 'target_pids' parameter to copy_process().  The new parameter will
-be used in a follow-on patch when clone_with_pids() is implemented.
+I've not looked at the details of what changed, thus I don't know
+why the old behavior cannot be maintained, but the virtual time jump
+should be avoided in this case (and it is not specified by the wf2q+
+algorithm).
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- kernel/fork.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/kernel/fork.c b/kernel/fork.c
-index d2d69d3..373411e 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -949,12 +949,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 					unsigned long stack_size,
- 					int __user *child_tidptr,
- 					struct pid *pid,
-+					pid_t *target_pids,
- 					int trace)
- {
- 	int retval;
- 	struct task_struct *p;
- 	int cgroup_callbacks_done = 0;
--	pid_t *target_pids = NULL;
- 
- 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
- 		return ERR_PTR(-EINVAL);
-@@ -1327,7 +1327,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
- 	struct pt_regs regs;
- 
- 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
--			    &init_struct_pid, 0);
-+			    &init_struct_pid, NULL, 0);
- 	if (!IS_ERR(task))
- 		init_idle(task, cpu);
- 
-@@ -1350,6 +1350,7 @@ long do_fork(unsigned long clone_flags,
- 	struct task_struct *p;
- 	int trace = 0;
- 	long nr;
-+	pid_t *target_pids = NULL;
- 
- 	/*
- 	 * Do some preliminary argument and permissions checking before we
-@@ -1390,7 +1391,7 @@ long do_fork(unsigned long clone_flags,
- 		trace = tracehook_prepare_clone(clone_flags);
- 
- 	p = copy_process(clone_flags, stack_start, regs, stack_size,
--			 child_tidptr, NULL, trace);
-+			 child_tidptr, NULL, target_pids, trace);
- 	/*
- 	 * Do this prior waking up the new thread - the thread pointer
- 	 * might get invalid after that point, if the thread exits quickly.
--- 
-1.5.2.5
+[ sorry for the excessive trimming, but due to some charset problems
+  the quotations were unreadable ]
