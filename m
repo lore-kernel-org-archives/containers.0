@@ -1,15 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
-Date: Thu, 28 May 2009 05:02:13 -0700
-Message-ID: <20090528120213.GM28083@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
+Date: Thu, 28 May 2009 07:52:52 -0500
+Message-ID: <20090528125252.GB14253@us.ibm.com>
 References: <20090528043748.GA16522@us.ibm.com>
-	<20090528043945.GG16522@us.ibm.com>
+	<20090528043834.GC16522@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090528043945.GG16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090528043834.GC16522-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,51 +23,77 @@ To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.o
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, May 27, 2009 at 09:39:45PM -0700, Sukadev Bhattiprolu wrote:
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
+> >From a1fdec1036a952359d02a7c667d126bd2fff6804 Mon Sep 17 00:00:00 2001
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 4 May 2009 01:17:45 -0700
-> Subject: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
+> Date: Mon, 4 May 2009 01:17:41 -0700
+> Subject: [RFC][PATCH 3/7][v2] Add target_pid parameter to alloc_pidmap()
 > 
-> clone_with_pids() is same as clone(), except that it takes a 'target_pid_set'
-> paramter which lets caller choose a specific pid number for the child process
-> in each of the child process's pid namespace. This system call would be needed
-> to implement Checkpoint/Restart (i.e after a checkpoint, restart a process with
-> its original pids).
+> With support for setting a specific pid number for a process,
+> alloc_pidmap() will need a paramter a 'target_pid' parameter.
 > 
-> Call clone_with_pids as follows:
+> Changelog[v2]:
+> 	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
+> 	  actually checks for 'pid <= 0' for completeness).
 > 
-> 	pid_t pids[] = { 0, 77, 99 };
-> 	struct target_pid_set pid_set;
-> 
-> 	pid_set.num_pids = sizeof(pids) / sizeof(int);
-> 	pid_set.target_pids = &pids;
-> 
-> 	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
-> 
-> If a target-pid is 0, the kernel continues to assign a pid for the process in
-> that namespace. In the above example, pids[0] is 0, meaning the kernel will
-> assign next available pid to the process in init_pid_ns. But kernel will assign
-> pid 77 in the child pid namespace 1 and pid 99 in pid namespace 2. If either
-> 77 or 99 are taken, the system call fails with -EBUSY.
-> 
-> If 'pid_set.num_pids' exceeds the current nesting level of pid namespaces,
-> the system call fails with -EINVAL.
-> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-The patch description shows the solution before alluding to the problem.
-You could prepend a more elaborate problem description:
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-	Container restart requires that a task have the same pid it had
-	when it was checkpointed. When containers are nested the tasks within
-	the containers exist in multiple pid namespaces and hence have multiple
-	pids to specify during restart.
-
-	clone_with_pids(), intended for use during restart, is the same as clone(), 
-	...
-
-I think that makes it clearer why you're introducing clone_with_pids()
-and why clone() or clone_with_pid() would be insufficient.
-
-Cheers,
-	-Matt
+> ---
+>  kernel/pid.c |   28 ++++++++++++++++++++++++++--
+>  1 files changed, 26 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index b2d6a19..b44dd21 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -147,11 +147,35 @@ static int alloc_pidmap_page(struct pidmap *map)
+>  	return 0;
+>  }
+> 
+> -static int alloc_pidmap(struct pid_namespace *pid_ns)
+> +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
+> +{
+> +	int offset;
+> +	struct pidmap *map;
+> +
+> +	if (pid <= 0 || pid >= pid_max)
+> +		return -EINVAL;
+> +
+> +	offset = pid & BITS_PER_PAGE_MASK;
+> +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+> +
+> +	if (alloc_pidmap_page(map))
+> +		return -ENOMEM;
+> +
+> +	if (test_and_set_bit(offset, map->page))
+> +		return -EBUSY;
+> +
+> +	atomic_dec(&map->nr_free);
+> +	return pid;
+> +}
+> +
+> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+>  {
+>  	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
+>  	struct pidmap *map;
+> 
+> +	if (target_pid)
+> +		return set_pidmap(pid_ns, target_pid);
+> +
+>  	pid = last + 1;
+>  	if (pid >= pid_max)
+>  		pid = RESERVED_PIDS;
+> @@ -270,7 +294,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+> 
+>  	tmp = ns;
+>  	for (i = ns->level; i >= 0; i--) {
+> -		nr = alloc_pidmap(tmp);
+> +		nr = alloc_pidmap(tmp, 0);
+>  		if (nr < 0)
+>  			goto out_free;
+> 
+> -- 
+> 1.5.2.5
