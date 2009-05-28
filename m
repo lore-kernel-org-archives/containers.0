@@ -1,18 +1,12 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
-Date: Thu, 28 May 2009 12:47:08 -0500
-Message-ID: <20090528174708.GA2236@hallyn.com>
-References: <20090528043748.GA16522@us.ibm.com>
-	<20090528043945.GG16522@us.ibm.com>
-	<4A1EA73F.1080802@cs.columbia.edu>
-	<20090528151444.GA17772@us.ibm.com>
-	<20090528170103.GA26183@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] cr: s390: define CKPT_ARCH_ID for s390
+Date: Thu, 28 May 2009 12:45:04 -0500
+Message-ID: <20090528174503.GA22373@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090528170103.GA26183-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,35 +16,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-> | Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> | > In general, can a task figure out it's depth in the pid-ns hierarchy ?
-> | 
-> | In user-space?  No.
-> 
-> Not from any existing user interface. But hypothetically or in the
-> long-term can/should sys_checkpoint() not be able to figure out if
-> it has to C/R say a bash shell that has nested pid namespaces ?
-> 
-> I am guessing sys_checkpoint() can know if its crossing a pid-ns
-> boundary by comparing or computing the max nesting level while
-> walking a process tree. i.e if task_pid(task)->pid_ns->level is
-> not the same for all process in the tree, then we have nested
-> namespaces. How to checkpoint/restart such a tree is of course a
-> bigger challenge.
-> 
-> But if sys_checkpoint() can find the max nesting level ? If that
-> info is saved in checkpoint image, clone_with_pids() could
-> use that info - no ?
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/include/asm/checkpoint_hdr.h |    5 +++++
+ include/linux/checkpoint_hdr.h         |    1 +
+ 2 files changed, 6 insertions(+), 0 deletions(-)
 
-If a container at pidns level 2, with 1 more pidns underneath it,
-is checkpointed, then the checkpoint image should only reflect
-the base and child pidns.  The two ancestor pidns levels should
-not be there.
-
--serge
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index 185194b..fc0ace8 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -20,6 +20,11 @@
+ #include <sys/user.h>
+ #endif
+ 
++#ifdef CONFIG_64BIT
++#define CKPT_ARCH_ID	CKPT_ARCH_S390X
++/* else - if we ever support 32bit - CKPT_ARCH_S390 */
++#endif
++
+ /*
+  * Notes
+  * NUM_GPRS defined in <asm/ptrace.h> to be 16
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 46f38f3..7f4972b 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -89,6 +89,7 @@ enum {
+ /* architecture */
+ enum {
+ 	CKPT_ARCH_X86_32 = 1,
++	CKPT_ARCH_S390X,
+ };
+ 
+ /* shared objrects (objref) */
+-- 
+1.6.1
