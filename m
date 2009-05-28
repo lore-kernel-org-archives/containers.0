@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 4/7][v2] Add target_pids parameter to alloc_pid()
-Date: Wed, 27 May 2009 21:38:52 -0700
-Message-ID: <20090528043852.GD16522@us.ibm.com>
+Subject: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
+Date: Wed, 27 May 2009 21:39:29 -0700
+Message-ID: <20090528043929.GF16522@us.ibm.com>
 References: <20090528043748.GA16522@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,88 +24,93 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:42 -0700
-Subject: [RFC][PATCH 4/7][v2] Add target_pids parameter to alloc_pid()
+Date: Mon, 4 May 2009 01:17:44 -0700
+Subject: [RFC][PATCH 6/7][v2] Define do_fork_with_pids()
 
-With support for setting a specific pid numbers, alloc_pid() would need
-to take a set of 'target-pids' which gives the user-specified pids. Add
-this parameter to alloc_pid(), but leave it set to NULL for now. The
-parameter will be used in a follow-on patch.
+do_fork_with_pids() is same as do_fork(), except that it takes an
+additional, 'pid_set', parameter. This parameter, currently unused,
+specifies the set of target pids of the process in each of its pid
+namespaces.
+
+Changelog[v2]:
+	- [v1] of this patch had some architecture-indpendent code in
+	  arch/x86/kernel/process_32.c.  To facilitate moving this code
+	  to kernel/fork.c, in the next patch, [v2] of the patch passes
+	  'struct target_pid_set __user *' to do_fork_with_pids() instead
+	  of 'pid_t *'.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/pid.h |    2 +-
- kernel/fork.c       |    3 ++-
- kernel/pid.c        |    9 +++++++--
- 3 files changed, 10 insertions(+), 4 deletions(-)
+ include/linux/sched.h |    1 +
+ include/linux/types.h |    5 +++++
+ kernel/fork.c         |   16 ++++++++++++++--
+ 3 files changed, 20 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index 49f1c2f..914185d 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, int last);
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index b4c38bc..8468e54 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1995,6 +1995,7 @@ extern int disallow_signal(int);
  
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
- extern void free_pid(struct pid *pid);
+ extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
+ extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
++extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *, struct target_pid_set __user *pid_set);
+ struct task_struct *fork_idle(int);
  
- /*
+ extern void set_task_comm(struct task_struct *tsk, char *from);
+diff --git a/include/linux/types.h b/include/linux/types.h
+index 5abe354..17ec186 100644
+--- a/include/linux/types.h
++++ b/include/linux/types.h
+@@ -204,6 +204,11 @@ struct ustat {
+ 	char			f_fpack[6];
+ };
+ 
++struct target_pid_set {
++	int num_pids;
++	pid_t *target_pids;
++};
++
+ #endif	/* __KERNEL__ */
+ #endif /*  __ASSEMBLY__ */
+ #endif /* _LINUX_TYPES_H */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index f8411a8..d2d69d3 100644
+index 373411e..a16ef7b 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -954,6 +954,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	int retval;
+@@ -1340,12 +1340,13 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+  * It copies the process, and if successful kick-starts
+  * it and waits for it to finish using the VM if required.
+  */
+-long do_fork(unsigned long clone_flags,
++long do_fork_with_pids(unsigned long clone_flags,
+ 	      unsigned long stack_start,
+ 	      struct pt_regs *regs,
+ 	      unsigned long stack_size,
+ 	      int __user *parent_tidptr,
+-	      int __user *child_tidptr)
++	      int __user *child_tidptr,
++	      struct target_pid_set __user *pid_setp)
+ {
  	struct task_struct *p;
- 	int cgroup_callbacks_done = 0;
-+	pid_t *target_pids = NULL;
- 
- 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
- 		return ERR_PTR(-EINVAL);
-@@ -1119,7 +1120,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
- 		if (IS_ERR(pid)) {
- 			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index b44dd21..090b221 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -280,13 +280,14 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
+ 	int trace = 0;
+@@ -1448,6 +1449,17 @@ long do_fork(unsigned long clone_flags,
+ 	return nr;
  }
  
--struct pid *alloc_pid(struct pid_namespace *ns)
-+struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
- {
- 	struct pid *pid;
- 	enum pid_type type;
- 	int i, nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
-+	int tpid;
- 
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid)
-@@ -294,7 +295,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp, 0);
-+		tpid = 0;
-+		if (target_pids)
-+			tpid = target_pids[i];
++long do_fork(unsigned long clone_flags,
++	      unsigned long stack_start,
++	      struct pt_regs *regs,
++	      unsigned long stack_size,
++	      int __user *parent_tidptr,
++	      int __user *child_tidptr)
++{
++	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
++			parent_tidptr, child_tidptr, NULL);
++}
 +
-+		nr = alloc_pidmap(tmp, tpid);
- 		if (nr < 0)
- 			goto out_free;
- 
+ #ifndef ARCH_MIN_MMSTRUCT_ALIGN
+ #define ARCH_MIN_MMSTRUCT_ALIGN 0
+ #endif
 -- 
 1.5.2.5
