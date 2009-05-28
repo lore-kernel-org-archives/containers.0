@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 18/38] C/R: core stuff
 Date: Thu, 28 May 2009 13:17:15 -0500
-Message-ID: <20090528181715.GA2384__16879.0067117245$1243534402$gmane$org@hallyn.com>
+Message-ID: <20090528181715.GA2384__33167.1747066595$1243534484$gmane$org@hallyn.com>
 References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
 	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
 	<20090526131644.GA20920@hallyn.com>
