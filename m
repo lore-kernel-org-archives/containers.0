@@ -1,17 +1,18 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 02/20] io-controller: Common flat fair queuing code in
-	elevaotor layer
-Date: Thu, 28 May 2009 12:00:03 -0400
-Message-ID: <20090528160003.GA4335__7999.45615367523$1243526600$gmane$org@redhat.com>
-References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
-	<1243377729-2176-3-git-send-email-vgoyal@redhat.com>
-	<e98e18940905271353kc6890dbxa1ea63026c8faec1@mail.gmail.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v16][PATCH 19/43] c/r: external checkpoint of a task other
+	than ourself
+Date: Thu, 28 May 2009 20:33:42 +0400
+Message-ID: <20090528163342.GA18962__38361.3408347175$1243528460$gmane$org@x200.localdomain>
+References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
+	<1243445589-32388-20-git-send-email-orenl@cs.columbia.edu>
+	<20090527211950.GA7855@x200.localdomain>
+	<Pine.LNX.4.64.0905271831030.7284@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <e98e18940905271353kc6890dbxa1ea63026c8faec1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0905271831030.7284-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,84 +22,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, May 27, 2009 at 01:53:59PM -0700, Nauman Rafique wrote:
+On Wed, May 27, 2009 at 06:32:28PM -0400, Oren Laadan wrote:
+> On Thu, 28 May 2009, Alexey Dobriyan wrote:
+> 
+> > On Wed, May 27, 2009 at 01:32:45PM -0400, Oren Laadan wrote:
+> > > Now we can do "external" checkpoint, i.e. act on another task.
+> > 
+> > > +static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+> > > +{
+> > > +	if (t->state == TASK_DEAD) {
+> > > +		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
+> > > +		return -EAGAIN;
+> > > +	}
+> > > +
+> > > +	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
+> > > +		__ckpt_write_err(ctx, "access to task %d (%s) denied",
+> > > +				 task_pid_vnr(t), t->comm);
+> > > +		return -EPERM;
+> > > +	}
+> > > +
+> > > +	/* verify that the task is frozen (unless self) */
+> > > +	if (t != current && !frozen(t)) {
+> > > +		__ckpt_write_err(ctx, "task %d (%s) is not frozen",
+> > > +				 task_pid_vnr(t), t->comm);
+> > > +		return -EBUSY;
+> > > +	}
+> > > +
+> > > +	/* FIX: add support for ptraced tasks */
+> > > +	if (task_ptrace(t)) {
+> > > +		__ckpt_write_err(ctx, "task %d (%s) is ptraced",
+> > > +				 task_pid_vnr(t), t->comm);
+> > > +		return -EBUSY;
+> > > +	}
+> > > +
+> > > +	return 0;
+> > > +}
+> > > +
+> > > +static int get_container(struct ckpt_ctx *ctx, pid_t pid)
+> > > +{
+> > > +	struct task_struct *task = NULL;
+> > > +	struct nsproxy *nsproxy = NULL;
+> > > +	int ret;
+> > > +
+> > > +	ctx->root_pid = pid;
+> > > +
+> > > +	read_lock(&tasklist_lock);
+> > > +	task = find_task_by_vpid(pid);
+> > > +	if (task)
+> > > +		get_task_struct(task);
+> > > +	read_unlock(&tasklist_lock);
+> > > +
+> > > +	if (!task)
+> > > +		return -ESRCH;
+> > > +
+> > > +	ret = may_checkpoint_task(ctx, task);
+> > > +	if (ret) {
+> > > +		ckpt_write_err(ctx, NULL);
+> > > +		put_task_struct(task);
+> > > +		return ret;
+> > > +	}
+> > > +
+> > > +	rcu_read_lock();
+> > > +	nsproxy = task_nsproxy(task);
+> > > +	get_nsproxy(nsproxy);
+> > 
+> > Will oops if init is multi-threaded and thread group leader exited
+> > (nsproxy = NULL). I need to think what to do, too.
+> 
+> 
+> ood catch. Since all threads share same nsproxy (except those
+> who exits.. duh) we can test for this case, and get the nsproxy
+> from any of the other threads, something like this (untested):
 
-[..]
-> > +/**
-> > + * __bfq_lookup_next_entity - return the first eligible entity in @st.
-> > + * @st: the service tree.
-> > + *
-> > + * Update the virtual time in @st and return the first eligible entity
-> > + * it contains.
-> > + */
-> > +static struct io_entity *__bfq_lookup_next_entity(struct io_service_tr=
-ee *st)
-> > +{
-> > + =A0 =A0 =A0 struct io_entity *entity;
-> > +
-> > + =A0 =A0 =A0 if (RB_EMPTY_ROOT(&st->active))
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return NULL;
-> > +
-> > + =A0 =A0 =A0 bfq_update_vtime(st);
-> =
+I don't know if such behaviour was intented, but threads have only common
+pid_ns not whole nsproxy. CLONE_THREAD|CLONE_NEWUTS works just fine.
 
-> Vivek, Paolo, Fabio,
-> Over here we call bfq_update_vtime(), and this function could have
-> been called even when we are just doing a lookup (and not an extract).
-> So vtime is updated while we are not really selecting the next queue
-> for service (for an example, see elv_preempt_queue()). This can result
-> in a call to update_vtime when only an entity with small weight (say
-> weight=3D1) is backlogged and another entity with bigger weight (say 10)
-> is getting serviced so it is not in the tree (we extract the entity
-> which is getting service). This results in a big vtime jump to the
-> start time of the entity with weight 1 (entity of weight 1 would have
-> big start times, as it has small weight). Now when another entity with
-> bigger weight (say 90) gets backlogged, it is assigned a new vtime
-> from service tree's vtime, causing it to get a big value. In the
-> meanwhile, iog for weight 10 keeps getting service for many quantums,
-> as it was continuously backlogged.
-> =
-
-> The problem happens because we extract an entity (removing it from the
-> tree) while it is getting service, and do vtime jumps based on what is
-> still in the tree. I think we need to add an extra check on the vtime
-> of the entity in service, before we take a vtime jump.
-> =
-
-> I have actually seen this happening when trying to debug on of my
-> tests. Please let me know what you think.
-> =
-
-
-Hi Nauman,
-
-This sounds like a problem but apart from elv_preempt_queue(), in which path
-do you see it?
-
-Initially fabio posted the patches where preemption was allowed only if
-the preempting queue is the next one to be served. To keep the behavior
-same as CFQ, I have changed that logic and if we decide to preempt the
-current queue (based on many checks like sync or async), I expire the
-current queue and add the new queue to the front of the service tree so
-that it is selected next. It does impact the fairness a bit but that's how
-cfq does it today and concept of preemption with-in same prio class is
-somewhat peculiar.
-
-So in latest patches preemption path is covered. There does not seem to be
-other paths where we do lookups while and active entity is being served.
-For example, update_next_active() does not continue with lookup if there
-is an active entity. So with this version of patch, you should not face
-the issue.
-
-In general, I think it is a good idea to fix it in update_vtime() so
-that not to udpate vtime if there is an active entity and not rely on =
-
-caller who makes sure that update_vtime() is not called when there is
-an active entity. Do you have a quick patch for that?
-
-Thanks
-Vivek
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -522,9 +522,33 @@ static int get_container(struct ckpt_ctx *ctx, pid_t pid)
+>  
+>  	rcu_read_lock();
+>  	nsproxy = task_nsproxy(task);
+> -	get_nsproxy(nsproxy);
+> +	if (nsproxy)
+> +		get_nsproxy(nsproxy);
+>  	rcu_read_unlock();
+>  
+> +	/*
+> +	 * If we hit a zombie thread-group-leader, nsproxy will be NULL,
+> +	 * and we instead grab it from one of the other threads.
+> +	 */
+> +	if (!nsproxy) {
+> +		struct task_struct *p = next_thread(task);
+> +
+> +		BUG_ON(task->state != TASK_DEAD);
+> +		read_lock(&tasklist_lock);
+> +		while (p != task && !task_nsproxy(p))
+> +			p = next_thread(p);
+> +		nsproxy = get_nsproxy(p);
+> +		if (nsproxy)
+> +			get_nsproxy(nsproxy);
+> +		read_unlock(&tasklist_lock);
+> +	}
+> +
+> +	/* still not ... too bad ... */
+> +	if (!nsproxy) {
+> +		put_task_struct(task);
+> +		return -ESRCH;
+> +	}
+> +
+>  	ctx->root_task = task;
+>  	ctx->root_nsproxy = nsproxy;
+>  	ctx->root_init = is_container_init(task);
