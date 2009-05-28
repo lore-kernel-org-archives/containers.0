@@ -1,18 +1,17 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC v16][PATCH 19/43] c/r: external checkpoint of a task other
-	than ourself
-Date: Thu, 28 May 2009 20:33:42 +0400
-Message-ID: <20090528163342.GA18962__38361.3408347175$1243528460$gmane$org@x200.localdomain>
-References: <1243445589-32388-1-git-send-email-orenl@cs.columbia.edu>
-	<1243445589-32388-20-git-send-email-orenl@cs.columbia.edu>
-	<20090527211950.GA7855@x200.localdomain>
-	<Pine.LNX.4.64.0905271831030.7284@takamine.ncl.cs.columbia.edu>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 15/20] io-controller: map async requests to appropriate
+	cgroup
+Date: Thu, 28 May 2009 12:57:10 -0400
+Message-ID: <20090528165710.GB4335__31574.6290064$1243529898$gmane$org@redhat.com>
+References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
+	<1243377729-2176-16-git-send-email-vgoyal@redhat.com>
+	<20090528.182740.193697101.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0905271831030.7284-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <20090528.182740.193697101.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,119 +21,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, May 27, 2009 at 06:32:28PM -0400, Oren Laadan wrote:
-> On Thu, 28 May 2009, Alexey Dobriyan wrote:
+On Thu, May 28, 2009 at 06:27:40PM +0900, Ryo Tsuruta wrote:
+> Hi Vivek,
 > 
-> > On Wed, May 27, 2009 at 01:32:45PM -0400, Oren Laadan wrote:
-> > > Now we can do "external" checkpoint, i.e. act on another task.
-> > 
-> > > +static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-> > > +{
-> > > +	if (t->state == TASK_DEAD) {
-> > > +		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
-> > > +		return -EAGAIN;
-> > > +	}
-> > > +
-> > > +	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
-> > > +		__ckpt_write_err(ctx, "access to task %d (%s) denied",
-> > > +				 task_pid_vnr(t), t->comm);
-> > > +		return -EPERM;
-> > > +	}
-> > > +
-> > > +	/* verify that the task is frozen (unless self) */
-> > > +	if (t != current && !frozen(t)) {
-> > > +		__ckpt_write_err(ctx, "task %d (%s) is not frozen",
-> > > +				 task_pid_vnr(t), t->comm);
-> > > +		return -EBUSY;
-> > > +	}
-> > > +
-> > > +	/* FIX: add support for ptraced tasks */
-> > > +	if (task_ptrace(t)) {
-> > > +		__ckpt_write_err(ctx, "task %d (%s) is ptraced",
-> > > +				 task_pid_vnr(t), t->comm);
-> > > +		return -EBUSY;
-> > > +	}
-> > > +
-> > > +	return 0;
-> > > +}
-> > > +
-> > > +static int get_container(struct ckpt_ctx *ctx, pid_t pid)
-> > > +{
-> > > +	struct task_struct *task = NULL;
-> > > +	struct nsproxy *nsproxy = NULL;
-> > > +	int ret;
-> > > +
-> > > +	ctx->root_pid = pid;
-> > > +
-> > > +	read_lock(&tasklist_lock);
-> > > +	task = find_task_by_vpid(pid);
-> > > +	if (task)
-> > > +		get_task_struct(task);
-> > > +	read_unlock(&tasklist_lock);
-> > > +
-> > > +	if (!task)
-> > > +		return -ESRCH;
-> > > +
-> > > +	ret = may_checkpoint_task(ctx, task);
-> > > +	if (ret) {
-> > > +		ckpt_write_err(ctx, NULL);
-> > > +		put_task_struct(task);
-> > > +		return ret;
-> > > +	}
-> > > +
-> > > +	rcu_read_lock();
-> > > +	nsproxy = task_nsproxy(task);
-> > > +	get_nsproxy(nsproxy);
-> > 
-> > Will oops if init is multi-threaded and thread group leader exited
-> > (nsproxy = NULL). I need to think what to do, too.
+> > +#ifdef CONFIG_TRACK_ASYNC_CONTEXT
+> > +	if (elv_bio_sync(bio)) {
+> > +		/* sync io. Determine cgroup from submitting task context. */
+> > +		cgroup = task_cgroup(current, io_subsys_id);
+> > +		return cgroup;
+> > +	}
+> > +
+> > +	/* Async io. Determine cgroup from with cgroup id stored in page */
+> > +	bio_cgroup_id = get_blkio_cgroup_id(bio);
+> > +
+> > +	if (!bio_cgroup_id)
+> > +		return NULL;
+> > +
+> > +	cgroup = blkio_cgroup_lookup(bio_cgroup_id);
+> > +#else
+> > +	cgroup = task_cgroup(current, io_subsys_id);
+> > +#endif
+> > +	return cgroup;
+> > +}
 > 
+> There is a case where a kernel thread (such as device-mapper drivers)
+> submits a sync IO instead of a task which originates the IO. I think
+> you should always use get_blkio_cgroup_id() to determine cgroup.
 > 
-> ood catch. Since all threads share same nsproxy (except those
-> who exits.. duh) we can test for this case, and get the nsproxy
-> from any of the other threads, something like this (untested):
 
-I don't know if such behaviour was intented, but threads have only common
-pid_ns not whole nsproxy. CLONE_THREAD|CLONE_NEWUTS works just fine.
+Hi Ryo,
 
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -522,9 +522,33 @@ static int get_container(struct ckpt_ctx *ctx, pid_t pid)
->  
->  	rcu_read_lock();
->  	nsproxy = task_nsproxy(task);
-> -	get_nsproxy(nsproxy);
-> +	if (nsproxy)
-> +		get_nsproxy(nsproxy);
->  	rcu_read_unlock();
->  
-> +	/*
-> +	 * If we hit a zombie thread-group-leader, nsproxy will be NULL,
-> +	 * and we instead grab it from one of the other threads.
-> +	 */
-> +	if (!nsproxy) {
-> +		struct task_struct *p = next_thread(task);
-> +
-> +		BUG_ON(task->state != TASK_DEAD);
-> +		read_lock(&tasklist_lock);
-> +		while (p != task && !task_nsproxy(p))
-> +			p = next_thread(p);
-> +		nsproxy = get_nsproxy(p);
-> +		if (nsproxy)
-> +			get_nsproxy(nsproxy);
-> +		read_unlock(&tasklist_lock);
-> +	}
-> +
-> +	/* still not ... too bad ... */
-> +	if (!nsproxy) {
-> +		put_task_struct(task);
-> +		return -ESRCH;
-> +	}
-> +
->  	ctx->root_task = task;
->  	ctx->root_nsproxy = nsproxy;
->  	ctx->root_init = is_container_init(task);
+Ok. Can you give some examples of drivers which are submitting reads in
+different context al-together. You mentioned in the past that dm-crypt
+looks like the one. How does current CFQ takes care of that. So if a 
+BE prio 7 or an RT prio 0, task is submitting a READ, CFQ will not know it
+and it will put that READ in the queue of the READ submitting device
+mapper thread (may be BE prio 3 or 4)? 
+
+Always determining the cgroup from bio, will make things slower at the 
+same time complicated from the CFQ point of view. Right now cfq creates
+and caches the queue pointer in the io context of the bio submitting task
+and assumes sync requests are coming from that task/io context. Currently
+there can only be one sync queue associated with one context. So if a single
+thread is submitting reads (may be a worker thread) on behalf of other
+processes, then we loose the io context information. In fact currently we
+don't even carry ioprio and io class information in bio.
+
+So looks like we need to carry task io context information also in bio
+to be able to associate the bio to right queue at CFQ level. This makes
+it bit more complicated. For the time being I will keep it in my TODO
+list and handle it once other more severe problems have been taken care
+of.
+
+Thanks
+Vivek
