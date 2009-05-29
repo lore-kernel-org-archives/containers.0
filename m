@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH 1/3] export generic checkpoint headers to user space
-Date: Fri, 29 May 2009 06:22:16 -0400
-Message-ID: <4A1FB758.2060802@cs.columbia.edu>
+Date: Fri, 29 May 2009 06:22:29 -0400
+Message-ID: <4A1FB765.3000909@cs.columbia.edu>
 References: <1243552253-7221-1-git-send-email-ntl@pobox.com>
 	<20090529010217.GD17402@us.ibm.com>
 Mime-Version: 1.0
@@ -23,7 +23,7 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbW
 List-Id: containers.vger.kernel.org
 
 
-Applied to ckpt-v16-dev, thanks.
+Applied all three to ckpt-v16-dev, thanks.
 
 Oren.
 
