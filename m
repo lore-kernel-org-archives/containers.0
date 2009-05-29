@@ -1,13 +1,23 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] cr: ipc: don't unlock before calling freeary in error path
-Date: Fri, 29 May 2009 16:46:16 -0400
-Message-ID: <4A204998.2090107@cs.columbia.edu>
-References: <20090529202306.GA11982@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
+Date: Fri, 29 May 2009 14:19:22 -0700
+Message-ID: <20090529211922.GC12597@us.ibm.com>
+References: <4A1EA73F.1080802@cs.columbia.edu>
+	<20090528173019.GB26183@us.ibm.com>
+	<4A1F228C.2020201@cs.columbia.edu>
+	<20090529030558.GA2548@us.ibm.com>
+	<4A1F72A1.4070103@cs.columbia.edu>
+	<20090529054645.GA3344@us.ibm.com>
+	<4A1F78AF.6030404@cs.columbia.edu>
+	<20090529170616.GA12597@us.ibm.com>
+	<20090529193416.GB12597@us.ibm.com>
+	<4A203F2E.1060807@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090529202306.GA11982-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A203F2E.1060807-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,48 +27,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| 
+| 
+| Sukadev Bhattiprolu wrote:
+| > Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| > | Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| > 
+| > I am not sure what the semantics should be for this case:
+| > 
+| > 	- checkpoint a process that is in level-3 pid namespace
+| > 	- restart in a level-2 or level-1 pid namespace
+| > 
+| 
+| Meaning: a container root was at level-3, so tasks in the container
+| were level-3 through level-(3+N), where N is the in-container depth
+| so to speak. Then it was restarted such that the base became level-2
+| or level-1.
+| 
+| I think we already covered this.
+| 
 
-Applied to ckpt-v16-dev.
+Sorry, I meant level3 not 'level minus 3' :-) Restating, suppose
+init_pid_ns is L0, and L3 is a pid namespace 3 levels deep (i.e the
+process has 4 pids at checkpoint time). When restarting, if the
+process only needs 2 pids bc it is L1, current behavior is to return
+-EINVAL. 
 
-As per Dave's note, it will be helpful if you mention which
-patches in the original patchset are affected by this one,
-e.g. I added:
-    [re commit 615744ad97 ... c/r: support share-memory sysv-ipc]
+I have this check in copy_target_pids():
 
-Will make it easier to create the next clean patchset.
++       if (num_pids < 0 || num_pids > nesting)
++               return ERR_PTR(-EINVAL);
 
-Thanks :)
-
-Oren.
-
-Serge E. Hallyn wrote:
-> Else freeary will BUG out.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  ipc/checkpoint_sem.c |    5 ++---
->  1 files changed, 2 insertions(+), 3 deletions(-)
-> 
-> diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-> index 34dea40..e6934dc 100644
-> --- a/ipc/checkpoint_sem.c
-> +++ b/ipc/checkpoint_sem.c
-> @@ -206,12 +206,11 @@ int restore_ipc_sem(struct ckpt_ctx *ctx)
->  	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
->  
->  	ret = load_ipc_sem_hdr(ctx, h, sem);
-> -	ipc_unlock(perms);
-> -
->  	if (ret < 0) {
->  		ckpt_debug("sem: need to remove (%d)\n", ret);
->  		freeary(current->nsproxy->ipc_ns, perms);
-> -	}
-> +	} else
-> +		ipc_unlock(perms);
->  	up_write(&sem_ids->rw_mutex);
->   out:
->  	kfree(sma);
+Is it ok to return -EINVAL when num_pids > nesting ?
