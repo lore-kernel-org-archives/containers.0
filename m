@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/3] export generic checkpoint headers to user space
-Date: Fri, 29 May 2009 06:22:29 -0400
-Message-ID: <4A1FB765.3000909@cs.columbia.edu>
-References: <1243552253-7221-1-git-send-email-ntl@pobox.com>
-	<20090529010217.GD17402@us.ibm.com>
+From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Fri, 29 May 2009 10:22:32 +0000
+Message-ID: <20090529102232.GA6279__13922.2260601402$1243592592$gmane$org@ff.dom.local>
+References: <20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
+	<20090529074812.GA5483@ff.dom.local>
+	<20090529080330.GB5483@ff.dom.local>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090529010217.GD17402-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090529080330.GB5483-8HppEYmqbBCE+EvaaNYduQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,36 +20,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jamal Hadi Salim <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Fri, May 29, 2009 at 08:03:30AM +0000, Jarek Poplawski wrote:
+> On Fri, May 29, 2009 at 07:48:12AM +0000, Jarek Poplawski wrote:
+> > On 29-05-2009 07:18, Minoru Usui wrote:
+> ...
+> > > I investigated this problem, and I found a bug in tc_ctl_tfilter() in net/sched/cls_api.c.
+> > > 
+> > > When 'tc filter add' command is executed and proto-tcf does not exist, 
+> > > tcf_ctl_tfilter() allocates, initializes and chanins proto-tcf(tp) to
+> > > cops->tcf_chain()'s chain before calling tp->ops->change().
+> > > 
+> > > If tp->ops->change() returns an error, tcf_ctl_tfilter() returns an error
+> > > too, but proto-tcf(tp) is not unchained yet. 
+> > > 
+> > > I think tcf_ctl_tfilter() shouldn't chain proto-tcf to the chain before it returns
+> > > an error.
+> > 
+> > I didn't verify this too much, so I might be wrong, but it looks like
+> > cls_cgroup_classify() does things a bit different than others (doesn't
+> > check the 'head' etc. for NULL), so maybe you should consider fixing
+> > it instead? (Btw., the tc classifier maintainer added to Cc).
+> 
+> OOPS! Others mostly don't check this either, so my suggestion was wrong.
 
-Applied all three to ckpt-v16-dev, thanks.
+Hmm... Or maybe I wasn't so wrong; it seems classifiers which
+don't assign the head during init do this check for NULL later.
 
-Oren.
-
-Matt Helsley wrote:
-> On Thu, May 28, 2009 at 06:10:51PM -0500, Nathan Lynch wrote:
->> Checkpoint-related headers are not properly exported, resulting in
->>
->> $ make ARCH=i386 headers_check -s
->> /home/nathanl/devel/linux-2.6.git/usr/include/linux/fs.h:11: included file 'linux/checkpoint_types.h' is not exported
->>
->> Export checkpoint_types.h and checkpoint_hdr.h.
->>
->> After this and arch-specific exports to follow, user-cr can be built
->> against the result of 'make headers_install'.
->>
->> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
->> ---
-> 
-> You can apply this to all 3:
-> 
-> Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Thanks for posting these.
-> 
-> Cheers,
-> 	-Matt
-> 
+Jarek P.
