@@ -1,22 +1,22 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
-Date: Fri, 29 May 2009 10:06:16 -0700
-Message-ID: <20090529170616.GA12597@us.ibm.com>
-References: <20090528043748.GA16522@us.ibm.com>
-	<20090528043945.GG16522@us.ibm.com>
-	<4A1EA73F.1080802@cs.columbia.edu>
-	<20090528173019.GB26183@us.ibm.com>
-	<4A1F228C.2020201@cs.columbia.edu>
-	<20090529030558.GA2548@us.ibm.com>
-	<4A1F72A1.4070103@cs.columbia.edu>
-	<20090529054645.GA3344@us.ibm.com>
-	<4A1F78AF.6030404@cs.columbia.edu>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 18/38] C/R: core stuff
+Date: Fri, 29 May 2009 10:26:27 -0700
+Message-ID: <1243617988.14679.69.camel__24193.9008389183$1243618086$gmane$org@nimitz>
+References: <1242968132-1044-1-git-send-email-adobriyan@gmail.com>
+	<1242968132-1044-18-git-send-email-adobriyan@gmail.com>
+	<20090526131644.GA20920@hallyn.com>
+	<20090526193503.GB11909@x200.localdomain>
+	<4A1DA8FB.3000306@cs.columbia.edu>
+	<20090527221753.GB8321@x200.localdomain>
+	<4A1DC270.8080807@cs.columbia.edu>
+	<20090528153322.GB18256@x200.localdomain>
+	<4A1F0E29.2040506@cs.columbia.edu>
+	<20090529060131.GA5504@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A1F78AF.6030404-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20090529060131.GA5504-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,33 +26,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+On Fri, 2009-05-29 at 10:01 +0400, Alexey Dobriyan wrote:
+>                 if (ctx->dump_live)
+>                         down_read(&uts_sem);
+>                 strncpy(i->sysname, (const char *)uts_ns->name.sysname, 64);
+>                 strncpy(i->nodename, (const char *)uts_ns->name.nodename, 64);
+>                 strncpy(i->release, (const char *)uts_ns->name.release, 64);
+>                 strncpy(i->version, (const char *)uts_ns->name.version, 64);
+>                 strncpy(i->machine, (const char *)uts_ns->name.machine, 64);
+>                 strncpy(i->domainname, (const char *)uts_ns->name.domainname, 64);
+>                 if (ctx->dump_live)
+>                         up_read(&uts_sem);
 
-| > | I should have mentioned earlier, but there is also the case of
-| > | CLONE_NEWPID. If CLONE_NEWPID is given, then @nesting should be
-| > | plus one, _and_ the corresponding pid must be 1 or 0.
-| > 
-| > Right. do_fork_with_pids() checks if CLONE_NEWPID is specified with
-| > target_pids and returns -EINVAL for now.
-| 
-| Any reason not to handle this case already ?
+Doesn't this turn a minor bug (like a task getting accidentally
+unfrozen) into a oopsable bug?
 
-The only reason was that we are not planning on supporting C/R of
-nested containers for a while, but yes, we don't need to restrict
-clone_with_pids().
+I mean, doing this without a lock is nice and all, but it adds code to
+make it selectable.  What's the purpose of avoiding the semaphore
+anyway?  Performance?
 
-| 
-| I have a simpler suggestion than above: pass the clone_flags to
-| copy_target_pids(), and in there, if CLONE_NEWPID is set, then
-| you should allocate an array +1 in size, and force last slot to
-| be 0 (or 1). User doesn't have to pass a larger array.
-
-Looks like it would be cleaner code-wise, to always allocate an
-extra element in the target_pids list and leave the last one set
-to 0. If CLONE_NEWPID is set, alloc_pid() will assign the first pid
-in the new namespace. If it is not set, the last element will never
-be referenced in alloc_pid().
+-- Dave
