@@ -1,12 +1,23 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: don't unlock ipc before freeing
-Date: Fri, 29 May 2009 16:21:32 -0500
-Message-ID: <20090529212132.GA12973@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 7/7][v2] Define clone_with_pids syscall
+Date: Fri, 29 May 2009 17:32:47 -0400
+Message-ID: <4A20547F.8020800@cs.columbia.edu>
+References: <4A1EA73F.1080802@cs.columbia.edu>
+	<20090528173019.GB26183@us.ibm.com>
+	<4A1F228C.2020201@cs.columbia.edu>
+	<20090529030558.GA2548@us.ibm.com>
+	<4A1F72A1.4070103@cs.columbia.edu>
+	<20090529054645.GA3344@us.ibm.com>
+	<4A1F78AF.6030404@cs.columbia.edu>
+	<20090529170616.GA12597@us.ibm.com>
+	<20090529193416.GB12597@us.ibm.com>
+	<4A203F2E.1060807@cs.columbia.edu>
+	<20090529211922.GC12597@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090529211922.GC12597-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,60 +27,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sorry, this should have been a part of the analogous sem fix.
 
-    [re commit 615744ad97 ... c/r: support share-memory sysv-ipc]
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- ipc/checkpoint_msg.c |    4 ++--
- ipc/checkpoint_shm.c |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+Sukadev Bhattiprolu wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | 
+> | 
+> | Sukadev Bhattiprolu wrote:
+> | > Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+> | > | Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | > 
+> | > I am not sure what the semantics should be for this case:
+> | > 
+> | > 	- checkpoint a process that is in level-3 pid namespace
+> | > 	- restart in a level-2 or level-1 pid namespace
+> | > 
+> | 
+> | Meaning: a container root was at level-3, so tasks in the container
+> | were level-3 through level-(3+N), where N is the in-container depth
+> | so to speak. Then it was restarted such that the base became level-2
+> | or level-1.
+> | 
+> | I think we already covered this.
+> | 
+> 
+> Sorry, I meant level3 not 'level minus 3' :-) Restating, suppose
+> init_pid_ns is L0, and L3 is a pid namespace 3 levels deep (i.e the
+> process has 4 pids at checkpoint time). When restarting, if the
+> process only needs 2 pids bc it is L1, current behavior is to return
+> -EINVAL. 
+> 
+> I have this check in copy_target_pids():
+> 
+> +       if (num_pids < 0 || num_pids > nesting)
+> +               return ERR_PTR(-EINVAL);
+> 
+> Is it ok to return -EINVAL when num_pids > nesting ?
+> 
 
-diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
-index a988a9e..fb1a61e 100644
---- a/ipc/checkpoint_msg.c
-+++ b/ipc/checkpoint_msg.c
-@@ -348,12 +348,12 @@ int restore_ipc_msg(struct ckpt_ctx *ctx)
- 	msq->q_qnum = h->q_qnum;
- 
- 	ret = load_ipc_msg_hdr(ctx, h, msq);
--	ipc_unlock(perms);
- 
- 	if (ret < 0) {
- 		ckpt_debug("msq: need to remove (%d)\n", ret);
- 		freeque(current->nsproxy->ipc_ns, perms);
--	}
-+	} else
-+		ipc_unlock(perms);
- 	up_write(&msg_ids->rw_mutex);
-  out:
- 	free_msg_list(&messages);  /* no-op if all ok, else cleanup msgs */
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-index 713f910..0d8eb14 100644
---- a/ipc/checkpoint_shm.c
-+++ b/ipc/checkpoint_shm.c
-@@ -239,7 +239,6 @@ int restore_ipc_shm(struct ckpt_ctx *ctx)
- 	get_file(file);
- 
- 	ret = load_ipc_shm_hdr(ctx, h, shp);
--	ipc_unlock(perms);
- 	if (ret < 0)
- 		goto mutex;
- 
-@@ -253,7 +252,8 @@ int restore_ipc_shm(struct ckpt_ctx *ctx)
- 	if (ret < 0) {
- 		ckpt_debug("shm: need to remove (%d)\n", ret);
- 		do_shm_rmid(current->nsproxy->ipc_ns, perms);
--	}
-+	} else
-+		ipc_unlock(perms);
- 	up_write(&shm_ids->rw_mutex);
-  out:
- 	ckpt_hdr_put(ctx, h);
--- 
-1.6.1
+IMHO yes. I'd keep the semantics this way.
+
+clone_with_pid() is anyway intended for restart() only, and restart
+need never get to that situation. In fact, checkpoint() should only
+record those pids from the container "base" downwards, so the depth
+of the original "base" is irrelevant.
+
+Besdies, the alternative is to silently ignore part of what the
+caller requests - which is worse.
+
+Oren.
