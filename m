@@ -1,89 +1,108 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 9/9] cr: ipc: reset kern_ipc_perms
-Date: Fri, 29 May 2009 17:34:04 -0500
-Message-ID: <20090529223404.GI14602@us.ibm.com>
-References: <20090529223229.GA14536@us.ibm.com>
+From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Sat, 30 May 2009 00:59:29 +0200
+Message-ID: <20090529225929.GD2753__49246.8680641197$1243638108$gmane$org@ami.dom.local>
+References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
+	<20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
+	<1243604796.3966.21.camel@dogo.mojatatu.com>
+	<1243605269.3966.28.camel@dogo.mojatatu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090529223229.GA14536@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, Andrew Morgan <morgan@kernel.org>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+In-Reply-To: <1243605269.3966.28.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Reset the checkpointed uid and gid info on ipc objects.
+On Fri, May 29, 2009 at 09:54:29AM -0400, jamal wrote:
+> Hi Minoru,
+> 
+> I hate to do this to you after i made suggestions on how to
+> make the changes.... (as an adult i hate it when people do it to
+> me;->)
+> But sometimes code helps. So what i meant is the attached patch.
+> I havent even compiled it yet.
+> If it works, please submit it and add yourself as the author
+> (and a signed-off from me). Then we can revisit the init()
+> issue in cls_group..
+> You should also cc tgraf in your cls_grp config questions.
+> 
+> cheers,
+> jamal
+> 
+> On Fri, 2009-05-29 at 09:46 -0400, jamal wrote:
+> > 
+> > This is incorrect. tp may already exist and you dont want to destroy
+> > for failure to change its parameters. You also dont want to reattach
+> > an existing tp because it succeeded in parameter change. 
+> > So the soln is to check if this is a new tp and then do what you did
+> > above...
+> > Did that make sense?
+> > 
+> > cheers,
+> > jamal
 
-Right now, we return -EPERM if the user calling sys_restart() isn't
-allowed to create an object with the checkpointed uid.  We may prefer
-to simply use the caller's uid in that case - but that could lead to
-subtle userspace bugs?  Unsure, so going for the stricter behavior.
+> diff --git a/net/sched/cls_api.c b/net/sched/cls_api.c
+> index 0759f32..8760a48 100644
+> --- a/net/sched/cls_api.c
+> +++ b/net/sched/cls_api.c
+> @@ -266,11 +266,6 @@ replay:
+>  			goto errout;
+>  		}
+>  
+> -		spin_lock_bh(root_lock);
+> -		tp->next = *back;
+> -		*back = tp;
+> -		spin_unlock_bh(root_lock);
+> -
+>  	} else if (tca[TCA_KIND] && nla_strcmp(tca[TCA_KIND], tp->ops->kind))
+>  		goto errout;
+>  
+...
+        } else {
+                switch (n->nlmsg_type) {
+                case RTM_NEWTFILTER:
+                        err = -EEXIST;
+                        if (n->nlmsg_flags & NLM_F_EXCL)
+                                goto errout;
+                        break;
 
-TODO: restore kern_ipc_perms->security.
+Probably this case needs tcf_destroy() too.
 
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- ipc/checkpoint.c |   33 +++++++++++++++++++++++++++++++--
- 1 files changed, 31 insertions(+), 2 deletions(-)
+Cheers,
+Jarek P.
 
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index f621226..bc77743 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -119,6 +119,26 @@ int checkpoint_ipc_ns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
-  * Restart
-  */
- 
-+/*
-+ * check whether current task may create ipc object with
-+ * checkpointed uids and gids.
-+ * Return 1 if ok, 0 if not.
-+ */
-+static int validate_created_perms(struct ckpt_hdr_ipc_perms *h)
-+{
-+	const struct cred *cred = current_cred();
-+	uid_t uid = cred->uid, euid = cred->euid;
-+
-+	/* actually I don't know - is CAP_IPC_OWNER the right one? */
-+	if (((h->uid != uid && h->uid == euid) ||
-+			(h->cuid != uid && h->cuid != euid) ||
-+			!in_group_p(h->cgid) ||
-+			!in_group_p(h->gid)) &&
-+			!capable(CAP_IPC_OWNER))
-+		return 0;
-+	return 1;
-+}
-+
- int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 			   struct kern_ipc_perm *perm)
- {
-@@ -139,14 +159,23 @@ int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 
- 	perm->id = h->id;
- 	perm->key = h->key;
--#if 0 /* FIX: requires security checks */
-+
-+	if (!validate_created_perms(h))
-+		return -EPERM;
- 	perm->uid = h->uid;
- 	perm->gid = h->gid;
- 	perm->cuid = h->cuid;
- 	perm->cgid = h->cgid;
--#endif
- 	perm->mode = h->mode;
- 	perm->seq = h->seq;
-+	/*
-+	 * Todo: restore perm->security.
-+	 * At the moment it gets set by security_x_alloc() called through
-+	 * ipcget()->ipcget_public()->ops-.getnew (->nequeue for instance)
-+	 * We will want to ask the LSM to consider resetting the
-+	 * checkpointed ->security, based on current_security(),
-+	 * the checkpointed ->security, and the checkpoint file context.
-+	 */
- 
- 	return 0;
- }
--- 
-1.6.1
-
+> @@ -314,8 +309,21 @@ replay:
+>  	}
+>  
+>  	err = tp->ops->change(tp, cl, t->tcm_handle, tca, &fh);
+> -	if (err == 0)
+> +	if (err == 0) {
+> +		if (n->nlmsg_type == RTM_NEWTFILTER &&
+> +		    (n->nlmsg_flags&NLM_F_CREATE)) {
+> +			spin_lock_bh(root_lock);
+> +			tp->next = *back;
+> +			*back = tp;
+> +			spin_unlock_bh(root_lock);
+> +		}
+>  		tfilter_notify(skb, n, tp, fh, RTM_NEWTFILTER);
+> +	} else {
+> +		if (n->nlmsg_type == RTM_NEWTFILTER &&
+> +		    (n->nlmsg_flags&NLM_F_CREATE)) {
+> +			tcf_destroy(tp);
+> +		}
+> +	}
+>  
+>  errout:
+>  	if (cl)
