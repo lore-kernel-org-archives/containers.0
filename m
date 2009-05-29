@@ -1,17 +1,18 @@
-From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Fri, 29 May 2009 09:15:16 -0400
-Message-ID: <1243602916.3966.11.camel@dogo.mojatatu.com>
-References: <20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
-	<20090529074812.GA5483@ff.dom.local>
-	<20090529080330.GB5483@ff.dom.local>
-	<20090529102232.GA6279@ff.dom.local>
-Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 15/20] io-controller: map async requests to appropriate
+	cgroup
+Date: Fri, 29 May 2009 09:38:04 -0400
+Message-ID: <20090529133804.GA26962__13366.2881366492$1243604356$gmane$org@redhat.com>
+References: <1243377729-2176-16-git-send-email-vgoyal@redhat.com>
+	<20090528.182740.193697101.ryov@valinux.co.jp>
+	<20090528165710.GB4335@redhat.com>
+	<20090529.121737.189708024.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090529102232.GA6279-8HppEYmqbBCE+EvaaNYduQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090529.121737.189708024.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,28 +22,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thanks for the CC Jarek.
-
-On Fri, 2009-05-29 at 10:22 +0000, Jarek Poplawski wrote:
-
-> > > I didn't verify this too much, so I might be wrong, but it looks like
-> > > cls_cgroup_classify() does things a bit different than others (doesn't
-> > > check the 'head' etc. for NULL), so maybe you should consider fixing
-> > > it instead? (Btw., the tc classifier maintainer added to Cc).
-> > 
-> > OOPS! Others mostly don't check this either, so my suggestion was wrong.
+On Fri, May 29, 2009 at 12:17:37PM +0900, Ryo Tsuruta wrote:
+> Hi Vivek,
 > 
-> Hmm... Or maybe I wasn't so wrong; it seems classifiers which
-> don't assign the head during init do this check for NULL later.
+> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > On Thu, May 28, 2009 at 06:27:40PM +0900, Ryo Tsuruta wrote:
+> > > Hi Vivek,
+> > > 
+> > > > +#ifdef CONFIG_TRACK_ASYNC_CONTEXT
+> > > > +	if (elv_bio_sync(bio)) {
+> > > > +		/* sync io. Determine cgroup from submitting task context. */
+> > > > +		cgroup = task_cgroup(current, io_subsys_id);
+> > > > +		return cgroup;
+> > > > +	}
+> > > > +
+> > > > +	/* Async io. Determine cgroup from with cgroup id stored in page */
+> > > > +	bio_cgroup_id = get_blkio_cgroup_id(bio);
+> > > > +
+> > > > +	if (!bio_cgroup_id)
+> > > > +		return NULL;
+> > > > +
+> > > > +	cgroup = blkio_cgroup_lookup(bio_cgroup_id);
+> > > > +#else
+> > > > +	cgroup = task_cgroup(current, io_subsys_id);
+> > > > +#endif
+> > > > +	return cgroup;
+> > > > +}
+> > > 
+> > > There is a case where a kernel thread (such as device-mapper drivers)
+> > > submits a sync IO instead of a task which originates the IO. I think
+> > > you should always use get_blkio_cgroup_id() to determine cgroup.
+> > > 
+> > 
+> > Hi Ryo,
+> > 
+> > Ok. Can you give some examples of drivers which are submitting reads in
+> > different context al-together. You mentioned in the past that dm-crypt
+> > looks like the one. How does current CFQ takes care of that. So if a 
+> > BE prio 7 or an RT prio 0, task is submitting a READ, CFQ will not know it
+> > and it will put that READ in the queue of the READ submitting device
+> > mapper thread (may be BE prio 3 or 4)? 
+> 
+> In the case of READ, dm-raid1 submits read IOs in differenct context
+> under some conditions. dm-ioband also does it.
+> 
+> > Always determining the cgroup from bio, will make things slower at the 
+> > same time complicated from the CFQ point of view. Right now cfq creates
+> > and caches the queue pointer in the io context of the bio submitting task
+> > and assumes sync requests are coming from that task/io context. Currently
+> > there can only be one sync queue associated with one context. So if a single
+> > thread is submitting reads (may be a worker thread) on behalf of other
+> > processes, then we loose the io context information. In fact currently we
+> > don't even carry ioprio and io class information in bio.
+> > 
+> > So looks like we need to carry task io context information also in bio
+> > to be able to associate the bio to right queue at CFQ level. This makes
+> > it bit more complicated. For the time being I will keep it in my TODO
+> > list and handle it once other more severe problems have been taken care
+> > of.
+> 
+> There is a patchset which makes every bio points the iocontext of the
+> process which is originally generated an IO request.
+> 
+>   Date Tue, 22 Apr 2008 22:51:31 +0900 (JST)
+>   Subject [RFC][PATCH 1/10] I/O context inheritance
+>   From Hirokazu Takahashi <>
+>   http://lkml.org/lkml/2008/4/22/195
 
-It is good practise to initialize things in init() and use attributes
-in change() to set them. 
-I will read the thread and check out the code path then respond
-more intelligently.
+Ok, Thanks. This is good. So once above patches make to upstream, I will
+just forward port my patches to make use of this infrastructure.
 
-cheers,
-jamal
+Thanks
+Vivek
