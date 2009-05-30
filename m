@@ -1,24 +1,12 @@
-From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Sat, 30 May 2009 19:34:52 -0400
-Message-ID: <1243726492.3966.178.camel__24117.1949929141$1243726585$gmane$org@dogo.mojatatu.com>
-References: <20090529225929.GD2753@ami.dom.local>
-	<20090530114506.GA3166@ami.dom.local>
-	<1243684594.3966.89.camel@dogo.mojatatu.com>
-	<20090530120750.GB3166@ami.dom.local>
-	<1243686683.3966.117.camel@dogo.mojatatu.com>
-	<20090530124554.GC3166@ami.dom.local>
-	<1243688628.3966.126.camel@dogo.mojatatu.com>
-	<20090530132047.GD3166@ami.dom.local>
-	<1243690297.3966.135.camel@dogo.mojatatu.com>
-	<20090530140006.GE3166@ami.dom.local>
-	<b10243b50905301538o2716855ag21fbc95b37c8da22@mail.gmail.com>
-Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][v3][PATCH 1/7] Factor out code to allocate pidmap page
+Date: Sat, 30 May 2009 16:57:14 -0700
+Message-ID: <20090530235714.GA4083@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <b10243b50905301538o2716855ag21fbc95b37c8da22-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,19 +16,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <mi.usui-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>, Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 2009-05-31 at 07:38 +0900, Minoru Usui wrote:
 
-> I agree.
-> I think cls_cgroup should check head(tp->root) whether NULL or not
-> like other classifiers, too.
-> 
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 4 May 2009 01:17:39 -0700
+Subject: [RFC][v3][PATCH 1/7] Factor out code to allocate pidmap page
 
-I dont think this is necessary if the adding/linking unconfigured tp
-doesnt happen on failed config.
+To implement support for clone_with_pids() system call we would
+need to allocate pidmap page in more than one place. Move this
+code to a new function alloc_pidmap_page().
 
-cheers,
-jamal
+Changelog[v2]:
+	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
+	  -ENOMEM on error instead of -1.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/pid.c |   46 ++++++++++++++++++++++++++++++----------------
+ 1 files changed, 30 insertions(+), 16 deletions(-)
+
+diff --git a/kernel/pid.c b/kernel/pid.c
+index b2e5f78..9ff33cc 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -122,9 +122,34 @@ static void free_pidmap(struct upid *upid)
+ 	atomic_inc(&map->nr_free);
+ }
+ 
++static int alloc_pidmap_page(struct pidmap *map)
++{
++	void *page;
++
++	if (likely(map->page))
++		return 0;
++
++	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
++
++	/*
++	 * Free the page if someone raced with us installing it:
++	 */
++	spin_lock_irq(&pidmap_lock);
++	if (map->page)
++		kfree(page);
++	else
++		map->page = page;
++	spin_unlock_irq(&pidmap_lock);
++
++	if (unlikely(!map->page))
++		return -ENOMEM;
++
++	return 0;
++}
++
+ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ {
+-	int i, offset, max_scan, pid, last = pid_ns->last_pid;
++	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
+ 	struct pidmap *map;
+ 
+ 	pid = last + 1;
+@@ -134,21 +159,10 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+ 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+ 	for (i = 0; i <= max_scan; ++i) {
+-		if (unlikely(!map->page)) {
+-			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+-			/*
+-			 * Free the page if someone raced with us
+-			 * installing it:
+-			 */
+-			spin_lock_irq(&pidmap_lock);
+-			if (map->page)
+-				kfree(page);
+-			else
+-				map->page = page;
+-			spin_unlock_irq(&pidmap_lock);
+-			if (unlikely(!map->page))
+-				break;
+-		}
++		rc = alloc_pidmap_page(map);
++		if (rc)
++			break;
++
+ 		if (likely(atomic_read(&map->nr_free))) {
+ 			do {
+ 				if (!test_and_set_bit(offset, map->page)) {
+-- 
+1.5.2.5
