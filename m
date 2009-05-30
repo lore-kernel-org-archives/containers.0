@@ -1,17 +1,12 @@
-From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Sat, 30 May 2009 00:59:29 +0200
-Message-ID: <20090529225929.GD2753__49246.8680641197$1243638108$gmane$org@ami.dom.local>
-References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
-	<20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
-	<1243604796.3966.21.camel@dogo.mojatatu.com>
-	<1243605269.3966.28.camel@dogo.mojatatu.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] cgroup freezer: Update stale comments
+Date: Fri, 29 May 2009 17:18:29 -0700
+Message-ID: <20090530001829.GE9285@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1243605269.3966.28.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,88 +16,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, May 29, 2009 at 09:54:29AM -0400, jamal wrote:
-> Hi Minoru,
-> 
-> I hate to do this to you after i made suggestions on how to
-> make the changes.... (as an adult i hate it when people do it to
-> me;->)
-> But sometimes code helps. So what i meant is the attached patch.
-> I havent even compiled it yet.
-> If it works, please submit it and add yourself as the author
-> (and a signed-off from me). Then we can revisit the init()
-> issue in cls_group..
-> You should also cc tgraf in your cls_grp config questions.
-> 
-> cheers,
-> jamal
-> 
-> On Fri, 2009-05-29 at 09:46 -0400, jamal wrote:
-> > 
-> > This is incorrect. tp may already exist and you dont want to destroy
-> > for failure to change its parameters. You also dont want to reattach
-> > an existing tp because it succeeded in parameter change. 
-> > So the soln is to check if this is a new tp and then do what you did
-> > above...
-> > Did that make sense?
-> > 
-> > cheers,
-> > jamal
+Update stale comments regarding locking order and add a little more detail
+so it's easier to follow the locking between the cgroup freezer and the
+power management freezer code.
 
-> diff --git a/net/sched/cls_api.c b/net/sched/cls_api.c
-> index 0759f32..8760a48 100644
-> --- a/net/sched/cls_api.c
-> +++ b/net/sched/cls_api.c
-> @@ -266,11 +266,6 @@ replay:
->  			goto errout;
->  		}
->  
-> -		spin_lock_bh(root_lock);
-> -		tp->next = *back;
-> -		*back = tp;
-> -		spin_unlock_bh(root_lock);
-> -
->  	} else if (tca[TCA_KIND] && nla_strcmp(tca[TCA_KIND], tp->ops->kind))
->  		goto errout;
->  
-...
-        } else {
-                switch (n->nlmsg_type) {
-                case RTM_NEWTFILTER:
-                        err = -EEXIST;
-                        if (n->nlmsg_flags & NLM_F_EXCL)
-                                goto errout;
-                        break;
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Probably this case needs tcf_destroy() too.
-
-Cheers,
-Jarek P.
-
-> @@ -314,8 +309,21 @@ replay:
->  	}
->  
->  	err = tp->ops->change(tp, cl, t->tcm_handle, tca, &fh);
-> -	if (err == 0)
-> +	if (err == 0) {
-> +		if (n->nlmsg_type == RTM_NEWTFILTER &&
-> +		    (n->nlmsg_flags&NLM_F_CREATE)) {
-> +			spin_lock_bh(root_lock);
-> +			tp->next = *back;
-> +			*back = tp;
-> +			spin_unlock_bh(root_lock);
-> +		}
->  		tfilter_notify(skb, n, tp, fh, RTM_NEWTFILTER);
-> +	} else {
-> +		if (n->nlmsg_type == RTM_NEWTFILTER &&
-> +		    (n->nlmsg_flags&NLM_F_CREATE)) {
-> +			tcf_destroy(tp);
-> +		}
-> +	}
->  
->  errout:
->  	if (cl)
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index fb249e2..c2bb4aa 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -87,8 +87,8 @@ struct cgroup_subsys freezer_subsys;
+  * ------------------------------
+  * css_set_lock
+  * cgroup_mutex (AKA cgroup_lock)
+- * task->alloc_lock (AKA task_lock)
+  * freezer->lock
++ * task->alloc_lock (AKA task_lock)
+  * task->sighand->siglock
+  *
+  * cgroup code forces css_set_lock to be taken before task->alloc_lock
+@@ -103,7 +103,6 @@ struct cgroup_subsys freezer_subsys;
+  * task->alloc_lock (to get task's cgroup)
+  *
+  * freezer_fork() (preserving fork() performance means can't take cgroup_mutex):
+- * task->alloc_lock (to get task's cgroup)
+  * freezer->lock
+  *  sighand->siglock (if the cgroup is freezing)
+  *
+@@ -116,13 +115,13 @@ struct cgroup_subsys freezer_subsys;
+  * cgroup_mutex
+  *  freezer->lock
+  *   read_lock css_set_lock (cgroup iterator start)
+- *    sighand->siglock
++ *    sighand->siglock (fake signal delivery inside freeze_task())
+  *
+  * freezer_write() (unfreeze):
+  * cgroup_mutex
+  *  freezer->lock
+  *   read_lock css_set_lock (cgroup iterator start)
+- *    task->alloc_lock (to prevent races with freeze_task())
++ *    task->alloc_lock (inside thaw_process(), prevents race with refrigerator())
+  *     sighand->siglock
+  */
+ static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
