@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v3][PATCH 6/7] Define do_fork_with_pids()
-Date: Sat, 30 May 2009 17:02:55 -0700
-Message-ID: <20090531000255.GE4191@us.ibm.com>
+Subject: [RFC][v3][PATCH 7/7] Define clone_with_pids syscall
+Date: Sat, 30 May 2009 17:03:50 -0700
+Message-ID: <20090531000350.GF4191@us.ibm.com>
 References: <20090530235714.GA4083@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,100 +23,312 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:44 -0700
-Subject: [RFC][v3][PATCH 6/7] Define do_fork_with_pids()
+Serge,
 
-do_fork_with_pids() is same as do_fork(), except that it takes an
-additional, 'pid_set', parameter. This parameter, currently unused,
-specifies the set of target pids of the process in each of its pid
-namespaces.
+I have removed restriction on CLONE_NEWPID and may need a new ack.
+
+Sukadev
+---
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 4 May 2009 01:17:45 -0700
+Subject: [RFC][v3][PATCH 7/7] Define clone_with_pids syscall
+
+Container restart requires that a task have the same pid it had when it was
+checkpointed. When containers are nested the tasks within the containers
+exist in multiple pid namespaces and hence have multiple pids to specify
+during restart.
+
+clone_with_pids(), intended for use during restart, is the same as clone(),
+except that it takes a 'target_pid_set' paramter. This parameter lets caller
+choose specific pid numbers for the child process, in the process's active
+and ancestor pid namespaces. (Descendant pid namespaces in general don't
+matter since processes don't have pids in them anyway, but see comments
+in copy_target_pids() regarding CLONE_NEWPID).
+
+Unlike clone(), clone_with_pids() needs CAP_SYS_ADMIN, at least for now, to
+prevent unprivileged processes from misusing this interface.
+
+Call clone_with_pids as follows:
+
+	pid_t pids[] = { 0, 77, 99 };
+	struct target_pid_set pid_set;
+
+	pid_set.num_pids = sizeof(pids) / sizeof(int);
+	pid_set.target_pids = &pids;
+
+	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
+
+If a target-pid is 0, the kernel continues to assign a pid for the process in
+that namespace. In the above example, pids[0] is 0, meaning the kernel will
+assign next available pid to the process in init_pid_ns. But kernel will assign
+pid 77 in the child pid namespace 1 and pid 99 in pid namespace 2. If either
+77 or 99 are taken, the system call fails with -EBUSY.
+
+If 'pid_set.num_pids' exceeds the current nesting level of pid namespaces,
+the system call fails with -EINVAL.
+
+Its mostly an exploratory patch seeking feedback on the interface.
+
+NOTE:
+	Compared to clone(), clone_with_pids() needs to pass in two more
+	pieces of information:
+
+		- number of pids in the set
+		- user buffer containing the list of pids.
+
+	But since clone() already takes 5 parameters, use a 'struct
+	target_pid_set'.
+
+TODO:
+	- Gently tested.
+	- May need additional sanity checks in do_fork_with_pids().
 
 Changelog[v3]:
-	- Fix "long-line" warning from checkpatch.pl
+	- (Oren Laadan) Allow CLONE_NEWPID flag (by allocating an extra pid
+	  in the target_pids[] list and setting it 0. See copy_target_pids()).
+	- (Oren Laadan) Specified target pids should apply only to youngest
+	  pid-namespaces (see copy_target_pids())
+	- (Matt Helsley) Update patch description.
 
 Changelog[v2]:
-	- To facilitate moving architecture-inpdendent code to kernel/fork.c
-	  pass in 'struct target_pid_set __user *' to do_fork_with_pids()
-	  rather than 'pid_t *' (next patch moves the arch-independent
-	  code to kernel/fork.c)
+	- Remove unnecessary printk and add a note to callers of
+	  copy_target_pids() to free target_pids.
+	- (Serge Hallyn) Mention CAP_SYS_ADMIN restriction in patch description.
+	- (Oren Laadan) Add checks for 'num_pids < 0' (return -EINVAL) and
+	  'num_pids == 0' (fall back to normal clone()).
+	- Move arch-independent code (sanity checks and copy-in of target-pids)
+	  into kernel/fork.c and simplify sys_clone_with_pids()
+
+Changelog[v1]:
+	- Fixed some compile errors (had fixed these errors earlier in my
+	  git tree but had not refreshed patches before emailing them)
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/sched.h |    3 +++
- include/linux/types.h |    5 +++++
- kernel/fork.c         |   16 ++++++++++++++--
- 3 files changed, 22 insertions(+), 2 deletions(-)
+ arch/x86/include/asm/syscalls.h    |    1 +
+ arch/x86/include/asm/unistd_32.h   |    1 +
+ arch/x86/kernel/entry_32.S         |    1 +
+ arch/x86/kernel/process_32.c       |   21 +++++++
+ arch/x86/kernel/syscall_table_32.S |    1 +
+ kernel/fork.c                      |  108 +++++++++++++++++++++++++++++++++++-
+ 6 files changed, 132 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b4c38bc..e3bdb86 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1995,6 +1995,9 @@ extern int disallow_signal(int);
+diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
+index 7043408..1fdc149 100644
+--- a/arch/x86/include/asm/syscalls.h
++++ b/arch/x86/include/asm/syscalls.h
+@@ -31,6 +31,7 @@ asmlinkage int sys_get_thread_area(struct user_desc __user *);
+ /* kernel/process_32.c */
+ int sys_fork(struct pt_regs *);
+ int sys_clone(struct pt_regs *);
++int sys_clone_with_pids(struct pt_regs *);
+ int sys_vfork(struct pt_regs *);
+ int sys_execve(struct pt_regs *);
  
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
-+				unsigned long, int __user *, int __user *,
-+				struct target_pid_set __user *pid_set);
- struct task_struct *fork_idle(int);
+diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+index 6e72d74..90f906f 100644
+--- a/arch/x86/include/asm/unistd_32.h
++++ b/arch/x86/include/asm/unistd_32.h
+@@ -340,6 +340,7 @@
+ #define __NR_inotify_init1	332
+ #define __NR_preadv		333
+ #define __NR_pwritev		334
++#define __NR_clone_with_pids	335
  
- extern void set_task_comm(struct task_struct *tsk, char *from);
-diff --git a/include/linux/types.h b/include/linux/types.h
-index 5abe354..17ec186 100644
---- a/include/linux/types.h
-+++ b/include/linux/types.h
-@@ -204,6 +204,11 @@ struct ustat {
- 	char			f_fpack[6];
- };
+ #ifdef __KERNEL__
  
-+struct target_pid_set {
-+	int num_pids;
-+	pid_t *target_pids;
-+};
+diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+index c929add..ee92b0d 100644
+--- a/arch/x86/kernel/entry_32.S
++++ b/arch/x86/kernel/entry_32.S
+@@ -707,6 +707,7 @@ ptregs_##name: \
+ PTREGSCALL(iopl)
+ PTREGSCALL(fork)
+ PTREGSCALL(clone)
++PTREGSCALL(clone_with_pids)
+ PTREGSCALL(vfork)
+ PTREGSCALL(execve)
+ PTREGSCALL(sigaltstack)
+diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
+index 76f8f84..1efc3de 100644
+--- a/arch/x86/kernel/process_32.c
++++ b/arch/x86/kernel/process_32.c
+@@ -445,6 +445,27 @@ int sys_clone(struct pt_regs *regs)
+ 	return do_fork(clone_flags, newsp, regs, 0, parent_tidptr, child_tidptr);
+ }
+ 
++int sys_clone_with_pids(struct pt_regs *regs)
++{
++	unsigned long clone_flags;
++	unsigned long newsp;
++	int __user *parent_tidptr;
++	int __user *child_tidptr;
++	void __user *upid_setp;
 +
- #endif	/* __KERNEL__ */
- #endif /*  __ASSEMBLY__ */
- #endif /* _LINUX_TYPES_H */
++	clone_flags = regs->bx;
++	newsp = regs->cx;
++	parent_tidptr = (int __user *)regs->dx;
++	child_tidptr = (int __user *)regs->di;
++	upid_setp = (void __user *)regs->bp;
++
++	if (!newsp)
++		newsp = regs->sp;
++
++	return do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
++			child_tidptr, upid_setp);
++}
++
+ /*
+  * sys_execve() executes a new program.
+  */
+diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+index ff5c873..94c1a58 100644
+--- a/arch/x86/kernel/syscall_table_32.S
++++ b/arch/x86/kernel/syscall_table_32.S
+@@ -334,3 +334,4 @@ ENTRY(sys_call_table)
+ 	.long sys_inotify_init1
+ 	.long sys_preadv
+ 	.long sys_pwritev
++	.long ptregs_clone_with_pids	/* 335 */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 373411e..a16ef7b 100644
+index a16ef7b..7738aed 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1340,12 +1340,13 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+@@ -1335,6 +1335,97 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+ }
+ 
+ /*
++ * If user specified any 'target-pids' in @upid_setp, copy them from
++ * user and return a pointer to a local copy of the list of pids. The
++ * caller must free the list, when they are done using it.
++ *
++ * If user did not specify any target pids, return NULL (caller should
++ * treat this like normal clone).
++ *
++ * On any errors, return the error code
++ */
++static pid_t *copy_target_pids(void __user *upid_setp)
++{
++	int j;
++	int rc;
++	int size;
++	int unum_pids;		/* # of pids specified by user */
++	int knum_pids;		/* # of pids needed in kernel */
++	pid_t *target_pids;
++	struct target_pid_set pid_set;
++
++	if (!upid_setp)
++		return NULL;
++
++	rc = copy_from_user(&pid_set, upid_setp, sizeof(pid_set));
++	if (rc)
++		return ERR_PTR(-EFAULT);
++
++	unum_pids = pid_set.num_pids;
++	knum_pids = task_pid(current)->level + 1;
++
++	if (!unum_pids)
++		return NULL;
++
++	if (unum_pids < 0 || unum_pids > knum_pids)
++		return ERR_PTR(-EINVAL);
++
++	/*
++	 * To keep alloc_pid() simple, allocate an extra pid_t in target_pids[]
++	 * and set it to 0. This last entry in target_pids[] corresponds to the
++	 * (yet-to-be-created) descendant pid-namespace if CLONE_NEWPID was
++	 * specified. If CLONE_NEWPID was not specified, this last entry will
++	 * simply be ignored.
++	 */
++	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
++	if (!target_pids)
++		return ERR_PTR(-ENOMEM);
++
++	/*
++	 * A process running in a level 2 pid namespace has three pid namespaces
++	 * and hence three pid numbers. If this process is checkpointed,
++	 * information about these three namespaces are saved. We refer to these
++	 * namespaces as 'known namespaces'.
++	 *
++	 * If this checkpointed process is however restarted in a level 3 pid
++	 * namespace, the restarted process has an extra ancestor pid namespace
++	 * (i.e 'unknown namespace') and 'knum_pids' exceeds 'unum_pids'.
++	 *
++	 * During restart, the process requests specific pids for its 'known
++	 * namespaces' and lets kernel assign pids to its 'unknown namespaces'.
++	 *
++	 * Since the requested-pids correspond to 'known namespaces' and since
++	 * 'known-namespaces' are younger than (i.e descendants of) 'unknown-
++	 * namespaces', copy requested pids to the back-end of target_pids[]
++	 * (i.e before the last entry for CLONE_NEWPID mentioned above).
++	 * Any entries in target_pids[] not corresponding to a requested pid
++	 * will be set to zero and kernel assigns a pid in those namespaces.
++	 *
++	 * NOTE: The order of pids in target_pids[] is oldest pid namespace to
++	 * 	 youngest (target_pids[0] corresponds to init_pid_ns). i.e.
++	 * 	 the order is:
++	 *
++	 * 		- pids for 'unknown-namespaces' (if any)
++	 * 		- pids for 'known-namespaces' (requested pids)
++	 * 		- 0 in the last entry (for CLONE_NEWPID).
++	 */
++	j = knum_pids - unum_pids;
++	size = unum_pids * sizeof(pid_t);
++
++	rc = copy_from_user(&target_pids[j], pid_set.target_pids, size);
++	if (rc) {
++		rc = -EFAULT;
++		goto out_free;
++	}
++
++	return target_pids;
++
++out_free:
++	kfree(target_pids);
++	return ERR_PTR(rc);
++}
++
++/*
+  *  Ok, this is the main fork-routine.
+  *
   * It copies the process, and if successful kick-starts
-  * it and waits for it to finish using the VM if required.
-  */
--long do_fork(unsigned long clone_flags,
-+long do_fork_with_pids(unsigned long clone_flags,
- 	      unsigned long stack_start,
- 	      struct pt_regs *regs,
- 	      unsigned long stack_size,
- 	      int __user *parent_tidptr,
--	      int __user *child_tidptr)
-+	      int __user *child_tidptr,
-+	      struct target_pid_set __user *pid_setp)
- {
+@@ -1351,7 +1442,7 @@ long do_fork_with_pids(unsigned long clone_flags,
  	struct task_struct *p;
  	int trace = 0;
-@@ -1448,6 +1449,17 @@ long do_fork(unsigned long clone_flags,
+ 	long nr;
+-	pid_t *target_pids = NULL;
++	pid_t *target_pids;
+ 
+ 	/*
+ 	 * Do some preliminary argument and permissions checking before we
+@@ -1385,6 +1476,17 @@ long do_fork_with_pids(unsigned long clone_flags,
+ 		}
+ 	}
+ 
++	target_pids = copy_target_pids(pid_setp);
++
++	if (target_pids) {
++		if (IS_ERR(target_pids))
++			return PTR_ERR(target_pids);
++
++		nr = -EPERM;
++		if (!capable(CAP_SYS_ADMIN))
++			goto out_free;
++	}
++
+ 	/*
+ 	 * When called from kernel_thread, don't do user tracing stuff.
+ 	 */
+@@ -1446,6 +1548,10 @@ long do_fork_with_pids(unsigned long clone_flags,
+ 	} else {
+ 		nr = PTR_ERR(p);
+ 	}
++
++out_free:
++	kfree(target_pids);
++
  	return nr;
  }
  
-+long do_fork(unsigned long clone_flags,
-+	      unsigned long stack_start,
-+	      struct pt_regs *regs,
-+	      unsigned long stack_size,
-+	      int __user *parent_tidptr,
-+	      int __user *child_tidptr)
-+{
-+	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, NULL);
-+}
-+
- #ifndef ARCH_MIN_MMSTRUCT_ALIGN
- #define ARCH_MIN_MMSTRUCT_ALIGN 0
- #endif
 -- 
 1.5.2.5
