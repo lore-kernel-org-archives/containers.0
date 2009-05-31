@@ -1,358 +1,89 @@
-From: "Andrew G. Morgan" <morgan@kernel.org>
-Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-Date: Sun, 31 May 2009 13:26:21 -0700
-Message-ID: <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
-References: <20090529223229.GA14536@us.ibm.com>
-	 <20090529223319.GE14602@us.ibm.com>
+From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Sun, 31 May 2009 22:33:27 +0200
+Message-ID: <20090531203327.GB2777__24134.352306328$1243802146$gmane$org@ami.dom.local>
+References: <20090530120750.GB3166@ami.dom.local>
+	<1243686683.3966.117.camel@dogo.mojatatu.com>
+	<20090530124554.GC3166@ami.dom.local>
+	<1243688628.3966.126.camel@dogo.mojatatu.com>
+	<20090530132047.GD3166@ami.dom.local>
+	<1243690297.3966.135.camel@dogo.mojatatu.com>
+	<20090530140006.GE3166@ami.dom.local>
+	<1243724933.3966.158.camel@dogo.mojatatu.com>
+	<20090531075528.GA2756@ami.dom.local>
+	<1243775830.3966.231.camel@dogo.mojatatu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090529223319.GE14602@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1243775830.3966.231.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Cc: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge,
+On Sun, May 31, 2009 at 09:17:10AM -0400, jamal wrote:
+> On Sun, 2009-05-31 at 09:55 +0200, Jarek Poplawski wrote:
+> 
+> > Sure, after fixing it properly we should get rid of unneeded checks.
+> 
+> > > > Anyway, it's worked for other classifiers like this for some time...
+> > > 
+> > > Would you agree that it is/was a bandaid?
+> > > Or maybe you have some other fear that this may break something else and
+> > > prefer the workaround instead?
+> > 
+> > If somebody decided to do it this way instead of the "proper" fix then
+> > it looks to me more like a bandaid "by design". 
+> 
+> I think your and my definition of "proper" are at odds here ;->
+> My logic says there's a causality effect and you always fix the cause
+> in such a situation. 
+> Here's the anology of our conversation (some captured above) as i see it
+> centred around a bug of leaky pipe which just messed up the carpet
+> overnight in some room:
+>  
+> handyman Jamal: fix the pipe so it doesnt leak.
+> handyman Jarek: put a little bucket below the dripping spot
+> handyman Jamal: fixing this pipe is cheap - it is on warranty too
+> handyman Jarek: I fixed two other rooms by putting buckets
+> handyman Jamal: Proper: fix the pipe - you dont need the buckets forever
+> handyman Jarek: Proper fix is to put the bucket below any drip
+> 
+> Of course i am exagerating to make a point on our logical approaches:
+> leaking pipes dont quiet match software bugs i.e.
+> a dripping pipe will have the short term sense of emergency of needing
+> buckets but in this case the cost of the damage and time is the same
+> if you put a bucket or fixed the pipe.
 
-I'm not sure I'm too happy with hard coding the 64-bitness of
-capability sets. It may well be a very long time before we increase
-their size, but couldn't you prepare for that with some reference to
-the prevailing magic numbers for the current ABI representation?
+Yes, you're exagerating; my point is:
+handyman Jarek: Proper fix is to fix the pipe, but since this hole
+is so old and there were other handymans who couldn't miss this let's
+do it with caution (2 way).
 
-Also, the use of 'error' as both a variable and a goto destination
-looks a little confusing.
+> 
+> > And, yes, I have some
+> > fear we could break some strange configs, which could depend on this
+> > wrong but working design.
+> 
+> To continue our discussion
+> handyman Jamal: What is your fear about fixing the pipe?
+> handyman Jarek: Someone may have plants which depend on the drips;
+> so if you fix it his plants wont get water anymore.
+> 
+> I hope the above doesnt offend you - it is meant in good spirit.
 
-Cheers
+No, dead plants don't offend me. But, if there is any kitten harmed -
+better beware! ;-)
 
-Andrew
-
-
-On Fri, May 29, 2009 at 3:33 PM, Serge E. Hallyn <serue@us.ibm.com> wro=
-te:
-> An application checkpoint image will store capability sets
-> (and the bounding set) as __u64s. =C2=A0Define checkpoint and
-> restart functions to translate between those and kernel_cap_t's.
->
-> Define a common function do_capset_tocred() which applies capability
-> set changes to a passed-in struct cred.
->
-> The restore function uses do_capset_tocred() to apply the restored
-> capabilities to the struct cred being crafted, subject to the
-> current task's (task executing sys_restart()) permissions.
->
-> Changelog:
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0May 28: add helpers to c/r securebits
->
-> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
-> ---
-> =C2=A0include/linux/capability.h | =C2=A0 =C2=A07 +++
-> =C2=A0kernel/capability.c =C2=A0 =C2=A0 =C2=A0 =C2=A0| =C2=A0 94 ++++=
-+++++++++++++++++++++++++++++++++------
-> =C2=A0security/commoncap.c =C2=A0 =C2=A0 =C2=A0 | =C2=A0 51 +++++++++=
-+++++++--------
-> =C2=A03 files changed, 122 insertions(+), 30 deletions(-)
->
-> diff --git a/include/linux/capability.h b/include/linux/capability.h
-> index c302110..b3853ca 100644
-> --- a/include/linux/capability.h
-> +++ b/include/linux/capability.h
-> @@ -536,6 +536,13 @@ extern const kernel_cap_t __cap_empty_set;
-> =C2=A0extern const kernel_cap_t __cap_full_set;
-> =C2=A0extern const kernel_cap_t __cap_init_eff_set;
->
-> +extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
-> +struct cred;
-> +extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x=
-,
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 struct cred *cred);
-> +extern void checkpoint_save_securebits(unsigned *, unsigned);
-> +extern int checkpoint_restore_securebits(unsigned, struct cred *);
-> +
-> =C2=A0/**
-> =C2=A0* has_capability - Determine if a task has a superior capabilit=
-y available
-> =C2=A0* @t: The task in question
-> diff --git a/kernel/capability.c b/kernel/capability.c
-> index 4e17041..d2c9bb3 100644
-> --- a/kernel/capability.c
-> +++ b/kernel/capability.c
-> @@ -217,6 +217,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, heade=
-r, cap_user_data_t, dataptr)
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0return ret;
-> =C2=A0}
->
-> +static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *i=
-nheritable,
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 kernel_cap_t *permitted, struct cred *new)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 int ret;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 ret =3D security_capset(new, current_cred(),
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0 =C2=A0 =C2=A0 effective, inheritable, permitted);
-> + =C2=A0 =C2=A0 =C2=A0 if (ret < 0)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return ret;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 /*
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0* for checkpoint-restart, do we want to =
-wait until end of restart?
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0* not sure we care */
-> + =C2=A0 =C2=A0 =C2=A0 audit_log_capset(current->pid, new, current_cr=
-ed());
-> +
-> + =C2=A0 =C2=A0 =C2=A0 return 0;
-> +}
-> +
-> +static int do_capset(kernel_cap_t *effective, kernel_cap_t *inherita=
-ble,
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 kernel_cap_t *permitted)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 struct cred *new;
-> + =C2=A0 =C2=A0 =C2=A0 int ret;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 new =3D prepare_creds();
-> + =C2=A0 =C2=A0 =C2=A0 if (!new)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return -ENOMEM;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 ret =3D do_capset_tocred(effective, inheritabl=
-e, permitted, new);
-> + =C2=A0 =C2=A0 =C2=A0 if (ret < 0)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 goto error;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 return commit_creds(new);
-> +
-> +error:
-> + =C2=A0 =C2=A0 =C2=A0 abort_creds(new);
-> + =C2=A0 =C2=A0 =C2=A0 return ret;
-> +}
-> +
-> =C2=A0/**
-> =C2=A0* sys_capset - set capabilities for a process or (*) a group of=
- processes
-> =C2=A0* @header: pointer to struct that contains capability version a=
-nd
-> @@ -240,7 +279,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header=
-, const cap_user_data_t, data)
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0struct __user_cap_data_struct kdata[_KERNE=
-L_CAPABILITY_U32S];
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0unsigned i, tocopy;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0kernel_cap_t inheritable, permitted, effec=
-tive;
-> - =C2=A0 =C2=A0 =C2=A0 struct cred *new;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0int ret;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0pid_t pid;
->
-> @@ -271,22 +309,52 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, head=
-er, const cap_user_data_t, data)
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0i++;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0}
->
-> - =C2=A0 =C2=A0 =C2=A0 new =3D prepare_creds();
-> - =C2=A0 =C2=A0 =C2=A0 if (!new)
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return -ENOMEM;
-> + =C2=A0 =C2=A0 =C2=A0 return do_capset(&effective, &inheritable, &pe=
-rmitted);
->
-> - =C2=A0 =C2=A0 =C2=A0 ret =3D security_capset(new, current_cred(),
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0 =C2=A0 =C2=A0 &effective, &inheritable, &permitted);
-> - =C2=A0 =C2=A0 =C2=A0 if (ret < 0)
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 goto error;
-> +}
->
-> - =C2=A0 =C2=A0 =C2=A0 audit_log_capset(pid, new, current_cred());
->
-> - =C2=A0 =C2=A0 =C2=A0 return commit_creds(new);
-> +void checkpoint_save_cap(__u64 *dest, kernel_cap_t src)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 *dest =3D src.cap[0] | (src.cap[1] << sizeof(_=
-_u32));
-> +}
->
-> -error:
-> - =C2=A0 =C2=A0 =C2=A0 abort_creds(new);
-> - =C2=A0 =C2=A0 =C2=A0 return ret;
-> +static void do_capbset_drop(struct cred *cred, int cap)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 cap_lower(cred->cap_bset, cap);
-> +}
-> +
-> +int checkpoint_restore_cap(__u64 newe, __u64 newi, __u64 newp, __u64=
- newx,
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 struct cred *cred)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 kernel_cap_t effective, inheritable, permitted=
-, bset;
-> + =C2=A0 =C2=A0 =C2=A0 int may_dropbcap =3D capable(CAP_SETPCAP);
-> + =C2=A0 =C2=A0 =C2=A0 int ret, i;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 effective.cap[0] =3D newe;
-> + =C2=A0 =C2=A0 =C2=A0 effective.cap[1] =3D (newe >> sizeof(__u32));
-> + =C2=A0 =C2=A0 =C2=A0 inheritable.cap[0] =3D newi;
-> + =C2=A0 =C2=A0 =C2=A0 inheritable.cap[1] =3D (newi >> sizeof(__u32))=
-;
-> + =C2=A0 =C2=A0 =C2=A0 permitted.cap[0] =3D newp;
-> + =C2=A0 =C2=A0 =C2=A0 permitted.cap[1] =3D (newp >> sizeof(__u32));
-> + =C2=A0 =C2=A0 =C2=A0 bset.cap[0] =3D newx;
-> + =C2=A0 =C2=A0 =C2=A0 bset.cap[1] =3D (newx >> sizeof(__u32));
-> +
-> + =C2=A0 =C2=A0 =C2=A0 ret =3D do_capset_tocred(&effective, &inherita=
-ble, &permitted, cred);
-> + =C2=A0 =C2=A0 =C2=A0 if (ret < 0)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return ret;
-> +
-> + =C2=A0 =C2=A0 =C2=A0 for (i =3D 0; i < CAP_LAST_CAP; i++) {
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (cap_raised(bse=
-t, i))
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 continue;
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (!cap_raised(cu=
-rrent_cred()->cap_bset, i))
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 continue;
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (!may_dropbcap)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 return -EPERM;
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 do_capbset_drop(cr=
-ed, i);
-> + =C2=A0 =C2=A0 =C2=A0 }
-> +
-> + =C2=A0 =C2=A0 =C2=A0 return 0;
-> =C2=A0}
->
-> =C2=A0/**
-> diff --git a/security/commoncap.c b/security/commoncap.c
-> index beac025..8054a07 100644
-> --- a/security/commoncap.c
-> +++ b/security/commoncap.c
-> @@ -804,6 +804,28 @@ int cap_task_setnice (struct task_struct *p, int=
- nice)
-> =C2=A0}
-> =C2=A0#endif
->
-> +int cap_set_securebits(struct cred *new, unsigned securebits)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 if ((((new->securebits & SECURE_ALL_LOCKS) >> =
-1)
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0& (new->securebits ^ secur=
-ebits)) =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
-=C2=A0 =C2=A0 =C2=A0 =C2=A0/*[1]*/
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || ((new->securebits & SECURE_AL=
-L_LOCKS & ~securebits)) =C2=A0 =C2=A0 /*[2]*/
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || (securebits & ~(SECURE_ALL_LO=
-CKS | SECURE_ALL_BITS)) =C2=A0 =C2=A0 /*[3]*/
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || (cap_capable(current, current=
-_cred(), CAP_SETPCAP,
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0 =C2=A0 SECURITY_CAP_AUDIT) !=3D 0) =C2=A0 =C2=A0 =C2=A0 =
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /*[4]*/
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /*
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0* [1] no cha=
-nging of bits that are locked
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0* [2] no unl=
-ocking of locks
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0* [3] no set=
-ting of unsupported bits
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0* [4] doing =
-anything requires privilege (go read about
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0* =C2=A0 =C2=
-=A0 the "sendmail capabilities bug")
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0*/
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 )
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /* cannot change a=
- locked bit */
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 return -EPERM;
-> + =C2=A0 =C2=A0 =C2=A0 new->securebits =3D securebits;
-> + =C2=A0 =C2=A0 =C2=A0 return 0;
-> +}
-> +
-> =C2=A0/**
-> =C2=A0* cap_task_prctl - Implement process control functions for this=
- security module
-> =C2=A0* @option: The process control function requested
-> @@ -861,24 +883,9 @@ int cap_task_prctl(int option, unsigned long arg=
-2, unsigned long arg3,
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 * capability-based-privilege environment.
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 */
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0case PR_SET_SECUREBITS:
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 error =3D -EPERM;
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if ((((new->secure=
-bits & SECURE_ALL_LOCKS) >> 1)
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
-& (new->securebits ^ arg2)) =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0/*[1]*/
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || (=
-(new->securebits & SECURE_ALL_LOCKS & ~arg2)) =C2=A0 /*[2]*/
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || (=
-arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS)) =C2=A0 /*[3]*/
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 || (=
-cap_capable(current, current_cred(), CAP_SETPCAP,
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 SECURITY_CAP_AUDIT) !=
-=3D 0) =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 /*[4]*/
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 /*
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0* [1] no changing of bits that are locked
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0* [2] no unlocking of locks
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0* [3] no setting of unsupported bits
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0* [4] doing anything requires privilege (go read about
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0* =C2=A0 =C2=A0 the "sendmail capabilities bug")
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0*/
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 )
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 /* cannot change a locked bit */
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 error =3D cap_set_=
-securebits(new, arg2);
-> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (error)
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
- =C2=A0 =C2=A0goto error;
-> - =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 new->securebits =3D=
- arg2;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto changed;
->
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0case PR_GET_SECUREBITS:
-> @@ -921,6 +928,16 @@ error:
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0return error;
-> =C2=A0}
->
-> +void checkpoint_save_securebits(unsigned *b, unsigned cred_securebit=
-s)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 *b =3D cred_securebits;
-> +}
-> +
-> +int checkpoint_restore_securebits(unsigned b, struct cred *cred)
-> +{
-> + =C2=A0 =C2=A0 =C2=A0 return cap_set_securebits(cred, b);
-> +}
-> +
-> =C2=A0/**
-> =C2=A0* cap_syslog - Determine whether syslog function is permitted
-> =C2=A0* @type: Function requested
-> --
-> 1.6.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-secur=
-ity-module" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-securit=
-y-module" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Cheers,
+Jarek P.
