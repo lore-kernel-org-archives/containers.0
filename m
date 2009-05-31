@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v3][PATCH 4/7] Add target_pids parameter to alloc_pid()
-Date: Sat, 30 May 2009 17:02:20 -0700
-Message-ID: <20090531000220.GC4191@us.ibm.com>
+Subject: [RFC][v3][PATCH 5/7] Add target_pids parameter to copy_process()
+Date: Sat, 30 May 2009 17:02:37 -0700
+Message-ID: <20090531000237.GD4191@us.ibm.com>
 References: <20090530235714.GA4083@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,86 +24,62 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 4 May 2009 01:17:42 -0700
-Subject: [RFC][v3][PATCH 4/7] Add target_pids parameter to alloc_pid()
+Date: Mon, 4 May 2009 01:17:43 -0700
+Subject: [RFC][v3][PATCH 5/7] Add target_pids parameter to copy_process()
 
-This parameter is currently NULL, but will be used in a follow-on patch.
+The new parameter will be used in a follow-on patch when clone_with_pids()
+is implemented.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/pid.h |    2 +-
- kernel/fork.c       |    3 ++-
- kernel/pid.c        |    9 +++++++--
- 3 files changed, 10 insertions(+), 4 deletions(-)
+ kernel/fork.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index 49f1c2f..914185d 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, int last);
- 
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
- extern void free_pid(struct pid *pid);
- 
- /*
 diff --git a/kernel/fork.c b/kernel/fork.c
-index f8411a8..d2d69d3 100644
+index d2d69d3..373411e 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -954,6 +954,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -949,12 +949,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 					unsigned long stack_size,
+ 					int __user *child_tidptr,
+ 					struct pid *pid,
++					pid_t *target_pids,
+ 					int trace)
+ {
  	int retval;
  	struct task_struct *p;
  	int cgroup_callbacks_done = 0;
-+	pid_t *target_pids = NULL;
+-	pid_t *target_pids = NULL;
  
  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
  		return ERR_PTR(-EINVAL);
-@@ -1119,7 +1120,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		goto bad_fork_cleanup_io;
+@@ -1327,7 +1327,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+ 	struct pt_regs regs;
  
- 	if (pid != &init_struct_pid) {
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
- 		if (IS_ERR(pid)) {
- 			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index b44dd21..090b221 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -280,13 +280,14 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
- }
+ 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
+-			    &init_struct_pid, 0);
++			    &init_struct_pid, NULL, 0);
+ 	if (!IS_ERR(task))
+ 		init_idle(task, cpu);
  
--struct pid *alloc_pid(struct pid_namespace *ns)
-+struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
- {
- 	struct pid *pid;
- 	enum pid_type type;
- 	int i, nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
-+	int tpid;
+@@ -1350,6 +1350,7 @@ long do_fork(unsigned long clone_flags,
+ 	struct task_struct *p;
+ 	int trace = 0;
+ 	long nr;
++	pid_t *target_pids = NULL;
  
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid)
-@@ -294,7 +295,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 	/*
+ 	 * Do some preliminary argument and permissions checking before we
+@@ -1390,7 +1391,7 @@ long do_fork(unsigned long clone_flags,
+ 		trace = tracehook_prepare_clone(clone_flags);
  
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp, 0);
-+		tpid = 0;
-+		if (target_pids)
-+			tpid = target_pids[i];
-+
-+		nr = alloc_pidmap(tmp, tpid);
- 		if (nr < 0)
- 			goto out_free;
- 
+ 	p = copy_process(clone_flags, stack_start, regs, stack_size,
+-			 child_tidptr, NULL, trace);
++			 child_tidptr, NULL, target_pids, trace);
+ 	/*
+ 	 * Do this prior waking up the new thread - the thread pointer
+ 	 * might get invalid after that point, if the thread exits quickly.
 -- 
 1.5.2.5
