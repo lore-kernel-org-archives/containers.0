@@ -1,24 +1,20 @@
 From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
 Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Sun, 31 May 2009 09:17:10 -0400
-Message-ID: <1243775830.3966.231.camel__43173.4283607968$1243775926$gmane$org@dogo.mojatatu.com>
-References: <20090530114506.GA3166@ami.dom.local>
-	<1243684594.3966.89.camel@dogo.mojatatu.com>
-	<20090530120750.GB3166@ami.dom.local>
-	<1243686683.3966.117.camel@dogo.mojatatu.com>
-	<20090530124554.GC3166@ami.dom.local>
-	<1243688628.3966.126.camel@dogo.mojatatu.com>
-	<20090530132047.GD3166@ami.dom.local>
-	<1243690297.3966.135.camel@dogo.mojatatu.com>
-	<20090530140006.GE3166@ami.dom.local>
-	<1243724933.3966.158.camel@dogo.mojatatu.com>
-	<20090531075528.GA2756@ami.dom.local>
+Date: Sun, 31 May 2009 09:24:53 -0400
+Message-ID: <1243776293.3966.241.camel__31863.9384153814$1243776386$gmane$org@dogo.mojatatu.com>
+References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
+	<20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
+	<1243604796.3966.21.camel@dogo.mojatatu.com>
+	<1243605269.3966.28.camel@dogo.mojatatu.com>
+	<20090529225929.GD2753@ami.dom.local>
+	<1243684218.3966.83.camel@dogo.mojatatu.com>
+	<20090531081213.GC2756@ami.dom.local>
 Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090531075528.GA2756-dUp/P3zyUuaNj9Bq2fkWzw@public.gmane.org>
+In-Reply-To: <20090531081213.GC2756-dUp/P3zyUuaNj9Bq2fkWzw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,52 +25,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 2009-05-31 at 09:55 +0200, Jarek Poplawski wrote:
+On Sun, 2009-05-31 at 10:12 +0200, Jarek Poplawski wrote:
 
-> Sure, after fixing it properly we should get rid of unneeded checks.
+> If somebody runs tc add filter with a new priority but existing handle
+> a newly created (and not linked now) tc would be handled with goto
+> errout and would leak, I guess.
 
-> > > Anyway, it's worked for other classifiers like this for some time...
+This would imply the classifier is buggy. I will stare at the different
+classifier - and if any exhibits such traits it needs to be fixed
+
+> The change (in the two spots) is:
+> > +               if (n->nlmsg_type == RTM_NEWTFILTER &&
+> > +                   (n->nlmsg_flags&(NLM_F_CREATE|NLM_F_EXCL))) {
 > > 
-> > Would you agree that it is/was a bandaid?
-> > Or maybe you have some other fear that this may break something else and
-> > prefer the workaround instead?
 > 
-> If somebody decided to do it this way instead of the "proper" fix then
-> it looks to me more like a bandaid "by design". 
+> Sorry, but I don't think this change is enough; tc filter replace
+> with only this (n->nlmsg_type == RTM_NEWTFILTER &&
+> (n->nlmsg_flags&(NLM_F_CREATE))) can get here with an "old" tp
+> and will relink it or destroy depending on the ->change() return.
+> 
 
-I think your and my definition of "proper" are at odds here ;->
-My logic says there's a causality effect and you always fix the cause
-in such a situation. 
-Here's the anology of our conversation (some captured above) as i see it
-centred around a bug of leaky pipe which just messed up the carpet
-overnight in some room:
- 
-handyman Jamal: fix the pipe so it doesnt leak.
-handyman Jarek: put a little bucket below the dripping spot
-handyman Jamal: fixing this pipe is cheap - it is on warranty too
-handyman Jarek: I fixed two other rooms by putting buckets
-handyman Jamal: Proper: fix the pipe - you dont need the buckets forever
-handyman Jarek: Proper fix is to put the bucket below any drip
+Excellent point - there could be buggy user space apps that will do
+that. Minoru change the check to:
 
-Of course i am exagerating to make a point on our logical approaches:
-leaking pipes dont quiet match software bugs i.e.
-a dripping pipe will have the short term sense of emergency of needing
-buckets but in this case the cost of the damage and time is the same
-if you put a bucket or fixed the pipe.
-
-> And, yes, I have some
-> fear we could break some strange configs, which could depend on this
-> wrong but working design.
-
-To continue our discussion
-handyman Jamal: What is your fear about fixing the pipe?
-handyman Jarek: Someone may have plants which depend on the drips;
-so if you fix it his plants wont get water anymore.
-
-I hope the above doesnt offend you - it is meant in good spirit.
++               if (n->nlmsg_type == RTM_NEWTFILTER &&
++                   (n->nlmsg_flags&NLM_F_CREATE &&
++                    n->nlmsg_flags&NLM_F_EXCL)) {
 
 cheers,
 jamal
