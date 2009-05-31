@@ -1,16 +1,22 @@
-From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 14/38] Remove struct mm_struct::exe_file et al
-Date: Sun, 31 May 2009 16:15:50 -0700 (PDT)
-Message-ID: <alpine.LFD.2.01.0905311613260.3435@localhost.localdomain>
-References: <20090526113618.GJ28083@us.ibm.com>
-	<20090526162415.fb9cefef.akpm@linux-foundation.org>
-	<20090531215427.GA29534@x200.localdomain>
-	<20090531151953.8f8b14b5.akpm@linux-foundation.org>
+From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Sun, 31 May 2009 19:40:16 -0400
+Message-ID: <1243813216.3966.254.camel@dogo.mojatatu.com>
+References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
+	<20090529141830.8ba30a24.usui@mxm.nes.nec.co.jp>
+	<1243604796.3966.21.camel@dogo.mojatatu.com>
+	<1243605269.3966.28.camel@dogo.mojatatu.com>
+	<20090529225929.GD2753@ami.dom.local>
+	<1243684218.3966.83.camel@dogo.mojatatu.com>
+	<20090531081213.GC2756@ami.dom.local>
+	<1243776293.3966.241.camel@dogo.mojatatu.com>
+	<20090531195557.GA2777@ami.dom.local>
+Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090531151953.8f8b14b5.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20090531195557.GA2777-dUp/P3zyUuaNj9Bq2fkWzw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,29 +26,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Sun, 2009-05-31 at 21:55 +0200, Jarek Poplawski wrote:
 
+> But then, there could be "tc filter replace" with only this
+> (n->nlmsg_type == RTM_NEWTFILTER && (n->nlmsg_flags&(NLM_F_CREATE)))
+> which can't get here with a newly created tp, I guess.
 
-On Sun, 31 May 2009, Andrew Morton wrote:
+Right - because in that case tp would already exist and would
+be found in the lookup.
+
+> I'm almost sure these commands (right or wrong) can trigger such a 
+> leak:
 > 
-> What I always find a bit weird is that an MM container is used as the
-> central point for a number of sched obects.  But it's logical, given
-> that the never-before-stated definition of a heavyweight process is
-> "thing which share a VM".
+> $ sudo tc qdisc add dev lo root handle 1: htb
+> $ sudo tc filter add dev lo proto ip pref 1 handle 800::1 u32 match
+u32 0 0 classid 1:1
+> $ sudo tc filter add dev lo proto ip pref 2 handle 800::1 u32 match
+u32 0 0 classid 1:1
+> RTNETLINK answers: File exists
 
-It has nothing to do with "heavy-weight process" or anything else.
+You are good - A tip of my hat and a wag of my finger at you;->
+Ok, now i looked a lot closer at all 8 classifiers
+and u32 is the only one that can fault. It just needs to be fixed.
+I will wait until Minoru's patch and then i will submit a fix for it.
+Of course the commands from user space are a little rude ;->
 
-The thing is, from a scheduling standpoint, one of the primary performance 
-concerns in the TLB switch.
-
-And there's a 1:1 relationship between TLB switch and MM container, modulo 
-the issue of kernel tasks (and those obviously "borrow" approproate MM 
-structs to avoid the switch).
-
-So it's not weird at all. It's very direct, and a very straightforward and 
-obvious relationship.
-
-			Linus
+cheers,
+jamal
