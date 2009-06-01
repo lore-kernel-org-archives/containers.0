@@ -1,65 +1,75 @@
-From: Minoru Usui <mi.usui-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Mon, 1 Jun 2009 22:34:13 +0900
-Message-ID: <b10243b50906010634r1df4ed71y904eb629c89a6f70__21334.2779585675$1243863311$gmane$org@mail.gmail.com>
-References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
-	<1243605269.3966.28.camel@dogo.mojatatu.com>
-	<20090529225929.GD2753@ami.dom.local>
-	<1243684218.3966.83.camel@dogo.mojatatu.com>
-	<20090531081213.GC2756@ami.dom.local>
-	<1243776293.3966.241.camel@dogo.mojatatu.com>
-	<20090531195557.GA2777@ami.dom.local>
-	<1243813216.3966.254.camel@dogo.mojatatu.com>
-	<20090601060638.GA4256@ff.dom.local>
-	<1243861410.3966.268.camel@dogo.mojatatu.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
+Date: Mon, 1 Jun 2009 08:35:08 -0500
+Message-ID: <20090601133508.GA18889@us.ibm.com>
+References: <20090529223229.GA14536@us.ibm.com> <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com> <20090601013837.GA15897@hallyn.com> <551280e50905311918j28cd2482g5918bf9b0bcb297a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1243861410.3966.268.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>, Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <551280e50905311918j28cd2482g5918bf9b0bcb297a@mail.gmail.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Andrew G. Morgan" <morgan@kernel.org>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-2009/6/1 jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>:
-> On Mon, 2009-06-01 at 06:06 +0000, Jarek Poplawski wrote:
->
->>
->> But how about that (of course extremely rude) case "tc filter replace"
->> is run with a new prio?
->
->
-> Jarek, sir, handyman extraordinaire, handsome devil, and lover of
-> kittens I humbly opine that we need to handle that case.
-> How about going back to your original idea of defining tp_created? With
-> apologies to Minoru (he must be thinking we are lunatics by now), how
-> does the attached changed patch look to you?
+Quoting Andrew G. Morgan (morgan@kernel.org):
+> On Sun, May 31, 2009 at 6:38 PM, Serge E. Hallyn <serge@hallyn.com> w=
+rote:
+> >
+> > Quoting Andrew G. Morgan (morgan@kernel.org):
+> > > Serge,
+> > >
+> > > I'm not sure I'm too happy with hard coding the 64-bitness of
+> > > capability sets. It may well be a very long time before we increa=
+se
+> > > their size, but couldn't you prepare for that with some reference=
+ to
+> > > the prevailing magic numbers for the current ABI representation?
+> >
+> > Hmm, ok. =A0I figured since the c/r code was in capability.h it wou=
+ld
+> > be obvious that going past 64-bit would mean a new checkpoint image
+> > format. =A0I can see where that's silly...
+> >
+> > I'll put in a commented BUILD_BUG_ON like Alexey suggests - does th=
+at
+> > suffice?
+>=20
+> I guess I'm not really well up on what the plans are for checkpoint
+> images. Is there some sort of version control/signature/checksum to
+> protect a kernel from loading an image that has been hacked to modify
+> the privilege it was running with when the checkpoint was created?
 
-It looks good to me, because it's simple and really understandable.
-I think below issue should separate from above patch, because it's
-easy to come to understand a patch.
+No.  One day we expect there will be TPM-signing of checkpoint images,
+but that will be up to userspace to properly exploit.  So if userspace
+wants to enforce a certain flow control to prevent an unprivileged user
+from modifying a checkpoint image (which of course it does), then it
+should set up DAC and/or MAC to enforce that.
 
-How about that?
-If it's ok, I'll test it tomorrow.
+> > > Also, the use of 'error' as both a variable and a goto destinatio=
+n
+> > > looks a little confusing.
+> >
+> > Ok will change.
+> >
+> > Did you see any problems with the way I authorize a task's resettin=
+g
+> > of capabilities at sys_restart()?
+>=20
+> [See above.] Is there a mailing list or something I can lurk on to ge=
+t
+> up to speed on what is being intended?
 
-> Before you throw another rock, there is another issue which will be
-> caused by this rude misconfig:
-> "replace" really means "get rid of the old and add this new one".
-> But for the last 50 years we do not "get rid of the old". I cant think
-> of a clean way to do it sans shaving one of the kittens. One simple
-> thing to do is to printk a warning when detecting this error. I think
-> one needs to draw a line where bad config affects your life - in this
-> case i dont think it is worth big changes..
->
-> cheers,
-> jamal
->
+It mainly gets discussed on the containers list
+(https://lists.linux-foundation.org/mailman/listinfo/containers) and
+on freenode/#lxcontainers.
+
+thanks,
+-serge
+--
+To unsubscribe from this list: send the line "unsubscribe linux-securit=
+y-module" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
