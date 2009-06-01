@@ -1,88 +1,41 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-Date: Mon, 01 Jun 2009 12:34:13 -0400
-Message-ID: <4A240305.7030406@cs.columbia.edu>
-References: <20090529223229.GA14536@us.ibm.com> <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com> <20090601154901.GA22301@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v3][PATCH 7/7] Define clone_with_pids syscall
+Date: Mon, 1 Jun 2009 12:19:43 -0500
+Message-ID: <20090601171943.GA23878@us.ibm.com>
+References: <20090530235714.GA4083@us.ibm.com>
+	<20090531000350.GF4191@us.ibm.com>
+	<20090601151650.GA20295@us.ibm.com>
+	<4A240213.70001@cs.columbia.edu>
+	<20090601164232.GA23252@us.ibm.com>
+	<4A2407B2.8030304@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090601154901.GA22301@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: "Andrew G. Morgan" <morgan@kernel.org>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A2407B2.8030304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> > One last thought - should there be an explicit check to make sure that
+> > if CLONE_NEWPID, then at the end pid[knum_pids+1] = 0?  Or is that
+> > there and I just missed it?
+> 
+> the wonders of kzalloc() ...
 
+No.  I'm saying that I don't see anything stopping the user from
+doing CLONE_NEWPID while specifying an extra pid, so that they
+end up trying to create a pidns init with vpid 5
 
-Serge E. Hallyn wrote:
-> Quoting Andrew G. Morgan (morgan@kernel.org):
->> Serge,
->>
->> I'm not sure I'm too happy with hard coding the 64-bitness of
->> capability sets. It may well be a very long time before we increase
->> their size, but couldn't you prepare for that with some reference to
->> the prevailing magic numbers for the current ABI representation?
-> 
-> Is the appended, updated version of the patch ok?
-> 
->> Also, the use of 'error' as both a variable and a goto destination
->> looks a little confusing.
-> 
-> Ok, but that was in the original code.  I can send a separate
-> patch for mainline to change that, but it's not hurting
-> anything at the moment so not sure it's worth it?
-> 
-> -serge
-> 
-> From aa72f022fb5788ab46658e6eb94eaf18e8c6568a Mon Sep 17 00:00:00 2001
-> From: Serge E. Hallyn <serue@us.ibm.com>
-> Date: Mon, 11 May 2009 09:44:42 -0400
-> Subject: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-> 
-> An application checkpoint image will store capability sets
-> (and the bounding set) as __u64s.  Define checkpoint and
-> restart functions to translate between those and kernel_cap_t's.
-> 
-> Define a common function do_capset_tocred() which applies capability
-> set changes to a passed-in struct cred.
-> 
-> The restore function uses do_capset_tocred() to apply the restored
-> capabilities to the struct cred being crafted, subject to the
-> current task's (task executing sys_restart()) permissions.
-> 
-> Changelog:
-> 	Jun 01: Add commented BUILD_BUG_ON() to point out that the
-> 		current implementation depends on 64-bit capabilities.
-> 		(Andrew Morgan and Alexey Dobriyan).
-> 	May 28: add helpers to c/r securebits
-> 
-> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
-> ---
->  include/linux/capability.h |    7 +++
->  kernel/capability.c        |  102 ++++++++++++++++++++++++++++++++++++++------
->  security/commoncap.c       |   51 +++++++++++++++-------
->  3 files changed, 130 insertions(+), 30 deletions(-)
-> 
-> diff --git a/include/linux/capability.h b/include/linux/capability.h
-> index c302110..b3853ca 100644
-> --- a/include/linux/capability.h
-> +++ b/include/linux/capability.h
-> @@ -536,6 +536,13 @@ extern const kernel_cap_t __cap_empty_set;
->  extern const kernel_cap_t __cap_full_set;
->  extern const kernel_cap_t __cap_init_eff_set;
->  
-> +extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
-> +struct cred;
-> +extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x,
-> +				struct cred *cred);
-> +extern void checkpoint_save_securebits(unsigned *, unsigned);
-> +extern int checkpoint_restore_securebits(unsigned, struct cred *);
-
-(nit) How about:
-	checkpoint_capabilities()  or  checkpoint_cap_t()
-	restore_capabilities()  or  restore_cap_t()
-?  (also consistent with rest of the c/r code)
-
-Oren.
-
+-serge
