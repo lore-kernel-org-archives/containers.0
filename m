@@ -1,70 +1,292 @@
-From: "Andrew G. Morgan" <morgan@kernel.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-Date: Mon, 1 Jun 2009 08:46:03 -0700
-Message-ID: <551280e50906010846i2b46c603x55eea7967233b2e0@mail.gmail.com>
-References: <20090529223229.GA14536@us.ibm.com>
-	 <20090529223319.GE14602@us.ibm.com>
-	 <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
-	 <20090601013837.GA15897@hallyn.com>
-	 <551280e50905311918j28cd2482g5918bf9b0bcb297a@mail.gmail.com>
-	 <20090601133508.GA18889@us.ibm.com>
+Date: Mon, 1 Jun 2009 10:49:01 -0500
+Message-ID: <20090601154901.GA22301@us.ibm.com>
+References: <20090529223229.GA14536@us.ibm.com> <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090601133508.GA18889@us.ibm.com>
+Content-Disposition: inline
+In-Reply-To: <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
 Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
+To: "Andrew G. Morgan" <morgan@kernel.org>
 Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 1, 2009 at 6:35 AM, Serge E. Hallyn <serue@us.ibm.com> wrot=
-e:
->> > I'll put in a commented BUILD_BUG_ON like Alexey suggests - does t=
-hat
->> > suffice?
+Quoting Andrew G. Morgan (morgan@kernel.org):
+> Serge,
+> 
+> I'm not sure I'm too happy with hard coding the 64-bitness of
+> capability sets. It may well be a very long time before we increase
+> their size, but couldn't you prepare for that with some reference to
+> the prevailing magic numbers for the current ABI representation?
 
-I can't speak for other subsystems, but it seems to me as if for the
-capabilities, I'd want to create something like this in
-include/linux/capabilities.h
+Is the appended, updated version of the patch ok?
 
-typedef struct checkpoint_caps_s {
-   /* what goes in here is the capability code's business */
-} checkpoint_caps_t;
+> Also, the use of 'error' as both a variable and a goto destination
+> looks a little confusing.
 
-and then have a kernel-internal callable:
+Ok, but that was in the original code.  I can send a separate
+patch for mainline to change that, but it's not hurting
+anything at the moment so not sure it's worth it?
 
-   caps_checkpoint_save(&caps_storage);
-   caps_checkpoint_restore(&caps_storage);
+-serge
 
-kind if API. That way, the maintainer of the subsystem state gets to
-make sure that the right things are saved/restored/sanity checked.
-Breaking things out explicitly in "struct ckpt_hdr_cred" looks like it
-will complicate the distribution of knowledge about what's going on
-throughout the kernel.
+From aa72f022fb5788ab46658e6eb94eaf18e8c6568a Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue@us.ibm.com>
+Date: Mon, 11 May 2009 09:44:42 -0400
+Subject: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
 
-Cheers
+An application checkpoint image will store capability sets
+(and the bounding set) as __u64s.  Define checkpoint and
+restart functions to translate between those and kernel_cap_t's.
 
-Andrew
+Define a common function do_capset_tocred() which applies capability
+set changes to a passed-in struct cred.
 
+The restore function uses do_capset_tocred() to apply the restored
+capabilities to the struct cred being crafted, subject to the
+current task's (task executing sys_restart()) permissions.
 
->>
->> I guess I'm not really well up on what the plans are for checkpoint
->> images. Is there some sort of version control/signature/checksum to
->> protect a kernel from loading an image that has been hacked to modif=
-y
->> the privilege it was running with when the checkpoint was created?
->
-> No. =A0One day we expect there will be TPM-signing of checkpoint imag=
-es,
-> but that will be up to userspace to properly exploit. =A0So if usersp=
-ace
-> wants to enforce a certain flow control to prevent an unprivileged us=
-er
-> from modifying a checkpoint image (which of course it does), then it
-> should set up DAC and/or MAC to enforce that.
---
-To unsubscribe from this list: send the line "unsubscribe linux-securit=
-y-module" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Changelog:
+	Jun 01: Add commented BUILD_BUG_ON() to point out that the
+		current implementation depends on 64-bit capabilities.
+		(Andrew Morgan and Alexey Dobriyan).
+	May 28: add helpers to c/r securebits
+
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+---
+ include/linux/capability.h |    7 +++
+ kernel/capability.c        |  102 ++++++++++++++++++++++++++++++++++++++------
+ security/commoncap.c       |   51 +++++++++++++++-------
+ 3 files changed, 130 insertions(+), 30 deletions(-)
+
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index c302110..b3853ca 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -536,6 +536,13 @@ extern const kernel_cap_t __cap_empty_set;
+ extern const kernel_cap_t __cap_full_set;
+ extern const kernel_cap_t __cap_init_eff_set;
+ 
++extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
++struct cred;
++extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x,
++				struct cred *cred);
++extern void checkpoint_save_securebits(unsigned *, unsigned);
++extern int checkpoint_restore_securebits(unsigned, struct cred *);
++
+ /**
+  * has_capability - Determine if a task has a superior capability available
+  * @t: The task in question
+diff --git a/kernel/capability.c b/kernel/capability.c
+index 4e17041..6bfd180 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -217,6 +217,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, header, cap_user_data_t, dataptr)
+ 	return ret;
+ }
+ 
++static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *inheritable,
++			kernel_cap_t *permitted, struct cred *new)
++{
++	int ret;
++
++	ret = security_capset(new, current_cred(),
++			      effective, inheritable, permitted);
++	if (ret < 0)
++		return ret;
++
++	/*
++	 * for checkpoint-restart, do we want to wait until end of restart?
++	 * not sure we care */
++	audit_log_capset(current->pid, new, current_cred());
++
++	return 0;
++}
++
++static int do_capset(kernel_cap_t *effective, kernel_cap_t *inheritable,
++			kernel_cap_t *permitted)
++{
++	struct cred *new;
++	int ret;
++
++	new = prepare_creds();
++	if (!new)
++		return -ENOMEM;
++
++	ret = do_capset_tocred(effective, inheritable, permitted, new);
++	if (ret < 0)
++		goto error;
++
++	return commit_creds(new);
++
++error:
++	abort_creds(new);
++	return ret;
++}
++
+ /**
+  * sys_capset - set capabilities for a process or (*) a group of processes
+  * @header: pointer to struct that contains capability version and
+@@ -240,7 +279,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
+ 	struct __user_cap_data_struct kdata[_KERNEL_CAPABILITY_U32S];
+ 	unsigned i, tocopy;
+ 	kernel_cap_t inheritable, permitted, effective;
+-	struct cred *new;
+ 	int ret;
+ 	pid_t pid;
+ 
+@@ -271,22 +309,60 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
+ 		i++;
+ 	}
+ 
+-	new = prepare_creds();
+-	if (!new)
+-		return -ENOMEM;
++	return do_capset(&effective, &inheritable, &permitted);
+ 
+-	ret = security_capset(new, current_cred(),
+-			      &effective, &inheritable, &permitted);
+-	if (ret < 0)
+-		goto error;
++}
+ 
+-	audit_log_capset(pid, new, current_cred());
++void checkpoint_save_cap(__u64 *dest, kernel_cap_t src)
++{
+ 
+-	return commit_creds(new);
++	/*
++	 * If the following triggers, then capabilities no longer fit into
++	 * 64 bits.  The checkpoint image defined in include/linux/checkpoint_hdr.h
++	 * as well as the checkpoint_save_cap() and checkpoint_restore_cap()
++	 * helpers below need to be updated
++	 */
++	BUILD_BUG_ON(CAP_LAST_CAP >= 64);
+ 
+-error:
+-	abort_creds(new);
+-	return ret;
++	*dest = src.cap[0] | (src.cap[1] << sizeof(__u32));
++}
++
++static void do_capbset_drop(struct cred *cred, int cap)
++{
++	cap_lower(cred->cap_bset, cap);
++}
++
++int checkpoint_restore_cap(__u64 newe, __u64 newi, __u64 newp, __u64 newx,
++			struct cred *cred)
++{
++	kernel_cap_t effective, inheritable, permitted, bset;
++	int may_dropbcap = capable(CAP_SETPCAP);
++	int ret, i;
++
++	effective.cap[0] = newe;
++	effective.cap[1] = (newe >> sizeof(__u32));
++	inheritable.cap[0] = newi;
++	inheritable.cap[1] = (newi >> sizeof(__u32));
++	permitted.cap[0] = newp;
++	permitted.cap[1] = (newp >> sizeof(__u32));
++	bset.cap[0] = newx;
++	bset.cap[1] = (newx >> sizeof(__u32));
++
++	ret = do_capset_tocred(&effective, &inheritable, &permitted, cred);
++	if (ret < 0)
++		return ret;
++
++	for (i = 0; i < CAP_LAST_CAP; i++) {
++		if (cap_raised(bset, i))
++			continue;
++		if (!cap_raised(current_cred()->cap_bset, i))
++			continue;
++		if (!may_dropbcap)
++			return -EPERM;
++		do_capbset_drop(cred, i);
++	}
++
++	return 0;
+ }
+ 
+ /**
+diff --git a/security/commoncap.c b/security/commoncap.c
+index beac025..8054a07 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -804,6 +804,28 @@ int cap_task_setnice (struct task_struct *p, int nice)
+ }
+ #endif
+ 
++int cap_set_securebits(struct cred *new, unsigned securebits)
++{
++	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
++	     & (new->securebits ^ securebits))				/*[1]*/
++	    || ((new->securebits & SECURE_ALL_LOCKS & ~securebits))	/*[2]*/
++	    || (securebits & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
++	    || (cap_capable(current, current_cred(), CAP_SETPCAP,
++			    SECURITY_CAP_AUDIT) != 0)			/*[4]*/
++		/*
++		 * [1] no changing of bits that are locked
++		 * [2] no unlocking of locks
++		 * [3] no setting of unsupported bits
++		 * [4] doing anything requires privilege (go read about
++		 *     the "sendmail capabilities bug")
++		 */
++	    )
++		/* cannot change a locked bit */
++		return -EPERM;
++	new->securebits = securebits;
++	return 0;
++}
++
+ /**
+  * cap_task_prctl - Implement process control functions for this security module
+  * @option: The process control function requested
+@@ -861,24 +883,9 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
+ 	 * capability-based-privilege environment.
+ 	 */
+ 	case PR_SET_SECUREBITS:
+-		error = -EPERM;
+-		if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
+-		     & (new->securebits ^ arg2))			/*[1]*/
+-		    || ((new->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
+-		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
+-		    || (cap_capable(current, current_cred(), CAP_SETPCAP,
+-				    SECURITY_CAP_AUDIT) != 0)		/*[4]*/
+-			/*
+-			 * [1] no changing of bits that are locked
+-			 * [2] no unlocking of locks
+-			 * [3] no setting of unsupported bits
+-			 * [4] doing anything requires privilege (go read about
+-			 *     the "sendmail capabilities bug")
+-			 */
+-		    )
+-			/* cannot change a locked bit */
++		error = cap_set_securebits(new, arg2);
++		if (error)
+ 			goto error;
+-		new->securebits = arg2;
+ 		goto changed;
+ 
+ 	case PR_GET_SECUREBITS:
+@@ -921,6 +928,16 @@ error:
+ 	return error;
+ }
+ 
++void checkpoint_save_securebits(unsigned *b, unsigned cred_securebits)
++{
++	*b = cred_securebits;
++}
++
++int checkpoint_restore_securebits(unsigned b, struct cred *cred)
++{
++	return cap_set_securebits(cred, b);
++}
++
+ /**
+  * cap_syslog - Determine whether syslog function is permitted
+  * @type: Function requested
+-- 
+1.6.1
+
