@@ -1,8 +1,9 @@
-From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
 Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Mon, 1 Jun 2009 23:55:42 +0200
-Message-ID: <20090601215542.GB2760__44315.1040155955$1243893569$gmane$org@ami.dom.local>
-References: <1243605269.3966.28.camel@dogo.mojatatu.com>
+Date: Mon, 01 Jun 2009 18:06:03 -0400
+Message-ID: <1243893963.3966.325.camel__31758.5824094296$1243894145$gmane$org@dogo.mojatatu.com>
+References: <1243604796.3966.21.camel@dogo.mojatatu.com>
+	<1243605269.3966.28.camel@dogo.mojatatu.com>
 	<20090529225929.GD2753@ami.dom.local>
 	<1243684218.3966.83.camel@dogo.mojatatu.com>
 	<20090531081213.GC2756@ami.dom.local>
@@ -12,11 +13,11 @@ References: <1243605269.3966.28.camel@dogo.mojatatu.com>
 	<20090601060638.GA4256@ff.dom.local>
 	<1243861410.3966.268.camel@dogo.mojatatu.com>
 	<20090601204957.GA2760@ami.dom.local>
+Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <20090601204957.GA2760-dUp/P3zyUuaNj9Bq2fkWzw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -27,12 +28,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+To: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 01, 2009 at 10:49:57PM +0200, Jarek Poplawski wrote:
-...
+On Mon, 2009-06-01 at 22:49 +0200, Jarek Poplawski wrote:
+
+> 
+> Actually, I'd insist with the old rock and handling that other rude
+> u32 case, at least until it's fixed in place. So I attach my version
+> of your patch (additionally I removed a pair of braces because of
+> checkpatch warning).
+
+Sure, it doesnt complicate anything - Minoru, this is the version to go
+for.
+
 > Alas, I still think we don't need to change so much in -stable to
 > fix the cls_cgroup oops, so I attach a patch which I think is
 > enough for -stable and probably -net too. It could be "reverted"
@@ -40,45 +50,24 @@ On Mon, Jun 01, 2009 at 10:49:57PM +0200, Jarek Poplawski wrote:
 > it only as my humble proposal, and feel free to recommend to David
 > your version, no problem (really).
 
-Since there are possible other oopses in cls_cgroup, here is an update
-of patch #2.
 
-Jarek P.
---------------------------> patch #2 (take 2)
+My view is the same - that the second patch doesnt fix the root
+cause; and it is not that complicated to fix the root cause. So I humbly
+disagree with you.
 
- net/sched/cls_cgroup.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+The issue is that a classifer (cls_group in this example) is being
+misconfigured. It rejects the config - but the tp has already been
+added. 
+It then tries to use the tp in the fast and fails. 
 
-diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-index 1ab4542..edb71e1 100644
---- a/net/sched/cls_cgroup.c
-+++ b/net/sched/cls_cgroup.c
-@@ -101,6 +101,8 @@ static int cls_cgroup_classify(struct sk_buff *skb, struct tcf_proto *tp,
- 	struct cgroup_cls_state *cs;
- 	int ret = 0;
- 
-+	if (!head)
-+		return -1;
- 	/*
- 	 * Due to the nature of the classifier it is required to ignore all
- 	 * packets originating from softirq context as accessing `current'
-@@ -218,6 +220,9 @@ static void cls_cgroup_walk(struct tcf_proto *tp, struct tcf_walker *arg)
- {
- 	struct cls_cgroup_head *head = tp->root;
- 
-+	if (!head)
-+		return;
-+
- 	if (arg->count < arg->skip)
- 		goto skip;
- 
-@@ -236,6 +241,9 @@ static int cls_cgroup_dump(struct tcf_proto *tp, unsigned long fh,
- 	unsigned char *b = skb_tail_pointer(skb);
- 	struct nlattr *nest;
- 
-+	if (!head)
-+		return -1;
-+
- 	t->tcm_handle = head->handle;
- 
- 	nest = nla_nest_start(skb, TCA_OPTIONS);
+If you look as closely as you did with the patch i posted, youd find
+ways to construct similar hostile misconfigs for other classifiers.
+You just need to create the scenario where the attributes will fail to
+validate. 
+
+I actually suspect the most common scenario for such a failure is not
+that head is null (I doubt in Minoru case that allocation will fail);
+rather it is some reference to head->something.
+
+cheers,
+jamal
