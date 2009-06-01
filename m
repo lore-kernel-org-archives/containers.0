@@ -1,73 +1,40 @@
-From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Mon, 01 Jun 2009 18:06:03 -0400
-Message-ID: <1243893963.3966.325.camel__31758.5824094296$1243894145$gmane$org@dogo.mojatatu.com>
-References: <1243604796.3966.21.camel@dogo.mojatatu.com>
-	<1243605269.3966.28.camel@dogo.mojatatu.com>
-	<20090529225929.GD2753@ami.dom.local>
-	<1243684218.3966.83.camel@dogo.mojatatu.com>
-	<20090531081213.GC2756@ami.dom.local>
-	<1243776293.3966.241.camel@dogo.mojatatu.com>
-	<20090531195557.GA2777@ami.dom.local>
-	<1243813216.3966.254.camel@dogo.mojatatu.com>
-	<20090601060638.GA4256@ff.dom.local>
-	<1243861410.3966.268.camel@dogo.mojatatu.com>
-	<20090601204957.GA2760@ami.dom.local>
-Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
+Date: Mon, 1 Jun 2009 17:18:57 -0500
+Message-ID: <20090601221857.GA29164@us.ibm.com>
+References: <20090529223229.GA14536@us.ibm.com> <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com> <20090601013837.GA15897@hallyn.com> <551280e50905311918j28cd2482g5918bf9b0bcb297a@mail.gmail.com> <20090601133508.GA18889@us.ibm.com> <551280e50906010846i2b46c603x55eea7967233b2e0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090601204957.GA2760-dUp/P3zyUuaNj9Bq2fkWzw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <551280e50906010846i2b46c603x55eea7967233b2e0@mail.gmail.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Andrew G. Morgan" <morgan@kernel.org>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-06-01 at 22:49 +0200, Jarek Poplawski wrote:
-
+Quoting Andrew G. Morgan (morgan@kernel.org):
+> On Mon, Jun 1, 2009 at 6:35 AM, Serge E. Hallyn <serue@us.ibm.com> wrote:
+> >> > I'll put in a commented BUILD_BUG_ON like Alexey suggests - does that
+> >> > suffice?
 > 
-> Actually, I'd insist with the old rock and handling that other rude
-> u32 case, at least until it's fixed in place. So I attach my version
-> of your patch (additionally I removed a pair of braces because of
-> checkpatch warning).
+> I can't speak for other subsystems, but it seems to me as if for the
+> capabilities, I'd want to create something like this in
+> include/linux/capabilities.h
+> 
+> typedef struct checkpoint_caps_s {
+>    /* what goes in here is the capability code's business */
+> } checkpoint_caps_t;
 
-Sure, it doesnt complicate anything - Minoru, this is the version to go
-for.
+Sigh - Did a patch this way, but the problem is userspace needs to be
+able to parse the checkpoint image, so it needs to know what this struct
+looks like.  So if I put it the struct definition
+include/linux/capability.h, I run into a whole new set of problems
+trying to compile a userspace program to do a sys_restart().
 
-> Alas, I still think we don't need to change so much in -stable to
-> fix the cls_cgroup oops, so I attach a patch which I think is
-> enough for -stable and probably -net too. It could be "reverted"
-> in -net-next just after applying cls_api patch. Of course, treat
-> it only as my humble proposal, and feel free to recommend to David
-> your version, no problem (really).
+So I went part-way to what you suggested in the patchset I'm about to
+send out (please see patch 6/8).  I think the caps code does look
+nicer in this new version.
 
-
-My view is the same - that the second patch doesnt fix the root
-cause; and it is not that complicated to fix the root cause. So I humbly
-disagree with you.
-
-The issue is that a classifer (cls_group in this example) is being
-misconfigured. It rejects the config - but the tp has already been
-added. 
-It then tries to use the tp in the fast and fails. 
-
-If you look as closely as you did with the patch i posted, youd find
-ways to construct similar hostile misconfigs for other classifiers.
-You just need to create the scenario where the attributes will fail to
-validate. 
-
-I actually suspect the most common scenario for such a failure is not
-that head is null (I doubt in Minoru case that allocation will fail);
-rather it is some reference to head->something.
-
-cheers,
-jamal
+thanks,
+-serge
