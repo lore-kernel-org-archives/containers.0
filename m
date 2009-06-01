@@ -1,292 +1,181 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-Date: Mon, 1 Jun 2009 10:49:01 -0500
-Message-ID: <20090601154901.GA22301@us.ibm.com>
-References: <20090529223229.GA14536@us.ibm.com> <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][v3][PATCH 7/7] Define clone_with_pids syscall
+Date: Mon, 01 Jun 2009 12:30:11 -0400
+Message-ID: <4A240213.70001@cs.columbia.edu>
+References: <20090530235714.GA4083@us.ibm.com>
+	<20090531000350.GF4191@us.ibm.com>
+	<20090601151650.GA20295@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Andrew G. Morgan" <morgan@kernel.org>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090601151650.GA20295-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew G. Morgan (morgan@kernel.org):
-> Serge,
+
+
+Serge E. Hallyn wrote:
+> Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> I'm not sure I'm too happy with hard coding the 64-bitness of
-> capability sets. It may well be a very long time before we increase
-> their size, but couldn't you prepare for that with some reference to
-> the prevailing magic numbers for the current ABI representation?
+> Bear with me as I try to get this straight...
+> 
+> Let's say we have the following task being checkpointed (btw, the
+> actual checkpoint code hopefully will, as Oren mentioned, not
+> be always checkpointing all of a task's pids, but only the
+> pids from the checkpointer's pidns level an up - but that doesn't
+> matter to you):
+> 
+> Either:
+> 
+> level no    |    pid
+> 0               1001
+> 1                50
+> 2                 3
+> 
+> or
+> 
+> level no    |    pid
+> 0               1001
+> 1                50
+> 2                 1
+> 
+> Now we want to restart that inside a container.  So for the
+> first task we have a parent task:
+> 
+> level no       |     pid
+> 0                    5009
+> 1                    1000
+> 2                     49
+> 3                      2
+> 
+> calling clone_with_pid with upids {1001,50,3} to produce task:
+> 
+> level no       |     pid
+> 0                   5010
+> 1                   1001
+> 2                    50
+> 3                     3
+> 
+> So the numbers in your code for this case become:
+> 
+>> +	unum_pids = pid_set.num_pids;
+>         unum_pids = 3
+>> +	knum_pids = task_pid(current)->level + 1;
+>         knum_pids = 3 + 1 = 4
+> 
+>> +	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
+> 
+> XXX First problem:
+>         target_pids gets room for 5 pids, one more than we need.
 
-Is the appended, updated version of the patch ok?
+The two issues are related, and this is intentional. The idea
+was that when you use CLONE_NEWPID, you imply a new nesting level
+and a pid==1 there. So you are not supposed to specify the pid
+of that new level.
 
-> Also, the use of 'error' as both a variable and a goto destination
-> looks a little confusing.
+IOW, the parent specify the pid's of the child from the _parent's_
+level and up (of the desired depth). CLONE_NEWPID creates a new
+pidns level below the parent's, and that is not covered in the
+array of pids.
 
-Ok, but that was in the original code.  I can send a separate
-patch for mainline to change that, but it's not hurting
-anything at the moment so not sure it's worth it?
+By allocation an extra slot and forcing it to be 0, we ensure that
+the case of CLONE_NEWPID is covered correctly. Clearly, if this
+flag isn't set, then the extra slot is redundant (but doesn't hurt).
 
--serge
+> 
+>> +	j = knum_pids - unum_pids;
+>         j = 1, so we copy the 3 pids in the right place.
+> 
+>> +	rc = copy_from_user(&target_pids[j], pid_set.target_pids, size);
+>> +	if (rc) {
+>> +		rc = -EFAULT;
+>> +		goto out_free;
+>> +	}
+>> +
+>> +	return target_pids;
+> 
+> 
+> For the second one, we have a parent task
+> 
+> level no       |     pid
+> 0                   5009
+> 1                   1000
+> 2                    49
+> 
+> calling clone_with_pid with CLONE_NEWPID and {1001,50,1} to produce:
+> 
+> level no       |     pid
+> 0                   5010
+> 1                   1001
+> 2                    50
+> 3                    1
+> 
+> So the numbers in your code become:
+> 
+>> +	unum_pids = pid_set.num_pids;
+>         unum_pids = 3
 
-From aa72f022fb5788ab46658e6eb94eaf18e8c6568a Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue@us.ibm.com>
-Date: Mon, 11 May 2009 09:44:42 -0400
-Subject: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
+This is a "bug" of the parent. The parent should specify the pids
+from the parent's level only and up, and not include the new level
+below that will be created. (After all, it will have to be 1).
 
-An application checkpoint image will store capability sets
-(and the bounding set) as __u64s.  Define checkpoint and
-restart functions to translate between those and kernel_cap_t's.
+So unum_pids = 3 will not do what you want; instead it will try to
+create the process:
 
-Define a common function do_capset_tocred() which applies capability
-set changes to a passed-in struct cred.
+0	1001
+1	50
+2	1
+3	1
 
-The restore function uses do_capset_tocred() to apply the restored
-capabilities to the struct cred being crafted, subject to the
-current task's (task executing sys_restart()) permissions.
+And will fail, of course, because pid==1 at level 2 is already
+taken.
 
-Changelog:
-	Jun 01: Add commented BUILD_BUG_ON() to point out that the
-		current implementation depends on 64-bit capabilities.
-		(Andrew Morgan and Alexey Dobriyan).
-	May 28: add helpers to c/r securebits
+Instead, parent should say use {1001, 50}.
 
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- include/linux/capability.h |    7 +++
- kernel/capability.c        |  102 ++++++++++++++++++++++++++++++++++++++------
- security/commoncap.c       |   51 +++++++++++++++-------
- 3 files changed, 130 insertions(+), 30 deletions(-)
+>> +	knum_pids = task_pid(current)->level + 1;
+>         knum_pids = 2 + 1 = 3
+> 
+>> +	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
+> 
+>         target_pids gets room for 4 pids
+> 
+>> +	j = knum_pids - unum_pids;
+> 
+> XXX Second problem:
+>         j = 0, which is not right, should be 1?
+> 
+>> +	rc = copy_from_user(&target_pids[j], pid_set.target_pids, size);
+>> +	if (rc) {
+>> +		rc = -EFAULT;
+>> +		goto out_free;
+>> +	}
+>> +
+>> +	return target_pids;
+> 
+> So it looks like your usage of knum_pids isn't quite right.
+> 
+> (right?)
 
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index c302110..b3853ca 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -536,6 +536,13 @@ extern const kernel_cap_t __cap_empty_set;
- extern const kernel_cap_t __cap_full_set;
- extern const kernel_cap_t __cap_init_eff_set;
- 
-+extern void checkpoint_save_cap(__u64 *dest, kernel_cap_t src);
-+struct cred;
-+extern int checkpoint_restore_cap(__u64 e, __u64 i, __u64 p, __u64 x,
-+				struct cred *cred);
-+extern void checkpoint_save_securebits(unsigned *, unsigned);
-+extern int checkpoint_restore_securebits(unsigned, struct cred *);
-+
- /**
-  * has_capability - Determine if a task has a superior capability available
-  * @t: The task in question
-diff --git a/kernel/capability.c b/kernel/capability.c
-index 4e17041..6bfd180 100644
---- a/kernel/capability.c
-+++ b/kernel/capability.c
-@@ -217,6 +217,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, header, cap_user_data_t, dataptr)
- 	return ret;
- }
- 
-+static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted, struct cred *new)
-+{
-+	int ret;
-+
-+	ret = security_capset(new, current_cred(),
-+			      effective, inheritable, permitted);
-+	if (ret < 0)
-+		return ret;
-+
-+	/*
-+	 * for checkpoint-restart, do we want to wait until end of restart?
-+	 * not sure we care */
-+	audit_log_capset(current->pid, new, current_cred());
-+
-+	return 0;
-+}
-+
-+static int do_capset(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted)
-+{
-+	struct cred *new;
-+	int ret;
-+
-+	new = prepare_creds();
-+	if (!new)
-+		return -ENOMEM;
-+
-+	ret = do_capset_tocred(effective, inheritable, permitted, new);
-+	if (ret < 0)
-+		goto error;
-+
-+	return commit_creds(new);
-+
-+error:
-+	abort_creds(new);
-+	return ret;
-+}
-+
- /**
-  * sys_capset - set capabilities for a process or (*) a group of processes
-  * @header: pointer to struct that contains capability version and
-@@ -240,7 +279,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 	struct __user_cap_data_struct kdata[_KERNEL_CAPABILITY_U32S];
- 	unsigned i, tocopy;
- 	kernel_cap_t inheritable, permitted, effective;
--	struct cred *new;
- 	int ret;
- 	pid_t pid;
- 
-@@ -271,22 +309,60 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 		i++;
- 	}
- 
--	new = prepare_creds();
--	if (!new)
--		return -ENOMEM;
-+	return do_capset(&effective, &inheritable, &permitted);
- 
--	ret = security_capset(new, current_cred(),
--			      &effective, &inheritable, &permitted);
--	if (ret < 0)
--		goto error;
-+}
- 
--	audit_log_capset(pid, new, current_cred());
-+void checkpoint_save_cap(__u64 *dest, kernel_cap_t src)
-+{
- 
--	return commit_creds(new);
-+	/*
-+	 * If the following triggers, then capabilities no longer fit into
-+	 * 64 bits.  The checkpoint image defined in include/linux/checkpoint_hdr.h
-+	 * as well as the checkpoint_save_cap() and checkpoint_restore_cap()
-+	 * helpers below need to be updated
-+	 */
-+	BUILD_BUG_ON(CAP_LAST_CAP >= 64);
- 
--error:
--	abort_creds(new);
--	return ret;
-+	*dest = src.cap[0] | (src.cap[1] << sizeof(__u32));
-+}
-+
-+static void do_capbset_drop(struct cred *cred, int cap)
-+{
-+	cap_lower(cred->cap_bset, cap);
-+}
-+
-+int checkpoint_restore_cap(__u64 newe, __u64 newi, __u64 newp, __u64 newx,
-+			struct cred *cred)
-+{
-+	kernel_cap_t effective, inheritable, permitted, bset;
-+	int may_dropbcap = capable(CAP_SETPCAP);
-+	int ret, i;
-+
-+	effective.cap[0] = newe;
-+	effective.cap[1] = (newe >> sizeof(__u32));
-+	inheritable.cap[0] = newi;
-+	inheritable.cap[1] = (newi >> sizeof(__u32));
-+	permitted.cap[0] = newp;
-+	permitted.cap[1] = (newp >> sizeof(__u32));
-+	bset.cap[0] = newx;
-+	bset.cap[1] = (newx >> sizeof(__u32));
-+
-+	ret = do_capset_tocred(&effective, &inheritable, &permitted, cred);
-+	if (ret < 0)
-+		return ret;
-+
-+	for (i = 0; i < CAP_LAST_CAP; i++) {
-+		if (cap_raised(bset, i))
-+			continue;
-+		if (!cap_raised(current_cred()->cap_bset, i))
-+			continue;
-+		if (!may_dropbcap)
-+			return -EPERM;
-+		do_capbset_drop(cred, i);
-+	}
-+
-+	return 0;
- }
- 
- /**
-diff --git a/security/commoncap.c b/security/commoncap.c
-index beac025..8054a07 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -804,6 +804,28 @@ int cap_task_setnice (struct task_struct *p, int nice)
- }
- #endif
- 
-+int cap_set_securebits(struct cred *new, unsigned securebits)
-+{
-+	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
-+	     & (new->securebits ^ securebits))				/*[1]*/
-+	    || ((new->securebits & SECURE_ALL_LOCKS & ~securebits))	/*[2]*/
-+	    || (securebits & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
-+	    || (cap_capable(current, current_cred(), CAP_SETPCAP,
-+			    SECURITY_CAP_AUDIT) != 0)			/*[4]*/
-+		/*
-+		 * [1] no changing of bits that are locked
-+		 * [2] no unlocking of locks
-+		 * [3] no setting of unsupported bits
-+		 * [4] doing anything requires privilege (go read about
-+		 *     the "sendmail capabilities bug")
-+		 */
-+	    )
-+		/* cannot change a locked bit */
-+		return -EPERM;
-+	new->securebits = securebits;
-+	return 0;
-+}
-+
- /**
-  * cap_task_prctl - Implement process control functions for this security module
-  * @option: The process control function requested
-@@ -861,24 +883,9 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
- 	 * capability-based-privilege environment.
- 	 */
- 	case PR_SET_SECUREBITS:
--		error = -EPERM;
--		if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
--		     & (new->securebits ^ arg2))			/*[1]*/
--		    || ((new->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
--		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
--		    || (cap_capable(current, current_cred(), CAP_SETPCAP,
--				    SECURITY_CAP_AUDIT) != 0)		/*[4]*/
--			/*
--			 * [1] no changing of bits that are locked
--			 * [2] no unlocking of locks
--			 * [3] no setting of unsupported bits
--			 * [4] doing anything requires privilege (go read about
--			 *     the "sendmail capabilities bug")
--			 */
--		    )
--			/* cannot change a locked bit */
-+		error = cap_set_securebits(new, arg2);
-+		if (error)
- 			goto error;
--		new->securebits = arg2;
- 		goto changed;
- 
- 	case PR_GET_SECUREBITS:
-@@ -921,6 +928,16 @@ error:
- 	return error;
- }
- 
-+void checkpoint_save_securebits(unsigned *b, unsigned cred_securebits)
-+{
-+	*b = cred_securebits;
-+}
-+
-+int checkpoint_restore_securebits(unsigned b, struct cred *cred)
-+{
-+	return cap_set_securebits(cred, b);
-+}
-+
- /**
-  * cap_syslog - Determine whether syslog function is permitted
-  * @type: Function requested
--- 
-1.6.1
+The main difference is that in the first case the parent forks
+from level 3 and in the second case is forks from level 2.  And
+the syscall is relative to the parent's nesting level.
 
+> Or are you expecting userspace to not specify the 1, only 2
+> upids?  In that case, you're requiring different behavior for
+> pid 1 than any others, which is kind of weird?  Or is that just
+> me?
+
+Either that, or it's just Suka and myself :p
+
+Oren.
