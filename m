@@ -1,15 +1,16 @@
-From: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v3][PATCH 5/7] Add target_pids parameter to copy_process()
-Date: Mon, 1 Jun 2009 16:40:43 +0800
-Message-ID: <20090601084043.GF4381@cr0.nay.redhat.com>
-References: <20090530235714.GA4083@us.ibm.com>
-	<20090531000237.GD4191@us.ibm.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 15/20] io-controller: map async requests to appropriate
+	cgroup
+Date: Mon, 01 Jun 2009 20:25:21 +0900 (JST)
+Message-ID: <20090601.202521.189722764.ryov__24669.4405716427$1243855634$gmane$org@valinux.co.jp>
+References: <20090528165710.GB4335@redhat.com>
+	<20090529.121737.189708024.ryov@valinux.co.jp>
+	<20090529133804.GA26962@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090531000237.GD4191-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090529133804.GA26962-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,21 +20,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, May 30, 2009 at 05:02:37PM -0700, Sukadev Bhattiprolu wrote:
->
->From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
->Date: Mon, 4 May 2009 01:17:43 -0700
->Subject: [RFC][v3][PATCH 5/7] Add target_pids parameter to copy_process()
->
->The new parameter will be used in a follow-on patch when clone_with_pids()
->is implemented.
->
->Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
->Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Fri, May 29, 2009 at 12:17:37PM +0900, Ryo Tsuruta wrote:
+> > Hi Vivek,
+> > 
+> > Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > > On Thu, May 28, 2009 at 06:27:40PM +0900, Ryo Tsuruta wrote:
+> > > > Hi Vivek,
+> > > > 
+> > > > > +#ifdef CONFIG_TRACK_ASYNC_CONTEXT
+> > > > > +	if (elv_bio_sync(bio)) {
+> > > > > +		/* sync io. Determine cgroup from submitting task context. */
+> > > > > +		cgroup = task_cgroup(current, io_subsys_id);
+> > > > > +		return cgroup;
+> > > > > +	}
+> > > > > +
+> > > > > +	/* Async io. Determine cgroup from with cgroup id stored in page */
+> > > > > +	bio_cgroup_id = get_blkio_cgroup_id(bio);
+> > > > > +
+> > > > > +	if (!bio_cgroup_id)
+> > > > > +		return NULL;
+> > > > > +
+> > > > > +	cgroup = blkio_cgroup_lookup(bio_cgroup_id);
+> > > > > +#else
+> > > > > +	cgroup = task_cgroup(current, io_subsys_id);
+> > > > > +#endif
+> > > > > +	return cgroup;
+> > > > > +}
+> > > > 
+> > > > There is a case where a kernel thread (such as device-mapper drivers)
+> > > > submits a sync IO instead of a task which originates the IO. I think
+> > > > you should always use get_blkio_cgroup_id() to determine cgroup.
+> > > > 
+> > > 
+> > > Hi Ryo,
+> > > 
+> > > Ok. Can you give some examples of drivers which are submitting reads in
+> > > different context al-together. You mentioned in the past that dm-crypt
+> > > looks like the one. How does current CFQ takes care of that. So if a 
+> > > BE prio 7 or an RT prio 0, task is submitting a READ, CFQ will not know it
+> > > and it will put that READ in the queue of the READ submitting device
+> > > mapper thread (may be BE prio 3 or 4)? 
+> > 
+> > In the case of READ, dm-raid1 submits read IOs in differenct context
+> > under some conditions. dm-ioband also does it.
+> > 
+> > > Always determining the cgroup from bio, will make things slower at the 
+> > > same time complicated from the CFQ point of view. Right now cfq creates
+> > > and caches the queue pointer in the io context of the bio submitting task
+> > > and assumes sync requests are coming from that task/io context. Currently
+> > > there can only be one sync queue associated with one context. So if a single
+> > > thread is submitting reads (may be a worker thread) on behalf of other
+> > > processes, then we loose the io context information. In fact currently we
+> > > don't even carry ioprio and io class information in bio.
+> > > 
+> > > So looks like we need to carry task io context information also in bio
+> > > to be able to associate the bio to right queue at CFQ level. This makes
+> > > it bit more complicated. For the time being I will keep it in my TODO
+> > > list and handle it once other more severe problems have been taken care
+> > > of.
+> > 
+> > There is a patchset which makes every bio points the iocontext of the
+> > process which is originally generated an IO request.
+> > 
+> >   Date Tue, 22 Apr 2008 22:51:31 +0900 (JST)
+> >   Subject [RFC][PATCH 1/10] I/O context inheritance
+> >   From Hirokazu Takahashi <>
+> >   http://lkml.org/lkml/2008/4/22/195
+> 
+> Ok, Thanks. This is good. So once above patches make to upstream, I will
+> just forward port my patches to make use of this infrastructure.
 
-Reviewed-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+If there are other people who also need this patchset, I'll consider
+to port it to the latest kernel. I would like to hear opinions from
+other people. I think it is useful for CFQ users.
+
+Thanks,
+Ryo Tsuruta
