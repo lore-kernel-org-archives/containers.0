@@ -1,23 +1,14 @@
-From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Tue, 2 Jun 2009 07:24:36 +0000
-Message-ID: <20090602072436.GB4239__11823.6110466116$1243927940$gmane$org@ff.dom.local>
-References: <1243684218.3966.83.camel@dogo.mojatatu.com>
-	<20090531081213.GC2756@ami.dom.local>
-	<1243776293.3966.241.camel@dogo.mojatatu.com>
-	<20090531195557.GA2777@ami.dom.local>
-	<1243813216.3966.254.camel@dogo.mojatatu.com>
-	<20090601060638.GA4256@ff.dom.local>
-	<1243861410.3966.268.camel@dogo.mojatatu.com>
-	<20090601204957.GA2760@ami.dom.local>
-	<1243893963.3966.325.camel@dogo.mojatatu.com>
-	<20090602155919.da89c08e.usui@mxm.nes.nec.co.jp>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroups: forbid noprefix if mounting more than just
+	cpuset subsystem
+Date: Tue, 2 Jun 2009 00:59:31 -0700
+Message-ID: <6599ad830906020059r6aa7e8f5ra7e570e70360f100__37449.0622002215$1243929609$gmane$org@mail.gmail.com>
+References: <4A24911F.4070601@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090602155919.da89c08e.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <4A24911F.4070601-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,36 +18,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jun 02, 2009 at 03:59:19PM +0900, Minoru Usui wrote:
-> On Mon, 01 Jun 2009 18:06:03 -0400
-> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> wrote:
-> 
-> > On Mon, 2009-06-01 at 22:49 +0200, Jarek Poplawski wrote:
-> > 
-> > > 
-> > > Actually, I'd insist with the old rock and handling that other rude
-> > > u32 case, at least until it's fixed in place. So I attach my version
-> > > of your patch (additionally I removed a pair of braces because of
-> > > checkpatch warning).
-> > 
-> > Sure, it doesnt complicate anything - Minoru, this is the version to go
-> > for.
-> 
-> I've tested Jarek's patch #1(for cls_api.c).
-> It works fine to me. Thanks Jarek.
-> 
-> 	Tested-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+On Mon, Jun 1, 2009 at 7:40 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+> We don't want users to use nopreifx, and also want to avoid name
+> collision, so we change to allow noprefix only if mounting just
+> the cpuset subsystem.
+>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+> =A0kernel/cgroup.c | =A0 10 ++++++++++
+> =A01 files changed, 10 insertions(+), 0 deletions(-)
+>
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index a7267bf..ad17f9d 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -842,6 +842,11 @@ static int parse_cgroupfs_options(char *data,
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 s=
+truct cgroup_sb_opts *opts)
+> =A0{
+> =A0 =A0 =A0 =A0char *token, *o =3D data ?: "all";
+> + =A0 =A0 =A0 unsigned long mask =3D (unsigned long)-1;
 
-Signed-off-by: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Patch looks good, but to make it more self-explanatory how about
+calling this variable noprefix_conflict_mask ?
 
-Actually, as far as I can remember, it's your patch with slight
-modifications by Jamal and me. So please Minoru, resend this patch
-as Jamal previously suggested: with your changelog and Jamal's,
-plus maybe mine (if you don't mind) signed-off-by's.
-
-Thanks,
-Jarek P.
+Paul
