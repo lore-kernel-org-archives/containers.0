@@ -1,52 +1,111 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
-Date: Tue, 2 Jun 2009 12:15:35 -0500
-Message-ID: <20090602171535.GA17150@us.ibm.com>
-References: <20090529223319.GE14602@us.ibm.com> <d4f050d30905311326i59bf5e2fjfa837f2720d076dc@mail.gmail.com> <20090601013837.GA15897@hallyn.com> <551280e50905311918j28cd2482g5918bf9b0bcb297a@mail.gmail.com> <20090601133508.GA18889@us.ibm.com> <551280e50906010846i2b46c603x55eea7967233b2e0@mail.gmail.com> <20090601221857.GA29164@us.ibm.com> <551280e50906020649n4ea15ca9y3c0a22b0114b807c@mail.gmail.com> <20090602142353.GA11135@us.ibm.com> <551280e50906020849o12f777dma4fd66d0dd887e38@mail.gmail.com>
+From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Tue, 2 Jun 2009 23:10:31 +0200
+Message-ID: <20090602211031.GA2850__41368.469692725$1243977132$gmane$org@ami.dom.local>
+References: <20090531081213.GC2756@ami.dom.local>
+	<1243776293.3966.241.camel@dogo.mojatatu.com>
+	<20090531195557.GA2777@ami.dom.local>
+	<1243813216.3966.254.camel@dogo.mojatatu.com>
+	<20090601060638.GA4256@ff.dom.local>
+	<1243861410.3966.268.camel@dogo.mojatatu.com>
+	<20090601204957.GA2760@ami.dom.local>
+	<1243893963.3966.325.camel@dogo.mojatatu.com>
+	<20090602062623.GA4239@ff.dom.local>
+	<1243948587.3966.393.camel@dogo.mojatatu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <551280e50906020849o12f777dma4fd66d0dd887e38@mail.gmail.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Andrew G. Morgan" <morgan@kernel.org>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
+In-Reply-To: <1243948587.3966.393.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew G. Morgan (morgan@kernel.org):
-> > with a BUILD_BUG_ON to ensure that sizeof(r)=3D=3Dsizeof(d). =A0Ugl=
-y, but
-> > should suit everyone?
->=20
-> could the checkpointing code check the return value for
-> cap_checkpoint_restore() and fail the restore if it returned an error=
-?
+On Tue, Jun 02, 2009 at 09:16:27AM -0400, jamal wrote:
+...
+> Thanks for the courtesy.
+> I note Dave already swallowed Minoru's patch; so lets move from there.
+> Yes, there's a possibility of a regression - I (and so are you) are only
+> recently evolved humans; we are not perfect... yet ;->
+> So i would agree with Minoru testing your patch as plan B in case the
+> applied one starts causing trouble.
+> BTW, ok - here's a quick untested, uncompiled fix to the u32 classifier
+> to fix the first rock (which you already worked around in your changes
+> to the included patch). No rush to submit for now..
 
-Sorry things seem mixed up here.  Let's stick to the naming Oren
-suggested (and i used in the latest set):
+Thanks for your courtesy as well. Alas, I'm not sure I can fully
+understand the current patch. You seem to redefine the ->get() method
+usage, so it looks for handle only for configured tp's. It might be
+right but I need more time to check this.
 
-	checkpoint_capabilities() saves the credential's caps to the
-		checkpoint image
-	restore_capabilities() takes state from checkpoint file and
-		sets a credential's caps accordingly if allowed.
+> 
+> On the second rock you threw so violently, after some reflection, I
+> think it is ok to send a replace twice with different priorities.
+> The second one will be added and the old not deleted, but if the user
+> has chosen the correct priority, then things will work out just fine.
+> And if they want they have to explicitly delete the one they dont want.
+> It is also not illegal to do a "replace" for installing instead of
+> "add".
+> 
+> So the only other things left to do from this exercise are (no rush in
+> any of them):
+> a) remove all "buckets" from underneath other classifiers
+> b) get consistency across all classifiers in usage of setup API
+> 
+> If you want to do this - go ahead; else i plan on tackling it probably
+> when stable 2.6.31 kicks in.
 
-restore_capabilities() returns an error now on failure (-EPERM or
--ENOMEM).  We might talk about it returning -EINVAL if capability
-sets aren't valid, but then the kernel currently allows invalid
-capabilities to be set anyway (hence CapPrm for root tasks is
-generally 0xffffffffffffffff, not just filled with valid bits).
+I definitely prefer you doing this and me asking "rude" questions.;-)
 
-checkpoint_capabilities() doesn't need to return an error - if it
-is called at all, it is called with enough space for the struct
-it expects to write out.
+Cheers,
+Jarek P.
 
-So I don't understand what it is you're asking for above?
-
-thanks,
--serge
---
-To unsubscribe from this list: send the line "unsubscribe linux-securit=
-y-module" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/net/sched/cls_u32.c b/net/sched/cls_u32.c
+> index 07372f6..5ad0b98 100644
+> --- a/net/sched/cls_u32.c
+> +++ b/net/sched/cls_u32.c
+> @@ -249,6 +249,9 @@ static unsigned long u32_get(struct tcf_proto *tp, u32 handle)
+>  	struct tc_u_hnode *ht;
+>  	struct tc_u_common *tp_c = tp->data;
+>  
+> +	if (!tp_c)
+> +		return 0;
+> +
+>  	if (TC_U32_HTID(handle) == TC_U32_ROOT)
+>  		ht = tp->root;
+>  	else
+> @@ -311,7 +314,6 @@ static int u32_init(struct tcf_proto *tp)
+>  	root_ht->tp_c = tp_c;
+>  
+>  	tp->root = root_ht;
+> -	tp->data = tp_c;
+>  	return 0;
+>  }
+>  
+> @@ -524,7 +526,7 @@ static int u32_change(struct tcf_proto *tp, unsigned long base, u32 handle,
+>  		      struct nlattr **tca,
+>  		      unsigned long *arg)
+>  {
+> -	struct tc_u_common *tp_c = tp->data;
+> +	struct tc_u_common *tp_c = tp->root->tp_c;
+>  	struct tc_u_hnode *ht;
+>  	struct tc_u_knode *n;
+>  	struct tc_u32_sel *s;
+> @@ -540,6 +542,7 @@ static int u32_change(struct tcf_proto *tp, unsigned long base, u32 handle,
+>  	if (err < 0)
+>  		return err;
+>  
+> +	tp->data = tp_c;
+>  	if ((n = (struct tc_u_knode*)*arg) != NULL) {
+>  		if (TC_U32_KEY(n->handle) == 0)
+>  			return -EINVAL;
