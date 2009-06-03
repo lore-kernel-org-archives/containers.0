@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/9] exec_path 3/9: switch TOMOYO to ->exec_path
-Date: Thu, 4 Jun 2009 03:05:50 +0400
-Message-ID: <20090603230550.GD853@x200.localdomain>
+Subject: [PATCH 4/9] exec_path 4/9: switch oprofile to ->exec_path
+Date: Thu, 4 Jun 2009 03:06:13 +0400
+Message-ID: <20090603230613.GE853@x200.localdomain>
 References: <20090526113618.GJ28083@us.ibm.com>
 	<20090526162415.fb9cefef.akpm@linux-foundation.org>
 	<20090531215427.GA29534@x200.localdomain>
@@ -28,43 +28,64 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- security/tomoyo/common.c |   18 ++++++------------
- 1 files changed, 6 insertions(+), 12 deletions(-)
+ drivers/oprofile/buffer_sync.c |   30 ++++++++----------------------
+ 1 files changed, 8 insertions(+), 22 deletions(-)
 
-diff --git a/security/tomoyo/common.c b/security/tomoyo/common.c
-index ddfb9cc..d26deea 100644
---- a/security/tomoyo/common.c
-+++ b/security/tomoyo/common.c
-@@ -10,6 +10,7 @@
-  */
- 
- #include <linux/uaccess.h>
+diff --git a/drivers/oprofile/buffer_sync.c b/drivers/oprofile/buffer_sync.c
+index 8574622..64c6d7d 100644
+--- a/drivers/oprofile/buffer_sync.c
++++ b/drivers/oprofile/buffer_sync.c
+@@ -25,6 +25,7 @@
+ #include <linux/workqueue.h>
+ #include <linux/notifier.h>
+ #include <linux/dcookies.h>
 +#include <linux/path.h>
- #include <linux/security.h>
- #include <linux/hardirq.h>
- #include "realpath.h"
-@@ -700,20 +701,13 @@ bool tomoyo_io_printf(struct tomoyo_io_buffer *head, const char *fmt, ...)
-  */
- static const char *tomoyo_get_exe(void)
+ #include <linux/profile.h>
+ #include <linux/module.h>
+ #include <linux/fs.h>
+@@ -213,30 +214,15 @@ static inline unsigned long fast_get_dcookie(struct path *path)
+ 	return cookie;
+ }
+ 
+-
+-/* Look up the dcookie for the task's first VM_EXECUTABLE mapping,
+- * which corresponds loosely to "application name". This is
+- * not strictly necessary but allows oprofile to associate
+- * shared-library samples with particular applications
+- */
+-static unsigned long get_exec_dcookie(struct mm_struct *mm)
++static unsigned long get_exec_dcookie(struct task_struct *tsk)
  {
--	struct mm_struct *mm = current->mm;
+ 	unsigned long cookie = NO_COOKIE;
 -	struct vm_area_struct *vma;
 +	struct path exec_path;
- 	const char *cp = NULL;
  
 -	if (!mm)
--		return NULL;
--	down_read(&mm->mmap_sem);
+-		goto out;
+-
 -	for (vma = mm->mmap; vma; vma = vma->vm_next) {
--		if ((vma->vm_flags & VM_EXECUTABLE) && vma->vm_file) {
--			cp = tomoyo_realpath_from_path(&vma->vm_file->f_path);
--			break;
--		}
+-		if (!vma->vm_file)
+-			continue;
+-		if (!(vma->vm_flags & VM_EXECUTABLE))
+-			continue;
+-		cookie = fast_get_dcookie(&vma->vm_file->f_path);
+-		break;
 -	}
--	up_read(&mm->mmap_sem);
-+	get_task_exec_path(current, &exec_path);
+-
+-out:
++	get_task_exec_path(tsk, &exec_path);
 +	if (exec_path.mnt && exec_path.dentry)
-+		cp = tomoyo_realpath_from_path(&exec_path);
++		cookie = fast_get_dcookie(&exec_path);
 +	path_put(&exec_path);
- 	return cp;
+ 	return cookie;
  }
+ 
+@@ -543,7 +529,7 @@ void sync_buffer(int cpu)
+ 				release_mm(oldmm);
+ 				mm = take_tasks_mm(new);
+ 				if (mm != oldmm)
+-					cookie = get_exec_dcookie(mm);
++					cookie = get_exec_dcookie(new);
+ 				add_user_ctx_switch(new, cookie);
+ 			}
+ 			if (op_cpu_buffer_get_size(&entry))
