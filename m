@@ -1,11 +1,18 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: ckpt-16-dev BUG() - bisected
-Date: Wed, 03 Jun 2009 17:00:59 -0500
-Message-ID: <m3vdndkmec.fsf@pobox.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 1/9] exec_path 1/9: introduce ->exec_path and switch
+	/proc/*/exe
+Date: Thu, 4 Jun 2009 03:04:22 +0400
+Message-ID: <20090603230422.GB853@x200.localdomain>
+References: <20090526113618.GJ28083@us.ibm.com>
+	<20090526162415.fb9cefef.akpm@linux-foundation.org>
+	<20090531215427.GA29534@x200.localdomain>
+	<20090531151953.8f8b14b5.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090531151953.8f8b14b5.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,53 +22,235 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pulled latest updates today, started seeing the bug below when doing
-simple bash shell checkpoint/restart.  Git bisect blames:
+On Sun, May 31, 2009 at 03:19:53PM -0700, Andrew Morton wrote:
+> On Mon, 1 Jun 2009 01:54:27 +0400 Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> 
+> > And BTW, there is something unnatural when executable path is attached
+> > to mm_struct(!) not task_struct,
+> 
+> mm_struct is the central object for a heavyweight process.  All threads
+> within that process share the same executable path (don't they?) so
+> attaching the executable path to the mm seems OK to me.
 
-commit 505d9949cac385c5111bbd8ff3d2e123d5c468d8
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Sun May 31 12:59:40 2009 -0400
-
-    c/r: [X86_32] validate task's cpu registers and tls during restart
-    
-    Check the eflags, segment registers and tls entries from the
-    checkpoint image to prevent breakpoints inside the kernel code.
-    
-    Fixes in restore_thread() and load_cpu_regs():
-            /* TODO: ADD SANITY CHECKS TO VERIFY VALIDITY OF VALUES */
-    
-    Based on patch from Alexey Dobriyan:
-    https://lists.linux-foundation.org/pipermail/containers/2009-May/017886.html
-        Segment registers are abstracted to allow i386 => x86_64
-        migration (BTW, I'm not so sure if just making 32-bit selectors
-        the same will achieve same effect)
+OK, let's try this:
 
 
-kernel BUG at arch/x86/mm/checkpoint.c:86!
-invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-last sysfs file: /sys/block/sda/size
-Modules linked in:
+[PATCH 1/9] exec_path 1/9: introduce ->exec_path and switch /proc/*/exe
 
-Pid: 2236, comm: ckpt Not tainted (2.6.30-rc7-00054-g505d994 #55) 
-EIP: 0060:[<c021c3dd>] EFLAGS: 00010202 CPU: 0
-EIP is at encode_segment+0x51/0x57
-EAX: 1fffe009 EBX: df03a720 ECX: 00000130 EDX: 1fffe00f
-ESI: df996fb4 EDI: def3f250 EBP: de8abf18 ESP: de8abf18
- DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-Process ckpt (pid: 2236, ti=de8ab000 task=de8e28e0 task.ti=de8ab000)
-Stack:
- de8abf38 c021cc07 decf51c0 def3f250 00000062 dc99a440 00000000 def3f250
- de8abf58 c038eb3c decf51c0 decf54e8 00000007 00000000 00000000 def3f250
- de8abf98 c038d7bf c07a69e0 00000001 00000001 00000000 def73ee0 c07ad224
-Call Trace:
- [<c021cc07>] ? checkpoint_cpu+0x11a/0x426
- [<c038eb3c>] ? checkpoint_task+0x226/0x239
- [<c038d7bf>] ? do_checkpoint+0x404/0x511
- [<c038c669>] ? sys_checkpoint+0x6d/0x83
- [<c0202ce5>] ? syscall_call+0x7/0xb
-Code: 74 2d 83 fa 7b b8 02 00 00 00 74 23 f6 c2 04 74 0a 89 d0 c1 e8 03 80 cc 80 eb 14 c1 ea 03 8d 42 fa 83 f8 02 77 05 80 cc 40 eb 04 <0f> 0b eb fe 5d c3 55 89 e5 e8 f9 72 fe ff 85 c0 74 40 83 f8 01 
-EIP: [<c021c3dd>] encode_segment+0x51/0x57 SS:ESP 0068:de8abf18
----[ end trace 270dba57a69e79e1 ]---
+->exec_path marks executable which is associated with running task.
+Binfmt loader decides which executable is such and can, in theory,
+assign anything. Unlike current status quo when first VM_EXECUTABLE mapping is
+sort of marks running executable.
+
+If executable unmaps its all VM_EXECUTABLE mappings, /proc/*/exe ceases
+to exists, ick! And userpsace can't even use MAP_EXECUTABLE.
+
+Tasks which aren't created by running clone(2) and execve(2)
+(read: kernel threads) get empty ->exec_path and
+
+->exec_path is copied on clone(2) and put at do_exit() time.
+
+->exec_path is going to replace struct mm_struct::exe_file et al
+and allows to remove VM_EXECUTABLE flag while keeping readlink("/proc/*/exe")
+without loop over all VMAs.
+
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ fs/binfmt_aout.c      |    1 +
+ fs/binfmt_elf.c       |    1 +
+ fs/binfmt_elf_fdpic.c |    1 +
+ fs/binfmt_flat.c      |    1 +
+ fs/binfmt_som.c       |    1 +
+ fs/proc/base.c        |   38 ++++++++++++++------------------------
+ include/linux/sched.h |   25 +++++++++++++++++++++++++
+ kernel/exit.c         |    1 +
+ kernel/fork.c         |    2 ++
+ 9 files changed, 47 insertions(+), 24 deletions(-)
+
+diff --git a/fs/binfmt_aout.c b/fs/binfmt_aout.c
+index b639dcf..a19b185 100644
+--- a/fs/binfmt_aout.c
++++ b/fs/binfmt_aout.c
+@@ -379,6 +379,7 @@ beyond_if:
+ 	regs->gp = ex.a_gpvalue;
+ #endif
+ 	start_thread(regs, ex.a_entry, current->mm->start_stack);
++	set_task_exec_path(current, &bprm->file->f_path);
+ 	return 0;
+ }
+ 
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index 40381df..b815bfc 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -999,6 +999,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
+ #endif
+ 
+ 	start_thread(regs, elf_entry, bprm->p);
++	set_task_exec_path(current, &bprm->file->f_path);
+ 	retval = 0;
+ out:
+ 	kfree(loc);
+diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
+index fdb66fa..f545504 100644
+--- a/fs/binfmt_elf_fdpic.c
++++ b/fs/binfmt_elf_fdpic.c
+@@ -1185,6 +1185,7 @@ static int elf_fdpic_map_file_by_direct_mmap(struct elf_fdpic_params *params,
+ 		seg++;
+ 	}
+ 
++	set_task_exec_path(current, &file->f_path);
+ 	return 0;
+ }
+ 
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 697f6b5..a16f977 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -798,6 +798,7 @@ static int load_flat_file(struct linux_binprm * bprm,
+ 			libinfo->lib_list[id].start_brk) +	/* start brk */
+ 			stack_len);
+ 
++	set_task_exec_path(current, &bprm->file->f_path);
+ 	return 0;
+ err:
+ 	return ret;
+diff --git a/fs/binfmt_som.c b/fs/binfmt_som.c
+index eff74b9..6c56262 100644
+--- a/fs/binfmt_som.c
++++ b/fs/binfmt_som.c
+@@ -174,6 +174,7 @@ static int map_som_binary(struct file *file,
+ 	up_write(&current->mm->mmap_sem);
+ 	if (retval > 0 || retval < -1024)
+ 		retval = 0;
++	set_task_exec_path(current, &bprm->file->f_path);
+ out:
+ 	set_fs(old_fs);
+ 	return retval;
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 3326bbf..dc4ee6a 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -201,6 +201,20 @@ static int proc_root_link(struct inode *inode, struct path *path)
+ 	return result;
+ }
+ 
++static int proc_exe_link(struct inode *inode, struct path *path)
++{
++	struct task_struct *tsk;
++
++	tsk = get_proc_task(inode);
++	if (!tsk)
++		return -ENOENT;
++	get_task_exec_path(tsk, path);
++	put_task_struct(tsk);
++	if (!path->mnt || !path->dentry)
++		return -ENOENT;
++	return 0;
++}
++
+ /*
+  * Return zero if current may access user memory in @task, -error if not.
+  */
+@@ -1302,30 +1316,6 @@ void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm)
+ 	newmm->exe_file = get_mm_exe_file(oldmm);
+ }
+ 
+-static int proc_exe_link(struct inode *inode, struct path *exe_path)
+-{
+-	struct task_struct *task;
+-	struct mm_struct *mm;
+-	struct file *exe_file;
+-
+-	task = get_proc_task(inode);
+-	if (!task)
+-		return -ENOENT;
+-	mm = get_task_mm(task);
+-	put_task_struct(task);
+-	if (!mm)
+-		return -ENOENT;
+-	exe_file = get_mm_exe_file(mm);
+-	mmput(mm);
+-	if (exe_file) {
+-		*exe_path = exe_file->f_path;
+-		path_get(&exe_file->f_path);
+-		fput(exe_file);
+-		return 0;
+-	} else
+-		return -ENOENT;
+-}
+-
+ static void *proc_pid_follow_link(struct dentry *dentry, struct nameidata *nd)
+ {
+ 	struct inode *inode = dentry->d_inode;
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index b4c38bc..6b2dd01 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1265,6 +1265,12 @@ struct task_struct {
+ #endif
+ /* CPU-specific state of this task */
+ 	struct thread_struct thread;
++	/*
++	 * Executable, binfmt loader wants to associate with task
++	 * (read: execve(2) argument).
++	 * Empty, if concept isn't applicable, e. g. kernel thread.
++	 */
++	struct path exec_path;
+ /* filesystem information */
+ 	struct fs_struct *fs;
+ /* open file information */
+@@ -2403,6 +2409,25 @@ static inline void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
+ 
+ #define TASK_STATE_TO_CHAR_STR "RSDTtZX"
+ 
++static inline void get_task_exec_path(struct task_struct *tsk, struct path *path)
++{
++	task_lock(tsk);
++	path_get(&tsk->exec_path);
++	*path = tsk->exec_path;
++	task_unlock(tsk);
++}
++
++static inline void set_task_exec_path(struct task_struct *tsk, struct path *path)
++{
++	struct path old_path;
++
++	path_get(path);
++	task_lock(tsk);
++	old_path = tsk->exec_path;
++	tsk->exec_path = *path;
++	task_unlock(tsk);
++	path_put(&old_path);
++}
+ #endif /* __KERNEL__ */
+ 
+ #endif
+diff --git a/kernel/exit.c b/kernel/exit.c
+index abf9cf3..8e70b54 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -962,6 +962,7 @@ NORET_TYPE void do_exit(long code)
+ 
+ 	exit_sem(tsk);
+ 	exit_files(tsk);
++	set_task_exec_path(tsk, &(struct path){ .mnt = NULL, .dentry = NULL });
+ 	exit_fs(tsk);
+ 	check_stack_usage();
+ 	exit_thread();
+diff --git a/kernel/fork.c b/kernel/fork.c
+index b9e2edd..c0ee931 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1191,6 +1191,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	cgroup_fork_callbacks(p);
+ 	cgroup_callbacks_done = 1;
+ 
++	get_task_exec_path(current, &p->exec_path);
++
+ 	/* Need tasklist lock for parent etc handling! */
+ 	write_lock_irq(&tasklist_lock);
