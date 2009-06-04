@@ -1,23 +1,18 @@
-From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Thu, 4 Jun 2009 06:34:45 +0000
-Message-ID: <20090604063445.GA2683__27900.1898401932$1244097341$gmane$org@ff.dom.local>
-References: <1243776293.3966.241.camel@dogo.mojatatu.com>
-	<20090531195557.GA2777@ami.dom.local>
-	<1243813216.3966.254.camel@dogo.mojatatu.com>
-	<20090601060638.GA4256@ff.dom.local>
-	<1243861410.3966.268.camel@dogo.mojatatu.com>
-	<20090601204957.GA2760@ami.dom.local>
-	<1243893963.3966.325.camel@dogo.mojatatu.com>
-	<20090602155919.da89c08e.usui@mxm.nes.nec.co.jp>
-	<1243948765.3966.397.camel@dogo.mojatatu.com>
-	<20090604134133.dde9ddc6.usui@mxm.nes.nec.co.jp>
+From: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC][v3][PATCH 6/7] Define do_fork_with_pids()
+Date: Thu, 4 Jun 2009 15:21:12 +0800
+Message-ID: <20090604072112.GA6856@cr0.nay.redhat.com>
+References: <20090530235714.GA4083@us.ibm.com>
+	<20090531000255.GE4191@us.ibm.com>
+	<20090601081929.GC4381@cr0.nay.redhat.com>
+	<20090603003522.GA22704@us.ibm.com>
+	<Pine.LNX.4.64.0906032306240.25421@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090604134133.dde9ddc6.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0906032306240.25421-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,40 +22,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 04, 2009 at 01:41:33PM +0900, Minoru Usui wrote:
-> On Tue, 02 Jun 2009 09:19:25 -0400
-> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> wrote:
-> 
-> > On Tue, 2009-06-02 at 15:59 +0900, Minoru Usui wrote:
-> > 
-> > > If we have to test Jarek's patch #2, I'll test it tomorrow.
-> > > What do you think Jamal?
-> > 
-> > Yes please - even if it is for reasons of givein Jarek some peace of
-> > mind;->
-> > If something goes seriously wrong with other classifiers because of the
-> > patch, and Jareks patch works, we can back out the current patch and fix
-> > it with that approach.
-> 
-> I've tested Jarek's patch #2 without patch #1.
-> It works fine, too. Thanks Jarek.
-> 
-> 	Tested-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+On Wed, Jun 03, 2009 at 11:07:40PM -0400, Oren Laadan wrote:
+>On Tue, 2 Jun 2009, Sukadev Bhattiprolu wrote:
+>
+>> | >diff --git a/include/linux/types.h b/include/linux/types.h
+>> | >index 5abe354..17ec186 100644
+>> | >--- a/include/linux/types.h
+>> | >+++ b/include/linux/types.h
+>> | >@@ -204,6 +204,11 @@ struct ustat {
+>> | > 	char			f_fpack[6];
+>> | > };
+>> | > 
+>> | >+struct target_pid_set {
+>> | >+	int num_pids;
+>> | >+	pid_t *target_pids;
+>> | >+};
+>> | >+
+>> | 
+>> | A quick question: why not putting this definition into
+>> | include/linux/pid.h?
+>> 
+>> Well, the data structure needs to be visible to applications so I
+>> chose types.h since its already listed in fork(2) man page and the
+>> related type, 'pid_t' is defined there.
+>
+>I don't recall linux/types.h mentioned in the manpage.
 
-Thank you very much. So, as Jamal wrote, let's wait - hoping it won't
-be needed...
+In fact, linux/types.h for userspace only has a few types
+for endians...
 
-Jarek P.
+>
+>And, heh, it ended up within #ifdef __KERNEL__ there...
+>In fact, the types defined in that header are for kernel use.
 
-Btw., it seems your box needs time update:
+Yup, I believe Sukadev put it in a wrong position.
 
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Thu, 4 Jun 2009 13:41:33 +0900
-...
-Original-Received: from mail03.kamome.nec.co.jp (mail03.kamome.nec.co.jp [10.25.43.7])
-	by mailsv.nec.co.jp (8.13.8/8.13.4) with ESMTP id n5455gP4006057;
-	Thu, 4 Jun 2009 14:06:27 +0900 (JST)
+Thanks.
