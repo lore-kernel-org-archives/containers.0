@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Enhance checkpoint/restart Kconfig options
-Date: Thu, 4 Jun 2009 15:41:14 -0500
-Message-ID: <20090604204114.GA3513@us.ibm.com>
-References: <20090604184504.F1BCB2F8@kernel>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: Add AF_UNIX support
+Date: Thu, 04 Jun 2009 14:16:08 -0700
+Message-ID: <873aafk8dj.fsf@caffeine.danplanet.com>
+References: <1244042305-7770-1-git-send-email-danms@us.ibm.com>
+	<20090604201444.GA4302@localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090604184504.F1BCB2F8@kernel>
+In-Reply-To: <20090604201444.GA4302@localdomain> (Louis Rilling's message of
+	"Thu\, 4 Jun 2009 22\:14\:45 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> I spent way too much time yesterday trying to figure out why
-> my c/r tests weren't running.  It turned out that I didn't
-> have any of the namespaces enabled, the sys_unshare() was
-> failing, and the debugging didn't explain any of this.
-> 
-> So, to protect the world from repeating my mistakes, let's
-> improve the Kconfig options a bit.
-> 
-> 1. Don't say "Enable" in the c/r menu, that's just silly
-> 2. move the c/r menu next to the namespaces
-> 3. make CHECKPOINT select all of the namespaces
-> 4. put a Kconfig 'comment' in explaining how everything
->    got selected.
-> 5. Put the namespaces in their own menu
-> 
-> Perhaps I should break this up a bit and we can push some
-> of this to the beginning of the series.  Thoughts?
+LR> GFP_KERNEL is not allowed here, since from->lock is locked. Not
+LR> sure that GFP_ATOMIC is acceptable though. Perhaps it would be
+LR> better to temporarily move the queue to a local head, copy it (no
+LR> spinlock needed), and then push it again.  This would need to
+LR> block concurrent senders/receivers during this operation, unless
+LR> it's guaranteed that they are all frozen.
 
-Yes the selects are needed imo.
+Ah, yeah, good catch.  I'll have to think about that a little.
 
--serge
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
