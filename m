@@ -1,17 +1,18 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4] cgroup freezer: Add CHECKPOINTING state to
-	safeguard container checkpoint
-Date: Thu, 4 Jun 2009 03:44:12 -0700
-Message-ID: <20090604104412.GX9285@us.ibm.com>
+Subject: Re: [PATCH 4/4] cgroup freezer: --- replacement patch 4/4 (b)
+Date: Thu, 4 Jun 2009 03:45:27 -0700
+Message-ID: <20090604104527.GY9285@us.ibm.com>
 References: <cover.1244019829.git.matthltc@us.ibm.com>
 	<89c3726813accffb7c51cd30ff93b79a4391f382.1244019829.git.matthltc@us.ibm.com>
 	<20090603161840.GD7848@us.ibm.com>
+	<Pine.LNX.4.64.0906031957110.19096@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0906032011470.19096@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090603161840.GD7848-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0906032011470.19096-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,140 +22,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 03, 2009 at 11:18:40AM -0500, Serge E. Hallyn wrote:
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > The CHECKPOINTING state prevents userspace from unfreezing tasks until
-> > sys_checkpoint() is finished. When doing container checkpoint userspace
-> > will do:
-> > 
-> > 	echo FROZEN > /cgroups/my_container/freezer.state
-> > 	...
-> > 	rc = sys_checkpoint( <pid of container root> );
-> > 
-> > To ensure a consistent checkpoint image userspace should not be allowed
-> > to thaw the cgroup (echo THAWED > /cgroups/my_container/freezer.state)
-> > during checkpoint.
-> > 
-> > "CHECKPOINTING" can only be set on a "FROZEN" cgroup using the checkpoint
-> > system call. Once in the "CHECKPOINTING" state, the cgroup may not leave until
-> > the checkpoint system call is finished and ready to return. Then the
-> > freezer state returns to "FROZEN". Writing any new state to freezer.state while
-> > checkpointing will return EBUSY. These semantics ensure that userspace cannot
-> > unfreeze the cgroup midway through the checkpoint system call.
-> > 
-> > The cgroup_freezer_begin_checkpoint() and cgroup_freezer_end_checkpoint()
-> > make relatively few assumptions about the task that is passed in. However the
-> > way they are called in do_checkpoint() assumes that the root of the container
-> > is in the same freezer cgroup as all the other tasks that will be
-> > checkpointed.
-> > 
-> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> > Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> > Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-> > Cc: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> > 
-> > Notes:
-> > 	Meant to work with Oren's checkpoint/restart v16-dev git tree.
-> >         Still needs testing.
-> >         As a side-effect this prevents the multiple tasks from entering the
-> >                 CHECKPOINTING state simultaneously. All but one will get -EBUSY.
-> > ---
-> >  Documentation/cgroups/freezer-subsystem.txt |   10 ++
-> >  checkpoint/checkpoint.c                     |    8 ++-
-> >  include/linux/freezer.h                     |    8 ++
-> >  kernel/cgroup_freezer.c                     |  128 +++++++++++++++++++-------
-> >  4 files changed, 117 insertions(+), 37 deletions(-)
-> > 
-> > diff --git a/Documentation/cgroups/freezer-subsystem.txt b/Documentation/cgroups/freezer-subsystem.txt
-> > index 41f37fe..92b68e6 100644
-> > --- a/Documentation/cgroups/freezer-subsystem.txt
-> > +++ b/Documentation/cgroups/freezer-subsystem.txt
-> > @@ -100,3 +100,13 @@ things happens:
-> >  		and returns EINVAL)
-> >  	3) The tasks that blocked the cgroup from entering the "FROZEN"
-> >  		state disappear from the cgroup's set of tasks.
-> > +
-> > +When the cgroup freezer is used to guard container checkpoint operations the
-> > +freezer.state may be "CHECKPOINTING". "CHECKPOINTING" can only be set on a
-> > +"FROZEN" cgroup using the checkpoint system call. Once in the "CHECKPOINTING"
-> > +state, the cgroup may not leave until the checkpoint system call returns the
-> > +freezer state to "FROZEN". Writing any new state to freezer.state while
-> > +checkpointing will return EBUSY. These semantics ensure that userspace cannot
-> > +unfreeze the cgroup midway through the checkpoint system call. Note that,
-> > +unlike "FROZEN" and "FREEZING", there is no corresponding "CHECKPOINTED"
-> > +state.
-> > diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> > index afc7300..d586a9b 100644
-> > --- a/checkpoint/checkpoint.c
-> > +++ b/checkpoint/checkpoint.c
-> > @@ -569,7 +569,10 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
-> > 
-> >  	ret = init_checkpoint_ctx(ctx, pid);
-> >  	if (ret < 0)
-> > -		goto out;
-> > +		return ret;
-> > +	ret = cgroup_freezer_begin_checkpoint(ctx->root_task);
-> > +	if (ret < 0)
-> > +		return ret;
-> >  	ret = build_tree(ctx);
-> >  	if (ret < 0)
-> >  		goto out;
-> > @@ -597,6 +600,7 @@ int do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
-> >  	/* on success, return (unique) checkpoint identifier */
-> >  	ctx->crid = atomic_inc_return(&ctx_count);
-> >  	ret = ctx->crid;
-> > - out:
-> > +out:
-> > +	cgroup_freezer_end_checkpoint(ctx->root_task);
-> >  	return ret;
-> >  }
+On Wed, Jun 03, 2009 at 08:12:19PM -0400, Oren Laadan wrote:
+> From 3c24531980764a71705492c2dfc2cc99366784f3 Mon Sep 17 00:00:00 2001
+> From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> Date: Wed, 3 Jun 2009 19:31:21 -0400
+> Subject: [PATCH] c/r: use CHECKPOINTING state for hierarchy's cgroup freezer
 > 
-> We have no guarantees that all tasks under ctx->root_task are in
-> the same freezer cgroup.  This presents a problem if we want to
-> make this guarantee which you're trying to make.
-> 
+> Set state of freezer cgroup of checkpointed task hierarchy to
+> "CHECKPOINTING" during a checkpoint, to ensure that tasks cannot
+> be thawed while at it.
+>
+> get_container() grabs a reference to the root task's freezer cgroup.
+> Then in may_checkpoint_task() each it verifies that all tasks belong
+> to the same freezer group.
 
-Right. I know we don't have that guarantee -- that's why I mentioned it.
-
-> First, you need to update the may_checkpoint() check to check that
-> the tasks are CHECKPOINTING, not FROZEN.
-
-Good point.
+Ugh, I really don't like grabbing this reference. It may be necessary
+though -- I need to think about it more.
 
 > 
-> But in addition, note that (a) there may be two parallel checkpoints of
-> separate tasksets (C and D), and (b) userspace may have mucked up
-> and put some tasks from set C into set D's cgroup.  That means that it's
-> possible that all of the may_checkpoint() tasks pass, but if D's
-> checkpoint finishes before C's, then some tasks will be unfrozen
-> before their checkpoint is complete.
-> 
-> So I guess now you need to enforce at may_checkpoint() that all tasks
-> being checkpointed are in ctx->root_task's freezer cgroup?
+> In particular, the root task is also tested, such that if the root
+> tasks changes its freezer cgroups before it moves to "CHECKPOINTING",
+> it will be notived and an error returned.
 
-One thing to note is the cgroup_freezer_begin|end_checkpoint() calls
-could be applied to any task. Right now my patch only applies it to the
-root. 
-
-The use of it in the checkpoint code will look very different if it's applied
-to all tasks. Since we haven't clearly defined "container", it's not quite
-clear what should be done here. I'm thinking we either need to check that all
-the tasks belong to the same cgroup (below) or we need to call
-cgroup_freezer_begin|end_checkpoint() for each task we encounter :/.
-
-So when the initial leak-detection pass is made you'd also try to cause
-each task's cgroup to enter CHECKPOINTING. That would require a counter for
-the number of times the cgroup has (re)entered CHECKPOINTING, and when the
-counter reaches 0 -- on the last cgroup_freezer_end_checkpoint() call --
-the freezer.state could be moved back to FROZEN.
-
-Add to all that the self-checkpoint problem where a task freezes itself
-before getting to sys_checkpoint :P...
+Tasks in a CHECKPOINTING cgroup are frozen and frozen tasks cannot move.
+See freezer_can_attach(). This does rather complicate self-checkpoint
+though! See my reply to your follow-on patches..
 
 Cheers,
-	-Matt
+	-Matt Helsley
