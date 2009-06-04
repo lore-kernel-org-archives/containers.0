@@ -1,18 +1,19 @@
-From: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v3][PATCH 6/7] Define do_fork_with_pids()
-Date: Thu, 4 Jun 2009 15:21:12 +0800
-Message-ID: <20090604072112.GA6856@cr0.nay.redhat.com>
-References: <20090530235714.GA4083@us.ibm.com>
-	<20090531000255.GE4191@us.ibm.com>
-	<20090601081929.GC4381@cr0.nay.redhat.com>
-	<20090603003522.GA22704@us.ibm.com>
-	<Pine.LNX.4.64.0906032306240.25421@takamine.ncl.cs.columbia.edu>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 9/9] exec_path 9/9: remove VM_EXECUTABLE
+Date: Thu, 4 Jun 2009 00:24:00 -0700
+Message-ID: <20090604072400.GT9285__45213.7545253665$1244100390$gmane$org@us.ibm.com>
+References: <20090526113618.GJ28083@us.ibm.com>
+	<20090526162415.fb9cefef.akpm@linux-foundation.org>
+	<20090531215427.GA29534@x200.localdomain>
+	<20090531151953.8f8b14b5.akpm@linux-foundation.org>
+	<20090603230422.GB853@x200.localdomain>
+	<20090603230810.GJ853@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0906032306240.25421-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <20090603230810.GJ853-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,43 +23,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 03, 2009 at 11:07:40PM -0400, Oren Laadan wrote:
->On Tue, 2 Jun 2009, Sukadev Bhattiprolu wrote:
->
->> | >diff --git a/include/linux/types.h b/include/linux/types.h
->> | >index 5abe354..17ec186 100644
->> | >--- a/include/linux/types.h
->> | >+++ b/include/linux/types.h
->> | >@@ -204,6 +204,11 @@ struct ustat {
->> | > 	char			f_fpack[6];
->> | > };
->> | > 
->> | >+struct target_pid_set {
->> | >+	int num_pids;
->> | >+	pid_t *target_pids;
->> | >+};
->> | >+
->> | 
->> | A quick question: why not putting this definition into
->> | include/linux/pid.h?
->> 
->> Well, the data structure needs to be visible to applications so I
->> chose types.h since its already listed in fork(2) man page and the
->> related type, 'pid_t' is defined there.
->
->I don't recall linux/types.h mentioned in the manpage.
+On Thu, Jun 04, 2009 at 03:08:10AM +0400, Alexey Dobriyan wrote:
+> Noone uses VM_EXECUTABLE now, binfmt loaders set ->exec_path by hand
+> and MAP_EXECUTABLE is ignored from userland.
 
-In fact, linux/types.h for userspace only has a few types
-for endians...
+nit: MAP_EXECUTABLE is still used in the binfmt loaders when they
+supply flags to do_mmap(). That needs to be removed before getting
+rid of VM_EXECUTABLE.
 
->
->And, heh, it ended up within #ifdef __KERNEL__ there...
->In fact, the types defined in that header are for kernel use.
+Cheers,
+	-Matt Helsley
 
-Yup, I believe Sukadev put it in a wrong position.
-
-Thanks.
+> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>  include/linux/mm.h   |    1 -
+>  include/linux/mman.h |    1 -
+>  2 files changed, 0 insertions(+), 2 deletions(-)
+> 
+> diff --git a/include/linux/mm.h b/include/linux/mm.h
+> index b3b61a6..79854af 100644
+> --- a/include/linux/mm.h
+> +++ b/include/linux/mm.h
+> @@ -82,7 +82,6 @@ extern unsigned int kobjsize(const void *objp);
+>  #define VM_PFNMAP	0x00000400	/* Page-ranges managed without "struct page", just pure PFN */
+>  #define VM_DENYWRITE	0x00000800	/* ETXTBSY on write attempts.. */
+> 
+> -#define VM_EXECUTABLE	0x00001000
+>  #define VM_LOCKED	0x00002000
+>  #define VM_IO           0x00004000	/* Memory mapped I/O or similar */
+> 
+> diff --git a/include/linux/mman.h b/include/linux/mman.h
+> index 9872d6c..1a01871 100644
+> --- a/include/linux/mman.h
+> +++ b/include/linux/mman.h
+> @@ -86,7 +86,6 @@ calc_vm_flag_bits(unsigned long flags)
+>  {
+>  	return _calc_vm_trans(flags, MAP_GROWSDOWN,  VM_GROWSDOWN ) |
+>  	       _calc_vm_trans(flags, MAP_DENYWRITE,  VM_DENYWRITE ) |
+> -	       _calc_vm_trans(flags, MAP_EXECUTABLE, VM_EXECUTABLE) |
+>  	       _calc_vm_trans(flags, MAP_LOCKED,     VM_LOCKED    );
+>  }
+>  #endif /* __KERNEL__ */
