@@ -1,19 +1,26 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/4] cgroup freezer: Avoid lazy state changes when
-	convenient
-Date: Wed, 3 Jun 2009 20:18:42 -0700
-Message-ID: <20090604031842.GR9285@us.ibm.com>
-References: <cover.1244019829.git.matthltc@us.ibm.com>
-	<03412f8681d89c99ac575330381ab49f6e5e61ba.1244019829.git.matthltc@us.ibm.com>
-	<20090603161046.GC7848@us.ibm.com>
-	<20090603175242.GQ9285@us.ibm.com>
-	<20090603181547.GA10141@us.ibm.com>
+From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
+Date: Thu, 4 Jun 2009 13:41:33 +0900
+Message-ID: <20090604134133.dde9ddc6.usui__13956.1468772174$1244092238$gmane$org@mxm.nes.nec.co.jp>
+References: <1243604796.3966.21.camel@dogo.mojatatu.com>
+	<1243605269.3966.28.camel@dogo.mojatatu.com>
+	<20090529225929.GD2753@ami.dom.local>
+	<1243684218.3966.83.camel@dogo.mojatatu.com>
+	<20090531081213.GC2756@ami.dom.local>
+	<1243776293.3966.241.camel@dogo.mojatatu.com>
+	<20090531195557.GA2777@ami.dom.local>
+	<1243813216.3966.254.camel@dogo.mojatatu.com>
+	<20090601060638.GA4256@ff.dom.local>
+	<1243861410.3966.268.camel@dogo.mojatatu.com>
+	<20090601204957.GA2760@ami.dom.local>
+	<1243893963.3966.325.camel@dogo.mojatatu.com>
+	<20090602155919.da89c08e.usui@mxm.nes.nec.co.jp>
+	<1243948765.3966.397.camel@dogo.mojatatu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090603181547.GA10141-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243948765.3966.397.camel-A00voryUPPswpNmlq7E/ZAC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,32 +30,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 03, 2009 at 01:15:47PM -0500, Serge E. Hallyn wrote:
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > On Wed, Jun 03, 2009 at 11:10:46AM -0500, Serge E. Hallyn wrote:
-> > > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > > >  When all the tasks of a cgroup were successfully frozen we can avoid
-> > > >  the lazy FREEZING -> FROZEN transition and move into FROZEN during the
-> > > >  write to freezer.state.
-> > > 
-> > > Can you remind us then what the point of the FREEZING state is?
-> > > It doesn't look to me like, after this patch, a cgroup will
-> > > ever be FREEZING?
-> > 
-> > FREEZING is an intermediate state indicating that the cgroup is
-> > partially frozen and, unless userspace retries, it will remain so. 
+On Tue, 02 Jun 2009 09:19:25 -0400
+jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> wrote:
+
+> On Tue, 2009-06-02 at 15:59 +0900, Minoru Usui wrote:
 > 
-> Oh, so basically a cgroup will be in CGROUP_FREEZING state only
-> while try_to_freeze_cgroup() is looping over the tasks now?
+> > If we have to test Jarek's patch #2, I'll test it tomorrow.
+> > What do you think Jamal?
+> 
+> Yes please - even if it is for reasons of givein Jarek some peace of
+> mind;->
+> If something goes seriously wrong with other classifiers because of the
+> patch, and Jareks patch works, we can back out the current patch and fix
+> it with that approach.
 
-Not quite. freeze_task() can fail because of vfork. If it fails we do
-some additional checks to make sure it'll eventually be freezable. If so
-then we know we missed one. That's when it stays in the FREEZING
-state until the next time userspace writes FROZEN or THAWED to freezer.state.
+I've tested Jarek's patch #2 without patch #1.
+It works fine, too. Thanks Jarek.
 
-Cheers,
-	-Matt
+	Tested-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+
+-- 
+Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
