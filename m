@@ -1,16 +1,19 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][v3][PATCH 6/7] Define do_fork_with_pids()
-Date: Wed, 3 Jun 2009 23:07:40 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0906032306240.25421@takamine.ncl.cs.columbia.edu>
-References: <20090530235714.GA4083@us.ibm.com>
-	<20090531000255.GE4191@us.ibm.com>
-	<20090601081929.GC4381@cr0.nay.redhat.com>
-	<20090603003522.GA22704@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/4] cgroup freezer: Avoid lazy state changes when
+	convenient
+Date: Wed, 3 Jun 2009 20:18:42 -0700
+Message-ID: <20090604031842.GR9285@us.ibm.com>
+References: <cover.1244019829.git.matthltc@us.ibm.com>
+	<03412f8681d89c99ac575330381ab49f6e5e61ba.1244019829.git.matthltc@us.ibm.com>
+	<20090603161046.GC7848@us.ibm.com>
+	<20090603175242.GQ9285@us.ibm.com>
+	<20090603181547.GA10141@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090603003522.GA22704-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090603181547.GA10141-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,44 +23,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2 Jun 2009, Sukadev Bhattiprolu wrote:
+On Wed, Jun 03, 2009 at 01:15:47PM -0500, Serge E. Hallyn wrote:
+> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > On Wed, Jun 03, 2009 at 11:10:46AM -0500, Serge E. Hallyn wrote:
+> > > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > > >  When all the tasks of a cgroup were successfully frozen we can avoid
+> > > >  the lazy FREEZING -> FROZEN transition and move into FROZEN during the
+> > > >  write to freezer.state.
+> > > 
+> > > Can you remind us then what the point of the FREEZING state is?
+> > > It doesn't look to me like, after this patch, a cgroup will
+> > > ever be FREEZING?
+> > 
+> > FREEZING is an intermediate state indicating that the cgroup is
+> > partially frozen and, unless userspace retries, it will remain so. 
+> 
+> Oh, so basically a cgroup will be in CGROUP_FREEZING state only
+> while try_to_freeze_cgroup() is looping over the tasks now?
 
-> | >diff --git a/include/linux/types.h b/include/linux/types.h
-> | >index 5abe354..17ec186 100644
-> | >--- a/include/linux/types.h
-> | >+++ b/include/linux/types.h
-> | >@@ -204,6 +204,11 @@ struct ustat {
-> | > 	char			f_fpack[6];
-> | > };
-> | > 
-> | >+struct target_pid_set {
-> | >+	int num_pids;
-> | >+	pid_t *target_pids;
-> | >+};
-> | >+
-> | 
-> | A quick question: why not putting this definition into
-> | include/linux/pid.h?
-> 
-> Well, the data structure needs to be visible to applications so I
-> chose types.h since its already listed in fork(2) man page and the
-> related type, 'pid_t' is defined there.
+Not quite. freeze_task() can fail because of vfork. If it fails we do
+some additional checks to make sure it'll eventually be freezable. If so
+then we know we missed one. That's when it stays in the FREEZING
+state until the next time userspace writes FROZEN or THAWED to freezer.state.
 
-I don't recall linux/types.h mentioned in the manpage.
-
-And, heh, it ended up within #ifdef __KERNEL__ there...
-In fact, the types defined in that header are for kernel use.
-
-Oren.
-
-> 
-> Isn't pid.h is a kernel-only file ?
-> 
-> 
-> Sukadev
-> 
-> 
+Cheers,
+	-Matt
