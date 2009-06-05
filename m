@@ -1,15 +1,14 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] Enhance checkpoint/restart Kconfig options
-Date: Thu, 04 Jun 2009 23:25:22 -0500
-Message-ID: <m2zlcnfgst.fsf@pobox.com>
-References: <20090604184504.F1BCB2F8@kernel> <m3iqjbix8u.fsf@pobox.com>
-	<1244146621.20418.4912.camel@nimitz>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] CPU hard limits
+Date: Fri, 5 Jun 2009 12:37:17 +0800
+Message-ID: <661de9470906042137u603e2997n80c270bf7f6191ad__27929.8823363662$1244176673$gmane$org@mail.gmail.com>
+References: <20090604053649.GA3701@in.ibm.com> <4A27BBCA.5020606@redhat.com>
+	<20090605030309.GA3872@in.ibm.com> <4A28921C.6010802@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1244146621.20418.4912.camel@nimitz> (Dave Hansen's message of
-	"Thu\, 04 Jun 2009 13\:17\:01 -0700")
+In-Reply-To: <4A28921C.6010802-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,49 +18,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
-> On Thu, 2009-06-04 at 15:01 -0500, Nathan Lynch wrote:
->> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->> > diff -puN checkpoint/Kconfig~cr-kconfig-fixup checkpoint/Kconfig
->> > --- linux-2.6.git/checkpoint/Kconfig~cr-kconfig-fixup	2009-06-04 11:38:57.000000000 -0700
->> > +++ linux-2.6.git-dave/checkpoint/Kconfig	2009-06-04 11:38:57.000000000 -0700
->> > @@ -7,9 +7,14 @@ config DEFERQUEUE
->> >  	default n
->> >  
->> >  config CHECKPOINT
->> > -	bool "Enable checkpoint/restart (EXPERIMENTAL)"
->> > +	bool "Checkpoint/restart (EXPERIMENTAL)"
->> >  	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
->> >  	select DEFERQUEUE
->> > +	select UTS_NS
->> > +	select IPC_NS
->> > +	select NET_NS
->> > +	select PID_NS
->> > +	select USER_NS
->> 
->> *_NS all depend on NAMESPACES at the very least; some have additional
->> dependencies.  Selecting a symbol without ensuring its dependencies are
->> enabled is one way to break a build.
+On Fri, Jun 5, 2009 at 11:33 AM, Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> Bharata B Rao wrote:
+>>>
+>>> Another way is to place the 8 groups in a container group, and limit
+>>> =A0that to 80%. But that doesn't work if I want to provide guarantees to
+>>> =A0several groups.
+>>>
+>>
+>> Hmm why not ? Reduce the guarantee of the container group and provide
+>> the same to additional groups ?
+>>
 >
-> Ahh, but there *isn't* a strict build dependency on them.  We just want
-> to make sure that if they're available that we enable them.  If we have
-> CONFIG_NET=n, then we certainly don't want to make CHECKPOINT depends on
-> it.
+> This method produces suboptimal results:
+>
+> $ cgroup-limits 10 10 0
+> [50.0, 50.0, 40.0]
+>
+> I want to provide two 10% guaranteed groups and one best-effort group.
+> =A0Using the limits method, no group can now use more than 50% of the
+> resources. =A0However, having the first group use 90% of the resources do=
+es
+> not violate any guarantees, but it not allowed by the solution.
+>
 
-Sorry, I'm afraid I don't understand what you're saying here.
+How, it works out fine in my calculation
 
-Here's a concrete example of what I'm talking about.
+50 + 40 for G2 and G3, make sure that G1 gets 10%, since others are
+limited to 90%
+50 + 40 for G1 and G3, make sure that G2 gets 10%, since others are
+limited to 90%
+50 + 50 for G1 and G2, make sure that G3 gets 0%, since others are
+limited to 100%
 
-$ git checkout oren/ckpt-v16
-$ make ARCH=i386 i386_defconfig
-[ edit .config, enable CONFIG_CHECKPOINT and disable CONFIG_NET ]
-$ make ARCH=i386 -s vmlinux   # which should succeed
-[ apply your patch ]
-$ make ARCH=i386 -s vmlinux
-kernel/built-in.o: In function `free_nsproxy':
-(.text+0x1daaf): undefined reference to `__put_net'
-make: *** [.tmp_vmlinux1] Error 1
+Now if we really have zeros, I would recommend using
+
+cgroup-limits 10 10 and you'll see that you'll get 90, 90 as output.
+
+Adding zeros to the calcuation is not recommended. Does that help?
+
+Balbir
