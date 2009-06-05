@@ -1,22 +1,14 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/9] exec_path 1/9: introduce ->exec_path and switch
-	/proc/*/exe
-Date: Fri, 5 Jun 2009 02:42:39 +0400
-Message-ID: <20090604224239.GA10666__6508.90946058116$1244155417$gmane$org@x200.localdomain>
-References: <20090526113618.GJ28083@us.ibm.com>
-	<20090526162415.fb9cefef.akpm@linux-foundation.org>
-	<20090531215427.GA29534@x200.localdomain>
-	<20090531151953.8f8b14b5.akpm@linux-foundation.org>
-	<20090603230422.GB853@x200.localdomain>
-	<20090604075532.GU9285@us.ibm.com>
-	<alpine.LFD.2.01.0906040803410.4880@localhost.localdomain>
-	<20090604213033.GZ9285@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Enhance checkpoint/restart Kconfig options
+Date: Thu, 04 Jun 2009 21:32:17 -0400
+Message-ID: <4A2875A1.8080009@cs.columbia.edu>
+References: <20090604184504.F1BCB2F8@kernel> <m3iqjbix8u.fsf@pobox.com>
+	<1244146621.20418.4912.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090604213033.GZ9285-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1244146621.20418.4912.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,37 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 04, 2009 at 02:30:33PM -0700, Matt Helsley wrote:
-> On Thu, Jun 04, 2009 at 08:07:23AM -0700, Linus Torvalds wrote:
-> > On Thu, 4 Jun 2009, Matt Helsley wrote:
-> > > 
-> > > Doesn't this pin the vfs mount of the executable for the lifetime of
-> > > the task?
-> > 
-> > Well, yes, but so does the current code.
-> 
-> Not quite. The current code pins it as long as the corresponding VMAs
-> are mapped -- not for the lifetime of the task.
-> 
-> > Sure, in _theory_ it can be a non-mmap executable (maybe people still have 
-> > those old OMAGIC a.out executables), and in _theory_ you could unmap the 
-> > executable even if it was originally mmap'ed, but neither of those is 
-> > exactly common, are they?
-> 
-> Not common to my knowledge, no.
-> 
-> > 
-> > So in practice, nothing has changed wrt lifetime of the executable.
-> 
-> Almost all of the time, yes.
 
-And year ago executable wasn't pinned at all, so if you're opposing
-widening of time executable is pinned, you should revert your own patch
-which introduced it in first place.
 
-->exec_path merely makes /proc/*/exe very unheuristical (binfmt loader
-decides, nothing else) and suitable for other code as demonstrated.
+Dave Hansen wrote:
+> On Thu, 2009-06-04 at 15:01 -0500, Nathan Lynch wrote:
+>> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>> diff -puN checkpoint/Kconfig~cr-kconfig-fixup checkpoint/Kconfig
+>>> --- linux-2.6.git/checkpoint/Kconfig~cr-kconfig-fixup	2009-06-04 11:38:57.000000000 -0700
+>>> +++ linux-2.6.git-dave/checkpoint/Kconfig	2009-06-04 11:38:57.000000000 -0700
+>>> @@ -7,9 +7,14 @@ config DEFERQUEUE
+>>>  	default n
+>>>  
+>>>  config CHECKPOINT
+>>> -	bool "Enable checkpoint/restart (EXPERIMENTAL)"
+>>> +	bool "Checkpoint/restart (EXPERIMENTAL)"
+>>>  	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+>>>  	select DEFERQUEUE
+>>> +	select UTS_NS
+>>> +	select IPC_NS
+>>> +	select NET_NS
+>>> +	select PID_NS
+>>> +	select USER_NS
+>> *_NS all depend on NAMESPACES at the very least; some have additional
+>> dependencies.  Selecting a symbol without ensuring its dependencies are
+>> enabled is one way to break a build.
+> 
+> Ahh, but there *isn't* a strict build dependency on them.  We just want
+> to make sure that if they're available that we enable them.  If we have
+> CONFIG_NET=n, then we certainly don't want to make CHECKPOINT depends on
+> it.  
+> 
+>> Also - checkpoint is useful without *_NS, no?  Forcing these things on
+>> seems a little user-hostile..
+
+I concur.
+
+> 
+> I think the hostile thing is trying to completely unshare all the
+> namespaces without checking to see which ones are enabled, first. ;)
+
+I concur again :o
+
+Will fix that.
+
+Oren.
