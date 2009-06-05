@@ -1,22 +1,16 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC] CPU hard limits
-Date: Fri, 5 Jun 2009 17:39:47 +0800
-Message-ID: <20090605093947.GJ11755__16686.162146698$1244194915$gmane$org@balbir.in.ibm.com>
-References: <20090605030309.GA3872@in.ibm.com> <4A28921C.6010802@redhat.com>
-	<661de9470906042137u603e2997n80c270bf7f6191ad@mail.gmail.com>
-	<4A28A2AB.3060108@redhat.com>
-	<20090605044946.GA11755@balbir.in.ibm.com>
-	<20090605051050.GB11755@balbir.in.ibm.com>
-	<4A28AB67.7040800@redhat.com>
-	<20090605052755.GE11755@balbir.in.ibm.com>
-	<20090605053159.GB3872@in.ibm.com> <4A28B4CE.4010004@redhat.com>
+Date: Fri, 5 Jun 2009 17:36:25 +0800
+Message-ID: <20090605093625.GI11755__39012.4578182169$1244194934$gmane$org@balbir.in.ibm.com>
+References: <20090604053649.GA3701@in.ibm.com>
+	<6599ad830906050153i1afd104fqe70f681317349142@mail.gmail.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A28B4CE.4010004-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <6599ad830906050153i1afd104fqe70f681317349142-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,69 +20,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-05 09:01:50]:
+* menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2009-06-05 01:53:15]:
 
-> Bharata B Rao wrote:
->> On Fri, Jun 05, 2009 at 01:27:55PM +0800, Balbir Singh wrote:
->>   
->>> * Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-05 08:21:43]:
->>>
->>>     
->>>> Balbir Singh wrote:
->>>>       
->>>>>> But then there is no other way to make a *guarantee*, guarantees come
->>>>>> at a cost of idling resources, no? Can you show me any other
->>>>>> combination that will provide the guarantee and without idling the
->>>>>> system for the specified guarantees?
->>>>>>               
->>>>> OK, I see part of your concern, but I think we could do some
->>>>> optimizations during design. For example if all groups have reached
->>>>> their hard-limit and the system is idle, should we do start a new hard
->>>>> limit interval and restart, so that idleness can be removed. Would
->>>>> that be an acceptable design point?
->>>>>         
->>>> I think so.  Given guarantees G1..Gn (0 <= Gi <= 1; sum(Gi) <= 1), 
->>>> and a  cpu hog running in each group, how would the algorithm 
->>>> divide resources?
->>>>
->>>>       
->>> As per the matrix calculation, but as soon as we reach an idle point,
->>> we redistribute the b/w and start a new quantum so to speak, where all
->>> groups are charged up to their hard limits.
->>>     
->>
->> But could there be client models where you are required to strictly
->> adhere to the limit within the bandwidth and not provide more (by advancing
->> the bandwidth period) in the presence of idle cycles ?
->>   
->
-> That's the limit part.  I'd like to be able to specify limits and  
-> guarantees on the same host and for the same groups; I don't think that  
-> works when you advance the bandwidth period.
+> On Wed, Jun 3, 2009 at 10:36 PM, Bharata B
+> Rao<bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> > - Hard limits can be used to provide guarantees.
+> >
+> 
+> This claim (and the subsequent long thread it generated on how limits
+> can provide guarantees) confused me a bit.
+> 
+> Why do we need limits to provide guarantees when we can already
+> provide guarantees via shares?
+> 
+> Suppose 10 cgroups each want 10% of the machine's CPU. We can just
+> give each cgroup an equal share, and they're guaranteed 10% if they
+> try to use it; if they don't use it, other cgroups can get access to
+> the idle cycles.
+> 
+> Suppose cgroup A wants a guarantee of 50% and two others, B and C,
+> want guarantees of 15% each; give A 50 shares and B and C 15 shares
+> each. In this case, if they all run flat out they'll get 62%/19%/19%,
+> which is within their SLA.
+> 
+> That's not to say that hard limits can't be useful in their own right
+> - e.g. for providing reproducible loadtesting conditions by
+> controlling how much CPU a service can use during the load test. But I
+> don't see why using them to implement guarantees is either necessary
+> or desirable.
+> 
+> (Unless I'm missing some crucial point ...)
 
-Yes, this feature needs to be configurable. But your use case for both
-limits and guarantees is interesting. We spoke to Peter and he was
-convinced only of the guarantee use case. Could you please help
-elaborate your use case, so that we can incorporate it into RFC v2 we
-send out. Peter is opposed to having hard limits and is convinced that
-they are not generally useful, so far I seen you and Paul say it is
-useful, any arguments you have or any +1 from you will help us. Peter
-I am not back stabbing you :)
+The important scenario I have is adding and removing groups.
 
-
->
-> I think we need to treat guarantees as first-class goals, not something  
-> derived from limits (in fact I think guarantees are more useful as they  
-> can be used to provide SLAs).
-
-Even limits are useful for SLA's since your b/w available changes
-quite drastically as we add or remove groups. There are other use
-cases for limits as well.
-
+Consider 10 cgroups with shares of 10 each, what if 5 new are created
+with the same shares? We now start getting 100/15, even though we did
+not change our shares.
 
 -- 
 	Balbir
