@@ -1,12 +1,20 @@
-From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: lxc-start fails on clone(child_stack=0,
-	flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL (Invalid argument)
-Date: Fri, 5 Jun 2009 14:30:44 +0100
-Message-ID: <f058a9c30906050630p2bb36451odef8863081c2bef@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] CPU hard limits
+Date: Fri, 5 Jun 2009 19:12:26 +0530
+Message-ID: <661de9470906050642s7774d601l53e366c77ffa7475@mail.gmail.com>
+References: <20090605030309.GA3872@in.ibm.com> <4A28A2AB.3060108@redhat.com>
+	<20090605044946.GA11755@balbir.in.ibm.com>
+	<20090605051050.GB11755@balbir.in.ibm.com>
+	<4A28AB67.7040800@redhat.com>
+	<20090605052755.GE11755@balbir.in.ibm.com>
+	<20090605053159.GB3872@in.ibm.com> <4A28B4CE.4010004@redhat.com>
+	<20090605093947.GJ11755@balbir.in.ibm.com>
+	<4A291A2F.3090201@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4A291A2F.3090201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,122 +24,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+On Fri, Jun 5, 2009 at 6:44 PM, Avi Kivity<avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> Balbir Singh wrote:
+>>>
+>>> That's the limit part. =A0I'd like to be able to specify limits and
+>>> =A0guarantees on the same host and for the same groups; I don't think t=
+hat
+>>> =A0works when you advance the bandwidth period.
+>>>
+>>
+>> Yes, this feature needs to be configurable. But your use case for both
+>> limits and guarantees is interesting. We spoke to Peter and he was
+>> convinced only of the guarantee use case. Could you please help
+>> elaborate your use case, so that we can incorporate it into RFC v2 we
+>> send out. Peter is opposed to having hard limits and is convinced that
+>> they are not generally useful, so far I seen you and Paul say it is
+>> useful, any arguments you have or any +1 from you will help us. Peter
+>> I am not back stabbing you :)
+>>
+>
+> I am selling virtual private servers. =A0A 10% cpu share costs $x/month, =
+and I
+> guarantee you'll get that 10%, or your money back. =A0On the other hand, I
+> want to limit cpu usage to that 10% (maybe a little more) so people don't
+> buy 10% shares and use 100% on my underutilized servers. =A0If they want =
+100%,
+> let them pay for 100%.
 
-I'm trying to play with lxc, but I'm unable to start a container
-created with lxc-debian in two diferent linux systems I have.
+Excellent examples, we've covered them in the RFC, could you see if we
+missed anything in terms of use cases? The real question is do we care
+enough to build hard limits control into the CFS group scheduler. I
+believe we should.
 
-linux-2.6.29-gentoo-r5 x86_64.
-linux-2.6.28-11-generic ubuntu x86_64.
+>
+>>> I think we need to treat guarantees as first-class goals, not something
+>>> =A0derived from limits (in fact I think guarantees are more useful as t=
+hey
+>>> =A0can be used to provide SLAs).
+>>>
+>>
+>> Even limits are useful for SLA's since your b/w available changes
+>> quite drastically as we add or remove groups. There are other use
+>> cases for limits as well
+>
+> SLAs are specified in terms of guarantees on a service, not on limits on
+> others. =A0If we could use limits to provide guarantees, that would be fi=
+ne,
+> but it doesn't quite work out.
 
-Lxc version 0.6.2, git checkout of yesterday.
+To be honest, I would disagree here, specifically if you start
+comparing how you would build guarantees in the kernel and compare it
+with the proposed approach. I don't want to harp on the technicality,
+but point out the feasibility for people who care for lower end of the
+guarantee without requiring density. I think the real technical
+discussion should be on here are the use cases, lets agree on the need
+for the feature and go ahead and start prototyping the feature.
 
-lxc-debian sucessfully creates a new container:
-
-root@feynman:/mnt# lxc-info -n x86deb
-'x86deb' is STOPPED
-root@feynman:/mnt# lxc-start -n x86deb
-lxc-start: Invalid argument - failed to fork into a new namespace
-lxc-start: failed to spawn '/sbin/init'
-
-I only have the ubuntu machine acessible now, but my problem on the
-gentoo was the same I believe.
-
-In this ubuntu machine, lxc-showconfig gives me this:
-
-root@feynman:/mnt# lxc-checkconfig
-Kernel config /proc/config.gz not found, looking in other places...
-Found kernel config file /boot/config-2.6.28-11-generic
---- Namespaces ---
-Namespaces: enabled
-Utsname namespace: enabled
-Ipc namespace: enabled
-Pid namespace: enabled
-User namespace: disabled
-Network namespace: disabled
-Multiple /dev/pts instances: disabled
-
---- Control groups ---
-Cgroup: enabled
-Cgroup namespace: enabled
-Cgroup device: disabled
-Cgroup sched: enabled
-Cgroup cpu account: enabled
-Cgroup memory controller: enabled
-Cgroup cpuset: enabled
-
---- Misc ---
-Veth pair device: enabled
-Macvlan: enabled
-
-
-
-
-
------------- strace of lxc-start follows ---------------
-...
-stat("/dev/pts/6", {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 6), ...}) = 0
-statfs("/dev/pts/6", {f_type="DEVPTS_SUPER_MAGIC", f_bsize=4096,
-f_blocks=0, f_bfree=0, f_bavail=0, f_files=0, f_ffree=0, f_fsid={0,
-0}, f_namelen=255, f_frsize=4096}) = 0
-ioctl(8, TIOCSPTLCK, [0])               = 0
-ioctl(8, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
-ioctl(8, TIOCGPTN, [6])                 = 0
-stat("/dev/pts/6", {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 6), ...}) = 0
-open("/dev/pts/6", O_RDWR|O_NOCTTY)     = 9
-fcntl(8, F_SETFD, FD_CLOEXEC)           = 0
-fcntl(9, F_SETFD, FD_CLOEXEC)           = 0
-open("/dev/ptmx", O_RDWR)               = 10
-ioctl(10, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon
-echo ...}) = 0
-ioctl(10, TIOCGPTN, [8])                = 0
-stat("/dev/pts/8", {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 8), ...}) = 0
-statfs("/dev/pts/8", {f_type="DEVPTS_SUPER_MAGIC", f_bsize=4096,
-f_blocks=0, f_bfree=0, f_bavail=0, f_files=0, f_ffree=0, f_fsid={0,
-0}, f_namelen=255, f_frsize=4096}) = 0
-ioctl(10, TIOCSPTLCK, [0])              = 0
-ioctl(10, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon
-echo ...}) = 0
-ioctl(10, TIOCGPTN, [8])                = 0
-stat("/dev/pts/8", {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 8), ...}) = 0
-open("/dev/pts/8", O_RDWR|O_NOCTTY)     = 11
-fcntl(10, F_SETFD, FD_CLOEXEC)          = 0
-fcntl(11, F_SETFD, FD_CLOEXEC)          = 0
-rt_sigprocmask(SIG_BLOCK, NULL, [], 8)  = 0
-rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
-syscall_289(0xffffffffffffffff, 0x7fffbfa191a0, 0x8, 0,
-0xfefefefefefefeff, 0xffffffffff000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) = 0xc
-fcntl(12, F_SETFD, FD_CLOEXEC)          = 0
-rt_sigaction(SIGINT, {0x7fa1b73e2c20, ~[RTMIN RT_1],
-SA_RESTORER|SA_SIGINFO, 0x7fa1b709d040}, {SIG_DFL}, 8) = 0
-rt_sigaction(SIGQUIT, {0x7fa1b73e2c40, ~[RTMIN RT_1],
-SA_RESTORER|SA_SIGINFO, 0x7fa1b709d040}, {SIG_DFL}, 8) = 0
-socketpair(PF_FILE, SOCK_STREAM, 0, [13, 14]) = 0
-stat("/usr/local/var/lib/lxc/x86deb/utsname", {st_mode=S_IFREG|0755,
-st_size=8, ...}) = 0
-stat("/usr/local/var/lib/lxc/x86deb/network", {st_mode=S_IFDIR|0755,
-st_size=4096, ...}) = 0
-clone(child_stack=0, flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL
-(Invalid argument)
-write(2, "lxc-start: "..., 11lxc-start: )          = 11
-write(2, "Invalid argument - failed to fork"..., 54Invalid argument -
-failed to fork into a new namespace) = 54
-write(2, "\n"..., 1
-)                    = 1
-close(13)                               = 0
-close(14)                               = 0
-write(2, "lxc-start: "..., 11lxc-start: )          = 11
-write(2, "failed to spawn '/sbin/init'"..., 28failed to spawn '/sbin/init') = 28
-write(2, "\n"..., 1
-)                    = 1
-...
------------------------------------------
-
-Thanks in advance.
-
--- 
-Miguel Sousa Filipe
+Thanks,
+Balbir
