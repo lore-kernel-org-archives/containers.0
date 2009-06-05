@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/4] Move checkpoint closer to namespaces
-Date: Fri, 05 Jun 2009 12:15:27 -0700
-Message-ID: <20090605191527.05B6C68E@kernel>
+Subject: [PATCH 3/4] kill 'Enable' in c/r config option
+Date: Fri, 05 Jun 2009 12:15:28 -0700
+Message-ID: <20090605191528.10AC5D2F@kernel>
 References: <20090605191525.C3F1C2F2@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,35 +22,25 @@ Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-These are pretty intimately related, so let's make them
-closer to each other in Kconfig.  This shoudl be pushed
-up into the patch that creates CONFIG_CHECKPOINT in the
-first place.
+We don't neeeed to say 'Enable'.  That's what Kconfig does
+for everything. :)
+
 
 ---
 
- linux-2.6.git-dave/init/Kconfig |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ linux-2.6.git-dave/checkpoint/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff -puN init/Kconfig~move-cr-close-to-namespaces init/Kconfig
---- linux-2.6.git/init/Kconfig~move-cr-close-to-namespaces	2009-06-05 11:45:19.000000000 -0700
-+++ linux-2.6.git-dave/init/Kconfig	2009-06-05 11:57:46.000000000 -0700
-@@ -709,6 +709,8 @@ config NET_NS
- 	  Allow user space to create what appear to be multiple instances
- 	  of the network stack.
+diff -puN checkpoint/Kconfig~kill-Enabled checkpoint/Kconfig
+--- linux-2.6.git/checkpoint/Kconfig~kill-Enabled	2009-06-05 11:46:01.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/Kconfig	2009-06-05 11:57:46.000000000 -0700
+@@ -7,7 +7,7 @@ config DEFERQUEUE
+ 	default n
  
-+source "checkpoint/Kconfig"
-+
- config BLK_DEV_INITRD
- 	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
- 	depends on BROKEN || !FRV
-@@ -1042,8 +1044,6 @@ config SLOW_WORK
- 
- 	  See Documentation/slow-work.txt.
- 
--source "checkpoint/Kconfig"
--
- endmenu		# General setup
- 
- config HAVE_GENERIC_DMA_COHERENT
+ config CHECKPOINT
+-	bool "Enable checkpoint/restart (EXPERIMENTAL)"
++	bool "Checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+ 	select DEFERQUEUE
+ 	help
 _
