@@ -1,22 +1,17 @@
-From: "Chris Friesen" <cfriesen-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] CPU hard limits
-Date: Fri, 05 Jun 2009 08:54:14 -0600
-Message-ID: <4A293196.2060006__23395.189541816$1244213699$gmane$org@nortel.com>
-References: <20090605030309.GA3872@in.ibm.com> <4A28921C.6010802@redhat.com>
-	<661de9470906042137u603e2997n80c270bf7f6191ad@mail.gmail.com>
-	<4A28A2AB.3060108@redhat.com>
-	<20090605044946.GA11755@balbir.in.ibm.com>
-	<20090605051050.GB11755@balbir.in.ibm.com>
-	<4A28AB67.7040800@redhat.com>
-	<20090605052755.GE11755@balbir.in.ibm.com>
-	<20090605053159.GB3872@in.ibm.com> <4A28B4CE.4010004@redhat.com>
-	<20090605093947.GJ11755@balbir.in.ibm.com>
-	<4A291A2F.3090201@redhat.com>
+From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: lxc-start fails on clone(child_stack=0,
+	flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL (Invalid argument)
+Date: Fri, 5 Jun 2009 16:01:19 +0100
+Message-ID: <f058a9c30906050801g1a5be7aepe9e1109e9f17b06e@mail.gmail.com>
+References: <f058a9c30906050630p2bb36451odef8863081c2bef@mail.gmail.com>
+	<20090605135924.GA16326@us.ibm.com>
+	<f058a9c30906050709mc5d17epa12df023b91022a0@mail.gmail.com>
+	<4A293086.8090508@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A291A2F.3090201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A293086.8090508-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,25 +21,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Avi Kivity wrote:
-
-> I am selling virtual private servers.  A 10% cpu share costs $x/month, 
-> and I guarantee you'll get that 10%, or your money back.  On the other 
-> hand, I want to limit cpu usage to that 10% (maybe a little more) so 
-> people don't buy 10% shares and use 100% on my underutilized servers.  
-> If they want 100%, let them pay for 100%.
-
-What about taking a page from the networking folks and specifying cpu
-like a networking SLA?
-
-Something like "group A is guaranteed X percent (or share) of the cpu,
-but it is allowed to burst up to Y percent for Z milliseconds"
-
-If a rule of this form was the first-class citizen, it would provide
-both guarantees, limits, and flexible behaviour.
-
-Chris
+T24gRnJpLCBKdW4gNSwgMjAwOSBhdCAzOjQ5IFBNLCBEYW5pZWwgTGV6Y2FubzxkYW5pZWwubGV6
+Y2Fub0BmcmVlLmZyPiB3cm90ZToKPiBNaWd1ZWwgRiBNYXNjYXJlbmhhcyBTb3VzYSBGaWxpcGUg
+d3JvdGU6Cj4+Cj4+IE9uIEZyaSwgSnVuIDUsIDIwMDkgYXQgMjo1OSBQTSwgU2VyZ2UgRS4gSGFs
+bHluPHNlcnVlQHVzLmlibS5jb20+IHdyb3RlOgo+Pgo+Pj4KPj4+IFF1b3RpbmcgTWlndWVsIEYg
+TWFzY2FyZW5oYXMgU291c2EgRmlsaXBlIChtaWd1ZWwuZmlsaXBlQGdtYWlsLmNvbSk6Cj4+Pgo+
+Pj4+Cj4+Pj4gSGVsbG8sCj4+Pj4KPj4+PiBJJ20gdHJ5aW5nIHRvIHBsYXkgd2l0aCBseGMsIGJ1
+dCBJJ20gdW5hYmxlIHRvIHN0YXJ0IGEgY29udGFpbmVyCj4+Pj4gY3JlYXRlZCB3aXRoIGx4Yy1k
+ZWJpYW4gaW4gdHdvIGRpZmVyZW50IGxpbnV4IHN5c3RlbXMgSSBoYXZlLgo+Pj4+Cj4+Pj4gbGlu
+dXgtMi42LjI5LWdlbnRvby1yNSB4ODZfNjQuCj4+Pj4gbGludXgtMi42LjI4LTExLWdlbmVyaWMg
+dWJ1bnR1IHg4Nl82NC4KPj4+Pgo+Pj4KPj4+IEkgc3VzcGVjdCB0aGUgcHJvYmxlbSBpcyB0aGF0
+IHlvdXIga2VybmVsIChlc3BlY2lhbGx5IHRoZSB1YnVudHUKPj4+IG9uZSkgaXMgY29tcGlsZWQg
+d2l0aG91dCBDT05GSUdfTkVUX05TPXkuCj4+Pgo+Pj4KPj4+Pgo+Pj4+IGNsb25lKGNoaWxkX3N0
+YWNrPTAsIGZsYWdzPUNMT05FX05FV05TfDB4NmMwMDAwMDB8U0lHQ0hMRCkgPSAtMSBFSU5WQUwK
+Pj4+Pgo+Pj4KPj4+IFlvdSBhcmUgc2VuZGluZyBjbG9uZSB0aGUgZmxhZ3MgTENPTl9ORVdOUywg
+Q0xPTkVfTkVXTkVULCBDTE9ORV9ORVdQSUQsCj4+PiBDTE9ORV9ORVdVVFMgYW5kIENMT05FX05F
+V0lQQy4gwqBPZiB0aG9zZSwgQ0xPTkVfTkVXTkVUIGlzIHRoZSBuZXdlc3QKPj4+IG9uZS4KPj4+
+Cj4+PiBBcmUgeW91IGZyZWUgdG8gcmVjb21waWxlIHlvdXIga2VybmVsPwo+Pj4KPj4KPj4gT24g
+bXkgZGV2ZWwvdGVzdCBib3hlcyB5ZXMsIGJ1dCBJIHdvdWxkIGxpa2UgdG8gdXNlIGNvbnRhaW5l
+cnMgb24KPj4gc2VydmVycyB3aGVyZSBJJ20gbm90IGdvaW5nIHRvIGhhdmUgdGhhdCAiZnJlZWRv
+bSIuCj4+Cj4+IEkgcHJvYmFibHkgaGF2ZSB0byBlbmFibGUgdGhpczoKPj4KPj4gVXNlciBuYW1l
+c3BhY2U6IGRpc2FibGVkCj4+Cj4KPiBZb3UgZG9uJ3QgbmVlZCB0aGlzIG9wdGlvbi4KPgo+PiBO
+ZXR3b3JrIG5hbWVzcGFjZTogZGlzYWJsZWQKPj4gTXVsdGlwbGUgL2Rldi9wdHMgaW5zdGFuY2Vz
+OiBkaXNhYmxlZAo+Pgo+PiBSaWdodD8KPj4KPgo+IENvcnJlY3QgOikKPgo+IE1heWJlIHlvdSBj
+YW4gYXNrIHRoZSBnZW50b28ga2VybmVsIG1haWxpbmcgbGlzdCBpZiB0aGV5IGNhbiBlbmFibGUg
+dGhlc2UKPiBvcHRpb25zID8KPgoKWWVzLCBoYXZlIGl0IGJ5IGRlZmF1bHQgZW5hYmxlZC4KQWxz
+byBhIGJ1ZyByZXBvcnQgb24gdGhlIGdlbmtlcm5lbCBwYXRjaCwgd2hpY2ggYXV0b21hdGVzIHRo
+ZSBrZXJuZWwKY29uZmlnIGFuZCBidWlsZCwgc2luY2UgdGhleSB1c2UgYSBiYXNlIGtlcm5lbCBj
+b25maWcuCgoKCj4gRm9yIHVidW50dSwgd2UgaGF2ZSB0byB3YWl0IGZvciB0aGUgMi42LjI5IGtl
+cm5lbCB2ZXJzaW9uIGZvciB0aGUgbmV0d29yawo+IG5hbWVzcGFjZS4KCmFoLi4gb2theS4uIGkn
+bGwgdHJ5IGEgY3VzdG9tIGtlcm5lbC4KCj4KPiBCVFcsIEkgdHJpZWQgYSBmZWRvcmEgMTEgYmV0
+YSBhbmQgYWxsIHRoZSBvcHRpb25zIGFyZSB0dXJuZWQgb24uCj4KPiDCoC0tIERhbmllbAo+Cj4K
+Pgo+CgpLaW5kIHJlZ2FyZHMsCgotLSAKTWlndWVsIFNvdXNhIEZpbGlwZQpfX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
+dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
