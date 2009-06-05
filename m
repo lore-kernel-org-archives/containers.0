@@ -1,15 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Miguel F Mascarenhas Sousa Filipe <miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: lxc-start fails on clone(child_stack=0,
 	flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL (Invalid argument)
-Date: Fri, 5 Jun 2009 08:59:24 -0500
-Message-ID: <20090605135924.GA16326@us.ibm.com>
+Date: Fri, 5 Jun 2009 15:09:06 +0100
+Message-ID: <f058a9c30906050709mc5d17epa12df023b91022a0@mail.gmail.com>
 References: <f058a9c30906050630p2bb36451odef8863081c2bef@mail.gmail.com>
+	<20090605135924.GA16326@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <f058a9c30906050630p2bb36451odef8863081c2bef-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20090605135924.GA16326-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +19,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Miguel F Mascarenhas Sousa Filipe <miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Miguel F Mascarenhas Sousa Filipe (miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hello,
-> 
-> I'm trying to play with lxc, but I'm unable to start a container
-> created with lxc-debian in two diferent linux systems I have.
-> 
-> linux-2.6.29-gentoo-r5 x86_64.
-> linux-2.6.28-11-generic ubuntu x86_64.
-
-I suspect the problem is that your kernel (especially the ubuntu
-one) is compiled without CONFIG_NET_NS=y.
-
-> clone(child_stack=0, flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL
-
-You are sending clone the flags LCON_NEWNS, CLONE_NEWNET, CLONE_NEWPID,
-CLONE_NEWUTS and CLONE_NEWIPC.  Of those, CLONE_NEWNET is the newest
-one.
-
-Are you free to recompile your kernel?
-
-thanks,
--serge
+T24gRnJpLCBKdW4gNSwgMjAwOSBhdCAyOjU5IFBNLCBTZXJnZSBFLiBIYWxseW48c2VydWVAdXMu
+aWJtLmNvbT4gd3JvdGU6Cj4gUXVvdGluZyBNaWd1ZWwgRiBNYXNjYXJlbmhhcyBTb3VzYSBGaWxp
+cGUgKG1pZ3VlbC5maWxpcGVAZ21haWwuY29tKToKPj4gSGVsbG8sCj4+Cj4+IEknbSB0cnlpbmcg
+dG8gcGxheSB3aXRoIGx4YywgYnV0IEknbSB1bmFibGUgdG8gc3RhcnQgYSBjb250YWluZXIKPj4g
+Y3JlYXRlZCB3aXRoIGx4Yy1kZWJpYW4gaW4gdHdvIGRpZmVyZW50IGxpbnV4IHN5c3RlbXMgSSBo
+YXZlLgo+Pgo+PiBsaW51eC0yLjYuMjktZ2VudG9vLXI1IHg4Nl82NC4KPj4gbGludXgtMi42LjI4
+LTExLWdlbmVyaWMgdWJ1bnR1IHg4Nl82NC4KPgo+IEkgc3VzcGVjdCB0aGUgcHJvYmxlbSBpcyB0
+aGF0IHlvdXIga2VybmVsIChlc3BlY2lhbGx5IHRoZSB1YnVudHUKPiBvbmUpIGlzIGNvbXBpbGVk
+IHdpdGhvdXQgQ09ORklHX05FVF9OUz15Lgo+Cj4+IGNsb25lKGNoaWxkX3N0YWNrPTAsIGZsYWdz
+PUNMT05FX05FV05TfDB4NmMwMDAwMDB8U0lHQ0hMRCkgPSAtMSBFSU5WQUwKPgo+IFlvdSBhcmUg
+c2VuZGluZyBjbG9uZSB0aGUgZmxhZ3MgTENPTl9ORVdOUywgQ0xPTkVfTkVXTkVULCBDTE9ORV9O
+RVdQSUQsCj4gQ0xPTkVfTkVXVVRTIGFuZCBDTE9ORV9ORVdJUEMuIMKgT2YgdGhvc2UsIENMT05F
+X05FV05FVCBpcyB0aGUgbmV3ZXN0Cj4gb25lLgo+Cj4gQXJlIHlvdSBmcmVlIHRvIHJlY29tcGls
+ZSB5b3VyIGtlcm5lbD8KCk9uIG15IGRldmVsL3Rlc3QgYm94ZXMgeWVzLCBidXQgSSB3b3VsZCBs
+aWtlIHRvIHVzZSBjb250YWluZXJzIG9uCnNlcnZlcnMgd2hlcmUgSSdtIG5vdCBnb2luZyB0byBo
+YXZlIHRoYXQgImZyZWVkb20iLgoKSSBwcm9iYWJseSBoYXZlIHRvIGVuYWJsZSB0aGlzOgoKVXNl
+ciBuYW1lc3BhY2U6IGRpc2FibGVkCk5ldHdvcmsgbmFtZXNwYWNlOiBkaXNhYmxlZApNdWx0aXBs
+ZSAvZGV2L3B0cyBpbnN0YW5jZXM6IGRpc2FibGVkCgpSaWdodD8KCgp0aGFua3MsCgo+Cj4gdGhh
+bmtzLAo+IC1zZXJnZQo+CgoKCi0tIApNaWd1ZWwgU291c2EgRmlsaXBlCl9fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
