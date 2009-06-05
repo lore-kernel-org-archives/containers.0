@@ -1,15 +1,22 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: lxc-start fails on clone(child_stack=0,
-	flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL (Invalid argument)
-Date: Fri, 05 Jun 2009 16:49:42 +0200
-Message-ID: <4A293086.8090508@free.fr>
-References: <f058a9c30906050630p2bb36451odef8863081c2bef@mail.gmail.com>	<20090605135924.GA16326@us.ibm.com>
-	<f058a9c30906050709mc5d17epa12df023b91022a0@mail.gmail.com>
+From: "Chris Friesen" <cfriesen-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] CPU hard limits
+Date: Fri, 05 Jun 2009 08:54:14 -0600
+Message-ID: <4A293196.2060006__23395.189541816$1244213699$gmane$org@nortel.com>
+References: <20090605030309.GA3872@in.ibm.com> <4A28921C.6010802@redhat.com>
+	<661de9470906042137u603e2997n80c270bf7f6191ad@mail.gmail.com>
+	<4A28A2AB.3060108@redhat.com>
+	<20090605044946.GA11755@balbir.in.ibm.com>
+	<20090605051050.GB11755@balbir.in.ibm.com>
+	<4A28AB67.7040800@redhat.com>
+	<20090605052755.GE11755@balbir.in.ibm.com>
+	<20090605053159.GB3872@in.ibm.com> <4A28B4CE.4010004@redhat.com>
+	<20090605093947.GJ11755@balbir.in.ibm.com>
+	<4A291A2F.3090201@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <f058a9c30906050709mc5d17epa12df023b91022a0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4A291A2F.3090201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,58 +26,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Miguel F Mascarenhas Sousa Filipe <miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Miguel F Mascarenhas Sousa Filipe wrote:
-> On Fri, Jun 5, 2009 at 2:59 PM, Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->   
->> Quoting Miguel F Mascarenhas Sousa Filipe (miguel.filipe-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->>     
->>> Hello,
->>>
->>> I'm trying to play with lxc, but I'm unable to start a container
->>> created with lxc-debian in two diferent linux systems I have.
->>>
->>> linux-2.6.29-gentoo-r5 x86_64.
->>> linux-2.6.28-11-generic ubuntu x86_64.
->>>       
->> I suspect the problem is that your kernel (especially the ubuntu
->> one) is compiled without CONFIG_NET_NS=y.
->>
->>     
->>> clone(child_stack=0, flags=CLONE_NEWNS|0x6c000000|SIGCHLD) = -1 EINVAL
->>>       
->> You are sending clone the flags LCON_NEWNS, CLONE_NEWNET, CLONE_NEWPID,
->> CLONE_NEWUTS and CLONE_NEWIPC.  Of those, CLONE_NEWNET is the newest
->> one.
->>
->> Are you free to recompile your kernel?
->>     
->
-> On my devel/test boxes yes, but I would like to use containers on
-> servers where I'm not going to have that "freedom".
->
-> I probably have to enable this:
->
-> User namespace: disabled
->   
-You don't need this option.
+Avi Kivity wrote:
 
-> Network namespace: disabled
-> Multiple /dev/pts instances: disabled
->
-> Right?
->   
-Correct :)
+> I am selling virtual private servers.  A 10% cpu share costs $x/month, 
+> and I guarantee you'll get that 10%, or your money back.  On the other 
+> hand, I want to limit cpu usage to that 10% (maybe a little more) so 
+> people don't buy 10% shares and use 100% on my underutilized servers.  
+> If they want 100%, let them pay for 100%.
 
-Maybe you can ask the gentoo kernel mailing list if they can enable 
-these options ?
+What about taking a page from the networking folks and specifying cpu
+like a networking SLA?
 
-For ubuntu, we have to wait for the 2.6.29 kernel version for the 
-network namespace.
+Something like "group A is guaranteed X percent (or share) of the cpu,
+but it is allowed to burst up to Y percent for Z milliseconds"
 
-BTW, I tried a fedora 11 beta and all the options are turned on.
+If a rule of this form was the first-class citizen, it would provide
+both guarantees, limits, and flexible behaviour.
 
-  -- Daniel
+Chris
