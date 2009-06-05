@@ -1,21 +1,14 @@
 From: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] CPU hard limits
-Date: Fri, 05 Jun 2009 15:57:54 +0300
-Message-ID: <4A291652.4090308__9935.94747637889$1244206817$gmane$org@redhat.com>
-References: <4A27BBCA.5020606@redhat.com> <20090605030309.GA3872@in.ibm.com>
-	<4A28921C.6010802@redhat.com>
-	<661de9470906042137u603e2997n80c270bf7f6191ad@mail.gmail.com>
-	<4A28A2AB.3060108@redhat.com>
-	<20090605044946.GA11755@balbir.in.ibm.com>
-	<20090605051050.GB11755@balbir.in.ibm.com>
-	<4A28AB67.7040800@redhat.com>
-	<20090605052755.GE11755@balbir.in.ibm.com>
-	<4A28B539.3050001@redhat.com> <20090605063243.GC3872@in.ibm.com>
+Date: Fri, 05 Jun 2009 16:02:11 +0300
+Message-ID: <4A291753.7090205__26409.3652404428$1244207106$gmane$org@redhat.com>
+References: <20090604053649.GA3701@in.ibm.com>
+	<6599ad830906050153i1afd104fqe70f681317349142@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090605063243.GC3872-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <6599ad830906050153i1afd104fqe70f681317349142-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,25 +18,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Bharata B Rao wrote:
->> So the groups with guarantees get a priority boost.  That's not a good  
->> side effect.
+Paul Menage wrote:
+> On Wed, Jun 3, 2009 at 10:36 PM, Bharata B
+> Rao<bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>   
+>> - Hard limits can be used to provide guarantees.
+>>
 >>     
 >
-> That happens only in the presence of idle cycles when other groups [with or
-> without guarantees] have nothing useful to do. So how would that matter
-> since there is nothing else to run anyway ?
+> This claim (and the subsequent long thread it generated on how limits
+> can provide guarantees) confused me a bit.
+>
+> Why do we need limits to provide guarantees when we can already
+> provide guarantees via shares?
+>
+> Suppose 10 cgroups each want 10% of the machine's CPU. We can just
+> give each cgroup an equal share, and they're guaranteed 10% if they
+> try to use it; if they don't use it, other cgroups can get access to
+> the idle cycles.
+>
+> Suppose cgroup A wants a guarantee of 50% and two others, B and C,
+> want guarantees of 15% each; give A 50 shares and B and C 15 shares
+> each. In this case, if they all run flat out they'll get 62%/19%/19%,
+> which is within their SLA.
+>
+> That's not to say that hard limits can't be useful in their own right
+> - e.g. for providing reproducible loadtesting conditions by
+> controlling how much CPU a service can use during the load test. But I
+> don't see why using them to implement guarantees is either necessary
+> or desirable.
+>
+> (Unless I'm missing some crucial point ...)
 >   
 
-If there are three groups, each running a cpu hog, and they have (say) 
-guarantees of 10%, 10%, and 0%, then they should each get 33% of the 
-cpu, not biased towards the groups with the guarantee.
+How many shares does a cgroup with a 0% guarantee get?
 
-If I want to change the weights, I'll alter their priority.
+Ideally, the scheduler would hand out cpu time according to weight and 
+demand, then clamp over-demand by a cgroup's limit and boost the share 
+to meet guarantees.
 
 -- 
 I have a truly marvellous patch that fixes the bug which this
