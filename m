@@ -1,79 +1,144 @@
-From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Subject: Re: [PATCH 1/9] exec_path 1/9: introduce ->exec_path and switch
-	/proc/*/exe
-Date: Sat, 6 Jun 2009 08:22:44 +0100
-Message-ID: <20090606072244.GA13497__17562.171808868$1244273040$gmane$org@ZenIV.linux.org.uk>
-References: <20090526113618.GJ28083@us.ibm.com>
-	<20090526162415.fb9cefef.akpm@linux-foundation.org>
-	<20090531215427.GA29534@x200.localdomain>
-	<20090531151953.8f8b14b5.akpm@linux-foundation.org>
-	<20090603230422.GB853@x200.localdomain>
+From: "Andrew G. Morgan" <morgan@kernel.org>
+Subject: Re: [PATCH 5/9] cr: capabilities: define checkpoint and restore fns
+Date: Sat, 6 Jun 2009 08:02:28 -0700
+Message-ID: <551280e50906060802m16820d89l3077f403e23f4f55@mail.gmail.com>
+References: <20090601133508.GA18889@us.ibm.com>
+	 <20090601221857.GA29164@us.ibm.com>
+	 <551280e50906020649n4ea15ca9y3c0a22b0114b807c@mail.gmail.com>
+	 <20090602142353.GA11135@us.ibm.com>
+	 <551280e50906020849o12f777dma4fd66d0dd887e38@mail.gmail.com>
+	 <4A25BE4F.6000603@cs.columbia.edu>
+	 <551280e50906030803q50fa586bwdd95c31bdcf1230f@mail.gmail.com>
+	 <20090603164529.GA7894@us.ibm.com>
+	 <551280e50906040713k38a3f18fg257b8b5ef43c860@mail.gmail.com>
+	 <20090605194124.GA22917@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090603230422.GB853-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090605194124.GA22917@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, David Howells <dhowells@redhat.com>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 04, 2009 at 03:04:22AM +0400, Alexey Dobriyan wrote:
-> diff --git a/fs/binfmt_som.c b/fs/binfmt_som.c
-> index eff74b9..6c56262 100644
-> --- a/fs/binfmt_som.c
-> +++ b/fs/binfmt_som.c
-> @@ -174,6 +174,7 @@ static int map_som_binary(struct file *file,
->  	up_write(&current->mm->mmap_sem);
->  	if (retval > 0 || retval < -1024)
->  		retval = 0;
-> +	set_task_exec_path(current, &bprm->file->f_path);
+On Fri, Jun 5, 2009 at 12:41 PM, Serge E. Hallyn <serue@us.ibm.com> wro=
+te:
+> Quoting Andrew G. Morgan (morgan@kernel.org):
+> ...
+>> > Now you mention using kernel_cap_t's... =A0we can go partway
+>> > down that road, but the inherent problem is serializing the
+>> > relevant data so it can be streamed to some file. =A0So I
+>> > think it's better if the subsystems are required to specify
+>> > a useful format (like struct ckpt_capabilities) and define
+>> > the checkpoint/restart helpers to serialize data into the
+>> > struct. =A0We can try and get cute with dual mirrored
+>> > struct defs, one which is defined in terms the caps code
+>> > can understand, and one defined in more arch-independent
+>> > terms (which is why we need __u64s and packed, for instance).
+>> > But that seems more fragile than having clear and simple
+>> > requirements for the $SUBYSTEM_checkpoint() and $SUBSYSTEM_restart=
+()
+>> > helpers.
+>>
+>> I like this $SUBSYSTEM_checkpoint() etc. thing.
+>>
+>> I like the ckpthdr.sed thing. I think a similar rule could be used t=
+o
+>> generate the calls to the list of $SUBSYSTEM_checkpoint() functions.
+>
+> Sorry, I don't follow.  Could you say a bit more about this?
 
-Oh?  Even on failure exits?
-> +	if (!path->mnt || !path->dentry)
-> +		return -ENOENT;
+See sketch below.
 
-Umm...  I really don't like that.  Note that path with NULL vfsmount
-and non-NULL dentry should never happen.  If anything, we ought
-to add path_empty(path) (!(path)->mnt) and convert such places to it.
+>
+>> For serialization, could a kernel "gcc -E checkpoint-headers.h >
+>> this-kernel-checkpoint-file.h" build rule be enough?
+>
+> Again, I don't follow.  Do you mean to turn something like kernel_cap=
+_t
+> into something like struct ckpt_capabilities?
 
-> +static inline void set_task_exec_path(struct task_struct *tsk, struct path *path)
-> +{
-> +	struct path old_path;
-> +
-> +	path_get(path);
-> +	task_lock(tsk);
-> +	old_path = tsk->exec_path;
-> +	tsk->exec_path = *path;
-> +	task_unlock(tsk);
-> +	path_put(&old_path);
-> +}
+Yes, but without manual effort.
 
-Do we ever have a right to do that to anything other than current?  Note
-that fork() is a special case anyway...
+To return the the 1,2,3 breakdown. I think it should be possible for 1
+to provide code like this:
 
-> +	set_task_exec_path(tsk, &(struct path){ .mnt = NULL, .dentry = NULL });
+$SUBSYSTEM_header.h:
+  struct ckpt_$SUBSYSTEM_s {
+     kernel_foo_t a, b, c;
+  };
 
-Ew...
+$SUBSYSTEM_code.c:
+  void $SUBSYSTEM_checkpoint(struct *storage_ptr)
+  {
+  }
 
-> +	get_task_exec_path(current, &p->exec_path);
-> +
+  int $SUBSYSTEM_restore(struct *storage_ptr)
+  {
+  }
 
-We already have that value sitting there, so why not get_path(&p->exec_path)?
+2 would be 'sed'(perl) generated:
 
-The real problem I have with that we *really* can't umount the filesystem
-that used to host the binary anymore.  At all.
+temp_header.h:
+  foreach $x (sort @SUBSYSTEMS) {
+    print "#include <$SUBSYSTEM_header.h>\n";
+  }
+  print "extern full_checkpoint();\n";
+  print "struct uber_ckpt_struct {\n";
+  foreach $x (sort @SUBSYSTEMS) {
+    print "  struct ckpt_$x_s $x;\n";
+  }
+  print <<EOT;
+};
 
-Frankly, I'm almost tempted to add explicit way to switch the damn thing
-via /proc/self/something - e.g. allow a binary to write a pathname to
-/proc/self/set_exec and have that switch the sucker.  The interesting
-part, of course, is figuring out the security implications of that...
+#ifdef __kernel_source__
+full_checkpoint()
+{
+EOT
+  foreach $x (sort @SUBSYSTEMS) {
+    print "  $x_checkpoint();\n";
+  }
+  print <<EOT;
+}
+#endif
+EOT
+
+"ditto for restore, but pay attention to return codes".
+
+Then, for '3', gcc -E temp_header.h | sed 'cut from line after 'extern
+full_checkpoint'.
+
+That means:
+
+  1. gets to define its checkpoint state with its own conventions
+  2. gets generated with some perl/sed/whatever - low maintenance
+  3. gets a plain C serialization of the checkpointed state.
+
+The kernel code subsystem code is king here. It defines its
+checkpoints in whatever manner it feels is natural for the specific
+subsystem. The glue code is autogenerated. User space has full access
+to the data in a plain C format. The user space code is where things
+are fragile, if the user space code wants to manipulate the
+checkpointed data in some way, but I think there will always be at
+least one place in the system for fragility and user space is the best
+place for it.
+
+Cheers
+
+Andrew
+
+>
+> thanks,
+> -serge
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-secur=
+ity-module" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-securit=
+y-module" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
