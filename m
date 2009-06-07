@@ -1,22 +1,18 @@
-From: Bharata B Rao <bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] CPU hard limits
-Date: Sun, 7 Jun 2009 21:44:40 +0530
-Message-ID: <20090607161440.GA3609__27853.0494113967$1244391403$gmane$org@in.ibm.com>
-References: <661de9470906042137u603e2997n80c270bf7f6191ad@mail.gmail.com>
-	<4A28A2AB.3060108@redhat.com>
-	<20090605044946.GA11755@balbir.in.ibm.com>
-	<20090605051050.GB11755@balbir.in.ibm.com>
-	<4A28AB67.7040800@redhat.com>
-	<20090605052755.GE11755@balbir.in.ibm.com>
-	<20090605053159.GB3872@in.ibm.com> <4A28B4CE.4010004@redhat.com>
-	<20090605081651.GD3872@in.ibm.com> <4A2B5881.9060204@redhat.com>
-Reply-To: bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 2/4] cgroup freezer: Avoid lazy state changes when
+	convenient
+Date: Sun, 07 Jun 2009 16:36:07 -0500
+Message-ID: <m3y6s3bubc.fsf@pobox.com>
+References: <cover.1244019829.git.matthltc@us.ibm.com>
+	<03412f8681d89c99ac575330381ab49f6e5e61ba.1244019829.git.matthltc@us.ibm.com>
+	<20090603161046.GC7848@us.ibm.com> <20090603175242.GQ9285@us.ibm.com>
+	<20090603181547.GA10141@us.ibm.com> <20090604031842.GR9285@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A2B5881.9060204-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090604031842.GR9285-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Matt Helsley's message of
+	"Wed\, 3 Jun 2009 20\:18\:42 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,42 +22,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Jun 07, 2009 at 09:04:49AM +0300, Avi Kivity wrote:
-> Bharata B Rao wrote:
->> On Fri, Jun 05, 2009 at 09:01:50AM +0300, Avi Kivity wrote:
->>   
->>> Bharata B Rao wrote:
->>>     
->>>> But could there be client models where you are required to strictly
->>>> adhere to the limit within the bandwidth and not provide more (by advancing
->>>> the bandwidth period) in the presence of idle cycles ?
->>>>         
->>> That's the limit part.  I'd like to be able to specify limits and   
->>> guarantees on the same host and for the same groups; I don't think 
->>> that  works when you advance the bandwidth period.
->>>
->>> I think we need to treat guarantees as first-class goals, not 
->>> something  derived from limits (in fact I think guarantees are more 
->>> useful as they  can be used to provide SLAs).
->>>     
->>
->> I agree that guarantees are important, but I am not sure about
->>
->> 1. specifying both limits and guarantees for groups and
->>   
+Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> On Wed, Jun 03, 2009 at 01:15:47PM -0500, Serge E. Hallyn wrote:
+>> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>> > On Wed, Jun 03, 2009 at 11:10:46AM -0500, Serge E. Hallyn wrote:
+>> > > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>> > > >  When all the tasks of a cgroup were successfully frozen we can avoid
+>> > > >  the lazy FREEZING -> FROZEN transition and move into FROZEN during the
+>> > > >  write to freezer.state.
+>> > > 
+>> > > Can you remind us then what the point of the FREEZING state is?
+>> > > It doesn't look to me like, after this patch, a cgroup will
+>> > > ever be FREEZING?
+>> > 
+>> > FREEZING is an intermediate state indicating that the cgroup is
+>> > partially frozen and, unless userspace retries, it will remain so. 
+>> 
+>> Oh, so basically a cgroup will be in CGROUP_FREEZING state only
+>> while try_to_freeze_cgroup() is looping over the tasks now?
 >
-> Why would you allow specifying a lower bound for cpu usage (a  
-> guarantee), and upper bound (a limit), but not both?
+> Not quite. freeze_task() can fail because of vfork. If it fails we do
+> some additional checks to make sure it'll eventually be freezable. If so
+> then we know we missed one. That's when it stays in the FREEZING
+> state until the next time userspace writes FROZEN or THAWED to freezer.state.
 
-I was saying that we specify only limits and not guarantees since it
-can be worked out from limits. Initial thinking was that the kernel will
-be made aware of only limits and users could set the limits appropriately
-to obtain the desired guarantees. I understand your concerns/objections
-on this and we will address this in our next version of RFC as Balbir said.
+Not really a comment on your patch, but some puzzlement regarding this
+treatment of vfork.
 
-Regards,
-Bharata.
+I see how the do_fork code makes the freezer skip a task which is
+waiting in vfork.  But is there anything preventing a vfork'd child from
+being frozen (e.g. before it execs or exits)?  As far as I can tell this
+isn't prevented, but perhaps it should be, since the parent cannot enter
+frozen state until after the child has called mm_release.
+
+Does the FREEZING state in cgroup_freezer.c exist solely for the sake of
+vfork?  If so, it would help reviewers quite a bit to have that
+documented in the code.
