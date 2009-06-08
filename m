@@ -1,16 +1,13 @@
-From: Jarek Poplawski <jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Mon, 8 Jun 2009 07:48:14 +0000
-Message-ID: <20090608074814.GA4972__820.537101435725$1244447355$gmane$org@ff.dom.local>
-References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
-	<20090601181201.ca1c2832.usui@mxm.nes.nec.co.jp>
-	<20090608153951.dfa4b162.usui@mxm.nes.nec.co.jp>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: clone_with_pids() library interface
+Date: Mon, 8 Jun 2009 04:25:54 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0906080354070.12219@takamine.ncl.cs.columbia.edu>
+References: <20090606022225.GA19083@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090608153951.dfa4b162.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <20090606022225.GA19083-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,83 +17,94 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: tgraf-G/eBtMaohhA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 08, 2009 at 03:39:51PM +0900, Minoru Usui wrote:
-> Hi Thomas
-> 
-> On Mon, 1 Jun 2009 18:12:01 +0900
-> Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-> 
-> > Hi Thomas
-> > 
-> > Original mail sent to netdev and containers before.
-> > (http://www.spinics.net/lists/netdev/msg97745.html)
-> > 
-> > I have a question about how to use cls_cgroup.
-> > 
-> > On Thu, 21 May 2009 09:22:56 +0900
-> > Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-> > 
-> > > Hi
-> > > 
-> > > Unfortunately this is only panic report.
-> > > 
-> > > I used cgroup net_cls subsystem, then kernel panic occured.
-> > > I attach panic message and kernel config in this mail's last paragraph.
-> > > If my operation is wrong, could you tell me how to use net_cls and
-> > > where the documentation is. 
-> > > 
-> > > # But I think panic is very bad even if my operation is wrong.
-> > 
-> > The cause of panic will fix soon. (Now I'll make a patch and will test it.)
-> > 
-> > I want to know how to use cls_cgroup correctly, so could you tell me how to use it if my operation is wrong. 
-> > Now, I think I might have to specify 'handle' with tc command line, is this true?
-> > But when I specified 'handle', I faced oops. X-P
-> 
-> I investigated this problem, and I found a bug in cls_cgroup_change() in cls_cgroup.c.
-> cls_cgroup_change() expected tca[TCA_OPTIONS] was set from user space properly,
-> but tc in iproute2-2.6.29-1 (which I used) didn't set it.
-> 
-> I saw the current source code of tc in git, I found the code for cls_cgroup in iproute2/tc/f_cgroup.c.
-> It set tca[TCA_OPTIONS].
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git
-> 
-> # Unfortunately, current source coude of iproute2 couldn't compile, because it occured compile error. X-P
-> # But this is another issue.
-> 
-> If we always use a newest iproute2 in git when we use cls_cgroup, we don't face this oops probably.
-> But I think, kernel shouldn't panic regardless of use program's behaviour. 
-> 
 
-This patch looks OK to me, but I guess you should add some title (plus
-"[PATCH]" in the subject), and a changelog (with lines width <= 80).
+Coindicentally I also got it to run. The prototype is in agreement
+with the usual clone() prototype.
 
-Cheers,
-Jarek P.
+#if defined(__i386__) && defined(__NR_clone_with_pids)
+/*
+ * libc doesn't support clone_with_pid() yet...
+ * (see: http://lkml.indiana.edu/hypermail/linux/kernel/9604.3/0204.html)
+ */
+static int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
+			   struct target_pid_set *target_pids, void *arg)
+{
+	long retval;
+	void **newstack;
+
+	/*
+	 * Set up the stack for child:
+	 *  - the (void *) arg will be the argument for the child function
+	 *  - the fn pointer will be loaded into ebx after the clone
+	 */
+	newstack = (void **) child_stack;
+	*--newstack = arg;
+	*--newstack = fn;
+
+	__asm__  __volatile__(
+		 "movl %0, %%ebx\n\t"		/* flags -> 1st (ebx) */
+		 "movl %1, %%ecx\n\t"		/* newstack -> 2nd (ecx)*/
+		 "xorl %%edi, %%edi\n\t"	/* 0 -> edi */
+		 "xorl %%edx, %%edx\n\t"	/* 0 -> edx */
+		 "pushl %%ebp\n\t"		/* save value of ebp */
+		 "movl %2, %%ebp\n\t"		/* flags -> 6th (ebp) */
+		:
+		:"b" (flags),
+		 "c" (newstack),
+		 "r" (target_pids)
+		);
+
+	__asm__ __volatile__(
+		 "int $0x80\n\t"	/* Linux/i386 system call */
+		 "testl %0,%0\n\t"	/* check return value */
+		 "jne 1f\n\t"		/* jump if parent */
+		 "popl %%ebx\n\t"	/* get subthread function */
+		 "call *%%ebx\n\t"	/* start subthread function */
+		 "movl %2,%0\n\t"
+		 "int $0x80\n"		/* exit system call: exit subthread */
+		 "1:\n\t"
+		 "popl %%ebp\t"		/* restore parent's ebp */
+		:"=a" (retval)
+		:"0" (__NR_clone_with_pids), "i" (__NR_exit)
+		:"ebx", "ecx"
+		);
+
+	if (retval < 0) {
+		errno = -retval;
+		retval = -1;
+	}
+	return retval;
+}
+#endif
+
+I added it to mktree.c and commited to user-cr.git :: ckpt-v16-dev,
+I also added the clone_with_pids patches to linux-cr.git :: ckpt-v16-dev
+
+It works well when not in a new namespace (mktree --pids < ckpt.image)
+assuming the the pids are avaiable.
+
+It doesn't work yet when in a new namespace, as the kernel code needs
+to be adjusted (for the restarting tasks to find the coordintor in an
+ancestor namespace).
+
+Oren.
+
+
+On Fri, 5 Jun 2009, Sukadev Bhattiprolu wrote:
 
 > 
-> Signed-off-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+> Attached are two files -
 > 
-> diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-> index cc29b44..2ec0adc 100644
-> --- a/net/sched/cls_cgroup.c
-> +++ b/net/sched/cls_cgroup.c
-> @@ -167,6 +167,9 @@ static int cls_cgroup_change(struct tcf_proto *tp, unsigned long base,
->  	struct tcf_exts e;
->  	int err;
->  
-> +	if (!tca[TCA_OPTIONS])
-> +		return -EINVAL;
-> +
->  	if (head == NULL) {
->  		if (!handle)
->  			return -EINVAL;
+> 	cwp.c 		- implements clone_with_pids() library interface
+> 	cwp-test.c	- a simple program to test the interface
 > 
+> There maybe more optimal ways of implementing it though :-)
 > 
-> -- 
-> Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+> If it makes sense, will submit as a patch to user-cr tree.
+> 
+> Sukadev
+> 
