@@ -1,14 +1,15 @@
-From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [BUG] net_cls: Panic occured when net_cls subsystem use
-Date: Mon, 8 Jun 2009 15:39:51 +0900
-Message-ID: <20090608153951.dfa4b162.usui__22894.5112707608$1244444447$gmane$org@mxm.nes.nec.co.jp>
-References: <20090521092256.d33717b9.usui@mxm.nes.nec.co.jp>
-	<20090601181201.ca1c2832.usui@mxm.nes.nec.co.jp>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 02/20] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Mon, 08 Jun 2009 15:44:31 +0800
+Message-ID: <4A2CC15F.2010708@cn.fujitsu.com>
+References: <1243377729-2176-1-git-send-email-vgoyal@redhat.com>
+	<1243377729-2176-3-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090601181201.ca1c2832.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <1243377729-2176-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,75 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: tgraf-G/eBtMaohhA@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Thomas
+Vivek Goyal wrote:
+...
+> +
+> +static inline pid_t elv_ioq_pid(struct io_queue *ioq)
+> +{
+> +	return ioq->pid;
+> +}
+> +
+> +static inline unsigned long elv_ioq_ttime_mean(struct io_queue *ioq)
+> +{
+> +	return ioq->ttime_mean;
+> +}
+> +
+> +static inline unsigned long elv_ioq_sample_valid(struct io_queue *ioq)
+> +{
+> +	return ioq_sample_valid(ioq->ttime_samples);
+> +}
+> +
 
-On Mon, 1 Jun 2009 18:12:01 +0900
-Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+These three functions are dead now, just remove them.
 
-> Hi Thomas
-> 
-> Original mail sent to netdev and containers before.
-> (http://www.spinics.net/lists/netdev/msg97745.html)
-> 
-> I have a question about how to use cls_cgroup.
-> 
-> On Thu, 21 May 2009 09:22:56 +0900
-> Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-> 
-> > Hi
-> > 
-> > Unfortunately this is only panic report.
-> > 
-> > I used cgroup net_cls subsystem, then kernel panic occured.
-> > I attach panic message and kernel config in this mail's last paragraph.
-> > If my operation is wrong, could you tell me how to use net_cls and
-> > where the documentation is. 
-> > 
-> > # But I think panic is very bad even if my operation is wrong.
-> 
-> The cause of panic will fix soon. (Now I'll make a patch and will test it.)
-> 
-> I want to know how to use cls_cgroup correctly, so could you tell me how to use it if my operation is wrong. 
-> Now, I think I might have to specify 'handle' with tc command line, is this true?
-> But when I specified 'handle', I faced oops. X-P
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ block/elevator-fq.h |   15 ---------------
+ 1 files changed, 0 insertions(+), 15 deletions(-)
 
-I investigated this problem, and I found a bug in cls_cgroup_change() in cls_cgroup.c.
-cls_cgroup_change() expected tca[TCA_OPTIONS] was set from user space properly,
-but tc in iproute2-2.6.29-1 (which I used) didn't set it.
-
-I saw the current source code of tc in git, I found the code for cls_cgroup in iproute2/tc/f_cgroup.c.
-It set tca[TCA_OPTIONS].
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git
-
-# Unfortunately, current source coude of iproute2 couldn't compile, because it occured compile error. X-P
-# But this is another issue.
-
-If we always use a newest iproute2 in git when we use cls_cgroup, we don't face this oops probably.
-But I think, kernel shouldn't panic regardless of use program's behaviour. 
-
-
-Signed-off-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-
-diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-index cc29b44..2ec0adc 100644
---- a/net/sched/cls_cgroup.c
-+++ b/net/sched/cls_cgroup.c
-@@ -167,6 +167,9 @@ static int cls_cgroup_change(struct tcf_proto *tp, unsigned long base,
- 	struct tcf_exts e;
- 	int err;
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 24a3af9..b2bb11a 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -452,21 +452,6 @@ static inline int elv_ioq_nr_queued(struct io_queue *ioq)
+ 	return ioq->nr_queued;
+ }
  
-+	if (!tca[TCA_OPTIONS])
-+		return -EINVAL;
-+
- 	if (head == NULL) {
- 		if (!handle)
- 			return -EINVAL;
-
-
+-static inline pid_t elv_ioq_pid(struct io_queue *ioq)
+-{
+-	return ioq->pid;
+-}
+-
+-static inline unsigned long elv_ioq_ttime_mean(struct io_queue *ioq)
+-{
+-	return ioq->ttime_mean;
+-}
+-
+-static inline unsigned long elv_ioq_sample_valid(struct io_queue *ioq)
+-{
+-	return ioq_sample_valid(ioq->ttime_samples);
+-}
+-
+ static inline void elv_get_ioq(struct io_queue *ioq)
+ {
+ 	atomic_inc(&ioq->ref);
 -- 
-Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+1.5.4.rc3
