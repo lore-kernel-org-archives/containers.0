@@ -1,15 +1,11 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 10/19] io-conroller: Prepare elevator layer for single
-	queue schedulers
-Date: Thu, 11 Jun 2009 16:10:55 +0800
-Message-ID: <4A30BC0F.3000401__16812.1670991697$1244708012$gmane$org@cn.fujitsu.com>
-References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
-	<1244513342-11758-11-git-send-email-vgoyal@redhat.com>
+From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
+Date: Thu, 11 Jun 2009 18:05:55 +0900
+Message-ID: <20090611180555.f2c76568.usui__41199.0694272847$1244711433$gmane$org@mxm.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1244513342-11758-11-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,117 +15,145 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: tgraf-G/eBtMaohhA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
->  
->  /*
-> @@ -1296,6 +1302,13 @@ void io_group_chain_link(struct request_queue *q, void *key,
->  		iog = io_cgroup_lookup_group(iocg, key);
->  		io_group_set_parent(prev, iog);
->  	}
-> +
-> +	if (unlikely(efqd->only_root_group))
-> +		/*
-> +		 * TODO: Take care of force expiry of existing queue before
-> +		 * new queue is queued.
-> +		 */
-> +		efqd->only_root_group = 0;
+cls_cgroup: unify classid syntax to tc
 
-  Hi Vivek,
+This patch unifies classid syntax of cls_cgroup to tc.
+In present implementation of cls_cgroup, classid read/write syntax is different from tc's one.
 
-  This flag isn't set back when all child groups go away. Am i missing something?
-  BTW, why not just determine "only root group" by cgroup itself? Although there might be 
-  some impact if cgroup is built but no request goes into it. but i think this isn't a big
-  deal. How about the following patch?
+  tc     1:10
+  write  0x10010 (hexadecimal)
+  read   65552   (decimal)
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- block/elevator-fq.c |   21 ++++++++++-----------
- block/elevator-fq.h |    1 -
- 2 files changed, 10 insertions(+), 12 deletions(-)
+-------------------------------------------------
+  # echo 0x10010 > /cgroup/net/net_cls.classid
+  # cat /cgroup/net/net_cls.classid
+  65552
+-------------------------------------------------
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index a516dce..f33155c 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -76,7 +76,6 @@ void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
- void elv_activate_ioq(struct io_queue *ioq, int add_front);
- void elv_deactivate_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
- 					int requeue);
--
- static int bfq_update_next_active(struct io_sched_data *sd)
- {
- 	struct io_group *iog;
-@@ -1131,6 +1130,14 @@ struct io_cgroup io_root_cgroup = {
- 	.ioprio_class = IO_DEFAULT_GRP_CLASS,
- };
+This is very inconvenient, so I made a patch which enables only tc syntax.
+If we don't classify with net_cls.classid, we write 0 to net_cls.classid.
+(This behavior is the same as present implementation.)
+
+-------------------------------------------------
+  # echo 1:10 > /cgroup/net/net_cls.classid
+  # cat /cgroup/net/net_cls.classid
+  1:10
+  # echo 0 > /cgroup/net/net_cls.classid
+  # cat /cgroup/net/net_cls.classid
+  0
+-------------------------------------------------
+
+
+Signed-off-by: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index e5becb9..6d87d00 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -12,6 +12,7 @@
+ #include <linux/module.h>
+ #include <linux/types.h>
+ #include <linux/string.h>
++#include <linux/ctype.h>
+ #include <linux/errno.h>
+ #include <linux/skbuff.h>
+ #include <linux/cgroup.h>
+@@ -55,17 +56,76 @@ static void cgrp_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
+ 	kfree(cgrp_cls_state(cgrp));
+ }
  
-+static int is_only_root_group(void)
-+{
-+	if (list_empty(&io_root_cgroup.css.cgroup->children))
-+		return 1;
+-static u64 read_classid(struct cgroup *cgrp, struct cftype *cft)
++#define CLS_CGROUP_CLASSID_LEN 16
 +
-+	return 0;
++static ssize_t read_classid(struct cgroup *cgrp, struct cftype *cft,
++				struct file *file, char __user *buf,
++				size_t nbytes, loff_t *ppos)
++{
++	u32 value;
++	char classid[CLS_CGROUP_CLASSID_LEN];
++
++	value = cgrp_cls_state(cgrp)->classid;
++	if (value)
++		sprintf(classid, "%x:%x\n",
++			TC_H_MAJ(value)>>16, TC_H_MIN(value));
++	else
++		strcpy(classid, "0\n");
++
++	return simple_read_from_buffer(buf, nbytes, ppos,
++					classid, strlen(classid));
 +}
 +
- void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
++static int get_tc_classid(u32 *classid, const char *str)
  {
- 	entity->ioprio = entity->new_ioprio;
-@@ -1543,13 +1550,6 @@ void io_group_chain_link(struct request_queue *q, void *key,
- 		iog = io_cgroup_lookup_group(iocg, key);
- 		io_group_set_parent(prev, iog);
- 	}
--
--	if (unlikely(efqd->only_root_group))
--		/*
--		 * TODO: Take care of force expiry of existing queue before
--		 * new queue is queued.
--		 */
--		efqd->only_root_group = 0;
+-	return cgrp_cls_state(cgrp)->classid;
++	u32 maj, min;
++	char *p;
++
++	/* check "0" for reset request */
++	if (!strcmp(str, "0")) {
++		*classid = 0;
++		return 0;
++	}
++
++	/* parse major number */
++	maj = simple_strtoul(str, &p, 16);
++	if (p == str) {
++		maj = 0;
++		if (*p != ':')
++			return -EINVAL;
++	}
++
++	/* parse minor number */
++	if (*p == ':') {
++		if (maj >= (1<<16))
++			return -EINVAL;
++
++		str = p + 1;
++		min = simple_strtoul(str, &p, 16);
++		if (*p != 0)
++			return -EINVAL;
++		if (min >= (1<<16))
++			return -EINVAL;
++	} else if (*p != 0)
++		return -EINVAL;
++
++	*classid = TC_H_MAKE(maj<<16, min);
++
++	return 0;
  }
  
- /**
-@@ -3601,7 +3601,7 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
- 	 * overhead.
- 	 */
+-static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
++static int write_classid(struct cgroup *cgrp, struct cftype *cft,
++				const char *buf)
+ {
++	u32 classid;
++
+ 	if (!cgroup_lock_live_group(cgrp))
+ 		return -ENODEV;
  
--	if (efqd->only_root_group && elv_iosched_single_ioq(q->elevator)) {
-+	if (is_only_root_group() && elv_iosched_single_ioq(q->elevator)) {
- 		elv_log_ioq(efqd, ioq, "select: only root group, no expiry");
- 		goto keep_queue;
- 	}
-@@ -3872,7 +3872,7 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 		 * unnecessary overhead.
- 		 */
+-	cgrp_cls_state(cgrp)->classid = (u32) value;
++	if (get_tc_classid(&classid, buf) < 0)
++		return -EINVAL;
++
++	cgrp_cls_state(cgrp)->classid = classid;
  
--		if (efqd->only_root_group &&
-+		if (is_only_root_group() &&
- 			elv_iosched_single_ioq(q->elevator)) {
- 			elv_log_ioq(efqd, ioq, "select: only root group,"
- 					" no expiry");
-@@ -4019,7 +4019,6 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ 	cgroup_unlock();
  
- 	/* For the time being keep fairness enabled by default */
- 	efqd->fairness = 1;
--	efqd->only_root_group = 1;
- 	return 0;
- }
- 
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 1b1fb0b..0939735 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -368,7 +368,6 @@ struct elv_fq_data {
- 	 * queues.
- 	 */
- 	unsigned int fairness;
--	int only_root_group;
+@@ -75,8 +135,8 @@ static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
+ static struct cftype ss_files[] = {
+ 	{
+ 		.name = "classid",
+-		.read_u64 = read_classid,
+-		.write_u64 = write_classid,
++		.read = read_classid,
++		.write_string = write_classid,
+ 	},
  };
  
- extern int elv_slice_idle;
+
 -- 
-1.5.4.rc3
+Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
