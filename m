@@ -1,19 +1,15 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 08/18] io-controller: idle for sometime on sync queue
-	before expiring it
-Date: Thu, 11 Jun 2009 09:22:26 +0800
-Message-ID: <4A305C52.7040804__12579.1564853445$1244683512$gmane$org@cn.fujitsu.com>
-References: <1241553525-28095-1-git-send-email-vgoyal@redhat.com>
-	<1241553525-28095-9-git-send-email-vgoyal@redhat.com>
-	<4A2E15B6.8030001@cn.fujitsu.com>
-	<20090609175131.GB13476@redhat.com>
-	<4A2F0CBE.8030208@cn.fujitsu.com>
-	<20090610132638.GB19680@redhat.com>
+Subject: Re: [PATCH 04/19] io-controller: Modify cfq to make use of flat
+	elevator fair queuing
+Date: Thu, 11 Jun 2009 14:12:44 +0800
+Message-ID: <4A30A05C.4060703__38875.9785368622$1244700929$gmane$org@cn.fujitsu.com>
+References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
+	<1244513342-11758-5-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090610132638.GB19680-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1244513342-11758-5-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,111 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> On Wed, Jun 10, 2009 at 09:30:38AM +0800, Gui Jianfeng wrote:
->> Vivek Goyal wrote:
->>> On Tue, Jun 09, 2009 at 03:56:38PM +0800, Gui Jianfeng wrote:
->>>> Vivek Goyal wrote:
->>>> ...
->>>>> +ssize_t elv_fairness_store(struct request_queue *q, const char *name,
->>>>> +			  size_t count)
->>>>> +{
->>>>> +	struct elv_fq_data *efqd;
->>>>> +	unsigned int data;
->>>>> +	unsigned long flags;
->>>>> +
->>>>> +	char *p = (char *)name;
->>>>> +
->>>>> +	data = simple_strtoul(p, &p, 10);
->>>>> +
->>>>> +	if (data < 0)
->>>>> +		data = 0;
->>>>> +	else if (data > INT_MAX)
->>>>> +		data = INT_MAX;
->>>>   Hi Vivek,
->>>>
->>>>   data might overflow on 64 bit systems. In addition, since "fairness" is nothing 
->>>>   more than a switch, just let it be.
->>>>
->>>> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->>>> ---
->>> Hi Gui,
->>>
->>> How about following patch? Currently this should apply at the end of the
->>> patch series. If it looks good, I will merge the changes in higher level
->>> patches.
->>   This patch seems good to me. Some trivial issues comment below.
->>
->>> Thanks
->>> Vivek
->>>
->>> o Previously common layer elevator parameters were appearing as request
->>>   queue parameters in sysfs. But actually these are io scheduler parameters
->>>   in hiearchical mode. Fix it.
->>>
->>> o Use macros to define multiple sysfs C functions doing the same thing. Code
->>>   borrowed from CFQ. Helps reduce the number of lines of by 140.
->>>
->>> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> ...	\
->>> +}
->>> +SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
->>> +EXPORT_SYMBOL(elv_fairness_show);
->>> +SHOW_FUNCTION(elv_slice_idle_show, efqd->elv_slice_idle, 1);
->>> +EXPORT_SYMBOL(elv_slice_idle_show);
->>> +SHOW_FUNCTION(elv_async_slice_idle_show, efqd->elv_async_slice_idle, 1);
->>> +EXPORT_SYMBOL(elv_async_slice_idle_show);
->>> +SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
->>> +EXPORT_SYMBOL(elv_slice_sync_show);
->>> +SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
->>> +EXPORT_SYMBOL(elv_slice_async_show);
->>> +#undef SHOW_FUNCTION
->>> +
->>> +#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
->>> +ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
->>> +{									\
->>> +	struct elv_fq_data *efqd = &e->efqd;				\
->>> +	unsigned int __data;						\
->>> +	int ret = elv_var_store(&__data, (page), count);		\
->>   Since simple_strtoul returns unsigned long, it's better to make __data 
->>   be that type.
->>
-> 
-> I just took it from CFQ. BTW, what's the harm here in truncating unsigned
-> long to int? Anyway for our variables we are not expecting any value 
-> bigger than unsigned int and if it is, we expect to truncate it?
-> 
->>> +	if (__data < (MIN))						\
->>> +		__data = (MIN);						\
->>> +	else if (__data > (MAX))					\
->>> +		__data = (MAX);						\
->>> +	if (__CONV)							\
->>> +		*(__PTR) = msecs_to_jiffies(__data);			\
->>> +	else								\
->>> +		*(__PTR) = __data;					\
->>> +	return ret;							\
->>> +}
->>> +STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
->>> +EXPORT_SYMBOL(elv_fairness_store);
->>> +STORE_FUNCTION(elv_slice_idle_store, &efqd->elv_slice_idle, 0, UINT_MAX, 1);
->>   Do we need to set an actual max limitation rather than UINT_MAX for these entries?
-> 
-> Again these are the same values CFQ was using.  Do you have a better upper
-> limit in mind? Until and unless there is strong objection to UINT_MAX, we
-> can stick to what CFQ has been doing so far.
-
-  Ok, I don't have strong opinion about the above things.
-
-> 
-> Thanks
-> Vivek
-> 
-> 
+> This patch changes cfq to use fair queuing code from elevator layer.
 > 
 
+last_end_request in cic is of no use anymore. Get rid of it.
+
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ block/cfq-iosched.c       |    4 ----
+ include/linux/iocontext.h |    1 -
+ 2 files changed, 0 insertions(+), 5 deletions(-)
+
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 5871568..705e7ba 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1170,7 +1170,6 @@ cfq_alloc_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
+ 	cic = kmem_cache_alloc_node(cfq_ioc_pool, gfp_mask | __GFP_ZERO,
+ 							q->node);
+ 	if (cic) {
+-		cic->last_end_request = jiffies;
+ 		INIT_LIST_HEAD(&cic->queue_list);
+ 		INIT_HLIST_NODE(&cic->cic_list);
+ 		cic->dtor = cfq_free_io_context;
+@@ -1794,9 +1793,6 @@ static void cfq_completed_request(struct request_queue *q, struct request *rq)
+ 
+ 	if (!cfq_class_idle(cfqq))
+ 		cfqd->last_end_request = now;
+-
+-	if (sync)
+-		RQ_CIC(rq)->last_end_request = now;
+ }
+ 
+ /*
+diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
+index 1fe9d78..9c4587b 100644
+--- a/include/linux/iocontext.h
++++ b/include/linux/iocontext.h
+@@ -39,7 +39,6 @@ struct cfq_io_context {
+ 
+ 	struct io_context *ioc;
+ 
+-	unsigned long last_end_request;
+ 	sector_t last_request_pos;
+ 
+ 	unsigned int seek_samples;
 -- 
-Regards
-Gui Jianfeng
+1.5.4.rc3
