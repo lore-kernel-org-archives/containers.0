@@ -1,7 +1,7 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
-Date: Thu, 11 Jun 2009 21:36:41 -0700 (PDT)
-Message-ID: <20090611.213641.208431667.davem__29989.6416524009$1244781474$gmane$org@davemloft.net>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
+Date: Thu, 11 Jun 2009 22:06:00 -0700
+Message-ID: <6599ad830906112206n745fb0dw19cdb75d7c40b2a4__17322.4499020309$1244783198$gmane$org@mail.gmail.com>
 References: <20090611180555.f2c76568.usui@mxm.nes.nec.co.jp>
 	<20090611.021347.142243970.davem@davemloft.net>
 	<20090612124028.fe4c2100.usui@mxm.nes.nec.co.jp>
@@ -19,15 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org
-Cc: tgraf-G/eBtMaohhA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Date: Fri, 12 Jun 2009 12:40:28 +0900
+On Thu, Jun 11, 2009 at 8:40 PM, Minoru Usui<usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+>
+> It's true. If my patch applied, old syntax can't use.
+> But I think compatibility is important, too.
+> So I'll make a new patch which can use both old and new syntax, when we write classid to net_cls.classid file.
+>
+> Present implementation is an asymmetry with read and write.(read: decimal, write: hexadecimal)
 
-> Of course, if read syntax change from decimal expression, there
-> isn't compatibility.  But I think it's better to fix this problem.
-> What do you think?
+You can write the classid value in decimal too, or even octal - it
+just uses strtoull() to convert the string to an integer, so
+0x-prefixed hex values are handled automatically.
 
-I think compatibility is more important than symmetry.
+>
+> If it's ok, I'd like to be able to use tc syntax(X:Y style),
+> because cls_cgroup's purpose is select class which create by tc command.
+> tc command can only use classid syntax X:Y style, so we should be able to use X:Y style to cls_cgroup.
+
+We should keep it as it is - purely apart from compatibility issues,
+there's no need to introduce the complexity of the tc interface into
+the cls_cgroup kernel code. When a cgroup control file represents a
+simple integer, then it should be exposed as such.
+
+Paul
