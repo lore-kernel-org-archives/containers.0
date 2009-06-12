@@ -1,18 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] cgroup freezer: Fix buggy resume test for tasks
-	frozen with cgroup freezer
-Date: Thu, 11 Jun 2009 14:56:03 -0700
-Message-ID: <20090611215603.GE6739@us.ibm.com>
-References: <cover.1244019829.git.matthltc@us.ibm.com>
-	<91260d5797bcf233ca54c7b41da8278e99b4ca66.1244019829.git.matthltc@us.ibm.com>
-	<20090603160551.GB7848@us.ibm.com>
-	<4A271B75.7090607@cn.fujitsu.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 10/19] io-conroller: Prepare elevator layer for single
+	queue schedulers
+Date: Fri, 12 Jun 2009 08:37:25 +0800
+Message-ID: <4A31A345.50705__23838.1513082006$1244767200$gmane$org@cn.fujitsu.com>
+References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
+	<1244513342-11758-11-git-send-email-vgoyal@redhat.com>
+	<4A30BC0F.3000401@cn.fujitsu.com>
+	<20090611144136.GC27892@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A271B75.7090607-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090611144136.GC27892-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,36 +21,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 04, 2009 at 08:55:17AM +0800, Li Zefan wrote:
-> Serge E. Hallyn wrote:
-> > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> >> -int cgroup_frozen(struct task_struct *task)
-> >> +int cgroup_freezing_or_frozen(struct task_struct *task)
-> >>  {
-> >>  	struct freezer *freezer;
-> >>  	enum freezer_state state;
-> >>
-> >>  	task_lock(task);
-> >>  	freezer = task_freezer(task);
-> >> -	state = freezer->state;
-> >> +	if (!freezer->css.cgroup->parent)
-> >> +		state = CGROUP_THAWED; /* root cgroup can't be frozen */
-> >> +	else
-> >> +		state = freezer->state;
-> > 
-> > Why do you have to add this special-casing now?  I thought
-> > we were already preventing freezing the root cgroup, so
-> > freezer->state should be sane in that case anyway?
-> > 
+Vivek Goyal wrote:
+> On Thu, Jun 11, 2009 at 04:10:55PM +0800, Gui Jianfeng wrote:
+>> Vivek Goyal wrote:
+>> ...
+>>>  
+>>>  /*
+>>> @@ -1296,6 +1302,13 @@ void io_group_chain_link(struct request_queue *q, void *key,
+>>>  		iog = io_cgroup_lookup_group(iocg, key);
+>>>  		io_group_set_parent(prev, iog);
+>>>  	}
+>>> +
+>>> +	if (unlikely(efqd->only_root_group))
+>>> +		/*
+>>> +		 * TODO: Take care of force expiry of existing queue before
+>>> +		 * new queue is queued.
+>>> +		 */
+>>> +		efqd->only_root_group = 0;
+>>   Hi Vivek,
+>>
+>>   This flag isn't set back when all child groups go away. Am i missing something?
+>>   BTW, why not just determine "only root group" by cgroup itself? Although there might be 
+>>   some impact if cgroup is built but no request goes into it. but i think this isn't a big
+>>   deal. How about the following patch?
+>>
 > 
-> Yeah, IIRC top_freezer->state is alwasy CGROUP_THAWED, so this
-> check is redundant.
+> Hi Gui,
+> 
+> Determining if there are any children present or not from cgroup sounds like
+> a good idea. Just that cost of the operation now has increased. I am not
+> sure how significant that is. But for the time being we can stick to your
+> implementation. 
 
-Right, fixed.
+  I don't introduce any extra locking here, so i guess the cost is very limited.
 
-Cheers,
-	-Matt
+> 
+> One question inline below.
+> 
+>> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>> ---
+>>  block/elevator-fq.c |   21 ++++++++++-----------
+>>  block/elevator-fq.h |    1 -
+>>  2 files changed, 10 insertions(+), 12 deletions(-)
+>>
+>> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+>> index a516dce..f33155c 100644
+>> --- a/block/elevator-fq.c
+>> +++ b/block/elevator-fq.c
+>> @@ -76,7 +76,6 @@ void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
+>>  void elv_activate_ioq(struct io_queue *ioq, int add_front);
+>>  void elv_deactivate_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
+>>  					int requeue);
+>> -
+>>  static int bfq_update_next_active(struct io_sched_data *sd)
+>>  {
+>>  	struct io_group *iog;
+>> @@ -1131,6 +1130,14 @@ struct io_cgroup io_root_cgroup = {
+>>  	.ioprio_class = IO_DEFAULT_GRP_CLASS,
+>>  };
+>>  
+>> +static int is_only_root_group(void)
+>> +{
+>> +	if (list_empty(&io_root_cgroup.css.cgroup->children))
+>> +		return 1;
+>> +
+> 
+> Do we need some kind of locking here to make sure cgroup->children list is not
+> being modified?
+
+  Even if the children list is modified, i think this is not a big problem, and just
+  get a mis-judgement for one time. Anyway, children list changing is rarely happens.
+  For this corner case, IMHO, there's no need to introduce the cgroup lock, for this 
+  lock costs too much.
+
+
+-- 
+Regards
+Gui Jianfeng
