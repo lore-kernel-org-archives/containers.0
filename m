@@ -1,15 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
-Date: Thu, 11 Jun 2009 22:06:00 -0700
-Message-ID: <6599ad830906112206n745fb0dw19cdb75d7c40b2a4__17322.4499020309$1244783198$gmane$org@mail.gmail.com>
-References: <20090611180555.f2c76568.usui@mxm.nes.nec.co.jp>
-	<20090611.021347.142243970.davem@davemloft.net>
-	<20090612124028.fe4c2100.usui@mxm.nes.nec.co.jp>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v3][PATCH 7/7] Define clone_with_pids syscall
+Date: Sat, 13 Jun 2009 11:18:38 -0700
+Message-ID: <20090613181838.GA2775@us.ibm.com>
+References: <20090530235714.GA4083@us.ibm.com>
+	<20090531000350.GF4191@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090612124028.fe4c2100.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090531000350.GF4191-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +19,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 11, 2009 at 8:40 PM, Minoru Usui<usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
->
-> It's true. If my patch applied, old syntax can't use.
-> But I think compatibility is important, too.
-> So I'll make a new patch which can use both old and new syntax, when we write classid to net_cls.classid file.
->
-> Present implementation is an asymmetry with read and write.(read: decimal, write: hexadecimal)
+| Call clone_with_pids as follows:
+| 
+| 	pid_t pids[] = { 0, 77, 99 };
+| 	struct target_pid_set pid_set;
+| 
+| 	pid_set.num_pids = sizeof(pids) / sizeof(int);
+| 	pid_set.target_pids = &pids;
+| 
+| 	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
 
-You can write the classid value in decimal too, or even octal - it
-just uses strtoull() to convert the string to an integer, so
-0x-prefixed hex values are handled automatically.
 
->
-> If it's ok, I'd like to be able to use tc syntax(X:Y style),
-> because cls_cgroup's purpose is select class which create by tc command.
-> tc command can only use classid syntax X:Y style, so we should be able to use X:Y style to cls_cgroup.
+Now that we need to do a copy_from_user() anyway, is it worth collapsing
+one or more parameters into a structure ?
 
-We should keep it as it is - purely apart from compatibility issues,
-there's no need to introduce the complexity of the tc interface into
-the cls_cgroup kernel code. When a cgroup control file represents a
-simple integer, then it should be exposed as such.
+	struct clone_with_pid_args {
+		u64 flags;
+		void *stack;
+		void *tls;
+		struct target_pid_set *pid_set;
+	};
 
-Paul
+	struct clone_tid_info {
+		int *parent_tidptr;
+		int *child_tidptr;
+	}
+
+	struct clone_with_pid_args cwp_args;
+	struct clone_tid_info ctid_inf;
+
+	...
+
+	syscall(__NR_clone_with_pids, &cwp_args, &ctid_info);
+
+One advantage would be that it would make room for 64 bit clone flags, so we
+won't need a new flavor of clone_with_pids() when clone_flags is extended.
+
+Sukadev
