@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] fix -ESRCH on self-restart
-Date: Mon, 15 Jun 2009 15:20:22 -0500
-Message-ID: <20090615202022.GA18223@us.ibm.com>
+Subject: [PATCH 1/1] restore_ipc_ns: set ret=0 if no error
+Date: Mon, 15 Jun 2009 15:59:11 -0500
+Message-ID: <20090615205911.GA18820@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,69 +20,27 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-when doing a self-restart, we can't search for ourselves on our
-list of children...
+Why pretend there's an error when there isn't?
+
+(Without this, all restarts fail with CONFIG_UTS_NS or CONFIG_IPC_NS
+on)
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/restart.c |   32 +++++++++++++++++++++++---------
- 1 files changed, 23 insertions(+), 9 deletions(-)
+ kernel/nsproxy.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index b87d0e1..13f48fb 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -569,16 +569,16 @@ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
- 	return ret;
- }
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index e3db0b9..5fae13c 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -308,6 +308,7 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 	nsproxy = create_nsproxy();
+ 	if (!nsproxy)
+ 		goto out;
++	ret = 0;
  
--/* setup restart-specific parts of ctx */
--static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
-+static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
- {
--	struct task_struct *task;
--	struct nsproxy *nsproxy;
-+	struct task_struct *task = current;
- 
--	/*
--	 * No need for explicit cleanup here, because if an error
--	 * occurs then ckpt_ctx_free() is eventually called.
--	 */
-+	if (ctx->uflags & RESTART_TASKSELF) {
-+		ctx->root_pid = pid;
-+		ctx->root_task = task;
-+		get_task_struct(current);
-+		return current;
-+	}
- 
- 	read_lock(&tasklist_lock);
- 	list_for_each_entry(task, &current->children, sibling) {
-@@ -590,11 +590,25 @@ static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 		}
- 	}
- 	read_unlock(&tasklist_lock);
-+	return task;
-+}
-+
-+/* setup restart-specific parts of ctx */
-+static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	struct nsproxy *nsproxy;
-+
-+	/*
-+	 * No need for explicit cleanup here, because if an error
-+	 * occurs then ckpt_ctx_free() is eventually called.
-+	 */
-+
-+	ctx->root_task = choose_root_task(ctx, pid);
- 	if (!ctx->root_task)
- 		return -ESRCH;
- 
- 	rcu_read_lock();
--	nsproxy = task_nsproxy(task);
-+	nsproxy = task_nsproxy(ctx->root_task);
- 	if (nsproxy) {
- 		get_nsproxy(nsproxy);
- 		ctx->root_nsproxy = nsproxy;
+ 	get_uts_ns(uts_ns);
+ 	nsproxy->uts_ns = uts_ns;
 -- 
 1.6.1
