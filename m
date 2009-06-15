@@ -1,15 +1,17 @@
-From: Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [HELP] for using class group classifier network controller
-Date: Mon, 15 Jun 2009 06:30:20 -0400
-Message-ID: <20090615103020.GA8894__44694.5756477819$1245061868$gmane$org@bombadil.infradead.org>
-References: <4C86297B4AC6554B8BA018F0806590CE01C8AFA5@email1>
-	<20090615113609.db5c0613.usui@mxm.nes.nec.co.jp>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 04/19] io-controller: Modify cfq to make use of flat
+	elevator fair queuing
+Date: Mon, 15 Jun 2009 09:02:25 -0400
+Message-ID: <20090615130225.GB5717__49329.5896020301$1245071002$gmane$org@redhat.com>
+References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
+	<1244513342-11758-5-git-send-email-vgoyal@redhat.com>
+	<4A360CD2.8060707@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090615113609.db5c0613.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <4A360CD2.8060707-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +21,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 15, 2009 at 11:36:09AM +0900, Minoru Usui wrote:
-> Hi, Cheiyol
+On Mon, Jun 15, 2009 at 04:56:50PM +0800, Gui Jianfeng wrote:
+> > -static inline int
+> > -cfq_prio_to_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+> > +static inline int cfq_class_rt(struct cfq_queue *cfqq)
+> >  {
+> > -	return cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio);
+> > +	return elv_ioq_class_rt(cfqq->ioq);
+> >  }
 > 
-> > # classid 1:10
-> > 
-> > echo 0x1000A > /dev/cpuctl/foo/net_cls.classid
-> > 
-> > #classid 1:20
-> > 
-> > echo 0x10014 > /dev/cpuctl/bob/net_cls.classid
+> Hi Vivek,
 > 
-> (snip)
+> cfq_class_rt isn't needed now, clean it up.
 > 
-> > # add class 1:10 for foo group
-> > 
-> > $TC class add dev eth0 parent 1:0 classid 1:10 htb rate 50mbit
-> > 
-> > # add class 1:20 for bob group
-> > 
-> > $TC class add dev eth0 parent 1:0 classid 1:20 htb rate 30mbit
-> > 
-> > # default class
-> > 
-> > $TC class add dev eth0 parent 1:0 classid 1:30 htb rate 10mbit
-> 
-> In class ID to use TC, both a major number and a minor number are hexadecimal.
-> So 1:10 equals 0x00010010.
-> 
-> I think, you should set 0x10010 to net_cls.classid if you classify to 1:10.
 
-That's right, both net_cls.classid and tc use integers in hexadecimal form
-for both, printing and parsing.
+Thanks Gui. Queued up for next posting.
 
-10:10 -> 0x100010
-10:20 -> 0x100020
+Vivek
 
-This seems to be the weak point regarding usability that's why I like
-Minoru Usui's patch so much. It would no longer be necessary to really
-understand the internals of classids etc.
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  block/cfq-iosched.c |    5 -----
+>  1 files changed, 0 insertions(+), 5 deletions(-)
+> 
+> diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+> index 705e7ba..23b24b9 100644
+> --- a/block/cfq-iosched.c
+> +++ b/block/cfq-iosched.c
+> @@ -234,11 +234,6 @@ static inline int cfq_class_idle(struct cfq_queue *cfqq)
+>  	return elv_ioq_class_idle(cfqq->ioq);
+>  }
+>  
+> -static inline int cfq_class_rt(struct cfq_queue *cfqq)
+> -{
+> -	return elv_ioq_class_rt(cfqq->ioq);
+> -}
+> -
+>  static inline int cfq_cfqq_sync(struct cfq_queue *cfqq)
+>  {
+>  	return elv_ioq_sync(cfqq->ioq);
+> -- 
+> 1.5.4.rc3
+> 
