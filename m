@@ -1,15 +1,12 @@
-From: Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 02/19] io-controller: Common flat fair queuing code in
-	elevaotor layer
-Date: Tue, 16 Jun 2009 12:44:58 -0700
-Message-ID: <af41c7c40906161244q61fd47c5u1a10243c8839938__36450.8259146989$1245181626$gmane$org@mail.gmail.com>
-References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
-	<1244513342-11758-3-git-send-email-vgoyal@redhat.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] cr: user_ns: fix trivial errors
+Date: Tue, 16 Jun 2009 15:58:49 -0500
+Message-ID: <20090616205849.GA5402@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1244513342-11758-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +16,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 8, 2009 at 7:08 PM, Vivek Goyal<vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> void elv_deactivate_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 int requeue)
-> +{
-> + =A0 =A0 =A0 if (ioq =3D=3D efqd->active_queue)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 elv_reset_active_ioq(efqd);
-> +
-> + =A0 =A0 =A0 bfq_deactivate_entity(&ioq->entity, requeue);
-> +}
+Use the right identifier out of CKPT_OBJ_USER and CKPT_OBJ_USER_NS.
 
-The check for ioq =3D=3D efqd->active_queue and the call to
-elv_reset_active_ioq() seem to be unnecessary. This gets called from
-elv_del_ioq_busy() which has 2 callers which:
-- either explicitly check for ioq !=3D efqd->active_queue
-- or call elv_reset_active_ioq() right before invoking this function
+Don't do ckpt_hdr_put() twice in do_restore_user_ns
 
-This was needed earlier as the io_ioq_move() function didn't fall in
-one of the 2 categories above. This has been done away with the ref
-counting patch, AFAICT.
+Don't ifdef CONFIG_USER_NS in user_namespace.c which is only compiled
+when CONFIG_USER_NS.
 
--Divyesh
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/user.c           |    2 +-
+ kernel/user_namespace.c |    7 ++-----
+ 2 files changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/kernel/user.c b/kernel/user.c
+index 58ec18d..820cc2c 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -545,7 +545,7 @@ static int do_checkpoint_user(struct ckpt_ctx *ctx, struct user_struct *u)
+ 	do {
+ 		ns = save_u->user_ns;
+ 		save_u = ns->creator;
+-		if (ckpt_obj_lookup(ctx, save_u, CKPT_OBJ_USER_NS))
++		if (ckpt_obj_lookup(ctx, save_u, CKPT_OBJ_USER))
+ 			goto found;
+ 		unsaved_creators[unsaved_ns_nr++] = save_u;
+ 		if (unsaved_ns_nr == step * UNSAVED_STRIDE) {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index a8a46a3..eb1a714 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -125,7 +125,7 @@ static int do_checkpoint_userns(struct ckpt_ctx *ctx, struct user_namespace *ns)
+ 	root_ns = task_cred_xxx(ctx->root_task, user)->user_ns;
+ 	if (ns != root_ns) {
+ 		creator_ref = ckpt_obj_lookup(ctx, ns->creator,
+-					      CKPT_OBJ_USER_NS);
++					      CKPT_OBJ_USER);
+ 		if (!creator_ref)
+ 			return -EINVAL;
+ 	}
+@@ -163,9 +163,7 @@ static struct user_namespace *do_restore_userns(struct ckpt_ctx *ctx)
+ 		goto out;
+ 	}
+ 
+-#ifdef CONFIG_USER_NS
+ 	creator = ckpt_obj_fetch(ctx, h->creator_ref, CKPT_OBJ_USER);
+-	ckpt_hdr_put(ctx, h);
+ 	if (IS_ERR(creator)) {
+ 		ns = ERR_PTR(-EINVAL);
+ 		goto out;
+@@ -187,10 +185,9 @@ static struct user_namespace *do_restore_userns(struct ckpt_ctx *ctx)
+ 	 * The objhash will keep the userns pinned until then.
+ 	 */
+ 	free_uid(new_root);
+-#endif
+ 
+  out:
+-	ctx->stats.ipc_ns++;
++	ctx->stats.user_ns++;
+ 	ckpt_hdr_put(ctx, h);
+ 	return ns;
+ }
+-- 
+1.6.1
