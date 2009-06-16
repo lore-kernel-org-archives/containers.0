@@ -1,15 +1,11 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 02/19] io-controller: Common flat fair queuing code in
-	elevaotor layer
-Date: Tue, 16 Jun 2009 11:54:04 +0800
-Message-ID: <4A37175C.80906__8398.18921308524$1245124730$gmane$org@cn.fujitsu.com>
-References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
-	<1244513342-11758-3-git-send-email-vgoyal@redhat.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: [PATCH 1/2] dm-ioband: I/O bandwidth controller v1.12.0: main part
+Date: Tue, 16 Jun 2009 19:27:21 +0900 (JST)
+Message-ID: <20090616.192721.48502798.ryov__22917.7417619669$1245148209$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1244513342-11758-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +15,3339 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
-> +
-> +int elv_nr_busy_rt_ioq(struct elevator_queue *e)
-> +{
-> +	return e->efqd.busy_rt_queues;
-> +}
-> +EXPORT_SYMBOL(elv_nr_busy_rt_ioq);
+Hi All,
 
-This function is no need now.
+This is the dm-ioband version 1.12.0 release. dm-ioband is an I/O
+bandwidth controller implemented as a device-mapper driver and can
+control bandwidth on per partition, per user, per process , per
+virtual machine (such as KVM or Xen) basis.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+The major change of this release is that a new bandwidth control
+policy "range-bw" is supported. This policy is developed by Dong-Jae
+Kang, and it allows users to set a minimum and maximum I/O bandwidth
+by absolute numbers. The minimum I/O bandwidth should be guaranteed
+for stable performance or reliability of specific process groups, and
+I/O bandwidth over the maximum limit should be throttled to protect
+the limited I/O resource from over-provisioning in unnecessary usage
+or to reserve the I/O bandwidth for another use.
+
+The patch is created against the current device-mapper development
+tree (2.6.30 based).
+
+Changes from the previous release:
+o A new policy range-bw is supported. This policy allows users to set
+  a minimum and maximum bandwidth by absolute numbers.
+o Support write barriers.
+
+And I also announce that the new website of dm-ioband and blkio-cgroup
+has launched at sourceforge.net. A lot more information (manual,
+benchmark results, binaries for RHEL5 and CentOS and so on) is
+available at http://sourceforge.net/apps/trac/ioband/ .
+Please visit our website and try out dm-ioband.
+
+Any feed-backs and suggestions are welcome!
+
+Thanks,
+Ryo Tsuruta
+
+Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+
 ---
- block/elevator-fq.c |    6 ------
- block/elevator-fq.h |    1 -
- 2 files changed, 0 insertions(+), 7 deletions(-)
+ Documentation/device-mapper/ioband.txt | 1113 +++++++++++++++++++++++++++
+ drivers/md/Kconfig                     |   13 
+ drivers/md/Makefile                    |    3 
+ drivers/md/dm-ioband-ctl.c             | 1344 +++++++++++++++++++++++++++++++++
+ drivers/md/dm-ioband-policy.c          |  455 +++++++++++
+ drivers/md/dm-ioband-type.c            |   76 +
+ drivers/md/dm-ioband.h                 |  228 +++++
+ 7 files changed, 3232 insertions(+)
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index f33155c..912ac6a 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -2553,12 +2553,6 @@ int elv_nr_busy_ioq(struct elevator_queue *e)
- }
- EXPORT_SYMBOL(elv_nr_busy_ioq);
+Index: linux-2.6.30/Documentation/device-mapper/ioband.txt
+===================================================================
+--- /dev/null
++++ linux-2.6.30/Documentation/device-mapper/ioband.txt
+@@ -0,0 +1,1113 @@
++                     Block I/O bandwidth control: dm-ioband
++
++            -------------------------------------------------------
++
++   Table of Contents
++
++   [1]What's dm-ioband all about?
++
++   [2]Differences from the CFQ I/O scheduler
++
++   [3]How dm-ioband works.
++
++   [4]Setup and Installation
++
++   [5]Getting started
++
++   [6]Command Reference
++
++   [7]Examples
++
++What's dm-ioband all about?
++
++     dm-ioband is an I/O bandwidth controller implemented as a device-mapper
++   driver. Several jobs using the same block device have to share the
++   bandwidth of the device. dm-ioband gives bandwidth to each job according
++   to bandwidth control policies.
++
++     A job is a group of processes with the same pid or pgrp or uid or a
++   virtual machine such as KVM or Xen. A job can also be a cgroup by applying
++   the blkio-cgroup patch, which can be found at
++   http://sourceforge.net/apps/trac/ioband/.
++
++       +-------+ +-------+ +-------+ +-------+ +-------+ +-------+
++       |cgroup | |cgroup | |  the  | |  pid  | |  pid  | |  the  |   jobs
++       |   A   | |   B   | |others | |   X   | |   Y   | |others |
++       +---|---+ +---|---+ +---|---+ +---|---+ +---|---+ +---|---+
++           |         |         |         |         |         |
++     +-----|---------|---------|----+----|---------|---------|-----+
++     |     | /dev/mapper/disk1 |    |    | /dev/mapper/disk2 |     |
++     |-----|---------|---------|----+----|---------|---------|-----|
++     | +---V---+ +---V---+ +---V---+ +---V---+ +---V---+ +---V---+ |
++     | | ioband| | ioband| |default| | ioband| | ioband| |default| |
++     | | group | | group | | group | | group | | group | | group | | dm-ioband
++     | |-------+-+-------+-+-------+-+-------+-+-------+-+-------| |
++     | |                     bandwidth control                   | |
++     | +-------------|-----------------------------|-------------+ |
++      ---------------|-----------------------------|---------------
++                     |                             |
++     +---------------V--------------+--------------V---------------+
++     |           /dev/sdb1          |          /dev/sdb2           | partitions
++     +------------------------------+------------------------------+
++
++
++   --------------------------------------------------------------------------
++
++Differences from the CFQ I/O scheduler
++
++     Dm-ioband is flexible to configure the bandwidth settings.
++
++     Dm-ioband can work with any type of I/O scheduler such as the NOOP
++   scheduler, which is often chosen for high-end storages, since it is
++   implemented outside the I/O scheduling layer. It allows both of partition
++   based bandwidth control and job --- a group of processes --- based
++   control. In addition, it can set different configuration on each block
++   device to control its bandwidth.
++
++     Meanwhile the current implementation of the CFQ scheduler has 8 IO
++   priority levels and all jobs whose processes have the same IO priority
++   share the bandwidth assigned to this level between them. And IO priority
++   is an attribute of a process, so that it equally effects to all block
++   devices.
++
++   --------------------------------------------------------------------------
++
++How dm-ioband works.
++
++     The bandwidth of each job is determined by a bandwidth control policy.
++   dm-ioband provides three kinds of policies "weight", "weight-iosize" and
++   "range-bw", and a user can select one of them at the time of setup.
++
++   --------------------------------------------------------------------------
++
++  weight and weight-iosize policy
++
++     Every ioband device has one ioband group, which by default is called the
++   default group, and can also have extra ioband groups in the ioband device.
++   Each ioband group has its own weight and tokens. The amount of tokens are
++   determined proportional to the weight of each ioband group.
++
++     The ioband group can pass on I/O requests that its job issues to the
++   underlying layer so long as it has tokens left, while requests are blocked
++   if there aren't any tokens left in the ioband group. The tokens are
++   refilled once all of the ioband groups that have requests on a given
++   underlying block device use up their tokens.
++
++     The weight policy lets dm-ioband consume one token per one I/O request.
++   The weight-iosize policy lets dm-ioband consume one token per one I/O
++   sector, for example, one I/O request which consists of 4Kbytes (512bytes *
++   8 sectors) read consumes 8 tokens.
++
++     With this approach, a job running on the ioband group with large weight
++   is guaranteed a wide I/O bandwidth.
++
++   --------------------------------------------------------------------------
++
++  range-bw policy
++
++     range-bw means the predicable I/O bandwidth with minimum and maximum
++   value defined by administrator. And it is also possible to set up only
++   maximum value for only I/O limitation. So, you can define the specific and
++   fixed bandwidth to satisfy I/O requirement regardless of whole I/O
++   bandwidth.
++
++     Minimum I/O bandwidth is to guarantee the stable performance or
++   reliability of specific process group and maximum bandwidth is to throttle
++   the unnecessary I/O usage or to reserve the I/O bandwidth for another use.
++   So range-bw supports adequate and predicable I/O bandwidth between minimum
++   and maximum value.
++
++     The setting unit is based on Kbytes/sec. If you want to allocate
++   3M~5Mbytes/sec I/O bandwidth to X group, you should set 3000 to min-bw,
++   5000 to max-bw.
++
++     Attention
++
++     Although range-bw supports the predicable I/O bandwidth, it should be
++   configured in the scope of total I/O bandwidth of the I/O system to
++   guarantee the minimum I/O requirement. For example, if total I/O bandwidth
++   is 40Mbytes/sec, the summary of I/O bandwidth configured in each process
++   group should be equal or smaller than 40Mbytes/sec. So, we need to check
++   total I/O bandwidth before set it up.
++
++   --------------------------------------------------------------------------
++
++Setup and Installation
++
++     Build a kernel with these options enabled:
++
++     CONFIG_MD
++     CONFIG_BLK_DEV_DM
++     CONFIG_DM_IOBAND
++
++
++     If compiled as module, use modprobe to load dm-ioband.
++
++     # make modules
++     # make modules_install
++     # depmod -a
++     # modprobe dm-ioband
++
++
++     "dmsetup targets" command shows all available device-mapper targets.
++   "ioband" and the version number are displayed when dm-ioband has been
++   loaded.
++
++     # dmsetup targets | grep ioband
++     ioband           v1.0.0
++
++
++   --------------------------------------------------------------------------
++
++Getting started
++
++     The following is a brief description how to control the I/O bandwidth of
++   disks. In this description, we'll take one disk with two partitions as an
++   example target.
++
++   --------------------------------------------------------------------------
++
++  Create and map ioband devices
++
++     Create two ioband devices "ioband1" and "ioband2". "ioband1" is mapped
++   to "/dev/sda1" and has a weight of 40. "ioband2" is mapped to "/dev/sda2"
++   and has a weight of 10. "ioband1" can use 80% --- 40/(40+10)*100 --- of
++   the bandwidth of "/dev/sda" while "ioband2" can use 20%.
++
++     # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1 0 0 none" \
++         "weight 0 :40" | dmsetup create ioband1
++     # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1 0 0 none" \
++         "weight 0 :10" | dmsetup create ioband2
++
++
++     If the commands are successful then the device files
++   "/dev/mapper/ioband1" and "/dev/mapper/ioband2" will have been created.
++
++   --------------------------------------------------------------------------
++
++  Additional bandwidth control
++
++     In this example two extra ioband groups are created on "ioband1."
++
++     First, set the ioband group type as user. Next, create two ioband groups
++   that have id 1000 and 2000. Then, give weights of 30 and 20 to the ioband
++   groups respectively.
++
++     # dmsetup message ioband1 0 type user
++     # dmsetup message ioband1 0 attach 1000
++     # dmsetup message ioband1 0 attach 2000
++     # dmsetup message ioband1 0 weight 1000:30
++     # dmsetup message ioband1 0 weight 2000:20
++
++
++     Now the processes owned by uid 1000 can use 30% --- 30/(30+20+40+10)*100
++   --- of the bandwidth of "/dev/sda" when the processes issue I/O requests
++   through "ioband1." The processes owned by uid 2000 can use 20% of the
++   bandwidth likewise.
++
++   Table 1. Weight assignments
++
++   +----------------------------------------------------------------+
++   | ioband device |          ioband group          | ioband weight |
++   |---------------+--------------------------------+---------------|
++   | ioband1       | user id 1000                   | 30            |
++   |---------------+--------------------------------+---------------|
++   | ioband1       | user id 2000                   | 20            |
++   |---------------+--------------------------------+---------------|
++   | ioband1       | default group(the other users) | 40            |
++   |---------------+--------------------------------+---------------|
++   | ioband2       | default group                  | 10            |
++   +----------------------------------------------------------------+
++
++   --------------------------------------------------------------------------
++
++  Remove the ioband devices
++
++     Remove the ioband devices when no longer used.
++
++     # dmsetup remove ioband1
++     # dmsetup remove ioband2
++
++
++   --------------------------------------------------------------------------
++
++Command Reference
++
++  Create an ioband device
++
++   SYNOPSIS
++
++           dmsetup create IOBAND_DEVICE
++
++   DESCRIPTION
++
++             Create an ioband device with the given name IOBAND_DEVICE.
++           Generally, dmsetup reads a table from standard input. Each line of
++           the table specifies a single target and is of the form:
++
++             start_sector num_sectors "ioband" device_file ioband_device_id \
++                 io_throttle io_limit ioband_group_type policy policy_args...
++
++
++                start_sector, num_sectors
++
++                          The sector range of the underlying device where
++                        dm-ioband maps.
++
++                ioband
++
++                          Specify the string "ioband" as a target type.
++
++                device_file
++
++                          Underlying device name.
++
++                ioband_device_id
++
++                          The ID for an ioband device can be symbolic,
++                        numeric, or mixed. The same ID must be set among the
++                        ioband devices that share the same bandwidth. This is
++                        useful for grouping disk drives partitioned from one
++                        disk drive such as RAID drive or LVM logical striped
++                        volume.
++
++                io_throttle
++
++                          When a device has a lot of tokens, and the number
++                        of in-flight I/Os in dm-ioband exceeds io_throttle,
++                        dm-ioband gives priority to the device and issues
++                        I/Os to the device until no tokens of the device are
++                        left. If 0 is specified, the default value is used.
++                        This setting applies all ioband devices which has the
++                        same ioband device ID as you specified by
++                        "ioband_device_id."
++
++                io_limit
++
++                          Dm-ioband blocks all I/O requests for IOBAND_DEVICE
++                        when the number of BIOs in progress exceeds this
++                        value. If 0 is specified, the default value is used.
++                        This setting applies all ioband devices which has the
++                        same ioband device ID as you specified by
++                        "ioband_device_id."
++
++                ioband_group_type
++
++                          Specify how to evaluate the ioband group ID. The
++                        selectable group types are "none", "user", "gid",
++                        "pid" or "pgrp." The type "cgroup" is enabled by
++                        applying the blkio-cgroup patch. Specify "none" if
++                        you don't need any ioband groups other than the
++                        default ioband group.
++
++                policy and policy_args
++
++                          Specify a bandwidth control policy. The selectable
++                        policies are "weight", "weight-iosize" or "range-bw."
++                        This setting applies all ioband devices which has the
++                        same ioband device ID as you specified by
++                        "ioband_device_id."
++
++                          policy_args are specific for each policy. See below
++                        for information on each policy.
++
++   WEIGHT AND WEIGHT-IOSIZE POLICIES
++
++             The "weight" and "weight-iosize" policies distribute bandwidth
++           proportional to the weight of each ioband group. Each ioband group
++           is charged on an I/O count basis when the "weight" policy is used
++           and an I/O size basis when the "weight-iosize" policy is used. The
++           arguments are of the form:
++
++             token_base :weight [ioband_group_id:weight...]
++
++
++                token_base
++
++                          The number of tokens which specified by token_base
++                        will be distributed to all ioband groups proportional
++                        to the weight of each ioband group. If 0 is
++                        specified, the default value is used. This setting
++                        applies all ioband devices which has the same ioband
++                        device ID as you specified by "ioband_device_id."
++
++                :weight
++
++                          Set the weight of the default ioband group.
++
++                ioband_group_id:weight
++
++                          Create an extra ioband group with an
++                        ioband_group_id and set its weight. The
++                        ioband_group_id is an identification number and
++                        corresponds to pid, pgrp , uid and so on which depend
++                        on ioband group type settings.
++
++   RANGE-BW POLICY
++
++             The "range-bw" policy distributes the predicable bandwidth to
++           each group according to the values of minimum and maximum
++           bandwidth value. And range-bw is not based on I/O token which is
++           usually grant for I/O authority.
++
++             So, "0" value is used for token_base parameter in range-bw
++           policy. And both parameters, min-bw and max-bw, are generally used
++           together, but, max-bw can be used alone for only limitation. The
++           arguments are of the form:
++
++             token_base :min-bw:max-bw [ioband_group_id:min-bw:max-bw...]
++
++
++                token_base
++
++                          "0" is used, because it is not meaningful in this
++                        policy
++
++                min-bw
++
++                          Set the minimum bandwidth of the default ioband
++                        group. This parameter can't be used alone.
++
++                max-bw
++
++                          Set the maximum bandwidth of the default ioband
++                        group.
++
++                ioband_group_id:min-bw:max-bw
++
++                          Create an extra ioband group with an
++                        ioband_group_id and set its min and max bandwidth.
++                        The ioband_group_id is an identification number and
++                        corresponds to pid, pgrp , uid and so on which depend
++                        on ioband group type settings.
++
++   EXAMPLE
++
++             Create an ioband device with the following parameters:
++
++              *   Starting sector = "0"
++
++              *   The number of sectors = "$(blockdev --getsize /dev/sda1)"
++
++              *   Target type = "ioband"
++
++              *   Underlying device name = "/dev/sda1"
++
++              *   Ioband device ID = "share1"
++
++              *   I/O throttle = "10"
++
++              *   I/O limit = "400"
++
++              *   Ioband group type = "user"
++
++              *   Bandwidth control policy = "weight"
++
++              *   Token base = "2048"
++
++              *   Weight for the default ioband group = "100"
++
++              *   Weight for the ioband group 1000 = "80"
++
++              *   Weight for the ioband group 2000 = "20"
++
++              *   Ioband device name = "ioband1"
++
++             # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1" \
++               "share1 10 400 user weight 2048 :100 1000:80 2000:20" \
++               | dmsetup create ioband1
++
++
++             Create two device groups (ID=1,2). The bandwidths of these
++           device groups will be individually controlled.
++
++             # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1" \
++               "0 0 none weight 0 :80" | dmsetup create ioband1
++             # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1" \
++               "0 0 none weight 0 :20" | dmsetup create ioband2
++             # echo "0 $(blockdev --getsize /dev/sdb3) ioband /dev/sdb3 2" \
++               "0 0 none weight 0 :60" | dmsetup create ioband3
++             # echo "0 $(blockdev --getsize /dev/sdb4) ioband /dev/sdb4 2" \
++               "0 0 none weight 0 :40" | dmsetup create ioband4
++
++
++   --------------------------------------------------------------------------
++
++  Remove the ioband device
++
++   SYNOPSIS
++
++           dmsetup remove IOBAND_DEVICE
++
++   DESCRIPTION
++
++             Remove the specified ioband device IOBAND_DEVICE. All the band
++           groups attached to the ioband device are also removed
++           automatically.
++
++   EXAMPLE
++
++             Remove ioband device "ioband1."
++
++             # dmsetup remove ioband1
++
++
++   --------------------------------------------------------------------------
++
++  Set an ioband group type
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 type TYPE
++
++   DESCRIPTION
++
++             Set an ioband group type of IOBAND_DEVICE. TYPE must be one of
++           "none", "user", "gid", "pid" or "pgrp." The type "cgroup" is
++           enabled by applying the blkio-cgroup patch. Once the type is set,
++           new ioband groups can be created on IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Set the ioband group type of ioband device "ioband1" to "user."
++
++             # dmsetup message ioband1 0 type user
++
++
++   --------------------------------------------------------------------------
++
++  Create an ioband group
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 attach ID
++
++   DESCRIPTION
++
++             Create an ioband group and attach it to IOBAND_DEVICE. ID
++           specifies user-id, group-id, process-id or process-group-id
++           depending the ioband group type of IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Create an ioband group which consists of all processes with
++           user-id 1000 and attach it to ioband device "ioband1."
++
++             # dmsetup message ioband1 0 type user
++             # dmsetup message ioband1 0 attach 1000
++
++
++   --------------------------------------------------------------------------
++
++  Detach the ioband group
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 detach ID
++
++   DESCRIPTION
++
++             Detach the ioband group specified by ID from ioband device
++           IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Detach the ioband group with ID "2000" from ioband device
++           "ioband2."
++
++             # dmsetup message ioband2 0 detach 1000
++
++
++   --------------------------------------------------------------------------
++
++  Set bandwidth control policy
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 policy POLICY
++
++   DESCRIPTION
++
++             Set POLICY to a bandwidth control policy. The selectable
++           policies are "weight", "weight-iosize" and "range-bw." This
++           setting applies all ioband devices which has the same ioband
++           device ID as IOBAND_DEVICE.
++
++                weight
++
++                          This policy distributes bandwidth proportional to
++                        the weight of each ioband group. Each ioband group is
++                        charged on an I/O count basis.
++
++                weight-iosize
++
++                          This policy distributes bandwidth proportional to
++                        the weight of each ioband group. Each ioband group is
++                        charged on an I/O size basis.
++
++                range-bw
++
++                          This policy guarantees minimum bandwidth and limits
++                        maximum bandwidth for each ioband group.
++
++   EXAMPLE
++
++             Set bandwidth control policy of ioband devices which have the
++           same ioband device ID as "ioband1" to "weight-iosize."
++
++             # dmsetup message ioband1 0 policy weight-iosize
++
++
++   --------------------------------------------------------------------------
++
++  Set the weight of an ioband group
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 weight VAL
++
++           dmsetup message IOBAND_DEVICE 0 weight ID:VAL
++
++   DESCRIPTION
++
++             Set the weight of the ioband group which belongs to
++           IOBAND_DEVICE. The group is determined by ID. If ID: is omitted,
++           the default ioband group is chosen.
++
++             The following example means that "ioband1" can use 80% ---
++           40/(40+10)*100 --- of the bandwidth of the underlying block device
++           while "ioband2" can use 20%.
++
++             # dmsetup message ioband1 0 weight 40
++             # dmsetup message ioband2 0 weight 10
++
++
++             The following lines have the same effect as the above:
++
++             # dmsetup message ioband1 0 weight 4
++             # dmsetup message ioband2 0 weight 1
++
++
++             VAL must be an integer larger than 0. The default value, which
++           is assigned to newly created ioband groups, is 100.
++
++   EXAMPLE
++
++             Set the weight of the default ioband group of "ioband1" to 40.
++
++             # dmsetup message ioband1 0 weight 40
++
++
++             Set the weight of the ioband group of "ioband1" with ID "1000"
++           to 10.
++
++             # dmsetup message ioband1 0 weight 1000:10
++
++
++   --------------------------------------------------------------------------
++
++  Set the range-bw of an ioband group
++
++   SYNOPSIS
++
++           dmsetup -- message IOBAND_DEVICE 0 range-bw -1:MIN:MAX
++
++           dmsetup message IOBAND_DEVICE 0 range-bw ID:MIN-BW:MAX-BW
++
++   DESCRIPTION
++
++             Set the range-bw of the ioband group which belongs to
++           IOBAND_DEVICE. The group is determined by ID. If -1 is specified
++           as ID, the default ioband group is chosen.
++
++             The following example means that "ioband1" can use
++           5M~6Mbytes/sec bandwidth of the underlying block device while
++           "ioband2" can use 900K~1Mbytes/sec bandwidth.
++
++             # dmsetup message -- ioband1 0 range-bw -1:5000:6000
++
++             # dmsetup message -- ioband2 0 range-bw -1:900:1000
++
++
++             MIN-BW and MAX-BW and must be an integer larger than 0 and its
++           unit is Kbyte/sec.
++
++   EXAMPLE
++
++             Set the range-bw of the default ioband group of "ioband1" to
++           200K~300K I/O bandwidth.
++
++             # dmsetup -- message ioband1 0 range-bw -1:200:300
++
++
++             Set the weight of the ioband group of "ioband1" with ID "1000"
++           to 10M~12M I/O bandwidth.
++
++             # dmsetup message ioband1 0 range-bw 1000:10000:12000
++
++
++   --------------------------------------------------------------------------
++
++  Set the number of tokens
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 token VAL
++
++   DESCRIPTION
++
++             The number of tokens will be distributed to all ioband groups
++           proportional to the weight of each ioband group. If 0 is
++           specified, the default value is used. This setting applies all
++           ioband devices which has the same ioband device ID as
++           IOBAND_DEVICE
++
++   EXAMPLE
++
++             Set the number of tokens to 256.
++
++             # dmsetup message ioband1 0 token 256
++
++
++   --------------------------------------------------------------------------
++
++  Set a limit of how many tokens are carried over
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 carryover VAL
++
++   DESCRIPTION
++
++             When dm-ioband tries to refill an ioband group with tokens after
++           another ioband group is already refilled several times, dm-ioband
++           determines the number of tokens to refill by multiplying the
++           number of tokens refilled once by the smaller of how many times
++           the other group is already refilled or this limit. If 0 is
++           specified, the default value is used. This setting applies all
++           ioband devices which has the same ioband device ID as
++           IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Set a limit for "ioband1" to 2.
++
++             # dmsetup message ioband1 0 carryover 2
++
++
++   --------------------------------------------------------------------------
++
++  Set I/O throttling
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 io_throttle VAL
++
++   DESCRIPTION
++
++             When a device has a lot of tokens, and the number of in-flight
++           I/Os in dm-ioband exceeds io_throttle, dm-ioband gives priority to
++           the device and issues I/Os to the device until no tokens of the
++           device are left. If 0 is specified, the default value is used.
++           This setting applies all ioband devices which has the same ioband
++           device ID as you specified by "ioband_device_id."
++
++   EXAMPLE
++
++             Set the I/O throttling value of "ioband1" to 16.
++
++             # dmsetup message ioband1 0 io_throttle 16
++
++
++   --------------------------------------------------------------------------
++
++  Set I/O limiting
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 io_limit VAL
++
++   DESCRIPTION
++
++             Dm-ioband blocks all I/O requests for IOBAND_DEVICE when the
++           number of BIOs in progress exceeds this value. If 0 is specified,
++           the default value is used. This setting applies all ioband devices
++           which has the same ioband device ID as IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Set the I/O limiting value of "ioband1" to 128.
++
++             # dmsetup message ioband1 0 io_limit 128
++
++
++   --------------------------------------------------------------------------
++
++  Display settings
++
++   SYNOPSIS
++
++           dmsetup table --target ioband
++
++   DESCRIPTION
++
++             Display the current table for the ioband device in a format. See
++           "dmsetup create" command for information on the table format.
++
++   EXAMPLE
++
++             The following output shows the current table of "ioband1."
++
++             # dmsetup table --target ioband
++             ioband: 0 32129937 ioband1 8:29 128 10 400 user weight \
++               2048 :100 1000:80 2000:20
++
++
++   --------------------------------------------------------------------------
++
++  Display Statistics
++
++   SYNOPSIS
++
++           dmsetup status --target ioband
++
++   DESCRIPTION
++
++             Display the statistics of all the ioband devices whose target
++           type is "ioband."
++
++             The output format is as below. the first five columns shows:
++
++              *   ioband device name
++
++              *   logical start sector of the device (must be 0)
++
++              *   device size in sectors
++
++              *   target type (must be "ioband")
++
++              *   device group ID
++
++             The remaining columns show the statistics of each ioband group
++           on the band device. Each group uses seven columns for its
++           statistics.
++
++              *   ioband group ID (-1 means default)
++
++              *   total read requests
++
++              *   delayed read requests
++
++              *   total read sectors
++
++              *   total write requests
++
++              *   delayed write requests
++
++              *   total write sectors
++
++   EXAMPLE
++
++             The following output shows the statistics of two ioband devices.
++           Ioband2 only has the default ioband group and ioband1 has three
++           (default, 1001, 1002) ioband groups.
++
++             # dmsetup status
++             ioband2: 0 44371467 ioband 128 -1 143 90 424 122 78 352
++             ioband1: 0 44371467 ioband 128 -1 223 172 408 211 136 600 1001 \
++             166 107 472 139 95 352 1002 211 146 520 210 147 504
++
++
++   --------------------------------------------------------------------------
++
++  Reset status counter
++
++   SYNOPSIS
++
++           dmsetup message IOBAND_DEVICE 0 reset
++
++   DESCRIPTION
++
++             Reset the statistics of ioband device IOBAND_DEVICE.
++
++   EXAMPLE
++
++             Reset the statistics of "ioband1."
++
++             # dmsetup message ioband1 0 reset
++
++
++   --------------------------------------------------------------------------
++
++Examples
++
++  Example #1: Bandwidth control on Partitions
++
++     This example describes how to control the bandwidth with disk
++   partitions. The following diagram illustrates the configuration of this
++   example. You may want to run a database on /dev/mapper/ioband1 and web
++   applications on /dev/mapper/ioband2.
++
++                 /mnt1                        /mnt2            mount points
++                   |                              |
++     +-------------V------------+ +-------------V------------+
++     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
++     +--------------------------+ +--------------------------+
++     |       default group      | |       default group      | ioband groups
++     |           (80)           | |           (40)           |    (weight)
++     +-------------|------------+ +-------------|------------+
++                   |                            |
++     +-------------V-------------+--------------V------------+
++     |         /dev/sda1         |          /dev/sda2        | partitions
++     +---------------------------+---------------------------+
++
++
++     To setup the above configuration, follow these steps:
++
++    1.   Create ioband devices with the same device group ID and assign
++       weights of 80 and 40 to the default ioband groups respectively.
++
++         # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1 0 0" \
++             "none weight 0 :80" | dmsetup create ioband1
++         # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1 0 0" \
++             "none weight 0 :40" | dmsetup create ioband2
++
++
++    2.   Create filesystems on the ioband devices and mount them.
++
++         # mkfs.ext3 /dev/mapper/ioband1
++         # mount /dev/mapper/ioband1 /mnt1
++
++         # mkfs.ext3 /dev/mapper/ioband2
++         # mount /dev/mapper/ioband2 /mnt2
++
++
++   --------------------------------------------------------------------------
++
++  Example #2: Bandwidth control on Logical Volumes
++
++     This example is similar to the example #1 but it uses LVM logical
++   volumes instead of disk partitions. This example shows how to configure
++   ioband devices on two striped logical volumes.
++
++                 /mnt1                        /mnt2            mount points
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
++     +--------------------------+ +--------------------------+
++     |       default group      | |       default group      | ioband groups
++     |           (80)           | |           (40)           |    (weight)
++     +-------------|------------+ +-------------|------------+
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |      /dev/mapper/lv0     | |     /dev/mapper/lv1      | striped logical
++     |                          | |                          | volumes
++     +-------------------------------------------------------+
++     |                          vg0                          | volume group
++     +-------------|----------------------------|------------+
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |         /dev/sdb         | |         /dev/sdc         | physical disks
++     +--------------------------+ +--------------------------+
++
++
++     To setup the above configuration, follow these steps:
++
++    1.   Initialize the partitions for use by LVM.
++
++         # pvcreate /dev/sdb
++         # pvcreate /dev/sdc
++
++
++    2.   Create a new volume group named "vg0" with /dev/sdb and /dev/sdc.
++
++         # vgcreate vg0 /dev/sdb /dev/sdc
++
++
++    3.   Create two logical volumes in "vg0." The volumes have to be striped.
++
++         # lvcreate -n lv0 -i 2 -I 64 vg0 -L 1024M
++         # lvcreate -n lv1 -i 2 -I 64 vg0 -L 1024M
++
++
++         The rest is the same as the example #1.
++
++    4.   Create ioband devices corresponding to each logical volume and
++       assign weights of 80 and 40 to the default ioband groups respectively.
++
++         # echo "0 $(blockdev --getsize /dev/mapper/vg0-lv0)" \
++            "ioband /dev/mapper/vg0-lv0 1 0 0 none weight 0 :80" | \
++            dmsetup create ioband1
++         # echo "0 $(blockdev --getsize /dev/mapper/vg0-lv1)" \
++            "ioband /dev/mapper/vg0-lv1 1 0 0 none weight 0 :40" | \
++            dmsetup create ioband2
++
++
++    5.   Create filesystems on the ioband devices and mount them.
++
++         # mkfs.ext3 /dev/mapper/ioband1
++         # mount /dev/mapper/ioband1 /mnt1
++
++         # mkfs.ext3 /dev/mapper/ioband2
++         # mount /dev/mapper/ioband2 /mnt2
++
++
++   --------------------------------------------------------------------------
++
++  Example #4: Bandwidth control on processes
++
++     This example describes how to control the bandwidth with groups of
++   processes. You may also want to run an additional application on the same
++   machine described in the example #1. This example shows how to add a new
++   ioband group for this application.
++
++                 /mnt1                        /mnt2            mount points
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
++     +-------------+------------+ +-------------+------------+
++     |          default         | |  user=1000  |   default  | ioband groups
++     |           (80)           | |     (20)    |    (40)    |   (weight)
++     +-------------+------------+ +-------------+------------+
++                   |                            |
++     +-------------V-------------+--------------V------------+
++     |         /dev/sda1         |          /dev/sda2        | partitions
++     +---------------------------+---------------------------+
++
++
++     The following shows to set up a new ioband group on the machine that is
++   already configured as the example #1. The application will have a weight
++   of 20 and run with user-id 1000 on /dev/mapper/ioband2.
++
++    1.   Set the type of ioband2 to "user."
++
++         # dmsetup message ioband2 0 type user.
++
++
++    2.   Create a new ioband group on ioband2.
++
++         # dmsetup message ioband2 0 attach 1000
++
++
++    3.   Assign weight of 10 to this newly created ioband group.
++
++         # dmsetup message ioband2 0 weight 1000:20
++
++
++   --------------------------------------------------------------------------
++
++  Example #3: Bandwidth control for Xen virtual block devices
++
++     This example describes how to control the bandwidth for Xen virtual
++   block devices. The following diagram illustrates the configuration of this
++   example.
++
++           Virtual Machine 1            Virtual Machine 2      virtual machines
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |         /dev/xvda1       | |         /dev/xvda1       | virtual block
++     +-------------|------------+ +-------------|------------+    devices
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
++     +--------------------------+ +--------------------------+
++     |       default group      | |       default group      | ioband groups
++     |           (80)           | |           (40)           |    (weight)
++     +-------------|------------+ +-------------|------------+
++                   |                            |
++     +-------------V-------------+--------------V------------+
++     |         /dev/sda1         |          /dev/sda2        | partitions
++     +---------------------------+---------------------------+
++
++
++     The followings shows how to map ioband device "ioband1" and "ioband2" to
++   virtual block device "/dev/xvda1 on Virtual Machine 1" and "/dev/xvda1 on
++   Virtual Machine 2" respectively on the machine configured as the example
++   #1. Add the following lines to the configuration files that are referenced
++   when creating "Virtual Machine 1" and "Virtual Machine 2."
++
++       For "Virtual Machine 1"
++       disk = [ 'phy:/dev/mapper/ioband1,xvda,w' ]
++
++       For "Virtual Machine 2"
++       disk = [ 'phy:/dev/mapper/ioband2,xvda,w' ]
++
++
++   --------------------------------------------------------------------------
++
++  Example #4: Bandwidth control for Xen blktap devices
++
++     This example describes how to control the bandwidth for Xen virtual
++   block devices when Xen blktap devices are used. The following diagram
++   illustrates the configuration of this example.
++
++           Virtual Machine 1            Virtual Machine 2      virtual machines
++                   |                            |
++     +-------------V------------+ +-------------V------------+
++     |         /dev/xvda1       | |         /dev/xvda1       | virtual block
++     +-------------|------------+ +-------------|------------+    devices
++                   |                            |
++        +----------V----------+     +-----------V---------+
++        |       tapdisk       |     |        tapdisk      |    tapdisk daemons
++        |       (15011)       |     |        (15276)      |    (daemon's pid)
++        +----------|----------+     +-----------|---------+
++                   |                            |
++     +-------------|----------------------------|------------+
++     |             |     /dev/mapper/ioband1    |            | ioband device
++     |             |       mount on /vmdisk     |            |
++     +-------------V-------------+--------------V------------+
++     |     group for PID=15011   |    group for PID=15276    | ioband groups
++     |           (80)            |            (40)           |    (weight)
++     +-------------|----------------------------|------------+
++                   |                            |
++     +-------------|----------------------------|------------+
++     |  +----------V----------+     +-----------V---------+  |
++     |  |       vm1.img       |     |        vm2.img      |  | disk image files
++     |  +---------------------+     +---------------------+  |
++     |                       /dev/sda1                       | partition
++     +-------------------------------------------------------+
++
++
++     To setup the above configuration, follow these steps:
++
++    1.   Create an ioband device.
++
++         # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1" \
++             "1 0 0 none weight 0 :100" | dmsetup create ioband1
++
++
++    2.   Add the following lines to the configuration files that are
++       referenced when creating "Virtual Machine 1" and "Virtual Machine 2."
++       Disk image files "/vmdisk/vm1.img" and "/vmdisk/vm2.img" will be used.
++
++         For "Virtual Machine 1"
++         disk = [ 'tap:aio:/vmdisk/vm1.img,xvda,w', ]
++
++         For "Virtual Machine 1"
++         disk = [ 'tap:aio:/vmdisk/vm2.img,xvda,w', ]
++
++
++    3.   Run the virtual machines.
++
++         # xm create vm1
++         # xm create vm2
++
++
++    4.   Find out the process IDs of the daemons which control the blktap
++       devices.
++
++         # lsof /vmdisk/disk[12].img
++         COMMAND   PID USER   FD   TYPE DEVICE       SIZE  NODE NAME
++         tapdisk 15011 root   11u   REG  253,0 2147483648 48961 /vmdisk/vm1.img
++         tapdisk 15276 root   13u   REG  253,0 2147483648 48962 /vmdisk/vm2.img
++
++
++    5.   Create new ioband groups of pid 15011 and pid 15276, which are
++       process IDs of the tapdisks, and assign weight of 80 and 40 to the
++       groups respectively.
++
++         # dmsetup message ioband1 0 type pid
++         # dmsetup message ioband1 0 attach 15011
++         # dmsetup message ioband1 0 weight 15011:80
++         # dmsetup message ioband1 0 attach 15276
++         # dmsetup message ioband1 0 weight 15276:40
+Index: linux-2.6.30/drivers/md/Kconfig
+===================================================================
+--- linux-2.6.30.orig/drivers/md/Kconfig
++++ linux-2.6.30/drivers/md/Kconfig
+@@ -293,4 +293,17 @@ config DM_UEVENT
+ 	---help---
+ 	Generate udev events for DM events.
  
--int elv_nr_busy_rt_ioq(struct elevator_queue *e)
--{
--	return e->efqd.busy_rt_queues;
--}
--EXPORT_SYMBOL(elv_nr_busy_rt_ioq);
--
- int elv_hw_tag(struct elevator_queue *e)
- {
- 	return e->efqd.hw_tag;
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 0939735..285a1ff 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -711,7 +711,6 @@ extern void io_group_set_async_queue(struct io_group *iog, int ioprio_class,
- extern struct io_group *io_get_io_group(struct request_queue *q,
- 					struct bio *bio, int create);
- extern int elv_nr_busy_ioq(struct elevator_queue *e);
--extern int elv_nr_busy_rt_ioq(struct elevator_queue *e);
- extern struct io_queue *elv_alloc_ioq(struct request_queue *q, gfp_t gfp_mask);
- extern void elv_free_ioq(struct io_queue *ioq);
- 
--- 
-1.5.4.rc3
++config DM_IOBAND
++	tristate "I/O bandwidth control (EXPERIMENTAL)"
++	depends on BLK_DEV_DM && EXPERIMENTAL
++	---help---
++	This device-mapper target allows to define how the
++	available bandwidth of a storage device should be
++	shared between processes, cgroups, the partitions or the LUNs.
++
++	Information on how to use dm-ioband is available in:
++	   <file:Documentation/device-mapper/ioband.txt>.
++
++	If unsure, say N.
++
+ endif # MD
+Index: linux-2.6.30/drivers/md/Makefile
+===================================================================
+--- linux-2.6.30.orig/drivers/md/Makefile
++++ linux-2.6.30/drivers/md/Makefile
+@@ -8,6 +8,8 @@ dm-multipath-y	+= dm-path-selector.o dm-
+ dm-snapshot-y	+= dm-snap.o dm-exception-store.o dm-snap-transient.o \
+ 		    dm-snap-persistent.o
+ dm-mirror-y	+= dm-raid1.o
++dm-ioband-y	+= dm-ioband-ctl.o dm-ioband-policy.o dm-ioband-rangebw.o \
++		    dm-ioband-type.o
+ dm-log-clustered-y \
+ 		+= dm-log-cluster.o dm-log-cluster-transfer.o
+ md-mod-y	+= md.o bitmap.o
+@@ -37,6 +39,7 @@ obj-$(CONFIG_BLK_DEV_MD)	+= md-mod.o
+ obj-$(CONFIG_BLK_DEV_DM)	+= dm-mod.o
+ obj-$(CONFIG_DM_CRYPT)		+= dm-crypt.o
+ obj-$(CONFIG_DM_DELAY)		+= dm-delay.o
++obj-$(CONFIG_DM_IOBAND)		+= dm-ioband.o
+ obj-$(CONFIG_DM_MULTIPATH)	+= dm-multipath.o dm-round-robin.o
+ obj-$(CONFIG_DM_MULTIPATH_QL)	+= dm-queue-length.o
+ obj-$(CONFIG_DM_MULTIPATH_ST)	+= dm-service-time.o
+Index: linux-2.6.30/drivers/md/dm-ioband-ctl.c
+===================================================================
+--- /dev/null
++++ linux-2.6.30/drivers/md/dm-ioband-ctl.c
+@@ -0,0 +1,1344 @@
++/*
++ * Copyright (C) 2008-2009 VA Linux Systems Japan K.K.
++ * Authors: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
++ *          Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
++ *
++ *  I/O bandwidth control
++ *
++ * Some blktrace messages were added by Alan D. Brunelle <Alan.Brunelle-VXdhtT5mjnY@public.gmane.org>
++ *
++ * This file is released under the GPL.
++ */
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/bio.h>
++#include <linux/slab.h>
++#include <linux/workqueue.h>
++#include <linux/rbtree.h>
++#include <linux/blktrace_api.h>
++#include "dm.h"
++#include "md.h"
++#include "dm-ioband.h"
++
++#define POLICY_PARAM_START 6
++#define POLICY_PARAM_DELIM "=:,"
++
++#define num_issued(dp) \
++	(dp->g_issued[BLK_RW_SYNC] + dp->g_issued[BLK_RW_ASYNC])
++
++static LIST_HEAD(ioband_device_list);
++/* to protect ioband_device_list */
++static DEFINE_SPINLOCK(ioband_devicelist_lock);
++
++static void suspend_ioband_device(struct ioband_device *, unsigned long, int);
++static void resume_ioband_device(struct ioband_device *);
++static void ioband_conduct(struct work_struct *);
++static void ioband_hold_bio(struct ioband_group *, struct bio *);
++static struct bio *ioband_pop_bio(struct ioband_group *);
++static int ioband_set_param(struct ioband_group *, char *, char *);
++static int ioband_group_attach(struct ioband_group *, int, char *);
++static int ioband_group_type_select(struct ioband_group *, char *);
++
++static void do_nothing(void) {}
++
++static int policy_init(struct ioband_device *dp, char *name,
++		       int argc, char **argv)
++{
++	struct policy_type *p;
++	struct ioband_group *gp;
++	unsigned long flags;
++	int r;
++
++	for (p = dm_ioband_policy_type; p->p_name; p++) {
++		if (!strcmp(name, p->p_name))
++			break;
++	}
++	if (!p->p_name)
++		return -EINVAL;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	if (dp->g_policy == p) {
++		/* do nothing if the same policy is already set */
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		return 0;
++	}
++
++	suspend_ioband_device(dp, flags, 1);
++	list_for_each_entry(gp, &dp->g_groups, c_list)
++		dp->g_group_dtr(gp);
++
++	/* switch to the new policy */
++	dp->g_policy = p;
++	r = p->p_policy_init(dp, argc, argv);
++	if (!r) {
++		if (!dp->g_hold_bio)
++			dp->g_hold_bio = ioband_hold_bio;
++		if (!dp->g_pop_bio)
++			dp->g_pop_bio = ioband_pop_bio;
++
++		list_for_each_entry(gp, &dp->g_groups, c_list)
++			dp->g_group_ctr(gp, NULL);
++	}
++	resume_ioband_device(dp);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	return r;
++}
++
++static struct ioband_device *alloc_ioband_device(char *name,
++						 int io_throttle, int io_limit)
++{
++	struct ioband_device *dp, *new_dp;
++	unsigned long flags;
++
++	new_dp = kzalloc(sizeof(struct ioband_device), GFP_KERNEL);
++	if (!new_dp)
++		return NULL;
++
++	/*
++	 * Prepare its own workqueue as generic_make_request() may
++	 * potentially block the workqueue when submitting BIOs.
++	 */
++	new_dp->g_ioband_wq = create_workqueue("kioband");
++	if (!new_dp->g_ioband_wq) {
++		kfree(new_dp);
++		return NULL;
++	}
++
++	spin_lock_irqsave(&ioband_devicelist_lock, flags);
++	list_for_each_entry(dp, &ioband_device_list, g_list) {
++		if (!strcmp(dp->g_name, name)) {
++			dp->g_ref++;
++			spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
++			destroy_workqueue(new_dp->g_ioband_wq);
++			kfree(new_dp);
++			return dp;
++		}
++	}
++
++	INIT_DELAYED_WORK(&new_dp->g_conductor, ioband_conduct);
++	INIT_LIST_HEAD(&new_dp->g_groups);
++	INIT_LIST_HEAD(&new_dp->g_list);
++	spin_lock_init(&new_dp->g_lock);
++	mutex_init(&new_dp->g_lock_device);
++	bio_list_init(&new_dp->g_urgent_bios);
++	new_dp->g_io_throttle = io_throttle;
++	new_dp->g_io_limit = io_limit;
++	new_dp->g_issued[BLK_RW_SYNC] = 0;
++	new_dp->g_issued[BLK_RW_ASYNC] = 0;
++	new_dp->g_blocked = 0;
++	new_dp->g_ref = 1;
++	new_dp->g_flags = 0;
++	strlcpy(new_dp->g_name, name, sizeof(new_dp->g_name));
++	new_dp->g_policy = NULL;
++	new_dp->g_hold_bio = NULL;
++	new_dp->g_pop_bio = NULL;
++	init_waitqueue_head(&new_dp->g_waitq);
++	init_waitqueue_head(&new_dp->g_waitq_suspend);
++	init_waitqueue_head(&new_dp->g_waitq_flush);
++	list_add_tail(&new_dp->g_list, &ioband_device_list);
++
++	spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
++	return new_dp;
++}
++
++static void release_ioband_device(struct ioband_device *dp)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&ioband_devicelist_lock, flags);
++	dp->g_ref--;
++	if (dp->g_ref > 0) {
++		spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
++		return;
++	}
++	list_del(&dp->g_list);
++	spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
++	destroy_workqueue(dp->g_ioband_wq);
++	kfree(dp);
++}
++
++static int is_ioband_device_flushed(struct ioband_device *dp,
++				    int wait_completion)
++{
++	struct ioband_group *gp;
++
++	if (wait_completion && num_issued(dp) > 0)
++		return 0;
++	if (dp->g_blocked || waitqueue_active(&dp->g_waitq))
++		return 0;
++	list_for_each_entry(gp, &dp->g_groups, c_list)
++		if (waitqueue_active(&gp->c_waitq))
++			return 0;
++	return 1;
++}
++
++static void suspend_ioband_device(struct ioband_device *dp,
++				  unsigned long flags, int wait_completion)
++{
++	struct ioband_group *gp;
++
++	/* block incoming bios */
++	set_device_suspended(dp);
++
++	/* wake up all blocked processes and go down all ioband groups */
++	wake_up_all(&dp->g_waitq);
++	list_for_each_entry(gp, &dp->g_groups, c_list) {
++		if (!is_group_down(gp)) {
++			set_group_down(gp);
++			set_group_need_up(gp);
++		}
++		wake_up_all(&gp->c_waitq);
++	}
++
++	/* flush the already mapped bios */
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	queue_delayed_work(dp->g_ioband_wq, &dp->g_conductor, 0);
++	flush_workqueue(dp->g_ioband_wq);
++
++	/* wait for all processes to wake up and bios to release */
++	spin_lock_irqsave(&dp->g_lock, flags);
++	wait_event_lock_irq(dp->g_waitq_flush,
++			    is_ioband_device_flushed(dp, wait_completion),
++			    dp->g_lock, do_nothing());
++}
++
++static void resume_ioband_device(struct ioband_device *dp)
++{
++	struct ioband_group *gp;
++
++	/* go up ioband groups */
++	list_for_each_entry(gp, &dp->g_groups, c_list) {
++		if (group_need_up(gp)) {
++			clear_group_need_up(gp);
++			clear_group_down(gp);
++		}
++	}
++
++	/* accept incoming bios */
++	wake_up_all(&dp->g_waitq_suspend);
++	clear_device_suspended(dp);
++}
++
++static struct ioband_group *ioband_group_find(struct ioband_group *head, int id)
++{
++	struct rb_node *node = head->c_group_root.rb_node;
++
++	while (node) {
++		struct ioband_group *p =
++			container_of(node, struct ioband_group, c_group_node);
++
++		if (p->c_id == id || id == IOBAND_ID_ANY)
++			return p;
++		node = (id < p->c_id) ? node->rb_left : node->rb_right;
++	}
++	return NULL;
++}
++
++static void ioband_group_add_node(struct rb_root *root, struct ioband_group *gp)
++{
++	struct rb_node **node = &root->rb_node, *parent = NULL;
++	struct ioband_group *p;
++
++	while (*node) {
++		p = container_of(*node, struct ioband_group, c_group_node);
++		parent = *node;
++		node = (gp->c_id < p->c_id) ?
++				&(*node)->rb_left : &(*node)->rb_right;
++	}
++
++	rb_link_node(&gp->c_group_node, parent, node);
++	rb_insert_color(&gp->c_group_node, root);
++}
++
++static int ioband_group_init(struct ioband_group *gp,
++			     struct ioband_group *head,
++			     struct ioband_device *dp, int id, char *param)
++{
++	unsigned long flags;
++	int r;
++
++	INIT_LIST_HEAD(&gp->c_list);
++	bio_list_init(&gp->c_blocked_bios);
++	bio_list_init(&gp->c_prio_bios);
++	gp->c_id = id;	/* should be verified */
++	gp->c_blocked = 0;
++	gp->c_prio_blocked = 0;
++	memset(gp->c_stat, 0, sizeof(gp->c_stat));
++	init_waitqueue_head(&gp->c_waitq);
++	gp->c_flags = 0;
++	gp->c_group_root = RB_ROOT;
++	gp->c_banddev = dp;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	if (head && ioband_group_find(head, id)) {
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		DMWARN("ioband_group: id=%d already exists.", id);
++		return -EEXIST;
++	}
++
++	list_add_tail(&gp->c_list, &dp->g_groups);
++
++	r = dp->g_group_ctr(gp, param);
++	if (r) {
++		list_del(&gp->c_list);
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		return r;
++	}
++
++	if (head) {
++		ioband_group_add_node(&head->c_group_root, gp);
++		gp->c_dev = head->c_dev;
++		gp->c_target = head->c_target;
++	}
++
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++
++	return 0;
++}
++
++static void ioband_group_release(struct ioband_group *head,
++				 struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	list_del(&gp->c_list);
++	if (head)
++		rb_erase(&gp->c_group_node, &head->c_group_root);
++	dp->g_group_dtr(gp);
++	kfree(gp);
++}
++
++static void ioband_group_destroy_all(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct ioband_group *p;
++	unsigned long flags;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	while ((p = ioband_group_find(gp, IOBAND_ID_ANY)))
++		ioband_group_release(gp, p);
++	ioband_group_release(NULL, gp);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++}
++
++static void ioband_group_stop_all(struct ioband_group *head, int suspend)
++{
++	struct ioband_device *dp = head->c_banddev;
++	struct ioband_group *p;
++	struct rb_node *node;
++	unsigned long flags;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	for (node = rb_first(&head->c_group_root); node; node = rb_next(node)) {
++		p = rb_entry(node, struct ioband_group, c_group_node);
++		set_group_down(p);
++		if (suspend)
++			set_group_suspended(p);
++	}
++	set_group_down(head);
++	if (suspend)
++		set_group_suspended(head);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	queue_delayed_work(dp->g_ioband_wq, &dp->g_conductor, 0);
++	flush_workqueue(dp->g_ioband_wq);
++}
++
++static void ioband_group_resume_all(struct ioband_group *head)
++{
++	struct ioband_device *dp = head->c_banddev;
++	struct ioband_group *p;
++	struct rb_node *node;
++	unsigned long flags;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	for (node = rb_first(&head->c_group_root); node; node = rb_next(node)) {
++		p = rb_entry(node, struct ioband_group, c_group_node);
++		clear_group_down(p);
++		clear_group_suspended(p);
++	}
++	clear_group_down(head);
++	clear_group_suspended(head);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++}
++
++static int split_string(char *s, long *id, char **v)
++{
++	char *p;
++
++	p = strsep(&s, POLICY_PARAM_DELIM);
++	if (!s) {
++		*v = p;
++		*id = IOBAND_ID_ANY;
++		return 0;
++	} else {
++		*v = s;
++		return strict_strtol(p, 0, id);
++	}
++}
++
++/*
++ * Create a new band device:
++ *   parameters:  <device> <device-group-id> <io_throttle> <io_limit>
++ *     <type> <policy> <policy-param...> <group-id:group-param...>
++ */
++static int ioband_ctr(struct dm_target *ti, unsigned argc, char **argv)
++{
++	struct ioband_group *gp;
++	struct ioband_device *dp;
++	struct dm_dev *dev;
++	int io_throttle;
++	int io_limit;
++	int i, r, start;
++	long val, id;
++	char *param, *s;
++
++	if (argc < POLICY_PARAM_START) {
++		ti->error = "Requires " __stringify(POLICY_PARAM_START)
++							" or more arguments";
++		return -EINVAL;
++	}
++
++	if (strlen(argv[1]) > IOBAND_NAME_MAX) {
++		ti->error = "Ioband device name is too long";
++		return -EINVAL;
++	}
++
++	r = strict_strtol(argv[2], 0, &val);
++	if (r || val < 0 || val > SHORT_MAX) {
++		ti->error = "Invalid io_throttle";
++		return -EINVAL;
++	}
++	io_throttle = (val == 0) ? DEFAULT_IO_THROTTLE : val;
++
++	r = strict_strtol(argv[3], 0, &val);
++	if (r || val < 0 || val > SHORT_MAX) {
++		ti->error = "Invalid io_limit";
++		return -EINVAL;
++	}
++	io_limit = val;
++
++	r = dm_get_device(ti, argv[0], 0, ti->len,
++			  dm_table_get_mode(ti->table), &dev);
++	if (r) {
++		ti->error = "Device lookup failed";
++		return r;
++	}
++
++	if (io_limit == 0) {
++		struct request_queue *q;
++
++		q = bdev_get_queue(dev->bdev);
++		if (!q) {
++			ti->error = "Can't get queue size";
++			r = -ENXIO;
++			goto release_dm_device;
++		}
++		/*
++		 * The block layer accepts I/O requests up to 50% over
++		 * nr_requests when the requests are issued from a
++		 * "batcher" process.
++		 */
++		io_limit = (3 * q->nr_requests / 2);
++	}
++
++	if (io_limit < io_throttle)
++		io_limit = io_throttle;
++
++	dp = alloc_ioband_device(argv[1], io_throttle, io_limit);
++	if (!dp) {
++		ti->error = "Cannot create ioband device";
++		r = -EINVAL;
++		goto release_dm_device;
++	}
++
++	mutex_lock(&dp->g_lock_device);
++	r = policy_init(dp, argv[POLICY_PARAM_START - 1],
++			argc - POLICY_PARAM_START, &argv[POLICY_PARAM_START]);
++	if (r) {
++		ti->error = "Invalid policy parameter";
++		goto release_ioband_device;
++	}
++
++	gp = kzalloc(sizeof(struct ioband_group), GFP_KERNEL);
++	if (!gp) {
++		ti->error = "Cannot allocate memory for ioband group";
++		r = -ENOMEM;
++		goto release_ioband_device;
++	}
++
++	ti->num_flush_requests = 1;
++	ti->private = gp;
++	gp->c_target = ti;
++	gp->c_dev = dev;
++
++	/* Find a default group parameter */
++	for (start = POLICY_PARAM_START; start < argc; start++) {
++		s = strpbrk(argv[start], POLICY_PARAM_DELIM);
++		if (s == argv[start])
++			break;
++	}
++	param = (start < argc) ? &argv[start][1] : NULL;
++
++	/* Create a default ioband group */
++	r = ioband_group_init(gp, NULL, dp, IOBAND_ID_ANY, param);
++	if (r) {
++		kfree(gp);
++		ti->error = "Cannot create default ioband group";
++		goto release_ioband_device;
++	}
++
++	r = ioband_group_type_select(gp, argv[4]);
++	if (r) {
++		ti->error = "Cannot set ioband group type";
++		goto release_ioband_group;
++	}
++
++	/* Create sub ioband groups */
++	for (i = start + 1; i < argc; i++) {
++		r = split_string(argv[i], &id, &param);
++		if (r) {
++			ti->error = "Invalid ioband group parameter";
++			goto release_ioband_group;
++		}
++		r = ioband_group_attach(gp, id, param);
++		if (r) {
++			ti->error = "Cannot create ioband group";
++			goto release_ioband_group;
++		}
++	}
++	mutex_unlock(&dp->g_lock_device);
++	return 0;
++
++release_ioband_group:
++	ioband_group_destroy_all(gp);
++release_ioband_device:
++	mutex_unlock(&dp->g_lock_device);
++	release_ioband_device(dp);
++release_dm_device:
++	dm_put_device(ti, dev);
++	return r;
++}
++
++static void ioband_dtr(struct dm_target *ti)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++
++	mutex_lock(&dp->g_lock_device);
++	ioband_group_stop_all(gp, 0);
++	cancel_delayed_work_sync(&dp->g_conductor);
++	dm_put_device(ti, gp->c_dev);
++	ioband_group_destroy_all(gp);
++	mutex_unlock(&dp->g_lock_device);
++	release_ioband_device(dp);
++}
++
++static void ioband_hold_bio(struct ioband_group *gp, struct bio *bio)
++{
++	/* Todo: The list should be split into a sync list and an async list */
++	bio_list_add(&gp->c_blocked_bios, bio);
++}
++
++static struct bio *ioband_pop_bio(struct ioband_group *gp)
++{
++	return bio_list_pop(&gp->c_blocked_bios);
++}
++
++static int is_urgent_bio(struct bio *bio)
++{
++	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
++	/*
++	 * ToDo: A new flag should be added to struct bio, which indicates
++	 *       it contains urgent I/O requests.
++	 */
++	if (!PageReclaim(page))
++		return 0;
++	if (PageSwapCache(page))
++		return 2;
++	return 1;
++}
++
++static inline int device_should_block(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	if (is_group_down(gp))
++		return 0;
++	if (is_device_blocked(dp))
++		return 1;
++	if (dp->g_blocked >= dp->g_io_limit * 2) {
++		set_device_blocked(dp);
++		return 1;
++	}
++	return 0;
++}
++
++static inline int group_should_block(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	if (is_group_down(gp))
++		return 0;
++	if (is_group_blocked(gp))
++		return 1;
++	if (dp->g_should_block(gp)) {
++		set_group_blocked(gp);
++		return 1;
++	}
++	return 0;
++}
++
++static void prevent_burst_bios(struct ioband_group *gp, struct bio *bio)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	if (current->flags & PF_KTHREAD || is_urgent_bio(bio)) {
++		/*
++		 * Kernel threads shouldn't be blocked easily since each of
++		 * them may handle BIOs for several groups on several
++		 * partitions.
++		 */
++		wait_event_lock_irq(dp->g_waitq, !device_should_block(gp),
++				    dp->g_lock, do_nothing());
++	} else {
++		wait_event_lock_irq(gp->c_waitq, !group_should_block(gp),
++				    dp->g_lock, do_nothing());
++	}
++}
++
++static inline int should_pushback_bio(struct ioband_group *gp)
++{
++	return is_group_suspended(gp) && dm_noflush_suspending(gp->c_target);
++}
++
++static inline bool bio_is_sync(struct bio *bio)
++{
++	/* Must be the same condition as rw_is_sync() in blkdev.h */
++	return !bio_data_dir(bio) || bio_sync(bio);
++}
++
++static inline int prepare_to_issue(struct ioband_group *gp, struct bio *bio)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	dp->g_issued[bio_is_sync(bio)]++;
++	return dp->g_prepare_bio(gp, bio, 0);
++}
++
++static inline int room_for_bio(struct ioband_device *dp)
++{
++	return dp->g_issued[BLK_RW_SYNC] < dp->g_io_limit
++		|| dp->g_issued[BLK_RW_ASYNC] < dp->g_io_limit;
++}
++
++static void hold_bio(struct ioband_group *gp, struct bio *bio)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	dp->g_blocked++;
++	if (is_urgent_bio(bio)) {
++		dp->g_prepare_bio(gp, bio, IOBAND_URGENT);
++		bio_list_add(&dp->g_urgent_bios, bio);
++		/* TODO: blk_add_trace_msg will be replaced by TRACE_EVENT */
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s hold_urg %d", dp->g_name,
++				  dp->g_blocked);
++	} else {
++		gp->c_blocked++;
++		dp->g_hold_bio(gp, bio);
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s hold_nrm %d", dp->g_name,
++				  gp->c_blocked);
++	}
++}
++
++static inline int room_for_bio_sync(struct ioband_device *dp, int sync)
++{
++	return dp->g_issued[sync] < dp->g_io_limit;
++}
++
++static void push_prio_bio(struct ioband_group *gp, struct bio *bio, int sync)
++{
++	if (bio_list_empty(&gp->c_prio_bios))
++		set_prio_queue(gp, sync);
++	bio_list_add(&gp->c_prio_bios, bio);
++	gp->c_prio_blocked++;
++}
++
++static struct bio *pop_prio_bio(struct ioband_group *gp)
++{
++	struct bio *bio = bio_list_pop(&gp->c_prio_bios);
++
++	if (bio_list_empty(&gp->c_prio_bios))
++		clear_prio_queue(gp);
++
++	if (bio)
++		gp->c_prio_blocked--;
++	return bio;
++}
++
++static int make_issue_list(struct ioband_group *gp, struct bio *bio,
++			   struct bio_list *issue_list,
++			   struct bio_list *pushback_list)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	dp->g_blocked--;
++	gp->c_blocked--;
++	if (!gp->c_blocked && is_group_blocked(gp)) {
++		clear_group_blocked(gp);
++		wake_up_all(&gp->c_waitq);
++	}
++	if (should_pushback_bio(gp)) {
++		bio_list_add(pushback_list, bio);
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s add_pback %d %d", dp->g_name,
++				  dp->g_blocked, gp->c_blocked);
++	} else {
++		int rw = bio_data_dir(bio);
++
++		gp->c_stat[rw].deferred++;
++		gp->c_stat[rw].sectors += bio_sectors(bio);
++		bio_list_add(issue_list, bio);
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s add_iss %d %d", dp->g_name,
++				  dp->g_blocked, gp->c_blocked);
++	}
++	return prepare_to_issue(gp, bio);
++}
++
++static void release_urgent_bios(struct ioband_device *dp,
++				struct bio_list *issue_list,
++				struct bio_list *pushback_list)
++{
++	struct bio *bio;
++
++	if (bio_list_empty(&dp->g_urgent_bios))
++		return;
++	while (room_for_bio_sync(dp, BLK_RW_ASYNC)) {
++		bio = bio_list_pop(&dp->g_urgent_bios);
++		if (!bio)
++			return;
++		dp->g_blocked--;
++		dp->g_issued[bio_is_sync(bio)]++;
++		bio_list_add(issue_list, bio);
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s urg_add_iss %d", dp->g_name,
++				  dp->g_blocked);
++	}
++}
++
++static int release_prio_bios(struct ioband_group *gp,
++			     struct bio_list *issue_list,
++			     struct bio_list *pushback_list)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct bio *bio;
++	int sync;
++	int ret;
++
++	if (bio_list_empty(&gp->c_prio_bios))
++		return R_OK;
++	sync = prio_queue_sync(gp);
++	while (gp->c_prio_blocked) {
++		if (!dp->g_can_submit(gp))
++			return R_BLOCK;
++		if (!room_for_bio_sync(dp, sync))
++			return R_OK;
++		bio = pop_prio_bio(gp);
++		if (!bio)
++			return R_OK;
++		ret = make_issue_list(gp, bio, issue_list, pushback_list);
++		if (ret)
++			return ret;
++	}
++	return R_OK;
++}
++
++static int release_norm_bios(struct ioband_group *gp,
++			     struct bio_list *issue_list,
++			     struct bio_list *pushback_list)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct bio *bio;
++	int sync, ret;
++
++	while (gp->c_blocked - gp->c_prio_blocked) {
++		if (!dp->g_can_submit(gp))
++			return R_BLOCK;
++		if (!room_for_bio(dp))
++			return R_OK;
++		bio = dp->g_pop_bio(gp);
++		if (!bio)
++			return R_OK;
++
++		sync = bio_is_sync(bio);
++		if (!room_for_bio_sync(dp, sync)) {
++			push_prio_bio(gp, bio, sync);
++			continue;
++		}
++		ret = make_issue_list(gp, bio, issue_list, pushback_list);
++		if (ret)
++			return ret;
++	}
++	return R_OK;
++}
++
++static inline int release_bios(struct ioband_group *gp,
++			       struct bio_list *issue_list,
++			       struct bio_list *pushback_list)
++{
++	int ret = release_prio_bios(gp, issue_list, pushback_list);
++	if (ret)
++		return ret;
++	return release_norm_bios(gp, issue_list, pushback_list);
++}
++
++static struct ioband_group *ioband_group_get(struct ioband_group *head,
++					     struct bio *bio)
++{
++	struct ioband_group *gp;
++
++	if (!head->c_type->t_getid)
++		return head;
++
++	gp = ioband_group_find(head, head->c_type->t_getid(bio));
++
++	if (!gp)
++		gp = head;
++	return gp;
++}
++
++/*
++ * Start to control the bandwidth once the number of uncompleted BIOs
++ * exceeds the value of "io_throttle".
++ */
++static int ioband_map(struct dm_target *ti, struct bio *bio,
++		      union map_info *map_context)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++	unsigned long flags;
++	int direct;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++
++	/*
++	 * The device is suspended while some of the ioband device
++	 * configurations are being changed.
++	 */
++	if (is_device_suspended(dp))
++		wait_event_lock_irq(dp->g_waitq_suspend,
++				    !is_device_suspended(dp), dp->g_lock,
++				    do_nothing());
++
++	gp = ioband_group_get(gp, bio);
++	prevent_burst_bios(gp, bio);
++	if (should_pushback_bio(gp)) {
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		return DM_MAPIO_REQUEUE;
++	}
++
++	bio->bi_bdev = gp->c_dev->bdev;
++	if (bio_sectors(bio))
++		bio->bi_sector -= ti->begin;
++	direct = bio_data_dir(bio);
++
++	if (!gp->c_blocked && room_for_bio_sync(dp, bio_is_sync(bio))) {
++		if (dp->g_can_submit(gp)) {
++			prepare_to_issue(gp, bio);
++			gp->c_stat[direct].immediate++;
++			gp->c_stat[direct].sectors += bio_sectors(bio);
++			spin_unlock_irqrestore(&dp->g_lock, flags);
++			return DM_MAPIO_REMAPPED;
++		} else if (!dp->g_blocked && num_issued(dp) == 0) {
++			DMDEBUG("%s: token expired gp:%p", __func__, gp);
++			queue_delayed_work(dp->g_ioband_wq,
++					   &dp->g_conductor, 1);
++		}
++	}
++	hold_bio(gp, bio);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++
++	return DM_MAPIO_SUBMITTED;
++}
++
++/*
++ * Select the best group to resubmit its BIOs.
++ */
++static struct ioband_group *choose_best_group(struct ioband_device *dp)
++{
++	struct ioband_group *gp;
++	struct ioband_group *best = NULL;
++	int highest = 0;
++	int pri;
++
++	/* Todo: The algorithm should be optimized.
++	 *       It would be better to use rbtree.
++	 */
++	list_for_each_entry(gp, &dp->g_groups, c_list) {
++		if (!gp->c_blocked || !room_for_bio(dp))
++			continue;
++		if (gp->c_blocked == gp->c_prio_blocked &&
++		    !room_for_bio_sync(dp, prio_queue_sync(gp))) {
++			continue;
++		}
++		pri = dp->g_can_submit(gp);
++		if (pri > highest) {
++			highest = pri;
++			best = gp;
++		}
++	}
++
++	return best;
++}
++
++/*
++ * This function is called right after it becomes able to resubmit BIOs.
++ * It selects the best BIOs and passes them to the underlying layer.
++ */
++static void ioband_conduct(struct work_struct *work)
++{
++	struct ioband_device *dp =
++		container_of(work, struct ioband_device, g_conductor.work);
++	struct ioband_group *gp = NULL;
++	struct bio *bio;
++	unsigned long flags;
++	struct bio_list issue_list, pushback_list;
++
++	bio_list_init(&issue_list);
++	bio_list_init(&pushback_list);
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	release_urgent_bios(dp, &issue_list, &pushback_list);
++	if (dp->g_blocked) {
++		gp = choose_best_group(dp);
++		if (gp &&
++		    release_bios(gp, &issue_list, &pushback_list) == R_YIELD)
++			queue_delayed_work(dp->g_ioband_wq,
++					   &dp->g_conductor, 0);
++	}
++
++	if (is_device_blocked(dp) && dp->g_blocked < dp->g_io_limit * 2) {
++		clear_device_blocked(dp);
++		wake_up_all(&dp->g_waitq);
++	}
++
++	if (dp->g_blocked &&
++	    room_for_bio_sync(dp, BLK_RW_SYNC) &&
++	    room_for_bio_sync(dp, BLK_RW_ASYNC) &&
++	    bio_list_empty(&issue_list) && bio_list_empty(&pushback_list) &&
++	    dp->g_restart_bios(dp)) {
++		DMDEBUG("%s: token expired dp:%p issued(%d,%d) g_blocked(%d)",
++			__func__, dp,
++			dp->g_issued[BLK_RW_SYNC], dp->g_issued[BLK_RW_ASYNC],
++			dp->g_blocked);
++		queue_delayed_work(dp->g_ioband_wq, &dp->g_conductor, 0);
++	}
++
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++
++	while ((bio = bio_list_pop(&issue_list))) {
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s pop_iss", dp->g_name);
++		generic_make_request(bio);
++	}
++
++	while ((bio = bio_list_pop(&pushback_list))) {
++		blk_add_trace_msg(bdev_get_queue(bio->bi_bdev),
++				  "ioband %s pop_pback", dp->g_name);
++		bio_endio(bio, -EIO);
++	}
++}
++
++static int ioband_end_io(struct dm_target *ti, struct bio *bio,
++			 int error, union map_info *map_context)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++	unsigned long flags;
++	int r = error;
++
++	/*
++	 *  XXX: A new error code for device mapper devices should be used
++	 *       rather than EIO.
++	 */
++	if (error == -EIO && should_pushback_bio(gp)) {
++		/* This ioband device is suspending */
++		r = DM_ENDIO_REQUEUE;
++	}
++	/*
++	 * Todo: The algorithm should be optimized to eliminate the spinlock.
++	 */
++	spin_lock_irqsave(&dp->g_lock, flags);
++	dp->g_issued[bio_is_sync(bio)]--;
++
++	/*
++	 * Todo: It would be better to introduce high/low water marks here
++	 *       not to kick the workqueues so often.
++	 */
++	if (dp->g_blocked)
++		queue_delayed_work(dp->g_ioband_wq, &dp->g_conductor, 0);
++	else if (is_device_suspended(dp) && num_issued(dp) == 0)
++		wake_up_all(&dp->g_waitq_flush);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	return r;
++}
++
++static void ioband_presuspend(struct dm_target *ti)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++
++	mutex_lock(&dp->g_lock_device);
++	ioband_group_stop_all(gp, 1);
++	mutex_unlock(&dp->g_lock_device);
++}
++
++static void ioband_resume(struct dm_target *ti)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++
++	mutex_lock(&dp->g_lock_device);
++	ioband_group_resume_all(gp);
++	mutex_unlock(&dp->g_lock_device);
++}
++
++static void ioband_group_status(struct ioband_group *gp, int *szp,
++				char *result, unsigned maxlen)
++{
++	struct ioband_group_stat *stat;
++	int i, sz = *szp; /* used in DMEMIT() */
++
++	DMEMIT(" %d", gp->c_id);
++	for (i = 0; i < 2; i++) {
++		stat = &gp->c_stat[i];
++		DMEMIT(" %lu %lu %lu",
++		       stat->immediate + stat->deferred, stat->deferred,
++		       stat->sectors);
++	}
++	*szp = sz;
++}
++
++static int ioband_status(struct dm_target *ti, status_type_t type,
++			 char *result, unsigned maxlen)
++{
++	struct ioband_group *gp = ti->private, *p;
++	struct ioband_device *dp = gp->c_banddev;
++	struct rb_node *node;
++	int sz = 0;	/* used in DMEMIT() */
++	unsigned long flags;
++
++	mutex_lock(&dp->g_lock_device);
++
++	switch (type) {
++	case STATUSTYPE_INFO:
++		spin_lock_irqsave(&dp->g_lock, flags);
++		DMEMIT("%s", dp->g_name);
++		ioband_group_status(gp, &sz, result, maxlen);
++		for (node = rb_first(&gp->c_group_root); node;
++		     node = rb_next(node)) {
++			p = rb_entry(node, struct ioband_group, c_group_node);
++			ioband_group_status(p, &sz, result, maxlen);
++		}
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		break;
++
++	case STATUSTYPE_TABLE:
++		spin_lock_irqsave(&dp->g_lock, flags);
++		DMEMIT("%s %s %d %d %s %s",
++		       gp->c_dev->name, dp->g_name,
++		       dp->g_io_throttle, dp->g_io_limit,
++		       gp->c_type->t_name, dp->g_policy->p_name);
++		dp->g_show(gp, &sz, result, maxlen);
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		break;
++	}
++
++	mutex_unlock(&dp->g_lock_device);
++	return 0;
++}
++
++static int ioband_group_type_select(struct ioband_group *gp, char *name)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct group_type *t;
++	unsigned long flags;
++
++	for (t = dm_ioband_group_type; (t->t_name); t++) {
++		if (!strcmp(name, t->t_name))
++			break;
++	}
++	if (!t->t_name) {
++		DMWARN("ioband type select: %s isn't supported.", name);
++		return -EINVAL;
++	}
++	spin_lock_irqsave(&dp->g_lock, flags);
++	if (!RB_EMPTY_ROOT(&gp->c_group_root)) {
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		return -EBUSY;
++	}
++	gp->c_type = t;
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++
++	return 0;
++}
++
++static int ioband_set_param(struct ioband_group *gp, char *cmd, char *value)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	char *val_str;
++	long id;
++	unsigned long flags;
++	int r;
++
++	r = split_string(value, &id, &val_str);
++	if (r)
++		return r;
++
++	spin_lock_irqsave(&dp->g_lock, flags);
++	if (id != IOBAND_ID_ANY) {
++		gp = ioband_group_find(gp, id);
++		if (!gp) {
++			spin_unlock_irqrestore(&dp->g_lock, flags);
++			DMWARN("ioband_set_param: id=%ld not found.", id);
++			return -EINVAL;
++		}
++	}
++	r = dp->g_set_param(gp, cmd, val_str);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	return r;
++}
++
++static int ioband_group_attach(struct ioband_group *gp, int id, char *param)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct ioband_group *sub_gp;
++	int r;
++
++	if (id < 0) {
++		DMWARN("ioband_group_attach: invalid id:%d", id);
++		return -EINVAL;
++	}
++	if (!gp->c_type->t_getid) {
++		DMWARN("ioband_group_attach: "
++		       "no ioband group type is specified");
++		return -EINVAL;
++	}
++
++	sub_gp = kzalloc(sizeof(struct ioband_group), GFP_KERNEL);
++	if (!sub_gp)
++		return -ENOMEM;
++
++	r = ioband_group_init(sub_gp, gp, dp, id, param);
++	if (r < 0) {
++		kfree(sub_gp);
++		return r;
++	}
++	return 0;
++}
++
++static int ioband_group_detach(struct ioband_group *gp, int id)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct ioband_group *sub_gp;
++	unsigned long flags;
++
++	if (id < 0) {
++		DMWARN("ioband_group_detach: invalid id:%d", id);
++		return -EINVAL;
++	}
++	spin_lock_irqsave(&dp->g_lock, flags);
++	sub_gp = ioband_group_find(gp, id);
++	if (!sub_gp) {
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		DMWARN("ioband_group_detach: invalid id:%d", id);
++		return -EINVAL;
++	}
++
++	/*
++	 * Todo: Calling suspend_ioband_device() before releasing the
++	 *       ioband group has a large overhead. Need improvement.
++	 */
++	suspend_ioband_device(dp, flags, 0);
++	ioband_group_release(gp, sub_gp);
++	resume_ioband_device(dp);
++	spin_unlock_irqrestore(&dp->g_lock, flags);
++	return 0;
++}
++
++/*
++ * Message parameters:
++ *	"policy"      <name>
++ *       ex)
++ *		"policy" "weight"
++ *	"type"        "none"|"pid"|"pgrp"|"node"|"cpuset"|"cgroup"|"user"|"gid"
++ * 	"io_throttle" <value>
++ * 	"io_limit"    <value>
++ *	"attach"      <group id>
++ *	"detach"      <group id>
++ *	"any-command" <group id>:<value>
++ *       ex)
++ *		"weight" 0:<value>
++ *		"token"  24:<value>
++ */
++static int __ioband_message(struct dm_target *ti, unsigned argc, char **argv)
++{
++	struct ioband_group *gp = ti->private, *p;
++	struct ioband_device *dp = gp->c_banddev;
++	struct rb_node *node;
++	long val;
++	int r = 0;
++	unsigned long flags;
++
++	if (argc == 1 && !strcmp(argv[0], "reset")) {
++		spin_lock_irqsave(&dp->g_lock, flags);
++		memset(gp->c_stat, 0, sizeof(gp->c_stat));
++		for (node = rb_first(&gp->c_group_root); node;
++		     node = rb_next(node)) {
++			p = rb_entry(node, struct ioband_group, c_group_node);
++			memset(p->c_stat, 0, sizeof(p->c_stat));
++		}
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		return 0;
++	}
++
++	if (argc != 2) {
++		DMWARN("Unrecognised band message received.");
++		return -EINVAL;
++	}
++	if (!strcmp(argv[0], "io_throttle")) {
++		r = strict_strtol(argv[1], 0, &val);
++		if (r || val < 0 || val > SHORT_MAX)
++			return -EINVAL;
++		if (val == 0)
++			val = DEFAULT_IO_THROTTLE;
++		spin_lock_irqsave(&dp->g_lock, flags);
++		if (val > dp->g_io_limit) {
++			spin_unlock_irqrestore(&dp->g_lock, flags);
++			return -EINVAL;
++		}
++		dp->g_io_throttle = val;
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		ioband_set_param(gp, argv[0], argv[1]);
++		return 0;
++	} else if (!strcmp(argv[0], "io_limit")) {
++		r = strict_strtol(argv[1], 0, &val);
++		if (r || val < 0 || val > SHORT_MAX)
++			return -EINVAL;
++		spin_lock_irqsave(&dp->g_lock, flags);
++		if (val == 0) {
++			struct request_queue *q;
++
++			q = bdev_get_queue(gp->c_dev->bdev);
++			if (!q) {
++				spin_unlock_irqrestore(&dp->g_lock, flags);
++				return -ENXIO;
++			}
++			/*
++			 * The block layer accepts I/O requests up to
++			 * 50% over nr_requests when the requests are
++			 * issued from a "batcher" process.
++			 */
++			val = (3 * q->nr_requests / 2);
++		}
++		if (val < dp->g_io_throttle) {
++			spin_unlock_irqrestore(&dp->g_lock, flags);
++			return -EINVAL;
++		}
++		dp->g_io_limit = val;
++		spin_unlock_irqrestore(&dp->g_lock, flags);
++		ioband_set_param(gp, argv[0], argv[1]);
++		return 0;
++	} else if (!strcmp(argv[0], "type")) {
++		return ioband_group_type_select(gp, argv[1]);
++	} else if (!strcmp(argv[0], "attach")) {
++		r = strict_strtol(argv[1], 0, &val);
++		if (r)
++			return r;
++		return ioband_group_attach(gp, val, NULL);
++	} else if (!strcmp(argv[0], "detach")) {
++		r = strict_strtol(argv[1], 0, &val);
++		if (r)
++			return r;
++		return ioband_group_detach(gp, val);
++	} else if (!strcmp(argv[0], "policy")) {
++		r = policy_init(dp, argv[1], 0, &argv[2]);
++		return r;
++	} else {
++		/* message anycommand <group-id>:<value> */
++		r = ioband_set_param(gp, argv[0], argv[1]);
++		if (r < 0)
++			DMWARN("Unrecognised band message received.");
++		return r;
++	}
++	return 0;
++}
++
++static int ioband_message(struct dm_target *ti, unsigned argc, char **argv)
++{
++	struct ioband_group *gp = ti->private;
++	struct ioband_device *dp = gp->c_banddev;
++	int r;
++
++	mutex_lock(&dp->g_lock_device);
++	r = __ioband_message(ti, argc, argv);
++	mutex_unlock(&dp->g_lock_device);
++	return r;
++}
++
++static int ioband_merge(struct dm_target *ti, struct bvec_merge_data *bvm,
++			struct bio_vec *biovec, int max_size)
++{
++	struct ioband_group *gp = ti->private;
++	struct request_queue *q = bdev_get_queue(gp->c_dev->bdev);
++
++	if (!q->merge_bvec_fn)
++		return max_size;
++
++	bvm->bi_bdev = gp->c_dev->bdev;
++	bvm->bi_sector -= ti->begin;
++
++	return min(max_size, q->merge_bvec_fn(q, bvm, biovec));
++}
++
++static struct target_type ioband_target = {
++	.name	     = "ioband",
++	.module      = THIS_MODULE,
++	.version     = {1, 12, 0},
++	.ctr	     = ioband_ctr,
++	.dtr	     = ioband_dtr,
++	.map	     = ioband_map,
++	.end_io	     = ioband_end_io,
++	.presuspend  = ioband_presuspend,
++	.resume	     = ioband_resume,
++	.status	     = ioband_status,
++	.message     = ioband_message,
++	.merge       = ioband_merge,
++};
++
++static int __init dm_ioband_init(void)
++{
++	int r;
++
++	r = dm_register_target(&ioband_target);
++	if (r < 0) {
++		DMERR("register failed %d", r);
++		return r;
++	}
++	return r;
++}
++
++static void __exit dm_ioband_exit(void)
++{
++	dm_unregister_target(&ioband_target);
++}
++
++module_init(dm_ioband_init);
++module_exit(dm_ioband_exit);
++
++MODULE_DESCRIPTION(DM_NAME " I/O bandwidth control");
++MODULE_AUTHOR("Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "
++	      "Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org");
++MODULE_LICENSE("GPL");
+Index: linux-2.6.30/drivers/md/dm-ioband-policy.c
+===================================================================
+--- /dev/null
++++ linux-2.6.30/drivers/md/dm-ioband-policy.c
+@@ -0,0 +1,455 @@
++/*
++ * Copyright (C) 2008-2009 VA Linux Systems Japan K.K.
++ *
++ *  I/O bandwidth control
++ *
++ * This file is released under the GPL.
++ */
++#include <linux/bio.h>
++#include <linux/workqueue.h>
++#include <linux/rbtree.h>
++#include "dm.h"
++#include "dm-ioband.h"
++
++/*
++ * The following functions determine when and which BIOs should
++ * be submitted to control the I/O flow.
++ * It is possible to add a new BIO scheduling policy with it.
++ */
++
++/*
++ * Functions for weight balancing policy based on the number of I/Os.
++ */
++#define DEFAULT_WEIGHT		100
++#define DEFAULT_TOKENPOOL	2048
++#define DEFAULT_BUCKET		2
++#define IOBAND_IOPRIO_BASE	100
++#define TOKEN_BATCH_UNIT	20
++#define PROCEED_THRESHOLD	8
++#define	LOCAL_ACTIVE_RATIO	8
++#define	GLOBAL_ACTIVE_RATIO	16
++#define OVERCOMMIT_RATE		4
++
++/*
++ * Calculate the effective number of tokens this group has.
++ */
++static int get_token(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	int token = gp->c_token;
++	int allowance = dp->g_epoch - gp->c_my_epoch;
++
++	if (allowance) {
++		if (allowance > dp->g_carryover)
++			allowance = dp->g_carryover;
++		token += gp->c_token_initial * allowance;
++	}
++	if (is_group_down(gp))
++		token += gp->c_token_initial * dp->g_carryover * 2;
++
++	return token;
++}
++
++/*
++ * Calculate the priority of a given group.
++ */
++static int iopriority(struct ioband_group *gp)
++{
++	return get_token(gp) * IOBAND_IOPRIO_BASE / gp->c_token_initial + 1;
++}
++
++/*
++ * This function is called when all the active group on the same ioband
++ * device has used up their tokens. It makes a new global epoch so that
++ * all groups on this device will get freshly assigned tokens.
++ */
++static int make_global_epoch(struct ioband_device *dp)
++{
++	struct ioband_group *gp = dp->g_dominant;
++
++	/*
++	 * Don't make a new epoch if the dominant group still has a lot of
++	 * tokens, except when the I/O load is low.
++	 */
++	if (gp) {
++		int iopri = iopriority(gp);
++		if (iopri * PROCEED_THRESHOLD > IOBAND_IOPRIO_BASE &&
++		    dp->g_issued[READ] + dp->g_issued[WRITE] >=
++		    dp->g_io_throttle)
++			return 0;
++	}
++
++	dp->g_epoch++;
++	DMDEBUG("make_epoch %d", dp->g_epoch);
++
++	/* The leftover tokens will be used in the next epoch. */
++	dp->g_token_extra = dp->g_token_left;
++	if (dp->g_token_extra < 0)
++		dp->g_token_extra = 0;
++	dp->g_token_left = dp->g_token_bucket;
++
++	dp->g_expired = NULL;
++	dp->g_dominant = NULL;
++
++	return 1;
++}
++
++/*
++ * This function is called when this group has used up its own tokens.
++ * It will check whether it's possible to make a new epoch of this group.
++ */
++static inline int make_epoch(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	int allowance = dp->g_epoch - gp->c_my_epoch;
++
++	if (!allowance)
++		return 0;
++	if (allowance > dp->g_carryover)
++		allowance = dp->g_carryover;
++	gp->c_my_epoch = dp->g_epoch;
++	return allowance;
++}
++
++/*
++ * Check whether this group has tokens to issue an I/O. Return 0 if it
++ * doesn't have any, otherwise return the priority of this group.
++ */
++static int is_token_left(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	int allowance;
++	int delta;
++	int extra;
++
++	if (gp->c_token > 0)
++		return iopriority(gp);
++
++	if (is_group_down(gp)) {
++		gp->c_token = gp->c_token_initial;
++		return iopriority(gp);
++	}
++	allowance = make_epoch(gp);
++	if (!allowance)
++		return 0;
++	/*
++	 * If this group has the right to get tokens for several epochs,
++	 * give all of them to the group here.
++	 */
++	delta = gp->c_token_initial * allowance;
++	dp->g_token_left -= delta;
++	/*
++	 * Give some extra tokens to this group when there have left unused
++	 * tokens on this ioband device from the previous epoch.
++	 */
++	extra = dp->g_token_extra * gp->c_token_initial /
++	    (dp->g_token_bucket - dp->g_token_extra / 2);
++	delta += extra;
++	gp->c_token += delta;
++	gp->c_consumed = 0;
++
++	if (gp == dp->g_current)
++		dp->g_yield_mark += delta;
++	DMDEBUG("refill token: gp:%p token:%d->%d extra(%d) allowance(%d)",
++		gp, gp->c_token - delta, gp->c_token, extra, allowance);
++	if (gp->c_token > 0)
++		return iopriority(gp);
++	DMDEBUG("refill token: yet empty gp:%p token:%d", gp, gp->c_token);
++	return 0;
++}
++
++/*
++ * Use tokens to issue an I/O. After the operation, the number of tokens left
++ * on this group may become negative value, which will be treated as debt.
++ */
++static int consume_token(struct ioband_group *gp, int count, int flag)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	if (gp->c_consumed * LOCAL_ACTIVE_RATIO < gp->c_token_initial &&
++	    gp->c_consumed * GLOBAL_ACTIVE_RATIO < dp->g_token_bucket) {
++		; /* Do nothing unless this group is really active. */
++	} else if (!dp->g_dominant ||
++		   get_token(gp) > get_token(dp->g_dominant)) {
++		/*
++		 * Regard this group as the dominant group on this
++		 * ioband device when it has larger number of tokens
++		 * than those of the previous one.
++		 */
++		dp->g_dominant = gp;
++	}
++	if (dp->g_epoch == gp->c_my_epoch &&
++	    gp->c_token > 0 && gp->c_token - count <= 0) {
++		/* Remember the last group which used up its own tokens. */
++		dp->g_expired = gp;
++		if (dp->g_dominant == gp)
++			dp->g_dominant = NULL;
++	}
++
++	if (gp != dp->g_current) {
++		/* This group is the current already. */
++		dp->g_current = gp;
++		dp->g_yield_mark =
++		    gp->c_token - (TOKEN_BATCH_UNIT << dp->g_token_unit);
++	}
++	gp->c_token -= count;
++	gp->c_consumed += count;
++	if (gp->c_token <= dp->g_yield_mark && !(flag & IOBAND_URGENT)) {
++		/*
++		 * Return-value 1 means that this policy requests dm-ioband
++		 * to give a chance to another group to be selected since
++		 * this group has already issued enough amount of I/Os.
++		 */
++		dp->g_current = NULL;
++		return R_YIELD;
++	}
++	/*
++	 * Return-value 0 means that this policy allows dm-ioband to select
++	 * this group to issue I/Os without a break.
++	 */
++	return R_OK;
++}
++
++/*
++ * Consume one token on each I/O.
++ */
++static int prepare_token(struct ioband_group *gp, struct bio *bio, int flag)
++{
++	return consume_token(gp, 1, flag);
++}
++
++/*
++ * Check if this group is able to receive a new bio.
++ */
++static int is_queue_full(struct ioband_group *gp)
++{
++	return gp->c_blocked >= gp->c_limit;
++}
++
++static void set_weight(struct ioband_group *gp, int new)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	struct ioband_group *p;
++
++	dp->g_weight_total += (new - gp->c_weight);
++	gp->c_weight = new;
++
++	if (dp->g_weight_total == 0) {
++		list_for_each_entry(p, &dp->g_groups, c_list)
++			p->c_token = p->c_token_initial = p->c_limit = 1;
++	} else {
++		list_for_each_entry(p, &dp->g_groups, c_list) {
++			p->c_token = p->c_token_initial =
++				dp->g_token_bucket * p->c_weight /
++				dp->g_weight_total + 1;
++			p->c_limit = dp->g_io_limit * 2 * p->c_weight /
++				dp->g_weight_total / OVERCOMMIT_RATE + 1;
++		}
++	}
++}
++
++static void init_token_bucket(struct ioband_device *dp,
++			      int token_bucket, int carryover)
++{
++	if (!token_bucket)
++		dp->g_token_bucket = (dp->g_io_limit * 2 * DEFAULT_BUCKET) <<
++							dp->g_token_unit;
++	else
++		dp->g_token_bucket = token_bucket;
++	if (!carryover)
++		dp->g_carryover = (DEFAULT_TOKENPOOL << dp->g_token_unit) /
++							dp->g_token_bucket;
++	else
++		dp->g_carryover = carryover;
++	if (dp->g_carryover < 1)
++		dp->g_carryover = 1;
++	dp->g_token_left = 0;
++}
++
++static int policy_weight_param(struct ioband_group *gp, char *cmd, char *value)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	long val;
++	int r = 0, err;
++
++	err = strict_strtol(value, 0, &val);
++	if (!strcmp(cmd, "weight")) {
++		if (!err && 0 < val && val <= SHORT_MAX)
++			set_weight(gp, val);
++		else
++			r = -EINVAL;
++	} else if (!strcmp(cmd, "token")) {
++		if (!err && 0 <= val && val <= INT_MAX) {
++			init_token_bucket(dp, val, 0);
++			set_weight(gp, gp->c_weight);
++			dp->g_token_extra = 0;
++		} else
++			r = -EINVAL;
++	} else if (!strcmp(cmd, "carryover")) {
++		if (!err && 0 <= val && val <= INT_MAX) {
++			init_token_bucket(dp, dp->g_token_bucket, val);
++			set_weight(gp, gp->c_weight);
++			dp->g_token_extra = 0;
++		} else
++			r = -EINVAL;
++	} else if (!strcmp(cmd, "io_limit")) {
++		init_token_bucket(dp, 0, 0);
++		set_weight(gp, gp->c_weight);
++	} else {
++		r = -EINVAL;
++	}
++	return r;
++}
++
++static int policy_weight_ctr(struct ioband_group *gp, char *arg)
++{
++	struct ioband_device *dp = gp->c_banddev;
++
++	if (!arg)
++		arg = __stringify(DEFAULT_WEIGHT);
++	gp->c_my_epoch = dp->g_epoch;
++	gp->c_weight = 0;
++	gp->c_consumed = 0;
++	return policy_weight_param(gp, "weight", arg);
++}
++
++static void policy_weight_dtr(struct ioband_group *gp)
++{
++	struct ioband_device *dp = gp->c_banddev;
++	set_weight(gp, 0);
++	dp->g_dominant = NULL;
++	dp->g_expired = NULL;
++}
++
++static void policy_weight_show(struct ioband_group *gp, int *szp,
++			       char *result, unsigned maxlen)
++{
++	struct ioband_group *p;
++	struct ioband_device *dp = gp->c_banddev;
++	struct rb_node *node;
++	int sz = *szp;	/* used in DMEMIT() */
++
++	DMEMIT(" %d :%d", dp->g_token_bucket, gp->c_weight);
++
++	for (node = rb_first(&gp->c_group_root); node; node = rb_next(node)) {
++		p = rb_entry(node, struct ioband_group, c_group_node);
++		DMEMIT(" %d:%d", p->c_id, p->c_weight);
++	}
++	*szp = sz;
++}
++
++/*
++ *  <Method>      <description>
++ * g_can_submit   : To determine whether a given group has the right to
++ *                  submit BIOs. The larger the return value the higher the
++ *                  priority to submit. Zero means it has no right.
++ * g_prepare_bio  : Called right before submitting each BIO.
++ * g_restart_bios : Called if this ioband device has some BIOs blocked but none
++ *                  of them can be submitted now. This method has to
++ *                  reinitialize the data to restart to submit BIOs and return
++ *                  0 or 1.
++ *                  The return value 0 means that it has become able to submit
++ *                  them now so that this ioband device will continue its work.
++ *                  The return value 1 means that it is still unable to submit
++ *                  them so that this device will stop its work. And this
++ *                  policy module has to reactivate the device when it gets
++ *                  to be able to submit BIOs.
++ * g_hold_bio     : To hold a given BIO until it is submitted.
++ *                  The default function is used when this method is undefined.
++ * g_pop_bio      : To select and get the best BIO to submit.
++ * g_group_ctr    : To initalize the policy own members of struct ioband_group.
++ * g_group_dtr    : Called when struct ioband_group is removed.
++ * g_set_param    : To update the policy own date.
++ *                  The parameters can be passed through "dmsetup message"
++ *                  command.
++ * g_should_block : Called every time this ioband device receive a BIO.
++ *                  Return 1 if a given group can't receive any more BIOs,
++ *                  otherwise return 0.
++ * g_show         : Show the configuration.
++ */
++static int policy_weight_init(struct ioband_device *dp, int argc, char **argv)
++{
++	long val;
++	int r = 0;
++
++	if (argc < 1)
++		val = 0;
++	else {
++		r = strict_strtol(argv[0], 0, &val);
++		if (r || val < 0 || val > INT_MAX)
++			return -EINVAL;
++	}
++
++	dp->g_can_submit = is_token_left;
++	dp->g_prepare_bio = prepare_token;
++	dp->g_restart_bios = make_global_epoch;
++	dp->g_group_ctr = policy_weight_ctr;
++	dp->g_group_dtr = policy_weight_dtr;
++	dp->g_set_param = policy_weight_param;
++	dp->g_should_block = is_queue_full;
++	dp->g_show = policy_weight_show;
++
++	dp->g_epoch = 0;
++	dp->g_weight_total = 0;
++	dp->g_current = NULL;
++	dp->g_dominant = NULL;
++	dp->g_expired = NULL;
++	dp->g_token_extra = 0;
++	dp->g_token_unit = 0;
++	init_token_bucket(dp, val, 0);
++	dp->g_token_left = dp->g_token_bucket;
++
++	return 0;
++}
++
++/* weight balancing policy based on the number of I/Os. --- End --- */
++
++/*
++ * Functions for weight balancing policy based on I/O size.
++ * It just borrows a lot of functions from the regular weight balancing policy.
++ */
++static int w2_prepare_token(struct ioband_group *gp, struct bio *bio, int flag)
++{
++	/* Consume tokens depending on the size of a given bio. */
++	return consume_token(gp, bio_sectors(bio), flag);
++}
++
++static int w2_policy_weight_init(struct ioband_device *dp,
++				 int argc, char **argv)
++{
++	long val;
++	int r = 0;
++
++	if (argc < 1)
++		val = 0;
++	else {
++		r = strict_strtol(argv[0], 0, &val);
++		if (r || val < 0 || val > INT_MAX)
++			return -EINVAL;
++	}
++
++	r = policy_weight_init(dp, argc, argv);
++	if (r < 0)
++		return r;
++
++	dp->g_prepare_bio = w2_prepare_token;
++	dp->g_token_unit = PAGE_SHIFT - 9;
++	init_token_bucket(dp, val, 0);
++	dp->g_token_left = dp->g_token_bucket;
++	return 0;
++}
++
++/* weight balancing policy based on I/O size. --- End --- */
++
++static int policy_default_init(struct ioband_device *dp, int argc, char **argv)
++{
++	return policy_weight_init(dp, argc, argv);
++}
++
++struct policy_type dm_ioband_policy_type[] = {
++	{"default", policy_default_init},
++	{"weight", policy_weight_init},
++	{"weight-iosize", w2_policy_weight_init},
++	{"range-bw", policy_range_bw_init},
++	{NULL, policy_default_init}
++};
+Index: linux-2.6.30/drivers/md/dm-ioband-type.c
+===================================================================
+--- /dev/null
++++ linux-2.6.30/drivers/md/dm-ioband-type.c
+@@ -0,0 +1,76 @@
++/*
++ * Copyright (C) 2008-2009 VA Linux Systems Japan K.K.
++ *
++ *  I/O bandwidth control
++ *
++ * This file is released under the GPL.
++ */
++#include <linux/bio.h>
++#include "dm.h"
++#include "dm-ioband.h"
++
++/*
++ * Any I/O bandwidth can be divided into several bandwidth groups, each of which
++ * has its own unique ID. The following functions are called to determine
++ * which group a given BIO belongs to and return the ID of the group.
++ */
++
++/* ToDo: unsigned long value would be better for group ID */
++
++static int ioband_process_id(struct bio *bio)
++{
++	/*
++	 * This function will work for KVM and Xen.
++	 */
++	return (int)current->tgid;
++}
++
++static int ioband_process_group(struct bio *bio)
++{
++	return (int)task_pgrp_nr(current);
++}
++
++static int ioband_uid(struct bio *bio)
++{
++	return (int)current_uid();
++}
++
++static int ioband_gid(struct bio *bio)
++{
++	return (int)current_gid();
++}
++
++static int ioband_cpuset(struct bio *bio)
++{
++	return 0;	/* not implemented yet */
++}
++
++static int ioband_node(struct bio *bio)
++{
++	return 0;	/* not implemented yet */
++}
++
++static int ioband_cgroup(struct bio *bio)
++{
++	/*
++	 * This function should return the ID of the cgroup which
++	 * issued "bio". The ID of the cgroup which the current
++	 * process belongs to won't be suitable ID for this purpose,
++	 * since some BIOs will be handled by kernel threads like aio
++	 * or pdflush on behalf of the process requesting the BIOs.
++	 */
++	return 0;	/* not implemented yet */
++}
++
++struct group_type dm_ioband_group_type[] = {
++	{"none", NULL},
++	{"pgrp", ioband_process_group},
++	{"pid", ioband_process_id},
++	{"node", ioband_node},
++	{"cpuset", ioband_cpuset},
++	{"cgroup", ioband_cgroup},
++	{"user", ioband_uid},
++	{"uid", ioband_uid},
++	{"gid", ioband_gid},
++	{NULL, NULL}
++};
+Index: linux-2.6.30/drivers/md/dm-ioband.h
+===================================================================
+--- /dev/null
++++ linux-2.6.30/drivers/md/dm-ioband.h
+@@ -0,0 +1,228 @@
++/*
++ * Copyright (C) 2008-2009 VA Linux Systems Japan K.K.
++ *
++ *  I/O bandwidth control
++ *
++ * This file is released under the GPL.
++ */
++
++#include <linux/version.h>
++#include <linux/wait.h>
++#include <linux/jiffies.h>
++#include <linux/random.h>
++#include <linux/time.h>
++#include <linux/timer.h>
++
++#define DM_MSG_PREFIX "ioband"
++
++#define DEFAULT_IO_THROTTLE	4
++#define DEFAULT_IO_LIMIT	128
++#define IOBAND_NAME_MAX 31
++#define IOBAND_ID_ANY (-1)
++
++#define MAX_BW_OVER             1
++#define MAX_BW_UNDER            0
++#define NO_IO_MODE              4
++
++#define TIME_COMPENSATOR        10
++
++struct ioband_group;
++
++struct ioband_device {
++	struct list_head g_groups;
++	struct delayed_work g_conductor;
++	struct workqueue_struct *g_ioband_wq;
++	struct bio_list g_urgent_bios;
++	int g_io_throttle;
++	int g_io_limit;
++	int g_issued[2];
++	int g_blocked;
++	spinlock_t g_lock;
++	struct mutex g_lock_device;
++	wait_queue_head_t g_waitq;
++	wait_queue_head_t g_waitq_suspend;
++	wait_queue_head_t g_waitq_flush;
++
++	int g_ref;
++	struct list_head g_list;
++	int g_flags;
++	char g_name[IOBAND_NAME_MAX + 1];
++	struct policy_type *g_policy;
++
++	/* policy dependent */
++	int (*g_can_submit) (struct ioband_group *);
++	int (*g_prepare_bio) (struct ioband_group *, struct bio *, int);
++	int (*g_restart_bios) (struct ioband_device *);
++	void (*g_hold_bio) (struct ioband_group *, struct bio *);
++	struct bio *(*g_pop_bio) (struct ioband_group *);
++	int (*g_group_ctr) (struct ioband_group *, char *);
++	void (*g_group_dtr) (struct ioband_group *);
++	int (*g_set_param) (struct ioband_group *, char *cmd, char *value);
++	int (*g_should_block) (struct ioband_group *);
++	void (*g_show) (struct ioband_group *, int *, char *, unsigned);
++
++	/* members for weight balancing policy */
++	int g_epoch;
++	int g_weight_total;
++	/* the number of tokens which can be used in every epoch */
++	int g_token_bucket;
++	/* how many epochs tokens can be carried over */
++	int g_carryover;
++	/* how many tokens should be used for one page-sized I/O */
++	int g_token_unit;
++	/* the last group which used a token */
++	struct ioband_group *g_current;
++	/* give another group a chance to be scheduled when the rest
++	   of tokens of the current group reaches this mark */
++	int g_yield_mark;
++	/* the latest group which used up its tokens */
++	struct ioband_group *g_expired;
++	/* the group which has the largest number of tokens in the
++	   active groups */
++	struct ioband_group *g_dominant;
++	/* the number of unused tokens in this epoch */
++	int g_token_left;
++	/* left-over tokens from the previous epoch */
++	int g_token_extra;
++
++	/* members for range-bw policy */
++	int     g_min_bw_total;
++	int     g_max_bw_total;
++	unsigned long   g_next_time_period;
++	int     g_time_period_expired;
++	struct ioband_group *g_running_gp;
++	int     g_total_min_bw_token;
++	int     g_consumed_min_bw_token;
++	int     g_io_mode;
++
++};
++
++struct ioband_group_stat {
++	unsigned long sectors;
++	unsigned long immediate;
++	unsigned long deferred;
++};
++
++struct ioband_group {
++	struct list_head c_list;
++	struct ioband_device *c_banddev;
++	struct dm_dev *c_dev;
++	struct dm_target *c_target;
++	struct bio_list c_blocked_bios;
++	struct bio_list c_prio_bios;
++	struct rb_root c_group_root;
++	struct rb_node c_group_node;
++	int c_id;	/* should be unsigned long or unsigned long long */
++	char c_name[IOBAND_NAME_MAX + 1];	/* rfu */
++	int c_blocked;
++	int c_prio_blocked;
++	wait_queue_head_t c_waitq;
++	int c_flags;
++	struct ioband_group_stat c_stat[2];	/* hold rd/wr status */
++	struct group_type *c_type;
++
++	/* members for weight balancing policy */
++	int c_weight;
++	int c_my_epoch;
++	int c_token;
++	int c_token_initial;
++	int c_limit;
++	int c_consumed;
++
++	/* rfu */
++	/* struct bio_list	c_ordered_tag_bios; */
++
++	/* members for range-bw policy */
++	wait_queue_head_t       c_max_bw_over_waitq;
++	spinlock_t      c_lock;
++	struct timer_list *c_timer;
++	int     timer_set;
++	int     c_min_bw;
++	int     c_max_bw;
++	int     c_time_slice_expired;
++	int     c_min_bw_token;
++	int     c_max_bw_token;
++	int     c_consumed_min_bw_token;
++	int     c_is_over_max_bw;
++	int     c_io_mode;
++	unsigned long   c_time_slice;
++	unsigned long   c_time_slice_start;
++	unsigned long   c_time_slice_end;
++	int     c_wait_p_count;
++
++};
++
++#define IOBAND_URGENT 1
++
++#define DEV_BIO_BLOCKED		1
++#define DEV_SUSPENDED		2
++
++#define set_device_blocked(dp)		((dp)->g_flags |= DEV_BIO_BLOCKED)
++#define clear_device_blocked(dp)	((dp)->g_flags &= ~DEV_BIO_BLOCKED)
++#define is_device_blocked(dp)		((dp)->g_flags & DEV_BIO_BLOCKED)
++
++#define set_device_suspended(dp)	((dp)->g_flags |= DEV_SUSPENDED)
++#define clear_device_suspended(dp)	((dp)->g_flags &= ~DEV_SUSPENDED)
++#define is_device_suspended(dp)		((dp)->g_flags & DEV_SUSPENDED)
++
++#define IOG_PRIO_BIO_SYNC	1
++#define IOG_PRIO_QUEUE		2
++#define IOG_BIO_BLOCKED		4
++#define IOG_GOING_DOWN		8
++#define IOG_SUSPENDED		16
++#define IOG_NEED_UP		32
++
++#define R_OK		0
++#define R_BLOCK		1
++#define R_YIELD		2
++
++#define set_group_blocked(gp)		((gp)->c_flags |= IOG_BIO_BLOCKED)
++#define clear_group_blocked(gp)		((gp)->c_flags &= ~IOG_BIO_BLOCKED)
++#define is_group_blocked(gp)		((gp)->c_flags & IOG_BIO_BLOCKED)
++
++#define set_group_down(gp)		((gp)->c_flags |= IOG_GOING_DOWN)
++#define clear_group_down(gp)		((gp)->c_flags &= ~IOG_GOING_DOWN)
++#define is_group_down(gp)		((gp)->c_flags & IOG_GOING_DOWN)
++
++#define set_group_suspended(gp)		((gp)->c_flags |= IOG_SUSPENDED)
++#define clear_group_suspended(gp)	((gp)->c_flags &= ~IOG_SUSPENDED)
++#define is_group_suspended(gp)		((gp)->c_flags & IOG_SUSPENDED)
++
++#define set_group_need_up(gp)		((gp)->c_flags |= IOG_NEED_UP)
++#define clear_group_need_up(gp)		((gp)->c_flags &= ~IOG_NEED_UP)
++#define group_need_up(gp)		((gp)->c_flags & IOG_NEED_UP)
++
++#define set_prio_async(gp)		((gp)->c_flags |= IOG_PRIO_QUEUE)
++#define clear_prio_async(gp)		((gp)->c_flags &= ~IOG_PRIO_QUEUE)
++#define is_prio_async(gp) \
++	((gp)->c_flags & (IOG_PRIO_QUEUE|IOG_PRIO_BIO_SYNC) == IOG_PRIO_QUEUE)
++
++#define set_prio_sync(gp) \
++	((gp)->c_flags |= (IOG_PRIO_QUEUE|IOG_PRIO_BIO_SYNC))
++#define clear_prio_sync(gp) \
++	((gp)->c_flags &= ~(IOG_PRIO_QUEUE|IOG_PRIO_BIO_SYNC))
++#define is_prio_sync(gp) \
++	((gp)->c_flags & (IOG_PRIO_QUEUE|IOG_PRIO_BIO_SYNC) == \
++		(IOG_PRIO_QUEUE|IOG_PRIO_BIO_SYNC))
++
++#define set_prio_queue(gp, sync) \
++	((gp)->c_flags |= (IOG_PRIO_QUEUE|sync))
++#define clear_prio_queue(gp)		clear_prio_sync(gp)
++#define is_prio_queue(gp)		((gp)->c_flags & IOG_PRIO_QUEUE)
++#define prio_queue_sync(gp)		((gp)->c_flags & IOG_PRIO_BIO_SYNC)
++
++struct policy_type {
++	const char *p_name;
++	int (*p_policy_init) (struct ioband_device *, int, char **);
++};
++
++extern struct policy_type dm_ioband_policy_type[];
++
++struct group_type {
++	const char *t_name;
++	int (*t_getid) (struct bio *);
++};
++
++extern struct group_type dm_ioband_group_type[];
++
++extern int policy_range_bw_init(struct ioband_device *, int, char **);
