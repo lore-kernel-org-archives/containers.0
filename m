@@ -1,12 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
-Date: Tue, 16 Jun 2009 19:17:23 -0500
-Message-ID: <20090617001723.GA9452@us.ibm.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 04/19] io-controller: Modify cfq to make use of flat
+	elevator fair queuing
+Date: Wed, 17 Jun 2009 10:22:44 +0800
+Message-ID: <4A385374.7060708__2293.88900702379$1245205614$gmane$org@cn.fujitsu.com>
+References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
+	<1244513342-11758-5-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1244513342-11758-5-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,67 +19,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-It looks like Oren wanted ns c/r to "sort of work" with CONFIG_UTS_NS=n
-but kernel/utsname.c is not compiled if CONFIG_UTS_NS=n.
+Vivek Goyal wrote:
+> This patch changes cfq to use fair queuing code from elevator layer.
+> 
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+elevator_private2 isn't used to store cfqq now.
+
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/checkpoint.h |    5 +++++
- kernel/utsname.c           |   13 -------------
- 2 files changed, 5 insertions(+), 13 deletions(-)
+ block/cfq-iosched.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index c2f04c5..ef4fc33 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -136,8 +136,13 @@ extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_ns(struct ckpt_ctx *ctx);
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 23b24b9..7a9bbe6 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1874,7 +1874,7 @@ static void cfq_put_request(struct request *rq)
+ 		put_io_context(RQ_CIC(rq)->ioc);
  
- /* uts-ns */
-+#ifdef CONFIG_UTS_NS
- extern int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_uts_ns(struct ckpt_ctx *ctx);
-+#else
-+#define checkpoint_uts_ns checkpoint_bad
-+#define restore_uts_ns restore_bad
-+#endif
+ 		rq->elevator_private = NULL;
+-		rq->elevator_private2 = NULL;
++		rq->ioq = NULL;
  
- /* ipc-ns */
- #ifdef CONFIG_SYSVIPC
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index 76f9966..5c12ebb 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -130,11 +130,6 @@ static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
- 	    h->domainname_len > sizeof(uts_ns->name.domainname))
- 		goto out;
- 
--	/*
--	 * If !CONFIG_UTS_NS, do not restore the global uts state, as
--	 * it is used by other processes.
--	 */
--#ifdef CONFIG_UTS_NS
- 	ret = -ENOMEM;
- 	uts_ns = create_uts_ns();
- 	if (!uts_ns)
-@@ -153,14 +148,6 @@ static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
- 	up_read(&uts_sem);
- 	if (ret < 0)
- 		goto out;
--#else
--	ret = -EEXIST;
--	/* complain if image contains multiple namespaces */
--	if (ctx->stats.uts_ns)
--		goto out;
--	uts_ns = current->nsproxy->uts_ns;
--	get_uts_ns(uts_ns);
--#endif
- 
- 	ctx->stats.uts_ns++;
-  out:
+ 		cfq_put_queue(cfqq);
+ 	}
 -- 
-1.6.1
+1.5.4.rc3
