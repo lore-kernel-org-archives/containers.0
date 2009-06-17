@@ -1,15 +1,18 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 04/19] io-controller: Modify cfq to make use of flat
-	elevator fair queuing
-Date: Wed, 17 Jun 2009 10:22:44 +0800
-Message-ID: <4A385374.7060708__2293.88900702379$1245205614$gmane$org@cn.fujitsu.com>
-References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
-	<1244513342-11758-5-git-send-email-vgoyal@redhat.com>
+From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
+Date: Wed, 17 Jun 2009 09:49:07 +0900
+Message-ID: <20090617094907.e8cd77bd.usui__43229.2545134716$1245207410$gmane$org@mxm.nes.nec.co.jp>
+References: <20090611180555.f2c76568.usui@mxm.nes.nec.co.jp>
+	<20090611.021347.142243970.davem@davemloft.net>
+	<20090612124028.fe4c2100.usui@mxm.nes.nec.co.jp>
+	<6599ad830906112206n745fb0dw19cdb75d7c40b2a4@mail.gmail.com>
+	<20090615120035.a8b7b38f.usui@mxm.nes.nec.co.jp>
+	<20090615101919.GC7768@bombadil.infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1244513342-11758-5-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090615101919.GC7768-PfSpb0PWhxZc2C7mugBRk2EX/6BAtgUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,33 +22,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> This patch changes cfq to use fair queuing code from elevator layer.
+On Mon, 15 Jun 2009 06:19:19 -0400
+Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org> wrote:
+
+> On Mon, Jun 15, 2009 at 12:00:35PM +0900, Minoru Usui wrote:
+> > Actually, In tc <-> kernel I/F (which uses netlink), tc sets classid to hexadecimal style not X:Y style.
+> > X:Y style is result of translating by tc command.
+> > 
+> > I thought this patch was very useful at first, but it's not necessary to implementing to the kernel.
+> > This function can be implemented on user space if we need.
+> > And we can also keep compatibility of net_cls.classid I/F. :-)
+> > 
+> > I drop this patch. I'm sorry for confusing a lot of people.
 > 
+> I found this patch to be extremely useful if it wasn't to break
+> compatibility but that issue can be resolved by accepting both
+> formats easly.
 
-elevator_private2 isn't used to store cfqq now.
+Thank you for agreeing my patch.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- block/cfq-iosched.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+I think you said write format only. Am I right?
+What do you think about read format?
+Do you think you should keep read format as current implementation?
 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 23b24b9..7a9bbe6 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -1874,7 +1874,7 @@ static void cfq_put_request(struct request *rq)
- 		put_io_context(RQ_CIC(rq)->ioc);
- 
- 		rq->elevator_private = NULL;
--		rq->elevator_private2 = NULL;
-+		rq->ioq = NULL;
- 
- 		cfq_put_queue(cfqq);
- 	}
+I think we should need to unify read/write format, if we make cls_cgroup is more userfriendly. 
+Because some of people are confused about having to read their write value as different format.
+(Unfortunately, current implementation is so...)
+
+But this approach breaks compatibility, so I drop this patch.
 -- 
-1.5.4.rc3
+Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
