@@ -1,15 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH 1/2] Deny CLONE_PARENT|CLONE_NEWPID combination
-Date: Wed, 17 Jun 2009 20:30:51 -0700
-Message-ID: <m1d492jk0k.fsf@fess.ebiederm.org>
-References: <20090618024743.GA31515@us.ibm.com>
-	<20090618024934.GA31672@us.ibm.com>
+From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [HELP] for using class group classifier network controller
+Date: Thu, 18 Jun 2009 13:13:00 +0900
+Message-ID: <20090618131300.14d575b8.usui__36533.1349931241$1245302109$gmane$org@mxm.nes.nec.co.jp>
+References: <d89801c9ef32$cdfcf480$8310fe81@etri.info>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090618024934.GA31672-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
-	message of "Wed\, 17 Jun 2009 19\:49\:34 -0700")
+In-Reply-To: <d89801c9ef32$cdfcf480$8310fe81-tRM8rG9f+DVhl2p70BpVqQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,45 +17,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Chei-Yol Kim <gauri-mINagvnPBMnWF1p7bDn8Kw@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+> when I set the classid to 0x10010, class 1:10's packet count was increased. 
+> But, according to your configuration, every packet has to flowed to 1:10 class. 
 
-> Deny CLONE_PARENT|CLONE_NEWPID combination.
+Yes, you are right.
+
+> Of course I know that the net_cls can't classify all packet because of the getting classid from the current task. 
+> Even though we consider it, Many packets are flowed to 1:30 class. 
+> therefore, the rate of the socket showed about 30mbps. This is the 1:30 class's rate.
+> I think it's because that 1:30 class is the default class. 
+> When I changed the default to 20, the rate was varied to 20mbps, class 1:20's rate.
 >
-> CLONE_PARENT was probably used to implement an older threading model.
+> 
+> To measure this rate, I used the iperf and scp command. Two results are the same.
+> How about your experiment's result? 
+> Would you check the accurate rate of the network using applications like a iperf?
 
-Yes it was.
+I did same experience with nuttcp, I observed the same result, too.
+(Almost packets were classified into default classid.)
+ 
+> By the results of my experiments, net_cls couldn't control the network rate of the group. 
+> What is your opinion?
 
-> If so, for consistency with CLONE_THREAD, the CLONE_PARENT|CLONE_NEWPID
-> combination should also fail with -EINVAL.
+I agree with you.
+I'm going to investigate this problem. 
 
-CLONE_THREAD can not work with CLONE_NEWPID because the processes share
-a signal queue.
-
-I can see a similar argument going for CLONE_SIGHAND even though there is not
-as much sharing there.  I don't see how CLONE_PARENT could cause any harm.
-Without CLONE_SIGHAND.
-
-Eric
-
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/pid_namespace.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> Index: linux-mmotm/kernel/pid_namespace.c
-> ===================================================================
-> --- linux-mmotm.orig/kernel/pid_namespace.c	2009-06-17 18:19:42.000000000 -0700
-> +++ linux-mmotm/kernel/pid_namespace.c	2009-06-17 18:19:58.000000000 -0700
-> @@ -118,7 +118,7 @@ struct pid_namespace *copy_pid_ns(unsign
->  {
->  	if (!(flags & CLONE_NEWPID))
->  		return get_pid_ns(old_ns);
-> -	if (flags & CLONE_THREAD)
-> +	if (flags & (CLONE_THREAD|CLONE_PARENT))
->  		return ERR_PTR(-EINVAL);
->  	return create_pid_namespace(old_ns);
->  }
+-- 
+Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
