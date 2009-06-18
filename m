@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] checkpoint/restart of robust futex lists
-Date: Thu, 18 Jun 2009 13:12:18 -0400
-Message-ID: <4A3A7572.9030907@cs.columbia.edu>
-References: <20090603041919.GO9285@us.ibm.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
+Date: Thu, 18 Jun 2009 13:25:06 -0500
+Message-ID: <m3ws79h01p.fsf@pobox.com>
+References: <20090617001723.GA9452@us.ibm.com>
+	<4A3A6F61.5030401@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090603041919.GO9285-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A3A6F61.5030401-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Thu\, 18 Jun 2009 12\:46\:25 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,221 +19,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
 
+> I think it's useful to be able to
+>
+> 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
+> 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
+> system with !CONFIG_UTS_NS (as long as all tasks in the image
+> share a single uts-ns)
 
-Matt Helsley wrote:
->     Save and restore the [compat_]robust_list member of the task struct.
->     
->     These lists record which futexes the task holds. To keep the overhead of
->     robust futexes low the list is kept in userspace. When the task exits the
->     kernel carefully walks these lists to recover held futexes that
->     other tasks may be attempting to acquire with FUTEX_WAIT.
->     
->     Because they point to userspace memory that is saved/restored by
->     checkpoint/restart saving the list pointers works.
->     
->     While saving the pointers works during checkpoint, restart is tricky
->     because the robust futex ABI contains provisions for changes based on
->     checking the size of the list head. So we need to save the length of
->     the list head too in order to make sure that the kernel used during
->     restart is capable of handling that ABI. Since there is only one ABI
->     supported at the moment taking the list head's size is simple. Should
->     the ABI change we will need to use the same size as specified during
->     sys_set_robust_list() and hence some new means of determining the length
->     of this userspace structure in sys_checkpoint would be required.
->     
->     Rather than rewrite the logic that checks and handles the ABI we reuse
->     sys_set_robust_list() by factoring out the body of the function and
->     calling it during restart.
->     
->     Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In principle I agree, but what confidence can we have that meaningful
+testing of such configurations (especially #2) will occur?
 
-What happens if we checkpoint on a system with CONFIG_FUTEX and
-restart on a a system with !CONFIG_FUTEX ?
+Flexibility is good, but the complexity involved in properly supporting
+checkpoint with all possible combinations of CONFIG_*_NS seems daunting.
+Just consider the build matrix (assuming CONFIG_CHECKPOINT=y):
 
-Clearly, if processes used futex, restart should fail.
++------ CONFIG_CGROUP_NS
+|+----- CONFIG_UTS_NS
+||+---- CONFIG_IPC_NS
+|||+--- CONFIG_NET_NS
+||||+-- CONFIG_USER_NS
+|||||+- CONFIG_PID_NS
+nnnnnn
+ynnnnn
+yynnnn
+yyynnn
+yyyynn
+yyyyyn
+....
+nynnnn
+nyynnn
+nyyynn
+nyyyyn
+nyyyyy
+...
 
-If they didn't - then all we know is that at the time of the
-checkpoint they didn't. It could be that they didn't and will
-never try, so restarting on a futex-less kernel is correct.
+You get the idea, I'm sure: at least 64 distinct build configurations
+that are salient to checkpoint.  Is anybody building even a fraction of
+those?
 
-But it could be that they perhaps did and perhaps will attempt
-again later on. In this case, restarting on a futex-less kernel
-is incorrect, because it isn't compatible with the (intention)
-of the original execution.
+Add actual runtime testing of C/R to that workload and it quickly
+becomes impractical to achieve decent test coverage.  And accommodating
+C/R between kernels with different CONFIG_*_NS settings introduces a
+combinatorial explosion of scenarios to test.
 
-I suppose it's time to come up with some scheme to encode the
-capabilities of a kernel in the checkpoint image. At restart
-we can test compatibility of current kernel with original one,
-and decide what to do.
-
-The decision itself, or part of it - like the question above -
-can be done in userspace.
-
-The opposite case (checkpoint with !CONFIG_FUTEX and restart on
-CONFIG_FUTEX) is always ok, because it will overwrite with null
-values on the restarting tasks.
-
-Oren.
-
-
-> 
-> diff --git a/checkpoint/process.c b/checkpoint/process.c
-> index b604a85..084a2e4 100644
-> --- a/checkpoint/process.c
-> +++ b/checkpoint/process.c
-> @@ -42,6 +42,17 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
->  
->  	h->task_comm_len = TASK_COMM_LEN;
->  
-> +#ifdef CONFIG_FUTEX
-> +	/* These are __user pointers and can be saved without the objhash. */
-> +	h->robust_futex_list = t->robust_list;
-> +	h->robust_futex_head_len = sizeof(t->robust_list);
-> +#ifdef CONFIG_COMPAT
-> +	h->compat_robust_futex_list = t->compat_robust_list;
-> +	h->compat_robust_futex_head_len = sizeof(t->compat_robust_list);
-> +#endif
-> +	/* FIXME save pi futex state?? */
-> +#endif
-> +
->  	/* FIXME: save remaining relevant task_struct fields */
->  
->  	ret = ckpt_write_obj(ctx, &h->h);
-> @@ -366,6 +377,20 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
->  	memset(t->comm, 0, TASK_COMM_LEN);
->  	ret = _ckpt_read_string(ctx, t->comm, h->task_comm_len);
->  
-> +#ifdef CONFIG_FUTEX
-> +	/* Since we restore the memory map the address remains the same and
-> +	 * this is safe. This is the same as [compat_]sys_set_robust_list() */
-> +	if (h->robust_futex_list) {
-> +		struct robust_list_head __user *rfl = h->robust_futex_list;
-> +		do_set_robust_list(rfl, h->robust_futex_head_len);
-> +	}
-> +#ifdef CONFIG_COMPAT
-> +	if (h->compat_robust_futex_list) {
-> +		struct compat_robust_list_head __user *crfl = h->compat_robust_futex_list;
-> +		do_compat_set_robust_list(crfl, h->compat_robust_futex_head_len);
-> +	}
-> +#endif
-> +#endif
->  	/* FIXME: restore remaining relevant task_struct fields */
->   out:
->  	ckpt_hdr_put(ctx, h);
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index cd427d8..f226f8f 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -163,6 +163,12 @@ struct ckpt_hdr_task {
->  	__u32 exit_signal;
->  
->  	__u32 task_comm_len;
-> +
-> +	__u32 robust_futex_head_len;
-> +	__u32 compat_robust_futex_head_len;
-> +	__u64 robust_futex_list; /* a __user * */
-> +	__u64 compat_robust_futex_list; /* a __user * */
-> +	/* FIXME need futex prio inheritance state? */
->  } __attribute__((aligned(8)));
->  
->  /* namespaces */
-> diff --git a/include/linux/compat.h b/include/linux/compat.h
-> index f2ded21..f311e36 100644
-> --- a/include/linux/compat.h
-> +++ b/include/linux/compat.h
-> @@ -165,7 +165,8 @@ struct compat_robust_list_head {
->  };
->  
->  extern void compat_exit_robust_list(struct task_struct *curr);
-> -
-> +extern long do_compat_set_robust_list(struct compat_robust_list_head __user *head,
-> +				      compat_size_t len);
->  asmlinkage long
->  compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
->  			   compat_size_t len);
-> diff --git a/include/linux/futex.h b/include/linux/futex.h
-> index dd0e06b..8685d1c 100644
-> --- a/include/linux/futex.h
-> +++ b/include/linux/futex.h
-> @@ -178,6 +178,7 @@ union futex_key {
->  #define FUTEX_KEY_INIT (union futex_key) { .both = { .ptr = NULL } }
->  
->  #ifdef CONFIG_FUTEX
-> +extern long do_set_robust_list(struct robust_list_head __user *head, size_t len);
->  extern void exit_robust_list(struct task_struct *curr);
->  extern void exit_pi_state_list(struct task_struct *curr);
->  extern int futex_cmpxchg_enabled;
-> diff --git a/kernel/futex.c b/kernel/futex.c
-> index f405c73..cf80e7c 100644
-> --- a/kernel/futex.c
-> +++ b/kernel/futex.c
-> @@ -1680,13 +1680,7 @@ pi_faulted:
->   * the list. There can only be one such pending lock.
->   */
->  
-> -/**
-> - * sys_set_robust_list - set the robust-futex list head of a task
-> - * @head: pointer to the list-head
-> - * @len: length of the list-head, as userspace expects
-> - */
-> -SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
-> -		size_t, len)
-> +long do_set_robust_list(struct robust_list_head __user *head, size_t len)
->  {
->  	if (!futex_cmpxchg_enabled)
->  		return -ENOSYS;
-> @@ -1702,6 +1696,17 @@ SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
->  }
->  
->  /**
-> + * sys_set_robust_list - set the robust-futex list head of a task
-> + * @head: pointer to the list-head
-> + * @len: length of the list-head, as userspace expects
-> + */
-> +SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
-> +		size_t, len)
-> +{
-> +	return do_set_robust_list(head, len);
-> +}
-> +
-> +/**
->   * sys_get_robust_list - get the robust-futex list head of a task
->   * @pid: pid of the process [zero for current task]
->   * @head_ptr: pointer to a list-head pointer, the kernel fills it in
-> diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
-> index d607a5b..eac734c 100644
-> --- a/kernel/futex_compat.c
-> +++ b/kernel/futex_compat.c
-> @@ -114,9 +114,9 @@ void compat_exit_robust_list(struct task_struct *curr)
->  	}
->  }
->  
-> -asmlinkage long
-> -compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
-> -			   compat_size_t len)
-> +long
-> +do_compat_set_robust_list(struct compat_robust_list_head __user *head,
-> +			  compat_size_t len)
->  {
->  	if (!futex_cmpxchg_enabled)
->  		return -ENOSYS;
-> @@ -130,6 +130,13 @@ compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
->  }
->  
->  asmlinkage long
-> +compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
-> +			   compat_size_t len)
-> +{
-> +	return do_compat_set_robust_list(head, len);
-> +}
-> +
-> +asmlinkage long
->  compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
->  			   compat_size_t __user *len_ptr)
->  {
-> 
+CONFIG_CHECKPOINT should just depend on all of CONFIG_*_NS.  Otherwise
+we're going to have an abundance of corner cases at build time and (more
+importantly) run time that never get exercised.
