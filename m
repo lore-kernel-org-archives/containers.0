@@ -1,7 +1,7 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: cgroup attach/fork hooks consistency with the ns_cgroup
-Date: Thu, 18 Jun 2009 09:21:24 +0800
-Message-ID: <4A399694.601@cn.fujitsu.com>
+Date: Wed, 17 Jun 2009 18:21:57 -0700
+Message-ID: <6599ad830906171821v3c97f176y65bd4b7fa9a405e9@mail.gmail.com>
 References: <4A390D5D.5040702@free.fr> <20090617212614.GA26781@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,25 +18,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Wed, Jun 17, 2009 at 2:26 PM, Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+>
 > The ns cgroup is really only good for preventing root in a container
 > from escaping its cgroup-imposed limits.  The same can be done today
 > using smack or selinux, and eventually will be possible using user
 > namespaces.  Would anyone object to removing ns_cgroup?
-> 
 
-I vote for removing it. :)
+Sounds reasonable to me. It feels to me that there ought to be some
+good way to integrate namespaces and cgroups, but I'm not quite sure
+exactly how, and ns_cgroup sort of hovers in the "toy" category rather
+than something very useful.
 
-> It won't just remove kernel/ns_cgroup.c, but some subtle code in
-> fork.c, nsproxy.c, and of course cgroup.c as well.
-> 
-
-Yeah, regarding to cgroup, cgroup_clone() and cgroup_is_descendant()
-can be removed. cgroup_clone() is somewhat ugly I think.
-
-> There admittedly is minute convenience gain in not having to
-> manually create a new cgroup and attach a cloned child to it, but
-> that wasn't the intent of the cgroup.
-> 
+Paul
