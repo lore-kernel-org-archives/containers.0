@@ -1,16 +1,13 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/2] Prevent container-inits from using CLONE_PARENT
-Date: Thu, 18 Jun 2009 17:42:16 +0200
-Message-ID: <20090618154216.GB6404@redhat.com>
-References: <20090618024743.GA31515@us.ibm.com>
-	<20090618025103.GB31672@us.ibm.com>
-	<20090618153501.GA6404@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] checkpoint_sem trivialities
+Date: Thu, 18 Jun 2009 12:41:45 -0400
+Message-ID: <4A3A6E49.6040806@cs.columbia.edu>
+References: <20090616220410.GA7115@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090618153501.GA6404-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090616220410.GA7115-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,34 +17,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 06/18, Oleg Nesterov wrote:
->
-> On 06/17, Sukadev Bhattiprolu wrote:
-> >
-> > @@ -974,6 +974,14 @@ static struct task_struct *copy_process(
-> >  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
-> >  		return ERR_PTR(-EINVAL);
-> >
-> > +	/*
-> > +	 * To keep pid namespace semantics simple, prevent container-inits
-> > +	 * from creating siblings.
-> > +	 */
-> > +	if ((clone_flags & CLONE_PARENT) &&
-> > +			is_container_init(current) && !is_global_init(current))
->
-> Both is_ checks are not right afaics. There are per-thread. This means
-> that container-init can do clone(CLONE_THREAD), and then this thread
-> does CLONE_PARENT and fools copy_process().
->
-> As for !is_global_init(). I never understood what should we do if the
-> global init does CLONE_PARENT, this attaches another process to swapper,
-> not good.
 
-Hmm. And idle threads run with ->action[SIGHLD] == SIG_DFL, so this is
-really wrong. Fortunately, we can trust the global init.
+Applied.
 
-Oleg.
+Serge E. Hallyn wrote:
+> fix a typo in a comment
+> 
+> rather than #include msg.h just so util.h doesn't break on struct msg_msg,
+> just fwd-declare it.  Probably should be fixed in util.h itself?
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  ipc/checkpoint_sem.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+> index e6934dc..19e9402 100644
+> --- a/ipc/checkpoint_sem.c
+> +++ b/ipc/checkpoint_sem.c
+> @@ -19,7 +19,7 @@
+>  #include <linux/nsproxy.h>
+>  #include <linux/ipc_namespace.h>
+>  
+> -#include <linux/msg.h>	/* needed for util.h that uses 'struct msg_msg' */
+> +struct msg_msg;
+>  #include "util.h"
+>  
+>  #include <linux/checkpoint.h>
+> @@ -192,7 +192,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx)
+>  	ckpt_debug("sem: do_semget key %d flag %#x id %d\n",
+>  		 h->perms.key, semflag, h->perms.id);
+>  	ret = do_semget(h->perms.key, h->sem_nsems, semflag, h->perms.id);
+> -	ckpt_debug("sem: do_msgget ret %d\n", ret);
+> +	ckpt_debug("sem: do_semget ret %d\n", ret);
+>  	if (ret < 0)
+>  		goto out;
+>  
