@@ -1,13 +1,20 @@
 From: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [HELP] for using class group classifier network controller
-Date: Thu, 18 Jun 2009 13:13:00 +0900
-Message-ID: <20090618131300.14d575b8.usui__36533.1349931241$1245302109$gmane$org@mxm.nes.nec.co.jp>
-References: <d89801c9ef32$cdfcf480$8310fe81@etri.info>
+Subject: Re: [Devel] Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
+Date: Thu, 18 Jun 2009 15:15:16 +0900
+Message-ID: <20090618151516.73daf5d8.usui__38275.7669584409$1245318023$gmane$org@mxm.nes.nec.co.jp>
+References: <20090611180555.f2c76568.usui@mxm.nes.nec.co.jp>
+	<20090611.021347.142243970.davem@davemloft.net>
+	<20090612124028.fe4c2100.usui@mxm.nes.nec.co.jp>
+	<6599ad830906112206n745fb0dw19cdb75d7c40b2a4@mail.gmail.com>
+	<20090615120035.a8b7b38f.usui@mxm.nes.nec.co.jp>
+	<20090615101919.GC7768@bombadil.infradead.org>
+	<20090617094907.e8cd77bd.usui@mxm.nes.nec.co.jp>
+	<4A399FF7.5060209@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <d89801c9ef32$cdfcf480$8310fe81-tRM8rG9f+DVhl2p70BpVqQ@public.gmane.org>
+In-Reply-To: <4A399FF7.5060209-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,34 +24,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chei-Yol Kim <gauri-mINagvnPBMnWF1p7bDn8Kw@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, tgraf-G/eBtMaohhA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> when I set the classid to 0x10010, class 1:10's packet count was increased. 
-> But, according to your configuration, every packet has to flowed to 1:10 class. 
+On Thu, 18 Jun 2009 10:01:27 +0800
+Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 
-Yes, you are right.
-
-> Of course I know that the net_cls can't classify all packet because of the getting classid from the current task. 
-> Even though we consider it, Many packets are flowed to 1:30 class. 
-> therefore, the rate of the socket showed about 30mbps. This is the 1:30 class's rate.
-> I think it's because that 1:30 class is the default class. 
-> When I changed the default to 20, the rate was varied to 20mbps, class 1:20's rate.
->
+> Minoru Usui wrote:
+> > On Mon, 15 Jun 2009 06:19:19 -0400
+> > Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org> wrote:
+> > 
+> >> On Mon, Jun 15, 2009 at 12:00:35PM +0900, Minoru Usui wrote:
+> >>> Actually, In tc <-> kernel I/F (which uses netlink), tc sets classid to hexadecimal style not X:Y style.
+> >>> X:Y style is result of translating by tc command.
+> >>>
+> >>> I thought this patch was very useful at first, but it's not necessary to implementing to the kernel.
+> >>> This function can be implemented on user space if we need.
+> >>> And we can also keep compatibility of net_cls.classid I/F. :-)
+> >>>
+> >>> I drop this patch. I'm sorry for confusing a lot of people.
+> >> I found this patch to be extremely useful if it wasn't to break
+> >> compatibility but that issue can be resolved by accepting both
+> >> formats easly.
+> > 
+> > Thank you for agreeing my patch.
+> > 
+> > I think you said write format only. Am I right?
+> > What do you think about read format?
+> > Do you think you should keep read format as current implementation?
+> > 
+> > I think we should need to unify read/write format, if we make cls_cgroup is more userfriendly. 
+> > Because some of people are confused about having to read their write value as different format.
+> > (Unfortunately, current implementation is so...)
+> > 
+> > But this approach breaks compatibility, so I drop this patch.
 > 
-> To measure this rate, I used the iperf and scp command. Two results are the same.
-> How about your experiment's result? 
-> Would you check the accurate rate of the network using applications like a iperf?
+> How about adding a new control file net_cls.tc_classid?
+> 
 
-I did same experience with nuttcp, I observed the same result, too.
-(Almost packets were classified into default classid.)
- 
-> By the results of my experiments, net_cls couldn't control the network rate of the group. 
-> What is your opinion?
+net_cls.classid's core purpose is to read/write classid. 
+If we add net_cls.tc_classid, its core purpose is same.
+Their difference is only read/write value of expression.
 
-I agree with you.
-I'm going to investigate this problem. 
+Is this approach ok?
 
 -- 
 Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
