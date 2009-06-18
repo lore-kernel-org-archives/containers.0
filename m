@@ -1,16 +1,16 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/2] Prevent container-inits from using CLONE_PARENT
-Date: Thu, 18 Jun 2009 15:52:08 -0700
-Message-ID: <20090618225208.GC14063@us.ibm.com>
-References: <20090618024743.GA31515@us.ibm.com>
-	<20090618025103.GB31672@us.ibm.com>
-	<20090618153501.GA6404@redhat.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
+Date: Thu, 18 Jun 2009 18:12:01 -0500
+Message-ID: <m3zlc5kugu.fsf@pobox.com>
+References: <20090617001723.GA9452@us.ibm.com>
+	<4A3A6F61.5030401@cs.columbia.edu> <m3ws79h01p.fsf@pobox.com>
+	<20090618223213.GA13179@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090618153501.GA6404-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090618223213.GA13179-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message
+	of "Thu\, 18 Jun 2009 17\:32\:13 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,47 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-| Again, strange but harmless.
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+>> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+>> 
+>> > I think it's useful to be able to
+>> >
+>> > 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
+>> > 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
+>> > system with !CONFIG_UTS_NS (as long as all tasks in the image
+>> > share a single uts-ns)
+>> 
+>> In principle I agree, but what confidence can we have that meaningful
+>> testing of such configurations (especially #2) will occur?
+>
+> History says, low confidence.  So far just 1 is bad enough.  It's
+> taking a lot of my time on the LSM c/r (with the various combinations
+> of CONFIG_SECURITY, CONFIG_IPC_NS, and CONFIG_CHECKPOINT), and things
+> like CONFIG_IPC_NS consistently break c/r anyway.
+>
+> So for 2 i'm tempted to say let's encode a sha1sum of the .config
+> into the checkpoint header.  We'll keep *trying* to support (2), and
+> userspace can trivially rewrite the header if it really wants to believe
+> we've succeeded.
 
-Right nothing broken, just trying to disable the strangeness till usage
-becomes clear.
+Are you suggesting having sys_restart code path consult the .config
+sha1sum in the image?  Or is it just for the benefit of userspace?  If
+the former, I'm having difficulty grasping the benefit.
 
-| 
-| > To keep pid namespace semantics simple, prevent container-inits from using
-| > CLONE_PARENT at least until we have a better understanding of CLONE_PARENT
-| > and pid-namespace interactions.
-| 
-| Yes, perhaps makes sense.
-| 
-| > --- linux-mmotm.orig/kernel/fork.c	2009-06-17 18:23:23.000000000 -0700
-| > +++ linux-mmotm/kernel/fork.c	2009-06-17 19:17:54.000000000 -0700
-| > @@ -974,6 +974,14 @@ static struct task_struct *copy_process(
-| >  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
-| >  		return ERR_PTR(-EINVAL);
-| >
-| > +	/*
-| > +	 * To keep pid namespace semantics simple, prevent container-inits
-| > +	 * from creating siblings.
-| > +	 */
-| > +	if ((clone_flags & CLONE_PARENT) &&
-| > +			is_container_init(current) && !is_global_init(current))
-| 
-| Both is_ checks are not right afaics. There are per-thread. This means
-| that container-init can do clone(CLONE_THREAD), and then this thread
-| does CLONE_PARENT and fools copy_process().
+>
+> And for 1, I agree - most distros ship with namespaces enabled
+> anyway, and one day I expect we'll get rid of those configs, so
+> I see no reason to support CONFIG_CHECKPOINT if any namespaces are
+> turned off.
+>
+> In fact, I thought that last week Dave suggested that, and Nathan
+> was against it?  :)
 
-Good point. Should check the tgid.
-| 
-| As for !is_global_init(). I never understood what should we do if the
-| global init does CLONE_PARENT, this attaches another process to swapper,
-| not good.
-
-Agree, like I replied to Eric, I just was not sure there were any
-existing users of CLONE_PARENT :-(
-
-I could make a separate patch in this set to just disable CLONE_PARENT for
-global init.
+I was against using select in the CHECKPOINT config item to force-enable
+CONFIG_*_NS.  Making CHECKPOINT depend on the namespace options strikes
+me as a sane tradeoff here.
