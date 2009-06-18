@@ -1,15 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
-Date: Thu, 18 Jun 2009 17:32:13 -0500
-Message-ID: <20090618223213.GA13179@us.ibm.com>
-References: <20090617001723.GA9452@us.ibm.com>
-	<4A3A6F61.5030401@cs.columbia.edu> <m3ws79h01p.fsf@pobox.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/2] Deny CLONE_PARENT|CLONE_NEWPID combination
+Date: Thu, 18 Jun 2009 15:28:31 -0700
+Message-ID: <20090618222831.GA14063@us.ibm.com>
+References: <20090618024743.GA31515@us.ibm.com>
+	<20090618024934.GA31672@us.ibm.com>
+	<m1d492jk0k.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m3ws79h01p.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <m1d492jk0k.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,39 +20,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
-> 
-> > I think it's useful to be able to
-> >
-> > 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
-> > 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
-> > system with !CONFIG_UTS_NS (as long as all tasks in the image
-> > share a single uts-ns)
-> 
-> In principle I agree, but what confidence can we have that meaningful
-> testing of such configurations (especially #2) will occur?
+Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+| Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+| 
+| > Deny CLONE_PARENT|CLONE_NEWPID combination.
+| >
+| > CLONE_PARENT was probably used to implement an older threading model.
+| 
+| Yes it was.
+| 
+| > If so, for consistency with CLONE_THREAD, the CLONE_PARENT|CLONE_NEWPID
+| > combination should also fail with -EINVAL.
+| 
+| CLONE_THREAD can not work with CLONE_NEWPID because the processes share
+| a signal queue.
+| 
+| I can see a similar argument going for CLONE_SIGHAND even though there is not
+| as much sharing there.  I don't see how CLONE_PARENT could cause any harm.
+| Without CLONE_SIGHAND.
 
-History says, low confidence.  So far just 1 is bad enough.  It's
-taking a lot of my time on the LSM c/r (with the various combinations
-of CONFIG_SECURITY, CONFIG_IPC_NS, and CONFIG_CHECKPOINT), and things
-like CONFIG_IPC_NS consistently break c/r anyway.
+It does not cause any harm. Only reason to disable CLONE_PARENT, at least for
+now, is the confusing semantics (from users pov) and the process-tree model
+and the usefulness (if CLONE_PARENT is only used in old threading model, the
+needs of such an application acting as container-init is not clear).
 
-So for 2 i'm tempted to say let's encode a sha1sum of the .config
-into the checkpoint header.  We'll keep *trying* to support (2), and
-userspace can trivially rewrite the header if it really wants to believe
-we've succeeded.
-
-And for 1, I agree - most distros ship with namespaces enabled
-anyway, and one day I expect we'll get rid of those configs, so
-I see no reason to support CONFIG_CHECKPOINT if any namespaces are
-turned off.
-
-In fact, I thought that last week Dave suggested that, and Nathan
-was against it?  :)
-
--serge
+Should we disable CLONE_SIGHAND in addition to CLONE_PARENT or just
+CLONE_SIGHAND ?
