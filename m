@@ -1,21 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 1/1] cls_cgroup: unify classid syntax to tc
-Date: Thu, 18 Jun 2009 08:21:12 -0700
-Message-ID: <6599ad830906180821q2c357112s39c0da4e157b555c__14472.4360936836$1245338655$gmane$org@mail.gmail.com>
-References: <20090611180555.f2c76568.usui@mxm.nes.nec.co.jp>
-	<20090611.021347.142243970.davem@davemloft.net>
-	<20090612124028.fe4c2100.usui@mxm.nes.nec.co.jp>
-	<6599ad830906112206n745fb0dw19cdb75d7c40b2a4@mail.gmail.com>
-	<20090615120035.a8b7b38f.usui@mxm.nes.nec.co.jp>
-	<20090615101919.GC7768@bombadil.infradead.org>
-	<20090617094907.e8cd77bd.usui@mxm.nes.nec.co.jp>
-	<4A399FF7.5060209@cn.fujitsu.com>
-	<20090618151516.73daf5d8.usui@mxm.nes.nec.co.jp>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/2] Prevent container-inits from using CLONE_PARENT
+Date: Thu, 18 Jun 2009 17:35:01 +0200
+Message-ID: <20090618153501.GA6404@redhat.com>
+References: <20090618024743.GA31515@us.ibm.com>
+	<20090618025103.GB31672@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090618151516.73daf5d8.usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090618025103.GB31672-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,19 +19,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minoru Usui <usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, tgraf-G/eBtMaohhA@public.gmane.org, Thomas Graf <tgraf-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, jarkao2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 17, 2009 at 11:15 PM, Minoru Usui<usui-vEbCzmPPqHe45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+On 06/17, Sukadev Bhattiprolu wrote:
 >
-> net_cls.classid's core purpose is to read/write classid.
-> If we add net_cls.tc_classid, its core purpose is same.
-> Their difference is only read/write value of expression.
+> Prevent container-inits from using CLONE_PARENT
+>
+> If a container-init creates a sibling (using CLONE_PARENT), pid namespace
+> semantics become complicated:
+>
+> 	- the "active pid namespace" of the sibling will be the descendant
+> 	  container, but its not obvious if that is correct.
+>
+> 	- if container-init exits, it will terminate the sibling, but again
+> 	  its not clear if that is the correct behavior.
+>
+> 	- the sibling exists in both parent and child containers while current
+> 	  pid namespace semantics assume that only container-init can exist
+> 	  in both parent/child containers.
+>
+> 	- the parent of the sibling is not a descendant of container-init
+> 	  (while pid namespaces assume that all processes in the container
+> 	  are descendants of the container-init)
 
-I still feel that it's unnecessary bloat to put that parsing/printing
-logic in the kernel when userspace can do it just as easily. But
-having it as a separate file would at least remove the compatibility
-concerns.
+I agree, this all a bit strange and perhaps should be fixed. But afaics,
+nothing bad can happen? I mean, if the sub-namespace does stupid things
+it can't do a harm to the parent namespace? Or I missed something?
 
-Paul
+> 	- When the sibling dies, the SIGCHLD is sent to its parent (if
+> 	  alive), i.e the signal escapes the container to a parent container.
+
+The same if container-init exits, we send SIGCHLD up. But yes, I agree,
+this is a bit strange.
+
+> 	  (if the parent of the sibling exits, the container-init then becomes
+> 	  the reaper of the sibling).
+
+Again, strange but harmless.
+
+> To keep pid namespace semantics simple, prevent container-inits from using
+> CLONE_PARENT at least until we have a better understanding of CLONE_PARENT
+> and pid-namespace interactions.
+
+Yes, perhaps makes sense.
+
+> --- linux-mmotm.orig/kernel/fork.c	2009-06-17 18:23:23.000000000 -0700
+> +++ linux-mmotm/kernel/fork.c	2009-06-17 19:17:54.000000000 -0700
+> @@ -974,6 +974,14 @@ static struct task_struct *copy_process(
+>  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
+>  		return ERR_PTR(-EINVAL);
+>
+> +	/*
+> +	 * To keep pid namespace semantics simple, prevent container-inits
+> +	 * from creating siblings.
+> +	 */
+> +	if ((clone_flags & CLONE_PARENT) &&
+> +			is_container_init(current) && !is_global_init(current))
+
+Both is_ checks are not right afaics. There are per-thread. This means
+that container-init can do clone(CLONE_THREAD), and then this thread
+does CLONE_PARENT and fools copy_process().
+
+As for !is_global_init(). I never understood what should we do if the
+global init does CLONE_PARENT, this attaches another process to swapper,
+not good.
+
+Oleg.
