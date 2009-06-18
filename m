@@ -1,15 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: cgroup attach/fork hooks consistency with the ns_cgroup
-Date: Thu, 18 Jun 2009 11:41:56 -0700
-Message-ID: <6599ad830906181141w1669d154j22277070ae221a76@mail.gmail.com>
-References: <4A390D5D.5040702@free.fr> <20090617212614.GA26781@us.ibm.com>
-	<6599ad830906171821v3c97f176y65bd4b7fa9a405e9@mail.gmail.com>
-	<20090618134527.GA3186@us.ibm.com> <4A3A891C.8020305@free.fr>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] checkpoint/restart of robust futex lists
+Date: Thu, 18 Jun 2009 14:24:55 -0500
+Message-ID: <m31vphgxa0.fsf@pobox.com>
+References: <20090603041919.GO9285@us.ibm.com>
+	<4A3A7572.9030907@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A3A891C.8020305-GANU6spQydw@public.gmane.org>
+In-Reply-To: <4A3A7572.9030907-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Thu\, 18 Jun 2009 13\:12\:18 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,31 +19,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 18, 2009 at 11:36 AM, Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
->
-> There isn't a rule saying that we will inherit the values set by the parent
-> ? If it is case, maybe we can remove the ns_cgroup and fix the cpuset at the
-> same time, no ?
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> What happens if we checkpoint on a system with CONFIG_FUTEX and
+> restart on a a system with !CONFIG_FUTEX ?
 
-There's no rule either way, but there is the backward-compatibility
-aspects of cpusets.
-
-One way around that would be to add a "cgroup.clone_children" control
-file - if you write 1 to it (it defaults to 0) then all mkdir
-operations do a clone (i.e. pre-populate the child with appropriate
-defaults even if that's not the normal behaviour for the subsystem.
-That would avoid compatibility issues.
-
-> Maybe, we can first fix the ns_cgroup hook problem by moving the
-> ns_cgroup_clone after cgroup_fork_callbacks
-
- You mean fork the task into the parent cgroup, then clone the new
-cgroup and reattach to the new cgroup? That could work, although I'm
-not sure whether it would be bad to have the new task briefly
-appearing in the parent cgroups.
-
-Paul
+You can't disable FUTEX unless EMBEDDED=y, and EMBEDDED is the "I know
+what I'm doing" knob.  Is this really worth worrying about?
