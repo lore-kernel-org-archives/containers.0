@@ -1,9 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Fixes for the deferqueue_add() function
-Date: Fri, 19 Jun 2009 11:16:43 -0700
-Message-ID: <87prd0um0k.fsf@caffeine.danplanet.com>
-References: <1245431791-17588-1-git-send-email-danms@us.ibm.com>
-	<20090619175600.GB26692@us.ibm.com>
+Subject: [PATCH] Fixes for the deferqueue_add() function (v2)
+Date: Fri, 19 Jun 2009 11:18:25 -0700
+Message-ID: <1245435505-24842-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,22 +15,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->> +	INIT_LIST_HEAD(&dq->list);
+I'm not sure how the deferqueue would (or has ever) worked without these
+modifications, but I had to make them in order to use it :)
 
-SH> I'm pretty sure only head->list needed to be initialized.
+Changes (v2):
+  - Remove unnecessary initialization of the new list item
 
->> -	list_add_tail(&head->list, &dq->list);
->> +	list_add_tail(&dq->list, &head->list);
+Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/deferqueue.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-SH> at least after you've done this :)
-
-Right, right, well, it was part of the process... :)
-
+diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+index efd99d5..3fb388b 100644
+--- a/kernel/deferqueue.c
++++ b/kernel/deferqueue.c
+@@ -66,7 +66,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
+ {
+ 	struct deferqueue_entry *dq;
+ 
+-	dq = kmalloc(sizeof(dq) + size, GFP_KERNEL);
++	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
+ 	if (!dq)
+ 		return -ENOMEM;
+ 
+@@ -77,7 +77,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
+ 	pr_debug("%s: adding work %p func %p dtor %p\n",
+ 		 __func__, dq, func, dtor);
+ 	spin_lock(&head->lock);
+-	list_add_tail(&head->list, &dq->list);
++	list_add_tail(&dq->list, &head->list);
+ 	spin_unlock(&head->lock);
+ 	return 0;
+ }
 -- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+1.6.0.4
