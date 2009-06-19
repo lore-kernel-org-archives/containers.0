@@ -1,16 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
-Date: Fri, 19 Jun 2009 09:56:06 -0500
-Message-ID: <20090619145606.GB22381@us.ibm.com>
-References: <20090617001723.GA9452@us.ibm.com>
-	<4A3A6F61.5030401@cs.columbia.edu> <m3ws79h01p.fsf@pobox.com>
-	<20090618223213.GA13179@us.ibm.com> <m3zlc5kugu.fsf@pobox.com>
+Subject: Re: [PATCH 2/2] clone_with_pids: define the s390 syscall
+Date: Fri, 19 Jun 2009 10:13:41 -0500
+Message-ID: <20090619151341.GC22381@us.ibm.com>
+References: <20090615170443.GA14808@us.ibm.com>
+	<20090615170524.GA14950@us.ibm.com>
+	<20090615171645.GA15217@us.ibm.com>
+	<20090619131622.3193472d@skybase>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m3zlc5kugu.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090619131622.3193472d@skybase>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,55 +21,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> >> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
-> >> 
-> >> > I think it's useful to be able to
-> >> >
-> >> > 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
-> >> > 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
-> >> > system with !CONFIG_UTS_NS (as long as all tasks in the image
-> >> > share a single uts-ns)
-> >> 
-> >> In principle I agree, but what confidence can we have that meaningful
-> >> testing of such configurations (especially #2) will occur?
-> >
-> > History says, low confidence.  So far just 1 is bad enough.  It's
-> > taking a lot of my time on the LSM c/r (with the various combinations
-> > of CONFIG_SECURITY, CONFIG_IPC_NS, and CONFIG_CHECKPOINT), and things
-> > like CONFIG_IPC_NS consistently break c/r anyway.
-> >
-> > So for 2 i'm tempted to say let's encode a sha1sum of the .config
-> > into the checkpoint header.  We'll keep *trying* to support (2), and
-> > userspace can trivially rewrite the header if it really wants to believe
-> > we've succeeded.
+Quoting Martin Schwidefsky (schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org):
+> Hi Serge,
 > 
-> Are you suggesting having sys_restart code path consult the .config
-> sha1sum in the image?
+> On Mon, 15 Jun 2009 12:16:45 -0500
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+> > index c2228b2..bf13315 100644
+> > --- a/arch/s390/kernel/compat_wrapper.S
+> > +++ b/arch/s390/kernel/compat_wrapper.S
+> > @@ -1837,3 +1837,13 @@ sys_restore_wrapper:
+> >  	lgfr	%r3,%r3			# int
+> >  	llgfr	%r4,%r4			# unsigned long
+> >  	jg	compat_sys_restore
+> > +
+> > +	.globl sys_clone_with_pids_wrapper
+> > +sys_clone_with_pids_wrapper:
+> > +	llgfr	%r2,%r2			# unsigned long
+> > +	llgfr	%r3,%r3			# unsigned long
+> > +	llgtr	%r4,%r4			# int *
+> > +	llgtr	%r5,%r5			# int *
+> > +	llgtr	%r6,%r6			# void *
+> > +	llgtr	%r7,%r7			# void *
+> > +	jg	compat_sys_clone_with_pids
+> 
+> This is incorrect. If you have a system call that takes 6 parameters
+> you need to load/store the 6th parameter from the stack. Check out the
+> futex system call wrapper. But before you do that see the next comment.
+> 
+> > diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+> > index a3acd8e..fa187bf 100644
+> > --- a/arch/s390/kernel/process.c
+> > +++ b/arch/s390/kernel/process.c
+> > @@ -246,6 +246,25 @@ SYSCALL_DEFINE0(clone)
+> >  		       parent_tidptr, child_tidptr);
+> >  }
+> > 
+> > +SYSCALL_DEFINE0(clone_with_pids)
+> > +{
+> > +	struct pt_regs *regs = task_pt_regs(current);
+> > +	unsigned long clone_flags;
+> > +	unsigned long newsp;
+> > +	int __user *parent_tidptr, *child_tidptr;
+> > +	void __user *upid_setp;
+> > +
+> > +	clone_flags = regs->gprs[3];
+> > +	newsp = regs->orig_gpr2;
+> > +	parent_tidptr = (int __user *) regs->gprs[4];
+> > +	child_tidptr = (int __user *) regs->gprs[5];
+> > +	upid_setp = (void __user *) regs->gprs[7];
+> > +	if (!newsp)
+> > +		newsp = regs->gprs[15];
+> > +	return do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
+> > +			child_tidptr, upid_setp);
+> > +}
+> > +
+> >  /*
+> >   * This is trivial, and on the face of it looks like it
+> >   * could equally well be done in user mode.
+> 
+> clone_with_pids is declared as system call with no paramters. In this
+> case the system call wrapper is not needed (empty) and you have to do
+> the compat conversion inside the system call. See sys32_clone.
 
-Yup.
+Ah, I see, thanks.
 
-> Or is it just for the benefit of userspace?  If
-> the former, I'm having difficulty grasping the benefit.
+So in that case, is it ok for me to just use gprs[7] to pass in the
+upid_setp variable?
 
-Well we could also do it in userspace, but it seemed easier to actually
-store the sha1sum in a char buf in the c/r code in the kernel, stick it
-in the header at checkpoint, and verify it at restart.
-
-The benefit?  Well...  really I feel opposite today.  Along the lines
-of supporting unprivileged restart as long as possible to make us
-consider security, I guess I'd argue we should support heterogenous
-(in terms of config :) c/r as long as possible.  The reason I was
-thinking otherwise yesterday is that I have to special-case things
-like the task->security objref when CONFIG_SECURITY=n.  It felt
-hacky yesterday, but the end result looks pretty good and is i 
-think better thought out than it would have been were we doing the
-sha1sum thing.
-
+thanks,
 -serge
