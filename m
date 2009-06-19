@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 17/20] io-controller: Per io group bdi congestion interface
-Date: Fri, 19 Jun 2009 16:37:35 -0400
-Message-ID: <1245443858-8487-18-git-send-email-vgoyal__9066.43029670722$1245445188$gmane$org@redhat.com>
+Subject: [PATCH 04/20] io-controller: Modify cfq to make use of flat elevator
+	fair queuing
+Date: Fri, 19 Jun 2009 16:37:22 -0400
+Message-ID: <1245443858-8487-5-git-send-email-vgoyal__37166.0861339935$1245445212$gmane$org@redhat.com>
 References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,1200 +22,1873 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o So far there used to be only one pair or queue  of request descriptors
-  (one for sync and one for async) per device and number of requests allocated
-  used to decide whether associated bdi is congested or not.
+This patch changes cfq to use fair queuing code from elevator layer.
 
-  Now with per io group request descriptor infrastructure, there is a pair
-  of request descriptor queue per io group per device. So it might happen
-  that overall request queue is not congested but a particular io group
-  bio belongs to is congested.
-
-  Or, it could be otherwise that group is not congested but overall queue
-  is congested. This can happen if user has not properly set the request
-  descriptors limits for queue and groups.
-  (q->nr_requests < nr_groups * q->nr_group_requests)
-
-  Hence there is a need for new interface which can query deivce congestion
-  status per group. This group is determined by the "struct page" IO will be
-  done for. If page is null, then group is determined from the current task
-  context.
-
-o This patch introduces new set of function bdi_*_congested_group(), which
-  take "struct page" as addition argument. These functions will call the
-  block layer and in trun elevator to find out if the io group the page will
-  go into is congested or not.
-
-o Currently I have introduced the core functions and migrated most of the users.
-  But there might be still some left. This is an ongoing TODO item.
-
-o There are some io_get_io_group() related changes which should be pushed into
-  higher patches. Still testing this patch. Will push these changes up in next
-  posting.
-
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-core.c            |   21 +++++
- block/cfq-iosched.c         |    6 +-
- block/elevator-fq.c         |  179 ++++++++++++++++++++++++++++++++++---------
- block/elevator-fq.h         |   10 ++-
- drivers/md/dm-table.c       |   11 ++-
- drivers/md/dm.c             |    5 +-
- drivers/md/dm.h             |    3 +-
- drivers/md/linear.c         |    7 +-
- drivers/md/multipath.c      |    7 +-
- drivers/md/raid0.c          |    6 +-
- drivers/md/raid1.c          |    9 ++-
- drivers/md/raid10.c         |    6 +-
- drivers/md/raid5.c          |    2 +-
- fs/afs/write.c              |    8 ++-
- fs/btrfs/disk-io.c          |    6 +-
- fs/btrfs/extent_io.c        |   12 +++
- fs/btrfs/volumes.c          |    8 ++-
- fs/cifs/file.c              |   11 +++
- fs/ext2/ialloc.c            |    2 +-
- fs/gfs2/ops_address.c       |   12 +++
- fs/nilfs2/segbuf.c          |    3 +-
- fs/xfs/linux-2.6/xfs_aops.c |    2 +-
- fs/xfs/linux-2.6/xfs_buf.c  |    2 +-
- include/linux/backing-dev.h |   61 ++++++++++++++-
- include/linux/biotrack.h    |    6 ++
- include/linux/blkdev.h      |    5 +
- mm/backing-dev.c            |   62 +++++++++++++++
- mm/biotrack.c               |   21 +++++
- mm/page-writeback.c         |   11 +++
- mm/readahead.c              |    4 +-
- 30 files changed, 435 insertions(+), 73 deletions(-)
+ block/Kconfig.iosched     |    3 +-
+ block/cfq-iosched.c       | 1106 +++++++++------------------------------------
+ include/linux/iocontext.h |    5 -
+ 3 files changed, 222 insertions(+), 892 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index 35e3725..5f16f4a 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -99,6 +99,27 @@ void blk_queue_congestion_threshold(struct request_queue *q)
- 	q->nr_congestion_off = nr;
- }
+diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
+index 3398134..dd5224d 100644
+--- a/block/Kconfig.iosched
++++ b/block/Kconfig.iosched
+@@ -3,7 +3,7 @@ if BLOCK
+ menu "IO Schedulers"
  
-+#ifdef CONFIG_GROUP_IOSCHED
-+int blk_queue_io_group_congested(struct backing_dev_info *bdi, int bdi_bits,
-+					struct page *page)
-+{
-+	int ret = 0;
-+	struct request_queue *q = bdi->unplug_io_data;
-+
-+	if (!q && !q->elevator)
-+		return bdi_congested(bdi, bdi_bits);
-+
-+	/* Do we need to hold queue lock? */
-+	if (bdi_bits & (1 << BDI_sync_congested))
-+		ret |= elv_io_group_congested(q, page, 1);
-+
-+	if (bdi_bits & (1 << BDI_async_congested))
-+		ret |= elv_io_group_congested(q, page, 0);
-+
-+	return ret;
-+}
-+#endif
-+
- /**
-  * blk_get_backing_dev_info - get the address of a queue's backing_dev_info
-  * @bdev:	device
+ config ELV_FAIR_QUEUING
+-	bool "Elevator Fair Queuing Support"
++	bool
+ 	default n
+ 	---help---
+ 	  Traditionally only cfq had notion of multiple queues and it did
+@@ -46,6 +46,7 @@ config IOSCHED_DEADLINE
+ 
+ config IOSCHED_CFQ
+ 	tristate "CFQ I/O scheduler"
++	select ELV_FAIR_QUEUING
+ 	default y
+ 	---help---
+ 	  The CFQ I/O scheduler tries to distribute bandwidth equally
 diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 77bbe6c..b02acf2 100644
+index a55a9bd..995c8dd 100644
 --- a/block/cfq-iosched.c
 +++ b/block/cfq-iosched.c
-@@ -195,7 +195,7 @@ static struct cfq_queue *cic_bio_to_cfqq(struct cfq_data *cfqd,
- 		 * async bio tracking is enabled and we are not caching
- 		 * async queue pointer in cic.
- 		 */
--		iog = io_get_io_group(cfqd->queue, bio, 0);
-+		iog = io_get_io_group_bio(cfqd->queue, bio, 0);
- 		if (!iog) {
- 			/*
- 			 * May be this is first rq/bio and io group has not
-@@ -1334,7 +1334,7 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, struct bio *bio, int is_sync,
- 	struct io_queue *ioq = NULL, *new_ioq = NULL;
- 	struct io_group *iog = NULL;
- retry:
--	iog = io_get_io_group(q, bio, 1);
-+	iog = io_get_io_group_bio(q, bio, 1);
+@@ -12,7 +12,6 @@
+ #include <linux/rbtree.h>
+ #include <linux/ioprio.h>
+ #include <linux/blktrace_api.h>
+-
+ /*
+  * tunables
+  */
+@@ -23,15 +22,7 @@ static const int cfq_fifo_expire[2] = { HZ / 4, HZ / 8 };
+ static const int cfq_back_max = 16 * 1024;
+ /* penalty of a backwards seek */
+ static const int cfq_back_penalty = 2;
+-static const int cfq_slice_sync = HZ / 10;
+-static int cfq_slice_async = HZ / 25;
+ static const int cfq_slice_async_rq = 2;
+-static int cfq_slice_idle = HZ / 125;
+-
+-/*
+- * offset from end of service tree
+- */
+-#define CFQ_IDLE_DELAY		(HZ / 5)
  
+ /*
+  * below this threshold, we consider thinktime immediate
+@@ -43,7 +34,7 @@ static int cfq_slice_idle = HZ / 125;
+ 
+ #define RQ_CIC(rq)		\
+ 	((struct cfq_io_context *) (rq)->elevator_private)
+-#define RQ_CFQQ(rq)		(struct cfq_queue *) ((rq)->elevator_private2)
++#define RQ_CFQQ(rq)	(struct cfq_queue *) (ioq_sched_queue((rq)->ioq))
+ 
+ static struct kmem_cache *cfq_pool;
+ static struct kmem_cache *cfq_ioc_pool;
+@@ -53,8 +44,6 @@ static struct completion *ioc_gone;
+ static DEFINE_SPINLOCK(ioc_gone_lock);
+ 
+ #define CFQ_PRIO_LISTS		IOPRIO_BE_NR
+-#define cfq_class_idle(cfqq)	((cfqq)->ioprio_class == IOPRIO_CLASS_IDLE)
+-#define cfq_class_rt(cfqq)	((cfqq)->ioprio_class == IOPRIO_CLASS_RT)
+ 
+ #define sample_valid(samples)	((samples) > 80)
+ 
+@@ -75,12 +64,6 @@ struct cfq_rb_root {
+  */
+ struct cfq_data {
+ 	struct request_queue *queue;
+-
+-	/*
+-	 * rr list of queues with requests and the count of them
+-	 */
+-	struct cfq_rb_root service_tree;
+-
+ 	/*
+ 	 * Each priority tree is sorted by next_request position.  These
+ 	 * trees are used when determining if two or more queues are
+@@ -88,41 +71,11 @@ struct cfq_data {
+ 	 */
+ 	struct rb_root prio_trees[CFQ_PRIO_LISTS];
+ 
+-	unsigned int busy_queues;
+-	/*
+-	 * Used to track any pending rt requests so we can pre-empt current
+-	 * non-RT cfqq in service when this value is non-zero.
+-	 */
+-	unsigned int busy_rt_queues;
+-
+-	int rq_in_driver;
+ 	int sync_flight;
+ 
+-	/*
+-	 * queue-depth detection
+-	 */
+-	int rq_queued;
+-	int hw_tag;
+-	int hw_tag_samples;
+-	int rq_in_driver_peak;
+-
+-	/*
+-	 * idle window management
+-	 */
+-	struct timer_list idle_slice_timer;
+-	struct work_struct unplug_work;
+-
+-	struct cfq_queue *active_queue;
+ 	struct cfq_io_context *active_cic;
+ 
+-	/*
+-	 * async queue for each priority case
+-	 */
+-	struct cfq_queue *async_cfqq[2][IOPRIO_BE_NR];
+-	struct cfq_queue *async_idle_cfqq;
+-
+ 	sector_t last_position;
+-	unsigned long last_end_request;
+ 
+ 	/*
+ 	 * tunables, see top of file
+@@ -131,9 +84,7 @@ struct cfq_data {
+ 	unsigned int cfq_fifo_expire[2];
+ 	unsigned int cfq_back_penalty;
+ 	unsigned int cfq_back_max;
+-	unsigned int cfq_slice[2];
+ 	unsigned int cfq_slice_async_rq;
+-	unsigned int cfq_slice_idle;
+ 
+ 	struct list_head cic_list;
+ };
+@@ -142,16 +93,11 @@ struct cfq_data {
+  * Per process-grouping structure
+  */
+ struct cfq_queue {
+-	/* reference count */
+-	atomic_t ref;
++	struct io_queue *ioq;
+ 	/* various state flags, see below */
+ 	unsigned int flags;
+ 	/* parent cfq_data */
+ 	struct cfq_data *cfqd;
+-	/* service_tree member */
+-	struct rb_node rb_node;
+-	/* service_tree key */
+-	unsigned long rb_key;
+ 	/* prio tree member */
+ 	struct rb_node p_node;
+ 	/* prio tree root we belong to, if any */
+@@ -167,33 +113,23 @@ struct cfq_queue {
+ 	/* fifo list of requests in sort_list */
+ 	struct list_head fifo;
+ 
+-	unsigned long slice_end;
+-	long slice_resid;
+ 	unsigned int slice_dispatch;
+ 
+ 	/* pending metadata requests */
+ 	int meta_pending;
+-	/* number of requests that are on the dispatch list or inside driver */
+-	int dispatched;
+ 
+ 	/* io prio of this group */
+-	unsigned short ioprio, org_ioprio;
+-	unsigned short ioprio_class, org_ioprio_class;
++	unsigned short org_ioprio;
++	unsigned short org_ioprio_class;
+ 
+ 	pid_t pid;
+ };
+ 
+ enum cfqq_state_flags {
+-	CFQ_CFQQ_FLAG_on_rr = 0,	/* on round-robin busy list */
+-	CFQ_CFQQ_FLAG_wait_request,	/* waiting for a request */
+-	CFQ_CFQQ_FLAG_must_dispatch,	/* must be allowed a dispatch */
+ 	CFQ_CFQQ_FLAG_must_alloc,	/* must be allowed rq alloc */
+ 	CFQ_CFQQ_FLAG_must_alloc_slice,	/* per-slice must_alloc flag */
+ 	CFQ_CFQQ_FLAG_fifo_expire,	/* FIFO checked in this slice */
+-	CFQ_CFQQ_FLAG_idle_window,	/* slice idling enabled */
+ 	CFQ_CFQQ_FLAG_prio_changed,	/* task priority has changed */
+-	CFQ_CFQQ_FLAG_slice_new,	/* no requests dispatched in slice */
+-	CFQ_CFQQ_FLAG_sync,		/* synchronous queue */
+ 	CFQ_CFQQ_FLAG_coop,		/* has done a coop jump of the queue */
+ };
+ 
+@@ -211,16 +147,10 @@ static inline int cfq_cfqq_##name(const struct cfq_queue *cfqq)		\
+ 	return ((cfqq)->flags & (1 << CFQ_CFQQ_FLAG_##name)) != 0;	\
+ }
+ 
+-CFQ_CFQQ_FNS(on_rr);
+-CFQ_CFQQ_FNS(wait_request);
+-CFQ_CFQQ_FNS(must_dispatch);
+ CFQ_CFQQ_FNS(must_alloc);
+ CFQ_CFQQ_FNS(must_alloc_slice);
+ CFQ_CFQQ_FNS(fifo_expire);
+-CFQ_CFQQ_FNS(idle_window);
+ CFQ_CFQQ_FNS(prio_changed);
+-CFQ_CFQQ_FNS(slice_new);
+-CFQ_CFQQ_FNS(sync);
+ CFQ_CFQQ_FNS(coop);
+ #undef CFQ_CFQQ_FNS
+ 
+@@ -259,66 +189,27 @@ static inline int cfq_bio_sync(struct bio *bio)
+ 	return 0;
+ }
+ 
+-/*
+- * scheduler run of queue, if there are requests pending and no one in the
+- * driver that will restart queueing
+- */
+-static inline void cfq_schedule_dispatch(struct cfq_data *cfqd)
++static inline struct io_group *cfqq_to_io_group(struct cfq_queue *cfqq)
+ {
+-	if (cfqd->busy_queues) {
+-		cfq_log(cfqd, "schedule dispatch");
+-		kblockd_schedule_work(cfqd->queue, &cfqd->unplug_work);
+-	}
++	return ioq_to_io_group(cfqq->ioq);
+ }
+ 
+-static int cfq_queue_empty(struct request_queue *q)
++static inline int cfq_class_idle(struct cfq_queue *cfqq)
+ {
+-	struct cfq_data *cfqd = q->elevator->elevator_data;
+-
+-	return !cfqd->busy_queues;
++	return elv_ioq_class_idle(cfqq->ioq);
+ }
+ 
+-/*
+- * Scale schedule slice based on io priority. Use the sync time slice only
+- * if a queue is marked sync and has sync io queued. A sync queue with async
+- * io only, should not get full sync slice length.
+- */
+-static inline int cfq_prio_slice(struct cfq_data *cfqd, int sync,
+-				 unsigned short prio)
+-{
+-	const int base_slice = cfqd->cfq_slice[sync];
+-
+-	WARN_ON(prio >= IOPRIO_BE_NR);
+-
+-	return base_slice + (base_slice/CFQ_SLICE_SCALE * (4 - prio));
+-}
+-
+-static inline int
+-cfq_prio_to_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+-{
+-	return cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio);
+-}
+-
+-static inline void
+-cfq_set_prio_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
++static inline int cfq_cfqq_sync(struct cfq_queue *cfqq)
+ {
+-	cfqq->slice_end = cfq_prio_to_slice(cfqd, cfqq) + jiffies;
+-	cfq_log_cfqq(cfqd, cfqq, "set_slice=%lu", cfqq->slice_end - jiffies);
++	return elv_ioq_sync(cfqq->ioq);
+ }
+ 
+-/*
+- * We need to wrap this check in cfq_cfqq_slice_new(), since ->slice_end
+- * isn't valid until the first request from the dispatch is activated
+- * and the slice time set.
+- */
+-static inline int cfq_slice_used(struct cfq_queue *cfqq)
++static inline int cfqq_is_active_queue(struct cfq_queue *cfqq)
+ {
+-	if (cfq_cfqq_slice_new(cfqq))
+-		return 0;
+-	if (time_before(jiffies, cfqq->slice_end))
+-		return 0;
++	struct cfq_data *cfqd = cfqq->cfqd;
++	struct elevator_queue *e = cfqd->queue->elevator;
+ 
+-	return 1;
++	return (elv_active_sched_queue(e) == cfqq);
+ }
+ 
+ /*
+@@ -417,33 +308,6 @@ cfq_choose_req(struct cfq_data *cfqd, struct request *rq1, struct request *rq2)
+ }
+ 
+ /*
+- * The below is leftmost cache rbtree addon
+- */
+-static struct cfq_queue *cfq_rb_first(struct cfq_rb_root *root)
+-{
+-	if (!root->left)
+-		root->left = rb_first(&root->rb);
+-
+-	if (root->left)
+-		return rb_entry(root->left, struct cfq_queue, rb_node);
+-
+-	return NULL;
+-}
+-
+-static void rb_erase_init(struct rb_node *n, struct rb_root *root)
+-{
+-	rb_erase(n, root);
+-	RB_CLEAR_NODE(n);
+-}
+-
+-static void cfq_rb_erase(struct rb_node *n, struct cfq_rb_root *root)
+-{
+-	if (root->left == n)
+-		root->left = NULL;
+-	rb_erase_init(n, &root->rb);
+-}
+-
+-/*
+  * would be nice to take fifo expire time into account as well
+  */
+ static struct request *
+@@ -456,10 +320,10 @@ cfq_find_next_rq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+ 
+ 	BUG_ON(RB_EMPTY_NODE(&last->rb_node));
+ 
+-	if (rbprev)
++	if (rbprev != NULL)
+ 		prev = rb_entry_rq(rbprev);
+ 
+-	if (rbnext)
++	if (rbnext != NULL)
+ 		next = rb_entry_rq(rbnext);
+ 	else {
+ 		rbnext = rb_first(&cfqq->sort_list);
+@@ -470,95 +334,6 @@ cfq_find_next_rq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+ 	return cfq_choose_req(cfqd, next, prev);
+ }
+ 
+-static unsigned long cfq_slice_offset(struct cfq_data *cfqd,
+-				      struct cfq_queue *cfqq)
+-{
+-	/*
+-	 * just an approximation, should be ok.
+-	 */
+-	return (cfqd->busy_queues - 1) * (cfq_prio_slice(cfqd, 1, 0) -
+-		       cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio));
+-}
+-
+-/*
+- * The cfqd->service_tree holds all pending cfq_queue's that have
+- * requests waiting to be processed. It is sorted in the order that
+- * we will service the queues.
+- */
+-static void cfq_service_tree_add(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+-				 int add_front)
+-{
+-	struct rb_node **p, *parent;
+-	struct cfq_queue *__cfqq;
+-	unsigned long rb_key;
+-	int left;
+-
+-	if (cfq_class_idle(cfqq)) {
+-		rb_key = CFQ_IDLE_DELAY;
+-		parent = rb_last(&cfqd->service_tree.rb);
+-		if (parent && parent != &cfqq->rb_node) {
+-			__cfqq = rb_entry(parent, struct cfq_queue, rb_node);
+-			rb_key += __cfqq->rb_key;
+-		} else
+-			rb_key += jiffies;
+-	} else if (!add_front) {
+-		rb_key = cfq_slice_offset(cfqd, cfqq) + jiffies;
+-		rb_key += cfqq->slice_resid;
+-		cfqq->slice_resid = 0;
+-	} else
+-		rb_key = 0;
+-
+-	if (!RB_EMPTY_NODE(&cfqq->rb_node)) {
+-		/*
+-		 * same position, nothing more to do
+-		 */
+-		if (rb_key == cfqq->rb_key)
+-			return;
+-
+-		cfq_rb_erase(&cfqq->rb_node, &cfqd->service_tree);
+-	}
+-
+-	left = 1;
+-	parent = NULL;
+-	p = &cfqd->service_tree.rb.rb_node;
+-	while (*p) {
+-		struct rb_node **n;
+-
+-		parent = *p;
+-		__cfqq = rb_entry(parent, struct cfq_queue, rb_node);
+-
+-		/*
+-		 * sort RT queues first, we always want to give
+-		 * preference to them. IDLE queues goes to the back.
+-		 * after that, sort on the next service time.
+-		 */
+-		if (cfq_class_rt(cfqq) > cfq_class_rt(__cfqq))
+-			n = &(*p)->rb_left;
+-		else if (cfq_class_rt(cfqq) < cfq_class_rt(__cfqq))
+-			n = &(*p)->rb_right;
+-		else if (cfq_class_idle(cfqq) < cfq_class_idle(__cfqq))
+-			n = &(*p)->rb_left;
+-		else if (cfq_class_idle(cfqq) > cfq_class_idle(__cfqq))
+-			n = &(*p)->rb_right;
+-		else if (rb_key < __cfqq->rb_key)
+-			n = &(*p)->rb_left;
+-		else
+-			n = &(*p)->rb_right;
+-
+-		if (n == &(*p)->rb_right)
+-			left = 0;
+-
+-		p = n;
+-	}
+-
+-	if (left)
+-		cfqd->service_tree.left = &cfqq->rb_node;
+-
+-	cfqq->rb_key = rb_key;
+-	rb_link_node(&cfqq->rb_node, parent, p);
+-	rb_insert_color(&cfqq->rb_node, &cfqd->service_tree.rb);
+-}
+-
+ static struct cfq_queue *
+ cfq_prio_tree_lookup(struct cfq_data *cfqd, struct rb_root *root,
+ 		     sector_t sector, struct rb_node **ret_parent,
+@@ -620,57 +395,34 @@ static void cfq_prio_tree_add(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ 		cfqq->p_root = NULL;
+ }
+ 
+-/*
+- * Update cfqq's position in the service tree.
+- */
+-static void cfq_resort_rr_list(struct cfq_data *cfqd, struct cfq_queue *cfqq)
++/* An active ioq is being reset. A chance to do cic related stuff. */
++static void cfq_active_ioq_reset(struct request_queue *q, void *sched_queue)
+ {
+-	/*
+-	 * Resorting requires the cfqq to be on the RR list already.
+-	 */
+-	if (cfq_cfqq_on_rr(cfqq)) {
+-		cfq_service_tree_add(cfqd, cfqq, 0);
+-		cfq_prio_tree_add(cfqd, cfqq);
+-	}
+-}
++	struct cfq_data *cfqd = q->elevator->elevator_data;
++	struct cfq_queue *cfqq = sched_queue;
+ 
+-/*
+- * add to busy list of queues for service, trying to be fair in ordering
+- * the pending list according to last request service
+- */
+-static void cfq_add_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+-{
+-	cfq_log_cfqq(cfqd, cfqq, "add_to_rr");
+-	BUG_ON(cfq_cfqq_on_rr(cfqq));
+-	cfq_mark_cfqq_on_rr(cfqq);
+-	cfqd->busy_queues++;
+-	if (cfq_class_rt(cfqq))
+-		cfqd->busy_rt_queues++;
++	if (cfqd->active_cic) {
++		put_io_context(cfqd->active_cic->ioc);
++		cfqd->active_cic = NULL;
++	}
+ 
+-	cfq_resort_rr_list(cfqd, cfqq);
++	/* Resort the cfqq in prio tree */
++	if (cfqq)
++		cfq_prio_tree_add(cfqd, cfqq);
+ }
+ 
+-/*
+- * Called when the cfqq no longer has requests pending, remove it from
+- * the service tree.
+- */
+-static void cfq_del_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
++/* An ioq has been set as active one. */
++static void cfq_active_ioq_set(struct request_queue *q, void *sched_queue,
++				int coop)
+ {
+-	cfq_log_cfqq(cfqd, cfqq, "del_from_rr");
+-	BUG_ON(!cfq_cfqq_on_rr(cfqq));
+-	cfq_clear_cfqq_on_rr(cfqq);
++	struct cfq_queue *cfqq = sched_queue;
+ 
+-	if (!RB_EMPTY_NODE(&cfqq->rb_node))
+-		cfq_rb_erase(&cfqq->rb_node, &cfqd->service_tree);
+-	if (cfqq->p_root) {
+-		rb_erase(&cfqq->p_node, cfqq->p_root);
+-		cfqq->p_root = NULL;
+-	}
++	cfqq->slice_dispatch = 0;
+ 
+-	BUG_ON(!cfqd->busy_queues);
+-	cfqd->busy_queues--;
+-	if (cfq_class_rt(cfqq))
+-		cfqd->busy_rt_queues--;
++	cfq_clear_cfqq_must_alloc_slice(cfqq);
++	cfq_clear_cfqq_fifo_expire(cfqq);
++	if (!coop)
++		cfq_clear_cfqq_coop(cfqq);
+ }
+ 
+ /*
+@@ -679,7 +431,6 @@ static void cfq_del_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ static void cfq_del_rq_rb(struct request *rq)
+ {
+ 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
+-	struct cfq_data *cfqd = cfqq->cfqd;
+ 	const int sync = rq_is_sync(rq);
+ 
+ 	BUG_ON(!cfqq->queued[sync]);
+@@ -687,8 +438,17 @@ static void cfq_del_rq_rb(struct request *rq)
+ 
+ 	elv_rb_del(&cfqq->sort_list, rq);
+ 
+-	if (cfq_cfqq_on_rr(cfqq) && RB_EMPTY_ROOT(&cfqq->sort_list))
+-		cfq_del_cfqq_rr(cfqd, cfqq);
++	/*
++	 * If this was last request in the queue, remove this queue from
++	 * prio trees. For last request nr_queued count will still be 1 as
++	 * elevator fair queuing layer is yet to do the accounting.
++	 */
++	if (elv_ioq_nr_queued(cfqq->ioq) == 1) {
++		if (cfqq->p_root) {
++			rb_erase(&cfqq->p_node, cfqq->p_root);
++			cfqq->p_root = NULL;
++		}
++	}
+ }
+ 
+ static void cfq_add_rq_rb(struct request *rq)
+@@ -706,9 +466,6 @@ static void cfq_add_rq_rb(struct request *rq)
+ 	while ((__alias = elv_rb_add(&cfqq->sort_list, rq)) != NULL)
+ 		cfq_dispatch_insert(cfqd->queue, __alias);
+ 
+-	if (!cfq_cfqq_on_rr(cfqq))
+-		cfq_add_cfqq_rr(cfqd, cfqq);
+-
+ 	/*
+ 	 * check if this request is a better next-serve candidate
+ 	 */
+@@ -756,23 +513,9 @@ static void cfq_activate_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 
+-	cfqd->rq_in_driver++;
+-	cfq_log_cfqq(cfqd, RQ_CFQQ(rq), "activate rq, drv=%d",
+-						cfqd->rq_in_driver);
+-
+ 	cfqd->last_position = rq->hard_sector + rq->hard_nr_sectors;
+ }
+ 
+-static void cfq_deactivate_request(struct request_queue *q, struct request *rq)
+-{
+-	struct cfq_data *cfqd = q->elevator->elevator_data;
+-
+-	WARN_ON(!cfqd->rq_in_driver);
+-	cfqd->rq_in_driver--;
+-	cfq_log_cfqq(cfqd, RQ_CFQQ(rq), "deactivate rq, drv=%d",
+-						cfqd->rq_in_driver);
+-}
+-
+ static void cfq_remove_request(struct request *rq)
+ {
+ 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
+@@ -783,7 +526,6 @@ static void cfq_remove_request(struct request *rq)
+ 	list_del_init(&rq->queuelist);
+ 	cfq_del_rq_rb(rq);
+ 
+-	cfqq->cfqd->rq_queued--;
+ 	if (rq_is_meta(rq)) {
+ 		WARN_ON(!cfqq->meta_pending);
+ 		cfqq->meta_pending--;
+@@ -857,93 +599,21 @@ static int cfq_allow_merge(struct request_queue *q, struct request *rq,
+ 	return 0;
+ }
+ 
+-static void __cfq_set_active_queue(struct cfq_data *cfqd,
+-				   struct cfq_queue *cfqq)
+-{
+-	if (cfqq) {
+-		cfq_log_cfqq(cfqd, cfqq, "set_active");
+-		cfqq->slice_end = 0;
+-		cfqq->slice_dispatch = 0;
+-
+-		cfq_clear_cfqq_wait_request(cfqq);
+-		cfq_clear_cfqq_must_dispatch(cfqq);
+-		cfq_clear_cfqq_must_alloc_slice(cfqq);
+-		cfq_clear_cfqq_fifo_expire(cfqq);
+-		cfq_mark_cfqq_slice_new(cfqq);
+-
+-		del_timer(&cfqd->idle_slice_timer);
+-	}
+-
+-	cfqd->active_queue = cfqq;
+-}
+-
+ /*
+  * current cfqq expired its slice (or was too idle), select new one
+  */
+ static void
+-__cfq_slice_expired(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+-		    int timed_out)
++__cfq_slice_expired(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ {
+-	cfq_log_cfqq(cfqd, cfqq, "slice expired t=%d", timed_out);
+-
+-	if (cfq_cfqq_wait_request(cfqq))
+-		del_timer(&cfqd->idle_slice_timer);
+-
+-	cfq_clear_cfqq_wait_request(cfqq);
+-
+-	/*
+-	 * store what was left of this slice, if the queue idled/timed out
+-	 */
+-	if (timed_out && !cfq_cfqq_slice_new(cfqq)) {
+-		cfqq->slice_resid = cfqq->slice_end - jiffies;
+-		cfq_log_cfqq(cfqd, cfqq, "resid=%ld", cfqq->slice_resid);
+-	}
+-
+-	cfq_resort_rr_list(cfqd, cfqq);
+-
+-	if (cfqq == cfqd->active_queue)
+-		cfqd->active_queue = NULL;
+-
+-	if (cfqd->active_cic) {
+-		put_io_context(cfqd->active_cic->ioc);
+-		cfqd->active_cic = NULL;
+-	}
++	__elv_ioq_slice_expired(cfqd->queue, cfqq->ioq);
+ }
+ 
+-static inline void cfq_slice_expired(struct cfq_data *cfqd, int timed_out)
++static inline void cfq_slice_expired(struct cfq_data *cfqd)
+ {
+-	struct cfq_queue *cfqq = cfqd->active_queue;
++	struct cfq_queue *cfqq = elv_active_sched_queue(cfqd->queue->elevator);
+ 
+ 	if (cfqq)
+-		__cfq_slice_expired(cfqd, cfqq, timed_out);
+-}
+-
+-/*
+- * Get next queue for service. Unless we have a queue preemption,
+- * we'll simply select the first cfqq in the service tree.
+- */
+-static struct cfq_queue *cfq_get_next_queue(struct cfq_data *cfqd)
+-{
+-	if (RB_EMPTY_ROOT(&cfqd->service_tree.rb))
+-		return NULL;
+-
+-	return cfq_rb_first(&cfqd->service_tree);
+-}
+-
+-/*
+- * Get and set a new active queue for service.
+- */
+-static struct cfq_queue *cfq_set_active_queue(struct cfq_data *cfqd,
+-					      struct cfq_queue *cfqq)
+-{
+-	if (!cfqq) {
+-		cfqq = cfq_get_next_queue(cfqd);
+-		if (cfqq)
+-			cfq_clear_cfqq_coop(cfqq);
+-	}
+-
+-	__cfq_set_active_queue(cfqd, cfqq);
+-	return cfqq;
++		__cfq_slice_expired(cfqd, cfqq);
+ }
+ 
+ static inline sector_t cfq_dist_from_last(struct cfq_data *cfqd,
+@@ -1020,11 +690,12 @@ static struct cfq_queue *cfqq_close(struct cfq_data *cfqd,
+  * associated with the I/O issued by cur_cfqq.  I'm not sure this is a valid
+  * assumption.
+  */
+-static struct cfq_queue *cfq_close_cooperator(struct cfq_data *cfqd,
+-					      struct cfq_queue *cur_cfqq,
++static struct io_queue *cfq_close_cooperator(struct request_queue *q,
++					      void *cur_sched_queue,
+ 					      int probe)
+ {
+-	struct cfq_queue *cfqq;
++	struct cfq_queue *cur_cfqq = cur_sched_queue, *cfqq;
++	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 
+ 	/*
+ 	 * A valid cfq_io_context is necessary to compare requests against
+@@ -1047,38 +718,18 @@ static struct cfq_queue *cfq_close_cooperator(struct cfq_data *cfqd,
+ 
+ 	if (!probe)
+ 		cfq_mark_cfqq_coop(cfqq);
+-	return cfqq;
++	return cfqq->ioq;
+ }
+ 
+-static void cfq_arm_slice_timer(struct cfq_data *cfqd)
++static void cfq_arm_slice_timer(struct request_queue *q, void *sched_queue)
+ {
+-	struct cfq_queue *cfqq = cfqd->active_queue;
++	struct cfq_data *cfqd = q->elevator->elevator_data;
++	struct cfq_queue *cfqq = sched_queue;
+ 	struct cfq_io_context *cic;
+ 	unsigned long sl;
+ 
+-	/*
+-	 * SSD device without seek penalty, disable idling. But only do so
+-	 * for devices that support queuing, otherwise we still have a problem
+-	 * with sync vs async workloads.
+-	 */
+-	if (blk_queue_nonrot(cfqd->queue) && cfqd->hw_tag)
+-		return;
+-
+ 	WARN_ON(!RB_EMPTY_ROOT(&cfqq->sort_list));
+-	WARN_ON(cfq_cfqq_slice_new(cfqq));
+-
+-	/*
+-	 * idle is disabled, either manually or by past process history
+-	 */
+-	if (!cfqd->cfq_slice_idle || !cfq_cfqq_idle_window(cfqq))
+-		return;
+-
+-	/*
+-	 * still requests with the driver, don't idle
+-	 */
+-	if (cfqd->rq_in_driver)
+-		return;
+-
++	WARN_ON(elv_ioq_slice_new(cfqq->ioq));
+ 	/*
+ 	 * task has exited, don't wait
+ 	 */
+@@ -1086,18 +737,18 @@ static void cfq_arm_slice_timer(struct cfq_data *cfqd)
+ 	if (!cic || !atomic_read(&cic->ioc->nr_tasks))
+ 		return;
+ 
+-	cfq_mark_cfqq_wait_request(cfqq);
+ 
++	elv_mark_ioq_wait_request(cfqq->ioq);
+ 	/*
+ 	 * we don't want to idle for seeks, but we do want to allow
+ 	 * fair distribution of slice time for a process doing back-to-back
+ 	 * seeks. so allow a little bit of time for him to submit a new rq
+ 	 */
+-	sl = cfqd->cfq_slice_idle;
++	sl = elv_get_slice_idle(q->elevator);
+ 	if (sample_valid(cic->seek_samples) && CIC_SEEKY(cic))
+ 		sl = min(sl, msecs_to_jiffies(CFQ_MIN_TT));
+ 
+-	mod_timer(&cfqd->idle_slice_timer, jiffies + sl);
++	elv_mod_idle_slice_timer(q->elevator, jiffies + sl);
+ 	cfq_log_cfqq(cfqd, cfqq, "arm_idle: %lu", sl);
+ }
+ 
+@@ -1106,13 +757,12 @@ static void cfq_arm_slice_timer(struct cfq_data *cfqd)
+  */
+ static void cfq_dispatch_insert(struct request_queue *q, struct request *rq)
+ {
+-	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
++	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 
+-	cfq_log_cfqq(cfqd, cfqq, "dispatch_insert");
++	cfq_log_cfqq(cfqd, cfqq, "dispatch_insert sect=%d", rq->nr_sectors);
+ 
+ 	cfq_remove_request(rq);
+-	cfqq->dispatched++;
+ 	elv_dispatch_sort(q, rq);
+ 
+ 	if (cfq_cfqq_sync(cfqq))
+@@ -1150,78 +800,11 @@ static inline int
+ cfq_prio_to_maxrq(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ {
+ 	const int base_rq = cfqd->cfq_slice_async_rq;
++	unsigned short ioprio = elv_ioq_ioprio(cfqq->ioq);
+ 
+-	WARN_ON(cfqq->ioprio >= IOPRIO_BE_NR);
++	WARN_ON(ioprio >= IOPRIO_BE_NR);
+ 
+-	return 2 * (base_rq + base_rq * (CFQ_PRIO_LISTS - 1 - cfqq->ioprio));
+-}
+-
+-/*
+- * Select a queue for service. If we have a current active queue,
+- * check whether to continue servicing it, or retrieve and set a new one.
+- */
+-static struct cfq_queue *cfq_select_queue(struct cfq_data *cfqd)
+-{
+-	struct cfq_queue *cfqq, *new_cfqq = NULL;
+-
+-	cfqq = cfqd->active_queue;
+-	if (!cfqq)
+-		goto new_queue;
+-
+-	/*
+-	 * The active queue has run out of time, expire it and select new.
+-	 */
+-	if (cfq_slice_used(cfqq) && !cfq_cfqq_must_dispatch(cfqq))
+-		goto expire;
+-
+-	/*
+-	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
+-	 * cfqq.
+-	 */
+-	if (!cfq_class_rt(cfqq) && cfqd->busy_rt_queues) {
+-		/*
+-		 * We simulate this as cfqq timed out so that it gets to bank
+-		 * the remaining of its time slice.
+-		 */
+-		cfq_log_cfqq(cfqd, cfqq, "preempt");
+-		cfq_slice_expired(cfqd, 1);
+-		goto new_queue;
+-	}
+-
+-	/*
+-	 * The active queue has requests and isn't expired, allow it to
+-	 * dispatch.
+-	 */
+-	if (!RB_EMPTY_ROOT(&cfqq->sort_list))
+-		goto keep_queue;
+-
+-	/*
+-	 * If another queue has a request waiting within our mean seek
+-	 * distance, let it run.  The expire code will check for close
+-	 * cooperators and put the close queue at the front of the service
+-	 * tree.
+-	 */
+-	new_cfqq = cfq_close_cooperator(cfqd, cfqq, 0);
+-	if (new_cfqq)
+-		goto expire;
+-
+-	/*
+-	 * No requests pending. If the active queue still has requests in
+-	 * flight or is idling for a new request, allow either of these
+-	 * conditions to happen (or time out) before selecting a new queue.
+-	 */
+-	if (timer_pending(&cfqd->idle_slice_timer) ||
+-	    (cfqq->dispatched && cfq_cfqq_idle_window(cfqq))) {
+-		cfqq = NULL;
+-		goto keep_queue;
+-	}
+-
+-expire:
+-	cfq_slice_expired(cfqd, 0);
+-new_queue:
+-	cfqq = cfq_set_active_queue(cfqd, new_cfqq);
+-keep_queue:
+-	return cfqq;
++	return 2 * (base_rq + base_rq * (CFQ_PRIO_LISTS - 1 - ioprio));
+ }
+ 
+ static int __cfq_forced_dispatch_cfqq(struct cfq_queue *cfqq)
+@@ -1246,12 +829,14 @@ static int cfq_forced_dispatch(struct cfq_data *cfqd)
+ 	struct cfq_queue *cfqq;
+ 	int dispatched = 0;
+ 
+-	while ((cfqq = cfq_rb_first(&cfqd->service_tree)) != NULL)
++	while ((cfqq = elv_select_sched_queue(cfqd->queue, 1)) != NULL)
+ 		dispatched += __cfq_forced_dispatch_cfqq(cfqq);
+ 
+-	cfq_slice_expired(cfqd, 0);
++	/* This probably is redundant now. above loop will should make sure
++	 * that all the busy queues have expired */
++	cfq_slice_expired(cfqd);
+ 
+-	BUG_ON(cfqd->busy_queues);
++	BUG_ON(elv_nr_busy_ioq(cfqd->queue->elevator));
+ 
+ 	cfq_log(cfqd, "forced_dispatch=%d\n", dispatched);
+ 	return dispatched;
+@@ -1297,13 +882,10 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
+ 	struct cfq_queue *cfqq;
+ 	unsigned int max_dispatch;
+ 
+-	if (!cfqd->busy_queues)
+-		return 0;
+-
+ 	if (unlikely(force))
+ 		return cfq_forced_dispatch(cfqd);
+ 
+-	cfqq = cfq_select_queue(cfqd);
++	cfqq = elv_select_sched_queue(q, 0);
+ 	if (!cfqq)
+ 		return 0;
+ 
+@@ -1320,7 +902,7 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
+ 	/*
+ 	 * Does this cfqq already have too much IO in flight?
+ 	 */
+-	if (cfqq->dispatched >= max_dispatch) {
++	if (elv_ioq_nr_dispatched(cfqq->ioq) >= max_dispatch) {
+ 		/*
+ 		 * idle queue must always only have a single IO in flight
+ 		 */
+@@ -1330,13 +912,13 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
+ 		/*
+ 		 * We have other queues, don't allow more IO from this one
+ 		 */
+-		if (cfqd->busy_queues > 1)
++		if (elv_nr_busy_ioq(q->elevator) > 1)
+ 			return 0;
+ 
+ 		/*
+ 		 * we are the only queue, allow up to 4 times of 'quantum'
+ 		 */
+-		if (cfqq->dispatched >= 4 * max_dispatch)
++		if (elv_ioq_nr_dispatched(cfqq->ioq) >= 4 * max_dispatch)
+ 			return 0;
+ 	}
+ 
+@@ -1345,51 +927,45 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
+ 	 */
+ 	cfq_dispatch_request(cfqd, cfqq);
+ 	cfqq->slice_dispatch++;
+-	cfq_clear_cfqq_must_dispatch(cfqq);
+ 
+ 	/*
+ 	 * expire an async queue immediately if it has used up its slice. idle
+ 	 * queue always expire after 1 dispatch round.
+ 	 */
+-	if (cfqd->busy_queues > 1 && ((!cfq_cfqq_sync(cfqq) &&
++	if (elv_nr_busy_ioq(q->elevator) > 1 && ((!cfq_cfqq_sync(cfqq) &&
+ 	    cfqq->slice_dispatch >= cfq_prio_to_maxrq(cfqd, cfqq)) ||
+ 	    cfq_class_idle(cfqq))) {
+-		cfqq->slice_end = jiffies + 1;
+-		cfq_slice_expired(cfqd, 0);
++		cfq_slice_expired(cfqd);
+ 	}
+ 
+ 	cfq_log(cfqd, "dispatched a request");
+ 	return 1;
+ }
+ 
+-/*
+- * task holds one reference to the queue, dropped when task exits. each rq
+- * in-flight on this queue also holds a reference, dropped when rq is freed.
+- *
+- * queue lock must be held here.
+- */
+-static void cfq_put_queue(struct cfq_queue *cfqq)
++static void cfq_free_cfq_queue(struct elevator_queue *e, void *sched_queue)
+ {
++	struct cfq_queue *cfqq = sched_queue;
+ 	struct cfq_data *cfqd = cfqq->cfqd;
+ 
+-	BUG_ON(atomic_read(&cfqq->ref) <= 0);
+-
+-	if (!atomic_dec_and_test(&cfqq->ref))
+-		return;
++	BUG_ON(!cfqq);
+ 
+-	cfq_log_cfqq(cfqd, cfqq, "put_queue");
++	cfq_log_cfqq(cfqd, cfqq, "free_queue");
+ 	BUG_ON(rb_first(&cfqq->sort_list));
+ 	BUG_ON(cfqq->allocated[READ] + cfqq->allocated[WRITE]);
+-	BUG_ON(cfq_cfqq_on_rr(cfqq));
+ 
+-	if (unlikely(cfqd->active_queue == cfqq)) {
+-		__cfq_slice_expired(cfqd, cfqq, 0);
+-		cfq_schedule_dispatch(cfqd);
++	if (unlikely(cfqq_is_active_queue(cfqq))) {
++		__cfq_slice_expired(cfqd, cfqq);
++		elv_schedule_dispatch(cfqd->queue);
+ 	}
+ 
+ 	kmem_cache_free(cfq_pool, cfqq);
+ }
+ 
++static inline void cfq_put_queue(struct cfq_queue *cfqq)
++{
++	elv_put_ioq(cfqq->ioq);
++}
++
+ /*
+  * Must always be called with the rcu_read_lock() held
+  */
+@@ -1477,9 +1053,9 @@ static void cfq_free_io_context(struct io_context *ioc)
+ 
+ static void cfq_exit_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ {
+-	if (unlikely(cfqq == cfqd->active_queue)) {
+-		__cfq_slice_expired(cfqd, cfqq, 0);
+-		cfq_schedule_dispatch(cfqd);
++	if (unlikely(cfqq == elv_active_sched_queue(cfqd->queue->elevator))) {
++		__cfq_slice_expired(cfqd, cfqq);
++		elv_schedule_dispatch(cfqd->queue);
+ 	}
+ 
+ 	cfq_put_queue(cfqq);
+@@ -1549,11 +1125,11 @@ static struct cfq_io_context *
+ cfq_alloc_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
+ {
+ 	struct cfq_io_context *cic;
++	struct request_queue *q = cfqd->queue;
+ 
+ 	cic = kmem_cache_alloc_node(cfq_ioc_pool, gfp_mask | __GFP_ZERO,
+-							cfqd->queue->node);
++							q->node);
+ 	if (cic) {
+-		cic->last_end_request = jiffies;
+ 		INIT_LIST_HEAD(&cic->queue_list);
+ 		INIT_HLIST_NODE(&cic->cic_list);
+ 		cic->dtor = cfq_free_io_context;
+@@ -1567,7 +1143,7 @@ cfq_alloc_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
+ static void cfq_init_prio_data(struct cfq_queue *cfqq, struct io_context *ioc)
+ {
+ 	struct task_struct *tsk = current;
+-	int ioprio_class;
++	int ioprio_class, ioprio;
+ 
+ 	if (!cfq_cfqq_prio_changed(cfqq))
+ 		return;
+@@ -1580,30 +1156,33 @@ static void cfq_init_prio_data(struct cfq_queue *cfqq, struct io_context *ioc)
+ 		/*
+ 		 * no prio set, inherit CPU scheduling settings
+ 		 */
+-		cfqq->ioprio = task_nice_ioprio(tsk);
+-		cfqq->ioprio_class = task_nice_ioclass(tsk);
++		ioprio = task_nice_ioprio(tsk);
++		ioprio_class = task_nice_ioclass(tsk);
+ 		break;
+ 	case IOPRIO_CLASS_RT:
+-		cfqq->ioprio = task_ioprio(ioc);
+-		cfqq->ioprio_class = IOPRIO_CLASS_RT;
++		ioprio = task_ioprio(ioc);
++		ioprio_class = IOPRIO_CLASS_RT;
+ 		break;
+ 	case IOPRIO_CLASS_BE:
+-		cfqq->ioprio = task_ioprio(ioc);
+-		cfqq->ioprio_class = IOPRIO_CLASS_BE;
++		ioprio = task_ioprio(ioc);
++		ioprio_class = IOPRIO_CLASS_BE;
+ 		break;
+ 	case IOPRIO_CLASS_IDLE:
+-		cfqq->ioprio_class = IOPRIO_CLASS_IDLE;
+-		cfqq->ioprio = 7;
+-		cfq_clear_cfqq_idle_window(cfqq);
++		ioprio_class = IOPRIO_CLASS_IDLE;
++		ioprio = 7;
++		elv_clear_ioq_idle_window(cfqq->ioq);
+ 		break;
+ 	}
+ 
++	elv_ioq_set_ioprio_class(cfqq->ioq, ioprio_class);
++	elv_ioq_set_ioprio(cfqq->ioq, ioprio);
++
+ 	/*
+ 	 * keep track of original prio settings in case we have to temporarily
+ 	 * elevate the priority of this queue
+ 	 */
+-	cfqq->org_ioprio = cfqq->ioprio;
+-	cfqq->org_ioprio_class = cfqq->ioprio_class;
++	cfqq->org_ioprio = ioprio;
++	cfqq->org_ioprio_class = ioprio_class;
+ 	cfq_clear_cfqq_prio_changed(cfqq);
+ }
+ 
+@@ -1612,11 +1191,12 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
+ 	struct cfq_data *cfqd = cic->key;
+ 	struct cfq_queue *cfqq;
+ 	unsigned long flags;
++	struct request_queue *q = cfqd->queue;
+ 
+ 	if (unlikely(!cfqd))
+ 		return;
+ 
+-	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
++	spin_lock_irqsave(q->queue_lock, flags);
+ 
+ 	cfqq = cic->cfqq[BLK_RW_ASYNC];
+ 	if (cfqq) {
+@@ -1633,7 +1213,7 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
+ 	if (cfqq)
+ 		cfq_mark_cfqq_prio_changed(cfqq);
+ 
+-	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
++	spin_unlock_irqrestore(q->queue_lock, flags);
+ }
+ 
+ static void cfq_ioc_set_ioprio(struct io_context *ioc)
+@@ -1644,11 +1224,12 @@ static void cfq_ioc_set_ioprio(struct io_context *ioc)
+ 
+ static struct cfq_queue *
+ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
+-		     struct io_context *ioc, gfp_t gfp_mask)
++				struct io_context *ioc, gfp_t gfp_mask)
+ {
+ 	struct cfq_queue *cfqq, *new_cfqq = NULL;
+ 	struct cfq_io_context *cic;
+-
++	struct request_queue *q = cfqd->queue;
++	struct io_queue *ioq = NULL, *new_ioq = NULL;
+ retry:
  	cic = cfq_cic_lookup(cfqd, ioc);
  	/* cic always exists here */
-@@ -1452,7 +1452,7 @@ cfq_get_queue(struct cfq_data *cfqd, struct bio *bio, int is_sync,
+@@ -1656,8 +1237,7 @@ retry:
+ 
+ 	if (!cfqq) {
+ 		if (new_cfqq) {
+-			cfqq = new_cfqq;
+-			new_cfqq = NULL;
++			goto alloc_ioq;
+ 		} else if (gfp_mask & __GFP_WAIT) {
+ 			/*
+ 			 * Inform the allocator of the fact that we will
+@@ -1678,22 +1258,52 @@ retry:
+ 			if (!cfqq)
+ 				goto out;
+ 		}
++alloc_ioq:
++		if (new_ioq) {
++			ioq = new_ioq;
++			new_ioq = NULL;
++			cfqq = new_cfqq;
++			new_cfqq = NULL;
++		} else if (gfp_mask & __GFP_WAIT) {
++			/*
++			 * Inform the allocator of the fact that we will
++			 * just repeat this allocation if it fails, to allow
++			 * the allocator to do whatever it needs to attempt to
++			 * free memory.
++			 */
++			spin_unlock_irq(q->queue_lock);
++			new_ioq = elv_alloc_ioq(q,
++					gfp_mask | __GFP_NOFAIL | __GFP_ZERO);
++			spin_lock_irq(q->queue_lock);
++			goto retry;
++		} else {
++			ioq = elv_alloc_ioq(q, gfp_mask | __GFP_ZERO);
++			if (!ioq) {
++				kmem_cache_free(cfq_pool, cfqq);
++				cfqq = NULL;
++				goto out;
++			}
++		}
+ 
+-		RB_CLEAR_NODE(&cfqq->rb_node);
++		/*
++		 * Both cfqq and ioq objects allocated. Do the initializations
++		 * now.
++		 */
+ 		RB_CLEAR_NODE(&cfqq->p_node);
+ 		INIT_LIST_HEAD(&cfqq->fifo);
+-
+-		atomic_set(&cfqq->ref, 0);
+ 		cfqq->cfqd = cfqd;
+ 
+ 		cfq_mark_cfqq_prio_changed(cfqq);
+ 
++		cfqq->ioq = ioq;
+ 		cfq_init_prio_data(cfqq, ioc);
++		elv_init_ioq(q->elevator, ioq, cfqq, cfqq->org_ioprio_class,
++				cfqq->org_ioprio, is_sync);
+ 
+ 		if (is_sync) {
+ 			if (!cfq_class_idle(cfqq))
+-				cfq_mark_cfqq_idle_window(cfqq);
+-			cfq_mark_cfqq_sync(cfqq);
++				elv_mark_ioq_idle_window(cfqq->ioq);
++			elv_mark_ioq_sync(cfqq->ioq);
+ 		}
+ 		cfqq->pid = current->pid;
+ 		cfq_log_cfqq(cfqd, cfqq, "alloced");
+@@ -1702,38 +1312,28 @@ retry:
+ 	if (new_cfqq)
+ 		kmem_cache_free(cfq_pool, new_cfqq);
+ 
++	if (new_ioq)
++		elv_free_ioq(new_ioq);
++
+ out:
+ 	WARN_ON((gfp_mask & __GFP_WAIT) && !cfqq);
+ 	return cfqq;
+ }
+ 
+-static struct cfq_queue **
+-cfq_async_queue_prio(struct cfq_data *cfqd, int ioprio_class, int ioprio)
+-{
+-	switch (ioprio_class) {
+-	case IOPRIO_CLASS_RT:
+-		return &cfqd->async_cfqq[0][ioprio];
+-	case IOPRIO_CLASS_BE:
+-		return &cfqd->async_cfqq[1][ioprio];
+-	case IOPRIO_CLASS_IDLE:
+-		return &cfqd->async_idle_cfqq;
+-	default:
+-		BUG();
+-	}
+-}
+-
+ static struct cfq_queue *
+ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
+-	      gfp_t gfp_mask)
++					gfp_t gfp_mask)
+ {
+ 	const int ioprio = task_ioprio(ioc);
  	const int ioprio_class = task_ioprio_class(ioc);
- 	struct cfq_queue *async_cfqq = NULL;
+-	struct cfq_queue **async_cfqq = NULL;
++	struct cfq_queue *async_cfqq = NULL;
  	struct cfq_queue *cfqq = NULL;
--	struct io_group *iog = io_get_io_group(cfqd->queue, bio, 1);
-+	struct io_group *iog = io_get_io_group_bio(cfqd->queue, bio, 1);
++	struct io_group *iog = io_lookup_io_group_current(cfqd->queue);
  
  	if (!is_sync) {
- 		async_cfqq = io_group_async_queue_prio(iog, ioprio_class,
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 16f75ad..13c8161 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -42,7 +42,6 @@ struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
- void elv_release_ioq(struct elevator_queue *eq, struct io_queue **ioq_ptr);
- int elv_iosched_expire_ioq(struct request_queue *q, int slice_expired,
- 					int force);
--
- static inline int elv_prio_slice(struct elv_fq_data *efqd, int sync,
- 					unsigned short prio)
- {
-@@ -1087,11 +1086,69 @@ struct request_list *io_group_get_request_list(struct request_queue *q,
- {
- 	struct io_group *iog;
+-		async_cfqq = cfq_async_queue_prio(cfqd, ioprio_class, ioprio);
+-		cfqq = *async_cfqq;
++		async_cfqq = io_group_async_queue_prio(iog, ioprio_class,
++								ioprio);
++		cfqq = async_cfqq;
+ 	}
  
--	iog = io_get_io_group(q, bio, 1);
-+	iog = io_get_io_group_bio(q, bio, 1);
- 	BUG_ON(!iog);
- 	return &iog->rl;
+ 	if (!cfqq) {
+@@ -1742,15 +1342,11 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
+ 			return NULL;
+ 	}
+ 
+-	/*
+-	 * pin the queue now that it's allocated, scheduler exit will prune it
+-	 */
+-	if (!is_sync && !(*async_cfqq)) {
+-		atomic_inc(&cfqq->ref);
+-		*async_cfqq = cfqq;
+-	}
++	if (!is_sync && !async_cfqq)
++		io_group_set_async_queue(iog, ioprio_class, ioprio, cfqq->ioq);
+ 
+-	atomic_inc(&cfqq->ref);
++	/* ioc reference */
++	elv_get_ioq(cfqq->ioq);
+ 	return cfqq;
  }
  
-+/* Set io group congestion on and off thresholds */
-+void elv_io_group_congestion_threshold(struct request_queue *q,
-+						struct io_group *iog)
-+{
-+	int nr;
-+
-+	nr = q->nr_group_requests - (q->nr_group_requests / 8) + 1;
-+	if (nr > q->nr_group_requests)
-+		nr = q->nr_group_requests;
-+	iog->nr_congestion_on = nr;
-+
-+	nr = q->nr_group_requests - (q->nr_group_requests / 8)
-+			- (q->nr_group_requests / 16) - 1;
-+	if (nr < 1)
-+		nr = 1;
-+	iog->nr_congestion_off = nr;
-+}
-+
-+static inline int elv_is_iog_congested(struct request_queue *q,
-+					struct io_group *iog, int sync)
-+{
-+	if (iog->rl.count[sync] >= iog->nr_congestion_on)
-+		return 1;
-+	return 0;
-+}
-+
-+/* Determine if io group page maps to is congested or not */
-+int elv_io_group_congested(struct request_queue *q, struct page *page, int sync)
-+{
-+	struct io_group *iog;
-+	int ret = 0;
-+
-+	rcu_read_lock();
-+
-+	iog = io_get_io_group(q, page, 0);
-+
-+	if (!iog) {
-+		/*
-+		 * Either cgroup got deleted or this is first request in the
-+		 * group and associated io group object has not been created
-+		 * yet. Map it to root group.
-+		 *
-+		 * TODO: Fix the case of group not created yet.
-+		 */
-+		iog = q->elevator->efqd.root_group;
-+	}
-+
-+	ret = elv_is_iog_congested(q, iog, sync);
-+	if (ret)
-+		elv_log_iog(&q->elevator->efqd, iog, "iog congested=%d sync=%d"
-+			" rl.count[sync]=%d nr_group_requests=%d",
-+			ret, sync, iog->rl.count[sync], q->nr_group_requests);
-+
-+	rcu_read_unlock();
-+	return ret;
-+}
-+
-+
- /*
-  * Search the bfq_group for bfqd into the hash table (by now only a list)
-  * of bgrp.  Must be called under rcu_read_lock().
-@@ -1265,11 +1322,13 @@ static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
-  * to the root has already an allocated group on @bfqd.
-  */
- struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
--					struct cgroup *cgroup, struct bio *bio)
-+					struct cgroup *cgroup)
+@@ -1829,6 +1425,7 @@ static int cfq_cic_link(struct cfq_data *cfqd, struct io_context *ioc,
  {
- 	struct io_cgroup *iocg;
- 	struct io_group *iog, *leaf = NULL, *prev = NULL;
- 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
-+	unsigned int major, minor;
-+	struct backing_dev_info *bdi = &q->backing_dev_info;
+ 	unsigned long flags;
+ 	int ret;
++	struct request_queue *q = cfqd->queue;
  
- 	for (; cgroup != NULL; cgroup = cgroup->parent) {
- 		iocg = cgroup_to_io_cgroup(cgroup);
-@@ -1308,6 +1367,7 @@ struct io_group *io_group_chain_alloc(struct request_queue *q, void *key,
- 		elv_get_iog(iog);
+ 	ret = radix_tree_preload(gfp_mask);
+ 	if (!ret) {
+@@ -1845,9 +1442,9 @@ static int cfq_cic_link(struct cfq_data *cfqd, struct io_context *ioc,
+ 		radix_tree_preload_end();
  
- 		blk_init_request_list(&iog->rl);
-+		elv_io_group_congestion_threshold(q, iog);
+ 		if (!ret) {
+-			spin_lock_irqsave(cfqd->queue->queue_lock, flags);
++			spin_lock_irqsave(q->queue_lock, flags);
+ 			list_add(&cic->queue_list, &cfqd->cic_list);
+-			spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
++			spin_unlock_irqrestore(q->queue_lock, flags);
+ 		}
+ 	}
  
- 		if (leaf == NULL) {
- 			leaf = iog;
-@@ -1412,7 +1472,7 @@ void io_group_chain_link(struct request_queue *q, void *key,
-  */
- struct io_group *io_find_alloc_group(struct request_queue *q,
- 			struct cgroup *cgroup, struct elv_fq_data *efqd,
--			int create, struct bio *bio)
-+			int create)
+@@ -1867,10 +1464,11 @@ cfq_get_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
  {
- 	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
- 	struct io_group *iog = NULL;
-@@ -1431,7 +1491,7 @@ struct io_group *io_find_alloc_group(struct request_queue *q,
- 	if (iog != NULL || !create)
- 		goto end;
+ 	struct io_context *ioc = NULL;
+ 	struct cfq_io_context *cic;
++	struct request_queue *q = cfqd->queue;
  
--	iog = io_group_chain_alloc(q, key, cgroup, bio);
-+	iog = io_group_chain_alloc(q, key, cgroup);
- 	if (iog != NULL)
- 		io_group_chain_link(q, key, cgroup, iog, efqd);
+ 	might_sleep_if(gfp_mask & __GFP_WAIT);
  
-@@ -1440,46 +1500,60 @@ end:
- 	return iog;
- }
- 
--/* Map a bio to respective cgroup. Null return means, map it to root cgroup */
--static inline struct cgroup *get_cgroup_from_bio(struct bio *bio)
-+/* Map a page to respective cgroup. Null return means, map it to root cgroup */
-+static inline struct cgroup *get_cgroup_from_page(struct page *page)
- {
- 	unsigned long bio_cgroup_id;
- 	struct cgroup *cgroup;
- 
--	/* blk_get_request can reach here without passing a bio */
--	if (!bio)
-+	bio_cgroup_id = get_blkio_cgroup_id_page(page);
-+
-+	if (!bio_cgroup_id)
+-	ioc = get_io_context(gfp_mask, cfqd->queue->node);
++	ioc = get_io_context(gfp_mask, q->node);
+ 	if (!ioc)
  		return NULL;
  
-+	cgroup = blkio_cgroup_lookup(bio_cgroup_id);
-+	return cgroup;
-+}
-+
-+
-+struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
-+					int create)
-+{
-+	struct page *page = NULL;
-+
-+	/*
-+	 * Determine the group from task context. Even calls from
-+	 * blk_get_request() which don't have any bio info will be mapped
-+	 * to the task's group
-+	 */
-+	if (!bio)
-+		goto sync;
-+
- 	if (bio_barrier(bio)) {
- 		/*
- 		 * Map barrier requests to root group. May be more special
- 		 * bio cases should come here
- 		 */
--		return NULL;
-+		return q->elevator->efqd.root_group;
- 	}
- 
--#ifdef CONFIG_TRACK_ASYNC_CONTEXT
--	if (elv_bio_sync(bio)) {
--		/* sync io. Determine cgroup from submitting task context. */
--		cgroup = task_cgroup(current, io_subsys_id);
--		return cgroup;
--	}
-+	/* Map the sync bio to the right group using task context */
-+	if (elv_bio_sync(bio))
-+		goto sync;
- 
--	/* Async io. Determine cgroup from with cgroup id stored in page */
--	bio_cgroup_id = get_blkio_cgroup_id(bio);
+@@ -1889,7 +1487,6 @@ out:
+ 	smp_read_barrier_depends();
+ 	if (unlikely(ioc->ioprio_changed))
+ 		cfq_ioc_set_ioprio(ioc);
 -
--	if (!bio_cgroup_id)
--		return NULL;
--
--	cgroup = blkio_cgroup_lookup(bio_cgroup_id);
--#else
--	cgroup = task_cgroup(current, io_subsys_id);
-+#ifndef CONFIG_TRACK_ASYNC_CONTEXT
-+	goto sync;
- #endif
--	return cgroup;
-+	/* Determine the group from info stored in page */
-+	page = bio_iovec_idx(bio, 0)->bv_page;
-+	return io_get_io_group(q, page, create);
-+sync:
-+	return io_get_io_group(q, NULL, create);
+ 	return cic;
+ err_free:
+ 	cfq_cic_free(cic);
+@@ -1899,17 +1496,6 @@ err:
  }
-+EXPORT_SYMBOL(io_get_io_group_bio);
  
- /*
-- * Find the io group bio belongs to.
-+ * Find the io group page belongs to.
-  * If "create" is set, io group is created if it is not already present.
-  *
-  * Note: This function should be called with queue lock held. It returns
-@@ -1488,22 +1562,27 @@ static inline struct cgroup *get_cgroup_from_bio(struct bio *bio)
-  * needs to get hold of queue lock). So if somebody needs to use group
-  * pointer even after dropping queue lock, take a reference to the group
-  * before dropping queue lock.
-+ *
-+ * One can call it without queue lock with rcu read lock held for browsing
-+ * through the groups.
-  */
--struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
-+struct io_group *io_get_io_group(struct request_queue *q, struct page *page,
- 					int create)
+ static void
+-cfq_update_io_thinktime(struct cfq_data *cfqd, struct cfq_io_context *cic)
+-{
+-	unsigned long elapsed = jiffies - cic->last_end_request;
+-	unsigned long ttime = min(elapsed, 2UL * cfqd->cfq_slice_idle);
+-
+-	cic->ttime_samples = (7*cic->ttime_samples + 256) / 8;
+-	cic->ttime_total = (7*cic->ttime_total + 256*ttime) / 8;
+-	cic->ttime_mean = (cic->ttime_total + 128) / cic->ttime_samples;
+-}
+-
+-static void
+ cfq_update_io_seektime(struct cfq_data *cfqd, struct cfq_io_context *cic,
+ 		       struct request *rq)
  {
- 	struct cgroup *cgroup;
- 	struct io_group *iog;
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
- 
--	assert_spin_locked(q->queue_lock);
-+
-+	if (create)
-+		assert_spin_locked(q->queue_lock);
- 
- 	rcu_read_lock();
- 
--	if (!bio)
-+	if (!page)
- 		cgroup = task_cgroup(current, io_subsys_id);
- 	else
--		cgroup = get_cgroup_from_bio(bio);
-+		cgroup = get_cgroup_from_page(page);
- 
- 	if (!cgroup) {
- 		if (create)
-@@ -1518,7 +1597,7 @@ struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
- 		goto out;
- 	}
- 
--	iog = io_find_alloc_group(q, cgroup, efqd, create, bio);
-+	iog = io_find_alloc_group(q, cgroup, efqd, create);
- 	if (!iog) {
- 		if (create)
- 			iog = efqd->root_group;
-@@ -1570,6 +1649,7 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
- 		iog->sched_data.service_tree[i] = IO_SERVICE_TREE_INIT;
- 
- 	blk_init_request_list(&iog->rl);
-+	elv_io_group_congestion_threshold(q, iog);
- 
- 	iocg = &io_root_cgroup;
- 	spin_lock_irq(&iocg->lock);
-@@ -1578,6 +1658,10 @@ struct io_group *io_alloc_root_group(struct request_queue *q,
- 	iog->iocg_id = css_id(&iocg->css);
- 	spin_unlock_irq(&iocg->lock);
- 
-+#ifdef CONFIG_DEBUG_GROUP_IOSCHED
-+	io_group_path(iog, iog->path, sizeof(iog->path));
-+#endif
-+
- 	return iog;
+@@ -1940,57 +1526,41 @@ cfq_update_io_seektime(struct cfq_data *cfqd, struct cfq_io_context *cic,
  }
  
-@@ -1670,6 +1754,14 @@ void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
- 	task_unlock(tsk);
- }
- 
-+static void io_group_free_rcu(struct rcu_head *head)
-+{
-+	struct io_group *iog;
-+
-+	iog = container_of(head, struct io_group, rcu_head);
-+	kfree(iog);
-+}
-+
  /*
-  * This cleanup function does the last bit of things to destroy cgroup.
-  * It should only get called after io_destroy_group has been invoked.
-@@ -1693,7 +1785,13 @@ void io_group_cleanup(struct io_group *iog)
- 	BUG_ON(entity != NULL && entity->tree != NULL);
+- * Disable idle window if the process thinks too long or seeks so much that
+- * it doesn't matter
++ * Disable idle window if the process seeks so much that it doesn't matter
+  */
+-static void
+-cfq_update_idle_window(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+-		       struct cfq_io_context *cic)
++static int
++cfq_update_idle_window(struct elevator_queue *eq, void *cfqq,
++					struct request *rq)
+ {
+-	int old_idle, enable_idle;
++	struct cfq_io_context *cic = RQ_CIC(rq);
  
- 	iog->iocg_id = 0;
--	kfree(iog);
-+
-+	/*
-+	 * Wait for any rcu readers to exit before freeing up the group.
-+	 * Primarily useful when io_get_io_group() is called without queue
-+	 * lock to access some group data from bdi_congested_group() path.
-+	 */
-+	call_rcu(&iog->rcu_head, io_group_free_rcu);
+ 	/*
+-	 * Don't idle for async or idle io prio class
++	 * Enabling/Disabling idling based on thinktime has been moved
++	 * in common layer.
+ 	 */
+-	if (!cfq_cfqq_sync(cfqq) || cfq_class_idle(cfqq))
+-		return;
+-
+-	enable_idle = old_idle = cfq_cfqq_idle_window(cfqq);
+-
+-	if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
+-	    (cfqd->hw_tag && CIC_SEEKY(cic)))
+-		enable_idle = 0;
+-	else if (sample_valid(cic->ttime_samples)) {
+-		if (cic->ttime_mean > cfqd->cfq_slice_idle)
+-			enable_idle = 0;
+-		else
+-			enable_idle = 1;
+-	}
++	if (!atomic_read(&cic->ioc->nr_tasks) ||
++	    (elv_hw_tag(eq) && CIC_SEEKY(cic)))
++		return 0;
+ 
+-	if (old_idle != enable_idle) {
+-		cfq_log_cfqq(cfqd, cfqq, "idle=%d", enable_idle);
+-		if (enable_idle)
+-			cfq_mark_cfqq_idle_window(cfqq);
+-		else
+-			cfq_clear_cfqq_idle_window(cfqq);
+-	}
++	return 1;
  }
  
- void elv_put_iog(struct io_group *iog)
-@@ -1933,7 +2031,7 @@ int io_group_allow_merge(struct request *rq, struct bio *bio)
+ /*
+  * Check if new_cfqq should preempt the currently active queue. Return 0 for
+- * no or if we aren't sure, a 1 will cause a preempt.
++ * no or if we aren't sure, a 1 will cause a preemption attempt.
++ * Some of the preemption logic has been moved to common layer. Only cfq
++ * specific parts are left here.
+  */
+ static int
+-cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
+-		   struct request *rq)
++cfq_should_preempt(struct request_queue *q, void *new_cfqq, struct request *rq)
+ {
+-	struct cfq_queue *cfqq;
++	struct cfq_data *cfqd = q->elevator->elevator_data;
++	struct cfq_queue *cfqq = elv_active_sched_queue(q->elevator);
+ 
+-	cfqq = cfqd->active_queue;
+ 	if (!cfqq)
+ 		return 0;
+ 
+-	if (cfq_slice_used(cfqq))
++	if (elv_ioq_slice_used(cfqq->ioq))
  		return 1;
  
- 	/* Determine the io group of the bio submitting task */
--	iog = io_get_io_group(q, bio, 0);
-+	iog = io_get_io_group_bio(q, bio, 0);
- 	if (!iog) {
- 		/* May be task belongs to a differet cgroup for which io
- 		 * group has not been setup yet. */
-@@ -1973,7 +2071,7 @@ int elv_fq_set_request_ioq(struct request_queue *q, struct request *rq,
+ 	if (cfq_class_idle(new_cfqq))
+@@ -2013,13 +1583,7 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
+ 	if (rq_is_meta(rq) && !cfqq->meta_pending)
+ 		return 1;
  
- retry:
- 	/* Determine the io group request belongs to */
--	iog = io_get_io_group(q, bio, 1);
-+	iog = io_get_io_group_bio(q, bio, 1);
- 	BUG_ON(!iog);
- 
- 	/* Get the iosched queue */
-@@ -2066,7 +2164,7 @@ struct io_queue *elv_lookup_ioq_bio(struct request_queue *q, struct bio *bio)
- 	struct io_group *iog;
- 
- 	/* Determine the io group and io queue of the bio submitting task */
--	iog = io_get_io_group(q, bio, 0);
-+	iog = io_get_io_group_bio(q, bio, 0);
- 	if (!iog) {
- 		/* May be bio belongs to a cgroup for which io group has
- 		 * not been setup yet. */
-@@ -2133,7 +2231,14 @@ void io_free_root_group(struct elevator_queue *e)
- 	kfree(iog);
- }
- 
--struct io_group *io_get_io_group(struct request_queue *q, struct bio *bio,
-+struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
-+					int create)
-+{
-+	return q->elevator->efqd.root_group;
-+}
-+EXPORT_SYMBOL(io_get_io_group_bio);
-+
-+struct io_group *io_get_io_group(struct request_queue *q, struct page *page,
- 						int create)
- {
- 	return q->elevator->efqd.root_group;
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index c2f71d7..d60105f 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -258,8 +258,13 @@ struct io_group {
- 	/* Single ioq per group, used for noop, deadline, anticipatory */
- 	struct io_queue *ioq;
- 
-+	/* io group congestion on and off threshold for request descriptors */
-+	unsigned int nr_congestion_on;
-+	unsigned int nr_congestion_off;
-+
- 	/* request list associated with the group */
- 	struct request_list rl;
-+	struct rcu_head rcu_head;
- };
- 
- /**
-@@ -540,7 +545,8 @@ extern struct io_queue *elv_lookup_ioq_bio(struct request_queue *q,
- 						struct bio *bio);
- extern struct request_list *io_group_get_request_list(struct request_queue *q,
- 						struct bio *bio);
+-	/*
+-	 * Allow an RT request to pre-empt an ongoing non-RT cfqq timeslice.
+-	 */
+-	if (cfq_class_rt(new_cfqq) && !cfq_class_rt(cfqq))
+-		return 1;
 -
-+extern int elv_io_group_congested(struct request_queue *q, struct page *page,
-+					int sync);
- /* Returns single ioq associated with the io group. */
- static inline struct io_queue *io_group_ioq(struct io_group *iog)
- {
-@@ -672,6 +678,8 @@ extern void *io_group_async_queue_prio(struct io_group *iog, int ioprio_class,
- extern void io_group_set_async_queue(struct io_group *iog, int ioprio_class,
- 					int ioprio, struct io_queue *ioq);
- extern struct io_group *io_get_io_group(struct request_queue *q,
-+					struct page *page, int create);
-+extern struct io_group *io_get_io_group_bio(struct request_queue *q,
- 					struct bio *bio, int create);
- extern int elv_nr_busy_ioq(struct elevator_queue *e);
- extern struct io_queue *elv_alloc_ioq(struct request_queue *q, gfp_t gfp_mask);
-diff --git a/drivers/md/dm-table.c b/drivers/md/dm-table.c
-index 429b50b..8fe04f1 100644
---- a/drivers/md/dm-table.c
-+++ b/drivers/md/dm-table.c
-@@ -1000,7 +1000,8 @@ int dm_table_resume_targets(struct dm_table *t)
- 	return 0;
+-	if (!cfqd->active_cic || !cfq_cfqq_wait_request(cfqq))
++	if (!cfqd->active_cic || !elv_ioq_wait_request(cfqq->ioq))
+ 		return 0;
+ 
+ 	/*
+@@ -2033,29 +1597,10 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
  }
- 
--int dm_table_any_congested(struct dm_table *t, int bdi_bits)
-+int dm_table_any_congested(struct dm_table *t, int bdi_bits, struct page *page,
-+				int group)
- {
- 	struct dm_dev_internal *dd;
- 	struct list_head *devices = dm_table_get_devices(t);
-@@ -1010,9 +1011,11 @@ int dm_table_any_congested(struct dm_table *t, int bdi_bits)
- 		struct request_queue *q = bdev_get_queue(dd->dm_dev.bdev);
- 		char b[BDEVNAME_SIZE];
- 
--		if (likely(q))
--			r |= bdi_congested(&q->backing_dev_info, bdi_bits);
--		else
-+		if (likely(q)) {
-+			struct backing_dev_info *bdi = &q->backing_dev_info;
-+			r |= group ? bdi_congested_group(bdi, bdi_bits, page)
-+				: bdi_congested(bdi, bdi_bits);
-+		} else
- 			DMWARN_LIMIT("%s: any_congested: nonexistent device %s",
- 				     dm_device_name(t->md),
- 				     bdevname(dd->dm_dev.bdev, b));
-diff --git a/drivers/md/dm.c b/drivers/md/dm.c
-index 424f7b0..ef12cee 100644
---- a/drivers/md/dm.c
-+++ b/drivers/md/dm.c
-@@ -994,7 +994,8 @@ static void dm_unplug_all(struct request_queue *q)
- 	}
- }
- 
--static int dm_any_congested(void *congested_data, int bdi_bits)
-+static int dm_any_congested(void *congested_data, int bdi_bits,
-+					struct page *page, int group)
- {
- 	int r = bdi_bits;
- 	struct mapped_device *md = congested_data;
-@@ -1003,7 +1004,7 @@ static int dm_any_congested(void *congested_data, int bdi_bits)
- 	if (!test_bit(DMF_BLOCK_IO_FOR_SUSPEND, &md->flags)) {
- 		map = dm_get_table(md);
- 		if (map) {
--			r = dm_table_any_congested(map, bdi_bits);
-+			r = dm_table_any_congested(map, bdi_bits, page, group);
- 			dm_table_put(map);
- 		}
- 	}
-diff --git a/drivers/md/dm.h b/drivers/md/dm.h
-index a31506d..7efe4b4 100644
---- a/drivers/md/dm.h
-+++ b/drivers/md/dm.h
-@@ -46,7 +46,8 @@ struct list_head *dm_table_get_devices(struct dm_table *t);
- void dm_table_presuspend_targets(struct dm_table *t);
- void dm_table_postsuspend_targets(struct dm_table *t);
- int dm_table_resume_targets(struct dm_table *t);
--int dm_table_any_congested(struct dm_table *t, int bdi_bits);
-+int dm_table_any_congested(struct dm_table *t, int bdi_bits, struct page *page,
-+				int group);
  
  /*
-  * To check the return value from dm_table_find_target().
-diff --git a/drivers/md/linear.c b/drivers/md/linear.c
-index 7a36e38..ddf43dd 100644
---- a/drivers/md/linear.c
-+++ b/drivers/md/linear.c
-@@ -88,7 +88,7 @@ static void linear_unplug(struct request_queue *q)
- 	}
+- * cfqq preempts the active queue. if we allowed preempt with no slice left,
+- * let it have half of its nominal slice.
+- */
+-static void cfq_preempt_queue(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+-{
+-	cfq_log_cfqq(cfqd, cfqq, "preempt");
+-	cfq_slice_expired(cfqd, 1);
+-
+-	/*
+-	 * Put the new queue at the front of the of the current list,
+-	 * so we know that it will be selected next.
+-	 */
+-	BUG_ON(!cfq_cfqq_on_rr(cfqq));
+-
+-	cfq_service_tree_add(cfqd, cfqq, 1);
+-
+-	cfqq->slice_end = 0;
+-	cfq_mark_cfqq_slice_new(cfqq);
+-}
+-
+-/*
+  * Called when a new fs request (rq) is added (to cfqq). Check if there's
+  * something we should do about it
++ * After enqueuing the request whether queue should be preempted or kicked
++ * decision is taken by common layer.
+  */
+ static void
+ cfq_rq_enqueued(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+@@ -2063,45 +1608,12 @@ cfq_rq_enqueued(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+ {
+ 	struct cfq_io_context *cic = RQ_CIC(rq);
+ 
+-	cfqd->rq_queued++;
+ 	if (rq_is_meta(rq))
+ 		cfqq->meta_pending++;
+ 
+-	cfq_update_io_thinktime(cfqd, cic);
+ 	cfq_update_io_seektime(cfqd, cic, rq);
+-	cfq_update_idle_window(cfqd, cfqq, cic);
+ 
+ 	cic->last_request_pos = rq->sector + rq->nr_sectors;
+-
+-	if (cfqq == cfqd->active_queue) {
+-		/*
+-		 * Remember that we saw a request from this process, but
+-		 * don't start queuing just yet. Otherwise we risk seeing lots
+-		 * of tiny requests, because we disrupt the normal plugging
+-		 * and merging. If the request is already larger than a single
+-		 * page, let it rip immediately. For that case we assume that
+-		 * merging is already done. Ditto for a busy system that
+-		 * has other work pending, don't risk delaying until the
+-		 * idle timer unplug to continue working.
+-		 */
+-		if (cfq_cfqq_wait_request(cfqq)) {
+-			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
+-			    cfqd->busy_queues > 1) {
+-				del_timer(&cfqd->idle_slice_timer);
+-				blk_start_queueing(cfqd->queue);
+-			}
+-			cfq_mark_cfqq_must_dispatch(cfqq);
+-		}
+-	} else if (cfq_should_preempt(cfqd, cfqq, rq)) {
+-		/*
+-		 * not the active queue - expire current slice if it is
+-		 * idle and has expired it's mean thinktime or this new queue
+-		 * has some old slice time left and is of higher priority or
+-		 * this new queue is RT and the current one is BE
+-		 */
+-		cfq_preempt_queue(cfqd, cfqq);
+-		blk_start_queueing(cfqd->queue);
+-	}
  }
  
--static int linear_congested(void *data, int bits)
-+static int linear_congested(void *data, int bits, struct page *page, int group)
- {
- 	mddev_t *mddev = data;
- 	linear_conf_t *conf = mddev_to_conf(mddev);
-@@ -96,7 +96,10 @@ static int linear_congested(void *data, int bits)
+ static void cfq_insert_request(struct request_queue *q, struct request *rq)
+@@ -2119,84 +1631,17 @@ static void cfq_insert_request(struct request_queue *q, struct request *rq)
+ 	cfq_rq_enqueued(cfqd, cfqq, rq);
+ }
  
- 	for (i = 0; i < mddev->raid_disks && !ret ; i++) {
- 		struct request_queue *q = bdev_get_queue(conf->disks[i].rdev->bdev);
--		ret |= bdi_congested(&q->backing_dev_info, bits);
-+		struct backing_dev_info *bdi = &q->backing_dev_info;
+-/*
+- * Update hw_tag based on peak queue depth over 50 samples under
+- * sufficient load.
+- */
+-static void cfq_update_hw_tag(struct cfq_data *cfqd)
+-{
+-	if (cfqd->rq_in_driver > cfqd->rq_in_driver_peak)
+-		cfqd->rq_in_driver_peak = cfqd->rq_in_driver;
+-
+-	if (cfqd->rq_queued <= CFQ_HW_QUEUE_MIN &&
+-	    cfqd->rq_in_driver <= CFQ_HW_QUEUE_MIN)
+-		return;
+-
+-	if (cfqd->hw_tag_samples++ < 50)
+-		return;
+-
+-	if (cfqd->rq_in_driver_peak >= CFQ_HW_QUEUE_MIN)
+-		cfqd->hw_tag = 1;
+-	else
+-		cfqd->hw_tag = 0;
+-
+-	cfqd->hw_tag_samples = 0;
+-	cfqd->rq_in_driver_peak = 0;
+-}
+-
+ static void cfq_completed_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
+ 	struct cfq_data *cfqd = cfqq->cfqd;
+-	const int sync = rq_is_sync(rq);
+ 	unsigned long now;
+ 
+ 	now = jiffies;
+ 	cfq_log_cfqq(cfqd, cfqq, "complete");
+ 
+-	cfq_update_hw_tag(cfqd);
+-
+-	WARN_ON(!cfqd->rq_in_driver);
+-	WARN_ON(!cfqq->dispatched);
+-	cfqd->rq_in_driver--;
+-	cfqq->dispatched--;
+-
+ 	if (cfq_cfqq_sync(cfqq))
+ 		cfqd->sync_flight--;
+-
+-	if (!cfq_class_idle(cfqq))
+-		cfqd->last_end_request = now;
+-
+-	if (sync)
+-		RQ_CIC(rq)->last_end_request = now;
+-
+-	/*
+-	 * If this is the active queue, check if it needs to be expired,
+-	 * or if we want to idle in case it has no pending requests.
+-	 */
+-	if (cfqd->active_queue == cfqq) {
+-		const bool cfqq_empty = RB_EMPTY_ROOT(&cfqq->sort_list);
+-
+-		if (cfq_cfqq_slice_new(cfqq)) {
+-			cfq_set_prio_slice(cfqd, cfqq);
+-			cfq_clear_cfqq_slice_new(cfqq);
+-		}
+-		/*
+-		 * If there are no requests waiting in this queue, and
+-		 * there are other queues ready to issue requests, AND
+-		 * those other queues are issuing requests within our
+-		 * mean seek distance, give them a chance to run instead
+-		 * of idling.
+-		 */
+-		if (cfq_slice_used(cfqq) || cfq_class_idle(cfqq))
+-			cfq_slice_expired(cfqd, 1);
+-		else if (cfqq_empty && !cfq_close_cooperator(cfqd, cfqq, 1) &&
+-			 sync && !rq_noidle(rq))
+-			cfq_arm_slice_timer(cfqd);
+-	}
+-
+-	if (!cfqd->rq_in_driver)
+-		cfq_schedule_dispatch(cfqd);
+ }
+ 
+ /*
+@@ -2205,30 +1650,33 @@ static void cfq_completed_request(struct request_queue *q, struct request *rq)
+  */
+ static void cfq_prio_boost(struct cfq_queue *cfqq)
+ {
++	struct io_queue *ioq = cfqq->ioq;
 +
-+		ret |= group ? bdi_congested_group(bdi, bits, page) :
-+			bdi_congested(bdi, bits);
- 	}
- 	return ret;
- }
-diff --git a/drivers/md/multipath.c b/drivers/md/multipath.c
-index 41ced0c..9f25b21 100644
---- a/drivers/md/multipath.c
-+++ b/drivers/md/multipath.c
-@@ -192,7 +192,8 @@ static void multipath_status (struct seq_file *seq, mddev_t *mddev)
- 	seq_printf (seq, "]");
- }
- 
--static int multipath_congested(void *data, int bits)
-+static int multipath_congested(void *data, int bits, struct page *page,
-+					int group)
- {
- 	mddev_t *mddev = data;
- 	multipath_conf_t *conf = mddev_to_conf(mddev);
-@@ -203,8 +204,10 @@ static int multipath_congested(void *data, int bits)
- 		mdk_rdev_t *rdev = rcu_dereference(conf->multipaths[i].rdev);
- 		if (rdev && !test_bit(Faulty, &rdev->flags)) {
- 			struct request_queue *q = bdev_get_queue(rdev->bdev);
-+			struct backing_dev_info *bdi = &q->backing_dev_info;
- 
--			ret |= bdi_congested(&q->backing_dev_info, bits);
-+			ret |= group ? bdi_congested_group(bdi, bits, page)
-+				: bdi_congested(bdi, bits);
- 			/* Just like multipath_map, we just check the
- 			 * first available device
- 			 */
-diff --git a/drivers/md/raid0.c b/drivers/md/raid0.c
-index c08d755..eb1d33a 100644
---- a/drivers/md/raid0.c
-+++ b/drivers/md/raid0.c
-@@ -37,7 +37,7 @@ static void raid0_unplug(struct request_queue *q)
- 	}
- }
- 
--static int raid0_congested(void *data, int bits)
-+static int raid0_congested(void *data, int bits, struct page *page, int group)
- {
- 	mddev_t *mddev = data;
- 	raid0_conf_t *conf = mddev_to_conf(mddev);
-@@ -46,8 +46,10 @@ static int raid0_congested(void *data, int bits)
- 
- 	for (i = 0; i < mddev->raid_disks && !ret ; i++) {
- 		struct request_queue *q = bdev_get_queue(devlist[i]->bdev);
-+		struct backing_dev_info *bdi = &q->backing_dev_info;
- 
--		ret |= bdi_congested(&q->backing_dev_info, bits);
-+		ret |= group ? bdi_congested_group(bdi, bits, page)
-+				: bdi_congested(bdi, bits);
- 	}
- 	return ret;
- }
-diff --git a/drivers/md/raid1.c b/drivers/md/raid1.c
-index 36df910..cdd268e 100644
---- a/drivers/md/raid1.c
-+++ b/drivers/md/raid1.c
-@@ -570,7 +570,7 @@ static void raid1_unplug(struct request_queue *q)
- 	md_wakeup_thread(mddev->thread);
- }
- 
--static int raid1_congested(void *data, int bits)
-+static int raid1_congested(void *data, int bits, struct page *page, int group)
- {
- 	mddev_t *mddev = data;
- 	conf_t *conf = mddev_to_conf(mddev);
-@@ -581,14 +581,17 @@ static int raid1_congested(void *data, int bits)
- 		mdk_rdev_t *rdev = rcu_dereference(conf->mirrors[i].rdev);
- 		if (rdev && !test_bit(Faulty, &rdev->flags)) {
- 			struct request_queue *q = bdev_get_queue(rdev->bdev);
-+			struct backing_dev_info *bdi = &q->backing_dev_info;
- 
- 			/* Note the '|| 1' - when read_balance prefers
- 			 * non-congested targets, it can be removed
- 			 */
- 			if ((bits & (1<<BDI_async_congested)) || 1)
--				ret |= bdi_congested(&q->backing_dev_info, bits);
-+				ret |= group ? bdi_congested_group(bdi, bits,
-+					page) : bdi_congested(bdi, bits);
- 			else
--				ret &= bdi_congested(&q->backing_dev_info, bits);
-+				ret &= group ? bdi_congested_group(bdi, bits,
-+					page) : bdi_congested(bdi, bits);
- 		}
- 	}
- 	rcu_read_unlock();
-diff --git a/drivers/md/raid10.c b/drivers/md/raid10.c
-index 499620a..49f41e3 100644
---- a/drivers/md/raid10.c
-+++ b/drivers/md/raid10.c
-@@ -625,7 +625,7 @@ static void raid10_unplug(struct request_queue *q)
- 	md_wakeup_thread(mddev->thread);
- }
- 
--static int raid10_congested(void *data, int bits)
-+static int raid10_congested(void *data, int bits, struct page *page, int group)
- {
- 	mddev_t *mddev = data;
- 	conf_t *conf = mddev_to_conf(mddev);
-@@ -636,8 +636,10 @@ static int raid10_congested(void *data, int bits)
- 		mdk_rdev_t *rdev = rcu_dereference(conf->mirrors[i].rdev);
- 		if (rdev && !test_bit(Faulty, &rdev->flags)) {
- 			struct request_queue *q = bdev_get_queue(rdev->bdev);
-+			struct backing_dev_info *bdi = &q->backing_dev_info;
- 
--			ret |= bdi_congested(&q->backing_dev_info, bits);
-+			ret |= group ? bdi_congested_group(bdi, bits, page)
-+				: bdi_congested(bdi, bits);
- 		}
- 	}
- 	rcu_read_unlock();
-diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
-index bb37fb1..40f76a4 100644
---- a/drivers/md/raid5.c
-+++ b/drivers/md/raid5.c
-@@ -3324,7 +3324,7 @@ static void raid5_unplug_device(struct request_queue *q)
- 	unplug_slaves(mddev);
- }
- 
--static int raid5_congested(void *data, int bits)
-+static int raid5_congested(void *data, int bits, struct page *page, int group)
- {
- 	mddev_t *mddev = data;
- 	raid5_conf_t *conf = mddev_to_conf(mddev);
-diff --git a/fs/afs/write.c b/fs/afs/write.c
-index c2e7a7f..aa8b359 100644
---- a/fs/afs/write.c
-+++ b/fs/afs/write.c
-@@ -455,7 +455,7 @@ int afs_writepage(struct page *page, struct writeback_control *wbc)
- 	}
- 
- 	wbc->nr_to_write -= ret;
--	if (wbc->nonblocking && bdi_write_congested(bdi))
-+	if (wbc->nonblocking && bdi_or_group_write_congested(bdi, page))
- 		wbc->encountered_congestion = 1;
- 
- 	_leave(" = 0");
-@@ -491,6 +491,12 @@ static int afs_writepages_region(struct address_space *mapping,
- 			return 0;
- 		}
- 
-+		if (wbc->nonblocking && bdi_write_congested_group(bdi, page)) {
-+			wbc->encountered_congestion = 1;
-+			page_cache_release(page);
-+			break;
-+		}
-+
- 		/* at this point we hold neither mapping->tree_lock nor lock on
- 		 * the page itself: the page may be truncated or invalidated
- 		 * (changing page->mapping to NULL), or even swizzled back from
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4b0ea0b..245d8f4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1250,7 +1250,8 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
- 	return root;
- }
- 
--static int btrfs_congested_fn(void *congested_data, int bdi_bits)
-+static int btrfs_congested_fn(void *congested_data, int bdi_bits,
-+					struct page *page, int group)
- {
- 	struct btrfs_fs_info *info = (struct btrfs_fs_info *)congested_data;
- 	int ret = 0;
-@@ -1261,7 +1262,8 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
- 		if (!device->bdev)
- 			continue;
- 		bdi = blk_get_backing_dev_info(device->bdev);
--		if (bdi && bdi_congested(bdi, bdi_bits)) {
-+		if (bdi && (group ? bdi_congested_group(bdi, bdi_bits, page) :
-+		    bdi_congested(bdi, bdi_bits))) {
- 			ret = 1;
- 			break;
- 		}
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fe9eb99..fac4299 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2358,6 +2358,18 @@ retry:
- 		unsigned i;
- 
- 		scanned = 1;
-+
-+		/*
-+		 * If the io group page will go into is congested, bail out.
-+		 */
-+		if (wbc->nonblocking
-+		    && bdi_write_congested_group(bdi, pvec.pages[0])) {
-+			wbc->encountered_congestion = 1;
-+			done = 1;
-+			pagevec_release(&pvec);
-+			break;
-+		}
-+
- 		for (i = 0; i < nr_pages; i++) {
- 			struct page *page = pvec.pages[i];
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a6d35b0..5b19141 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -163,6 +163,7 @@ static noinline int run_scheduled_bios(struct btrfs_device *device)
- 	unsigned long num_sync_run;
- 	unsigned long limit;
- 	unsigned long last_waited = 0;
-+	struct page *page;
- 
- 	bdi = blk_get_backing_dev_info(device->bdev);
- 	fs_info = device->dev_root->fs_info;
-@@ -265,8 +266,11 @@ loop_lock:
- 		 * is now congested.  Back off and let other work structs
- 		 * run instead
+ 	if (has_fs_excl()) {
+ 		/*
+ 		 * boost idle prio on transactions that would lock out other
+ 		 * users of the filesystem
  		 */
--		if (pending && bdi_write_congested(bdi) && num_run > 16 &&
--		    fs_info->fs_devices->open_devices > 1) {
-+		if (pending)
-+			page = bio_iovec_idx(pending, 0)->bv_page;
+ 		if (cfq_class_idle(cfqq))
+-			cfqq->ioprio_class = IOPRIO_CLASS_BE;
+-		if (cfqq->ioprio > IOPRIO_NORM)
+-			cfqq->ioprio = IOPRIO_NORM;
++			elv_ioq_set_ioprio_class(ioq, IOPRIO_CLASS_BE);
++		if (elv_ioq_ioprio(ioq) > IOPRIO_NORM)
++			elv_ioq_set_ioprio(ioq, IOPRIO_NORM);
 +
-+		if (pending && bdi_or_group_write_congested(bdi, page) &&
-+		    num_run > 16 && fs_info->fs_devices->open_devices > 1) {
- 			struct io_context *ioc;
+ 	} else {
+ 		/*
+ 		 * check if we need to unboost the queue
+ 		 */
+-		if (cfqq->ioprio_class != cfqq->org_ioprio_class)
+-			cfqq->ioprio_class = cfqq->org_ioprio_class;
+-		if (cfqq->ioprio != cfqq->org_ioprio)
+-			cfqq->ioprio = cfqq->org_ioprio;
++		if (elv_ioq_ioprio_class(ioq) != cfqq->org_ioprio_class)
++			elv_ioq_set_ioprio_class(ioq, cfqq->org_ioprio_class);
++		if (elv_ioq_ioprio(ioq) != cfqq->org_ioprio)
++			elv_ioq_set_ioprio(ioq, cfqq->org_ioprio);
+ 	}
+ }
  
- 			ioc = current->io_context;
-diff --git a/fs/cifs/file.c b/fs/cifs/file.c
-index 302ea15..71d3fb5 100644
---- a/fs/cifs/file.c
-+++ b/fs/cifs/file.c
-@@ -1466,6 +1466,17 @@ retry:
- 		n_iov = 0;
- 		bytes_to_write = 0;
- 
-+		/*
-+		 * If the io group page will go into is congested, bail out.
-+		 */
-+		if (wbc->nonblocking &&
-+		    bdi_write_congested_group(bdi, pvec.pages[0])) {
-+			wbc->encountered_congestion = 1;
-+			done = 1;
-+			pagevec_release(&pvec);
-+			break;
-+		}
-+
- 		for (i = 0; i < nr_pages; i++) {
- 			page = pvec.pages[i];
- 			/*
-diff --git a/fs/ext2/ialloc.c b/fs/ext2/ialloc.c
-index 15387c9..090a961 100644
---- a/fs/ext2/ialloc.c
-+++ b/fs/ext2/ialloc.c
-@@ -179,7 +179,7 @@ static void ext2_preread_inode(struct inode *inode)
- 	struct backing_dev_info *bdi;
- 
- 	bdi = inode->i_mapping->backing_dev_info;
--	if (bdi_read_congested(bdi))
-+	if (bdi_or_group_read_congested(bdi, NULL))
- 		return;
- 	if (bdi_write_congested(bdi))
- 		return;
-diff --git a/fs/gfs2/ops_address.c b/fs/gfs2/ops_address.c
-index a6dde17..b352f19 100644
---- a/fs/gfs2/ops_address.c
-+++ b/fs/gfs2/ops_address.c
-@@ -372,6 +372,18 @@ retry:
- 					       PAGECACHE_TAG_DIRTY,
- 					       min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1))) {
- 		scanned = 1;
-+
-+		/*
-+		 * If io group page belongs to is congested. bail out.
-+		 */
-+		if (wbc->nonblocking
-+		    && bdi_write_congested_group(bdi, pvec.pages[0])) {
-+			wbc->encountered_congestion = 1;
-+			done = 1;
-+			pagevec_release(&pvec);
-+			break;
-+		}
-+
- 		ret = gfs2_write_jdata_pagevec(mapping, wbc, &pvec, nr_pages, end);
- 		if (ret)
- 			done = 1;
-diff --git a/fs/nilfs2/segbuf.c b/fs/nilfs2/segbuf.c
-index 1e68821..abcb161 100644
---- a/fs/nilfs2/segbuf.c
-+++ b/fs/nilfs2/segbuf.c
-@@ -267,8 +267,9 @@ static int nilfs_submit_seg_bio(struct nilfs_write_info *wi, int mode)
+ static inline int __cfq_may_queue(struct cfq_queue *cfqq)
  {
- 	struct bio *bio = wi->bio;
- 	int err;
-+	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
+-	if ((cfq_cfqq_wait_request(cfqq) || cfq_cfqq_must_alloc(cfqq)) &&
+-	    !cfq_cfqq_must_alloc_slice(cfqq)) {
++	if ((elv_ioq_wait_request(cfqq->ioq) ||
++	   cfq_cfqq_must_alloc(cfqq)) && !cfq_cfqq_must_alloc_slice(cfqq)) {
+ 		cfq_mark_cfqq_must_alloc_slice(cfqq);
+ 		return ELV_MQUEUE_MUST;
+ 	}
+@@ -2280,7 +1728,7 @@ static void cfq_put_request(struct request *rq)
+ 		put_io_context(RQ_CIC(rq)->ioc);
  
--	if (wi->nbio > 0 && bdi_write_congested(wi->bdi)) {
-+	if (wi->nbio > 0 && bdi_or_group_write_congested(wi->bdi, page)) {
- 		wait_for_completion(&wi->bio_event);
- 		wi->nbio--;
- 		if (unlikely(atomic_read(&wi->err))) {
-diff --git a/fs/xfs/linux-2.6/xfs_aops.c b/fs/xfs/linux-2.6/xfs_aops.c
-index 7ec89fc..2a515ab 100644
---- a/fs/xfs/linux-2.6/xfs_aops.c
-+++ b/fs/xfs/linux-2.6/xfs_aops.c
-@@ -891,7 +891,7 @@ xfs_convert_page(
+ 		rq->elevator_private = NULL;
+-		rq->elevator_private2 = NULL;
++		rq->ioq = NULL;
  
- 			bdi = inode->i_mapping->backing_dev_info;
- 			wbc->nr_to_write--;
--			if (bdi_write_congested(bdi)) {
-+			if (bdi_or_group_write_congested(bdi, page)) {
- 				wbc->encountered_congestion = 1;
- 				done = 1;
- 			} else if (wbc->nr_to_write <= 0) {
-diff --git a/fs/xfs/linux-2.6/xfs_buf.c b/fs/xfs/linux-2.6/xfs_buf.c
-index e28800a..9e000f4 100644
---- a/fs/xfs/linux-2.6/xfs_buf.c
-+++ b/fs/xfs/linux-2.6/xfs_buf.c
-@@ -714,7 +714,7 @@ xfs_buf_readahead(
- 	struct backing_dev_info *bdi;
+ 		cfq_put_queue(cfqq);
+ 	}
+@@ -2320,119 +1768,31 @@ cfq_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
  
- 	bdi = target->bt_mapping->backing_dev_info;
--	if (bdi_read_congested(bdi))
-+	if (bdi_or_group_read_congested(bdi, NULL))
- 		return;
+ 	cfqq->allocated[rw]++;
+ 	cfq_clear_cfqq_must_alloc(cfqq);
+-	atomic_inc(&cfqq->ref);
++	elv_get_ioq(cfqq->ioq);
  
- 	flags |= (XBF_TRYLOCK|XBF_ASYNC|XBF_READ_AHEAD);
-diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
-index 0ec2c59..f06fdbf 100644
---- a/include/linux/backing-dev.h
-+++ b/include/linux/backing-dev.h
-@@ -29,7 +29,7 @@ enum bdi_state {
- 	BDI_unused,		/* Available bits start here */
+ 	spin_unlock_irqrestore(q->queue_lock, flags);
+ 
+ 	rq->elevator_private = cic;
+-	rq->elevator_private2 = cfqq;
++	rq->ioq = cfqq->ioq;
+ 	return 0;
+ 
+ queue_fail:
+ 	if (cic)
+ 		put_io_context(cic->ioc);
+ 
+-	cfq_schedule_dispatch(cfqd);
++	elv_schedule_dispatch(cfqd->queue);
+ 	spin_unlock_irqrestore(q->queue_lock, flags);
+ 	cfq_log(cfqd, "set_request fail");
+ 	return 1;
+ }
+ 
+-static void cfq_kick_queue(struct work_struct *work)
+-{
+-	struct cfq_data *cfqd =
+-		container_of(work, struct cfq_data, unplug_work);
+-	struct request_queue *q = cfqd->queue;
+-
+-	spin_lock_irq(q->queue_lock);
+-	blk_start_queueing(q);
+-	spin_unlock_irq(q->queue_lock);
+-}
+-
+-/*
+- * Timer running if the active_queue is currently idling inside its time slice
+- */
+-static void cfq_idle_slice_timer(unsigned long data)
+-{
+-	struct cfq_data *cfqd = (struct cfq_data *) data;
+-	struct cfq_queue *cfqq;
+-	unsigned long flags;
+-	int timed_out = 1;
+-
+-	cfq_log(cfqd, "idle timer fired");
+-
+-	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
+-
+-	cfqq = cfqd->active_queue;
+-	if (cfqq) {
+-		timed_out = 0;
+-
+-		/*
+-		 * We saw a request before the queue expired, let it through
+-		 */
+-		if (cfq_cfqq_must_dispatch(cfqq))
+-			goto out_kick;
+-
+-		/*
+-		 * expired
+-		 */
+-		if (cfq_slice_used(cfqq))
+-			goto expire;
+-
+-		/*
+-		 * only expire and reinvoke request handler, if there are
+-		 * other queues with pending requests
+-		 */
+-		if (!cfqd->busy_queues)
+-			goto out_cont;
+-
+-		/*
+-		 * not expired and it has a request pending, let it dispatch
+-		 */
+-		if (!RB_EMPTY_ROOT(&cfqq->sort_list))
+-			goto out_kick;
+-	}
+-expire:
+-	cfq_slice_expired(cfqd, timed_out);
+-out_kick:
+-	cfq_schedule_dispatch(cfqd);
+-out_cont:
+-	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
+-}
+-
+-static void cfq_shutdown_timer_wq(struct cfq_data *cfqd)
+-{
+-	del_timer_sync(&cfqd->idle_slice_timer);
+-	cancel_work_sync(&cfqd->unplug_work);
+-}
+-
+-static void cfq_put_async_queues(struct cfq_data *cfqd)
+-{
+-	int i;
+-
+-	for (i = 0; i < IOPRIO_BE_NR; i++) {
+-		if (cfqd->async_cfqq[0][i])
+-			cfq_put_queue(cfqd->async_cfqq[0][i]);
+-		if (cfqd->async_cfqq[1][i])
+-			cfq_put_queue(cfqd->async_cfqq[1][i]);
+-	}
+-
+-	if (cfqd->async_idle_cfqq)
+-		cfq_put_queue(cfqd->async_idle_cfqq);
+-}
+-
+ static void cfq_exit_queue(struct elevator_queue *e)
+ {
+ 	struct cfq_data *cfqd = e->elevator_data;
+ 	struct request_queue *q = cfqd->queue;
+ 
+-	cfq_shutdown_timer_wq(cfqd);
+-
+ 	spin_lock_irq(q->queue_lock);
+ 
+-	if (cfqd->active_queue)
+-		__cfq_slice_expired(cfqd, cfqd->active_queue, 0);
+-
+ 	while (!list_empty(&cfqd->cic_list)) {
+ 		struct cfq_io_context *cic = list_entry(cfqd->cic_list.next,
+ 							struct cfq_io_context,
+@@ -2441,12 +1801,7 @@ static void cfq_exit_queue(struct elevator_queue *e)
+ 		__cfq_exit_single_io_context(cfqd, cic);
+ 	}
+ 
+-	cfq_put_async_queues(cfqd);
+-
+ 	spin_unlock_irq(q->queue_lock);
+-
+-	cfq_shutdown_timer_wq(cfqd);
+-
+ 	kfree(cfqd);
+ }
+ 
+@@ -2459,8 +1814,6 @@ static void *cfq_init_queue(struct request_queue *q)
+ 	if (!cfqd)
+ 		return NULL;
+ 
+-	cfqd->service_tree = CFQ_RB_ROOT;
+-
+ 	/*
+ 	 * Not strictly needed (since RB_ROOT just clears the node and we
+ 	 * zeroed cfqd on alloc), but better be safe in case someone decides
+@@ -2473,23 +1826,12 @@ static void *cfq_init_queue(struct request_queue *q)
+ 
+ 	cfqd->queue = q;
+ 
+-	init_timer(&cfqd->idle_slice_timer);
+-	cfqd->idle_slice_timer.function = cfq_idle_slice_timer;
+-	cfqd->idle_slice_timer.data = (unsigned long) cfqd;
+-
+-	INIT_WORK(&cfqd->unplug_work, cfq_kick_queue);
+-
+-	cfqd->last_end_request = jiffies;
+ 	cfqd->cfq_quantum = cfq_quantum;
+ 	cfqd->cfq_fifo_expire[0] = cfq_fifo_expire[0];
+ 	cfqd->cfq_fifo_expire[1] = cfq_fifo_expire[1];
+ 	cfqd->cfq_back_max = cfq_back_max;
+ 	cfqd->cfq_back_penalty = cfq_back_penalty;
+-	cfqd->cfq_slice[0] = cfq_slice_async;
+-	cfqd->cfq_slice[1] = cfq_slice_sync;
+ 	cfqd->cfq_slice_async_rq = cfq_slice_async_rq;
+-	cfqd->cfq_slice_idle = cfq_slice_idle;
+-	cfqd->hw_tag = 1;
+ 
+ 	return cfqd;
+ }
+@@ -2554,9 +1896,6 @@ SHOW_FUNCTION(cfq_fifo_expire_sync_show, cfqd->cfq_fifo_expire[1], 1);
+ SHOW_FUNCTION(cfq_fifo_expire_async_show, cfqd->cfq_fifo_expire[0], 1);
+ SHOW_FUNCTION(cfq_back_seek_max_show, cfqd->cfq_back_max, 0);
+ SHOW_FUNCTION(cfq_back_seek_penalty_show, cfqd->cfq_back_penalty, 0);
+-SHOW_FUNCTION(cfq_slice_idle_show, cfqd->cfq_slice_idle, 1);
+-SHOW_FUNCTION(cfq_slice_sync_show, cfqd->cfq_slice[1], 1);
+-SHOW_FUNCTION(cfq_slice_async_show, cfqd->cfq_slice[0], 1);
+ SHOW_FUNCTION(cfq_slice_async_rq_show, cfqd->cfq_slice_async_rq, 0);
+ #undef SHOW_FUNCTION
+ 
+@@ -2584,9 +1923,6 @@ STORE_FUNCTION(cfq_fifo_expire_async_store, &cfqd->cfq_fifo_expire[0], 1,
+ STORE_FUNCTION(cfq_back_seek_max_store, &cfqd->cfq_back_max, 0, UINT_MAX, 0);
+ STORE_FUNCTION(cfq_back_seek_penalty_store, &cfqd->cfq_back_penalty, 1,
+ 		UINT_MAX, 0);
+-STORE_FUNCTION(cfq_slice_idle_store, &cfqd->cfq_slice_idle, 0, UINT_MAX, 1);
+-STORE_FUNCTION(cfq_slice_sync_store, &cfqd->cfq_slice[1], 1, UINT_MAX, 1);
+-STORE_FUNCTION(cfq_slice_async_store, &cfqd->cfq_slice[0], 1, UINT_MAX, 1);
+ STORE_FUNCTION(cfq_slice_async_rq_store, &cfqd->cfq_slice_async_rq, 1,
+ 		UINT_MAX, 0);
+ #undef STORE_FUNCTION
+@@ -2600,10 +1936,10 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	CFQ_ATTR(fifo_expire_async),
+ 	CFQ_ATTR(back_seek_max),
+ 	CFQ_ATTR(back_seek_penalty),
+-	CFQ_ATTR(slice_sync),
+-	CFQ_ATTR(slice_async),
+ 	CFQ_ATTR(slice_async_rq),
+-	CFQ_ATTR(slice_idle),
++	ELV_ATTR(slice_idle),
++	ELV_ATTR(slice_sync),
++	ELV_ATTR(slice_async),
+ 	__ATTR_NULL
  };
  
--typedef int (congested_fn)(void *, int);
-+typedef int (congested_fn)(void *, int, struct page *, int);
+@@ -2616,8 +1952,6 @@ static struct elevator_type iosched_cfq = {
+ 		.elevator_dispatch_fn =		cfq_dispatch_requests,
+ 		.elevator_add_req_fn =		cfq_insert_request,
+ 		.elevator_activate_req_fn =	cfq_activate_request,
+-		.elevator_deactivate_req_fn =	cfq_deactivate_request,
+-		.elevator_queue_empty_fn =	cfq_queue_empty,
+ 		.elevator_completed_req_fn =	cfq_completed_request,
+ 		.elevator_former_req_fn =	elv_rb_former_request,
+ 		.elevator_latter_req_fn =	elv_rb_latter_request,
+@@ -2627,7 +1961,15 @@ static struct elevator_type iosched_cfq = {
+ 		.elevator_init_fn =		cfq_init_queue,
+ 		.elevator_exit_fn =		cfq_exit_queue,
+ 		.trim =				cfq_free_io_context,
++		.elevator_free_sched_queue_fn =	cfq_free_cfq_queue,
++		.elevator_active_ioq_set_fn = 	cfq_active_ioq_set,
++		.elevator_active_ioq_reset_fn =	cfq_active_ioq_reset,
++		.elevator_arm_slice_timer_fn = 	cfq_arm_slice_timer,
++		.elevator_should_preempt_fn = 	cfq_should_preempt,
++		.elevator_update_idle_window_fn = cfq_update_idle_window,
++		.elevator_close_cooperator_fn = cfq_close_cooperator,
+ 	},
++	.elevator_features =    ELV_IOSCHED_NEED_FQ,
+ 	.elevator_attrs =	cfq_attrs,
+ 	.elevator_name =	"cfq",
+ 	.elevator_owner =	THIS_MODULE,
+@@ -2635,14 +1977,6 @@ static struct elevator_type iosched_cfq = {
  
- enum bdi_stat_item {
- 	BDI_RECLAIMABLE,
-@@ -209,7 +209,7 @@ int writeback_in_progress(struct backing_dev_info *bdi);
- static inline int bdi_congested(struct backing_dev_info *bdi, int bdi_bits)
+ static int __init cfq_init(void)
  {
- 	if (bdi->congested_fn)
--		return bdi->congested_fn(bdi->congested_data, bdi_bits);
-+		return bdi->congested_fn(bdi->congested_data, bdi_bits, NULL, 0);
- 	return (bdi->state & bdi_bits);
- }
+-	/*
+-	 * could be 0 on HZ < 1000 setups
+-	 */
+-	if (!cfq_slice_async)
+-		cfq_slice_async = 1;
+-	if (!cfq_slice_idle)
+-		cfq_slice_idle = 1;
+-
+ 	if (cfq_slab_setup())
+ 		return -ENOMEM;
  
-@@ -229,6 +229,63 @@ static inline int bdi_rw_congested(struct backing_dev_info *bdi)
- 				  (1 << BDI_async_congested));
- }
+diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
+index 08b987b..5be25b3 100644
+--- a/include/linux/iocontext.h
++++ b/include/linux/iocontext.h
+@@ -39,13 +39,8 @@ struct cfq_io_context {
  
-+#ifdef CONFIG_GROUP_IOSCHED
-+extern int bdi_congested_group(struct backing_dev_info *bdi, int bdi_bits,
-+				struct page *page);
-+
-+extern int bdi_read_congested_group(struct backing_dev_info *bdi,
-+						struct page *page);
-+
-+extern int bdi_or_group_read_congested(struct backing_dev_info *bdi,
-+					struct page *page);
-+
-+extern int bdi_write_congested_group(struct backing_dev_info *bdi,
-+					struct page *page);
-+
-+extern int bdi_or_group_write_congested(struct backing_dev_info *bdi,
-+					struct page *page);
-+
-+extern int bdi_rw_congested_group(struct backing_dev_info *bdi,
-+					struct page *page);
-+#else /* CONFIG_GROUP_IOSCHED */
-+static inline int bdi_congested_group(struct backing_dev_info *bdi,
-+					int bdi_bits, struct page *page)
-+{
-+	return bdi_congested(bdi, bdi_bits);
-+}
-+
-+static inline int bdi_read_congested_group(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_read_congested(bdi);
-+}
-+
-+static inline int bdi_or_group_read_congested(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_read_congested(bdi);
-+}
-+
-+static inline int bdi_write_congested_group(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_write_congested(bdi);
-+}
-+
-+static inline int bdi_or_group_write_congested(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_write_congested(bdi);
-+}
-+
-+static inline int bdi_rw_congested_group(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_rw_congested(bdi);
-+}
-+
-+#endif /* CONFIG_GROUP_IOSCHED */
-+
- void clear_bdi_congested(struct backing_dev_info *bdi, int rw);
- void set_bdi_congested(struct backing_dev_info *bdi, int rw);
- long congestion_wait(int rw, long timeout);
-diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
-index 741a8b5..0b4491a 100644
---- a/include/linux/biotrack.h
-+++ b/include/linux/biotrack.h
-@@ -49,6 +49,7 @@ extern void blkio_cgroup_copy_owner(struct page *page, struct page *opage);
+ 	struct io_context *ioc;
  
- extern struct io_context *get_blkio_cgroup_iocontext(struct bio *bio);
- extern unsigned long get_blkio_cgroup_id(struct bio *bio);
-+extern unsigned long get_blkio_cgroup_id_page(struct page *page);
- extern struct cgroup *blkio_cgroup_lookup(int id);
+-	unsigned long last_end_request;
+ 	sector_t last_request_pos;
  
- #else	/* CONFIG_CGROUP_BIO */
-@@ -92,6 +93,11 @@ static inline unsigned long get_blkio_cgroup_id(struct bio *bio)
- 	return 0;
- }
- 
-+static inline unsigned long get_blkio_cgroup_id_page(struct page *page)
-+{
-+	return 0;
-+}
-+
- #endif	/* CONFIG_CGROUP_BLKIO */
- 
- #endif /* _LINUX_BIOTRACK_H */
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 7fd7d33..45e4cb7 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -880,6 +880,11 @@ static inline void blk_set_queue_congested(struct request_queue *q, int rw)
- 	set_bdi_congested(&q->backing_dev_info, rw);
- }
- 
-+#ifdef CONFIG_GROUP_IOSCHED
-+extern int blk_queue_io_group_congested(struct backing_dev_info *bdi,
-+					int bdi_bits, struct page *page);
-+#endif
-+
- extern void blk_start_queue(struct request_queue *q);
- extern void blk_stop_queue(struct request_queue *q);
- extern void blk_sync_queue(struct request_queue *q);
-diff --git a/mm/backing-dev.c b/mm/backing-dev.c
-index 493b468..cef038d 100644
---- a/mm/backing-dev.c
-+++ b/mm/backing-dev.c
-@@ -7,6 +7,7 @@
- #include <linux/module.h>
- #include <linux/writeback.h>
- #include <linux/device.h>
-+#include "../block/elevator-fq.h"
- 
- void default_unplug_io_fn(struct backing_dev_info *bdi, struct page *page)
- {
-@@ -328,3 +329,64 @@ long congestion_wait(int rw, long timeout)
- }
- EXPORT_SYMBOL(congestion_wait);
- 
-+/*
-+ * With group IO scheduling, there are request descriptors per io group per
-+ * queue. So generic notion of whether queue is congested or not is not
-+ * very accurate. Queue might not be congested but the io group in which
-+ * request will go might actually be congested.
-+ *
-+ * Hence to get the correct idea about congestion level, one should query
-+ * the io group congestion status on the queue. Pass in the page information
-+ * which can be used to determine the io group of the page and congestion
-+ * status can be determined accordingly.
-+ *
-+ * If page info is not passed, io group is determined from the current task
-+ * context.
-+ */
-+#ifdef CONFIG_GROUP_IOSCHED
-+int bdi_congested_group(struct backing_dev_info *bdi, int bdi_bits,
-+				struct page *page)
-+{
-+	if (bdi->congested_fn)
-+		return bdi->congested_fn(bdi->congested_data, bdi_bits, page, 1);
-+
-+	return blk_queue_io_group_congested(bdi, bdi_bits, page);
-+}
-+EXPORT_SYMBOL(bdi_congested_group);
-+
-+int bdi_read_congested_group(struct backing_dev_info *bdi, struct page *page)
-+{
-+	return bdi_congested_group(bdi, 1 << BDI_sync_congested, page);
-+}
-+EXPORT_SYMBOL(bdi_read_congested_group);
-+
-+/* Checks if either bdi or associated group is read congested */
-+int bdi_or_group_read_congested(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_read_congested(bdi) || bdi_read_congested_group(bdi, page);
-+}
-+EXPORT_SYMBOL(bdi_or_group_read_congested);
-+
-+int bdi_write_congested_group(struct backing_dev_info *bdi, struct page *page)
-+{
-+	return bdi_congested_group(bdi, 1 << BDI_async_congested, page);
-+}
-+EXPORT_SYMBOL(bdi_write_congested_group);
-+
-+/* Checks if either bdi or associated group is write congested */
-+int bdi_or_group_write_congested(struct backing_dev_info *bdi,
-+						struct page *page)
-+{
-+	return bdi_write_congested(bdi) || bdi_write_congested_group(bdi, page);
-+}
-+EXPORT_SYMBOL(bdi_or_group_write_congested);
-+
-+int bdi_rw_congested_group(struct backing_dev_info *bdi, struct page *page)
-+{
-+	return bdi_congested_group(bdi, (1 << BDI_sync_congested) |
-+				  (1 << BDI_async_congested), page);
-+}
-+EXPORT_SYMBOL(bdi_rw_congested_group);
-+
-+#endif /* CONFIG_GROUP_IOSCHED */
-diff --git a/mm/biotrack.c b/mm/biotrack.c
-index 2baf1f0..f7d8efb 100644
---- a/mm/biotrack.c
-+++ b/mm/biotrack.c
-@@ -212,6 +212,27 @@ unsigned long get_blkio_cgroup_id(struct bio *bio)
- }
- 
- /**
-+ * get_blkio_cgroup_id_page() - determine the blkio-cgroup ID
-+ * @page:	the &struct page which describes the I/O
-+ *
-+ * Returns the blkio-cgroup ID of a given page. A return value zero
-+ * means that the page associated with the IO belongs to default_blkio_cgroup.
-+ */
-+unsigned long get_blkio_cgroup_id_page(struct page *page)
-+{
-+	struct page_cgroup *pc;
-+	unsigned long id = 0;
-+
-+	pc = lookup_page_cgroup(page);
-+	if (pc) {
-+		lock_page_cgroup(pc);
-+		id = page_cgroup_get_id(pc);
-+		unlock_page_cgroup(pc);
-+	}
-+	return id;
-+}
-+
-+/**
-  * get_blkio_cgroup_iocontext() - determine the blkio-cgroup iocontext
-  * @bio:	the &struct bio which describe the I/O
-  *
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 3604c35..26b9e0a 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -981,6 +981,17 @@ retry:
- 		if (nr_pages == 0)
- 			break;
- 
-+		/*
-+		 * If the io group page will go into is congested, bail out.
-+		 */
-+		if (wbc->nonblocking
-+		    && bdi_write_congested_group(bdi, pvec.pages[0])) {
-+			wbc->encountered_congestion = 1;
-+			done = 1;
-+			pagevec_release(&pvec);
-+			break;
-+		}
-+
- 		for (i = 0; i < nr_pages; i++) {
- 			struct page *page = pvec.pages[i];
- 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 133b6d5..acd9c57 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -240,7 +240,7 @@ int force_page_cache_readahead(struct address_space *mapping, struct file *filp,
- int do_page_cache_readahead(struct address_space *mapping, struct file *filp,
- 			pgoff_t offset, unsigned long nr_to_read)
- {
--	if (bdi_read_congested(mapping->backing_dev_info))
-+	if (bdi_or_group_read_congested(mapping->backing_dev_info, NULL))
- 		return -1;
- 
- 	return __do_page_cache_readahead(mapping, filp, offset, nr_to_read, 0);
-@@ -485,7 +485,7 @@ page_cache_async_readahead(struct address_space *mapping,
- 	/*
- 	 * Defer asynchronous read-ahead on IO congestion.
- 	 */
--	if (bdi_read_congested(mapping->backing_dev_info))
-+	if (bdi_or_group_read_congested(mapping->backing_dev_info, NULL))
- 		return;
- 
- 	/* do read-ahead */
+-	unsigned long ttime_total;
+-	unsigned long ttime_samples;
+-	unsigned long ttime_mean;
+-
+ 	unsigned int seek_samples;
+ 	u64 seek_total;
+ 	sector_t seek_mean;
 -- 
 1.6.0.6
