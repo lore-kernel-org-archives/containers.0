@@ -1,12 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: c/r of pdeath
-Date: Fri, 19 Jun 2009 13:21:14 -0500
-Message-ID: <20090619182114.GA27320@us.ibm.com>
+Subject: Re: [PATCH] Fixes for the deferqueue_add() function (v2)
+Date: Fri, 19 Jun 2009 13:36:14 -0500
+Message-ID: <20090619183614.GA27656@us.ibm.com>
+References: <1245435505-24842-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <1245435505-24842-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,16 +18,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Oren,
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> I'm not sure how the deferqueue would (or has ever) worked without these
+> modifications, but I had to make them in order to use it :)
+> 
+> Changes (v2):
+>   - Remove unnecessary initialization of the new list item
 
-commit 9a45e26c0aabda6a94e2ac620befd8ee12a7363d adds
-reset of pdeath_signal.  It does so unconditionally.  I
-don't think that's safe.  Perhaps if pdeath_signal is
-anything other than 0, it should only be restored if
-the task is capable(CAP_KILL)?
+Reviewed-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+thanks,
 -serge
+
+> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  kernel/deferqueue.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+> index efd99d5..3fb388b 100644
+> --- a/kernel/deferqueue.c
+> +++ b/kernel/deferqueue.c
+> @@ -66,7 +66,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
+>  {
+>  	struct deferqueue_entry *dq;
+> 
+> -	dq = kmalloc(sizeof(dq) + size, GFP_KERNEL);
+> +	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
+>  	if (!dq)
+>  		return -ENOMEM;
+> 
+> @@ -77,7 +77,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
+>  	pr_debug("%s: adding work %p func %p dtor %p\n",
+>  		 __func__, dq, func, dtor);
+>  	spin_lock(&head->lock);
+> -	list_add_tail(&head->list, &dq->list);
+> +	list_add_tail(&dq->list, &head->list);
+>  	spin_unlock(&head->lock);
+>  	return 0;
+>  }
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
