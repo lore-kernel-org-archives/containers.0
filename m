@@ -1,14 +1,12 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Fixes for the deferqueue_add() function (v2)
-Date: Fri, 19 Jun 2009 13:36:14 -0500
-Message-ID: <20090619183614.GA27656@us.ibm.com>
-References: <1245435505-24842-1-git-send-email-danms@us.ibm.com>
+Subject: [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org: [PATCH 1/9] cred: #include init.h in cred.h]
+Date: Fri, 19 Jun 2009 13:48:11 -0500
+Message-ID: <20090619184811.GA28045@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1245435505-24842-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,54 +16,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> I'm not sure how the deferqueue would (or has ever) worked without these
-> modifications, but I had to make them in order to use it :)
-> 
-> Changes (v2):
->   - Remove unnecessary initialization of the new list item
+Hi Oren,
 
-Reviewed-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+until you rebase onto a newer Linus tree (which has this fix), I still
+need this patch in order for s390 to compile.  Can you keep it in the
+patchset for now?
 
-thanks,
--serge
+----- Forwarded message from "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> -----
 
-> Cc: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/deferqueue.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
-> index efd99d5..3fb388b 100644
-> --- a/kernel/deferqueue.c
-> +++ b/kernel/deferqueue.c
-> @@ -66,7 +66,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
->  {
->  	struct deferqueue_entry *dq;
-> 
-> -	dq = kmalloc(sizeof(dq) + size, GFP_KERNEL);
-> +	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
->  	if (!dq)
->  		return -ENOMEM;
-> 
-> @@ -77,7 +77,7 @@ int deferqueue_add(struct deferqueue_head *head, void *data, int size,
->  	pr_debug("%s: adding work %p func %p dtor %p\n",
->  		 __func__, dq, func, dtor);
->  	spin_lock(&head->lock);
-> -	list_add_tail(&head->list, &dq->list);
-> +	list_add_tail(&dq->list, &head->list);
->  	spin_unlock(&head->lock);
->  	return 0;
->  }
-> -- 
-> 1.6.0.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+Date:  Fri, 29 May 2009 17:32:48 -0500
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>,
+	Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>,
+	Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>,
+	David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>,
+	linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Subject: [PATCH 1/9] cred: #include init.h in cred.h
+
+cred.h can't be included as first header because it uses __init and
+doesn't include init.h which is enough to break compilation on at least
+ia64.
+
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/cred.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 3282ee4..4fa9996 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -13,6 +13,7 @@
+ #define _LINUX_CRED_H
+
+ #include <linux/capability.h>
++#include <linux/init.h>
+ #include <linux/key.h>
+ #include <asm/atomic.h>
+
+-- 
+1.6.1
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+----- End forwarded message -----
