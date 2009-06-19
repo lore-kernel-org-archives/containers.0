@@ -1,24 +1,17 @@
-From: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] mm: clear N_HIGH_MEMORY map before se set it again -v4
-Date: Fri, 19 Jun 2009 09:16:57 -0700
-Message-ID: <4A3BB9F9.6090203__19459.9545248368$1245428467$gmane$org@kernel.org>
-References: <4A05269D.8000701@kernel.org> <20090512111623.GG25923@csn.ul.ie>
-	<4A0A64FB.4080504@kernel.org> <20090513145950.GB28097@csn.ul.ie>
-	<4A0C4910.7090508@kernel.org> <4A0C4A2A.6080009@kernel.org>
-	<20090514095414.ba8356e5.akpm@linux-foundation.org>
-	<4A0C4F67.5080802@kernel.org>
-	<20090514102554.b3a36f19.akpm@linux-foundation.org>
-	<4A0C563A.3020100@kernel.org> <4A2758CB.9090404@kernel.org>
-	<alpine.DEB.1.10.0906041236520.5377@gentwo.org>
-	<4A27FAD4.2010104@kernel.org>
-	<alpine.DEB.1.10.0906041309230.8080@gentwo.org>
-	<4A2803D1.4070001@kernel.org> <m3bpokiv0u.fsf@pobox.com>
-	<4A3B49BA.40100@kernel.org> <m3prd0havh.fsf@pobox.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
+Date: Fri, 19 Jun 2009 12:10:36 -0500
+Message-ID: <m3ljnogneb.fsf@pobox.com>
+References: <20090617001723.GA9452@us.ibm.com>
+	<4A3A6F61.5030401@cs.columbia.edu> <m3ws79h01p.fsf@pobox.com>
+	<20090618223213.GA13179@us.ibm.com> <m3zlc5kugu.fsf@pobox.com>
+	<20090619145606.GB22381@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m3prd0havh.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090619145606.GB22381-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message
+	of "Fri\, 19 Jun 2009 09\:56\:06 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,65 +21,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pekka Enberg <penberg-bbCR+/B0CizivPeTLB3BmA@public.gmane.org>
-Cc: steiner-sJ/iWh9BUns@public.gmane.org, Christoph Lameter <cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, Mel Gorman <mel-wPRd99KPJ+uzQB+pC5nmwQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Nathan Lynch wrote:
-> Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
->>> I bisected to the commit containing this change.  Reverting fixes the
->>> problem.
->>>
->> can you use following patch to see what happens to that nodemask?
-> 
-> # dmesg | grep node_states
-> before clear: node_states [3]: 1
-> after online check: node_states [3]: 0
-> 
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-/*
- * Array of node states.
- */
-nodemask_t node_states[NR_NODE_STATES] __read_mostly = {
-        [N_POSSIBLE] = NODE_MASK_ALL,
-        [N_ONLINE] = { { [0] = 1UL } },
-#ifndef CONFIG_NUMA
-        [N_NORMAL_MEMORY] = { { [0] = 1UL } },
-#ifdef CONFIG_HIGHMEM
-        [N_HIGH_MEMORY] = { { [0] = 1UL } },
-#endif
-        [N_CPU] = { { [0] = 1UL } },
-#endif  /* NUMA */
-};
-EXPORT_SYMBOL(node_states);
+> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+>> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+>> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+>> >> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+>> >> 
+>> >> > I think it's useful to be able to
+>> >> >
+>> >> > 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
+>> >> > 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
+>> >> > system with !CONFIG_UTS_NS (as long as all tasks in the image
+>> >> > share a single uts-ns)
+>> >> 
+>> >> In principle I agree, but what confidence can we have that meaningful
+>> >> testing of such configurations (especially #2) will occur?
+>> >
+>> > History says, low confidence.  So far just 1 is bad enough.  It's
+>> > taking a lot of my time on the LSM c/r (with the various combinations
+>> > of CONFIG_SECURITY, CONFIG_IPC_NS, and CONFIG_CHECKPOINT), and things
+>> > like CONFIG_IPC_NS consistently break c/r anyway.
+>> >
+>> > So for 2 i'm tempted to say let's encode a sha1sum of the .config
+>> > into the checkpoint header.  We'll keep *trying* to support (2), and
+>> > userspace can trivially rewrite the header if it really wants to believe
+>> > we've succeeded.
+>> 
+>> Are you suggesting having sys_restart code path consult the .config
+>> sha1sum in the image?
+>
+> Yup.
+>
+>> Or is it just for the benefit of userspace?  If
+>> the former, I'm having difficulty grasping the benefit.
+>
+> Well we could also do it in userspace, but it seemed easier to actually
+> store the sha1sum in a char buf in the c/r code in the kernel, stick it
+> in the header at checkpoint, and verify it at restart.
+>
+> The benefit?  Well...  really I feel opposite today.  Along the lines
+> of supporting unprivileged restart as long as possible to make us
+> consider security, I guess I'd argue we should support heterogenous
+> (in terms of config :) c/r as long as possible.  The reason I was
+> thinking otherwise yesterday is that I have to special-case things
+> like the task->security objref when CONFIG_SECURITY=n.  It felt
+> hacky yesterday, but the end result looks pretty good and is i 
+> think better thought out than it would have been were we doing the
+> sha1sum thing.
 
-preset that
-
-
-and
-
-Zone PFN ranges:
-  DMA      0x00000000 -> 0x00001000
-  Normal   0x00001000 -> 0x0001fff0
-  HighMem  0x0001fff0 -> 0x0001fff0
-Movable zone start PFN for each node
-early_node_map[2] active PFN ranges
-    0: 0x00000000 -> 0x0000009f
-    0: 0x00000100 -> 0x0001fff0
-before clear: node_states [3]: 1
-On node 0 totalpages: 130959
-free_area_init_node: node 0, pgdat c0976960, node_mem_map c1151000
-  DMA zone: 60 pages used for memmap
-  DMA zone: 0 pages reserved
-  DMA zone: 3939 pages, LIFO batch:0
-  Normal zone: 1860 pages used for memmap
-  Normal zone: 125100 pages, LIFO batch:31
-after online check: node_states [3]: 0
-
-
-you don't have high mem, so we should it.
-
-really hate those preset value assume node 0 has RAM...
-
-
-YH
+Okay.  My thought was that the sha1sum would be as subject to tampering
+as anything else in the image, so the restart path couldn't really rely
+on it to convey accurate information about the image contents.  But I
+suppose it's moot now.
