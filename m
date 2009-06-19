@@ -1,16 +1,16 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 18/19] io-controller: Debug hierarchical IO scheduling
-Date: Fri, 19 Jun 2009 10:08:54 -0400
-Message-ID: <20090619140854.GC3726__26119.5716834211$1245420615$gmane$org@redhat.com>
-References: <1244513342-11758-1-git-send-email-vgoyal@redhat.com>
-	<1244513342-11758-19-git-send-email-vgoyal@redhat.com>
-	<4A3B2F7E.10405@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: fix compilation with CONFIG_UTS_NS=n
+Date: Fri, 19 Jun 2009 09:56:06 -0500
+Message-ID: <20090619145606.GB22381@us.ibm.com>
+References: <20090617001723.GA9452@us.ibm.com>
+	<4A3A6F61.5030401@cs.columbia.edu> <m3ws79h01p.fsf@pobox.com>
+	<20090618223213.GA13179@us.ibm.com> <m3zlc5kugu.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A3B2F7E.10405-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <m3zlc5kugu.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,94 +20,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jun 19, 2009 at 02:26:06PM +0800, Gui Jianfeng wrote:
-> Vivek Goyal wrote:
-> ...
-> > +static inline void bfq_account_for_entity_addition(struct io_entity *entity)
-> > +{
-> > +	struct io_group *iog = io_entity_to_iog(entity);
-> > +
-> > +	if (iog) {
-> > +		struct elv_fq_data *efqd;
-> > +		char path[128];
-> > +
-> > +		/*
-> > +		 * Keep track of how many times a group has been removed
-> > +		 * from active tree because it did not have any active
-> > +		 * backlogged ioq under it
-> > +		 */
-> > +		iog->queue++;
-> > +		iog->queue_start = jiffies;
-> > +
-> > +		/* Log group addition event */
-> > +		rcu_read_lock();
-> > +		efqd = rcu_dereference(iog->key);
-> > +		if (efqd) {
-> > +			io_group_path(iog, path, sizeof(path));
-> > +			elv_log(efqd, "add group=%s weight=%ld", path,
-> > +					iog->entity.weight);
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> >> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> >> 
+> >> > I think it's useful to be able to
+> >> >
+> >> > 1) checkpoint on a system with !CONFIG_UTS_NS,  and -
+> >> > 2) checkpoint on a system with CONFIG_UTS_NS and restart on a
+> >> > system with !CONFIG_UTS_NS (as long as all tasks in the image
+> >> > share a single uts-ns)
+> >> 
+> >> In principle I agree, but what confidence can we have that meaningful
+> >> testing of such configurations (especially #2) will occur?
+> >
+> > History says, low confidence.  So far just 1 is bad enough.  It's
+> > taking a lot of my time on the LSM c/r (with the various combinations
+> > of CONFIG_SECURITY, CONFIG_IPC_NS, and CONFIG_CHECKPOINT), and things
+> > like CONFIG_IPC_NS consistently break c/r anyway.
+> >
+> > So for 2 i'm tempted to say let's encode a sha1sum of the .config
+> > into the checkpoint header.  We'll keep *trying* to support (2), and
+> > userspace can trivially rewrite the header if it really wants to believe
+> > we've succeeded.
 > 
-> Since cgroup path is already cached, why not use it. :)
-> 
+> Are you suggesting having sys_restart code path consult the .config
+> sha1sum in the image?
 
-Thanks Gui. Queued for next posting.
+Yup.
 
-Vivek
+> Or is it just for the benefit of userspace?  If
+> the former, I'm having difficulty grasping the benefit.
 
-> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  block/elevator-fq.c |   12 ++++--------
->  1 files changed, 4 insertions(+), 8 deletions(-)
-> 
-> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-> index bfa79c9..1a397c3 100644
-> --- a/block/elevator-fq.c
-> +++ b/block/elevator-fq.c
-> @@ -183,7 +183,6 @@ static inline void bfq_account_for_entity_addition(struct io_entity *entity)
->  
->  	if (iog) {
->  		struct elv_fq_data *efqd;
-> -		char path[128];
->  
->  		/*
->  		 * Keep track of how many times a group has been removed
-> @@ -197,9 +196,8 @@ static inline void bfq_account_for_entity_addition(struct io_entity *entity)
->  		rcu_read_lock();
->  		efqd = rcu_dereference(iog->key);
->  		if (efqd) {
-> -			io_group_path(iog, path, sizeof(path));
-> -			elv_log(efqd, "add group=%s weight=%ld", path,
-> -					iog->entity.weight);
-> +			elv_log(efqd, "add group=%s weight=%ld", iog->path,
-> +				iog->entity.weight);
->  		}
->  		rcu_read_unlock();
->  	}
-> @@ -215,7 +213,6 @@ static inline void bfq_account_for_entity_deletion(struct io_entity *entity)
->  
->  	if (iog) {
->  		struct elv_fq_data *efqd;
-> -		char path[128];
->  
->  		iog->dequeue++;
->  		/* Keep a track of how long group was on active tree */
-> @@ -227,9 +224,8 @@ static inline void bfq_account_for_entity_deletion(struct io_entity *entity)
->  		rcu_read_lock();
->  		efqd = rcu_dereference(iog->key);
->  		if (efqd) {
-> -			io_group_path(iog, path, sizeof(path));
-> -			elv_log(efqd, "del group=%s weight=%ld", path,
-> -					iog->entity.weight);
-> +			elv_log(efqd, "del group=%s weight=%ld", iog->path,
-> +				iog->entity.weight);
->  		}
->  		rcu_read_unlock();
->  	}
-> -- 
-> 1.5.4.rc3
-> 
-> 
+Well we could also do it in userspace, but it seemed easier to actually
+store the sha1sum in a char buf in the c/r code in the kernel, stick it
+in the header at checkpoint, and verify it at restart.
+
+The benefit?  Well...  really I feel opposite today.  Along the lines
+of supporting unprivileged restart as long as possible to make us
+consider security, I guess I'd argue we should support heterogenous
+(in terms of config :) c/r as long as possible.  The reason I was
+thinking otherwise yesterday is that I have to special-case things
+like the task->security objref when CONFIG_SECURITY=n.  It felt
+hacky yesterday, but the end result looks pretty good and is i 
+think better thought out than it would have been were we doing the
+sha1sum thing.
+
+-serge
