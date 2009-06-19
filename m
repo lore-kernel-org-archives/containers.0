@@ -1,12 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: uts: don't pass an unsigned var as a signed int
-Date: Fri, 19 Jun 2009 15:37:19 -0500
-Message-ID: <20090619203719.GA30093@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 11/20] io-controller: noop changes for hierarchical fair
+	queuing
+Date: Fri, 19 Jun 2009 16:37:29 -0400
+Message-ID: <1245443858-8487-12-git-send-email-vgoyal__47615.3510543101$1245445097$gmane$org@redhat.com>
+References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1245443858-8487-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,50 +18,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Else my checkpoing image gets reeeaallly huge.  Just passing the
-result of sizeof() however does the right thing.
+This patch changes noop to use queue scheduling code from elevator layer.
+One can go back to old noop by deselecting CONFIG_IOSCHED_NOOP_HIER.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/namespace.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ block/Kconfig.iosched |   11 +++++++++++
+ block/noop-iosched.c  |   13 +++++++++++++
+ 2 files changed, 24 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
-index 5726acb..8206aee 100644
---- a/checkpoint/namespace.c
-+++ b/checkpoint/namespace.c
-@@ -46,22 +46,22 @@ static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
- 		return ret;
+diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
+index a91a807..9da6657 100644
+--- a/block/Kconfig.iosched
++++ b/block/Kconfig.iosched
+@@ -25,6 +25,17 @@ config IOSCHED_NOOP
+ 	  that do their own scheduling and require only minimal assistance from
+ 	  the kernel.
  
- 	down_read(&uts_sem);
--	ret = ckpt_write_string(ctx, name->sysname, h->sysname_len);
-+	ret = ckpt_write_string(ctx, name->sysname, sizeof(name->sysname));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->nodename, h->nodename_len);
-+	ret = ckpt_write_string(ctx, name->nodename, sizeof(name->nodename));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->release, h->release_len);
-+	ret = ckpt_write_string(ctx, name->release, sizeof(name->release));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->version, h->version_len);
-+	ret = ckpt_write_string(ctx, name->version, sizeof(name->version));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->machine, h->machine_len);
-+	ret = ckpt_write_string(ctx, name->machine, sizeof(name->machine));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->domainname, h->domainname_len);
-+	ret = ckpt_write_string(ctx, name->domainname, sizeof(name->domainname));
-  up:
- 	up_read(&uts_sem);
- 	return ret;
++config IOSCHED_NOOP_HIER
++	bool "Noop Hierarchical Scheduling support"
++	depends on IOSCHED_NOOP && CGROUPS
++	select ELV_FAIR_QUEUING
++	select GROUP_IOSCHED
++	default n
++	---help---
++	  Enable hierarhical scheduling in noop. In this mode noop keeps
++	  one IO queue per cgroup instead of a global queue. Elevator
++	  fair queuing logic ensures fairness among various queues.
++
+ config IOSCHED_AS
+ 	tristate "Anticipatory I/O scheduler"
+ 	default y
+diff --git a/block/noop-iosched.c b/block/noop-iosched.c
+index 731dbf2..97ea41b 100644
+--- a/block/noop-iosched.c
++++ b/block/noop-iosched.c
+@@ -82,6 +82,15 @@ static void noop_free_noop_queue(struct elevator_queue *e, void *sched_queue)
+ 	kfree(nq);
+ }
+ 
++#ifdef CONFIG_IOSCHED_NOOP_HIER
++static struct elv_fs_entry noop_attrs[] = {
++	ELV_ATTR(fairness),
++	ELV_ATTR(slice_idle),
++	ELV_ATTR(slice_sync),
++	__ATTR_NULL
++};
++#endif
++
+ static struct elevator_type elevator_noop = {
+ 	.ops = {
+ 		.elevator_merge_req_fn		= noop_merged_requests,
+@@ -92,6 +101,10 @@ static struct elevator_type elevator_noop = {
+ 		.elevator_alloc_sched_queue_fn	= noop_alloc_noop_queue,
+ 		.elevator_free_sched_queue_fn	= noop_free_noop_queue,
+ 	},
++#ifdef CONFIG_IOSCHED_NOOP_HIER
++	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
++	.elevator_attrs = noop_attrs,
++#endif
+ 	.elevator_name = "noop",
+ 	.elevator_owner = THIS_MODULE,
+ };
 -- 
-1.6.1
+1.6.0.6
