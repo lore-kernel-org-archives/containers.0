@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 04/20] io-controller: Modify cfq to make use of flat elevator
-	fair queuing
-Date: Fri, 19 Jun 2009 16:37:22 -0400
-Message-ID: <1245443858-8487-5-git-send-email-vgoyal__37166.0861339935$1245445212$gmane$org@redhat.com>
+Subject: [PATCH 02/20] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Fri, 19 Jun 2009 16:37:20 -0400
+Message-ID: <1245443858-8487-3-git-send-email-vgoyal__40880.0866840922$1245445234$gmane$org@redhat.com>
 References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,1873 +22,2810 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch changes cfq to use fair queuing code from elevator layer.
+This is common fair queuing code in elevator layer. This is controlled by
+config option CONFIG_ELV_FAIR_QUEUING. This patch initially only introduces
+flat fair queuing support where there is only one group, "root group" and all
+the tasks belong to root group.
+
+This elevator layer changes are backward compatible. That means any ioscheduler
+using old interfaces will continue to work.
+
+This code is essentially the CFQ code for fair queuing. The primary difference
+is that flat rounding robin algorithm of CFQ has been replaced with BFQ (WF2Q+).
 
 Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
 Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched     |    3 +-
- block/cfq-iosched.c       | 1106 +++++++++------------------------------------
- include/linux/iocontext.h |    5 -
- 3 files changed, 222 insertions(+), 892 deletions(-)
+ block/Kconfig.iosched    |   13 +
+ block/Makefile           |    1 +
+ block/elevator-fq.c      | 2015 ++++++++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h      |  473 +++++++++++
+ block/elevator.c         |   46 +-
+ include/linux/blkdev.h   |    5 +
+ include/linux/elevator.h |   51 ++
+ 7 files changed, 2593 insertions(+), 11 deletions(-)
+ create mode 100644 block/elevator-fq.c
+ create mode 100644 block/elevator-fq.h
 
 diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 3398134..dd5224d 100644
+index 7e803fc..3398134 100644
 --- a/block/Kconfig.iosched
 +++ b/block/Kconfig.iosched
-@@ -3,7 +3,7 @@ if BLOCK
+@@ -2,6 +2,19 @@ if BLOCK
+ 
  menu "IO Schedulers"
  
- config ELV_FAIR_QUEUING
--	bool "Elevator Fair Queuing Support"
-+	bool
- 	default n
- 	---help---
- 	  Traditionally only cfq had notion of multiple queues and it did
-@@ -46,6 +46,7 @@ config IOSCHED_DEADLINE
- 
- config IOSCHED_CFQ
- 	tristate "CFQ I/O scheduler"
-+	select ELV_FAIR_QUEUING
++config ELV_FAIR_QUEUING
++	bool "Elevator Fair Queuing Support"
++	default n
++	---help---
++	  Traditionally only cfq had notion of multiple queues and it did
++	  fair queuing at its own. With the cgroups and need of controlling
++	  IO, now even the simple io schedulers like noop, deadline, as will
++	  have one queue per cgroup and will need hierarchical fair queuing.
++	  Instead of every io scheduler implementing its own fair queuing
++	  logic, this option enables fair queuing in elevator layer so that
++	  other ioschedulers can make use of it.
++	  If unsure, say N.
++
+ config IOSCHED_NOOP
+ 	bool
  	default y
- 	---help---
- 	  The CFQ I/O scheduler tries to distribute bandwidth equally
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index a55a9bd..995c8dd 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -12,7 +12,6 @@
- #include <linux/rbtree.h>
- #include <linux/ioprio.h>
- #include <linux/blktrace_api.h>
--
- /*
-  * tunables
-  */
-@@ -23,15 +22,7 @@ static const int cfq_fifo_expire[2] = { HZ / 4, HZ / 8 };
- static const int cfq_back_max = 16 * 1024;
- /* penalty of a backwards seek */
- static const int cfq_back_penalty = 2;
--static const int cfq_slice_sync = HZ / 10;
--static int cfq_slice_async = HZ / 25;
- static const int cfq_slice_async_rq = 2;
--static int cfq_slice_idle = HZ / 125;
--
--/*
-- * offset from end of service tree
-- */
--#define CFQ_IDLE_DELAY		(HZ / 5)
- 
- /*
-  * below this threshold, we consider thinktime immediate
-@@ -43,7 +34,7 @@ static int cfq_slice_idle = HZ / 125;
- 
- #define RQ_CIC(rq)		\
- 	((struct cfq_io_context *) (rq)->elevator_private)
--#define RQ_CFQQ(rq)		(struct cfq_queue *) ((rq)->elevator_private2)
-+#define RQ_CFQQ(rq)	(struct cfq_queue *) (ioq_sched_queue((rq)->ioq))
- 
- static struct kmem_cache *cfq_pool;
- static struct kmem_cache *cfq_ioc_pool;
-@@ -53,8 +44,6 @@ static struct completion *ioc_gone;
- static DEFINE_SPINLOCK(ioc_gone_lock);
- 
- #define CFQ_PRIO_LISTS		IOPRIO_BE_NR
--#define cfq_class_idle(cfqq)	((cfqq)->ioprio_class == IOPRIO_CLASS_IDLE)
--#define cfq_class_rt(cfqq)	((cfqq)->ioprio_class == IOPRIO_CLASS_RT)
- 
- #define sample_valid(samples)	((samples) > 80)
- 
-@@ -75,12 +64,6 @@ struct cfq_rb_root {
-  */
- struct cfq_data {
- 	struct request_queue *queue;
--
--	/*
--	 * rr list of queues with requests and the count of them
--	 */
--	struct cfq_rb_root service_tree;
--
- 	/*
- 	 * Each priority tree is sorted by next_request position.  These
- 	 * trees are used when determining if two or more queues are
-@@ -88,41 +71,11 @@ struct cfq_data {
- 	 */
- 	struct rb_root prio_trees[CFQ_PRIO_LISTS];
- 
--	unsigned int busy_queues;
--	/*
--	 * Used to track any pending rt requests so we can pre-empt current
--	 * non-RT cfqq in service when this value is non-zero.
--	 */
--	unsigned int busy_rt_queues;
--
--	int rq_in_driver;
- 	int sync_flight;
- 
--	/*
--	 * queue-depth detection
--	 */
--	int rq_queued;
--	int hw_tag;
--	int hw_tag_samples;
--	int rq_in_driver_peak;
--
--	/*
--	 * idle window management
--	 */
--	struct timer_list idle_slice_timer;
--	struct work_struct unplug_work;
--
--	struct cfq_queue *active_queue;
- 	struct cfq_io_context *active_cic;
- 
--	/*
--	 * async queue for each priority case
--	 */
--	struct cfq_queue *async_cfqq[2][IOPRIO_BE_NR];
--	struct cfq_queue *async_idle_cfqq;
--
- 	sector_t last_position;
--	unsigned long last_end_request;
- 
- 	/*
- 	 * tunables, see top of file
-@@ -131,9 +84,7 @@ struct cfq_data {
- 	unsigned int cfq_fifo_expire[2];
- 	unsigned int cfq_back_penalty;
- 	unsigned int cfq_back_max;
--	unsigned int cfq_slice[2];
- 	unsigned int cfq_slice_async_rq;
--	unsigned int cfq_slice_idle;
- 
- 	struct list_head cic_list;
- };
-@@ -142,16 +93,11 @@ struct cfq_data {
-  * Per process-grouping structure
-  */
- struct cfq_queue {
--	/* reference count */
--	atomic_t ref;
-+	struct io_queue *ioq;
- 	/* various state flags, see below */
- 	unsigned int flags;
- 	/* parent cfq_data */
- 	struct cfq_data *cfqd;
--	/* service_tree member */
--	struct rb_node rb_node;
--	/* service_tree key */
--	unsigned long rb_key;
- 	/* prio tree member */
- 	struct rb_node p_node;
- 	/* prio tree root we belong to, if any */
-@@ -167,33 +113,23 @@ struct cfq_queue {
- 	/* fifo list of requests in sort_list */
- 	struct list_head fifo;
- 
--	unsigned long slice_end;
--	long slice_resid;
- 	unsigned int slice_dispatch;
- 
- 	/* pending metadata requests */
- 	int meta_pending;
--	/* number of requests that are on the dispatch list or inside driver */
--	int dispatched;
- 
- 	/* io prio of this group */
--	unsigned short ioprio, org_ioprio;
--	unsigned short ioprio_class, org_ioprio_class;
-+	unsigned short org_ioprio;
-+	unsigned short org_ioprio_class;
- 
- 	pid_t pid;
- };
- 
- enum cfqq_state_flags {
--	CFQ_CFQQ_FLAG_on_rr = 0,	/* on round-robin busy list */
--	CFQ_CFQQ_FLAG_wait_request,	/* waiting for a request */
--	CFQ_CFQQ_FLAG_must_dispatch,	/* must be allowed a dispatch */
- 	CFQ_CFQQ_FLAG_must_alloc,	/* must be allowed rq alloc */
- 	CFQ_CFQQ_FLAG_must_alloc_slice,	/* per-slice must_alloc flag */
- 	CFQ_CFQQ_FLAG_fifo_expire,	/* FIFO checked in this slice */
--	CFQ_CFQQ_FLAG_idle_window,	/* slice idling enabled */
- 	CFQ_CFQQ_FLAG_prio_changed,	/* task priority has changed */
--	CFQ_CFQQ_FLAG_slice_new,	/* no requests dispatched in slice */
--	CFQ_CFQQ_FLAG_sync,		/* synchronous queue */
- 	CFQ_CFQQ_FLAG_coop,		/* has done a coop jump of the queue */
- };
- 
-@@ -211,16 +147,10 @@ static inline int cfq_cfqq_##name(const struct cfq_queue *cfqq)		\
- 	return ((cfqq)->flags & (1 << CFQ_CFQQ_FLAG_##name)) != 0;	\
- }
- 
--CFQ_CFQQ_FNS(on_rr);
--CFQ_CFQQ_FNS(wait_request);
--CFQ_CFQQ_FNS(must_dispatch);
- CFQ_CFQQ_FNS(must_alloc);
- CFQ_CFQQ_FNS(must_alloc_slice);
- CFQ_CFQQ_FNS(fifo_expire);
--CFQ_CFQQ_FNS(idle_window);
- CFQ_CFQQ_FNS(prio_changed);
--CFQ_CFQQ_FNS(slice_new);
--CFQ_CFQQ_FNS(sync);
- CFQ_CFQQ_FNS(coop);
- #undef CFQ_CFQQ_FNS
- 
-@@ -259,66 +189,27 @@ static inline int cfq_bio_sync(struct bio *bio)
- 	return 0;
- }
- 
--/*
-- * scheduler run of queue, if there are requests pending and no one in the
-- * driver that will restart queueing
-- */
--static inline void cfq_schedule_dispatch(struct cfq_data *cfqd)
-+static inline struct io_group *cfqq_to_io_group(struct cfq_queue *cfqq)
- {
--	if (cfqd->busy_queues) {
--		cfq_log(cfqd, "schedule dispatch");
--		kblockd_schedule_work(cfqd->queue, &cfqd->unplug_work);
--	}
-+	return ioq_to_io_group(cfqq->ioq);
- }
- 
--static int cfq_queue_empty(struct request_queue *q)
-+static inline int cfq_class_idle(struct cfq_queue *cfqq)
- {
--	struct cfq_data *cfqd = q->elevator->elevator_data;
--
--	return !cfqd->busy_queues;
-+	return elv_ioq_class_idle(cfqq->ioq);
- }
- 
--/*
-- * Scale schedule slice based on io priority. Use the sync time slice only
-- * if a queue is marked sync and has sync io queued. A sync queue with async
-- * io only, should not get full sync slice length.
-- */
--static inline int cfq_prio_slice(struct cfq_data *cfqd, int sync,
--				 unsigned short prio)
--{
--	const int base_slice = cfqd->cfq_slice[sync];
--
--	WARN_ON(prio >= IOPRIO_BE_NR);
--
--	return base_slice + (base_slice/CFQ_SLICE_SCALE * (4 - prio));
--}
--
--static inline int
--cfq_prio_to_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
--{
--	return cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio);
--}
--
--static inline void
--cfq_set_prio_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
-+static inline int cfq_cfqq_sync(struct cfq_queue *cfqq)
- {
--	cfqq->slice_end = cfq_prio_to_slice(cfqd, cfqq) + jiffies;
--	cfq_log_cfqq(cfqd, cfqq, "set_slice=%lu", cfqq->slice_end - jiffies);
-+	return elv_ioq_sync(cfqq->ioq);
- }
- 
--/*
-- * We need to wrap this check in cfq_cfqq_slice_new(), since ->slice_end
-- * isn't valid until the first request from the dispatch is activated
-- * and the slice time set.
-- */
--static inline int cfq_slice_used(struct cfq_queue *cfqq)
-+static inline int cfqq_is_active_queue(struct cfq_queue *cfqq)
- {
--	if (cfq_cfqq_slice_new(cfqq))
--		return 0;
--	if (time_before(jiffies, cfqq->slice_end))
--		return 0;
-+	struct cfq_data *cfqd = cfqq->cfqd;
-+	struct elevator_queue *e = cfqd->queue->elevator;
- 
--	return 1;
-+	return (elv_active_sched_queue(e) == cfqq);
- }
- 
- /*
-@@ -417,33 +308,6 @@ cfq_choose_req(struct cfq_data *cfqd, struct request *rq1, struct request *rq2)
- }
- 
- /*
-- * The below is leftmost cache rbtree addon
-- */
--static struct cfq_queue *cfq_rb_first(struct cfq_rb_root *root)
--{
--	if (!root->left)
--		root->left = rb_first(&root->rb);
--
--	if (root->left)
--		return rb_entry(root->left, struct cfq_queue, rb_node);
--
--	return NULL;
--}
--
--static void rb_erase_init(struct rb_node *n, struct rb_root *root)
--{
--	rb_erase(n, root);
--	RB_CLEAR_NODE(n);
--}
--
--static void cfq_rb_erase(struct rb_node *n, struct cfq_rb_root *root)
--{
--	if (root->left == n)
--		root->left = NULL;
--	rb_erase_init(n, &root->rb);
--}
--
--/*
-  * would be nice to take fifo expire time into account as well
-  */
- static struct request *
-@@ -456,10 +320,10 @@ cfq_find_next_rq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- 
- 	BUG_ON(RB_EMPTY_NODE(&last->rb_node));
- 
--	if (rbprev)
-+	if (rbprev != NULL)
- 		prev = rb_entry_rq(rbprev);
- 
--	if (rbnext)
-+	if (rbnext != NULL)
- 		next = rb_entry_rq(rbnext);
- 	else {
- 		rbnext = rb_first(&cfqq->sort_list);
-@@ -470,95 +334,6 @@ cfq_find_next_rq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- 	return cfq_choose_req(cfqd, next, prev);
- }
- 
--static unsigned long cfq_slice_offset(struct cfq_data *cfqd,
--				      struct cfq_queue *cfqq)
--{
--	/*
--	 * just an approximation, should be ok.
--	 */
--	return (cfqd->busy_queues - 1) * (cfq_prio_slice(cfqd, 1, 0) -
--		       cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio));
--}
--
--/*
-- * The cfqd->service_tree holds all pending cfq_queue's that have
-- * requests waiting to be processed. It is sorted in the order that
-- * we will service the queues.
-- */
--static void cfq_service_tree_add(struct cfq_data *cfqd, struct cfq_queue *cfqq,
--				 int add_front)
--{
--	struct rb_node **p, *parent;
--	struct cfq_queue *__cfqq;
--	unsigned long rb_key;
--	int left;
--
--	if (cfq_class_idle(cfqq)) {
--		rb_key = CFQ_IDLE_DELAY;
--		parent = rb_last(&cfqd->service_tree.rb);
--		if (parent && parent != &cfqq->rb_node) {
--			__cfqq = rb_entry(parent, struct cfq_queue, rb_node);
--			rb_key += __cfqq->rb_key;
--		} else
--			rb_key += jiffies;
--	} else if (!add_front) {
--		rb_key = cfq_slice_offset(cfqd, cfqq) + jiffies;
--		rb_key += cfqq->slice_resid;
--		cfqq->slice_resid = 0;
--	} else
--		rb_key = 0;
--
--	if (!RB_EMPTY_NODE(&cfqq->rb_node)) {
--		/*
--		 * same position, nothing more to do
--		 */
--		if (rb_key == cfqq->rb_key)
--			return;
--
--		cfq_rb_erase(&cfqq->rb_node, &cfqd->service_tree);
--	}
--
--	left = 1;
--	parent = NULL;
--	p = &cfqd->service_tree.rb.rb_node;
--	while (*p) {
--		struct rb_node **n;
--
--		parent = *p;
--		__cfqq = rb_entry(parent, struct cfq_queue, rb_node);
--
--		/*
--		 * sort RT queues first, we always want to give
--		 * preference to them. IDLE queues goes to the back.
--		 * after that, sort on the next service time.
--		 */
--		if (cfq_class_rt(cfqq) > cfq_class_rt(__cfqq))
--			n = &(*p)->rb_left;
--		else if (cfq_class_rt(cfqq) < cfq_class_rt(__cfqq))
--			n = &(*p)->rb_right;
--		else if (cfq_class_idle(cfqq) < cfq_class_idle(__cfqq))
--			n = &(*p)->rb_left;
--		else if (cfq_class_idle(cfqq) > cfq_class_idle(__cfqq))
--			n = &(*p)->rb_right;
--		else if (rb_key < __cfqq->rb_key)
--			n = &(*p)->rb_left;
--		else
--			n = &(*p)->rb_right;
--
--		if (n == &(*p)->rb_right)
--			left = 0;
--
--		p = n;
--	}
--
--	if (left)
--		cfqd->service_tree.left = &cfqq->rb_node;
--
--	cfqq->rb_key = rb_key;
--	rb_link_node(&cfqq->rb_node, parent, p);
--	rb_insert_color(&cfqq->rb_node, &cfqd->service_tree.rb);
--}
--
- static struct cfq_queue *
- cfq_prio_tree_lookup(struct cfq_data *cfqd, struct rb_root *root,
- 		     sector_t sector, struct rb_node **ret_parent,
-@@ -620,57 +395,34 @@ static void cfq_prio_tree_add(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- 		cfqq->p_root = NULL;
- }
- 
--/*
-- * Update cfqq's position in the service tree.
-- */
--static void cfq_resort_rr_list(struct cfq_data *cfqd, struct cfq_queue *cfqq)
-+/* An active ioq is being reset. A chance to do cic related stuff. */
-+static void cfq_active_ioq_reset(struct request_queue *q, void *sched_queue)
- {
--	/*
--	 * Resorting requires the cfqq to be on the RR list already.
--	 */
--	if (cfq_cfqq_on_rr(cfqq)) {
--		cfq_service_tree_add(cfqd, cfqq, 0);
--		cfq_prio_tree_add(cfqd, cfqq);
--	}
--}
-+	struct cfq_data *cfqd = q->elevator->elevator_data;
-+	struct cfq_queue *cfqq = sched_queue;
- 
--/*
-- * add to busy list of queues for service, trying to be fair in ordering
-- * the pending list according to last request service
-- */
--static void cfq_add_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
--{
--	cfq_log_cfqq(cfqd, cfqq, "add_to_rr");
--	BUG_ON(cfq_cfqq_on_rr(cfqq));
--	cfq_mark_cfqq_on_rr(cfqq);
--	cfqd->busy_queues++;
--	if (cfq_class_rt(cfqq))
--		cfqd->busy_rt_queues++;
-+	if (cfqd->active_cic) {
-+		put_io_context(cfqd->active_cic->ioc);
-+		cfqd->active_cic = NULL;
-+	}
- 
--	cfq_resort_rr_list(cfqd, cfqq);
-+	/* Resort the cfqq in prio tree */
-+	if (cfqq)
-+		cfq_prio_tree_add(cfqd, cfqq);
- }
- 
--/*
-- * Called when the cfqq no longer has requests pending, remove it from
-- * the service tree.
-- */
--static void cfq_del_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
-+/* An ioq has been set as active one. */
-+static void cfq_active_ioq_set(struct request_queue *q, void *sched_queue,
-+				int coop)
- {
--	cfq_log_cfqq(cfqd, cfqq, "del_from_rr");
--	BUG_ON(!cfq_cfqq_on_rr(cfqq));
--	cfq_clear_cfqq_on_rr(cfqq);
-+	struct cfq_queue *cfqq = sched_queue;
- 
--	if (!RB_EMPTY_NODE(&cfqq->rb_node))
--		cfq_rb_erase(&cfqq->rb_node, &cfqd->service_tree);
--	if (cfqq->p_root) {
--		rb_erase(&cfqq->p_node, cfqq->p_root);
--		cfqq->p_root = NULL;
--	}
-+	cfqq->slice_dispatch = 0;
- 
--	BUG_ON(!cfqd->busy_queues);
--	cfqd->busy_queues--;
--	if (cfq_class_rt(cfqq))
--		cfqd->busy_rt_queues--;
-+	cfq_clear_cfqq_must_alloc_slice(cfqq);
-+	cfq_clear_cfqq_fifo_expire(cfqq);
-+	if (!coop)
-+		cfq_clear_cfqq_coop(cfqq);
- }
- 
- /*
-@@ -679,7 +431,6 @@ static void cfq_del_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- static void cfq_del_rq_rb(struct request *rq)
- {
- 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
--	struct cfq_data *cfqd = cfqq->cfqd;
- 	const int sync = rq_is_sync(rq);
- 
- 	BUG_ON(!cfqq->queued[sync]);
-@@ -687,8 +438,17 @@ static void cfq_del_rq_rb(struct request *rq)
- 
- 	elv_rb_del(&cfqq->sort_list, rq);
- 
--	if (cfq_cfqq_on_rr(cfqq) && RB_EMPTY_ROOT(&cfqq->sort_list))
--		cfq_del_cfqq_rr(cfqd, cfqq);
-+	/*
-+	 * If this was last request in the queue, remove this queue from
-+	 * prio trees. For last request nr_queued count will still be 1 as
-+	 * elevator fair queuing layer is yet to do the accounting.
-+	 */
-+	if (elv_ioq_nr_queued(cfqq->ioq) == 1) {
-+		if (cfqq->p_root) {
-+			rb_erase(&cfqq->p_node, cfqq->p_root);
-+			cfqq->p_root = NULL;
-+		}
-+	}
- }
- 
- static void cfq_add_rq_rb(struct request *rq)
-@@ -706,9 +466,6 @@ static void cfq_add_rq_rb(struct request *rq)
- 	while ((__alias = elv_rb_add(&cfqq->sort_list, rq)) != NULL)
- 		cfq_dispatch_insert(cfqd->queue, __alias);
- 
--	if (!cfq_cfqq_on_rr(cfqq))
--		cfq_add_cfqq_rr(cfqd, cfqq);
--
- 	/*
- 	 * check if this request is a better next-serve candidate
- 	 */
-@@ -756,23 +513,9 @@ static void cfq_activate_request(struct request_queue *q, struct request *rq)
- {
- 	struct cfq_data *cfqd = q->elevator->elevator_data;
- 
--	cfqd->rq_in_driver++;
--	cfq_log_cfqq(cfqd, RQ_CFQQ(rq), "activate rq, drv=%d",
--						cfqd->rq_in_driver);
--
- 	cfqd->last_position = rq->hard_sector + rq->hard_nr_sectors;
- }
- 
--static void cfq_deactivate_request(struct request_queue *q, struct request *rq)
--{
--	struct cfq_data *cfqd = q->elevator->elevator_data;
--
--	WARN_ON(!cfqd->rq_in_driver);
--	cfqd->rq_in_driver--;
--	cfq_log_cfqq(cfqd, RQ_CFQQ(rq), "deactivate rq, drv=%d",
--						cfqd->rq_in_driver);
--}
--
- static void cfq_remove_request(struct request *rq)
- {
- 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
-@@ -783,7 +526,6 @@ static void cfq_remove_request(struct request *rq)
- 	list_del_init(&rq->queuelist);
- 	cfq_del_rq_rb(rq);
- 
--	cfqq->cfqd->rq_queued--;
- 	if (rq_is_meta(rq)) {
- 		WARN_ON(!cfqq->meta_pending);
- 		cfqq->meta_pending--;
-@@ -857,93 +599,21 @@ static int cfq_allow_merge(struct request_queue *q, struct request *rq,
- 	return 0;
- }
- 
--static void __cfq_set_active_queue(struct cfq_data *cfqd,
--				   struct cfq_queue *cfqq)
--{
--	if (cfqq) {
--		cfq_log_cfqq(cfqd, cfqq, "set_active");
--		cfqq->slice_end = 0;
--		cfqq->slice_dispatch = 0;
--
--		cfq_clear_cfqq_wait_request(cfqq);
--		cfq_clear_cfqq_must_dispatch(cfqq);
--		cfq_clear_cfqq_must_alloc_slice(cfqq);
--		cfq_clear_cfqq_fifo_expire(cfqq);
--		cfq_mark_cfqq_slice_new(cfqq);
--
--		del_timer(&cfqd->idle_slice_timer);
--	}
--
--	cfqd->active_queue = cfqq;
--}
--
- /*
-  * current cfqq expired its slice (or was too idle), select new one
-  */
- static void
--__cfq_slice_expired(struct cfq_data *cfqd, struct cfq_queue *cfqq,
--		    int timed_out)
-+__cfq_slice_expired(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- {
--	cfq_log_cfqq(cfqd, cfqq, "slice expired t=%d", timed_out);
--
--	if (cfq_cfqq_wait_request(cfqq))
--		del_timer(&cfqd->idle_slice_timer);
--
--	cfq_clear_cfqq_wait_request(cfqq);
--
--	/*
--	 * store what was left of this slice, if the queue idled/timed out
--	 */
--	if (timed_out && !cfq_cfqq_slice_new(cfqq)) {
--		cfqq->slice_resid = cfqq->slice_end - jiffies;
--		cfq_log_cfqq(cfqd, cfqq, "resid=%ld", cfqq->slice_resid);
--	}
--
--	cfq_resort_rr_list(cfqd, cfqq);
--
--	if (cfqq == cfqd->active_queue)
--		cfqd->active_queue = NULL;
--
--	if (cfqd->active_cic) {
--		put_io_context(cfqd->active_cic->ioc);
--		cfqd->active_cic = NULL;
--	}
-+	__elv_ioq_slice_expired(cfqd->queue, cfqq->ioq);
- }
- 
--static inline void cfq_slice_expired(struct cfq_data *cfqd, int timed_out)
-+static inline void cfq_slice_expired(struct cfq_data *cfqd)
- {
--	struct cfq_queue *cfqq = cfqd->active_queue;
-+	struct cfq_queue *cfqq = elv_active_sched_queue(cfqd->queue->elevator);
- 
- 	if (cfqq)
--		__cfq_slice_expired(cfqd, cfqq, timed_out);
--}
--
--/*
-- * Get next queue for service. Unless we have a queue preemption,
-- * we'll simply select the first cfqq in the service tree.
-- */
--static struct cfq_queue *cfq_get_next_queue(struct cfq_data *cfqd)
--{
--	if (RB_EMPTY_ROOT(&cfqd->service_tree.rb))
--		return NULL;
--
--	return cfq_rb_first(&cfqd->service_tree);
--}
--
--/*
-- * Get and set a new active queue for service.
-- */
--static struct cfq_queue *cfq_set_active_queue(struct cfq_data *cfqd,
--					      struct cfq_queue *cfqq)
--{
--	if (!cfqq) {
--		cfqq = cfq_get_next_queue(cfqd);
--		if (cfqq)
--			cfq_clear_cfqq_coop(cfqq);
--	}
--
--	__cfq_set_active_queue(cfqd, cfqq);
--	return cfqq;
-+		__cfq_slice_expired(cfqd, cfqq);
- }
- 
- static inline sector_t cfq_dist_from_last(struct cfq_data *cfqd,
-@@ -1020,11 +690,12 @@ static struct cfq_queue *cfqq_close(struct cfq_data *cfqd,
-  * associated with the I/O issued by cur_cfqq.  I'm not sure this is a valid
-  * assumption.
-  */
--static struct cfq_queue *cfq_close_cooperator(struct cfq_data *cfqd,
--					      struct cfq_queue *cur_cfqq,
-+static struct io_queue *cfq_close_cooperator(struct request_queue *q,
-+					      void *cur_sched_queue,
- 					      int probe)
- {
--	struct cfq_queue *cfqq;
-+	struct cfq_queue *cur_cfqq = cur_sched_queue, *cfqq;
-+	struct cfq_data *cfqd = q->elevator->elevator_data;
- 
- 	/*
- 	 * A valid cfq_io_context is necessary to compare requests against
-@@ -1047,38 +718,18 @@ static struct cfq_queue *cfq_close_cooperator(struct cfq_data *cfqd,
- 
- 	if (!probe)
- 		cfq_mark_cfqq_coop(cfqq);
--	return cfqq;
-+	return cfqq->ioq;
- }
- 
--static void cfq_arm_slice_timer(struct cfq_data *cfqd)
-+static void cfq_arm_slice_timer(struct request_queue *q, void *sched_queue)
- {
--	struct cfq_queue *cfqq = cfqd->active_queue;
-+	struct cfq_data *cfqd = q->elevator->elevator_data;
-+	struct cfq_queue *cfqq = sched_queue;
- 	struct cfq_io_context *cic;
- 	unsigned long sl;
- 
--	/*
--	 * SSD device without seek penalty, disable idling. But only do so
--	 * for devices that support queuing, otherwise we still have a problem
--	 * with sync vs async workloads.
--	 */
--	if (blk_queue_nonrot(cfqd->queue) && cfqd->hw_tag)
--		return;
--
- 	WARN_ON(!RB_EMPTY_ROOT(&cfqq->sort_list));
--	WARN_ON(cfq_cfqq_slice_new(cfqq));
--
--	/*
--	 * idle is disabled, either manually or by past process history
--	 */
--	if (!cfqd->cfq_slice_idle || !cfq_cfqq_idle_window(cfqq))
--		return;
--
--	/*
--	 * still requests with the driver, don't idle
--	 */
--	if (cfqd->rq_in_driver)
--		return;
--
-+	WARN_ON(elv_ioq_slice_new(cfqq->ioq));
- 	/*
- 	 * task has exited, don't wait
- 	 */
-@@ -1086,18 +737,18 @@ static void cfq_arm_slice_timer(struct cfq_data *cfqd)
- 	if (!cic || !atomic_read(&cic->ioc->nr_tasks))
- 		return;
- 
--	cfq_mark_cfqq_wait_request(cfqq);
- 
-+	elv_mark_ioq_wait_request(cfqq->ioq);
- 	/*
- 	 * we don't want to idle for seeks, but we do want to allow
- 	 * fair distribution of slice time for a process doing back-to-back
- 	 * seeks. so allow a little bit of time for him to submit a new rq
- 	 */
--	sl = cfqd->cfq_slice_idle;
-+	sl = elv_get_slice_idle(q->elevator);
- 	if (sample_valid(cic->seek_samples) && CIC_SEEKY(cic))
- 		sl = min(sl, msecs_to_jiffies(CFQ_MIN_TT));
- 
--	mod_timer(&cfqd->idle_slice_timer, jiffies + sl);
-+	elv_mod_idle_slice_timer(q->elevator, jiffies + sl);
- 	cfq_log_cfqq(cfqd, cfqq, "arm_idle: %lu", sl);
- }
- 
-@@ -1106,13 +757,12 @@ static void cfq_arm_slice_timer(struct cfq_data *cfqd)
-  */
- static void cfq_dispatch_insert(struct request_queue *q, struct request *rq)
- {
--	struct cfq_data *cfqd = q->elevator->elevator_data;
- 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
-+	struct cfq_data *cfqd = q->elevator->elevator_data;
- 
--	cfq_log_cfqq(cfqd, cfqq, "dispatch_insert");
-+	cfq_log_cfqq(cfqd, cfqq, "dispatch_insert sect=%d", rq->nr_sectors);
- 
- 	cfq_remove_request(rq);
--	cfqq->dispatched++;
- 	elv_dispatch_sort(q, rq);
- 
- 	if (cfq_cfqq_sync(cfqq))
-@@ -1150,78 +800,11 @@ static inline int
- cfq_prio_to_maxrq(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- {
- 	const int base_rq = cfqd->cfq_slice_async_rq;
-+	unsigned short ioprio = elv_ioq_ioprio(cfqq->ioq);
- 
--	WARN_ON(cfqq->ioprio >= IOPRIO_BE_NR);
-+	WARN_ON(ioprio >= IOPRIO_BE_NR);
- 
--	return 2 * (base_rq + base_rq * (CFQ_PRIO_LISTS - 1 - cfqq->ioprio));
--}
--
--/*
-- * Select a queue for service. If we have a current active queue,
-- * check whether to continue servicing it, or retrieve and set a new one.
-- */
--static struct cfq_queue *cfq_select_queue(struct cfq_data *cfqd)
--{
--	struct cfq_queue *cfqq, *new_cfqq = NULL;
--
--	cfqq = cfqd->active_queue;
--	if (!cfqq)
--		goto new_queue;
--
--	/*
--	 * The active queue has run out of time, expire it and select new.
--	 */
--	if (cfq_slice_used(cfqq) && !cfq_cfqq_must_dispatch(cfqq))
--		goto expire;
--
--	/*
--	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
--	 * cfqq.
--	 */
--	if (!cfq_class_rt(cfqq) && cfqd->busy_rt_queues) {
--		/*
--		 * We simulate this as cfqq timed out so that it gets to bank
--		 * the remaining of its time slice.
--		 */
--		cfq_log_cfqq(cfqd, cfqq, "preempt");
--		cfq_slice_expired(cfqd, 1);
--		goto new_queue;
--	}
--
--	/*
--	 * The active queue has requests and isn't expired, allow it to
--	 * dispatch.
--	 */
--	if (!RB_EMPTY_ROOT(&cfqq->sort_list))
--		goto keep_queue;
--
--	/*
--	 * If another queue has a request waiting within our mean seek
--	 * distance, let it run.  The expire code will check for close
--	 * cooperators and put the close queue at the front of the service
--	 * tree.
--	 */
--	new_cfqq = cfq_close_cooperator(cfqd, cfqq, 0);
--	if (new_cfqq)
--		goto expire;
--
--	/*
--	 * No requests pending. If the active queue still has requests in
--	 * flight or is idling for a new request, allow either of these
--	 * conditions to happen (or time out) before selecting a new queue.
--	 */
--	if (timer_pending(&cfqd->idle_slice_timer) ||
--	    (cfqq->dispatched && cfq_cfqq_idle_window(cfqq))) {
--		cfqq = NULL;
--		goto keep_queue;
--	}
--
--expire:
--	cfq_slice_expired(cfqd, 0);
--new_queue:
--	cfqq = cfq_set_active_queue(cfqd, new_cfqq);
--keep_queue:
--	return cfqq;
-+	return 2 * (base_rq + base_rq * (CFQ_PRIO_LISTS - 1 - ioprio));
- }
- 
- static int __cfq_forced_dispatch_cfqq(struct cfq_queue *cfqq)
-@@ -1246,12 +829,14 @@ static int cfq_forced_dispatch(struct cfq_data *cfqd)
- 	struct cfq_queue *cfqq;
- 	int dispatched = 0;
- 
--	while ((cfqq = cfq_rb_first(&cfqd->service_tree)) != NULL)
-+	while ((cfqq = elv_select_sched_queue(cfqd->queue, 1)) != NULL)
- 		dispatched += __cfq_forced_dispatch_cfqq(cfqq);
- 
--	cfq_slice_expired(cfqd, 0);
-+	/* This probably is redundant now. above loop will should make sure
-+	 * that all the busy queues have expired */
-+	cfq_slice_expired(cfqd);
- 
--	BUG_ON(cfqd->busy_queues);
-+	BUG_ON(elv_nr_busy_ioq(cfqd->queue->elevator));
- 
- 	cfq_log(cfqd, "forced_dispatch=%d\n", dispatched);
- 	return dispatched;
-@@ -1297,13 +882,10 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
- 	struct cfq_queue *cfqq;
- 	unsigned int max_dispatch;
- 
--	if (!cfqd->busy_queues)
--		return 0;
--
- 	if (unlikely(force))
- 		return cfq_forced_dispatch(cfqd);
- 
--	cfqq = cfq_select_queue(cfqd);
-+	cfqq = elv_select_sched_queue(q, 0);
- 	if (!cfqq)
- 		return 0;
- 
-@@ -1320,7 +902,7 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
- 	/*
- 	 * Does this cfqq already have too much IO in flight?
- 	 */
--	if (cfqq->dispatched >= max_dispatch) {
-+	if (elv_ioq_nr_dispatched(cfqq->ioq) >= max_dispatch) {
- 		/*
- 		 * idle queue must always only have a single IO in flight
- 		 */
-@@ -1330,13 +912,13 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
- 		/*
- 		 * We have other queues, don't allow more IO from this one
- 		 */
--		if (cfqd->busy_queues > 1)
-+		if (elv_nr_busy_ioq(q->elevator) > 1)
- 			return 0;
- 
- 		/*
- 		 * we are the only queue, allow up to 4 times of 'quantum'
- 		 */
--		if (cfqq->dispatched >= 4 * max_dispatch)
-+		if (elv_ioq_nr_dispatched(cfqq->ioq) >= 4 * max_dispatch)
- 			return 0;
- 	}
- 
-@@ -1345,51 +927,45 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
- 	 */
- 	cfq_dispatch_request(cfqd, cfqq);
- 	cfqq->slice_dispatch++;
--	cfq_clear_cfqq_must_dispatch(cfqq);
- 
- 	/*
- 	 * expire an async queue immediately if it has used up its slice. idle
- 	 * queue always expire after 1 dispatch round.
- 	 */
--	if (cfqd->busy_queues > 1 && ((!cfq_cfqq_sync(cfqq) &&
-+	if (elv_nr_busy_ioq(q->elevator) > 1 && ((!cfq_cfqq_sync(cfqq) &&
- 	    cfqq->slice_dispatch >= cfq_prio_to_maxrq(cfqd, cfqq)) ||
- 	    cfq_class_idle(cfqq))) {
--		cfqq->slice_end = jiffies + 1;
--		cfq_slice_expired(cfqd, 0);
-+		cfq_slice_expired(cfqd);
- 	}
- 
- 	cfq_log(cfqd, "dispatched a request");
- 	return 1;
- }
- 
--/*
-- * task holds one reference to the queue, dropped when task exits. each rq
-- * in-flight on this queue also holds a reference, dropped when rq is freed.
-- *
-- * queue lock must be held here.
-- */
--static void cfq_put_queue(struct cfq_queue *cfqq)
-+static void cfq_free_cfq_queue(struct elevator_queue *e, void *sched_queue)
- {
-+	struct cfq_queue *cfqq = sched_queue;
- 	struct cfq_data *cfqd = cfqq->cfqd;
- 
--	BUG_ON(atomic_read(&cfqq->ref) <= 0);
--
--	if (!atomic_dec_and_test(&cfqq->ref))
--		return;
-+	BUG_ON(!cfqq);
- 
--	cfq_log_cfqq(cfqd, cfqq, "put_queue");
-+	cfq_log_cfqq(cfqd, cfqq, "free_queue");
- 	BUG_ON(rb_first(&cfqq->sort_list));
- 	BUG_ON(cfqq->allocated[READ] + cfqq->allocated[WRITE]);
--	BUG_ON(cfq_cfqq_on_rr(cfqq));
- 
--	if (unlikely(cfqd->active_queue == cfqq)) {
--		__cfq_slice_expired(cfqd, cfqq, 0);
--		cfq_schedule_dispatch(cfqd);
-+	if (unlikely(cfqq_is_active_queue(cfqq))) {
-+		__cfq_slice_expired(cfqd, cfqq);
-+		elv_schedule_dispatch(cfqd->queue);
- 	}
- 
- 	kmem_cache_free(cfq_pool, cfqq);
- }
- 
-+static inline void cfq_put_queue(struct cfq_queue *cfqq)
+diff --git a/block/Makefile b/block/Makefile
+index e9fa4dd..94bfc6e 100644
+--- a/block/Makefile
++++ b/block/Makefile
+@@ -15,3 +15,4 @@ obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
+ 
+ obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
+ obj-$(CONFIG_BLK_DEV_INTEGRITY)	+= blk-integrity.o
++obj-$(CONFIG_ELV_FAIR_QUEUING)	+= elevator-fq.o
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+new file mode 100644
+index 0000000..9357fb0
+--- /dev/null
++++ b/block/elevator-fq.c
+@@ -0,0 +1,2015 @@
++/*
++ * BFQ: Hierarchical B-WF2Q+ scheduler.
++ *
++ * Based on ideas and code from CFQ:
++ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
++ *
++ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
++ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
++ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++ */
++
++#include <linux/blkdev.h>
++#include "elevator-fq.h"
++#include <linux/blktrace_api.h>
++
++/* Values taken from cfq */
++const int elv_slice_sync = HZ / 10;
++int elv_slice_async = HZ / 25;
++const int elv_slice_async_rq = 2;
++int elv_slice_idle = HZ / 125;
++static struct kmem_cache *elv_ioq_pool;
++
++#define ELV_SLICE_SCALE		(5)
++#define ELV_HW_QUEUE_MIN	(5)
++#define IO_SERVICE_TREE_INIT   ((struct io_service_tree)		\
++				{ RB_ROOT, RB_ROOT, NULL, NULL, 0, 0 })
++
++static inline struct io_queue *elv_close_cooperator(struct request_queue *q,
++					struct io_queue *ioq, int probe);
++struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
++						 int extract);
++
++static inline int elv_prio_slice(struct elv_fq_data *efqd, int sync,
++					unsigned short prio)
 +{
-+	elv_put_ioq(cfqq->ioq);
++	const int base_slice = efqd->elv_slice[sync];
++
++	WARN_ON(prio >= IOPRIO_BE_NR);
++
++	return base_slice + (base_slice/ELV_SLICE_SCALE * (4 - prio));
 +}
 +
- /*
-  * Must always be called with the rcu_read_lock() held
-  */
-@@ -1477,9 +1053,9 @@ static void cfq_free_io_context(struct io_context *ioc)
- 
- static void cfq_exit_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- {
--	if (unlikely(cfqq == cfqd->active_queue)) {
--		__cfq_slice_expired(cfqd, cfqq, 0);
--		cfq_schedule_dispatch(cfqd);
-+	if (unlikely(cfqq == elv_active_sched_queue(cfqd->queue->elevator))) {
-+		__cfq_slice_expired(cfqd, cfqq);
-+		elv_schedule_dispatch(cfqd->queue);
- 	}
- 
- 	cfq_put_queue(cfqq);
-@@ -1549,11 +1125,11 @@ static struct cfq_io_context *
- cfq_alloc_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
- {
- 	struct cfq_io_context *cic;
-+	struct request_queue *q = cfqd->queue;
- 
- 	cic = kmem_cache_alloc_node(cfq_ioc_pool, gfp_mask | __GFP_ZERO,
--							cfqd->queue->node);
-+							q->node);
- 	if (cic) {
--		cic->last_end_request = jiffies;
- 		INIT_LIST_HEAD(&cic->queue_list);
- 		INIT_HLIST_NODE(&cic->cic_list);
- 		cic->dtor = cfq_free_io_context;
-@@ -1567,7 +1143,7 @@ cfq_alloc_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
- static void cfq_init_prio_data(struct cfq_queue *cfqq, struct io_context *ioc)
- {
- 	struct task_struct *tsk = current;
--	int ioprio_class;
-+	int ioprio_class, ioprio;
- 
- 	if (!cfq_cfqq_prio_changed(cfqq))
- 		return;
-@@ -1580,30 +1156,33 @@ static void cfq_init_prio_data(struct cfq_queue *cfqq, struct io_context *ioc)
- 		/*
- 		 * no prio set, inherit CPU scheduling settings
- 		 */
--		cfqq->ioprio = task_nice_ioprio(tsk);
--		cfqq->ioprio_class = task_nice_ioclass(tsk);
-+		ioprio = task_nice_ioprio(tsk);
-+		ioprio_class = task_nice_ioclass(tsk);
- 		break;
- 	case IOPRIO_CLASS_RT:
--		cfqq->ioprio = task_ioprio(ioc);
--		cfqq->ioprio_class = IOPRIO_CLASS_RT;
-+		ioprio = task_ioprio(ioc);
-+		ioprio_class = IOPRIO_CLASS_RT;
- 		break;
- 	case IOPRIO_CLASS_BE:
--		cfqq->ioprio = task_ioprio(ioc);
--		cfqq->ioprio_class = IOPRIO_CLASS_BE;
-+		ioprio = task_ioprio(ioc);
-+		ioprio_class = IOPRIO_CLASS_BE;
- 		break;
- 	case IOPRIO_CLASS_IDLE:
--		cfqq->ioprio_class = IOPRIO_CLASS_IDLE;
--		cfqq->ioprio = 7;
--		cfq_clear_cfqq_idle_window(cfqq);
-+		ioprio_class = IOPRIO_CLASS_IDLE;
-+		ioprio = 7;
-+		elv_clear_ioq_idle_window(cfqq->ioq);
- 		break;
- 	}
- 
-+	elv_ioq_set_ioprio_class(cfqq->ioq, ioprio_class);
-+	elv_ioq_set_ioprio(cfqq->ioq, ioprio);
++static inline int
++elv_prio_to_slice(struct elv_fq_data *efqd, struct io_queue *ioq)
++{
++	return elv_prio_slice(efqd, elv_ioq_sync(ioq), ioq->entity.ioprio);
++}
 +
- 	/*
- 	 * keep track of original prio settings in case we have to temporarily
- 	 * elevate the priority of this queue
- 	 */
--	cfqq->org_ioprio = cfqq->ioprio;
--	cfqq->org_ioprio_class = cfqq->ioprio_class;
-+	cfqq->org_ioprio = ioprio;
-+	cfqq->org_ioprio_class = ioprio_class;
- 	cfq_clear_cfqq_prio_changed(cfqq);
- }
- 
-@@ -1612,11 +1191,12 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
- 	struct cfq_data *cfqd = cic->key;
- 	struct cfq_queue *cfqq;
- 	unsigned long flags;
-+	struct request_queue *q = cfqd->queue;
- 
- 	if (unlikely(!cfqd))
- 		return;
- 
--	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
-+	spin_lock_irqsave(q->queue_lock, flags);
- 
- 	cfqq = cic->cfqq[BLK_RW_ASYNC];
- 	if (cfqq) {
-@@ -1633,7 +1213,7 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
- 	if (cfqq)
- 		cfq_mark_cfqq_prio_changed(cfqq);
- 
--	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
-+	spin_unlock_irqrestore(q->queue_lock, flags);
- }
- 
- static void cfq_ioc_set_ioprio(struct io_context *ioc)
-@@ -1644,11 +1224,12 @@ static void cfq_ioc_set_ioprio(struct io_context *ioc)
- 
- static struct cfq_queue *
- cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
--		     struct io_context *ioc, gfp_t gfp_mask)
-+				struct io_context *ioc, gfp_t gfp_mask)
- {
- 	struct cfq_queue *cfqq, *new_cfqq = NULL;
- 	struct cfq_io_context *cic;
--
-+	struct request_queue *q = cfqd->queue;
-+	struct io_queue *ioq = NULL, *new_ioq = NULL;
- retry:
- 	cic = cfq_cic_lookup(cfqd, ioc);
- 	/* cic always exists here */
-@@ -1656,8 +1237,7 @@ retry:
- 
- 	if (!cfqq) {
- 		if (new_cfqq) {
--			cfqq = new_cfqq;
--			new_cfqq = NULL;
-+			goto alloc_ioq;
- 		} else if (gfp_mask & __GFP_WAIT) {
- 			/*
- 			 * Inform the allocator of the fact that we will
-@@ -1678,22 +1258,52 @@ retry:
- 			if (!cfqq)
- 				goto out;
- 		}
-+alloc_ioq:
-+		if (new_ioq) {
-+			ioq = new_ioq;
-+			new_ioq = NULL;
-+			cfqq = new_cfqq;
-+			new_cfqq = NULL;
-+		} else if (gfp_mask & __GFP_WAIT) {
++/* Mainly the BFQ scheduling code Follows */
++
++/*
++ * Shift for timestamp calculations.  This actually limits the maximum
++ * service allowed in one timestamp delta (small shift values increase it),
++ * the maximum total weight that can be used for the queues in the system
++ * (big shift values increase it), and the period of virtual time wraparounds.
++ */
++#define WFQ_SERVICE_SHIFT	22
++
++/**
++ * bfq_gt - compare two timestamps.
++ * @a: first ts.
++ * @b: second ts.
++ *
++ * Return @a > @b, dealing with wrapping correctly.
++ */
++static inline int bfq_gt(bfq_timestamp_t a, bfq_timestamp_t b)
++{
++	return (s64)(a - b) > 0;
++}
++
++/**
++ * bfq_delta - map service into the virtual time domain.
++ * @service: amount of service.
++ * @weight: scale factor.
++ */
++static inline bfq_timestamp_t bfq_delta(bfq_service_t service,
++					bfq_weight_t weight)
++{
++	bfq_timestamp_t d = (bfq_timestamp_t)service << WFQ_SERVICE_SHIFT;
++
++	do_div(d, weight);
++	return d;
++}
++
++/**
++ * bfq_calc_finish - assign the finish time to an entity.
++ * @entity: the entity to act upon.
++ * @service: the service to be charged to the entity.
++ */
++static inline void bfq_calc_finish(struct io_entity *entity,
++				   bfq_service_t service)
++{
++	BUG_ON(entity->weight == 0);
++
++	entity->finish = entity->start + bfq_delta(service, entity->weight);
++}
++
++static inline struct io_queue *io_entity_to_ioq(struct io_entity *entity)
++{
++	struct io_queue *ioq = NULL;
++
++	BUG_ON(entity == NULL);
++	if (entity->my_sched_data == NULL)
++		ioq = container_of(entity, struct io_queue, entity);
++	return ioq;
++}
++
++/**
++ * bfq_entity_of - get an entity from a node.
++ * @node: the node field of the entity.
++ *
++ * Convert a node pointer to the relative entity.  This is used only
++ * to simplify the logic of some functions and not as the generic
++ * conversion mechanism because, e.g., in the tree walking functions,
++ * the check for a %NULL value would be redundant.
++ */
++static inline struct io_entity *bfq_entity_of(struct rb_node *node)
++{
++	struct io_entity *entity = NULL;
++
++	if (node != NULL)
++		entity = rb_entry(node, struct io_entity, rb_node);
++
++	return entity;
++}
++
++/**
++ * bfq_extract - remove an entity from a tree.
++ * @root: the tree root.
++ * @entity: the entity to remove.
++ */
++static inline void bfq_extract(struct rb_root *root, struct io_entity *entity)
++{
++	BUG_ON(entity->tree != root);
++
++	entity->tree = NULL;
++	rb_erase(&entity->rb_node, root);
++}
++
++/**
++ * bfq_idle_extract - extract an entity from the idle tree.
++ * @st: the service tree of the owning @entity.
++ * @entity: the entity being removed.
++ */
++static void bfq_idle_extract(struct io_service_tree *st,
++				struct io_entity *entity)
++{
++	struct rb_node *next;
++
++	BUG_ON(entity->tree != &st->idle);
++
++	if (entity == st->first_idle) {
++		next = rb_next(&entity->rb_node);
++		st->first_idle = bfq_entity_of(next);
++	}
++
++	if (entity == st->last_idle) {
++		next = rb_prev(&entity->rb_node);
++		st->last_idle = bfq_entity_of(next);
++	}
++
++	bfq_extract(&st->idle, entity);
++}
++
++/**
++ * bfq_insert - generic tree insertion.
++ * @root: tree root.
++ * @entity: entity to insert.
++ *
++ * This is used for the idle and the active tree, since they are both
++ * ordered by finish time.
++ */
++static void bfq_insert(struct rb_root *root, struct io_entity *entity)
++{
++	struct io_entity *entry;
++	struct rb_node **node = &root->rb_node;
++	struct rb_node *parent = NULL;
++
++	BUG_ON(entity->tree != NULL);
++
++	while (*node != NULL) {
++		parent = *node;
++		entry = rb_entry(parent, struct io_entity, rb_node);
++
++		if (bfq_gt(entry->finish, entity->finish))
++			node = &parent->rb_left;
++		else
++			node = &parent->rb_right;
++	}
++
++	rb_link_node(&entity->rb_node, parent, node);
++	rb_insert_color(&entity->rb_node, root);
++
++	entity->tree = root;
++}
++
++/**
++ * bfq_update_min - update the min_start field of a entity.
++ * @entity: the entity to update.
++ * @node: one of its children.
++ *
++ * This function is called when @entity may store an invalid value for
++ * min_start due to updates to the active tree.  The function  assumes
++ * that the subtree rooted at @node (which may be its left or its right
++ * child) has a valid min_start value.
++ */
++static inline void bfq_update_min(struct io_entity *entity,
++					struct rb_node *node)
++{
++	struct io_entity *child;
++
++	if (node != NULL) {
++		child = rb_entry(node, struct io_entity, rb_node);
++		if (bfq_gt(entity->min_start, child->min_start))
++			entity->min_start = child->min_start;
++	}
++}
++
++/**
++ * bfq_update_active_node - recalculate min_start.
++ * @node: the node to update.
++ *
++ * @node may have changed position or one of its children may have moved,
++ * this function updates its min_start value.  The left and right subtrees
++ * are assumed to hold a correct min_start value.
++ */
++static inline void bfq_update_active_node(struct rb_node *node)
++{
++	struct io_entity *entity = rb_entry(node, struct io_entity, rb_node);
++
++	entity->min_start = entity->start;
++	bfq_update_min(entity, node->rb_right);
++	bfq_update_min(entity, node->rb_left);
++}
++
++/**
++ * bfq_update_active_tree - update min_start for the whole active tree.
++ * @node: the starting node.
++ *
++ * @node must be the deepest modified node after an update.  This function
++ * updates its min_start using the values held by its children, assuming
++ * that they did not change, and then updates all the nodes that may have
++ * changed in the path to the root.  The only nodes that may have changed
++ * are the ones in the path or their siblings.
++ */
++static void bfq_update_active_tree(struct rb_node *node)
++{
++	struct rb_node *parent;
++
++up:
++	bfq_update_active_node(node);
++
++	parent = rb_parent(node);
++	if (parent == NULL)
++		return;
++
++	if (node == parent->rb_left && parent->rb_right != NULL)
++		bfq_update_active_node(parent->rb_right);
++	else if (parent->rb_left != NULL)
++		bfq_update_active_node(parent->rb_left);
++
++	node = parent;
++	goto up;
++}
++
++/**
++ * bfq_active_insert - insert an entity in the active tree of its group/device.
++ * @st: the service tree of the entity.
++ * @entity: the entity being inserted.
++ *
++ * The active tree is ordered by finish time, but an extra key is kept
++ * per each node, containing the minimum value for the start times of
++ * its children (and the node itself), so it's possible to search for
++ * the eligible node with the lowest finish time in logarithmic time.
++ */
++static void bfq_active_insert(struct io_service_tree *st,
++					struct io_entity *entity)
++{
++	struct rb_node *node = &entity->rb_node;
++
++	bfq_insert(&st->active, entity);
++
++	if (node->rb_left != NULL)
++		node = node->rb_left;
++	else if (node->rb_right != NULL)
++		node = node->rb_right;
++
++	bfq_update_active_tree(node);
++}
++
++/**
++ * bfq_ioprio_to_weight - calc a weight from an ioprio.
++ * @ioprio: the ioprio value to convert.
++ */
++static bfq_weight_t bfq_ioprio_to_weight(int ioprio)
++{
++	WARN_ON(ioprio < 0 || ioprio >= IOPRIO_BE_NR);
++	return IOPRIO_BE_NR - ioprio;
++}
++
++void bfq_get_entity(struct io_entity *entity)
++{
++	struct io_queue *ioq = io_entity_to_ioq(entity);
++
++	if (ioq)
++		elv_get_ioq(ioq);
++}
++
++void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
++{
++	entity->ioprio = entity->new_ioprio;
++	entity->ioprio_class = entity->new_ioprio_class;
++	entity->sched_data = &iog->sched_data;
++}
++
++/**
++ * bfq_find_deepest - find the deepest node that an extraction can modify.
++ * @node: the node being removed.
++ *
++ * Do the first step of an extraction in an rb tree, looking for the
++ * node that will replace @node, and returning the deepest node that
++ * the following modifications to the tree can touch.  If @node is the
++ * last node in the tree return %NULL.
++ */
++static struct rb_node *bfq_find_deepest(struct rb_node *node)
++{
++	struct rb_node *deepest;
++
++	if (node->rb_right == NULL && node->rb_left == NULL)
++		deepest = rb_parent(node);
++	else if (node->rb_right == NULL)
++		deepest = node->rb_left;
++	else if (node->rb_left == NULL)
++		deepest = node->rb_right;
++	else {
++		deepest = rb_next(node);
++		if (deepest->rb_right != NULL)
++			deepest = deepest->rb_right;
++		else if (rb_parent(deepest) != node)
++			deepest = rb_parent(deepest);
++	}
++
++	return deepest;
++}
++
++/**
++ * bfq_active_extract - remove an entity from the active tree.
++ * @st: the service_tree containing the tree.
++ * @entity: the entity being removed.
++ */
++static void bfq_active_extract(struct io_service_tree *st,
++				struct io_entity *entity)
++{
++	struct rb_node *node;
++
++	node = bfq_find_deepest(&entity->rb_node);
++	bfq_extract(&st->active, entity);
++
++	if (node != NULL)
++		bfq_update_active_tree(node);
++}
++
++/**
++ * bfq_idle_insert - insert an entity into the idle tree.
++ * @st: the service tree containing the tree.
++ * @entity: the entity to insert.
++ */
++static void bfq_idle_insert(struct io_service_tree *st,
++					struct io_entity *entity)
++{
++	struct io_entity *first_idle = st->first_idle;
++	struct io_entity *last_idle = st->last_idle;
++
++	if (first_idle == NULL || bfq_gt(first_idle->finish, entity->finish))
++		st->first_idle = entity;
++	if (last_idle == NULL || bfq_gt(entity->finish, last_idle->finish))
++		st->last_idle = entity;
++
++	bfq_insert(&st->idle, entity);
++}
++
++/**
++ * bfq_forget_entity - remove an entity from the wfq trees.
++ * @st: the service tree.
++ * @entity: the entity being removed.
++ *
++ * Update the device status and forget everything about @entity, putting
++ * the device reference to it, if it is a queue.  Entities belonging to
++ * groups are not refcounted.
++ */
++static void bfq_forget_entity(struct io_service_tree *st,
++				struct io_entity *entity)
++{
++	struct io_queue *ioq = NULL;
++
++	BUG_ON(!entity->on_st);
++	entity->on_st = 0;
++	st->wsum -= entity->weight;
++	ioq = io_entity_to_ioq(entity);
++	if (!ioq)
++		return;
++	elv_put_ioq(ioq);
++}
++
++/**
++ * bfq_put_idle_entity - release the idle tree ref of an entity.
++ * @st: service tree for the entity.
++ * @entity: the entity being released.
++ */
++void bfq_put_idle_entity(struct io_service_tree *st,
++				struct io_entity *entity)
++{
++	bfq_idle_extract(st, entity);
++	bfq_forget_entity(st, entity);
++}
++
++/**
++ * bfq_forget_idle - update the idle tree if necessary.
++ * @st: the service tree to act upon.
++ *
++ * To preserve the global O(log N) complexity we only remove one entry here;
++ * as the idle tree will not grow indefinitely this can be done safely.
++ */
++void bfq_forget_idle(struct io_service_tree *st)
++{
++	struct io_entity *first_idle = st->first_idle;
++	struct io_entity *last_idle = st->last_idle;
++
++	if (RB_EMPTY_ROOT(&st->active) && last_idle != NULL &&
++	    !bfq_gt(last_idle->finish, st->vtime)) {
++		/*
++		 * Active tree is empty. Pull back vtime to finish time of
++		 * last idle entity on idle tree.
++		 * Rational seems to be that it reduces the possibility of
++		 * vtime wraparound (bfq_gt(V-F) < 0).
++		 */
++		st->vtime = last_idle->finish;
++	}
++
++	if (first_idle != NULL && !bfq_gt(first_idle->finish, st->vtime))
++		bfq_put_idle_entity(st, first_idle);
++}
++
++
++static struct io_service_tree *
++__bfq_entity_update_prio(struct io_service_tree *old_st,
++				struct io_entity *entity)
++{
++	struct io_service_tree *new_st = old_st;
++	struct io_queue *ioq = io_entity_to_ioq(entity);
++
++	if (entity->ioprio_changed) {
++		entity->ioprio = entity->new_ioprio;
++		entity->ioprio_class = entity->new_ioprio_class;
++		entity->ioprio_changed = 0;
++
++		/*
++		 * Also update the scaled budget for ioq. Group will get the
++		 * updated budget once ioq is selected to run next.
++		 */
++		if (ioq) {
++			struct elv_fq_data *efqd = ioq->efqd;
++			entity->budget = elv_prio_to_slice(efqd, ioq);
++		}
++
++		old_st->wsum -= entity->weight;
++		entity->weight = bfq_ioprio_to_weight(entity->ioprio);
++
++		/*
++		 * NOTE: here we may be changing the weight too early,
++		 * this will cause unfairness.  The correct approach
++		 * would have required additional complexity to defer
++		 * weight changes to the proper time instants (i.e.,
++		 * when entity->finish <= old_st->vtime).
++		 */
++		new_st = io_entity_service_tree(entity);
++		new_st->wsum += entity->weight;
++
++		if (new_st != old_st)
++			entity->start = new_st->vtime;
++	}
++
++	return new_st;
++}
++
++/**
++ * __bfq_activate_entity - activate an entity.
++ * @entity: the entity being activated.
++ *
++ * Called whenever an entity is activated, i.e., it is not active and one
++ * of its children receives a new request, or has to be reactivated due to
++ * budget exhaustion.  It uses the current budget of the entity (and the
++ * service received if @entity is active) of the queue to calculate its
++ * timestamps.
++ */
++static void __bfq_activate_entity(struct io_entity *entity, int add_front)
++{
++	struct io_sched_data *sd = entity->sched_data;
++	struct io_service_tree *st = io_entity_service_tree(entity);
++
++	if (entity == sd->active_entity) {
++		BUG_ON(entity->tree != NULL);
++		/*
++		 * If we are requeueing the current entity we have
++		 * to take care of not charging to it service it has
++		 * not received.
++		 */
++		bfq_calc_finish(entity, entity->service);
++		entity->start = entity->finish;
++		sd->active_entity = NULL;
++	} else if (entity->tree == &st->active) {
++		/*
++		 * Requeueing an entity due to a change of some
++		 * next_active entity below it.  We reuse the old
++		 * start time.
++		 */
++		bfq_active_extract(st, entity);
++	} else if (entity->tree == &st->idle) {
++		/*
++		 * Must be on the idle tree, bfq_idle_extract() will
++		 * check for that.
++		 */
++		bfq_idle_extract(st, entity);
++		entity->start = bfq_gt(st->vtime, entity->finish) ?
++				       st->vtime : entity->finish;
++	} else {
++		/*
++		 * The finish time of the entity may be invalid, and
++		 * it is in the past for sure, otherwise the queue
++		 * would have been on the idle tree.
++		 */
++		entity->start = st->vtime;
++		st->wsum += entity->weight;
++		bfq_get_entity(entity);
++
++		BUG_ON(entity->on_st);
++		entity->on_st = 1;
++	}
++
++	st = __bfq_entity_update_prio(st, entity);
++	/*
++	 * This is to emulate cfq like functionality where preemption can
++	 * happen with-in same class, like sync queue preempting async queue
++	 * May be this is not a very good idea from fairness point of view
++	 * as preempting queue gains share. Keeping it for now.
++	 */
++	if (add_front) {
++		struct io_entity *next_entity;
++
++		/*
++		 * Determine the entity which will be dispatched next
++		 * Use sd->next_active once hierarchical patch is applied
++		 */
++		next_entity = bfq_lookup_next_entity(sd, 0);
++
++		if (next_entity && next_entity != entity) {
++			struct io_service_tree *new_st;
++			bfq_timestamp_t delta;
++
++			new_st = io_entity_service_tree(next_entity);
++
 +			/*
-+			 * Inform the allocator of the fact that we will
-+			 * just repeat this allocation if it fails, to allow
-+			 * the allocator to do whatever it needs to attempt to
-+			 * free memory.
++			 * At this point, both entities should belong to
++			 * same service tree as cross service tree preemption
++			 * is automatically taken care by algorithm
 +			 */
-+			spin_unlock_irq(q->queue_lock);
-+			new_ioq = elv_alloc_ioq(q,
-+					gfp_mask | __GFP_NOFAIL | __GFP_ZERO);
-+			spin_lock_irq(q->queue_lock);
-+			goto retry;
-+		} else {
-+			ioq = elv_alloc_ioq(q, gfp_mask | __GFP_ZERO);
-+			if (!ioq) {
-+				kmem_cache_free(cfq_pool, cfqq);
-+				cfqq = NULL;
-+				goto out;
++			BUG_ON(new_st != st);
++			entity->finish = next_entity->finish - 1;
++			delta = bfq_delta(entity->budget, entity->weight);
++			entity->start = entity->finish - delta;
++			if (bfq_gt(entity->start, st->vtime))
++				entity->start = st->vtime;
++		}
++	} else {
++		bfq_calc_finish(entity, entity->budget);
++	}
++	bfq_active_insert(st, entity);
++}
++
++/**
++ * bfq_activate_entity - activate an entity.
++ * @entity: the entity to activate.
++ */
++void bfq_activate_entity(struct io_entity *entity, int add_front)
++{
++	__bfq_activate_entity(entity, add_front);
++}
++
++/**
++ * __bfq_deactivate_entity - deactivate an entity from its service tree.
++ * @entity: the entity to deactivate.
++ * @requeue: if false, the entity will not be put into the idle tree.
++ *
++ * Deactivate an entity, independently from its previous state.  If the
++ * entity was not on a service tree just return, otherwise if it is on
++ * any scheduler tree, extract it from that tree, and if necessary
++ * and if the caller did not specify @requeue, put it on the idle tree.
++ *
++ */
++int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
++{
++	struct io_sched_data *sd = entity->sched_data;
++	struct io_service_tree *st = io_entity_service_tree(entity);
++	int was_active = entity == sd->active_entity;
++	int ret = 0;
++
++	if (!entity->on_st)
++		return 0;
++
++	BUG_ON(was_active && entity->tree != NULL);
++
++	if (was_active) {
++		bfq_calc_finish(entity, entity->service);
++		sd->active_entity = NULL;
++	} else if (entity->tree == &st->active)
++		bfq_active_extract(st, entity);
++	else if (entity->tree == &st->idle)
++		bfq_idle_extract(st, entity);
++	else if (entity->tree != NULL)
++		BUG();
++
++	if (!requeue || !bfq_gt(entity->finish, st->vtime))
++		bfq_forget_entity(st, entity);
++	else
++		bfq_idle_insert(st, entity);
++
++	BUG_ON(sd->active_entity == entity);
++
++	return ret;
++}
++
++/**
++ * bfq_deactivate_entity - deactivate an entity.
++ * @entity: the entity to deactivate.
++ * @requeue: true if the entity can be put on the idle tree
++ */
++void bfq_deactivate_entity(struct io_entity *entity, int requeue)
++{
++	__bfq_deactivate_entity(entity, requeue);
++}
++
++/**
++ * bfq_update_vtime - update vtime if necessary.
++ * @st: the service tree to act upon.
++ *
++ * If necessary update the service tree vtime to have at least one
++ * eligible entity, skipping to its start time.  Assumes that the
++ * active tree of the device is not empty.
++ *
++ * NOTE: this hierarchical implementation updates vtimes quite often,
++ * we may end up with reactivated tasks getting timestamps after a
++ * vtime skip done because we needed a ->first_active entity on some
++ * intermediate node.
++ */
++static void bfq_update_vtime(struct io_service_tree *st)
++{
++	struct io_entity *entry;
++	struct rb_node *node = st->active.rb_node;
++
++	entry = rb_entry(node, struct io_entity, rb_node);
++	if (bfq_gt(entry->min_start, st->vtime)) {
++		st->vtime = entry->min_start;
++		bfq_forget_idle(st);
++	}
++}
++
++/**
++ * bfq_first_active - find the eligible entity with the smallest finish time
++ * @st: the service tree to select from.
++ *
++ * This function searches the first schedulable entity, starting from the
++ * root of the tree and going on the left every time on this side there is
++ * a subtree with at least one eligible (start <= vtime) entity.  The path
++ * on the right is followed only if a) the left subtree contains no eligible
++ * entities and b) no eligible entity has been found yet.
++ */
++static struct io_entity *bfq_first_active_entity(struct io_service_tree *st)
++{
++	struct io_entity *entry, *first = NULL;
++	struct rb_node *node = st->active.rb_node;
++
++	while (node != NULL) {
++		entry = rb_entry(node, struct io_entity, rb_node);
++left:
++		if (!bfq_gt(entry->start, st->vtime))
++			first = entry;
++
++		BUG_ON(bfq_gt(entry->min_start, st->vtime));
++
++		if (node->rb_left != NULL) {
++			entry = rb_entry(node->rb_left,
++					 struct io_entity, rb_node);
++			if (!bfq_gt(entry->min_start, st->vtime)) {
++				node = node->rb_left;
++				goto left;
 +			}
 +		}
- 
--		RB_CLEAR_NODE(&cfqq->rb_node);
-+		/*
-+		 * Both cfqq and ioq objects allocated. Do the initializations
-+		 * now.
-+		 */
- 		RB_CLEAR_NODE(&cfqq->p_node);
- 		INIT_LIST_HEAD(&cfqq->fifo);
--
--		atomic_set(&cfqq->ref, 0);
- 		cfqq->cfqd = cfqd;
- 
- 		cfq_mark_cfqq_prio_changed(cfqq);
- 
-+		cfqq->ioq = ioq;
- 		cfq_init_prio_data(cfqq, ioc);
-+		elv_init_ioq(q->elevator, ioq, cfqq, cfqq->org_ioprio_class,
-+				cfqq->org_ioprio, is_sync);
- 
- 		if (is_sync) {
- 			if (!cfq_class_idle(cfqq))
--				cfq_mark_cfqq_idle_window(cfqq);
--			cfq_mark_cfqq_sync(cfqq);
-+				elv_mark_ioq_idle_window(cfqq->ioq);
-+			elv_mark_ioq_sync(cfqq->ioq);
- 		}
- 		cfqq->pid = current->pid;
- 		cfq_log_cfqq(cfqd, cfqq, "alloced");
-@@ -1702,38 +1312,28 @@ retry:
- 	if (new_cfqq)
- 		kmem_cache_free(cfq_pool, new_cfqq);
- 
-+	if (new_ioq)
-+		elv_free_ioq(new_ioq);
++		if (first != NULL)
++			break;
++		node = node->rb_right;
++	}
 +
- out:
- 	WARN_ON((gfp_mask & __GFP_WAIT) && !cfqq);
- 	return cfqq;
- }
- 
--static struct cfq_queue **
--cfq_async_queue_prio(struct cfq_data *cfqd, int ioprio_class, int ioprio)
--{
--	switch (ioprio_class) {
--	case IOPRIO_CLASS_RT:
--		return &cfqd->async_cfqq[0][ioprio];
--	case IOPRIO_CLASS_BE:
--		return &cfqd->async_cfqq[1][ioprio];
--	case IOPRIO_CLASS_IDLE:
--		return &cfqd->async_idle_cfqq;
--	default:
--		BUG();
--	}
--}
--
- static struct cfq_queue *
- cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
--	      gfp_t gfp_mask)
-+					gfp_t gfp_mask)
- {
- 	const int ioprio = task_ioprio(ioc);
- 	const int ioprio_class = task_ioprio_class(ioc);
--	struct cfq_queue **async_cfqq = NULL;
-+	struct cfq_queue *async_cfqq = NULL;
- 	struct cfq_queue *cfqq = NULL;
-+	struct io_group *iog = io_lookup_io_group_current(cfqd->queue);
- 
- 	if (!is_sync) {
--		async_cfqq = cfq_async_queue_prio(cfqd, ioprio_class, ioprio);
--		cfqq = *async_cfqq;
-+		async_cfqq = io_group_async_queue_prio(iog, ioprio_class,
-+								ioprio);
-+		cfqq = async_cfqq;
- 	}
- 
- 	if (!cfqq) {
-@@ -1742,15 +1342,11 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
- 			return NULL;
- 	}
- 
--	/*
--	 * pin the queue now that it's allocated, scheduler exit will prune it
--	 */
--	if (!is_sync && !(*async_cfqq)) {
--		atomic_inc(&cfqq->ref);
--		*async_cfqq = cfqq;
--	}
-+	if (!is_sync && !async_cfqq)
-+		io_group_set_async_queue(iog, ioprio_class, ioprio, cfqq->ioq);
- 
--	atomic_inc(&cfqq->ref);
-+	/* ioc reference */
-+	elv_get_ioq(cfqq->ioq);
- 	return cfqq;
- }
- 
-@@ -1829,6 +1425,7 @@ static int cfq_cic_link(struct cfq_data *cfqd, struct io_context *ioc,
- {
- 	unsigned long flags;
- 	int ret;
-+	struct request_queue *q = cfqd->queue;
- 
- 	ret = radix_tree_preload(gfp_mask);
- 	if (!ret) {
-@@ -1845,9 +1442,9 @@ static int cfq_cic_link(struct cfq_data *cfqd, struct io_context *ioc,
- 		radix_tree_preload_end();
- 
- 		if (!ret) {
--			spin_lock_irqsave(cfqd->queue->queue_lock, flags);
-+			spin_lock_irqsave(q->queue_lock, flags);
- 			list_add(&cic->queue_list, &cfqd->cic_list);
--			spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
-+			spin_unlock_irqrestore(q->queue_lock, flags);
- 		}
- 	}
- 
-@@ -1867,10 +1464,11 @@ cfq_get_io_context(struct cfq_data *cfqd, gfp_t gfp_mask)
- {
- 	struct io_context *ioc = NULL;
- 	struct cfq_io_context *cic;
-+	struct request_queue *q = cfqd->queue;
- 
- 	might_sleep_if(gfp_mask & __GFP_WAIT);
- 
--	ioc = get_io_context(gfp_mask, cfqd->queue->node);
-+	ioc = get_io_context(gfp_mask, q->node);
- 	if (!ioc)
- 		return NULL;
- 
-@@ -1889,7 +1487,6 @@ out:
- 	smp_read_barrier_depends();
- 	if (unlikely(ioc->ioprio_changed))
- 		cfq_ioc_set_ioprio(ioc);
--
- 	return cic;
- err_free:
- 	cfq_cic_free(cic);
-@@ -1899,17 +1496,6 @@ err:
- }
- 
- static void
--cfq_update_io_thinktime(struct cfq_data *cfqd, struct cfq_io_context *cic)
--{
--	unsigned long elapsed = jiffies - cic->last_end_request;
--	unsigned long ttime = min(elapsed, 2UL * cfqd->cfq_slice_idle);
--
--	cic->ttime_samples = (7*cic->ttime_samples + 256) / 8;
--	cic->ttime_total = (7*cic->ttime_total + 256*ttime) / 8;
--	cic->ttime_mean = (cic->ttime_total + 128) / cic->ttime_samples;
--}
--
--static void
- cfq_update_io_seektime(struct cfq_data *cfqd, struct cfq_io_context *cic,
- 		       struct request *rq)
- {
-@@ -1940,57 +1526,41 @@ cfq_update_io_seektime(struct cfq_data *cfqd, struct cfq_io_context *cic,
- }
- 
- /*
-- * Disable idle window if the process thinks too long or seeks so much that
-- * it doesn't matter
-+ * Disable idle window if the process seeks so much that it doesn't matter
-  */
--static void
--cfq_update_idle_window(struct cfq_data *cfqd, struct cfq_queue *cfqq,
--		       struct cfq_io_context *cic)
-+static int
-+cfq_update_idle_window(struct elevator_queue *eq, void *cfqq,
++	BUG_ON(first == NULL && !RB_EMPTY_ROOT(&st->active));
++	return first;
++}
++
++/**
++ * __bfq_lookup_next_entity - return the first eligible entity in @st.
++ * @st: the service tree.
++ *
++ * Update the virtual time in @st and return the first eligible entity
++ * it contains.
++ */
++static struct io_entity *__bfq_lookup_next_entity(struct io_service_tree *st)
++{
++	struct io_entity *entity;
++
++	if (RB_EMPTY_ROOT(&st->active))
++		return NULL;
++
++	bfq_update_vtime(st);
++	entity = bfq_first_active_entity(st);
++	BUG_ON(bfq_gt(entity->start, st->vtime));
++
++	return entity;
++}
++
++/**
++ * bfq_lookup_next_entity - return the first eligible entity in @sd.
++ * @sd: the sched_data.
++ * @extract: if true the returned entity will be also extracted from @sd.
++ *
++ * NOTE: since we cache the next_active entity at each level of the
++ * hierarchy, the complexity of the lookup can be decreased with
++ * absolutely no effort just returning the cached next_active value;
++ * we prefer to do full lookups to test the consistency of * the data
++ * structures.
++ */
++struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
++						 int extract)
++{
++	struct io_service_tree *st = sd->service_tree;
++	struct io_entity *entity;
++	int i;
++
++	/*
++	 * We should not call lookup when an entity is active, as doing lookup
++	 * can result in an erroneous vtime jump.
++	 */
++	BUG_ON(sd->active_entity != NULL);
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++, st++) {
++		entity = __bfq_lookup_next_entity(st);
++		if (entity != NULL) {
++			if (extract) {
++				bfq_active_extract(st, entity);
++				sd->active_entity = entity;
++			}
++			break;
++		}
++	}
++
++	return entity;
++}
++
++void entity_served(struct io_entity *entity, bfq_service_t served)
++{
++	struct io_service_tree *st;
++
++	st = io_entity_service_tree(entity);
++	entity->service += served;
++	BUG_ON(st->wsum == 0);
++	st->vtime += bfq_delta(served, st->wsum);
++	bfq_forget_idle(st);
++}
++
++/**
++ * bfq_flush_idle_tree - deactivate any entity on the idle tree of @st.
++ * @st: the service tree being flushed.
++ */
++void io_flush_idle_tree(struct io_service_tree *st)
++{
++	struct io_entity *entity = st->first_idle;
++
++	for (; entity != NULL; entity = st->first_idle)
++		__bfq_deactivate_entity(entity, 0);
++}
++
++/* Elevator fair queuing function */
++struct io_queue *rq_ioq(struct request *rq)
++{
++	return rq->ioq;
++}
++
++static inline struct io_queue *elv_active_ioq(struct elevator_queue *e)
++{
++	return e->efqd.active_queue;
++}
++
++void *elv_active_sched_queue(struct elevator_queue *e)
++{
++	return ioq_sched_queue(elv_active_ioq(e));
++}
++EXPORT_SYMBOL(elv_active_sched_queue);
++
++int elv_nr_busy_ioq(struct elevator_queue *e)
++{
++	return e->efqd.busy_queues;
++}
++EXPORT_SYMBOL(elv_nr_busy_ioq);
++
++int elv_hw_tag(struct elevator_queue *e)
++{
++	return e->efqd.hw_tag;
++}
++EXPORT_SYMBOL(elv_hw_tag);
++
++/* Helper functions for operating on elevator idle slice timer */
++int elv_mod_idle_slice_timer(struct elevator_queue *eq, unsigned long expires)
++{
++	struct elv_fq_data *efqd = &eq->efqd;
++
++	return mod_timer(&efqd->idle_slice_timer, expires);
++}
++EXPORT_SYMBOL(elv_mod_idle_slice_timer);
++
++int elv_del_idle_slice_timer(struct elevator_queue *eq)
++{
++	struct elv_fq_data *efqd = &eq->efqd;
++
++	return del_timer(&efqd->idle_slice_timer);
++}
++EXPORT_SYMBOL(elv_del_idle_slice_timer);
++
++unsigned int elv_get_slice_idle(struct elevator_queue *eq)
++{
++	return eq->efqd.elv_slice_idle;
++}
++EXPORT_SYMBOL(elv_get_slice_idle);
++
++void elv_ioq_served(struct io_queue *ioq, bfq_service_t served)
++{
++	entity_served(&ioq->entity, served);
++}
++
++/* Tells whether ioq is queued in root group or not */
++static inline int is_root_group_ioq(struct request_queue *q,
++					struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	return (ioq->entity.sched_data == &efqd->root_group->sched_data);
++}
++
++/*
++ * sysfs parts below -->
++ */
++static ssize_t
++elv_var_show(unsigned int var, char *page)
++{
++	return sprintf(page, "%d\n", var);
++}
++
++static ssize_t
++elv_var_store(unsigned int *var, const char *page, size_t count)
++{
++	char *p = (char *) page;
++
++	*var = simple_strtoul(p, &p, 10);
++	return count;
++}
++
++#define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
++ssize_t __FUNC(struct elevator_queue *e, char *page)		\
++{									\
++	struct elv_fq_data *efqd = &e->efqd;				\
++	unsigned int __data = __VAR;					\
++	if (__CONV)							\
++		__data = jiffies_to_msecs(__data);			\
++	return elv_var_show(__data, (page));				\
++}
++SHOW_FUNCTION(elv_slice_idle_show, efqd->elv_slice_idle, 1);
++EXPORT_SYMBOL(elv_slice_idle_show);
++SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
++EXPORT_SYMBOL(elv_slice_sync_show);
++SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
++EXPORT_SYMBOL(elv_slice_async_show);
++#undef SHOW_FUNCTION
++
++#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
++ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)\
++{									\
++	struct elv_fq_data *efqd = &e->efqd;				\
++	unsigned int __data;						\
++	int ret = elv_var_store(&__data, (page), count);		\
++	if (__data < (MIN))						\
++		__data = (MIN);						\
++	else if (__data > (MAX))					\
++		__data = (MAX);						\
++	if (__CONV)							\
++		*(__PTR) = msecs_to_jiffies(__data);			\
++	else								\
++		*(__PTR) = __data;					\
++	return ret;							\
++}
++STORE_FUNCTION(elv_slice_idle_store, &efqd->elv_slice_idle, 0, UINT_MAX, 1);
++EXPORT_SYMBOL(elv_slice_idle_store);
++STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
++EXPORT_SYMBOL(elv_slice_sync_store);
++STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
++EXPORT_SYMBOL(elv_slice_async_store);
++#undef STORE_FUNCTION
++
++void elv_schedule_dispatch(struct request_queue *q)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	if (elv_nr_busy_ioq(q->elevator)) {
++		elv_log(efqd, "schedule dispatch");
++		kblockd_schedule_work(efqd->queue, &efqd->unplug_work);
++	}
++}
++EXPORT_SYMBOL(elv_schedule_dispatch);
++
++void elv_kick_queue(struct work_struct *work)
++{
++	struct elv_fq_data *efqd =
++		container_of(work, struct elv_fq_data, unplug_work);
++	struct request_queue *q = efqd->queue;
++	unsigned long flags;
++
++	spin_lock_irqsave(q->queue_lock, flags);
++	blk_start_queueing(q);
++	spin_unlock_irqrestore(q->queue_lock, flags);
++}
++
++void elv_shutdown_timer_wq(struct elevator_queue *e)
++{
++	del_timer_sync(&e->efqd.idle_slice_timer);
++	cancel_work_sync(&e->efqd.unplug_work);
++}
++EXPORT_SYMBOL(elv_shutdown_timer_wq);
++
++void elv_ioq_set_prio_slice(struct request_queue *q, struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	ioq->slice_end = jiffies + ioq->entity.budget;
++	elv_log_ioq(efqd, ioq, "set_slice=%lu", ioq->entity.budget);
++}
++
++static void elv_ioq_update_io_thinktime(struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = ioq->efqd;
++	unsigned long elapsed = jiffies - ioq->last_end_request;
++	unsigned long ttime = min(elapsed, 2UL * efqd->elv_slice_idle);
++
++	ioq->ttime_samples = (7*ioq->ttime_samples + 256) / 8;
++	ioq->ttime_total = (7*ioq->ttime_total + 256*ttime) / 8;
++	ioq->ttime_mean = (ioq->ttime_total + 128) / ioq->ttime_samples;
++}
++
++/*
++ * Disable idle window if the process thinks too long.
++ * This idle flag can also be updated by io scheduler.
++ */
++static void elv_ioq_update_idle_window(struct elevator_queue *eq,
++				struct io_queue *ioq, struct request *rq)
++{
++	int old_idle, enable_idle;
++	struct elv_fq_data *efqd = ioq->efqd;
++
++	/*
++	 * Don't idle for async or idle io prio class
++	 */
++	if (!elv_ioq_sync(ioq) || elv_ioq_class_idle(ioq))
++		return;
++
++	enable_idle = old_idle = elv_ioq_idle_window(ioq);
++
++	if (!efqd->elv_slice_idle)
++		enable_idle = 0;
++	else if (ioq_sample_valid(ioq->ttime_samples)) {
++		if (ioq->ttime_mean > efqd->elv_slice_idle)
++			enable_idle = 0;
++		else
++			enable_idle = 1;
++	}
++
++	/*
++	 * From think time perspective idle should be enabled. Check with
++	 * io scheduler if it wants to disable idling based on additional
++	 * considrations like seek pattern.
++	 */
++	if (enable_idle) {
++		if (eq->ops->elevator_update_idle_window_fn)
++			enable_idle = eq->ops->elevator_update_idle_window_fn(
++						eq, ioq->sched_queue, rq);
++		if (!enable_idle)
++			elv_log_ioq(efqd, ioq, "iosched disabled idle");
++	}
++
++	if (old_idle != enable_idle) {
++		elv_log_ioq(efqd, ioq, "idle=%d", enable_idle);
++		if (enable_idle)
++			elv_mark_ioq_idle_window(ioq);
++		else
++			elv_clear_ioq_idle_window(ioq);
++	}
++}
++
++struct io_queue *elv_alloc_ioq(struct request_queue *q, gfp_t gfp_mask)
++{
++	struct io_queue *ioq = NULL;
++
++	ioq = kmem_cache_alloc_node(elv_ioq_pool, gfp_mask, q->node);
++	return ioq;
++}
++EXPORT_SYMBOL(elv_alloc_ioq);
++
++void elv_free_ioq(struct io_queue *ioq)
++{
++	kmem_cache_free(elv_ioq_pool, ioq);
++}
++EXPORT_SYMBOL(elv_free_ioq);
++
++int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
++			void *sched_queue, int ioprio_class, int ioprio,
++			int is_sync)
++{
++	struct elv_fq_data *efqd = &eq->efqd;
++	struct io_group *iog = io_lookup_io_group_current(efqd->queue);
++
++	RB_CLEAR_NODE(&ioq->entity.rb_node);
++	atomic_set(&ioq->ref, 0);
++	ioq->efqd = efqd;
++	elv_ioq_set_ioprio_class(ioq, ioprio_class);
++	elv_ioq_set_ioprio(ioq, ioprio);
++	ioq->pid = current->pid;
++	ioq->sched_queue = sched_queue;
++	if (is_sync && !elv_ioq_class_idle(ioq))
++		elv_mark_ioq_idle_window(ioq);
++	bfq_init_entity(&ioq->entity, iog);
++	ioq->entity.budget = elv_prio_to_slice(efqd, ioq);
++	if (is_sync)
++		ioq->last_end_request = jiffies;
++
++	return 0;
++}
++EXPORT_SYMBOL(elv_init_ioq);
++
++void elv_put_ioq(struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = ioq->efqd;
++	struct elevator_queue *e = container_of(efqd, struct elevator_queue,
++						efqd);
++
++	BUG_ON(atomic_read(&ioq->ref) <= 0);
++	if (!atomic_dec_and_test(&ioq->ref))
++		return;
++	BUG_ON(ioq->nr_queued);
++	BUG_ON(ioq->entity.tree != NULL);
++	BUG_ON(elv_ioq_busy(ioq));
++	BUG_ON(efqd->active_queue == ioq);
++
++	/* Can be called by outgoing elevator. Don't use q */
++	BUG_ON(!e->ops->elevator_free_sched_queue_fn);
++
++	e->ops->elevator_free_sched_queue_fn(e, ioq->sched_queue);
++	elv_log_ioq(efqd, ioq, "put_queue");
++	elv_free_ioq(ioq);
++}
++EXPORT_SYMBOL(elv_put_ioq);
++
++void elv_release_ioq(struct elevator_queue *e, struct io_queue **ioq_ptr)
++{
++	struct io_queue *ioq = *ioq_ptr;
++
++	if (ioq != NULL) {
++		/* Drop the reference taken by the io group */
++		elv_put_ioq(ioq);
++		*ioq_ptr = NULL;
++	}
++}
++
++/*
++ * Normally next io queue to be served is selected from the service tree.
++ * This function allows one to choose a specific io queue to run next
++ * out of order. This is primarily to accomodate the close_cooperator
++ * feature of cfq.
++ *
++ * Currently it is done only for root level as to begin with supporting
++ * close cooperator feature only for root group to make sure default
++ * cfq behavior in flat hierarchy is not changed.
++ */
++void elv_set_next_ioq(struct request_queue *q, struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_entity *entity = &ioq->entity;
++	struct io_sched_data *sd = &efqd->root_group->sched_data;
++	struct io_service_tree *st = io_entity_service_tree(entity);
++
++	BUG_ON(efqd->active_queue != NULL || sd->active_entity != NULL);
++	BUG_ON(!efqd->busy_queues);
++	BUG_ON(sd != entity->sched_data);
++	BUG_ON(!st);
++
++	bfq_update_vtime(st);
++	bfq_active_extract(st, entity);
++	sd->active_entity = entity;
++	entity->service = 0;
++	elv_log_ioq(efqd, ioq, "set_next_ioq");
++}
++
++/* Get next queue for service. */
++struct io_queue *elv_get_next_ioq(struct request_queue *q, int extract)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_entity *entity = NULL;
++	struct io_queue *ioq = NULL;
++	struct io_sched_data *sd;
++
++	/*
++	 * We should not call lookup when an entity is active, as doing
++	 * lookup can result in an erroneous vtime jump.
++	 */
++	BUG_ON(efqd->active_queue != NULL);
++
++	if (!efqd->busy_queues)
++		return NULL;
++
++	sd = &efqd->root_group->sched_data;
++	entity = bfq_lookup_next_entity(sd, 1);
++
++	BUG_ON(!entity);
++	if (extract)
++		entity->service = 0;
++	ioq = io_entity_to_ioq(entity);
++
++	return ioq;
++}
++
++/*
++ * coop tells that io scheduler selected a queue for us and we did not
++ * select the next queue based on fairness.
++ */
++static void __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
++					int coop)
++{
++	struct request_queue *q = efqd->queue;
++
++	if (ioq) {
++		elv_log_ioq(efqd, ioq, "set_active, busy=%d",
++							efqd->busy_queues);
++		ioq->slice_end = 0;
++
++		elv_clear_ioq_wait_request(ioq);
++		elv_clear_ioq_must_dispatch(ioq);
++		elv_mark_ioq_slice_new(ioq);
++
++		del_timer(&efqd->idle_slice_timer);
++	}
++
++	efqd->active_queue = ioq;
++
++	/* Let iosched know if it wants to take some action */
++	if (ioq) {
++		if (q->elevator->ops->elevator_active_ioq_set_fn)
++			q->elevator->ops->elevator_active_ioq_set_fn(q,
++							ioq->sched_queue, coop);
++	}
++}
++
++/* Get and set a new active queue for service. */
++struct io_queue *elv_set_active_ioq(struct request_queue *q,
++						struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	int coop = 0;
++
++	if (!ioq)
++		ioq = elv_get_next_ioq(q, 1);
++	else {
++		elv_set_next_ioq(q, ioq);
++		/*
++		 * io scheduler selected the next queue for us. Pass this
++		 * this info back to io scheudler. cfq currently uses it
++		 * to reset coop flag on the queue.
++		 */
++		coop = 1;
++	}
++	__elv_set_active_ioq(efqd, ioq, coop);
++	return ioq;
++}
++
++void elv_reset_active_ioq(struct elv_fq_data *efqd)
++{
++	struct request_queue *q = efqd->queue;
++	struct io_queue *ioq = elv_active_ioq(efqd->queue->elevator);
++
++	if (q->elevator->ops->elevator_active_ioq_reset_fn)
++		q->elevator->ops->elevator_active_ioq_reset_fn(q,
++							ioq->sched_queue);
++	efqd->active_queue = NULL;
++	del_timer(&efqd->idle_slice_timer);
++}
++
++void elv_activate_ioq(struct io_queue *ioq, int add_front)
++{
++	bfq_activate_entity(&ioq->entity, add_front);
++}
++
++void elv_deactivate_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
++					int requeue)
++{
++	bfq_deactivate_entity(&ioq->entity, requeue);
++}
++
++/* Called when an inactive queue receives a new request. */
++void elv_add_ioq_busy(struct elv_fq_data *efqd, struct io_queue *ioq)
++{
++	BUG_ON(elv_ioq_busy(ioq));
++	BUG_ON(ioq == efqd->active_queue);
++	elv_log_ioq(efqd, ioq, "add to busy");
++	elv_activate_ioq(ioq, 0);
++	elv_mark_ioq_busy(ioq);
++	efqd->busy_queues++;
++	if (elv_ioq_class_rt(ioq)) {
++		struct io_group *iog = ioq_to_io_group(ioq);
++		iog->busy_rt_queues++;
++	}
++}
++
++void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
++					int requeue)
++{
++	struct elv_fq_data *efqd = &e->efqd;
++
++	BUG_ON(!elv_ioq_busy(ioq));
++	BUG_ON(ioq->nr_queued);
++	elv_log_ioq(efqd, ioq, "del from busy");
++	elv_clear_ioq_busy(ioq);
++	BUG_ON(efqd->busy_queues == 0);
++	efqd->busy_queues--;
++	if (elv_ioq_class_rt(ioq)) {
++		struct io_group *iog = ioq_to_io_group(ioq);
++		iog->busy_rt_queues--;
++	}
++
++	elv_deactivate_ioq(efqd, ioq, requeue);
++}
++
++/*
++ * Do the accounting. Determine how much service (in terms of time slices)
++ * current queue used and adjust the start, finish time of queue and vtime
++ * of the tree accordingly.
++ *
++ * Determining the service used in terms of time is tricky in certain
++ * situations. Especially when underlying device supports command queuing
++ * and requests from multiple queues can be there at same time, then it
++ * is not clear which queue consumed how much of disk time.
++ *
++ * To mitigate this problem, cfq starts the time slice of the queue only
++ * after first request from the queue has completed. This does not work
++ * very well if we expire the queue before we wait for first and more
++ * request to finish from the queue. For seeky queues, we will expire the
++ * queue after dispatching few requests without waiting and start dispatching
++ * from next queue.
++ *
++ * Not sure how to determine the time consumed by queue in such scenarios.
++ * Currently as a crude approximation, we are charging 25% of time slice
++ * for such cases. A better mechanism is needed for accurate accounting.
++ */
++void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_entity *entity = &ioq->entity;
++	long slice_unused = 0, slice_used = 0, slice_overshoot = 0;
++
++	assert_spin_locked(q->queue_lock);
++	elv_log_ioq(efqd, ioq, "slice expired");
++
++	if (elv_ioq_wait_request(ioq))
++		del_timer(&efqd->idle_slice_timer);
++
++	elv_clear_ioq_wait_request(ioq);
++
++	/*
++	 * if ioq->slice_end = 0, that means a queue was expired before first
++	 * reuqest from the queue got completed. Of course we are not planning
++	 * to idle on the queue otherwise we would not have expired it.
++	 *
++	 * Charge for the 25% slice in such cases. This is not the best thing
++	 * to do but at the same time not very sure what's the next best
++	 * thing to do.
++	 *
++	 * This arises from that fact that we don't have the notion of
++	 * one queue being operational at one time. io scheduler can dispatch
++	 * requests from multiple queues in one dispatch round. Ideally for
++	 * more accurate accounting of exact disk time used by disk, one
++	 * should dispatch requests from only one queue and wait for all
++	 * the requests to finish. But this will reduce throughput.
++	 */
++	if (!ioq->slice_end)
++		slice_used = entity->budget/4;
++	else {
++		if (time_after(ioq->slice_end, jiffies)) {
++			slice_unused = ioq->slice_end - jiffies;
++			if (slice_unused == entity->budget) {
++				/*
++				 * queue got expired immediately after
++				 * completing first request. Charge 25% of
++				 * slice.
++				 */
++				slice_used = entity->budget/4;
++			} else
++				slice_used = entity->budget - slice_unused;
++		} else {
++			slice_overshoot = jiffies - ioq->slice_end;
++			slice_used = entity->budget + slice_overshoot;
++		}
++	}
++
++	elv_log_ioq(efqd, ioq, "sl_end=%lx, jiffies=%lx", ioq->slice_end,
++			jiffies);
++	elv_log_ioq(efqd, ioq, "sl_used=%ld, budget=%ld overshoot=%ld",
++				slice_used, entity->budget, slice_overshoot);
++	elv_ioq_served(ioq, slice_used);
++
++	BUG_ON(ioq != efqd->active_queue);
++	elv_reset_active_ioq(efqd);
++
++	if (!ioq->nr_queued)
++		elv_del_ioq_busy(q->elevator, ioq, 1);
++	else
++		elv_activate_ioq(ioq, 0);
++}
++EXPORT_SYMBOL(__elv_ioq_slice_expired);
++
++/*
++ *  Expire the ioq.
++ */
++void elv_ioq_slice_expired(struct request_queue *q)
++{
++	struct io_queue *ioq = elv_active_ioq(q->elevator);
++
++	if (ioq)
++		__elv_ioq_slice_expired(q, ioq);
++}
++
++/*
++ * Check if new_cfqq should preempt the currently active queue. Return 0 for
++ * no or if we aren't sure, a 1 will cause a preemption attempt.
++ */
++int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
++			struct request *rq)
++{
++	struct io_queue *ioq;
++	struct elevator_queue *eq = q->elevator;
++	struct io_entity *entity, *new_entity;
++
++	ioq = elv_active_ioq(eq);
++
++	if (!ioq)
++		return 0;
++
++	entity = &ioq->entity;
++	new_entity = &new_ioq->entity;
++
++	/*
++	 * Allow an RT request to pre-empt an ongoing non-RT cfqq timeslice.
++	 */
++
++	if (new_entity->ioprio_class == IOPRIO_CLASS_RT
++	    && entity->ioprio_class != IOPRIO_CLASS_RT)
++		return 1;
++	/*
++	 * Allow an BE request to pre-empt an ongoing IDLE clas timeslice.
++	 */
++
++	if (new_entity->ioprio_class == IOPRIO_CLASS_BE
++	    && entity->ioprio_class == IOPRIO_CLASS_IDLE)
++		return 1;
++
++	/*
++	 * Check with io scheduler if it has additional criterion based on
++	 * which it wants to preempt existing queue.
++	 */
++	if (eq->ops->elevator_should_preempt_fn)
++		return eq->ops->elevator_should_preempt_fn(q,
++						ioq_sched_queue(new_ioq), rq);
++
++	return 0;
++}
++
++static void elv_preempt_queue(struct request_queue *q, struct io_queue *ioq)
++{
++	elv_log_ioq(&q->elevator->efqd, ioq, "preempt");
++	elv_ioq_slice_expired(q);
++
++	/*
++	 * Put the new queue at the front of the of the current list,
++	 * so we know that it will be selected next.
++	 */
++
++	elv_activate_ioq(ioq, 1);
++	elv_ioq_set_slice_end(ioq, 0);
++	elv_mark_ioq_slice_new(ioq);
++}
++
++void elv_ioq_request_add(struct request_queue *q, struct request *rq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_queue *ioq = rq->ioq;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return;
++
++	BUG_ON(!efqd);
++	BUG_ON(!ioq);
++	efqd->rq_queued++;
++	ioq->nr_queued++;
++
++	if (!elv_ioq_busy(ioq))
++		elv_add_ioq_busy(efqd, ioq);
++
++	elv_ioq_update_io_thinktime(ioq);
++	elv_ioq_update_idle_window(q->elevator, ioq, rq);
++
++	if (ioq == elv_active_ioq(q->elevator)) {
++		/*
++		 * Remember that we saw a request from this process, but
++		 * don't start queuing just yet. Otherwise we risk seeing lots
++		 * of tiny requests, because we disrupt the normal plugging
++		 * and merging. If the request is already larger than a single
++		 * page, let it rip immediately. For that case we assume that
++		 * merging is already done. Ditto for a busy system that
++		 * has other work pending, don't risk delaying until the
++		 * idle timer unplug to continue working.
++		 */
++		if (elv_ioq_wait_request(ioq)) {
++			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
++			    efqd->busy_queues > 1) {
++				del_timer(&efqd->idle_slice_timer);
++				blk_start_queueing(q);
++			}
++			elv_mark_ioq_must_dispatch(ioq);
++		}
++	} else if (elv_should_preempt(q, ioq, rq)) {
++		/*
++		 * not the active queue - expire current slice if it is
++		 * idle and has expired it's mean thinktime or this new queue
++		 * has some old slice time left and is of higher priority or
++		 * this new queue is RT and the current one is BE
++		 */
++		elv_preempt_queue(q, ioq);
++		blk_start_queueing(q);
++	}
++}
++
++void elv_idle_slice_timer(unsigned long data)
++{
++	struct elv_fq_data *efqd = (struct elv_fq_data *)data;
++	struct io_queue *ioq;
++	unsigned long flags;
++	struct request_queue *q = efqd->queue;
++
++	elv_log(efqd, "idle timer fired");
++
++	spin_lock_irqsave(q->queue_lock, flags);
++
++	ioq = efqd->active_queue;
++
++	if (ioq) {
++
++		/*
++		 * We saw a request before the queue expired, let it through
++		 */
++		if (elv_ioq_must_dispatch(ioq))
++			goto out_kick;
++
++		/*
++		 * expired
++		 */
++		if (elv_ioq_slice_used(ioq))
++			goto expire;
++
++		/*
++		 * only expire and reinvoke request handler, if there are
++		 * other queues with pending requests
++		 */
++		if (!elv_nr_busy_ioq(q->elevator))
++			goto out_cont;
++
++		/*
++		 * not expired and it has a request pending, let it dispatch
++		 */
++		if (ioq->nr_queued)
++			goto out_kick;
++	}
++expire:
++	elv_ioq_slice_expired(q);
++out_kick:
++	elv_schedule_dispatch(q);
++out_cont:
++	spin_unlock_irqrestore(q->queue_lock, flags);
++}
++
++void elv_ioq_arm_slice_timer(struct request_queue *q)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_queue *ioq = elv_active_ioq(q->elevator);
++	unsigned long sl;
++
++	BUG_ON(!ioq);
++
++	/*
++	 * SSD device without seek penalty, disable idling. But only do so
++	 * for devices that support queuing, otherwise we still have a problem
++	 * with sync vs async workloads.
++	 */
++	if (blk_queue_nonrot(q) && efqd->hw_tag)
++		return;
++
++	/*
++	 * still requests with the driver, don't idle
++	 */
++	if (efqd->rq_in_driver)
++		return;
++
++	/*
++	 * idle is disabled, either manually or by past process history
++	 */
++	if (!efqd->elv_slice_idle || !elv_ioq_idle_window(ioq))
++		return;
++
++	/*
++	 * may be iosched got its own idling logic. In that case io
++	 * schduler will take care of arming the timer, if need be.
++	 */
++	if (q->elevator->ops->elevator_arm_slice_timer_fn) {
++		q->elevator->ops->elevator_arm_slice_timer_fn(q,
++						ioq->sched_queue);
++	} else {
++		elv_mark_ioq_wait_request(ioq);
++		sl = efqd->elv_slice_idle;
++		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
++		elv_log_ioq(efqd, ioq, "arm idle: %lu", sl);
++	}
++}
++
++/* Common layer function to select the next queue to dispatch from */
++void *elv_fq_select_ioq(struct request_queue *q, int force)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++	struct io_queue *new_ioq = NULL, *ioq = elv_active_ioq(q->elevator);
++	struct io_group *iog;
++
++	if (!elv_nr_busy_ioq(q->elevator))
++		return NULL;
++
++	if (ioq == NULL)
++		goto new_queue;
++
++	/*
++	 * Force dispatch. Continue to dispatch from current queue as long
++	 * as it has requests.
++	 */
++	if (unlikely(force)) {
++		if (ioq->nr_queued)
++			goto keep_queue;
++		else
++			goto expire;
++	}
++
++	/*
++	 * The active queue has run out of time, expire it and select new.
++	 */
++	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
++		goto expire;
++
++	/*
++	 * If we have a RT cfqq waiting, then we pre-empt the current non-rt
++	 * cfqq.
++	 */
++	iog = ioq_to_io_group(ioq);
++
++	if (!elv_ioq_class_rt(ioq) && iog->busy_rt_queues) {
++		/*
++		 * We simulate this as cfqq timed out so that it gets to bank
++		 * the remaining of its time slice.
++		 */
++		elv_log_ioq(efqd, ioq, "preempt");
++		goto expire;
++	}
++
++	/*
++	 * The active queue has requests and isn't expired, allow it to
++	 * dispatch.
++	 */
++
++	if (ioq->nr_queued)
++		goto keep_queue;
++
++	/*
++	 * If another queue has a request waiting within our mean seek
++	 * distance, let it run.  The expire code will check for close
++	 * cooperators and put the close queue at the front of the service
++	 * tree.
++	 */
++	new_ioq = elv_close_cooperator(q, ioq, 0);
++	if (new_ioq)
++		goto expire;
++
++	/*
++	 * No requests pending. If the active queue still has requests in
++	 * flight or is idling for a new request, allow either of these
++	 * conditions to happen (or time out) before selecting a new queue.
++	 */
++
++	if (timer_pending(&efqd->idle_slice_timer) ||
++	    (elv_ioq_nr_dispatched(ioq) && elv_ioq_idle_window(ioq))) {
++		ioq = NULL;
++		goto keep_queue;
++	}
++
++expire:
++	elv_ioq_slice_expired(q);
++new_queue:
++	ioq = elv_set_active_ioq(q, new_ioq);
++keep_queue:
++	return ioq;
++}
++
++/* A request got removed from io_queue. Do the accounting */
++void elv_ioq_request_removed(struct elevator_queue *e, struct request *rq)
++{
++	struct io_queue *ioq;
++	struct elv_fq_data *efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return;
++
++	ioq = rq->ioq;
++	BUG_ON(!ioq);
++	ioq->nr_queued--;
++
++	efqd = ioq->efqd;
++	BUG_ON(!efqd);
++	efqd->rq_queued--;
++
++	if (elv_ioq_busy(ioq) && (elv_active_ioq(e) != ioq) && !ioq->nr_queued)
++		elv_del_ioq_busy(e, ioq, 1);
++}
++
++/* A request got dispatched. Do the accounting. */
++void elv_fq_dispatched_request(struct elevator_queue *e, struct request *rq)
++{
++	struct io_queue *ioq = rq->ioq;
++
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return;
++
++	BUG_ON(!ioq);
++	elv_ioq_request_dispatched(ioq);
++	elv_ioq_request_removed(e, rq);
++	elv_clear_ioq_must_dispatch(ioq);
++}
++
++void elv_fq_activate_rq(struct request_queue *q, struct request *rq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return;
++
++	efqd->rq_in_driver++;
++	elv_log_ioq(efqd, rq_ioq(rq), "activate rq, drv=%d",
++						efqd->rq_in_driver);
++}
++
++void elv_fq_deactivate_rq(struct request_queue *q, struct request *rq)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return;
++
++	WARN_ON(!efqd->rq_in_driver);
++	efqd->rq_in_driver--;
++	elv_log_ioq(efqd, rq_ioq(rq), "deactivate rq, drv=%d",
++						efqd->rq_in_driver);
++}
++
++/*
++ * Update hw_tag based on peak queue depth over 50 samples under
++ * sufficient load.
++ */
++static void elv_update_hw_tag(struct elv_fq_data *efqd)
++{
++	if (efqd->rq_in_driver > efqd->rq_in_driver_peak)
++		efqd->rq_in_driver_peak = efqd->rq_in_driver;
++
++	if (efqd->rq_queued <= ELV_HW_QUEUE_MIN &&
++	    efqd->rq_in_driver <= ELV_HW_QUEUE_MIN)
++		return;
++
++	if (efqd->hw_tag_samples++ < 50)
++		return;
++
++	if (efqd->rq_in_driver_peak >= ELV_HW_QUEUE_MIN)
++		efqd->hw_tag = 1;
++	else
++		efqd->hw_tag = 0;
++
++	efqd->hw_tag_samples = 0;
++	efqd->rq_in_driver_peak = 0;
++}
++
++/*
++ * If ioscheduler has functionality of keeping track of close cooperator, check
++ * with it if it has got a closely co-operating queue.
++ */
++static inline struct io_queue *elv_close_cooperator(struct request_queue *q,
++					struct io_queue *ioq, int probe)
++{
++	struct elevator_queue *e = q->elevator;
++	struct io_queue *new_ioq = NULL;
++
++	/*
++	 * Currently this feature is supported only for flat hierarchy or
++	 * root group queues so that default cfq behavior is not changed.
++	 */
++	if (!is_root_group_ioq(q, ioq))
++		return NULL;
++
++	if (q->elevator->ops->elevator_close_cooperator_fn)
++		new_ioq = e->ops->elevator_close_cooperator_fn(q,
++						ioq->sched_queue, probe);
++
++	/* Only select co-operating queue if it belongs to root group */
++	if (new_ioq && !is_root_group_ioq(q, new_ioq))
++		return NULL;
++
++	return new_ioq;
++}
++
++/* A request got completed from io_queue. Do the accounting. */
++void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
++{
++	const int sync = rq_is_sync(rq);
++	struct io_queue *ioq;
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return;
++
++	ioq = rq->ioq;
++
++	elv_log_ioq(efqd, ioq, "complete");
++
++	elv_update_hw_tag(efqd);
++
++	WARN_ON(!efqd->rq_in_driver);
++	WARN_ON(!ioq->dispatched);
++	efqd->rq_in_driver--;
++	ioq->dispatched--;
++
++	if (sync)
++		ioq->last_end_request = jiffies;
++
++	/*
++	 * If this is the active queue, check if it needs to be expired,
++	 * or if we want to idle in case it has no pending requests.
++	 */
++
++	if (elv_active_ioq(q->elevator) == ioq) {
++		if (elv_ioq_slice_new(ioq)) {
++			elv_ioq_set_prio_slice(q, ioq);
++			elv_clear_ioq_slice_new(ioq);
++		}
++		/*
++		 * If there are no requests waiting in this queue, and
++		 * there are other queues ready to issue requests, AND
++		 * those other queues are issuing requests within our
++		 * mean seek distance, give them a chance to run instead
++		 * of idling.
++		 */
++		if (elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq))
++			elv_ioq_slice_expired(q);
++		else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq, 1)
++			 && sync && !rq_noidle(rq))
++			elv_ioq_arm_slice_timer(q);
++	}
++
++	if (!efqd->rq_in_driver)
++		elv_schedule_dispatch(q);
++}
++
++struct io_group *io_lookup_io_group_current(struct request_queue *q)
++{
++	struct elv_fq_data *efqd = &q->elevator->efqd;
++
++	return efqd->root_group;
++}
++EXPORT_SYMBOL(io_lookup_io_group_current);
++
++void *io_group_async_queue_prio(struct io_group *iog, int ioprio_class,
++					int ioprio)
++{
++	struct io_queue *ioq = NULL;
++
++	switch (ioprio_class) {
++	case IOPRIO_CLASS_RT:
++		ioq = iog->async_queue[0][ioprio];
++		break;
++	case IOPRIO_CLASS_BE:
++		ioq = iog->async_queue[1][ioprio];
++		break;
++	case IOPRIO_CLASS_IDLE:
++		ioq = iog->async_idle_queue;
++		break;
++	default:
++		BUG();
++	}
++
++	if (ioq)
++		return ioq->sched_queue;
++	return NULL;
++}
++EXPORT_SYMBOL(io_group_async_queue_prio);
++
++void io_group_set_async_queue(struct io_group *iog, int ioprio_class,
++					int ioprio, struct io_queue *ioq)
++{
++	switch (ioprio_class) {
++	case IOPRIO_CLASS_RT:
++		iog->async_queue[0][ioprio] = ioq;
++		break;
++	case IOPRIO_CLASS_BE:
++		iog->async_queue[1][ioprio] = ioq;
++		break;
++	case IOPRIO_CLASS_IDLE:
++		iog->async_idle_queue = ioq;
++		break;
++	default:
++		BUG();
++	}
++
++	/*
++	 * Take the group reference and pin the queue. Group exit will
++	 * clean it up
++	 */
++	elv_get_ioq(ioq);
++}
++EXPORT_SYMBOL(io_group_set_async_queue);
++
++/*
++ * Release all the io group references to its async queues.
++ */
++void io_put_io_group_queues(struct elevator_queue *e, struct io_group *iog)
++{
++	int i, j;
++
++	for (i = 0; i < 2; i++)
++		for (j = 0; j < IOPRIO_BE_NR; j++)
++			elv_release_ioq(e, &iog->async_queue[i][j]);
++
++	/* Free up async idle queue */
++	elv_release_ioq(e, &iog->async_idle_queue);
++}
++
++struct io_group *io_alloc_root_group(struct request_queue *q,
++					struct elevator_queue *e, void *key)
++{
++	struct io_group *iog;
++	int i;
++
++	iog = kmalloc_node(sizeof(*iog), GFP_KERNEL | __GFP_ZERO, q->node);
++	if (iog == NULL)
++		return NULL;
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++)
++		iog->sched_data.service_tree[i] = IO_SERVICE_TREE_INIT;
++
++	return iog;
++}
++
++void io_free_root_group(struct elevator_queue *e)
++{
++	struct io_group *iog = e->efqd.root_group;
++	struct io_service_tree *st;
++	int i;
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
++		io_flush_idle_tree(st);
++	}
++
++	io_put_io_group_queues(e, iog);
++	kfree(iog);
++}
++
++static void elv_slab_kill(void)
++{
++	/*
++	 * Caller already ensured that pending RCU callbacks are completed,
++	 * so we should have no busy allocations at this point.
++	 */
++	if (elv_ioq_pool)
++		kmem_cache_destroy(elv_ioq_pool);
++}
++
++static int __init elv_slab_setup(void)
++{
++	elv_ioq_pool = KMEM_CACHE(io_queue, 0);
++	if (!elv_ioq_pool)
++		goto fail;
++
++	return 0;
++fail:
++	elv_slab_kill();
++	return -ENOMEM;
++}
++
++/* Initialize fair queueing data associated with elevator */
++int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
++{
++	struct io_group *iog;
++	struct elv_fq_data *efqd = &e->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return 0;
++
++	iog = io_alloc_root_group(q, e, efqd);
++	if (iog == NULL)
++		return 1;
++
++	efqd->root_group = iog;
++	efqd->queue = q;
++
++	init_timer(&efqd->idle_slice_timer);
++	efqd->idle_slice_timer.function = elv_idle_slice_timer;
++	efqd->idle_slice_timer.data = (unsigned long) efqd;
++
++	INIT_WORK(&efqd->unplug_work, elv_kick_queue);
++
++	efqd->elv_slice[0] = elv_slice_async;
++	efqd->elv_slice[1] = elv_slice_sync;
++	efqd->elv_slice_idle = elv_slice_idle;
++	efqd->hw_tag = 1;
++
++	return 0;
++}
++
++/*
++ * elv_exit_fq_data is called before we call elevator_exit_fn. Before
++ * we ask elevator to cleanup its queues, we do the cleanup here so
++ * that all the group and idle tree references to ioq are dropped. Later
++ * during elevator cleanup, ioc reference will be dropped which will lead
++ * to removal of ioscheduler queue as well as associated ioq object.
++ */
++void elv_exit_fq_data(struct elevator_queue *e)
++{
++	struct elv_fq_data *efqd = &e->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return;
++
++	elv_shutdown_timer_wq(e);
++
++	BUG_ON(timer_pending(&efqd->idle_slice_timer));
++	io_free_root_group(e);
++}
++
++/*
++ * This is called after the io scheduler has cleaned up its data structres.
++ * I don't think that this function is required. Right now just keeping it
++ * because cfq cleans up timer and work queue again after freeing up
++ * io contexts. To me io scheduler has already been drained out, and all
++ * the active queue have already been expired so time and work queue should
++ * not been activated during cleanup process.
++ *
++ * Keeping it here for the time being. Will get rid of it later.
++ */
++void elv_exit_fq_data_post(struct elevator_queue *e)
++{
++	struct elv_fq_data *efqd = &e->efqd;
++
++	if (!elv_iosched_fair_queuing_enabled(e))
++		return;
++
++	elv_shutdown_timer_wq(e);
++	BUG_ON(timer_pending(&efqd->idle_slice_timer));
++}
++
++
++static int __init elv_fq_init(void)
++{
++	if (elv_slab_setup())
++		return -ENOMEM;
++
++	/* could be 0 on HZ < 1000 setups */
++
++	if (!elv_slice_async)
++		elv_slice_async = 1;
++
++	if (!elv_slice_idle)
++		elv_slice_idle = 1;
++
++	return 0;
++}
++
++module_init(elv_fq_init);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+new file mode 100644
+index 0000000..5b6c1cc
+--- /dev/null
++++ b/block/elevator-fq.h
+@@ -0,0 +1,473 @@
++/*
++ * BFQ: data structures and common functions prototypes.
++ *
++ * Based on ideas and code from CFQ:
++ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
++ *
++ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
++ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
++ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++ */
++
++#include <linux/blkdev.h>
++
++#ifndef _BFQ_SCHED_H
++#define _BFQ_SCHED_H
++
++#define IO_IOPRIO_CLASSES	3
++
++typedef u64 bfq_timestamp_t;
++typedef unsigned long bfq_weight_t;
++typedef unsigned long bfq_service_t;
++struct io_entity;
++struct io_queue;
++
++#ifdef CONFIG_ELV_FAIR_QUEUING
++
++#define ELV_ATTR(name) \
++	__ATTR(name, S_IRUGO|S_IWUSR, elv_##name##_show, elv_##name##_store)
++
++/**
++ * struct bfq_service_tree - per ioprio_class service tree.
++ * @active: tree for active entities (i.e., those backlogged).
++ * @idle: tree for idle entities (i.e., those not backlogged, with V <= F_i).
++ * @first_idle: idle entity with minimum F_i.
++ * @last_idle: idle entity with maximum F_i.
++ * @vtime: scheduler virtual time.
++ * @wsum: scheduler weight sum; active and idle entities contribute to it.
++ *
++ * Each service tree represents a B-WF2Q+ scheduler on its own.  Each
++ * ioprio_class has its own independent scheduler, and so its own
++ * bfq_service_tree.  All the fields are protected by the queue lock
++ * of the containing efqd.
++ */
++struct io_service_tree {
++	struct rb_root active;
++	struct rb_root idle;
++
++	struct io_entity *first_idle;
++	struct io_entity *last_idle;
++
++	bfq_timestamp_t vtime;
++	bfq_weight_t wsum;
++};
++
++/**
++ * struct bfq_sched_data - multi-class scheduler.
++ * @active_entity: entity under service.
++ * @next_active: head-of-the-line entity in the scheduler.
++ * @service_tree: array of service trees, one per ioprio_class.
++ *
++ * bfq_sched_data is the basic scheduler queue.  It supports three
++ * ioprio_classes, and can be used either as a toplevel queue or as
++ * an intermediate queue on a hierarchical setup.
++ * @next_active points to the active entity of the sched_data service
++ * trees that will be scheduled next.
++ *
++ * The supported ioprio_classes are the same as in CFQ, in descending
++ * priority order, IOPRIO_CLASS_RT, IOPRIO_CLASS_BE, IOPRIO_CLASS_IDLE.
++ * Requests from higher priority queues are served before all the
++ * requests from lower priority queues; among requests of the same
++ * queue requests are served according to B-WF2Q+.
++ * All the fields are protected by the queue lock of the containing bfqd.
++ */
++struct io_sched_data {
++	struct io_entity *active_entity;
++	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
++};
++
++/**
++ * struct bfq_entity - schedulable entity.
++ * @rb_node: service_tree member.
++ * @on_st: flag, true if the entity is on a tree (either the active or
++ *         the idle one of its service_tree).
++ * @finish: B-WF2Q+ finish timestamp (aka F_i).
++ * @start: B-WF2Q+ start timestamp (aka S_i).
++ * @tree: tree the entity is enqueued into; %NULL if not on a tree.
++ * @min_start: minimum start time of the (active) subtree rooted at
++ *             this entity; used for O(log N) lookups into active trees.
++ * @service: service received during the last round of service.
++ * @budget: budget used to calculate F_i; F_i = S_i + @budget / @weight.
++ * @weight: weight of the queue, calculated as IOPRIO_BE_NR - @ioprio.
++ * @parent: parent entity, for hierarchical scheduling.
++ * @my_sched_data: for non-leaf nodes in the cgroup hierarchy, the
++ *                 associated scheduler queue, %NULL on leaf nodes.
++ * @sched_data: the scheduler queue this entity belongs to.
++ * @ioprio: the ioprio in use.
++ * @new_ioprio: when an ioprio change is requested, the new ioprio value
++ * @ioprio_class: the ioprio_class in use.
++ * @new_ioprio_class: when an ioprio_class change is requested, the new
++ *                    ioprio_class value.
++ * @ioprio_changed: flag, true when the user requested an ioprio or
++ *                  ioprio_class change.
++ *
++ * A bfq_entity is used to represent either a bfq_queue (leaf node in the
++ * cgroup hierarchy) or a bfq_group into the upper level scheduler.  Each
++ * entity belongs to the sched_data of the parent group in the cgroup
++ * hierarchy.  Non-leaf entities have also their own sched_data, stored
++ * in @my_sched_data.
++ *
++ * Each entity stores independently its priority values; this would allow
++ * different weights on different devices, but this functionality is not
++ * exported to userspace by now.  Priorities are updated lazily, first
++ * storing the new values into the new_* fields, then setting the
++ * @ioprio_changed flag.  As soon as there is a transition in the entity
++ * state that allows the priority update to take place the effective and
++ * the requested priority values are synchronized.
++ *
++ * The weight value is calculated from the ioprio to export the same
++ * interface as CFQ.  When dealing with ``well-behaved'' queues (i.e.,
++ * queues that do not spend too much time to consume their budget and
++ * have true sequential behavior, and when there are no external factors
++ * breaking anticipation) the relative weights at each level of the
++ * cgroups hierarchy should be guaranteed.
++ * All the fields are protected by the queue lock of the containing bfqd.
++ */
++struct io_entity {
++	struct rb_node rb_node;
++
++	int on_st;
++
++	bfq_timestamp_t finish;
++	bfq_timestamp_t start;
++
++	struct rb_root *tree;
++
++	bfq_timestamp_t min_start;
++
++	bfq_service_t service, budget;
++	bfq_weight_t weight;
++
++	struct io_entity *parent;
++
++	struct io_sched_data *my_sched_data;
++	struct io_sched_data *sched_data;
++
++	unsigned short ioprio, new_ioprio;
++	unsigned short ioprio_class, new_ioprio_class;
++
++	int ioprio_changed;
++};
++
++/*
++ * A common structure embedded by every io scheduler into their respective
++ * queue structure.
++ */
++struct io_queue {
++	struct io_entity entity;
++	atomic_t ref;
++	unsigned int flags;
++
++	/* Pointer to generic elevator data structure */
++	struct elv_fq_data *efqd;
++	pid_t pid;
++
++	/* Number of requests queued on this io queue */
++	unsigned long nr_queued;
++
++	/* Requests dispatched from this queue */
++	int dispatched;
++
++	/* Keep a track of think time of processes in this queue */
++	unsigned long last_end_request;
++	unsigned long ttime_total;
++	unsigned long ttime_samples;
++	unsigned long ttime_mean;
++
++	unsigned long slice_end;
++
++	/* Pointer to io scheduler's queue */
++	void *sched_queue;
++};
++
++struct io_group {
++	struct io_sched_data sched_data;
++
++	/* async_queue and idle_queue are used only for cfq */
++	struct io_queue *async_queue[2][IOPRIO_BE_NR];
++	struct io_queue *async_idle_queue;
++
++	/*
++	 * Used to track any pending rt requests so we can pre-empt current
++	 * non-RT cfqq in service when this value is non-zero.
++	 */
++	unsigned int busy_rt_queues;
++};
++
++struct elv_fq_data {
++	struct io_group *root_group;
++
++	struct request_queue *queue;
++	unsigned int busy_queues;
++
++	/* Number of requests queued */
++	int rq_queued;
++
++	/* Pointer to the ioscheduler queue being served */
++	void *active_queue;
++
++	int rq_in_driver;
++	int hw_tag;
++	int hw_tag_samples;
++	int rq_in_driver_peak;
++
++	/*
++	 * elevator fair queuing layer has the capability to provide idling
++	 * for ensuring fairness for processes doing dependent reads.
++	 * This might be needed to ensure fairness among two processes doing
++	 * synchronous reads in two different cgroups. noop and deadline don't
++	 * have any notion of anticipation/idling. As of now, these are the
++	 * users of this functionality.
++	 */
++	unsigned int elv_slice_idle;
++	struct timer_list idle_slice_timer;
++	struct work_struct unplug_work;
++
++	unsigned int elv_slice[2];
++};
++
++extern int elv_slice_idle;
++extern int elv_slice_async;
++
++/* Logging facilities. */
++#define elv_log_ioq(efqd, ioq, fmt, args...) \
++	blk_add_trace_msg((efqd)->queue, "elv%d%c " fmt, (ioq)->pid,	\
++				elv_ioq_sync(ioq) ? 'S' : 'A', ##args)
++
++#define elv_log(efqd, fmt, args...) \
++	blk_add_trace_msg((efqd)->queue, "elv " fmt, ##args)
++
++#define ioq_sample_valid(samples)   ((samples) > 80)
++
++/* Some shared queue flag manipulation functions among elevators */
++
++enum elv_queue_state_flags {
++	ELV_QUEUE_FLAG_busy = 0,          /* has requests or is under service */
++	ELV_QUEUE_FLAG_sync,              /* synchronous queue */
++	ELV_QUEUE_FLAG_idle_window,	  /* elevator slice idling enabled */
++	ELV_QUEUE_FLAG_wait_request,	  /* waiting for a request */
++	ELV_QUEUE_FLAG_must_dispatch,	  /* must be allowed a dispatch */
++	ELV_QUEUE_FLAG_slice_new,	  /* no requests dispatched in slice */
++	ELV_QUEUE_FLAG_NR,
++};
++
++#define ELV_IO_QUEUE_FLAG_FNS(name)					\
++static inline void elv_mark_ioq_##name(struct io_queue *ioq)		\
++{                                                                       \
++	(ioq)->flags |= (1 << ELV_QUEUE_FLAG_##name);			\
++}                                                                       \
++static inline void elv_clear_ioq_##name(struct io_queue *ioq)		\
++{                                                                       \
++	(ioq)->flags &= ~(1 << ELV_QUEUE_FLAG_##name);			\
++}                                                                       \
++static inline int elv_ioq_##name(struct io_queue *ioq)         		\
++{                                                                       \
++	return ((ioq)->flags & (1 << ELV_QUEUE_FLAG_##name)) != 0;	\
++}
++
++ELV_IO_QUEUE_FLAG_FNS(busy)
++ELV_IO_QUEUE_FLAG_FNS(sync)
++ELV_IO_QUEUE_FLAG_FNS(wait_request)
++ELV_IO_QUEUE_FLAG_FNS(must_dispatch)
++ELV_IO_QUEUE_FLAG_FNS(idle_window)
++ELV_IO_QUEUE_FLAG_FNS(slice_new)
++
++static inline struct io_service_tree *
++io_entity_service_tree(struct io_entity *entity)
++{
++	struct io_sched_data *sched_data = entity->sched_data;
++	unsigned int idx = entity->ioprio_class - 1;
++
++	BUG_ON(idx >= IO_IOPRIO_CLASSES);
++	BUG_ON(sched_data == NULL);
++
++	return sched_data->service_tree + idx;
++}
++
++/* A request got dispatched from the io_queue. Do the accounting. */
++static inline void elv_ioq_request_dispatched(struct io_queue *ioq)
++{
++	ioq->dispatched++;
++}
++
++static inline int elv_ioq_slice_used(struct io_queue *ioq)
++{
++	if (elv_ioq_slice_new(ioq))
++		return 0;
++	if (time_before(jiffies, ioq->slice_end))
++		return 0;
++
++	return 1;
++}
++
++/* How many request are currently dispatched from the queue */
++static inline int elv_ioq_nr_dispatched(struct io_queue *ioq)
++{
++	return ioq->dispatched;
++}
++
++/* How many request are currently queued in the queue */
++static inline int elv_ioq_nr_queued(struct io_queue *ioq)
++{
++	return ioq->nr_queued;
++}
++
++static inline void elv_get_ioq(struct io_queue *ioq)
++{
++	atomic_inc(&ioq->ref);
++}
++
++static inline void elv_ioq_set_slice_end(struct io_queue *ioq,
++						unsigned long slice_end)
++{
++	ioq->slice_end = slice_end;
++}
++
++static inline int elv_ioq_class_idle(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio_class == IOPRIO_CLASS_IDLE;
++}
++
++static inline int elv_ioq_class_rt(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio_class == IOPRIO_CLASS_RT;
++}
++
++static inline int elv_ioq_ioprio_class(struct io_queue *ioq)
++{
++	return ioq->entity.new_ioprio_class;
++}
++
++static inline int elv_ioq_ioprio(struct io_queue *ioq)
++{
++	return ioq->entity.new_ioprio;
++}
++
++static inline void elv_ioq_set_ioprio_class(struct io_queue *ioq,
++						int ioprio_class)
++{
++	ioq->entity.new_ioprio_class = ioprio_class;
++	ioq->entity.ioprio_changed = 1;
++}
++
++static inline void elv_ioq_set_ioprio(struct io_queue *ioq, int ioprio)
++{
++	ioq->entity.new_ioprio = ioprio;
++	ioq->entity.ioprio_changed = 1;
++}
++
++static inline void *ioq_sched_queue(struct io_queue *ioq)
++{
++	if (ioq)
++		return ioq->sched_queue;
++	return NULL;
++}
++
++static inline struct io_group *ioq_to_io_group(struct io_queue *ioq)
++{
++	return container_of(ioq->entity.sched_data, struct io_group,
++						sched_data);
++}
++
++extern ssize_t elv_slice_idle_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_slice_idle_store(struct elevator_queue *q, const char *name,
++						size_t count);
++extern ssize_t elv_slice_sync_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_slice_sync_store(struct elevator_queue *q, const char *name,
++						size_t count);
++extern ssize_t elv_slice_async_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_slice_async_store(struct elevator_queue *q, const char *name,
++						size_t count);
++
++/* Functions used by elevator.c */
++extern int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e);
++extern void elv_exit_fq_data(struct elevator_queue *e);
++extern void elv_exit_fq_data_post(struct elevator_queue *e);
++
++extern void elv_ioq_request_add(struct request_queue *q, struct request *rq);
++extern void elv_ioq_request_removed(struct elevator_queue *e,
++					struct request *rq);
++extern void elv_fq_dispatched_request(struct elevator_queue *e,
++					struct request *rq);
++
++extern void elv_fq_activate_rq(struct request_queue *q, struct request *rq);
++extern void elv_fq_deactivate_rq(struct request_queue *q, struct request *rq);
++
++extern void elv_ioq_completed_request(struct request_queue *q,
++				struct request *rq);
++
++extern void *elv_fq_select_ioq(struct request_queue *q, int force);
++extern struct io_queue *rq_ioq(struct request *rq);
++
++/* Functions used by io schedulers */
++extern void elv_put_ioq(struct io_queue *ioq);
++extern void __elv_ioq_slice_expired(struct request_queue *q,
++					struct io_queue *ioq);
++extern int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
++		void *sched_queue, int ioprio_class, int ioprio, int is_sync);
++extern void elv_schedule_dispatch(struct request_queue *q);
++extern int elv_hw_tag(struct elevator_queue *e);
++extern void *elv_active_sched_queue(struct elevator_queue *e);
++extern int elv_mod_idle_slice_timer(struct elevator_queue *eq,
++					unsigned long expires);
++extern int elv_del_idle_slice_timer(struct elevator_queue *eq);
++extern unsigned int elv_get_slice_idle(struct elevator_queue *eq);
++extern void *io_group_async_queue_prio(struct io_group *iog, int ioprio_class,
++					int ioprio);
++extern void io_group_set_async_queue(struct io_group *iog, int ioprio_class,
++					int ioprio, struct io_queue *ioq);
++extern struct io_group *io_lookup_io_group_current(struct request_queue *q);
++extern int elv_nr_busy_ioq(struct elevator_queue *e);
++extern struct io_queue *elv_alloc_ioq(struct request_queue *q, gfp_t gfp_mask);
++extern void elv_free_ioq(struct io_queue *ioq);
++
++#else /* CONFIG_ELV_FAIR_QUEUING */
++
++static inline int elv_init_fq_data(struct request_queue *q,
++					struct elevator_queue *e)
++{
++	return 0;
++}
++
++static inline void elv_exit_fq_data(struct elevator_queue *e) {}
++static inline void elv_exit_fq_data_post(struct elevator_queue *e) {}
++
++static inline void elv_fq_activate_rq(struct request_queue *q,
 +					struct request *rq)
- {
--	int old_idle, enable_idle;
-+	struct cfq_io_context *cic = RQ_CIC(rq);
++{
++}
++
++static inline void elv_fq_deactivate_rq(struct request_queue *q,
++					struct request *rq)
++{
++}
++
++static inline void elv_fq_dispatched_request(struct elevator_queue *e,
++						struct request *rq)
++{
++}
++
++static inline void elv_ioq_request_removed(struct elevator_queue *e,
++						struct request *rq)
++{
++}
++
++static inline void elv_ioq_request_add(struct request_queue *q,
++					struct request *rq)
++{
++}
++
++static inline void elv_ioq_completed_request(struct request_queue *q,
++						struct request *rq)
++{
++}
++
++static inline void *ioq_sched_queue(struct io_queue *ioq) { return NULL; }
++static inline struct io_queue *rq_ioq(struct request *rq) { return NULL; }
++static inline void *elv_fq_select_ioq(struct request_queue *q, int force)
++{
++	return NULL;
++}
++#endif /* CONFIG_ELV_FAIR_QUEUING */
++#endif /* _BFQ_SCHED_H */
+diff --git a/block/elevator.c b/block/elevator.c
+index 7073a90..c2f07f5 100644
+--- a/block/elevator.c
++++ b/block/elevator.c
+@@ -231,6 +231,9 @@ static struct elevator_queue *elevator_alloc(struct request_queue *q,
+ 	for (i = 0; i < ELV_HASH_ENTRIES; i++)
+ 		INIT_HLIST_HEAD(&eq->hash[i]);
  
- 	/*
--	 * Don't idle for async or idle io prio class
-+	 * Enabling/Disabling idling based on thinktime has been moved
-+	 * in common layer.
- 	 */
--	if (!cfq_cfqq_sync(cfqq) || cfq_class_idle(cfqq))
--		return;
++	if (elv_init_fq_data(q, eq))
++		goto err;
++
+ 	return eq;
+ err:
+ 	kfree(eq);
+@@ -301,9 +304,11 @@ EXPORT_SYMBOL(elevator_init);
+ void elevator_exit(struct elevator_queue *e)
+ {
+ 	mutex_lock(&e->sysfs_lock);
++	elv_exit_fq_data(e);
+ 	if (e->ops->elevator_exit_fn)
+ 		e->ops->elevator_exit_fn(e);
+ 	e->ops = NULL;
++	elv_exit_fq_data_post(e);
+ 	mutex_unlock(&e->sysfs_lock);
+ 
+ 	kobject_put(&e->kobj);
+@@ -314,6 +319,8 @@ static void elv_activate_rq(struct request_queue *q, struct request *rq)
+ {
+ 	struct elevator_queue *e = q->elevator;
+ 
++	elv_fq_activate_rq(q, rq);
++
+ 	if (e->ops->elevator_activate_req_fn)
+ 		e->ops->elevator_activate_req_fn(q, rq);
+ }
+@@ -322,6 +329,8 @@ static void elv_deactivate_rq(struct request_queue *q, struct request *rq)
+ {
+ 	struct elevator_queue *e = q->elevator;
+ 
++	elv_fq_deactivate_rq(q, rq);
++
+ 	if (e->ops->elevator_deactivate_req_fn)
+ 		e->ops->elevator_deactivate_req_fn(q, rq);
+ }
+@@ -446,6 +455,7 @@ void elv_dispatch_sort(struct request_queue *q, struct request *rq)
+ 	elv_rqhash_del(q, rq);
+ 
+ 	q->nr_sorted--;
++	elv_fq_dispatched_request(q->elevator, rq);
+ 
+ 	boundary = q->end_sector;
+ 	stop_flags = REQ_SOFTBARRIER | REQ_HARDBARRIER | REQ_STARTED;
+@@ -486,6 +496,7 @@ void elv_dispatch_add_tail(struct request_queue *q, struct request *rq)
+ 	elv_rqhash_del(q, rq);
+ 
+ 	q->nr_sorted--;
++	elv_fq_dispatched_request(q->elevator, rq);
+ 
+ 	q->end_sector = rq_end_sector(rq);
+ 	q->boundary_rq = rq;
+@@ -553,6 +564,7 @@ void elv_merge_requests(struct request_queue *q, struct request *rq,
+ 	elv_rqhash_del(q, next);
+ 
+ 	q->nr_sorted--;
++	elv_ioq_request_removed(e, next);
+ 	q->last_merge = rq;
+ }
+ 
+@@ -657,12 +669,8 @@ void elv_insert(struct request_queue *q, struct request *rq, int where)
+ 				q->last_merge = rq;
+ 		}
+ 
+-		/*
+-		 * Some ioscheds (cfq) run q->request_fn directly, so
+-		 * rq cannot be accessed after calling
+-		 * elevator_add_req_fn.
+-		 */
+ 		q->elevator->ops->elevator_add_req_fn(q, rq);
++		elv_ioq_request_add(q, rq);
+ 		break;
+ 
+ 	case ELEVATOR_INSERT_REQUEUE:
+@@ -872,13 +880,12 @@ void elv_dequeue_request(struct request_queue *q, struct request *rq)
+ 
+ int elv_queue_empty(struct request_queue *q)
+ {
+-	struct elevator_queue *e = q->elevator;
 -
--	enable_idle = old_idle = cfq_cfqq_idle_window(cfqq);
--
--	if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
--	    (cfqd->hw_tag && CIC_SEEKY(cic)))
--		enable_idle = 0;
--	else if (sample_valid(cic->ttime_samples)) {
--		if (cic->ttime_mean > cfqd->cfq_slice_idle)
--			enable_idle = 0;
--		else
--			enable_idle = 1;
--	}
-+	if (!atomic_read(&cic->ioc->nr_tasks) ||
-+	    (elv_hw_tag(eq) && CIC_SEEKY(cic)))
+ 	if (!list_empty(&q->queue_head))
+ 		return 0;
+ 
+-	if (e->ops->elevator_queue_empty_fn)
+-		return e->ops->elevator_queue_empty_fn(q);
++	/* Hopefully nr_sorted works and no need to call queue_empty_fn */
++	if (q->nr_sorted)
 +		return 0;
  
--	if (old_idle != enable_idle) {
--		cfq_log_cfqq(cfqd, cfqq, "idle=%d", enable_idle);
--		if (enable_idle)
--			cfq_mark_cfqq_idle_window(cfqq);
--		else
--			cfq_clear_cfqq_idle_window(cfqq);
--	}
-+	return 1;
- }
- 
- /*
-  * Check if new_cfqq should preempt the currently active queue. Return 0 for
-- * no or if we aren't sure, a 1 will cause a preempt.
-+ * no or if we aren't sure, a 1 will cause a preemption attempt.
-+ * Some of the preemption logic has been moved to common layer. Only cfq
-+ * specific parts are left here.
-  */
- static int
--cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
--		   struct request *rq)
-+cfq_should_preempt(struct request_queue *q, void *new_cfqq, struct request *rq)
- {
--	struct cfq_queue *cfqq;
-+	struct cfq_data *cfqd = q->elevator->elevator_data;
-+	struct cfq_queue *cfqq = elv_active_sched_queue(q->elevator);
- 
--	cfqq = cfqd->active_queue;
- 	if (!cfqq)
- 		return 0;
- 
--	if (cfq_slice_used(cfqq))
-+	if (elv_ioq_slice_used(cfqq->ioq))
- 		return 1;
- 
- 	if (cfq_class_idle(new_cfqq))
-@@ -2013,13 +1583,7 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
- 	if (rq_is_meta(rq) && !cfqq->meta_pending)
- 		return 1;
- 
--	/*
--	 * Allow an RT request to pre-empt an ongoing non-RT cfqq timeslice.
--	 */
--	if (cfq_class_rt(new_cfqq) && !cfq_class_rt(cfqq))
--		return 1;
--
--	if (!cfqd->active_cic || !cfq_cfqq_wait_request(cfqq))
-+	if (!cfqd->active_cic || !elv_ioq_wait_request(cfqq->ioq))
- 		return 0;
- 
- 	/*
-@@ -2033,29 +1597,10 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
- }
- 
- /*
-- * cfqq preempts the active queue. if we allowed preempt with no slice left,
-- * let it have half of its nominal slice.
-- */
--static void cfq_preempt_queue(struct cfq_data *cfqd, struct cfq_queue *cfqq)
--{
--	cfq_log_cfqq(cfqd, cfqq, "preempt");
--	cfq_slice_expired(cfqd, 1);
--
--	/*
--	 * Put the new queue at the front of the of the current list,
--	 * so we know that it will be selected next.
--	 */
--	BUG_ON(!cfq_cfqq_on_rr(cfqq));
--
--	cfq_service_tree_add(cfqd, cfqq, 1);
--
--	cfqq->slice_end = 0;
--	cfq_mark_cfqq_slice_new(cfqq);
--}
--
--/*
-  * Called when a new fs request (rq) is added (to cfqq). Check if there's
-  * something we should do about it
-+ * After enqueuing the request whether queue should be preempted or kicked
-+ * decision is taken by common layer.
-  */
- static void
- cfq_rq_enqueued(struct cfq_data *cfqd, struct cfq_queue *cfqq,
-@@ -2063,45 +1608,12 @@ cfq_rq_enqueued(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- {
- 	struct cfq_io_context *cic = RQ_CIC(rq);
- 
--	cfqd->rq_queued++;
- 	if (rq_is_meta(rq))
- 		cfqq->meta_pending++;
- 
--	cfq_update_io_thinktime(cfqd, cic);
- 	cfq_update_io_seektime(cfqd, cic, rq);
--	cfq_update_idle_window(cfqd, cfqq, cic);
- 
- 	cic->last_request_pos = rq->sector + rq->nr_sectors;
--
--	if (cfqq == cfqd->active_queue) {
--		/*
--		 * Remember that we saw a request from this process, but
--		 * don't start queuing just yet. Otherwise we risk seeing lots
--		 * of tiny requests, because we disrupt the normal plugging
--		 * and merging. If the request is already larger than a single
--		 * page, let it rip immediately. For that case we assume that
--		 * merging is already done. Ditto for a busy system that
--		 * has other work pending, don't risk delaying until the
--		 * idle timer unplug to continue working.
--		 */
--		if (cfq_cfqq_wait_request(cfqq)) {
--			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
--			    cfqd->busy_queues > 1) {
--				del_timer(&cfqd->idle_slice_timer);
--				blk_start_queueing(cfqd->queue);
--			}
--			cfq_mark_cfqq_must_dispatch(cfqq);
--		}
--	} else if (cfq_should_preempt(cfqd, cfqq, rq)) {
--		/*
--		 * not the active queue - expire current slice if it is
--		 * idle and has expired it's mean thinktime or this new queue
--		 * has some old slice time left and is of higher priority or
--		 * this new queue is RT and the current one is BE
--		 */
--		cfq_preempt_queue(cfqd, cfqq);
--		blk_start_queueing(cfqd->queue);
--	}
- }
- 
- static void cfq_insert_request(struct request_queue *q, struct request *rq)
-@@ -2119,84 +1631,17 @@ static void cfq_insert_request(struct request_queue *q, struct request *rq)
- 	cfq_rq_enqueued(cfqd, cfqq, rq);
- }
- 
--/*
-- * Update hw_tag based on peak queue depth over 50 samples under
-- * sufficient load.
-- */
--static void cfq_update_hw_tag(struct cfq_data *cfqd)
--{
--	if (cfqd->rq_in_driver > cfqd->rq_in_driver_peak)
--		cfqd->rq_in_driver_peak = cfqd->rq_in_driver;
--
--	if (cfqd->rq_queued <= CFQ_HW_QUEUE_MIN &&
--	    cfqd->rq_in_driver <= CFQ_HW_QUEUE_MIN)
--		return;
--
--	if (cfqd->hw_tag_samples++ < 50)
--		return;
--
--	if (cfqd->rq_in_driver_peak >= CFQ_HW_QUEUE_MIN)
--		cfqd->hw_tag = 1;
--	else
--		cfqd->hw_tag = 0;
--
--	cfqd->hw_tag_samples = 0;
--	cfqd->rq_in_driver_peak = 0;
--}
--
- static void cfq_completed_request(struct request_queue *q, struct request *rq)
- {
- 	struct cfq_queue *cfqq = RQ_CFQQ(rq);
- 	struct cfq_data *cfqd = cfqq->cfqd;
--	const int sync = rq_is_sync(rq);
- 	unsigned long now;
- 
- 	now = jiffies;
- 	cfq_log_cfqq(cfqd, cfqq, "complete");
- 
--	cfq_update_hw_tag(cfqd);
--
--	WARN_ON(!cfqd->rq_in_driver);
--	WARN_ON(!cfqq->dispatched);
--	cfqd->rq_in_driver--;
--	cfqq->dispatched--;
--
- 	if (cfq_cfqq_sync(cfqq))
- 		cfqd->sync_flight--;
--
--	if (!cfq_class_idle(cfqq))
--		cfqd->last_end_request = now;
--
--	if (sync)
--		RQ_CIC(rq)->last_end_request = now;
--
--	/*
--	 * If this is the active queue, check if it needs to be expired,
--	 * or if we want to idle in case it has no pending requests.
--	 */
--	if (cfqd->active_queue == cfqq) {
--		const bool cfqq_empty = RB_EMPTY_ROOT(&cfqq->sort_list);
--
--		if (cfq_cfqq_slice_new(cfqq)) {
--			cfq_set_prio_slice(cfqd, cfqq);
--			cfq_clear_cfqq_slice_new(cfqq);
--		}
--		/*
--		 * If there are no requests waiting in this queue, and
--		 * there are other queues ready to issue requests, AND
--		 * those other queues are issuing requests within our
--		 * mean seek distance, give them a chance to run instead
--		 * of idling.
--		 */
--		if (cfq_slice_used(cfqq) || cfq_class_idle(cfqq))
--			cfq_slice_expired(cfqd, 1);
--		else if (cfqq_empty && !cfq_close_cooperator(cfqd, cfqq, 1) &&
--			 sync && !rq_noidle(rq))
--			cfq_arm_slice_timer(cfqd);
--	}
--
--	if (!cfqd->rq_in_driver)
--		cfq_schedule_dispatch(cfqd);
- }
- 
- /*
-@@ -2205,30 +1650,33 @@ static void cfq_completed_request(struct request_queue *q, struct request *rq)
-  */
- static void cfq_prio_boost(struct cfq_queue *cfqq)
- {
-+	struct io_queue *ioq = cfqq->ioq;
-+
- 	if (has_fs_excl()) {
- 		/*
- 		 * boost idle prio on transactions that would lock out other
- 		 * users of the filesystem
- 		 */
- 		if (cfq_class_idle(cfqq))
--			cfqq->ioprio_class = IOPRIO_CLASS_BE;
--		if (cfqq->ioprio > IOPRIO_NORM)
--			cfqq->ioprio = IOPRIO_NORM;
-+			elv_ioq_set_ioprio_class(ioq, IOPRIO_CLASS_BE);
-+		if (elv_ioq_ioprio(ioq) > IOPRIO_NORM)
-+			elv_ioq_set_ioprio(ioq, IOPRIO_NORM);
-+
- 	} else {
- 		/*
- 		 * check if we need to unboost the queue
- 		 */
--		if (cfqq->ioprio_class != cfqq->org_ioprio_class)
--			cfqq->ioprio_class = cfqq->org_ioprio_class;
--		if (cfqq->ioprio != cfqq->org_ioprio)
--			cfqq->ioprio = cfqq->org_ioprio;
-+		if (elv_ioq_ioprio_class(ioq) != cfqq->org_ioprio_class)
-+			elv_ioq_set_ioprio_class(ioq, cfqq->org_ioprio_class);
-+		if (elv_ioq_ioprio(ioq) != cfqq->org_ioprio)
-+			elv_ioq_set_ioprio(ioq, cfqq->org_ioprio);
- 	}
- }
- 
- static inline int __cfq_may_queue(struct cfq_queue *cfqq)
- {
--	if ((cfq_cfqq_wait_request(cfqq) || cfq_cfqq_must_alloc(cfqq)) &&
--	    !cfq_cfqq_must_alloc_slice(cfqq)) {
-+	if ((elv_ioq_wait_request(cfqq->ioq) ||
-+	   cfq_cfqq_must_alloc(cfqq)) && !cfq_cfqq_must_alloc_slice(cfqq)) {
- 		cfq_mark_cfqq_must_alloc_slice(cfqq);
- 		return ELV_MQUEUE_MUST;
- 	}
-@@ -2280,7 +1728,7 @@ static void cfq_put_request(struct request *rq)
- 		put_io_context(RQ_CIC(rq)->ioc);
- 
- 		rq->elevator_private = NULL;
--		rq->elevator_private2 = NULL;
-+		rq->ioq = NULL;
- 
- 		cfq_put_queue(cfqq);
- 	}
-@@ -2320,119 +1768,31 @@ cfq_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- 
- 	cfqq->allocated[rw]++;
- 	cfq_clear_cfqq_must_alloc(cfqq);
--	atomic_inc(&cfqq->ref);
-+	elv_get_ioq(cfqq->ioq);
- 
- 	spin_unlock_irqrestore(q->queue_lock, flags);
- 
- 	rq->elevator_private = cic;
--	rq->elevator_private2 = cfqq;
-+	rq->ioq = cfqq->ioq;
- 	return 0;
- 
- queue_fail:
- 	if (cic)
- 		put_io_context(cic->ioc);
- 
--	cfq_schedule_dispatch(cfqd);
-+	elv_schedule_dispatch(cfqd->queue);
- 	spin_unlock_irqrestore(q->queue_lock, flags);
- 	cfq_log(cfqd, "set_request fail");
  	return 1;
  }
- 
--static void cfq_kick_queue(struct work_struct *work)
--{
--	struct cfq_data *cfqd =
--		container_of(work, struct cfq_data, unplug_work);
--	struct request_queue *q = cfqd->queue;
--
--	spin_lock_irq(q->queue_lock);
--	blk_start_queueing(q);
--	spin_unlock_irq(q->queue_lock);
--}
--
--/*
-- * Timer running if the active_queue is currently idling inside its time slice
-- */
--static void cfq_idle_slice_timer(unsigned long data)
--{
--	struct cfq_data *cfqd = (struct cfq_data *) data;
--	struct cfq_queue *cfqq;
--	unsigned long flags;
--	int timed_out = 1;
--
--	cfq_log(cfqd, "idle timer fired");
--
--	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
--
--	cfqq = cfqd->active_queue;
--	if (cfqq) {
--		timed_out = 0;
--
--		/*
--		 * We saw a request before the queue expired, let it through
--		 */
--		if (cfq_cfqq_must_dispatch(cfqq))
--			goto out_kick;
--
--		/*
--		 * expired
--		 */
--		if (cfq_slice_used(cfqq))
--			goto expire;
--
--		/*
--		 * only expire and reinvoke request handler, if there are
--		 * other queues with pending requests
--		 */
--		if (!cfqd->busy_queues)
--			goto out_cont;
--
--		/*
--		 * not expired and it has a request pending, let it dispatch
--		 */
--		if (!RB_EMPTY_ROOT(&cfqq->sort_list))
--			goto out_kick;
--	}
--expire:
--	cfq_slice_expired(cfqd, timed_out);
--out_kick:
--	cfq_schedule_dispatch(cfqd);
--out_cont:
--	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
--}
--
--static void cfq_shutdown_timer_wq(struct cfq_data *cfqd)
--{
--	del_timer_sync(&cfqd->idle_slice_timer);
--	cancel_work_sync(&cfqd->unplug_work);
--}
--
--static void cfq_put_async_queues(struct cfq_data *cfqd)
--{
--	int i;
--
--	for (i = 0; i < IOPRIO_BE_NR; i++) {
--		if (cfqd->async_cfqq[0][i])
--			cfq_put_queue(cfqd->async_cfqq[0][i]);
--		if (cfqd->async_cfqq[1][i])
--			cfq_put_queue(cfqd->async_cfqq[1][i]);
--	}
--
--	if (cfqd->async_idle_cfqq)
--		cfq_put_queue(cfqd->async_idle_cfqq);
--}
--
- static void cfq_exit_queue(struct elevator_queue *e)
- {
- 	struct cfq_data *cfqd = e->elevator_data;
- 	struct request_queue *q = cfqd->queue;
- 
--	cfq_shutdown_timer_wq(cfqd);
--
- 	spin_lock_irq(q->queue_lock);
- 
--	if (cfqd->active_queue)
--		__cfq_slice_expired(cfqd, cfqd->active_queue, 0);
--
- 	while (!list_empty(&cfqd->cic_list)) {
- 		struct cfq_io_context *cic = list_entry(cfqd->cic_list.next,
- 							struct cfq_io_context,
-@@ -2441,12 +1801,7 @@ static void cfq_exit_queue(struct elevator_queue *e)
- 		__cfq_exit_single_io_context(cfqd, cic);
+@@ -953,8 +960,11 @@ void elv_completed_request(struct request_queue *q, struct request *rq)
+ 	 */
+ 	if (blk_account_rq(rq)) {
+ 		q->in_flight--;
+-		if (blk_sorted_rq(rq) && e->ops->elevator_completed_req_fn)
+-			e->ops->elevator_completed_req_fn(q, rq);
++		if (blk_sorted_rq(rq)) {
++			if (e->ops->elevator_completed_req_fn)
++				e->ops->elevator_completed_req_fn(q, rq);
++			elv_ioq_completed_request(q, rq);
++		}
  	}
  
--	cfq_put_async_queues(cfqd);
--
- 	spin_unlock_irq(q->queue_lock);
--
--	cfq_shutdown_timer_wq(cfqd);
--
- 	kfree(cfqd);
- }
- 
-@@ -2459,8 +1814,6 @@ static void *cfq_init_queue(struct request_queue *q)
- 	if (!cfqd)
- 		return NULL;
- 
--	cfqd->service_tree = CFQ_RB_ROOT;
--
  	/*
- 	 * Not strictly needed (since RB_ROOT just clears the node and we
- 	 * zeroed cfqd on alloc), but better be safe in case someone decides
-@@ -2473,23 +1826,12 @@ static void *cfq_init_queue(struct request_queue *q)
- 
- 	cfqd->queue = q;
- 
--	init_timer(&cfqd->idle_slice_timer);
--	cfqd->idle_slice_timer.function = cfq_idle_slice_timer;
--	cfqd->idle_slice_timer.data = (unsigned long) cfqd;
--
--	INIT_WORK(&cfqd->unplug_work, cfq_kick_queue);
--
--	cfqd->last_end_request = jiffies;
- 	cfqd->cfq_quantum = cfq_quantum;
- 	cfqd->cfq_fifo_expire[0] = cfq_fifo_expire[0];
- 	cfqd->cfq_fifo_expire[1] = cfq_fifo_expire[1];
- 	cfqd->cfq_back_max = cfq_back_max;
- 	cfqd->cfq_back_penalty = cfq_back_penalty;
--	cfqd->cfq_slice[0] = cfq_slice_async;
--	cfqd->cfq_slice[1] = cfq_slice_sync;
- 	cfqd->cfq_slice_async_rq = cfq_slice_async_rq;
--	cfqd->cfq_slice_idle = cfq_slice_idle;
--	cfqd->hw_tag = 1;
- 
- 	return cfqd;
+@@ -1242,3 +1252,17 @@ struct request *elv_rb_latter_request(struct request_queue *q,
+ 	return NULL;
  }
-@@ -2554,9 +1896,6 @@ SHOW_FUNCTION(cfq_fifo_expire_sync_show, cfqd->cfq_fifo_expire[1], 1);
- SHOW_FUNCTION(cfq_fifo_expire_async_show, cfqd->cfq_fifo_expire[0], 1);
- SHOW_FUNCTION(cfq_back_seek_max_show, cfqd->cfq_back_max, 0);
- SHOW_FUNCTION(cfq_back_seek_penalty_show, cfqd->cfq_back_penalty, 0);
--SHOW_FUNCTION(cfq_slice_idle_show, cfqd->cfq_slice_idle, 1);
--SHOW_FUNCTION(cfq_slice_sync_show, cfqd->cfq_slice[1], 1);
--SHOW_FUNCTION(cfq_slice_async_show, cfqd->cfq_slice[0], 1);
- SHOW_FUNCTION(cfq_slice_async_rq_show, cfqd->cfq_slice_async_rq, 0);
- #undef SHOW_FUNCTION
+ EXPORT_SYMBOL(elv_rb_latter_request);
++
++/* Get the io scheduler queue pointer. For cfq, it is stored in rq->ioq*/
++void *elv_get_sched_queue(struct request_queue *q, struct request *rq)
++{
++	return ioq_sched_queue(rq_ioq(rq));
++}
++EXPORT_SYMBOL(elv_get_sched_queue);
++
++/* Select an ioscheduler queue to dispatch request from. */
++void *elv_select_sched_queue(struct request_queue *q, int force)
++{
++	return ioq_sched_queue(elv_fq_select_ioq(q, force));
++}
++EXPORT_SYMBOL(elv_select_sched_queue);
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index b4f71f1..96a94c9 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -245,6 +245,11 @@ struct request {
  
-@@ -2584,9 +1923,6 @@ STORE_FUNCTION(cfq_fifo_expire_async_store, &cfqd->cfq_fifo_expire[0], 1,
- STORE_FUNCTION(cfq_back_seek_max_store, &cfqd->cfq_back_max, 0, UINT_MAX, 0);
- STORE_FUNCTION(cfq_back_seek_penalty_store, &cfqd->cfq_back_penalty, 1,
- 		UINT_MAX, 0);
--STORE_FUNCTION(cfq_slice_idle_store, &cfqd->cfq_slice_idle, 0, UINT_MAX, 1);
--STORE_FUNCTION(cfq_slice_sync_store, &cfqd->cfq_slice[1], 1, UINT_MAX, 1);
--STORE_FUNCTION(cfq_slice_async_store, &cfqd->cfq_slice[0], 1, UINT_MAX, 1);
- STORE_FUNCTION(cfq_slice_async_rq_store, &cfqd->cfq_slice_async_rq, 1,
- 		UINT_MAX, 0);
- #undef STORE_FUNCTION
-@@ -2600,10 +1936,10 @@ static struct elv_fs_entry cfq_attrs[] = {
- 	CFQ_ATTR(fifo_expire_async),
- 	CFQ_ATTR(back_seek_max),
- 	CFQ_ATTR(back_seek_penalty),
--	CFQ_ATTR(slice_sync),
--	CFQ_ATTR(slice_async),
- 	CFQ_ATTR(slice_async_rq),
--	CFQ_ATTR(slice_idle),
-+	ELV_ATTR(slice_idle),
-+	ELV_ATTR(slice_sync),
-+	ELV_ATTR(slice_async),
- 	__ATTR_NULL
+ 	/* for bidi */
+ 	struct request *next_rq;
++
++#ifdef CONFIG_ELV_FAIR_QUEUING
++	/* io queue request belongs to */
++	struct io_queue *ioq;
++#endif
  };
  
-@@ -2616,8 +1952,6 @@ static struct elevator_type iosched_cfq = {
- 		.elevator_dispatch_fn =		cfq_dispatch_requests,
- 		.elevator_add_req_fn =		cfq_insert_request,
- 		.elevator_activate_req_fn =	cfq_activate_request,
--		.elevator_deactivate_req_fn =	cfq_deactivate_request,
--		.elevator_queue_empty_fn =	cfq_queue_empty,
- 		.elevator_completed_req_fn =	cfq_completed_request,
- 		.elevator_former_req_fn =	elv_rb_former_request,
- 		.elevator_latter_req_fn =	elv_rb_latter_request,
-@@ -2627,7 +1961,15 @@ static struct elevator_type iosched_cfq = {
- 		.elevator_init_fn =		cfq_init_queue,
- 		.elevator_exit_fn =		cfq_exit_queue,
- 		.trim =				cfq_free_io_context,
-+		.elevator_free_sched_queue_fn =	cfq_free_cfq_queue,
-+		.elevator_active_ioq_set_fn = 	cfq_active_ioq_set,
-+		.elevator_active_ioq_reset_fn =	cfq_active_ioq_reset,
-+		.elevator_arm_slice_timer_fn = 	cfq_arm_slice_timer,
-+		.elevator_should_preempt_fn = 	cfq_should_preempt,
-+		.elevator_update_idle_window_fn = cfq_update_idle_window,
-+		.elevator_close_cooperator_fn = cfq_close_cooperator,
- 	},
-+	.elevator_features =    ELV_IOSCHED_NEED_FQ,
- 	.elevator_attrs =	cfq_attrs,
- 	.elevator_name =	"cfq",
- 	.elevator_owner =	THIS_MODULE,
-@@ -2635,14 +1977,6 @@ static struct elevator_type iosched_cfq = {
+ static inline unsigned short req_get_ioprio(struct request *req)
+diff --git a/include/linux/elevator.h b/include/linux/elevator.h
+index c59b769..679c149 100644
+--- a/include/linux/elevator.h
++++ b/include/linux/elevator.h
+@@ -2,6 +2,7 @@
+ #define _LINUX_ELEVATOR_H
  
- static int __init cfq_init(void)
+ #include <linux/percpu.h>
++#include "../../block/elevator-fq.h"
+ 
+ #ifdef CONFIG_BLOCK
+ 
+@@ -29,6 +30,18 @@ typedef void (elevator_deactivate_req_fn) (struct request_queue *, struct reques
+ 
+ typedef void *(elevator_init_fn) (struct request_queue *);
+ typedef void (elevator_exit_fn) (struct elevator_queue *);
++#ifdef CONFIG_ELV_FAIR_QUEUING
++typedef void (elevator_free_sched_queue_fn) (struct elevator_queue*, void *);
++typedef void (elevator_active_ioq_set_fn) (struct request_queue*, void *, int);
++typedef void (elevator_active_ioq_reset_fn) (struct request_queue *, void*);
++typedef void (elevator_arm_slice_timer_fn) (struct request_queue*, void*);
++typedef int (elevator_should_preempt_fn) (struct request_queue*, void*,
++						struct request*);
++typedef int (elevator_update_idle_window_fn) (struct elevator_queue*, void*,
++						struct request*);
++typedef struct io_queue* (elevator_close_cooperator_fn) (struct request_queue*,
++						void*, int probe);
++#endif
+ 
+ struct elevator_ops
  {
--	/*
--	 * could be 0 on HZ < 1000 setups
--	 */
--	if (!cfq_slice_async)
--		cfq_slice_async = 1;
--	if (!cfq_slice_idle)
--		cfq_slice_idle = 1;
--
- 	if (cfq_slab_setup())
- 		return -ENOMEM;
+@@ -56,6 +69,17 @@ struct elevator_ops
+ 	elevator_init_fn *elevator_init_fn;
+ 	elevator_exit_fn *elevator_exit_fn;
+ 	void (*trim)(struct io_context *);
++
++#ifdef CONFIG_ELV_FAIR_QUEUING
++	elevator_free_sched_queue_fn *elevator_free_sched_queue_fn;
++	elevator_active_ioq_set_fn *elevator_active_ioq_set_fn;
++	elevator_active_ioq_reset_fn *elevator_active_ioq_reset_fn;
++
++	elevator_arm_slice_timer_fn *elevator_arm_slice_timer_fn;
++	elevator_should_preempt_fn *elevator_should_preempt_fn;
++	elevator_update_idle_window_fn *elevator_update_idle_window_fn;
++	elevator_close_cooperator_fn *elevator_close_cooperator_fn;
++#endif
+ };
  
-diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
-index 08b987b..5be25b3 100644
---- a/include/linux/iocontext.h
-+++ b/include/linux/iocontext.h
-@@ -39,13 +39,8 @@ struct cfq_io_context {
+ #define ELV_NAME_MAX	(16)
+@@ -76,6 +100,9 @@ struct elevator_type
+ 	struct elv_fs_entry *elevator_attrs;
+ 	char elevator_name[ELV_NAME_MAX];
+ 	struct module *elevator_owner;
++#ifdef CONFIG_ELV_FAIR_QUEUING
++	int elevator_features;
++#endif
+ };
  
- 	struct io_context *ioc;
+ /*
+@@ -89,6 +116,10 @@ struct elevator_queue
+ 	struct elevator_type *elevator_type;
+ 	struct mutex sysfs_lock;
+ 	struct hlist_head *hash;
++#ifdef CONFIG_ELV_FAIR_QUEUING
++	/* fair queuing data */
++	struct elv_fq_data efqd;
++#endif
+ };
  
--	unsigned long last_end_request;
- 	sector_t last_request_pos;
+ /*
+@@ -209,5 +240,25 @@ enum {
+ 	__val;							\
+ })
  
--	unsigned long ttime_total;
--	unsigned long ttime_samples;
--	unsigned long ttime_mean;
--
- 	unsigned int seek_samples;
- 	u64 seek_total;
- 	sector_t seek_mean;
++/* iosched can let elevator know their feature set/capability */
++#ifdef CONFIG_ELV_FAIR_QUEUING
++
++/* iosched wants to use fq logic of elevator layer */
++#define	ELV_IOSCHED_NEED_FQ	1
++
++static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
++{
++	return (e->elevator_type->elevator_features) & ELV_IOSCHED_NEED_FQ;
++}
++
++#else /* ELV_IOSCHED_FAIR_QUEUING */
++
++static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
++{
++	return 0;
++}
++#endif /* ELV_IOSCHED_FAIR_QUEUING */
++extern void *elv_get_sched_queue(struct request_queue *q, struct request *rq);
++extern void *elv_select_sched_queue(struct request_queue *q, int force);
+ #endif /* CONFIG_BLOCK */
+ #endif
 -- 
 1.6.0.6
