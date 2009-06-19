@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org: [PATCH 1/9] cred: #include init.h in cred.h]
-Date: Fri, 19 Jun 2009 13:48:11 -0500
-Message-ID: <20090619184811.GA28045@us.ibm.com>
+Subject: [PATCH 1/1] cr: uts: don't pass an unsigned var as a signed int
+Date: Fri, 19 Jun 2009 15:37:19 -0500
+Message-ID: <20090619203719.GA30093@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,51 +20,46 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Oren,
+Else my checkpoing image gets reeeaallly huge.  Just passing the
+result of sizeof() however does the right thing.
 
-until you rebase onto a newer Linus tree (which has this fix), I still
-need this patch in order for s390 to compile.  Can you keep it in the
-patchset for now?
-
------ Forwarded message from "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> -----
-
-Date:  Fri, 29 May 2009 17:32:48 -0500
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>,
-	Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>,
-	Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>,
-	David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>,
-	linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Subject: [PATCH 1/9] cred: #include init.h in cred.h
-
-cred.h can't be included as first header because it uses __init and
-doesn't include init.h which is enough to break compilation on at least
-ia64.
-
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cred.h |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ checkpoint/namespace.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 3282ee4..4fa9996 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -13,6 +13,7 @@
- #define _LINUX_CRED_H
-
- #include <linux/capability.h>
-+#include <linux/init.h>
- #include <linux/key.h>
- #include <asm/atomic.h>
-
+diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
+index 5726acb..8206aee 100644
+--- a/checkpoint/namespace.c
++++ b/checkpoint/namespace.c
+@@ -46,22 +46,22 @@ static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
+ 		return ret;
+ 
+ 	down_read(&uts_sem);
+-	ret = ckpt_write_string(ctx, name->sysname, h->sysname_len);
++	ret = ckpt_write_string(ctx, name->sysname, sizeof(name->sysname));
+ 	if (ret < 0)
+ 		goto up;
+-	ret = ckpt_write_string(ctx, name->nodename, h->nodename_len);
++	ret = ckpt_write_string(ctx, name->nodename, sizeof(name->nodename));
+ 	if (ret < 0)
+ 		goto up;
+-	ret = ckpt_write_string(ctx, name->release, h->release_len);
++	ret = ckpt_write_string(ctx, name->release, sizeof(name->release));
+ 	if (ret < 0)
+ 		goto up;
+-	ret = ckpt_write_string(ctx, name->version, h->version_len);
++	ret = ckpt_write_string(ctx, name->version, sizeof(name->version));
+ 	if (ret < 0)
+ 		goto up;
+-	ret = ckpt_write_string(ctx, name->machine, h->machine_len);
++	ret = ckpt_write_string(ctx, name->machine, sizeof(name->machine));
+ 	if (ret < 0)
+ 		goto up;
+-	ret = ckpt_write_string(ctx, name->domainname, h->domainname_len);
++	ret = ckpt_write_string(ctx, name->domainname, sizeof(name->domainname));
+  up:
+ 	up_read(&uts_sem);
+ 	return ret;
 -- 
 1.6.1
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
------ End forwarded message -----
