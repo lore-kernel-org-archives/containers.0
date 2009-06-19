@@ -1,15 +1,23 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 2/2] clone_with_pids: define the s390 syscall
-Date: Fri, 19 Jun 2009 02:56:34 -0400
-Message-ID: <4A3B36A2.9030304@cs.columbia.edu>
-References: <20090615170443.GA14808@us.ibm.com>
-	<20090615170524.GA14950@us.ibm.com>
-	<20090615171645.GA15217@us.ibm.com>
+From: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] mm: clear N_HIGH_MEMORY map before se set it again -v4
+Date: Fri, 19 Jun 2009 01:18:02 -0700
+Message-ID: <4A3B49BA.40100__31969.8924351998$1245399652$gmane$org@kernel.org>
+References: <4A05269D.8000701@kernel.org> <20090512111623.GG25923@csn.ul.ie>
+	<4A0A64FB.4080504@kernel.org> <20090513145950.GB28097@csn.ul.ie>
+	<4A0C4910.7090508@kernel.org> <4A0C4A2A.6080009@kernel.org>
+	<20090514095414.ba8356e5.akpm@linux-foundation.org>
+	<4A0C4F67.5080802@kernel.org>
+	<20090514102554.b3a36f19.akpm@linux-foundation.org>
+	<4A0C563A.3020100@kernel.org> <4A2758CB.9090404@kernel.org>
+	<alpine.DEB.1.10.0906041236520.5377@gentwo.org>
+	<4A27FAD4.2010104@kernel.org>
+	<alpine.DEB.1.10.0906041309230.8080@gentwo.org>
+	<4A2803D1.4070001@kernel.org> <m3bpokiv0u.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090615171645.GA15217-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m3bpokiv0u.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,143 +27,111 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: steiner-sJ/iWh9BUns@public.gmane.org, Christoph Lameter <cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, mel-wPRd99KPJ+uzQB+pC5nmwQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Nathan Lynch wrote:
+> Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
+>> SRAT tables may contains nodes of very small size. The arch code may
+>> decide to not activate such a node. However, currently the early boot code
+>> sets N_HIGH_MEMORY for such nodes. These nodes therefore seem to be active
+>> although these nodes have no present pages.
+>>
+>> for 64bit N_HIGH_MEMORY == N_NORMAL_MEMORY, so that works for 64 bit too
+>>
+>> v4: update description according to Christoph
+>>
+>> Signed-off-by: Yinghai Lu <Yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+>> Tested-by: Jack Steiner <steiner-sJ/iWh9BUns@public.gmane.org>
+>> Acked-by: Christoph Lameter <cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+>>
+>> ---
+>>  mm/page_alloc.c |    5 +++++
+>>  1 file changed, 5 insertions(+)
+>>
+>> Index: linux-2.6/mm/page_alloc.c
+>> ===================================================================
+>> --- linux-2.6.orig/mm/page_alloc.c
+>> +++ linux-2.6/mm/page_alloc.c
+>> @@ -4041,6 +4041,11 @@ void __init free_area_init_nodes(unsigne
+>>  						early_node_map[i].start_pfn,
+>>  						early_node_map[i].end_pfn);
+>>  
+>> +	/*
+>> +	 * find_zone_movable_pfns_for_nodes/early_calculate_totalpages init
+>> +	 * that node_mask, clear it at first
+>> +	 */
+>> +	nodes_clear(node_states[N_HIGH_MEMORY]);
+>>  	/* Initialise every node */
+>>  	mminit_verify_pageflags_layout();
+>>  	setup_nr_node_ids();
+> 
+> This patch breaks the cpuset.mems cgroup attribute on an i386 kvm guest.
+> 
+> With v2.6.30:
+> 
+> # uname -r
+> 2.6.30
+> # cat /cgroup/cpuset.mems
+> 0
+> # mkdir /cgroup/test
+> # for i in cpus mems ; do cat /cgroup/cpuset.$i > /cgroup/test/cpuset.$i ; done
+> # echo $$ > /cgroup/test/tasks
+> # echo $?
+> 0
+> 
+> With a pulled-today Linus tree:
+> 
+> # uname -r
+> 2.6.30-06725-g1d89b30
+> # cat /cgroup/cpuset.mems
+> 
+> # mkdir /cgroup/test
+> # for i in cpus mems ; do cat /cgroup/cpuset.$i > /cgroup/test/cpuset.$i ; done
+> # echo $$ > /cgroup/test/tasks
+> -bash: echo: write error: No space left on device
+> 
+> (Note that in addition to the ENOSPC error, /cgroup/cpuset.mems is empty
+> rather than '0' in the second test.)
+> 
+> I bisected to the commit containing this change.  Reverting fixes the
+> problem.
+> 
 
-Applied.
+can you use following patch to see what happens to that nodemask?
 
-Serge E. Hallyn wrote:
-> Gah, sorry, git user error.  syscalls.S update was not in the patch.
-> Here is an update:
-> 
-> thanks,
-> -serge
-> 
-> From 788c5bcc14211608f187f36d327a9d6d87b19755 Mon Sep 17 00:00:00 2001
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Mon, 15 Jun 2009 12:14:11 -0400
-> Subject: [PATCH 2/2] clone_with_pids: define the s390 syscall
-> 
-> Hook up the clone_with_pids system call for s390x.  clone_with_pids()
-> takes an additional argument over clone(), which we pass in through
-> register 7.  Stub code for using the syscall looks like:
-> 
-> struct target_pid_set {
->         int num_pids;
->         pid_t *target_pids;
->         unsigned long flags;
-> };
-> 
->         register unsigned long int __r2 asm ("2") = (unsigned long int)(stack);\
->         register unsigned long int __r3 asm ("3") = (unsigned long int)(flags);\
->         register unsigned long int __r4 asm ("4") = (unsigned long int)(NULL); \
->         register unsigned long int __r5 asm ("5") = (unsigned long int)(NULL); \
->         register unsigned long int __r6 asm ("6") = (unsigned long int)(NULL); \
->         register unsigned long int __r7 asm ("7") = (unsigned long int)(setp); \
->         register unsigned long int __result asm ("2"); \
->         __asm__ __volatile__( \
->                 " lghi %%r1,332\n" \
->                 " svc 0\n" \
->                 : "=d" (__result) \
->                 : "0" (__r2), "d" (__r3), \
->                   "d" (__r4), "d" (__r5), "d" (__r6), "d" (__r7) \
->                 : "1", "cc", "memory" \
->         ); \
->                 __result; \
->         })
-> 
->         struct target_pid_set pid_set;
->         int pids[1] = { 19799 };
->         pid_set.num_pids = 1;
->         pid_set.target_pids = &pids[0];
->         pid_set.flags = 0;
-> 
->         rc = do_clone_with_pids(topstack, clone_flags, setp);
-> 	if (rc == 0)
-> 		printf("Child\n");
-> 	else if (rc > 0)
-> 		printf("Parent: child pid %d\n", rc);
-> 	else
-> 		printf("Error %d\n", rc);
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  arch/s390/include/asm/unistd.h    |    3 ++-
->  arch/s390/kernel/compat_wrapper.S |   10 ++++++++++
->  arch/s390/kernel/process.c        |   19 +++++++++++++++++++
->  arch/s390/kernel/syscalls.S       |    1 +
->  4 files changed, 32 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
-> index 3d22f17..d2facab 100644
-> --- a/arch/s390/include/asm/unistd.h
-> +++ b/arch/s390/include/asm/unistd.h
-> @@ -269,7 +269,8 @@
->  #define	__NR_pwritev		329
->  #define __NR_checkpoint		330
->  #define __NR_restart		331
-> -#define NR_syscalls 332
-> +#define __NR_clone_with_pids	332
-> +#define NR_syscalls 333
->  
->  /* 
->   * There are some system calls that are not present on 64 bit, some
-> diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
-> index c2228b2..bf13315 100644
-> --- a/arch/s390/kernel/compat_wrapper.S
-> +++ b/arch/s390/kernel/compat_wrapper.S
-> @@ -1837,3 +1837,13 @@ sys_restore_wrapper:
->  	lgfr	%r3,%r3			# int
->  	llgfr	%r4,%r4			# unsigned long
->  	jg	compat_sys_restore
-> +
-> +	.globl sys_clone_with_pids_wrapper
-> +sys_clone_with_pids_wrapper:
-> +	llgfr	%r2,%r2			# unsigned long
-> +	llgfr	%r3,%r3			# unsigned long
-> +	llgtr	%r4,%r4			# int *
-> +	llgtr	%r5,%r5			# int *
-> +	llgtr	%r6,%r6			# void *
-> +	llgtr	%r7,%r7			# void *
-> +	jg	compat_sys_clone_with_pids
-> diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-> index a3acd8e..fa187bf 100644
-> --- a/arch/s390/kernel/process.c
-> +++ b/arch/s390/kernel/process.c
-> @@ -246,6 +246,25 @@ SYSCALL_DEFINE0(clone)
->  		       parent_tidptr, child_tidptr);
->  }
->  
-> +SYSCALL_DEFINE0(clone_with_pids)
-> +{
-> +	struct pt_regs *regs = task_pt_regs(current);
-> +	unsigned long clone_flags;
-> +	unsigned long newsp;
-> +	int __user *parent_tidptr, *child_tidptr;
-> +	void __user *upid_setp;
-> +
-> +	clone_flags = regs->gprs[3];
-> +	newsp = regs->orig_gpr2;
-> +	parent_tidptr = (int __user *) regs->gprs[4];
-> +	child_tidptr = (int __user *) regs->gprs[5];
-> +	upid_setp = (void __user *) regs->gprs[7];
-> +	if (!newsp)
-> +		newsp = regs->gprs[15];
-> +	return do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
-> +			child_tidptr, upid_setp);
-> +}
-> +
->  /*
->   * This is trivial, and on the face of it looks like it
->   * could equally well be done in user mode.
-> diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-> index e755e93..1d638f5 100644
-> --- a/arch/s390/kernel/syscalls.S
-> +++ b/arch/s390/kernel/syscalls.S
-> @@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
->  SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
->  SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper) /* 330 */
->  SYSCALL(sys_restart,sys_restart,sys_restore_wrapper)
-> +SYSCALL(sys_clone_with_pids,sys_clone_with_pids,sys_clone_with_pids_wrapper)
+YH
+
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index a5f3c27..eb89e8b 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -4189,6 +4189,7 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
+ {
+ 	unsigned long nid;
+ 	int i;
++	char buf[512];
+ 
+ 	/* Sort early_node_map as initialisation assumes it is sorted */
+ 	sort_node_map();
+@@ -4244,6 +4245,9 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
+ 	 * find_zone_movable_pfns_for_nodes/early_calculate_totalpages init
+ 	 * that node_mask, clear it at first
+ 	 */
++	memset(buf, 0, 512);
++	nodemask_scnprintf(buf, 512, node_states[N_HIGH_MEMORY]);
++	printk(KERN_DEBUG "before clear: node_states [%d]: %s\n", N_HIGH_MEMORY, buf);
+ 	nodes_clear(node_states[N_HIGH_MEMORY]);
+ 	/* Initialise every node */
+ 	mminit_verify_pageflags_layout();
+@@ -4258,6 +4262,9 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
+ 			node_set_state(nid, N_HIGH_MEMORY);
+ 		check_for_regular_memory(pgdat);
+ 	}
++	memset(buf, 0, 512);
++	nodemask_scnprintf(buf, 512, node_states[N_HIGH_MEMORY]);
++	printk(KERN_DEBUG "after online check: node_states [%d]: %s\n", N_HIGH_MEMORY, buf);
+ }
+ 
+ static int __init cmdline_parse_core(char *p, unsigned long *core)
