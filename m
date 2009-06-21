@@ -1,15 +1,15 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based io controller (V5)
-Date: Sun, 21 Jun 2009 20:51:16 +0530
-Message-ID: <20090621152116.GC3728__5839.66354975036$1245598118$gmane$org@balbir.in.ibm.com>
-References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: uts: don't pass an unsigned var as a signed int
+Date: Sun, 21 Jun 2009 14:13:05 -0500
+Message-ID: <20090621191305.GA2499@hallyn.com>
+References: <20090619203719.GA30093@us.ibm.com> <m3prczfs2m.fsf@pobox.com>
+	<20090621001837.GA32394@hallyn.com> <m34ouaf942.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1245443858-8487-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m34ouaf942.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,28 +19,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-19 16:37:18]:
-
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> Hi All,
+> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> >> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> >> 
+> >> > Else my checkpoing image gets reeeaallly huge.  Just passing the
+> >> > result of sizeof() however does the right thing.
+> >> >
+> >> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >> > ---
+> >> >  checkpoint/namespace.c |   12 ++++++------
+> >> >  1 files changed, 6 insertions(+), 6 deletions(-)
+> >> 
+> >> But right above the code you're changing we have:
+> >> 
+> >> 	h->sysname_len = sizeof(name->sysname);
+> >> 	h->nodename_len = sizeof(name->nodename);
+> >> 	h->release_len = sizeof(name->release);
+> >> 	h->version_len = sizeof(name->version);
+> >> 	h->machine_len = sizeof(name->machine);
+> >> 	h->domainname_len = sizeof(name->domainname);
+> >> 
+> >> Your patch shouldn't change any behavior.  What gives?
+> >
+> > "Shouldn't", perhaps, but does.
 > 
-> Here is the V5 of the IO controller patches generated on top of 2.6.30.
-[snip]
+> 
+> Revisiting do_checkpoint_uts_ns, I think it's a case of use after free:
+> 
+> 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
+> 	if (!h)
+> 		return -ENOMEM;
+> 
+> 	h->sysname_len = sizeof(name->sysname);
+> 	h->nodename_len = sizeof(name->nodename);
+> 	h->release_len = sizeof(name->release);
+> 	h->version_len = sizeof(name->version);
+> 	h->machine_len = sizeof(name->machine);
+> 	h->domainname_len = sizeof(name->domainname);
+> 
+> 	ret = ckpt_write_obj(ctx, &h->h);
+> 	ckpt_hdr_put(ctx, h);
+> 	if (ret < 0)
+> 		return ret;
+> 
+> 	down_read(&uts_sem);
+> 	ret = ckpt_write_string(ctx, name->sysname, h->sysname_len);
+> 
+> We're continuing to use h's memory after it has been released by
+> ckpt_hdr_put.  Seems plausible that the poison values written by sl*b
+> debug would cause the len argument to be ridiculously large.
 
-> Testing
-> =======
->
+Oren,
 
-[snip]
+would it be possible to put up a filter, either manual or
+automatic, to send every patch that gets pushed on the current
+ckpt git branch to the containers list, maybe with a [CKPT PUSH]
+tag in the subject line?
 
-I've not been reading through the discussions in complete detail, but
-I see no reference to async reads or aio. In the case of aio, aio
-presumes the context of the user space process. Could you elaborate on
-any testing you've done with these cases? 
+I think it will foster much more review of every patch.  Right now
+it feels like we just catch blatant bugs when they bite us too hard,
+but I don't think many people are looking through 'git wc' every
+day.
 
--- 
-	Balbir
+-serge
