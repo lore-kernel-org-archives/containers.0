@@ -1,13 +1,14 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/4] pipe_fs_i.h: add checkpoint-related declarations
-Date: Mon, 22 Jun 2009 18:06:17 -0500
-Message-ID: <1245711978-1453-4-git-send-email-ntl@pobox.com>
-References: <1245711978-1453-1-git-send-email-ntl@pobox.com>
+Subject: Re: [PATCH 1/1] cr: uts: don't pass an unsigned var as a signed int
+Date: Mon, 22 Jun 2009 18:20:22 -0500
+Message-ID: <m3k533lutl.fsf@pobox.com>
+References: <20090619203719.GA30093@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1245711978-1453-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090619203719.GA30093-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message
+	of "Fri\, 19 Jun 2009 15\:37\:19 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,30 +18,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-pipe_fs_i.h apparently relies on ordering of includes in .c files to
-get declarations of ckpt_ctx and ckpt_hdr_file for pipe_file_restore's
-prototype.  This is bad.  Add appropriate forward declarations.
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> Else my checkpoing image gets reeeaallly huge.  Just passing the
+> result of sizeof() however does the right thing.
+>
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/namespace.c |   12 ++++++------
+>  1 files changed, 6 insertions(+), 6 deletions(-)
+>
+> diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
+> index 5726acb..8206aee 100644
+> --- a/checkpoint/namespace.c
+> +++ b/checkpoint/namespace.c
+> @@ -46,22 +46,22 @@ static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
+>  		return ret;
+>  
+>  	down_read(&uts_sem);
+> -	ret = ckpt_write_string(ctx, name->sysname, h->sysname_len);
+> +	ret = ckpt_write_string(ctx, name->sysname, sizeof(name->sysname));
+>  	if (ret < 0)
+>  		goto up;
+> -	ret = ckpt_write_string(ctx, name->nodename, h->nodename_len);
+> +	ret = ckpt_write_string(ctx, name->nodename, sizeof(name->nodename));
+>  	if (ret < 0)
+>  		goto up;
+> -	ret = ckpt_write_string(ctx, name->release, h->release_len);
+> +	ret = ckpt_write_string(ctx, name->release, sizeof(name->release));
+>  	if (ret < 0)
+>  		goto up;
+> -	ret = ckpt_write_string(ctx, name->version, h->version_len);
+> +	ret = ckpt_write_string(ctx, name->version, sizeof(name->version));
+>  	if (ret < 0)
+>  		goto up;
+> -	ret = ckpt_write_string(ctx, name->machine, h->machine_len);
+> +	ret = ckpt_write_string(ctx, name->machine, sizeof(name->machine));
+>  	if (ret < 0)
+>  		goto up;
+> -	ret = ckpt_write_string(ctx, name->domainname, h->domainname_len);
+> +	ret = ckpt_write_string(ctx, name->domainname, sizeof(name->domainname));
+>   up:
+>  	up_read(&uts_sem);
+>  	return ret;
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- include/linux/pipe_fs_i.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
-index b877598..fe45a85 100644
---- a/include/linux/pipe_fs_i.h
-+++ b/include/linux/pipe_fs_i.h
-@@ -155,6 +155,8 @@ int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
- 
- /* checkpoint/restart */
- #ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
-+struct ckpt_hdr_file;
- extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
- 				      struct ckpt_hdr_file *ptr);
- #endif
--- 
-1.6.0.6
+So, getting back to the actual patch, this change seems fine -- just the
+commit subject and message should be updated, yes?
