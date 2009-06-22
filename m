@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/4] shm.h: add checkpoint-related declarations
-Date: Mon, 22 Jun 2009 18:06:15 -0500
-Message-ID: <1245711978-1453-2-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/4] remove checkpoint_types.h dependency from mm.h
+Date: Mon, 22 Jun 2009 18:06:18 -0500
+Message-ID: <1245711978-1453-5-git-send-email-ntl@pobox.com>
 References: <1245711978-1453-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,27 +20,41 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-shm.h apparently relies on ordering of includes in .c files to get
-declarations of ckpt_ctx and ckpt_hdr_vma for ipcshm_restore's
-prototype.  This is bad.  Add appropriate forward declarations.
+The checkpoint-related declarations in mm.h don't require the
+definitions of struct ckpt_ctx and ckpt_hdr_vma; simply forward
+declare these and remove the include of checkpoint_types.h.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/shm.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ include/linux/mm.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index 6edc26e..94ac1a7 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -124,6 +124,8 @@ extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index c8e8972..fa89212 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -14,13 +14,12 @@
+ #include <linux/debug_locks.h>
+ #include <linux/mm_types.h>
  
- #ifdef CONFIG_CHECKPOINT
- #ifdef CONFIG_SYSVIPC
+-#include <linux/checkpoint_types.h>
+-
+ struct mempolicy;
+ struct anon_vma;
+ struct file_ra_state;
+ struct user_struct;
+ struct writeback_control;
 +struct ckpt_ctx;
+ 
+ #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */
+ extern unsigned long max_mapnr;
+@@ -1199,6 +1198,7 @@ void task_dirty_inc(struct task_struct *tsk);
+ 
+ /* checkpoint/restart */
+ #ifdef CONFIG_CHECKPOINT
 +struct ckpt_hdr_vma;
- extern int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			  struct ckpt_hdr_vma *h);
- #else
+ extern int filemap_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			   struct ckpt_hdr_vma *hh);
+ extern int special_mapping_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
 -- 
 1.6.0.6
