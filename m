@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/4] remove checkpoint_types.h dependency from mm.h
-Date: Mon, 22 Jun 2009 18:06:18 -0500
-Message-ID: <1245711978-1453-5-git-send-email-ntl@pobox.com>
+Subject: [PATCH 2/4] fs.h: fix header export breakage
+Date: Mon, 22 Jun 2009 18:06:16 -0500
+Message-ID: <1245711978-1453-3-git-send-email-ntl@pobox.com>
 References: <1245711978-1453-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,41 +20,44 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The checkpoint-related declarations in mm.h don't require the
-definitions of struct ckpt_ctx and ckpt_hdr_vma; simply forward
-declare these and remove the include of checkpoint_types.h.
+# make headers_check
+...
+/home/nathanl/devel/linux-2.6.git/usr/include/linux/fs.h:11: included file 'linux/checkpoint_types.h' is not exported
+
+This breaks building of any user space code which includes fs.h.
+
+include/linux/checkpoint_types.h is not exported.
+include/linux/fs.h is exported.
+
+The latter #includes the former for the declaration of struct
+ckpt_ctx, but this is not strictly necessary for correctness.
+Forward-declaring struct ckpt_ctx and removing the include of
+checkpoint_types.h is sufficient and fixes the breakage.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/mm.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ include/linux/fs.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index c8e8972..fa89212 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -14,13 +14,12 @@
- #include <linux/debug_locks.h>
- #include <linux/mm_types.h>
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index e64f892..18e462c 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -8,7 +8,6 @@
  
+ #include <linux/limits.h>
+ #include <linux/ioctl.h>
 -#include <linux/checkpoint_types.h>
--
- struct mempolicy;
- struct anon_vma;
- struct file_ra_state;
- struct user_struct;
- struct writeback_control;
+ 
+ /*
+  * It's silly to have NR_OPEN bigger than NR_FILE, but you can change
+@@ -389,6 +388,7 @@ struct kstatfs;
+ struct vm_area_struct;
+ struct vfsmount;
+ struct cred;
 +struct ckpt_ctx;
  
- #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */
- extern unsigned long max_mapnr;
-@@ -1199,6 +1198,7 @@ void task_dirty_inc(struct task_struct *tsk);
- 
- /* checkpoint/restart */
- #ifdef CONFIG_CHECKPOINT
-+struct ckpt_hdr_vma;
- extern int filemap_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			   struct ckpt_hdr_vma *hh);
- extern int special_mapping_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ extern void __init inode_init(void);
+ extern void __init inode_init_early(void);
 -- 
 1.6.0.6
