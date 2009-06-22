@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/4] fs.h: fix header export breakage
-Date: Mon, 22 Jun 2009 18:06:16 -0500
-Message-ID: <1245711978-1453-3-git-send-email-ntl@pobox.com>
+Subject: [PATCH 3/4] pipe_fs_i.h: add checkpoint-related declarations
+Date: Mon, 22 Jun 2009 18:06:17 -0500
+Message-ID: <1245711978-1453-4-git-send-email-ntl@pobox.com>
 References: <1245711978-1453-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,44 +20,27 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-# make headers_check
-...
-/home/nathanl/devel/linux-2.6.git/usr/include/linux/fs.h:11: included file 'linux/checkpoint_types.h' is not exported
-
-This breaks building of any user space code which includes fs.h.
-
-include/linux/checkpoint_types.h is not exported.
-include/linux/fs.h is exported.
-
-The latter #includes the former for the declaration of struct
-ckpt_ctx, but this is not strictly necessary for correctness.
-Forward-declaring struct ckpt_ctx and removing the include of
-checkpoint_types.h is sufficient and fixes the breakage.
+pipe_fs_i.h apparently relies on ordering of includes in .c files to
+get declarations of ckpt_ctx and ckpt_hdr_file for pipe_file_restore's
+prototype.  This is bad.  Add appropriate forward declarations.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/fs.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ include/linux/pipe_fs_i.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index e64f892..18e462c 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -8,7 +8,6 @@
+diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
+index b877598..fe45a85 100644
+--- a/include/linux/pipe_fs_i.h
++++ b/include/linux/pipe_fs_i.h
+@@ -155,6 +155,8 @@ int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
  
- #include <linux/limits.h>
- #include <linux/ioctl.h>
--#include <linux/checkpoint_types.h>
- 
- /*
-  * It's silly to have NR_OPEN bigger than NR_FILE, but you can change
-@@ -389,6 +388,7 @@ struct kstatfs;
- struct vm_area_struct;
- struct vfsmount;
- struct cred;
+ /* checkpoint/restart */
+ #ifdef CONFIG_CHECKPOINT
 +struct ckpt_ctx;
- 
- extern void __init inode_init(void);
- extern void __init inode_init_early(void);
++struct ckpt_hdr_file;
+ extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
+ 				      struct ckpt_hdr_file *ptr);
+ #endif
 -- 
 1.6.0.6
