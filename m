@@ -1,13 +1,15 @@
-From: Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
-Date: Mon, 22 Jun 2009 10:47:05 -0400
-Message-ID: <1245682025.3033.178.camel@localhost.localdomain>
-References: <20090620013216.GA4435@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO scheduler based io controller (V5)
+Date: Mon, 22 Jun 2009 11:30:31 -0400
+Message-ID: <20090622153030.GA15600__25685.1147547879$1245684744$gmane$org@redhat.com>
+References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
+	<20090621152116.GC3728@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090620013216.GA4435-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090621152116.GC3728-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,74 +19,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-06-19 at 20:32 -0500, Serge E. Hallyn wrote:
-> Here is the next version of the patch implementing checkpoint
-> and restore of LSM contexts.  This is just handling IPC objects
-> as a proof of concept.  But actually, looking ahead and both
-> files and tasks, I see that selinux stores several sids in the
-> security structs.  For instance, for tasks there is the current
-> sid, exec sid, create sid, keycreate_sid, and sockcreate_sid.
-> So I guess I'll have to ask the LSM for how many secids it wants
-> to checkpoint, then checkpoint an array of contexts?
-
-You will need to support checkpointing multiple secids/contexts per
-object, but what about other state that might live in the security
-structs, e.g. flags fields, policy seqno, etc.
-
-> >From 19669b07cdfef4d377f3f188e2421c4124e38708 Mon Sep 17 00:00:00 2001
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Wed, 17 Jun 2009 12:00:21 -0400
-> Subject: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
+On Sun, Jun 21, 2009 at 08:51:16PM +0530, Balbir Singh wrote:
+> * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-19 16:37:18]:
 > 
-> Introduce a cache of secids for checkpoint and restart.
-
-Not sure you need to cache them in the cr layer (vs. just using the
-mapping functions provided by the LSM hook interface, and letting the
-security module handle caching internally).
-
-> At checkpoint, it takes a secid, stores the corresponding
-> context string, and stores the objref for later use.
-> At restart, read the context from checkpoint image,
-> ask the security module for a secid, and store the secid
-> on the objhash.
+> > 
+> > Hi All,
+> > 
+> > Here is the V5 of the IO controller patches generated on top of 2.6.30.
+> [snip]
 > 
-> The per-object security c/r code will be responsible for
-> getting secid from void*security at checkpoint time, and
-> converting secid to void*security at restore time.
+> > Testing
+> > =======
+> >
 > 
-> The code to c/r contexts for IPC objects is also in this
-> patch.
+> [snip]
 > 
-> For Smack, assign the label of the process doing sys_restart()
-> if !capable(CAP_MAC_ADMIN), otherwise use the checkpointed
-> label.
+> I've not been reading through the discussions in complete detail, but
+> I see no reference to async reads or aio. In the case of aio, aio
+> presumes the context of the user space process. Could you elaborate on
+> any testing you've done with these cases? 
 > 
-> For SELinux, define a new 'restore' permission for ipc objects.
-> (A corresponding trival policy patch adding 'restore' to the
-> common flask permissions for refpolicy is also needed).  The
-> caller of sys_restart() must have the class:restore permission
-> to assign the checkpointed label, else restart will be refused.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index e42e0db..e3fb9b3 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -418,7 +426,7 @@ struct ckpt_hdr_ipc_perms {
->  	__u32 cuid;
->  	__u32 cgid;
->  	__u32 mode;
-> -	__u32 _padding;
-> +	__s32 secref;
+Hi Balbir,
 
-Why s32 vs u32?  secids are u32 and 0 means they aren't supported by the
-security module.
+So far I had not done any testing with AIO. I have done some just now.
+Here are the results.
 
--- 
-Stephen Smalley
-National Security Agency
+Test1 (AIO reads)
+================
+Set up two fio, AIO read jobs in two cgroup with weight 1000 and 500
+respectively. I am using cfq scheduler. Following are some lines from my test
+script.
+
+===================================================================
+fio_args="--ioengine=libaio --rw=read --size=512M"
+
+echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
+
+fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/ --output=/mnt/$BLOCKDEV/fio1/test1.log --exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
+
+fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/ --output=/mnt/$BLOCKDEV/fio2/test2.log &
+===================================================================
+
+test1 and test2 are two groups with weight 1000 and 500 respectively.
+"read-and-display-group-stats.sh" is one small script which reads the
+test1 and test2 cgroup files to determine how much disk time each group
+got till first fio job finished.
+
+Following are the results.
+
+test1 statistics: time=8 16 5598   sectors=8 16 1049648 
+test2 statistics: time=8 16 2908   sectors=8 16 508560
+
+Above shows that by the time first fio (higher weight), finished, group
+test1 got 5598 ms of disk time and group test2 got 2908 ms of disk time.
+similarly the statistics for number of sectors transferred are also shown.
+
+Note that disk time given to group test1 is almost double of group2 disk
+time.
+
+
+Test2 (AIO Wries (direct))
+==========================
+Set up two fio, AIO direct write jobs in two cgroup with weight 1000 and 500
+respectively. I am using cfq scheduler. Following are some lines from my test
+script.
+
+===================================================================
+fio_args="--ioengine=libaio --rw=write --size=512M --direct=1"
+
+echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
+
+fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/ --output=/mnt/$BLOCKDEV/fio1/test1.log --exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
+
+fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/ --output=/mnt/$BLOCKDEV/fio2/test2.log &
+===================================================================
+
+test1 and test2 are two groups with weight 1000 and 500 respectively.
+"read-and-display-group-stats.sh" is one small script which reads the
+test1 and test2 cgroup files to determine how much disk time each group
+got till first fio job finished.
+
+Following are the results.
+
+test1 statistics: time=8 16 28029   sectors=8 16 1049656
+test2 statistics: time=8 16 14093   sectors=8 16 512600
+
+Above shows that by the time first fio (higher weight), finished, group
+test1 got 28029 ms of disk time and group test2 got 14093 ms of disk time.
+similarly the statistics for number of sectors transferred are also shown.
+
+Note that disk time given to group test1 is almost double of group2 disk
+time.
+
+Thanks
+Vivek
