@@ -1,17 +1,11 @@
-From: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] clone_with_pids: define the s390 syscall
-Date: Mon, 22 Jun 2009 09:21:18 +0200
-Message-ID: <20090622092118.519a3c25@skybase>
-References: <20090615170443.GA14808@us.ibm.com>
-	<20090615170524.GA14950@us.ibm.com>
-	<20090615171645.GA15217@us.ibm.com>
-	<20090619131622.3193472d@skybase>
-	<20090619151341.GC22381@us.ibm.com>
+From: James Yu <cyu021-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: unshare network namespace problem
+Date: Mon, 22 Jun 2009 15:33:11 +0800
+Message-ID: <60bb95410906220033x4d53d8acy2f1418b2720e171e@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090619151341.GC22381-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,26 +15,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 19 Jun 2009 10:13:41 -0500
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Hi all,
 
-> > clone_with_pids is declared as system call with no paramters. In this
-> > case the system call wrapper is not needed (empty) and you have to do
-> > the compat conversion inside the system call. See sys32_clone.  
-> 
-> Ah, I see, thanks.
-> 
-> So in that case, is it ok for me to just use gprs[7] to pass in the
-> upid_setp variable?
+I tried to follow the configuration from "
+http://lxc.sourceforge.net/network/configuration.php",
+For Method 1: step 7, I use the "ns_exec" download from "git clone git://
+git.sr71.net/~hallyn/cr_tests.git".
+However, I get the following error message, please advise:
 
-Yes, correct.
+[root@vmhat cr_tests]# ./ns_exec -nm -- /bin/bash
+about to unshare with 40020000
+unshare: Invalid argument
 
--- 
-blue skies,
-   Martin.
-
-"Reality continues to ruin my life." - Calvin.
+Thanks for the help.
+This is a UTF-8 formatted mail
+-----------------------------------------------
+James C.-C.Yu
++886988713275
