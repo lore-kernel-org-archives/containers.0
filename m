@@ -1,63 +1,60 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add AF_INET c/r support
-Date: Tue, 23 Jun 2009 12:03:52 -0500
-Message-ID: <20090623170352.GA22369@us.ibm.com>
-References: <1245697976-29159-1-git-send-email-danms@us.ibm.com>
-	<20090623145313.GA19332@us.ibm.com>
-	<87ocsfyoey.fsf@caffeine.danplanet.com>
-	<20090623161406.GA21423@us.ibm.com>
+From: Stephen Smalley <sds@epoch.ncsc.mil>
+Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
+Date: Tue, 23 Jun 2009 13:55:51 -0400
+Message-ID: <1245779751.27538.14.camel@localhost.localdomain>
+References: <20090620013216.GA4435@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090623161406.GA21423-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090620013216.GA4435@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>, Andrew Morgan <morgan@kernel.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > SH> ckpt_hdr_put(ctx, in) ?
-> > 
-> > Oops.
-> > 
-> > >> +	un->this = ckpt_obj_lookup_add(ctx, sk, CKPT_OBJ_SOCK, &new);
-> > >> +	if (un->this < 0)
-> > >> +		goto out;
-> > >> +
-> > >> +	if (sk->peer)
-> > >> +		un->peer = ckpt_obj_lookup_add(ctx, pr, CKPT_OBJ_SOCK, &new);
-> > >> +	else
-> > >> +		un->peer = 0;
-> > >> +
-> > >> +	if (un->peer < 0) {
-> > >> +		ret = un->peer;
-> > >> +		goto out;
-> > >> +	}
-> > 
-> > SH> So what if new == 1 for either un->this or un->peer?  You never
-> > SH> actually write them out to the checkpoint image?
-> > 
-> > On the checkpoint run, the new flag doesn't matter to us (and isn't
-> > used here).  Am I missing something?
-> 
-> Well when is do_sock_file_checkpoint() going to be called?
+On Fri, 2009-06-19 at 20:32 -0500, Serge E. Hallyn wrote:
+> diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+> index 51385b0..ca55339 100644
+> --- a/ipc/checkpoint_msg.c
+> +++ b/ipc/checkpoint_msg.c
+<snip>
+> @@ -175,11 +183,26 @@ static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
+>  			    struct msg_queue *msq)
+>  {
+>  	int ret = 0;
+> +	int secid = 0;
+>  
+>  	ret = restore_load_ipc_perms(&h->perms, &msq->q_perm);
+>  	if (ret < 0)
+>  		return ret;
+>  
+> +	if (h->perms.secref) {
+> +		struct sec_store *s;
+> +		s = ckpt_obj_fetch(ctx, h->perms.secref, CKPT_OBJ_SECURITY);
+> +		if (IS_ERR(s))
+> +			return PTR_ERR(s);
+> +		secid = s->secid;
+> +	}
+> +	ret = security_msg_queue_alloc(msq);
+> +	if (ret)
+> +		return ret;
+> +	ret = security_msg_queue_restore(msq, secid);
+> +	if (ret < 0)
+> +		return ret;
 
-Ok, I see, h is the actual socket details represented by
-un->this.  I was glossing over the writing of h thinking
-it was just a ckpt_hdr.
+I don't think you want to call security_msg_queue_alloc() here, as that
+both allocates the security struct and performs the create check.  So I
+would just call the _restore() function, and let it internally call
+ipc_alloc_security() to allocate the struct but then apply its own
+distinct restore check.  Likewise for the rest of them.
 
-Looks good.
+Also, where do we get to veto attempts to checkpoint the task in the
+first place?  If ptrace, I think we'd want it treated as a
+PTRACE_MODE_ATTACH (also used for /proc/pid/mem) rather than just
+PTRACE_MODE_READ (reading other /proc/pid info).
 
-thanks,
--serge
+-- 
+Stephen Smalley
+National Security Agency
+
