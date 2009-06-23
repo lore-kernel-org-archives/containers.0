@@ -1,14 +1,12 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add AF_INET c/r support
-Date: Tue, 23 Jun 2009 09:53:13 -0500
-Message-ID: <20090623145313.GA19332@us.ibm.com>
-References: <1245697976-29159-1-git-send-email-danms@us.ibm.com>
+Subject: kernel summit topic - 'containers end-game'
+Date: Tue, 23 Jun 2009 09:56:11 -0500
+Message-ID: <20090623145611.GB19332@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1245697976-29159-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,188 +16,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Daniel Veillard <veillard-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This patch adds AF_INET c/r support based on the framework established in
-> my AF_UNIX patch.  I've tested it by checkpointing a single app with a
-> pair of sockets connected over loopback.
-> 
-> I expect a pile of comments :)
-> 
-> A couple points about the operation:
-> 
->  1. In order to properly hook up the established sockets with the matching
->     listening parent socket, I added a new list to the ckpt_ctx and run the
->     parent attachment in the deferqueue at the end of the restart process.
->  2. I don't do anything to redirect or freeze traffic flowing to or from the
->     remote system (to prevent a RST from breaking things).  I expect that
->     userspace will bring down a veth device or freeze traffic to the remote
->     system to handle this case.
-> 
-> Cc: Oren Laaden <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/sys.c                 |    2 +
->  include/linux/checkpoint_hdr.h   |    1 +
->  include/linux/checkpoint_types.h |    2 +
->  include/linux/socket.h           |   95 ++++++++++
->  net/checkpoint.c                 |  369 +++++++++++++++++++++++++++++++++-----
->  5 files changed, 428 insertions(+), 41 deletions(-)
+A topic on ksummit agenda is 'containers end-game and how do we
+get there'.
 
-...
+So for starters, looking just at application (and system) containers, what do
+the libvirt and liblxc projects want to see in kernel support that is currently
+missing?  Are there specific things that should be done soon to make containers
+more useful and usable?
 
-> +static int sock_in_checkpoint(struct ckpt_ctx *ctx,
-> +			      struct sock *sock,
-> +			      struct ckpt_hdr_socket *h)
-> +{
-> +	int ret = -EINVAL;
-> +	struct ckpt_hdr_socket_in *in;
-> +
-> +	in = ckpt_hdr_get_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_IN);
-> +	if (!in)
-> +		goto out;
-> +
-> +	ret = sock_in_cptrst(ctx, sock, in, CKPT_CPT);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) in);
-> + out:
+More generally, the topic raises the question... what 'end-games' are there?
+A few I can think of off-hand include:
 
-ckpt_hdr_put(ctx, in) ?
+	1. resource control
+	2. lightweight virtual servers
+	3. (or 2.5) unprivileged containers/jail-on-steroids
+		(lightweight virtual servers in which you might, just
+		maybe, almost, be able to give away a root account, at
+		least as much as you could do so with a kvm/qemu/xen
+		partition)
+	4. checkpoint, restart, and migration
 
-> +	return ret;
-> +}
-> +
-> +static int sock_un_checkpoint(struct ckpt_ctx *ctx,
-> +			      struct sock *sock,
-> +			      struct ckpt_hdr_socket *h)
-> +{
-> +	struct unix_sock *sk = unix_sk(sock);
-> +	struct unix_sock *pr = unix_sk(sk->peer);
-> +	struct ckpt_hdr_socket_un *un;
-> +	int new;
-> +	int ret = -ENOMEM;
-> +
-> +	if ((sock->sk_state == TCP_LISTEN) &&
-> +	    !skb_queue_empty(&sock->sk_receive_queue)) {
-> +		ckpt_debug("listening socket has unaccepted peers");
-> +		return -EBUSY;
-> +	}
-> +
-> +	un = ckpt_hdr_get_type(ctx, sizeof(*un), CKPT_HDR_SOCKET_UN);
-> +	if (!un)
-> +		goto out;
-> +
-> +	un->linked = sk->dentry && (sk->dentry->d_inode->i_nlink > 0);
-> +
-> +	un->this = ckpt_obj_lookup_add(ctx, sk, CKPT_OBJ_SOCK, &new);
-> +	if (un->this < 0)
-> +		goto out;
-> +
-> +	if (sk->peer)
-> +		un->peer = ckpt_obj_lookup_add(ctx, pr, CKPT_OBJ_SOCK, &new);
-> +	else
-> +		un->peer = 0;
-> +
-> +	if (un->peer < 0) {
-> +		ret = un->peer;
-> +		goto out;
-> +	}
+For each end-game, what kernel pieces do we think are missing?  For instance,
+people seem agreed that resource control needs io control :)  Containers imo
+need a user namespace.  I think there are quite a few network namespace
+exploiters who require sysfs directory tagging (or some equivalent) to
+allow us to migrate physical devices into network namespaces.  And
+checkpoint/restart needs... checkpoint/restart.
 
-So what if new == 1 for either un->this or un->peer?  You never actually
-write them out to the checkpoint image?
-
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) un);
-> + out:
-
-ckpt_hdr_put(ctx, un) ?
-
-> +	return ret;
-> +}
-> +
->  int do_sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
->  {
->  	struct socket *socket = file->private_data;
-
-...
-
-> +static int sock_in_restart(struct ckpt_ctx *ctx,
-> +			   struct ckpt_hdr_socket *h,
-> +			   struct socket *socket)
-> +{
-> +	int ret;
-> +	struct ckpt_hdr_socket_in *in;
-> +	struct sockaddr_in *l = (struct sockaddr_in *)&h->laddr;
-> +
-> +	in = ckpt_read_obj_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_IN);
-> +	if (IS_ERR(in))
-> +		return PTR_ERR(in);
-> +
-> +	if (h->sock.state == TCP_ESTABLISHED) {
-> +		socket->state = h->socket.state;
-> +		socket->sk->sk_state = h->sock.state;
-> +
-> +		sock_cptrst(ctx, socket->sk, h, CKPT_RST);
-> +		ret = sock_in_cptrst(ctx, socket->sk, in, CKPT_RST);
-> +
-> +		/* Delay hashing this sock until the end so we can
-> +		 * hook it up with its parent (if appropriate)
-> +		 */
-> +		sock_defer_hash(ctx, socket->sk);
-> +
-> +	} else if (h->sock.state == TCP_LISTEN) {
-> +		socket->sk->sk_reuse = 2;
-> +		inet_sk(socket->sk)->freebind = 1;
-> +		ret = socket->ops->bind(socket,
-> +					(struct sockaddr *)l,
-> +					h->laddr_len);
-> +		if (ret < 0)
-> +			goto out;
-> +		ret = socket->ops->listen(socket, h->sock.backlog);
-> +		if (ret < 0)
-> +			goto out;
-> +
-> +		sock_add_parent(ctx, socket->sk);
-> +	}
-> +
-> +  out:
-
-ckpt_hdr_socket_in(ctx, in)?
-
-> +	return ret;
-> + }
-> +
->  struct socket *do_sock_file_restore(struct ckpt_ctx *ctx,
->  				    struct ckpt_hdr_socket *h)
->  {
-> @@ -465,6 +749,9 @@ struct socket *do_sock_file_restore(struct ckpt_ctx *ctx,
->  	if (h->sock_common.family == AF_UNIX) {
->  		ret = sock_un_restart(ctx, h, socket);
->  		ckpt_debug("sock_un_restart: %i\n", ret);
-> +	} else if (h->sock_common.family == AF_INET) {
-> +		ret = sock_in_restart(ctx, h, socket);
-> +		ckpt_debug("sock_in_restart: %i\n", ret);
->  	} else {
->  		ckpt_debug("unsupported family %i\n", h->sock_common.family);
->  		ret = -EINVAL;
-> -- 
-> 1.6.2.2
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+thanks,
+-serge
