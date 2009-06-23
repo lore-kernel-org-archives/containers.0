@@ -1,21 +1,21 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based io controller (V5)
-Date: Tue, 23 Jun 2009 12:22:42 +0530
-Message-ID: <20090623065242.GI8642__39085.0090807818$1245740063$gmane$org@balbir.in.ibm.com>
+Subject: Re: [PATCH 02/20] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Tue, 23 Jun 2009 13:02:52 +0530
+Message-ID: <20090623073252.GJ8642__1480.03972503847$1245742484$gmane$org@balbir.in.ibm.com>
 References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
-	<20090621152116.GC3728@balbir.in.ibm.com>
-	<20090622153030.GA15600@redhat.com>
-	<x497hz4l1j9.fsf@segfault.boston.devel.redhat.com>
-	<20090622160207.GC15600@redhat.com>
-	<x493a9sl0bx.fsf@segfault.boston.devel.redhat.com>
-	<20090622170812.GD15600@redhat.com>
+	<1245443858-8487-3-git-send-email-vgoyal@redhat.com>
+	<20090622084612.GD3728@balbir.in.ibm.com>
+	<20090622124313.GF28770@gandalf.sssup.it>
+	<20090623024337.GC3620@redhat.com>
+	<20090623041052.GS28770@gandalf.sssup.it>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090622170812.GD15600-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090623041052.GS28770-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,78 +25,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-22 13:08:12]:
+* Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2009-06-23 06:10:52]:
 
-> On Mon, Jun 22, 2009 at 12:06:42PM -0400, Jeff Moyer wrote:
-> > Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> > From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Date: Mon, Jun 22, 2009 10:43:37PM -0400
+> >
+> > On Mon, Jun 22, 2009 at 02:43:13PM +0200, Fabio Checconi wrote:
 > > 
-> > > On Mon, Jun 22, 2009 at 11:40:42AM -0400, Jeff Moyer wrote:
-> > >> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> > >> 
-> > >> > On Sun, Jun 21, 2009 at 08:51:16PM +0530, Balbir Singh wrote:
-> > >> >> * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-06-19 16:37:18]:
-> > >> >> 
-> > >> >> > 
-> > >> >> > Hi All,
-> > >> >> > 
-> > >> >> > Here is the V5 of the IO controller patches generated on top of 2.6.30.
-> > >> >> [snip]
-> > >> >> 
-> > >> >> > Testing
-> > >> >> > =======
-> > >> >> >
-> > >> >> 
-> > >> >> [snip]
-> > >> >> 
-> > >> >> I've not been reading through the discussions in complete detail, but
-> > >> >> I see no reference to async reads or aio. In the case of aio, aio
-> > >> >> presumes the context of the user space process. Could you elaborate on
-> > >> >> any testing you've done with these cases? 
-> > >> >> 
-> > >> >
-> > >> > Hi Balbir,
-> > >> >
-> > >> > So far I had not done any testing with AIO. I have done some just now.
-> > >> > Here are the results.
-> > >> >
-> > >> > Test1 (AIO reads)
-> > >> > ================
-> > >> > Set up two fio, AIO read jobs in two cgroup with weight 1000 and 500
-> > >> > respectively. I am using cfq scheduler. Following are some lines from my test
-> > >> > script.
-> > >> >
-> > >> > ===================================================================
-> > >> > fio_args="--ioengine=libaio --rw=read --size=512M"
-> > >> 
-> > >> AIO doesn't make sense without O_DIRECT.
-> > >> 
-> > >
-> > > Ok, here are the read results with --direct=1 for reads. In previous posting,
-> > > writes were already direct.
-> > >
-> > > test1 statistics: time=8 16 20796   sectors=8 16 1049648
-> > > test2 statistics: time=8 16 10551   sectors=8 16 581160
-> > >
-> > >
-> > > Not sure why reads are so slow with --direct=1? In the previous test
-> > > (no direct IO), I had cleared the caches using
-> > > (echo 3 > /proc/sys/vm/drop_caches) so reads could not have come from page
-> > > cache?
+> ...
+> > > > Please help me understand this, we sort the tree by finish time, but
+> > > > search by vtime, start_time. The worst case could easily be O(N),
+> > > > right?
+> > > > 
+> > > 
+> > > no, (again, the full answer is in the paper); the nice property of
+> > > min_start is that it partitions the tree in two regions, one with
+> > > eligible entities and one without any of them.  once we know that
+> > > there is one eligible entity (checking the min_start at the root)
+> > > we can find the node i with min(F_i) subject to S_i < V walking down
+> > > a single path from the root to the leftmost eligible entity.  (we
+> > > need to go to the right only if the subtree on the left contains 
+> > > no eligible entities at all.)  since the RB tree is balanced this
+> > > can be done in O(log N).
+> > > 
 > > 
-> > O_DIRECT bypasses the page cache, and hence the readahead code.  Try
-> > driving deeper queue depths and/or using larger I/O sizes.
+> > Hi Fabio,
+> > 
+> > When I go thorough the paper you mentioned above, they seem to have
+> > sorted the tree based on eligible time (looks like equivalent of start
+> > time) and then keep track of minimum deadline on each node (equivalnet of
+> > finish time).
+> > 
+> > We seem to be doing reverse in BFQ where we sort tree on finish time
+> > and keep track of minimum start time on each node. Is there any specific
+> > reason behind that?
+> > 
 > 
-> Ok. Thanks. I tried increasing iodepth to 20 and it helped a lot.
+> Well... no specific reasons...  I think that our implementation is easier
+> to understand than the one of the paper, because it actually uses finish
+> times as the ordering key, and min_start to quickly locate eligible
+> subtrees, following the definition of the algorithm.
 > 
-> test1 statistics: time=8 16 6672   sectors=8 16 1049656
-> test2 statistics: time=8 16 3508   sectors=8 16 583432
->
 
-Good to see.. Thanks! 
+Is it still O(log N)?
+
+> Moreover, if you look at the get_req() code in the paper, it needs a
+> couple of loops to get to the result, while with our implementation
+> we save the second loop.
+> 
+> Our version is still correct, because it always moves to the left
+> (towards smaller finish times), except when moving to the left would
+> mean entering a non feasible subtree, in which case it moves to the
+> right.
+> 
+> Unfortunately I'm not aware of any paper describing a version of the
+> algorithm more similar to the one we've implemented.  Sorry for not
+> having mentioned that difference in the comments nor anywhere else,
+> it has been a long long time since I read the paper, and I must have
+> forgotten about that.
+
+/me needs to go read the paper in full.
 
 -- 
 	Balbir
