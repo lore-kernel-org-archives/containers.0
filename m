@@ -1,12 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: kernel summit topic - 'containers end-game'
-Date: Tue, 23 Jun 2009 09:56:11 -0500
-Message-ID: <20090623145611.GB19332@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Add AF_INET c/r support
+Date: Tue, 23 Jun 2009 08:12:37 -0700
+Message-ID: <87ocsfyoey.fsf@caffeine.danplanet.com>
+References: <1245697976-29159-1-git-send-email-danms@us.ibm.com>
+	<20090623145313.GA19332@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090623145313.GA19332-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Tue\, 23 Jun 2009 09\:53\:13 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,36 +19,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Daniel Veillard <veillard-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-A topic on ksummit agenda is 'containers end-game and how do we
-get there'.
+SH> ckpt_hdr_put(ctx, in) ?
 
-So for starters, looking just at application (and system) containers, what do
-the libvirt and liblxc projects want to see in kernel support that is currently
-missing?  Are there specific things that should be done soon to make containers
-more useful and usable?
+Oops.
 
-More generally, the topic raises the question... what 'end-games' are there?
-A few I can think of off-hand include:
+>> +	un->this = ckpt_obj_lookup_add(ctx, sk, CKPT_OBJ_SOCK, &new);
+>> +	if (un->this < 0)
+>> +		goto out;
+>> +
+>> +	if (sk->peer)
+>> +		un->peer = ckpt_obj_lookup_add(ctx, pr, CKPT_OBJ_SOCK, &new);
+>> +	else
+>> +		un->peer = 0;
+>> +
+>> +	if (un->peer < 0) {
+>> +		ret = un->peer;
+>> +		goto out;
+>> +	}
 
-	1. resource control
-	2. lightweight virtual servers
-	3. (or 2.5) unprivileged containers/jail-on-steroids
-		(lightweight virtual servers in which you might, just
-		maybe, almost, be able to give away a root account, at
-		least as much as you could do so with a kvm/qemu/xen
-		partition)
-	4. checkpoint, restart, and migration
+SH> So what if new == 1 for either un->this or un->peer?  You never
+SH> actually write them out to the checkpoint image?
 
-For each end-game, what kernel pieces do we think are missing?  For instance,
-people seem agreed that resource control needs io control :)  Containers imo
-need a user namespace.  I think there are quite a few network namespace
-exploiters who require sysfs directory tagging (or some equivalent) to
-allow us to migrate physical devices into network namespaces.  And
-checkpoint/restart needs... checkpoint/restart.
+On the checkpoint run, the new flag doesn't matter to us (and isn't
+used here).  Am I missing something?
 
-thanks,
--serge
+SH> ckpt_hdr_put(ctx, un) ?
+
+Oops.
+
+SH> ckpt_hdr_socket_in(ctx, in)?
+
+I think you mean:
+
+  ckpt_hdr_put(ctx, in);
+
+and if so: Oops :)
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
