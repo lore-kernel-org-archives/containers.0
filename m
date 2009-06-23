@@ -1,68 +1,73 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: uts: don't deref h after freeing
-Date: Tue, 23 Jun 2009 14:37:02 -0500
-Message-ID: <20090623193702.GA25291@us.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
+Date: Tue, 23 Jun 2009 14:57:03 -0500
+Message-ID: <20090623195703.GA25469@us.ibm.com>
+References: <20090620013216.GA4435@us.ibm.com> <1245779751.27538.14.camel@localhost.localdomain> <20090623181810.GA23644@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan T Lynch <natlynch-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <20090623181810.GA23644@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Stephen Smalley <sds@epoch.ncsc.mil>
+Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>, Andrew Morgan <morgan@kernel.org>
 List-Id: containers.vger.kernel.org
 
-Don't pass h->xyz_len etc as lengths after freeing h!  Send
-the result of sizeof(name->xyz) directly.
+Quoting Serge E. Hallyn (serue@us.ibm.com):
+> Quoting Stephen Smalley (sds@epoch.ncsc.mil):
+> > On Fri, 2009-06-19 at 20:32 -0500, Serge E. Hallyn wrote:
+> > > diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+> > > index 51385b0..ca55339 100644
+> > > --- a/ipc/checkpoint_msg.c
+> > > +++ b/ipc/checkpoint_msg.c
+> > <snip>
+> > > @@ -175,11 +183,26 @@ static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
+> > >  			    struct msg_queue *msq)
+> > >  {
+> > >  	int ret = 0;
+> > > +	int secid = 0;
+> > >  
+> > >  	ret = restore_load_ipc_perms(&h->perms, &msq->q_perm);
+> > >  	if (ret < 0)
+> > >  		return ret;
+> > >  
+> > > +	if (h->perms.secref) {
+> > > +		struct sec_store *s;
+> > > +		s = ckpt_obj_fetch(ctx, h->perms.secref, CKPT_OBJ_SECURITY);
+> > > +		if (IS_ERR(s))
+> > > +			return PTR_ERR(s);
+> > > +		secid = s->secid;
+> > > +	}
+> > > +	ret = security_msg_queue_alloc(msq);
+> > > +	if (ret)
+> > > +		return ret;
+> > > +	ret = security_msg_queue_restore(msq, secid);
+> > > +	if (ret < 0)
+> > > +		return ret;
+> > 
+> > I don't think you want to call security_msg_queue_alloc() here, as that
+> > both allocates the security struct and performs the create check.  So I
+> > would just call the _restore() function, and let it internally call
+> > ipc_alloc_security() to allocate the struct but then apply its own
+> > distinct restore check.  Likewise for the rest of them.
+> 
+> Ok, will change that.
 
-Changelog: Jun 23: resend with new description which accurately
-	describes what is being fixed (figured out by Nathan Lynch).
+Hmm, but that means that if there is some new LSM which allocates memory
+in security_msg_queue_alloc(), but which does not define
+security_msg_queue_restore() (for some stupid reason), it'll end up
+causing a bug.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/namespace.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+It's something we can certainly catch through code review, but do we
+want to set such a scenario up at all?
 
-diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
-index 5726acb..8206aee 100644
---- a/checkpoint/namespace.c
-+++ b/checkpoint/namespace.c
-@@ -46,22 +46,22 @@ static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
- 		return ret;
- 
- 	down_read(&uts_sem);
--	ret = ckpt_write_string(ctx, name->sysname, h->sysname_len);
-+	ret = ckpt_write_string(ctx, name->sysname, sizeof(name->sysname));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->nodename, h->nodename_len);
-+	ret = ckpt_write_string(ctx, name->nodename, sizeof(name->nodename));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->release, h->release_len);
-+	ret = ckpt_write_string(ctx, name->release, sizeof(name->release));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->version, h->version_len);
-+	ret = ckpt_write_string(ctx, name->version, sizeof(name->version));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->machine, h->machine_len);
-+	ret = ckpt_write_string(ctx, name->machine, sizeof(name->machine));
- 	if (ret < 0)
- 		goto up;
--	ret = ckpt_write_string(ctx, name->domainname, h->domainname_len);
-+	ret = ckpt_write_string(ctx, name->domainname, sizeof(name->domainname));
-  up:
- 	up_read(&uts_sem);
- 	return ret;
--- 
-1.6.1
+Speaking just for SELinux, the security_msg_queue_alloc() hook would
+return -EPERM only if the task calling sys_restart() wasn't allowed
+to create a msg queue with its own type, right?  Is that something
+which is often disallowed?
+
+I suppose we could have the default (cap_msg_queue_restore) call
+security_ops->msg_queue_alloc() - feels frail, but maybe it's ok...
+
+thanks,
+-serge
