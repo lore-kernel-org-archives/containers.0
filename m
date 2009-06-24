@@ -1,84 +1,87 @@
-From: Stephen Smalley <sds@epoch.ncsc.mil>
-Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
-Date: Wed, 24 Jun 2009 09:10:08 -0400
-Message-ID: <1245849008.9669.13.camel@moss-pluto.epoch.ncsc.mil>
-References: <20090620013216.GA4435@us.ibm.com>
-	 <1245779751.27538.14.camel@localhost.localdomain>
-	 <20090623181810.GA23644@us.ibm.com>  <20090623195703.GA25469@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] s390: clone_with_pids: fix compat wrapper
+Date: Wed, 24 Jun 2009 12:40:10 -0400
+Message-ID: <4A4256EA.9080408@cs.columbia.edu>
+References: <20090622153052.GA32517@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090623195703.GA25469@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>, Andrew Morgan <morgan@kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090622153052.GA32517-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-06-23 at 14:57 -0500, Serge E. Hallyn wrote:
-> Quoting Serge E. Hallyn (serue@us.ibm.com):
-> > Quoting Stephen Smalley (sds@epoch.ncsc.mil):
-> > > On Fri, 2009-06-19 at 20:32 -0500, Serge E. Hallyn wrote:
-> > > > diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
-> > > > index 51385b0..ca55339 100644
-> > > > --- a/ipc/checkpoint_msg.c
-> > > > +++ b/ipc/checkpoint_msg.c
-> > > <snip>
-> > > > @@ -175,11 +183,26 @@ static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
-> > > >  			    struct msg_queue *msq)
-> > > >  {
-> > > >  	int ret = 0;
-> > > > +	int secid = 0;
-> > > >  
-> > > >  	ret = restore_load_ipc_perms(&h->perms, &msq->q_perm);
-> > > >  	if (ret < 0)
-> > > >  		return ret;
-> > > >  
-> > > > +	if (h->perms.secref) {
-> > > > +		struct sec_store *s;
-> > > > +		s = ckpt_obj_fetch(ctx, h->perms.secref, CKPT_OBJ_SECURITY);
-> > > > +		if (IS_ERR(s))
-> > > > +			return PTR_ERR(s);
-> > > > +		secid = s->secid;
-> > > > +	}
-> > > > +	ret = security_msg_queue_alloc(msq);
-> > > > +	if (ret)
-> > > > +		return ret;
-> > > > +	ret = security_msg_queue_restore(msq, secid);
-> > > > +	if (ret < 0)
-> > > > +		return ret;
-> > > 
-> > > I don't think you want to call security_msg_queue_alloc() here, as that
-> > > both allocates the security struct and performs the create check.  So I
-> > > would just call the _restore() function, and let it internally call
-> > > ipc_alloc_security() to allocate the struct but then apply its own
-> > > distinct restore check.  Likewise for the rest of them.
-> > 
-> > Ok, will change that.
+
+Applied.
+
+Oren.
+
+Serge E. Hallyn wrote:
+> Martin Schwidefsky pointed out two problems with my compat
+> wrapper.  Define sys32_clone_with_pids() in compat_linux.c
+> instead of using a syscall wrapper.
 > 
-> Hmm, but that means that if there is some new LSM which allocates memory
-> in security_msg_queue_alloc(), but which does not define
-> security_msg_queue_restore() (for some stupid reason), it'll end up
-> causing a bug.
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  arch/s390/kernel/compat_linux.c   |   19 +++++++++++++++++++
+>  arch/s390/kernel/compat_wrapper.S |   10 ----------
+>  2 files changed, 19 insertions(+), 10 deletions(-)
 > 
-> It's something we can certainly catch through code review, but do we
-> want to set such a scenario up at all?
-> 
-> Speaking just for SELinux, the security_msg_queue_alloc() hook would
-> return -EPERM only if the task calling sys_restart() wasn't allowed
-> to create a msg queue with its own type, right?  Is that something
-> which is often disallowed?
-
-Certainly some program domains lack permission to create ipc objects.
-The ipc _alloc hooks are unusual in that they combine both allocation
-and create checking unlike the rest of the object alloc hooks.  I think
-that was discussed at the time, but people didn't want two different
-hook calls at the same call site.
-
-> I suppose we could have the default (cap_msg_queue_restore) call
-> security_ops->msg_queue_alloc() - feels frail, but maybe it's ok...
-
--- 
-Stephen Smalley
-National Security Agency
-
+> diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+> index 002c70d..cb4a304 100644
+> --- a/arch/s390/kernel/compat_linux.c
+> +++ b/arch/s390/kernel/compat_linux.c
+> @@ -821,6 +821,25 @@ asmlinkage long sys32_clone(void)
+>  		       parent_tidptr, child_tidptr);
+>  }
+>  
+> +asmlinkage long sys32_clone_with_pids(void)
+> +{
+> +	struct pt_regs *regs = task_pt_regs(current);
+> +	unsigned long clone_flags;
+> +	unsigned long newsp;
+> +	int __user *parent_tidptr, *child_tidptr;
+> +	void __user *upid_setp;
+> +
+> +	clone_flags = regs->gprs[3] & 0xffffffffUL;
+> +	newsp = regs->orig_gpr2 & 0x7fffffffUL;
+> +	parent_tidptr = compat_ptr(regs->gprs[4]);
+> +	child_tidptr = compat_ptr(regs->gprs[5]);
+> +	upid_setp = compat_ptr(regs->gprs[7]);
+> +	if (!newsp)
+> +		newsp = regs->gprs[15];
+> +	return do_fork_with_pids(clone_flags, newsp, regs, 0,
+> +		       parent_tidptr, child_tidptr, upid_setp);
+> +}
+> +
+>  /*
+>   * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
+>   * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
+> diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+> index bf13315..c2228b2 100644
+> --- a/arch/s390/kernel/compat_wrapper.S
+> +++ b/arch/s390/kernel/compat_wrapper.S
+> @@ -1837,13 +1837,3 @@ sys_restore_wrapper:
+>  	lgfr	%r3,%r3			# int
+>  	llgfr	%r4,%r4			# unsigned long
+>  	jg	compat_sys_restore
+> -
+> -	.globl sys_clone_with_pids_wrapper
+> -sys_clone_with_pids_wrapper:
+> -	llgfr	%r2,%r2			# unsigned long
+> -	llgfr	%r3,%r3			# unsigned long
+> -	llgtr	%r4,%r4			# int *
+> -	llgtr	%r5,%r5			# int *
+> -	llgtr	%r6,%r6			# void *
+> -	llgtr	%r7,%r7			# void *
+> -	jg	compat_sys_clone_with_pids
