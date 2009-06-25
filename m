@@ -1,44 +1,40 @@
 From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
-Date: Thu, 25 Jun 2009 00:21:34 -0400
-Message-ID: <4A42FB4E.2070306@cs.columbia.edu>
-References: <20090620013216.GA4435@us.ibm.com>	<1245779751.27538.14.camel@localhost.localdomain> <20090623181810.GA23644@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH] c/r: tighten ptrace checking for checkpoint to PTRACE_MODE_ATTACH
+Date: Thu, 25 Jun 2009 05:34:27 -0400
+Message-ID: <1245922467-9444-1-git-send-email-orenl@cs.columbia.edu>
 Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090623181810.GA23644@us.ibm.com>
 Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Stephen Smalley <sds@epoch.ncsc.mil>, Casey Schaufler <casey@schaufler-ca.com>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Linux Containers <containers@lists.osdl.org>, Alexey Dobriyan <adobriyan@gmail.com>, Andrew Morgan <morgan@kernel.org>
+To: Linux Containers <containers@lists.osdl.org>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, "Serge E. Hallyn" <serue@us.ibm.com>, Stephen Smalley <sds@epoch.ncsc.mil>, Casey Schaufler <casey@schaufler-ca.com>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Andrew Morgan <morgan@kernel.org>
 List-Id: containers.vger.kernel.org
 
+Security modules distinguish reading of process state (via proc) from
+full ptrace access using the access mode: PTRACE_MODE_{READ,ATTACH}.
 
+Read access to /proc/pid/mem requires a full ptrace attach (for more
+details, see: http://lwn.net/Articles/282930/).
 
-Serge E. Hallyn wrote:
-> Quoting Stephen Smalley (sds@epoch.ncsc.mil):
->> On Fri, 2009-06-19 at 20:32 -0500, Serge E. Hallyn wrote:
+Checkpoint needs access to full process state, including memory, so
+we require PTRACE_MODE_ATTACH.
 
-[...]
+Signed-off-by: Oren Laadan <orenl@cs.columbia.edu>
+---
+ checkpoint/checkpoint.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
->> Also, where do we get to veto attempts to checkpoint the task in the
->> first place?  If ptrace, I think we'd want it treated as a
->> PTRACE_MODE_ATTACH (also used for /proc/pid/mem) rather than just
->> PTRACE_MODE_READ (reading other /proc/pid info).
-> 
-> The checkpointing of ipc objects goes through an ipcperms(perm, S_IROTH)
-> check in ipc/checkpoint (at top of
-> http://git.ncl.cs.columbia.edu/?p=linux-cr.git;a=blob;f=ipc/checkpoint.c;h=88996e2b7abf328bd1b263400798ed5bd4924f48;hb=HEAD
-> )
-> 
-> But yes, for the task itself we check PTRACE_MODE_READ (line 280 in
-> http://git.ncl.cs.columbia.edu/?p=linux-cr.git;a=blob;f=checkpoint/checkpoint.c;h=a6dee4fb1085a47095f24443c48683a7fbc8ac59;hb=HEAD )
-> I had thought that PTRACE_MODE_ATTACH implied the permission to
-> actually modify the task.  If it also can imply a "very invasive" read 
-> then changing it certainly seems right.
-
-Hmmm... I was unaware of this:   http://lwn.net/Articles/282930/
-So yes, probably need to change that.
-
-Oren.
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 325dfa3..7b141e3 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -296,7 +296,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return -EAGAIN;
+ 	}
+ 
+-	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
++	if (!ptrace_may_access(t, PTRACE_MODE_ATTACH)) {
+ 		__ckpt_write_err(ctx, "access to task %d (%s) denied",
+ 				 task_pid_vnr(t), t->comm);
+ 		return -EPERM;
+-- 
+1.6.0.4
 
