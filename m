@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: define CKPT_ARCH_NSIG for s390x
-Date: Thu, 25 Jun 2009 13:48:48 -0500
-Message-ID: <20090625184847.GA11510@us.ibm.com>
+Subject: [PATCH 1/1] cr: allocate security context for msg_msg
+Date: Thu, 25 Jun 2009 13:57:32 -0500
+Message-ID: <20090625185732.GA11699@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,25 +20,39 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Else compilation fails on s390x.
+Since we create msg_msg structs by hand, we also need to
+ask LSM to allocate a security context.  Otherwise
+selinux_msg_queue_msgrcv will throw a fit dereferencing
+msg->security (6b6b6b6b6b6b6000).
+
+With this patch, cr tests can be executed with selinux
+enabled.
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/s390/include/asm/checkpoint_hdr.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ ipc/checkpoint_msg.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
-index fc0ace8..a5aaa3e 100644
---- a/arch/s390/include/asm/checkpoint_hdr.h
-+++ b/arch/s390/include/asm/checkpoint_hdr.h
-@@ -79,6 +79,8 @@ struct ckpt_hdr_mm_context {
- 	unsigned long asce_limit;
- };
+diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+index 51385b0..fca8e7d 100644
+--- a/ipc/checkpoint_msg.c
++++ b/ipc/checkpoint_msg.c
+@@ -17,6 +17,7 @@
+ #include <linux/sched.h>
+ #include <linux/syscalls.h>
+ #include <linux/nsproxy.h>
++#include <linux/security.h>
+ #include <linux/ipc_namespace.h>
  
-+#define CKPT_ARCH_NSIG _SIGCONTEXT_NSIG
+ #include "util.h"
+@@ -248,6 +249,8 @@ static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
+ 	msg->m_type = h->m_type;
+ 	msg->m_ts = h->m_ts;
+ 	*clen = h->m_ts;
++	ret = security_msg_msg_alloc(msg);
 +
- struct ckpt_hdr_header_arch {
- 	struct ckpt_hdr h;
- };
+  out:
+ 	if (ret < 0 && msg) {
+ 		free_msg(msg);
 -- 
 1.6.1
