@@ -1,12 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: allocate security context for msg_msg
-Date: Thu, 25 Jun 2009 13:57:32 -0500
-Message-ID: <20090625185732.GA11699@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] better file error debugging
+Date: Thu, 25 Jun 2009 12:51:25 -0700
+Message-ID: <1245959485.31856.74.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,42 +16,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Since we create msg_msg structs by hand, we also need to
-ask LSM to allocate a security context.  Otherwise
-selinux_msg_queue_msgrcv will throw a fit dereferencing
-msg->security (6b6b6b6b6b6b6000).
+This should give a nice message with symbol names for when we have an
+open file that doesn't have an f_op->checkpoint.
 
-With this patch, cr tests can be executed with selinux
-enabled.
+Something along the lines of:
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- ipc/checkpoint_msg.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+[1133:c/r:checkpoint_file] file operations have no checkpoint handler:tty_open+0x0/0x24
 
-diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
-index 51385b0..fca8e7d 100644
---- a/ipc/checkpoint_msg.c
-+++ b/ipc/checkpoint_msg.c
-@@ -17,6 +17,7 @@
- #include <linux/sched.h>
- #include <linux/syscalls.h>
- #include <linux/nsproxy.h>
-+#include <linux/security.h>
- #include <linux/ipc_namespace.h>
- 
- #include "util.h"
-@@ -248,6 +249,8 @@ static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
- 	msg->m_type = h->m_type;
- 	msg->m_ts = h->m_ts;
- 	*clen = h->m_ts;
-+	ret = security_msg_msg_alloc(msg);
-+
-  out:
- 	if (ret < 0 && msg) {
- 		free_msg(msg);
--- 
-1.6.1
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 5be7d1b..566fc9a 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -193,8 +193,11 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ {
+ 	struct file *file = (struct file *) ptr;
+
+-	if (!file->f_op || !file->f_op->checkpoint)
++	if (!file->f_op || !file->f_op->checkpoint) {
++		ckpt_debug("file operations have no checkpoint handler: %pS\n",
++				file->f_op);
+ 		return -EBADF;
++	}
+ 	if (d_unhashed(file->f_dentry) && !IS_ROOT(file->f_dentry))
+ 		return -EBADF;
+ 	return file->f_op->checkpoint(ctx, file);
+
+
+
+-- Dave
