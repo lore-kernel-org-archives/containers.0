@@ -1,48 +1,44 @@
-From: Stephen Smalley <sds@epoch.ncsc.mil>
-Subject: Re: [PATCH 1/1] cr: lsm: restore LSM contexts for ipc objects
-Date: Thu, 25 Jun 2009 10:06:02 -0400
-Message-ID: <1245938762.22128.9.camel@moss-pluto.epoch.ncsc.mil>
-References: <20090620013216.GA4435@us.ibm.com>
-	 <1245779751.27538.14.camel@localhost.localdomain>
-	 <20090623181810.GA23644@us.ibm.com> <20090623195703.GA25469@us.ibm.com>
-	 <1245849008.9669.13.camel@moss-pluto.epoch.ncsc.mil>
-	 <20090624220736.GA21134@us.ibm.com>
-	 <1245933275.9669.100.camel@moss-pluto.epoch.ncsc.mil>
-	 <20090625125936.GA30349@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] cr: define CKPT_ARCH_NSIG for s390x
+Date: Thu, 25 Jun 2009 13:48:48 -0500
+Message-ID: <20090625184847.GA11510@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090625125936.GA30349@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>, Andrew Morgan <morgan@kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-06-25 at 07:59 -0500, Serge E. Hallyn wrote:
-> Quoting Stephen Smalley (sds@epoch.ncsc.mil):
-> > On Wed, 2009-06-24 at 17:07 -0500, Serge E. Hallyn wrote:
-> > > Oh, no.  I wasn't thinking right.
-> > > 
-> > > The objects are actually restored through calls to do_shmget() etc,
-> > > so that security_xyz_alloc() already gets called.
-> > 
-> > Does this mean that the objects temporarily exist in the wrong security
-> > context and are accessible to other threads during the interval between
-> > creation and when they get "restored" to the right security context?
-> 
-> They get restored in a private IPC namespace so they aren't accessible
-> to any live tasks.  Also, the objects will be created using the default
-> context for the program doing sys_restore(), running as app_restore_t or
-> something, so presumably a policy could ensure that such temporary
-> objects aren't readable by anyone else, just in case something goes
-> wrong before the security_ipcxyz_restore(), right?
+Else compilation fails on s390x.
 
-That could be confusing if the program ever needs to legitimately create
-any objects of its own for other purposes.  But the private IPC
-namespace should be sufficient.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/include/asm/checkpoint_hdr.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index fc0ace8..a5aaa3e 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -79,6 +79,8 @@ struct ckpt_hdr_mm_context {
+ 	unsigned long asce_limit;
+ };
+ 
++#define CKPT_ARCH_NSIG _SIGCONTEXT_NSIG
++
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ };
 -- 
-Stephen Smalley
-National Security Agency
-
+1.6.1
