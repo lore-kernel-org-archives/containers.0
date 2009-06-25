@@ -1,40 +1,202 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: [PATCH] c/r: tighten ptrace checking for checkpoint to PTRACE_MODE_ATTACH
-Date: Thu, 25 Jun 2009 05:34:27 -0400
-Message-ID: <1245922467-9444-1-git-send-email-orenl@cs.columbia.edu>
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Linux Containers <containers@lists.osdl.org>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, "Serge E. Hallyn" <serue@us.ibm.com>, Stephen Smalley <sds@epoch.ncsc.mil>, Casey Schaufler <casey@schaufler-ca.com>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Alexey Dobriyan <adobriyan@gmail.com>, Andrew Morgan <morgan@kernel.org>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] io-controller: do some changes of io.policy interface
+Date: Thu, 25 Jun 2009 18:23:52 +0800
+Message-ID: <4A435038.60406__10274.1650109694$1245925500$gmane$org@cn.fujitsu.com>
+References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>	
+	<1245443858-8487-19-git-send-email-vgoyal@redhat.com>
+	<6599ad830906241452t76e64815s7d68a22a6e746a59@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830906241452t76e64815s7d68a22a6e746a59-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Security modules distinguish reading of process state (via proc) from
-full ptrace access using the access mode: PTRACE_MODE_{READ,ATTACH}.
+Paul Menage wrote:
+> On Fri, Jun 19, 2009 at 1:37 PM, Vivek Goyal<vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>> You can use the following format to play with the new interface.
+>> #echo DEV:weight:ioprio_class > /patch/to/cgroup/policy
+>> weight=0 means removing the policy for DEV.
+>>
+>> Examples:
+>> Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
+>> # echo /dev/hdb:300:2 > io.policy
+>> # cat io.policy
+>> dev weight class
+>> /dev/hdb 300 2
+> 
+> I think that the read and write should be consistent. Can you just use
+> white-space separation for both, rather than colon-separation for
+> writes and white-space separation for reads?
+> 
+> Also, storing device inode paths statically as strings into the
+> io_policy structure seems wrong, since it's quite possible for the
+> device node that was used originally to be gone by the time that
+> someone reads the io.policy file, or renamed, or even replaced with an
+> inode that refers to to a different block device
+> 
+> My preferred alternatives would be:
+> 
+> - read/write the value as a device number rather than a name
+> - read/write the block device's actual name (e.g. hda or sda) rather
+> than a path to the inode
+> 
 
-Read access to /proc/pid/mem requires a full ptrace attach (for more
-details, see: http://lwn.net/Articles/282930/).
+Hi Paul, Vivek
 
-Checkpoint needs access to full process state, including memory, so
-we require PTRACE_MODE_ATTACH.
+Here is a patch to fix the issue Paul raised.
 
-Signed-off-by: Oren Laadan <orenl@cs.columbia.edu>
+This patch achives the following goals
+1 According to Paul's comment, Modifing io.policy interface to
+  use device number for read/write directly. 
+2 Just use white-space separation for both, rather than colon-
+  separation for writes and white-space separation for reads.
+3 Do more strict checking for inputting.
+
+old interface:
+Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
+# echo "/dev/hdb:300:2" > io.policy
+# cat io.policy
+dev weight class
+/dev/hdb 300 2
+
+new interface:
+Configure weight=300 ioprio_class=2 on /dev/hdb in this cgroup
+# echo "3:64 300 2" > io.policy
+# cat io.policy
+dev     weight  class
+3:64    300     2
+
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- checkpoint/checkpoint.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ block/elevator-fq.c |   59 ++++++++++++++++++++++++++++++++++----------------
+ block/elevator-fq.h |    1 -
+ 2 files changed, 40 insertions(+), 20 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 325dfa3..7b141e3 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -296,7 +296,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -EAGAIN;
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index d779282..83c831b 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -1895,12 +1895,12 @@ static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
+ 	if (list_empty(&iocg->policy_list))
+ 		goto out;
+ 
+-	seq_printf(m, "dev weight class\n");
++	seq_printf(m, "dev\tweight\tclass\n");
+ 
+ 	spin_lock_irq(&iocg->lock);
+ 	list_for_each_entry(pn, &iocg->policy_list, node) {
+-		seq_printf(m, "%s %lu %lu\n", pn->dev_name,
+-			   pn->weight, pn->ioprio_class);
++		seq_printf(m, "%u:%u\t%lu\t%lu\n", MAJOR(pn->dev),
++			   MINOR(pn->dev), pn->weight, pn->ioprio_class);
+ 	}
+ 	spin_unlock_irq(&iocg->lock);
+ out:
+@@ -1936,44 +1936,65 @@ static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
+ 	return NULL;
+ }
+ 
+-static int devname_to_devnum(const char *buf, dev_t *dev)
++static int check_dev_num(dev_t dev)
+ {
+-	struct block_device *bdev;
++	int part = 0;
+ 	struct gendisk *disk;
+-	int part;
+ 
+-	bdev = lookup_bdev(buf);
+-	if (IS_ERR(bdev))
++	disk = get_gendisk(dev, &part);
++	if (!disk || part)
+ 		return -ENODEV;
+ 
+-	disk = get_gendisk(bdev->bd_dev, &part);
+-	if (part)
+-		return -EINVAL;
+-
+-	*dev = MKDEV(disk->major, disk->first_minor);
+-	bdput(bdev);
+-
+ 	return 0;
+ }
+ 
+ static int policy_parse_and_set(char *buf, struct io_policy_node *newpn)
+ {
+-	char *s[3], *p;
++	char *s[4], *p, *major_s = NULL, *minor_s = NULL;
+ 	int ret;
++	unsigned long major, minor;
+ 	int i = 0;
++	dev_t dev;
+ 
+ 	memset(s, 0, sizeof(s));
+-	while ((p = strsep(&buf, ":")) != NULL) {
++	while ((p = strsep(&buf, " ")) != NULL) {
+ 		if (!*p)
+ 			continue;
+ 		s[i++] = p;
++
++		/* Prevent from inputing too many things */
++		if (i == 4)
++			break;
  	}
  
--	if (!ptrace_may_access(t, PTRACE_MODE_READ)) {
-+	if (!ptrace_may_access(t, PTRACE_MODE_ATTACH)) {
- 		__ckpt_write_err(ctx, "access to task %d (%s) denied",
- 				 task_pid_vnr(t), t->comm);
- 		return -EPERM;
+-	ret = devname_to_devnum(s[0], &newpn->dev);
++	if (i != 3)
++		return -EINVAL;
++
++	p = strsep(&s[0], ":");
++	if (p != NULL)
++		major_s = p;
++	else
++		return -EINVAL;
++
++	minor_s = s[0];
++	if (!minor_s)
++		return -EINVAL;
++
++	ret = strict_strtoul(major_s, 10, &major);
++	if (ret)
++		return -EINVAL;
++
++	ret = strict_strtoul(minor_s, 10, &minor);
++	if (ret)
++		return -EINVAL;
++
++	dev = MKDEV(major, minor);
++
++	ret = check_dev_num(dev);
+ 	if (ret)
+ 		return ret;
+ 
+-	strcpy(newpn->dev_name, s[0]);
++	newpn->dev = dev;
+ 
+ 	if (s[1] == NULL)
+ 		return -EINVAL;
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index b3193f8..7722ebe 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -286,7 +286,6 @@ struct io_group {
+ 
+ struct io_policy_node {
+ 	struct list_head node;
+-	char dev_name[32];
+ 	dev_t dev;
+ 	unsigned long weight;
+ 	unsigned long ioprio_class;
 -- 
-1.6.0.4
-
+1.5.4.rc3
