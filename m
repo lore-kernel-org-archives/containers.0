@@ -1,14 +1,14 @@
-From: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] x86: only clear node_states for 64bit
-Date: Fri, 26 Jun 2009 14:09:18 -0700
-Message-ID: <4A4538FE.2090101__2366.61782623759$1246050807$gmane$org@kernel.org>
-References: <4A05269D.8000701@kernel.org>	<20090512111623.GG25923@csn.ul.ie>	<4A0A64FB.4080504@kernel.org>	<20090513145950.GB28097@csn.ul.ie>	<4A0C4910.7090508@kernel.org>	<4A0C4A2A.6080009@kernel.org>	<20090514095414.ba8356e5.akpm@linux-foundation.org>	<4A0C4F67.5080802@kernel.org>	<20090514102554.b3a36f19.akpm@linux-foundation.org>	<4A0C563A.3020100@kernel.org>	<4A2758CB.9090404@kernel.org>	<alpine.DEB.1.10.0906041236520.5377@gentwo.org>	<4A27FAD4.2010104@kernel.org>	<alpine.DEB.1.10.0906041309230.8080@gentwo.org>	<4A2803D1.4070001@kernel.org>	<m3bpokiv0u.fsf@pobox.com>	<4A3B49BA.40100@kernel.org>	<m3prd0havh.fsf@pobox.com>	<4A3D7419.8040305@kernel.org>	<m3my807ug3.fsf@pobox.com>	<4A3FA58A.3010909@kernel.org>
-	<20090626135428.d8f88a70.akpm@linux-foundation.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Add AF_INET c/r support
+Date: Fri, 26 Jun 2009 15:09:06 -0700
+Message-ID: <20090626220906.GF17502@count0.beaverton.ibm.com>
+References: <1245697976-29159-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090626135428.d8f88a70.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1245697976-29159-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,68 +18,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: steiner-sJ/iWh9BUns@public.gmane.org, cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, mel-wPRd99KPJ+uzQB+pC5nmwQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Mon, 22 Jun 2009 08:38:50 -0700
-> Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+On Mon, Jun 22, 2009 at 12:12:56PM -0700, Dan Smith wrote:
+> This patch adds AF_INET c/r support based on the framework established in
+> my AF_UNIX patch.  I've tested it by checkpointing a single app with a
+> pair of sockets connected over loopback.
 > 
->> Nathan reported that
->> | commit 73d60b7f747176dbdff826c4127d22e1fd3f9f74
->> | Author: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
->> | Date:   Tue Jun 16 15:33:00 2009 -0700
->> |
->> |    page-allocator: clear N_HIGH_MEMORY map before we set it again
->> |    
->> |    SRAT tables may contains nodes of very small size.  The arch code may
->> |    decide to not activate such a node.  However, currently the early boot
->> |    code sets N_HIGH_MEMORY for such nodes.  These nodes therefore seem to be
->> |    active although these nodes have no present pages.
->> |    
->> |    For 64bit N_HIGH_MEMORY == N_NORMAL_MEMORY, so that works for 64 bit too
->>
->> the cpuset.mems cgroup attribute on an i386 kvm guest
->>
->> fix it by only clearing node_states[N_NORMAL_MEMORY] for 64bit only.
->> and need to do save/restore for that in find_zone_movable_pfn
->>
+> I expect a pile of comments :)
 > 
-> There appear to be some words omitted from this changelog - it doesn't
-> make sense.
+> A couple points about the operation:
 > 
-> I think that perhaps a line got deleted before "the cpuset.mems cgroup
-> ...".  That was the line which actualy describes the bug which we're
-> fixing.  Or perhaps it was a single word?  "zeroes".
+>  1. In order to properly hook up the established sockets with the matching
+>     listening parent socket, I added a new list to the ckpt_ctx and run the
+>     parent attachment in the deferqueue at the end of the restart process.
+>  2. I don't do anything to redirect or freeze traffic flowing to or from the
+>     remote system (to prevent a RST from breaking things).  I expect that
+>     userspace will bring down a veth device or freeze traffic to the remote
+>     system to handle this case.
 > 
+> Cc: Oren Laaden <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/sys.c                 |    2 +
+>  include/linux/checkpoint_hdr.h   |    1 +
+>  include/linux/checkpoint_types.h |    2 +
+>  include/linux/socket.h           |   95 ++++++++++
+>  net/checkpoint.c                 |  369 +++++++++++++++++++++++++++++++++-----
+>  5 files changed, 428 insertions(+), 41 deletions(-)
 > 
-> I did this:
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index 38a5299..b6f18ea 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -242,6 +242,8 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+>  	INIT_LIST_HEAD(&ctx->pgarr_pool);
+>  	init_waitqueue_head(&ctx->waitq);
 > 
-> Nathan reported that
-> : 
-> : | commit 73d60b7f747176dbdff826c4127d22e1fd3f9f74
-> : | Author: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> : | Date:   Tue Jun 16 15:33:00 2009 -0700
-> : |
-> : |    page-allocator: clear N_HIGH_MEMORY map before we set it again
-> : |
-> : |    SRAT tables may contains nodes of very small size.  The arch code may
-> : |    decide to not activate such a node.  However, currently the early boot
-> : |    code sets N_HIGH_MEMORY for such nodes.  These nodes therefore seem to be
-> : |    active although these nodes have no present pages.
-> : |
-> : |    For 64bit N_HIGH_MEMORY == N_NORMAL_MEMORY, so that works for 64 bit too
-> : 
+> +	INIT_LIST_HEAD(&ctx->listen_sockets);
+> +
+>  	err = -EBADF;
+>  	ctx->file = fget(fd);
+>  	if (!ctx->file)
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index 46285f8..0a19767 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -87,6 +87,7 @@ enum {
+>  	CKPT_HDR_SOCKET_BUFFERS,
+>  	CKPT_HDR_SOCKET_BUFFER,
+>  	CKPT_HDR_SOCKET_UN,
+> +	CKPT_HDR_SOCKET_IN,
 
-"
-> : unintentionally and incorrectly clears the cpuset.mems cgroup attribute on
-> : an i386 kvm guest
-"
-==> 
+Nano-nit: I think it's easier to read if we call these CKPT_HDR_SOCKET_UNIX 
+and CKPT_HDR_SOCKET_INET. The extra 2 characters are worth that. This also
+applies to the struct names later in the patch.
 
-32bit assume NORMAL_MEMORY bit and HIGH_MEMORY bit are set for Node0 always.
-
-and some code only check if HIGH_MEMORY is there to know if NORMAL_MEMORY is there.
-
-YH
+Cheers,
+	-Matt Helsley
