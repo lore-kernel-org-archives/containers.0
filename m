@@ -1,7 +1,7 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] io-controller: do some changes of io.policy interface
-Date: Fri, 26 Jun 2009 08:27:22 +0800
-Message-ID: <4A4415EA.4090201__21111.3237230622$1245976116$gmane$org@cn.fujitsu.com>
+Date: Fri, 26 Jun 2009 08:59:43 +0800
+Message-ID: <4A441D7F.2070505__38990.0453425527$1245978050$gmane$org@cn.fujitsu.com>
 References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
 	<1245443858-8487-19-git-send-email-vgoyal@redhat.com>
 	<6599ad830906241452t76e64815s7d68a22a6e746a59@mail.gmail.com>
@@ -32,12 +32,12 @@ Vivek Goyal wrote:
 > Thanks for the patch. "unsigned long" for ioprio_class is too big. How
 > about using "unsigned short"? I noticed that in io_cgroup also we are
 > using "unsigned long". I will fix that.
+
+  Ah, i see, If you already have the patch, would you share it?
+
 > 
 > For storing weight now we are planning to use "unsigned int". Can you
 > please switch to that.
-
-  Sure, i'll post another patch to switch to that.
-
 > 
 > Thanks
 > Vivek
