@@ -1,20 +1,12 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: [PATCH] x86: only clear node_states for 64bit
-Date: Sat, 27 Jun 2009 19:17:14 +0200
-Message-ID: <20090627171714.GD21595@elte.hu>
-References: <alpine.DEB.1.10.0906041309230.8080@gentwo.org>
-	<4A2803D1.4070001@kernel.org> <m3bpokiv0u.fsf@pobox.com>
-	<4A3B49BA.40100@kernel.org> <m3prd0havh.fsf@pobox.com>
-	<4A3D7419.8040305@kernel.org> <m3my807ug3.fsf@pobox.com>
-	<4A3FA58A.3010909@kernel.org>
-	<20090626135428.d8f88a70.akpm@linux-foundation.org>
-	<4A4538FE.2090101@kernel.org>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][GIT]linux-cr branch, ckpt-v16-dev,
+	updated. v2.6.27-rc5-36014-g8a031aa
+Date: Sat, 27 Jun 2009 15:20:33 -0400
+Message-ID: <200906271920.n5RJKXZX003236@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A4538FE.2090101-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,77 +16,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: steiner-sJ/iWh9BUns@public.gmane.org, cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, mel-wPRd99KPJ+uzQB+pC5nmwQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-* Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+The branch, ckpt-v16-dev has been updated
+       via  8a031aa88271ac44e5574c15d82c21af98855876 (commit)
+       via  27099c13bee4a24d4f79f8911d71bc99ddde95d3 (commit)
+       via  fcb7a17df8c1b42346aab9fd5dd1af27beee2b39 (commit)
+      from  c147a0c72dd40c5a0dba96602da3c8b1559cff1d (commit)
 
-> Andrew Morton wrote:
-> > On Mon, 22 Jun 2009 08:38:50 -0700
-> > Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> > 
-> >> Nathan reported that
-> >> | commit 73d60b7f747176dbdff826c4127d22e1fd3f9f74
-> >> | Author: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> >> | Date:   Tue Jun 16 15:33:00 2009 -0700
-> >> |
-> >> |    page-allocator: clear N_HIGH_MEMORY map before we set it again
-> >> |    
-> >> |    SRAT tables may contains nodes of very small size.  The arch code may
-> >> |    decide to not activate such a node.  However, currently the early boot
-> >> |    code sets N_HIGH_MEMORY for such nodes.  These nodes therefore seem to be
-> >> |    active although these nodes have no present pages.
-> >> |    
-> >> |    For 64bit N_HIGH_MEMORY == N_NORMAL_MEMORY, so that works for 64 bit too
-> >>
-> >> the cpuset.mems cgroup attribute on an i386 kvm guest
-> >>
-> >> fix it by only clearing node_states[N_NORMAL_MEMORY] for 64bit only.
-> >> and need to do save/restore for that in find_zone_movable_pfn
-> >>
-> > 
-> > There appear to be some words omitted from this changelog - it doesn't
-> > make sense.
-> > 
-> > I think that perhaps a line got deleted before "the cpuset.mems cgroup
-> > ...".  That was the line which actualy describes the bug which we're
-> > fixing.  Or perhaps it was a single word?  "zeroes".
-> > 
-> > 
-> > I did this:
-> > 
-> > Nathan reported that
-> > : 
-> > : | commit 73d60b7f747176dbdff826c4127d22e1fd3f9f74
-> > : | Author: Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> > : | Date:   Tue Jun 16 15:33:00 2009 -0700
-> > : |
-> > : |    page-allocator: clear N_HIGH_MEMORY map before we set it again
-> > : |
-> > : |    SRAT tables may contains nodes of very small size.  The arch code may
-> > : |    decide to not activate such a node.  However, currently the early boot
-> > : |    code sets N_HIGH_MEMORY for such nodes.  These nodes therefore seem to be
-> > : |    active although these nodes have no present pages.
-> > : |
-> > : |    For 64bit N_HIGH_MEMORY == N_NORMAL_MEMORY, so that works for 64 bit too
-> > : 
-> 
-> "
-> > : unintentionally and incorrectly clears the cpuset.mems cgroup attribute on
-> > : an i386 kvm guest
-> "
-> ==> 
-> 
-> 32bit assume NORMAL_MEMORY bit and HIGH_MEMORY bit are set for 
-> Node0 always.
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-Where in the code is this assumption?
+- Log -----------------------------------------------------------------
+commit 8a031aa88271ac44e5574c15d82c21af98855876
+Author: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date:   Thu Jun 25 12:51:25 2009 -0700
 
-> and some code only check if HIGH_MEMORY is there to know if 
-> NORMAL_MEMORY is there.
+    c/r: better file error debugging
+    
+    This should give a nice message with symbol names for when we have an
+    open file that doesn't have an f_op->checkpoint.
+    
+    Something along the lines of:
+    
+    [1133:c/r:checkpoint_file] file operations have no checkpoint handler:tty_open+0x0/0x24
+    
+    Also add a debug message when hitting an unlinked file.
+    
+    Based on a patch by Dave Hansen.
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Which code is that exactly?
+commit 27099c13bee4a24d4f79f8911d71bc99ddde95d3
+Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date:   Fri Jun 26 15:06:43 2009 -0400
 
-	Ingo
+    cr: define CKPT_ARCH_NSIG for s390
+    
+    Also add a check for x86 and s390 in the hopes of catching any
+    changes to NSIG which don't update CKPT_ARCH_NSIG.
+    
+    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+    Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+
+commit fcb7a17df8c1b42346aab9fd5dd1af27beee2b39
+Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date:   Thu Jun 25 05:06:06 2009 -0400
+
+    c/r: tighten ptrace checking for checkpoint to PTRACE_MODE_ATTACH
+    
+    Security modules distinguish reading of process state (via proc) from
+    full ptrace access using the access mode: PTRACE_MODE_{READ,ATTACH}.
+    
+    Read access to /proc/pid/mem requires a full ptrace attach (for more
+    details, see: http://lwn.net/Articles/282930/).
+    
+    Checkpoint needs access to full process state, including memory, so
+    we require PTRACE_MODE_ATTACH.
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+    Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+-----------------------------------------------------------------------
+
+Summary of changes:
+ arch/s390/include/asm/checkpoint_hdr.h |    8 ++++++++
+ arch/x86/include/asm/checkpoint_hdr.h  |    6 ++++++
+ checkpoint/checkpoint.c                |    2 +-
+ checkpoint/files.c                     |    8 ++++++--
+ 4 files changed, 21 insertions(+), 3 deletions(-)
+
+
+hooks/post-receive
+--
+linux-cr
