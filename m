@@ -1,77 +1,70 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [lxc-devel] segfault on shutdown if containers running
-Date: Mon, 29 Jun 2009 10:44:49 +0200
-Message-ID: <4A487F01.6040603@free.fr>
-References: <4A42D033.5060202@zombino.com> <4A432714.4040606@free.fr>
-	<4A480F08.3040102@zombino.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [libvirt] kernel summit topic - 'containers end-game'
+Date: Mon, 29 Jun 2009 16:05:41 +0530
+Message-ID: <661de9470906290335i74f76a55t57438a781e6a84c8@mail.gmail.com>
+References: <20090623145611.GB19332@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A480F08.3040102-+878OnfSgr5BDgjK7y7TUQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Adam Majer <adamm-+878OnfSgr5BDgjK7y7TUQ@public.gmane.org>, Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <libvir-list-bounces@redhat.com>
+In-Reply-To: <20090623145611.GB19332@us.ibm.com>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/libvir-list>,
+	<mailto:libvir-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/libvir-list>
+List-Post: <mailto:libvir-list@redhat.com>
+List-Help: <mailto:libvir-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/libvir-list>,
+	<mailto:libvir-list-request@redhat.com?subject=subscribe>
+Sender: libvir-list-bounces@redhat.com
+Errors-To: libvir-list-bounces@redhat.com
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, libvir-list@redhat.com
 List-Id: containers.vger.kernel.org
 
-Adam Majer wrote:
-> Daniel Lezcano wrote:
->>> Is this a known problem? If not, I'll provide the backtrace.
->> Yes, please, maybe I am missing something but I was not able to
->> reproduce it.
-> 
-> I see to be failing at being able to safe this segfault. The computer
-> has no serial port so I've been trying to get netconsole to work, and it
-> does, but the entire OOPS is only visible on local console, not
-> transmitted. Only part of the oops is transmitted :(
-> 
-> 
-> [  635.526580] BUG: unable to handle kernel NULL pointer dereference at
-> 000000000000009c
-> [  635.526692] IP: [<ffffffff803b26f1>] tty_open+0x1e6/0x411
-> [  635.526775] PGD 13dd44067 PUD 1379d5067 PMD 0
-> [  635.526905] Oops: 0000 [#1] SMP
-> [  635.526999] last sysfs file: /sys/devices/virtual/net/lo/operstate
-> [  635.527045] CPU 1
-> [  635.527110] Modules linked in: netconsole configfs veth nvidia(P)
-> binfmt_misc powernow_k8 cpufreq_powersave cpufreq_conservative
-> cpufreq_stats cpufreq_userspace tun bridge stp ext2 mbcache it87
-> hwmon_vid loop firewire_sbp2 snd_hda_codec_analog snd_hda_intel
-> snd_hda_codec snd_hwdep snd_pcm_oss snd_mixer_oss snd_pcm snd_seq_midi
-> snd_rawmidi snd_seq_midi_event snd_seq snd_timer snd_seq_device usblp
-> k8temp i2c_nforce2 pcspkr snd evdev asus_atk0110 i2c_core soundcore
-> snd_page_alloc button processor xfs exportfs raid1 md_mod
-> 
-> 
-> 
-> So, I've copied the stacktrace on paper and typing it back,
+On Tue, Jun 23, 2009 at 8:26 PM, Serge E. Hallyn<serue@us.ibm.com> wrote:
+> A topic on ksummit agenda is 'containers end-game and how do we
+> get there'.
+>
+> So for starters, looking just at application (and system) containers, w=
+hat do
+> the libvirt and liblxc projects want to see in kernel support that is c=
+urrently
+> missing? =A0Are there specific things that should be done soon to make =
+containers
+> more useful and usable?
+>
+> More generally, the topic raises the question... what 'end-games' are t=
+here?
+> A few I can think of off-hand include:
+>
+> =A0 =A0 =A0 =A01. resource control
 
-Thanks for taking the time to do that !
+We intend to hold a io-controller minisummit before KS, we should have
+updates on that front. We also need to discuss CPU hard limits and
+Memory soft limits. We need control for memory large page, mlock, OOM
+notification support, shared page accounting, etc. Eventually on the
+libvirt front, we want to isolate cgroup and lxc support into
+individual components (long term)
 
-> Process getty (pid:3940) <<<-- looks like a process in the container?
-> 
-> chrdev_open + 0x148/0x167
-> chrdev_open + 0x0/0x167
-> __dentry_open + 0x148/0x260
-> do_flip_open + 0x468/0x85a
-> alloc_fd + ....
-> do_sys_gen + ...
-> system_call_fastpath + ....
-> 
-> RIP tty_open
+> =A0 =A0 =A0 =A02. lightweight virtual servers
+> =A0 =A0 =A0 =A03. (or 2.5) unprivileged containers/jail-on-steroids
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(lightweight virtual servers in which yo=
+u might, just
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0maybe, almost, be able to give away a ro=
+ot account, at
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0least as much as you could do so with a =
+kvm/qemu/xen
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0partition)
+> =A0 =A0 =A0 =A04. checkpoint, restart, and migration
+>
+> For each end-game, what kernel pieces do we think are missing? =A0For i=
+nstance,
+> people seem agreed that resource control needs io control :) =A0Contain=
+ers imo
+> need a user namespace. =A0I think there are quite a few network namespa=
+ce
+> exploiters who require sysfs directory tagging (or some equivalent) to
+> allow us to migrate physical devices into network namespaces. =A0And
+> checkpoint/restart needs... checkpoint/restart.
 
-This stack trace reminds me something :)
-Let me check if I can reproduce it with a small program.
-
-Suka ? Are you aware of this bug ?
-
-Thanks
-   -- Daniel
+Balbir Singh
