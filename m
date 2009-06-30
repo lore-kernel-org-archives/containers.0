@@ -1,11 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Memory c/r performance
-Date: Tue, 30 Jun 2009 11:25:41 -0700
-Message-ID: <1246386341.31856.631.camel@nimitz>
+From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] io-controller: optimization for iog deletion when
+	elevator exiting
+Date: Tue, 30 Jun 2009 10:14:48 -0700
+Message-ID: <e98e18940906301014n146e7146vb5a73c2f33c9e819__7635.18766402758$1246387227$gmane$org@mail.gmail.com>
+References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
+	<1245443858-8487-6-git-send-email-vgoyal@redhat.com>
+	<4A4850D3.3000700@cn.fujitsu.com> <20090629140631.GA4622@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090629140631.GA4622-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,76 +20,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The biggest limiting factor for dumping large amounts of memory seems to
-be i/o device speed, so big surprise there.
+On Mon, Jun 29, 2009 at 7:06 AM, Vivek Goyal<vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Jun 29, 2009 at 01:27:47PM +0800, Gui Jianfeng wrote:
+>> Hi Vivek,
+>>
+>> There's no need to travel the iocg->group_data for each iog
+>> when exiting a elevator, that costs too much. An alternative
+>> solution is reseting iocg_id as soon as an io group unlinking
+>> from a iocg. Make a decision that whether it's need to carry
+>> out deleting action by checking iocg_id.
+>>
+>
+> Thanks Gui. This makes sense to me. We can check iog->iocg_id to determine
+> wheter group is still on iocg list or not instead of traversing the list.
+>
+> Nauman, do you see any issues with the patch?
 
-The other limit that I've noticed is that k{un}map_atomic() on i386 when
-running under kvm is sloooooow.  I have to wonder if using regular old
-kmap() is a better idea.  On 64-bit platforms, they'll basically compile
-away.  But, on i386, it costs us 1 global tlb flush every time we wrap
-the kmap space, which is every 2MB of memory, I think.
+Looks like this should work. The only iog with zero id is associated
+with root group, which gets deleted outside of this function anyways.
 
-kmap_atomic(), on the other hand, costs an invlpg at unmap time.  That's
-cheap on normal hardware, but costs a trip into the hypervisor (I guess
-this is fixed in newer chips).
-
-Anyway, here's what happens checkpointing an 800MB app using kmap and
-kmap_atomic.  We save ~1 second of system time using kmap.  But, this is
-all 32-bit which probably doesn't matter anyway.  
-
-kmap (modified):
-real	0m23.373s
-user	0m2.020s
-sys	0m20.161s
-   788 checkpoint_dump_page                      12.1231
-   423 __copy_from_user_ll_nozero                 4.9186
-   415 kunmap_atomic                              4.3684
-   268 __block_prepare_write                      0.3829
-    87 ide_dma_end                                0.9255
-    50 lookup_bh_lru                              0.4065
-    44 on_each_cpu                                0.6984
-    40 ext3_do_update_inode                       0.0571
-    39 smp_invalidate_interrupt                   0.3023
-    39 page_address                               0.2086
-    38 __set_page_dirty                           0.2346
-    31 __mark_inode_dirty                         0.0994
-    30 do_get_write_access                        0.0279
-    29 radix_tree_lookup_slot                     0.2522
-    26 ext3_get_inode_block                       0.1757
-    25 set_page_address                           0.0767
-    25 buffered_rmqueue                           0.0471
-    24 journal_stop                               0.0423
-    24 journal_add_journal_head                   0.0923
-    23 kmem_cache_alloc                           0.1704
-
-
-kmap_atomic:
-real	0m24.552s
-user	0m1.992s
-sys	0m21.401s
-   902 kunmap_atomic                              9.4947
-   750 checkpoint_dump_page                      10.0000
-   423 __copy_from_user_ll_nozero                 4.9186
-   247 __block_prepare_write                      0.3529
-    70 ide_dma_end                                0.7447
-    43 __set_page_dirty                           0.2654
-    35 do_get_write_access                        0.0326
-    35 buffered_rmqueue                           0.0659
-    33 lookup_bh_lru                              0.2683
-    31 ext3_do_update_inode                       0.0443
-    28 radix_tree_lookup_slot                     0.2435
-    28 journal_stop                               0.0494
-    27 journal_add_journal_head                   0.1038
-    27 __mark_inode_dirty                         0.0865
-    24 __ratelimit                                0.1429
-    23 journal_dirty_metadata                     0.0774
-    21 ext3_get_inode_block                       0.1419
-    20 test_set_page_writeback                    0.0844
-    20 ext3_new_blocks                            0.0162
-    20 __wake_up                                  0.3509
-
--- Dave
+>
+> Thanks
+> Vivek
+>
+>> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>> ---
+>> =A0block/elevator-fq.c | =A0 29 ++++++++++-------------------
+>> =A01 files changed, 10 insertions(+), 19 deletions(-)
+>>
+>> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+>> index d779282..b26fe0f 100644
+>> --- a/block/elevator-fq.c
+>> +++ b/block/elevator-fq.c
+>> @@ -2218,8 +2218,6 @@ void io_group_cleanup(struct io_group *iog)
+>> =A0 =A0 =A0 BUG_ON(iog->sched_data.active_entity !=3D NULL);
+>> =A0 =A0 =A0 BUG_ON(entity !=3D NULL && entity->tree !=3D NULL);
+>>
+>> - =A0 =A0 iog->iocg_id =3D 0;
+>> -
+>> =A0 =A0 =A0 /*
+>> =A0 =A0 =A0 =A0* Wait for any rcu readers to exit before freeing up the =
+group.
+>> =A0 =A0 =A0 =A0* Primarily useful when io_get_io_group() is called witho=
+ut queue
+>> @@ -2376,6 +2374,7 @@ remove_entry:
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 group_node);
+>> =A0 =A0 =A0 efqd =3D rcu_dereference(iog->key);
+>> =A0 =A0 =A0 hlist_del_rcu(&iog->group_node);
+>> + =A0 =A0 iog->iocg_id =3D 0;
+>> =A0 =A0 =A0 spin_unlock_irqrestore(&iocg->lock, flags);
+>>
+>> =A0 =A0 =A0 spin_lock_irqsave(efqd->queue->queue_lock, flags);
+>> @@ -2403,35 +2402,27 @@ done:
+>> =A0void io_group_check_and_destroy(struct elv_fq_data *efqd, struct io_g=
+roup *iog)
+>> =A0{
+>> =A0 =A0 =A0 struct io_cgroup *iocg;
+>> - =A0 =A0 unsigned short id =3D iog->iocg_id;
+>> - =A0 =A0 struct hlist_node *n;
+>> - =A0 =A0 struct io_group *__iog;
+>> =A0 =A0 =A0 unsigned long flags;
+>> =A0 =A0 =A0 struct cgroup_subsys_state *css;
+>>
+>> =A0 =A0 =A0 rcu_read_lock();
+>>
+>> - =A0 =A0 BUG_ON(!id);
+>> - =A0 =A0 css =3D css_lookup(&io_subsys, id);
+>> + =A0 =A0 css =3D css_lookup(&io_subsys, iog->iocg_id);
+>>
+>> - =A0 =A0 /* css can't go away as associated io group is still around */
+>> - =A0 =A0 BUG_ON(!css);
+>> + =A0 =A0 if (!css)
+>> + =A0 =A0 =A0 =A0 =A0 =A0 goto out;
+>>
+>> =A0 =A0 =A0 iocg =3D container_of(css, struct io_cgroup, css);
+>>
+>> =A0 =A0 =A0 spin_lock_irqsave(&iocg->lock, flags);
+>> - =A0 =A0 hlist_for_each_entry_rcu(__iog, n, &iocg->group_data, group_no=
+de) {
+>> - =A0 =A0 =A0 =A0 =A0 =A0 /*
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0* Remove iog only if it is still in iocg li=
+st. Cgroup
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0* deletion could have deleted it already.
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0*/
+>> - =A0 =A0 =A0 =A0 =A0 =A0 if (__iog =3D=3D iog) {
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 hlist_del_rcu(&iog->group_node=
+);
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 __io_destroy_group(efqd, iog);
+>> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+>> - =A0 =A0 =A0 =A0 =A0 =A0 }
+>> +
+>> + =A0 =A0 if (iog->iocg_id) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 hlist_del_rcu(&iog->group_node);
+>> + =A0 =A0 =A0 =A0 =A0 =A0 __io_destroy_group(efqd, iog);
+>> =A0 =A0 =A0 }
+>> +
+>> =A0 =A0 =A0 spin_unlock_irqrestore(&iocg->lock, flags);
+>> +out:
+>> =A0 =A0 =A0 rcu_read_unlock();
+>> =A0}
+>>
+>> -- 1.5.4.rc3
+>
