@@ -1,61 +1,58 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [libvirt] kernel summit topic - 'containers end-game'
-Date: Tue, 30 Jun 2009 15:06:13 -0500
-Message-ID: <20090630200613.GA22283@us.ibm.com>
-References: <20090623145611.GB19332@us.ibm.com>
-	<661de9470906290335i74f76a55t57438a781e6a84c8@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] cr: allocate security context for msg_msg
+Date: Tue, 30 Jun 2009 15:19:50 -0500
+Message-ID: <20090630201950.GA22761@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <libvir-list-bounces@redhat.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <661de9470906290335i74f76a55t57438a781e6a84c8@mail.gmail.com>
-List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/libvir-list>,
-	<mailto:libvir-list-request@redhat.com?subject=unsubscribe>
-List-Archive: <https://www.redhat.com/archives/libvir-list>
-List-Post: <mailto:libvir-list@redhat.com>
-List-Help: <mailto:libvir-list-request@redhat.com?subject=help>
-List-Subscribe: <https://www.redhat.com/mailman/listinfo/libvir-list>,
-	<mailto:libvir-list-request@redhat.com?subject=subscribe>
-Sender: libvir-list-bounces@redhat.com
-Errors-To: libvir-list-bounces@redhat.com
-To: Balbir Singh <balbir@linux.vnet.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, libvir-list@redhat.com
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Balbir Singh (balbir@linux.vnet.ibm.com):
-> On Tue, Jun 23, 2009 at 8:26 PM, Serge E. Hallyn<serue@us.ibm.com> wrot=
-e:
-> > A topic on ksummit agenda is 'containers end-game and how do we
-> > get there'.
-> >
-> > So for starters, looking just at application (and system) containers,=
- what do
-> > the libvirt and liblxc projects want to see in kernel support that is=
- currently
-> > missing? =A0Are there specific things that should be done soon to mak=
-e containers
-> > more useful and usable?
-> >
-> > More generally, the topic raises the question... what 'end-games' are=
- there?
-> > A few I can think of off-hand include:
-> >
-> > =A0 =A0 =A0 =A01. resource control
->=20
-> We intend to hold a io-controller minisummit before KS, we should have
-> updates on that front. We also need to discuss CPU hard limits and
-> Memory soft limits. We need control for memory large page, mlock, OOM
-> notification support, shared page accounting, etc. Eventually on the
-> libvirt front, we want to isolate cgroup and lxc support into
-> individual components (long term)
+Since we create msg_msg structs by hand, we also need to
+ask LSM to allocate a security context.  Otherwise
+selinux_msg_queue_msgrcv will throw a fit dereferencing
+msg->security (6b6b6b6b6b6b6000).
 
-Thanks, Balbir.  By the last sentence, are you talking about having
-cgroup in its own libcgroup, or do you mean something else?
+With this patch, cr tests can be executed with selinux
+enabled.
 
-On the topic of cgroups, does anyone not agree that we should try
-to get rid of the ns cgroup, at least once user namespaces can
-prevent root in a container from escaping their cgroup?
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ ipc/checkpoint_msg.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-thanks,
--serge
+diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+index 51385b0..fca8e7d 100644
+--- a/ipc/checkpoint_msg.c
++++ b/ipc/checkpoint_msg.c
+@@ -17,6 +17,7 @@
+ #include <linux/sched.h>
+ #include <linux/syscalls.h>
+ #include <linux/nsproxy.h>
++#include <linux/security.h>
+ #include <linux/ipc_namespace.h>
+ 
+ #include "util.h"
+@@ -248,6 +249,8 @@ static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
+ 	msg->m_type = h->m_type;
+ 	msg->m_ts = h->m_ts;
+ 	*clen = h->m_ts;
++	ret = security_msg_msg_alloc(msg);
++
+  out:
+ 	if (ret < 0 && msg) {
+ 		free_msg(msg);
+-- 
+1.6.1
