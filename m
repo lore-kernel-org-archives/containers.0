@@ -1,15 +1,16 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] Disable CLONE_PARENT for init
-Date: Wed, 1 Jul 2009 01:01:06 -0700
-Message-ID: <20090701080106.GA14762__22745.3714739115$1246435589$gmane$org@us.ibm.com>
-References: <20090701073140.GA14284@us.ibm.com>
-	<20090701074654.A6C6321D57@magilla.sf.frob.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [lxc-devel] segfault on shutdown if containers running
+Date: Wed, 01 Jul 2009 10:14:47 +0200
+Message-ID: <4A4B1AF7.8090009@fr.ibm.com>
+References: <4A42D033.5060202@zombino.com> <4A432714.4040606@free.fr>
+	<4A480F08.3040102@zombino.com> <4A48555E.9060607@free.fr>
+	<4A491745.2050002@zombino.com> <4A491FDA.1050904@fr.ibm.com>
+	<4A4AA6D6.2090308@zombino.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090701074654.A6C6321D57-nL1rrgvulkc2UH6IwYuUx0EOCMrvLtNR@public.gmane.org>
+In-Reply-To: <4A4AA6D6.2090308-+878OnfSgr5BDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +20,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Adam Majer <adamm-+878OnfSgr5BDgjK7y7TUQ@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Roland McGrath [roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
-| > When global or container-init processes use CLONE_PARENT, they create a
-| > multi-rooted process tree. 
-| 
-| I take this to be the real motivation for your change.
-| But you don't mention it in the code comment.
+Adam Majer wrote:
+>>>>> chrdev_open + 0x148/0x167
+>>>>> chrdev_open + 0x0/0x167
+>>>>> __dentry_open + 0x148/0x260
+>>>>> do_flip_open + 0x468/0x85a
+>>>>> alloc_fd + ....
+>>>>> do_sys_gen + ...
+>>>>> system_call_fastpath + ....
+>>>>>
+>>>>> RIP tty_open
+>>>> which kernel are you using ? could you run :
+>>>>
+>>>>     $ addr2line -e <vmlinux> ffffffff803b26f1
+> 
+>>> Would setting this to yes produce a backtrace with line numbers?
+>> Yes and maybe CONFIG_FRAME_POINTER too.
+> 
+> Well, adding symbols didn't add line numbers to the backtrace. But now I
+> can use addr2line with the vmlinux (all 78mb of it) to get you guys a
+> backtrace with line numbers :)
+> 
+> 
+> So,
+> 
+> OOPS (NULL pointer deference) at
+> 
+>   drivers/char/tty_io.c:1321  (tty_open)
+> 
+> Backtrace,
+> 
+>   fs/char_dev.c:397 (chrdev_open)
+>   fs/char_dev.c:357 (chrdev_open)
+>   fs/open.c:841     (__dentry_open)
+>   arch/x86/include/asm/atomic_64.h:117 (do_flip_open)
+>   fs/file.c:459     (alloc_fd)
+>   ...
 
-Well, it was - when I started. But my understanding of the comments was that
-the constraint could be extended to global init as well for the following
-reason.
+Excellent !
 
-| 
-| > +	 * Swapper process sets the handler for SIGCHLD to SIG_DFL. If init
-| > +	 * creates a sibling and the sibling exits, the SIGCHLD is sent to
-| > +	 * the swapper (since the swapper's handler for SIGCHLD is SIG_DFL).
-| > +	 * But since the swapper does not reap its children, the zombie will
-| > +	 * remain forever. So prevent init from using CLONE_PARENT.
-| 
-| This would be fixed by having swapper set its SIGCHLD to SIG_IGN instead,
-| so such children self-reap.  That seems like the better fix for that.
+Suka ? Isn't this oops related to the newpts instance ?
 
-Yes, that would fix the global init case.
-
-| 
-| If you want to make this change because of container-init issues, I think
-| you should just say so independent of this global-init case.
-
-So can I leave the check for SIGNAL_UNKILLABLE but simplify the comments
-to refer to the multi-rooted process tree ?
+Thanks
+   -- Daniel
