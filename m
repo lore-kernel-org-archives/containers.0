@@ -1,11 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: IO controller mini-summit -- Japan, Oct 2009
-Date: Wed, 01 Jul 2009 20:44:50 +0900 (JST)
-Message-ID: <20090701.204450.104062613.ryov__14458.6940565661$1246448750$gmane$org@valinux.co.jp>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Add AF_INET c/r support
+Date: Wed, 01 Jul 2009 09:10:07 -0700
+Message-ID: <87vdmcxu3k.fsf@caffeine.danplanet.com>
+References: <1245697976-29159-1-git-send-email-danms@us.ibm.com>
+	<4A42EA32.4070809@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4A42EA32.4070809-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Wed\, 24 Jun 2009 23\:08\:34 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,25 +19,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
-Cc: ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, osonoi-de/tnXTf+JLsfHDXvbKv3Xf5DAMn2ifp@public.gmane.org, kunai-de/tnXTf+JLsfHDXvbKv3Xf5DAMn2ifp@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi All,
+OL> Adding a comment about it would clearly show that you thought
+OL> about it, and warn others.
 
-We will hold a Linux IO controller Mini-Summit in Tokyo, Japan
-on Saturday, Oct. 17, 2009 -- day before the 9th Linux kernel summit.
+Done.
 
-This is a good opportunity to meet face-to-face to discuss issues and
-directions for developing IO controller.
+OL> Network developers are probably the right audience for this kind
+OL> of audit.
 
-Details of the summit are still sketchy, so suggestions for agenda
-topics are welcome. Please e-mail to me or post on the wiki page at
-http://apps.sourceforge.net/trac/ioband/wiki/iosummit
-(You need an account on SourceForge.net to edit this page.)
-The final agenda will be formed by consensus of the attendees.
+Yep, agreed.  I suppose I'll copy netdev on the next round unless
+there are more comments...
 
-Please join the summit if you are interested.
+OL> Relocating the function below generates confusing noise in the
+OL> patch.
 
-Thanks,
-Ryo Tsuruta
+Yep, and made for a bunch of collisions when changing the UNIX patch
+underneath.  Sorry about that.
+
+OL> What about sockets that aren't either TCP_{LISTEN,ESTABLISHED} ?
+
+Yep, I caused it to fail to restart with an unconnected UDP socket.
+I've got that fixed up now.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
