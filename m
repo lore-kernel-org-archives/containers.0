@@ -1,15 +1,15 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Disable CLONE_PARENT for init
-Date: Wed, 1 Jul 2009 10:24:52 +0200
-Message-ID: <20090701082452.GA3297__25109.0915328406$1246437039$gmane$org@redhat.com>
-References: <20090701073140.GA14284@us.ibm.com>
-	<20090701074654.A6C6321D57@magilla.sf.frob.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 02/20] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Wed, 01 Jul 2009 17:24:46 +0800
+Message-ID: <4A4B2B5E.3080309__41839.1206920662$1246440600$gmane$org@cn.fujitsu.com>
+References: <1245443858-8487-1-git-send-email-vgoyal@redhat.com>
+	<1245443858-8487-3-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090701074654.A6C6321D57-nL1rrgvulkc2UH6IwYuUx0EOCMrvLtNR@public.gmane.org>
+In-Reply-To: <1245443858-8487-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,33 +19,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/01, Roland McGrath wrote:
->
-> > When global or container-init processes use CLONE_PARENT, they create a
-> > multi-rooted process tree. 
->
-> I take this to be the real motivation for your change.
-> But you don't mention it in the code comment.
->
-> > +	 * Swapper process sets the handler for SIGCHLD to SIG_DFL. If init
-> > +	 * creates a sibling and the sibling exits, the SIGCHLD is sent to
-> > +	 * the swapper (since the swapper's handler for SIGCHLD is SIG_DFL).
-> > +	 * But since the swapper does not reap its children, the zombie will
-> > +	 * remain forever. So prevent init from using CLONE_PARENT.
->
-> This would be fixed by having swapper set its SIGCHLD to SIG_IGN instead,
-> so such children self-reap.  That seems like the better fix for that.
+Vivek Goyal wrote:
+...
+> + * If ioscheduler has functionality of keeping track of close cooperator, check
+> + * with it if it has got a closely co-operating queue.
+> + */
+> +static inline struct io_queue *elv_close_cooperator(struct request_queue *q,
+> +					struct io_queue *ioq, int probe)
+> +{
+> +	struct elevator_queue *e = q->elevator;
+> +	struct io_queue *new_ioq = NULL;
+> +
+> +	/*
+> +	 * Currently this feature is supported only for flat hierarchy or
+> +	 * root group queues so that default cfq behavior is not changed.
+> +	 */
+> +	if (!is_root_group_ioq(q, ioq))
+> +		return NULL;
+> +
+> +	if (q->elevator->ops->elevator_close_cooperator_fn)
+> +		new_ioq = e->ops->elevator_close_cooperator_fn(q,
+> +						ioq->sched_queue, probe);
+> +
+> +	/* Only select co-operating queue if it belongs to root group */
+> +	if (new_ioq && !is_root_group_ioq(q, new_ioq))
+> +		return NULL;
+> +
+> +	return new_ioq;
+> +}
 
-This won't fix the problem. The child won't autoreap itself if ->exit_signal
-!= SIGCHLD.
+  Hi Vivek,
 
-> If you want to make this change because of container-init issues, I think
-> you should just say so independent of this global-init case.
+  Currently, whether we can let this feature be supported if current queue 
+  and found queue are in the same group? I guess this change won't break 
+  the default cfq behavior. Am i missing something?
 
-Yes, agreed, the comment looks confusing.
-
-Oleg
+-- 
+Regards
+Gui Jianfeng
