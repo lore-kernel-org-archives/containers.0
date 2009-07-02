@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 03/25] io-controller: bfq support of in-class preemption
-Date: Thu,  2 Jul 2009 16:01:35 -0400
-Message-ID: <1246564917-19603-4-git-send-email-vgoyal__19672.1230553978$1246566627$gmane$org@redhat.com>
+Subject: [PATCH 13/25] io-controller: Wait for requests to complete from last
+	queue before new queue is scheduled
+Date: Thu,  2 Jul 2009 16:01:45 -0400
+Message-ID: <1246564917-19603-14-git-send-email-vgoyal__23258.9884348728$1246566904$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,95 +22,96 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o Generally preemption is associated with cross class where if an request
-  from RT class is pending it will preempt the ongoing BE or IDLE class
-  request.
+o Currently one can dispatch requests from multiple queues to the disk. This
+  is true for hardware which supports queuing. So if a disk support queue
+  depth of 31 it is possible that 20 requests are dispatched from queue 1
+  and then next queue is scheduled in which dispatches more requests.
 
-o CFQ also does in-class preemtions like a sync request queue preempting the
-  async request queue. In that case it looks like preempting queue gains
-  share and it is not fair.
+o This multiple queue dispatch introduces issues for accurate accounting of
+  disk time consumed by a particular queue. For example, if one async queue
+  is scheduled in, it can dispatch 31 requests to the disk and then it will
+  be expired and a new sync queue might get scheduled in. These 31 requests
+  might take a long time to finish but this time is never accounted to the
+  async queue which dispatched these requests.
 
-o Implement the similar functionality in bfq so that we can retain the
-  existing CFQ behavior.
+o This patch introduces the functionality where we wait for all the requests
+  to finish from previous queue before next queue is scheduled in. That way
+  a queue is more accurately accounted for disk time it has consumed. Note
+  this still does not take care of errors introduced by disk write caching.
 
-o This patch creates a bypass path so that a queue can be put at the
-  front of the service tree (add_front, similar to CFQ), so that it will
-  be selected next to run. That's a different thing that in the process
-  this queue gains share.
+o Because above behavior can result in reduced throughput, this behavior will
+  be enabled only if user sets "fairness" tunable to 2 or higher.
+
+o This patch helps in achieving more isolation between reads and buffered
+  writes in different cgroups. buffered writes typically utilize full queue
+  depth and then expire the queue. On the contarary, sequential reads
+  typicaly driver queue depth of 1. So despite the fact that writes are
+  using more disk time it is never accounted to write queue because we don't
+  wait for requests to finish after dispatching these. This patch helps
+  do more accurate accounting of disk time, especially for buffered writes
+  hence providing better fairness hence better isolation between two cgroups
+  running read and write workloads.
 
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   43 +++++++++++++++++++++++++++++++++++++++----
- 1 files changed, 39 insertions(+), 4 deletions(-)
+ block/elevator-fq.c |   31 ++++++++++++++++++++++++++++++-
+ 1 files changed, 30 insertions(+), 1 deletions(-)
 
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index a58efdc..7ee4321 100644
+index 68be1dc..7609579 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -582,7 +582,7 @@ static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
-  * service received if @entity is active) of the queue to calculate its
-  * timestamps.
-  */
--static void __bfq_activate_entity(struct io_entity *entity)
-+static void __bfq_activate_entity(struct io_entity *entity, int add_front)
- {
- 	struct io_sched_data *sd = entity->sched_data;
- 	struct io_service_tree *st = io_entity_service_tree(entity);
-@@ -627,7 +627,42 @@ static void __bfq_activate_entity(struct io_entity *entity)
+@@ -2038,7 +2038,7 @@ STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_sync_store);
+ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
+-STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
++STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 2, 0);
+ EXPORT_SYMBOL(elv_fairness_store);
+ #undef STORE_FUNCTION
+ 
+@@ -2952,6 +2952,24 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
  	}
  
- 	st = __bfq_entity_update_prio(st, entity);
--	bfq_calc_finish(entity, entity->budget);
-+	/*
-+	 * This is to emulate cfq like functionality where preemption can
-+	 * happen with-in same class, like sync queue preempting async queue
-+	 * May be this is not a very good idea from fairness point of view
-+	 * as preempting queue gains share. Keeping it for now.
-+	 */
-+	if (add_front) {
-+		struct io_entity *next_entity;
-+
+ expire:
++	if (efqd->fairness >= 2 && !force && ioq && ioq->dispatched) {
 +		/*
-+		 * Determine the entity which will be dispatched next
-+		 * Use sd->next_active once hierarchical patch is applied
++		 * If there are request dispatched from this queue, don't
++		 * dispatch requests from new queue till all the requests from
++		 * this queue have completed.
++		 *
++		 * This helps in attributing right amount of disk time consumed
++		 * by a particular queue when hardware allows queuing.
++		 *
++		 * Set ioq = NULL so that no more requests are dispatched from
++		 * this queue.
 +		 */
-+		next_entity = bfq_lookup_next_entity(sd, 0);
-+
-+		if (next_entity && next_entity != entity) {
-+			struct io_service_tree *new_st;
-+			u64 delta;
-+
-+			new_st = io_entity_service_tree(next_entity);
-+
-+			/*
-+			 * At this point, both entities should belong to
-+			 * same service tree as cross service tree preemption
-+			 * is automatically taken care by algorithm
-+			 */
-+			BUG_ON(new_st != st);
-+			entity->finish = next_entity->finish - 1;
-+			delta = bfq_delta(entity->budget, entity->weight);
-+			entity->start = entity->finish - delta;
-+			if (bfq_gt(entity->start, st->vtime))
-+				entity->start = st->vtime;
-+		}
-+	} else {
-+		bfq_calc_finish(entity, entity->budget);
++		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
++				" disp=%lu", ioq->dispatched);
++		ioq = NULL;
++		goto keep_queue;
 +	}
- 	bfq_active_insert(st, entity);
- }
- 
-@@ -635,9 +670,9 @@ static void __bfq_activate_entity(struct io_entity *entity)
-  * bfq_activate_entity - activate an entity.
-  * @entity: the entity to activate.
-  */
--static void bfq_activate_entity(struct io_entity *entity)
-+static void bfq_activate_entity(struct io_entity *entity, int add_front)
- {
--	__bfq_activate_entity(entity);
-+	__bfq_activate_entity(entity, add_front);
- }
- 
- /**
++
+ 	elv_ioq_slice_expired(q);
+ new_queue:
+ 	ioq = elv_set_active_ioq(q, new_ioq);
+@@ -3109,6 +3127,17 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 				 */
+ 				elv_ioq_arm_slice_timer(q, 1);
+ 			} else {
++				/* If fairness >=2 and there are requests
++				 * dispatched from this queue, don't dispatch
++				 * new requests from a different queue till
++				 * all requests from this queue have finished.
++				 * This helps in attributing right disk time
++				 * to a queue when hardware supports queuing.
++				 */
++
++				if (efqd->fairness >= 2 && ioq->dispatched)
++					goto done;
++
+ 				/* Expire the queue */
+ 				elv_ioq_slice_expired(q);
+ 			}
 -- 
 1.6.0.6
