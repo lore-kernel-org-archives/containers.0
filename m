@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/25] io-controller: Core of the B-WF2Q+ scheduler
-Date: Thu,  2 Jul 2009 16:01:34 -0400
-Message-ID: <1246564917-19603-3-git-send-email-vgoyal__16699.0153761164$1246568250$gmane$org@redhat.com>
+Subject: [PATCH 14/25] io-controller: Separate out queue and data
+Date: Thu,  2 Jul 2009 16:01:46 -0400
+Message-ID: <1246564917-19603-15-git-send-email-vgoyal__48459.3201698319$1246568259$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,958 +21,1179 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is core of the BFQ(B-WF2Q+) scheduler originally implemented by Paolo and
-Fabio in BFQ patches. Since then I have taken relevant pieces from BFQ and
-continued the work on IO controller. It is not the full patch. Just pulled out
-the some bits to show how core scheduler looks like and it becomes easier to
-review.
+o So far noop, deadline and AS had one common structure called *_data which
+  contained both the queue information where requests are queued and also
+  common data used for scheduling. This patch breaks down this common
+  structure in two parts, *_queue and *_data. This is along the lines of
+  cfq where all the reuquests are queued in queue and common data and tunables
+  are part of data.
 
-Originally BFQ code was hierarchical. This patch only shows non-hierarchical
-bits. Hierarhical code comes in later patches.
+o It does not change the functionality but this re-organization helps once
+  noop, deadline and AS are changed to use hierarchical fair queuing.
 
-This code is the building base of introducing fair queuing logic in common
-elevator layer so that it can be used by all the four IO schedulers. In
-later patches, CFQ's weighted round robin scheduler will be replaced with
-B-WF2Q+ scheduler.
+o looks like queue_empty function is not required and we can check for
+  q->nr_sorted in elevator layer to see if ioscheduler queues are empty or
+  not.
 
-Also note that BFQ originally provided fairness in-terms of number of
-sectors of IO done by the queue. It has been modified to provide fairness
-in terms of disk time (like CFQ allocate disk time slices proportionate to
-prio/weight).
-
-B-WF2Q+ is based on WF2Q+, that is described in [2], together with
-H-WF2Q+, while the augmented tree used to implement B-WF2Q+ with O(log N)
-complexity derives from the one introduced with EEVDF in [3].
-
-[1] P. Valente and F. Checconi, ``High Throughput Disk Scheduling
-    with Deterministic Guarantees on Bandwidth Distribution,'' to be
-    published.
-
-    http://algo.ing.unimo.it/people/paolo/disk_sched/bfq.pdf
-
-[2] Jon C.R. Bennett and H. Zhang, ``Hierarchical Packet Fair Queueing
-    Algorithms,'' IEEE/ACM Transactions on Networking, 5(5):675-689,
-    Oct 1997.
-
-    http://www.cs.cmu.edu/~hzhang/papers/TON-97-Oct.ps.gz
-
-[3] I. Stoica and H. Abdel-Wahab, ``Earliest Eligible Virtual Deadline
-    First: A Flexible and Accurate Mechanism for Proportional Share
-    Resource Allocation,'' technical report.
-
-    http://www.cs.berkeley.edu/~istoica/papers/eevdf-tr-95.pdf
-
-Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |  717 +++++++++++++++++++++++++++++++++++++++++++++++++++
- block/elevator-fq.h |  172 ++++++++++++
- 2 files changed, 889 insertions(+), 0 deletions(-)
- create mode 100644 block/elevator-fq.c
- create mode 100644 block/elevator-fq.h
+ block/as-iosched.c       |  208 ++++++++++++++++++++++++++--------------------
+ block/deadline-iosched.c |  117 ++++++++++++++++----------
+ block/elevator.c         |  111 +++++++++++++++++++++----
+ block/noop-iosched.c     |   59 ++++++-------
+ include/linux/elevator.h |    8 ++-
+ 5 files changed, 319 insertions(+), 184 deletions(-)
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-new file mode 100644
-index 0000000..a58efdc
---- /dev/null
-+++ b/block/elevator-fq.c
-@@ -0,0 +1,717 @@
-+/*
-+ * elevator fair queuing Layer. Uses B-WF2Q+ hierarchical scheduler for
-+ * fair queuing.
-+ *
-+ * Based on ideas and code from CFQ:
-+ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-+ *
-+ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-+ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-+ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-+ */
-+
-+#include <linux/blkdev.h>
-+#include "elevator-fq.h"
-+
-+#define IO_SERVICE_TREE_INIT   ((struct io_service_tree)		\
-+				{ RB_ROOT, RB_ROOT, NULL, NULL, 0, 0 })
-+
-+/* Mainly the BFQ scheduling code Follows */
-+
-+/*
-+ * Shift for timestamp calculations.  This actually limits the maximum
-+ * service allowed in one timestamp delta (small shift values increase it),
-+ * the maximum total weight that can be used for the queues in the system
-+ * (big shift values increase it), and the period of virtual time wraparounds.
-+ */
-+#define WFQ_SERVICE_SHIFT	22
-+
-+/**
-+ * bfq_gt - compare two timestamps.
-+ * @a: first ts.
-+ * @b: second ts.
-+ *
-+ * Return @a > @b, dealing with wrapping correctly.
-+ */
-+static inline int bfq_gt(u64 a, u64 b)
-+{
-+	return (s64)(a - b) > 0;
-+}
-+
-+/**
-+ * bfq_delta - map service into the virtual time domain.
-+ * @service: amount of service.
-+ * @weight: scale factor.
-+ */
-+static inline u64 bfq_delta(unsigned long service, unsigned int weight)
-+{
-+	u64 d = (u64)service << WFQ_SERVICE_SHIFT;
-+
-+	do_div(d, weight);
-+	return d;
-+}
-+
-+/**
-+ * bfq_calc_finish - assign the finish time to an entity.
-+ * @entity: the entity to act upon.
-+ * @service: the service to be charged to the entity.
-+ */
-+static inline void bfq_calc_finish(struct io_entity *entity,
-+					unsigned long service)
-+{
-+	BUG_ON(entity->weight == 0);
-+
-+	entity->finish = entity->start + bfq_delta(service, entity->weight);
-+}
-+
-+static inline struct io_queue *io_entity_to_ioq(struct io_entity *entity)
-+{
-+	struct io_queue *ioq = NULL;
-+
-+	BUG_ON(entity == NULL);
-+	if (entity->my_sched_data == NULL)
-+		ioq = container_of(entity, struct io_queue, entity);
-+	return ioq;
-+}
-+
-+/**
-+ * io_entity_of - get an entity from a node.
-+ * @node: the node field of the entity.
-+ *
-+ * Convert a node pointer to the relative entity.  This is used only
-+ * to simplify the logic of some functions and not as the generic
-+ * conversion mechanism because, e.g., in the tree walking functions,
-+ * the check for a %NULL value would be redundant.
-+ */
-+static inline struct io_entity *io_entity_of(struct rb_node *node)
-+{
-+	struct io_entity *entity = NULL;
-+
-+	if (node != NULL)
-+		entity = rb_entry(node, struct io_entity, rb_node);
-+
-+	return entity;
-+}
-+
-+/**
-+ * bfq_remove - remove an entity from a tree.
-+ * @root: the tree root.
-+ * @entity: the entity to remove.
-+ */
-+static inline void bfq_remove(struct rb_root *root, struct io_entity *entity)
-+{
-+	BUG_ON(entity->tree != root);
-+
-+	entity->tree = NULL;
-+	rb_erase(&entity->rb_node, root);
-+}
-+
-+/**
-+ * bfq_idle_remove - remove an entity from the idle tree.
-+ * @st: the service tree of the owning @entity.
-+ * @entity: the entity being removed.
-+ */
-+static void bfq_idle_remove(struct io_service_tree *st,
-+				struct io_entity *entity)
-+{
-+	struct rb_node *next;
-+
-+	BUG_ON(entity->tree != &st->idle);
-+
-+	if (entity == st->first_idle) {
-+		next = rb_next(&entity->rb_node);
-+		st->first_idle = io_entity_of(next);
-+	}
-+
-+	if (entity == st->last_idle) {
-+		next = rb_prev(&entity->rb_node);
-+		st->last_idle = io_entity_of(next);
-+	}
-+
-+	bfq_remove(&st->idle, entity);
-+}
-+
-+/**
-+ * bfq_insert - generic tree insertion.
-+ * @root: tree root.
-+ * @entity: entity to insert.
-+ *
-+ * This is used for the idle and the active tree, since they are both
-+ * ordered by finish time.
-+ */
-+static void bfq_insert(struct rb_root *root, struct io_entity *entity)
-+{
-+	struct io_entity *entry;
-+	struct rb_node **node = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+
-+	BUG_ON(entity->tree != NULL);
-+
-+	while (*node != NULL) {
-+		parent = *node;
-+		entry = rb_entry(parent, struct io_entity, rb_node);
-+
-+		if (bfq_gt(entry->finish, entity->finish))
-+			node = &parent->rb_left;
-+		else
-+			node = &parent->rb_right;
-+	}
-+
-+	rb_link_node(&entity->rb_node, parent, node);
-+	rb_insert_color(&entity->rb_node, root);
-+
-+	entity->tree = root;
-+}
-+
-+/**
-+ * bfq_update_min - update the min_start field of a entity.
-+ * @entity: the entity to update.
-+ * @node: one of its children.
-+ *
-+ * This function is called when @entity may store an invalid value for
-+ * min_start due to updates to the active tree.  The function  assumes
-+ * that the subtree rooted at @node (which may be its left or its right
-+ * child) has a valid min_start value.
-+ */
-+static inline void bfq_update_min(struct io_entity *entity,
-+					struct rb_node *node)
-+{
-+	struct io_entity *child;
-+
-+	if (node != NULL) {
-+		child = rb_entry(node, struct io_entity, rb_node);
-+		if (bfq_gt(entity->min_start, child->min_start))
-+			entity->min_start = child->min_start;
-+	}
-+}
-+
-+/**
-+ * bfq_update_active_node - recalculate min_start.
-+ * @node: the node to update.
-+ *
-+ * @node may have changed position or one of its children may have moved,
-+ * this function updates its min_start value.  The left and right subtrees
-+ * are assumed to hold a correct min_start value.
-+ */
-+static inline void bfq_update_active_node(struct rb_node *node)
-+{
-+	struct io_entity *entity = rb_entry(node, struct io_entity, rb_node);
-+
-+	entity->min_start = entity->start;
-+	bfq_update_min(entity, node->rb_right);
-+	bfq_update_min(entity, node->rb_left);
-+}
-+
-+/**
-+ * bfq_update_active_tree - update min_start for the whole active tree.
-+ * @node: the starting node.
-+ *
-+ * @node must be the deepest modified node after an update.  This function
-+ * updates its min_start using the values held by its children, assuming
-+ * that they did not change, and then updates all the nodes that may have
-+ * changed in the path to the root.  The only nodes that may have changed
-+ * are the ones in the path or their siblings.
-+ */
-+static void bfq_update_active_tree(struct rb_node *node)
-+{
-+	struct rb_node *parent;
-+
-+up:
-+	bfq_update_active_node(node);
-+
-+	parent = rb_parent(node);
-+	if (parent == NULL)
-+		return;
-+
-+	if (node == parent->rb_left && parent->rb_right != NULL)
-+		bfq_update_active_node(parent->rb_right);
-+	else if (parent->rb_left != NULL)
-+		bfq_update_active_node(parent->rb_left);
-+
-+	node = parent;
-+	goto up;
-+}
-+
-+/**
-+ * bfq_active_insert - insert an entity in the active tree of its group/device.
-+ * @st: the service tree of the entity.
-+ * @entity: the entity being inserted.
-+ *
-+ * The active tree is ordered by finish time, but an extra key is kept
-+ * per each node, containing the minimum value for the start times of
-+ * its children (and the node itself), so it's possible to search for
-+ * the eligible node with the lowest finish time in logarithmic time.
-+ */
-+static void bfq_active_insert(struct io_service_tree *st,
-+					struct io_entity *entity)
-+{
-+	struct rb_node *node = &entity->rb_node;
-+
-+	bfq_insert(&st->active, entity);
-+
-+	if (node->rb_left != NULL)
-+		node = node->rb_left;
-+	else if (node->rb_right != NULL)
-+		node = node->rb_right;
-+
-+	bfq_update_active_tree(node);
-+}
-+
-+static void bfq_get_entity(struct io_entity *entity)
-+{
-+	struct io_queue *ioq = io_entity_to_ioq(entity);
-+
-+	if (ioq)
-+		elv_get_ioq(ioq);
-+}
-+
-+static void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
-+{
-+	entity->ioprio = entity->new_ioprio;
-+	entity->ioprio_class = entity->new_ioprio_class;
-+	entity->sched_data = &iog->sched_data;
-+}
-+
-+/**
-+ * bfq_find_deepest - find the deepest node that an extraction can modify.
-+ * @node: the node being removed.
-+ *
-+ * Do the first step of an extraction in an rb tree, looking for the
-+ * node that will replace @node, and returning the deepest node that
-+ * the following modifications to the tree can touch.  If @node is the
-+ * last node in the tree return %NULL.
-+ */
-+static struct rb_node *bfq_find_deepest(struct rb_node *node)
-+{
-+	struct rb_node *deepest;
-+
-+	if (node->rb_right == NULL && node->rb_left == NULL)
-+		deepest = rb_parent(node);
-+	else if (node->rb_right == NULL)
-+		deepest = node->rb_left;
-+	else if (node->rb_left == NULL)
-+		deepest = node->rb_right;
-+	else {
-+		deepest = rb_next(node);
-+		if (deepest->rb_right != NULL)
-+			deepest = deepest->rb_right;
-+		else if (rb_parent(deepest) != node)
-+			deepest = rb_parent(deepest);
-+	}
-+
-+	return deepest;
-+}
-+
-+/**
-+ * bfq_active_remove - remove an entity from the active tree.
-+ * @st: the service_tree containing the tree.
-+ * @entity: the entity being removed.
-+ */
-+static void bfq_active_remove(struct io_service_tree *st,
-+				struct io_entity *entity)
-+{
-+	struct rb_node *node;
-+
-+	node = bfq_find_deepest(&entity->rb_node);
-+	bfq_remove(&st->active, entity);
-+
-+	if (node != NULL)
-+		bfq_update_active_tree(node);
-+}
-+
-+/**
-+ * bfq_idle_insert - insert an entity into the idle tree.
-+ * @st: the service tree containing the tree.
-+ * @entity: the entity to insert.
-+ */
-+static void bfq_idle_insert(struct io_service_tree *st,
-+					struct io_entity *entity)
-+{
-+	struct io_entity *first_idle = st->first_idle;
-+	struct io_entity *last_idle = st->last_idle;
-+
-+	if (first_idle == NULL || bfq_gt(first_idle->finish, entity->finish))
-+		st->first_idle = entity;
-+	if (last_idle == NULL || bfq_gt(entity->finish, last_idle->finish))
-+		st->last_idle = entity;
-+
-+	bfq_insert(&st->idle, entity);
-+}
-+
-+/**
-+ * bfq_forget_entity - remove an entity from the wfq trees.
-+ * @st: the service tree.
-+ * @entity: the entity being removed.
-+ *
-+ * Update the device status and forget everything about @entity, putting
-+ * the device reference to it, if it is a queue.  Entities belonging to
-+ * groups are not refcounted.
-+ */
-+static void bfq_forget_entity(struct io_service_tree *st,
-+				struct io_entity *entity)
-+{
-+	struct io_queue *ioq = NULL;
-+
-+	BUG_ON(!entity->on_st);
-+	entity->on_st = 0;
-+	st->wsum -= entity->weight;
-+	ioq = io_entity_to_ioq(entity);
-+	if (!ioq)
-+		return;
-+	elv_put_ioq(ioq);
-+}
-+
-+/**
-+ * bfq_put_idle_entity - release the idle tree ref of an entity.
-+ * @st: service tree for the entity.
-+ * @entity: the entity being released.
-+ */
-+static void bfq_put_idle_entity(struct io_service_tree *st,
-+				struct io_entity *entity)
-+{
-+	bfq_idle_remove(st, entity);
-+	bfq_forget_entity(st, entity);
-+}
-+
-+/**
-+ * bfq_forget_idle - update the idle tree if necessary.
-+ * @st: the service tree to act upon.
-+ *
-+ * To preserve the global O(log N) complexity we only remove one entry here;
-+ * as the idle tree will not grow indefinitely this can be done safely.
-+ */
-+static void bfq_forget_idle(struct io_service_tree *st)
-+{
-+	struct io_entity *first_idle = st->first_idle;
-+	struct io_entity *last_idle = st->last_idle;
-+
-+	if (RB_EMPTY_ROOT(&st->active) && last_idle != NULL &&
-+	    !bfq_gt(last_idle->finish, st->vtime)) {
-+		/*
-+		 * Active tree is empty. Pull back vtime to finish time of
-+		 * last idle entity on idle tree.
-+		 * Rational seems to be that it reduces the possibility of
-+		 * vtime wraparound (bfq_gt(V-F) < 0).
-+		 */
-+		st->vtime = last_idle->finish;
-+	}
-+
-+	if (first_idle != NULL && !bfq_gt(first_idle->finish, st->vtime))
-+		bfq_put_idle_entity(st, first_idle);
-+}
-+
-+
-+static struct io_service_tree *
-+__bfq_entity_update_prio(struct io_service_tree *old_st,
-+				struct io_entity *entity)
-+{
-+	struct io_service_tree *new_st = old_st;
-+	struct io_queue *ioq = io_entity_to_ioq(entity);
-+
-+	if (entity->ioprio_changed) {
-+		old_st->wsum -= entity->weight;
-+		entity->ioprio = entity->new_ioprio;
-+		entity->ioprio_class = entity->new_ioprio_class;
-+		entity->weight = entity->new_weight;
-+		entity->ioprio_changed = 0;
-+
-+		/*
-+		 * Also update the scaled budget for ioq. Group will get the
-+		 * updated budget once ioq is selected to run next.
-+		 */
-+		if (ioq) {
-+			struct elv_fq_data *efqd = ioq->efqd;
-+			/*
-+			 * elv_prio_to_slice() is defined in later patches
-+			 * where a slice length is calculated from the
-+			 * ioprio of the queue.
-+			 */
-+			entity->budget = elv_prio_to_slice(efqd, ioq);
-+		}
-+
-+		/*
-+		 * NOTE: here we may be changing the weight too early,
-+		 * this will cause unfairness.  The correct approach
-+		 * would have required additional complexity to defer
-+		 * weight changes to the proper time instants (i.e.,
-+		 * when entity->finish <= old_st->vtime).
-+		 */
-+		new_st = io_entity_service_tree(entity);
-+		new_st->wsum += entity->weight;
-+
-+		if (new_st != old_st)
-+			entity->start = new_st->vtime;
-+	}
-+
-+	return new_st;
-+}
-+
-+/**
-+ * bfq_update_vtime - update vtime if necessary.
-+ * @st: the service tree to act upon.
-+ *
-+ * If necessary update the service tree vtime to have at least one
-+ * eligible entity, skipping to its start time.  Assumes that the
-+ * active tree of the device is not empty.
-+ *
-+ * NOTE: this hierarchical implementation updates vtimes quite often,
-+ * we may end up with reactivated tasks getting timestamps after a
-+ * vtime skip done because we needed a ->first_active entity on some
-+ * intermediate node.
-+ */
-+static void bfq_update_vtime(struct io_service_tree *st)
-+{
-+	struct io_entity *entry;
-+	struct rb_node *node = st->active.rb_node;
-+
-+	entry = rb_entry(node, struct io_entity, rb_node);
-+	if (bfq_gt(entry->min_start, st->vtime)) {
-+		st->vtime = entry->min_start;
-+		bfq_forget_idle(st);
-+	}
-+}
-+
-+/**
-+ * bfq_first_active - find the eligible entity with the smallest finish time
-+ * @st: the service tree to select from.
-+ *
-+ * This function searches the first schedulable entity, starting from the
-+ * root of the tree and going on the left every time on this side there is
-+ * a subtree with at least one eligible (start <= vtime) entity.  The path
-+ * on the right is followed only if a) the left subtree contains no eligible
-+ * entities and b) no eligible entity has been found yet.
-+ */
-+static struct io_entity *bfq_first_active_entity(struct io_service_tree *st)
-+{
-+	struct io_entity *entry, *first = NULL;
-+	struct rb_node *node = st->active.rb_node;
-+
-+	while (node != NULL) {
-+		entry = rb_entry(node, struct io_entity, rb_node);
-+left:
-+		if (!bfq_gt(entry->start, st->vtime))
-+			first = entry;
-+
-+		BUG_ON(bfq_gt(entry->min_start, st->vtime));
-+
-+		if (node->rb_left != NULL) {
-+			entry = rb_entry(node->rb_left,
-+					 struct io_entity, rb_node);
-+			if (!bfq_gt(entry->min_start, st->vtime)) {
-+				node = node->rb_left;
-+				goto left;
-+			}
-+		}
-+		if (first != NULL)
-+			break;
-+		node = node->rb_right;
-+	}
-+
-+	BUG_ON(first == NULL && !RB_EMPTY_ROOT(&st->active));
-+	return first;
-+}
-+
-+/**
-+ * __bfq_lookup_next_entity - return the first eligible entity in @st.
-+ * @st: the service tree.
-+ *
-+ * Update the virtual time in @st and return the first eligible entity
-+ * it contains.
-+ */
-+static struct io_entity *__bfq_lookup_next_entity(struct io_service_tree *st)
-+{
-+	struct io_entity *entity;
-+
-+	if (RB_EMPTY_ROOT(&st->active))
-+		return NULL;
-+
-+	bfq_update_vtime(st);
-+	entity = bfq_first_active_entity(st);
-+	BUG_ON(bfq_gt(entity->start, st->vtime));
-+
-+	return entity;
-+}
-+
-+/**
-+ * bfq_lookup_next_entity - return the first eligible entity in @sd.
-+ * @sd: the sched_data.
-+ * @extract: if true the returned entity will be also extracted from @sd.
-+ *
-+ * NOTE: since we cache the next_active entity at each level of the
-+ * hierarchy, the complexity of the lookup can be decreased with
-+ * absolutely no effort just returning the cached next_active value;
-+ * we prefer to do full lookups to test the consistency of * the data
-+ * structures.
-+ */
-+static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
-+						 int extract)
-+{
-+	struct io_service_tree *st = sd->service_tree;
-+	struct io_entity *entity;
-+	int i;
-+
-+	/*
-+	 * We should not call lookup when an entity is active, as doing lookup
-+	 * can result in an erroneous vtime jump.
-+	 */
-+	BUG_ON(sd->active_entity != NULL);
-+
-+	for (i = 0; i < IO_IOPRIO_CLASSES; i++, st++) {
-+		entity = __bfq_lookup_next_entity(st);
-+		if (entity != NULL) {
-+			if (extract) {
-+				bfq_active_remove(st, entity);
-+				sd->active_entity = entity;
-+			}
-+			break;
-+		}
-+	}
-+
-+	return entity;
-+}
-+
-+/**
-+ * __bfq_activate_entity - activate an entity.
-+ * @entity: the entity being activated.
-+ *
-+ * Called whenever an entity is activated, i.e., it is not active and one
-+ * of its children receives a new request, or has to be reactivated due to
-+ * budget exhaustion.  It uses the current budget of the entity (and the
-+ * service received if @entity is active) of the queue to calculate its
-+ * timestamps.
-+ */
-+static void __bfq_activate_entity(struct io_entity *entity)
-+{
-+	struct io_sched_data *sd = entity->sched_data;
-+	struct io_service_tree *st = io_entity_service_tree(entity);
-+
-+	if (entity == sd->active_entity) {
-+		BUG_ON(entity->tree != NULL);
-+		/*
-+		 * If we are requeueing the current entity we have
-+		 * to take care of not charging to it service it has
-+		 * not received.
-+		 */
-+		bfq_calc_finish(entity, entity->service);
-+		entity->start = entity->finish;
-+		sd->active_entity = NULL;
-+	} else if (entity->tree == &st->active) {
-+		/*
-+		 * Requeueing an entity due to a change of some
-+		 * next_active entity below it.  We reuse the old
-+		 * start time.
-+		 */
-+		bfq_active_remove(st, entity);
-+	} else if (entity->tree == &st->idle) {
-+		/*
-+		 * Must be on the idle tree, bfq_idle_remove() will
-+		 * check for that.
-+		 */
-+		bfq_idle_remove(st, entity);
-+		entity->start = bfq_gt(st->vtime, entity->finish) ?
-+				       st->vtime : entity->finish;
-+	} else {
-+		/*
-+		 * The finish time of the entity may be invalid, and
-+		 * it is in the past for sure, otherwise the queue
-+		 * would have been on the idle tree.
-+		 */
-+		entity->start = st->vtime;
-+		st->wsum += entity->weight;
-+		bfq_get_entity(entity);
-+
-+		BUG_ON(entity->on_st);
-+		entity->on_st = 1;
-+	}
-+
-+	st = __bfq_entity_update_prio(st, entity);
-+	bfq_calc_finish(entity, entity->budget);
-+	bfq_active_insert(st, entity);
-+}
-+
-+/**
-+ * bfq_activate_entity - activate an entity.
-+ * @entity: the entity to activate.
-+ */
-+static void bfq_activate_entity(struct io_entity *entity)
-+{
-+	__bfq_activate_entity(entity);
-+}
-+
-+/**
-+ * __bfq_deactivate_entity - deactivate an entity from its service tree.
-+ * @entity: the entity to deactivate.
-+ * @requeue: if false, the entity will not be put into the idle tree.
-+ *
-+ * Deactivate an entity, independently from its previous state.  If the
-+ * entity was not on a service tree just return, otherwise if it is on
-+ * any scheduler tree, extract it from that tree, and if necessary
-+ * and if the caller did not specify @requeue, put it on the idle tree.
-+ *
-+ */
-+static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
-+{
-+	struct io_sched_data *sd = entity->sched_data;
-+	struct io_service_tree *st = io_entity_service_tree(entity);
-+	int was_active = entity == sd->active_entity;
-+	int ret = 0;
-+
-+	if (!entity->on_st)
+diff --git a/block/as-iosched.c b/block/as-iosched.c
+index 7a12cf6..cafc734 100644
+--- a/block/as-iosched.c
++++ b/block/as-iosched.c
+@@ -76,13 +76,7 @@ enum anticipation_status {
+ 				 * or timed out */
+ };
+ 
+-struct as_data {
+-	/*
+-	 * run time data
+-	 */
+-
+-	struct request_queue *q;	/* the "owner" queue */
+-
++struct as_queue {
+ 	/*
+ 	 * requests (as_rq s) are present on both sort_list and fifo_list
+ 	 */
+@@ -90,6 +84,14 @@ struct as_data {
+ 	struct list_head fifo_list[2];
+ 
+ 	struct request *next_rq[2];	/* next in sort order */
++	unsigned long last_check_fifo[2];
++	int write_batch_count;		/* max # of reqs in a write batch */
++	int current_write_count;	/* how many requests left this batch */
++	int write_batch_idled;		/* has the write batch gone idle? */
++};
++
++struct as_data {
++	struct request_queue *q;	/* the "owner" queue */
+ 	sector_t last_sector[2];	/* last SYNC & ASYNC sectors */
+ 
+ 	unsigned long exit_prob;	/* probability a task will exit while
+@@ -103,21 +105,17 @@ struct as_data {
+ 	sector_t new_seek_mean;
+ 
+ 	unsigned long current_batch_expires;
+-	unsigned long last_check_fifo[2];
+ 	int changed_batch;		/* 1: waiting for old batch to end */
+ 	int new_batch;			/* 1: waiting on first read complete */
+-	int batch_data_dir;		/* current batch SYNC / ASYNC */
+-	int write_batch_count;		/* max # of reqs in a write batch */
+-	int current_write_count;	/* how many requests left this batch */
+-	int write_batch_idled;		/* has the write batch gone idle? */
+ 
+ 	enum anticipation_status antic_status;
+ 	unsigned long antic_start;	/* jiffies: when it started */
+ 	struct timer_list antic_timer;	/* anticipatory scheduling timer */
+-	struct work_struct antic_work;	/* Deferred unplugging */
++	struct work_struct antic_work;  /* Deferred unplugging */
+ 	struct io_context *io_context;	/* Identify the expected process */
+ 	int ioc_finished; /* IO associated with io_context is finished */
+ 	int nr_dispatched;
++	int batch_data_dir;		/* current batch SYNC / ASYNC */
+ 
+ 	/*
+ 	 * settings that change how the i/o scheduler behaves
+@@ -258,13 +256,14 @@ static void as_put_io_context(struct request *rq)
+ /*
+  * rb tree support functions
+  */
+-#define RQ_RB_ROOT(ad, rq)	(&(ad)->sort_list[rq_is_sync((rq))])
++#define RQ_RB_ROOT(asq, rq)	(&(asq)->sort_list[rq_is_sync((rq))])
+ 
+ static void as_add_rq_rb(struct as_data *ad, struct request *rq)
+ {
+ 	struct request *alias;
++	struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
+ 
+-	while ((unlikely(alias = elv_rb_add(RQ_RB_ROOT(ad, rq), rq)))) {
++	while ((unlikely(alias = elv_rb_add(RQ_RB_ROOT(asq, rq), rq)))) {
+ 		as_move_to_dispatch(ad, alias);
+ 		as_antic_stop(ad);
+ 	}
+@@ -272,7 +271,9 @@ static void as_add_rq_rb(struct as_data *ad, struct request *rq)
+ 
+ static inline void as_del_rq_rb(struct as_data *ad, struct request *rq)
+ {
+-	elv_rb_del(RQ_RB_ROOT(ad, rq), rq);
++	struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
++
++	elv_rb_del(RQ_RB_ROOT(asq, rq), rq);
+ }
+ 
+ /*
+@@ -366,7 +367,7 @@ as_choose_req(struct as_data *ad, struct request *rq1, struct request *rq2)
+  * what request to process next. Anticipation works on top of this.
+  */
+ static struct request *
+-as_find_next_rq(struct as_data *ad, struct request *last)
++as_find_next_rq(struct as_data *ad, struct as_queue *asq, struct request *last)
+ {
+ 	struct rb_node *rbnext = rb_next(&last->rb_node);
+ 	struct rb_node *rbprev = rb_prev(&last->rb_node);
+@@ -382,7 +383,7 @@ as_find_next_rq(struct as_data *ad, struct request *last)
+ 	else {
+ 		const int data_dir = rq_is_sync(last);
+ 
+-		rbnext = rb_first(&ad->sort_list[data_dir]);
++		rbnext = rb_first(&asq->sort_list[data_dir]);
+ 		if (rbnext && rbnext != &last->rb_node)
+ 			next = rb_entry_rq(rbnext);
+ 	}
+@@ -789,9 +790,10 @@ static int as_can_anticipate(struct as_data *ad, struct request *rq)
+ static void as_update_rq(struct as_data *ad, struct request *rq)
+ {
+ 	const int data_dir = rq_is_sync(rq);
++	struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
+ 
+ 	/* keep the next_rq cache up to date */
+-	ad->next_rq[data_dir] = as_choose_req(ad, rq, ad->next_rq[data_dir]);
++	asq->next_rq[data_dir] = as_choose_req(ad, rq, asq->next_rq[data_dir]);
+ 
+ 	/*
+ 	 * have we been anticipating this request?
+@@ -812,25 +814,26 @@ static void update_write_batch(struct as_data *ad)
+ {
+ 	unsigned long batch = ad->batch_expire[BLK_RW_ASYNC];
+ 	long write_time;
++	struct as_queue *asq = elv_get_sched_queue(ad->q, NULL);
+ 
+ 	write_time = (jiffies - ad->current_batch_expires) + batch;
+ 	if (write_time < 0)
+ 		write_time = 0;
+ 
+-	if (write_time > batch && !ad->write_batch_idled) {
++	if (write_time > batch && !asq->write_batch_idled) {
+ 		if (write_time > batch * 3)
+-			ad->write_batch_count /= 2;
++			asq->write_batch_count /= 2;
+ 		else
+-			ad->write_batch_count--;
+-	} else if (write_time < batch && ad->current_write_count == 0) {
++			asq->write_batch_count--;
++	} else if (write_time < batch && asq->current_write_count == 0) {
+ 		if (batch > write_time * 3)
+-			ad->write_batch_count *= 2;
++			asq->write_batch_count *= 2;
+ 		else
+-			ad->write_batch_count++;
++			asq->write_batch_count++;
+ 	}
+ 
+-	if (ad->write_batch_count < 1)
+-		ad->write_batch_count = 1;
++	if (asq->write_batch_count < 1)
++		asq->write_batch_count = 1;
+ }
+ 
+ /*
+@@ -901,6 +904,7 @@ static void as_remove_queued_request(struct request_queue *q,
+ 	const int data_dir = rq_is_sync(rq);
+ 	struct as_data *ad = q->elevator->elevator_data;
+ 	struct io_context *ioc;
++	struct as_queue *asq = elv_get_sched_queue(q, rq);
+ 
+ 	WARN_ON(RQ_STATE(rq) != AS_RQ_QUEUED);
+ 
+@@ -914,8 +918,8 @@ static void as_remove_queued_request(struct request_queue *q,
+ 	 * Update the "next_rq" cache if we are about to remove its
+ 	 * entry
+ 	 */
+-	if (ad->next_rq[data_dir] == rq)
+-		ad->next_rq[data_dir] = as_find_next_rq(ad, rq);
++	if (asq->next_rq[data_dir] == rq)
++		asq->next_rq[data_dir] = as_find_next_rq(ad, asq, rq);
+ 
+ 	rq_fifo_clear(rq);
+ 	as_del_rq_rb(ad, rq);
+@@ -929,23 +933,23 @@ static void as_remove_queued_request(struct request_queue *q,
+  *
+  * See as_antic_expired comment.
+  */
+-static int as_fifo_expired(struct as_data *ad, int adir)
++static int as_fifo_expired(struct as_data *ad, struct as_queue *asq, int adir)
+ {
+ 	struct request *rq;
+ 	long delta_jif;
+ 
+-	delta_jif = jiffies - ad->last_check_fifo[adir];
++	delta_jif = jiffies - asq->last_check_fifo[adir];
+ 	if (unlikely(delta_jif < 0))
+ 		delta_jif = -delta_jif;
+ 	if (delta_jif < ad->fifo_expire[adir])
+ 		return 0;
+ 
+-	ad->last_check_fifo[adir] = jiffies;
++	asq->last_check_fifo[adir] = jiffies;
+ 
+-	if (list_empty(&ad->fifo_list[adir]))
++	if (list_empty(&asq->fifo_list[adir]))
+ 		return 0;
+ 
+-	rq = rq_entry_fifo(ad->fifo_list[adir].next);
++	rq = rq_entry_fifo(asq->fifo_list[adir].next);
+ 
+ 	return time_after(jiffies, rq_fifo_time(rq));
+ }
+@@ -954,7 +958,7 @@ static int as_fifo_expired(struct as_data *ad, int adir)
+  * as_batch_expired returns true if the current batch has expired. A batch
+  * is a set of reads or a set of writes.
+  */
+-static inline int as_batch_expired(struct as_data *ad)
++static inline int as_batch_expired(struct as_data *ad, struct as_queue *asq)
+ {
+ 	if (ad->changed_batch || ad->new_batch)
+ 		return 0;
+@@ -964,7 +968,7 @@ static inline int as_batch_expired(struct as_data *ad)
+ 		return time_after(jiffies, ad->current_batch_expires);
+ 
+ 	return time_after(jiffies, ad->current_batch_expires)
+-		|| ad->current_write_count == 0;
++		|| asq->current_write_count == 0;
+ }
+ 
+ /*
+@@ -973,6 +977,7 @@ static inline int as_batch_expired(struct as_data *ad)
+ static void as_move_to_dispatch(struct as_data *ad, struct request *rq)
+ {
+ 	const int data_dir = rq_is_sync(rq);
++	struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
+ 
+ 	BUG_ON(RB_EMPTY_NODE(&rq->rb_node));
+ 
+@@ -995,12 +1000,12 @@ static void as_move_to_dispatch(struct as_data *ad, struct request *rq)
+ 			ad->io_context = NULL;
+ 		}
+ 
+-		if (ad->current_write_count != 0)
+-			ad->current_write_count--;
++		if (asq->current_write_count != 0)
++			asq->current_write_count--;
+ 	}
+ 	ad->ioc_finished = 0;
+ 
+-	ad->next_rq[data_dir] = as_find_next_rq(ad, rq);
++	asq->next_rq[data_dir] = as_find_next_rq(ad, asq, rq);
+ 
+ 	/*
+ 	 * take it off the sort and fifo list, add to dispatch queue
+@@ -1024,9 +1029,16 @@ static void as_move_to_dispatch(struct as_data *ad, struct request *rq)
+ static int as_dispatch_request(struct request_queue *q, int force)
+ {
+ 	struct as_data *ad = q->elevator->elevator_data;
+-	const int reads = !list_empty(&ad->fifo_list[BLK_RW_SYNC]);
+-	const int writes = !list_empty(&ad->fifo_list[BLK_RW_ASYNC]);
+ 	struct request *rq;
++	struct as_queue *asq = elv_select_sched_queue(q, force);
++	int reads, writes;
++
++	if (!asq)
 +		return 0;
 +
-+	BUG_ON(was_active && entity->tree != NULL);
++	reads = !list_empty(&asq->fifo_list[BLK_RW_SYNC]);
++	writes = !list_empty(&asq->fifo_list[BLK_RW_ASYNC]);
 +
-+	if (was_active) {
-+		bfq_calc_finish(entity, entity->service);
-+		sd->active_entity = NULL;
-+	} else if (entity->tree == &st->active)
-+		bfq_active_remove(st, entity);
-+	else if (entity->tree == &st->idle)
-+		bfq_idle_remove(st, entity);
-+	else if (entity->tree != NULL)
-+		BUG();
+ 
+ 	if (unlikely(force)) {
+ 		/*
+@@ -1042,25 +1054,25 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 		ad->changed_batch = 0;
+ 		ad->new_batch = 0;
+ 
+-		while (ad->next_rq[BLK_RW_SYNC]) {
+-			as_move_to_dispatch(ad, ad->next_rq[BLK_RW_SYNC]);
++		while (asq->next_rq[BLK_RW_SYNC]) {
++			as_move_to_dispatch(ad, asq->next_rq[BLK_RW_SYNC]);
+ 			dispatched++;
+ 		}
+-		ad->last_check_fifo[BLK_RW_SYNC] = jiffies;
++		asq->last_check_fifo[BLK_RW_SYNC] = jiffies;
+ 
+-		while (ad->next_rq[BLK_RW_ASYNC]) {
+-			as_move_to_dispatch(ad, ad->next_rq[BLK_RW_ASYNC]);
++		while (asq->next_rq[BLK_RW_ASYNC]) {
++			as_move_to_dispatch(ad, asq->next_rq[BLK_RW_ASYNC]);
+ 			dispatched++;
+ 		}
+-		ad->last_check_fifo[BLK_RW_ASYNC] = jiffies;
++		asq->last_check_fifo[BLK_RW_ASYNC] = jiffies;
+ 
+ 		return dispatched;
+ 	}
+ 
+ 	/* Signal that the write batch was uncontended, so we can't time it */
+ 	if (ad->batch_data_dir == BLK_RW_ASYNC && !reads) {
+-		if (ad->current_write_count == 0 || !writes)
+-			ad->write_batch_idled = 1;
++		if (asq->current_write_count == 0 || !writes)
++			asq->write_batch_idled = 1;
+ 	}
+ 
+ 	if (!(reads || writes)
+@@ -1069,14 +1081,14 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 		|| ad->changed_batch)
+ 		return 0;
+ 
+-	if (!(reads && writes && as_batch_expired(ad))) {
++	if (!(reads && writes && as_batch_expired(ad, asq))) {
+ 		/*
+ 		 * batch is still running or no reads or no writes
+ 		 */
+-		rq = ad->next_rq[ad->batch_data_dir];
++		rq = asq->next_rq[ad->batch_data_dir];
+ 
+ 		if (ad->batch_data_dir == BLK_RW_SYNC && ad->antic_expire) {
+-			if (as_fifo_expired(ad, BLK_RW_SYNC))
++			if (as_fifo_expired(ad, asq, BLK_RW_SYNC))
+ 				goto fifo_expired;
+ 
+ 			if (as_can_anticipate(ad, rq)) {
+@@ -1100,7 +1112,7 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 	 */
+ 
+ 	if (reads) {
+-		BUG_ON(RB_EMPTY_ROOT(&ad->sort_list[BLK_RW_SYNC]));
++		BUG_ON(RB_EMPTY_ROOT(&asq->sort_list[BLK_RW_SYNC]));
+ 
+ 		if (writes && ad->batch_data_dir == BLK_RW_SYNC)
+ 			/*
+@@ -1113,8 +1125,8 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 			ad->changed_batch = 1;
+ 		}
+ 		ad->batch_data_dir = BLK_RW_SYNC;
+-		rq = rq_entry_fifo(ad->fifo_list[BLK_RW_SYNC].next);
+-		ad->last_check_fifo[ad->batch_data_dir] = jiffies;
++		rq = rq_entry_fifo(asq->fifo_list[BLK_RW_SYNC].next);
++		asq->last_check_fifo[ad->batch_data_dir] = jiffies;
+ 		goto dispatch_request;
+ 	}
+ 
+@@ -1124,7 +1136,7 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 
+ 	if (writes) {
+ dispatch_writes:
+-		BUG_ON(RB_EMPTY_ROOT(&ad->sort_list[BLK_RW_ASYNC]));
++		BUG_ON(RB_EMPTY_ROOT(&asq->sort_list[BLK_RW_ASYNC]));
+ 
+ 		if (ad->batch_data_dir == BLK_RW_SYNC) {
+ 			ad->changed_batch = 1;
+@@ -1137,10 +1149,10 @@ dispatch_writes:
+ 			ad->new_batch = 0;
+ 		}
+ 		ad->batch_data_dir = BLK_RW_ASYNC;
+-		ad->current_write_count = ad->write_batch_count;
+-		ad->write_batch_idled = 0;
+-		rq = rq_entry_fifo(ad->fifo_list[BLK_RW_ASYNC].next);
+-		ad->last_check_fifo[BLK_RW_ASYNC] = jiffies;
++		asq->current_write_count = asq->write_batch_count;
++		asq->write_batch_idled = 0;
++		rq = rq_entry_fifo(asq->fifo_list[BLK_RW_ASYNC].next);
++		asq->last_check_fifo[BLK_RW_ASYNC] = jiffies;
+ 		goto dispatch_request;
+ 	}
+ 
+@@ -1152,9 +1164,9 @@ dispatch_request:
+ 	 * If a request has expired, service it.
+ 	 */
+ 
+-	if (as_fifo_expired(ad, ad->batch_data_dir)) {
++	if (as_fifo_expired(ad, asq, ad->batch_data_dir)) {
+ fifo_expired:
+-		rq = rq_entry_fifo(ad->fifo_list[ad->batch_data_dir].next);
++		rq = rq_entry_fifo(asq->fifo_list[ad->batch_data_dir].next);
+ 	}
+ 
+ 	if (ad->changed_batch) {
+@@ -1187,6 +1199,7 @@ static void as_add_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct as_data *ad = q->elevator->elevator_data;
+ 	int data_dir;
++	struct as_queue *asq = elv_get_sched_queue(q, rq);
+ 
+ 	RQ_SET_STATE(rq, AS_RQ_NEW);
+ 
+@@ -1205,7 +1218,7 @@ static void as_add_request(struct request_queue *q, struct request *rq)
+ 	 * set expire time and add to fifo list
+ 	 */
+ 	rq_set_fifo_time(rq, jiffies + ad->fifo_expire[data_dir]);
+-	list_add_tail(&rq->queuelist, &ad->fifo_list[data_dir]);
++	list_add_tail(&rq->queuelist, &asq->fifo_list[data_dir]);
+ 
+ 	as_update_rq(ad, rq); /* keep state machine up to date */
+ 	RQ_SET_STATE(rq, AS_RQ_QUEUED);
+@@ -1227,31 +1240,20 @@ static void as_deactivate_request(struct request_queue *q, struct request *rq)
+ 		atomic_inc(&RQ_IOC(rq)->aic->nr_dispatched);
+ }
+ 
+-/*
+- * as_queue_empty tells us if there are requests left in the device. It may
+- * not be the case that a driver can get the next request even if the queue
+- * is not empty - it is used in the block layer to check for plugging and
+- * merging opportunities
+- */
+-static int as_queue_empty(struct request_queue *q)
+-{
+-	struct as_data *ad = q->elevator->elevator_data;
+-
+-	return list_empty(&ad->fifo_list[BLK_RW_ASYNC])
+-		&& list_empty(&ad->fifo_list[BLK_RW_SYNC]);
+-}
+-
+ static int
+ as_merge(struct request_queue *q, struct request **req, struct bio *bio)
+ {
+-	struct as_data *ad = q->elevator->elevator_data;
+ 	sector_t rb_key = bio->bi_sector + bio_sectors(bio);
+ 	struct request *__rq;
++	struct as_queue *asq = elv_get_sched_queue_current(q);
 +
-+	if (!requeue || !bfq_gt(entity->finish, st->vtime))
-+		bfq_forget_entity(st, entity);
++	if (!asq)
++		return ELEVATOR_NO_MERGE;
+ 
+ 	/*
+ 	 * check for front merge
+ 	 */
+-	__rq = elv_rb_find(&ad->sort_list[bio_data_dir(bio)], rb_key);
++	__rq = elv_rb_find(&asq->sort_list[bio_data_dir(bio)], rb_key);
+ 	if (__rq && elv_rq_merge_ok(__rq, bio)) {
+ 		*req = __rq;
+ 		return ELEVATOR_FRONT_MERGE;
+@@ -1334,6 +1336,41 @@ static int as_may_queue(struct request_queue *q, int rw)
+ 	return ret;
+ }
+ 
++/* Called with queue lock held */
++static void *as_alloc_as_queue(struct request_queue *q,
++				struct elevator_queue *eq, gfp_t gfp_mask)
++{
++	struct as_queue *asq;
++	struct as_data *ad = eq->elevator_data;
++
++	asq = kmalloc_node(sizeof(*asq), gfp_mask | __GFP_ZERO, q->node);
++	if (asq == NULL)
++		goto out;
++
++	INIT_LIST_HEAD(&asq->fifo_list[BLK_RW_SYNC]);
++	INIT_LIST_HEAD(&asq->fifo_list[BLK_RW_ASYNC]);
++	asq->sort_list[BLK_RW_SYNC] = RB_ROOT;
++	asq->sort_list[BLK_RW_ASYNC] = RB_ROOT;
++	if (ad)
++		asq->write_batch_count = ad->batch_expire[BLK_RW_ASYNC] / 10;
 +	else
-+		bfq_idle_insert(st, entity);
++		asq->write_batch_count = default_write_batch_expire / 10;
 +
-+	BUG_ON(sd->active_entity == entity);
-+
-+	return ret;
++	if (asq->write_batch_count < 2)
++		asq->write_batch_count = 2;
++out:
++	return asq;
 +}
 +
-+/**
-+ * bfq_deactivate_entity - deactivate an entity.
-+ * @entity: the entity to deactivate.
-+ * @requeue: true if the entity can be put on the idle tree
-+ */
-+static void bfq_deactivate_entity(struct io_entity *entity, int requeue)
++static void as_free_as_queue(struct elevator_queue *e, void *sched_queue)
 +{
-+	__bfq_deactivate_entity(entity, requeue);
++	struct as_queue *asq = sched_queue;
++
++	BUG_ON(!list_empty(&asq->fifo_list[BLK_RW_SYNC]));
++	BUG_ON(!list_empty(&asq->fifo_list[BLK_RW_ASYNC]));
++	kfree(asq);
 +}
 +
-+static void entity_served(struct io_entity *entity, unsigned long served)
+ static void as_exit_queue(struct elevator_queue *e)
+ {
+ 	struct as_data *ad = e->elevator_data;
+@@ -1341,9 +1378,6 @@ static void as_exit_queue(struct elevator_queue *e)
+ 	del_timer_sync(&ad->antic_timer);
+ 	cancel_work_sync(&ad->antic_work);
+ 
+-	BUG_ON(!list_empty(&ad->fifo_list[BLK_RW_SYNC]));
+-	BUG_ON(!list_empty(&ad->fifo_list[BLK_RW_ASYNC]));
+-
+ 	put_io_context(ad->io_context);
+ 	kfree(ad);
+ }
+@@ -1367,10 +1401,6 @@ static void *as_init_queue(struct request_queue *q)
+ 	init_timer(&ad->antic_timer);
+ 	INIT_WORK(&ad->antic_work, as_work_handler);
+ 
+-	INIT_LIST_HEAD(&ad->fifo_list[BLK_RW_SYNC]);
+-	INIT_LIST_HEAD(&ad->fifo_list[BLK_RW_ASYNC]);
+-	ad->sort_list[BLK_RW_SYNC] = RB_ROOT;
+-	ad->sort_list[BLK_RW_ASYNC] = RB_ROOT;
+ 	ad->fifo_expire[BLK_RW_SYNC] = default_read_expire;
+ 	ad->fifo_expire[BLK_RW_ASYNC] = default_write_expire;
+ 	ad->antic_expire = default_antic_expire;
+@@ -1378,9 +1408,6 @@ static void *as_init_queue(struct request_queue *q)
+ 	ad->batch_expire[BLK_RW_ASYNC] = default_write_batch_expire;
+ 
+ 	ad->current_batch_expires = jiffies + ad->batch_expire[BLK_RW_SYNC];
+-	ad->write_batch_count = ad->batch_expire[BLK_RW_ASYNC] / 10;
+-	if (ad->write_batch_count < 2)
+-		ad->write_batch_count = 2;
+ 
+ 	return ad;
+ }
+@@ -1478,7 +1505,6 @@ static struct elevator_type iosched_as = {
+ 		.elevator_add_req_fn =		as_add_request,
+ 		.elevator_activate_req_fn =	as_activate_request,
+ 		.elevator_deactivate_req_fn = 	as_deactivate_request,
+-		.elevator_queue_empty_fn =	as_queue_empty,
+ 		.elevator_completed_req_fn =	as_completed_request,
+ 		.elevator_former_req_fn =	elv_rb_former_request,
+ 		.elevator_latter_req_fn =	elv_rb_latter_request,
+@@ -1486,6 +1512,8 @@ static struct elevator_type iosched_as = {
+ 		.elevator_init_fn =		as_init_queue,
+ 		.elevator_exit_fn =		as_exit_queue,
+ 		.trim =				as_trim,
++		.elevator_alloc_sched_queue_fn = as_alloc_as_queue,
++		.elevator_free_sched_queue_fn = as_free_as_queue,
+ 	},
+ 
+ 	.elevator_attrs = as_attrs,
+diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
+index b547cbc..5bd5257 100644
+--- a/block/deadline-iosched.c
++++ b/block/deadline-iosched.c
+@@ -23,25 +23,23 @@ static const int writes_starved = 2;    /* max times reads can starve a write */
+ static const int fifo_batch = 16;       /* # of sequential requests treated as one
+ 				     by the above parameters. For throughput. */
+ 
+-struct deadline_data {
+-	/*
+-	 * run time data
+-	 */
+-
++struct deadline_queue {
+ 	/*
+ 	 * requests (deadline_rq s) are present on both sort_list and fifo_list
+ 	 */
+-	struct rb_root sort_list[2];	
++	struct rb_root sort_list[2];
+ 	struct list_head fifo_list[2];
+-
+ 	/*
+ 	 * next in sort order. read, write or both are NULL
+ 	 */
+ 	struct request *next_rq[2];
+ 	unsigned int batching;		/* number of sequential requests made */
+-	sector_t last_sector;		/* head position */
+ 	unsigned int starved;		/* times reads have starved writes */
++};
+ 
++struct deadline_data {
++	struct request_queue *q;
++	sector_t last_sector;		/* head position */
+ 	/*
+ 	 * settings that change how the i/o scheduler behaves
+ 	 */
+@@ -56,7 +54,9 @@ static void deadline_move_request(struct deadline_data *, struct request *);
+ static inline struct rb_root *
+ deadline_rb_root(struct deadline_data *dd, struct request *rq)
+ {
+-	return &dd->sort_list[rq_data_dir(rq)];
++	struct deadline_queue *dq = elv_get_sched_queue(dd->q, rq);
++
++	return &dq->sort_list[rq_data_dir(rq)];
+ }
+ 
+ /*
+@@ -87,9 +87,10 @@ static inline void
+ deadline_del_rq_rb(struct deadline_data *dd, struct request *rq)
+ {
+ 	const int data_dir = rq_data_dir(rq);
++	struct deadline_queue *dq = elv_get_sched_queue(dd->q, rq);
+ 
+-	if (dd->next_rq[data_dir] == rq)
+-		dd->next_rq[data_dir] = deadline_latter_request(rq);
++	if (dq->next_rq[data_dir] == rq)
++		dq->next_rq[data_dir] = deadline_latter_request(rq);
+ 
+ 	elv_rb_del(deadline_rb_root(dd, rq), rq);
+ }
+@@ -102,6 +103,7 @@ deadline_add_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct deadline_data *dd = q->elevator->elevator_data;
+ 	const int data_dir = rq_data_dir(rq);
++	struct deadline_queue *dq = elv_get_sched_queue(q, rq);
+ 
+ 	deadline_add_rq_rb(dd, rq);
+ 
+@@ -109,7 +111,7 @@ deadline_add_request(struct request_queue *q, struct request *rq)
+ 	 * set expire time and add to fifo list
+ 	 */
+ 	rq_set_fifo_time(rq, jiffies + dd->fifo_expire[data_dir]);
+-	list_add_tail(&rq->queuelist, &dd->fifo_list[data_dir]);
++	list_add_tail(&rq->queuelist, &dq->fifo_list[data_dir]);
+ }
+ 
+ /*
+@@ -129,6 +131,11 @@ deadline_merge(struct request_queue *q, struct request **req, struct bio *bio)
+ 	struct deadline_data *dd = q->elevator->elevator_data;
+ 	struct request *__rq;
+ 	int ret;
++	struct deadline_queue *dq;
++
++	dq = elv_get_sched_queue_current(q);
++	if (!dq)
++		return ELEVATOR_NO_MERGE;
+ 
+ 	/*
+ 	 * check for front merge
+@@ -136,7 +143,7 @@ deadline_merge(struct request_queue *q, struct request **req, struct bio *bio)
+ 	if (dd->front_merges) {
+ 		sector_t sector = bio->bi_sector + bio_sectors(bio);
+ 
+-		__rq = elv_rb_find(&dd->sort_list[bio_data_dir(bio)], sector);
++		__rq = elv_rb_find(&dq->sort_list[bio_data_dir(bio)], sector);
+ 		if (__rq) {
+ 			BUG_ON(sector != blk_rq_pos(__rq));
+ 
+@@ -207,10 +214,11 @@ static void
+ deadline_move_request(struct deadline_data *dd, struct request *rq)
+ {
+ 	const int data_dir = rq_data_dir(rq);
++	struct deadline_queue *dq = elv_get_sched_queue(dd->q, rq);
+ 
+-	dd->next_rq[READ] = NULL;
+-	dd->next_rq[WRITE] = NULL;
+-	dd->next_rq[data_dir] = deadline_latter_request(rq);
++	dq->next_rq[READ] = NULL;
++	dq->next_rq[WRITE] = NULL;
++	dq->next_rq[data_dir] = deadline_latter_request(rq);
+ 
+ 	dd->last_sector = rq_end_sector(rq);
+ 
+@@ -225,9 +233,9 @@ deadline_move_request(struct deadline_data *dd, struct request *rq)
+  * deadline_check_fifo returns 0 if there are no expired requests on the fifo,
+  * 1 otherwise. Requires !list_empty(&dd->fifo_list[data_dir])
+  */
+-static inline int deadline_check_fifo(struct deadline_data *dd, int ddir)
++static inline int deadline_check_fifo(struct deadline_queue *dq, int ddir)
+ {
+-	struct request *rq = rq_entry_fifo(dd->fifo_list[ddir].next);
++	struct request *rq = rq_entry_fifo(dq->fifo_list[ddir].next);
+ 
+ 	/*
+ 	 * rq is expired!
+@@ -245,20 +253,26 @@ static inline int deadline_check_fifo(struct deadline_data *dd, int ddir)
+ static int deadline_dispatch_requests(struct request_queue *q, int force)
+ {
+ 	struct deadline_data *dd = q->elevator->elevator_data;
+-	const int reads = !list_empty(&dd->fifo_list[READ]);
+-	const int writes = !list_empty(&dd->fifo_list[WRITE]);
++	struct deadline_queue *dq = elv_select_sched_queue(q, force);
++	int reads, writes;
+ 	struct request *rq;
+ 	int data_dir;
+ 
++	if (!dq)
++		return 0;
++
++	reads = !list_empty(&dq->fifo_list[READ]);
++	writes = !list_empty(&dq->fifo_list[WRITE]);
++
+ 	/*
+ 	 * batches are currently reads XOR writes
+ 	 */
+-	if (dd->next_rq[WRITE])
+-		rq = dd->next_rq[WRITE];
++	if (dq->next_rq[WRITE])
++		rq = dq->next_rq[WRITE];
+ 	else
+-		rq = dd->next_rq[READ];
++		rq = dq->next_rq[READ];
+ 
+-	if (rq && dd->batching < dd->fifo_batch)
++	if (rq && dq->batching < dd->fifo_batch)
+ 		/* we have a next request are still entitled to batch */
+ 		goto dispatch_request;
+ 
+@@ -268,9 +282,9 @@ static int deadline_dispatch_requests(struct request_queue *q, int force)
+ 	 */
+ 
+ 	if (reads) {
+-		BUG_ON(RB_EMPTY_ROOT(&dd->sort_list[READ]));
++		BUG_ON(RB_EMPTY_ROOT(&dq->sort_list[READ]));
+ 
+-		if (writes && (dd->starved++ >= dd->writes_starved))
++		if (writes && (dq->starved++ >= dd->writes_starved))
+ 			goto dispatch_writes;
+ 
+ 		data_dir = READ;
+@@ -284,9 +298,9 @@ static int deadline_dispatch_requests(struct request_queue *q, int force)
+ 
+ 	if (writes) {
+ dispatch_writes:
+-		BUG_ON(RB_EMPTY_ROOT(&dd->sort_list[WRITE]));
++		BUG_ON(RB_EMPTY_ROOT(&dq->sort_list[WRITE]));
+ 
+-		dd->starved = 0;
++		dq->starved = 0;
+ 
+ 		data_dir = WRITE;
+ 
+@@ -299,48 +313,62 @@ dispatch_find_request:
+ 	/*
+ 	 * we are not running a batch, find best request for selected data_dir
+ 	 */
+-	if (deadline_check_fifo(dd, data_dir) || !dd->next_rq[data_dir]) {
++	if (deadline_check_fifo(dq, data_dir) || !dq->next_rq[data_dir]) {
+ 		/*
+ 		 * A deadline has expired, the last request was in the other
+ 		 * direction, or we have run out of higher-sectored requests.
+ 		 * Start again from the request with the earliest expiry time.
+ 		 */
+-		rq = rq_entry_fifo(dd->fifo_list[data_dir].next);
++		rq = rq_entry_fifo(dq->fifo_list[data_dir].next);
+ 	} else {
+ 		/*
+ 		 * The last req was the same dir and we have a next request in
+ 		 * sort order. No expired requests so continue on from here.
+ 		 */
+-		rq = dd->next_rq[data_dir];
++		rq = dq->next_rq[data_dir];
+ 	}
+ 
+-	dd->batching = 0;
++	dq->batching = 0;
+ 
+ dispatch_request:
+ 	/*
+ 	 * rq is the selected appropriate request.
+ 	 */
+-	dd->batching++;
++	dq->batching++;
+ 	deadline_move_request(dd, rq);
+ 
+ 	return 1;
+ }
+ 
+-static int deadline_queue_empty(struct request_queue *q)
++static void *deadline_alloc_deadline_queue(struct request_queue *q,
++				struct elevator_queue *eq, gfp_t gfp_mask)
+ {
+-	struct deadline_data *dd = q->elevator->elevator_data;
++	struct deadline_queue *dq;
+ 
+-	return list_empty(&dd->fifo_list[WRITE])
+-		&& list_empty(&dd->fifo_list[READ]);
++	dq = kmalloc_node(sizeof(*dq), gfp_mask | __GFP_ZERO, q->node);
++	if (dq == NULL)
++		goto out;
++
++	INIT_LIST_HEAD(&dq->fifo_list[READ]);
++	INIT_LIST_HEAD(&dq->fifo_list[WRITE]);
++	dq->sort_list[READ] = RB_ROOT;
++	dq->sort_list[WRITE] = RB_ROOT;
++out:
++	return dq;
++}
++
++static void deadline_free_deadline_queue(struct elevator_queue *e,
++						void *sched_queue)
 +{
-+	struct io_service_tree *st;
++	struct deadline_queue *dq = sched_queue;
 +
-+	st = io_entity_service_tree(entity);
-+	entity->service += served;
-+	BUG_ON(st->wsum == 0);
-+	st->vtime += bfq_delta(served, st->wsum);
-+	bfq_forget_idle(st);
++	kfree(dq);
+ }
+ 
+ static void deadline_exit_queue(struct elevator_queue *e)
+ {
+ 	struct deadline_data *dd = e->elevator_data;
+ 
+-	BUG_ON(!list_empty(&dd->fifo_list[READ]));
+-	BUG_ON(!list_empty(&dd->fifo_list[WRITE]));
+-
+ 	kfree(dd);
+ }
+ 
+@@ -355,10 +383,7 @@ static void *deadline_init_queue(struct request_queue *q)
+ 	if (!dd)
+ 		return NULL;
+ 
+-	INIT_LIST_HEAD(&dd->fifo_list[READ]);
+-	INIT_LIST_HEAD(&dd->fifo_list[WRITE]);
+-	dd->sort_list[READ] = RB_ROOT;
+-	dd->sort_list[WRITE] = RB_ROOT;
++	dd->q = q;
+ 	dd->fifo_expire[READ] = read_expire;
+ 	dd->fifo_expire[WRITE] = write_expire;
+ 	dd->writes_starved = writes_starved;
+@@ -445,13 +470,13 @@ static struct elevator_type iosched_deadline = {
+ 		.elevator_merge_req_fn =	deadline_merged_requests,
+ 		.elevator_dispatch_fn =		deadline_dispatch_requests,
+ 		.elevator_add_req_fn =		deadline_add_request,
+-		.elevator_queue_empty_fn =	deadline_queue_empty,
+ 		.elevator_former_req_fn =	elv_rb_former_request,
+ 		.elevator_latter_req_fn =	elv_rb_latter_request,
+ 		.elevator_init_fn =		deadline_init_queue,
+ 		.elevator_exit_fn =		deadline_exit_queue,
++		.elevator_alloc_sched_queue_fn = deadline_alloc_deadline_queue,
++		.elevator_free_sched_queue_fn = deadline_free_deadline_queue,
+ 	},
+-
+ 	.elevator_attrs = deadline_attrs,
+ 	.elevator_name = "deadline",
+ 	.elevator_owner = THIS_MODULE,
+diff --git a/block/elevator.c b/block/elevator.c
+index a6ef1f1..76cfc3a 100644
+--- a/block/elevator.c
++++ b/block/elevator.c
+@@ -175,17 +175,54 @@ static struct elevator_type *elevator_get(const char *name)
+ 	return e;
+ }
+ 
+-static void *elevator_init_queue(struct request_queue *q,
+-				 struct elevator_queue *eq)
++static void *elevator_init_data(struct request_queue *q,
++					struct elevator_queue *eq)
+ {
+-	return eq->ops->elevator_init_fn(q);
++	void *data = NULL;
++
++	if (eq->ops->elevator_init_fn) {
++		data = eq->ops->elevator_init_fn(q);
++		if (data)
++			return data;
++		else
++			return ERR_PTR(-ENOMEM);
++	}
++
++	/* IO scheduler does not instanciate data (noop), it is not an error */
++	return NULL;
 +}
 +
-+/**
-+ * io_flush_idle_tree - deactivate any entity on the idle tree of @st.
-+ * @st: the service tree being flushed.
-+ */
-+static void io_flush_idle_tree(struct io_service_tree *st)
++static void elevator_free_sched_queue(struct elevator_queue *eq,
++						void *sched_queue)
 +{
-+	struct io_entity *entity = st->first_idle;
-+
-+	for (; entity != NULL; entity = st->first_idle)
-+		__bfq_deactivate_entity(entity, 0);
++	/* Not all io schedulers (cfq) strore sched_queue */
++	if (!sched_queue)
++		return;
++	eq->ops->elevator_free_sched_queue_fn(eq, sched_queue);
 +}
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-new file mode 100644
-index 0000000..4554d7f
---- /dev/null
-+++ b/block/elevator-fq.h
-@@ -0,0 +1,172 @@
++
++static void *elevator_alloc_sched_queue(struct request_queue *q,
++					struct elevator_queue *eq)
++{
++	void *sched_queue = NULL;
++
++	if (eq->ops->elevator_alloc_sched_queue_fn) {
++		sched_queue = eq->ops->elevator_alloc_sched_queue_fn(q, eq,
++								GFP_KERNEL);
++		if (!sched_queue)
++			return ERR_PTR(-ENOMEM);
++
++	}
++
++	return sched_queue;
+ }
+ 
+ static void elevator_attach(struct request_queue *q, struct elevator_queue *eq,
+-			   void *data)
++			   void *data, void *sched_queue)
+ {
+ 	q->elevator = eq;
+ 	eq->elevator_data = data;
++	eq->sched_queue = sched_queue;
+ }
+ 
+ static char chosen_elevator[16];
+@@ -255,7 +292,7 @@ int elevator_init(struct request_queue *q, char *name)
+ 	struct elevator_type *e = NULL;
+ 	struct elevator_queue *eq;
+ 	int ret = 0;
+-	void *data;
++	void *data = NULL, *sched_queue = NULL;
+ 
+ 	INIT_LIST_HEAD(&q->queue_head);
+ 	q->last_merge = NULL;
+@@ -289,13 +326,21 @@ int elevator_init(struct request_queue *q, char *name)
+ 	if (!eq)
+ 		return -ENOMEM;
+ 
+-	data = elevator_init_queue(q, eq);
+-	if (!data) {
++	data = elevator_init_data(q, eq);
++
++	if (IS_ERR(data)) {
++		kobject_put(&eq->kobj);
++		return -ENOMEM;
++	}
++
++	sched_queue = elevator_alloc_sched_queue(q, eq);
++
++	if (IS_ERR(sched_queue)) {
+ 		kobject_put(&eq->kobj);
+ 		return -ENOMEM;
+ 	}
+ 
+-	elevator_attach(q, eq, data);
++	elevator_attach(q, eq, data, sched_queue);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(elevator_init);
+@@ -303,6 +348,7 @@ EXPORT_SYMBOL(elevator_init);
+ void elevator_exit(struct elevator_queue *e)
+ {
+ 	mutex_lock(&e->sysfs_lock);
++	elevator_free_sched_queue(e, e->sched_queue);
+ 	elv_exit_fq_data(e);
+ 	if (e->ops->elevator_exit_fn)
+ 		e->ops->elevator_exit_fn(e);
+@@ -992,7 +1038,7 @@ EXPORT_SYMBOL_GPL(elv_unregister);
+ static int elevator_switch(struct request_queue *q, struct elevator_type *new_e)
+ {
+ 	struct elevator_queue *old_elevator, *e;
+-	void *data;
++	void *data = NULL, *sched_queue = NULL;
+ 
+ 	/*
+ 	 * Allocate new elevator
+@@ -1001,10 +1047,18 @@ static int elevator_switch(struct request_queue *q, struct elevator_type *new_e)
+ 	if (!e)
+ 		return 0;
+ 
+-	data = elevator_init_queue(q, e);
+-	if (!data) {
++	data = elevator_init_data(q, e);
++
++	if (IS_ERR(data)) {
+ 		kobject_put(&e->kobj);
+-		return 0;
++		return -ENOMEM;
++	}
++
++	sched_queue = elevator_alloc_sched_queue(q, e);
++
++	if (IS_ERR(sched_queue)) {
++		kobject_put(&e->kobj);
++		return -ENOMEM;
+ 	}
+ 
+ 	/*
+@@ -1021,7 +1075,7 @@ static int elevator_switch(struct request_queue *q, struct elevator_type *new_e)
+ 	/*
+ 	 * attach and start new elevator
+ 	 */
+-	elevator_attach(q, e, data);
++	elevator_attach(q, e, data, sched_queue);
+ 
+ 	spin_unlock_irq(q->queue_lock);
+ 
+@@ -1136,16 +1190,43 @@ struct request *elv_rb_latter_request(struct request_queue *q,
+ }
+ EXPORT_SYMBOL(elv_rb_latter_request);
+ 
+-/* Get the io scheduler queue pointer. For cfq, it is stored in rq->ioq*/
++/* Get the io scheduler queue pointer. */
+ void *elv_get_sched_queue(struct request_queue *q, struct request *rq)
+ {
+-	return ioq_sched_queue(req_ioq(rq));
++	/*
++	 * io scheduler is not using fair queuing. Return sched_queue
++	 * pointer stored in elevator_queue. It will be null if io
++	 * scheduler never stored anything there to begin with (cfq)
++	 */
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return q->elevator->sched_queue;
++
++	/*
++	 * IO schedueler is using fair queuing infrasture. If io scheduler
++	 * has passed a non null rq, retrieve sched_queue pointer from
++	 * there. */
++	if (rq)
++		return ioq_sched_queue(req_ioq(rq));
++
++	return NULL;
+ }
+ EXPORT_SYMBOL(elv_get_sched_queue);
+ 
+ /* Select an ioscheduler queue to dispatch request from. */
+ void *elv_select_sched_queue(struct request_queue *q, int force)
+ {
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return q->elevator->sched_queue;
++
+ 	return ioq_sched_queue(elv_fq_select_ioq(q, force));
+ }
+ EXPORT_SYMBOL(elv_select_sched_queue);
++
 +/*
-+ * elevator fair queuing Layer. Uses B-WF2Q+ hierarchical scheduler for
-+ * fair queuing. Data structures and common functions prototypes.
-+ *
-+ * Based on ideas and code from CFQ:
-+ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-+ *
-+ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-+ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-+ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++ * Get the io scheduler queue pointer for current task.
 + */
-+
-+#include <linux/blkdev.h>
-+
-+#ifndef _BFQ_SCHED_H
-+#define _BFQ_SCHED_H
-+
-+#define IO_IOPRIO_CLASSES	3
-+
-+struct io_entity;
-+struct io_queue;
-+
-+/**
-+ * struct io_service_tree - per ioprio_class service tree.
-+ * @active: tree for active entities (i.e., those backlogged).
-+ * @idle: tree for idle entities (i.e., those not backlogged, with V <= F_i).
-+ * @first_idle: idle entity with minimum F_i.
-+ * @last_idle: idle entity with maximum F_i.
-+ * @vtime: scheduler virtual time.
-+ * @wsum: scheduler weight sum; active and idle entities contribute to it.
-+ *
-+ * Each service tree represents a B-WF2Q+ scheduler on its own.  Each
-+ * ioprio_class has its own independent scheduler, and so its own
-+ * io_service_tree.  All the fields are protected by the queue lock
-+ * of the containing efqd.
-+ */
-+struct io_service_tree {
-+	struct rb_root active;
-+	struct rb_root idle;
-+
-+	struct io_entity *first_idle;
-+	struct io_entity *last_idle;
-+
-+	u64 vtime;
-+	unsigned int wsum;
-+};
-+
-+/**
-+ * struct io_sched_data - multi-class scheduler.
-+ * @active_entity: entity under service.
-+ * @next_active: head-of-the-line entity in the scheduler.
-+ * @service_tree: array of service trees, one per ioprio_class.
-+ *
-+ * io_sched_data is the basic scheduler queue.  It supports three
-+ * ioprio_classes, and can be used either as a toplevel queue or as
-+ * an intermediate queue on a hierarchical setup.
-+ * @next_active points to the active entity of the sched_data service
-+ * trees that will be scheduled next.
-+ *
-+ * The supported ioprio_classes are the same as in CFQ, in descending
-+ * priority order, IOPRIO_CLASS_RT, IOPRIO_CLASS_BE, IOPRIO_CLASS_IDLE.
-+ * Requests from higher priority queues are served before all the
-+ * requests from lower priority queues; among requests of the same
-+ * queue requests are served according to B-WF2Q+.
-+ * All the fields are protected by the queue lock of the containing efqd.
-+ */
-+struct io_sched_data {
-+	struct io_entity *active_entity;
-+	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
-+};
-+
-+/**
-+ * struct io_entity - schedulable entity.
-+ * @rb_node: service_tree member.
-+ * @on_st: flag, true if the entity is on a tree (either the active or
-+ *         the idle one of its service_tree).
-+ * @finish: B-WF2Q+ finish timestamp (aka F_i).
-+ * @start: B-WF2Q+ start timestamp (aka S_i).
-+ * @tree: tree the entity is enqueued into; %NULL if not on a tree.
-+ * @min_start: minimum start time of the (active) subtree rooted at
-+ *             this entity; used for O(log N) lookups into active trees.
-+ * @service: service received during the last round of service.
-+ * @budget: budget used to calculate F_i; F_i = S_i + @budget / @weight.
-+ * @weight: weight of the queue, calculated as IOPRIO_BE_NR - @ioprio.
-+ * @new_weight: when a weight change is requested, the new weight value
-+ * @parent: parent entity, for hierarchical scheduling.
-+ * @my_sched_data: for non-leaf nodes in the cgroup hierarchy, the
-+ *                 associated scheduler queue, %NULL on leaf nodes.
-+ * @sched_data: the scheduler queue this entity belongs to.
-+ * @ioprio: the ioprio in use.
-+ * @new_ioprio: when an ioprio change is requested, the new ioprio value
-+ * @ioprio_class: the ioprio_class in use.
-+ * @new_ioprio_class: when an ioprio_class change is requested, the new
-+ *                    ioprio_class value.
-+ * @ioprio_changed: flag, true when the user requested an ioprio or
-+ *                  ioprio_class change.
-+ *
-+ * A io_entity is used to represent either a io_queue (leaf node in the
-+ * cgroup hierarchy) or a io_group into the upper level scheduler.  Each
-+ * entity belongs to the sched_data of the parent group in the cgroup
-+ * hierarchy.  Non-leaf entities have also their own sched_data, stored
-+ * in @my_sched_data.
-+ *
-+ * Each entity stores independently its priority values; this would allow
-+ * different weights on different devices, but this functionality is not
-+ * exported to userspace by now.  Priorities are updated lazily, first
-+ * storing the new values into the new_* fields, then setting the
-+ * @ioprio_changed flag.  As soon as there is a transition in the entity
-+ * state that allows the priority update to take place the effective and
-+ * the requested priority values are synchronized.
-+ *
-+ * The weight value is calculated from the ioprio to export the same
-+ * interface as CFQ.
-+ *
-+ * All the fields are protected by the queue lock of the containing efqd.
-+ */
-+struct io_entity {
-+	struct rb_node rb_node;
-+
-+	int on_st;
-+
-+	u64 finish;
-+	u64 start;
-+
-+	struct rb_root *tree;
-+
-+	u64 min_start;
-+
-+	unsigned long service, budget;
-+	unsigned int weight, new_weight;
-+
-+	struct io_entity *parent;
-+
-+	struct io_sched_data *my_sched_data;
-+	struct io_sched_data *sched_data;
-+
-+	unsigned short ioprio, new_ioprio;
-+	unsigned short ioprio_class, new_ioprio_class;
-+
-+	int ioprio_changed;
-+};
-+
-+/*
-+ * A common structure representing the io queue where requests are actually
-+ * queued.
-+ */
-+struct io_queue {
-+	struct io_entity entity;
-+	atomic_t ref;
-+
-+	/* Pointer to generic elevator fair queuing data structure */
-+	struct elv_fq_data *efqd;
-+};
-+
-+struct io_group {
-+	struct io_sched_data sched_data;
-+};
-+
-+static inline struct io_service_tree *
-+io_entity_service_tree(struct io_entity *entity)
++void *elv_get_sched_queue_current(struct request_queue *q)
 +{
-+	struct io_sched_data *sched_data = entity->sched_data;
-+	unsigned int idx = entity->ioprio_class - 1;
-+
-+	BUG_ON(idx >= IO_IOPRIO_CLASSES);
-+	BUG_ON(sched_data == NULL);
-+
-+	return sched_data->service_tree + idx;
++	return q->elevator->sched_queue;
 +}
-+#endif /* _BFQ_SCHED_H */
++EXPORT_SYMBOL(elv_get_sched_queue_current);
+diff --git a/block/noop-iosched.c b/block/noop-iosched.c
+index 3a0d369..d587832 100644
+--- a/block/noop-iosched.c
++++ b/block/noop-iosched.c
+@@ -7,7 +7,7 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ 
+-struct noop_data {
++struct noop_queue {
+ 	struct list_head queue;
+ };
+ 
+@@ -19,11 +19,14 @@ static void noop_merged_requests(struct request_queue *q, struct request *rq,
+ 
+ static int noop_dispatch(struct request_queue *q, int force)
+ {
+-	struct noop_data *nd = q->elevator->elevator_data;
++	struct noop_queue *nq = elv_select_sched_queue(q, force);
+ 
+-	if (!list_empty(&nd->queue)) {
++	if (!nq)
++		return 0;
++
++	if (!list_empty(&nq->queue)) {
+ 		struct request *rq;
+-		rq = list_entry(nd->queue.next, struct request, queuelist);
++		rq = list_entry(nq->queue.next, struct request, queuelist);
+ 		list_del_init(&rq->queuelist);
+ 		elv_dispatch_sort(q, rq);
+ 		return 1;
+@@ -33,24 +36,17 @@ static int noop_dispatch(struct request_queue *q, int force)
+ 
+ static void noop_add_request(struct request_queue *q, struct request *rq)
+ {
+-	struct noop_data *nd = q->elevator->elevator_data;
++	struct noop_queue *nq = elv_get_sched_queue(q, rq);
+ 
+-	list_add_tail(&rq->queuelist, &nd->queue);
+-}
+-
+-static int noop_queue_empty(struct request_queue *q)
+-{
+-	struct noop_data *nd = q->elevator->elevator_data;
+-
+-	return list_empty(&nd->queue);
++	list_add_tail(&rq->queuelist, &nq->queue);
+ }
+ 
+ static struct request *
+ noop_former_request(struct request_queue *q, struct request *rq)
+ {
+-	struct noop_data *nd = q->elevator->elevator_data;
++	struct noop_queue *nq = elv_get_sched_queue(q, rq);
+ 
+-	if (rq->queuelist.prev == &nd->queue)
++	if (rq->queuelist.prev == &nq->queue)
+ 		return NULL;
+ 	return list_entry(rq->queuelist.prev, struct request, queuelist);
+ }
+@@ -58,30 +54,32 @@ noop_former_request(struct request_queue *q, struct request *rq)
+ static struct request *
+ noop_latter_request(struct request_queue *q, struct request *rq)
+ {
+-	struct noop_data *nd = q->elevator->elevator_data;
++	struct noop_queue *nq = elv_get_sched_queue(q, rq);
+ 
+-	if (rq->queuelist.next == &nd->queue)
++	if (rq->queuelist.next == &nq->queue)
+ 		return NULL;
+ 	return list_entry(rq->queuelist.next, struct request, queuelist);
+ }
+ 
+-static void *noop_init_queue(struct request_queue *q)
++static void *noop_alloc_noop_queue(struct request_queue *q,
++				struct elevator_queue *eq, gfp_t gfp_mask)
+ {
+-	struct noop_data *nd;
++	struct noop_queue *nq;
+ 
+-	nd = kmalloc_node(sizeof(*nd), GFP_KERNEL, q->node);
+-	if (!nd)
+-		return NULL;
+-	INIT_LIST_HEAD(&nd->queue);
+-	return nd;
++	nq = kmalloc_node(sizeof(*nq), gfp_mask | __GFP_ZERO, q->node);
++	if (nq == NULL)
++		goto out;
++
++	INIT_LIST_HEAD(&nq->queue);
++out:
++	return nq;
+ }
+ 
+-static void noop_exit_queue(struct elevator_queue *e)
++static void noop_free_noop_queue(struct elevator_queue *e, void *sched_queue)
+ {
+-	struct noop_data *nd = e->elevator_data;
++	struct noop_queue *nq = sched_queue;
+ 
+-	BUG_ON(!list_empty(&nd->queue));
+-	kfree(nd);
++	kfree(nq);
+ }
+ 
+ static struct elevator_type elevator_noop = {
+@@ -89,11 +87,10 @@ static struct elevator_type elevator_noop = {
+ 		.elevator_merge_req_fn		= noop_merged_requests,
+ 		.elevator_dispatch_fn		= noop_dispatch,
+ 		.elevator_add_req_fn		= noop_add_request,
+-		.elevator_queue_empty_fn	= noop_queue_empty,
+ 		.elevator_former_req_fn		= noop_former_request,
+ 		.elevator_latter_req_fn		= noop_latter_request,
+-		.elevator_init_fn		= noop_init_queue,
+-		.elevator_exit_fn		= noop_exit_queue,
++		.elevator_alloc_sched_queue_fn	= noop_alloc_noop_queue,
++		.elevator_free_sched_queue_fn	= noop_free_noop_queue,
+ 	},
+ 	.elevator_name = "noop",
+ 	.elevator_owner = THIS_MODULE,
+diff --git a/include/linux/elevator.h b/include/linux/elevator.h
+index 81f1ed8..e7048b9 100644
+--- a/include/linux/elevator.h
++++ b/include/linux/elevator.h
+@@ -30,8 +30,9 @@ typedef void (elevator_deactivate_req_fn) (struct request_queue *, struct reques
+ 
+ typedef void *(elevator_init_fn) (struct request_queue *);
+ typedef void (elevator_exit_fn) (struct elevator_queue *);
+-#ifdef CONFIG_ELV_FAIR_QUEUING
++typedef void* (elevator_alloc_sched_queue_fn) (struct request_queue *q, struct elevator_queue *eq, gfp_t);
+ typedef void (elevator_free_sched_queue_fn) (struct elevator_queue*, void *);
++#ifdef CONFIG_ELV_FAIR_QUEUING
+ typedef void (elevator_active_ioq_set_fn) (struct request_queue*, void *, int);
+ typedef void (elevator_active_ioq_reset_fn) (struct request_queue *, void*);
+ typedef void (elevator_arm_slice_timer_fn) (struct request_queue*, void*);
+@@ -70,8 +71,9 @@ struct elevator_ops
+ 	elevator_exit_fn *elevator_exit_fn;
+ 	void (*trim)(struct io_context *);
+ 
+-#ifdef CONFIG_ELV_FAIR_QUEUING
++	elevator_alloc_sched_queue_fn *elevator_alloc_sched_queue_fn;
+ 	elevator_free_sched_queue_fn *elevator_free_sched_queue_fn;
++#ifdef CONFIG_ELV_FAIR_QUEUING
+ 	elevator_active_ioq_set_fn *elevator_active_ioq_set_fn;
+ 	elevator_active_ioq_reset_fn *elevator_active_ioq_reset_fn;
+ 
+@@ -112,6 +114,7 @@ struct elevator_queue
+ {
+ 	struct elevator_ops *ops;
+ 	void *elevator_data;
++	void *sched_queue;
+ 	struct kobject kobj;
+ 	struct elevator_type *elevator_type;
+ 	struct mutex sysfs_lock;
+@@ -258,5 +261,6 @@ static inline int elv_iosched_fair_queuing_enabled(struct elevator_queue *e)
+ #endif /* ELV_IOSCHED_FAIR_QUEUING */
+ extern void *elv_get_sched_queue(struct request_queue *q, struct request *rq);
+ extern void *elv_select_sched_queue(struct request_queue *q, int force);
++extern void *elv_get_sched_queue_current(struct request_queue *q);
+ #endif /* CONFIG_BLOCK */
+ #endif
 -- 
 1.6.0.6
