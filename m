@@ -1,8 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 17/25] io-controller: deadline changes for hierarchical fair
-	queuing
-Date: Thu,  2 Jul 2009 16:01:49 -0400
-Message-ID: <1246564917-19603-18-git-send-email-vgoyal__20269.8211804547$1246566546$gmane$org@redhat.com>
+Subject: [PATCH 03/25] io-controller: bfq support of in-class preemption
+Date: Thu,  2 Jul 2009 16:01:35 -0400
+Message-ID: <1246564917-19603-4-git-send-email-vgoyal__19672.1230553978$1246566627$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,63 +21,95 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch changes deadline to use queue scheduling code from elevator layer.
-One can go back to old deadline by selecting CONFIG_IOSCHED_DEADLINE_HIER.
+o Generally preemption is associated with cross class where if an request
+  from RT class is pending it will preempt the ongoing BE or IDLE class
+  request.
 
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+o CFQ also does in-class preemtions like a sync request queue preempting the
+  async request queue. In that case it looks like preempting queue gains
+  share and it is not fair.
+
+o Implement the similar functionality in bfq so that we can retain the
+  existing CFQ behavior.
+
+o This patch creates a bypass path so that a queue can be put at the
+  front of the service tree (add_front, similar to CFQ), so that it will
+  be selected next to run. That's a different thing that in the process
+  this queue gains share.
+
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched    |   11 +++++++++++
- block/deadline-iosched.c |    8 ++++++++
- 2 files changed, 19 insertions(+), 0 deletions(-)
+ block/elevator-fq.c |   43 +++++++++++++++++++++++++++++++++++++++----
+ 1 files changed, 39 insertions(+), 4 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 9da6657..3a9e7d7 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -55,6 +55,17 @@ config IOSCHED_DEADLINE
- 	  a disk at any one time, its behaviour is almost identical to the
- 	  anticipatory I/O scheduler and so is a good choice.
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index a58efdc..7ee4321 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -582,7 +582,7 @@ static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
+  * service received if @entity is active) of the queue to calculate its
+  * timestamps.
+  */
+-static void __bfq_activate_entity(struct io_entity *entity)
++static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ {
+ 	struct io_sched_data *sd = entity->sched_data;
+ 	struct io_service_tree *st = io_entity_service_tree(entity);
+@@ -627,7 +627,42 @@ static void __bfq_activate_entity(struct io_entity *entity)
+ 	}
  
-+config IOSCHED_DEADLINE_HIER
-+	bool "Deadline Hierarchical Scheduling support"
-+	depends on IOSCHED_DEADLINE && CGROUPS
-+	select ELV_FAIR_QUEUING
-+	select GROUP_IOSCHED
-+	default n
-+	---help---
-+	  Enable hierarhical scheduling in deadline. In this mode deadline keeps
-+	  one IO queue per cgroup instead of a global queue. Elevator
-+	  fair queuing logic ensures fairness among various queues.
+ 	st = __bfq_entity_update_prio(st, entity);
+-	bfq_calc_finish(entity, entity->budget);
++	/*
++	 * This is to emulate cfq like functionality where preemption can
++	 * happen with-in same class, like sync queue preempting async queue
++	 * May be this is not a very good idea from fairness point of view
++	 * as preempting queue gains share. Keeping it for now.
++	 */
++	if (add_front) {
++		struct io_entity *next_entity;
 +
- config IOSCHED_CFQ
- 	tristate "CFQ I/O scheduler"
- 	select ELV_FAIR_QUEUING
-diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
-index 03d7208..ad63493 100644
---- a/block/deadline-iosched.c
-+++ b/block/deadline-iosched.c
-@@ -460,6 +460,11 @@ static struct elv_fs_entry deadline_attrs[] = {
- 	DD_ATTR(writes_starved),
- 	DD_ATTR(front_merges),
- 	DD_ATTR(fifo_batch),
-+#ifdef CONFIG_IOSCHED_DEADLINE_HIER
-+	ELV_ATTR(fairness),
-+	ELV_ATTR(slice_idle),
-+	ELV_ATTR(slice_sync),
-+#endif
- 	__ATTR_NULL
- };
++		/*
++		 * Determine the entity which will be dispatched next
++		 * Use sd->next_active once hierarchical patch is applied
++		 */
++		next_entity = bfq_lookup_next_entity(sd, 0);
++
++		if (next_entity && next_entity != entity) {
++			struct io_service_tree *new_st;
++			u64 delta;
++
++			new_st = io_entity_service_tree(next_entity);
++
++			/*
++			 * At this point, both entities should belong to
++			 * same service tree as cross service tree preemption
++			 * is automatically taken care by algorithm
++			 */
++			BUG_ON(new_st != st);
++			entity->finish = next_entity->finish - 1;
++			delta = bfq_delta(entity->budget, entity->weight);
++			entity->start = entity->finish - delta;
++			if (bfq_gt(entity->start, st->vtime))
++				entity->start = st->vtime;
++		}
++	} else {
++		bfq_calc_finish(entity, entity->budget);
++	}
+ 	bfq_active_insert(st, entity);
+ }
  
-@@ -477,6 +482,9 @@ static struct elevator_type iosched_deadline = {
- 		.elevator_alloc_sched_queue_fn = deadline_alloc_deadline_queue,
- 		.elevator_free_sched_queue_fn = deadline_free_deadline_queue,
- 	},
-+#ifdef CONFIG_IOSCHED_DEADLINE_HIER
-+	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
-+#endif
- 	.elevator_attrs = deadline_attrs,
- 	.elevator_name = "deadline",
- 	.elevator_owner = THIS_MODULE,
+@@ -635,9 +670,9 @@ static void __bfq_activate_entity(struct io_entity *entity)
+  * bfq_activate_entity - activate an entity.
+  * @entity: the entity to activate.
+  */
+-static void bfq_activate_entity(struct io_entity *entity)
++static void bfq_activate_entity(struct io_entity *entity, int add_front)
+ {
+-	__bfq_activate_entity(entity);
++	__bfq_activate_entity(entity, add_front);
+ }
+ 
+ /**
 -- 
 1.6.0.6
