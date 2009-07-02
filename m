@@ -1,17 +1,19 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 8/9] [RFC] Example multi-bindable subsystem: a per-cgroup
-	notes field
-Date: Thu, 2 Jul 2009 00:22:43 -0700
-Message-ID: <6599ad830907020022y106a2d8epf78d8ce67ebe7c9a@mail.gmail.com>
-References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
-	<20090702021133.14469.35140.stgit@menage.mtv.corp.google.com>
-	<20090702114829.df04c885.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830907011956i33769d5ek5401e93553d75c59@mail.gmail.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] Disable CLONE_PARENT for init
+Date: Thu, 2 Jul 2009 09:58:33 +0200
+Message-ID: <20090702075833.GA14620__43013.9249693186$1246521827$gmane$org@redhat.com>
+References: <20090701073140.GA14284@us.ibm.com>
+	<20090701074654.A6C6321D57@magilla.sf.frob.com>
+	<20090701082452.GA3297@redhat.com>
+	<20090701214805.GA25734@us.ibm.com>
+	<20090701215833.876DA404FD@magilla.sf.frob.com>
+	<20090702003520.GA26247@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830907011956i33769d5ek5401e93553d75c59-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090702003520.GA26247-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,56 +23,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 1, 2009 at 7:56 PM, Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->> Hmm, do we need to this "info" file as subsys ? How about making this as
->> default file set ? (if there are users.)
->>
+On 07/01, Sukadev Bhattiprolu wrote:
 >
-> That would certainly be possible, and would be an alternative to
-> having multi-bindable subsystem support.
+> --- linux-mmotm.orig/kernel/fork.c	2009-06-30 23:01:06.000000000 -0700
+> +++ linux-mmotm/kernel/fork.c	2009-07-01 17:29:09.000000000 -0700
+> @@ -974,6 +974,16 @@ static struct task_struct *copy_process(
+>  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
+>  		return ERR_PTR(-EINVAL);
 >
-> The advantage of adding multi-bindable subsystems is that you can
-> avoid bloating the core cgroups code, by putting individual small
-> cgroups features in their own code modules, and you get to decide at
-> mount time which features are actually mounted; if they were part of
-> the core cgroups files, then there would either need to be special
-> mount options for each separate feature, or else no way to pick which
-> features were mounted on each hierarchy.
+> +	/*
+> +	 * Siblings of global init remain as zombies on exit since they are
+> +	 * not reaped by their parent (swapper). To solve this and to avoid
+> +	 * multi-rooted process trees, prevent global and container-inits
+> +	 * from creating siblings.
+> +	 */
+> +	if ((clone_flags & CLONE_PARENT) &&
+> +				current->signal->flags & SIGNAL_UNKILLABLE)
+> +		return ERR_PTR(-EINVAL);
 
-BTW, just to give a balanced argument: I agree that these example
-multi-bindable subsystems are somewhat weak justifications for the new
-feature - they each supply a single control file, they're not
-connected to anything in the kernel outside of the core cgroups
-framework, and they're almost zero overhead if they're not actively
-used, so making them part of the cgroups framework directly wouldn't
-be totally unreasonable.
-
-An example of a less-trivial multi-bindable subsystem could be cpuacct
-- logically there's no reason that you couldn't track CPU usage in
-multiple different hierarchies, keeping totals aggregated in different
-ways for the groupings in different hierarchies, and the overhead
-associated with tracking would mean that you wouldn't want to
-automatically link cpuacct into every hierarchy. The practical problem
-with this would be that finding the cgroup for a process would be
-slower since there wouldn't be a 1:1 mapping from a task to a cpuacct
-cgroup state object.
-
-Instead each task would have multiple such states and to update the
-usage accounting on each of them you'd have to do a list traversal
-rather than a direct lookup (and worse, right now that list traversal
-can only be done while holding cgroup_mutex, which is impossible when
-doing cpuacct charging from the guts of the scheduler). I can see how
-to extend the multi-bindable support to make it cheaper and to require
-less synchronization (i.e. walking an RCU-safe array to find the
-various state objects rather than doing a list traversal).
-
-Although before doing that I guess it would be worth asking whether
-anyone would actually *want* to aggregate CPU usage different ways for
-different hierarchies, even if it makes logical sense to be able to do
-so.
-
-Paul
+Acked-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
