@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 16/25] io-controller: noop changes for hierarchical fair
+Subject: [PATCH 17/25] io-controller: deadline changes for hierarchical fair
 	queuing
-Date: Thu,  2 Jul 2009 16:01:48 -0400
-Message-ID: <1246564917-19603-17-git-send-email-vgoyal__17572.9288057939$1246566475$gmane$org@redhat.com>
+Date: Thu,  2 Jul 2009 16:01:49 -0400
+Message-ID: <1246564917-19603-18-git-send-email-vgoyal__20269.8211804547$1246566546$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,68 +22,63 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch changes noop to use queue scheduling code from elevator layer.
-One can go back to old noop by deselecting CONFIG_IOSCHED_NOOP_HIER.
+This patch changes deadline to use queue scheduling code from elevator layer.
+One can go back to old deadline by selecting CONFIG_IOSCHED_DEADLINE_HIER.
 
 Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |   11 +++++++++++
- block/noop-iosched.c  |   13 +++++++++++++
- 2 files changed, 24 insertions(+), 0 deletions(-)
+ block/Kconfig.iosched    |   11 +++++++++++
+ block/deadline-iosched.c |    8 ++++++++
+ 2 files changed, 19 insertions(+), 0 deletions(-)
 
 diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index a91a807..9da6657 100644
+index 9da6657..3a9e7d7 100644
 --- a/block/Kconfig.iosched
 +++ b/block/Kconfig.iosched
-@@ -25,6 +25,17 @@ config IOSCHED_NOOP
- 	  that do their own scheduling and require only minimal assistance from
- 	  the kernel.
+@@ -55,6 +55,17 @@ config IOSCHED_DEADLINE
+ 	  a disk at any one time, its behaviour is almost identical to the
+ 	  anticipatory I/O scheduler and so is a good choice.
  
-+config IOSCHED_NOOP_HIER
-+	bool "Noop Hierarchical Scheduling support"
-+	depends on IOSCHED_NOOP && CGROUPS
++config IOSCHED_DEADLINE_HIER
++	bool "Deadline Hierarchical Scheduling support"
++	depends on IOSCHED_DEADLINE && CGROUPS
 +	select ELV_FAIR_QUEUING
 +	select GROUP_IOSCHED
 +	default n
 +	---help---
-+	  Enable hierarhical scheduling in noop. In this mode noop keeps
++	  Enable hierarhical scheduling in deadline. In this mode deadline keeps
 +	  one IO queue per cgroup instead of a global queue. Elevator
 +	  fair queuing logic ensures fairness among various queues.
 +
- config IOSCHED_AS
- 	tristate "Anticipatory I/O scheduler"
- 	default y
-diff --git a/block/noop-iosched.c b/block/noop-iosched.c
-index 731dbf2..97ea41b 100644
---- a/block/noop-iosched.c
-+++ b/block/noop-iosched.c
-@@ -82,6 +82,15 @@ static void noop_free_noop_queue(struct elevator_queue *e, void *sched_queue)
- 	kfree(nq);
- }
- 
-+#ifdef CONFIG_IOSCHED_NOOP_HIER
-+static struct elv_fs_entry noop_attrs[] = {
+ config IOSCHED_CFQ
+ 	tristate "CFQ I/O scheduler"
+ 	select ELV_FAIR_QUEUING
+diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
+index 03d7208..ad63493 100644
+--- a/block/deadline-iosched.c
++++ b/block/deadline-iosched.c
+@@ -460,6 +460,11 @@ static struct elv_fs_entry deadline_attrs[] = {
+ 	DD_ATTR(writes_starved),
+ 	DD_ATTR(front_merges),
+ 	DD_ATTR(fifo_batch),
++#ifdef CONFIG_IOSCHED_DEADLINE_HIER
 +	ELV_ATTR(fairness),
 +	ELV_ATTR(slice_idle),
 +	ELV_ATTR(slice_sync),
-+	__ATTR_NULL
-+};
 +#endif
-+
- static struct elevator_type elevator_noop = {
- 	.ops = {
- 		.elevator_merge_req_fn		= noop_merged_requests,
-@@ -92,6 +101,10 @@ static struct elevator_type elevator_noop = {
- 		.elevator_alloc_sched_queue_fn	= noop_alloc_noop_queue,
- 		.elevator_free_sched_queue_fn	= noop_free_noop_queue,
- 	},
-+#ifdef CONFIG_IOSCHED_NOOP_HIER
-+	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
-+	.elevator_attrs = noop_attrs,
-+#endif
- 	.elevator_name = "noop",
- 	.elevator_owner = THIS_MODULE,
+ 	__ATTR_NULL
  };
+ 
+@@ -477,6 +482,9 @@ static struct elevator_type iosched_deadline = {
+ 		.elevator_alloc_sched_queue_fn = deadline_alloc_deadline_queue,
+ 		.elevator_free_sched_queue_fn = deadline_free_deadline_queue,
+ 	},
++#ifdef CONFIG_IOSCHED_DEADLINE_HIER
++	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
++#endif
+ 	.elevator_attrs = deadline_attrs,
+ 	.elevator_name = "deadline",
+ 	.elevator_owner = THIS_MODULE,
 -- 
 1.6.0.6
