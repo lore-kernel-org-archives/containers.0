@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [C/R][PATCH] Use __WALL option in waitpid()
-Date: Thu, 02 Jul 2009 01:55:53 -0400
-Message-ID: <4A4C4BE9.5010903@cs.columbia.edu>
-References: <20090627192704.GA14326@us.ibm.com>
-	<20090628051707.GA21192@us.ibm.com>
+Subject: Re: Revert request: [PATCH] cgroup freezer: Avoid lazy state changes
+	when
+Date: Thu, 02 Jul 2009 01:56:37 -0400
+Message-ID: <4A4C4C15.5050304@cs.columbia.edu>
+References: <20090701022650.GA23013@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090628051707.GA21192-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090701022650.GA23013-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,58 +18,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Got it, thanks.
+Will do.
 
 Oren.
 
-Sukadev Bhattiprolu wrote:
-> Oren,
+Matt Helsley wrote:
+> convenient
+> Reply-To: 
 > 
-> (Following up on the discussion from IRC)
+> Hi Oren,
 > 
-> I had run my application as:
+> 	Nathan and Serge have confirmed that this patch triggers a
+> BUG_ON() in freezer_fork() quite reliably. Please revert it.
 > 
-> 	ns_exec -cpuimP pid.ptree1 -- ./ptree1 -n 2 -d 1 -w sleep
-> 
-> ns_exec creates the application in new container, with p->exit_signal 0.
-> for the container-init. When we checkpoint the process tree, we
-> correctly save and restore the exit_signal to 0. Because of that,
-> we need the coordinator to use __WALL.
-> 
-> Sukadev
-> 
-> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | 
-> | The coordinator creates the children with clone(), so pass the __WALL
-> | option to waitpid(). Otherwise the waitpid() will fail, and bring the
-> | container down even as the application is restarting successfully :-)
-> | 
-> | Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> | 
-> | ---
-> |  mktree.c |    2 +-
-> |  1 file changed, 1 insertion(+), 1 deletion(-)
-> | 
-> | Index: user-cr/mktree.c
-> | ===================================================================
-> | --- user-cr.orig/mktree.c	2009-06-27 12:16:42.000000000 -0700
-> | +++ user-cr/mktree.c	2009-06-27 12:17:02.000000000 -0700
-> | @@ -523,7 +523,7 @@ static int ckpt_collect_child(pid_t pid,
-> |  {
-> |  	int status;
-> | 
-> | -	pid = waitpid(pid, &status, 0);
-> | +	pid = waitpid(pid, &status, __WALL);
-> |  	if (pid < 0) {
-> |  		perror("WEIRD: collect child task");
-> |  		exit(1);
-> | _______________________________________________
-> | Containers mailing list
-> | Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> | https://lists.linux-foundation.org/mailman/listinfo/containers
+> Cheers,
+> 	-Matt Helsley
+> 	
 > 
