@@ -1,11 +1,14 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 0/9] [RFC] CGroup Hierarchy Extensions
-Date: Wed, 01 Jul 2009 19:10:52 -0700
-Message-ID: <20090702020624.14469.47066.stgit__16782.1085233756$1246500702$gmane$org@menage.mtv.corp.google.com>
+Subject: [PATCH 2/9] [RFC]Move the cgroup debug subsys into cgroup.c to access
+	internal state
+Date: Wed, 01 Jul 2009 19:11:03 -0700
+Message-ID: <20090702021103.14469.98752.stgit@menage.mtv.corp.google.com>
+References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090702020624.14469.47066.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +22,240 @@ To: lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdB
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The following series adds support for:
+[RFC]Move the cgroup debug subsys into cgroup.c to access internal state
 
-- named cgroup hierarchies
-- cgroup hierarchies with no bound subsystems
-- cgroup subsystems that can be bound to multiple hierarchies
+While it's architecturally clean to have the cgroup debug subsystem be
+completely independent of the cgroups framework, it limits its
+usefulness for debugging the contents of internal data structures.
+Move the debug subsystem code into the scope of all the cgroups data
+structures to make more detailed debugging possible.
 
-This allows more flexibility when constructing/mounting cgroups
-hierarchies, and allows functionality that's not tied to specific
-external resources to be made available on multiple cgroups
-hierarchies rather than just one.
-
-A few simple example cgroups subsystems that are multi-bindable are
-included in the patch series.
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
-Paul Menage (9):
-      [RFC] Support named cgroups hierarchies
-      [RFC] Move the cgroup debug subsys into cgroup.c to access internal state
-      [RFC] Add a back-pointer from struct cg_cgroup_link to struct cgroup
-      [RFC] Allow cgroup hierarchies to be created with no bound subsystems
-      [RFC] Remove cgroup_subsys.root pointer
-      [RFC] Remove the cgroup_subsys.bind callback
-      [RFC] Support multiply-bindable cgroup subsystems
-      [RFC] Example multi-bindable subsystem: a per-cgroup notes field
-      [RFC] Example multi-bindable subsystem: a max-depth controller
-
-
- Documentation/cgroups/cgroups.txt |    8 
- include/linux/cgroup.h            |   55 ++
- include/linux/cgroup_subsys.h     |   14 +
- init/Kconfig                      |   17 +
- kernel/Makefile                   |    3 
- kernel/cgroup.c                   |  905 +++++++++++++++++++++++++++----------
- kernel/cgroup_debug.c             |  105 ----
- kernel/info_cgroup.c              |  133 +++++
- kernel/maxdepth_cgroup.c          |   80 +++
- 9 files changed, 938 insertions(+), 382 deletions(-)
+ kernel/Makefile       |    1 
+ kernel/cgroup.c       |   88 +++++++++++++++++++++++++++++++++++++++++
+ kernel/cgroup_debug.c |  105 -------------------------------------------------
+ 3 files changed, 88 insertions(+), 106 deletions(-)
  delete mode 100644 kernel/cgroup_debug.c
- create mode 100644 kernel/info_cgroup.c
- create mode 100644 kernel/maxdepth_cgroup.c
+
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 51e51fe..7ffdc16 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -58,7 +58,6 @@ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+-obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
+ obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 940f28d..6788c97 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3664,3 +3664,91 @@ css_get_next(struct cgroup_subsys *ss, int id,
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_CGROUP_DEBUG
++static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
++						   struct cgroup *cont)
++{
++	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
++
++	if (!css)
++		return ERR_PTR(-ENOMEM);
++
++	return css;
++}
++
++static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	kfree(cont->subsys[debug_subsys_id]);
++}
++
++static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	return atomic_read(&cont->count);
++}
++
++static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	return cgroup_task_count(cont);
++}
++
++static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
++{
++	return (u64)(long)current->cgroups;
++}
++
++static u64 current_css_set_refcount_read(struct cgroup *cont,
++					   struct cftype *cft)
++{
++	u64 count;
++
++	rcu_read_lock();
++	count = atomic_read(&current->cgroups->refcount);
++	rcu_read_unlock();
++	return count;
++}
++
++static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
++{
++	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
++}
++
++static struct cftype debug_files[] =  {
++	{
++		.name = "cgroup_refcount",
++		.read_u64 = cgroup_refcount_read,
++	},
++	{
++		.name = "taskcount",
++		.read_u64 = debug_taskcount_read,
++	},
++
++	{
++		.name = "current_css_set",
++		.read_u64 = current_css_set_read,
++	},
++
++	{
++		.name = "current_css_set_refcount",
++		.read_u64 = current_css_set_refcount_read,
++	},
++
++	{
++		.name = "releasable",
++		.read_u64 = releasable_read,
++	},
++};
++
++static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, debug_files,
++				ARRAY_SIZE(debug_files));
++}
++
++struct cgroup_subsys debug_subsys = {
++	.name = "debug",
++	.create = debug_create,
++	.destroy = debug_destroy,
++	.populate = debug_populate,
++	.subsys_id = debug_subsys_id,
++};
++#endif /* CONFIG_CGROUP_DEBUG */
+diff --git a/kernel/cgroup_debug.c b/kernel/cgroup_debug.c
+deleted file mode 100644
+index 0c92d79..0000000
+--- a/kernel/cgroup_debug.c
++++ /dev/null
+@@ -1,105 +0,0 @@
+-/*
+- * kernel/cgroup_debug.c - Example cgroup subsystem that
+- * exposes debug info
+- *
+- * Copyright (C) Google Inc, 2007
+- *
+- * Developed by Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org)
+- *
+- */
+-
+-#include <linux/cgroup.h>
+-#include <linux/fs.h>
+-#include <linux/slab.h>
+-#include <linux/rcupdate.h>
+-
+-#include <asm/atomic.h>
+-
+-static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
+-						   struct cgroup *cont)
+-{
+-	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
+-
+-	if (!css)
+-		return ERR_PTR(-ENOMEM);
+-
+-	return css;
+-}
+-
+-static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
+-{
+-	kfree(cont->subsys[debug_subsys_id]);
+-}
+-
+-static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return atomic_read(&cont->count);
+-}
+-
+-static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	u64 count;
+-
+-	count = cgroup_task_count(cont);
+-	return count;
+-}
+-
+-static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return (u64)(long)current->cgroups;
+-}
+-
+-static u64 current_css_set_refcount_read(struct cgroup *cont,
+-					   struct cftype *cft)
+-{
+-	u64 count;
+-
+-	rcu_read_lock();
+-	count = atomic_read(&current->cgroups->refcount);
+-	rcu_read_unlock();
+-	return count;
+-}
+-
+-static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
+-{
+-	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
+-}
+-
+-static struct cftype files[] =  {
+-	{
+-		.name = "cgroup_refcount",
+-		.read_u64 = cgroup_refcount_read,
+-	},
+-	{
+-		.name = "taskcount",
+-		.read_u64 = taskcount_read,
+-	},
+-
+-	{
+-		.name = "current_css_set",
+-		.read_u64 = current_css_set_read,
+-	},
+-
+-	{
+-		.name = "current_css_set_refcount",
+-		.read_u64 = current_css_set_refcount_read,
+-	},
+-
+-	{
+-		.name = "releasable",
+-		.read_u64 = releasable_read,
+-	},
+-};
+-
+-static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
+-{
+-	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
+-}
+-
+-struct cgroup_subsys debug_subsys = {
+-	.name = "debug",
+-	.create = debug_create,
+-	.destroy = debug_destroy,
+-	.populate = debug_populate,
+-	.subsys_id = debug_subsys_id,
+-};
