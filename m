@@ -1,8 +1,7 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/9] [RFC] Allow cgroup hierarchies to be created with no
-	bound subsystems
-Date: Wed, 01 Jul 2009 19:11:13 -0700
-Message-ID: <20090702021113.14469.2703.stgit@menage.mtv.corp.google.com>
+Subject: [PATCH 7/9] [RFC] Support multiply-bindable cgroup subsystems
+Date: Wed, 01 Jul 2009 19:11:28 -0700
+Message-ID: <20090702021128.14469.3360.stgit@menage.mtv.corp.google.com>
 References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,392 +21,474 @@ To: lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdB
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[RFC] Allow cgroup hierarchies to be created with no bound subsystems
+[RFC] Support multiply-bindable cgroup subsystems
 
-This patch removes the restriction that a cgroup hierarchy must have
-at least one bound subsystem. The mount option "none" is treated as an
-explicit request for no bound subsystems.
+This patch allows a cgroup subsystem to be marked as bindable on
+multiple cgroup hierarchies independently, when declared in
+cgroup_subsys.h via MULTI_SUBSYS() rather than SUBSYS().
 
-A hierarchy with no subsystems can be useful for plain task tracking,
-and is also a step towards the support for multiply-bindable
-subsystems in a later patch in this series.
+The state for such subsystems cannot be accessed directly from a
+task->cgroups (since there's no unique mapping for a task) but instead
+must be accessed via a particular control group object.
 
-As part of this change, the hierarchy id is no longer calculated from
-the bitmask of subsystems in the hierarchy (since this is not
-guaranteed to be unique) but is allocated via an ida. Reference counts
-on cgroups from css_set objects are now taken explicitly one per
-hierarchy, rather than one per subsystem.
+Multiply-bound subsystems are useful in cases where there's no direct
+correspondence between the cgroup configuration and some property of
+the kernel outside of the cgroups subsystem.  So this would not be
+applicable to e.g. the CFS cgroup, since there has to a unique mapping
+from a task to its CFS run queue.
+
+As an example, the "debug" subsystem is marked multiply-bindable,
+since it has no state outside the cgroups framework itself.
 
 Example usage:
 
-mount -t cgroup -o none,name=foo cgroup /mnt/cgroup
+mount -t cgroup -o name=foo,debug,cpu cgroup /mnt1
+mount -t cgroup -o name=bar,debug,memory cgroup /mnt2
 
-Based on the "no-op"/"none" subsystem concept proposed by
-kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Open Issues:
+
+- in the current version of this patch, mounting a cgroups hierarchy
+  with no options does *not* get you any of the multi-bindable
+  subsystems; possibly for consistency it should give you all of the
+  multi-bindable subsystems as well as all of the single-bindable
+  subsystems.
+
+- how can we avoid the checkpatch.pl errors due to creative use of
+  macros to generate enum names?
 
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
- kernel/cgroup.c |  176 ++++++++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 123 insertions(+), 53 deletions(-)
+ include/linux/cgroup.h        |   38 +++++++-
+ include/linux/cgroup_subsys.h |    2 
+ kernel/cgroup.c               |  192 ++++++++++++++++++++++++++++-------------
+ 3 files changed, 168 insertions(+), 64 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index cd543ec..dede632 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -47,6 +47,7 @@
- #include <linux/hash.h>
- #include <linux/namei.h>
- #include <linux/smp_lock.h>
-+#include <linux/idr.h>
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index a6bb0ca..02fdea9 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -39,10 +39,38 @@ extern int cgroupstats_build(struct cgroupstats *stats,
  
- #include <asm/atomic.h>
+ extern struct file_operations proc_cgroup_operations;
  
-@@ -75,6 +76,9 @@ struct cgroupfs_root {
+-/* Define the enumeration of all cgroup subsystems */
+-#define SUBSYS(_x) _x ## _subsys_id,
++/*
++ * Define the enumeration of all cgroup subsystems. There are two
++ * kinds of subsystems:
++ *
++ * - regular (singleton) subsystems can be only mounted once; these
++ * generally correspond to some system that has substantial state
++ * outside of the cgroups framework, or where the state is being used
++ * to control some external behaviour (e.g. CPU scheduler).  Every
++ * task has an associated state pointer (accessed efficiently through
++ * task->cgroups) for each singleton subsystem.
++ *
++ * - multiply-bound subsystems may be mounted on zero or more
++ * hierarchies. Since there's no unique mapping from a task to a
++ * subsystem state pointer for multiply-bound subsystems, the state of
++ * these subsystems cannot be accessed rapidly from a task
++ * pointer. These correspond to subsystems where most or all of the
++ * state is maintained within the subsystem itself, and/or the
++ * subsystem is used for monitoring rather than control.
++ */
+ enum cgroup_subsys_id {
++#define SUBSYS(_x) _x ## _subsys_id,
++#define MULTI_SUBSYS(_x)
++#include <linux/cgroup_subsys.h>
++#undef SUBSYS
++#undef MULTI_SUBSYS
++	CGROUP_SINGLETON_SUBSYS_COUNT,
++	CGROUP_DUMMY_ENUM_RESET = CGROUP_SINGLETON_SUBSYS_COUNT - 1,
++#define SUBSYS(_x)
++#define MULTI_SUBSYS(_x) _x ## _subsys_id,
+ #include <linux/cgroup_subsys.h>
++#undef SUBSYS
++#undef MULTI_SUBSYS
+ 	CGROUP_SUBSYS_COUNT
+ };
+ #undef SUBSYS
+@@ -231,7 +259,7 @@ struct css_set {
+ 	 * time). Multi-subsystems don't have an entry in here since
+ 	 * there's no unique state for a given task.
  	 */
- 	unsigned long subsys_bits;
+-	struct cgroup_subsys_state *subsys[CGROUP_SUBSYS_COUNT];
++	struct cgroup_subsys_state *subsys[CGROUP_SINGLETON_SUBSYS_COUNT];
+ };
  
-+	/* Unique id for this hierarchy. */
-+	int hierarchy_id;
-+
- 	/* The bitmask of subsystems currently attached to this hierarchy */
- 	unsigned long actual_subsys_bits;
+ /*
+@@ -418,8 +446,10 @@ struct cgroup_subsys {
+ };
  
-@@ -145,6 +149,10 @@ struct css_id {
- static LIST_HEAD(roots);
- static int root_count;
+ #define SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
++#define MULTI_SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
+ #include <linux/cgroup_subsys.h>
+ #undef SUBSYS
++#undef MULTI_SUBSYS
  
-+static DEFINE_IDA(hierarchy_ida);
-+static int next_hierarchy_id;
-+static DEFINE_SPINLOCK(hierarchy_id_lock);
-+
- /* dummytop is a shorthand for the dummy hierarchy's top cgroup */
- #define dummytop (&rootnode.top_cgroup)
- 
-@@ -262,42 +270,10 @@ static struct hlist_head *css_set_hash(struct cgroup_subsys_state *css[])
-  * compiled into their kernel but not actually in use */
- static int use_task_css_set_links __read_mostly;
- 
--/* When we create or destroy a css_set, the operation simply
-- * takes/releases a reference count on all the cgroups referenced
-- * by subsystems in this css_set. This can end up multiple-counting
-- * some cgroups, but that's OK - the ref-count is just a
-- * busy/not-busy indicator; ensuring that we only count each cgroup
-- * once would require taking a global lock to ensure that no
-- * subsystems moved between hierarchies while we were doing so.
-- *
-- * Possible TODO: decide at boot time based on the number of
-- * registered subsystems and the number of CPUs or NUMA nodes whether
-- * it's better for performance to ref-count every subsystem, or to
-- * take a global lock and only add one ref count to each hierarchy.
-- */
--
--/*
-- * unlink a css_set from the list and free it
-- */
--static void unlink_css_set(struct css_set *cg)
-+static void __put_css_set(struct css_set *cg, int taskexit)
+ static inline struct cgroup_subsys_state *cgroup_subsys_state(
+ 	struct cgroup *cgrp, int subsys_id)
+@@ -430,6 +460,8 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
+ static inline struct cgroup_subsys_state *task_subsys_state(
+ 	struct task_struct *task, int subsys_id)
  {
- 	struct cg_cgroup_link *link;
- 	struct cg_cgroup_link *saved_link;
--
--	hlist_del(&cg->hlist);
--	css_set_count--;
--
--	list_for_each_entry_safe(link, saved_link, &cg->cg_links,
--				 cg_link_list) {
--		list_del(&link->cg_link_list);
--		list_del(&link->cgrp_link_list);
--		kfree(link);
--	}
--}
--
--static void __put_css_set(struct css_set *cg, int taskexit)
--{
--	int i;
- 	/*
- 	 * Ensure that the refcount doesn't hit zero while any readers
- 	 * can see it. Similar to atomic_dec_and_lock(), but for an
-@@ -310,20 +286,27 @@ static void __put_css_set(struct css_set *cg, int taskexit)
- 		write_unlock(&css_set_lock);
- 		return;
- 	}
--	unlink_css_set(cg);
--	write_unlock(&css_set_lock);
- 
--	rcu_read_lock();
--	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
--		struct cgroup *cgrp = rcu_dereference(cg->subsys[i]->cgroup);
-+	/* This css_set is dead. unlink it and release cgroup refcounts */
-+	hlist_del(&cg->hlist);
-+	css_set_count--;
-+
-+	list_for_each_entry_safe(link, saved_link, &cg->cg_links,
-+				 cg_link_list) {
-+		struct cgroup *cgrp = link->cgrp;
-+		list_del(&link->cg_link_list);
-+		list_del(&link->cgrp_link_list);
- 		if (atomic_dec_and_test(&cgrp->count) &&
- 		    notify_on_release(cgrp)) {
- 			if (taskexit)
- 				set_bit(CGRP_RELEASABLE, &cgrp->flags);
- 			check_for_release(cgrp);
- 		}
-+
-+		kfree(link);
- 	}
--	rcu_read_unlock();
-+
-+	write_unlock(&css_set_lock);
- 	kfree(cg);
++	/* This check is optimized out for most callers */
++	BUG_ON(subsys_id >= CGROUP_SINGLETON_SUBSYS_COUNT);
+ 	return rcu_dereference(task->cgroups->subsys[subsys_id]);
  }
  
-@@ -517,6 +500,7 @@ static void link_css_set(struct list_head *tmp_cg_links,
- 				cgrp_link_list);
- 	link->cg = cg;
- 	link->cgrp = cgrp;
-+	atomic_inc(&cgrp->count);
- 	list_move(&link->cgrp_link_list, &cgrp->css_sets);
- 	/*
- 	 * Always add links to the tail of the list so that the list
-@@ -537,7 +521,6 @@ static struct css_set *find_css_set(
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 9c8d31b..f78605e 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -14,7 +14,7 @@ SUBSYS(cpuset)
+ /* */
+ 
+ #ifdef CONFIG_CGROUP_DEBUG
+-SUBSYS(debug)
++MULTI_SUBSYS(debug)
+ #endif
+ 
+ /* */
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 74840ea..a527687 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -54,10 +54,18 @@
+ static DEFINE_MUTEX(cgroup_mutex);
+ 
+ /* Generate an array of cgroup subsystem pointers */
+-#define SUBSYS(_x) &_x ## _subsys,
+ 
+ static struct cgroup_subsys *subsys[] = {
++#define SUBSYS(_x) (&_x ## _subsys),
++#define MULTI_SUBSYS(_x)
+ #include <linux/cgroup_subsys.h>
++#undef SUBSYS
++#undef MULTI_SUBSYS
++#define SUBSYS(_x)
++#define MULTI_SUBSYS(_x) (&_x ## _subsys),
++#include <linux/cgroup_subsys.h>
++#undef SUBSYS
++#undef MULTI_SUBSYS
+ };
+ 
+ #define MAX_CGROUP_ROOT_NAMELEN 64
+@@ -269,7 +277,7 @@ static struct hlist_head *css_set_hash(struct cgroup_subsys_state *css[])
+ 	int index;
+ 	unsigned long tmp = 0UL;
+ 
+-	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++)
++	for (i = 0; i < CGROUP_SINGLETON_SUBSYS_COUNT; i++)
+ 		tmp += (unsigned long)css[i];
+ 	tmp = (tmp >> 16) ^ tmp;
+ 
+@@ -440,7 +448,7 @@ static struct css_set *find_existing_css_set(
+ 
+ 	/* Build the set of subsystem state objects that we want to
+ 	 * see in the new css_set */
+-	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++	for (i = 0; i < CGROUP_SINGLETON_SUBSYS_COUNT; i++) {
+ 		if (root->subsys_bits & (1UL << i)) {
+ 			/* Subsystem is in this hierarchy. So we want
+ 			 * the subsystem state from the new
+@@ -534,7 +542,7 @@ static struct css_set *find_css_set(
+ 	struct css_set *oldcg, struct cgroup *cgrp)
  {
  	struct css_set *res;
- 	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
--	int i;
+-	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
++	struct cgroup_subsys_state *template[CGROUP_SINGLETON_SUBSYS_COUNT];
  
  	struct list_head tmp_cg_links;
  
-@@ -576,10 +559,6 @@ static struct css_set *find_css_set(
- 
- 	write_lock(&css_set_lock);
- 	/* Add reference counts and links from the new css_set. */
--	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
--		struct cgroup *cgrp = res->subsys[i]->cgroup;
--		atomic_inc(&cgrp->count);
--	}
- 	list_for_each_entry(link, &oldcg->cg_links, cg_link_list) {
- 		struct cgroup *c = link->cgrp;
- 		if (c->root == cgrp->root)
-@@ -958,6 +937,10 @@ struct cgroup_sb_opts {
- 	unsigned long flags;
- 	char *release_agent;
- 	char *name;
-+
-+	/* User explicitly requested empty subsystem */
-+	bool none;
-+
- 	/* A flag indicating that a root was created from this options block */
- 	bool created_root;
- };
-@@ -988,6 +971,9 @@ static int parse_cgroupfs_options(char *data,
- 				if (!ss->disabled)
- 					opts->subsys_bits |= 1ul << i;
- 			}
-+		} else if (!strcmp(token, "none")) {
-+			/* Explicitly have no subsystems */
-+			opts->none = true;
- 		} else if (!strcmp(token, "noprefix")) {
- 			set_bit(ROOT_NOPREFIX, &opts->flags);
- 		} else if (!strncmp(token, "release_agent=", 14)) {
-@@ -1023,6 +1009,8 @@ static int parse_cgroupfs_options(char *data,
- 		}
- 	}
- 
-+	/* Consistency checks */
-+
- 	/*
- 	 * Option noprefix was introduced just for backward compatibility
- 	 * with the old cpuset, so we allow noprefix only if mounting just
-@@ -1032,6 +1020,16 @@ static int parse_cgroupfs_options(char *data,
- 	    (opts->subsys_bits & mask))
- 		return -EINVAL;
- 
-+
-+	/* Can't specify "none" and some subsystems */
-+	if (opts->subsys_bits && opts->none)
-+		return -EINVAL;
-+
-+	/*
-+	 * We either have to specify by name or by subsystems. (So all
-+	 * empty hierarchies must have a name).
-+	 */
-+
- 	/* We can't have an empty hierarchy */
- 	if (!opts->subsys_bits && !opts->name)
- 		return -EINVAL;
-@@ -1112,6 +1110,31 @@ static void init_cgroup_root(struct cgroupfs_root *root)
- 	init_cgroup_housekeeping(cgrp);
+@@ -857,17 +865,33 @@ static void cgroup_wakeup_rmdir_waiters(const struct cgroup *cgrp)
+ 		wake_up_all(&cgroup_rmdir_waitq);
  }
  
-+static bool init_root_id(struct cgroupfs_root *root)
++static void init_cgroup_css(struct cgroup_subsys_state *css,
++			       struct cgroup_subsys *ss,
++			       struct cgroup *cgrp)
 +{
++	css->cgroup = cgrp;
++	atomic_set(&css->refcnt, 1);
++	css->flags = 0;
++	css->id = NULL;
++	if (cgrp == dummytop)
++		set_bit(CSS_ROOT, &css->flags);
++	BUG_ON(cgrp->subsys[ss->subsys_id]);
++	cgrp->subsys[ss->subsys_id] = css;
++}
++
+ static int rebind_subsystems(struct cgroupfs_root *root,
+ 			     unsigned long final_bits)
+ {
+-	unsigned long added_bits, removed_bits;
++	unsigned long added_bits, removed_bits, rollback_bits;
 +	int ret = 0;
-+
-+	do {
-+		if (!ida_pre_get(&hierarchy_ida, GFP_KERNEL))
-+			return false;
-+		spin_lock(&hierarchy_id_lock);
-+		/* Try to allocate the next unused ID */
-+		ret = ida_get_new_above(&hierarchy_ida, next_hierarchy_id,
-+					&root->hierarchy_id);
-+		if (ret == -ENOSPC)
-+			/* Try again starting from 0 */
-+			ret = ida_get_new(&hierarchy_ida, &root->hierarchy_id);
-+		if (!ret) {
-+			next_hierarchy_id = root->hierarchy_id + 1;
-+		} else if (ret != -EAGAIN) {
-+			/* Can only get here if the 31-bit IDR is full ... */
-+			BUG_ON(ret);
-+		}
-+		spin_unlock(&hierarchy_id_lock);
-+	} while (ret);
-+	return true;
-+}
-+
- static int cgroup_test_super(struct super_block *sb, void *data)
- {
- 	struct cgroup_sb_opts *new = data;
-@@ -1132,14 +1155,19 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
- {
- 	struct cgroupfs_root *root;
+ 	struct cgroup *cgrp = &root->top_cgroup;
+ 	int i;
  
--	if (!opts->subsys_bits)
-+	if (!opts->subsys_bits && !opts->none)
- 		return ERR_PTR(-EINVAL);
+ 	removed_bits = root->subsys_bits & ~final_bits;
+ 	added_bits = final_bits & ~root->subsys_bits;
++	rollback_bits = 0;
+ 	/* Check that any added subsystems are currently free */
+-	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++	for (i = 0; i < CGROUP_SINGLETON_SUBSYS_COUNT; i++) {
+ 		unsigned long bit = 1UL << i;
+ 		if (!(bit & added_bits))
+ 			continue;
+@@ -884,33 +908,45 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 	if (root->number_of_cgroups > 1)
+ 		return -EBUSY;
  
- 	root = kzalloc(sizeof(*root), GFP_KERNEL);
- 	if (!root)
- 		return ERR_PTR(-ENOMEM);
- 
-+	if (!init_root_id(root)) {
-+		kfree(root);
-+		return ERR_PTR(-ENOMEM);
-+	}
- 	init_cgroup_root(root);
-+
- 	root->subsys_bits = opts->subsys_bits;
- 	root->flags = opts->flags;
- 	if (opts->release_agent)
-@@ -1150,6 +1178,15 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
- 	return root;
- }
- 
-+static void cgroup_drop_root(struct cgroupfs_root *root)
-+{
-+	BUG_ON(!root->hierarchy_id);
-+	spin_lock(&hierarchy_id_lock);
-+	ida_remove(&hierarchy_ida, root->hierarchy_id);
-+	spin_unlock(&hierarchy_id_lock);
-+	kfree(root);
-+}
-+
- static int cgroup_set_super(struct super_block *sb, void *data)
- {
- 	int ret;
-@@ -1161,7 +1198,7 @@ static int cgroup_set_super(struct super_block *sb, void *data)
- 		return PTR_ERR(root);
- 	ret = set_anon_super(sb, NULL);
- 	if (ret) {
--		kfree(root);
-+		cgroup_drop_root(root);
- 		return ret;
- 	}
- 
-@@ -1348,7 +1385,7 @@ static void cgroup_kill_sb(struct super_block *sb) {
- 	mutex_unlock(&cgroup_mutex);
- 
- 	kill_litter_super(sb);
--	kfree(root);
-+	cgroup_drop_root(root);
- }
- 
- static struct file_system_type cgroup_fs_type = {
-@@ -2992,7 +3029,7 @@ int __init cgroup_init(void)
- 	/* Add init_css_set to the hash table */
- 	hhead = css_set_hash(init_css_set.subsys);
- 	hlist_add_head(&init_css_set.hlist, hhead);
--
-+	BUG_ON(!init_root_id(&rootnode));
- 	err = register_filesystem(&cgroup_fs_type);
- 	if (err < 0)
- 		goto out;
-@@ -3047,7 +3084,7 @@ static int proc_cgroup_show(struct seq_file *m, void *v)
- 		struct cgroup *cgrp;
- 		int count = 0;
- 
--		seq_printf(m, "%lu:", root->subsys_bits);
-+		seq_printf(m, "%d:", root->hierarchy_id);
- 		for_each_subsys(root, ss)
- 			seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
- 		if (strlen(root->name))
-@@ -3093,8 +3130,8 @@ static int proc_cgroupstats_show(struct seq_file *m, void *v)
- 	mutex_lock(&cgroup_mutex);
+-	/* Process each subsystem */
++	/*
++	 * Process each subsystem. First try to add all new
++	 * subsystems, since this may require rollback
++	 */
  	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
  		struct cgroup_subsys *ss = subsys[i];
--		seq_printf(m, "%s\t%lu\t%d\t%d\n",
--			   ss->name, ss->root->subsys_bits,
-+		seq_printf(m, "%s\t%d\t%d\t%d\n",
-+			   ss->name, ss->root->hierarchy_id,
- 			   ss->root->number_of_cgroups, !ss->disabled);
++		bool singleton = i < CGROUP_SINGLETON_SUBSYS_COUNT;
+ 		unsigned long bit = 1UL << i;
+ 		if (bit & added_bits) {
++			struct cgroup_subsys_state *css;
+ 			/* We're binding this subsystem to this hierarchy */
+ 			BUG_ON(cgrp->subsys[i]);
+-			BUG_ON(!dummytop->subsys[i]);
+-			BUG_ON(dummytop->subsys[i]->cgroup != dummytop);
+-			BUG_ON(!(rootnode.subsys_bits & bit));
++			if (singleton) {
++				css = dummytop->subsys[i];
++				BUG_ON(!css);
++
++				BUG_ON(css->cgroup != dummytop);
++				BUG_ON(!(rootnode.subsys_bits & bit));
++			} else {
++				BUG_ON(dummytop->subsys[i]);
++				BUG_ON(rootnode.subsys_bits & bit);
++				css = ss->create(ss, cgrp);
++				if (IS_ERR(css)) {
++					ret = PTR_ERR(css);
++					break;
++				}
++				init_cgroup_css(css, ss, cgrp);
++			}
+ 			mutex_lock(&ss->hierarchy_mutex);
+-			cgrp->subsys[i] = dummytop->subsys[i];
+-			cgrp->subsys[i]->cgroup = cgrp;
+-			rootnode.subsys_bits &= ~bit;
++			cgrp->subsys[i] = css;
++			css->cgroup = cgrp;
++			if (singleton)
++				rootnode.subsys_bits &= ~bit;
+ 			root->subsys_bits |= bit;
+ 			mutex_unlock(&ss->hierarchy_mutex);
++			rollback_bits |= bit;
+ 		} else if (bit & removed_bits) {
+-			/* We're removing this subsystem */
+-			BUG_ON(cgrp->subsys[i] != dummytop->subsys[i]);
+-			BUG_ON(cgrp->subsys[i]->cgroup != cgrp);
+-			BUG_ON(rootnode.subsys_bits & bit);
+-			mutex_lock(&ss->hierarchy_mutex);
+-			dummytop->subsys[i]->cgroup = dummytop;
+-			cgrp->subsys[i] = NULL;
+-			root->subsys_bits &= ~bit;
+-			rootnode.subsys_bits |= bit;
+-			mutex_unlock(&ss->hierarchy_mutex);
++			/* Deal with this after adds are successful */
++			BUG_ON(!cgrp->subsys[i]);
+ 		} else if (bit & final_bits) {
+ 			/* Subsystem state should already exist */
+ 			BUG_ON(!cgrp->subsys[i]);
+@@ -919,9 +955,47 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 			BUG_ON(cgrp->subsys[i]);
+ 		}
  	}
- 	mutex_unlock(&cgroup_mutex);
-@@ -3812,8 +3849,8 @@ static int current_css_set_cg_links_read(struct cgroup *cont,
- 			name = c->dentry->d_name.name;
- 		else
- 			name = "?";
--		seq_printf(seq, "Root %lu group %s\n",
--			   c->root->subsys_bits, name);
-+		seq_printf(seq, "Root %d group %s\n",
-+			   c->root->hierarchy_id, name);
- 		rcu_read_unlock();
- 	}
- 	task_unlock(current);
-@@ -3821,6 +3858,34 @@ static int current_css_set_cg_links_read(struct cgroup *cont,
++	if (ret) {
++		/* We failed to add some subsystem - roll back */
++		removed_bits = rollback_bits;
++	}
++
++	/*
++	 * Now either remove the subsystems that were requested to be
++	 * removed, or roll back the subsystems that were added before
++	 * the error occurred
++	 */
++	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++		struct cgroup_subsys *ss = subsys[i];
++		bool singleton = i < CGROUP_SINGLETON_SUBSYS_COUNT;
++		unsigned long bit = 1UL << i;
++		if (bit & removed_bits) {
++			struct cgroup_subsys_state *css;
++			/* We're removing this subsystem */
++			css = cgrp->subsys[i];
++			BUG_ON(css->cgroup != cgrp);
++			if (singleton) {
++				BUG_ON(css != dummytop->subsys[i]);
++				BUG_ON(rootnode.subsys_bits & bit);
++			}
++			mutex_lock(&ss->hierarchy_mutex);
++			if (singleton) {
++				css->cgroup = dummytop;
++			} else {
++				/* Is this safe? */
++				ss->destroy(ss, cgrp);
++			}
++			cgrp->subsys[i] = NULL;
++			root->subsys_bits &= ~bit;
++			if (singleton)
++				rootnode.subsys_bits |= bit;
++			mutex_unlock(&ss->hierarchy_mutex);
++		}
++	}
++
+ 	synchronize_rcu();
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static int cgroup_show_options(struct seq_file *seq, struct vfsmount *vfs)
+@@ -976,7 +1050,7 @@ static int parse_cgroupfs_options(char *data,
+ 			/* Add all non-disabled subsystems */
+ 			int i;
+ 			opts->subsys_bits = 0;
+-			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			for (i = 0; i < CGROUP_SINGLETON_SUBSYS_COUNT; i++) {
+ 				struct cgroup_subsys *ss = subsys[i];
+ 				if (!ss->disabled)
+ 					opts->subsys_bits |= 1ul << i;
+@@ -1296,16 +1370,13 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		}
+ 
+ 		ret = rebind_subsystems(root, opts.subsys_bits);
+-		if (ret == -EBUSY) {
++		if (ret) {
+ 			mutex_unlock(&cgroup_mutex);
+ 			mutex_unlock(&inode->i_mutex);
+ 			free_cg_links(&tmp_cg_links);
+ 			goto drop_new_super;
+ 		}
+ 
+-		/* EBUSY should be the only error here */
+-		BUG_ON(ret);
+-
+ 		list_add(&root->root_list, &roots);
+ 		root_count++;
+ 
+@@ -2623,20 +2694,6 @@ static int cgroup_populate_dir(struct cgroup *cgrp)
  	return 0;
  }
  
-+#define MAX_TASKS_SHOWN_PER_CSS 25
-+static int cgroup_css_links_read(struct cgroup *cont,
-+				 struct cftype *cft,
-+				 struct seq_file *seq)
-+{
-+	struct cg_cgroup_link *link, *saved_link;
-+	write_lock_irq(&css_set_lock);
-+	list_for_each_entry_safe(link, saved_link, &cont->css_sets,
-+				 cgrp_link_list) {
-+		struct css_set *cg = link->cg;
-+		struct task_struct *task, *saved_task;
-+		int count = 0;
-+		seq_printf(seq, "css_set %p\n", cg);
-+		list_for_each_entry_safe(task, saved_task, &cg->tasks,
-+					 cg_list) {
-+			if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
-+				seq_puts(seq, "  ...\n");
-+				break;
-+			} else {
-+				seq_printf(seq, "  task %d\n",
-+					   task_pid_vnr(task));
+-static void init_cgroup_css(struct cgroup_subsys_state *css,
+-			       struct cgroup_subsys *ss,
+-			       struct cgroup *cgrp)
+-{
+-	css->cgroup = cgrp;
+-	atomic_set(&css->refcnt, 1);
+-	css->flags = 0;
+-	css->id = NULL;
+-	if (cgrp == dummytop)
+-		set_bit(CSS_ROOT, &css->flags);
+-	BUG_ON(cgrp->subsys[ss->subsys_id]);
+-	cgrp->subsys[ss->subsys_id] = css;
+-}
+-
+ static void cgroup_lock_hierarchy(struct cgroupfs_root *root)
+ {
+ 	/* We need to take each hierarchy_mutex in a consistent order */
+@@ -2922,21 +2979,23 @@ again:
+ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ {
+ 	struct cgroup_subsys_state *css;
+-
++	bool singleton = ss->subsys_id < CGROUP_SINGLETON_SUBSYS_COUNT;
+ 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
+ 
+-	/* Create the top cgroup state for this subsystem */
+-	css = ss->create(ss, dummytop);
+-	/* We don't handle early failures gracefully */
+-	BUG_ON(IS_ERR(css));
+-	init_cgroup_css(css, ss, dummytop);
+-
+-	/* Update the init_css_set to contain a subsys
+-	 * pointer to this state - since the subsystem is
+-	 * newly registered, all tasks and hence the
+-	 * init_css_set is in the subsystem's top cgroup. */
+-	init_css_set.subsys[ss->subsys_id] = dummytop->subsys[ss->subsys_id];
++	if (singleton) {
++		/* Create the top cgroup state for this subsystem */
++		css = ss->create(ss, dummytop);
++		/* We don't handle early failures gracefully */
++		BUG_ON(IS_ERR(css));
++		init_cgroup_css(css, ss, dummytop);
+ 
++		/* Update the init_css_set to contain a subsys
++		 * pointer to this state - since the subsystem is
++		 * newly registered, all tasks and hence the
++		 * init_css_set is in the subsystem's top cgroup. */
++		init_css_set.subsys[ss->subsys_id] = css;
++		rootnode.subsys_bits |= 1ULL << ss->subsys_id;
++	}
+ 	need_forkexit_callback |= ss->fork || ss->exit;
+ 
+ 	/* At system boot, before all subsystems have been
+@@ -2948,7 +3007,6 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
+ 	ss->active = 1;
+ 
+-	rootnode.subsys_bits |= 1ULL << ss->subsys_id;
+ }
+ 
+ /**
+@@ -3125,23 +3183,35 @@ struct file_operations proc_cgroup_operations = {
+ static void proc_show_subsys(struct seq_file *m, struct cgroupfs_root *root,
+ 			     struct cgroup_subsys *ss)
+ {
+-	seq_printf(m, "%s\t%d\t%d\t%d\n",
++	seq_printf(m, "%s\t%d\t%d\t%d\t%d\n",
+ 		   ss->name, root->hierarchy_id,
+-		   root->number_of_cgroups, !ss->disabled);
++		   root->number_of_cgroups, !ss->disabled,
++		   ss->subsys_id >= CGROUP_SINGLETON_SUBSYS_COUNT);
+ }
+ 
+ static int proc_cgroupstats_show(struct seq_file *m, void *v)
+ {
+ 	int i;
+-	seq_puts(m, "#subsys_name\thierarchy\tnum_cgroups\tenabled\n");
++	seq_puts(m, "#subsys_name\thierarchy\tnum_cgroups\tenabled\tmulti\n");
+ 	mutex_lock(&cgroup_mutex);
+ 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++		bool seen = false;
+ 		struct cgroup_subsys *ss = subsys[i];
+ 		unsigned long bit = 1ULL << ss->subsys_id;
+ 		struct cgroupfs_root *root;
+ 		for_each_root(root) {
+-			if (root->subsys_bits & bit)
++			if (root->subsys_bits & bit) {
+ 				proc_show_subsys(m, root, ss);
++				seen = true;
 +			}
 +		}
-+	}
-+	write_unlock_irq(&css_set_lock);
-+	return 0;
-+}
-+
- static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
- {
- 	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
-@@ -3852,6 +3917,11 @@ static struct cftype debug_files[] =  {
- 	},
++		if (!seen) {
++			BUG_ON(i < CGROUP_SINGLETON_SUBSYS_COUNT);
++			/*
++			 * multi-bindable subsystems show up in the
++			 * rootnode if they're not bound elsewhere.
++			 */
++			proc_show_subsys(m, &rootnode, ss);
+ 		}
+ 	}
+ 	mutex_unlock(&cgroup_mutex);
+@@ -3317,6 +3387,8 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
  
- 	{
-+		.name = "cgroup_css_links",
-+		.read_seq_string = cgroup_css_links_read,
-+	},
-+
-+	{
- 		.name = "releasable",
- 		.read_u64 = releasable_read,
- 	},
+ 	/* We shouldn't be called by an unregistered subsystem */
+ 	BUG_ON(!subsys->active);
++	/* We can only support singleton subsystems */
++	BUG_ON(subsys->subsys_id >= CGROUP_SINGLETON_SUBSYS_COUNT);
+ 
+ 	/* First figure out what hierarchy and cgroup we're dealing
+ 	 * with, and pin them so we can drop cgroup_mutex */
