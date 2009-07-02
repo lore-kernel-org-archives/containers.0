@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 11/25] io-controller: Export disk time used and nr sectors
-	dipatched through cgroups
-Date: Thu,  2 Jul 2009 16:01:43 -0400
-Message-ID: <1246564917-19603-12-git-send-email-vgoyal__24246.1412832656$1246567169$gmane$org@redhat.com>
+Subject: [PATCH 25/25] io-controller: experimental debug patch for async queue
+	wait before expiry
+Date: Thu,  2 Jul 2009 16:01:57 -0400
+Message-ID: <1246564917-19603-26-git-send-email-vgoyal__39403.0214091346$1246567308$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,184 +22,179 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o This patch exports some statistics through cgroup interface. Two of the
-  statistics currently exported are actual disk time assigned to the cgroup
-  and actual number of sectors dispatched to disk on behalf of this cgroup.
+o A debug patch which does wait for next IO from async queue once it
+  becomes empty.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+o For async writes, traffic seen by IO scheduler is not in proportion to
+  the weight of the cgroup task/page belongs to. So if there are two processes
+  doing heavy writeouts in two cgroups with weights 1000 and 500 respectively,
+  then IO scheduler does not see more traffic/IO from higher weight cgroup
+  even if IO scheduler tries to give it higher disk time. Effectively, the
+  async queue belonging to higher weight cgroup becomes empty, and gets out
+  of contention for disk and lower weight cgroup gets to use disk giving
+  an impression in user space that higher weight cgroup did not get higher
+  time to disk.
+
+o This is more of a problem at page cache level where a higher weight
+  process might be writing out the pages of lower weight process etc and
+  should be fixed there.
+
+o While we fix those issues, introducing this debug patch which allows one
+  to idle on async queue (tunable via /sys/blolc/<disk>/queue/async_slice_idle)  so that once a higher weight queue becomes empty, instead of expiring it
+  we try to wait for next request to come from that queue hence giving it
+  higher disk time. A higher value of async_slice_idle, around 300ms, helps
+  me get some right numbers for my setup. Note: higher disk time would not
+  necessarily translate in more IO done as higher weight group is not pushing
+  enough IO to io scheduler. It is just a debugging aid to prove correctness
+  of IO controller by providing higher disk times to higher weight cgroup.
+
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   81 +++++++++++++++++++++++++++++++++++++++++++++++++-
- block/elevator-fq.h |   10 ++++++
- 2 files changed, 89 insertions(+), 2 deletions(-)
+ block/cfq-iosched.c |    1 +
+ block/elevator-fq.c |   39 ++++++++++++++++++++++++++++++++++++---
+ block/elevator-fq.h |    5 +++++
+ 3 files changed, 42 insertions(+), 3 deletions(-)
 
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index a40a2fa..fbe56a9 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -2093,6 +2093,7 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(slice_async),
+ 	ELV_ATTR(fairness),
++	ELV_ATTR(async_slice_idle),
+ 	__ATTR_NULL
+ };
+ 
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index f8d0b90..bab01b5 100644
+index 5b3f068..7c83d1e 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -15,6 +15,7 @@
- #include <linux/blkdev.h>
- #include "elevator-fq.h"
- #include <linux/blktrace_api.h>
-+#include <linux/seq_file.h>
+@@ -24,6 +24,7 @@ const int elv_slice_sync = HZ / 10;
+ int elv_slice_async = HZ / 25;
+ const int elv_slice_async_rq = 2;
+ int elv_slice_idle = HZ / 125;
++int elv_async_slice_idle = 0;
+ static struct kmem_cache *elv_ioq_pool;
  
- /* Values taken from cfq */
- const int elv_slice_sync = HZ / 10;
-@@ -971,13 +972,16 @@ update:
- 	}
- }
+ /* Maximum Window length for updating average disk rate */
+@@ -2819,6 +2820,8 @@ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+ EXPORT_SYMBOL(elv_slice_async_show);
+ SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
+ EXPORT_SYMBOL(elv_fairness_show);
++SHOW_FUNCTION(elv_async_slice_idle_show, efqd->elv_async_slice_idle, 1);
++EXPORT_SYMBOL(elv_async_slice_idle_show);
+ #undef SHOW_FUNCTION
  
--static void entity_served(struct io_entity *entity, unsigned long served)
-+void entity_served(struct io_entity *entity, unsigned long served,
-+					unsigned long nr_sectors)
- {
- 	struct io_service_tree *st;
- 
- 	for_each_entity(entity) {
- 		st = io_entity_service_tree(entity);
- 		entity->service += served;
-+		entity->total_service += served;
-+		entity->total_sector_service += nr_sectors;
- 		BUG_ON(st->wsum == 0);
- 		st->vtime += bfq_delta(served, st->wsum);
- 		bfq_forget_idle(st);
-@@ -1140,6 +1144,66 @@ STORE_FUNCTION(weight, 1, WEIGHT_MAX);
- STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
+ #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+@@ -2845,6 +2848,8 @@ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
+ STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 2, 0);
+ EXPORT_SYMBOL(elv_fairness_store);
++STORE_FUNCTION(elv_async_slice_idle_store, &efqd->elv_async_slice_idle, 0, UINT_MAX, 1);
++EXPORT_SYMBOL(elv_async_slice_idle_store);
  #undef STORE_FUNCTION
  
-+static int io_cgroup_disk_time_read(struct cgroup *cgroup,
-+				struct cftype *cftype, struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_group *iog;
-+	struct hlist_node *n;
+ void elv_schedule_dispatch(struct request_queue *q)
+@@ -3018,7 +3023,7 @@ int elv_init_ioq(struct elevator_queue *eq, struct io_queue *ioq,
+ 		ioq->pid = current->pid;
+ 
+ 	ioq->sched_queue = sched_queue;
+-	if (is_sync && !elv_ioq_class_idle(ioq))
++	if (!elv_ioq_class_idle(ioq) && (is_sync || efqd->fairness))
+ 		elv_mark_ioq_idle_window(ioq);
+ 	bfq_init_entity(&ioq->entity, iog);
+ 	ioq->entity.budget = elv_prio_to_slice(efqd, ioq);
+@@ -3699,7 +3704,12 @@ static void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
+ 	/*
+ 	 * idle is disabled, either manually or by past process history
+ 	 */
+-	if (!efqd->elv_slice_idle || !elv_ioq_idle_window(ioq))
++	if ((elv_ioq_sync(ioq) && !efqd->elv_slice_idle) ||
++			!elv_ioq_idle_window(ioq))
++		return;
 +
-+	if (!cgroup_lock_live_group(cgroup))
-+		return -ENODEV;
-+
-+	iocg = cgroup_to_io_cgroup(cgroup);
-+
-+	rcu_read_lock();
-+	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
-+		/*
-+		 * There might be groups which are not functional and
-+		 * waiting to be reclaimed upon cgoup deletion.
-+		 */
-+		if (iog->key) {
-+			seq_printf(m, "%u %u %lu\n", MAJOR(iog->dev),
-+					MINOR(iog->dev),
-+					iog->entity.total_service);
-+		}
++	/* If this is async queue and async_slice_idle is disabled, return */
++	if (!elv_ioq_sync(ioq) && !efqd->elv_async_slice_idle)
+ 		return;
+ 
+ 	/*
+@@ -3708,7 +3718,10 @@ static void elv_ioq_arm_slice_timer(struct request_queue *q, int wait_for_busy)
+ 	 */
+ 	if (wait_for_busy) {
+ 		elv_mark_ioq_wait_busy(ioq);
+-		sl = efqd->elv_slice_idle;
++		if (elv_ioq_sync(ioq))
++			sl = efqd->elv_slice_idle;
++		else
++			sl = efqd->elv_async_slice_idle;
+ 		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
+ 		elv_log_ioq(efqd, ioq, "arm idle: %lu wait busy=1", sl);
+ 		return;
+@@ -3882,6 +3895,18 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
+ 		goto keep_queue;
+ 	}
+ 
++	/*
++	 * If this is an async queue which has time slice left but not
++	 * requests. Wait busy is also not on (may be because when last
++	 * request completed, ioq was not empty). Wait for the request
++	 * completion. May be completion will turn wait busy on.
++	 */
++	if (efqd->fairness && efqd->elv_async_slice_idle && !elv_ioq_sync(ioq)
++	    && elv_ioq_nr_dispatched(ioq)) {
++		ioq = NULL;
++		goto keep_queue;
 +	}
-+	rcu_read_unlock();
-+	cgroup_unlock();
 +
-+	return 0;
-+}
-+
-+static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
-+				struct cftype *cftype, struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_group *iog;
-+	struct hlist_node *n;
-+
-+	if (!cgroup_lock_live_group(cgroup))
-+		return -ENODEV;
-+
-+	iocg = cgroup_to_io_cgroup(cgroup);
-+
-+	rcu_read_lock();
-+	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
-+		/*
-+		 * There might be groups which are not functional and
-+		 * waiting to be reclaimed upon cgoup deletion.
-+		 */
-+		if (iog->key) {
-+			seq_printf(m, "%u %u %lu\n", MAJOR(iog->dev),
-+					MINOR(iog->dev),
-+					iog->entity.total_sector_service);
+ 	slice_expired = 0;
+ expire:
+ 	if (efqd->fairness >= 2 && !force && ioq && ioq->dispatched
+@@ -4076,6 +4101,13 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 			goto done;
+ 		}
+ 
++		/* For async queue try to do wait busy */
++		if (efqd->fairness && !elv_ioq_sync(ioq) && !ioq->nr_queued
++		    && (elv_iog_nr_active(iog) <= 1)) {
++			elv_ioq_arm_slice_timer(q, 1);
++			goto done;
 +		}
-+	}
-+	rcu_read_unlock();
-+	cgroup_unlock();
 +
-+	return 0;
-+}
-+
- struct cftype bfqio_files[] = {
- 	{
- 		.name = "weight",
-@@ -1151,6 +1215,14 @@ struct cftype bfqio_files[] = {
- 		.read_u64 = io_cgroup_ioprio_class_read,
- 		.write_u64 = io_cgroup_ioprio_class_write,
- 	},
-+	{
-+		.name = "disk_time",
-+		.read_seq_string = io_cgroup_disk_time_read,
-+	},
-+	{
-+		.name = "disk_sectors",
-+		.read_seq_string = io_cgroup_disk_sectors_read,
-+	},
- };
+ 		/*
+ 		 * If there are no requests waiting in this queue, and
+ 		 * there are other queues ready to issue requests, AND
+@@ -4215,6 +4247,7 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ 	efqd->elv_slice[0] = elv_slice_async;
+ 	efqd->elv_slice[1] = elv_slice_sync;
+ 	efqd->elv_slice_idle = elv_slice_idle;
++	efqd->elv_async_slice_idle = elv_async_slice_idle;
+ 	efqd->hw_tag = 1;
  
- static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-@@ -1252,6 +1324,8 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 	struct io_cgroup *iocg;
- 	struct io_group *iog, *leaf = NULL, *prev = NULL;
- 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
-+	unsigned int major, minor;
-+	struct backing_dev_info *bdi = &q->backing_dev_info;
- 
- 	for (; cgroup != NULL; cgroup = cgroup->parent) {
- 		iocg = cgroup_to_io_cgroup(cgroup);
-@@ -1272,6 +1346,9 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 
- 		iog->iocg_id = css_id(&iocg->css);
- 
-+		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
-+		iog->dev = MKDEV(major, minor);
-+
- 		io_group_init_entity(iocg, iog);
- 		iog->my_entity = &iog->entity;
- 
-@@ -1873,7 +1950,7 @@ EXPORT_SYMBOL(elv_get_slice_idle);
- 
- static void elv_ioq_served(struct io_queue *ioq, unsigned long served)
- {
--	entity_served(&ioq->entity, served);
-+	entity_served(&ioq->entity, served, ioq->nr_sectors);
- }
- 
- /* Tells whether ioq is queued in root group or not */
+ 	/* For the time being keep fairness enabled by default */
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index c8987c0..d76bd96 100644
+index 19ac8ca..f089a55 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -147,6 +147,13 @@ struct io_entity {
- 	unsigned short ioprio_class, new_ioprio_class;
+@@ -362,6 +362,8 @@ struct elv_fq_data {
+ 	 * users of this functionality.
+ 	 */
+ 	unsigned int elv_slice_idle;
++	/* idle slice for async queue */
++	unsigned int elv_async_slice_idle;
+ 	struct timer_list idle_slice_timer;
+ 	struct work_struct unplug_work;
  
- 	int ioprio_changed;
-+
-+	/*
-+	 * Keep track of total service received by this entity. Keep the
-+	 * stats both for time slices and number of sectors dispatched
-+	 */
-+	unsigned long total_service;
-+	unsigned long total_sector_service;
- };
+@@ -647,6 +649,9 @@ extern ssize_t elv_slice_async_store(struct elevator_queue *q, const char *name,
+ extern ssize_t elv_fairness_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_fairness_store(struct elevator_queue *q, const char *name,
+ 						size_t count);
++extern ssize_t elv_async_slice_idle_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_async_slice_idle_store(struct elevator_queue *q,
++					const char *name, size_t count);
  
- /*
-@@ -244,6 +251,9 @@ struct io_group {
- 
- 	int deleting;
- 	unsigned short iocg_id;
-+
-+	/* The device MKDEV(major, minor), this group has been created for */
-+	dev_t	dev;
- };
- 
- /**
+ /* Functions used by elevator.c */
+ extern int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e);
 -- 
 1.6.0.6
