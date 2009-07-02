@@ -1,15 +1,16 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/9] [RFC] Support multiply-bindable cgroup subsystems
-Date: Wed, 1 Jul 2009 19:52:16 -0700
-Message-ID: <6599ad830907011952t2e698e77j1e8dba21402bc9a9@mail.gmail.com>
+Subject: Re: [PATCH 8/9] [RFC] Example multi-bindable subsystem: a per-cgroup
+	notes field
+Date: Wed, 1 Jul 2009 19:56:28 -0700
+Message-ID: <6599ad830907011956i33769d5ek5401e93553d75c59__23803.5215218135$1246503505$gmane$org@mail.gmail.com>
 References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
-	<20090702021128.14469.3360.stgit@menage.mtv.corp.google.com>
-	<20090702114555.b7253edf.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090702021133.14469.35140.stgit@menage.mtv.corp.google.com>
+	<20090702114829.df04c885.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090702114555.b7253edf.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090702114829.df04c885.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,26 +24,22 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 1, 2009 at 7:45 PM, KAMEZAWA
+On Wed, Jul 1, 2009 at 7:48 PM, KAMEZAWA
 Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->> - in the current version of this patch, mounting a cgroups hierarchy
->> =A0 with no options does *not* get you any of the multi-bindable
->> =A0 subsystems; possibly for consistency it should give you all of the
->> =A0 multi-bindable subsystems as well as all of the single-bindable
->> =A0 subsystems.
->>
-> I don't think this is a big problem. Hmm, I wonder there are no people who
-> uses cgroup without any options (=3D mounts all subsys at once)...
-
-In practice I suspect that it's a rare usage outside of manual
-playing/testing - any real production system is going to want to be
-aware of what subsystems are available and decide which to mount on
-each hierarchy.
-
 >
-> Wow...seems complicated. How about adding linux/cgroup_multisubsys.h ?
+> Hmm, do we need to this "info" file as subsys ? How about making this as
+> default file set ? (if there are users.)
+>
 
-I think that the readability benefits in cgroup.c would be outweighed
-by having two different subsys include files.
+That would certainly be possible, and would be an alternative to
+having multi-bindable subsystem support.
+
+The advantage of adding multi-bindable subsystems is that you can
+avoid bloating the core cgroups code, by putting individual small
+cgroups features in their own code modules, and you get to decide at
+mount time which features are actually mounted; if they were part of
+the core cgroups files, then there would either need to be special
+mount options for each separate feature, or else no way to pick which
+features were mounted on each hierarchy.
 
 Paul
