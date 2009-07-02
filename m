@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 05/25] io-controller: Charge for time slice based on average
-	disk rate
-Date: Thu,  2 Jul 2009 16:01:37 -0400
-Message-ID: <1246564917-19603-6-git-send-email-vgoyal__23368.4141691358$1246567513$gmane$org@redhat.com>
+Subject: [PATCH 08/25] io-controller: cgroup related changes for hierarchical
+	group support
+Date: Thu,  2 Jul 2009 16:01:40 -0400
+Message-ID: <1246564917-19603-9-git-send-email-vgoyal__43706.0743257918$1246567592$gmane$org@redhat.com>
 References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,233 +22,340 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o There are situations where a queue gets expired very soon and it looks
-  as if time slice used by that queue is zero. For example, If an async
-  queue dispatches a bunch of requests and queue is expired before first
-  request completes. Another example is where a queue is expired as soon
-  as first request completes and queue has no more requests (sync queues
-  on SSD).
+o This patch introduces some of the cgroup related code for io controller.
 
-o Currently we just charge 25% of slice length in such cases. This patch tries
-  to improve on that approximation by keeping a track of average disk rate
-  and charging for time by nr_sectors/disk_rate.
-
-o This is still experimental, not very sure if it gives measurable improvement
-  or not. May be a better scheme is to use something more granular than jiffies
-  for time keeping for io queues.
-
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   97 +++++++++++++++++++++++++++++++++++++++++++++++----
- block/elevator-fq.h |   11 ++++++
- 2 files changed, 101 insertions(+), 7 deletions(-)
+ block/blk-ioc.c               |    3 +
+ block/elevator-fq.c           |  174 +++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h           |   43 ++++++++++-
+ include/linux/cgroup_subsys.h |    6 ++
+ include/linux/iocontext.h     |    5 +
+ 5 files changed, 230 insertions(+), 1 deletions(-)
 
+diff --git a/block/blk-ioc.c b/block/blk-ioc.c
+index d4ed600..0d56336 100644
+--- a/block/blk-ioc.c
++++ b/block/blk-ioc.c
+@@ -95,6 +95,9 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
+ 		spin_lock_init(&ret->lock);
+ 		ret->ioprio_changed = 0;
+ 		ret->ioprio = 0;
++#ifdef CONFIG_GROUP_IOSCHED
++		ret->cgroup_changed = 0;
++#endif
+ 		ret->last_waited = jiffies; /* doesn't matter... */
+ 		ret->nr_batch_requests = 0; /* because this is 0 */
+ 		ret->aic = NULL;
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 6f23d7e..67c02b9 100644
+index 0acfa2c..84276d5 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -23,6 +23,9 @@ const int elv_slice_async_rq = 2;
- int elv_slice_idle = HZ / 125;
- static struct kmem_cache *elv_ioq_pool;
- 
-+/* Maximum Window length for updating average disk rate */
-+static int elv_rate_sampling_window = HZ / 10;
-+
+@@ -29,6 +29,9 @@ static int elv_rate_sampling_window = HZ / 10;
  #define ELV_SLICE_SCALE		(5)
  #define ELV_HW_QUEUE_MIN	(5)
  
-@@ -941,6 +944,47 @@ static void elv_ioq_update_io_thinktime(struct io_queue *ioq)
- 	ioq->ttime_mean = (ioq->ttime_total + 128) / ioq->ttime_samples;
++#define IO_DEFAULT_GRP_WEIGHT  500
++#define IO_DEFAULT_GRP_CLASS   IOPRIO_CLASS_BE
++
+ #define IO_SERVICE_TREE_INIT   ((struct io_service_tree)		\
+ 				{ RB_ROOT, RB_ROOT, NULL, NULL, 0, 0 })
+ 
+@@ -899,6 +902,177 @@ static void io_flush_idle_tree(struct io_service_tree *st)
+ 		__bfq_deactivate_entity(entity, 0);
  }
  
-+static void elv_update_io_rate(struct elv_fq_data *efqd, struct request *rq)
++/* Mainly hierarchical grouping code */
++#ifdef CONFIG_GROUP_IOSCHED
++
++struct io_cgroup io_root_cgroup = {
++	.weight = IO_DEFAULT_GRP_WEIGHT,
++	.ioprio_class = IO_DEFAULT_GRP_CLASS,
++};
++
++static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
 +{
-+	long elapsed = jiffies - efqd->rate_sampling_start;
-+	unsigned long total;
-+
-+	/* sampling window is off */
-+	if (!efqd->rate_sampling_start)
-+		return;
-+
-+	efqd->rate_sectors_current += blk_rq_sectors(rq);
-+
-+	if (efqd->rq_in_driver && (elapsed < elv_rate_sampling_window))
-+		return;
-+
-+	efqd->rate_sectors = (7*efqd->rate_sectors +
-+				256*efqd->rate_sectors_current) / 8;
-+
-+	if (!elapsed) {
-+		/*
-+		 * updating rate before a jiffy could complete. Could be a
-+		 * problem with fast queuing/non-queuing hardware. Should we
-+		 * look at higher resolution time source?
-+		 *
-+		 * In case of non-queuing hardware we will probably not try to
-+		 * dispatch from multiple queues and will be able to account
-+		 * for disk time used and will not need this approximation
-+		 * anyway?
-+		 */
-+		elapsed = 1;
-+	}
-+
-+	efqd->rate_time = (7*efqd->rate_time + 256*elapsed) / 8;
-+	total = efqd->rate_sectors + (efqd->rate_time/2);
-+	efqd->mean_rate = total/efqd->rate_time;
-+
-+	elv_log(efqd, "mean_rate=%d, t=%d s=%d", efqd->mean_rate,
-+			elapsed, efqd->rate_sectors_current);
-+	efqd->rate_sampling_start = 0;
-+	efqd->rate_sectors_current = 0;
++	return container_of(cgroup_subsys_state(cgroup, io_subsys_id),
++			    struct io_cgroup, css);
 +}
 +
- /*
-  * Disable idle window if the process thinks too long.
-  * This idle flag can also be updated by io scheduler.
-@@ -1231,6 +1275,34 @@ static void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
- }
- 
- /*
-+ * Calculate the effective disk time used by the queue based on how many
-+ * sectors queue has dispatched and what is the average disk rate
-+ * Returns disk time in ms.
-+ */
-+static inline unsigned long elv_disk_time_used(struct request_queue *q,
-+					struct io_queue *ioq)
++#define SHOW_FUNCTION(__VAR)						\
++static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
++				       struct cftype *cftype)		\
++{									\
++	struct io_cgroup *iocg;					\
++	u64 ret;							\
++									\
++	if (!cgroup_lock_live_group(cgroup))				\
++		return -ENODEV;						\
++									\
++	iocg = cgroup_to_io_cgroup(cgroup);				\
++	spin_lock_irq(&iocg->lock);					\
++	ret = iocg->__VAR;						\
++	spin_unlock_irq(&iocg->lock);					\
++									\
++	cgroup_unlock();						\
++									\
++	return ret;							\
++}
++
++SHOW_FUNCTION(weight);
++SHOW_FUNCTION(ioprio_class);
++#undef SHOW_FUNCTION
++
++#define STORE_FUNCTION(__VAR, __MIN, __MAX)				\
++static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
++					struct cftype *cftype,		\
++					u64 val)			\
++{									\
++	struct io_cgroup *iocg;					\
++	struct io_group *iog;						\
++	struct hlist_node *n;						\
++									\
++	if (val < (__MIN) || val > (__MAX))				\
++		return -EINVAL;						\
++									\
++	if (!cgroup_lock_live_group(cgroup))				\
++		return -ENODEV;						\
++									\
++	iocg = cgroup_to_io_cgroup(cgroup);				\
++									\
++	spin_lock_irq(&iocg->lock);					\
++	iocg->__VAR = (unsigned long)val;				\
++	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
++		iog->entity.new_##__VAR = (unsigned long)val;		\
++		smp_wmb();						\
++		iog->entity.ioprio_changed = 1;				\
++	}								\
++	spin_unlock_irq(&iocg->lock);					\
++									\
++	cgroup_unlock();						\
++									\
++	return 0;							\
++}
++
++STORE_FUNCTION(weight, 1, WEIGHT_MAX);
++STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
++#undef STORE_FUNCTION
++
++struct cftype bfqio_files[] = {
++	{
++		.name = "weight",
++		.read_u64 = io_cgroup_weight_read,
++		.write_u64 = io_cgroup_weight_write,
++	},
++	{
++		.name = "ioprio_class",
++		.read_u64 = io_cgroup_ioprio_class_read,
++		.write_u64 = io_cgroup_ioprio_class_write,
++	},
++};
++
++static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
 +{
-+	struct elv_fq_data *efqd = &q->elevator->efqd;
-+	struct io_entity *entity = &ioq->entity;
-+	unsigned long jiffies_used = 0;
++	return cgroup_add_files(cgroup, subsys, bfqio_files,
++				ARRAY_SIZE(bfqio_files));
++}
 +
-+	if (!efqd->mean_rate)
-+		return entity->budget/4;
++static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
++						struct cgroup *cgroup)
++{
++	struct io_cgroup *iocg;
 +
-+	/* Charge the queue based on average disk rate */
-+	jiffies_used = ioq->nr_sectors/efqd->mean_rate;
++	if (cgroup->parent != NULL) {
++		iocg = kzalloc(sizeof(*iocg), GFP_KERNEL);
++		if (iocg == NULL)
++			return ERR_PTR(-ENOMEM);
++	} else
++		iocg = &io_root_cgroup;
 +
-+	if (!jiffies_used)
-+		jiffies_used = 1;
++	spin_lock_init(&iocg->lock);
++	INIT_HLIST_HEAD(&iocg->group_data);
++	iocg->weight = IO_DEFAULT_GRP_WEIGHT;
++	iocg->ioprio_class = IO_DEFAULT_GRP_CLASS;
 +
-+	elv_log_ioq(efqd, ioq, "disk time=%ldms sect=%lu rate=%ld",
-+				jiffies_to_msecs(jiffies_used),
-+				ioq->nr_sectors, efqd->mean_rate);
-+
-+	return jiffies_used;
++	return &iocg->css;
 +}
 +
 +/*
-  * Do the accounting. Determine how much service (in terms of time slices)
-  * current queue used and adjust the start, finish time of queue and vtime
-  * of the tree accordingly.
-@@ -1248,8 +1320,10 @@ static void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
-  * from next queue.
-  *
-  * Not sure how to determine the time consumed by queue in such scenarios.
-- * Currently as a crude approximation, we are charging 25% of time slice
-- * for such cases. A better mechanism is needed for accurate accounting.
-+ * Currently as a crude approximation, try to keep track of average disk rate
-+ * and charge the queue based on number of sectors transferred. If suffcient
-+ * disk rate data is not available then we are charging 25% of time slice
-+ * for such cases. A better mechanism, is needed for accurate accounting.
-  */
- void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
++ * We cannot support shared io contexts, as we have no mean to support
++ * two tasks with the same ioc in two different groups without major rework
++ * of the main cic/bfqq data structures.  By now we allow a task to change
++ * its cgroup only if it's the only owner of its ioc; the drawback of this
++ * behavior is that a group containing a task that forked using CLONE_IO
++ * will not be destroyed until the tasks sharing the ioc die.
++ */
++static int iocg_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
++			    struct task_struct *tsk)
++{
++	struct io_context *ioc;
++	int ret = 0;
++
++	/* task_lock() is needed to avoid races with exit_io_context() */
++	task_lock(tsk);
++	ioc = tsk->io_context;
++	if (ioc != NULL && atomic_read(&ioc->nr_tasks) > 1)
++		/*
++		 * ioc == NULL means that the task is either too young or
++		 * exiting: if it has still no ioc the ioc can't be shared,
++		 * if the task is exiting the attach will fail anyway, no
++		 * matter what we return here.
++		 */
++		ret = -EINVAL;
++	task_unlock(tsk);
++
++	return ret;
++}
++
++static void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
++			 struct cgroup *prev, struct task_struct *tsk)
++{
++	struct io_context *ioc;
++
++	task_lock(tsk);
++	ioc = tsk->io_context;
++	if (ioc != NULL)
++		ioc->cgroup_changed = 1;
++	task_unlock(tsk);
++}
++
++static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++{
++
++	/* Implemented in later patch */
++}
++
++struct cgroup_subsys io_subsys = {
++	.name = "io",
++	.create = iocg_create,
++	.can_attach = iocg_can_attach,
++	.attach = iocg_attach,
++	.destroy = iocg_destroy,
++	.populate = iocg_populate,
++	.subsys_id = io_subsys_id,
++	.use_id = 1,
++};
++#endif /* GROUP_IOSCHED */
+ /* Elevator fair queuing function */
+ static inline struct io_queue *elv_active_ioq(struct elevator_queue *e)
  {
-@@ -1270,9 +1344,9 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 	 * reuqest from the queue got completed. Of course we are not planning
- 	 * to idle on the queue otherwise we would not have expired it.
- 	 *
--	 * Charge for the 25% slice in such cases. This is not the best thing
--	 * to do but at the same time not very sure what's the next best
--	 * thing to do.
-+	 * Charge the queue based on average disk rate or the 25% slice if
-+	 * mean rate is 0. This is not the best thing to do but at the same
-+	 * time not very sure what's the next best thing to do.
- 	 *
- 	 * This arises from that fact that we don't have the notion of
- 	 * one queue being operational at one time. io scheduler can dispatch
-@@ -1282,7 +1356,7 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 	 * the requests to finish. But this will reduce throughput.
- 	 */
- 	if (!ioq->slice_end)
--		slice_used = entity->budget/4;
-+		slice_used = elv_disk_time_used(q, ioq);
- 	else {
- 		if (time_after(ioq->slice_end, jiffies)) {
- 			slice_unused = ioq->slice_end - jiffies;
-@@ -1292,7 +1366,7 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 				 * completing first request. Charge 25% of
- 				 * slice.
- 				 */
--				slice_used = entity->budget/4;
-+				slice_used = elv_disk_time_used(q, ioq);
- 			} else
- 				slice_used = entity->budget - slice_unused;
- 		} else {
-@@ -1310,6 +1384,8 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 	BUG_ON(ioq != efqd->active_queue);
- 	elv_reset_active_ioq(efqd);
- 
-+	/* Queue is being expired. Reset number of secotrs dispatched */
-+	ioq->nr_sectors = 0;
- 	if (!ioq->nr_queued)
- 		elv_del_ioq_busy(q->elevator, ioq, 1);
- 	else
-@@ -1671,6 +1747,7 @@ void elv_fq_dispatched_request(struct elevator_queue *e, struct request *rq)
- 
- 	BUG_ON(!ioq);
- 	elv_ioq_request_dispatched(ioq);
-+	ioq->nr_sectors += blk_rq_sectors(rq);
- 	elv_ioq_request_removed(e, rq);
- 	elv_clear_ioq_must_dispatch(ioq);
- }
-@@ -1683,6 +1760,10 @@ void elv_fq_activate_rq(struct request_queue *q, struct request *rq)
- 		return;
- 
- 	efqd->rq_in_driver++;
-+
-+	if (!efqd->rate_sampling_start)
-+		efqd->rate_sampling_start = jiffies;
-+
- 	elv_log_ioq(efqd, rq->ioq, "activate rq, drv=%d",
- 						efqd->rq_in_driver);
- }
-@@ -1746,6 +1827,8 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 	efqd->rq_in_driver--;
- 	ioq->dispatched--;
- 
-+	elv_update_io_rate(efqd, rq);
-+
- 	if (sync)
- 		ioq->last_end_request = jiffies;
- 
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index a7cbc0f..4b69239 100644
+index 57207c4..d9acb75 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -165,6 +165,9 @@ struct io_queue {
- 	/* Requests dispatched from this queue */
- 	int dispatched;
+@@ -13,11 +13,13 @@
+  */
  
-+	/* Number of sectors dispatched in current dispatch round */
-+	unsigned long nr_sectors;
-+
- 	/* Keep a track of think time of processes in this queue */
- 	unsigned long last_end_request;
- 	unsigned long ttime_total;
-@@ -228,6 +231,14 @@ struct elv_fq_data {
+ #include <linux/blkdev.h>
++#include <linux/cgroup.h>
  
- 	/* Base slice length for sync and async queues */
- 	unsigned int elv_slice[2];
-+
-+	/* Fields for keeping track of average disk rate */
-+	unsigned long rate_sectors; /* number of sectors finished */
-+	unsigned long rate_time;   /* jiffies elapsed */
-+	unsigned long mean_rate; /* sectors per jiffy */
-+	unsigned long long rate_sampling_start; /*sampling window start jifies*/
-+	/* number of sectors finished io during current sampling window */
-+	unsigned long rate_sectors_current;
+ #ifndef _BFQ_SCHED_H
+ #define _BFQ_SCHED_H
+ 
+ #define IO_IOPRIO_CLASSES	3
++#define WEIGHT_MAX             1000
+ 
+ struct io_entity;
+ struct io_queue;
+@@ -88,7 +90,7 @@ struct io_sched_data {
+  *             this entity; used for O(log N) lookups into active trees.
+  * @service: service received during the last round of service.
+  * @budget: budget used to calculate F_i; F_i = S_i + @budget / @weight.
+- * @weight: weight of the queue, calculated as IOPRIO_BE_NR - @ioprio.
++ * @weight: the weight in use.
+  * @new_weight: when a weight change is requested, the new weight value
+  * @parent: parent entity, for hierarchical scheduling.
+  * @my_sched_data: for non-leaf nodes in the cgroup hierarchy, the
+@@ -181,8 +183,10 @@ struct io_queue {
+ 	void *sched_queue;
  };
  
- /* Logging facilities. */
++#ifdef CONFIG_GROUP_IOSCHED
+ struct io_group {
+ 	struct io_entity entity;
++	struct hlist_node group_node;
+ 	struct io_sched_data sched_data;
+ 	struct io_entity *my_entity;
+ 
+@@ -199,8 +203,45 @@ struct io_group {
+ 	 * non-RT cfqq in service when this value is non-zero.
+ 	 */
+ 	unsigned int busy_rt_queues;
++	unsigned short iocg_id;
+ };
+ 
++/**
++ * struct io_cgroup - io cgroup data structure.
++ * @css: subsystem state for io in the containing cgroup.
++ * @weight: cgroup weight.
++ * @ioprio_class: cgroup ioprio_class.
++ * @lock: spinlock that protects @weight, @ioprio_class and @group_data.
++ * @group_data: list containing the io_group belonging to this cgroup.
++ *
++ * @group_data is accessed using RCU, with @lock protecting the updates,
++ * @weight and @ioprio_class are protected by @lock.
++ */
++struct io_cgroup {
++	struct cgroup_subsys_state css;
++
++	unsigned int weight;
++	unsigned short ioprio_class;
++
++	spinlock_t lock;
++	struct hlist_head group_data;
++};
++#else
++struct io_group {
++	struct io_sched_data sched_data;
++
++	/* async_queue and idle_queue are used only for cfq */
++	struct io_queue *async_queue[2][IOPRIO_BE_NR];
++	struct io_queue *async_idle_queue;
++
++	/*
++	 * Used to track any pending rt requests so we can pre-empt current
++	 * non-RT cfqq in service when this value is non-zero.
++	 */
++	unsigned int busy_rt_queues;
++};
++#endif /* CONFIG_GROUP_IOSCHED */
++
+ struct elv_fq_data {
+ 	struct io_group *root_group;
+ 
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 9c8d31b..baf544f 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -60,3 +60,9 @@ SUBSYS(net_cls)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_GROUP_IOSCHED
++SUBSYS(io)
++#endif
++
++/* */
+diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
+index 1482b20..ccecf53 100644
+--- a/include/linux/iocontext.h
++++ b/include/linux/iocontext.h
+@@ -68,6 +68,11 @@ struct io_context {
+ 	unsigned short ioprio;
+ 	unsigned short ioprio_changed;
+ 
++#ifdef CONFIG_GROUP_IOSCHED
++	/* If task changes the cgroup, elevator processes it asynchronously */
++	unsigned short cgroup_changed;
++#endif
++
+ 	/*
+ 	 * For request batching
+ 	 */
 -- 
 1.6.0.6
