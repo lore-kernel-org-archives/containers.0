@@ -1,8 +1,8 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/2] Adds a read-only "procs" file similar to "tasks"
-	that  shows only unique tgids
-Date: Thu, 2 Jul 2009 19:08:45 -0700
-Message-ID: <20090702190845.0cafc46a.akpm__43831.4137784348$1246586965$gmane$org@linux-foundation.org>
+	that shows only unique tgids
+Date: Thu, 2 Jul 2009 19:25:53 -0700
+Message-ID: <20090703022553.GJ19135__17099.6173903861$1246588079$gmane$org@count0.beaverton.ibm.com>
 References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
 	<20090702232620.3969.16680.stgit@menage.mtv.corp.google.com>
 	<20090702164649.303c4952.akpm@linux-foundation.org>
@@ -11,9 +11,10 @@ References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
 	<6599ad830907021808o6f3bb51eh324e4bf13544d83e@mail.gmail.com>
 	<2f86c2480907021817o79fce75yd9785aab682f7bb4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <2f86c2480907021817o79fce75yd9785aab682f7bb4-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -25,59 +26,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2 Jul 2009 18:17:56 -0700 Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-
+On Thu, Jul 02, 2009 at 06:17:56PM -0700, Benjamin Blum wrote:
 > On Thu, Jul 2, 2009 at 6:08 PM, Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Thu, Jul 2, 2009 at 5:53 PM, Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> >>> In the first snippet, count will be at most equal to length. As length
-> >>> is determined from cgroup_task_count, it can be no greater than the
-> >>> total number of pids on the system.
-> >>
-> >> Well that's a problem, because there can be tens or hundreds of
-> >> thousands of pids, and there's a fairly low maximum size for kmalloc()s
-> >> (include/linux/kmalloc_sizes.h).
-> >>
-> >> And even if this allocation attempt doesn't exceed KMALLOC_MAX_SIZE,
-> >> large allocations are less unreliable. __There is a large break point at
-> >> 8*PAGE_SIZE (PAGE_ALLOC_COSTLY_ORDER).
+> > On Thu, Jul 2, 2009 at 5:53 PM, Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org=
+> wrote:
+
+<snip>
+
 > >
-> > This has been a long-standing problem with the tasks file, ever since
-> > the cpusets days.
+> >>
+> >> One could perhaps create an alias (symlink?) and leave that in place
+> >> for a few kernel releases and then remove the old names. =A0The trick =
+to
+> >> doing this politely is to arrange for a friendly printk to come out
+> >> when userspace uses the old filename, so people know to change their
+> >> tools. =A0That printk should come out once-per-boot, not once-per-acce=
+ss.
 > >
-> > There are ways around it - Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> posted
-> > a patch that allocated an array of pages to store pids in, with a
-> > custom sorting function that let you specify indirection rather than
-> > assuming everything was in one contiguous array. This was technically
-> > the right approach in terms of not needing vmalloc and never doing
-> > large allocations, but it was very complex; an alternative that was
-> > mooted was to use kmalloc for small cgroups and vmalloc for large
-> > ones, so the vmalloc penalty wouldn't be paid generally. The thread
-> > fizzled AFAICS.
-> 
-> As it is currently, the kmalloc call will simply fail if there are too
-> many pids, correct? Do we prefer not being able to read the file in
-> this case, or would we rather use vmalloc?
+> > Personally, I feel that a bit of ugliness in the naming inconsistency
+> > is less painful than trying to deprecate something that people might
+> > be using.
+> =
 
-We'd prefer that we not use vmalloc and that the reads not fail!
+> That's what the people who designed x86 said :P
 
+And look at how successful x86 has been! ;)
 
+Seriously, I don't think the name "tasks" is ugly. I think "tasks"
+is a nice balance between overly verbose ("cgroup.tasks") and specificity.
+If anything I think the new file should be called "processes", not
+"cgroup.procs". The established convention was "subsys.foo". cgroup is not
+a subsystem of itself hence the names "tasks" and "processes" are just fine.
 
-Why are we doing all this anyway?  To avoid presenting duplicated pids
-to userspace?  Nothing else?
+> > If we could just flip the names without breaking anyone,
+> > that would be great, but this is just a style issue rather than a
+> > functional issue. My experience of such printk() statements scattered
+> > around in code is that no-one takes much notice of them.
 
-If so, why not stop doing that - userspace can remove dupes (if it
-cares) more easily than the kernel can?
+I agree with Paul.
 
+> =
 
-Or we can do it the other way?  Create an initially-empty local IDR
-tree or radix tree and, within that, mark off any pids which we've
-already emitted?  That'll have a worst-case memory consumption of
-approximately PID_MAX_LIMIT bits -- presently that's half a megabyte. 
-With no large allocations needed?
+> Whether or not we get rid of the old ones, it would be good to put in
+> aliases with the new style now so there's the option of removing the
+> old style ones later.
 
+What a terrible idea! If every alias has an uncertain future nobody will
+know which they should use. As a consequence 50% may use "tasks" and 50%
+may use "cgroup.tasks" and then we won't be able to remove either name!
 
-btw, did pidlist_uniq() actually needs to allocate new memory for the
-output array?  Could it have done the filtering in-place?
+Let's stick with what we have and not add endless numbers of aliases for
+every possible naming convention.
+
+Cheers,
+	-Matt Helsley
