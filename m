@@ -1,8 +1,8 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Adds a read-only "procs" file similar to "tasks" that
-	shows only unique tgids
-Date: Fri, 3 Jul 2009 10:54:48 -0700
-Message-ID: <6599ad830907031054x74d90149y38aae60afa403d58__24569.8888822973$1246643827$gmane$org@mail.gmail.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 1/2] Adds a read-only "procs" file similar to "tasks"
+	that  shows only unique tgids
+Date: Fri, 3 Jul 2009 11:10:16 -0700
+Message-ID: <20090703111016.ceb28541.akpm@linux-foundation.org>
 References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
 	<2f86c2480907021731h13e0bb95q94f06829eded9aa6@mail.gmail.com>
 	<20090702175341.fd2e26d5.akpm@linux-foundation.org>
@@ -13,11 +13,12 @@ References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
 	<20090702235527.7ddc873c.akpm@linux-foundation.org>
 	<6599ad830907030911m6176dc59id3a7d897b03d2bd@mail.gmail.com>
 	<20090703095000.cf46ad19.akpm@linux-foundation.org>
+	<6599ad830907031054x74d90149y38aae60afa403d58@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090703095000.cf46ad19.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <6599ad830907031054x74d90149y38aae60afa403d58-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,48 +28,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 3, 2009 at 9:50 AM, Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wr=
-ote:
->
-> I think you're saying "for each pid N in the cgroup, set the Nth
-> element in an IDR tree".
+On Fri, 3 Jul 2009 10:54:48 -0700 Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
 
-Right.
+> >__Unfortunately radix-trees are presented as operating on
+> > void* data, so one would need to do some typecasting when storing
+> > BITS_PER_LONG-sized bitfields inside them.
+> 
+> That would mean adding something a bit like the IDA wrapper that
+> converts IDR to deal with bitfields?
 
->=A0That would work. =A0And it automatically gives
-> ordered traversal and dupe removal.
->
-> I don't think IDRs permit in-order traversal, whereas radix-trees do
-> support this.
+I guess so.
 
-I thought that an IDR *was* a form of radix tree.
+> Is the benefit of avoiding a vmalloc() at all costs really worth the
+> additional complexity
 
-Looking at the IDR API it doesn't appear support the notion of "insert
-an entry with id N" anyway.
+Well no.  But nor was it worth the additional complexity the last twenty
+times someone resorted to vmalloc to solve a problem of this nature.  Taking
+a kernel-wide perspective here gives a different answer.
 
->=A0Unfortunately radix-trees are presented as operating on
-> void* data, so one would need to do some typecasting when storing
-> BITS_PER_LONG-sized bitfields inside them.
-
-That would mean adding something a bit like the IDA wrapper that
-converts IDR to deal with bitfields?
-
-Is the benefit of avoiding a vmalloc() at all costs really worth the
-additional complexity, versus just doing:
-
-if (size > 2 * PAGE_SIZE) {
-  array =3D vmalloc(size);
-} else {
-  array =3D kmalloc(size, GFP_KERNEL);
-}
-
-?
-
-That would only require vmalloc on cgroups with >2048 tasks, which is
-going to be pretty rare, and is way simpler.
-
-Paul
+However I don't think a little scoreboarding thing (what's the correct
+term) built around radix-trees would suffice to solve many of those
+past sins.  Whereas a general dynamic array thing would be applicable
+in many cases.
