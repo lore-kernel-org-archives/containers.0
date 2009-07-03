@@ -1,15 +1,13 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 4/9] [RFC] Allow cgroup hierarchies to be created with
-	no	bound subsystems
-Date: Fri, 03 Jul 2009 15:57:24 +0800
-Message-ID: <4A4DB9E4.9060500__39382.9971937977$1246608137$gmane$org@cn.fujitsu.com>
-References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
-	<20090702021113.14469.2703.stgit@menage.mtv.corp.google.com>
+Subject: Re: [PATCH] cgroup: Fix indent for /proc/cgroups
+Date: Fri, 03 Jul 2009 16:20:32 +0800
+Message-ID: <4A4DBF50.8090408__23936.461172025$1246609254$gmane$org@cn.fujitsu.com>
+References: <4A4DBBC2.8010805@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090702021113.14469.2703.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <4A4DBBC2.8010805-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +17,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> +#define MAX_TASKS_SHOWN_PER_CSS 25
-> +static int cgroup_css_links_read(struct cgroup *cont,
-> +				 struct cftype *cft,
-> +				 struct seq_file *seq)
-> +{
-> +	struct cg_cgroup_link *link, *saved_link;
+CC: container list
 
-need a newline
+Gui Jianfeng wrote:
+> Currently, /proc/cgroups outputs is fairly ugly as following,
+> #subsys_name    hierarchy       num_cgroups     enabled
+> cpuset  0       1       1
+> debug   0       1       1
+> ns      0       1       1
+> 
+> indent it in a good-looking way.
+> #subsys_name    hierarchy       num_cgroups     enabled
+> cpuset          0               1               1
+> debug           0               1               1
+> ns              0               1               1
+> 
 
-> +	write_lock_irq(&css_set_lock);
+But if there's a subsystem with name length >= 8,
+it won't be aligned properly..
 
-can be read_lock(&css_set_lock);
-
-> +	list_for_each_entry_safe(link, saved_link, &cont->css_sets,
-
-can be list_for_each_entry()
-
-> +				 cgrp_link_list) {
-> +		struct css_set *cg = link->cg;
-> +		struct task_struct *task, *saved_task;
-> +		int count = 0;
-> +		seq_printf(seq, "css_set %p\n", cg);
-> +		list_for_each_entry_safe(task, saved_task, &cg->tasks,
-
-ditto
-
-> +					 cg_list) {
-> +			if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
-> +				seq_puts(seq, "  ...\n");
-> +				break;
-> +			} else {
-> +				seq_printf(seq, "  task %d\n",
-> +					   task_pid_vnr(task));
-> +			}
-> +		}
-> +	}
-> +	write_unlock_irq(&css_set_lock);
-> +	return 0;
-> +}
+> 
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  kernel/cgroup.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 3737a68..99fc160 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -2963,7 +2963,7 @@ static int proc_cgroupstats_show(struct seq_file *m, void *v)
+>  	mutex_lock(&cgroup_mutex);
+>  	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+>  		struct cgroup_subsys *ss = subsys[i];
+> -		seq_printf(m, "%s\t%lu\t%d\t%d\n",
+> +		seq_printf(m, "%s\t\t%lu\t\t%d\t\t%d\n",
+>  			   ss->name, ss->root->subsys_bits,
+>  			   ss->root->number_of_cgroups, !ss->disabled);
+>  	}
