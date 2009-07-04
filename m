@@ -1,23 +1,13 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Adds a read-only "procs" file similar to "tasks" that
-	shows only unique tgids
-Date: Sat, 4 Jul 2009 09:10:58 -0700
-Message-ID: <6599ad830907040910k5c9d720bqafdf596bbc005783__14137.8185981468$1246723912$gmane$org@mail.gmail.com>
-References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
-	<20090702232620.3969.16680.stgit@menage.mtv.corp.google.com>
-	<20090702164649.303c4952.akpm@linux-foundation.org>
-	<2f86c2480907021731h13e0bb95q94f06829eded9aa6@mail.gmail.com>
-	<20090702175341.fd2e26d5.akpm@linux-foundation.org>
-	<6599ad830907021808o6f3bb51eh324e4bf13544d83e@mail.gmail.com>
-	<20090702183004.1e3f4315.akpm@linux-foundation.org>
-	<20090703145441.f526793f.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830907030852p2cd667e3m353d68448e0cdc6a@mail.gmail.com>
-	<3f9558558c68d9e2fe00f7c7681c3764.squirrel@webmail-b.css.fujitsu.com>
+From: "mike gordon" <mike.gordon-PeCUgM4zDv73fQ9qLvQP4Q@public.gmane.org>
+Subject: Quality, AS400, Ecommerce, B2B, Accounting, Technology -   IBM, ACCPAC,
+	Qucikbooks, ERP - SAP, QAD, CRM - Siebel, Manufacturing ,
+	Peoplesoft, Novell, Citrix
+Date: Sat, 04 Jul 2009 12:10:26 -0400
+Message-ID: <3002da13482b7c4080e4082c3a1b2f93@user-108dae7915>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <3f9558558c68d9e2fe00f7c7681c3764.squirrel-n3SY6/QrmYVJe+uFzlzAcYO9/linGGC/AL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,26 +17,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-2009/7/3 KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>:
-> Anyway, above algorithm shows that it's enough to have per-cgroup bitmap
-> (size can be dinamically changed) rather than big table and ugly sort().
-> How about adding per-cgroup taskid bitmap ?
-> clear/set is very easy.
->
-
-A per-cgroup bitmap of task ids would mean (assuming that it's
-implemented as a sparse tree like an IDA) that you'd add extra
-allocations and possible failure points in the fork path - right now
-the fork overhead imposed by the cgroups framework itself is just
-linking yourself into your parent's css_set and bumping its refcount.
-I guess there probably are workloads where doing more work at
-fork/exit time and less at "tasks" scan time is a win, but that has to
-be balanced against those where fork/exit performance is more
-critical, and the fact that it would be adding another way that fork
-could fail.
-
-Paul
+This email is to introduce our company Repharm and the services we offer.
+An international leader of sales and marketing database products for high technology businesses. Repharm provides installed customer lists for companies such as Oracle, PeopleSoft, Siebel, etc. Our lists are continuously maintained to ensure the highest level of accuracy and completeness. We have hundreds of industry leaders as customers today - many whose names you would recognize.
+If you are interested, we could send you a sample of one of our lists complete with summary information, so that you could evaluate our content. To find out about the various lists we have available, in preparation for any sales or marketing campaigns that your organization may be considering in future, we'd love to hear from you. Or, perhaps you'd be interested in acquiring your competitors' customer lists? 
+If you would like more information, please contact us at (905) 721-8456 or email us at repharm1-YDxpq3io04c@public.gmane.org
+Below are just some of the lists available:
+ERP (ENTERPRISE RESOURCE PLANNING):
+Baan
+JD Edwards
+Lawson
+Made2Manage
+Mapics
+Marcam
+Oracle
+Peoplesoft
+SAP
+SSA
+ 
+E-BUSINESS APPLICATIONS:
+Ariba
+BMC
+BroadVision
+Commerce One
+Webtrends
+ 
+MIDDLEWARE/CONNECTIVITY/APP SERVERS/WEB SERVERS:
+Bea Systems
+Iona
+Unisys
+ 
+OPERATING SYSTEMS/HARDWARE/SOFTWARE:
+COMPAQ
+HP 3000
+HP 9000
+HP-UX
+IBM AS/400
+IBM OS/390
+Lotus Notes
+Microsoft
+Sun Microsystems
+DATABASE:
+DB2
+FileMaker
+Informix
+Oracle
+SQL
+SybaseCRM (CUSTOMER RELATIONSHIP MANAGEMENT):
+Clarify
+E.piphany
+HNC
+Onyx
+Pivotal
+Siebel
+Vantive
+Xchange
+ 
+SUPPLY CHAIN:
+Agile
+i2 Technologies
+Manugistics
+QAD
+Webplan
+COMMUNICATIONS:
+Nortel
+Cisco
+3com
+Siemens
+Alcatel
+Telecom Vars
+ASP's
+CLECS
+ISP's
+ 
+E-COMMERCE:
+Dot Com Directory
+Consultant Directory
+Software Directory
+ 
+EXECUTIVE DIRECTORIES:
+Chief Executive Officer
+Chief Financial Officer
+Chief Information Officer
+Engineering
+Human Resources
+Purchasing
+Sales/Marketing
+ 
+INDUSTRY SPECIFIC LISTS:
+Agriculture, Forestry and Fishing, Communications, Construction,
+Finance, Insurance and Real Estate, Manufacturing, Mining, Public Administration,
+Retail Trade, Services, Transportation,
+Utilities, Wholesale Trade
