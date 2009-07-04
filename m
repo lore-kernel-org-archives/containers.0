@@ -1,15 +1,16 @@
 From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Sat, 4 Jul 2009 15:28:52 +0200
-Message-ID: <20090704132851.GA16373@megiteam.pl>
+Date: Sat, 4 Jul 2009 16:34:12 +0200
+Message-ID: <20090704143412.GA27523@megiteam.pl>
 References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
 	<20090413142038.GB13007@us.ibm.com>
+	<20090704132851.GA16373@megiteam.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090413142038.GB13007-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090704132851.GA16373-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,132 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGksCgpPbiBwb24sIGt3aSAxMywgMjAwOSBhdCAwOToyMDozOCAtMDUwMCwgU2VyZ2UgRS4gSGFs
-bHluIHdyb3RlOgo+IFF1b3RpbmcgTcO0c2hlIHZhbiBkZXIgU3RlcnJlIChtZUBtb3NoZS5ubCk6
-Cj4gPiBIZWxsbywKPiA+IAo+ID4gSSBhbSB3b3JraW5nIG9uIHRoZSBseGMgdXNlcnNwYWNlIHRv
-b2xzLCBhbmQgZ290IHRoaXMgQlVHIGEgY291cGxlIG9mCj4gPiB0aW1lcy4KPiA+IEhlcmUgYXJl
-IHRoZSByZXBvcnRzOgo+ID4gCj4gPiBodHRwOi8vbW9zaGUubmwvdHR5LWJ1Z3Nob3QxLnBuZwo+
-ID4gaHR0cDovL21vc2hlLm5sL3R0eS1idWdzaG90Mi5wbmcKPiA+IAo+ID4gSSBhbSBydW5uaW5n
-IDIuNi4yOS4xIGZyb20ga2VybmVsLm9yZyBpbiBhIHZpcnR1YWwgbWFjaGluZSB1bmRlciBrdm0u
-Cj4gPiBJIGhhdmUgbm90IGJlZW4gYWJsZSB0byByZWxpYWJseSByZXByb2R1Y2UgaXQsIGJ1dCBp
-dCBoYXBwZW5zIG9ubHkgYWZ0ZXIKPiA+IHRoZSBjb250YWluZXIgaXMgc2V0dXAgYW5kIHB0cmFj
-ZSBpcyBhY3RpdmUgb24gbHhjLXN0YXJ0Lgo+ID4gSSB0aGluayB0aGUgZmlyc3Qgc2NyZWVuIHNo
-b3QgaXMgd2hpbGUgYWxsIHR0eXMgd2hlcmUgYWxsb3dlZCBpbgo+ID4gY2dyb3VwLmRldmljZXMs
-IHRoZSBzZWNvbmQgb25lIHdoaWxlIG9ubHkgdHR5MSB3YXMgYWxsb3dlZC4KPiAKPiBXaGljaCBk
-aXN0cm8gaXMgdGhpcyAtIGFuIHVwdG9kYXRlIEYxMCwgZnJlc2ggRjExLCBzb21ldGhpbmcgZWxz
-ZT8KPiAKPiBTaW5jZSBpdCBhbHNvIGhhcHBlbnMgd2hlbiBhbGwgdHR5cyBhcmUgYWxsb3dlZCBp
-dCBwcm9iYWJseSBpc24ndCB0aGUKPiBkZXZpY2VzIGNncm91cC4uLiAgQWN0dWFsbHkgdGhlIGRl
-dnB0cyBjb2RlIHNlZW1zIHRoZSBtb3N0IGxpa2VseQo+IGNhdXNlLiAgU3VrYSwgY2FuIHlvdSB0
-YWtlIGEgbG9vayBhdCB0aGUgMi42LjI5LjEgc291cmNlIGZvciBhbnl0aGluZwo+IHN1c3BlY3Q/
-Cj4gCj4gTcO0c2hlLCBjYW4geW91IHNlbmQgbWUgdHR5X2lvLlMgYWZ0ZXIgZG9pbmc6Cj4gCSdv
-YmpkdW1wIC1kIGRyaXZlcnMvY2hhci90dHlfaW8ubyA+IHR0eV9pby5TJwo+IAo+IGFzIHdlbGwg
-YXMgc3RyYWNlX291dHB1dCBhZnRlciBkb2luZzoKPiAJJ3N0cmFjZSAtZiAtb3N0cmFjZV9vdXRw
-dXQgPHlvdXJfbHhjX3N0YXJ0X2NvbW1hbmRfaGVyZT4nCj4gPwoKU29ycnkgZm9yIGRpZ2dpbmcg
-dXAgc3VjaCBhbiBvbGQgdGhyZWFkIGJ1dCBJIGhhdmUgYXBwYXJlbnRseSBiZWVuCmJpdHRlbiBi
-eSB0aGUgc2FtZSBidWcuIEkndmUgYmVlbiBwbGF5aW5nIHdpdGggbGlidmlydCAwLjYuNCAod2hp
-Y2gKbW91bnRzIGRldnB0cyB3aXRoIG9wdGlvbiBuZXdpbnN0YW5jZSkgYW5kIEkgZ290IHRoZSBv
-b3BzIGJlbG93CndoaWxlIHN0cmFjZSdpbmcgY29udGFpbmVyIGluaXQgKHVwc3RhcnQgYWN0dWFs
-bHksIGdvdCBTSUdJTlQgYW5kIHdhcwphYm91dCB0byBleGl0OyBzb3JyeSwgbm8gc3RyYWNlIGF2
-YWlsYWJsZSBidXQgSSByZW1lbWJlciBub3RoaW5nCmV4dHJhb3JkaW5hcnkgZXhjZXB0IGZvciBh
-ICIrKysgS2lsbGVkIGJ5IFNJR1NFR1YgKysrIiBhdCB0aGUgZW5kKS4KClRoZSBrZXJuZWwgd2Fz
-IHZhbmlsbGEgMi42LjMwIChoYW5kLXJvbGxlZCBvbiBEZWJpYW4gTGVubnkpLgoKVGhlIG1hY2hp
-bmUgaXMgcXVpdGUgdW5jb21mb3J0YWJsZSB0byByZWJvb3QgYnV0IGlzIG5vdCBpbiBwcm9kdWN0
-aW9uCnVzZSwgc28gSSBndWVzcyBJIGNhbiB0ZXN0IHNvbWUgcGF0Y2hlcyBpZiBuZWVkZWQuCgpC
-ZXN0IHJlZ2FyZHMsCiBHcnplZ29yeiBOb3NlawoKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5l
-bDogWzE3MDgwOS40MTM5ODldIGdlbmVyYWwgcHJvdGVjdGlvbiBmYXVsdDogMDAwMCBbIzFdIFNN
-UApKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNDAyNF0gbGFzdCBzeXNm
-cyBmaWxlOiAvc3lzL2NsYXNzL25ldC9sby9vcGVyc3RhdGUKSnVsICAzIDIzOjIzOjMxIHNiYWNr
-IGtlcm5lbDogWzE3MDgwOS40MTQwNTJdIENQVSAwCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJu
-ZWw6IFsxNzA4MDkuNDE0MDc0XSBNb2R1bGVzIGxpbmtlZCBpbjogdmV0aCBpcHRfTUFTUVVFUkFE
-RSBpcHRhYmxlX25hdCBuZl9uYXQgbmZfY29ubnRyYWNrX2lwdjQgbmZfZGVmcmFnX2lwdjQgeHRf
-c3RhdGUgbmZfY29ubnRyYWNrIGlwdF9SRUpFQ1QgeHRfdGNwdWRwIGlwdGFibGVfZmlsdGVyIGlw
-X3RhYmxlcyB4X3RhYmxlcyBicmlkZ2Ugc3RwIGxsYyBpcHY2IHcKODM2MjdoZiBsbTg1IGh3bW9u
-X3ZpZCBsb29wIGV2ZGV2IHRnMyBsaWJwaHkgazh0ZW1wIHNocGNocCBwY2lfaG90cGx1ZyBpMmNf
-bmZvcmNlMiBpMmNfY29yZSBjb250YWluZXIgdGhlcm1hbCBwcm9jZXNzb3IgdGhlcm1hbF9zeXMg
-YnV0dG9uCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6IFsxNzA4MDkuNDE0MjcyXSBQaWQ6
-IDEzOTc0LCBjb21tOiBpbml0IE5vdCB0YWludGVkIDIuNi4zMC1zYmFjayAjMyBTMjg5MQpKdWwg
-IDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNDMwMV0gUklQOiAwMDEwOls8ZmZm
-ZmZmZmY4MDQzNzkxND5dICBbPGZmZmZmZmZmODA0Mzc5MTQ+XSB0dHlfb3BlbisweDFmYi8weDQy
-MwpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNDM1NF0gUlNQOiAwMDE4
-OmZmZmY4ODAwNjgwMTVjZjggIEVGTEFHUzogMDAwMTAyNDYKSnVsICAzIDIzOjIzOjMxIHNiYWNr
-IGtlcm5lbDogWzE3MDgwOS40MTQzODNdIFJBWDogZmZmZjg4MDA3ZTU0MDgwMCBSQlg6IGZmZmY4
-ODAwN2U1NDA4MDAgUkNYOiBmZmZmODgwMDdlOGNkNzA4Ckp1bCAgMyAyMzoyMzozMSBzYmFjayBr
-ZXJuZWw6IFsxNzA4MDkuNDE0NDI4XSBSRFg6IDY5NzM2NDZlNjU3MzJmNjQgUlNJOiAwMDAwMDAw
-MDAwMDAwMDAwIFJESTogZmZmZjg4MDA1OGM4ZGMxMApKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2Vy
-bmVsOiBbMTcwODA5LjQxNDQ3NF0gUkJQOiBmZmZmODgwMDY4MDE1ZDQ4IFIwODogMDAwMDAwMDAw
-MDAwMDAwMiBSMDk6IDAwMDAwMDAwMDAwMDAwMDAKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5l
-bDogWzE3MDgwOS40MTQ1MTldIFIxMDogMDAwMDAwMDAwMDAwMDE2NyBSMTE6IDAwMDAwMDAwMDAw
-MDAwMDQgUjEyOiBmZmZmODgwMTNlZGU5MDAwCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6
-IFsxNzA4MDkuNDE0NTY0XSBSMTM6IGZmZmY4ODAxM2VkZTkwMDggUjE0OiBmZmZmODgwMDdlNTg2
-YzAwIFIxNTogMDAwMDAwMDAwMDAwMDEwMApKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBb
-MTcwODA5LjQxNDYwOV0gRlM6ICAwMDAwN2Y0YTg4NzA1NmUwKDAwMDApIEdTOmZmZmZjMjAwMDAw
-MDAwMDAoMDAwMCkga25sR1M6MDAwMDAwMDAwMDAwMDAwMApKdWwgIDMgMjM6MjM6MzEgc2JhY2sg
-a2VybmVsOiBbMTcwODA5LjQxNDY1Nl0gQ1M6ICAwMDEwIERTOiAwMDAwIEVTOiAwMDAwIENSMDog
-MDAwMDAwMDA4MDA1MDAzYgpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQx
-NDY4NV0gQ1IyOiAwMDAwMDAwMDAyMGNkMDAwIENSMzogMDAwMDAwMDA3ZGMxYTAwMCBDUjQ6IDAw
-MDAwMDAwMDAwMDA2ZTAKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgwOS40MTQ3
-MzBdIERSMDogMDAwMDAwMDAwMDAwMDAwMCBEUjE6IDAwMDAwMDAwMDAwMDAwMDAgRFIyOiAwMDAw
-MDAwMDAwMDAwMDAwCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6IFsxNzA4MDkuNDE0Nzc1
-XSBEUjM6IDAwMDAwMDAwMDAwMDAwMDAgRFI2OiAwMDAwMDAwMGZmZmY0ZmYwIERSNzogMDAwMDAw
-MDAwMDAwMDQwMApKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNDgyMV0g
-UHJvY2VzcyBpbml0IChwaWQ6IDEzOTc0LCB0aHJlYWRpbmZvIGZmZmY4ODAwNjgwMTQwMDAsIHRh
-c2sgZmZmZjg4MDA3MjU2MDA0MCkKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgw
-OS40MTQ4NjhdIFN0YWNrOgpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQx
-NDg4OV0gIGZmZmY4ODAwN2U1ODZjMDAgZmZmZjg4MDA1OGM4ZGMxMCAwODgwMDAwMDAwMDA4MTAx
-IDAwMDAwMDAwMDAwMDAwMDEKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgwOS40
-MTQ5MjJdICAwMDAwMDAwMDAwMDAwMDAwIDAwMDAwMDAwMDAwMDAwMDAgMDAwMDAwMDAwMDAwMDAw
-MCBmZmZmODgwMTNlZGU5MDA4Ckp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6IFsxNzA4MDku
-NDE0OTcxXSAgMDAwMDAwMDAwMDAwMDAwMCBmZmZmODgwMDU4YzhkYzEwIGZmZmY4ODAwNjgwMTVk
-OTggZmZmZmZmZmY4MDJkNWIyNQpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5
-LjQxNTAzNl0gQ2FsbCBUcmFjZToKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgw
-OS40MTUwNTldICBbPGZmZmZmZmZmODAyZDViMjU+XSBjaHJkZXZfb3BlbisweDE1Zi8weDE3ZQpK
-dWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNTA5MF0gIFs8ZmZmZmZmZmY4
-MDNiYWEzYj5dID8gc2VsaW51eF9kZW50cnlfb3BlbisweGYyLzB4ZmIKSnVsICAzIDIzOjIzOjMx
-IHNiYWNrIGtlcm5lbDogWzE3MDgwOS40MTUxMjVdICBbPGZmZmZmZmZmODAyZDU5YzY+XSA/IGNo
-cmRldl9vcGVuKzB4MC8weDE3ZQpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5
-LjQxNTE1NF0gIFs8ZmZmZmZmZmY4MDJkMTA4Mj5dIF9fZGVudHJ5X29wZW4rMHgxNTUvMHgyNzQK
-SnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgwOS40MTUxODZdICBbPGZmZmZmZmZm
-ODAyZDEyNzg+XSBuYW1laWRhdGFfdG9fZmlscCsweDQ2LzB4NTcKSnVsICAzIDIzOjIzOjMxIHNi
-YWNrIGtlcm5lbDogWzE3MDgwOS40MTUyMThdICBbPGZmZmZmZmZmODAyZGViMWI+XSBkb19maWxw
-X29wZW4rMHg0Y2EvMHg5MjQKSnVsICAzIDIzOjIzOjMxIHNiYWNrIGtlcm5lbDogWzE3MDgwOS40
-MTUyNTFdICBbPGZmZmZmZmZmODAyZTdjZTg+XSA/IGFsbG9jX2ZkKzB4MTIyLzB4MTMzCkp1bCAg
-MyAyMzoyMzozMSBzYmFjayBrZXJuZWw6IFsxNzA4MDkuNDE1MjgxXSAgWzxmZmZmZmZmZjgwMmQw
-ZTYxPl0gZG9fc3lzX29wZW4rMHg1Yi8weGRiCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6
-IFsxNzA4MDkuNDE1MzEyXSAgWzxmZmZmZmZmZjgwMmQwZjE0Pl0gc3lzX29wZW4rMHgyMC8weDIy
-Ckp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJuZWw6IFsxNzA4MDkuNDE1MzQxXSAgWzxmZmZmZmZm
-ZjgwMjBiZjM2Pl0gdHJhY2VzeXMrMHhkOS8weGRlCkp1bCAgMyAyMzoyMzozMSBzYmFjayBrZXJu
-ZWw6IFsxNzA4MDkuNDE1MzczXSBDb2RlOiA4MSBmYiAwMCBmMCBmZiBmZiA3NiAxMSA0OCBjNyBj
-NyA2MCA2MSA3ZCA4MCBlOCBjMSAzOCAxNyAwMCBlOSBhOSAwMCAwMCAwMCA0OCA4NSBkYiA3NCA1
-YyA4MCBiYiA0MCAwMSAwMCAwMCAwMCA0OCA4YiA1MyAwOCA3OCA2NCA8ODE+IGJhIDljIDAwIDAw
-IDAwIDA0IDAwIDAxIDAwIDc1IDE2IDgzIGJiIDQ4IDAxIDAwIDAKMCAwMCA3NSA0ZgpKdWwgIDMg
-MjM6MjM6MzEgc2JhY2sga2VybmVsOiBbMTcwODA5LjQxNTU4Ml0gUklQICBbPGZmZmZmZmZmODA0
-Mzc5MTQ+XSB0dHlfb3BlbisweDFmYi8weDQyMwpKdWwgIDMgMjM6MjM6MzEgc2JhY2sga2VybmVs
-OiBbMTcwODA5LjQxNTYxMl0gIFJTUCA8ZmZmZjg4MDA2ODAxNWNmOD4KSnVsICAzIDIzOjIzOjMx
-IHNiYWNrIGtlcm5lbDogWzE3MDgwOS40MTU4NjldIC0tLVsgZW5kIHRyYWNlIGU2NWU2MzE5YjJm
-MzRmNWEgXS0tLQoKCkRlY29kaW5nIHRoZSBjb2RlIHlpZWxkczoKQWxsIGNvZGUKPT09PT09PT0K
-ICAgMDogICA4MSBmYiAwMCBmMCBmZiBmZiAgICAgICBjbXAgICAgJDB4ZmZmZmYwMDAsJWVieAog
-ICA2OiAgIDc2IDExICAgICAgICAgICAgICAgICAgIGpiZSAgICAweDE5CiAgIDg6ICAgNDggYzcg
-YzcgNjAgNjEgN2QgODAgICAgbW92ICAgICQweGZmZmZmZmZmODA3ZDYxNjAsJXJkaQogICBmOiAg
-IGU4IGMxIDM4IDE3IDAwICAgICAgICAgIGNhbGxxICAweDE3MzhkNQogIDE0OiAgIGU5IGE5IDAw
-IDAwIDAwICAgICAgICAgIGptcHEgICAweGMyCiAgMTk6ICAgNDggODUgZGIgICAgICAgICAgICAg
-ICAgdGVzdCAgICVyYngsJXJieAogIDFjOiAgIDc0IDVjICAgICAgICAgICAgICAgICAgIGplICAg
-ICAweDdhCiAgMWU6ICAgODAgYmIgNDAgMDEgMDAgMDAgMDAgICAgY21wYiAgICQweDAsMHgxNDAo
-JXJieCkKICAyNTogICA0OCA4YiA1MyAwOCAgICAgICAgICAgICBtb3YgICAgMHg4KCVyYngpLCVy
-ZHgKICAyOTogICA3OCA2NCAgICAgICAgICAgICAgICAgICBqcyAgICAgMHg4ZgogIDJiOiogIDgx
-IGJhIDljIDAwIDAwIDAwIDA0ICAgIGNtcGwgICAkMHgxMDAwNCwweDljKCVyZHgpICAgICA8LS0g
-dHJhcHBpbmcgaW5zdHJ1Y3Rpb24KICAzMjogICAwMCAwMSAwMAogIDM1OiAgIDc1IDE2ICAgICAg
-ICAgICAgICAgICAgIGpuZSAgICAweDRkCiAgMzc6ICAgODMgICAgICAgICAgICAgICAgICAgICAg
-LmJ5dGUgMHg4MwogIDM4OiAgIGJiIDQ4IDAxIDAwIDAwICAgICAgICAgIG1vdiAgICAkMHgxNDgs
-JWVieAoKQ29kZSBzdGFydGluZyB3aXRoIHRoZSBmYXVsdGluZyBpbnN0cnVjdGlvbgo9PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CiAgIDA6ICAgODEgYmEgOWMgMDAg
-MDAgMDAgMDQgICAgY21wbCAgICQweDEwMDA0LDB4OWMoJXJkeCkKICAgNzogICAwMCAwMSAwMAog
-ICBhOiAgIDc1IDE2ICAgICAgICAgICAgICAgICAgIGpuZSAgICAweDIyCiAgIGM6ICAgODMgICAg
-ICAgICAgICAgICAgICAgICAgLmJ5dGUgMHg4MwogICBkOiAgIGJiIDQ4IDAxIDAwIDAwICAgICAg
-ICAgIG1vdiAgICAkMHgxNDgsJWVieAoKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMu
-bGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9t
-YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Sat, Jul 04, 2009 at 03:28:52PM +0200, Grzegorz Nosek wrote:
+> Decoding the code yields:
+> All code
+> ========
+>    0:   81 fb 00 f0 ff ff       cmp    $0xfffff000,%ebx
+>    6:   76 11                   jbe    0x19
+>    8:   48 c7 c7 60 61 7d 80    mov    $0xffffffff807d6160,%rdi
+>    f:   e8 c1 38 17 00          callq  0x1738d5
+>   14:   e9 a9 00 00 00          jmpq   0xc2
+>   19:   48 85 db                test   %rbx,%rbx
+>   1c:   74 5c                   je     0x7a
+>   1e:   80 bb 40 01 00 00 00    cmpb   $0x0,0x140(%rbx)
+>   25:   48 8b 53 08             mov    0x8(%rbx),%rdx
+>   29:   78 64                   js     0x8f
+>   2b:*  81 ba 9c 00 00 00 04    cmpl   $0x10004,0x9c(%rdx)     <-- trapping instruction
+>   32:   00 01 00
+>   35:   75 16                   jne    0x4d
+>   37:   83                      .byte 0x83
+>   38:   bb 48 01 00 00          mov    $0x148,%ebx
+> 
+> Code starting with the faulting instruction
+> ===========================================
+>    0:   81 ba 9c 00 00 00 04    cmpl   $0x10004,0x9c(%rdx)
+>    7:   00 01 00
+>    a:   75 16                   jne    0x22
+>    c:   83                      .byte 0x83
+>    d:   bb 48 01 00 00          mov    $0x148,%ebx
+
+To my untrained eye it looks like the cmpl corresponds to:
+
+1841        if (tty->driver->type == TTY_DRIVER_TYPE_PTY &&
+1842            tty->driver->subtype == PTY_TYPE_MASTER)
+
+in drivers/char/tty_io.c
+
+That means that %rdx should contain tty->driver, but contains
+0x6973646e65732f64, which looks like a part of '/etc/init.d/sendsigs'.
+So, we're possibly using an already freed and overwritten tty struct.
+
+Best regards,
+ Grzegorz Nosek
