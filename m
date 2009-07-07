@@ -1,18 +1,15 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Tue, 7 Jul 2009 09:34:53 +0200
-Message-ID: <20090707073452.GA1383@megiteam.pl>
-References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
-	<20090413142038.GB13007@us.ibm.com>
-	<20090704132851.GA16373@megiteam.pl>
-	<20090704143412.GA27523@megiteam.pl>
-	<20090707033135.GA29461@us.ibm.com>
+From: "Elwin Stelzer Eliazer" <stelzere-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: RE: Using 127.n.x.x/16 for namespace to host
+Date: Tue, 7 Jul 2009 02:09:55 -0700
+Message-ID: <000001c9fee2$b3433540$19c99fc0$@com>
+References: <638f07d70907061546h5e017064t57ee22f45fa746b2@mail.gmail.com>
+	<20090707002842.GA20703@redback.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090707033135.GA29461-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090707002842.GA20703-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org>
+Content-Language: en-us
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,37 +19,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: 'Guenter Roeck' <groeck-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On pon, lip 06, 2009 at 08:31:35 -0700, Sukadev Bhattiprolu wrote:
-> | To my untrained eye it looks like the cmpl corresponds to:
-> | 
-> | 1841        if (tty->driver->type == TTY_DRIVER_TYPE_PTY &&
-> | 1842            tty->driver->subtype == PTY_TYPE_MASTER)
-> | 
-> | in drivers/char/tty_io.c
+Thank you for the suggestion. The link local address should be good enough
+for now.
+
+Cheers,
+Elwin.
+
+-----Original Message-----
+From: Guenter Roeck [mailto:groeck-gvzKVTG1yJJBDgjK7y7TUQ@public.gmane.org] 
+Sent: Monday, July 06, 2009 5:29 PM
+To: Elwin Stelzer Eliazer
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Subject: Re: Using 127.n.x.x/16 for namespace to host
+
+Look for ipv4_is_loopback().
+
+Another option might be to use link local addresses.
+
+Guenter
+
+On Mon, Jul 06, 2009 at 03:46:20PM -0700, Elwin Stelzer Eliazer wrote:
+> Hi,
 > 
-> I don't yet have the exact version of tty_io.c so the line numbers don't
-> match, but even so isn't the above 'cmpl' comparing a constant 0x10004
-> with the %rdx+0x9c address ? If so, I am not sure how it matches up to
-> either TTY_DRIVER_TYPE_PTY (0x0004) or PTY_TYPE_MASTER (0x0001).
+> I am using an internal bridge for internal socket communication between
+the
+> host and various containers' applications.
+> This is purely an internal bridge and no external traffic is expected in
+> this.
+> I can use a regular private ip address subnet for this, for example a
+> 192.168.x.x/16 for this, and things are working.
+> But since the applications at the container and host handle external
+traffic
+> as well, we are forced to exclude this internal subnet for external use.
+> Using a 127.n.x.x/16 subnet is preferred, since that is not expected to be
+> used externally.
+> But this is requiring kernel code change, since 127.0.0.1/8 is programmed
+> for loopback interface 'lo' in host.
+> Towards this tried changing:
+>      IFF_LOOPBACK 0x10 // in in.h, changed from 0x8 to 0x10
+>      ifa->ifa_prefixlen = 16; // in devinet.c, changed from 8 to 16
+> And still do not see them connected.
 > 
-> Wouldn't the above 'if' require two separate compare instructions ?
-
-They're two 16-bit words occupying the same 32-bit word, so presumably
-gcc optimised it into a single memory access.
-
-> Is it possibly related to this bug where they talk of some sort of
-> corruption going on with tty data structures (kernel versions appear
-> to be close, but need to double check).
+> Any suggestions on this will be appreciated.
 > 
-> 	http://lkml.org/lkml/2009/6/16/131
-
-2.6.30 has no tty_ldisc_hangup (the function being touched) at all. I
-guess it was added while restructuring the tty layer. I'll have a look
-at it though, thanks for the link.
-
-Best regards,
- Grzegorz Nosek
+> regards,
+> Elwin.
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
