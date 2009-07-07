@@ -1,19 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: kernel summit topic - 'containers end-game'
-Date: Tue, 7 Jul 2009 11:14:40 -0500
-Message-ID: <20090707161440.GA16152@us.ibm.com>
-References: <20090623145611.GB19332@us.ibm.com>
-	<4A4CFEAB.5080507@cs.columbia.edu>
-	<20090706143401.GA16868@us.ibm.com>
-	<4A5234D1.4010805@cs.columbia.edu>
-	<20090706184848.GA23819@us.ibm.com>
-	<4A536B91.5010205@cs.columbia.edu>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: build breaks when checkpoint unimplemented by arch
+Date: Tue, 07 Jul 2009 11:31:15 -0500
+Message-ID: <m33a98v4j0.fsf@pobox.com>
+References: <m3my7hv7w8.fsf@pobox.com>
+	<Pine.LNX.4.64.0907061902530.15941@takamine.ncl.cs.columbia.edu>
+	<m3bpnxv03k.fsf@pobox.com>
+	<Pine.LNX.4.64.0907070039360.22105@takamine.ncl.cs.columbia.edu>
+	<m2eist3tcr.fsf@pobox.com>
+	<Pine.LNX.4.64.0907071049540.24765@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A536B91.5010205-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0907071049540.24765-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+	(Oren Laadan's message of "Tue\, 7 Jul 2009 10\:58\:26 -0400 \(EDT\)")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,67 +24,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >>
-> >> Serge E. Hallyn wrote:
-> >>> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >>>> Serge E. Hallyn wrote:
-> >>>>> A topic on ksummit agenda is 'containers end-game and how do we
-> >>>>> get there'.
-> >>>>>
-> >>>>> So for starters, looking just at application (and system) containers, what do
-> >>>>> the libvirt and liblxc projects want to see in kernel support that is currently
-> >>>>> missing?  Are there specific things that should be done soon to make containers
-> >>>>> more useful and usable?
-> >>>>>
-> >>>>> More generally, the topic raises the question... what 'end-games' are there?
-> >>>>> A few I can think of off-hand include:
-> >>>>>
-> >>>>> 	1. resource control
-> >>>>> 	2. lightweight virtual servers
-> >>>>> 	3. (or 2.5) unprivileged containers/jail-on-steroids
-> >>>>> 		(lightweight virtual servers in which you might, just
-> >>>>> 		maybe, almost, be able to give away a root account, at
-> >>>>> 		least as much as you could do so with a kvm/qemu/xen
-> >>>>> 		partition)
-> >>>>> 	4. checkpoint, restart, and migration
-> >>>>>
-> >>>>> For each end-game, what kernel pieces do we think are missing?  For instance,
-> >>>>> people seem agreed that resource control needs io control :)  Containers imo
-> >>>>> need a user namespace.  I think there are quite a few network namespace
-> >>>>> exploiters who require sysfs directory tagging (or some equivalent) to
-> >>>>> allow us to migrate physical devices into network namespaces.  And
-> >>>>> checkpoint/restart needs... checkpoint/restart.
-> >>>> Heh ... it does need ... checkpoint/restart; and a few issues
-> >>>> which we should think about sometime --
-> >>> Yup, these are all things we need to discuss.  For some of them we might
-> >>> just need to flail about and code a few approaches until we figure out an
-> >>> answer, but then I think that everyone has thought about a few of these
-> >>> in some detail, so there probably is much we could gain from talking.
-> >>>
-> >>> ...  Does this mean we should try to have a mini-summit in the next 6
-> >>> months or so?  I'd recommend having one right before kernel summit so
-> >>> we can get our act together, but getting everyone to tokyo to chat seems
-> >>> uneconomical :)  It'd be good to chat about at least the first two items
-> >>> before the summit, though.
-> >>>
-> >> How about linux plumbers ?
-> > 
-> > Well it seems like an appropriate place for it.  Alas there is almost no chance
-> > of my being there, but let's hear a roll call - how many people (interested in
-> > checkpoint/restart) will be or can be at plumber's?
-> > 
-> > I'm pretty sure Suka and Dave will be there.
-> 
-> Seems like I can make it.
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> On Tue, 7 Jul 2009, Nathan Lynch wrote:
+>
+>> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+>> > That's what I tried initially, but the problem is that sigset_t may
+>> > be defined differently for userspace - see /usr/include/asm/sigset_t.h.
+>> > In fact, for x86_32, it it is different, defined as 'unsigned long' 
+>> > (and NSIG defined as 32, so only 32 bits).
+>> 
+>> I noticed this, but I figured only the kernel definition was salient.
+>> Apart from debugging checkpoint/restart, why would userspace need the
+>> definition of struct ckpt_hdr_sigset?
+>
+> I expect user space tools to at least:
+>
+> - Assist in debugging c/r
+>
+> - Assist users in reporting problems with c/r (especially since they
+>   themselves do not debug or hack)
+>
+> - Convert checkpoint images from one kernel version to another
+>
+> - Provide information about a checkpoint image, and even allow its
+>   manipulation.  This can assist developers in debugging their programs
+>   (e.g. to debug a crash you need to run a program for 30 minutes so it 
+>   ets up its state; instead of repeatedly running it, you run it once, 
+>   checkpoint, and then debug from a restarted version. A tool could 
+>   allow you to peek/poke inside the checkpoint and even modify data in 
+>   it).
+>
+> - Or a tool that converts a checkpoint image to a core dump so it
+>   can be inspected with gdb.
+>
+> I'm pretty sure others will find other uses to it...
 
-Alexey, are you planning on being at the plumber's conf this year?
+But I asked specifically about ckpt_hdr_sigset.
 
--serge
+
+>> For that matter, why would userspace need the definitions of most of the
+>> structures in checkpoint_hdr.h?  (Again, debugging purposes don't count:
+>> ckptinfo or similar developer utilities can be included with the
+>> kernel.)
+>
+> Keeping the checkpoint header format understandable by user space (and 
+> immune to 32-64 variations) has been a requirement since day 1.
+
+I guess I wasn't around that day.  It seems backwards to expose the
+format of every checkpoint record in the ABI regardless of whether
+plausible use cases exist.  Linux has a well-established pattern of
+introducing interfaces without sufficient testing or documentation[1],
+and I expect C/R will adhere to tradition.  Making the ABI obese in the
+hope of anticipating every conceivable use will just provide more
+opportunities to screw up.
+
+[1] http://userweb.kernel.org/~mtk/papers/lce2007/What_we_lose_without_words.pdf
