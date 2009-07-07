@@ -1,17 +1,17 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: build breaks when checkpoint unimplemented by arch
-Date: Tue, 7 Jul 2009 10:58:26 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0907071049540.24765@takamine.ncl.cs.columbia.edu>
+Date: Tue, 7 Jul 2009 10:59:43 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0907071058340.24765@takamine.ncl.cs.columbia.edu>
 References: <m3my7hv7w8.fsf@pobox.com>
 	<Pine.LNX.4.64.0907061902530.15941@takamine.ncl.cs.columbia.edu>
 	<m3bpnxv03k.fsf@pobox.com>
 	<Pine.LNX.4.64.0907070039360.22105@takamine.ncl.cs.columbia.edu>
-	<m2eist3tcr.fsf@pobox.com>
+	<20090707133335.GA7686@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m2eist3tcr.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20090707133335.GA7686-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,67 +21,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 7 Jul 2009, Nathan Lynch wrote:
+On Tue, 7 Jul 2009, Serge E. Hallyn wrote:
 
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> > On Mon, 6 Jul 2009, Nathan Lynch wrote:
+> > 
+> > > Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> > > 
+> > > > On Mon, 6 Jul 2009, Nathan Lynch wrote:
+> > > >
+> > > >> Hi Oren,
+> > > >> 
+> > > >> With ckpt-v17-rc1 (as well as ckpt-v16-dev) the powerpc build is broken:
+> > > >> 
+> > > >> In file included from include/linux/checkpoint.h:28,
+> > > >>                  from kernel/exit.c:53:
+> > > >> include/linux/checkpoint_hdr.h:42:32: error: asm/checkpoint_hdr.h: No such file or directory
+> > > >> In file included from include/linux/checkpoint.h:28,
+> > > >>                  from kernel/exit.c:53:
+> > > >> include/linux/checkpoint_hdr.h:410: error: 'CKPT_ARCH_NSIG' undeclared here (not in a function)
+> > > >> make[1]: *** [kernel/exit.o] Error 1
+> > > >> 
+> > > >> 
+> > > >> It appears that any architecture which does not supply
+> > > >> asm/checkpoint_hdr.h is broken in the same way.
+> > > >> 
+> > > >> Either all architectures need to supply asm/checkpoint_hdr.h (and define
+> > > >> CKPT_ARCH_NSIG), or there needs to be some other fix which allows
+> > > >> as-yet-unsupported arches to build..
+> > > >> 
+> > > >
+> > > > I see... well - maybe it's time to resend the powerpc port :p
+> > > 
+> > > I'm working on that, but the powerpc port won't be of any help to the
+> > > twenty-odd other architectures that are broken.
+> > > 
+> > 
+> > [...]
+> > 
 > > That's what I tried initially, but the problem is that sigset_t may
 > > be defined differently for userspace - see /usr/include/asm/sigset_t.h.
 > > In fact, for x86_32, it it is different, defined as 'unsigned long' 
 > > (and NSIG defined as 32, so only 32 bits).
-> 
-> I noticed this, but I figured only the kernel definition was salient.
-> Apart from debugging checkpoint/restart, why would userspace need the
-> definition of struct ckpt_hdr_sigset?
-
-I expect user space tools to at least:
-
-- Assist in debugging c/r
-
-- Assist users in reporting problems with c/r (especially since they
-  themselves do not debug or hack)
-
-- Convert checkpoint images from one kernel version to another
-
-- Provide information about a checkpoint image, and even allow its
-  manipulation.  This can assist developers in debugging their programs
-  (e.g. to debug a crash you need to run a program for 30 minutes so it 
-  ets up its state; instead of repeatedly running it, you run it once, 
-  checkpoint, and then debug from a restarted version. A tool could 
-  allow you to peek/poke inside the checkpoint and even modify data in 
-  it).
-
-- Or a tool that converts a checkpoint image to a core dump so it
-  can be inspected with gdb.
-
-I'm pretty sure others will find other uses to it...
-
-> 
-> For that matter, why would userspace need the definitions of most of the
-> structures in checkpoint_hdr.h?  (Again, debugging purposes don't count:
-> ckptinfo or similar developer utilities can be included with the
-> kernel.)
-
-Keeping the checkpoint header format understandable by user space (and 
-immune to 32-64 variations) has been a requirement since day 1.
-
-> 
+> > 
 > > Moreover, if you include <asm/sigset.h> in checkpoint_hdr.h, which is
 > > also included by userspace, you get lots of compilations warnings,
 > > because of other stuff included from the kernel's asm/sigset.h that
-						      ^^^^^^^^^^^^^
-					I meant:      asm/siginfo.h
-
 > > isn't supposed to be included by userspace.
+> > 
+> > So the introduction of CKPT_ARCH_NSIG is a workaround that.
+> > 
+> > And back to the other problem - I agree, kernel should only include
+> > <linux/checkpoint.h>, which in turn will include <checkpoint_hdr.h>
+> > if defined CONFIG_CHECKPOINT.
+> > 
+> > Can you try this patch:
 > 
-> Can you provide examples of such warnings?  Are you building against
-> "sanitized" kernel headers (make headers_install) or using them in
-> place?
+> (Which looks exactly like my patch from yesterday.)
+
+... great minds, eh ?  (and one was really tired ;)
+
+> 
+> > (Hallyn: note that there is some checkpoint-related code within
+> > kerbel/capability.c that should be inside #ifdef CONFIG_CHECKPOINT).
+> 
+> Yup, the patch i sent yesterday took care of that.
+> 
+> So if that's the route we want to take, then again I can
+> confirm it did compile on ppc, and compile and boot on
+> s390.
 > 
 
-Both.
+Sound good. 
 
 Oren.
+
+[...]
