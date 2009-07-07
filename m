@@ -1,21 +1,17 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Add AF_UNIX support (v3)
-Date: Tue, 07 Jul 2009 07:52:30 -0700
-Message-ID: <87prccsfyp.fsf@caffeine.danplanet.com>
-References: <1245167716-28906-1-git-send-email-danms@us.ibm.com>
-	<4A42E163.1080700@cs.columbia.edu>
-	<871vp3x81s.fsf@caffeine.danplanet.com>
-	<4A4C7AC7.3090004@cs.columbia.edu>
-	<87y6r1slxz.fsf@caffeine.danplanet.com>
-	<4A524B40.4040600@cs.columbia.edu>
-	<87tz1psbpq.fsf@caffeine.danplanet.com>
-	<4A527EB8.4060201@cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: build breaks when checkpoint unimplemented by arch
+Date: Tue, 7 Jul 2009 10:58:26 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0907071049540.24765@takamine.ncl.cs.columbia.edu>
+References: <m3my7hv7w8.fsf@pobox.com>
+	<Pine.LNX.4.64.0907061902530.15941@takamine.ncl.cs.columbia.edu>
+	<m3bpnxv03k.fsf@pobox.com>
+	<Pine.LNX.4.64.0907070039360.22105@takamine.ncl.cs.columbia.edu>
+	<m2eist3tcr.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A527EB8.4060201-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
-	"Mon\, 06 Jul 2009 18\:46\:16 -0400")
+In-Reply-To: <m2eist3tcr.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,69 +21,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OL> But there are two cases: if you are CAP_NET_ADMIN you are allowed
-OL> to go beyond that limit. So you need to add that test too.
+On Tue, 7 Jul 2009, Nathan Lynch wrote:
 
-Okay, fair enough.
+> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> > That's what I tried initially, but the problem is that sigset_t may
+> > be defined differently for userspace - see /usr/include/asm/sigset_t.h.
+> > In fact, for x86_32, it it is different, defined as 'unsigned long' 
+> > (and NSIG defined as 32, so only 32 bits).
+> 
+> I noticed this, but I figured only the kernel definition was salient.
+> Apart from debugging checkpoint/restart, why would userspace need the
+> definition of struct ckpt_hdr_sigset?
 
-OL> And in general, this helps to keep the checks - be it security,
-OL> resource limits, or whatever - in one place, instead of having to
-OL> duplicate code and, more importantly, risk getting out of sync
-OL> with the original checks (e.g., if sock_setsockopt changes).
+I expect user space tools to at least:
 
-But sock_setsockopt() will also set the userlocks flag saying that
-you've specified the buffer size.  At the point at which I currently
-restore the buffers, we've already restored the value specified in the
-checkpoint stream, so we'd need to re-reset it as a special case after
-the call to sock_setsockopt().  Further, to get the "override" case,
-you have to call it with SO_RCVBUFFORCE which fails if you're not
-CAP_SYS_ADMIN.  So, do we try force, then if it fails try SO_RCVBUF,
-then if it fails actually fail?  Since sock_setsockopt() doubles the
-buffer size we get it, do we cut the value we want in half before
-passing it in?
+- Assist in debugging c/r
 
-Doing all that seems like an abuse of sock_setsockopt() to me when the
-alternative is to check CAP_SYS_ADMIN and set the buffer size.
+- Assist users in reporting problems with c/r (especially since they
+  themselves do not debug or hack)
 
-OL> But we do care, because it is necessary to do the unlink() after
-OL> the bind(), like you do for listening sockets, for this scenario:
+- Convert checkpoint images from one kernel version to another
 
-OL> 	s = socket()
-OL> 	bind(s, pathname)
-OL> 	unlink(pathname)
-OL> 				<---- checkpoint/restart
-OL> 	r = socket()
-OL> 	bind(r, pathname)
+- Provide information about a checkpoint image, and even allow its
+  manipulation.  This can assist developers in debugging their programs
+  (e.g. to debug a crash you need to run a program for 30 minutes so it 
+  ets up its state; instead of repeatedly running it, you run it once, 
+  checkpoint, and then debug from a restarted version. A tool could 
+  allow you to peek/poke inside the checkpoint and even modify data in 
+  it).
 
-OL> The second bind() will succeed on the original system, but will
-OL> fail on the restarted system, unless you do that.
+- Or a tool that converts a checkpoint image to a core dump so it
+  can be inspected with gdb.
 
-Not if we don't actually call bind(s) in the unlinked case.  What I
-meant in my previous response is: if we're unlinked, then just fake
-the bind actions but don't actually do the bind()..unlink().  We
-already went over the case where we might unlink() a valid socket
-depending on the order, right?
+I'm pretty sure others will find other uses to it...
 
-OL> BTW, I just looked again at the code, and I'm concerned about:
+> 
+> For that matter, why would userspace need the definitions of most of the
+> structures in checkpoint_hdr.h?  (Again, debugging purposes don't count:
+> ckptinfo or similar developer utilities can be included with the
+> kernel.)
 
-OL> +		if (!un->linked) {
-OL> +			struct sockaddr_un *sun =
-OL> +				(struct sockaddr_un *)&h->laddr;
-OL> +			ret = sock_unix_unlink(sun->sun_path);
-OL> +		}
+Keeping the checkpoint header format understandable by user space (and 
+immune to 32-64 variations) has been a requirement since day 1.
 
-OL> You need to verify that the address is not abstract, because I'm
-OL> not sure what sock_unix_unlink() would do given the empty
-OL> string. Usually this is filtered higher in the VFS (getname).
+> 
+> > Moreover, if you include <asm/sigset.h> in checkpoint_hdr.h, which is
+> > also included by userspace, you get lots of compilations warnings,
+> > because of other stuff included from the kernel's asm/sigset.h that
+						      ^^^^^^^^^^^^^
+					I meant:      asm/siginfo.h
 
-Yep, but luckily that's gone with my recent changes to fake the bind()
-for unlinked sockets instead of actually doing the unlink() :)
+> > isn't supposed to be included by userspace.
+> 
+> Can you provide examples of such warnings?  Are you building against
+> "sanitized" kernel headers (make headers_install) or using them in
+> place?
+> 
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Both.
+
+Oren.
