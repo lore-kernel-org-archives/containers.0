@@ -1,19 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: build breaks when checkpoint unimplemented by arch
-Date: Tue, 07 Jul 2009 15:03:22 -0400
-Message-ID: <4A539BFA.7020200@cs.columbia.edu>
-References: <m3my7hv7w8.fsf@pobox.com>
-	<Pine.LNX.4.64.0907061902530.15941@takamine.ncl.cs.columbia.edu>
-	<m3bpnxv03k.fsf@pobox.com>
-	<Pine.LNX.4.64.0907070039360.22105@takamine.ncl.cs.columbia.edu>
-	<m2eist3tcr.fsf@pobox.com>
-	<Pine.LNX.4.64.0907071049540.24765@takamine.ncl.cs.columbia.edu>
-	<m33a98v4j0.fsf@pobox.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Add _ckpt_read_hdr_type() helper
+Date: Tue,  7 Jul 2009 12:03:27 -0700
+Message-ID: <1246993407-887-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m33a98v4j0.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,84 +15,99 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This helper function gives us a way to read a header object and the
+subsequent payload from the checkpoint stream directly into our own
+buffer.  This is used by the net/checkpoint.c code to read skb's
+without a memcpy().
 
+I'm sending this separately so that it doesn't get mixed in with the
+set going to netdev in a minute.
 
-Nathan Lynch wrote:
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
->> On Tue, 7 Jul 2009, Nathan Lynch wrote:
->>
->>> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
->>>> That's what I tried initially, but the problem is that sigset_t may
->>>> be defined differently for userspace - see /usr/include/asm/sigset_t.h.
->>>> In fact, for x86_32, it it is different, defined as 'unsigned long' 
->>>> (and NSIG defined as 32, so only 32 bits).
->>> I noticed this, but I figured only the kernel definition was salient.
->>> Apart from debugging checkpoint/restart, why would userspace need the
->>> definition of struct ckpt_hdr_sigset?
->> I expect user space tools to at least:
->>
->> - Assist in debugging c/r
->>
->> - Assist users in reporting problems with c/r (especially since they
->>   themselves do not debug or hack)
->>
->> - Convert checkpoint images from one kernel version to another
->>
->> - Provide information about a checkpoint image, and even allow its
->>   manipulation.  This can assist developers in debugging their programs
->>   (e.g. to debug a crash you need to run a program for 30 minutes so it 
->>   ets up its state; instead of repeatedly running it, you run it once, 
->>   checkpoint, and then debug from a restarted version. A tool could 
->>   allow you to peek/poke inside the checkpoint and even modify data in 
->>   it).
->>
->> - Or a tool that converts a checkpoint image to a core dump so it
->>   can be inspected with gdb.
->>
->> I'm pretty sure others will find other uses to it...
-> 
-> But I asked specifically about ckpt_hdr_sigset.
-> 
-> 
->>> For that matter, why would userspace need the definitions of most of the
->>> structures in checkpoint_hdr.h?  (Again, debugging purposes don't count:
->>> ckptinfo or similar developer utilities can be included with the
->>> kernel.)
->> Keeping the checkpoint header format understandable by user space (and 
->> immune to 32-64 variations) has been a requirement since day 1.
-> 
-> I guess I wasn't around that day.  It seems backwards to expose the
-> format of every checkpoint record in the ABI regardless of whether
-> plausible use cases exist.  Linux has a well-established pattern of
-> introducing interfaces without sufficient testing or documentation[1],
-> and I expect C/R will adhere to tradition.  Making the ABI obese in the
-> hope of anticipating every conceivable use will just provide more
-> opportunities to screw up.
-> 
-> [1] http://userweb.kernel.org/~mtk/papers/lce2007/What_we_lose_without_words.pdf
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++--
+ include/linux/checkpoint.h |    4 ++++
+ 2 files changed, 38 insertions(+), 2 deletions(-)
 
-I could not agree more !
-
-The intent of exposure to userspace is not to establish an ABI, but
-solely to allow *specialized* c/r-related user tools to understand
-such data, per kernel version.
-
-On the contrary: it is expected to change between kernel versions
-and break compatibility with older version, on a regular basis.
-That is why we plan to do conversion of checkpoint images between
-kernel version in userspace.
-
-I view it as a "window" for userspace to glance at how checkpoint
-image for a specific kernel version is defined. And it comes as is,
-no-strings-attached, with nothing but a promise to likely break it
-on the next release.
-
-This begs the question: how to make sure that this message is clear
-and is not misinterpreted ?   Or (and I'm no API expert) - perhaps
-there is a better way...
-
-Oren.
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 4155426..3bfee31 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -177,6 +177,38 @@ int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len)
+ }
+ 
+ /**
++ * _ckpt_read_hdr_type - read a header record and check the type
++ * @ctx: checkpoint context
++ * @h: provided header buffer (returned)
++ * @type: optional type, 0 to ignore
++ *
++ * Returns the size of the payload to follow or negative on error
++ */
++int _ckpt_read_hdr_type(struct ckpt_ctx *ctx, struct ckpt_hdr *h, int type)
++{
++	int ret;
++
++	ret = ckpt_kread(ctx, h, sizeof(*h));
++	if (ret < 0)
++		return ret;
++	else if (type && h->type != type)
++		return -EINVAL;
++	else
++		return h->len - sizeof(*h);
++}
++
++/**
++ * _ckpt_read_payload - read the payload associated with a recent header read
++ * @ctx: checkpoint_context
++ * @h: header returned from _ckpt_read_hdr_type()
++ * @buffer: pre-allocated buffer to store payload
++ */
++int _ckpt_read_payload(struct ckpt_ctx *ctx, struct ckpt_hdr *h, void *buffer)
++{
++	return ckpt_kread(ctx, buffer, h->len - sizeof(*h));
++}
++
++/**
+  * ckpt_read_obj - allocate and read an object (ckpt_hdr followed by payload)
+  * @ctx: checkpoint context
+  * @h: object descriptor
+@@ -192,7 +224,7 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
+ 	int ret;
+ 
+  again:
+-	ret = ckpt_kread(ctx, &hh, sizeof(hh));
++	ret = _ckpt_read_hdr_type(ctx, &hh, 0);
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+ 	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
+@@ -217,7 +249,7 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
+ 
+ 	*h = hh;	/* yay ! */
+ 
+-	ret = ckpt_kread(ctx, (h + 1), hh.len - sizeof(struct ckpt_hdr));
++	ret = _ckpt_read_payload(ctx, &hh, (h + 1));
+ 	if (ret < 0) {
+ 		ckpt_hdr_put(ctx, h);
+ 		h = ERR_PTR(ret);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 2765c33..ccc4aab 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -63,6 +63,10 @@ extern int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len);
+ extern void __ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...);
+ extern int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...);
+ 
++extern int _ckpt_read_payload(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
++			      void *buffer);
++extern int _ckpt_read_hdr_type(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
++			       int type);
+ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
+ 			       void *ptr, int len, int type);
+ extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
+-- 
+1.6.2.2
