@@ -1,17 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Mon, 6 Jul 2009 20:31:35 -0700
-Message-ID: <20090707033135.GA29461@us.ibm.com>
-References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
-	<20090413142038.GB13007@us.ibm.com>
-	<20090704132851.GA16373@megiteam.pl>
-	<20090704143412.GA27523@megiteam.pl>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: build breaks when checkpoint unimplemented by arch
+Date: Tue, 7 Jul 2009 00:44:15 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0907070039360.22105@takamine.ncl.cs.columbia.edu>
+References: <m3my7hv7w8.fsf@pobox.com>
+	<Pine.LNX.4.64.0907061902530.15941@takamine.ncl.cs.columbia.edu>
+	<m3bpnxv03k.fsf@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090704143412.GA27523-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <m3bpnxv03k.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,60 +19,198 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
-| On Sat, Jul 04, 2009 at 03:28:52PM +0200, Grzegorz Nosek wrote:
-| > Decoding the code yields:
-| > All code
-| > ========
-| >    0:   81 fb 00 f0 ff ff       cmp    $0xfffff000,%ebx
-| >    6:   76 11                   jbe    0x19
-| >    8:   48 c7 c7 60 61 7d 80    mov    $0xffffffff807d6160,%rdi
-| >    f:   e8 c1 38 17 00          callq  0x1738d5
-| >   14:   e9 a9 00 00 00          jmpq   0xc2
-| >   19:   48 85 db                test   %rbx,%rbx
-| >   1c:   74 5c                   je     0x7a
-| >   1e:   80 bb 40 01 00 00 00    cmpb   $0x0,0x140(%rbx)
-| >   25:   48 8b 53 08             mov    0x8(%rbx),%rdx
-| >   29:   78 64                   js     0x8f
-| >   2b:*  81 ba 9c 00 00 00 04    cmpl   $0x10004,0x9c(%rdx)     <-- trapping instruction
-| >   32:   00 01 00
-| >   35:   75 16                   jne    0x4d
-| >   37:   83                      .byte 0x83
-| >   38:   bb 48 01 00 00          mov    $0x148,%ebx
-| > 
-| > Code starting with the faulting instruction
-| > ===========================================
-| >    0:   81 ba 9c 00 00 00 04    cmpl   $0x10004,0x9c(%rdx)
-| >    7:   00 01 00
-| >    a:   75 16                   jne    0x22
-| >    c:   83                      .byte 0x83
-| >    d:   bb 48 01 00 00          mov    $0x148,%ebx
-| 
-| To my untrained eye it looks like the cmpl corresponds to:
-| 
-| 1841        if (tty->driver->type == TTY_DRIVER_TYPE_PTY &&
-| 1842            tty->driver->subtype == PTY_TYPE_MASTER)
-| 
-| in drivers/char/tty_io.c
+On Mon, 6 Jul 2009, Nathan Lynch wrote:
 
-I don't yet have the exact version of tty_io.c so the line numbers don't
-match, but even so isn't the above 'cmpl' comparing a constant 0x10004
-with the %rdx+0x9c address ? If so, I am not sure how it matches up to
-either TTY_DRIVER_TYPE_PTY (0x0004) or PTY_TYPE_MASTER (0x0001).
+> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
+> 
+> > On Mon, 6 Jul 2009, Nathan Lynch wrote:
+> >
+> >> Hi Oren,
+> >> 
+> >> With ckpt-v17-rc1 (as well as ckpt-v16-dev) the powerpc build is broken:
+> >> 
+> >> In file included from include/linux/checkpoint.h:28,
+> >>                  from kernel/exit.c:53:
+> >> include/linux/checkpoint_hdr.h:42:32: error: asm/checkpoint_hdr.h: No such file or directory
+> >> In file included from include/linux/checkpoint.h:28,
+> >>                  from kernel/exit.c:53:
+> >> include/linux/checkpoint_hdr.h:410: error: 'CKPT_ARCH_NSIG' undeclared here (not in a function)
+> >> make[1]: *** [kernel/exit.o] Error 1
+> >> 
+> >> 
+> >> It appears that any architecture which does not supply
+> >> asm/checkpoint_hdr.h is broken in the same way.
+> >> 
+> >> Either all architectures need to supply asm/checkpoint_hdr.h (and define
+> >> CKPT_ARCH_NSIG), or there needs to be some other fix which allows
+> >> as-yet-unsupported arches to build..
+> >> 
+> >
+> > I see... well - maybe it's time to resend the powerpc port :p
+> 
+> I'm working on that, but the powerpc port won't be of any help to the
+> twenty-odd other architectures that are broken.
+> 
 
-Wouldn't the above 'if' require two separate compare instructions ?
+[...]
 
-| 
-| That means that %rdx should contain tty->driver, but contains
-| 0x6973646e65732f64, which looks like a part of '/etc/init.d/sendsigs'.
-| So, we're possibly using an already freed and overwritten tty struct.
+That's what I tried initially, but the problem is that sigset_t may
+be defined differently for userspace - see /usr/include/asm/sigset_t.h.
+In fact, for x86_32, it it is different, defined as 'unsigned long' 
+(and NSIG defined as 32, so only 32 bits).
 
-Is it possibly related to this bug where they talk of some sort of
-corruption going on with tty data structures (kernel versions appear
-to be close, but need to double check).
+Moreover, if you include <asm/sigset.h> in checkpoint_hdr.h, which is
+also included by userspace, you get lots of compilations warnings,
+because of other stuff included from the kernel's asm/sigset.h that
+isn't supposed to be included by userspace.
 
-	http://lkml.org/lkml/2009/6/16/131
+So the introduction of CKPT_ARCH_NSIG is a workaround that.
+
+And back to the other problem - I agree, kernel should only include
+<linux/checkpoint.h>, which in turn will include <checkpoint_hdr.h>
+if defined CONFIG_CHECKPOINT.
+
+Can you try this patch:
+
+(Hallyn: note that there is some checkpoint-related code within
+kerbel/capability.c that should be inside #ifdef CONFIG_CHECKPOINT).
+
+Oren.
+
+
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 5d4c1c8..68fdab4 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -19,12 +19,11 @@
+ #include <linux/pagemap.h>
+ #include <linux/audit.h>
+ #include <linux/syscalls.h>
++#include <linux/checkpoint.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/ioctls.h>
+ 
+-#include <linux/checkpoint.h>
+-#include <linux/checkpoint_hdr.h>
+ 
+ /*
+  * We use a start+len construction, which provides full use of the 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index c47e796..b8f99be 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -19,6 +19,7 @@
+ #define RESTART_TASKSELF	0x1
+ 
+ #ifdef __KERNEL__
++#ifdef CONFIG_CHECKPOINT
+ 
+ #include <linux/sched.h>
+ #include <linux/nsproxy.h>
+@@ -299,6 +300,7 @@ extern unsigned long ckpt_debug_level;
+ 
+ #endif /* CONFIG_CHECKPOINT_DEBUG */
+ 
++#endif /* CONFIG_CHECKPOINT */
+ #endif /* __KERNEL__ */
+ 
+ #endif /* _LINUX_CHECKPOINT_H_ */
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 0991134..516b179 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -40,7 +40,6 @@
+ #include <linux/mount.h>
+ #include <linux/ipc_namespace.h>
+ #include <linux/ima.h>
+-#include <linux/checkpoint_hdr.h>
+ #include <linux/checkpoint.h>
+ 
+ #include <asm/uaccess.h>
+diff --git a/kernel/capability.c b/kernel/capability.c
+index 90cc7b4..4f58454 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -15,7 +15,7 @@
+ #include <linux/syscalls.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/securebits.h>
+-#include <linux/checkpoint_hdr.h>
++#include <linux/checkpoint.h>
+ #include <asm/uaccess.h>
+ #include "cred-internals.h"
+ 
+@@ -375,6 +375,7 @@ static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
+ }
+ #endif /* CONFIG_SECURITY_FILE_CAPABILITIES */
+ 
++#ifdef CONFIG_CHECKPOINT
+ static int do_restore_caps(struct ckpt_capabilities *h, struct cred *cred)
+ {
+ 	kernel_cap_t effective, inheritable, permitted, bset;
+@@ -428,6 +429,7 @@ int restore_capabilities(struct ckpt_capabilities *h, struct cred *new)
+ 
+ 	return ret;
+ }
++#endif /* CONFIG_CHECKPOINT */
+ 
+ /**
+  * capable - Determine if the current task has a superior capability in effect
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 782664d..202bd74 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -34,11 +34,9 @@
+ #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
+ #include <linux/memcontrol.h>
+ #include <linux/mm_inline.h> /* for page_is_file_cache() */
++#include <linux/checkpoint.h>
+ #include "internal.h"
+ 
+-#include <linux/checkpoint_types.h>
+-#include <linux/checkpoint_hdr.h>
+-#include <linux/checkpoint.h>
+ 
+ /*
+  * FIXME: remove all knowledge of the buffer layer from the core VM
+diff --git a/mm/mmap.c b/mm/mmap.c
+index e60424b..4c01a90 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -29,16 +29,13 @@
+ #include <linux/rmap.h>
+ #include <linux/mmu_notifier.h>
+ #include <linux/perf_counter.h>
++#include <linux/checkpoint.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/cacheflush.h>
+ #include <asm/tlb.h>
+ #include <asm/mmu_context.h>
+ 
+-#include <linux/checkpoint_types.h>
+-#include <linux/checkpoint_hdr.h>
+-#include <linux/checkpoint.h>
+-
+ #include "internal.h"
+ 
+ #ifndef arch_mmap_check
+diff --git a/mm/shmem.c b/mm/shmem.c
+index e123ec2..9334810 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -30,9 +30,6 @@
+ #include <linux/module.h>
+ #include <linux/swap.h>
+ #include <linux/ima.h>
+-
+-#include <linux/checkpoint_types.h>
+-#include <linux/checkpoint_hdr.h>
+ #include <linux/checkpoint.h>
+ 
+ static struct vfsmount *shm_mnt;
