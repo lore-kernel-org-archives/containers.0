@@ -1,85 +1,54 @@
-From: Brian Haley <brian.haley@hp.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
-Date: Tue, 07 Jul 2009 21:23:25 -0400
-Message-ID: <4A53F50D.30001@hp.com>
-References: <1246994776-1882-1-git-send-email-danms@us.ibm.com> <1246994776-1882-3-git-send-email-danms@us.ibm.com>
+Date: Tue, 07 Jul 2009 18:31:32 -0700
+Message-ID: <87prccq7t7.fsf@caffeine.danplanet.com>
+References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
+	<1246994776-1882-3-git-send-email-danms@us.ibm.com>
+	<4A53F50D.30001@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1246994776-1882-3-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4A53F50D.30001-VXdhtT5mjnY@public.gmane.org> (Brian Haley's message of "Tue\,
+	07 Jul 2009 21\:23\:25 -0400")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dan Smith wrote:
-> This patch adds AF_INET c/r support based on the framework established in
-> my AF_UNIX patch.  I've tested it by checkpointing a single app with a
-> pair of sockets connected over loopback.
- 
-> +struct ckpt_hdr_socket_inet {
-> +	struct ckpt_hdr h;
-> +
-> +	__u32 daddr;
-> +	__u32 rcv_saddr;
-> +	__u32 saddr;
-> +	__u16 dport;
-> +	__u16 num;
-> +	__u16 sport;
-> +	__s16 uc_ttl;
-> +	__u16 cmsg_flags;
-> +	__u16 __pad;
-> +
-> +	struct {
-> +		__u64 timeout;
-> +		__u32 ato;
-> +		__u32 lrcvtime;
-> +		__u16 last_seg_size;
-> +		__u16 rcv_mss;
-> +		__u8 pending;
-> +		__u8 quick;
-> +		__u8 pingpong;
-> +		__u8 blocked;
-> +	} icsk_ack __attribute__ ((aligned(8)));
-> +
-> +	/* FIXME: Skipped opt, tos, multicast, cork settings */
-> +
-<snip>
-> +
-> +	struct {
-> +		char saddr[16];
-> +		char rcv_saddr[16];
-> +		char daddr[16];
-> +	} inet6 __attribute__ ((aligned(8)));
+Hi Brian,
 
-These should be 'struct in6_addr'.
+>> +	struct {
+>> +		char saddr[16];
+>> +		char rcv_saddr[16];
+>> +		char daddr[16];
+>> +	} inet6 __attribute__ ((aligned(8)));
 
-And just like in your IPv4 section you need a FIXME here for the things
-you skipped :)
+BH> These should be 'struct in6_addr'.
 
-> +static int sock_inet_cptrst(struct ckpt_ctx *ctx,
-> +			    struct sock *sock,
-> +			    struct ckpt_hdr_socket_inet *hh,
-> +			  int op)
-> +{
-<snip>
-> +
-> +	if (sock->sk_family == AF_INET6) {
-> +		struct ipv6_pinfo *inet6 = inet6_sk(sock);
-> +		unsigned alen = sizeof(struct in6_addr);
-> +		if (op == CKPT_CPT) {
-> +			memcpy(hh->inet6.saddr, &inet6->saddr, alen);
-> +			memcpy(hh->inet6.rcv_saddr, &inet6->rcv_saddr, alen);
-> +			memcpy(hh->inet6.daddr, &inet6->daddr, alen);
-> +		} else {
-> +			memcpy(&inet6->saddr, hh->inet6.saddr, alen);
-> +			memcpy(&inet6->rcv_saddr, hh->inet6.rcv_saddr, alen);
-> +			memcpy(&inet6->daddr, hh->inet6.daddr, alen);
-> +		}
-> +	}
+Okay.
 
-There's an inline called ipv6_addr_copy() that will do the same thing,
-then you could drop the alen argument.
+BH> And just like in your IPv4 section you need a FIXME here for the
+BH> things you skipped :)
 
--Brian
+Heh, okay :)
+
+BH> There's an inline called ipv6_addr_copy() that will do the same
+BH> thing, then you could drop the alen argument.
+
+Okay, cool.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
