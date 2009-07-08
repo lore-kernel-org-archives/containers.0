@@ -1,17 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V6
-Date: Wed, 8 Jul 2009 20:09:25 +0530
-Message-ID: <20090708143925.GE3215__42766.5933887058$1247064026$gmane$org@balbir.in.ibm.com>
-References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
-	<20090708035621.GB3215@balbir.in.ibm.com>
-	<20090708134114.GA24048@redhat.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] c/r: Add AF_UNIX support (v5)
+Date: Wed, 08 Jul 2009 08:23:10 -0700
+Message-ID: <87ljmzqjvl.fsf@caffeine.danplanet.com>
+References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
+	<1246994776-1882-2-git-send-email-danms@us.ibm.com>
+	<4A543D82.5080408@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090708134114.GA24048-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A543D82.5080408-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Wed\, 08 Jul 2009 02\:32\:34 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,66 +20,134 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-08 09:41:14]:
+OL> UNIX_PATH_MAX = 108 ...  and then add sizeof(short) ?
 
-> On Wed, Jul 08, 2009 at 09:26:21AM +0530, Balbir Singh wrote:
-> > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-02 16:01:32]:
-> > 
-> > > 
-> > > Hi All,
-> > > 
-> > > Here is the V6 of the IO controller patches generated on top of 2.6.31-rc1.
-> > > 
-> > > Previous versions of the patches was posted here.
-> > > 
-> > > (V1) http://lkml.org/lkml/2009/3/11/486
-> > > (V2) http://lkml.org/lkml/2009/5/5/275
-> > > (V3) http://lkml.org/lkml/2009/5/26/472
-> > > (V4) http://lkml.org/lkml/2009/6/8/580
-> > > (V5) http://lkml.org/lkml/2009/6/19/279
-> > > 
-> > > This patchset is still work in progress but I want to keep on getting the
-> > > snapshot of my tree out at regular intervals to get the feedback hence V6.
-> > >
-> > 
-> > Hi, Vivek,
-> > 
-> > I was able to compile and boot a 2.6.31-rc1 kernel with this patchset.
-> > I have a request could you fold up all patches and make one
-> > consolidated patch available somewhere (makes it easier to test), may
-> > be a git tree?
-> > 
-> 
-> Thanks for trying it out balbir. Ok, for ease of patching and testing, I 
-> will also maintain a consolidated patch. For V6 you can download the patch
-> from here.
-> 
-> http://people.redhat.com/~vgoyal/io-controller/io-scheduler-based-io-controller-v6.patch
->
+Gah, yeah.  I was just getting lucky before anyway.  I'll move it to
+the per-type header.
 
-Thanks, this will definitely help me get more testing done!
- 
-> > I did some quick tests with some io benchmarks and found in a simple
-> > scenario that the scheduler worked as expected, except that it took
-> > very long. I'll investigate further and revert back.
-> 
-> Thanks. I will wait for details.
->
+OL> Perhaps a generic char *ckpt_read_string() ?
 
-I'll try and send something out by Friday, but for now I am not even
-very sure if it is a real problem. I ran iozone on two groups with 500
-and 1000 as weights on the same parition and set fairness to 1 in
-sysfs for the partition. I used a record size of 4 (default) and tried
-to run it on a file size of 1G.
+Didn't we have one before that was removed?
 
-BTW, I don't see anything about weights being multiple of an expected
-figure documented anywhere. I tried weights of 1024 (similar to the
-scheduler and got shouted back at :) ). Does the documentation patch
-specify the expected range for weights? 
+OL> Is this flag really needed ?  You can reuse sock_unix_need_cwd()
+OL> at restart.
+
+The idea was to avoid the need to replicate that logic in a non-kernel
+reader so that they know what's coming next without having to know to
+look at the socket path.  However, I can change it.
+
+OL> Since this is called after the fields of the socket are restored,
+OL> need to be careful with certain settings. For instance, it will
+OL> fail if the socket is shutdown already; Perhaps on other conditions
+OL> too.
+
+OL> Also, it has some side-effects:
+
+OL> First, it modifies sk->sk_wmem_alloc, which is not what you want
+OL> when restoring the receive buffer.
+
+OL> Second, on the other hand, sk->sk_rmem_alloc isn't restored.
+
+OL> Third, it sets the sk->sk_destructor to sock_wfree(), of own socket,
+OL> which is not what happens, e.g., usually with af_unix sockets.
+
+OL> (if I understand the af_unix code correctly, when socket A sends to
+OL> socket B, then A->sk->sk_wmem_alloc is incremented, as well as
+OL> B->sk->sk_rmem_alloc, and when the app reads the data, the kernel
+OL> decreases B->sk->sk_rmem_alloc and finally the callback sock_wfree()
+OL> decreases A->sk->sk_wmem_alloc).
+
+OL> Forth, you restore the buffer after having restored sk_{snd,rcv}buf.
+OL> So if, for example, the app originally had sk_sndbuf=16K, then sent
+OL> 16K (not read by peer), then set sk_sndbuf=4K -- restore will fail.
+
+Isn't this rather easily fixed by reading and restoring the buffers
+before doing calling the sync function to restore all the counters and
+limits into the socket?
+
+OL> Fifth, unix domains sockets never hold actualy data in the sndbuf,
+OL> they only keep track of bytes allocated (sk_wmem_alloc), and the
+OL> data is always placed on the receiver's rcvbuf. If the checkpoint
+OL> image tells another story, report an error.
+
+Yep, I suppose so, I was just trying to make that bit universal for
+all socket types.
+
+>> +	if (len > UNIX_PATH_MAX)
+>> +		return ERR_PTR(ENOSPC);
+
+OL> -EINVAL ?  The input from checkpoint image is invalid - someone
+OL> must have messed with it.
+
+Is UNIX_PATH_MAX a declared never-to-change limit?  Could newer
+kernels not have a larger or smaller value?
+
+>> +
+>> +	if (h->laddr_len == UNIX_LEN_EMPTY)
+>> +		addr = sock_unix_makeaddr((struct sockaddr_un *)&h->raddr,
+>> +					  h->raddr_len);
+>> +	else if (h->raddr_len == UNIX_LEN_EMPTY)
+>> +		addr = sock_unix_makeaddr((struct sockaddr_un *)&h->laddr,
+>> +					  h->laddr_len);
+
+OL> If neither conditions holds, @addr will remain uninitialized.
+
+Oops.  A last-minute change making the "else" an "else if".
+
+>> +static int sock_unix_restart_connected(struct ckpt_ctx *ctx,
+OL> 			^^^^^^^
+OL> Tiny nit:               restore
+
+Yep, agreed.
+
+>> +		write_lock(&current->fs->lock);
+>> +		cur = current->fs->pwd;
+>> +		current->fs->pwd = dir;
+>> +		write_unlock(&current->fs->lock);
+>> +	}
+>> +
+
+OL> Bizarre, but still: is it possible that at restart time (and also
+OL> at checkpoint time) the pathname will not be accessible ?
+
+OL> Like: create socket, bind it to some mounted subtree, and then
+OL> force-un-mount the subtree. Of course, the socket will no longer
+OL> be reachable (to connect to) from then on. Now checkpoint. The
+OL> restart will fail - because the bind fails, but unnecessarily so
+OL> :(
+
+So if the socket path is not accessible you'd rather a fake bind and
+have the application think it's reachable when it's not?
+
+OL> Hmmm... abstract unix sockets have sk->dentry = NULL, so at
+OL> checkpoint time, sock_unix_checkpoint() will not set
+OL> CKPT_UNIX_LINKED for them.  It will end up always doing fake-bind
+OL> :(
+
+Erm, yeah.
+
+>> +		ckpt_write_err(ctx, "unsupported UNIX socket state %i",
+>> +			       h->sock.state);
+OL> 		^^^^^^^^^^^^^^
+OL> This can destroy your checkpoint image, if passed as a file (and
+OL> isn't redirected). Good only for checkpoint.
+
+Eesh, yeah.  Perhaps we can/should make ckpt_write_err() refuse to do
+that if we're coming from a sys_restart()?
+
+OL> Hopefully some of this will eventually evolve into a set of
+OL> unit tests :p
+
+I've got a set going already, but clearly not enough.  It's a rather
+complex set of potential scenarios to test, unfortunately.
+
+Thanks!
 
 -- 
-	Balbir
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
