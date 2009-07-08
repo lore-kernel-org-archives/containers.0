@@ -1,60 +1,38 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
+From: Dan Smith <danms@us.ibm.com>
 Subject: Re: [PATCH 1/2] c/r: Add AF_UNIX support (v5)
-Date: Wed, 08 Jul 2009 14:16:56 -0400
-Message-ID: <4A54E298.4010202@cs.columbia.edu>
-References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>	<1246994776-1882-2-git-send-email-danms@us.ibm.com>	<4A543D82.5080408@cs.columbia.edu>	<87ljmzqjvl.fsf@caffeine.danplanet.com>	<4A54CCDB.1090602@cs.columbia.edu> <8763e3qfl9.fsf@caffeine.danplanet.com>
+Date: Wed, 08 Jul 2009 12:27:20 -0700
+Message-ID: <87y6qzou07.fsf@caffeine.danplanet.com>
+References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
+	<1246994776-1882-2-git-send-email-danms@us.ibm.com>
+	<4A543D82.5080408@cs.columbia.edu> <20090708140152.GC10787@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <8763e3qfl9.fsf@caffeine.danplanet.com>
+In-Reply-To: <20090708140152.GC10787@us.ibm.com> (Serge E. Hallyn's message of "Wed\, 8 Jul 2009 09\:01\:52 -0500")
 Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
+SH> That also caused you to skip a bunch of security_* calls (at the
+SH> least here, at the recv equivalent, do_sock_getname, and at your
+SH> bind at restore).
 
+SH> I don't think simply inserting them here is the right thing to do,
+SH> bc then as the main code changes this code is likely to fall out
+SH> of sync.  So like Oren says, I think you need to do more re-use of
+SH> the common code.  For the bind() case, for instance, write a
+SH> common helper used by both sys_bind() and your restart bind, which
+SH> does the security check and then calls sock->ops->bind().  It
+SH> makes your patchset a bit more intrusive, but easier to maintain.
 
-Dan Smith wrote:
-> OL> It will mostly fix the buffer limits, but not entirely: if the
-> OL> original socket first raised the limits above defualt, then sent
-> OL> data (not read by peer), then you'll still need to adjust the
-> OL> limit before restoring the buffers.
-> 
-> If we cap the buffers in the checkpoint image to the current system
-> limit (sysctl) and then set the per-socket buffer limit (after reading
-> them in) to the value in the checkpoint image then we get the desired
-> result, right?
+Does it make sense to modify kern_bind() (and friends) to make the
+security_*() calls and then make sys_bind() and my restore code use
+kern_bind()?  I don't know enough about the security stuff to know if
+the other uses of kern_bind() in the kernel would trip up if the
+checks are done there...
 
-Hmmm.... still not -- if user has CAP_NET_ADMIN then there is
-no upper bound on so_{snd,rcv}buf.
-
-
-So I guess the right way to do it is: (1) set buf size to the size
-of saved data, (2) populate buffer, (3) restore so_{snd,rcv}buf.
-
-#1 and #3 need to be done under the same security restrictions,
-of course, as any change to the buffer bounds.
-
-Oren.
-
-> 
-> OL> I can't predict the future, but it's been there forever...
-> 
-> Yeah, after I sent that I remembered that the magic 108 is in the
-> sockaddr_un structure which is a userspace API and therefore not
-> likely to change.
-> 
-> OL> But the point is that I would interpret ENOSPC as "storage/space
-> OL> is exhausted", while here the error is that this value is simply
-> OL> invalid for the particular kernel on which the restart occurs.
-> 
-> Yep, fair enough.
-> 
-> OL> In the original system, once the file becomes unreachable it
-> OL> cannot be made reachable again by simple (re)mounting, IOW it can
-> OL> no longer be connected-to.
-> 
-> Ah, I thought you meant "was reachable on the source system and not
-> reachable on the target system".  I'm with you now :)
-> 
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
