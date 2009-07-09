@@ -1,14 +1,17 @@
-From: "Vladislav D. Buzov" <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-Subject: Re: [PATCH 1/1] Memory usage limit notification addition to memcg
-Date: Wed, 08 Jul 2009 18:43:48 -0700
-Message-ID: <4A554B54.3080903__25059.3300130733$1247103941$gmane$org@embeddedalley.com>
-References: <1239660512-25468-1-git-send-email-dan@embeddedalley.com>	<1246998310-16764-1-git-send-email-vbuzov@embeddedalley.com>	<1246998310-16764-2-git-send-email-vbuzov@embeddedalley.com>
-	<20090708095616.cdfe8c7c.kamezawa.hiroyu@jp.fujitsu.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO scheduler based IO controller V6
+Date: Wed, 8 Jul 2009 21:58:42 -0400
+Message-ID: <20090709015842.GA29117__46020.1128772043$1247104770$gmane$org@redhat.com>
+References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
+	<20090708035621.GB3215@balbir.in.ibm.com>
+	<20090708134114.GA24048@redhat.com>
+	<20090708143925.GE3215@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090708095616.cdfe8c7c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090708143925.GE3215-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,112 +21,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> I don't think notify_available_in_bytes is necessary.
->   
-I agree. This was a replacement for the old percentage calculation that
-was harder for the application to resolve. I'll remove it and update the
-example to use the other available memory controller information.
+On Wed, Jul 08, 2009 at 08:09:25PM +0530, Balbir Singh wrote:
+> * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-08 09:41:14]:
+> 
+> > On Wed, Jul 08, 2009 at 09:26:21AM +0530, Balbir Singh wrote:
+> > > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-02 16:01:32]:
+> > > 
+> > > > 
+> > > > Hi All,
+> > > > 
+> > > > Here is the V6 of the IO controller patches generated on top of 2.6.31-rc1.
+> > > > 
+> > > > Previous versions of the patches was posted here.
+> > > > 
+> > > > (V1) http://lkml.org/lkml/2009/3/11/486
+> > > > (V2) http://lkml.org/lkml/2009/5/5/275
+> > > > (V3) http://lkml.org/lkml/2009/5/26/472
+> > > > (V4) http://lkml.org/lkml/2009/6/8/580
+> > > > (V5) http://lkml.org/lkml/2009/6/19/279
+> > > > 
+> > > > This patchset is still work in progress but I want to keep on getting the
+> > > > snapshot of my tree out at regular intervals to get the feedback hence V6.
+> > > >
+> > > 
+> > > Hi, Vivek,
+> > > 
+> > > I was able to compile and boot a 2.6.31-rc1 kernel with this patchset.
+> > > I have a request could you fold up all patches and make one
+> > > consolidated patch available somewhere (makes it easier to test), may
+> > > be a git tree?
+> > > 
+> > 
+> > Thanks for trying it out balbir. Ok, for ease of patching and testing, I 
+> > will also maintain a consolidated patch. For V6 you can download the patch
+> > from here.
+> > 
+> > http://people.redhat.com/~vgoyal/io-controller/io-scheduler-based-io-controller-v6.patch
+> >
+> 
+> Thanks, this will definitely help me get more testing done!
+>  
+> > > I did some quick tests with some io benchmarks and found in a simple
+> > > scenario that the scheduler worked as expected, except that it took
+> > > very long. I'll investigate further and revert back.
+> > 
+> > Thanks. I will wait for details.
+> >
+> 
+> I'll try and send something out by Friday, but for now I am not even
+> very sure if it is a real problem. I ran iozone on two groups with 500
+> and 1000 as weights on the same parition and set fairness to 1 in
+> sysfs for the partition. I used a record size of 4 (default) and tried
+> to run it on a file size of 1G.
+> 
 
-> For making this kind of threashold useful, I think some relaxing margin is good.
-> for example) Once triggered, "notiry" will not be triggered in next 1ms
-> Do you have an idea ?
->   
-There isn't any time attribute associated with this model. There is no
-"trigger," just that you don't sleep if the threshold is exceeded.
+Hi Balbir,
 
-The notification only happens if you are asking for it. One application
-implementation could be that you just respond to notifications. If one
-occurs, you will free some memory, then wait for another notification.
-If you didn't free enough memory, the notification just keeps occurring
-as you ask until the situation is resolved.
+Trying iozone might be a good idea for analyzing the performance impact
+of io controller patches but it might not be the best thing to test
+fairness.
 
-> I know people likes to wait for file descriptor to get notification in these days.
-> Can't we have "event" file descriptor in cgroup layer and make it reusable for
-> other purposes ?
-That's next on the list to implement, and there were some comments in
-previous messages. I just didn't want to complicate providing this
-notification feature by having to also implement an "event" descriptor.
-I'm certain that will cause much discussion as well. :-)
+The biggest reason being that IO controller provides fairness only if
+there is constant contention between the groups. If one group goes away
+for sometime, other gets to use the disk full. Now while running above
+benchmark, there are numerous occasions where disk is not contended for
+and we don't see fairness numbers in user space.
 
->
-> I hope this application will not block rmdir() ;)
->   
-No, because there are no blocking reads (the wait continues to return)
-when the cgroup is being destroyed.
+I would recommend trying out fio or small tests to begin with which
+can create continuously backlogged queues at the disk to see how 
+accurate the io-controller is.
 
-> One question is how this works under hierarchical accounting.
->
-> Considering following.
->
-> /cgroup/A/                     no thresh
->           001/                 thresh=5M
->               John             thresh=1M
->           002/                 no thresh
->               Hiroyuki         no thresh
->
-> If Hiroyuki use too much and hit /cgroup/A's limit, memory will be reclaimed from all
-> A,001,John,002,Hiroyuki and OOM Killer may kill processes in John.
-> But 001/John's notifier will not fire. Right ?
->   
-The 001/John's applications will not be notified, since everything in
-that child cgroup is OK. This is based on the accounting behavior of the
-memory cgroup. If you want notification at the parent, you need to
-create a thread to catch that condition at the parent level. When that
-occurs, there is a mechanism to notify the children by just writing the
-notify_threshold_lowait file. Your applications need to be designed to
-identify this condition (or simply always free some resources when
-notified) for this to work.
+> BTW, I don't see anything about weights being multiple of an expected
+> figure documented anywhere. I tried weights of 1024 (similar to the
+> scheduler and got shouted back at :) ). Does the documentation patch
+> specify the expected range for weights? 
+> 
 
-The OOM killer is an orthogonal discussion. You can select from
-available killers that may make the choices you desire, or implement
-your own requirements and attach it to the cgroup.
+Weight range is 1-1000. I will update documentation to reflect this.
+Thanks for pointing it out.
 
-> I don't think CONFIG is necessary. Let this always used.
->   
-Ok.
-
-> 2 points.
->  - Do we have to check this always we account ?
->   
-What are the options? Every N pages? How to select N?
-
->  - This will not catch hierarchical accounting threshold because this check
->    only local cgroup, no ancestors.
->   
-Right.. That was the intention so I'll need to fix it
-
-> I don't want to say this but you need to add hook to res_counter itself.
->   
-I agree, res_counter seems to be the most appropriate place to keep and
-track the threshold as well as it already does for the usage and limit.
-During resource charge operation res_counter can check the usage against
-the threshold and, if it's exceeded, call the memory controller cgroup
-to notify its tasks
-
-> What this means ?? Can happen ?
->   
-It means the cgroup was created but no one has yet set any limits on the
-cgroup itself. There is no reason to test any conditions for notification.
-
-> If this is true, "set limit" should be checked to guarantee this.
-> plz allow minus this for avoiding mess.
-Setting the memory controller cgroup limit and the notification
-threshold are two separate operations. There isn't any "mess," just some
-validation testing for reporting back to the source of the request. When
-changing the memory controller limit, we ensure the threshold limit is
-never allowed "negative." At most, the threshold limit will be equal the
-memory controller cgroup limit. Otherwise, the arithmetic and
-conditional tests during the operational part of the software becomes
-more complex, which we don't want.
-
-> plz call wake_em_up at pre_destroy(), too.
->   
-Ok.
-
-Thanks,
-Vlad.
+Vivek
