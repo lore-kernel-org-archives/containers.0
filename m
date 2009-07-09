@@ -1,17 +1,12 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V6
-Date: Wed, 8 Jul 2009 21:58:42 -0400
-Message-ID: <20090709015842.GA29117__46020.1128772043$1247104770$gmane$org@redhat.com>
-References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
-	<20090708035621.GB3215@balbir.in.ibm.com>
-	<20090708134114.GA24048@redhat.com>
-	<20090708143925.GE3215@balbir.in.ibm.com>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
+	updated. v2.6.27-rc5-45615-g3c60cd0
+Date: Thu, 9 Jul 2009 08:27:35 -0400
+Message-ID: <200907091227.n69CRZ1T030321@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090708143925.GE3215-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,87 +16,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 08, 2009 at 08:09:25PM +0530, Balbir Singh wrote:
-> * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-08 09:41:14]:
-> 
-> > On Wed, Jul 08, 2009 at 09:26:21AM +0530, Balbir Singh wrote:
-> > > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2009-07-02 16:01:32]:
-> > > 
-> > > > 
-> > > > Hi All,
-> > > > 
-> > > > Here is the V6 of the IO controller patches generated on top of 2.6.31-rc1.
-> > > > 
-> > > > Previous versions of the patches was posted here.
-> > > > 
-> > > > (V1) http://lkml.org/lkml/2009/3/11/486
-> > > > (V2) http://lkml.org/lkml/2009/5/5/275
-> > > > (V3) http://lkml.org/lkml/2009/5/26/472
-> > > > (V4) http://lkml.org/lkml/2009/6/8/580
-> > > > (V5) http://lkml.org/lkml/2009/6/19/279
-> > > > 
-> > > > This patchset is still work in progress but I want to keep on getting the
-> > > > snapshot of my tree out at regular intervals to get the feedback hence V6.
-> > > >
-> > > 
-> > > Hi, Vivek,
-> > > 
-> > > I was able to compile and boot a 2.6.31-rc1 kernel with this patchset.
-> > > I have a request could you fold up all patches and make one
-> > > consolidated patch available somewhere (makes it easier to test), may
-> > > be a git tree?
-> > > 
-> > 
-> > Thanks for trying it out balbir. Ok, for ease of patching and testing, I 
-> > will also maintain a consolidated patch. For V6 you can download the patch
-> > from here.
-> > 
-> > http://people.redhat.com/~vgoyal/io-controller/io-scheduler-based-io-controller-v6.patch
-> >
-> 
-> Thanks, this will definitely help me get more testing done!
->  
-> > > I did some quick tests with some io benchmarks and found in a simple
-> > > scenario that the scheduler worked as expected, except that it took
-> > > very long. I'll investigate further and revert back.
-> > 
-> > Thanks. I will wait for details.
-> >
-> 
-> I'll try and send something out by Friday, but for now I am not even
-> very sure if it is a real problem. I ran iozone on two groups with 500
-> and 1000 as weights on the same parition and set fairness to 1 in
-> sysfs for the partition. I used a record size of 4 (default) and tried
-> to run it on a file size of 1G.
-> 
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-Hi Balbir,
+The branch, ckpt-v17-rc1 has been updated
+       via  3c60cd06509ae7b12db3176dabc5a8baff45341a (commit)
+      from  9cfe3c478746960e25a9f3abaeeb9d8503e0f74d (commit)
 
-Trying iozone might be a good idea for analyzing the performance impact
-of io controller patches but it might not be the best thing to test
-fairness.
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-The biggest reason being that IO controller provides fairness only if
-there is constant contention between the groups. If one group goes away
-for sometime, other gets to use the disk full. Now while running above
-benchmark, there are numerous occasions where disk is not contended for
-and we don't see fairness numbers in user space.
+- Log -----------------------------------------------------------------
+commit 3c60cd06509ae7b12db3176dabc5a8baff45341a
+Author: Oren Laadan <orenl-yTy6EFHyJFUdnm+yROfE0A@public.gmane.org>
+Date:   Thu Jul 9 08:20:52 2009 -0400
 
-I would recommend trying out fio or small tests to begin with which
-can create continuously backlogged queues at the disk to see how 
-accurate the io-controller is.
+    c/r: do not modify restart(2) retval for restarting tasks
+    
+    Since Restart(2) isn't idempotent, the coordinator should return
+    -EINTR if interrupted so it does not retry the syscall blindly.
+    
+    Restarting tasks on the other way should always report the return
+    values saved from checkpoint. If the syscall is interrupted, then they
+    don't care about return value, because they terminate in response to a
+    failure.
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-> BTW, I don't see anything about weights being multiple of an expected
-> figure documented anywhere. I tried weights of 1024 (similar to the
-> scheduler and got shouted back at :) ). Does the documentation patch
-> specify the expected range for weights? 
-> 
+-----------------------------------------------------------------------
 
-Weight range is 1-1000. I will update documentation to reflect this.
-Thanks for pointing it out.
+Summary of changes:
+ checkpoint/sys.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
 
-Vivek
+
+hooks/post-receive
+--
+linux-cr
