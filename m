@@ -1,14 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [ns_exec] Add SIGCHLD to default clone flags
-Date: Fri, 10 Jul 2009 12:58:51 -0500
-Message-ID: <20090710175851.GA26663@us.ibm.com>
-References: <Pine.LNX.4.64.0907101347460.28818@takamine.ncl.cs.columbia.edu>
+From: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/3] Series short description
+Date: Fri, 10 Jul 2009 15:59:45 -0700
+Message-ID: <20090710225343.15970.42287.stgit__17476.4298055836$1247266938$gmane$org@hastromil.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0907101347460.28818-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,47 +15,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> This is the default behavior. Without it, the process will not
-> report/be reported to the parent on a normal wait() call. Instead
-> the parent will need to use __WALL wait flag.
-> 
-> This caused a nasty bug where running 'rstr' from a checkpoint
-> image of a process executed with ns_exec would cause the shell
-> to skip to the next line in the script without waiting for the
-> restarted task to terminate, contrary to one's expectation.
-> 
-> TODO: if someone would like to run with anything else than the
-> SIGCHLD there, then add an option to ns_exec to allow it.
-> 
-> Oren.
+The following series implements...
 
-Thanks Oren.  Since this flags field is also used for the
-unshare path, this would actually make that fail.  So instead
-of taking this patch, I'm currently unconditionally ORing in
-SIGCHLD right before calling clone.
+---
 
-If someone ends up wanting to send something other than SIGCHLD
-we'll worry about it when they send a patch I think :)
+Ben Blum (3):
+      Quick vmalloc vs kmalloc fix to the case where array size > KMALLOC_MAX_SIZE
+      Ensures correct concurrent opening/reading of pidlists across pid namespaces
+      Adds a read-only "procs" file similar to "tasks" that shows only unique tgids
 
-thanks,
--serge
 
-> diff --git a/ns_exec.c b/ns_exec.c
-> index 3c3aa9e..0d2f54a 100644
-> --- a/ns_exec.c
-> +++ b/ns_exec.c
-> @@ -219,7 +219,7 @@ void write_pid(char *pid_file, int pid)
->  int main(int argc, char *argv[])
->  {	
->  	int c;
-> -	unsigned long flags = 0, eflags = 0;
-> +	unsigned long flags = SIGCHLD, eflags = 0;
->  	char ttyname[256];
->  	int status;
->  	int ret, use_clone = 0;
+ include/linux/cgroup.h |   46 +++++-
+ kernel/cgroup.c        |  378 ++++++++++++++++++++++++++++++++++--------------
+ 2 files changed, 309 insertions(+), 115 deletions(-)
