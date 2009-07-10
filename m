@@ -1,8 +1,7 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
-	updated. v2.6.27-rc5-45617-g5a33cf3
-Date: Fri, 10 Jul 2009 13:02:07 -0400
-Message-ID: <200907101702.n6AH27ot008977@gorgona.ncl.cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [ns_exec] Add SIGCHLD to default clone flags
+Date: Fri, 10 Jul 2009 13:52:02 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0907101347460.28818@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,51 +15,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
 
-The branch, ckpt-v17-rc1 has been updated
-       via  5a33cf3bbc06f823f40bc4c3ffdf1d1325ff685e (commit)
-      from  dd07449e47df4bc59968e82b3a0e60f103b804cd (commit)
+This is the default behavior. Without it, the process will not
+report/be reported to the parent on a normal wait() call. Instead
+the parent will need to use __WALL wait flag.
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+This caused a nasty bug where running 'rstr' from a checkpoint
+image of a process executed with ns_exec would cause the shell
+to skip to the next line in the script without waiting for the
+restarted task to terminate, contrary to one's expectation.
 
-- Log -----------------------------------------------------------------
-commit 5a33cf3bbc06f823f40bc4c3ffdf1d1325ff685e
-Author: Oren Laadan <orenl-yTy6EFHyJFUdnm+yROfE0A@public.gmane.org>
-Date:   Fri Jul 10 12:14:46 2009 -0400
+TODO: if someone would like to run with anything else than the
+SIGCHLD there, then add an option to ns_exec to allow it.
 
-    c/r: restore_retval() only for restarting tasks (not coordinator)
-    
-    restore_retval() digs out the old restore value (from checkpoint time)
-    to ensure that a restarting tasks gives the correct retval.
-    
-    The coordinator should not replace it's own retval, of course. This
-    fixes weird -ENOSYS seen at times after a restart by mktree.
-    
-    One exception is when the coordinator is also a restarting task, as
-    is the case with self-restart (RESTART_TASKSELF).
-    
-    Finally, if a restarting tasks fails to restart, it will send a
-    SIGKILL to itself, because otherwise a partial restore usually leaves
-    the process in an undefined state.
-    
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- checkpoint/restart.c |   28 +++++++++++++++++++++++++---
- checkpoint/sys.c     |    9 ---------
- 2 files changed, 25 insertions(+), 12 deletions(-)
+Oren.
 
 
-hooks/post-receive
---
-linux-cr
+diff --git a/ns_exec.c b/ns_exec.c
+index 3c3aa9e..0d2f54a 100644
+--- a/ns_exec.c
++++ b/ns_exec.c
+@@ -219,7 +219,7 @@ void write_pid(char *pid_file, int pid)
+ int main(int argc, char *argv[])
+ {	
+ 	int c;
+-	unsigned long flags = 0, eflags = 0;
++	unsigned long flags = SIGCHLD, eflags = 0;
+ 	char ttyname[256];
+ 	int status;
+ 	int ret, use_clone = 0;
