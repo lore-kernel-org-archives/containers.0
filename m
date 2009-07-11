@@ -1,12 +1,18 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
-	updated. v2.6.27-rc5-45618-gb68089f
-Date: Sat, 11 Jul 2009 16:06:42 -0400
-Message-ID: <200907112006.n6BK6gWg012768@gorgona.ncl.cs.columbia.edu>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH] cr_tests: Fix hang when robust futex lists are not
+	restored during restart
+Date: Sat, 11 Jul 2009 13:56:32 -0700
+Message-ID: <20090711205632.GA13003@us.ibm.com>
+References: <20090709192207.GJ32310@count0.beaverton.ibm.com>
+	<20090709205853.GA23637@us.ibm.com>
+	<20090710002144.GA13085@us.ibm.com>
+	<20090710233457.GA5213@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090710233457.GA5213-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,48 +22,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+Matt Helsley [matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| On Thu, Jul 09, 2009 at 05:21:44PM -0700, Sukadev Bhattiprolu wrote:
+| > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| > | Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > | > The robust futex test can hang if the kernel fails to properly set the robust
+| > | > list pointer. This currently happens during restart. The test should not
+| > | > hang and instead should report failure.
+| > | > 
+| > | > Use a timeout to ensure that hangs are caught and reported as failure.
+| > | 
+| > | Doesn't seem to work though :)  The test still hangs on restart.
+| > 
+| > I got a hang on restart, with following backtrace (ckpt-v17-rc1 plus couple
+| > of bug fixes)
+| 
+| Sorry, which fixes?
 
-The branch, ckpt-v17-rc1 has been updated
-       via  b68089fecd73c84ab695d3de51546ae7a90da65f (commit)
-      from  5a33cf3bbc06f823f40bc4c3ffdf1d1325ff685e (commit)
+I was referring to informal versions of these two commits
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+	linux-cr: 3c60cd06509ae7b12db3176dabc5a8baff45341a
+	user-cr: 768ee7c3a407b31f8b7202ce5395163dfe79893e
 
-- Log -----------------------------------------------------------------
-commit b68089fecd73c84ab695d3de51546ae7a90da65f
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Sat Jul 11 15:41:32 2009 -0400
+that I added on top of ckpt-v17-rc1.
 
-    c/r: correctly restore retval for userspace tasks
-    
-    restore_retval() already fixes the return value when restarting tasks
-    that were doing a syscall at the time of the checkpoint.
-    
-    The return value of restarting tasks that were frozen from userspace
-    must also be loaded from the proper register (eax on x86) or else the
-    latter will be overwritten.
-    
-    This fixes the consistent crashes seen on certain checkpoints that
-    happen to be taken when the target process was in userspace, and its
-    eax was not zero.
-    
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+| 
+| Perhaps this is the same problem that Serge was seeing..
 
------------------------------------------------------------------------
-
-Summary of changes:
- checkpoint/restart.c |   58 +++++++++++++++++++++++++++++++------------------
- 1 files changed, 37 insertions(+), 21 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
+Ok.
