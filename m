@@ -1,15 +1,12 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 3/3] Quick vmalloc vs kmalloc fix to the case where array
-	size	is too large
-Date: Mon, 13 Jul 2009 11:03:03 +0800
-Message-ID: <4A5AA3E7.9070800__36826.7344929793$1247454238$gmane$org@cn.fujitsu.com>
-References: <20090710230043.16778.29656.stgit@hastromil.mtv.corp.google.com>
-	<20090710230205.16778.11707.stgit@hastromil.mtv.corp.google.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] user-cr: Support kernel builds done with O=
+Date: Sun, 12 Jul 2009 20:04:01 -0700
+Message-ID: <20090713030401.GB5213@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090710230205.16778.11707.stgit-/yCBOHwbXCxd3OlUiQof+WCaruZE5nAUZeezCHUQhQ4@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,81 +16,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Ben Blum wrote:
-> Quick vmalloc vs kmalloc fix to the case where array size is too large
-> 
-> Separates all pidlist allocation requests to a separate function that judges
-> based on the requested size whether or not the array needs to be vmalloced or
-> can be gotten via kmalloc, and similar for kfree/vfree. Should be replaced
-> entirely with a kernel-wide solution to this general problem.
-> 
-> Depends on cgroup-pidlist-namespace.patch, cgroup-procs.patch
-> 
+Support kernel builds such as:
 
-Since this is a patchset, you don't need to tell the dependencies of
-this patch, at least not in changelog, but can put it ...
+	make O=../kbuild bzImage
 
-> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
-> ---
-> 
+The Makefile must differentiate between where the kernel source is and where
+the build output is. The readlink test to determine KERN_ARCH is the only
+part of the Makefile that relies on kernel build output at the moment.
 
-... here
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ Makefile |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
 
----  <- followed by this mark
-
->  kernel/cgroup.c |   34 ++++++++++++++++++++++++++++------
->  1 files changed, 28 insertions(+), 6 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 33d89be..0ed85fa 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -48,6 +48,7 @@
->  #include <linux/namei.h>
->  #include <linux/smp_lock.h>
->  #include <linux/pid_namespace.h>
-> +#include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
->  
-
-Is this TODO different with the below one?
-
->  #include <asm/atomic.h>
->  
-> @@ -2121,6 +2122,27 @@ int cgroup_scan_tasks(struct cgroup_scanner *scan)
->   */
->  
->  /*
-> + * The following two functions "fix" the issue where there are more pids
-> + * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
-> + * TODO: replace with a kernel-wide solution to this problem
-> + */
-> +#define PIDLIST_TOO_LARGE(c) ((c) * sizeof(pid_t) > (PAGE_SIZE * 2))
-
-I think order-0 is most robust and should be used as much as possible.
-
-> +static inline void *pidlist_allocate(int count)
-
-It's better to let gcc decide to inline it or not.
-
-> +{
-> +	if (PIDLIST_TOO_LARGE(count))
-> +		return vmalloc(count * sizeof(pid_t));
-> +	else
-> +		return kmalloc(count * sizeof(pid_t), GFP_KERNEL);
-> +}
-> +static inline void pidlist_free(void *p)
-
-ditto
-
-> +{
-> +	if (is_vmalloc_addr(p))
-> +		vfree(p);
-> +	else
-> +		kfree(p);
-> +}
-> +
+diff --git a/Makefile b/Makefile
+index 0ae5fe0..f0439d4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,19 +1,20 @@
+ 
+-KERNELPATH ?= ../linux
++KERNELSRC ?= ../linux
++KERNELBUILD ?= ../linux
+ 
+ # compile with debug ?
+ DEBUG = -DCHECKPOINT_DEBUG
+ 
+ # find linux architecure
+-KERN_ARCH = $(shell readlink $(KERNELPATH)/include/asm | sed 's/^asm-//')
++KERN_ARCH = $(shell readlink $(KERNELBUILD)/include/asm | sed 's/^asm-//')
+ 
+ # look for includes
+-PATHS = -I$(KERNELPATH)/include \
+-	-I$(KERNELPATH)/arch/$(KERN_ARCH)/include
++PATHS = -I$(KERNELSRC)/include \
++	-I$(KERNELSRC)/arch/$(KERN_ARCH)/include
+ 
+ # checkpoint_hdr files
+-CKPT_HDR = $(KERNELPATH)/include/linux/checkpoint_hdr.h \
+-	   $(KERNELPATH)/arch/$(KERN_ARCH)/include/asm/checkpoint_hdr.h
++CKPT_HDR = $(KERNELSRC)/include/linux/checkpoint_hdr.h \
++	   $(KERNELSRC)/arch/$(KERN_ARCH)/include/asm/checkpoint_hdr.h
+ 
+ # extra warnings and fun
+ WARNS := -Wall -Wstrict-prototypes -Wno-trigraphs
+-- 
+1.5.6.3
