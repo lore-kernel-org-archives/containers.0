@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 25/36] Add the checkpoint operation for udf filesystem files
-	and directories.
-Date: Mon, 13 Jul 2009 06:58:39 -0700
-Message-ID: <1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 24/36] Add the checkpoint operation for ubifs files and
+	directories.
+Date: Mon, 13 Jul 2009 06:58:38 -0700
+Message-ID: <1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
@@ -27,12 +27,11 @@ References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-22-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-23-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-24-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-25-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-24-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -46,35 +45,52 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+I think the debug files will also work with the generic file
+checkpoint helper but it needs a bit more investigation to be
+certain.
+
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: Artem Bityutskiy <dedekind-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Adrian Hunter <ext-adrian.hunter-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+Cc: linux-mtd-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/udf/dir.c  |    1 +
- fs/udf/file.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ fs/ubifs/debug.c |    1 +
+ fs/ubifs/dir.c   |    1 +
+ fs/ubifs/file.c  |    1 +
+ 3 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/fs/udf/dir.c b/fs/udf/dir.c
-index 61d9a76..6586dbe 100644
---- a/fs/udf/dir.c
-+++ b/fs/udf/dir.c
-@@ -211,4 +211,5 @@ const struct file_operations udf_dir_operations = {
- 	.readdir		= udf_readdir,
- 	.ioctl			= udf_ioctl,
- 	.fsync			= simple_fsync,
-+	.checkpoint		= generic_file_checkpoint,
- };
-diff --git a/fs/udf/file.c b/fs/udf/file.c
-index 7464305..33c63a8 100644
---- a/fs/udf/file.c
-+++ b/fs/udf/file.c
-@@ -212,6 +212,7 @@ const struct file_operations udf_file_operations = {
- 	.fsync			= simple_fsync,
- 	.splice_read		= generic_file_splice_read,
- 	.llseek			= generic_file_llseek,
-+	.checkpoint		= generic_file_checkpoint,
+diff --git a/fs/ubifs/debug.c b/fs/ubifs/debug.c
+index ce2cd83..69a8892 100644
+--- a/fs/ubifs/debug.c
++++ b/fs/ubifs/debug.c
+@@ -2530,6 +2530,7 @@ static ssize_t write_debugfs_file(struct file *file, const char __user *buf,
+ static const struct file_operations dfs_fops = {
+ 	.open = open_debugfs_file,
+ 	.write = write_debugfs_file,
++	.checkpoint = generic_file_checkpoint,
+ 	.owner = THIS_MODULE,
  };
  
- const struct inode_operations udf_file_inode_operations = {
+diff --git a/fs/ubifs/dir.c b/fs/ubifs/dir.c
+index 552fb01..89ab2aa 100644
+--- a/fs/ubifs/dir.c
++++ b/fs/ubifs/dir.c
+@@ -1228,4 +1228,5 @@ const struct file_operations ubifs_dir_operations = {
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl   = ubifs_compat_ioctl,
+ #endif
++	.checkpoint     = generic_file_checkpoint,
+ };
+diff --git a/fs/ubifs/file.c b/fs/ubifs/file.c
+index 6d34dc7..2d94676 100644
+--- a/fs/ubifs/file.c
++++ b/fs/ubifs/file.c
+@@ -1595,4 +1595,5 @@ const struct file_operations ubifs_file_operations = {
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl   = ubifs_compat_ioctl,
+ #endif
++	.checkpoint     = generic_file_checkpoint,
+ };
 -- 
 1.5.6.3
