@@ -1,27 +1,12 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 14/36] Add the checkpoint operation for jffs2 files and
-	directories.
-Date: Mon, 13 Jul 2009 06:58:28 -0700
-Message-ID: <1247493495-23469-15-git-send-email-matthltc@us.ibm.com>
-References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-4-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-5-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-6-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-7-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-8-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-9-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-10-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-11-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-12-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-13-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-14-git-send-email-matthltc@us.ibm.com>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
+	updated. v2.6.27-rc5-45619-g4cbbabe
+Date: Mon, 13 Jul 2009 11:07:36 -0400
+Message-ID: <200907131507.n6DF7aAI018825@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-14-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -31,40 +16,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
----
- fs/jffs2/dir.c  |    1 +
- fs/jffs2/file.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-diff --git a/fs/jffs2/dir.c b/fs/jffs2/dir.c
-index 6f60cc9..c2b6487 100644
---- a/fs/jffs2/dir.c
-+++ b/fs/jffs2/dir.c
-@@ -41,6 +41,7 @@ const struct file_operations jffs2_dir_operations =
- 	.unlocked_ioctl=jffs2_ioctl,
- 	.fsync =	jffs2_fsync,
- 	.llseek =	generic_file_llseek,
-+	.checkpoint =	generic_file_checkpoint,
- };
- 
- 
-diff --git a/fs/jffs2/file.c b/fs/jffs2/file.c
-index 5edc2bf..6bc2bc6 100644
---- a/fs/jffs2/file.c
-+++ b/fs/jffs2/file.c
-@@ -50,6 +50,7 @@ const struct file_operations jffs2_file_operations =
- 	.mmap =		generic_file_readonly_mmap,
- 	.fsync =	jffs2_fsync,
- 	.splice_read =	generic_file_splice_read,
-+	.checkpoint =	generic_file_checkpoint,
- };
- 
- /* jffs2_file_inode_operations */
--- 
-1.5.6.3
+The branch, ckpt-v17-rc1 has been updated
+       via  4cbbabe2c7c1ba884c685654cf52f9f1a79320a0 (commit)
+      from  b68089fecd73c84ab695d3de51546ae7a90da65f (commit)
+
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
+
+- Log -----------------------------------------------------------------
+commit 4cbbabe2c7c1ba884c685654cf52f9f1a79320a0
+Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date:   Mon Jul 13 11:03:28 2009 -0400
+
+    c/r: correctly restore retval for userspace tasks (redo)
+    
+    Fix previous commit to use syscall_get_return_value() when restoring
+    the original retval. This replaces syscall_get_error() which gives
+    zero in place of non-error values.
+    
+    This (really) fixes the crashes seen on certain checkpoints where
+    the task was in userspace at feezing time.
+    
+    (At the moment, the s390 still experiences crashed related to this
+    matter, apparently not restoring gpr2 correctly).
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+
+-----------------------------------------------------------------------
+
+Summary of changes:
+ checkpoint/restart.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+
+hooks/post-receive
+--
+linux-cr
