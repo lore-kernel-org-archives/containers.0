@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: Support kernel builds done with O=
-Date: Mon, 13 Jul 2009 19:00:24 -0400
-Message-ID: <4A5BBC88.8050703@cs.columbia.edu>
-References: <20090713030401.GB5213@count0.beaverton.ibm.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/9] [RFC] Support named cgroups hierarchies
+Date: Mon, 13 Jul 2009 16:39:43 -0700
+Message-ID: <6599ad830907131639l273dbe6bmee98e745dc440174@mail.gmail.com>
+References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
+	<20090702021057.14469.37548.stgit@menage.mtv.corp.google.com>
+	<4A4D6DC4.10708@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090713030401.GB5213-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <4A4D6DC4.10708-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,63 +19,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Thu, Jul 2, 2009 at 7:32 PM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+> cgroup_set_super() is called with spinlock held, so we
+> can't do kmalloc(GFP_KERNEL).
 
-Got it.
+Good point. I'll have to go back to pre-allocating the root before
+calling sget()
 
-I added another change to allow taking the headers from
-the install directory (variable: KERNELHDR, defaulf it
-$(KERNELSRC)/usr/include).
-
-Hopefully I didn't break anything...
-
-Oren.
-
-Matt Helsley wrote:
-> Support kernel builds such as:
-> 
-> 	make O=../kbuild bzImage
-> 
-> The Makefile must differentiate between where the kernel source is and where
-> the build output is. The readlink test to determine KERN_ARCH is the only
-> part of the Makefile that relies on kernel build output at the moment.
-> 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  Makefile |   13 +++++++------
->  1 files changed, 7 insertions(+), 6 deletions(-)
-> 
-> diff --git a/Makefile b/Makefile
-> index 0ae5fe0..f0439d4 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -1,19 +1,20 @@
->  
-> -KERNELPATH ?= ../linux
-> +KERNELSRC ?= ../linux
-> +KERNELBUILD ?= ../linux
->  
->  # compile with debug ?
->  DEBUG = -DCHECKPOINT_DEBUG
->  
->  # find linux architecure
-> -KERN_ARCH = $(shell readlink $(KERNELPATH)/include/asm | sed 's/^asm-//')
-> +KERN_ARCH = $(shell readlink $(KERNELBUILD)/include/asm | sed 's/^asm-//')
->  
->  # look for includes
-> -PATHS = -I$(KERNELPATH)/include \
-> -	-I$(KERNELPATH)/arch/$(KERN_ARCH)/include
-> +PATHS = -I$(KERNELSRC)/include \
-> +	-I$(KERNELSRC)/arch/$(KERN_ARCH)/include
->  
->  # checkpoint_hdr files
-> -CKPT_HDR = $(KERNELPATH)/include/linux/checkpoint_hdr.h \
-> -	   $(KERNELPATH)/arch/$(KERN_ARCH)/include/asm/checkpoint_hdr.h
-> +CKPT_HDR = $(KERNELSRC)/include/linux/checkpoint_hdr.h \
-> +	   $(KERNELSRC)/arch/$(KERN_ARCH)/include/asm/checkpoint_hdr.h
->  
->  # extra warnings and fun
->  WARNS := -Wall -Wstrict-prototypes -Wno-trigraphs
+Paul
