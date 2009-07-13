@@ -1,12 +1,14 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] cr_tests: futex: Fix mktree usage in run.sh
-Date: Mon, 13 Jul 2009 06:24:32 -0700
-Message-ID: <20090713132432.GF5213@count0.beaverton.ibm.com>
+Subject: [PATCH 01/36] Add the checkpoint operation for affs files and
+	directories.
+Date: Mon, 13 Jul 2009 06:58:15 -0700
+Message-ID: <1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
+References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1247493495-23469-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,36 +18,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Restore the pids since robust and pi futexes rely on the pids to
- determine which task has the futex. Also use --copy-status to ensure
- that the exit code from the restarted processes propagate to run.sh
-
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
-I believe this is the most important fix to get robust futex tests
-running properly via run.sh. I've actually got a whole series that
-tweaks run.sh but most of those are only beneficial if the tests fail
-at various stages.
+ fs/affs/dir.c  |    1 +
+ fs/affs/file.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
- futex/run.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/futex/run.sh b/futex/run.sh
-index 1ed23ad..d66e64e 100755
---- a/futex/run.sh
-+++ b/futex/run.sh
-@@ -61,7 +61,7 @@ for T in ${TESTS[@]} ; do
- 	fi
+diff --git a/fs/affs/dir.c b/fs/affs/dir.c
+index 8ca8f3a..6cc5e43 100644
+--- a/fs/affs/dir.c
++++ b/fs/affs/dir.c
+@@ -22,6 +22,7 @@ const struct file_operations affs_dir_operations = {
+ 	.llseek		= generic_file_llseek,
+ 	.readdir	= affs_readdir,
+ 	.fsync		= affs_file_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
  
- 	# now try restarting
--	$MKTREE < checkpoint-$T
-+	$MKTREE -p --copy-status < checkpoint-$T
- 	retval=$?
- 	echo "Restart of test ${T} done, returned $retval"
- 	if [ $retval -ne 0 ]; then
+ /*
+diff --git a/fs/affs/file.c b/fs/affs/file.c
+index 184e55c..d580a12 100644
+--- a/fs/affs/file.c
++++ b/fs/affs/file.c
+@@ -36,6 +36,7 @@ const struct file_operations affs_file_operations = {
+ 	.release	= affs_file_release,
+ 	.fsync		= affs_file_fsync,
+ 	.splice_read	= generic_file_splice_read,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations affs_file_inode_operations = {
 -- 
 1.5.6.3
