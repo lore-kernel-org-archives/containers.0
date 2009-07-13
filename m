@@ -1,42 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 29/36] Add checkpoint operation for minix filesystem files and
+Subject: [PATCH 03/36] Add the checkpoint operation for bfs files and
 	directories.
-Date: Mon, 13 Jul 2009 06:58:43 -0700
-Message-ID: <1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
+Date: Mon, 13 Jul 2009 06:58:17 -0700
+Message-ID: <1247493495-23469-4-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-4-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-5-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-6-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-7-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-8-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-9-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-10-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-11-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-12-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-13-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-14-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-15-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-16-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-17-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-18-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-19-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-20-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-21-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-22-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-23-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-24-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-28-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-29-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-29-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-3-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -51,34 +25,35 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/minix/dir.c  |    1 +
- fs/minix/file.c |    1 +
+ fs/bfs/dir.c  |    1 +
+ fs/bfs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/minix/dir.c b/fs/minix/dir.c
-index d407e7a..9cf04af 100644
---- a/fs/minix/dir.c
-+++ b/fs/minix/dir.c
-@@ -23,6 +23,7 @@ const struct file_operations minix_dir_operations = {
- 	.read		= generic_read_dir,
- 	.readdir	= minix_readdir,
+diff --git a/fs/bfs/dir.c b/fs/bfs/dir.c
+index 54bd07d..6143810 100644
+--- a/fs/bfs/dir.c
++++ b/fs/bfs/dir.c
+@@ -81,6 +81,7 @@ const struct file_operations bfs_dir_operations = {
+ 	.readdir	= bfs_readdir,
  	.fsync		= simple_fsync,
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- static inline void dir_put_page(struct page *page)
-diff --git a/fs/minix/file.c b/fs/minix/file.c
-index 3eec3e6..2048d09 100644
---- a/fs/minix/file.c
-+++ b/fs/minix/file.c
-@@ -21,6 +21,7 @@ const struct file_operations minix_file_operations = {
+ extern void dump_imap(const char *, struct super_block *);
+diff --git a/fs/bfs/file.c b/fs/bfs/file.c
+index 6a02126..c74d5b9 100644
+--- a/fs/bfs/file.c
++++ b/fs/bfs/file.c
+@@ -30,6 +30,7 @@ const struct file_operations bfs_file_operations = {
+ 	.aio_write	= generic_file_aio_write,
  	.mmap		= generic_file_mmap,
- 	.fsync		= simple_fsync,
  	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
  };
  
- const struct inode_operations minix_file_inode_operations = {
+ static int bfs_move_block(unsigned long from, unsigned long to,
 -- 
 1.5.6.3
