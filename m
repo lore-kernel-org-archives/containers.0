@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] cr_tests: Prettify toplevel Makefile
-Date: Sun, 12 Jul 2009 20:19:25 -0700
-Message-ID: <20090713031925.GC5213@count0.beaverton.ibm.com>
+Subject: [PATCH] cr_tests: Fix quoting in common.sh
+Date: Sun, 12 Jul 2009 20:25:26 -0700
+Message-ID: <20090713032526.GD5213@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,32 +20,36 @@ To: Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Simplify the toplevel Makefile to avoid the need for a subshell by
-using make -C foo instead of ( cd foo ; make ). Also use the MAKE
-variable instead of "make" to re-invoke.
+When doing a very quick scan of shell script it's hard to notice the
+difference between ' and `.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Makefile |    4 ++--
+Caught by my vim config which does syntax highlighting. Otherwise I
+might not have noticed.
+
+ common.sh |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index cf88ed1..5af82d6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -5,11 +5,11 @@ targets = ns_exec
+diff --git a/common.sh b/common.sh
+index 002cd47..d889242 100644
+--- a/common.sh
++++ b/common.sh
+@@ -50,13 +50,13 @@ thaw()
  
- all: $(targets)
- 	for s in $(SUBDIRS) ; do \
--		( cd $$s ; make ) ; \
-+		$(MAKE) -C $$s ; \
- 	done
+ get_ltp_user()
+ {
+-	awk -F: '{ print $1 '} /etc/passwd | grep "\<ltp\>"
++	awk -F: '{ print $1 }' /etc/passwd | grep "\<ltp\>"
+ 	if [ $? -ne 0 ]; then
+ 		echo "I refuse to mess with your password file"
+ 		echo "please create a user named ltp"
+ 		uid=-1
+ 	fi
+-	uid=`grep "\<ltp\>" /etc/passwd | awk -F: '{ print $3 '}`
++	uid=`grep "\<ltp\>" /etc/passwd | awk -F: '{ print $3 }'`
+ }
  
- clean:
- 	rm -f $(targets)
- 	for s in $(SUBDIRS) ; do \
--		( cd $$s ; make clean ) ; \
-+		$(MAKE) -C $$s $@ ; \
- 	done
+ handlesigusr1()
 -- 
 1.5.6.3
