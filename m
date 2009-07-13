@@ -1,12 +1,14 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
-	updated. v2.6.27-rc5-45621-ge428694
-Date: Mon, 13 Jul 2009 18:59:11 -0400
-Message-ID: <200907132259.n6DMxBTu007678@gorgona.ncl.cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Save and restore the [compat_]robust_list member of the
+	task struct.
+Date: Mon, 13 Jul 2009 18:59:16 -0400
+Message-ID: <4A5BBC44.8040105@cs.columbia.edu>
+References: <20090713123615.GE5213@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090713123615.GE5213-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,74 +18,244 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
 
-The branch, ckpt-v17-rc1 has been updated
-       via  e428694a8f6857a10afbd99660bc695c353aa74b (commit)
-       via  135961c0bbe19ba9bf21c40d0b837630df2d2639 (commit)
-      from  4cbbabe2c7c1ba884c685654cf52f9f1a79320a0 (commit)
+Pulled, thanks.
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
-
-- Log -----------------------------------------------------------------
-commit e428694a8f6857a10afbd99660bc695c353aa74b
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Mon Jul 13 05:36:15 2009 -0700
-
-    Save and restore the [compat_]robust_list member of the task struct.
-    
-    These lists record which futexes the task holds. To keep the overhead of
-    robust futexes low the list is kept in userspace. When the task exits the
-    kernel carefully walks these lists to recover held futexes that
-    other tasks may be attempting to acquire with FUTEX_WAIT.
-    
-    Because they point to userspace memory that is saved/restored by
-    checkpoint/restart saving the list pointers themselves is safe.
-    
-    While saving the pointers is safe during checkpoint, restart is tricky
-    because the robust futex ABI contains provisions for changes based on
-    checking the size of the list head. So we need to save the length of
-    the list head too in order to make sure that the kernel used during
-    restart is capable of handling that ABI. Since there is only one ABI
-    supported at the moment taking the list head's size is simple. Should
-    the ABI change we will need to use the same size as specified during
-    sys_set_robust_list() and hence some new means of determining the length
-    of this userspace structure in sys_checkpoint would be required.
-    
-    Rather than rewrite the logic that checks and handles the ABI we reuse
-    sys_set_robust_list() by factoring out the body of the function and
-    calling it during restart.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 135961c0bbe19ba9bf21c40d0b837630df2d2639
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Mon Jul 13 18:56:50 2009 -0400
-
-    c/r: export include/linux/checkpoint.h
-    
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- checkpoint/process.c           |    2 +
- include/linux/Kbuild           |    1 +
- include/linux/checkpoint_hdr.h |    5 ++++
- include/linux/compat.h         |    3 +-
- include/linux/futex.h          |   46 ++++++++++++++++++++++++++++++++++++++++
- kernel/futex.c                 |   19 ++++++++++------
- kernel/futex_compat.c          |   13 ++++++++--
- 7 files changed, 78 insertions(+), 11 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
+Matt Helsley wrote:
+> These lists record which futexes the task holds. To keep the overhead of
+> robust futexes low the list is kept in userspace. When the task exits the
+> kernel carefully walks these lists to recover held futexes that
+> other tasks may be attempting to acquire with FUTEX_WAIT.
+> 
+> Because they point to userspace memory that is saved/restored by
+> checkpoint/restart saving the list pointers themselves is safe.
+> 
+> While saving the pointers is safe during checkpoint, restart is tricky
+> because the robust futex ABI contains provisions for changes based on
+> checking the size of the list head. So we need to save the length of
+> the list head too in order to make sure that the kernel used during
+> restart is capable of handling that ABI. Since there is only one ABI
+> supported at the moment taking the list head's size is simple. Should
+> the ABI change we will need to use the same size as specified during
+> sys_set_robust_list() and hence some new means of determining the length
+> of this userspace structure in sys_checkpoint would be required.
+> 
+> Rather than rewrite the logic that checks and handles the ABI we reuse
+> sys_set_robust_list() by factoring out the body of the function and
+> calling it during restart.
+> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+> v2:
+> 	Move the save/restore into include/linux/futex.h as this would
+> 		seem to address some of the comments from the previous
+> 		posting.
+> 	Make the compat __user* 32-bits since that's all we'll ever
+> 		need for it.
+> 	Use the compat_ptr() macros instead of brute casting when
+> 		possible.
+> 	Cast the regular __user* to unsigned long first.
+> 	Tested on x86-32 applied to ckpt-v17-rc1
+> 	NOTE: The futex tests need a fix to run.sh which utilizes
+> 		pid namespaces to recreate the pids. This is necessary
+> 		because robust and pi futexes store TIDs and the
+> 		kernel uses these TIDs to implement robust futex
+> 		support. See the patch to cr_tests that will follow..
+> 
+>  checkpoint/process.c           |    2 +
+>  include/linux/checkpoint_hdr.h |    5 ++++
+>  include/linux/compat.h         |    3 +-
+>  include/linux/futex.h          |   46 ++++++++++++++++++++++++++++++++++++++++
+>  kernel/futex.c                 |   19 ++++++++++------
+>  kernel/futex_compat.c          |   13 ++++++++--
+>  6 files changed, 77 insertions(+), 11 deletions(-)
+> 
+> diff --git a/checkpoint/process.c b/checkpoint/process.c
+> index a93df3d..768f25e 100644
+> --- a/checkpoint/process.c
+> +++ b/checkpoint/process.c
+> @@ -47,6 +47,7 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+>  		/* FIXME: save remaining relevant task_struct fields */
+>  		h->exit_signal = t->exit_signal;
+>  		h->pdeath_signal = t->pdeath_signal;
+> +		save_task_robust_futex_list(h, t);
+>  	}
+>  
+>  	ret = ckpt_write_obj(ctx, &h->h);
+> @@ -389,6 +390,7 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+>  		/* FIXME: restore remaining relevant task_struct fields */
+>  		t->exit_signal = h->exit_signal;
+>  		t->pdeath_signal = h->pdeath_signal;
+> +		restore_task_robust_futex_list(h);
+>  	}
+>  
+>  	memset(t->comm, 0, TASK_COMM_LEN);
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index b5243e1..2813a03 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -201,6 +201,11 @@ struct ckpt_hdr_task {
+>  	/* would audit want to track the checkpointed ids,
+>  	   or (more likely) who actually restarted? */
+>  #endif
+> +
+> +	__u32 compat_robust_futex_head_len;
+> +	__u32 compat_robust_futex_list; /* a compat __user ptr */
+> +	__u32 robust_futex_head_len;
+> +	__u64 robust_futex_list; /* a __user ptr */
+>  } __attribute__((aligned(8)));
+>  
+>  /* Posix capabilities */
+> diff --git a/include/linux/compat.h b/include/linux/compat.h
+> index af931ee..f444cf0 100644
+> --- a/include/linux/compat.h
+> +++ b/include/linux/compat.h
+> @@ -165,7 +165,8 @@ struct compat_robust_list_head {
+>  };
+>  
+>  extern void compat_exit_robust_list(struct task_struct *curr);
+> -
+> +extern long do_compat_set_robust_list(struct compat_robust_list_head __user *head,
+> +				      compat_size_t len);
+>  asmlinkage long
+>  compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+>  			   compat_size_t len);
+> diff --git a/include/linux/futex.h b/include/linux/futex.h
+> index 4326f81..934cf98 100644
+> --- a/include/linux/futex.h
+> +++ b/include/linux/futex.h
+> @@ -185,9 +185,46 @@ union futex_key {
+>  #define FUTEX_KEY_INIT (union futex_key) { .both = { .ptr = NULL } }
+>  
+>  #ifdef CONFIG_FUTEX
+> +extern long do_set_robust_list(struct robust_list_head __user *head, size_t len);
+>  extern void exit_robust_list(struct task_struct *curr);
+>  extern void exit_pi_state_list(struct task_struct *curr);
+>  extern int futex_cmpxchg_enabled;
+> +
+> +#ifdef CONFIG_CHECKPOINT
+> +#include <linux/checkpoint_hdr.h>
+> +
+> +static inline void save_task_robust_futex_list(struct ckpt_hdr_task *h,
+> +					       struct task_struct *t)
+> +{
+> +	/*
+> +	 * These are __user pointers and thus can be saved without
+> +	 * the objhash.
+> +	 */
+> +	h->robust_futex_list = (unsigned long)t->robust_list;
+> +	h->robust_futex_head_len = sizeof(*t->robust_list);
+> +#ifdef CONFIG_COMPAT
+> +	h->compat_robust_futex_list = ptr_to_compat(t->compat_robust_list);
+> +	h->compat_robust_futex_head_len = sizeof(*t->compat_robust_list);
+> +#endif
+> +}
+> +
+> +static inline void restore_task_robust_futex_list(struct ckpt_hdr_task *h)
+> +{
+> +	/* Since we restore the memory map the address remains the same and
+> +	 * this is safe. This is the same as [compat_]sys_set_robust_list() */
+> +	if (h->robust_futex_list) {
+> +		struct robust_list_head __user *rfl = (void __user *)(unsigned long)h->robust_futex_list;
+> +		do_set_robust_list(rfl, h->robust_futex_head_len);
+> +	}
+> +#ifdef CONFIG_COMPAT
+> +	if (h->compat_robust_futex_list) {
+> +		struct compat_robust_list_head __user *crfl = compat_ptr(h->compat_robust_futex_list);
+> +		do_compat_set_robust_list(crfl, h->compat_robust_futex_head_len);
+> +	}
+> +#endif
+> +}
+> +#endif /* CONFIG_CHECKPOINT */
+> +
+>  #else
+>  static inline void exit_robust_list(struct task_struct *curr)
+>  {
+> @@ -195,6 +232,15 @@ static inline void exit_robust_list(struct task_struct *curr)
+>  static inline void exit_pi_state_list(struct task_struct *curr)
+>  {
+>  }
+> +#ifdef CONFIG_CHECKPOINT
+> +static inline void save_task_robust_futex_list(struct ckpt_hdr_task *h,
+> +					      struct task_struct *t)
+> +{
+> +}
+> +static inline void restore_task_robust_futex_list(struct ckpt_hdr_task *h)
+> +{
+> +}
+> +#endif /* CONFIG_CHECKPOINT */
+>  #endif
+>  #endif /* __KERNEL__ */
+>  
+> diff --git a/kernel/futex.c b/kernel/futex.c
+> index dfe246f..57a46c9 100644
+> --- a/kernel/futex.c
+> +++ b/kernel/futex.c
+> @@ -2261,13 +2261,7 @@ out:
+>   * the list. There can only be one such pending lock.
+>   */
+>  
+> -/**
+> - * sys_set_robust_list - set the robust-futex list head of a task
+> - * @head: pointer to the list-head
+> - * @len: length of the list-head, as userspace expects
+> - */
+> -SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
+> -		size_t, len)
+> +long do_set_robust_list(struct robust_list_head __user *head, size_t len)
+>  {
+>  	if (!futex_cmpxchg_enabled)
+>  		return -ENOSYS;
+> @@ -2283,6 +2277,17 @@ SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
+>  }
+>  
+>  /**
+> + * sys_set_robust_list - set the robust-futex list head of a task
+> + * @head: pointer to the list-head
+> + * @len: length of the list-head, as userspace expects
+> + */
+> +SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
+> +		size_t, len)
+> +{
+> +	return do_set_robust_list(head, len);
+> +}
+> +
+> +/**
+>   * sys_get_robust_list - get the robust-futex list head of a task
+>   * @pid: pid of the process [zero for current task]
+>   * @head_ptr: pointer to a list-head pointer, the kernel fills it in
+> diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
+> index d607a5b..eac734c 100644
+> --- a/kernel/futex_compat.c
+> +++ b/kernel/futex_compat.c
+> @@ -114,9 +114,9 @@ void compat_exit_robust_list(struct task_struct *curr)
+>  	}
+>  }
+>  
+> -asmlinkage long
+> -compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+> -			   compat_size_t len)
+> +long
+> +do_compat_set_robust_list(struct compat_robust_list_head __user *head,
+> +			  compat_size_t len)
+>  {
+>  	if (!futex_cmpxchg_enabled)
+>  		return -ENOSYS;
+> @@ -130,6 +130,13 @@ compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+>  }
+>  
+>  asmlinkage long
+> +compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+> +			   compat_size_t len)
+> +{
+> +	return do_compat_set_robust_list(head, len);
+> +}
+> +
+> +asmlinkage long
+>  compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
+>  			   compat_size_t __user *len_ptr)
+>  {
