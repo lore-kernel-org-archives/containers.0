@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 34/36] Add the checkpoint operation to exofs files and
+Subject: [PATCH 29/36] Add checkpoint operation for minix filesystem files and
 	directories.
-Date: Mon, 13 Jul 2009 06:58:48 -0700
-Message-ID: <1247493495-23469-35-git-send-email-matthltc@us.ibm.com>
+Date: Mon, 13 Jul 2009 06:58:43 -0700
+Message-ID: <1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
@@ -32,16 +32,11 @@ References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-28-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-29-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-31-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-32-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-33-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-34-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-34-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-29-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -56,35 +51,34 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Boaz Harrosh <bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org>
-Cc: Avishay Traeger <avishay-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 ---
- fs/exofs/dir.c  |    1 +
- fs/exofs/file.c |    1 +
+ fs/minix/dir.c  |    1 +
+ fs/minix/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/exofs/dir.c b/fs/exofs/dir.c
-index 65b0c8c..5184c15 100644
---- a/fs/exofs/dir.c
-+++ b/fs/exofs/dir.c
-@@ -669,4 +669,5 @@ const struct file_operations exofs_dir_operations = {
- 	.llseek		= generic_file_llseek,
+diff --git a/fs/minix/dir.c b/fs/minix/dir.c
+index d407e7a..9cf04af 100644
+--- a/fs/minix/dir.c
++++ b/fs/minix/dir.c
+@@ -23,6 +23,7 @@ const struct file_operations minix_dir_operations = {
  	.read		= generic_read_dir,
- 	.readdir	= exofs_readdir,
+ 	.readdir	= minix_readdir,
+ 	.fsync		= simple_fsync,
 +	.checkpoint	= generic_file_checkpoint,
  };
-diff --git a/fs/exofs/file.c b/fs/exofs/file.c
-index 6ed7fe4..b94e792 100644
---- a/fs/exofs/file.c
-+++ b/fs/exofs/file.c
-@@ -68,6 +68,7 @@ static int exofs_flush(struct file *file, fl_owner_t id)
  
- const struct file_operations exofs_file_operations = {
- 	.llseek		= generic_file_llseek,
+ static inline void dir_put_page(struct page *page)
+diff --git a/fs/minix/file.c b/fs/minix/file.c
+index 3eec3e6..2048d09 100644
+--- a/fs/minix/file.c
++++ b/fs/minix/file.c
+@@ -21,6 +21,7 @@ const struct file_operations minix_file_operations = {
+ 	.mmap		= generic_file_mmap,
+ 	.fsync		= simple_fsync,
+ 	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
- 	.aio_read	= generic_file_aio_read,
+ };
+ 
+ const struct inode_operations minix_file_inode_operations = {
 -- 
 1.5.6.3
