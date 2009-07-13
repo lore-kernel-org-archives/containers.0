@@ -1,8 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 19/36] Add the checkpoint operation for qnx4 files and
-	directories.
-Date: Mon, 13 Jul 2009 06:58:33 -0700
-Message-ID: <1247493495-23469-20-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 31/36] Add checkpoint operations for ufs files and directories.
+Date: Mon, 13 Jul 2009 06:58:45 -0700
+Message-ID: <1247493495-23469-32-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
@@ -22,11 +21,23 @@ References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-17-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-18-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-19-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-20-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-21-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-22-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-23-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-24-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-28-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-29-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-31-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-19-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-31-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -41,35 +52,30 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/qnx4/dir.c  |    1 +
- fs/qnx4/file.c |    1 +
+ fs/ufs/dir.c  |    1 +
+ fs/ufs/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/qnx4/dir.c b/fs/qnx4/dir.c
-index 003c68f..ca99e01 100644
---- a/fs/qnx4/dir.c
-+++ b/fs/qnx4/dir.c
-@@ -80,6 +80,7 @@ const struct file_operations qnx4_dir_operations =
- 	.read		= generic_read_dir,
- 	.readdir	= qnx4_readdir,
+diff --git a/fs/ufs/dir.c b/fs/ufs/dir.c
+index 6f671f1..9379010 100644
+--- a/fs/ufs/dir.c
++++ b/fs/ufs/dir.c
+@@ -668,4 +668,5 @@ const struct file_operations ufs_dir_operations = {
+ 	.readdir	= ufs_readdir,
  	.fsync		= simple_fsync,
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
  };
- 
- const struct inode_operations qnx4_dir_inode_operations =
-diff --git a/fs/qnx4/file.c b/fs/qnx4/file.c
-index 09b170a..8aaa882 100644
---- a/fs/qnx4/file.c
-+++ b/fs/qnx4/file.c
-@@ -30,6 +30,7 @@ const struct file_operations qnx4_file_operations =
- 	.aio_write	= generic_file_aio_write,
+diff --git a/fs/ufs/file.c b/fs/ufs/file.c
+index 73655c6..15c8616 100644
+--- a/fs/ufs/file.c
++++ b/fs/ufs/file.c
+@@ -43,4 +43,5 @@ const struct file_operations ufs_file_operations = {
+ 	.open           = generic_file_open,
  	.fsync		= simple_fsync,
- #endif
+ 	.splice_read	= generic_file_splice_read,
 +	.checkpoint	= generic_file_checkpoint,
  };
- 
- const struct inode_operations qnx4_file_inode_operations =
 -- 
 1.5.6.3
