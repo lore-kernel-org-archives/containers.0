@@ -1,12 +1,16 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v17-rc1,
-	updated. v2.6.27-rc5-45619-g4cbbabe
-Date: Mon, 13 Jul 2009 11:07:36 -0400
-Message-ID: <200907131507.n6DF7aAI018825@gorgona.ncl.cs.columbia.edu>
+From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] Adds a read-only "procs" file similar to "tasks" that
+	shows only unique tgids
+Date: Mon, 13 Jul 2009 11:25:24 -0400
+Message-ID: <2f86c2480907130825x7189c713la2f5bd99749926__13809.4826521867$1247499314$gmane$org@mail.gmail.com>
+References: <20090710230043.16778.29656.stgit@hastromil.mtv.corp.google.com>
+	<20090710230154.16778.58053.stgit@hastromil.mtv.corp.google.com>
+	<4A5AAE02.7060106@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4A5AAE02.7060106-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,47 +20,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+On Sun, Jul 12, 2009 at 11:46 PM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> I think a better demonstration is:
+>
+> =A0$ cat tasks
+> =A01000
+> =A01001
+> =A01002
+>
+> =A0$ cat procs
+> =A01000
 
-The branch, ckpt-v17-rc1 has been updated
-       via  4cbbabe2c7c1ba884c685654cf52f9f1a79320a0 (commit)
-      from  b68089fecd73c84ab695d3de51546ae7a90da65f (commit)
+Indeed.
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+>> + =A0 =A0 /*
+>> + =A0 =A0 =A0* if the length difference is large enough, we want to allo=
+cate a
+>> + =A0 =A0 =A0* smaller buffer to save memory. if this fails due to out o=
+f memory,
+>> + =A0 =A0 =A0* we'll just stay with what we've got.
+>> + =A0 =A0 =A0*/
+>> + =A0 =A0 if (PIDLIST_REALLOC_DIFFERENCE(length, dest)) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 newlist =3D kmalloc(dest * sizeof(pid_t), GFP_=
+KERNEL);
+>
+> krealloc()
+>
 
-- Log -----------------------------------------------------------------
-commit 4cbbabe2c7c1ba884c685654cf52f9f1a79320a0
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Mon Jul 13 11:03:28 2009 -0400
-
-    c/r: correctly restore retval for userspace tasks (redo)
-    
-    Fix previous commit to use syscall_get_return_value() when restoring
-    the original retval. This replaces syscall_get_error() which gives
-    zero in place of non-error values.
-    
-    This (really) fixes the crashes seen on certain checkpoints where
-    the task was in userspace at feezing time.
-    
-    (At the moment, the s390 still experiences crashed related to this
-    matter, apparently not restoring gpr2 correctly).
-    
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- checkpoint/restart.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
+Ah yes. I had thought about krealloc and determined that it wasn't
+clever enough to do in-place resizing, but forgot that it could be
+used anyway here.
