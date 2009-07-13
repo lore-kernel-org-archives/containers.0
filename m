@@ -1,9 +1,8 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Mon, 13 Jul 2009 21:30:58 +0200
-Message-ID: <20090713193058.GL18617@megiteam.pl>
-References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
-	<20090413142038.GB13007@us.ibm.com>
+Date: Mon, 13 Jul 2009 15:26:10 -0500
+Message-ID: <20090713202610.GA6447@us.ibm.com>
+References: <20090413142038.GB13007@us.ibm.com>
 	<20090704132851.GA16373@megiteam.pl>
 	<20090704143412.GA27523@megiteam.pl>
 	<20090708105417.GA16833@megiteam.pl>
@@ -12,12 +11,13 @@ References: <d06d0dd6a4ddf760bea53291c048e291@[::1]>
 	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
 	<20090712074932.GA17291@megiteam.pl>
 	<20090713190211.GA4208@us.ibm.com>
+	<20090713193058.GL18617@megiteam.pl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090713190211.GA4208-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090713193058.GL18617-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,17 +27,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jul 13, 2009 at 02:02:11PM -0500, Serge E. Hallyn wrote:
-> I've tried but failed to reproduce.  Do you have a script or a more
-> precise recipe you can share?
+Quoting Grzegorz Nosek (root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org):
+> On Mon, Jul 13, 2009 at 02:02:11PM -0500, Serge E. Hallyn wrote:
+> > I've tried but failed to reproduce.  Do you have a script or a more
+> > precise recipe you can share?
+> 
+> I do have a script but all it does is starting and shutting down
+> a container in a loop. I can strip down and publish the virtualbox vm
+> image somewhere, if that helps.
 
-I do have a script but all it does is starting and shutting down
-a container in a loop. I can strip down and publish the virtualbox vm
-image somewhere, if that helps.
+The container init is /bin/sh, and you
+while [ 1 ]; do
+	virsh --connect lxc:/// start vm1
+	virsh --connect lxc:/// destroy vm1
+done
 
-Best regards,
- Grzegorz Nosek
+?  (I thought there was something about stracing the container
+init too, so i was basically doing the above while also
+stracing the bash shell)
+
+-serge
