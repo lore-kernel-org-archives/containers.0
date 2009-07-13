@@ -1,16 +1,23 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] Memory usage limit notification addition to memcg
-Date: Mon, 13 Jul 2009 15:15:45 -0700
-Message-ID: <6599ad830907131515h3c9622b5v309cf8f13d272bab@mail.gmail.com>
-References: <1239660512-25468-1-git-send-email-dan@embeddedalley.com>
-	<1246998310-16764-1-git-send-email-vbuzov@embeddedalley.com>
-	<1246998310-16764-2-git-send-email-vbuzov@embeddedalley.com>
-	<20090708095616.cdfe8c7c.kamezawa.hiroyu@jp.fujitsu.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Tue, 14 Jul 2009 00:34:44 +0200
+Message-ID: <20090713223444.GM18617@megiteam.pl>
+References: <20090704132851.GA16373@megiteam.pl>
+	<20090704143412.GA27523@megiteam.pl>
+	<20090708105417.GA16833@megiteam.pl>
+	<20090711193055.GA11303@megiteam.pl>
+	<20090711200133.GB11303@megiteam.pl>
+	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
+	<20090712074932.GA17291@megiteam.pl>
+	<20090713190211.GA4208@us.ibm.com>
+	<20090713193058.GL18617@megiteam.pl>
+	<20090713202610.GA6447@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090708095616.cdfe8c7c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090713202610.GA6447-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,53 +27,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 7, 2009 at 5:56 PM, KAMEZAWA
-Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->
-> I know people likes to wait for file descriptor to get notification in these days.
-> Can't we have "event" file descriptor in cgroup layer and make it reusable for
-> other purposes ?
+On Mon, Jul 13, 2009 at 03:26:10PM -0500, Serge E. Hallyn wrote:
+> The container init is /bin/sh, and you
+> while [ 1 ]; do
+> 	virsh --connect lxc:/// start vm1
+> 	virsh --connect lxc:/// destroy vm1
+> done
+> 
+> ?  (I thought there was something about stracing the container
+> init too, so i was basically doing the above while also
+> stracing the bash shell)
 
-I agree - rather than having to add a separate "wait for value to
-cross X threshold" file for each numeric usage value that people might
-be concerned about, it would be better to have a generic way to do it
-for any file. Given that this is a userspace API, it would be better
-to work out at least the generic API first, even if the initial
-implementation isn't generic.
+That was the first occurrence of the crash (though I can't tell you
+whether I used sash or upstart then). When I could reproduce the crash
+reliably, I was using upstart without strace and the script was
+basically
 
-Properties that it should support include:
+while [ 1 ]; do
+	virsh --connect lxc:/// start vm1
+	sleep 3
+	virsh --connect lxc:/// shutdown vm1
+	sleep 3
+done
 
-- notification when a value crosses above or below a given threshold
-(which would include binary cases such as OOM notification where the
-value cross from "not-OOM" to "OOM"
+to let the startup/shutdown settle (also, SLUB debugging had to be on to
+poison freed memory -- this was crucial for me).
 
-- independent thresholds for different waiters
+OK, I've been writing this mail for over an hour now, but I managed to
+produce a single program which produces the oops I've been encountering.
 
-- epoll support (by using eventfd?)
+Simply run it as container init. Sometimes it oopses immediately,
+usually it goes as far as the pause. If you kill it with SIGINT then,
+everything will probably be fine. But if you first kill the libvirt_lxc
+process above it (holding the pty master), and only then kill init, it
+should oops.
 
-- automatic wakeup when a cgroup is removed
+Note that the weird mount stuff is critical here (couldn't reproduce the
+oops by simply opening /dev/pts/0, even if I mounted it on /dev/console
+before).
 
-- maybe optional wakeup when a thread attach occurs?
+After applying my patch from some earlier mail I can no longer crash the
+kernel, but the "Hello world!" appears on my current VT, so there's
+potential for container root to mess up host console. I don't know how
+that happened, actually.
 
-- not require more than read permissions on the file containing the
-value being monitored
+Best regards,
+ Grzegorz Nosek
 
-I guess there are a few possible ways this could be exposed to userspace:
+/*------------------------------------------------------------------*/
+#include <sys/mount.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/signal.h>
 
-1) new ioctl on cgroups files. simple but probably not popular
+void dummy(int sig)
+{
+}
 
-2) new system call. maybe the cleanest, but involves changing every
-arch and is hard to script
+int main(void)
+{
+	sleep(2); /* wait for /dev/pts/0 to appear */
+	close(0);
+	close(1);
+	close(2);
+	mount("/dev/pts/0", "/dev/console", NULL, MS_BIND, NULL);
+	signal(SIGINT, dummy);
+	pause();
 
-3) new per-cgroup file to control these e.g:
-  - create an eventfd
-  - open the control file to be monitored
-  - write the "<event_fd>, <control_fd> <threshold> to
-cgroup.event_control to link them together
-flexible and scriptable but maybe a clumsy interface in general
-
-Paul
+	open("/dev/console", O_RDWR);
+	dup(0);
+	dup(0);
+	write(1, "Hello world!\n", sizeof("Hello world!\n")-1);
+	return 0;
+}
