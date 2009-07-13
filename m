@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 33/36] Add the checkpoint operation for adfs files and
-	directories.
-Date: Mon, 13 Jul 2009 06:58:47 -0700
-Message-ID: <1247493495-23469-34-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 25/36] Add the checkpoint operation for udf filesystem files
+	and directories.
+Date: Mon, 13 Jul 2009 06:58:39 -0700
+Message-ID: <1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
@@ -28,19 +28,11 @@ References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-23-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-24-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-28-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-29-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-31-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-32-git-send-email-matthltc@us.ibm.com>
-	<1247493495-23469-33-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-33-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-25-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -55,35 +47,34 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 ---
- fs/adfs/dir.c  |    1 +
- fs/adfs/file.c |    1 +
+ fs/udf/dir.c  |    1 +
+ fs/udf/file.c |    1 +
  2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/adfs/dir.c b/fs/adfs/dir.c
-index 23aa52f..7106f32 100644
---- a/fs/adfs/dir.c
-+++ b/fs/adfs/dir.c
-@@ -198,6 +198,7 @@ const struct file_operations adfs_dir_operations = {
- 	.llseek		= generic_file_llseek,
- 	.readdir	= adfs_readdir,
- 	.fsync		= simple_fsync,
-+	.checkpoint	= generic_file_checkpoint,
+diff --git a/fs/udf/dir.c b/fs/udf/dir.c
+index 61d9a76..6586dbe 100644
+--- a/fs/udf/dir.c
++++ b/fs/udf/dir.c
+@@ -211,4 +211,5 @@ const struct file_operations udf_dir_operations = {
+ 	.readdir		= udf_readdir,
+ 	.ioctl			= udf_ioctl,
+ 	.fsync			= simple_fsync,
++	.checkpoint		= generic_file_checkpoint,
+ };
+diff --git a/fs/udf/file.c b/fs/udf/file.c
+index 7464305..33c63a8 100644
+--- a/fs/udf/file.c
++++ b/fs/udf/file.c
+@@ -212,6 +212,7 @@ const struct file_operations udf_file_operations = {
+ 	.fsync			= simple_fsync,
+ 	.splice_read		= generic_file_splice_read,
+ 	.llseek			= generic_file_llseek,
++	.checkpoint		= generic_file_checkpoint,
  };
  
- static int
-diff --git a/fs/adfs/file.c b/fs/adfs/file.c
-index 005ea34..97bd298 100644
---- a/fs/adfs/file.c
-+++ b/fs/adfs/file.c
-@@ -30,6 +30,7 @@ const struct file_operations adfs_file_operations = {
- 	.write		= do_sync_write,
- 	.aio_write	= generic_file_aio_write,
- 	.splice_read	= generic_file_splice_read,
-+	.checkpoint	= generic_file_checkpoint,
- };
- 
- const struct inode_operations adfs_file_inode_operations = {
+ const struct inode_operations udf_file_inode_operations = {
 -- 
 1.5.6.3
