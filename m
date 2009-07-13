@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 26/36] Add the checkpoint operation for xfs files and
-	directories.
-Date: Mon, 13 Jul 2009 06:58:40 -0700
-Message-ID: <1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 36/36] Add checkpoint operations for UML host filesystem files
+	and directories.
+Date: Mon, 13 Jul 2009 06:58:50 -0700
+Message-ID: <1247493495-23469-37-git-send-email-matthltc@us.ibm.com>
 References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-2-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-3-git-send-email-matthltc@us.ibm.com>
@@ -29,11 +29,21 @@ References: <1247493495-23469-1-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-24-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-25-git-send-email-matthltc@us.ibm.com>
 	<1247493495-23469-26-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-27-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-28-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-29-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-30-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-31-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-32-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-33-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-34-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-35-git-send-email-matthltc@us.ibm.com>
+	<1247493495-23469-36-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247493495-23469-26-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247493495-23469-36-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -48,32 +58,31 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: xfs-masters-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
-Cc: xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>
+Cc: user-mode-linux-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 ---
- fs/xfs/linux-2.6/xfs_file.c |    2 ++
+ fs/hostfs/hostfs_kern.c |    2 ++
  1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/xfs/linux-2.6/xfs_file.c b/fs/xfs/linux-2.6/xfs_file.c
-index f4e2554..8e1074b 100644
---- a/fs/xfs/linux-2.6/xfs_file.c
-+++ b/fs/xfs/linux-2.6/xfs_file.c
-@@ -258,6 +258,7 @@ const struct file_operations xfs_file_operations = {
- #ifdef HAVE_FOP_OPEN_EXEC
- 	.open_exec	= xfs_file_open_exec,
- #endif
-+	.checkpoint	= generic_file_checkpoint,
- };
+diff --git a/fs/hostfs/hostfs_kern.c b/fs/hostfs/hostfs_kern.c
+index 032604e..67e2356 100644
+--- a/fs/hostfs/hostfs_kern.c
++++ b/fs/hostfs/hostfs_kern.c
+@@ -417,6 +417,7 @@ int hostfs_fsync(struct file *file, struct dentry *dentry, int datasync)
  
- const struct file_operations xfs_dir_file_operations = {
-@@ -270,6 +271,7 @@ const struct file_operations xfs_dir_file_operations = {
- 	.compat_ioctl	= xfs_file_compat_ioctl,
- #endif
- 	.fsync		= xfs_file_fsync,
+ static const struct file_operations hostfs_file_fops = {
+ 	.llseek		= generic_file_llseek,
 +	.checkpoint	= generic_file_checkpoint,
- };
+ 	.read		= do_sync_read,
+ 	.splice_read	= generic_file_splice_read,
+ 	.aio_read	= generic_file_aio_read,
+@@ -430,6 +431,7 @@ static const struct file_operations hostfs_file_fops = {
  
- static struct vm_operations_struct xfs_file_vm_ops = {
+ static const struct file_operations hostfs_dir_fops = {
+ 	.llseek		= generic_file_llseek,
++	.checkpoint	= generic_file_checkpoint,
+ 	.readdir	= hostfs_readdir,
+ 	.read		= generic_read_dir,
+ };
 -- 
 1.5.6.3
