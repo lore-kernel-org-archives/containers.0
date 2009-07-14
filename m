@@ -1,23 +1,23 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Tue, 14 Jul 2009 12:31:29 +0200
-Message-ID: <20090714103129.GB12958@megiteam.pl>
-References: <20090708105417.GA16833@megiteam.pl>
-	<20090711193055.GA11303@megiteam.pl>
-	<20090711200133.GB11303@megiteam.pl>
-	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
-	<20090712074932.GA17291@megiteam.pl>
-	<20090713190211.GA4208@us.ibm.com>
-	<20090713193058.GL18617@megiteam.pl>
-	<20090713202610.GA6447@us.ibm.com>
-	<20090713223444.GM18617@megiteam.pl>
-	<20090714064905.GA25278@us.ibm.com>
+From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/3] Quick vmalloc vs kmalloc fix to the case where array
+	size is too large
+Date: Tue, 14 Jul 2009 13:26:30 -0400
+Message-ID: <2f86c2480907141026h7ca27a4fq898c3ee248280a75__6565.73924138701$1247592537$gmane$org@mail.gmail.com>
+References: <20090710230043.16778.29656.stgit@hastromil.mtv.corp.google.com>
+	<20090710230205.16778.11707.stgit@hastromil.mtv.corp.google.com>
+	<4A5AA3E7.9070800@cn.fujitsu.com>
+	<20090713150303.70ab5176.kamezawa.hiroyu@jp.fujitsu.com>
+	<2f86c2480907130827u7d2b062bw26bbb80a8e3de657@mail.gmail.com>
+	<20090714084950.2401d9a6.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830907132050n226aecb3ucab6746a4d0e81fa@mail.gmail.com>
+	<20090714125334.b476aa78.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830907132104o55d31ccexb15e5aa35c31416e@mail.gmail.com>
+	<20090714132538.ac0bc44a.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090714064905.GA25278-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090714132538.ac0bc44a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,41 +27,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On pon, lip 13, 2009 at 11:49:05 -0700, Sukadev Bhattiprolu wrote:
-> Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
-> | Simply run it as container init. Sometimes it oopses immediately,
-> 
-> I am trying to reproduce this too and just trying to make sure I get
-> your environment correctly.  I have just built/installed libvirt 0.6.5
-> on Ubuntu 9.04. 
+On Tue, Jul 14, 2009 at 12:25 AM, KAMEZAWA
+Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> My point is
+> =A0- More PIDs, More time necessary to read procs file.
+> This patch boost it ;) Seems like "visit this later again" ,or FIXME patc=
+h.
+>
+> Thanks,
+> -Kame
 
-0.6.4 or 0.6.5, no difference really (tested both). Host distro is
-Debian Lenny but Ubuntu is probably close enough. Didn't test distro
-kernel, only used hand-built 2.6.30, 2.6.30.1 and 2.6.31-rc2
+Indeed. You'll notice the TODOs in the code here referring to the
+discussion of a possible dynamic array system in the previous thread.
+This is simply a correctness patch that aims to keep performance as
+good as it can for the current approach.
 
-> The bug does require libvirt+kvm right ?  IOW, does this simple test repro
-> if it is run as a container-init with say lxc-start (i.e from liblxc - see
-> http://lxc.sourceforge.net/) ? Another simpler way to create container-init
-> is the ns_exec program - I assume that won't create the problem ?
+(Kame, forgive the double-post; forgot to reply-all the first time)
 
-Probably, as it requires a "cross-namespace" pty. I didn't yet set up a
-lxc config file. Maybe you can help off the top of your head with the
-right incantations? BTW, where's the canonical source for ns_exec?
-
-> Also in an earlier mail you mentioned that disabling the 'newinstance'
-> mount option to devpts did not help. So does your setup work with older
-> kernels like 2.6.28 ?
-
-Well, I failed to build 2.6.28 with NET_NS (even without SYSFS it wasn't
-available in menuconfig) but 2.6.29 exhibits very similar behaviour,
-i.e. crashes instantly. The difference is that when the pty master
-exits, container init receives a SIGHUP. If it chooses to ignore it and
-open /dev/console anyway, *boom*. Looking roughly at %eip and the
-faulting address, it's the same bug.
-
-Best regards,
- Grzegorz Nosek
+- Ben
