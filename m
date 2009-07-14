@@ -1,23 +1,18 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Mon, 13 Jul 2009 23:49:05 -0700
-Message-ID: <20090714064905.GA25278@us.ibm.com>
-References: <20090704143412.GA27523@megiteam.pl>
-	<20090708105417.GA16833@megiteam.pl>
-	<20090711193055.GA11303@megiteam.pl>
-	<20090711200133.GB11303@megiteam.pl>
-	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
-	<20090712074932.GA17291@megiteam.pl>
-	<20090713190211.GA4208@us.ibm.com>
-	<20090713193058.GL18617@megiteam.pl>
-	<20090713202610.GA6447@us.ibm.com>
-	<20090713223444.GM18617@megiteam.pl>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] CGroups: cgroup member list enhancement/fix
+Date: Mon, 13 Jul 2009 23:49:16 -0700
+Message-ID: <6599ad830907132349u6cf52060t4fafb6637cbe4ed1__33686.0965741382$1247554194$gmane$org@mail.gmail.com>
+References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
+	<20090705063850.GX11273@balbir.in.ibm.com>
+	<6599ad830907101658i13e4046br70377a487dd6b49b@mail.gmail.com>
+	<20090713121138.GC5051@balbir.in.ibm.com>
+	<6599ad830907130926v7788af12hdcd76e4ccb3ab6de@mail.gmail.com>
+	<20090714055638.GI5051@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090713223444.GM18617-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <20090714055638.GI5051-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,66 +22,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
-| Simply run it as container init. Sometimes it oopses immediately,
+On Mon, Jul 13, 2009 at 10:56 PM, Balbir Singh<balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>
+>> Waiting for the next scheduling point might be too long, since a
+>> thread can block for arbitrary amounts of time and keeping the marker
+>> around for arbitrary time (unless we add a new task_struct field)
+>> would be tricky. Marking the cgroup or tgid as being migrated which
+>> then triggers the extra synchronization in the fork path (but which
+>> isn't needed at other times) is probably where we'll end up.
+>
+>
+> Hmm... but we would not need that information till we schedule the
+> tasks, adding a field to task_struct is what I had in mind.
 
-I am trying to reproduce this too and just trying to make sure I get
-your environment correctly.  I have just built/installed libvirt 0.6.5
-on Ubuntu 9.04. 
+Waiting until schedule to move the threads would result in them still
+showing up in the old "tasks" file until they next ran, which would be
+confusing and misleading.
 
-The bug does require libvirt+kvm right ?  IOW, does this simple test repro
-if it is run as a container-init with say lxc-start (i.e from liblxc - see
-http://lxc.sourceforge.net/) ? Another simpler way to create container-init
-is the ns_exec program - I assume that won't create the problem ?
+As a first cut, we were planning to add an rwsem that gets taken for
+read in cgroup_fork(), released in cgroup_post_fork(), and taken for
+write when moving an entire process to a new cgroup; not ideal
+performance-wise, but safe.
 
-Also in an earlier mail you mentioned that disabling the 'newinstance'
-mount option to devpts did not help. So does your setup work with older
-kernels like 2.6.28 ?
+If adding a field to task_struct is an option, then the rwsem could be
+per thread-group leader, which would reduce contention.
 
-| usually it goes as far as the pause. If you kill it with SIGINT then,
-| everything will probably be fine. But if you first kill the libvirt_lxc
-| process above it (holding the pty master), and only then kill init, it
-| should oops.
-| 
-| Note that the weird mount stuff is critical here (couldn't reproduce the
-| oops by simply opening /dev/pts/0, even if I mounted it on /dev/console
-| before).
-| 
-| After applying my patch from some earlier mail I can no longer crash the
-| kernel, but the "Hello world!" appears on my current VT, so there's
-| potential for container root to mess up host console. I don't know how
-| that happened, actually.
-| 
-| Best regards,
-|  Grzegorz Nosek
-| 
-| /*------------------------------------------------------------------*/
-| #include <sys/mount.h>
-| #include <fcntl.h>
-| #include <unistd.h>
-| #include <sys/signal.h>
-| 
-| void dummy(int sig)
-| {
-| }
-| 
-| int main(void)
-| {
-| 	sleep(2); /* wait for /dev/pts/0 to appear */
-| 	close(0);
-| 	close(1);
-| 	close(2);
-| 	mount("/dev/pts/0", "/dev/console", NULL, MS_BIND, NULL);
-| 	signal(SIGINT, dummy);
-| 	pause();
-| 
-| 	open("/dev/console", O_RDWR);
-| 	dup(0);
-| 	dup(0);
-| 	write(1, "Hello world!\n", sizeof("Hello world!\n")-1);
-| 	return 0;
-| }
+Paul
