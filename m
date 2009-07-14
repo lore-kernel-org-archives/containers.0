@@ -1,22 +1,19 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 3/3] Quick vmalloc vs kmalloc fix to the case where
-	array  size is too large
-Date: Tue, 14 Jul 2009 13:25:38 +0900
-Message-ID: <20090714132538.ac0bc44a.kamezawa.hiroyu__28105.6820801043$1247549375$gmane$org@jp.fujitsu.com>
-References: <20090710230043.16778.29656.stgit@hastromil.mtv.corp.google.com>
-	<20090710230205.16778.11707.stgit@hastromil.mtv.corp.google.com>
-	<4A5AA3E7.9070800@cn.fujitsu.com>
-	<20090713150303.70ab5176.kamezawa.hiroyu@jp.fujitsu.com>
-	<2f86c2480907130827u7d2b062bw26bbb80a8e3de657@mail.gmail.com>
-	<20090714084950.2401d9a6.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830907132050n226aecb3ucab6746a4d0e81fa@mail.gmail.com>
-	<20090714125334.b476aa78.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830907132104o55d31ccexb15e5aa35c31416e@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/2] CGroups: cgroup member list enhancement/fix
+Date: Tue, 14 Jul 2009 11:26:38 +0530
+Message-ID: <20090714055638.GI5051__435.973043977533$1247551046$gmane$org@balbir.in.ibm.com>
+References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
+	<20090705063850.GX11273@balbir.in.ibm.com>
+	<6599ad830907101658i13e4046br70377a487dd6b49b@mail.gmail.com>
+	<20090713121138.GC5051@balbir.in.ibm.com>
+	<6599ad830907130926v7788af12hdcd76e4ccb3ab6de@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830907132104o55d31ccexb15e5aa35c31416e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <6599ad830907130926v7788af12hdcd76e4ccb3ab6de-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,31 +24,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 13 Jul 2009 21:04:32 -0700
-Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+* menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2009-07-13 09:26:26]:
 
-> On Mon, Jul 13, 2009 at 8:53 PM, KAMEZAWA
-> Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > Hmm, ok...then, if too much pids, you hit vmalloc()/vfree() problem again.
-> > So, it's not good idea to use vmalloc/vfree here after all.
+> On Mon, Jul 13, 2009 at 5:11 AM, Balbir Singh<balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > >
+> > How about lazy migration? Mark a group as to move when the kernel sees
+> > it next for scheduling.
 > 
-> Agreed, using vmalloc()/vfree() isn't a perfect solution, but at least
-> the approach of kmalloc() for small allocations and vmalloc() for
-> larger allocations solves the current problem (reading tasks/procs
-> files can fail due to lack of contiguous kmalloc memory) without
-> introducing overhead in the typical case.
-> 
-My point is 
- - More PIDs, More time necessary to read procs file.
-This patch boost it ;) Seems like "visit this later again" ,or FIXME patch.
-
-Thanks,
--Kame
+> Waiting for the next scheduling point might be too long, since a
+> thread can block for arbitrary amounts of time and keeping the marker
+> around for arbitrary time (unless we add a new task_struct field)
+> would be tricky. Marking the cgroup or tgid as being migrated which
+> then triggers the extra synchronization in the fork path (but which
+> isn't needed at other times) is probably where we'll end up.
 
 
-> Paul
-> 
+Hmm... but we would not need that information till we schedule the
+tasks, adding a field to task_struct is what I had in mind.
+
+-- 
+	Balbir
