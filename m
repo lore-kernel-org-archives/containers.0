@@ -1,14 +1,18 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/1] Memory usage limit notification addition to memcg
-Date: Tue, 14 Jul 2009 10:43:57 +0900 (JST)
-Message-ID: <20090714100440.6283.A69D9226__35468.8926054679$1247535887$gmane$org@jp.fujitsu.com>
-References: <20090708095616.cdfe8c7c.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830907131515h3c9622b5v309cf8f13d272bab@mail.gmail.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/2] Resource usage threshold notification addition to
+	res_counter (v3)
+Date: Tue, 14 Jul 2009 10:45:43 +0900
+Message-ID: <20090714104543.c7e7fe32.kamezawa.hiroyu__39389.5931345925$1247536098$gmane$org@jp.fujitsu.com>
+References: <1246998310-16764-1-git-send-email-vbuzov@embeddedalley.com>
+	<1247530581-31416-1-git-send-email-vbuzov@embeddedalley.com>
+	<1247530581-31416-2-git-send-email-vbuzov@embeddedalley.com>
+	<20090714093022.6e8c1cc0.kamezawa.hiroyu@jp.fujitsu.com>
+	<4A5BDF5D.8090306@embeddedalley.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830907131515h3c9622b5v309cf8f13d272bab-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4A5BDF5D.8090306-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,65 +22,122 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Vladislav D. Buzov" <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
+Cc: Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, memory management list <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Linux-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> On Tue, Jul 7, 2009 at 5:56 PM, KAMEZAWA
-> Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+On Mon, 13 Jul 2009 18:29:01 -0700
+"Vladislav D. Buzov" <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org> wrote:
+
+> KAMEZAWA Hiroyuki wrote:
+> > On Mon, 13 Jul 2009 17:16:20 -0700
+> > Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org> wrote:
 > >
-> > I know people likes to wait for file descriptor to get notification in these days.
-> > Can't we have "event" file descriptor in cgroup layer and make it reusable for
-> > other purposes ?
+> >   
+> >> This patch updates the Resource Counter to add a configurable resource usage
+> >> threshold notification mechanism.
+> >>
+> >> Signed-off-by: Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
+> >> Signed-off-by: Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
+> >> ---
+> >>  Documentation/cgroups/resource_counter.txt |   21 ++++++++-
+> >>  include/linux/res_counter.h                |   69 ++++++++++++++++++++++++++++
+> >>  kernel/res_counter.c                       |    7 +++
+> >>  3 files changed, 95 insertions(+), 2 deletions(-)
+> >>
+> >> diff --git a/Documentation/cgroups/resource_counter.txt b/Documentation/cgroups/resource_counter.txt
+> >> index 95b24d7..1369dff 100644
+> >> --- a/Documentation/cgroups/resource_counter.txt
+> >> +++ b/Documentation/cgroups/resource_counter.txt
+> >> @@ -39,7 +39,20 @@ to work with it.
+> >>   	The failcnt stands for "failures counter". This is the number of
+> >>  	resource allocation attempts that failed.
+> >>  
+> >> - c. spinlock_t lock
+> >> + e. unsigned long long threshold
+> >> +
+> >> + 	The resource usage threshold to notify the resouce controller. This is
+> >> +	the minimal difference between the resource limit and current usage
+> >> +	to fire a notification.
+> >> +
+> >> + f. void (*threshold_notifier)(struct res_counter *counter)
+> >> +
+> >> +	The threshold notification callback installed by the resource
+> >> +	controller. Called when the usage reaches or exceeds the threshold.
+> >> +	Should be fast and not sleep because called when interrupts are
+> >> +	disabled.
+> >> +
+> >>     
+> >
+> > This interface isn't very useful..hard to use..can't you just return the result as
+> > "exceeds threshold" to the callers ?
+> >
+> > If I was you, I'll add following state to res_counter
+> >
+> > enum {
+> > 	RES_BELOW_THRESH,
+> > 	RES_OVER_THRESH,
+> > } res_state;
+> >
+> > struct res_counter {
+> > 	.....
+> > 	enum	res_state	state;
+> > }
+> >
+> > Then, caller does
+> > example)
+> > 	prev_state = res->state;
+> > 	res_counter_charge(res....)
+> > 	if (prev_state != res->state)
+> > 		do_xxxxx..
+> >
+> > notifier under spinlock is not usual interface. And if this is "notifier",
+> > something generic, notifier_call_chain should be used rather than original
+> > one, IIUC.
+> >
+> > So, avoiding to use "callback" is a way to go, I think.
+> >
+> >   
+> The reason of having this callback is to support the hierarchy, which
+> was the problem in previous implementation you pointed out.
 > 
-> I agree - rather than having to add a separate "wait for value to
-> cross X threshold" file for each numeric usage value that people might
-> be concerned about, it would be better to have a generic way to do it
-> for any file. Given that this is a userspace API, it would be better
-> to work out at least the generic API first, even if the initial
-> implementation isn't generic.
+> When a new page charged we want to walk up the hierarchy and find all
+> the ancestors exceeding their thresholds and notify them. To avoid
+> walking up the hierarchy twice, I've expanded res_counter with "notifier
+> callback" called by res_counter_charge() for each res_counter in the
+> tree which exceeds the limit.
 > 
-> Properties that it should support include:
+> In the example above, the hierarchy is not supported. We know only state
+> of the res_counter/memcg which current thread belongs to.
 > 
-> - notification when a value crosses above or below a given threshold
-> (which would include binary cases such as OOM notification where the
-> value cross from "not-OOM" to "OOM"
-> 
-> - independent thresholds for different waiters
->
-> - epoll support (by using eventfd?)
+How heavy res_coutner can be ? ;) plz don't check at "every charge", use some
+filter.
 
-signalfd?
+plz discuss with Balbir. His softlimit adds something similar. And I don't think
+both are elegant.
 
+I'll consider more (of course, I may not be able to find any..) and rewrite the
+whole thing if I have a chance.
 
-> - automatic wakeup when a cgroup is removed
-> 
-> - maybe optional wakeup when a thread attach occurs?
-> 
-> - not require more than read permissions on the file containing the
-> value being monitored
-> 
-> I guess there are a few possible ways this could be exposed to userspace:
-> 
-> 1) new ioctl on cgroups files. simple but probably not popular
-> 
-> 2) new system call. maybe the cleanest, but involves changing every
-> arch and is hard to script
-> 
-> 3) new per-cgroup file to control these e.g:
->   - create an eventfd
->   - open the control file to be monitored
->   - write the "<event_fd>, <control_fd> <threshold> to
-> cgroup.event_control to link them together
-> flexible and scriptable but maybe a clumsy interface in general
+Briefly thinking, it's not very bad to have following interface.
 
-I like multiple threshold and per-thresold file-descriptor.
-it solve multiple waiters issue. 
+==
+/*
+ * This function is for checking all ancestors's state. Each ancestors are
+ * pased to check_function() ony be one until res->parent is not NULL.
+ */
+void res_counter_callback(struct res_counter *res, int (*check_function)())
+{
+	do {
+		if ((*check_function)(res))
+			break;
+		res = res->parent;
+	} while (res);
+}
+==
+Calling this once per 1000 charges or once per sec will not be very bad. And we can
+keep res_counter simple. If you want some trigger, you can add something as
+you like.
 
-but How about this?
-
-  /cgroup
-    /group1
-      /notifications
-         /threashold-A
-         /threashold-B
+Thanks,
+-Kame
