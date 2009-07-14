@@ -1,8 +1,8 @@
-From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 3/3] Quick vmalloc vs kmalloc fix to the case where array
 	size is too large
-Date: Tue, 14 Jul 2009 13:26:30 -0400
-Message-ID: <2f86c2480907141026h7ca27a4fq898c3ee248280a75__6565.73924138701$1247592537$gmane$org@mail.gmail.com>
+Date: Tue, 14 Jul 2009 10:28:43 -0700
+Message-ID: <6599ad830907141028y50f36d63h8ea06f73ff369591__40771.3842847899$1247592770$gmane$org@mail.gmail.com>
 References: <20090710230043.16778.29656.stgit@hastromil.mtv.corp.google.com>
 	<20090710230205.16778.11707.stgit@hastromil.mtv.corp.google.com>
 	<4A5AA3E7.9070800@cn.fujitsu.com>
@@ -28,24 +28,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 14, 2009 at 12:25 AM, KAMEZAWA
+On Mon, Jul 13, 2009 at 9:25 PM, KAMEZAWA
 Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 > My point is
 > =A0- More PIDs, More time necessary to read procs file.
+
+Right now, many pids =3D> impossible to read procs file due to kmalloc
+failure. (This was always the case with cpusets too). So using kmalloc
+in those cases is a strict improvement.
+
 > This patch boost it ;) Seems like "visit this later again" ,or FIXME patc=
 h.
->
-> Thanks,
-> -Kame
 
-Indeed. You'll notice the TODOs in the code here referring to the
-discussion of a possible dynamic array system in the previous thread.
-This is simply a correctness patch that aims to keep performance as
-good as it can for the current approach.
+Agreed.
 
-(Kame, forgive the double-post; forgot to reply-all the first time)
-
-- Ben
+Paul
