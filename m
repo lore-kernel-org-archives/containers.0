@@ -1,14 +1,23 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [C/R][BUG] run-pthread1.sh hangs on restart
-Date: Tue, 14 Jul 2009 04:34:47 -0400
-Message-ID: <4A5C4327.7000200@cs.columbia.edu>
-References: <20090714071507.GA337@us.ibm.com>
-	<20090714072255.GA3166@us.ibm.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Tue, 14 Jul 2009 12:31:29 +0200
+Message-ID: <20090714103129.GB12958@megiteam.pl>
+References: <20090708105417.GA16833@megiteam.pl>
+	<20090711193055.GA11303@megiteam.pl>
+	<20090711200133.GB11303@megiteam.pl>
+	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
+	<20090712074932.GA17291@megiteam.pl>
+	<20090713190211.GA4208@us.ibm.com>
+	<20090713193058.GL18617@megiteam.pl>
+	<20090713202610.GA6447@us.ibm.com>
+	<20090713223444.GM18617@megiteam.pl>
+	<20090714064905.GA25278@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090714072255.GA3166-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090714064905.GA25278-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +28,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On pon, lip 13, 2009 at 11:49:05 -0700, Sukadev Bhattiprolu wrote:
+> Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
+> | Simply run it as container init. Sometimes it oopses immediately,
+> 
+> I am trying to reproduce this too and just trying to make sure I get
+> your environment correctly.  I have just built/installed libvirt 0.6.5
+> on Ubuntu 9.04. 
 
-These "MIA" messages are false alarms, but once given they
-break the restart. I'm working on a fix.
+0.6.4 or 0.6.5, no difference really (tested both). Host distro is
+Debian Lenny but Ubuntu is probably close enough. Didn't test distro
+kernel, only used hand-built 2.6.30, 2.6.30.1 and 2.6.31-rc2
 
-Oren.
+> The bug does require libvirt+kvm right ?  IOW, does this simple test repro
+> if it is run as a container-init with say lxc-start (i.e from liblxc - see
+> http://lxc.sourceforge.net/) ? Another simpler way to create container-init
+> is the ns_exec program - I assume that won't create the problem ?
 
-Sukadev Bhattiprolu wrote:
-> 
-> Sorry. I was on the wrong machine which has a different kernel. Will
-> re-run the test tomorrow.
-> 
-> 
-> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | 
-> | When I run the 'process-tree/run-pthread1.sh' test on ckpt-v17-rc1, 
-> | after restart, I see following three processes running in 'ps'
-> | 
-> | root     21165 21114  0 00:11 ttyp0    00:00:00 ../ns_exec -cpuimP pid.pthread1 -- /home/suka/ckpt/user-cr/mktree -vd
-> | root     21167 21165  0 00:11 ttyp0    00:00:00 /home/suka/ckpt/user-cr/mktree -vd
-> | root     21169 21167  0 00:11 ?        00:00:00 /home/suka/ckpt/user-cr/mktree -vd
-> | 
-> | Attached is output of mktree (-vd) (The "Parent MIA" message is interesting)
-> | 
-> | Following is the kernel stack trace of the above processes - the
-> | processes seem hung here even after 5 minutes.
-> 
+Probably, as it requires a "cross-namespace" pty. I didn't yet set up a
+lxc config file. Maybe you can help off the top of your head with the
+right incantations? BTW, where's the canonical source for ns_exec?
+
+> Also in an earlier mail you mentioned that disabling the 'newinstance'
+> mount option to devpts did not help. So does your setup work with older
+> kernels like 2.6.28 ?
+
+Well, I failed to build 2.6.28 with NET_NS (even without SYSFS it wasn't
+available in menuconfig) but 2.6.29 exhibits very similar behaviour,
+i.e. crashes instantly. The difference is that when the pty master
+exits, container init receives a SIGHUP. If it chooses to ignore it and
+open /dev/console anyway, *boom*. Looking roughly at %eip and the
+faulting address, it's the same bug.
+
+Best regards,
+ Grzegorz Nosek
