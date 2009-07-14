@@ -1,16 +1,17 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 1/2] Resource usage threshold notification addition to
 	res_counter (v3)
-Date: Mon, 13 Jul 2009 17:36:40 -0700
-Message-ID: <6599ad830907131736w4397d336xad733f274c812690__16539.7646408112$1247531839$gmane$org@mail.gmail.com>
+Date: Tue, 14 Jul 2009 09:47:29 +0900
+Message-ID: <20090714094729.45d4dff4.kamezawa.hiroyu__34992.0908724473$1247532703$gmane$org@jp.fujitsu.com>
 References: <1246998310-16764-1-git-send-email-vbuzov@embeddedalley.com>
 	<1247530581-31416-1-git-send-email-vbuzov@embeddedalley.com>
 	<1247530581-31416-2-git-send-email-vbuzov@embeddedalley.com>
+	<6599ad830907131736w4397d336xad733f274c812690@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247530581-31416-2-git-send-email-vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <6599ad830907131736w4397d336xad733f274c812690-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,257 +21,176 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-Cc: Linux Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux memory management list <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers Mailing List <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux memory management list <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-As I mentioned in another thread, I think that associating the
-threshold with the res_counter rather than with each individual waiter
-is a mistake, since it creates global state and makes it hard to have
-multiple waiters on the same cgroup.
-
-Paul
-
-On Mon, Jul 13, 2009 at 5:16 PM, Vladislav
-Buzov<vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org> wrote:
-> This patch updates the Resource Counter to add a configurable resource us=
-age
-> threshold notification mechanism.
->
-> Signed-off-by: Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> Signed-off-by: Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> ---
-> =A0Documentation/cgroups/resource_counter.txt | =A0 21 ++++++++-
-> =A0include/linux/res_counter.h =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0| =A0 69 ++=
-++++++++++++++++++++++++++
-> =A0kernel/res_counter.c =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 | =A0=
- =A07 +++
-> =A03 files changed, 95 insertions(+), 2 deletions(-)
->
-> diff --git a/Documentation/cgroups/resource_counter.txt b/Documentation/c=
-groups/resource_counter.txt
-> index 95b24d7..1369dff 100644
-> --- a/Documentation/cgroups/resource_counter.txt
-> +++ b/Documentation/cgroups/resource_counter.txt
-> @@ -39,7 +39,20 @@ to work with it.
-> =A0 =A0 =A0 =A0The failcnt stands for "failures counter". This is the num=
-ber of
-> =A0 =A0 =A0 =A0resource allocation attempts that failed.
->
-> - c. spinlock_t lock
-> + e. unsigned long long threshold
-> +
-> + =A0 =A0 =A0 The resource usage threshold to notify the resouce controll=
-er. This is
-> + =A0 =A0 =A0 the minimal difference between the resource limit and curre=
-nt usage
-> + =A0 =A0 =A0 to fire a notification.
-> +
-> + f. void (*threshold_notifier)(struct res_counter *counter)
-> +
-> + =A0 =A0 =A0 The threshold notification callback installed by the resour=
-ce
-> + =A0 =A0 =A0 controller. Called when the usage reaches or exceeds the th=
-reshold.
-> + =A0 =A0 =A0 Should be fast and not sleep because called when interrupts=
- are
-> + =A0 =A0 =A0 disabled.
-> +
-> + g. spinlock_t lock
->
-> =A0 =A0 =A0 =A0Protects changes of the above values.
->
-> @@ -140,6 +153,7 @@ counter fields. They are recommended to adhere to the=
- following rules:
-> =A0 =A0 =A0 =A0usage =A0 =A0 =A0 =A0 =A0 usage_in_<unit_of_measurement>
-> =A0 =A0 =A0 =A0max_usage =A0 =A0 =A0 max_usage_in_<unit_of_measurement>
-> =A0 =A0 =A0 =A0limit =A0 =A0 =A0 =A0 =A0 limit_in_<unit_of_measurement>
-> + =A0 =A0 =A0 threshold =A0 =A0 =A0 notify_threshold_in_<unit_of_measurem=
-ent>
-> =A0 =A0 =A0 =A0failcnt =A0 =A0 =A0 =A0 failcnt
-> =A0 =A0 =A0 =A0lock =A0 =A0 =A0 =A0 =A0 =A0no file :)
->
-> @@ -153,9 +167,12 @@ counter fields. They are recommended to adhere to th=
-e following rules:
-> =A0 =A0 =A0 =A0usage =A0 =A0 =A0 =A0 =A0 prohibited
-> =A0 =A0 =A0 =A0max_usage =A0 =A0 =A0 reset to usage
-> =A0 =A0 =A0 =A0limit =A0 =A0 =A0 =A0 =A0 set the limit
-> + =A0 =A0 =A0 threshold =A0 =A0 =A0 set the threshold
-> =A0 =A0 =A0 =A0failcnt =A0 =A0 =A0 =A0 reset to zero
->
-> -
-> + d. Notification is enabled by installing the threshold notifier callbac=
-k. It
-> + =A0 =A0is up to the resouce controller to communicate the notification =
-to user
-> + =A0 =A0space tasks.
->
-> =A05. Usage example
->
-> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-> index 511f42f..5ec98d7 100644
-> --- a/include/linux/res_counter.h
-> +++ b/include/linux/res_counter.h
-> @@ -9,6 +9,11 @@
-> =A0*
-> =A0* Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> =A0*
-> + * Resouce usage threshold notification update
-> + * Copyright 2009 CE Linux Forum and Embedded Alley Solutions, Inc.
-> + * Author: Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> + * Author: Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> + *
-> =A0* See Documentation/cgroups/resource_counter.txt for more
-> =A0* info about what this counter is.
-> =A0*/
-> @@ -35,6 +40,19 @@ struct res_counter {
-> =A0 =A0 =A0 =A0 */
-> =A0 =A0 =A0 =A0unsigned long long limit;
-> =A0 =A0 =A0 =A0/*
-> + =A0 =A0 =A0 =A0* the resource usage threshold to notify the resouce con=
-troller. This
-> + =A0 =A0 =A0 =A0* is the minimal difference between the resource limit a=
-nd current
-> + =A0 =A0 =A0 =A0* usage to fire a notification.
-> + =A0 =A0 =A0 =A0*/
-> + =A0 =A0 =A0 unsigned long long threshold;
-> + =A0 =A0 =A0 /*
-> + =A0 =A0 =A0 =A0* the threshold notification callback installed by the r=
-esource
-> + =A0 =A0 =A0 =A0* controller. Called when the usage reaches or exceeds t=
-he threshold.
-> + =A0 =A0 =A0 =A0* Should be fast and not sleep because called when inter=
-rupts are
-> + =A0 =A0 =A0 =A0* disabled.
-> + =A0 =A0 =A0 =A0*/
-> + =A0 =A0 =A0 void (*threshold_notifier)(struct res_counter *counter);
-> + =A0 =A0 =A0 /*
-> =A0 =A0 =A0 =A0 * the number of unsuccessful attempts to consume the reso=
-urce
-> =A0 =A0 =A0 =A0 */
-> =A0 =A0 =A0 =A0unsigned long long failcnt;
-> @@ -87,6 +105,7 @@ enum {
-> =A0 =A0 =A0 =A0RES_MAX_USAGE,
-> =A0 =A0 =A0 =A0RES_LIMIT,
-> =A0 =A0 =A0 =A0RES_FAILCNT,
-> + =A0 =A0 =A0 RES_THRESHOLD,
-> =A0};
->
-> =A0/*
-> @@ -132,6 +151,21 @@ static inline bool res_counter_limit_check_locked(st=
-ruct res_counter *cnt)
-> =A0 =A0 =A0 =A0return false;
-> =A0}
->
-> +static inline bool res_counter_threshold_check_locked(struct res_counter=
- *cnt)
-> +{
-> + =A0 =A0 =A0 if (cnt->usage + cnt->threshold < cnt->limit)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return true;
-> +
-> + =A0 =A0 =A0 return false;
-> +}
-> +
-> +static inline void res_counter_threshold_notify_locked(struct res_counte=
-r *cnt)
-> +{
-> + =A0 =A0 =A0 if (!res_counter_threshold_check_locked(cnt) &&
-> + =A0 =A0 =A0 =A0 =A0 cnt->threshold_notifier)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 cnt->threshold_notifier(cnt);
-> +}
-> +
-> =A0/*
-> =A0* Helper function to detect if the cgroup is within it's limit or
-> =A0* not. It's currently called from cgroup_rss_prepare()
-> @@ -147,6 +181,21 @@ static inline bool res_counter_check_under_limit(str=
-uct res_counter *cnt)
-> =A0 =A0 =A0 =A0return ret;
-> =A0}
->
-> +/*
-> + * Helper function to detect if the cgroup usage is under it's threshold=
- or
-> + * not.
-> + */
-> +static inline bool res_counter_check_under_threshold(struct res_counter =
-*cnt)
-> +{
-> + =A0 =A0 =A0 bool ret;
-> + =A0 =A0 =A0 unsigned long flags;
-> +
-> + =A0 =A0 =A0 spin_lock_irqsave(&cnt->lock, flags);
-> + =A0 =A0 =A0 ret =3D res_counter_threshold_check_locked(cnt);
-> + =A0 =A0 =A0 spin_unlock_irqrestore(&cnt->lock, flags);
-> + =A0 =A0 =A0 return ret;
-> +}
-> +
-> =A0static inline void res_counter_reset_max(struct res_counter *cnt)
-> =A0{
-> =A0 =A0 =A0 =A0unsigned long flags;
-> @@ -174,6 +223,26 @@ static inline int res_counter_set_limit(struct res_c=
-ounter *cnt,
-> =A0 =A0 =A0 =A0spin_lock_irqsave(&cnt->lock, flags);
-> =A0 =A0 =A0 =A0if (cnt->usage <=3D limit) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0cnt->limit =3D limit;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (limit <=3D cnt->threshold)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 cnt->threshold =3D 0;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 else
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 res_counter_threshold_notif=
-y_locked(cnt);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D 0;
-> + =A0 =A0 =A0 }
-> + =A0 =A0 =A0 spin_unlock_irqrestore(&cnt->lock, flags);
-> + =A0 =A0 =A0 return ret;
-> +}
-> +
-> +static inline int res_counter_set_threshold(struct res_counter *cnt,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsigned long long threshold)
-> +{
-> + =A0 =A0 =A0 unsigned long flags;
-> + =A0 =A0 =A0 int ret =3D -EINVAL;
-> +
-> + =A0 =A0 =A0 spin_lock_irqsave(&cnt->lock, flags);
-> + =A0 =A0 =A0 if (cnt->limit > threshold) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 cnt->threshold =3D threshold;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 res_counter_threshold_notify_locked(cnt);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D 0;
-> =A0 =A0 =A0 =A0}
-> =A0 =A0 =A0 =A0spin_unlock_irqrestore(&cnt->lock, flags);
-> diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-> index e1338f0..9b36748 100644
-> --- a/kernel/res_counter.c
-> +++ b/kernel/res_counter.c
-> @@ -5,6 +5,10 @@
-> =A0*
-> =A0* Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> =A0*
-> + * Resouce usage threshold notification update
-> + * Copyright 2009 CE Linux Forum and Embedded Alley Solutions, Inc.
-> + * Author: Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> + * Author: Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>
-> =A0*/
->
-> =A0#include <linux/types.h>
-> @@ -32,6 +36,7 @@ int res_counter_charge_locked(struct res_counter *count=
-er, unsigned long val)
-> =A0 =A0 =A0 =A0counter->usage +=3D val;
-> =A0 =A0 =A0 =A0if (counter->usage > counter->max_usage)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0counter->max_usage =3D counter->usage;
-> + =A0 =A0 =A0 res_counter_threshold_notify_locked(counter);
-> =A0 =A0 =A0 =A0return 0;
-> =A0}
->
-> @@ -101,6 +106,8 @@ res_counter_member(struct res_counter *counter, int m=
-ember)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return &counter->limit;
-> =A0 =A0 =A0 =A0case RES_FAILCNT:
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return &counter->failcnt;
-> + =A0 =A0 =A0 case RES_THRESHOLD:
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return &counter->threshold;
-> =A0 =A0 =A0 =A0};
->
-> =A0 =A0 =A0 =A0BUG();
-> --
-> 1.5.6.3
->
->
+T24gTW9uLCAxMyBKdWwgMjAwOSAxNzozNjo0MCAtMDcwMApQYXVsIE1lbmFnZSA8bWVuYWdlQGdv
+b2dsZS5jb20+IHdyb3RlOgoKPiBBcyBJIG1lbnRpb25lZCBpbiBhbm90aGVyIHRocmVhZCwgSSB0
+aGluayB0aGF0IGFzc29jaWF0aW5nIHRoZQo+IHRocmVzaG9sZCB3aXRoIHRoZSByZXNfY291bnRl
+ciByYXRoZXIgdGhhbiB3aXRoIGVhY2ggaW5kaXZpZHVhbCB3YWl0ZXIKPiBpcyBhIG1pc3Rha2Us
+IHNpbmNlIGl0IGNyZWF0ZXMgZ2xvYmFsIHN0YXRlIGFuZCBtYWtlcyBpdCBoYXJkIHRvIGhhdmUK
+PiBtdWx0aXBsZSB3YWl0ZXJzIG9uIHRoZSBzYW1lIGNncm91cC4KPiAKQWgsIEhtbS4uLm1heWJl
+IHllcy4gCgpCdXQgdGhlIHByb2JsZW0gaXMgImhpZXJhcmNoeSIuIChldmVuIGlmIHRoaXMgdXNh
+Z2Ugbm90aWZpZXIgZG9uJ3QgaGFuZGxlIGl0LikKCldoaWxlIHdlIGNoYXJnZSBhcyBmb2xsb3dp
+bmcgcmVzX2NvdXRuZXIraGllcmFyY2h5CgoJcmVzX2NvdW50ZXJfQQkJCSsgUEFHRV9TSVpFCgkJ
+cmVzX2NvdW50ZXJfQgkJCSsgUEFHRV9TSVpFCgkJCXJlc19jb3VudGVyX0MJCQkrIFBBR0VfU0la
+RQoKQ2hlY2tpbmcgIndoZXJlIHdlIGV4Y2VlZHMiIGluIHNtYXJ0IHdheSBpcyBub3QgdmVyeSBl
+YXN5LiBCYWxiaXIncyBzb2Z0IGxpbWl0IGRvZXMKc2ltaWxhciBjaGVjayBidXQgaXQncyBub3Qg
+dmVyeSBzbWFydCwgZWl0aGVyIEkgdGhpbmsuCgpJZiB0aGVyZSBhcmUgcHJ1cmFsIHRoZXNob2xk
+cyAobm90aWZlciwgc29mdGxpbWl0LCBldGMuLi4pLCB0aGlzIGlzIHdvcnRoIHRvIGJlCnRyaWVk
+LiBIbW0uLi5pZiBub3QsIHNpemUgb2YgcmVzX2NvdXRuZXIgZXhjZWVzIDEyOGJ5dGVzIGFuZCB3
+ZSdsbCBzZWUgdGVycmlibGUgY291bnRlci4KQW55IGlkZWEgPwoKVGhhbmtzLAotS2FtZQoKCj4g
+UGF1bAo+IAo+IE9uIE1vbiwgSnVsIDEzLCAyMDA5IGF0IDU6MTYgUE0sIFZsYWRpc2xhdgo+IEJ1
+em92PHZidXpvdkBlbWJlZGRlZGFsbGV5LmNvbT4gd3JvdGU6Cj4gPiBUaGlzIHBhdGNoIHVwZGF0
+ZXMgdGhlIFJlc291cmNlIENvdW50ZXIgdG8gYWRkIGEgY29uZmlndXJhYmxlIHJlc291cmNlIHVz
+YWdlCj4gPiB0aHJlc2hvbGQgbm90aWZpY2F0aW9uIG1lY2hhbmlzbS4KPiA+Cj4gPiBTaWduZWQt
+b2ZmLWJ5OiBWbGFkaXNsYXYgQnV6b3YgPHZidXpvdkBlbWJlZGRlZGFsbGV5LmNvbT4KPiA+IFNp
+Z25lZC1vZmYtYnk6IERhbiBNYWxlayA8ZGFuQGVtYmVkZGVkYWxsZXkuY29tPgo+ID4gLS0tCj4g
+PiDCoERvY3VtZW50YXRpb24vY2dyb3Vwcy9yZXNvdXJjZV9jb3VudGVyLnR4dCB8IMKgIDIxICsr
+KysrKysrLQo+ID4gwqBpbmNsdWRlL2xpbnV4L3Jlc19jb3VudGVyLmggwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqB8IMKgIDY5ICsrKysrKysrKysrKysrKysrKysrKysrKysrKysKPiA+IMKga2VybmVs
+L3Jlc19jb3VudGVyLmMgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgfCDCoCDCoDcg
+KysrCj4gPiDCoDMgZmlsZXMgY2hhbmdlZCwgOTUgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMo
+LSkKPiA+Cj4gPiBkaWZmIC0tZ2l0IGEvRG9jdW1lbnRhdGlvbi9jZ3JvdXBzL3Jlc291cmNlX2Nv
+dW50ZXIudHh0IGIvRG9jdW1lbnRhdGlvbi9jZ3JvdXBzL3Jlc291cmNlX2NvdW50ZXIudHh0Cj4g
+PiBpbmRleCA5NWIyNGQ3Li4xMzY5ZGZmIDEwMDY0NAo+ID4gLS0tIGEvRG9jdW1lbnRhdGlvbi9j
+Z3JvdXBzL3Jlc291cmNlX2NvdW50ZXIudHh0Cj4gPiArKysgYi9Eb2N1bWVudGF0aW9uL2Nncm91
+cHMvcmVzb3VyY2VfY291bnRlci50eHQKPiA+IEBAIC0zOSw3ICszOSwyMCBAQCB0byB3b3JrIHdp
+dGggaXQuCj4gPiDCoCDCoCDCoCDCoFRoZSBmYWlsY250IHN0YW5kcyBmb3IgImZhaWx1cmVzIGNv
+dW50ZXIiLiBUaGlzIGlzIHRoZSBudW1iZXIgb2YKPiA+IMKgIMKgIMKgIMKgcmVzb3VyY2UgYWxs
+b2NhdGlvbiBhdHRlbXB0cyB0aGF0IGZhaWxlZC4KPiA+Cj4gPiAtIGMuIHNwaW5sb2NrX3QgbG9j
+awo+ID4gKyBlLiB1bnNpZ25lZCBsb25nIGxvbmcgdGhyZXNob2xkCj4gPiArCj4gPiArIMKgIMKg
+IMKgIFRoZSByZXNvdXJjZSB1c2FnZSB0aHJlc2hvbGQgdG8gbm90aWZ5IHRoZSByZXNvdWNlIGNv
+bnRyb2xsZXIuIFRoaXMgaXMKPiA+ICsgwqAgwqAgwqAgdGhlIG1pbmltYWwgZGlmZmVyZW5jZSBi
+ZXR3ZWVuIHRoZSByZXNvdXJjZSBsaW1pdCBhbmQgY3VycmVudCB1c2FnZQo+ID4gKyDCoCDCoCDC
+oCB0byBmaXJlIGEgbm90aWZpY2F0aW9uLgo+ID4gKwo+ID4gKyBmLiB2b2lkICgqdGhyZXNob2xk
+X25vdGlmaWVyKShzdHJ1Y3QgcmVzX2NvdW50ZXIgKmNvdW50ZXIpCj4gPiArCj4gPiArIMKgIMKg
+IMKgIFRoZSB0aHJlc2hvbGQgbm90aWZpY2F0aW9uIGNhbGxiYWNrIGluc3RhbGxlZCBieSB0aGUg
+cmVzb3VyY2UKPiA+ICsgwqAgwqAgwqAgY29udHJvbGxlci4gQ2FsbGVkIHdoZW4gdGhlIHVzYWdl
+IHJlYWNoZXMgb3IgZXhjZWVkcyB0aGUgdGhyZXNob2xkLgo+ID4gKyDCoCDCoCDCoCBTaG91bGQg
+YmUgZmFzdCBhbmQgbm90IHNsZWVwIGJlY2F1c2UgY2FsbGVkIHdoZW4gaW50ZXJydXB0cyBhcmUK
+PiA+ICsgwqAgwqAgwqAgZGlzYWJsZWQuCj4gPiArCj4gPiArIGcuIHNwaW5sb2NrX3QgbG9jawo+
+ID4KPiA+IMKgIMKgIMKgIMKgUHJvdGVjdHMgY2hhbmdlcyBvZiB0aGUgYWJvdmUgdmFsdWVzLgo+
+ID4KPiA+IEBAIC0xNDAsNiArMTUzLDcgQEAgY291bnRlciBmaWVsZHMuIFRoZXkgYXJlIHJlY29t
+bWVuZGVkIHRvIGFkaGVyZSB0byB0aGUgZm9sbG93aW5nIHJ1bGVzOgo+ID4gwqAgwqAgwqAgwqB1
+c2FnZSDCoCDCoCDCoCDCoCDCoCB1c2FnZV9pbl88dW5pdF9vZl9tZWFzdXJlbWVudD4KPiA+IMKg
+IMKgIMKgIMKgbWF4X3VzYWdlIMKgIMKgIMKgIG1heF91c2FnZV9pbl88dW5pdF9vZl9tZWFzdXJl
+bWVudD4KPiA+IMKgIMKgIMKgIMKgbGltaXQgwqAgwqAgwqAgwqAgwqAgbGltaXRfaW5fPHVuaXRf
+b2ZfbWVhc3VyZW1lbnQ+Cj4gPiArIMKgIMKgIMKgIHRocmVzaG9sZCDCoCDCoCDCoCBub3RpZnlf
+dGhyZXNob2xkX2luXzx1bml0X29mX21lYXN1cmVtZW50Pgo+ID4gwqAgwqAgwqAgwqBmYWlsY250
+IMKgIMKgIMKgIMKgIGZhaWxjbnQKPiA+IMKgIMKgIMKgIMKgbG9jayDCoCDCoCDCoCDCoCDCoCDC
+oG5vIGZpbGUgOikKPiA+Cj4gPiBAQCAtMTUzLDkgKzE2NywxMiBAQCBjb3VudGVyIGZpZWxkcy4g
+VGhleSBhcmUgcmVjb21tZW5kZWQgdG8gYWRoZXJlIHRvIHRoZSBmb2xsb3dpbmcgcnVsZXM6Cj4g
+PiDCoCDCoCDCoCDCoHVzYWdlIMKgIMKgIMKgIMKgIMKgIHByb2hpYml0ZWQKPiA+IMKgIMKgIMKg
+IMKgbWF4X3VzYWdlIMKgIMKgIMKgIHJlc2V0IHRvIHVzYWdlCj4gPiDCoCDCoCDCoCDCoGxpbWl0
+IMKgIMKgIMKgIMKgIMKgIHNldCB0aGUgbGltaXQKPiA+ICsgwqAgwqAgwqAgdGhyZXNob2xkIMKg
+IMKgIMKgIHNldCB0aGUgdGhyZXNob2xkCj4gPiDCoCDCoCDCoCDCoGZhaWxjbnQgwqAgwqAgwqAg
+wqAgcmVzZXQgdG8gemVybwo+ID4KPiA+IC0KPiA+ICsgZC4gTm90aWZpY2F0aW9uIGlzIGVuYWJs
+ZWQgYnkgaW5zdGFsbGluZyB0aGUgdGhyZXNob2xkIG5vdGlmaWVyIGNhbGxiYWNrLiBJdAo+ID4g
+KyDCoCDCoGlzIHVwIHRvIHRoZSByZXNvdWNlIGNvbnRyb2xsZXIgdG8gY29tbXVuaWNhdGUgdGhl
+IG5vdGlmaWNhdGlvbiB0byB1c2VyCj4gPiArIMKgIMKgc3BhY2UgdGFza3MuCj4gPgo+ID4gwqA1
+LiBVc2FnZSBleGFtcGxlCj4gPgo+ID4gZGlmZiAtLWdpdCBhL2luY2x1ZGUvbGludXgvcmVzX2Nv
+dW50ZXIuaCBiL2luY2x1ZGUvbGludXgvcmVzX2NvdW50ZXIuaAo+ID4gaW5kZXggNTExZjQyZi4u
+NWVjOThkNyAxMDA2NDQKPiA+IC0tLSBhL2luY2x1ZGUvbGludXgvcmVzX2NvdW50ZXIuaAo+ID4g
+KysrIGIvaW5jbHVkZS9saW51eC9yZXNfY291bnRlci5oCj4gPiBAQCAtOSw2ICs5LDExIEBACj4g
+PiDCoCoKPiA+IMKgKiBBdXRob3I6IFBhdmVsIEVtZWxpYW5vdiA8eGVtdWxAb3BlbnZ6Lm9yZz4K
+PiA+IMKgKgo+ID4gKyAqIFJlc291Y2UgdXNhZ2UgdGhyZXNob2xkIG5vdGlmaWNhdGlvbiB1cGRh
+dGUKPiA+ICsgKiBDb3B5cmlnaHQgMjAwOSBDRSBMaW51eCBGb3J1bSBhbmQgRW1iZWRkZWQgQWxs
+ZXkgU29sdXRpb25zLCBJbmMuCj4gPiArICogQXV0aG9yOiBEYW4gTWFsZWsgPGRhbkBlbWJlZGRl
+ZGFsbGV5LmNvbT4KPiA+ICsgKiBBdXRob3I6IFZsYWRpc2xhdiBCdXpvdiA8dmJ1em92QGVtYmVk
+ZGVkYWxsZXkuY29tPgo+ID4gKyAqCj4gPiDCoCogU2VlIERvY3VtZW50YXRpb24vY2dyb3Vwcy9y
+ZXNvdXJjZV9jb3VudGVyLnR4dCBmb3IgbW9yZQo+ID4gwqAqIGluZm8gYWJvdXQgd2hhdCB0aGlz
+IGNvdW50ZXIgaXMuCj4gPiDCoCovCj4gPiBAQCAtMzUsNiArNDAsMTkgQEAgc3RydWN0IHJlc19j
+b3VudGVyIHsKPiA+IMKgIMKgIMKgIMKgICovCj4gPiDCoCDCoCDCoCDCoHVuc2lnbmVkIGxvbmcg
+bG9uZyBsaW1pdDsKPiA+IMKgIMKgIMKgIMKgLyoKPiA+ICsgwqAgwqAgwqAgwqAqIHRoZSByZXNv
+dXJjZSB1c2FnZSB0aHJlc2hvbGQgdG8gbm90aWZ5IHRoZSByZXNvdWNlIGNvbnRyb2xsZXIuIFRo
+aXMKPiA+ICsgwqAgwqAgwqAgwqAqIGlzIHRoZSBtaW5pbWFsIGRpZmZlcmVuY2UgYmV0d2VlbiB0
+aGUgcmVzb3VyY2UgbGltaXQgYW5kIGN1cnJlbnQKPiA+ICsgwqAgwqAgwqAgwqAqIHVzYWdlIHRv
+IGZpcmUgYSBub3RpZmljYXRpb24uCj4gPiArIMKgIMKgIMKgIMKgKi8KPiA+ICsgwqAgwqAgwqAg
+dW5zaWduZWQgbG9uZyBsb25nIHRocmVzaG9sZDsKPiA+ICsgwqAgwqAgwqAgLyoKPiA+ICsgwqAg
+wqAgwqAgwqAqIHRoZSB0aHJlc2hvbGQgbm90aWZpY2F0aW9uIGNhbGxiYWNrIGluc3RhbGxlZCBi
+eSB0aGUgcmVzb3VyY2UKPiA+ICsgwqAgwqAgwqAgwqAqIGNvbnRyb2xsZXIuIENhbGxlZCB3aGVu
+IHRoZSB1c2FnZSByZWFjaGVzIG9yIGV4Y2VlZHMgdGhlIHRocmVzaG9sZC4KPiA+ICsgwqAgwqAg
+wqAgwqAqIFNob3VsZCBiZSBmYXN0IGFuZCBub3Qgc2xlZXAgYmVjYXVzZSBjYWxsZWQgd2hlbiBp
+bnRlcnJ1cHRzIGFyZQo+ID4gKyDCoCDCoCDCoCDCoCogZGlzYWJsZWQuCj4gPiArIMKgIMKgIMKg
+IMKgKi8KPiA+ICsgwqAgwqAgwqAgdm9pZCAoKnRocmVzaG9sZF9ub3RpZmllcikoc3RydWN0IHJl
+c19jb3VudGVyICpjb3VudGVyKTsKPiA+ICsgwqAgwqAgwqAgLyoKPiA+IMKgIMKgIMKgIMKgICog
+dGhlIG51bWJlciBvZiB1bnN1Y2Nlc3NmdWwgYXR0ZW1wdHMgdG8gY29uc3VtZSB0aGUgcmVzb3Vy
+Y2UKPiA+IMKgIMKgIMKgIMKgICovCj4gPiDCoCDCoCDCoCDCoHVuc2lnbmVkIGxvbmcgbG9uZyBm
+YWlsY250Owo+ID4gQEAgLTg3LDYgKzEwNSw3IEBAIGVudW0gewo+ID4gwqAgwqAgwqAgwqBSRVNf
+TUFYX1VTQUdFLAo+ID4gwqAgwqAgwqAgwqBSRVNfTElNSVQsCj4gPiDCoCDCoCDCoCDCoFJFU19G
+QUlMQ05ULAo+ID4gKyDCoCDCoCDCoCBSRVNfVEhSRVNIT0xELAo+ID4gwqB9Owo+ID4KPiA+IMKg
+LyoKPiA+IEBAIC0xMzIsNiArMTUxLDIxIEBAIHN0YXRpYyBpbmxpbmUgYm9vbCByZXNfY291bnRl
+cl9saW1pdF9jaGVja19sb2NrZWQoc3RydWN0IHJlc19jb3VudGVyICpjbnQpCj4gPiDCoCDCoCDC
+oCDCoHJldHVybiBmYWxzZTsKPiA+IMKgfQo+ID4KPiA+ICtzdGF0aWMgaW5saW5lIGJvb2wgcmVz
+X2NvdW50ZXJfdGhyZXNob2xkX2NoZWNrX2xvY2tlZChzdHJ1Y3QgcmVzX2NvdW50ZXIgKmNudCkK
+PiA+ICt7Cj4gPiArIMKgIMKgIMKgIGlmIChjbnQtPnVzYWdlICsgY250LT50aHJlc2hvbGQgPCBj
+bnQtPmxpbWl0KQo+ID4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCByZXR1cm4gdHJ1ZTsKPiA+ICsK
+PiA+ICsgwqAgwqAgwqAgcmV0dXJuIGZhbHNlOwo+ID4gK30KPiA+ICsKPiA+ICtzdGF0aWMgaW5s
+aW5lIHZvaWQgcmVzX2NvdW50ZXJfdGhyZXNob2xkX25vdGlmeV9sb2NrZWQoc3RydWN0IHJlc19j
+b3VudGVyICpjbnQpCj4gPiArewo+ID4gKyDCoCDCoCDCoCBpZiAoIXJlc19jb3VudGVyX3RocmVz
+aG9sZF9jaGVja19sb2NrZWQoY250KSAmJgo+ID4gKyDCoCDCoCDCoCDCoCDCoCBjbnQtPnRocmVz
+aG9sZF9ub3RpZmllcikKPiA+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgY250LT50aHJlc2hvbGRf
+bm90aWZpZXIoY250KTsKPiA+ICt9Cj4gPiArCj4gPiDCoC8qCj4gPiDCoCogSGVscGVyIGZ1bmN0
+aW9uIHRvIGRldGVjdCBpZiB0aGUgY2dyb3VwIGlzIHdpdGhpbiBpdCdzIGxpbWl0IG9yCj4gPiDC
+oCogbm90LiBJdCdzIGN1cnJlbnRseSBjYWxsZWQgZnJvbSBjZ3JvdXBfcnNzX3ByZXBhcmUoKQo+
+ID4gQEAgLTE0Nyw2ICsxODEsMjEgQEAgc3RhdGljIGlubGluZSBib29sIHJlc19jb3VudGVyX2No
+ZWNrX3VuZGVyX2xpbWl0KHN0cnVjdCByZXNfY291bnRlciAqY250KQo+ID4gwqAgwqAgwqAgwqBy
+ZXR1cm4gcmV0Owo+ID4gwqB9Cj4gPgo+ID4gKy8qCj4gPiArICogSGVscGVyIGZ1bmN0aW9uIHRv
+IGRldGVjdCBpZiB0aGUgY2dyb3VwIHVzYWdlIGlzIHVuZGVyIGl0J3MgdGhyZXNob2xkIG9yCj4g
+PiArICogbm90Lgo+ID4gKyAqLwo+ID4gK3N0YXRpYyBpbmxpbmUgYm9vbCByZXNfY291bnRlcl9j
+aGVja191bmRlcl90aHJlc2hvbGQoc3RydWN0IHJlc19jb3VudGVyICpjbnQpCj4gPiArewo+ID4g
+KyDCoCDCoCDCoCBib29sIHJldDsKPiA+ICsgwqAgwqAgwqAgdW5zaWduZWQgbG9uZyBmbGFnczsK
+PiA+ICsKPiA+ICsgwqAgwqAgwqAgc3Bpbl9sb2NrX2lycXNhdmUoJmNudC0+bG9jaywgZmxhZ3Mp
+Owo+ID4gKyDCoCDCoCDCoCByZXQgPSByZXNfY291bnRlcl90aHJlc2hvbGRfY2hlY2tfbG9ja2Vk
+KGNudCk7Cj4gPiArIMKgIMKgIMKgIHNwaW5fdW5sb2NrX2lycXJlc3RvcmUoJmNudC0+bG9jaywg
+ZmxhZ3MpOwo+ID4gKyDCoCDCoCDCoCByZXR1cm4gcmV0Owo+ID4gK30KPiA+ICsKPiA+IMKgc3Rh
+dGljIGlubGluZSB2b2lkIHJlc19jb3VudGVyX3Jlc2V0X21heChzdHJ1Y3QgcmVzX2NvdW50ZXIg
+KmNudCkKPiA+IMKgewo+ID4gwqAgwqAgwqAgwqB1bnNpZ25lZCBsb25nIGZsYWdzOwo+ID4gQEAg
+LTE3NCw2ICsyMjMsMjYgQEAgc3RhdGljIGlubGluZSBpbnQgcmVzX2NvdW50ZXJfc2V0X2xpbWl0
+KHN0cnVjdCByZXNfY291bnRlciAqY250LAo+ID4gwqAgwqAgwqAgwqBzcGluX2xvY2tfaXJxc2F2
+ZSgmY250LT5sb2NrLCBmbGFncyk7Cj4gPiDCoCDCoCDCoCDCoGlmIChjbnQtPnVzYWdlIDw9IGxp
+bWl0KSB7Cj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoGNudC0+bGltaXQgPSBsaW1pdDsKPiA+
+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKGxpbWl0IDw9IGNudC0+dGhyZXNob2xkKQo+ID4g
+KyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBjbnQtPnRocmVzaG9sZCA9IDA7Cj4g
+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGVsc2UKPiA+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgcmVzX2NvdW50ZXJfdGhyZXNob2xkX25vdGlmeV9sb2NrZWQoY250KTsKPiA+
+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0ID0gMDsKPiA+ICsgwqAgwqAgwqAgfQo+ID4gKyDC
+oCDCoCDCoCBzcGluX3VubG9ja19pcnFyZXN0b3JlKCZjbnQtPmxvY2ssIGZsYWdzKTsKPiA+ICsg
+wqAgwqAgwqAgcmV0dXJuIHJldDsKPiA+ICt9Cj4gPiArCj4gPiArc3RhdGljIGlubGluZSBpbnQg
+cmVzX2NvdW50ZXJfc2V0X3RocmVzaG9sZChzdHJ1Y3QgcmVzX2NvdW50ZXIgKmNudCwKPiA+ICsg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgdW5zaWduZWQgbG9uZyBsb25nIHRocmVzaG9sZCkKPiA+ICt7
+Cj4gPiArIMKgIMKgIMKgIHVuc2lnbmVkIGxvbmcgZmxhZ3M7Cj4gPiArIMKgIMKgIMKgIGludCBy
+ZXQgPSAtRUlOVkFMOwo+ID4gKwo+ID4gKyDCoCDCoCDCoCBzcGluX2xvY2tfaXJxc2F2ZSgmY250
+LT5sb2NrLCBmbGFncyk7Cj4gPiArIMKgIMKgIMKgIGlmIChjbnQtPmxpbWl0ID4gdGhyZXNob2xk
+KSB7Cj4gPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGNudC0+dGhyZXNob2xkID0gdGhyZXNob2xk
+Owo+ID4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCByZXNfY291bnRlcl90aHJlc2hvbGRfbm90aWZ5
+X2xvY2tlZChjbnQpOwo+ID4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqByZXQgPSAwOwo+ID4gwqAg
+wqAgwqAgwqB9Cj4gPiDCoCDCoCDCoCDCoHNwaW5fdW5sb2NrX2lycXJlc3RvcmUoJmNudC0+bG9j
+aywgZmxhZ3MpOwo+ID4gZGlmZiAtLWdpdCBhL2tlcm5lbC9yZXNfY291bnRlci5jIGIva2VybmVs
+L3Jlc19jb3VudGVyLmMKPiA+IGluZGV4IGUxMzM4ZjAuLjliMzY3NDggMTAwNjQ0Cj4gPiAtLS0g
+YS9rZXJuZWwvcmVzX2NvdW50ZXIuYwo+ID4gKysrIGIva2VybmVsL3Jlc19jb3VudGVyLmMKPiA+
+IEBAIC01LDYgKzUsMTAgQEAKPiA+IMKgKgo+ID4gwqAqIEF1dGhvcjogUGF2ZWwgRW1lbGlhbm92
+IDx4ZW11bEBvcGVudnoub3JnPgo+ID4gwqAqCj4gPiArICogUmVzb3VjZSB1c2FnZSB0aHJlc2hv
+bGQgbm90aWZpY2F0aW9uIHVwZGF0ZQo+ID4gKyAqIENvcHlyaWdodCAyMDA5IENFIExpbnV4IEZv
+cnVtIGFuZCBFbWJlZGRlZCBBbGxleSBTb2x1dGlvbnMsIEluYy4KPiA+ICsgKiBBdXRob3I6IERh
+biBNYWxlayA8ZGFuQGVtYmVkZGVkYWxsZXkuY29tPgo+ID4gKyAqIEF1dGhvcjogVmxhZGlzbGF2
+IEJ1em92IDx2YnV6b3ZAZW1iZWRkZWRhbGxleS5jb20+Cj4gPiDCoCovCj4gPgo+ID4gwqAjaW5j
+bHVkZSA8bGludXgvdHlwZXMuaD4KPiA+IEBAIC0zMiw2ICszNiw3IEBAIGludCByZXNfY291bnRl
+cl9jaGFyZ2VfbG9ja2VkKHN0cnVjdCByZXNfY291bnRlciAqY291bnRlciwgdW5zaWduZWQgbG9u
+ZyB2YWwpCj4gPiDCoCDCoCDCoCDCoGNvdW50ZXItPnVzYWdlICs9IHZhbDsKPiA+IMKgIMKgIMKg
+IMKgaWYgKGNvdW50ZXItPnVzYWdlID4gY291bnRlci0+bWF4X3VzYWdlKQo+ID4gwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqBjb3VudGVyLT5tYXhfdXNhZ2UgPSBjb3VudGVyLT51c2FnZTsKPiA+ICsg
+wqAgwqAgwqAgcmVzX2NvdW50ZXJfdGhyZXNob2xkX25vdGlmeV9sb2NrZWQoY291bnRlcik7Cj4g
+PiDCoCDCoCDCoCDCoHJldHVybiAwOwo+ID4gwqB9Cj4gPgo+ID4gQEAgLTEwMSw2ICsxMDYsOCBA
+QCByZXNfY291bnRlcl9tZW1iZXIoc3RydWN0IHJlc19jb3VudGVyICpjb3VudGVyLCBpbnQgbWVt
+YmVyKQo+ID4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqByZXR1cm4gJmNvdW50ZXItPmxpbWl0Owo+
+ID4gwqAgwqAgwqAgwqBjYXNlIFJFU19GQUlMQ05UOgo+ID4gwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqByZXR1cm4gJmNvdW50ZXItPmZhaWxjbnQ7Cj4gPiArIMKgIMKgIMKgIGNhc2UgUkVTX1RIUkVT
+SE9MRDoKPiA+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0dXJuICZjb3VudGVyLT50aHJlc2hv
+bGQ7Cj4gPiDCoCDCoCDCoCDCoH07Cj4gPgo+ID4gwqAgwqAgwqAgwqBCVUcoKTsKPiA+IC0tCj4g
+PiAxLjUuNi4zCj4gPgo+ID4KPiAKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWls
+bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
