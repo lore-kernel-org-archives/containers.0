@@ -1,34 +1,89 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 1/1] veth: don't free priv->status until
- dev->destructor (v2)
-Date: Wed, 15 Jul 2009 08:50:12 -0700 (PDT)
-Message-ID: <20090715.085012.223420354.davem@davemloft.net>
-References: <20090626162418.GA24828@us.ibm.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Save and restore the [compat_]robust_list member of the
+	task struct.
+Date: Wed, 15 Jul 2009 11:02:01 -0500
+Message-ID: <m3r5wiorye.fsf@pobox.com>
+References: <20090713123615.GE5213@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755562AbZGOPuK@vger.kernel.org>
-In-Reply-To: <20090626162418.GA24828@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: serue@us.ibm.com
-Cc: shemminger@vyatta.com, containers@lists.osdl.org, sachinp@in.ibm.com, netdev@vger.kernel.org, matthltc@us.ibm.com, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090713123615.GE5213-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org> (Matt Helsley's
+	message of "Mon\, 13 Jul 2009 05\:36\:15 -0700")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Date: Fri, 26 Jun 2009 11:24:18 -0500
-
-> I haven't been able to reproduce the original oops though (been
-> trying to cat the stats sysfs files while rmmoding veth, to no
-> avail, and haven't found an original bug report or testcase), so
-> can't verify whether this patch prevents the original oops.
-
-If you 'cat' it you're unlikely to trigger the oops.
-
-You have to hold the sysfs files open, and then elsewhere do the
-rmmod, wait, and then continue with some access to those open sysfs
-file descriptors (f.e. do some reads).
-
-I'd also need this patch to be against current sources as they'll
-never apply since I did the revert quite some time ago.
-
-Thanks.
+TWF0dCBIZWxzbGV5IDxtYXR0aGx0Y0B1cy5pYm0uY29tPiB3cml0ZXM6Cj4gZGlmZiAtLWdpdCBh
+L2luY2x1ZGUvbGludXgvZnV0ZXguaCBiL2luY2x1ZGUvbGludXgvZnV0ZXguaAo+IGluZGV4IDQz
+MjZmODEuLjkzNGNmOTggMTAwNjQ0Cj4gLS0tIGEvaW5jbHVkZS9saW51eC9mdXRleC5oCj4gKysr
+IGIvaW5jbHVkZS9saW51eC9mdXRleC5oCj4gQEAgLTE4NSw5ICsxODUsNDYgQEAgdW5pb24gZnV0
+ZXhfa2V5IHsKPiAgI2RlZmluZSBGVVRFWF9LRVlfSU5JVCAodW5pb24gZnV0ZXhfa2V5KSB7IC5i
+b3RoID0geyAucHRyID0gTlVMTCB9IH0KPiAgCj4gICNpZmRlZiBDT05GSUdfRlVURVgKPiArZXh0
+ZXJuIGxvbmcgZG9fc2V0X3JvYnVzdF9saXN0KHN0cnVjdCByb2J1c3RfbGlzdF9oZWFkIF9fdXNl
+ciAqaGVhZCwgc2l6ZV90IGxlbik7Cj4gIGV4dGVybiB2b2lkIGV4aXRfcm9idXN0X2xpc3Qoc3Ry
+dWN0IHRhc2tfc3RydWN0ICpjdXJyKTsKPiAgZXh0ZXJuIHZvaWQgZXhpdF9waV9zdGF0ZV9saXN0
+KHN0cnVjdCB0YXNrX3N0cnVjdCAqY3Vycik7Cj4gIGV4dGVybiBpbnQgZnV0ZXhfY21weGNoZ19l
+bmFibGVkOwo+ICsKPiArI2lmZGVmIENPTkZJR19DSEVDS1BPSU5UCj4gKyNpbmNsdWRlIDxsaW51
+eC9jaGVja3BvaW50X2hkci5oPgo+ICsKPiArc3RhdGljIGlubGluZSB2b2lkIHNhdmVfdGFza19y
+b2J1c3RfZnV0ZXhfbGlzdChzdHJ1Y3QgY2twdF9oZHJfdGFzayAqaCwKPiArCQkJCQkgICAgICAg
+c3RydWN0IHRhc2tfc3RydWN0ICp0KQo+ICt7Cj4gKwkvKgo+ICsJICogVGhlc2UgYXJlIF9fdXNl
+ciBwb2ludGVycyBhbmQgdGh1cyBjYW4gYmUgc2F2ZWQgd2l0aG91dAo+ICsJICogdGhlIG9iamhh
+c2guCj4gKwkgKi8KPiArCWgtPnJvYnVzdF9mdXRleF9saXN0ID0gKHVuc2lnbmVkIGxvbmcpdC0+
+cm9idXN0X2xpc3Q7Cj4gKwloLT5yb2J1c3RfZnV0ZXhfaGVhZF9sZW4gPSBzaXplb2YoKnQtPnJv
+YnVzdF9saXN0KTsKPiArI2lmZGVmIENPTkZJR19DT01QQVQKPiArCWgtPmNvbXBhdF9yb2J1c3Rf
+ZnV0ZXhfbGlzdCA9IHB0cl90b19jb21wYXQodC0+Y29tcGF0X3JvYnVzdF9saXN0KTsKPiArCWgt
+PmNvbXBhdF9yb2J1c3RfZnV0ZXhfaGVhZF9sZW4gPSBzaXplb2YoKnQtPmNvbXBhdF9yb2J1c3Rf
+bGlzdCk7Cj4gKyNlbmRpZgo+ICt9Cj4gKwo+ICtzdGF0aWMgaW5saW5lIHZvaWQgcmVzdG9yZV90
+YXNrX3JvYnVzdF9mdXRleF9saXN0KHN0cnVjdCBja3B0X2hkcl90YXNrICpoKQo+ICt7Cj4gKwkv
+KiBTaW5jZSB3ZSByZXN0b3JlIHRoZSBtZW1vcnkgbWFwIHRoZSBhZGRyZXNzIHJlbWFpbnMgdGhl
+IHNhbWUgYW5kCj4gKwkgKiB0aGlzIGlzIHNhZmUuIFRoaXMgaXMgdGhlIHNhbWUgYXMgW2NvbXBh
+dF9dc3lzX3NldF9yb2J1c3RfbGlzdCgpICovCj4gKwlpZiAoaC0+cm9idXN0X2Z1dGV4X2xpc3Qp
+IHsKPiArCQlzdHJ1Y3Qgcm9idXN0X2xpc3RfaGVhZCBfX3VzZXIgKnJmbCA9ICh2b2lkIF9fdXNl
+ciAqKSh1bnNpZ25lZCBsb25nKWgtPnJvYnVzdF9mdXRleF9saXN0Owo+ICsJCWRvX3NldF9yb2J1
+c3RfbGlzdChyZmwsIGgtPnJvYnVzdF9mdXRleF9oZWFkX2xlbik7Cj4gKwl9Cj4gKyNpZmRlZiBD
+T05GSUdfQ09NUEFUCj4gKwlpZiAoaC0+Y29tcGF0X3JvYnVzdF9mdXRleF9saXN0KSB7Cj4gKwkJ
+c3RydWN0IGNvbXBhdF9yb2J1c3RfbGlzdF9oZWFkIF9fdXNlciAqY3JmbCA9IGNvbXBhdF9wdHIo
+aC0+Y29tcGF0X3JvYnVzdF9mdXRleF9saXN0KTsKPiArCQlkb19jb21wYXRfc2V0X3JvYnVzdF9s
+aXN0KGNyZmwsIGgtPmNvbXBhdF9yb2J1c3RfZnV0ZXhfaGVhZF9sZW4pOwo+ICsJfQo+ICsjZW5k
+aWYKPiArfQo+ICsjZW5kaWYgLyogQ09ORklHX0NIRUNLUE9JTlQgKi8KPiArCj4gICNlbHNlCj4g
+IHN0YXRpYyBpbmxpbmUgdm9pZCBleGl0X3JvYnVzdF9saXN0KHN0cnVjdCB0YXNrX3N0cnVjdCAq
+Y3VycikKPiAgewo+IEBAIC0xOTUsNiArMjMyLDE1IEBAIHN0YXRpYyBpbmxpbmUgdm9pZCBleGl0
+X3JvYnVzdF9saXN0KHN0cnVjdCB0YXNrX3N0cnVjdCAqY3VycikKPiAgc3RhdGljIGlubGluZSB2
+b2lkIGV4aXRfcGlfc3RhdGVfbGlzdChzdHJ1Y3QgdGFza19zdHJ1Y3QgKmN1cnIpCj4gIHsKPiAg
+fQo+ICsjaWZkZWYgQ09ORklHX0NIRUNLUE9JTlQKPiArc3RhdGljIGlubGluZSB2b2lkIHNhdmVf
+dGFza19yb2J1c3RfZnV0ZXhfbGlzdChzdHJ1Y3QgY2twdF9oZHJfdGFzayAqaCwKPiArCQkJCQkg
+ICAgICBzdHJ1Y3QgdGFza19zdHJ1Y3QgKnQpCj4gK3sKPiArfQo+ICtzdGF0aWMgaW5saW5lIHZv
+aWQgcmVzdG9yZV90YXNrX3JvYnVzdF9mdXRleF9saXN0KHN0cnVjdCBja3B0X2hkcl90YXNrICpo
+KQo+ICt7Cj4gK30KPiArI2VuZGlmIC8qIENPTkZJR19DSEVDS1BPSU5UICovCj4gICNlbmRpZgo+
+ICAjZW5kaWYgLyogX19LRVJORUxfXyAqLwo+ICAKCnBvd2VycGMgYnVpbGQgd2l0aCBDT05GSUdf
+Q0hFQ0tQT0lOVD15IGZhaWxzLiAgSSBzdXNwZWN0IGFueQpDT05GSUdfQ09NUEFUPXkgYnVpbGQg
+ZmFpbHM/CgpJbiBmaWxlIGluY2x1ZGVkIGZyb20ga2VybmVsL2ZvcmsuYzo0MjoKaW5jbHVkZS9s
+aW51eC9mdXRleC5oOiBJbiBmdW5jdGlvbiDigJhzYXZlX3Rhc2tfcm9idXN0X2Z1dGV4X2xpc3Ti
+gJk6CmluY2x1ZGUvbGludXgvZnV0ZXguaDoyMDY6IGVycm9yOiBpbXBsaWNpdCBkZWNsYXJhdGlv
+biBvZiBmdW5jdGlvbiDigJhwdHJfdG9fY29tcGF04oCZCmluY2x1ZGUvbGludXgvZnV0ZXguaDoy
+MDc6IGVycm9yOiBkZXJlZmVyZW5jaW5nIHBvaW50ZXIgdG8gaW5jb21wbGV0ZSB0eXBlCmluY2x1
+ZGUvbGludXgvZnV0ZXguaDogSW4gZnVuY3Rpb24g4oCYcmVzdG9yZV90YXNrX3JvYnVzdF9mdXRl
+eF9saXN04oCZOgppbmNsdWRlL2xpbnV4L2Z1dGV4Lmg6MjIxOiBlcnJvcjogaW1wbGljaXQgZGVj
+bGFyYXRpb24gb2YgZnVuY3Rpb24g4oCYY29tcGF0X3B0cuKAmQppbmNsdWRlL2xpbnV4L2Z1dGV4
+Lmg6MjIxOiB3YXJuaW5nOiBpbml0aWFsaXphdGlvbiBtYWtlcyBwb2ludGVyIGZyb20gaW50ZWdl
+ciB3aXRob3V0IGEgY2FzdAppbmNsdWRlL2xpbnV4L2Z1dGV4Lmg6MjIyOiBlcnJvcjogaW1wbGlj
+aXQgZGVjbGFyYXRpb24gb2YgZnVuY3Rpb24g4oCYZG9fY29tcGF0X3NldF9yb2J1c3RfbGlzdOKA
+mQoKZml4OgoKZGlmZiAtLWdpdCBhL2luY2x1ZGUvbGludXgvZnV0ZXguaCBiL2luY2x1ZGUvbGlu
+dXgvZnV0ZXguaAppbmRleCA5MzRjZjk4Li5mNDBhOWJmIDEwMDY0NAotLS0gYS9pbmNsdWRlL2xp
+bnV4L2Z1dGV4LmgKKysrIGIvaW5jbHVkZS9saW51eC9mdXRleC5oCkBAIC0zLDYgKzMsNyBAQAog
+CiAjaW5jbHVkZSA8bGludXgvY29tcGlsZXIuaD4KICNpbmNsdWRlIDxsaW51eC90eXBlcy5oPgor
+I2luY2x1ZGUgPGxpbnV4L2NvbXBhdC5oPgogCiBzdHJ1Y3QgaW5vZGU7CiBzdHJ1Y3QgbW1fc3Ry
+dWN0OwoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
+dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
+ZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
+dGFpbmVycw==
