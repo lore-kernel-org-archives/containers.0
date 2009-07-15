@@ -1,35 +1,34 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [cr][git]linux-cr branch, ckpt-v17-rc2,
-	created. v2.6.27-rc5-45616-g96b7bc2
-Date: Wed, 15 Jul 2009 07:38:12 -0700
-Message-ID: <87my76ko4r.fsf@caffeine.danplanet.com>
-References: <200907142115.n6ELFPpO009839@gorgona.ncl.cs.columbia.edu>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 1/1] veth: don't free priv->status until
+ dev->destructor (v2)
+Date: Wed, 15 Jul 2009 08:50:12 -0700 (PDT)
+Message-ID: <20090715.085012.223420354.davem@davemloft.net>
+References: <20090626162418.GA24828@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200907142115.n6ELFPpO009839-EuEShxyuPQkq9VVQU6f9tyzKzqNAjFMVlXN7HHkbuXM@public.gmane.org>
-	(orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org's message of "Tue\,
-	14 Jul 2009 17\:15\:25 -0400")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755562AbZGOPuK@vger.kernel.org>
+In-Reply-To: <20090626162418.GA24828@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: serue@us.ibm.com
+Cc: shemminger@vyatta.com, containers@lists.osdl.org, sachinp@in.ibm.com, netdev@vger.kernel.org, matthltc@us.ibm.com, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-OL> The branch, ckpt-v17-rc2 has been created
-OL>         at  96b7bc2d23eafb041f72be1f33911385e31835df (commit)
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Date: Fri, 26 Jun 2009 11:24:18 -0500
 
-Tested on s390 and seems to behave as expected now.
+> I haven't been able to reproduce the original oops though (been
+> trying to cat the stats sysfs files while rmmoding veth, to no
+> avail, and haven't found an original bug report or testcase), so
+> can't verify whether this patch prevents the original oops.
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+If you 'cat' it you're unlikely to trigger the oops.
+
+You have to hold the sysfs files open, and then elsewhere do the
+rmmod, wait, and then continue with some access to those open sysfs
+file descriptors (f.e. do some reads).
+
+I'd also need this patch to be against current sources as they'll
+never apply since I did the revert quite some time ago.
+
+Thanks.
