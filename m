@@ -1,13 +1,23 @@
-From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Subject: Re: [RFC][PATCH] checkpoint/restart: Add support for epoll
-Date: Wed, 15 Jul 2009 11:22:36 +0200
-Message-ID: <4A5D9FDC.7000309@free.fr>
-References: <20090714235405.GH5213@count0.beaverton.ibm.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Wed, 15 Jul 2009 15:19:23 +0200
+Message-ID: <20090715131923.GB21417@megiteam.pl>
+References: <20090711200133.GB11303@megiteam.pl>
+	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
+	<20090712074932.GA17291@megiteam.pl>
+	<20090713190211.GA4208@us.ibm.com>
+	<20090713193058.GL18617@megiteam.pl>
+	<20090713202610.GA6447@us.ibm.com>
+	<20090713223444.GM18617@megiteam.pl>
+	<20090714064905.GA25278@us.ibm.com>
+	<20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090714235405.GH5213-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090715044744.GA25745-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,74 +27,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/15/2009 01:54 AM, Matt Helsley wrote:
->   Add checkpoint/restart support for epoll files. This is the minimum
->   support necessary to recreate the epoll item sets without any pending
->   events.
->
->   This is an RFC to show where I'm going with the patch and give an idea
->   of how much code I expect it will take. Compiles and boots on x86 but
->   I haven't tested it.
->
->   Caveats: Does not correctly support restoring epoll fds to epoll sets
-> 	  as this requires some recursion detection/avoidance. See the
-> 	  "TODO" that mentions deferqueues.
+On Tue, Jul 14, 2009 at 09:47:44PM -0700, Sukadev Bhattiprolu wrote:
+> I am not too familiar with libvirt implementation, but do you think it
+> is possible to repro this using ns_exec and fewer/minimal namespaces ?
 
-it all depends on the algorithm of C/R for files.
+Just run the program below. 2.6.29 oopses when the child tries to open
+/dev/console. Possibly can be stripped down even further but I think
+it's fairly minimal anyway.
 
-the 'contents', the watched fds in your case, of the 'struct file' should be
-restored after all the struct files have been restored. you'll have the same
-issue with other fd types.
+BTW, I guess the patch should set ERR_PTR(-EIO) or something, instead
+of NULL, am I right?
 
-Also,I think it it possible to add 2 epoll services providing get and set without
-mixing the epoll code with C/R code. ugly, IHMO. something like :
+Best regards,
+ Grzegorz Nosek
 
-	diff --git a/include/linux/eventpoll.h b/include/linux/eventpoll.h
-	index f6856a5..b19b7a1 100644
-	--- a/include/linux/eventpoll.h
-	+++ b/include/linux/eventpoll.h
-	@@ -49,6 +49,12 @@ struct epoll_event {
-	        __u64 data;
-	 } EPOLL_PACKED;
-  
-	+struct epoll_fd_event {
-	+       int fd;
-	+       struct file* file;
-	+       struct epoll_event event;
-	+} EPOLL_PACKED;
-	+
-	 #ifdef __KERNEL__
-	
-	 /* Forward declarations to avoid compiler errors */
-	@@ -95,6 +101,9 @@ static inline void eventpoll_release(struct file *file)
-	        eventpoll_release_file(file);
-	 }
-  
-	+extern int eventpoll_get_events(int, struct epoll_fd_event *, int);
-	+extern int eventpoll_insert(int, int, struct file*, struct epoll_event *);
-	+
-	 #else
-	
-	 static inline void eventpoll_init_file(struct file *file) {}
+/*------------- cut ------------*/
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <sched.h>
+#include <stdlib.h>
+#include <sys/mount.h>
+#include <sys/signal.h>
+#include <unistd.h>
 
-finally,
+#include <linux/fs.h>
 
+void dummy(int sig)
+{
+}
 
-> +	/*
-> +	 * FIXME for now we do it one at a time. Later we might do it like
-> +	 * checkpoint_pids() for better performance since there can be many
-> +	 * more epoll items than pids.
-> +	 */
-> +	cepi = ckpt_hdr_get(ctx, sizeof(*cepi));
-> +	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp)) {
-> +		struct epitem *epi = rb_entry(rbp, struct epitem, rbn);
-> +		cepi->fd = epi->ffd.fd;
+static int child(void *unused)
+{
+	signal(SIGINT, dummy);
+	signal(SIGHUP, dummy);
+	pause(); /* cheesy synchronisation to wait for /dev/pts/0 to appear */
 
-epi->ffd.fd and epi->ffd.file are not necessarily related. fd could have been
-recycled after the EPOLL_CTL_ADD. nop ? and it will break the restart.
+	mount("/dev/pts/0", "/dev/console", NULL, MS_BIND, NULL);
+	sleep(2);
 
-C.
+	open("/dev/console", O_RDWR);
+	dup(0);
+	dup(0);
+	write(1, "Hello world!\n", sizeof("Hello world!\n")-1);
+	return 0;
+}
+
+int main(void)
+{
+	pid_t pid;
+	char *stack;
+	int fd;
+
+	stack = malloc(16384);
+	pid = clone(child, stack+16384, CLONE_NEWNS|SIGCHLD, NULL);
+
+	fd = open("/dev/ptmx", O_RDWR|O_NOCTTY|O_NONBLOCK);
+	unlockpt(fd);
+	grantpt(fd);
+
+	kill(pid, SIGHUP);
+	sleep(1);
+	return 0; /* exit before child opens /dev/console */
+}
