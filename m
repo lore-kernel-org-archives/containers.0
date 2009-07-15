@@ -1,23 +1,16 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Adds a read-only "procs" file similar to "tasks" that
-	shows only unique tgids
-Date: Wed, 15 Jul 2009 09:18:33 -0700
-Message-ID: <6599ad830907150918r5ed6f2cevde9dbc9ef304fb2b__46743.1948207833$1247674906$gmane$org@mail.gmail.com>
-References: <20090702231814.3969.44308.stgit@menage.mtv.corp.google.com>
-	<2f86c2480907021817o79fce75yd9785aab682f7bb4@mail.gmail.com>
-	<20090702190845.0cafc46a.akpm@linux-foundation.org>
-	<6599ad830907022116n7a711c7fs52ff9b400ec8797f@mail.gmail.com>
-	<20090702235527.7ddc873c.akpm@linux-foundation.org>
-	<6599ad830907030911m6176dc59id3a7d897b03d2bd@mail.gmail.com>
-	<20090703095000.cf46ad19.akpm@linux-foundation.org>
-	<6599ad830907031054x74d90149y38aae60afa403d58@mail.gmail.com>
-	<20090703111016.ceb28541.akpm@linux-foundation.org>
-	<m1ocrm73cu.fsf@fess.ebiederm.org>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Save and restore the [compat_]robust_list member of the
+	task struct.
+Date: Wed, 15 Jul 2009 14:15:18 -0500
+Message-ID: <m3bpnliwqh.fsf@pobox.com>
+References: <20090713123615.GE5213@count0.beaverton.ibm.com>
+	<m3r5wiorye.fsf@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1ocrm73cu.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <m3r5wiorye.fsf-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org> (Nathan Lynch's message of "Wed\, 15
+	Jul 2009 11\:02\:01 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,72 +20,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, lizf-BthXqXjhjHXBeW8qKU6YJg@public.gmane.org, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 15, 2009 at 1:33 AM, Eric W. Biederman<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> w=
-rote:
->
-> I think guaranteeing a truly atomic snapshot is likely to be a
-> horrible idea requiring all kinds of nasty locking,
-
-We don't guarantee a truly atomic snapshot unless you manage to read
-the entire file with a single read() call.
-
-> and smp
-> scalability issues. =A0So please walk the list of pids and
-> just return those that belong to your cgroup.
-
-The downside with that is that scanning any cgroup takes O(n) in the
-number of threads on the machine, so scanning them all becomes O(n^2).
-We've definitely seen problems (on older kernels using cpusets, which
-did something similar, i.e. walking the tasklist) where we have lots
-of small cpusets and a few huge ones, and this blew up the cost of
-accessing any of them.
-
-But having said that, the idea of being able to maintain just a cursor
-is something that would definitely be nice.
-
-Here's another idea that might work:
-
-Currently, each cgroup has a list running through the attached css_set
-objects, and each css_set has a list running through its tasks; we
-iterate through these lists of lists to produce the cgroup's task list
-
-Since this list isn't sorted in any way, there's no convenient way to
-save/restore your position between seq_file invocations; this is why
-we currently generate a sorted snapshot, so that even if the snapshot
-is updated by someone else before our next read, we know where to pick
-up from (the next pid above the last one that we returned).
-
-Instead, we could actually store cursor objects in the list itself
-whenever we need to pause/resume iterating through a large cgroup (due
-to hitting the limits of a single seq_file read, i.e. probably after
-every 700 threads).
-
-Then we'd just need to teach cgroup_iter_next() to distinguish between
-real tasks and cursors, and skip the latter. Simple way to do that
-would be to change the existing declarations in task_struct:
-
-#ifdef CONFIG_CGROUPS
-        /* Control Group info protected by css_set_lock */
-        struct css_set *cgroups;
-        /* cg_list protected by css_set_lock and tsk->alloc_lock */
-        struct list_head cg_list;
-#endif
-
-and instead define these two fields together as a struct
-cgroup_css_list_elem. A cursor can just be a cgroup_css_list_elem
-whose cgroups field points to a distinguishing address that identifies
-it as a cursor.
-
-So we're guaranteed to hit all threads that are in the cgroup before
-we start, and stay there until we finish; there are no guarantees
-about threads that move into or out of the cgroup while we're
-iterating
-
-It's a bit more complex than just iterating over the machine's entire
-pid list, but I think it scales better.
-
-Paul
+TmF0aGFuIEx5bmNoIDxudGxAcG9ib3guY29tPiB3cml0ZXM6Cj4gTWF0dCBIZWxzbGV5IDxtYXR0
+aGx0Y0B1cy5pYm0uY29tPiB3cml0ZXM6Cj4+IGRpZmYgLS1naXQgYS9pbmNsdWRlL2xpbnV4L2Z1
+dGV4LmggYi9pbmNsdWRlL2xpbnV4L2Z1dGV4LmgKPj4gaW5kZXggNDMyNmY4MS4uOTM0Y2Y5OCAx
+MDA2NDQKPj4gLS0tIGEvaW5jbHVkZS9saW51eC9mdXRleC5oCj4+ICsrKyBiL2luY2x1ZGUvbGlu
+dXgvZnV0ZXguaAo+PiBAQCAtMTg1LDkgKzE4NSw0NiBAQCB1bmlvbiBmdXRleF9rZXkgewo+PiAg
+I2RlZmluZSBGVVRFWF9LRVlfSU5JVCAodW5pb24gZnV0ZXhfa2V5KSB7IC5ib3RoID0geyAucHRy
+ID0gTlVMTCB9IH0KPj4gIAo+PiAgI2lmZGVmIENPTkZJR19GVVRFWAo+PiArZXh0ZXJuIGxvbmcg
+ZG9fc2V0X3JvYnVzdF9saXN0KHN0cnVjdCByb2J1c3RfbGlzdF9oZWFkIF9fdXNlciAqaGVhZCwg
+c2l6ZV90IGxlbik7Cj4+ICBleHRlcm4gdm9pZCBleGl0X3JvYnVzdF9saXN0KHN0cnVjdCB0YXNr
+X3N0cnVjdCAqY3Vycik7Cj4+ICBleHRlcm4gdm9pZCBleGl0X3BpX3N0YXRlX2xpc3Qoc3RydWN0
+IHRhc2tfc3RydWN0ICpjdXJyKTsKPj4gIGV4dGVybiBpbnQgZnV0ZXhfY21weGNoZ19lbmFibGVk
+Owo+PiArCj4+ICsjaWZkZWYgQ09ORklHX0NIRUNLUE9JTlQKPj4gKyNpbmNsdWRlIDxsaW51eC9j
+aGVja3BvaW50X2hkci5oPgo+PiArCj4+ICtzdGF0aWMgaW5saW5lIHZvaWQgc2F2ZV90YXNrX3Jv
+YnVzdF9mdXRleF9saXN0KHN0cnVjdCBja3B0X2hkcl90YXNrICpoLAo+PiArCQkJCQkgICAgICAg
+c3RydWN0IHRhc2tfc3RydWN0ICp0KQo+PiArewo+PiArCS8qCj4+ICsJICogVGhlc2UgYXJlIF9f
+dXNlciBwb2ludGVycyBhbmQgdGh1cyBjYW4gYmUgc2F2ZWQgd2l0aG91dAo+PiArCSAqIHRoZSBv
+YmpoYXNoLgo+PiArCSAqLwo+PiArCWgtPnJvYnVzdF9mdXRleF9saXN0ID0gKHVuc2lnbmVkIGxv
+bmcpdC0+cm9idXN0X2xpc3Q7Cj4+ICsJaC0+cm9idXN0X2Z1dGV4X2hlYWRfbGVuID0gc2l6ZW9m
+KCp0LT5yb2J1c3RfbGlzdCk7Cj4+ICsjaWZkZWYgQ09ORklHX0NPTVBBVAo+PiArCWgtPmNvbXBh
+dF9yb2J1c3RfZnV0ZXhfbGlzdCA9IHB0cl90b19jb21wYXQodC0+Y29tcGF0X3JvYnVzdF9saXN0
+KTsKPj4gKwloLT5jb21wYXRfcm9idXN0X2Z1dGV4X2hlYWRfbGVuID0gc2l6ZW9mKCp0LT5jb21w
+YXRfcm9idXN0X2xpc3QpOwo+PiArI2VuZGlmCj4+ICt9Cj4+ICsKPj4gK3N0YXRpYyBpbmxpbmUg
+dm9pZCByZXN0b3JlX3Rhc2tfcm9idXN0X2Z1dGV4X2xpc3Qoc3RydWN0IGNrcHRfaGRyX3Rhc2sg
+KmgpCj4+ICt7Cj4+ICsJLyogU2luY2Ugd2UgcmVzdG9yZSB0aGUgbWVtb3J5IG1hcCB0aGUgYWRk
+cmVzcyByZW1haW5zIHRoZSBzYW1lIGFuZAo+PiArCSAqIHRoaXMgaXMgc2FmZS4gVGhpcyBpcyB0
+aGUgc2FtZSBhcyBbY29tcGF0X11zeXNfc2V0X3JvYnVzdF9saXN0KCkgKi8KPj4gKwlpZiAoaC0+
+cm9idXN0X2Z1dGV4X2xpc3QpIHsKPj4gKwkJc3RydWN0IHJvYnVzdF9saXN0X2hlYWQgX191c2Vy
+ICpyZmwgPSAodm9pZCBfX3VzZXIgKikodW5zaWduZWQgbG9uZyloLT5yb2J1c3RfZnV0ZXhfbGlz
+dDsKPj4gKwkJZG9fc2V0X3JvYnVzdF9saXN0KHJmbCwgaC0+cm9idXN0X2Z1dGV4X2hlYWRfbGVu
+KTsKPj4gKwl9Cj4+ICsjaWZkZWYgQ09ORklHX0NPTVBBVAo+PiArCWlmIChoLT5jb21wYXRfcm9i
+dXN0X2Z1dGV4X2xpc3QpIHsKPj4gKwkJc3RydWN0IGNvbXBhdF9yb2J1c3RfbGlzdF9oZWFkIF9f
+dXNlciAqY3JmbCA9IGNvbXBhdF9wdHIoaC0+Y29tcGF0X3JvYnVzdF9mdXRleF9saXN0KTsKPj4g
+KwkJZG9fY29tcGF0X3NldF9yb2J1c3RfbGlzdChjcmZsLCBoLT5jb21wYXRfcm9idXN0X2Z1dGV4
+X2hlYWRfbGVuKTsKPj4gKwl9Cj4+ICsjZW5kaWYKPj4gK30KPj4gKyNlbmRpZiAvKiBDT05GSUdf
+Q0hFQ0tQT0lOVCAqLwo+PiArCj4+ICAjZWxzZQo+PiAgc3RhdGljIGlubGluZSB2b2lkIGV4aXRf
+cm9idXN0X2xpc3Qoc3RydWN0IHRhc2tfc3RydWN0ICpjdXJyKQo+PiAgewo+PiBAQCAtMTk1LDYg
+KzIzMiwxNSBAQCBzdGF0aWMgaW5saW5lIHZvaWQgZXhpdF9yb2J1c3RfbGlzdChzdHJ1Y3QgdGFz
+a19zdHJ1Y3QgKmN1cnIpCj4+ICBzdGF0aWMgaW5saW5lIHZvaWQgZXhpdF9waV9zdGF0ZV9saXN0
+KHN0cnVjdCB0YXNrX3N0cnVjdCAqY3VycikKPj4gIHsKPj4gIH0KPj4gKyNpZmRlZiBDT05GSUdf
+Q0hFQ0tQT0lOVAo+PiArc3RhdGljIGlubGluZSB2b2lkIHNhdmVfdGFza19yb2J1c3RfZnV0ZXhf
+bGlzdChzdHJ1Y3QgY2twdF9oZHJfdGFzayAqaCwKPj4gKwkJCQkJICAgICAgc3RydWN0IHRhc2tf
+c3RydWN0ICp0KQo+PiArewo+PiArfQo+PiArc3RhdGljIGlubGluZSB2b2lkIHJlc3RvcmVfdGFz
+a19yb2J1c3RfZnV0ZXhfbGlzdChzdHJ1Y3QgY2twdF9oZHJfdGFzayAqaCkKPj4gK3sKPj4gK30K
+Pj4gKyNlbmRpZiAvKiBDT05GSUdfQ0hFQ0tQT0lOVCAqLwo+PiAgI2VuZGlmCj4+ICAjZW5kaWYg
+LyogX19LRVJORUxfXyAqLwo+PiAgCj4KPiBwb3dlcnBjIGJ1aWxkIHdpdGggQ09ORklHX0NIRUNL
+UE9JTlQ9eSBmYWlscy4gIEkgc3VzcGVjdCBhbnkKPiBDT05GSUdfQ09NUEFUPXkgYnVpbGQgZmFp
+bHM/Cj4KPiBJbiBmaWxlIGluY2x1ZGVkIGZyb20ga2VybmVsL2ZvcmsuYzo0MjoKPiBpbmNsdWRl
+L2xpbnV4L2Z1dGV4Lmg6IEluIGZ1bmN0aW9uIOKAmHNhdmVfdGFza19yb2J1c3RfZnV0ZXhfbGlz
+dOKAmToKPiBpbmNsdWRlL2xpbnV4L2Z1dGV4Lmg6MjA2OiBlcnJvcjogaW1wbGljaXQgZGVjbGFy
+YXRpb24gb2YgZnVuY3Rpb24g4oCYcHRyX3RvX2NvbXBhdOKAmQo+IGluY2x1ZGUvbGludXgvZnV0
+ZXguaDoyMDc6IGVycm9yOiBkZXJlZmVyZW5jaW5nIHBvaW50ZXIgdG8gaW5jb21wbGV0ZSB0eXBl
+Cj4gaW5jbHVkZS9saW51eC9mdXRleC5oOiBJbiBmdW5jdGlvbiDigJhyZXN0b3JlX3Rhc2tfcm9i
+dXN0X2Z1dGV4X2xpc3TigJk6Cj4gaW5jbHVkZS9saW51eC9mdXRleC5oOjIyMTogZXJyb3I6IGlt
+cGxpY2l0IGRlY2xhcmF0aW9uIG9mIGZ1bmN0aW9uIOKAmGNvbXBhdF9wdHLigJkKPiBpbmNsdWRl
+L2xpbnV4L2Z1dGV4Lmg6MjIxOiB3YXJuaW5nOiBpbml0aWFsaXphdGlvbiBtYWtlcyBwb2ludGVy
+IGZyb20gaW50ZWdlciB3aXRob3V0IGEgY2FzdAo+IGluY2x1ZGUvbGludXgvZnV0ZXguaDoyMjI6
+IGVycm9yOiBpbXBsaWNpdCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiDigJhkb19jb21wYXRfc2V0
+X3JvYnVzdF9saXN04oCZCj4KPiBmaXg6Cj4KPiBkaWZmIC0tZ2l0IGEvaW5jbHVkZS9saW51eC9m
+dXRleC5oIGIvaW5jbHVkZS9saW51eC9mdXRleC5oCj4gaW5kZXggOTM0Y2Y5OC4uZjQwYTliZiAx
+MDA2NDQKPiAtLS0gYS9pbmNsdWRlL2xpbnV4L2Z1dGV4LmgKPiArKysgYi9pbmNsdWRlL2xpbnV4
+L2Z1dGV4LmgKPiBAQCAtMyw2ICszLDcgQEAKPiAgCj4gICNpbmNsdWRlIDxsaW51eC9jb21waWxl
+ci5oPgo+ICAjaW5jbHVkZSA8bGludXgvdHlwZXMuaD4KPiArI2luY2x1ZGUgPGxpbnV4L2NvbXBh
+dC5oPgo+ICAKPiAgc3RydWN0IGlub2RlOwo+ICBzdHJ1Y3QgbW1fc3RydWN0OwoKU2lnaC4uLiB0
+aGlzIGJyZWFrcyBoZWFkZXJzX2NoZWNrOgoKbGludXgtMi42LmdpdC91c3IvaW5jbHVkZS9saW51
+eC9mdXRleC5oOjY6IGluY2x1ZGVkIGZpbGUgJ2xpbnV4L2NvbXBhdC5oJyBpcyBub3QgZXhwb3J0
+ZWQKCkkgdGhpbmsgd2UgY291bGQgc2lkZXN0ZXAgdGhpcyBtZXNzIGJ5IHB1dHRpbmcgdGhlIGZ1
+dGV4LXJlbGF0ZWQKY2hlY2twb2ludCBmdW5jdGlvbnMgaW4gZnV0ZXguYyBpbnN0ZWFkIG9mIG1h
+a2luZyB0aGVtIGlubGluZXMgaW4gYW4KZXhwb3J0ZWQgaGVhZGVyLgpfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
+b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
