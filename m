@@ -1,23 +1,16 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Wed, 15 Jul 2009 15:19:23 +0200
-Message-ID: <20090715131923.GB21417@megiteam.pl>
-References: <20090711200133.GB11303@megiteam.pl>
-	<20090711231935.6ff59796@lxorguk.ukuu.org.uk>
-	<20090712074932.GA17291@megiteam.pl>
-	<20090713190211.GA4208@us.ibm.com>
-	<20090713193058.GL18617@megiteam.pl>
-	<20090713202610.GA6447@us.ibm.com>
-	<20090713223444.GM18617@megiteam.pl>
-	<20090714064905.GA25278@us.ibm.com>
-	<20090714103129.GB12958@megiteam.pl>
-	<20090715044744.GA25745@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [cr][git]linux-cr branch, ckpt-v17-rc2,
+	created. v2.6.27-rc5-45616-g96b7bc2
+Date: Wed, 15 Jul 2009 07:38:12 -0700
+Message-ID: <87my76ko4r.fsf@caffeine.danplanet.com>
+References: <200907142115.n6ELFPpO009839@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090715044744.GA25745-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <200907142115.n6ELFPpO009839-EuEShxyuPQkq9VVQU6f9tyzKzqNAjFMVlXN7HHkbuXM@public.gmane.org>
+	(orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org's message of "Tue\,
+	14 Jul 2009 17\:15\:25 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,69 +20,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 14, 2009 at 09:47:44PM -0700, Sukadev Bhattiprolu wrote:
-> I am not too familiar with libvirt implementation, but do you think it
-> is possible to repro this using ns_exec and fewer/minimal namespaces ?
+OL> The branch, ckpt-v17-rc2 has been created
+OL>         at  96b7bc2d23eafb041f72be1f33911385e31835df (commit)
 
-Just run the program below. 2.6.29 oopses when the child tries to open
-/dev/console. Possibly can be stripped down even further but I think
-it's fairly minimal anyway.
+Tested on s390 and seems to behave as expected now.
 
-BTW, I guess the patch should set ERR_PTR(-EIO) or something, instead
-of NULL, am I right?
-
-Best regards,
- Grzegorz Nosek
-
-/*------------- cut ------------*/
-#define _GNU_SOURCE
-#include <fcntl.h>
-#include <sched.h>
-#include <stdlib.h>
-#include <sys/mount.h>
-#include <sys/signal.h>
-#include <unistd.h>
-
-#include <linux/fs.h>
-
-void dummy(int sig)
-{
-}
-
-static int child(void *unused)
-{
-	signal(SIGINT, dummy);
-	signal(SIGHUP, dummy);
-	pause(); /* cheesy synchronisation to wait for /dev/pts/0 to appear */
-
-	mount("/dev/pts/0", "/dev/console", NULL, MS_BIND, NULL);
-	sleep(2);
-
-	open("/dev/console", O_RDWR);
-	dup(0);
-	dup(0);
-	write(1, "Hello world!\n", sizeof("Hello world!\n")-1);
-	return 0;
-}
-
-int main(void)
-{
-	pid_t pid;
-	char *stack;
-	int fd;
-
-	stack = malloc(16384);
-	pid = clone(child, stack+16384, CLONE_NEWNS|SIGCHLD, NULL);
-
-	fd = open("/dev/ptmx", O_RDWR|O_NOCTTY|O_NONBLOCK);
-	unlockpt(fd);
-	grantpt(fd);
-
-	kill(pid, SIGHUP);
-	sleep(1);
-	return 0; /* exit before child opens /dev/console */
-}
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
