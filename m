@@ -1,20 +1,23 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [patch 2/2] sched: fix nr_uninterruptible accounting of frozen
-	tasks really
-Date: Sat, 18 Jul 2009 18:59:55 -0500
-Message-ID: <1247961595.5256.63.camel@localhost.localdomain>
-References: <20090717121545.489258927@linutronix.de>
-	<20090717122103.225652146@linutronix.de>
-	<1247833910.15751.61.camel@twins>
-	<20090717152235.GA5878@count0.beaverton.ibm.com>
-	<1247849254.6522.75.camel@laptop>
-	<1247864134.17553.30.camel@localhost.localdomain>
-	<1247921791.6597.5.camel@laptop>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Sun, 19 Jul 2009 09:15:31 +0200
+Message-ID: <20090719071531.GA20818@megiteam.pl>
+References: <20090712074932.GA17291@megiteam.pl>
+	<20090713190211.GA4208@us.ibm.com>
+	<20090713193058.GL18617@megiteam.pl>
+	<20090713202610.GA6447@us.ibm.com>
+	<20090713223444.GM18617@megiteam.pl>
+	<20090714064905.GA25278@us.ibm.com>
+	<20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
+	<20090715131923.GB21417@megiteam.pl>
+	<20090718205244.GA23625@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1247921791.6597.5.camel@laptop>
+Content-Disposition: inline
+In-Reply-To: <20090718205244.GA23625-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,47 +27,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Rafael Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>, Nigel Cunningham <nigel-jrkICu/7yk3k1uMJSBkQmQ@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 2009-07-18 at 14:56 +0200, Peter Zijlstra wrote:
-> On Fri, 2009-07-17 at 15:55 -0500, Nathan Lynch wrote:
-> > On Fri, 2009-07-17 at 18:47 +0200, Peter Zijlstra wrote:
-> > > On Fri, 2009-07-17 at 08:22 -0700, Matt Helsley wrote:
-> > > 
-> > > > The job scheduler in question does not use FROZEN as a transient state and
-> > > > does not use checkpoint/restart at all since c/r is still a work in progress.
-> > 
-> > Right, the job scheduler uses the cgroup freezer as a mechanism to
-> > preempt a low priority job for a higher priority job.  (It had used
-> > SIGSTOP in the past.)  So in this scenario a frozen cgroup may remain in
-> > that state for a while.  Load average is consulted as a measure of
-> > system utilization.
+Hi,
+
+On sob, lip 18, 2009 at 01:52:44 -0700, Sukadev Bhattiprolu wrote:
+> 	virsh --connect lxc:/// start lxc-vm2
 > 
-> I think that this is an utterly broken use for it, if you want something
-> like that make a signal cgroup or something and deliver SIGSTOP to all
-> of them.
+> Is that what you mean by "just run" :-) ?
+> If so, I have to first resolve my unrelated problem with libvirtd+lxc.
 > 
-> In other words, why is the freezer any better than the SIGSTOP approach?
+> Running "ns_exec -cpuim ./tty-bug", I dont get the failure with 2.6.31-rc3
+> on a Fedora 11 KVM.
 
-Documentation/cgroups/freezer-subsystem.txt happens to document this use
-case and the disadvantages of SIGSTOP/SIGCONT.  Does that change your
-opinion at all?
+I get the oops by simply running the program, without libvirtd,
+lxc-tools or ns_exec (it sets up a mount namespace itself). Are you
+running with slub debugging (poisoning) enabled? The bug causes
+access to freed memory, so otherwise often nothing will happen
+(the memory won't have been overwritten yet).
 
+OTOH, I haven't tried 2.6.31-rc3 either (but it doesn't look like fixed
+there too).
 
-> > > > Even when used for power management it seems wrong to count frozen tasks
-> > > > towards the loadavg since they aren't using CPU time or waiting for IO.
-> > > 
-> > > You're abusing it for _WHAT_?
-> > 
-> > I think Matt was referring to system-wide suspend/resume/hibernate, not
-> > a behavior of the job scheduler, if that's your concern.
-> 
-> I understood he referred to the crazy use-case you mentioned above, IMHO
-> frozen should be a temporary state used for things like
-> snapshot/migrate.
-
-But snapshot (or checkpoint) and migration aren't possible with mainline
-at this time.  As far as I know, the use case to which you object is the
-primary use of the cgroup freezer on production systems.
+Best regards,
+ Grzegorz Nosek
