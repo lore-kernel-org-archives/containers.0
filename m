@@ -1,23 +1,11 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Sun, 19 Jul 2009 09:15:31 +0200
-Message-ID: <20090719071531.GA20818@megiteam.pl>
-References: <20090712074932.GA17291@megiteam.pl>
-	<20090713190211.GA4208@us.ibm.com>
-	<20090713193058.GL18617@megiteam.pl>
-	<20090713202610.GA6447@us.ibm.com>
-	<20090713223444.GM18617@megiteam.pl>
-	<20090714064905.GA25278@us.ibm.com>
-	<20090714103129.GB12958@megiteam.pl>
-	<20090715044744.GA25745@us.ibm.com>
-	<20090715131923.GB21417@megiteam.pl>
-	<20090718205244.GA23625@us.ibm.com>
+From: "malacologist"<malacologist-KoeRu02Q/TcqdlJmJB21zg@public.gmane.org>
+Subject: minimisation
+Date: Sun, 19 Jul 2009 19:26:57 +0100
+Message-ID: <333052$fMH54u6@adastra.co.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090718205244.GA23625-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,29 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-On sob, lip 18, 2009 at 01:52:44 -0700, Sukadev Bhattiprolu wrote:
-> 	virsh --connect lxc:/// start lxc-vm2
-> 
-> Is that what you mean by "just run" :-) ?
-> If so, I have to first resolve my unrelated problem with libvirtd+lxc.
-> 
-> Running "ns_exec -cpuim ./tty-bug", I dont get the failure with 2.6.31-rc3
-> on a Fedora 11 KVM.
-
-I get the oops by simply running the program, without libvirtd,
-lxc-tools or ns_exec (it sets up a mount namespace itself). Are you
-running with slub debugging (poisoning) enabled? The bug causes
-access to freed memory, so otherwise often nothing will happen
-(the memory won't have been overwritten yet).
-
-OTOH, I haven't tried 2.6.31-rc3 either (but it doesn't look like fixed
-there too).
-
-Best regards,
- Grzegorz Nosek
+Freeing thhe Female Omrgasm.www[dot]ku17[dot]net
