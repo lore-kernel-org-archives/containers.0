@@ -1,13 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFCv2][PATCH] flexible array implementation
-Date: Tue, 21 Jul 2009 15:09:05 -0700
-Message-ID: <1248214145.13249.5671.camel__49002.2888443947$1248216982$gmane$org@nimitz>
-References: <20090721220017.60A219D3@kernel>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/9] [RFC] Allow cgroup hierarchies to be created with no
+	bound subsystems
+Date: Tue, 21 Jul 2009 16:31:00 -0700
+Message-ID: <6599ad830907211631g6fb363d1n147fc0843fa4e626__33206.2185196721$1248219192$gmane$org@mail.gmail.com>
+References: <20090702020624.14469.47066.stgit@menage.mtv.corp.google.com>
+	<20090702021113.14469.2703.stgit@menage.mtv.corp.google.com>
+	<4A4DB9E4.9060500@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090721220017.60A219D3@kernel>
+In-Reply-To: <4A4DB9E4.9060500-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,28 +20,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-07-21 at 15:00 -0700, Dave Hansen wrote:
-> 
-> The interface is dirt simple.  4 functions:
->         alloc_flex_array()
->         free_flex_array()
->         flex_array_put()
->         flex_array_get()
-> 
-> put() appends an item into the array while get() takes
-> indexes and does array-style access.
+OK, updated for the next version of these patches.
 
-I need to update this description, but the kerneldoc comments are up to
-date.
+Thanks,
 
-That reminds me...  People will get somewhat weird behavior if they mix
-flex_array_append() and flex_array_put().  Is that OK?  Should
-flex_array_put() modify ->nr_elements to point to the element past the
-one that was just put()?  Should we perhaps drop the append() function
-and the ->nr_elements variable completely?
+Paul
 
--- Dave
+On Fri, Jul 3, 2009 at 12:57 AM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> +#define MAX_TASKS_SHOWN_PER_CSS 25
+>> +static int cgroup_css_links_read(struct cgroup *cont,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct cfty=
+pe *cft,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct seq_=
+file *seq)
+>> +{
+>> + =A0 =A0 struct cg_cgroup_link *link, *saved_link;
+>
+> need a newline
+>
+>> + =A0 =A0 write_lock_irq(&css_set_lock);
+>
+> can be read_lock(&css_set_lock);
+>
+>> + =A0 =A0 list_for_each_entry_safe(link, saved_link, &cont->css_sets,
+>
+> can be list_for_each_entry()
+>
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0cgrp_link_l=
+ist) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 struct css_set *cg =3D link->cg;
+>> + =A0 =A0 =A0 =A0 =A0 =A0 struct task_struct *task, *saved_task;
+>> + =A0 =A0 =A0 =A0 =A0 =A0 int count =3D 0;
+>> + =A0 =A0 =A0 =A0 =A0 =A0 seq_printf(seq, "css_set %p\n", cg);
+>> + =A0 =A0 =A0 =A0 =A0 =A0 list_for_each_entry_safe(task, saved_task, &cg=
+->tasks,
+>
+> ditto
+>
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0cg_list) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (count++ > MAX_TASKS_SHOWN_=
+PER_CSS) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 seq_puts(seq, =
+" =A0...\n");
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 } else {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 seq_printf(seq=
+, " =A0task %d\n",
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0task_pid_vnr(task));
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+>> + =A0 =A0 =A0 =A0 =A0 =A0 }
+>> + =A0 =A0 }
+>> + =A0 =A0 write_unlock_irq(&css_set_lock);
+>> + =A0 =A0 return 0;
+>> +}
+>
