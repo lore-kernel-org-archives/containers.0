@@ -1,15 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 7/9] blkio-cgroup-v9: Page tracking hooks
-Date: Tue, 21 Jul 2009 23:23:16 +0900 (JST)
-Message-ID: <20090721.232316.183036419.ryov__45848.5703835779$1248186445$gmane$org@valinux.co.jp>
-References: <20090721.231313.104044139.ryov@valinux.co.jp>
-	<20090721.231405.189716609.ryov@valinux.co.jp>
+Subject: [PATCH 8/9] blkio-cgroup-v9: Fast page tracking
+Date: Tue, 21 Jul 2009 23:24:01 +0900 (JST)
+Message-ID: <20090721.232401.39167673.ryov__14446.2440548979$1248186700$gmane$org@valinux.co.jp>
+References: <20090721.231405.189716609.ryov@valinux.co.jp>
 	<20090721.231505.112612378.ryov@valinux.co.jp>
+	<20090721.232316.183036419.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090721.231505.112612378.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090721.232316.183036419.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,183 +23,369 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch contains several hooks that let the blkio-cgroup framework to know
-which blkio-cgroup is the owner of a page before starting I/O against the page.
+This is an extra patch which reduces the overhead of IO tracking but
+increases the size of struct page_cgroup.
 
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
 ---
- fs/buffer.c         |    2 ++
- fs/direct-io.c      |    2 ++
- mm/bounce.c         |    2 ++
- mm/filemap.c        |    2 ++
- mm/memory.c         |    5 +++++
- mm/page-writeback.c |    2 ++
- mm/swap_state.c     |    2 ++
- 7 files changed, 17 insertions(+)
+ include/linux/biotrack.h    |    5 -
+ include/linux/page_cgroup.h |   26 --------
+ mm/biotrack.c               |  138 ++++++++++++++++++++++++++------------------
+ 3 files changed, 87 insertions(+), 82 deletions(-)
 
-Index: linux-2.6.31-rc3/fs/buffer.c
+Index: linux-2.6.31-rc3/mm/biotrack.c
 ===================================================================
---- linux-2.6.31-rc3.orig/fs/buffer.c
-+++ linux-2.6.31-rc3/fs/buffer.c
-@@ -36,6 +36,7 @@
- #include <linux/buffer_head.h>
- #include <linux/task_io_accounting_ops.h>
- #include <linux/bio.h>
-+#include <linux/biotrack.h>
- #include <linux/notifier.h>
- #include <linux/cpu.h>
- #include <linux/bitops.h>
-@@ -668,6 +669,7 @@ static void __set_page_dirty(struct page
- 	if (page->mapping) {	/* Race with truncate? */
- 		WARN_ON_ONCE(warn && !PageUptodate(page));
- 		account_page_dirtied(page, mapping);
-+		blkio_cgroup_reset_owner_pagedirty(page, current->mm);
- 		radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
+--- linux-2.6.31-rc3.orig/mm/biotrack.c
++++ linux-2.6.31-rc3/mm/biotrack.c
+@@ -3,9 +3,6 @@
+  * Copyright (C) VA Linux Systems Japan, 2008-2009
+  * Developed by Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+  *
+- * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+- * Use part of page_cgroup->flags to store blkio-cgroup ID.
+- *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+@@ -20,6 +17,7 @@
+ #include <linux/module.h>
+ #include <linux/smp.h>
+ #include <linux/bit_spinlock.h>
++#include <linux/idr.h>
+ #include <linux/blkdev.h>
+ #include <linux/biotrack.h>
+ #include <linux/mm_inline.h>
+@@ -45,8 +43,11 @@ static inline struct blkio_cgroup *blkio
+ 					struct blkio_cgroup, css);
+ }
+ 
++static struct idr blkio_cgroup_id;
++static DEFINE_SPINLOCK(blkio_cgroup_idr_lock);
+ static struct io_context default_blkio_io_context;
+ static struct blkio_cgroup default_blkio_cgroup = {
++	.id		= 0,
+ 	.io_context	= &default_blkio_io_context,
+ };
+ 
+@@ -61,7 +62,6 @@ void blkio_cgroup_set_owner(struct page 
+ {
+ 	struct blkio_cgroup *biog;
+ 	struct page_cgroup *pc;
+-	unsigned long id;
+ 
+ 	if (blkio_cgroup_disabled())
+ 		return;
+@@ -69,29 +69,27 @@ void blkio_cgroup_set_owner(struct page 
+ 	if (unlikely(!pc))
+ 		return;
+ 
+-	lock_page_cgroup(pc);
+-	page_cgroup_set_id(pc, 0);	/* 0: default blkio_cgroup id */
+-	unlock_page_cgroup(pc);
++	pc->blkio_cgroup_id = 0;	/* 0: default blkio_cgroup id */
+ 	if (!mm)
+ 		return;
+ 
++	/*
++	 * Locking "pc" isn't necessary here since the current process is
++	 * the only one that can access the members related to blkio_cgroup.
++	 */
+ 	rcu_read_lock();
+ 	biog = blkio_cgroup_from_task(rcu_dereference(mm->owner));
+-	if (unlikely(!biog)) {
+-		rcu_read_unlock();
+-		return;
+-	}
++	if (unlikely(!biog))
++		goto out;
+ 	/*
+ 	 * css_get(&bio->css) isn't called to increment the reference
+ 	 * count of this blkio_cgroup "biog" so the css_id might turn
+ 	 * invalid even if this page is still active.
+ 	 * This approach is chosen to minimize the overhead.
+ 	 */
+-	id = css_id(&biog->css);
++	pc->blkio_cgroup_id = biog->id;
++out:
+ 	rcu_read_unlock();
+-	lock_page_cgroup(pc);
+-	page_cgroup_set_id(pc, id);
+-	unlock_page_cgroup(pc);
+ }
+ 
+ /**
+@@ -103,6 +101,13 @@ void blkio_cgroup_set_owner(struct page 
+  */
+ void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
+ {
++	/*
++	 * A little trick:
++	 * Just call blkio_cgroup_set_owner() for pages which are already
++	 * active since the blkio_cgroup_id member of page_cgroup can be
++	 * updated without any locks. This is because an integer type of
++	 * variable can be set a new value at once on modern cpus.
++	 */
+ 	blkio_cgroup_set_owner(page, mm);
+ }
+ 
+@@ -133,7 +138,6 @@ void blkio_cgroup_reset_owner_pagedirty(
+ void blkio_cgroup_copy_owner(struct page *npage, struct page *opage)
+ {
+ 	struct page_cgroup *npc, *opc;
+-	unsigned long id;
+ 
+ 	if (blkio_cgroup_disabled())
+ 		return;
+@@ -144,12 +148,11 @@ void blkio_cgroup_copy_owner(struct page
+ 	if (unlikely(!opc))
+ 		return;
+ 
+-	lock_page_cgroup(opc);
+-	lock_page_cgroup(npc);
+-	id = page_cgroup_get_id(opc);
+-	page_cgroup_set_id(npc, id);
+-	unlock_page_cgroup(npc);
+-	unlock_page_cgroup(opc);
++	/*
++	 * Do this without any locks. The reason is the same as
++	 * blkio_cgroup_reset_owner().
++	 */
++	npc->blkio_cgroup_id = opc->blkio_cgroup_id;
+ }
+ 
+ /* Create a new blkio-cgroup. */
+@@ -158,25 +161,44 @@ blkio_cgroup_create(struct cgroup_subsys
+ {
+ 	struct blkio_cgroup *biog;
+ 	struct io_context *ioc;
++	int ret;
+ 
+ 	if (!cgrp->parent) {
+ 		biog = &default_blkio_cgroup;
+ 		init_io_context(biog->io_context);
+ 		/* Increment the referrence count not to be released ever. */
+ 		atomic_inc(&biog->io_context->refcount);
++		idr_init(&blkio_cgroup_id);
+ 		return &biog->css;
  	}
-Index: linux-2.6.31-rc3/fs/direct-io.c
+ 
+ 	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
+-	if (!biog)
+-		return ERR_PTR(-ENOMEM);
+ 	ioc = alloc_io_context(GFP_KERNEL, -1);
+-	if (!ioc) {
+-		kfree(biog);
+-		return ERR_PTR(-ENOMEM);
++	if (!ioc || !biog) {
++		ret = -ENOMEM;
++		goto out_err;
+ 	}
+ 	biog->io_context = ioc;
++retry:
++	if (!idr_pre_get(&blkio_cgroup_id, GFP_KERNEL)) {
++		ret = -EAGAIN;
++		goto out_err;
++	}
++	spin_lock_irq(&blkio_cgroup_idr_lock);
++	ret = idr_get_new_above(&blkio_cgroup_id, (void *)biog, 1, &biog->id);
++	spin_unlock_irq(&blkio_cgroup_idr_lock);
++	if (ret == -EAGAIN)
++		goto retry;
++	else if (ret)
++		goto out_err;
++
+ 	return &biog->css;
++out_err:
++	if (biog)
++		kfree(biog);
++	if (ioc)
++		put_io_context(ioc);
++	return ERR_PTR(ret);
+ }
+ 
+ /* Delete the blkio-cgroup. */
+@@ -185,10 +207,28 @@ static void blkio_cgroup_destroy(struct 
+ 	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
+ 
+ 	put_io_context(biog->io_context);
+-	free_css_id(&blkio_cgroup_subsys, &biog->css);
++
++	spin_lock_irq(&blkio_cgroup_idr_lock);
++	idr_remove(&blkio_cgroup_id, biog->id);
++	spin_unlock_irq(&blkio_cgroup_idr_lock);
++
+ 	kfree(biog);
+ }
+ 
++static struct blkio_cgroup *find_blkio_cgroup(int id)
++{
++	struct blkio_cgroup *biog;
++	spin_lock_irq(&blkio_cgroup_idr_lock);
++	/*
++	 * It might fail to find A bio-group associated with "id" since it
++	 * is allowed to remove the bio-cgroup even when some of I/O requests
++	 * this group issued haven't completed yet.
++	 */
++	biog = (struct blkio_cgroup *)idr_find(&blkio_cgroup_id, id);
++	spin_unlock_irq(&blkio_cgroup_idr_lock);
++	return biog;
++}
++
+ /**
+  * get_blkio_cgroup_id() - determine the blkio-cgroup ID
+  * @bio:	the &struct bio which describes the I/O
+@@ -200,14 +240,11 @@ unsigned long get_blkio_cgroup_id(struct
+ {
+ 	struct page_cgroup *pc;
+ 	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
+-	unsigned long id = 0;
++	int	id = 0;
+ 
+ 	pc = lookup_page_cgroup(page);
+-	if (pc) {
+-		lock_page_cgroup(pc);
+-		id = page_cgroup_get_id(pc);
+-		unlock_page_cgroup(pc);
+-	}
++	if (pc)
++		id = pc->blkio_cgroup_id;
+ 	return id;
+ }
+ 
+@@ -219,21 +256,17 @@ unsigned long get_blkio_cgroup_id(struct
+  */
+ struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
+ {
+-	struct cgroup_subsys_state *css;
+-	struct blkio_cgroup *biog;
++	struct blkio_cgroup *biog = NULL;
+ 	struct io_context *ioc;
+-	unsigned long id;
++	int	id = 0;
+ 
+ 	id = get_blkio_cgroup_id(bio);
+-	rcu_read_lock();
+-	css = css_lookup(&blkio_cgroup_subsys, id);
+-	if (css)
+-		biog = container_of(css, struct blkio_cgroup, css);
+-	else
++	if (id)
++		biog = find_blkio_cgroup(id);
++	if (!biog)
+ 		biog = &default_blkio_cgroup;
+ 	ioc = biog->io_context;	/* default io_context for this cgroup */
+ 	atomic_inc(&ioc->refcount);
+-	rcu_read_unlock();
+ 	return ioc;
+ }
+ 
+@@ -249,17 +282,15 @@ struct io_context *get_blkio_cgroup_ioco
+  */
+ struct cgroup *blkio_cgroup_lookup(int id)
+ {
+-	struct cgroup *cgrp;
+-	struct cgroup_subsys_state *css;
++	struct blkio_cgroup *biog = NULL;
+ 
+ 	if (blkio_cgroup_disabled())
+ 		return NULL;
+-
+-	css = css_lookup(&blkio_cgroup_subsys, id);
+-	if (!css)
++	if (id)
++		biog = find_blkio_cgroup(id);
++	if (!biog)
+ 		return NULL;
+-	cgrp = css->cgroup;
+-	return cgrp;
++	return biog->css.cgroup;
+ }
+ EXPORT_SYMBOL(get_blkio_cgroup_iocontext);
+ EXPORT_SYMBOL(get_blkio_cgroup_id);
+@@ -268,12 +299,8 @@ EXPORT_SYMBOL(blkio_cgroup_lookup);
+ static u64 blkio_id_read(struct cgroup *cgrp, struct cftype *cft)
+ {
+ 	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
+-	unsigned long id;
+ 
+-	rcu_read_lock();
+-	id = css_id(&biog->css);
+-	rcu_read_unlock();
+-	return (u64)id;
++	return (u64) biog->id;
+ }
+ 
+ 
+@@ -296,5 +323,4 @@ struct cgroup_subsys blkio_cgroup_subsys
+ 	.destroy	= blkio_cgroup_destroy,
+ 	.populate	= blkio_cgroup_populate,
+ 	.subsys_id	= blkio_cgroup_subsys_id,
+-	.use_id		= 1,
+ };
+Index: linux-2.6.31-rc3/include/linux/biotrack.h
 ===================================================================
---- linux-2.6.31-rc3.orig/fs/direct-io.c
-+++ linux-2.6.31-rc3/fs/direct-io.c
-@@ -33,6 +33,7 @@
- #include <linux/err.h>
- #include <linux/blkdev.h>
- #include <linux/buffer_head.h>
-+#include <linux/biotrack.h>
- #include <linux/rwsem.h>
- #include <linux/uio.h>
- #include <asm/atomic.h>
-@@ -797,6 +798,7 @@ static int do_direct_IO(struct dio *dio)
- 			ret = PTR_ERR(page);
- 			goto out;
- 		}
-+		blkio_cgroup_reset_owner(page, current->mm);
+--- linux-2.6.31-rc3.orig/include/linux/biotrack.h
++++ linux-2.6.31-rc3/include/linux/biotrack.h
+@@ -12,6 +12,7 @@ struct block_device;
  
- 		while (block_in_page < blocks_per_page) {
- 			unsigned offset_in_page = block_in_page << blkbits;
-Index: linux-2.6.31-rc3/mm/bounce.c
+ struct blkio_cgroup {
+ 	struct cgroup_subsys_state css;
++	int id;
+ 	struct io_context *io_context;	/* default io_context */
+ /*	struct radix_tree_root io_context_root; per device io_context */
+ };
+@@ -24,9 +25,7 @@ struct blkio_cgroup {
+  */
+ static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
+ {
+-	lock_page_cgroup(pc);
+-	page_cgroup_set_id(pc, 0);
+-	unlock_page_cgroup(pc);
++	pc->blkio_cgroup_id = 0;
+ }
+ 
+ /**
+Index: linux-2.6.31-rc3/include/linux/page_cgroup.h
 ===================================================================
---- linux-2.6.31-rc3.orig/mm/bounce.c
-+++ linux-2.6.31-rc3/mm/bounce.c
-@@ -13,6 +13,7 @@
- #include <linux/init.h>
- #include <linux/hash.h>
- #include <linux/highmem.h>
-+#include <linux/biotrack.h>
- #include <asm/tlbflush.h>
+--- linux-2.6.31-rc3.orig/include/linux/page_cgroup.h
++++ linux-2.6.31-rc3/include/linux/page_cgroup.h
+@@ -17,6 +17,9 @@ struct page_cgroup {
+ 	struct mem_cgroup *mem_cgroup;
+ 	struct list_head lru;		/* per cgroup LRU list */
+ #endif
++#ifdef CONFIG_CGROUP_BLKIO
++	int blkio_cgroup_id;
++#endif
+ };
  
- #include <trace/events/block.h>
-@@ -210,6 +211,7 @@ static void __blk_queue_bounce(struct re
- 		to->bv_len = from->bv_len;
- 		to->bv_offset = from->bv_offset;
- 		inc_zone_page_state(to->bv_page, NR_BOUNCE);
-+		blkio_cgroup_copy_owner(to->bv_page, page);
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
+@@ -140,27 +143,4 @@ static inline void swap_cgroup_swapoff(i
+ }
  
- 		if (rw == WRITE) {
- 			char *vto, *vfrom;
-Index: linux-2.6.31-rc3/mm/filemap.c
-===================================================================
---- linux-2.6.31-rc3.orig/mm/filemap.c
-+++ linux-2.6.31-rc3/mm/filemap.c
-@@ -33,6 +33,7 @@
- #include <linux/cpuset.h>
- #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
- #include <linux/memcontrol.h>
-+#include <linux/biotrack.h>
- #include <linux/mm_inline.h> /* for page_is_file_cache() */
- #include "internal.h"
- 
-@@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page
- 					gfp_mask & GFP_RECLAIM_MASK);
- 	if (error)
- 		goto out;
-+	blkio_cgroup_set_owner(page, current->mm);
- 
- 	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
- 	if (error == 0) {
-Index: linux-2.6.31-rc3/mm/memory.c
-===================================================================
---- linux-2.6.31-rc3.orig/mm/memory.c
-+++ linux-2.6.31-rc3/mm/memory.c
-@@ -51,6 +51,7 @@
- #include <linux/init.h>
- #include <linux/writeback.h>
- #include <linux/memcontrol.h>
-+#include <linux/biotrack.h>
- #include <linux/mmu_notifier.h>
- #include <linux/kallsyms.h>
- #include <linux/swapops.h>
-@@ -2115,6 +2116,7 @@ gotten:
- 		 */
- 		ptep_clear_flush_notify(vma, address, page_table);
- 		page_add_new_anon_rmap(new_page, vma, address);
-+		blkio_cgroup_set_owner(new_page, mm);
- 		set_pte_at(mm, address, page_table, entry);
- 		update_mmu_cache(vma, address, entry);
- 		if (old_page) {
-@@ -2580,6 +2582,7 @@ static int do_swap_page(struct mm_struct
- 	flush_icache_page(vma, page);
- 	set_pte_at(mm, address, page_table, pte);
- 	page_add_anon_rmap(page, vma, address);
-+	blkio_cgroup_reset_owner(page, mm);
- 	/* It's better to call commit-charge after rmap is established */
- 	mem_cgroup_commit_charge_swapin(page, ptr);
- 
-@@ -2644,6 +2647,7 @@ static int do_anonymous_page(struct mm_s
- 		goto release;
- 	inc_mm_counter(mm, anon_rss);
- 	page_add_new_anon_rmap(page, vma, address);
-+	blkio_cgroup_set_owner(page, mm);
- 	set_pte_at(mm, address, page_table, entry);
- 
- 	/* No need to invalidate - it was non-present before */
-@@ -2791,6 +2795,7 @@ static int __do_fault(struct mm_struct *
- 		if (anon) {
- 			inc_mm_counter(mm, anon_rss);
- 			page_add_new_anon_rmap(page, vma, address);
-+			blkio_cgroup_set_owner(page, mm);
- 		} else {
- 			inc_mm_counter(mm, file_rss);
- 			page_add_file_rmap(page);
-Index: linux-2.6.31-rc3/mm/page-writeback.c
-===================================================================
---- linux-2.6.31-rc3.orig/mm/page-writeback.c
-+++ linux-2.6.31-rc3/mm/page-writeback.c
-@@ -23,6 +23,7 @@
- #include <linux/init.h>
- #include <linux/backing-dev.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/biotrack.h>
- #include <linux/blkdev.h>
- #include <linux/mpage.h>
- #include <linux/rmap.h>
-@@ -1247,6 +1248,7 @@ int __set_page_dirty_nobuffers(struct pa
- 			BUG_ON(mapping2 != mapping);
- 			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
- 			account_page_dirtied(page, mapping);
-+			blkio_cgroup_reset_owner_pagedirty(page, current->mm);
- 			radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
- 		}
-Index: linux-2.6.31-rc3/mm/swap_state.c
-===================================================================
---- linux-2.6.31-rc3.orig/mm/swap_state.c
-+++ linux-2.6.31-rc3/mm/swap_state.c
-@@ -18,6 +18,7 @@
- #include <linux/pagevec.h>
- #include <linux/migrate.h>
- #include <linux/page_cgroup.h>
-+#include <linux/biotrack.h>
- 
- #include <asm/pgtable.h>
- 
-@@ -307,6 +308,7 @@ struct page *read_swap_cache_async(swp_e
- 		 */
- 		__set_page_locked(new_page);
- 		SetPageSwapBacked(new_page);
-+		blkio_cgroup_set_owner(new_page, current->mm);
- 		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
- 		if (likely(!err)) {
- 			/*
+ #endif
+-
+-#ifdef CONFIG_CGROUP_BLKIO
+-/*
+- * use lower 16 bits for flags and reserve the rest for the page tracking id
+- */
+-#define PCG_TRACKING_ID_SHIFT	(16)
+-#define PCG_TRACKING_ID_BITS \
+-	(8 * sizeof(unsigned long) - PCG_TRACKING_ID_SHIFT)
+-
+-/* NOTE: must be called with page_cgroup() held */
+-static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
+-{
+-	return pc->flags >> PCG_TRACKING_ID_SHIFT;
+-}
+-
+-/* NOTE: must be called with page_cgroup() held */
+-static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
+-{
+-	WARN_ON(id >= (1UL << PCG_TRACKING_ID_BITS));
+-	pc->flags &= (1UL << PCG_TRACKING_ID_SHIFT) - 1;
+-	pc->flags |= (unsigned long)(id << PCG_TRACKING_ID_SHIFT);
+-}
+-#endif
+ #endif
