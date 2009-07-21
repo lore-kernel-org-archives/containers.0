@@ -1,15 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 6/9] blkio-cgroup-v9: The document of blkio-cgroup
-Date: Tue, 21 Jul 2009 23:15:05 +0900 (JST)
-Message-ID: <20090721.231505.112612378.ryov__32094.3334060305$1248186310$gmane$org@valinux.co.jp>
-References: <20090721.231211.71098738.ryov@valinux.co.jp>
-	<20090721.231313.104044139.ryov@valinux.co.jp>
+Subject: [PATCH 7/9] blkio-cgroup-v9: Page tracking hooks
+Date: Tue, 21 Jul 2009 23:23:16 +0900 (JST)
+Message-ID: <20090721.232316.183036419.ryov__45848.5703835779$1248186445$gmane$org@valinux.co.jp>
+References: <20090721.231313.104044139.ryov@valinux.co.jp>
 	<20090721.231405.189716609.ryov@valinux.co.jp>
+	<20090721.231505.112612378.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090721.231405.189716609.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090721.231505.112612378.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,317 +23,183 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The document of blkio-cgroup.
+This patch contains several hooks that let the blkio-cgroup framework to know
+which blkio-cgroup is the owner of a page before starting I/O against the page.
 
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
 ---
- Documentation/cgroups/00-INDEX  |    2 
- Documentation/cgroups/blkio.txt |  289 ++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 291 insertions(+)
+ fs/buffer.c         |    2 ++
+ fs/direct-io.c      |    2 ++
+ mm/bounce.c         |    2 ++
+ mm/filemap.c        |    2 ++
+ mm/memory.c         |    5 +++++
+ mm/page-writeback.c |    2 ++
+ mm/swap_state.c     |    2 ++
+ 7 files changed, 17 insertions(+)
 
-Index: linux-2.6.31-rc3/Documentation/cgroups/00-INDEX
+Index: linux-2.6.31-rc3/fs/buffer.c
 ===================================================================
---- linux-2.6.31-rc3.orig/Documentation/cgroups/00-INDEX
-+++ linux-2.6.31-rc3/Documentation/cgroups/00-INDEX
-@@ -16,3 +16,5 @@ memory.txt
- 	- Memory Resource Controller; design, accounting, interface, testing.
- resource_counter.txt
- 	- Resource Counter API.
-+blkio.txt
-+	- Block I/O Tracking; description, interface and examples.
-Index: linux-2.6.31-rc3/Documentation/cgroups/blkio.txt
+--- linux-2.6.31-rc3.orig/fs/buffer.c
++++ linux-2.6.31-rc3/fs/buffer.c
+@@ -36,6 +36,7 @@
+ #include <linux/buffer_head.h>
+ #include <linux/task_io_accounting_ops.h>
+ #include <linux/bio.h>
++#include <linux/biotrack.h>
+ #include <linux/notifier.h>
+ #include <linux/cpu.h>
+ #include <linux/bitops.h>
+@@ -668,6 +669,7 @@ static void __set_page_dirty(struct page
+ 	if (page->mapping) {	/* Race with truncate? */
+ 		WARN_ON_ONCE(warn && !PageUptodate(page));
+ 		account_page_dirtied(page, mapping);
++		blkio_cgroup_reset_owner_pagedirty(page, current->mm);
+ 		radix_tree_tag_set(&mapping->page_tree,
+ 				page_index(page), PAGECACHE_TAG_DIRTY);
+ 	}
+Index: linux-2.6.31-rc3/fs/direct-io.c
 ===================================================================
---- /dev/null
-+++ linux-2.6.31-rc3/Documentation/cgroups/blkio.txt
-@@ -0,0 +1,289 @@
-+Block I/O Cgroup
-+
-+1. Overview
-+
-+Using this feature the owners of any type of I/O can be determined.
-+This allows dm-ioband to control block I/O bandwidth even when it is
-+accepting delayed write requests. dm-ioband can find the cgroup of
-+each request. It is also for possible that others working on I/O
-+bandwidth throttling to use this functionality to control asynchronous
-+I/O with a little enhancement.
-+
-+2. Setting up blkio-cgroup
-+
-+Note: If dm-ioband is to be used with blkio-cgroup, then the dm-ioband
-+patch needs to be applied first.
-+
-+The following kernel config options are required.
-+
-+CONFIG_CGROUPS=y
-+CONFIG_CGROUP_BLKIO=y
-+
-+Selecting the options for the cgroup memory subsystem is also recommended
-+as it makes it possible to give some I/O bandwidth and memory to a selected
-+cgroup to control delayed write requests. The amount of dirty pages is
-+limited within the cgroup even if the allocated bandwidth is narrow.
-+
-+CONFIG_RESOURCE_COUNTERS=y
-+CONFIG_CGROUP_MEM_RES_CTLR=y
-+
-+3. User interface
-+
-+3.1 Mounting the cgroup filesystem
-+
-+First, mount the cgroup filesystem in order to enable observation and
-+modification of the blkio-cgroup settings.
-+
-+# mount -t cgroup -o blkio none /cgroup
-+
-+3.2 The blkio.id file
-+
-+After mounting the cgroup filesystem the blkio.id file will be visible
-+in the cgroup directory. This file contains a unique ID number for
-+each cgroup. When an I/O operation starts, blkio-cgroup sets the
-+page's ID number on the page cgroup. The cgroup of I/O can be
-+determined by retrieving the ID number from the page cgroup, because
-+the page cgroup is associated with the page which is involved in the
-+I/O.
-+
-+If the dm-ioband support patch was applied then the blkio.devices and
-+blkio.settings files will also be present.
-+
-+4. Using dm-ioband and blkio-cgroup
-+
-+This section describes how to set up dm-ioband and blkio-cgroup in
-+order to control bandwidth on a per cgroup per logical volume basis.
-+The example used in this section assumes that there are two LVM volume
-+groups on individual hard disks and two logical volumes on each volume
-+group.
-+
-+                         Table. LVM configurations
-+
-+     --------------------------------------------------------------
-+    |   LVM volume groups  |  vg0 on /dev/sda  |  vg1 on /dev/sdb  |
-+    |----------------------|-------------------|-------------------|
-+    |  LVM logical volume  |   lv0   |   lv1   |   lv0   |   lv1   |
-+     --------------------------------------------------------------
-+
-+4.1. Creating a dm-ioband logical device
-+
-+A dm-ioband logical device needs to be created and stacked on the
-+device that is to bandwidth controlled. In this example the dm-ioband
-+logical devices are stacked on each of the existing LVM logical
-+volumes. By using the LVM facilities there is no need to unmount any
-+logical volumes, even in the case of a volume being used as the root
-+device. The following script is an example of how to stack and remove
-+dm-ioband devices.
-+
-+==================== cut here (ioband.sh) ====================
-+#!/bin/sh
-+#
-+# NOTE: You must run "ioband.sh stop" to restore the device-mapper
-+# settings before changing logical volume settings, such as activate,
-+# rename, resize and so on. These constraints would be eliminated by
-+# enhancing LVM tools to support dm-ioband.
-+
-+logvols="vg0-lv0 vg0-lv1 vg1-lv0 vg1-lv1"
-+
-+start()
-+{
-+	for lv in $logvols; do
-+		volgrp=${lv%%-*}
-+		orig=${lv}-orig
-+
-+		# clone an existing logical volume.
-+		/sbin/dmsetup table $lv | /sbin/dmsetup create $orig
-+
-+		# stack a dm-ioband device on the clone.
-+		size=$(/sbin/blockdev --getsize /dev/mapper/$orig)
-+		cat<<-EOM | /sbin/dmsetup load ${lv}
-+	0 $size ioband /dev/mapper/${orig} ${volgrp} 0 0 cgroup weight 0 :100
-+		EOM
-+
-+		# activate the new setting.
-+		/sbin/dmsetup resume $lv
-+	done
-+}
-+
-+stop()
-+{
-+	for lv in $logvols; do
-+		orig=${lv}-orig
-+
-+		# restore the original setting.
-+		/sbin/dmsetup table $orig | /sbin/dmsetup load $lv
-+
-+		# activate the new setting.
-+		/sbin/dmsetup resume $lv
-+
-+		# remove the clone.
-+		/sbin/dmsetup remove $orig
-+	done
-+}
-+
-+case "$1" in
-+	start)
-+		start
-+        ;;
-+	stop)
-+		stop
-+        ;;
-+esac
-+exit 0
-+==================== cut here (ioband.sh) ====================
-+
-+The following diagram shows how dm-ioband devices are stacked on and
-+removed from the logical volumes.
-+
-+           Figure. stacking and removing dm-ioband devices
-+
-+                     run "ioband.sh start"
-+                              ===>
-+
-+     -----------------------        -----------------------
-+    |    lv0    |    lv1    |      |    lv0    |    lv1    |
-+    |(dm-linear)|(dm-linear)|      |(dm-ioband)|(dm-ioband)|
-+    |-----------------------|      |-----------------------|
-+    |         vg0           |      | lv0-orig  | lv1-orig  |
-+     -----------------------       |(dm-linear)|(dm-linear)|
-+                                   |-----------------------|
-+                                   |          vg0          |
-+                                    -----------------------
-+                              <===
-+                      run "ioband.sh stop"
-+
-+After creating the dm-ioband devices, the settings can be observed by
-+reading the blkio.devices file.
-+
-+# cat /cgroup/blkio.devices
-+vg0 policy=weight io_throttle=4 io_limit=192 token=768 carryover=2
-+  vg0-lv0
-+  vg0-lv1
-+vg1 policy=weight io_throttle=4 io_limit=192 token=768 carryover=2
-+  vg1-lv0
-+  vg1-lv1
-+
-+The first field in the first line is the symbolic name for an ioband
-+device group, and the subsequent fields are settings for the ioband
-+device group. The settings can be changed by writing to the
-+blkio.devices, for example:
-+
-+# echo vg1 policy range-bw > /cgroup/blkio.devices
-+
-+Please refer to Document/device-mapper/ioband.txt which describes the
-+details of the ioband device group settings.
-+
-+The second and the third indented lines "vg0-lv0" and "vg0-lv1" are
-+the names of the dm-ioband devices that belong to the ioband device
-+group. Typically, dm-ioband devices that reside on the same hard disk
-+should belong to the same ioband device group in order to share the
-+bandwidth of the hard disk.
-+
-+dm-ioband is not restricted to working with LVM, it may work in
-+conjunction with any type of block device. Please refer to
-+Documentation/device-mapper/ioband.txt for more details.
-+
-+4.2 Setting up dm-ioband through the blkio-cgroup interface
-+
-+The following table shows the given settings for this example. The
-+bandwidth will be assigned on a per cgroup per logical volume basis.
-+
-+                   Table. Settings for each cgroup
-+
-+     --------------------------------------------------------------
-+    |   LVM volume groups  |  vg0 on /dev/sda  |  vg1 on /dev/sdb  |
-+    |----------------------|-------------------|-------------------|
-+    |  LVM logical volume  |   lv0   |   lv1   |   lv0   |   lv1   |
-+    |----------------------|-------------------|-------------------|
-+    |   bandwidth control  |     relative      |     absolute      |
-+    |        policy        |      weight       |  bandwidth limit  |
-+    |----------------------|-------------------|-------------------|
-+    |         unit         | weight value (*1) | throughput [KB/s] |
-+    |----------------------|-------------------|-------------------|
-+    | settings for cgroup1 | 40 (16) | 90 (36) |   400   |   900   |
-+    |----------------------|---------|---------|---------|---------|
-+    | settings for cgroup2 | 20  (8) | 60 (24) |   200   |   600   |
-+    |----------------------|---------|---------|---------|---------|
-+    |   for other cgroups  | 10  (4) | 30 (12) |   100   |   300   |
-+     --------------------------------------------------------------
-+
-+        *1: The values enclosed in () denote the preceding weight
-+            as a percentage of the total weight. The bandwidth of
-+            vg0 is distributed proportional to the total weight.
-+
-+The set-up is described step-by-step below.
-+
-+1) Create new cgroups using the mkdir command
-+
-+# mkdir /cgroup/1
-+# mkdir /cgroup/2
-+
-+2) Set bandwidth control policy on each ioband device group
-+
-+The set-up of bandwidth control policy is done by writing to
-+blkio.devices file.
-+
-+# echo vg0 policy weight > /cgroup/blkio.devices
-+# echo vg1 policy range-bw > /cgroup/blkio.devices
-+
-+3) Set up the root cgroup
-+
-+The root cgroup represents the default blkio-cgroup. If an I/O is
-+performed by a process in a cgroup and the cgroup is not set up by
-+blkio-cgroup, the I/O is charged to the root cgroup.
-+
-+The set-up of the root cgroup is done by writing to blkio.settings
-+file in the cgroup's root directory. The following commands write
-+the settings of each logical volume to that file.
-+
-+# echo vg0-lv0 10 > /cgroup/bklio.settings
-+# echo vg0-lv1 30 > /cgroup/bklio.settings
-+# echo vg1-lv0 100:100 > /cgroup/blkio.settings
-+# echo vg1-lv1 300:300 > /cgroup/blkio.settings
-+
-+The settings can be verified by reading the blkio.settings file.
-+
-+# cat /cgroup/blkio.settings
-+vg0-lv0 weight=10
-+vg0-lv1 weight=30
-+vg1-lv0 range-bw=100:100
-+vg1-lv1 range-bw=300:300
-+
-+4) Set up cgroup1 and cgroup2
-+
-+New cgroups are set up in the same manner as the root cgroup.
-+
-+Settings for cgroup1
-+# echo vg0-lv0 40 > /cgroup/1/blkio.settings
-+# echo vg0-lv1 90 > /cgroup/1/bklio.settings
-+# echo vg1-lv0 400:400 > /cgroup/1/blkio.settings
-+# echo vg1-lv1 900:900 > /cgroup/1/bklio.settings
-+
-+Settings for cgroup2
-+# echo vg0-lv0 20 > /cgroup/2/blkio.settings
-+# echo vg0-lv1 60 > /cgroup/2/bklio.settings
-+# echo vg1-lv0 200:200 > /cgroup/2/blkio.settings
-+# echo vg1-lv1 600:600 > /cgroup/2/bklio.settings
-+
-+Again, the settings can be verified by reading the appropriate
-+blkio.settings file.
-+
-+# cat /cgroup/1/blkio.settings
-+vg0-lv0 weight=40
-+vg0-lv1 weight=90
-+vg1-lv0 range-bw=400:400
-+vg1-lv1 range-bw=900:900
-+
-+If only the logical volume name is specified, the entry for the
-+logical volume is removed.
-+
-+# echo vg0-lv1 > /cgroup/1/vlkio.setting
-+# cat /cgroup/1/blkio.settings
-+vg0-lv0 weight=40
-+vg0-lv1 weight=90
-+vg1-lv0 range-bw=400:400
-+
-+5. Contact
-+
-+Linux Block I/O Bandwidth Control Project
-+http://sourceforge.net/projects/ioband/
+--- linux-2.6.31-rc3.orig/fs/direct-io.c
++++ linux-2.6.31-rc3/fs/direct-io.c
+@@ -33,6 +33,7 @@
+ #include <linux/err.h>
+ #include <linux/blkdev.h>
+ #include <linux/buffer_head.h>
++#include <linux/biotrack.h>
+ #include <linux/rwsem.h>
+ #include <linux/uio.h>
+ #include <asm/atomic.h>
+@@ -797,6 +798,7 @@ static int do_direct_IO(struct dio *dio)
+ 			ret = PTR_ERR(page);
+ 			goto out;
+ 		}
++		blkio_cgroup_reset_owner(page, current->mm);
+ 
+ 		while (block_in_page < blocks_per_page) {
+ 			unsigned offset_in_page = block_in_page << blkbits;
+Index: linux-2.6.31-rc3/mm/bounce.c
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/bounce.c
++++ linux-2.6.31-rc3/mm/bounce.c
+@@ -13,6 +13,7 @@
+ #include <linux/init.h>
+ #include <linux/hash.h>
+ #include <linux/highmem.h>
++#include <linux/biotrack.h>
+ #include <asm/tlbflush.h>
+ 
+ #include <trace/events/block.h>
+@@ -210,6 +211,7 @@ static void __blk_queue_bounce(struct re
+ 		to->bv_len = from->bv_len;
+ 		to->bv_offset = from->bv_offset;
+ 		inc_zone_page_state(to->bv_page, NR_BOUNCE);
++		blkio_cgroup_copy_owner(to->bv_page, page);
+ 
+ 		if (rw == WRITE) {
+ 			char *vto, *vfrom;
+Index: linux-2.6.31-rc3/mm/filemap.c
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/filemap.c
++++ linux-2.6.31-rc3/mm/filemap.c
+@@ -33,6 +33,7 @@
+ #include <linux/cpuset.h>
+ #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
+ #include <linux/memcontrol.h>
++#include <linux/biotrack.h>
+ #include <linux/mm_inline.h> /* for page_is_file_cache() */
+ #include "internal.h"
+ 
+@@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page
+ 					gfp_mask & GFP_RECLAIM_MASK);
+ 	if (error)
+ 		goto out;
++	blkio_cgroup_set_owner(page, current->mm);
+ 
+ 	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
+ 	if (error == 0) {
+Index: linux-2.6.31-rc3/mm/memory.c
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/memory.c
++++ linux-2.6.31-rc3/mm/memory.c
+@@ -51,6 +51,7 @@
+ #include <linux/init.h>
+ #include <linux/writeback.h>
+ #include <linux/memcontrol.h>
++#include <linux/biotrack.h>
+ #include <linux/mmu_notifier.h>
+ #include <linux/kallsyms.h>
+ #include <linux/swapops.h>
+@@ -2115,6 +2116,7 @@ gotten:
+ 		 */
+ 		ptep_clear_flush_notify(vma, address, page_table);
+ 		page_add_new_anon_rmap(new_page, vma, address);
++		blkio_cgroup_set_owner(new_page, mm);
+ 		set_pte_at(mm, address, page_table, entry);
+ 		update_mmu_cache(vma, address, entry);
+ 		if (old_page) {
+@@ -2580,6 +2582,7 @@ static int do_swap_page(struct mm_struct
+ 	flush_icache_page(vma, page);
+ 	set_pte_at(mm, address, page_table, pte);
+ 	page_add_anon_rmap(page, vma, address);
++	blkio_cgroup_reset_owner(page, mm);
+ 	/* It's better to call commit-charge after rmap is established */
+ 	mem_cgroup_commit_charge_swapin(page, ptr);
+ 
+@@ -2644,6 +2647,7 @@ static int do_anonymous_page(struct mm_s
+ 		goto release;
+ 	inc_mm_counter(mm, anon_rss);
+ 	page_add_new_anon_rmap(page, vma, address);
++	blkio_cgroup_set_owner(page, mm);
+ 	set_pte_at(mm, address, page_table, entry);
+ 
+ 	/* No need to invalidate - it was non-present before */
+@@ -2791,6 +2795,7 @@ static int __do_fault(struct mm_struct *
+ 		if (anon) {
+ 			inc_mm_counter(mm, anon_rss);
+ 			page_add_new_anon_rmap(page, vma, address);
++			blkio_cgroup_set_owner(page, mm);
+ 		} else {
+ 			inc_mm_counter(mm, file_rss);
+ 			page_add_file_rmap(page);
+Index: linux-2.6.31-rc3/mm/page-writeback.c
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/page-writeback.c
++++ linux-2.6.31-rc3/mm/page-writeback.c
+@@ -23,6 +23,7 @@
+ #include <linux/init.h>
+ #include <linux/backing-dev.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/biotrack.h>
+ #include <linux/blkdev.h>
+ #include <linux/mpage.h>
+ #include <linux/rmap.h>
+@@ -1247,6 +1248,7 @@ int __set_page_dirty_nobuffers(struct pa
+ 			BUG_ON(mapping2 != mapping);
+ 			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
+ 			account_page_dirtied(page, mapping);
++			blkio_cgroup_reset_owner_pagedirty(page, current->mm);
+ 			radix_tree_tag_set(&mapping->page_tree,
+ 				page_index(page), PAGECACHE_TAG_DIRTY);
+ 		}
+Index: linux-2.6.31-rc3/mm/swap_state.c
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/swap_state.c
++++ linux-2.6.31-rc3/mm/swap_state.c
+@@ -18,6 +18,7 @@
+ #include <linux/pagevec.h>
+ #include <linux/migrate.h>
+ #include <linux/page_cgroup.h>
++#include <linux/biotrack.h>
+ 
+ #include <asm/pgtable.h>
+ 
+@@ -307,6 +308,7 @@ struct page *read_swap_cache_async(swp_e
+ 		 */
+ 		__set_page_locked(new_page);
+ 		SetPageSwapBacked(new_page);
++		blkio_cgroup_set_owner(new_page, current->mm);
+ 		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
+ 		if (likely(!err)) {
+ 			/*
