@@ -1,14 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 3/9] blkio-cgroup-v9: The new page_cgroup framework
-Date: Tue, 21 Jul 2009 23:12:11 +0900 (JST)
-Message-ID: <20090721.231211.71098738.ryov__27324.3198440925$1248185609$gmane$org@valinux.co.jp>
-References: <20090721.230911.193692312.ryov@valinux.co.jp>
-	<20090721.231004.226793074.ryov@valinux.co.jp>
+Subject: [PATCH 5/9] blkio-cgroup-v9: The body of blkio-cgroup
+Date: Tue, 21 Jul 2009 23:14:05 +0900 (JST)
+Message-ID: <20090721.231405.189716609.ryov__12809.5811735422$1248185720$gmane$org@valinux.co.jp>
+References: <20090721.231004.226793074.ryov@valinux.co.jp>
+	<20090721.231211.71098738.ryov@valinux.co.jp>
+	<20090721.231313.104044139.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090721.231004.226793074.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090721.231313.104044139.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,160 +23,585 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch makes the page_cgroup framework be able to be used even if
-the compile option of the cgroup memory controller is off.
-So blkio-cgroup can use this framework without the memory controller.
+The body of blkio-cgroup.
 
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
 ---
- include/linux/memcontrol.h  |    6 ++++++
- include/linux/mmzone.h      |    4 ++--
- include/linux/page_cgroup.h |    8 +++++---
- init/Kconfig                |    4 ++++
- mm/Makefile                 |    3 ++-
- mm/memcontrol.c             |    6 ++++++
- mm/page_cgroup.c            |    3 +--
- 7 files changed, 26 insertions(+), 8 deletions(-)
+ include/linux/biotrack.h      |   97 +++++++++++++
+ include/linux/cgroup_subsys.h |    6 
+ include/linux/page_cgroup.h   |   23 +++
+ init/Kconfig                  |   13 +
+ mm/Makefile                   |    1 
+ mm/biotrack.c                 |  300 ++++++++++++++++++++++++++++++++++++++++++
+ mm/page_cgroup.c              |   20 +-
+ 7 files changed, 451 insertions(+), 9 deletions(-)
 
-Index: linux-2.6.31-rc3/include/linux/memcontrol.h
+Index: linux-2.6.31-rc3/include/linux/biotrack.h
 ===================================================================
---- linux-2.6.31-rc3.orig/include/linux/memcontrol.h
-+++ linux-2.6.31-rc3/include/linux/memcontrol.h
-@@ -37,6 +37,8 @@ struct mm_struct;
-  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
-  */
- 
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
+--- /dev/null
++++ linux-2.6.31-rc3/include/linux/biotrack.h
+@@ -0,0 +1,97 @@
++#include <linux/cgroup.h>
++#include <linux/mm.h>
++#include <linux/page_cgroup.h>
 +
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -121,6 +123,10 @@ void mem_cgroup_update_mapped_file_stat(
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
++#ifndef _LINUX_BIOTRACK_H
++#define _LINUX_BIOTRACK_H
++
++#ifdef CONFIG_CGROUP_BLKIO
++
++struct io_context;
++struct block_device;
++
++struct blkio_cgroup {
++	struct cgroup_subsys_state css;
++	struct io_context *io_context;	/* default io_context */
++/*	struct radix_tree_root io_context_root; per device io_context */
++};
++
++/**
++ * __init_blkio_page_cgroup() - initialize a blkio_page_cgroup
++ * @pc:		page_cgroup of the page
++ *
++ * Reset the owner ID of a page.
++ */
++static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
++{
++	lock_page_cgroup(pc);
++	page_cgroup_set_id(pc, 0);
++	unlock_page_cgroup(pc);
++}
++
++/**
++ * blkio_cgroup_disabled() - check whether blkio_cgroup is disabled
++ *
++ * Returns true if disabled, false if not.
++ */
++static inline bool blkio_cgroup_disabled(void)
++{
++	if (blkio_cgroup_subsys.disabled)
++		return true;
++	return false;
++}
++
++extern void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm);
++extern void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm);
++extern void blkio_cgroup_reset_owner_pagedirty(struct page *page,
++						 struct mm_struct *mm);
++extern void blkio_cgroup_copy_owner(struct page *page, struct page *opage);
++
++extern struct io_context *get_blkio_cgroup_iocontext(struct bio *bio);
++extern unsigned long get_blkio_cgroup_id(struct bio *bio);
++extern struct cgroup *blkio_cgroup_lookup(int id);
++
++#else /* !CONFIG_CGROUP_BLKIO */
++
++struct blkio_cgroup;
++
++static inline void __init_blkio_page_cgroup(struct page_cgroup *pc)
 +{
 +}
 +
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-Index: linux-2.6.31-rc3/include/linux/mmzone.h
++static inline bool blkio_cgroup_disabled(void)
++{
++	return true;
++}
++
++static inline void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
++{
++}
++
++static inline void blkio_cgroup_reset_owner(struct page *page,
++						struct mm_struct *mm)
++{
++}
++
++static inline void blkio_cgroup_reset_owner_pagedirty(struct page *page,
++						struct mm_struct *mm)
++{
++}
++
++static inline void blkio_cgroup_copy_owner(struct page *page, struct page *opage)
++{
++}
++
++static inline struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
++{
++	return NULL;
++}
++
++static inline unsigned long get_blkio_cgroup_id(struct bio *bio)
++{
++	return 0;
++}
++
++#endif /* CONFIG_CGROUP_BLKIO */
++
++#endif /* _LINUX_BIOTRACK_H */
+Index: linux-2.6.31-rc3/include/linux/cgroup_subsys.h
 ===================================================================
---- linux-2.6.31-rc3.orig/include/linux/mmzone.h
-+++ linux-2.6.31-rc3/include/linux/mmzone.h
-@@ -605,7 +605,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -956,7 +956,7 @@ struct mem_section {
+--- linux-2.6.31-rc3.orig/include/linux/cgroup_subsys.h
++++ linux-2.6.31-rc3/include/linux/cgroup_subsys.h
+@@ -43,6 +43,12 @@ SUBSYS(mem_cgroup)
  
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
+ /* */
+ 
++#ifdef CONFIG_CGROUP_BLKIO
++SUBSYS(blkio_cgroup)
++#endif
++
++/* */
++
+ #ifdef CONFIG_CGROUP_DEVICE
+ SUBSYS(devices)
+ #endif
 Index: linux-2.6.31-rc3/include/linux/page_cgroup.h
 ===================================================================
 --- linux-2.6.31-rc3.orig/include/linux/page_cgroup.h
 +++ linux-2.6.31-rc3/include/linux/page_cgroup.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- #include <linux/bit_spinlock.h>
- /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -12,9 +12,11 @@
-  */
- struct page_cgroup {
- 	unsigned long flags;
--	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
-+#endif
- };
- 
- void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat);
-@@ -83,7 +85,7 @@ static inline void unlock_page_cgroup(st
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+@@ -140,4 +140,27 @@ static inline void swap_cgroup_swapoff(i
  }
  
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_CGROUP_PAGE */
- struct page_cgroup;
- 
- static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+ #endif
++
++#ifdef CONFIG_CGROUP_BLKIO
++/*
++ * use lower 16 bits for flags and reserve the rest for the page tracking id
++ */
++#define PCG_TRACKING_ID_SHIFT	(16)
++#define PCG_TRACKING_ID_BITS \
++	(8 * sizeof(unsigned long) - PCG_TRACKING_ID_SHIFT)
++
++/* NOTE: must be called with page_cgroup() held */
++static inline unsigned long page_cgroup_get_id(struct page_cgroup *pc)
++{
++	return pc->flags >> PCG_TRACKING_ID_SHIFT;
++}
++
++/* NOTE: must be called with page_cgroup() held */
++static inline void page_cgroup_set_id(struct page_cgroup *pc, unsigned long id)
++{
++	WARN_ON(id >= (1UL << PCG_TRACKING_ID_BITS));
++	pc->flags &= (1UL << PCG_TRACKING_ID_SHIFT) - 1;
++	pc->flags |= (unsigned long)(id << PCG_TRACKING_ID_SHIFT);
++}
++#endif
+ #endif
 Index: linux-2.6.31-rc3/init/Kconfig
 ===================================================================
 --- linux-2.6.31-rc3.orig/init/Kconfig
 +++ linux-2.6.31-rc3/init/Kconfig
-@@ -614,6 +614,10 @@ config CGROUP_MEM_RES_CTLR_SWAP
+@@ -614,9 +614,20 @@ config CGROUP_MEM_RES_CTLR_SWAP
  
  endif # CGROUPS
  
-+config CGROUP_PAGE
-+	def_bool y
-+	depends on CGROUP_MEM_RES_CTLR
++config CGROUP_BLKIO
++	bool "Block I/O cgroup subsystem"
++	depends on CGROUPS && BLOCK
++	select MM_OWNER
++	help
++	  Provides a Resource Controller which enables to track the onwner
++	  of every Block I/O requests.
++	  The information this subsystem provides can be used from any
++	  kind of module such as dm-ioband device mapper modules or
++	  the cfq-scheduler.
 +
+ config CGROUP_PAGE
+ 	def_bool y
+-	depends on CGROUP_MEM_RES_CTLR
++	depends on CGROUP_MEM_RES_CTLR || CGROUP_BLKIO
+ 
  config MM_OWNER
  	bool
- 
-Index: linux-2.6.31-rc3/mm/Makefile
+Index: linux-2.6.31-rc3/mm/biotrack.c
 ===================================================================
---- linux-2.6.31-rc3.orig/mm/Makefile
-+++ linux-2.6.31-rc3/mm/Makefile
-@@ -39,6 +39,7 @@ else
- obj-$(CONFIG_SMP) += allocpercpu.o
- endif
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
- obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
- obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
-Index: linux-2.6.31-rc3/mm/memcontrol.c
-===================================================================
---- linux-2.6.31-rc3.orig/mm/memcontrol.c
-+++ linux-2.6.31-rc3/mm/memcontrol.c
-@@ -129,6 +129,12 @@ struct mem_cgroup_lru_info {
- 	struct mem_cgroup_per_node *nodeinfo[MAX_NUMNODES];
- };
- 
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
+--- /dev/null
++++ linux-2.6.31-rc3/mm/biotrack.c
+@@ -0,0 +1,300 @@
++/* biotrack.c - Block I/O Tracking
++ *
++ * Copyright (C) VA Linux Systems Japan, 2008-2009
++ * Developed by Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
++ *
++ * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
++ * Use part of page_cgroup->flags to store blkio-cgroup ID.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/smp.h>
++#include <linux/bit_spinlock.h>
++#include <linux/blkdev.h>
++#include <linux/biotrack.h>
++#include <linux/mm_inline.h>
++
++/*
++ * The block I/O tracking mechanism is implemented on the cgroup memory
++ * controller framework. It helps to find the the owner of an I/O request
++ * because every I/O request has a target page and the owner of the page
++ * can be easily determined on the framework.
++ */
++
++/* Return the blkio_cgroup that associates with a cgroup. */
++static inline struct blkio_cgroup *cgroup_blkio(struct cgroup *cgrp)
 +{
-+	pc->mem_cgroup = NULL;
-+	INIT_LIST_HEAD(&pc->lru);
++	return container_of(cgroup_subsys_state(cgrp, blkio_cgroup_subsys_id),
++					struct blkio_cgroup, css);
 +}
 +
- /*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
++/* Return the blkio_cgroup that associates with a process. */
++static inline struct blkio_cgroup *blkio_cgroup_from_task(struct task_struct *p)
++{
++	return container_of(task_subsys_state(p, blkio_cgroup_subsys_id),
++					struct blkio_cgroup, css);
++}
++
++static struct io_context default_blkio_io_context;
++static struct blkio_cgroup default_blkio_cgroup = {
++	.io_context	= &default_blkio_io_context,
++};
++
++/**
++ * blkio_cgroup_set_owner() - set the owner ID of a page.
++ * @page:	the page we want to tag
++ * @mm:		the mm_struct of a page owner
++ *
++ * Make a given page have the blkio-cgroup ID of the owner of this page.
++ */
++void blkio_cgroup_set_owner(struct page *page, struct mm_struct *mm)
++{
++	struct blkio_cgroup *biog;
++	struct page_cgroup *pc;
++	unsigned long id;
++
++	if (blkio_cgroup_disabled())
++		return;
++	pc = lookup_page_cgroup(page);
++	if (unlikely(!pc))
++		return;
++
++	lock_page_cgroup(pc);
++	page_cgroup_set_id(pc, 0);	/* 0: default blkio_cgroup id */
++	unlock_page_cgroup(pc);
++	if (!mm)
++		return;
++
++	rcu_read_lock();
++	biog = blkio_cgroup_from_task(rcu_dereference(mm->owner));
++	if (unlikely(!biog)) {
++		rcu_read_unlock();
++		return;
++	}
++	/*
++	 * css_get(&bio->css) isn't called to increment the reference
++	 * count of this blkio_cgroup "biog" so the css_id might turn
++	 * invalid even if this page is still active.
++	 * This approach is chosen to minimize the overhead.
++	 */
++	id = css_id(&biog->css);
++	rcu_read_unlock();
++	lock_page_cgroup(pc);
++	page_cgroup_set_id(pc, id);
++	unlock_page_cgroup(pc);
++}
++
++/**
++ * blkio_cgroup_reset_owner() - reset the owner ID of a page
++ * @page:	the page we want to tag
++ * @mm:		the mm_struct of a page owner
++ *
++ * Change the owner of a given page if necessary.
++ */
++void blkio_cgroup_reset_owner(struct page *page, struct mm_struct *mm)
++{
++	blkio_cgroup_set_owner(page, mm);
++}
++
++/**
++ * blkio_cgroup_reset_owner_pagedirty() - reset the owner ID of a pagecache page
++ * @page:	the page we want to tag
++ * @mm:		the mm_struct of a page owner
++ *
++ * Change the owner of a given page if the page is in the pagecache.
++ */
++void blkio_cgroup_reset_owner_pagedirty(struct page *page, struct mm_struct *mm)
++{
++	if (!page_is_file_cache(page))
++		return;
++	if (current->flags & PF_MEMALLOC)
++		return;
++
++	blkio_cgroup_reset_owner(page, mm);
++}
++
++/**
++ * blkio_cgroup_copy_owner() - copy the owner ID of a page into another page
++ * @npage:	the page where we want to copy the owner
++ * @opage:	the page from which we want to copy the ID
++ *
++ * Copy the owner ID of @opage into @npage.
++ */
++void blkio_cgroup_copy_owner(struct page *npage, struct page *opage)
++{
++	struct page_cgroup *npc, *opc;
++	unsigned long id;
++
++	if (blkio_cgroup_disabled())
++		return;
++	npc = lookup_page_cgroup(npage);
++	if (unlikely(!npc))
++		return;
++	opc = lookup_page_cgroup(opage);
++	if (unlikely(!opc))
++		return;
++
++	lock_page_cgroup(opc);
++	lock_page_cgroup(npc);
++	id = page_cgroup_get_id(opc);
++	page_cgroup_set_id(npc, id);
++	unlock_page_cgroup(npc);
++	unlock_page_cgroup(opc);
++}
++
++/* Create a new blkio-cgroup. */
++static struct cgroup_subsys_state *
++blkio_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	struct blkio_cgroup *biog;
++	struct io_context *ioc;
++
++	if (!cgrp->parent) {
++		biog = &default_blkio_cgroup;
++		init_io_context(biog->io_context);
++		/* Increment the referrence count not to be released ever. */
++		atomic_inc(&biog->io_context->refcount);
++		return &biog->css;
++	}
++
++	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
++	if (!biog)
++		return ERR_PTR(-ENOMEM);
++	ioc = alloc_io_context(GFP_KERNEL, -1);
++	if (!ioc) {
++		kfree(biog);
++		return ERR_PTR(-ENOMEM);
++	}
++	biog->io_context = ioc;
++	return &biog->css;
++}
++
++/* Delete the blkio-cgroup. */
++static void blkio_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
++
++	put_io_context(biog->io_context);
++	free_css_id(&blkio_cgroup_subsys, &biog->css);
++	kfree(biog);
++}
++
++/**
++ * get_blkio_cgroup_id() - determine the blkio-cgroup ID
++ * @bio:	the &struct bio which describes the I/O
++ *
++ * Returns the blkio-cgroup ID of a given bio. A return value zero
++ * means that the page associated with the bio belongs to default_blkio_cgroup.
++ */
++unsigned long get_blkio_cgroup_id(struct bio *bio)
++{
++	struct page_cgroup *pc;
++	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
++	unsigned long id = 0;
++
++	pc = lookup_page_cgroup(page);
++	if (pc) {
++		lock_page_cgroup(pc);
++		id = page_cgroup_get_id(pc);
++		unlock_page_cgroup(pc);
++	}
++	return id;
++}
++
++/**
++ * get_blkio_cgroup_iocontext() - determine the blkio-cgroup iocontext
++ * @bio:	the &struct bio which describe the I/O
++ *
++ * Returns the iocontext of blkio-cgroup that issued a given bio.
++ */
++struct io_context *get_blkio_cgroup_iocontext(struct bio *bio)
++{
++	struct cgroup_subsys_state *css;
++	struct blkio_cgroup *biog;
++	struct io_context *ioc;
++	unsigned long id;
++
++	id = get_blkio_cgroup_id(bio);
++	rcu_read_lock();
++	css = css_lookup(&blkio_cgroup_subsys, id);
++	if (css)
++		biog = container_of(css, struct blkio_cgroup, css);
++	else
++		biog = &default_blkio_cgroup;
++	ioc = biog->io_context;	/* default io_context for this cgroup */
++	atomic_inc(&ioc->refcount);
++	rcu_read_unlock();
++	return ioc;
++}
++
++/**
++ * blkio_cgroup_lookup() - lookup a cgroup by blkio-cgroup ID
++ * @id:		blkio-cgroup ID
++ *
++ * Returns the cgroup associated with the specified ID, or NULL if lookup
++ * fails.
++ *
++ * Note:
++ * This function should be called under rcu_read_lock().
++ */
++struct cgroup *blkio_cgroup_lookup(int id)
++{
++	struct cgroup *cgrp;
++	struct cgroup_subsys_state *css;
++
++	if (blkio_cgroup_disabled())
++		return NULL;
++
++	css = css_lookup(&blkio_cgroup_subsys, id);
++	if (!css)
++		return NULL;
++	cgrp = css->cgroup;
++	return cgrp;
++}
++EXPORT_SYMBOL(get_blkio_cgroup_iocontext);
++EXPORT_SYMBOL(get_blkio_cgroup_id);
++EXPORT_SYMBOL(blkio_cgroup_lookup);
++
++static u64 blkio_id_read(struct cgroup *cgrp, struct cftype *cft)
++{
++	struct blkio_cgroup *biog = cgroup_blkio(cgrp);
++	unsigned long id;
++
++	rcu_read_lock();
++	id = css_id(&biog->css);
++	rcu_read_unlock();
++	return (u64)id;
++}
++
++
++static struct cftype blkio_files[] = {
++	{
++		.name = "id",
++		.read_u64 = blkio_id_read,
++	},
++};
++
++static int blkio_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	return cgroup_add_files(cgrp, ss, blkio_files,
++					ARRAY_SIZE(blkio_files));
++}
++
++struct cgroup_subsys blkio_cgroup_subsys = {
++	.name		= "blkio",
++	.create		= blkio_cgroup_create,
++	.destroy	= blkio_cgroup_destroy,
++	.populate	= blkio_cgroup_populate,
++	.subsys_id	= blkio_cgroup_subsys_id,
++	.use_id		= 1,
++};
 Index: linux-2.6.31-rc3/mm/page_cgroup.c
 ===================================================================
 --- linux-2.6.31-rc3.orig/mm/page_cgroup.c
 +++ linux-2.6.31-rc3/mm/page_cgroup.c
-@@ -14,9 +14,8 @@ static void __meminit
+@@ -9,6 +9,7 @@
+ #include <linux/vmalloc.h>
+ #include <linux/cgroup.h>
+ #include <linux/swapops.h>
++#include <linux/biotrack.h>
+ 
+ static void __meminit
  __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
- {
+@@ -16,6 +17,7 @@ __init_page_cgroup(struct page_cgroup *p
  	pc->flags = 0;
--	pc->mem_cgroup = NULL;
  	pc->page = pfn_to_page(pfn);
--	INIT_LIST_HEAD(&pc->lru);
-+	__init_mem_page_cgroup(pc);
+ 	__init_mem_page_cgroup(pc);
++	__init_blkio_page_cgroup(pc);
  }
  static unsigned long total_usage;
+ 
+@@ -73,7 +75,7 @@ void __init page_cgroup_init_flatmem(voi
+ 
+ 	int nid, fail;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && blkio_cgroup_disabled())
+ 		return;
+ 
+ 	for_each_online_node(nid)  {
+@@ -82,12 +84,13 @@ void __init page_cgroup_init_flatmem(voi
+ 			goto fail;
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try 'cgroup_disable=memory' option if you"
+-	" don't want memory cgroups\n");
++	printk(KERN_INFO "please try 'cgroup_disable=memory,blkio' option"
++        " if you don't want memory and blkio cgroups\n");
+ 	return;
+ fail:
+ 	printk(KERN_CRIT "allocation of page_cgroup failed.\n");
+-	printk(KERN_CRIT "please try 'cgroup_disable=memory' boot option\n");
++	printk(KERN_CRIT
++		"please try 'cgroup_disable=memory,blkio' boot option\n");
+ 	panic("Out of memory");
+ }
+ 
+@@ -244,7 +247,7 @@ void __init page_cgroup_init(void)
+ 	unsigned long pfn;
+ 	int fail = 0;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && blkio_cgroup_disabled())
+ 		return;
+ 
+ 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+@@ -253,14 +256,15 @@ void __init page_cgroup_init(void)
+ 		fail = init_section_page_cgroup(pfn);
+ 	}
+ 	if (fail) {
+-		printk(KERN_CRIT "try 'cgroup_disable=memory' boot option\n");
++		printk(KERN_CRIT
++			"try 'cgroup_disable=memory,blkio' boot option\n");
+ 		panic("Out of memory");
+ 	} else {
+ 		hotplug_memory_notifier(page_cgroup_callback, 0);
+ 	}
+ 	printk(KERN_INFO "allocated %ld bytes of page_cgroup\n", total_usage);
+-	printk(KERN_INFO "please try 'cgroup_disable=memory' option if you don't"
+-	" want memory cgroups\n");
++	printk(KERN_INFO "please try 'cgroup_disable=memory,blkio' option"
++	" if you don't want memory and blkio cgroups\n");
+ }
+ 
+ void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
+Index: linux-2.6.31-rc3/mm/Makefile
+===================================================================
+--- linux-2.6.31-rc3.orig/mm/Makefile
++++ linux-2.6.31-rc3/mm/Makefile
+@@ -41,5 +41,6 @@ endif
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+ obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
+ obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
++obj-$(CONFIG_CGROUP_BLKIO) += biotrack.o
+ obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
+ obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
