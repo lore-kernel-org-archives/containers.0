@@ -1,46 +1,55 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFCv2][PATCH] flexible array implementation
-Date: Wed, 22 Jul 2009 08:02:35 -0700
-Message-ID: <1248274955.24021.5.camel__2122.26765365831$1248275479$gmane$org@nimitz>
-References: <20090721220017.60A219D3@kernel>
-	<20090722070903.GG6281@cr0.nay.redhat.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/1] veth: don't free priv->status until
+	dev->destructor (v2)
+Date: Wed, 22 Jul 2009 10:55:01 -0500
+Message-ID: <20090722155501.GA12820@us.ibm.com>
+References: <20090626162418.GA24828@us.ibm.com> <20090715.085012.223420354.davem@davemloft.net> <20090720142542.4fb12c12@nehalam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722070903.GG6281-+dguKlz9DXUf7BdofF/totBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Amerigo Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753290AbZGVPzU@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20090720142542.4fb12c12@nehalam>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Stephen Hemminger <shemminger@vyatta.com>
+Cc: David Miller <davem@davemloft.net>, containers@lists.osdl.org, sachinp@in.ibm.com, netdev@vger.kernel.org, matthltc@us.ibm.com, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-07-22 at 15:09 +0800, Amerigo Wang wrote:
-> On Tue, Jul 21, 2009 at 03:00:17PM -0700, Dave Hansen wrote:
-> >+static inline int __nr_part_ptrs(void)
+Quoting Stephen Hemminger (shemminger@vyatta.com):
+> On Wed, 15 Jul 2009 08:50:12 -0700 (PDT)
+> David Miller <davem@davemloft.net> wrote:
 > 
-> How about __nr_ptrs_in_part()?
+> > From: "Serge E. Hallyn" <serue@us.ibm.com>
+> > Date: Fri, 26 Jun 2009 11:24:18 -0500
+> > 
+> > > I haven't been able to reproduce the original oops though (been
+> > > trying to cat the stats sysfs files while rmmoding veth, to no
+> > > avail, and haven't found an original bug report or testcase), so
+> > > can't verify whether this patch prevents the original oops.
+> > 
+> > If you 'cat' it you're unlikely to trigger the oops.
+> > 
+> > You have to hold the sysfs files open, and then elsewhere do the
+> > rmmod, wait, and then continue with some access to those open sysfs
+> > file descriptors (f.e. do some reads).
 
-That would be fine except it is the number of part pointers in the base.
-I guess you're proving that I named it horribly. :)
+Yup, I was doing that too, but couldn't reproduce as yet.
 
-> >+static int fa_index_inside_part(struct flex_array *fa, int element_nr)
-> >+{
-> >+	return (element_nr % __elements_per_part(fa->element_size));
-> >+}
-> >+
-> >+static int offset_inside_part(struct flex_array *fa, int element_nr)
+> > I'd also need this patch to be against current sources as they'll
+> > never apply since I did the revert quite some time ago.
+> > 
+> > Thanks.
+
+Ok, thanks - I'll generate a new patch against a fresh pull when
+I can confirm that it actually solves the problem.
+
+> My usual way of doing this is:
 > 
-> How about index_in_part()?
+> #  (sleep 30; cat /sys/class/net/ethX/statistics/tx_bytes) &
+> # rmmod the_buggy_driver
+> 
+> wait...
 
-Yeah, I guess that's decent.  I'll go see how it feels when it gets
-used.
+Can you oops the kernel this way on latest netns?
 
--- Dave
+thanks,
+-serge
