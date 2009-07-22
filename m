@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 26/60] c/r: restart multiple processes
-Date: Wed, 22 Jul 2009 05:59:48 -0400
-Message-ID: <1248256822-23416-27-git-send-email-orenl__49496.2018602111$1248265654$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 55/60] c/r: define s390-specific checkpoint-restart
+	code
+Date: Wed, 22 Jul 2009 06:00:17 -0400
+Message-ID: <1248256822-23416-56-git-send-email-orenl__39302.6793063202$1248266198$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,865 +19,470 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Restarting of multiple processes expects all restarting tasks to call
-sys_restart(). Once inside the system call, each task will restart
-itself at the same order that they were saved. The internals of the
-syscall will take care of in-kernel synchronization bewteen tasks.
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This patch does _not_ create the task tree in the kernel. Instead it
-assumes that all tasks are created in some way and then invoke the
-restart syscall. You can use the userspace mktree.c program to do
-that.
+Implement the s390 arch-specific checkpoint/restart helpers.  This
+is on top of Oren Laadan's c/r code.
 
-There is one special task - the coordinator - that is not part of the
-restarted hierarchy. The coordinator task allocates the restart
-context (ctx) and orchestrates the restart. Thus even if a restart
-fails after, or during the restore of the root task, the user
-perceives a clean exit and an error message.
+With these, I am able to checkpoint and restart simple programs as per
+Oren's patch intro.  While on x86 I never had to freeze a single task
+to checkpoint it, on s390 I do need to.  That is a prereq for consistent
+snapshots (esp with multiple processes) anyway so I don't see that as
+a problem.
 
-The coordinator task will:
- 1) read header and tree, create @ctx (wake up restarting tasks)
- 2) set the ->checkpoint_ctx field of itself and all descendants
- 3) wait for all restarting tasks to reach sync point #1
- 4) activate first restarting task (root task)
- 5) wait for all other tasks to complete and reach sync point #3
- 6) wake up everybody
+Changelog:
+    Jun 15:
+            . Fix checkpoint and restart compat wrappers
+    May 28:
+            . Export asm/checkpoint_hdr.h to userspace
+            . Define CKPT_ARCH_ID for S390
+    Apr 11:
+            . Introduce ckpt_arch_vdso()
+    Feb 27:
+            . Add checkpoint_s390.h
+            . Fixed up save and restore of PSW, with the non-address bits
+              properly masked out
+    Feb 25:
+            . Make checkpoint_hdr.h safe for inclusion in userspace
+            . Replace comment about vsdo code
+            . Add comment about restoring access registers
+            . Write and read an empty ckpt_hdr_head_arch record to appease
+              code (mktree) that expects it to be there
+            . Utilize NUM_CKPT_WORDS in checkpoint_hdr.h
+    Feb 24:
+            . Use CKPT_COPY() to unify the un/loading of cpu and mm state
+            . Fix fprs definition in ckpt_hdr_cpu
+            . Remove debug WARN_ON() from checkpoint.c
+    Feb 23:
+            . Macro-ize the un/packing of trace flags
+            . Fix the crash when externally-linked
+            . Break out the restart functions into restart.c
+            . Remove unneeded s390_enable_sie() call
+    Jan 30:
+            . Switched types in ckpt_hdr_cpu to __u64 etc.
+              (Per Oren suggestion)
+            . Replaced direct inclusion of structs in
+              ckpt_hdr_cpu with the struct members.
+              (Per Oren suggestion)
+            . Also ended up adding a bunch of new things
+              into restart (mm_segment, ksp, etc) in vain
+              attempt to get code using fpu to not segfault
+              after restart.
 
-(Note that in step #2 the coordinator assumes that the entire task
-hierarchy exists by the time it enters sys_restart; this is arranged
-in user space by 'mktree')
-
-Task that are restarting has three sync points:
- 1) wait for its ->checkpoint_ctx to be set (by the coordinator)
- 2) wait for the task's turn to restore (be active)
- [...now the task restores its state...]
- 3) wait for all other tasks to complete
-
-The third sync point ensures that a task may only resume execution
-after all tasks have successfully restored their state (or fail if an
-error has occured). This prevents tasks from returning to user space
-prematurely, before the entire restart completes.
-
-If a single task wishes to restart, it can set the "RESTART_TASKSELF"
-flag to restart(2) to skip the logic of the coordinator.
-
-The root-task is a child of the coordinator, identified by the @pid
-given to sys_restart() in the pid-ns of the coordinator. Restarting
-tasks that aren't the coordinator, should set the @pid argument of
-restart(2) syscall to zero.
-
-All tasks explicitly test for an error flag on the checkpoint context
-when they wakeup from sync points.  If an error occurs during the
-restart of some task, it will mark the @ctx with an error flag, and
-wakeup the other tasks.
-
-An array of pids (the one saved during the checkpoint) is used to
-synchronize the operation. The first task in the array is the init
-task (*). The restart context (@ctx) maintains a "current position" in
-the array, which indicates which task is currently active. Once the
-currently active task completes its own restart, it increments that
-position and wakes up the next task.
-
-Restart assumes that userspace provides meaningful data, otherwise
-it's garbage-in-garbage-out. In this case, the syscall may block
-indefinitely, but in TASK_INTERRUPTIBLE, so the user can ctrl-c or
-otherwise kill the stray restarting tasks.
-
-In terms of security, restart runs as the user the invokes it, so it
-will not allow a user to do more than is otherwise permitted by the
-usual system semantics and policy.
-
-Currently we ignore threads and zombies, as well as session ids.
-Add support for multiple processes
-
-(*) For containers, restart should be called inside a fresh container
-by the init task of that container. However, it is also possible to
-restart applications not necessarily inside a container, and without
-restoring the original pids of the processes (that is, provided that
-the application can tolerate such behavior). This is useful to allow
-multi-process restart of tasks not isolated inside a container, and
-also for debugging.
-
-Changelog[v17]:
-  - Add uflag RESTART_FROZEN to freeze tasks after restart
-  - Fix restore_retval() and use only for restarting tasks
-  - Coordinator converts -ERSTART... to -EINTR
-  - Coordinator marks and sets descendants' ->checkpoint_ctx
-  - Coordinator properly detects errors when woken up from wait
-  - Fix race where root_task could kick start too early
-  - Add a sync point for restarting tasks
-  - Multiple fixes to restart logic
-Changelog[v14]:
-  - Revert change to pr_debug(), back to ckpt_debug()
-  - Discard field 'h.parent'
-  - Check whether calls to ckpt_hbuf_get() fail
-Changelog[v13]:
-  - Clear root_task->checkpoint_ctx regardless of error condition
-  - Remove unused argument 'ctx' from do_restore_task() prototype
-  - Remove unused member 'pids_err' from 'struct ckpt_ctx'
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/restart.c             |  461 ++++++++++++++++++++++++++++++++++++--
- checkpoint/sys.c                 |   33 ++-
- include/linux/checkpoint.h       |   39 +++-
- include/linux/checkpoint_types.h |   15 +-
- include/linux/sched.h            |    4 +
- kernel/exit.c                    |    5 +
- kernel/fork.c                    |    3 +
- 7 files changed, 519 insertions(+), 41 deletions(-)
+ arch/s390/include/asm/Kbuild           |    1 +
+ arch/s390/include/asm/checkpoint_hdr.h |   89 +++++++++++++++
+ arch/s390/include/asm/unistd.h         |    4 +-
+ arch/s390/kernel/compat_wrapper.S      |   14 +++
+ arch/s390/kernel/syscalls.S            |    2 +
+ arch/s390/mm/Makefile                  |    1 +
+ arch/s390/mm/checkpoint.c              |  183 ++++++++++++++++++++++++++++++++
+ arch/s390/mm/checkpoint_s390.h         |   23 ++++
+ include/linux/checkpoint_hdr.h         |    2 +
+ 9 files changed, 318 insertions(+), 1 deletions(-)
+ create mode 100644 arch/s390/include/asm/checkpoint_hdr.h
+ create mode 100644 arch/s390/mm/checkpoint.c
+ create mode 100644 arch/s390/mm/checkpoint_s390.h
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 4d1ff31..65422e2 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -13,7 +13,10 @@
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 63a2341..3282a6e 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -8,6 +8,7 @@ header-y += ucontext.h
+ header-y += vtoc.h
+ header-y += zcrypt.h
+ header-y += chsc.h
++header-y += checkpoint_hdr.h
  
- #include <linux/version.h>
- #include <linux/sched.h>
-+#include <linux/wait.h>
- #include <linux/file.h>
-+#include <linux/ptrace.h>
-+#include <linux/freezer.h>
- #include <linux/magic.h>
- #include <linux/utsname.h>
- #include <asm/syscall.h>
-@@ -324,6 +327,414 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+/* restore_read_tree - read the tasks tree into the checkpoint context */
-+static int restore_read_tree(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_tree *h;
-+	int size, ret;
+ unifdef-y += cmb.h
+ unifdef-y += debug.h
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+new file mode 100644
+index 0000000..ad9449e
+--- /dev/null
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -0,0 +1,89 @@
++#ifndef __ASM_S390_CKPT_HDR_H
++#define __ASM_S390_CKPT_HDR_H
++/*
++ *  Checkpoint/restart - architecture specific headers s/390
++ *
++ *  Copyright IBM Corp. 2009
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TREE);
++#ifndef _CHECKPOINT_CKPT_HDR_H_
++#error asm/checkpoint_hdr.h included directly
++#endif
++
++#include <linux/types.h>
++#include <asm/ptrace.h>
++
++#ifdef __KERNEL__
++#include <asm/processor.h>
++#else
++#include <sys/user.h>
++#endif
++
++#ifdef CONFIG_64BIT
++#define CKPT_ARCH_ID	CKPT_ARCH_S390X
++/* else - if we ever support 32bit - CKPT_ARCH_S390 */
++#endif
++
++/*
++ * Notes
++ * NUM_GPRS defined in <asm/ptrace.h> to be 16
++ * NUM_FPRS defined in <asm/ptrace.h> to be 16
++ * NUM_APRS defined in <asm/ptrace.h> to be 16
++ * NUM_CR_WORDS defined in <asm/ptrace.h> to be 3
++ */
++struct ckpt_hdr_cpu {
++	struct ckpt_hdr h;
++	__u64 args[1];
++	__u64 gprs[NUM_GPRS];
++	__u64 orig_gpr2;
++	__u16 svcnr;
++	__u16 ilc;
++	__u32 acrs[NUM_ACRS];
++	__u64 ieee_instruction_pointer;
++
++	/* psw_t */
++	__u64 psw_t_mask;
++	__u64 psw_t_addr;
++
++	/* s390_fp_regs_t */
++	__u32 fpc;
++	union {
++		float f;
++		double d;
++		__u64 ui;
++		struct {
++			__u32 fp_hi;
++			__u32 fp_lo;
++		} fp;
++	} fprs[NUM_FPRS];
++
++	/* per_struct */
++	__u64 per_control_regs[NUM_CR_WORDS];
++	__u64 starting_addr;
++	__u64 ending_addr;
++	__u64 address;
++	__u16 perc_atmid;
++	__u8 access_id;
++	__u8 single_step;
++	__u8 instruction_fetch;
++};
++
++struct ckpt_hdr_mm_context {
++	struct ckpt_hdr h;
++	unsigned long vdso_base;
++	int noexec;
++	int has_pgste;
++	int alloc_pgste;
++	unsigned long asce_bits;
++	unsigned long asce_limit;
++};
++
++struct ckpt_hdr_header_arch {
++	struct ckpt_hdr h;
++};
++
++#endif /* __ASM_S390_CKPT_HDR__H */
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index c80602d..5d1678a 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -269,7 +269,9 @@
+ #define	__NR_pwritev		329
+ #define __NR_rt_tgsigqueueinfo	330
+ #define __NR_perf_counter_open	331
+-#define NR_syscalls 332
++#define __NR_checkpoint		332
++#define __NR_restart		333
++#define NR_syscalls 334
+ 
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+index 88a8336..e882f99 100644
+--- a/arch/s390/kernel/compat_wrapper.S
++++ b/arch/s390/kernel/compat_wrapper.S
+@@ -1840,3 +1840,17 @@ sys_perf_counter_open_wrapper:
+ 	lgfr	%r5,%r5			# int
+ 	llgfr	%r6,%r6			# unsigned long
+ 	jg	sys_perf_counter_open	# branch to system call
++
++	.globl sys_checkpoint_wrapper
++sys_checkpoint_wrapper:
++	lgfr	%r2,%r2			# pid_t
++	lgfr	%r3,%r3			# int
++	llgfr	%r4,%r4			# unsigned long
++	jg	compat_sys_checkpoint
++
++	.globl sys_restore_wrapper
++sys_restore_wrapper:
++	lgfr	%r2,%r2			# int
++	lgfr	%r3,%r3			# int
++	llgfr	%r4,%r4			# unsigned long
++	jg	compat_sys_restore
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index ad1acd2..67518e2 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -340,3 +340,5 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
+ SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
+ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
+ SYSCALL(sys_perf_counter_open,sys_perf_counter_open,sys_perf_counter_open_wrapper)
++SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper)
++SYSCALL(sys_restart,sys_restart,sys_restore_wrapper)
+diff --git a/arch/s390/mm/Makefile b/arch/s390/mm/Makefile
+index db05661..e3d356d 100644
+--- a/arch/s390/mm/Makefile
++++ b/arch/s390/mm/Makefile
+@@ -6,3 +6,4 @@ obj-y	 := init.o fault.o extmem.o mmap.o vmem.o pgtable.o maccess.o
+ obj-$(CONFIG_CMM) += cmm.o
+ obj-$(CONFIG_HUGETLB_PAGE) += hugetlbpage.o
+ obj-$(CONFIG_PAGE_STATES) += page-states.o
++obj-$(CONFIG_CHECKPOINT) += checkpoint.o
+diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
+new file mode 100644
+index 0000000..a4a5da9
+--- /dev/null
++++ b/arch/s390/mm/checkpoint.c
+@@ -0,0 +1,183 @@
++/*
++ *  Checkpoint/restart - architecture specific support for s390
++ *
++ *  Copyright IBM Corp. 2009
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/kernel.h>
++#include <asm/system.h>
++#include <asm/pgtable.h>
++#include <asm/elf.h>
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/**************************************************************************
++ * Checkpoint
++ */
++
++static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
++			   struct task_struct *t)
++{
++	struct pt_regs *regs = task_pt_regs(t);
++	struct thread_struct *thr = &t->thread;
++
++	/* Save the whole PSW to facilitate forensic debugging, but only
++	 * restore the address portion to avoid letting userspace do
++	 * bad things by manipulating its value.
++	 */
++	if (op == CKPT_CPT) {
++		CKPT_COPY(op, h->psw_t_addr, regs->psw.addr);
++	} else {
++		regs->psw.addr &= ~PSW_ADDR_INSN;
++		regs->psw.addr |= h->psw_t_addr;
++	}
++
++	CKPT_COPY(op, h->args[0], regs->args[0]);
++	CKPT_COPY(op, h->orig_gpr2, regs->orig_gpr2);
++	CKPT_COPY(op, h->svcnr, regs->svcnr);
++	CKPT_COPY(op, h->ilc, regs->ilc);
++	CKPT_COPY(op, h->ieee_instruction_pointer,
++		thr->ieee_instruction_pointer);
++	CKPT_COPY(op, h->psw_t_mask, regs->psw.mask);
++	CKPT_COPY(op, h->fpc, thr->fp_regs.fpc);
++	CKPT_COPY(op, h->starting_addr, thr->per_info.starting_addr);
++	CKPT_COPY(op, h->ending_addr, thr->per_info.ending_addr);
++	CKPT_COPY(op, h->address, thr->per_info.lowcore.words.address);
++	CKPT_COPY(op, h->perc_atmid, thr->per_info.lowcore.words.perc_atmid);
++	CKPT_COPY(op, h->access_id, thr->per_info.lowcore.words.access_id);
++	CKPT_COPY(op, h->single_step, thr->per_info.single_step);
++	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
++
++	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
++	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
++	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
++	CKPT_COPY_ARRAY(op, h->per_control_regs,
++		      thr->per_info.control_regs.words.cr, NUM_CR_WORDS);
++}
++
++static void s390_mm(int op, struct ckpt_hdr_mm_context *h,
++		    struct mm_struct *mm)
++{
++	CKPT_COPY(op, h->noexec, mm->context.noexec);
++	CKPT_COPY(op, h->has_pgste, mm->context.has_pgste);
++	CKPT_COPY(op, h->alloc_pgste, mm->context.alloc_pgste);
++	CKPT_COPY(op, h->asce_bits, mm->context.asce_bits);
++	CKPT_COPY(op, h->asce_limit, mm->context.asce_limit);
++}
++
++int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	return 0;
++}
++
++/* dump the cpu state and registers of a given task */
++int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_cpu *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_CPU);
++	if (!h)
++		return -ENOMEM;
++
++	s390_copy_regs(CKPT_CPT, h, t);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++/* Write an empty header since it is assumed to be there */
++int checkpoint_write_header_arch(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_header_arch *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (!h)
++		return -ENOMEM;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
++{
++	struct ckpt_hdr_mm_context *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
++	if (!h)
++		return -ENOMEM;
++
++	s390_mm(CKPT_CPT, h, mm);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++/**************************************************************************
++ * Restart
++ */
++
++int restore_thread(struct ckpt_ctx *ctx)
++{
++	return 0;
++}
++
++int restore_cpu(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_cpu *h;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CPU);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
-+	ret = -EINVAL;
-+	if (h->nr_tasks < 0)
-+		goto out;
++	s390_copy_regs(CKPT_RST, h, current);
 +
-+	ctx->nr_pids = h->nr_tasks;
-+	size = sizeof(*ctx->pids_arr) * ctx->nr_pids;
-+	if (size < 0)		/* overflow ? */
-+		goto out;
++	/* s390 does not restore the access registers after a syscall,
++	 * but does on a task switch.  Since we're switching tasks (in
++	 * a way), we need to replicate that behavior here.
++	 */
++	restore_access_regs(h->acrs);
 +
-+	ctx->pids_arr = kmalloc(size, GFP_KERNEL);
-+	if (!ctx->pids_arr) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	ret = _ckpt_read_buffer(ctx, ctx->pids_arr, size);
-+ out:
 +	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+static inline pid_t get_active_pid(struct ckpt_ctx *ctx)
-+{
-+	int active = ctx->active_pid;
-+	return active >= 0 ? ctx->pids_arr[active].vpid : 0;
-+}
-+
-+static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	return get_active_pid(ctx) == pid;
-+}
-+
-+static inline void ckpt_notify_error(struct ckpt_ctx *ctx)
-+{
-+	ckpt_debug("ctx with root pid %d (%p)", ctx->root_pid, ctx);
-+	ckpt_set_ctx_error(ctx);
-+	complete(&ctx->complete);
-+}
-+
-+static int ckpt_activate_next(struct ckpt_ctx *ctx)
-+{
-+	struct task_struct *task;
-+	int active;
-+	pid_t pid;
-+
-+	active = ++ctx->active_pid;
-+	if (active >= ctx->nr_pids) {
-+		complete(&ctx->complete);
-+		return 0;
-+	}
-+
-+	pid = get_active_pid(ctx);
-+	ckpt_debug("active pid %d (%d < %d)\n", pid, active, ctx->nr_pids);
-+
-+	rcu_read_lock();
-+	task = find_task_by_pid_ns(pid, ctx->root_nsproxy->pid_ns);
-+	if (task)
-+		wake_up_process(task);
-+	rcu_read_unlock();
-+
-+	if (!task) {
-+		ckpt_notify_error(ctx);
-+		return -ESRCH;
-+	}
-+
 +	return 0;
 +}
 +
-+static int wait_task_active(struct ckpt_ctx *ctx)
++int restore_read_header_arch(struct ckpt_ctx *ctx)
 +{
-+	pid_t pid = task_pid_vnr(current);
-+	int ret;
++	struct ckpt_hdr_header_arch *h;
 +
-+	ckpt_debug("pid %d waiting\n", pid);
-+	ret = wait_event_interruptible(ctx->waitq,
-+				       is_task_active(ctx, pid) ||
-+				       ckpt_test_ctx_error(ctx));
-+	if (!ret && ckpt_test_ctx_error(ctx)) {
-+		force_sig(SIGKILL, current);
-+		ret = -EBUSY;
-+	}
-+	return ret;
-+}
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+static int wait_task_sync(struct ckpt_ctx *ctx)
-+{
-+	ckpt_debug("pid %d syncing\n", task_pid_vnr(current));
-+	wait_event_interruptible(ctx->waitq, ckpt_test_ctx_complete(ctx));
-+	if (ckpt_test_ctx_error(ctx)) {
-+		force_sig(SIGKILL, current);
-+		return -EBUSY;
-+	}
++	ckpt_hdr_put(ctx, h);
 +	return 0;
 +}
 +
-+static int do_restore_task(void)
++
++int restore_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
 +{
-+	DECLARE_WAIT_QUEUE_HEAD(waitq);
-+	struct ckpt_ctx *ctx, *old_ctx;
-+	int ret;
++	struct ckpt_hdr_mm_context *h;
 +
-+	/*
-+	 * Wait for coordinator to make become visible, then grab a
-+	 * reference to its restart context. If we're the last task to
-+	 * do it, notify the coordinator.
-+	 */
-+	ret = wait_event_interruptible(waitq, current->checkpoint_ctx);
-+	if (ret < 0)
-+		return ret;
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	ctx = xchg(&current->checkpoint_ctx, NULL);
-+	if (!ctx)
-+		return -EAGAIN;
-+	ckpt_ctx_get(ctx);
++	s390_mm(CKPT_RST, h, mm);
 +
-+	/*
-+	 * Put the @ctx back on our task_struct. If an ancestor tried
-+	 * to prepare_descendants() on us (although extremly unlikely)
-+	 * we will encounter the ctx that he xchg()ed there and bail.
-+	 */
-+	old_ctx = xchg(&current->checkpoint_ctx, ctx);
-+	if (old_ctx) {
-+		ckpt_debug("self-set of checkpoint_ctx failed\n");
-+		/* alert coordinator of unexpected ctx */
-+		ckpt_notify_error(old_ctx);
-+		ckpt_ctx_put(old_ctx);
-+		/* alert our coordinator that we bail */
-+		ckpt_notify_error(ctx);
-+		ckpt_ctx_put(ctx);
-+		return -EAGAIN;
-+	}
-+
-+	/* wait for our turn, do the restore, and tell next task in line */
-+	ret = wait_task_active(ctx);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = restore_task(ctx);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_activate_next(ctx);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = wait_task_sync(ctx);
-+ out:
-+	old_ctx = xchg(&current->checkpoint_ctx, NULL);
-+	if (old_ctx)
-+		ckpt_ctx_put(old_ctx);
-+
-+	/* if we're first to fail - notify others */
-+	if (ret < 0 && !ckpt_test_ctx_error(ctx)) {
-+		ckpt_notify_error(ctx);
-+		wake_up_all(&ctx->waitq);
-+	}
-+
-+	ckpt_ctx_put(ctx);
-+	return ret;
++	ckpt_hdr_put(ctx, h);
++	return 0;
 +}
-+
-+/**
-+ * prepare_descendants - set ->restart_tsk of all descendants
-+ * @ctx: checkpoint context
-+ * @root: root process for restart
+diff --git a/arch/s390/mm/checkpoint_s390.h b/arch/s390/mm/checkpoint_s390.h
+new file mode 100644
+index 0000000..c3bf24d
+--- /dev/null
++++ b/arch/s390/mm/checkpoint_s390.h
+@@ -0,0 +1,23 @@
++/*
++ *  Checkpoint/restart - architecture specific support for s390
 + *
-+ * Called by the coodinator to set the ->restart_tsk pointer of the
-+ * root task and all its descendants.
++ *  Copyright IBM Corp. 2009
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
 + */
-+static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
-+{
-+	struct task_struct *leader = root;
-+	struct task_struct *parent = NULL;
-+	struct task_struct *task = root;
-+	struct ckpt_ctx *old_ctx;
-+	int nr_pids = ctx->nr_pids;
-+	int ret = 0;
 +
-+	read_lock(&tasklist_lock);
-+	while (nr_pids) {
-+		ckpt_debug("consider task %d\n", task_pid_vnr(task));
-+		if (task_ptrace(task) & PT_PTRACED) {
-+			ret = -EBUSY;
-+			break;
-+		}
-+		/*
-+		 * Set task->restart_tsk of all non-zombie descendants.
-+		 * If a descendant already has a ->checkpoint_ctx, it
-+		 * must be a coordinator (for a different restart ?) so
-+		 * we fail.
-+		 *
-+		 * Note that own ancestors cannot interfere since they
-+		 * won't descend past us, as own ->checkpoint_ctx must
-+		 * already be set.
-+		 */
-+		if (!task->exit_state) {
-+			ckpt_ctx_get(ctx);
-+			old_ctx = xchg(&task->checkpoint_ctx, ctx);
-+			if (old_ctx) {
-+				ckpt_debug("bad task %d\n",task_pid_vnr(task));
-+				ckpt_ctx_put(old_ctx);
-+				ret = -EAGAIN;
-+				break;
-+			}
-+			ckpt_debug("prepare task %d\n", task_pid_vnr(task));
-+			wake_up_process(task);
-+			nr_pids--;
-+		}
++#ifndef _S390_CHECKPOINT_H
++#define _S390_CHECKPOINT_H
 +
-+		/* if has children - proceed with child */
-+		if (!list_empty(&task->children)) {
-+			parent = task;
-+			task = list_entry(task->children.next,
-+					  struct task_struct, sibling);
-+			continue;
-+		}
-+		while (task != root) {
-+			/* if has sibling - proceed with sibling */
-+			if (!list_is_last(&task->sibling, &parent->children)) {
-+				task = list_entry(task->sibling.next,
-+						  struct task_struct, sibling);
-+				break;
-+			}
++#include <linux/checkpoint_hdr.h>
++#include <linux/sched.h>
++#include <linux/mm_types.h>
 +
-+			/* else, trace back to parent and proceed */
-+			task = parent;
-+			parent = parent->real_parent;
-+		}
-+		if (task == root) {
-+			/* in case root task in multi-threaded */
-+			root = task = next_thread(task);
-+			if (root == leader)
-+				break;
-+		}
-+	}
-+	read_unlock(&tasklist_lock);
-+	ckpt_debug("left %d ret %d root/task %d\n", nr_pids, ret, task == root);
++extern void checkpoint_s390_regs(int op, struct ckpt_hdr_cpu *h,
++				 struct task_struct *t);
++extern void checkpoint_s390_mm(int op, struct ckpt_hdr_mm_context *h,
++			       struct mm_struct *mm);
 +
-+	/* fail unless number of processes matches */
-+	if (!ret && (nr_pids || task != root))
-+		ret = -ESRCH;
-+
-+	return ret;
-+}
-+
-+static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
-+{
-+	int ret;
-+
-+	init_completion(&ctx->complete);
-+
-+	ret = ckpt_activate_next(ctx);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = wait_for_completion_interruptible(&ctx->complete);
-+
-+	if (ckpt_test_ctx_error(ctx))
-+		ret = -EBUSY;
-+	return ret;
-+}
-+
-+static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	struct task_struct *task;
-+
-+	if (ctx->uflags & RESTART_TASKSELF) {
-+		ctx->root_pid = pid;
-+		ctx->root_task = current;
-+		get_task_struct(current);
-+		return current;
-+	}
-+
-+	read_lock(&tasklist_lock);
-+	list_for_each_entry(task, &current->children, sibling) {
-+		if (task_pid_vnr(task) == pid) {
-+			get_task_struct(task);
-+			ctx->root_task = task;
-+			ctx->root_pid = pid;
-+			break;
-+		}
-+	}
-+	read_unlock(&tasklist_lock);
-+
-+	return task;
-+}
-+
-+/* setup restart-specific parts of ctx */
-+static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	struct nsproxy *nsproxy;
-+
-+	/*
-+	 * No need for explicit cleanup here, because if an error
-+	 * occurs then ckpt_ctx_free() is eventually called.
-+	 */
-+
-+	ctx->root_task = choose_root_task(ctx, pid);
-+	if (!ctx->root_task)
-+		return -ESRCH;
-+
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(ctx->root_task);
-+	if (nsproxy) {
-+		get_nsproxy(nsproxy);
-+		ctx->root_nsproxy = nsproxy;
-+	}
-+	rcu_read_unlock();
-+	if (!nsproxy)
-+		return -ESRCH;
-+
-+	ctx->active_pid = -1;	/* see ckpt_activate_next, get_active_pid */
-+
-+	return 0;
-+}
-+
-+static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
-+{
-+	struct ckpt_ctx *old_ctx;
-+	int ret;
-+
-+	ret = restore_read_header(ctx);
-+	if (ret < 0)
-+		return ret;
-+	ret = restore_read_tree(ctx);
-+	if (ret < 0)
-+		return ret;
-+
-+	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1)
-+		return -EINVAL;
-+
-+	ret = init_restart_ctx(ctx, pid);
-+	if (ret < 0)
-+		return ret;
-+
-+	/*
-+	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
-+	 * prepare_descendants() on us, it will fail. Furthermore,
-+	 * that ancestor won't proceed deeper to interfere with our
-+	 * descendants that are restarting (e.g. by xchg()ing their
-+	 * ->checkpoint_ctx pointer temporarily).
-+	 */
-+	ckpt_ctx_get(ctx);
-+	old_ctx = xchg(&current->checkpoint_ctx, ctx);
-+	if (old_ctx) {
-+		/*
-+		 * We are a bad-behaving descendant: an ancestor must
-+		 * have done prepare_descendants() on us as part of a
-+		 * restart. Oh, well ... alert ancestor (coordinator)
-+		 * with an error on @old_ctx.
-+		 */
-+		ckpt_debug("bad bavhing checkpoint_ctx\n");
-+		ckpt_notify_error(old_ctx);
-+		ckpt_ctx_put(old_ctx);
-+		return -EBUSY;
-+	}
-+
-+	if (ctx->uflags & RESTART_TASKSELF) {
-+		ret = restore_task(ctx);
-+		if (ret < 0)
-+			goto out;
-+	} else {
-+		/* prepare descendants' t->restart_tsk point to coord */
-+		ret = prepare_descendants(ctx, ctx->root_task);
-+		if (ret < 0)
-+			goto out;
-+		/* wait for all other tasks to complete do_restore_task() */
-+		ret = wait_all_tasks_finish(ctx);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = restore_read_tail(ctx);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (ctx->uflags & RESTART_FROZEN) {
-+		ret = cgroup_freezer_make_frozen(ctx->root_task);
-+		ckpt_debug("freezing restart tasks ... %d\n", ret);
-+	}
-+ out:
-+	if (ret < 0)
-+		ckpt_set_ctx_error(ctx);
-+	else
-+		ckpt_set_ctx_success(ctx);
-+
-+	if (!(ctx->uflags & RESTART_TASKSELF))
-+		wake_up_all(&ctx->waitq);
-+	/*
-+	 * If an ancestor attempts to prepare_descendants() on us, it
-+	 * xchg()s our ->checkpoint_ctx, and free it. Our @ctx will,
-+	 * instead, point to the ctx that said ancestor placed.
-+	 */
-+	ctx = xchg(&current->checkpoint_ctx, NULL);
-+	ckpt_ctx_put(ctx);
-+
-+	return ret;
-+}
-+
- static long restore_retval(void)
- {
- 	struct pt_regs *regs = task_pt_regs(current);
-@@ -372,28 +783,40 @@ static long restore_retval(void)
- 	return ret;
- }
++#endif /* _S390_CHECKPOINT_H */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 2364a6f..3671e72 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -87,7 +87,9 @@ enum {
  
--/* setup restart-specific parts of ctx */
--static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
--{
--	return 0;
--}
--
- long do_restart(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	long ret;
- 
--	ret = init_restart_ctx(ctx, pid);
--	if (ret < 0)
--		return ret;
--	ret = restore_read_header(ctx);
--	if (ret < 0)
--		return ret;
--	ret = restore_task(ctx);
--	if (ret < 0)
--		return ret;
--	ret = restore_read_tail(ctx);
--	if (ret < 0)
--		return ret;
-+	if (ctx)
-+		ret = do_restore_coord(ctx, pid);
-+	else
-+		ret = do_restore_task();
- 
--	return restore_retval();
-+	/* restart(2) isn't idempotent: should not be auto-restarted */
-+	if (ret == -ERESTARTSYS || ret == -ERESTARTNOINTR ||
-+	    ret == -ERESTARTNOHAND || ret == -ERESTART_RESTARTBLOCK)
-+		ret = -EINTR;
-+
-+	/*
-+	 * The retval from what we return to the caller when all goes
-+	 * well: this is either the retval from the original syscall
-+	 * that was interrupted during checkpoint, or the contents of
-+	 * (saved) eax if the task was in userspace.
-+	 *
-+	 * The coordinator (ctx!=NULL) is exempt: don't adjust its retval.
-+	 * But in self-restart (where RESTART_TASKSELF), the coordinator
-+	 * _itself_ is a restarting task.
-+	 */
-+
-+	if (!ctx || (ctx->uflags & RESTART_TASKSELF)) {
-+		if (ret < 0) {
-+			/* partial restore is undefined: terminate */
-+			ckpt_debug("restart err %d, exiting\n", ret);
-+			force_sig(SIGKILL, current);
-+		} else {
-+			ret = restore_retval();
-+		}
-+	}
-+
-+	return ret;
- }
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index cc94775..c8921f0 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -189,6 +189,8 @@ static void task_arr_free(struct ckpt_ctx *ctx)
- 
- static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- {
-+	BUG_ON(atomic_read(&ctx->refcount));
-+
- 	if (ctx->file)
- 		fput(ctx->file);
- 
-@@ -202,6 +204,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 	if (ctx->root_freezer)
- 		put_task_struct(ctx->root_freezer);
- 
-+	kfree(ctx->pids_arr);
-+
- 	kfree(ctx);
- }
- 
-@@ -219,17 +223,32 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	ctx->kflags = kflags;
- 	ctx->ktime_begin = ktime_get();
- 
-+	atomic_set(&ctx->refcount, 0);
-+	init_waitqueue_head(&ctx->waitq);
-+
- 	err = -EBADF;
- 	ctx->file = fget(fd);
- 	if (!ctx->file)
- 		goto err;
- 
-+	atomic_inc(&ctx->refcount);
- 	return ctx;
-  err:
- 	ckpt_ctx_free(ctx);
- 	return ERR_PTR(err);
- }
- 
-+void ckpt_ctx_get(struct ckpt_ctx *ctx)
-+{
-+	atomic_inc(&ctx->refcount);
-+}
-+
-+void ckpt_ctx_put(struct ckpt_ctx *ctx)
-+{
-+	if (ctx && atomic_dec_and_test(&ctx->refcount))
-+		ckpt_ctx_free(ctx);
-+}
-+
- /**
-  * sys_checkpoint - checkpoint a container
-  * @pid: pid of the container init(1) process
-@@ -261,7 +280,7 @@ SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
- 	if (!ret)
- 		ret = ctx->crid;
- 
--	ckpt_ctx_free(ctx);
-+	ckpt_ctx_put(ctx);
- 	return ret;
- }
- 
-@@ -280,24 +299,20 @@ SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
- 	long ret;
- 
- 	/* no flags for now */
--	if (flags)
-+	if (flags & ~RESTART_USER_FLAGS)
- 		return -EINVAL;
- 
- 	if (!ckpt_unpriv_allowed && !capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART);
-+	if (pid)
-+		ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART);
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
- 
- 	ret = do_restart(ctx, pid);
- 
--	/* restart(2) isn't idempotent: can't restart syscall */
--	if (ret == -ERESTARTSYS || ret == -ERESTARTNOINTR ||
--	    ret == -ERESTARTNOHAND || ret == -ERESTART_RESTARTBLOCK)
--		ret = -EINTR;
--
--	ckpt_ctx_free(ctx);
-+	ckpt_ctx_put(ctx);
- 	return ret;
- }
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index df2938f..44b692d 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -15,6 +15,10 @@
- /* checkpoint user flags */
- #define CHECKPOINT_SUBTREE	0x1
- 
-+/* restart user flags */
-+#define RESTART_TASKSELF	0x1
-+#define RESTART_FROZEN		0x2
-+
- #ifdef __KERNEL__
- #ifdef CONFIG_CHECKPOINT
- 
-@@ -23,23 +27,21 @@
- 
- 
- /* ckpt_ctx: kflags */
--#define CKPT_CTX_CHECKPOINT_BIT		1
--#define CKPT_CTX_RESTART_BIT		2
-+#define CKPT_CTX_CHECKPOINT_BIT		0
-+#define CKPT_CTX_RESTART_BIT		1
-+#define CKPT_CTX_SUCCESS_BIT		2
-+#define CKPT_CTX_ERROR_BIT		3
- 
- #define CKPT_CTX_CHECKPOINT	(1 << CKPT_CTX_CHECKPOINT_BIT)
- #define CKPT_CTX_RESTART	(1 << CKPT_CTX_RESTART_BIT)
-+#define CKPT_CTX_SUCCESS	(1 << CKPT_CTX_SUCCESS_BIT)
-+#define CKPT_CTX_ERROR		(1 << CKPT_CTX_ERROR_BIT)
- 
--
--/* ckpt_ctx: kflags */
--#define CKPT_CTX_CHECKPOINT_BIT		1
--#define CKPT_CTX_RESTART_BIT		2
--
--#define CKPT_CTX_CHECKPOINT	(1 << CKPT_CTX_CHECKPOINT_BIT)
--#define CKPT_CTX_RESTART	(1 << CKPT_CTX_RESTART_BIT)
--
--/* ckpt ctx: uflags */
-+/* ckpt_ctx: uflags */
- #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
-+#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
- 
-+extern void exit_checkpoint(struct task_struct *tsk);
- 
- extern int ckpt_kwrite(struct ckpt_ctx *ctx, void *buf, int count);
- extern int ckpt_kread(struct ckpt_ctx *ctx, void *buf, int count);
-@@ -64,6 +66,21 @@ extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
- extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
- extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
- 
-+/* ckpt kflags */
-+#define ckpt_set_ctx_kflag(__ctx, __kflag)  \
-+	set_bit(__kflag##_BIT, &(__ctx)->kflags)
-+
-+#define ckpt_set_ctx_success(ctx)  ckpt_set_ctx_kflag(ctx, CKPT_CTX_SUCCESS)
-+#define ckpt_set_ctx_error(ctx)  ckpt_set_ctx_kflag(ctx, CKPT_CTX_ERROR)
-+
-+#define ckpt_test_ctx_error(ctx)  \
-+	((ctx)->kflags & CKPT_CTX_ERROR)
-+#define ckpt_test_ctx_complete(ctx)  \
-+	((ctx)->kflags & (CKPT_CTX_SUCCESS | CKPT_CTX_ERROR))
-+
-+extern void ckpt_ctx_get(struct ckpt_ctx *ctx);
-+extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
-+
- extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
- extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
- 
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 5dca34f..4785df6 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -16,6 +16,7 @@
- #include <linux/nsproxy.h>
- #include <linux/fs.h>
- #include <linux/ktime.h>
-+#include <linux/wait.h>
- 
- struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
-@@ -35,10 +36,20 @@ struct ckpt_ctx {
- 	struct file *file;	/* input/output file */
- 	int total;		/* total read/written */
- 
--	struct task_struct **tasks_arr;	/* array of all tasks in container */
--	int nr_tasks;			/* size of tasks array */
-+	atomic_t refcount;
- 
- 	char err_string[256];	/* checkpoint: error string */
-+
-+	/* [multi-process checkpoint] */
-+	struct task_struct **tasks_arr; /* array of all tasks [checkpoint] */
-+	int nr_tasks;                   /* size of tasks array */
-+
-+	/* [multi-process restart] */
-+	struct ckpt_hdr_pids *pids_arr;	/* array of all pids [restart] */
-+	int nr_pids;			/* size of pids array */
-+	int active_pid;			/* (next) position in pids array */
-+	struct completion complete;	/* container root and other tasks on */
-+	wait_queue_head_t waitq;	/* start, end, and restart ordering */
+ /* architecture */
+ enum {
++	/* do not change order (will break ABI) */
+ 	CKPT_ARCH_X86_32 = 1,
++	CKPT_ARCH_S390X,
  };
  
- #endif /* __KERNEL__ */
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e2ebb41..0e67de7 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1479,6 +1479,9 @@ struct task_struct {
- 	/* bitmask of trace recursion */
- 	unsigned long trace_recursion;
- #endif /* CONFIG_TRACING */
-+#ifdef CONFIG_CHECKPOINT
-+	struct ckpt_ctx *checkpoint_ctx;
-+#endif
- };
- 
- /* Future-safe accessor for struct task_struct's cpus_allowed. */
-@@ -1692,6 +1695,7 @@ extern cputime_t task_gtime(struct task_struct *p);
- #define PF_SPREAD_PAGE	0x01000000	/* Spread page cache over cpuset */
- #define PF_SPREAD_SLAB	0x02000000	/* Spread some slab caches over cpuset */
- #define PF_THREAD_BOUND	0x04000000	/* Thread bound to specific cpu */
-+#define PF_RESTARTING	0x08000000	/* Process is restarting (c/r) */
- #define PF_MEMPOLICY	0x10000000	/* Non-default NUMA mempolicy */
- #define PF_MUTEX_TESTER	0x20000000	/* Thread belongs to the rt mutex tester */
- #define PF_FREEZER_SKIP	0x40000000	/* Freezer should not count it as freezeable */
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 869dc22..912b1fa 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -49,6 +49,7 @@
- #include <linux/init_task.h>
- #include <linux/perf_counter.h>
- #include <trace/events/sched.h>
-+#include <linux/checkpoint.h>
- 
- #include <asm/uaccess.h>
- #include <asm/unistd.h>
-@@ -992,6 +993,10 @@ NORET_TYPE void do_exit(long code)
- 	if (unlikely(current->pi_state_cache))
- 		kfree(current->pi_state_cache);
- #endif
-+#ifdef CONFIG_CHECKPOINT
-+	if (unlikely(tsk->checkpoint_ctx))
-+		exit_checkpoint(tsk);
-+#endif
- 	/*
- 	 * Make sure we are holding no locks:
- 	 */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 29c66f0..68412b5 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1161,6 +1161,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	INIT_LIST_HEAD(&p->pi_state_list);
- 	p->pi_state_cache = NULL;
- #endif
-+#ifdef CONFIG_CHECKPOINT
-+	p->checkpoint_ctx = NULL;
-+#endif
- 	/*
- 	 * sigaltstack should be cleared when sharing the same VM
- 	 */
+ /* shared objrects (objref) */
 -- 
 1.6.0.4
