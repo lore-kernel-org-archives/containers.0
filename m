@@ -1,15 +1,13 @@
-From: Danny Feng <dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup: fix reverse unlock sequence in cgroup_get_sb
-Date: Wed, 22 Jul 2009 10:32:14 +0800
-Message-ID: <4A667A2E.9070206__30454.5320956551$1248229976$gmane$org@redhat.com>
-References: <1248171926-20232-1-git-send-email-dfeng@redhat.com>
-	<6599ad830907210903q7206cac2l83a9139d19c5e1a@mail.gmail.com>
-	<4A667218.7040105@redhat.com> <4A6676F4.7070201@cn.fujitsu.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFCv2][PATCH] flexible array implementation
+Date: Wed, 22 Jul 2009 11:25:03 +0800
+Message-ID: <4A66868F.4010001__11297.7288583808$1248233323$gmane$org@cn.fujitsu.com>
+References: <20090721220017.60A219D3@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A6676F4.7070201-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090721220017.60A219D3@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,47 +17,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/22/2009 10:18 AM, Li Zefan wrote:
-> Danny Feng wrote:
->> On 07/22/2009 12:03 AM, Paul Menage wrote:
->>> On Tue, Jul 21, 2009 at 3:25 AM, Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>   wrote:
->>>> In cgroup_get_sb, the lock sequence is:
->>>>          mutex_lock(&inode->i_mutex);
->>>>          mutex_lock(&cgroup->mutex);
->>>> so the last unlock sequence should be:
->>> Make this "so for consistency the last ..." ?
->>>
->>> Maybe make the patch title "Make unlock sequence in cgroup_get_sb
->>> consistent" so someone looking through the change logs for fixes to
->>> backport doesn't wrongly thing that this fixes any bug"?
->>>
->> Yep, this is a trivial patch.  Modified following your suggestion, thank
->> you.
->>
->
-> As far as it's not declared as a fix, I has no objection to this
-> patch.
->
-> Please always inline the patch in the mail body. And when resending
-> the patch, add the acked-by you collected in it:
->
-> Acked-by: Balbir ...
-> Acked-by: Paul ...
-> Signed-off-by: Xiaotian ...
->
-> You may resend the patch to Andrew Morton, who picks up cgroup
-> patches, otherwise the patch may be overlooked.
->
-Got it, thank you very much.
->>>>          mutex_unlock(&cgroup->mutex);
->>>>          mutex_unlock(&inode->i_mutex);
->>>>
->>>> Signed-off-by: Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>> Acked-by: Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->>>
->>> Paul
->
+> +/**
+> + * flex_array_put - copy data into the array at @element_nr
+> + * @src:	address of data to copy into the array
+> + * @element_nr:	index of the position in which to insert
+> + * 		the new element.
+
+@fa and @flags are not documented.
+
+> + *
+> + * Note that this *copies* the contents of @src into
+> + * the array.  If you are trying to store an array of
+> + * pointers, make sure to pass in &ptr instead of ptr.
+> + *
+> + * Locking must be provided by the caller.
+> + */
+> +int flex_array_put(struct flex_array *fa, int element_nr, void *src, gfp_t flags)
+> +{
+> +	int part_nr = fa_element_to_part_nr(fa, element_nr);
+> +	struct flex_array_part *part;
+> +	void *dst;
+> +
+> +	part = __fa_get_part(fa, part_nr, flags);
+> +	if (!part)
+> +		return -ENOMEM;
+
+So this may allocate memory, and has disavantages:
+
+- If flex_array_put() is called in atomic context, flags has to be GFP_ATOMIC.
+- and thus it may fail.
+
+Since we pass the total_elem to flex_array_alloc(), how about add a flag,
+and if the flag is set, the alloc() will also allocate all fa_parts?
+
+And add __flex_array_put(), which assumes fa_parts has been allocated.
+
+> +	dst = &part->elements[offset_inside_part(fa, element_nr)];
+> +	memcpy(dst, src, fa->element_size);
+> +	return 0;
+> +}
+> +
