@@ -1,17 +1,13 @@
 From: Danny Feng <dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroup: fix reverse unlock sequence in cgroup_get_sb
-Date: Wed, 22 Jul 2009 09:42:41 +0800
-Message-ID: <4A666E91.4090405__30588.7553644881$1248227013$gmane$org@redhat.com>
+Date: Wed, 22 Jul 2009 09:57:44 +0800
+Message-ID: <4A667218.7040105__10156.2255098999$1248228128$gmane$org@redhat.com>
 References: <1248171926-20232-1-git-send-email-dfeng@redhat.com>
-	<20090721111019.GV24157@balbir.in.ibm.com>
-	<8522a3d30907210438u6fce081fi835bf964d0c01e8a@mail.gmail.com>
-	<20090721120106.GW24157@balbir.in.ibm.com>
-	<4A66630C.3030303@cn.fujitsu.com>
+	<6599ad830907210903q7206cac2l83a9139d19c5e1a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------050805030304000303050602"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A66630C.3030303-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <6599ad830907210903q7206cac2l83a9139d19c5e1a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,52 +17,88 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Zefan Li <lizf.kernel-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/22/2009 08:53 AM, Li Zefan wrote:
->>>> Seems reasonable to me. You might also want to mention that elsewhere
->>>> the sequence is unlock cgroup_mutex followed by inode->i_mutex.
->>>>
->>>> Acked-by: Balbir Singh balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
->>>>          
->>> No, the unlock order is irrelevant. It's the lock order that matters. So
->>> this patch
->>> fixes nothing.
->>>
->>> Xiaotian, you didn't run into deadlock, did you?
->>>
->>>        
->> Li, Consider the following
->>
->>
->> lock(A)
->> lock(B)
->> unlock(A)
->> unlock(B)
->>
->> Tomorrow if a unsuspecting programmer does this
->>
->> lock(A)
->> lock(B)
->> unlock(A)
->>
->> code block
->>
->> unlock(B)
->>
->>
->> What protects code block? lock B? Is that the intention?
->>
->>      
+This is a multi-part message in MIME format.
+--------------050805030304000303050602
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+
+On 07/22/2009 12:03 AM, Paul Menage wrote:
+> On Tue, Jul 21, 2009 at 3:25 AM, Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>  wrote:
+>> In cgroup_get_sb, the lock sequence is:
+>>         mutex_lock(&inode->i_mutex);
+>>         mutex_lock(&cgroup->mutex);
+>> so the last unlock sequence should be:
 >
-> I won't worry about that. If unlock order is a concern,
-> we should have taught lockdep to detect it.
+> Make this "so for consistency the last ..." ?
 >
-> Here's a reply from Linus on this issue:
+> Maybe make the patch title "Make unlock sequence in cgroup_get_sb
+> consistent" so someone looking through the change logs for fixes to
+> backport doesn't wrongly thing that this fixes any bug"?
 >
-> 	http://lkml.org/lkml/2008/10/8/150
->    
-OK, this patch is trivial. Just for consistency with previous unlock 
-sequence:-)
+
+Yep, this is a trivial patch.  Modified following your suggestion, thank 
+you.
+
+>>         mutex_unlock(&cgroup->mutex);
+>>         mutex_unlock(&inode->i_mutex);
+>>
+>> Signed-off-by: Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>
+> Acked-by: Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>
+> Paul
+
+
+--------------050805030304000303050602
+Content-Type: text/x-patch;
+ name="0001-cgroup-make-unlock-sequence-in-cgroup_get_sb-consistent.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename*0="0001-cgroup-make-unlock-sequence-in-cgroup_get_sb-consistent";
+ filename*1=".patch"
+
+From ff96b0dc4a5f06a0e5b7f8dfa5df2b93e993302c Mon Sep 17 00:00:00 2001
+From: Xiaotian Feng <dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 21 Jul 2009 18:06:43 +0800
+Subject: [PATCH] cgroup: make unlock sequence in cgroup_get_sb consistent
+
+Make the last unlock sequence consistent with previous unlock sequeue.
+
+Signed-off-by: Xiaotian Feng <dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 3737a68..11ef162 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1140,8 +1140,8 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		BUG_ON(root->number_of_cgroups != 1);
+ 
+ 		cgroup_populate_dir(root_cgrp);
+-		mutex_unlock(&inode->i_mutex);
+ 		mutex_unlock(&cgroup_mutex);
++		mutex_unlock(&inode->i_mutex);
+ 	}
+ 
+ 	simple_set_mnt(mnt, sb);
+-- 
+1.6.2.5
+
+
+--------------050805030304000303050602
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------050805030304000303050602--
