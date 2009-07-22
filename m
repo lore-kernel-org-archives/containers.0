@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 24/60] c/r: restart-blocks
-Date: Wed, 22 Jul 2009 05:59:46 -0400
-Message-ID: <1248256822-23416-25-git-send-email-orenl__26600.420571822$1248261460$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 57/60] c/r: capabilities: define checkpoint and
+	restore fns
+Date: Wed, 22 Jul 2009 06:00:19 -0400
+Message-ID: <1248256822-23416-58-git-send-email-orenl__16228.3117570498$1248261577$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,447 +22,323 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(Paraphrasing what's said this message:
-http://lists.openwall.net/linux-kernel/2007/12/05/64)
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Restart blocks are callbacks used cause a system call to be restarted
-with the arguments specified in the system call restart block. It is
-useful for system call that are not idempotent, i.e. the argument(s)
-might be a relative timeout, where some adjustments are required when
-restarting the system call. It relies on the system call itself to set
-up its restart point and the argument save area.  They are rare: an
-actual signal would turn that it an EINTR. The only case that should
-ever trigger this is some kernel action that interrupts the system
-call, but does not actually result in any user-visible state changes -
-like freeze and thaw.
+[ Andrew: I am punting on dealing with the subsystem cooperation
+issues in this version, in favor of trying to get LSM issues
+straightened out ]
 
-So restart blocks are about time remaining for the system call to
-sleep/wait. Generally in c/r, there are two possible time models that
-we can follow: absolute, relative. Here, I chose to save the relative
-timeout, measured from the beginning of the checkpoint. The time when
-the checkpoint (and restart) begin is also saved. This information is
-sufficient to restart in either model (absolute or negative).
+An application checkpoint image will store capability sets
+(and the bounding set) as __u64s.  Define checkpoint and
+restart functions to translate between those and kernel_cap_t's.
 
-Which model to use should eventually be a per application choice (and
-possible configurable via cradvise() or some sort). For now, we adopt
-the relative model, namely, at restart the timeout is set relative to
-the beginning of the restart.
+Define a common function do_capset_tocred() which applies capability
+set changes to a passed-in struct cred.
 
-To checkpoint, we check if a task has a valid restart block, and if so
-we save the *remaining* time that is has to wait/sleep, and the type
-of the restart block.
+The restore function uses do_capset_tocred() to apply the restored
+capabilities to the struct cred being crafted, subject to the
+current task's (task executing sys_restart()) permissions.
 
-To restart, we fill in the data required at the proper place in the
-thread information. If the system call return an error (which is
-possibly an -ERESTARTSYS eg), we not only use that error as our own
-return value, but also arrange for the task to execute the signal
-handler (by faking a signal). The handler, in turn, already has the
-code to handle these restart request gracefully.
+Changelog:
+	Jun 09: Can't choose securebits or drop bounding set if
+		file capabilities aren't compiled into the kernel.
+		Also just store caps in __u32s (looks cleaner).
+	Jun 01: Made the checkpoint and restore functions and the
+		ckpt_hdr_capabilities struct more opaque to the
+		rest of the c/r code, as suggested by Andrew Morgan,
+		and using naming suggested by Oren.
+	Jun 01: Add commented BUILD_BUG_ON() to point out that the
+		current implementation depends on 64-bit capabilities.
+		(Andrew Morgan and Alexey Dobriyan).
+	May 28: add helpers to c/r securebits
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/include/asm/checkpoint_hdr.h |    1 -
- checkpoint/checkpoint.c               |    1 +
- checkpoint/process.c                  |  226 +++++++++++++++++++++++++++++++++
- checkpoint/restart.c                  |    5 +-
- checkpoint/sys.c                      |    1 +
- include/linux/checkpoint.h            |    4 +
- include/linux/checkpoint_hdr.h        |   22 +++
- include/linux/checkpoint_types.h      |    3 +
- 8 files changed, 260 insertions(+), 3 deletions(-)
+ include/linux/capability.h     |    6 ++
+ include/linux/checkpoint_hdr.h |   11 +++
+ kernel/capability.c            |  164 +++++++++++++++++++++++++++++++++++++---
+ security/commoncap.c           |   19 +----
+ 4 files changed, 172 insertions(+), 28 deletions(-)
 
-diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
-index c5762fb..f4d1e14 100644
---- a/arch/x86/include/asm/checkpoint_hdr.h
-+++ b/arch/x86/include/asm/checkpoint_hdr.h
-@@ -58,7 +58,6 @@ struct ckpt_hdr_header_arch {
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index c302110..3a74655 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -568,6 +568,12 @@ extern int capable(int cap);
+ struct dentry;
+ extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
  
- struct ckpt_hdr_thread {
++struct cred;
++int apply_securebits(unsigned securebits, struct cred *new);
++struct ckpt_capabilities;
++int restore_capabilities(struct ckpt_capabilities *h, struct cred *new);
++void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred * cred);
++
+ #endif /* __KERNEL__ */
+ 
+ #endif /* !_LINUX_CAPABILITY_H */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 3671e72..1f6a33d 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -60,6 +60,7 @@ enum {
+ 	CKPT_HDR_NS,
+ 	CKPT_HDR_UTS_NS,
+ 	CKPT_HDR_IPC_NS,
++	CKPT_HDR_CAPABILITIES,
+ 
+ 	/* 201-299: reserved for arch-dependent */
+ 
+@@ -191,6 +192,16 @@ struct ckpt_hdr_task {
+ 	__u64 robust_futex_list; /* a __user ptr */
+ } __attribute__((aligned(8)));
+ 
++/* Posix capabilities */
++struct ckpt_capabilities {
++	__u32 cap_i_0, cap_i_1; /* inheritable set */
++	__u32 cap_p_0, cap_p_1; /* permitted set */
++	__u32 cap_e_0, cap_e_1; /* effective set */
++	__u32 cap_b_0, cap_b_1; /* bounding set */
++	__u32 securebits;
++	__u32 padding;
++} __attribute__((aligned(8)));
++
+ /* namespaces */
+ struct ckpt_hdr_task_ns {
  	struct ckpt_hdr h;
--	/* FIXME: restart blocks */
- 	__u32 thread_info_flags;
- 	__u16 gdt_entry_tls_entries;
- 	__u16 sizeof_tls_array;
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 226735c..8facd9a 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -22,6 +22,7 @@
- #include <linux/mount.h>
- #include <linux/utsname.h>
- #include <linux/magic.h>
-+#include <linux/hrtimer.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+diff --git a/kernel/capability.c b/kernel/capability.c
+index 4e17041..4f58454 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -14,6 +14,8 @@
+ #include <linux/security.h>
+ #include <linux/syscalls.h>
+ #include <linux/pid_namespace.h>
++#include <linux/securebits.h>
++#include <linux/checkpoint.h>
+ #include <asm/uaccess.h>
+ #include "cred-internals.h"
  
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index d2c59d2..a0bf344 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -12,6 +12,9 @@
- #define CKPT_DFLAG  CKPT_DSYS
- 
- #include <linux/sched.h>
-+#include <linux/posix-timers.h>
-+#include <linux/futex.h>
-+#include <linux/poll.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-@@ -47,6 +50,116 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return ckpt_write_string(ctx, t->comm, TASK_COMM_LEN);
- }
- 
-+/* dump the task_struct of a given task */
-+int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct ckpt_hdr_restart_block *h;
-+	struct restart_block *restart_block;
-+	long (*fn)(struct restart_block *);
-+	s64 base, expire = 0;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_RESTART_BLOCK);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	base = ktime_to_ns(ctx->ktime_begin);
-+	restart_block = &task_thread_info(t)->restart_block;
-+	fn = restart_block->fn;
-+
-+	/* FIX: enumerate clockid_t so we're immune to changes */
-+
-+	if (fn == do_no_restart_syscall) {
-+
-+		h->function_type = CKPT_RESTART_BLOCK_NONE;
-+		ckpt_debug("restart_block: non\n");
-+
-+	} else if (fn == hrtimer_nanosleep_restart) {
-+
-+		h->function_type = CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP;
-+		h->arg_0 = restart_block->nanosleep.index;
-+		h->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		ckpt_debug("restart_block: hrtimer expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == posix_cpu_nsleep_restart) {
-+		struct timespec ts;
-+
-+		h->function_type = CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP;
-+		h->arg_0 = restart_block->arg0;
-+		h->arg_1 = restart_block->arg1;
-+		ts.tv_sec = restart_block->arg2;
-+		ts.tv_nsec = restart_block->arg3;
-+		expire = timespec_to_ns(&ts);
-+		ckpt_debug("restart_block: posix_cpu expire %lld now %lld\n",
-+			 expire, base);
-+
-+#ifdef CONFIG_COMPAT
-+	} else if (fn == compat_nanosleep_restart) {
-+
-+		h->function_type = CKPT_RESTART_BLOCK_NANOSLEEP;
-+		h->arg_0 = restart_block->nanosleep.index;
-+		h->arg_1 = (unsigned long)restart_block->nanosleep.rmtp;
-+		h->arg_2 = (unsigned long)restart_block->nanosleep.compat_rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		ckpt_debug("restart_block: compat expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == compat_clock_nanosleep_restart) {
-+
-+		h->function_type = CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP;
-+		h->arg_0 = restart_block->nanosleep.index;
-+		h->arg_1 = (unsigned long)restart_block->nanosleep.rmtp;
-+		h->arg_2 = (unsigned long)restart_block->nanosleep.compat_rmtp;
-+		expire = restart_block->nanosleep.expires;
-+		ckpt_debug("restart_block: compat_clock expire %lld now %lld\n",
-+			 expire, base);
-+
-+#endif
-+	} else if (fn == futex_wait_restart) {
-+
-+		h->function_type = CKPT_RESTART_BLOCK_FUTEX;
-+		h->arg_0 = (unsigned long) restart_block->futex.uaddr;
-+		h->arg_1 = restart_block->futex.val;
-+		h->arg_2 = restart_block->futex.flags;
-+		h->arg_3 = restart_block->futex.bitset;
-+		expire = restart_block->futex.time;
-+		ckpt_debug("restart_block: futex expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else if (fn == do_restart_poll) {
-+		struct timespec ts;
-+
-+		h->function_type = CKPT_RESTART_BLOCK_POLL;
-+		h->arg_0 = (unsigned long) restart_block->poll.ufds;
-+		h->arg_1 = restart_block->poll.nfds;
-+		h->arg_2 = restart_block->poll.has_timeout;
-+		ts.tv_sec = restart_block->poll.tv_sec;
-+		ts.tv_nsec = restart_block->poll.tv_nsec;
-+		expire = timespec_to_ns(&ts);
-+		ckpt_debug("restart_block: poll expire %lld now %lld\n",
-+			 expire, base);
-+
-+	} else {
-+
-+		BUG();
-+
-+	}
-+
-+	/* common to all restart blocks: */
-+	h->arg_4 = (base < expire ? expire - base : 0);
-+
-+	ckpt_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-+		 h->arg_0, h->arg_1, h->arg_2, h->arg_3, h->arg_4);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	ckpt_debug("restart_block ret %d\n", ret);
-+	return ret;
-+}
-+
- /* dump the entire state of a given task */
- int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- {
-@@ -60,6 +173,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+	ret = checkpoint_restart_block(ctx, t);
-+	ckpt_debug("restart-blocks %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = checkpoint_cpu(ctx, t);
- 	ckpt_debug("cpu %d\n", ret);
-  out:
-@@ -95,6 +212,111 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+@@ -217,6 +219,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, header, cap_user_data_t, dataptr)
  	return ret;
  }
  
-+int restore_restart_block(struct ckpt_ctx *ctx)
++static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *inheritable,
++			kernel_cap_t *permitted, struct cred *new)
 +{
-+	struct ckpt_hdr_restart_block *h;
-+	struct restart_block restart_block;
-+	struct timespec ts;
-+	clockid_t clockid;
-+	s64 expire;
-+	int ret = 0;
++	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_RESTART_BLOCK);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
++	ret = security_capset(new, current_cred(),
++			      effective, inheritable, permitted);
++	if (ret < 0)
++		return ret;
 +
-+	expire = ktime_to_ns(ctx->ktime_begin) + h->arg_4;
-+	restart_block.fn = NULL;
++	/*
++	 * for checkpoint-restart, do we want to wait until end of restart?
++	 * not sure we care */
++	audit_log_capset(current->pid, new, current_cred());
 +
-+	ckpt_debug("restart_block: expire %lld begin %lld\n",
-+		 expire, ktime_to_ns(ctx->ktime_begin));
-+	ckpt_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
-+		 h->arg_0, h->arg_1, h->arg_2, h->arg_3, h->arg_4);
++	return 0;
++}
 +
-+	switch (h->function_type) {
-+	case CKPT_RESTART_BLOCK_NONE:
-+		restart_block.fn = do_no_restart_syscall;
-+		break;
-+	case CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP:
-+		clockid = h->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = hrtimer_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) h->arg_1;
-+		restart_block.nanosleep.expires = expire;
-+		break;
-+	case CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP:
-+		clockid = h->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = posix_cpu_nsleep_restart;
-+		restart_block.arg0 = clockid;
-+		restart_block.arg1 = h->arg_1;
-+		ts = ns_to_timespec(expire);
-+		restart_block.arg2 = ts.tv_sec;
-+		restart_block.arg3 = ts.tv_nsec;
-+		break;
-+#ifdef CONFIG_COMPAT
-+	case CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP:
-+		clockid = h->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = compat_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) h->arg_1;
-+		restart_block.nanosleep.compat_rmtp =
-+			(struct compat_timespec __user *)
-+				(unsigned long) h->arg_2;
-+		resatrt_block.nanosleep.expires = expire;
-+		break;
-+	case CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
-+		clockid = h->arg_0;
-+		if (clockid < 0 || invalid_clockid(clockid))
-+			break;
-+		restart_block.fn = compat_clock_nanosleep_restart;
-+		restart_block.nanosleep.index = clockid;
-+		restart_block.nanosleep.rmtp =
-+			(struct timespec __user *) (unsigned long) h->arg_1;
-+		restart_block.nanosleep.compat_rmtp =
-+			(struct compat_timespec __user *)
-+				(unsigned long) h->arg_2;
-+		resatrt_block.nanosleep.expires = expire;
-+		break;
-+#endif
-+	case CKPT_RESTART_BLOCK_FUTEX:
-+		restart_block.fn = futex_wait_restart;
-+		restart_block.futex.uaddr = (u32 *) (unsigned long) h->arg_0;
-+		restart_block.futex.val = h->arg_1;
-+		restart_block.futex.flags = h->arg_2;
-+		restart_block.futex.bitset = h->arg_3;
-+		restart_block.futex.time = expire;
-+		break;
-+	case CKPT_RESTART_BLOCK_POLL:
-+		restart_block.fn = do_restart_poll;
-+		restart_block.poll.ufds =
-+			(struct pollfd __user *) (unsigned long) h->arg_0;
-+		restart_block.poll.nfds = h->arg_1;
-+		restart_block.poll.has_timeout = h->arg_2;
-+		ts = ns_to_timespec(expire);
-+		restart_block.poll.tv_sec = ts.tv_sec;
-+		restart_block.poll.tv_nsec = ts.tv_nsec;
-+		break;
-+	default:
-+		break;
-+	}
++static int do_capset(kernel_cap_t *effective, kernel_cap_t *inheritable,
++			kernel_cap_t *permitted)
++{
++	struct cred *new;
++	int ret;
 +
-+	if (restart_block.fn)
-+		task_thread_info(current)->restart_block = restart_block;
-+	else
-+		ret = -EINVAL;
++	new = prepare_creds();
++	if (!new)
++		return -ENOMEM;
 +
-+	ckpt_hdr_put(ctx, h);
++	ret = do_capset_tocred(effective, inheritable, permitted, new);
++	if (ret < 0)
++		goto error;
++
++	return commit_creds(new);
++
++error:
++	abort_creds(new);
 +	return ret;
 +}
 +
- /* read the entire state of the current task */
- int restore_task(struct ckpt_ctx *ctx)
- {
-@@ -108,6 +330,10 @@ int restore_task(struct ckpt_ctx *ctx)
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+	ret = restore_restart_block(ctx);
-+	ckpt_debug("restart-blocks %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = restore_cpu(ctx);
- 	ckpt_debug("cpu %d\n", ret);
-  out:
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 62e19b4..582d6b4 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -16,6 +16,8 @@
- #include <linux/file.h>
- #include <linux/magic.h>
- #include <linux/utsname.h>
-+#include <asm/syscall.h>
-+#include <linux/elf.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+ /**
+  * sys_capset - set capabilities for a process or (*) a group of processes
+  * @header: pointer to struct that contains capability version and
+@@ -240,7 +281,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
+ 	struct __user_cap_data_struct kdata[_KERNEL_CAPABILITY_U32S];
+ 	unsigned i, tocopy;
+ 	kernel_cap_t inheritable, permitted, effective;
+-	struct cred *new;
+ 	int ret;
+ 	pid_t pid;
  
-@@ -393,6 +395,5 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		return ret;
+@@ -271,23 +311,125 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
+ 		i++;
+ 	}
  
--	/* on success, adjust the return value if needed [TODO] */
--	return restore_retval(ctx);
-+	return restore_retval();
+-	new = prepare_creds();
+-	if (!new)
+-		return -ENOMEM;
++	return do_capset(&effective, &inheritable, &permitted);
+ 
+-	ret = security_capset(new, current_cred(),
+-			      &effective, &inheritable, &permitted);
++}
++
++#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
++int apply_securebits(unsigned securebits, struct cred *new)
++{
++	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
++	     & (new->securebits ^ securebits))				/*[1]*/
++	    || ((new->securebits & SECURE_ALL_LOCKS & ~securebits))	/*[2]*/
++	    || (securebits & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
++	    || (cap_capable(current, current_cred(), CAP_SETPCAP,
++			    SECURITY_CAP_AUDIT) != 0)			/*[4]*/
++		/*
++		 * [1] no changing of bits that are locked
++		 * [2] no unlocking of locks
++		 * [3] no setting of unsupported bits
++		 * [4] doing anything requires privilege (go read about
++		 *     the "sendmail capabilities bug")
++		 */
++	    )
++		/* cannot change a locked bit */
++		return -EPERM;
++	new->securebits = securebits;
++	return 0;
++}
++
++static void do_capbset_drop(struct cred *cred, int cap)
++{
++	cap_lower(cred->cap_bset, cap);
++}
++
++static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
++{
++	int i, may_dropbcap = capable(CAP_SETPCAP);
++
++	for (i = 0; i < CAP_LAST_CAP; i++) {
++		if (cap_raised(bset, i))
++			continue;
++		if (!cap_raised(current_cred()->cap_bset, i))
++			continue;
++		if (!may_dropbcap)
++			return -EPERM;
++		do_capbset_drop(cred, i);
++	}
++
++	return 0;
++}
++
++#else /* CONFIG_SECURITY_FILE_CAPABILITIES */
++
++int apply_securebits(unsigned securebits, struct cred *new)
++{
++	/* settable securebits not supported */
++	return 0;
++}
++
++static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
++{
++	/* bounding sets not supported */
++	return 0;
++}
++#endif /* CONFIG_SECURITY_FILE_CAPABILITIES */
++
++#ifdef CONFIG_CHECKPOINT
++static int do_restore_caps(struct ckpt_capabilities *h, struct cred *cred)
++{
++	kernel_cap_t effective, inheritable, permitted, bset;
++	int ret;
++
++	effective.cap[0] = h->cap_e_0;
++	effective.cap[1] = h->cap_e_1;
++	inheritable.cap[0] = h->cap_i_0;
++	inheritable.cap[1] = h->cap_i_1;
++	permitted.cap[0] = h->cap_p_0;
++	permitted.cap[1] = h->cap_p_1;
++	bset.cap[0] = h->cap_b_0;
++	bset.cap[1] = h->cap_b_1;
++
++	ret = do_capset_tocred(&effective, &inheritable, &permitted, cred);
+ 	if (ret < 0)
+-		goto error;
++		return ret;
++
++	ret = restore_cap_bset(bset, cred);
++	return ret;
++}
+ 
+-	audit_log_capset(pid, new, current_cred());
++void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred * cred)
++{
++	BUILD_BUG_ON(CAP_LAST_CAP >= 64);
++	h->securebits = cred->securebits;
++	h->cap_i_0 = cred->cap_inheritable.cap[0];
++	h->cap_i_1 = cred->cap_inheritable.cap[1];
++	h->cap_p_0 = cred->cap_permitted.cap[0];
++	h->cap_p_1 = cred->cap_permitted.cap[1];
++	h->cap_e_0 = cred->cap_effective.cap[0];
++	h->cap_e_1 = cred->cap_effective.cap[1];
++	h->cap_b_0 = cred->cap_bset.cap[0];
++	h->cap_b_1 = cred->cap_bset.cap[1];
++}
+ 
+-	return commit_creds(new);
++/*
++ * restore_capabilities: called by restore_creds() to set the
++ * restored capabilities (if permitted) in a new struct cred which
++ * will be attached at the end of the sys_restart().
++ * struct cred *new is prepared by caller (using prepare_creds())
++ * (and aborted by caller on error)
++ * return 0 on success, < 0 on error
++ */
++int restore_capabilities(struct ckpt_capabilities *h, struct cred *new)
++{
++	int ret = do_restore_caps(h, new);
++
++	if (!ret)
++		ret = apply_securebits(h->securebits, new);
+ 
+-error:
+-	abort_creds(new);
+ 	return ret;
  }
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index dda2c21..b37bc8c 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -193,6 +193,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
++#endif /* CONFIG_CHECKPOINT */
  
- 	ctx->uflags = uflags;
- 	ctx->kflags = kflags;
-+	ctx->ktime_begin = ktime_get();
+ /**
+  * capable - Determine if the current task has a superior capability in effect
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 48b7e02..2456b46 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -893,24 +893,9 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
+ 	 * capability-based-privilege environment.
+ 	 */
+ 	case PR_SET_SECUREBITS:
+-		error = -EPERM;
+-		if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
+-		     & (new->securebits ^ arg2))			/*[1]*/
+-		    || ((new->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
+-		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
+-		    || (cap_capable(current, current_cred(), CAP_SETPCAP,
+-				    SECURITY_CAP_AUDIT) != 0)		/*[4]*/
+-			/*
+-			 * [1] no changing of bits that are locked
+-			 * [2] no unlocking of locks
+-			 * [3] no setting of unsupported bits
+-			 * [4] doing anything requires privilege (go read about
+-			 *     the "sendmail capabilities bug")
+-			 */
+-		    )
+-			/* cannot change a locked bit */
++		error = apply_securebits(arg2, new);
++		if (error)
+ 			goto error;
+-		new->securebits = arg2;
+ 		goto changed;
  
- 	err = -EBADF;
- 	ctx->file = fget(fd);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index f7e2cb8..01541b8 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -66,6 +66,10 @@ extern int restore_read_header_arch(struct ckpt_ctx *ctx);
- extern int restore_thread(struct ckpt_ctx *ctx);
- extern int restore_cpu(struct ckpt_ctx *ctx);
- 
-+extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
-+				    struct task_struct *t);
-+extern int restore_restart_block(struct ckpt_ctx *ctx);
-+
- 
- /* debugging flags */
- #define CKPT_DBASE	0x1		/* anything */
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index ce43aa9..fa23629 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -50,6 +50,7 @@ enum {
- 	CKPT_HDR_STRING,
- 
- 	CKPT_HDR_TASK = 101,
-+	CKPT_HDR_RESTART_BLOCK,
- 	CKPT_HDR_THREAD,
- 	CKPT_HDR_CPU,
- 
-@@ -120,4 +121,25 @@ struct ckpt_hdr_task {
- 	__u64 clear_child_tid;
- } __attribute__((aligned(8)));
- 
-+/* restart blocks */
-+struct ckpt_hdr_restart_block {
-+	struct ckpt_hdr h;
-+	__u64 function_type;
-+	__u64 arg_0;
-+	__u64 arg_1;
-+	__u64 arg_2;
-+	__u64 arg_3;
-+	__u64 arg_4;
-+} __attribute__((aligned(8)));
-+
-+enum restart_block_type {
-+	CKPT_RESTART_BLOCK_NONE = 1,
-+	CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP,
-+	CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP,
-+	CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP,
-+	CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP,
-+	CKPT_RESTART_BLOCK_POLL,
-+	CKPT_RESTART_BLOCK_FUTEX
-+};
-+
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 21b5965..220c209 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -15,10 +15,13 @@
- #include <linux/sched.h>
- #include <linux/nsproxy.h>
- #include <linux/fs.h>
-+#include <linux/ktime.h>
- 
- struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
- 
-+	ktime_t ktime_begin;	/* checkpoint start time */
-+
- 	pid_t root_pid;				/* [container] root pid */
- 	struct task_struct *root_task;		/* [container] root task */
- 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
+ 	case PR_GET_SECUREBITS:
 -- 
 1.6.0.4
