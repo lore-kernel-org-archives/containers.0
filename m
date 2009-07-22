@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 03/60] c/r: break out new_user_ns()
-Date: Wed, 22 Jul 2009 05:59:25 -0400
-Message-ID: <1248256822-23416-4-git-send-email-orenl__13258.2251485021$1248258632$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 05/60] cgroup freezer: Fix buggy resume test for
+	tasks frozen with cgroup freezer
+Date: Wed, 22 Jul 2009 05:59:27 -0400
+Message-ID: <1248256822-23416-6-git-send-email-orenl__35769.3423553885$1248258769$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,138 +19,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Break out the core function which checks privilege and (if
-allowed) creates a new user namespace, with the passed-in
-creating user_struct.  Note that a user_namespace, unlike
-other namespace pointers, is not stored in the nsproxy.
-Rather it is purely a property of user_structs.
+When the cgroup freezer is used to freeze tasks we do not want to thaw
+those tasks during resume. Currently we test the cgroup freezer
+state of the resuming tasks to see if the cgroup is FROZEN.  If so
+then we don't thaw the task. However, the FREEZING state also indicates
+that the task should remain frozen.
 
-This will let us keep the task restore code simpler.
+This also avoids a problem pointed out by Oren Ladaan: the freezer state
+transition from FREEZING to FROZEN is updated lazily when userspace reads
+or writes the freezer.state file in the cgroup filesystem. This means that
+resume will thaw tasks in cgroups which should be in the FROZEN state if
+there is no read/write of the freezer.state file to trigger this
+transition before suspend.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+NOTE: Another "simple" solution would be to always update the cgroup
+freezer state during resume. However it's a bad choice for several reasons:
+Updating the cgroup freezer state is somewhat expensive because it requires
+walking all the tasks in the cgroup and checking if they are each frozen.
+Worse, this could easily make resume run in N^2 time where N is the number
+of tasks in the cgroup. Finally, updating the freezer state from this code
+path requires trickier locking because of the way locks must be ordered.
+
+Instead of updating the freezer state we rely on the fact that lazy
+updates only manage the transition from FREEZING to FROZEN. We know that
+a cgroup with the FREEZING state may actually be FROZEN so test for that
+state too. This makes sense in the resume path even for partially-frozen
+cgroups -- those that really are FREEZING but not FROZEN.
+
+Reported-by: Oren Ladaan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
+Cc: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>
+Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+Seems like a candidate for -stable.
 ---
- include/linux/user_namespace.h |    8 ++++++
- kernel/user_namespace.c        |   53 ++++++++++++++++++++++++++++------------
- 2 files changed, 45 insertions(+), 16 deletions(-)
+ include/linux/freezer.h |    7 +++++--
+ kernel/cgroup_freezer.c |    9 ++++++---
+ kernel/power/process.c  |    2 +-
+ 3 files changed, 12 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index cc4f453..f6ea75d 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -20,6 +20,8 @@ extern struct user_namespace init_user_ns;
+diff --git a/include/linux/freezer.h b/include/linux/freezer.h
+index 5a361f8..da7e52b 100644
+--- a/include/linux/freezer.h
++++ b/include/linux/freezer.h
+@@ -64,9 +64,12 @@ extern bool freeze_task(struct task_struct *p, bool sig_only);
+ extern void cancel_freezing(struct task_struct *p);
  
- #ifdef CONFIG_USER_NS
- 
-+struct user_namespace *new_user_ns(struct user_struct *creator,
-+				   struct user_struct **newroot);
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
- {
- 	if (ns)
-@@ -38,6 +40,12 @@ static inline void put_user_ns(struct user_namespace *ns)
- 
- #else
- 
-+static inline struct user_namespace *new_user_ns(struct user_struct *creator,
-+				   struct user_struct **newroot)
+ #ifdef CONFIG_CGROUP_FREEZER
+-extern int cgroup_frozen(struct task_struct *task);
++extern int cgroup_freezing_or_frozen(struct task_struct *task);
+ #else /* !CONFIG_CGROUP_FREEZER */
+-static inline int cgroup_frozen(struct task_struct *task) { return 0; }
++static inline int cgroup_freezing_or_frozen(struct task_struct *task)
 +{
-+	return ERR_PTR(-EINVAL);
++	return 0;
 +}
-+
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
- {
- 	return &init_user_ns;
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 076c7c8..e624b0f 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -11,15 +11,8 @@
- #include <linux/user_namespace.h>
- #include <linux/cred.h>
+ #endif /* !CONFIG_CGROUP_FREEZER */
  
--/*
-- * Create a new user namespace, deriving the creator from the user in the
-- * passed credentials, and replacing that user with the new root user for the
-- * new namespace.
-- *
-- * This is called by copy_creds(), which will finish setting the target task's
-- * credentials.
-- */
--int create_user_ns(struct cred *new)
-+static struct user_namespace *_new_user_ns(struct user_struct *creator,
-+				   struct user_struct **newroot)
- {
- 	struct user_namespace *ns;
- 	struct user_struct *root_user;
-@@ -27,7 +20,7 @@ int create_user_ns(struct cred *new)
- 
- 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
- 	if (!ns)
--		return -ENOMEM;
-+		return ERR_PTR(-ENOMEM);
- 
- 	kref_init(&ns->kref);
- 
-@@ -38,12 +31,43 @@ int create_user_ns(struct cred *new)
- 	root_user = alloc_uid(ns, 0);
- 	if (!root_user) {
- 		kfree(ns);
--		return -ENOMEM;
-+		return ERR_PTR(-ENOMEM);
- 	}
- 
- 	/* set the new root user in the credentials under preparation */
--	ns->creator = new->user;
--	new->user = root_user;
-+	ns->creator = creator;
-+
-+	/* alloc_uid() incremented the userns refcount.  Just set it to 1 */
-+	kref_set(&ns->kref, 1);
-+
-+	*newroot = root_user;
-+	return ns;
-+}
-+
-+struct user_namespace *new_user_ns(struct user_struct *creator,
-+				   struct user_struct **newroot)
-+{
-+	if (!capable(CAP_SYS_ADMIN))
-+		return ERR_PTR(-EPERM);
-+	return _new_user_ns(creator, newroot);
-+}
-+
-+/*
-+ * Create a new user namespace, deriving the creator from the user in the
-+ * passed credentials, and replacing that user with the new root user for the
-+ * new namespace.
-+ *
-+ * This is called by copy_creds(), which will finish setting the target task's
-+ * credentials.
-+ */
-+int create_user_ns(struct cred *new)
-+{
-+	struct user_namespace *ns;
-+
-+	ns = new_user_ns(new->user, &new->user);
-+	if (IS_ERR(ns))
-+		return PTR_ERR(ns);
-+
- 	new->uid = new->euid = new->suid = new->fsuid = 0;
- 	new->gid = new->egid = new->sgid = new->fsgid = 0;
- 	put_group_info(new->group_info);
-@@ -54,9 +78,6 @@ int create_user_ns(struct cred *new)
- #endif
- 	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
- 
--	/* alloc_uid() incremented the userns refcount.  Just set it to 1 */
--	kref_set(&ns->kref, 1);
--
- 	return 0;
+ /*
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index fb249e2..765e2c1 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -47,17 +47,20 @@ static inline struct freezer *task_freezer(struct task_struct *task)
+ 			    struct freezer, css);
  }
  
+-int cgroup_frozen(struct task_struct *task)
++int cgroup_freezing_or_frozen(struct task_struct *task)
+ {
+ 	struct freezer *freezer;
+ 	enum freezer_state state;
+ 
+ 	task_lock(task);
+ 	freezer = task_freezer(task);
+-	state = freezer->state;
++	if (!freezer->css.cgroup->parent)
++		state = CGROUP_THAWED; /* root cgroup can't be frozen */
++	else
++		state = freezer->state;
+ 	task_unlock(task);
+ 
+-	return state == CGROUP_FROZEN;
++	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
+ }
+ 
+ /*
+diff --git a/kernel/power/process.c b/kernel/power/process.c
+index da2072d..3728d4c 100644
+--- a/kernel/power/process.c
++++ b/kernel/power/process.c
+@@ -138,7 +138,7 @@ static void thaw_tasks(bool nosig_only)
+ 		if (nosig_only && should_send_signal(p))
+ 			continue;
+ 
+-		if (cgroup_frozen(p))
++		if (cgroup_freezing_or_frozen(p))
+ 			continue;
+ 
+ 		thaw_process(p);
 -- 
 1.6.0.4
