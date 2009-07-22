@@ -1,16 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 7/9] blkio-cgroup-v9: Page tracking hooks
-Date: Wed, 22 Jul 2009 11:17:14 +0900
-Message-ID: <20090722111714.8af6c5d8.kamezawa.hiroyu__16005.9119611562$1248229187$gmane$org@jp.fujitsu.com>
-References: <20090721.231313.104044139.ryov@valinux.co.jp>
-	<20090721.231405.189716609.ryov@valinux.co.jp>
-	<20090721.231505.112612378.ryov@valinux.co.jp>
-	<20090721.232316.183036419.ryov@valinux.co.jp>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] cgroup: fix reverse unlock sequence in cgroup_get_sb
+Date: Wed, 22 Jul 2009 10:18:28 +0800
+Message-ID: <4A6676F4.7070201__40361.2684378915$1248229268$gmane$org@cn.fujitsu.com>
+References: <1248171926-20232-1-git-send-email-dfeng@redhat.com>
+	<6599ad830907210903q7206cac2l83a9139d19c5e1a@mail.gmail.com>
+	<4A667218.7040105@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090721.232316.183036419.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <4A667218.7040105-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,134 +19,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Danny Feng <dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 21 Jul 2009 23:23:16 +0900 (JST)
-Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
+Danny Feng wrote:
+> On 07/22/2009 12:03 AM, Paul Menage wrote:
+>> On Tue, Jul 21, 2009 at 3:25 AM, Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>  wrote:
+>>> In cgroup_get_sb, the lock sequence is:
+>>>         mutex_lock(&inode->i_mutex);
+>>>         mutex_lock(&cgroup->mutex);
+>>> so the last unlock sequence should be:
+>>
+>> Make this "so for consistency the last ..." ?
+>>
+>> Maybe make the patch title "Make unlock sequence in cgroup_get_sb
+>> consistent" so someone looking through the change logs for fixes to
+>> backport doesn't wrongly thing that this fixes any bug"?
+>>
+> 
+> Yep, this is a trivial patch.  Modified following your suggestion, thank
+> you.
+> 
 
-> This patch contains several hooks that let the blkio-cgroup framework to know
-> which blkio-cgroup is the owner of a page before starting I/O against the page.
+As far as it's not declared as a fix, I has no objection to this
+patch.
 
-> @@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page
->  					gfp_mask & GFP_RECLAIM_MASK);
->  	if (error)
->  		goto out;
-> +	blkio_cgroup_set_owner(page, current->mm);
->  
+Please always inline the patch in the mail body. And when resending
+the patch, add the acked-by you collected in it:
 
-This part is doubtful...Is this necessary ? 
-I recommend you that the caller should attach owner by itself.
+Acked-by: Balbir ...
+Acked-by: Paul ...
+Signed-off-by: Xiaotian ...
 
+You may resend the patch to Andrew Morton, who picks up cgroup
+patches, otherwise the patch may be overlooked.
 
->  	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
->  	if (error == 0) {
-> Index: linux-2.6.31-rc3/mm/memory.c
-> ===================================================================
-> --- linux-2.6.31-rc3.orig/mm/memory.c
-> +++ linux-2.6.31-rc3/mm/memory.c
-> @@ -51,6 +51,7 @@
->  #include <linux/init.h>
->  #include <linux/writeback.h>
->  #include <linux/memcontrol.h>
-> +#include <linux/biotrack.h>
->  #include <linux/mmu_notifier.h>
->  #include <linux/kallsyms.h>
->  #include <linux/swapops.h>
-> @@ -2115,6 +2116,7 @@ gotten:
->  		 */
->  		ptep_clear_flush_notify(vma, address, page_table);
->  		page_add_new_anon_rmap(new_page, vma, address);
-> +		blkio_cgroup_set_owner(new_page, mm);
-
-plz do this in swap-out code.
-
->  		set_pte_at(mm, address, page_table, entry);
->  		update_mmu_cache(vma, address, entry);
->  		if (old_page) {
-> @@ -2580,6 +2582,7 @@ static int do_swap_page(struct mm_struct
->  	flush_icache_page(vma, page);
->  	set_pte_at(mm, address, page_table, pte);
->  	page_add_anon_rmap(page, vma, address);
-> +	blkio_cgroup_reset_owner(page, mm);
-
-and this.
-
-
->  	/* It's better to call commit-charge after rmap is established */
->  	mem_cgroup_commit_charge_swapin(page, ptr);
->  
-> @@ -2644,6 +2647,7 @@ static int do_anonymous_page(struct mm_s
->  		goto release;
->  	inc_mm_counter(mm, anon_rss);
->  	page_add_new_anon_rmap(page, vma, address);
-> +	blkio_cgroup_set_owner(page, mm);
->  	set_pte_at(mm, address, page_table, entry);
->  
-and this.
-
->  	/* No need to invalidate - it was non-present before */
-> @@ -2791,6 +2795,7 @@ static int __do_fault(struct mm_struct *
->  		if (anon) {
->  			inc_mm_counter(mm, anon_rss);
->  			page_add_new_anon_rmap(page, vma, address);
-> +			blkio_cgroup_set_owner(page, mm);
-and this.
-
-IMHO, later io for swap-out is caused by the caller of swapout, not page's
-owner. plz charge to them or,
-  - add special BLOCK CGROUP ID for the kernel's swap out. 
-
-Bye,
--Kame
-
->  		} else {
->  			inc_mm_counter(mm, file_rss);
->  			page_add_file_rmap(page);
-> Index: linux-2.6.31-rc3/mm/page-writeback.c
-> ===================================================================
-> --- linux-2.6.31-rc3.orig/mm/page-writeback.c
-> +++ linux-2.6.31-rc3/mm/page-writeback.c
-> @@ -23,6 +23,7 @@
->  #include <linux/init.h>
->  #include <linux/backing-dev.h>
->  #include <linux/task_io_accounting_ops.h>
-> +#include <linux/biotrack.h>
->  #include <linux/blkdev.h>
->  #include <linux/mpage.h>
->  #include <linux/rmap.h>
-> @@ -1247,6 +1248,7 @@ int __set_page_dirty_nobuffers(struct pa
->  			BUG_ON(mapping2 != mapping);
->  			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
->  			account_page_dirtied(page, mapping);
-> +			blkio_cgroup_reset_owner_pagedirty(page, current->mm);
->  			radix_tree_tag_set(&mapping->page_tree,
->  				page_index(page), PAGECACHE_TAG_DIRTY);
->  		}
-> Index: linux-2.6.31-rc3/mm/swap_state.c
-> ===================================================================
-> --- linux-2.6.31-rc3.orig/mm/swap_state.c
-> +++ linux-2.6.31-rc3/mm/swap_state.c
-> @@ -18,6 +18,7 @@
->  #include <linux/pagevec.h>
->  #include <linux/migrate.h>
->  #include <linux/page_cgroup.h>
-> +#include <linux/biotrack.h>
->  
->  #include <asm/pgtable.h>
->  
-> @@ -307,6 +308,7 @@ struct page *read_swap_cache_async(swp_e
->  		 */
->  		__set_page_locked(new_page);
->  		SetPageSwapBacked(new_page);
-> +		blkio_cgroup_set_owner(new_page, current->mm);
->  		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
->  		if (likely(!err)) {
->  			/*
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+>>>         mutex_unlock(&cgroup->mutex);
+>>>         mutex_unlock(&inode->i_mutex);
+>>>
+>>> Signed-off-by: Xiaotian Feng<dfeng-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>
+>> Acked-by: Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>>
+>> Paul
 > 
