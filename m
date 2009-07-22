@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/5] Add _ckpt_read_hdr_type() helper
-Date: Wed, 22 Jul 2009 13:41:37 -0700
-Message-ID: <1248295301-30930-2-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 4/5] Add a common sock_bind() helper to unify the security hook
+Date: Wed, 22 Jul 2009 13:41:40 -0700
+Message-ID: <1248295301-30930-5-git-send-email-danms@us.ibm.com>
 References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,92 +20,67 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This helper function gives us a way to read a header object and the
-subsequent payload from the checkpoint stream directly into our own
-buffer.  This is used by the net/checkpoint.c code to read skb's
-without a memcpy().
+This moves the meat out of the bind() syscall into a helper function that
+performs security_socket_bind() and then sock->ops->bind().  This allows a
+unification of this behavior between the syscall and the pending socket
+restart logic.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++--
- include/linux/checkpoint.h |    4 ++++
- 2 files changed, 38 insertions(+), 2 deletions(-)
+ include/net/sock.h |   16 ++++++++++++++++
+ net/socket.c       |   13 ++++---------
+ 2 files changed, 20 insertions(+), 9 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 677f030..5cbe491 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -178,6 +178,38 @@ int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len)
- }
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 2c0da92..d435dc1 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -1572,6 +1572,22 @@ extern void sock_enable_timestamp(struct sock *sk, int flag);
+ extern int sock_get_timestamp(struct sock *, struct timeval __user *);
+ extern int sock_get_timestampns(struct sock *, struct timespec __user *);
  
- /**
-+ * _ckpt_read_hdr_type - read a header record and check the type
-+ * @ctx: checkpoint context
-+ * @h: provided header buffer (returned)
-+ * @type: optional type, 0 to ignore
-+ *
-+ * Returns the size of the payload to follow or negative on error
++/* bind() helper shared between any callers needing to perform a bind on
++ * behalf of userspace (syscall and restart) with the security hooks.
 + */
-+int _ckpt_read_hdr_type(struct ckpt_ctx *ctx, struct ckpt_hdr *h, int type)
++static inline int sock_bind(struct socket *sock,
++			    struct sockaddr *addr,
++			    int addr_len)
 +{
-+	int ret;
++	int err;
 +
-+	ret = ckpt_kread(ctx, h, sizeof(*h));
-+	if (ret < 0)
-+		return ret;
-+	else if (type && h->type != type)
-+		return -EINVAL;
++	err = security_socket_bind(sock, addr, addr_len);
++	if (err)
++		return err;
 +	else
-+		return h->len - sizeof(*h);
++		return sock->ops->bind(sock, addr, addr_len);
 +}
 +
-+/**
-+ * _ckpt_read_payload - read the payload associated with a recent header read
-+ * @ctx: checkpoint_context
-+ * @h: header returned from _ckpt_read_hdr_type()
-+ * @buffer: pre-allocated buffer to store payload
-+ */
-+int _ckpt_read_payload(struct ckpt_ctx *ctx, struct ckpt_hdr *h, void *buffer)
-+{
-+	return ckpt_kread(ctx, buffer, h->len - sizeof(*h));
-+}
-+
-+/**
-  * ckpt_read_obj - allocate and read an object (ckpt_hdr followed by payload)
-  * @ctx: checkpoint context
-  * @h: object descriptor
-@@ -193,7 +225,7 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
- 	int ret;
- 
-  again:
--	ret = ckpt_kread(ctx, &hh, sizeof(hh));
-+	ret = _ckpt_read_hdr_type(ctx, &hh, 0);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
-@@ -218,7 +250,7 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
- 
- 	*h = hh;	/* yay ! */
- 
--	ret = ckpt_kread(ctx, (h + 1), hh.len - sizeof(struct ckpt_hdr));
-+	ret = _ckpt_read_payload(ctx, &hh, (h + 1));
- 	if (ret < 0) {
- 		ckpt_hdr_put(ctx, h);
- 		h = ERR_PTR(ret);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 60d1116..2e9772e 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -63,6 +63,10 @@ extern int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len);
- extern void __ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...);
- extern int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...);
- 
-+extern int _ckpt_read_payload(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
-+			      void *buffer);
-+extern int _ckpt_read_hdr_type(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
-+			       int type);
- extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
- 			       void *ptr, int len, int type);
- extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
+ /* 
+  *	Enable debug/info messages 
+  */
+diff --git a/net/socket.c b/net/socket.c
+index 791d71a..017f6e6 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -1414,15 +1414,10 @@ SYSCALL_DEFINE3(bind, int, fd, struct sockaddr __user *, umyaddr, int, addrlen)
+ 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
+ 	if (sock) {
+ 		err = move_addr_to_kernel(umyaddr, addrlen, (struct sockaddr *)&address);
+-		if (err >= 0) {
+-			err = security_socket_bind(sock,
+-						   (struct sockaddr *)&address,
+-						   addrlen);
+-			if (!err)
+-				err = sock->ops->bind(sock,
+-						      (struct sockaddr *)
+-						      &address, addrlen);
+-		}
++		if (err >= 0)
++			err = sock_bind(sock,
++					(struct sockaddr *)&address,
++					addrlen);
+ 		fput_light(sock->file, fput_needed);
+ 	}
+ 	return err;
 -- 
 1.6.2.5
