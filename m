@@ -1,15 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 3/9] blkio-cgroup-v9: The new page_cgroup framework
-Date: Wed, 22 Jul 2009 18:30:11 +0900 (JST)
-Message-ID: <20090722.183011.226792119.ryov__42944.4518559196$1248255183$gmane$org@valinux.co.jp>
-References: <20090722110739.e00c0f18.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090722.172843.193696974.ryov@valinux.co.jp>
-	<20090722173941.7608387e.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH 7/9] blkio-cgroup-v9: Page tracking hooks
+Date: Wed, 22 Jul 2009 18:40:55 +0900 (JST)
+Message-ID: <20090722.184055.226788113.ryov__3494.17628390274$1248255694$gmane$org@valinux.co.jp>
+References: <20090721.231505.112612378.ryov@valinux.co.jp>
+	<20090721.232316.183036419.ryov@valinux.co.jp>
+	<20090722111714.8af6c5d8.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722173941.7608387e.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090722111714.8af6c5d8.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,195 +20,144 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> On Wed, 22 Jul 2009 17:28:43 +0900 (JST)
+> On Tue, 21 Jul 2009 23:23:16 +0900 (JST)
 > Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> > > But, following is more straightforward. (and what you do is not different
-> > > from this.)
-> > > ==
-> > > struct page {
-> > > 	.....
-> > > #ifdef CONFIG_BLOCKIO_CGROUP
-> > > 	void *blockio_cgroup;
-> > > #endif
-> > > }
-> > > ==
-> > 
-> > This increases the size of struct page. Could I get a consensus on
-> > this approach?
-> > 
-> Just God knows ;)
 > 
-> To be honest, what I expected in these days for people of blockio cgroup is like
-> following for getting room for themselves.
+> > This patch contains several hooks that let the blkio-cgroup framework to know
+> > which blkio-cgroup is the owner of a page before starting I/O against the page.
 > 
-> I'm now thinking to do this by myself and offer a room for you because
-> terrible bugs have been gone now and I have time.
+> > @@ -464,6 +465,7 @@ int add_to_page_cache_locked(struct page
+> >  					gfp_mask & GFP_RECLAIM_MASK);
+> >  	if (error)
+> >  		goto out;
+> > +	blkio_cgroup_set_owner(page, current->mm);
+> >  
+> 
+> This part is doubtful...Is this necessary ? 
+> I recommend you that the caller should attach owner by itself.
 
-It is very nice for blkio-cgroup, it can make blkio-cgroup simple and
-more faster to track down the owner of an I/O request.
+I think that it is reasonable to add the hook right here rather than
+to add many hooks to a variety of places.
+ 
+> >  	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
+> >  	if (error == 0) {
+> > Index: linux-2.6.31-rc3/mm/memory.c
+> > ===================================================================
+> > --- linux-2.6.31-rc3.orig/mm/memory.c
+> > +++ linux-2.6.31-rc3/mm/memory.c
+> > @@ -51,6 +51,7 @@
+> >  #include <linux/init.h>
+> >  #include <linux/writeback.h>
+> >  #include <linux/memcontrol.h>
+> > +#include <linux/biotrack.h>
+> >  #include <linux/mmu_notifier.h>
+> >  #include <linux/kallsyms.h>
+> >  #include <linux/swapops.h>
+> > @@ -2115,6 +2116,7 @@ gotten:
+> >  		 */
+> >  		ptep_clear_flush_notify(vma, address, page_table);
+> >  		page_add_new_anon_rmap(new_page, vma, address);
+> > +		blkio_cgroup_set_owner(new_page, mm);
+> 
+> plz do this in swap-out code.
+> 
+> >  		set_pte_at(mm, address, page_table, entry);
+> >  		update_mmu_cache(vma, address, entry);
+> >  		if (old_page) {
+> > @@ -2580,6 +2582,7 @@ static int do_swap_page(struct mm_struct
+> >  	flush_icache_page(vma, page);
+> >  	set_pte_at(mm, address, page_table, pte);
+> >  	page_add_anon_rmap(page, vma, address);
+> > +	blkio_cgroup_reset_owner(page, mm);
+> 
+> and this.
+> 
+> 
+> >  	/* It's better to call commit-charge after rmap is established */
+> >  	mem_cgroup_commit_charge_swapin(page, ptr);
+> >  
+> > @@ -2644,6 +2647,7 @@ static int do_anonymous_page(struct mm_s
+> >  		goto release;
+> >  	inc_mm_counter(mm, anon_rss);
+> >  	page_add_new_anon_rmap(page, vma, address);
+> > +	blkio_cgroup_set_owner(page, mm);
+> >  	set_pte_at(mm, address, page_table, entry);
+> >  
+> and this.
+> 
+> >  	/* No need to invalidate - it was non-present before */
+> > @@ -2791,6 +2795,7 @@ static int __do_fault(struct mm_struct *
+> >  		if (anon) {
+> >  			inc_mm_counter(mm, anon_rss);
+> >  			page_add_new_anon_rmap(page, vma, address);
+> > +			blkio_cgroup_set_owner(page, mm);
+> and this.
+> 
+> IMHO, later io for swap-out is caused by the caller of swapout, not page's
+> owner. plz charge to them or,
+>   - add special BLOCK CGROUP ID for the kernel's swap out. 
+
+I think that it is not too bad to charge the owner of a page for
+swap-out. From another perspective, it can be considered that swap-out
+is caused by a process which uses a large amount of memory.
 
 Thanks,
 Ryo Tsuruta
 
-> Balbir, if you have no concerns, I'll clean up and send this to mmotm.
-> (maybe softlimit accesses pc->page and I have to update this.)
 > 
-> Note: This is _not_ tested at all.
-> 
-> Thanks,
+> Bye,
 > -Kame
-> ==
-> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 > 
-> page cgroup has pointer to memmap it stands for.
-> But, page_cgroup->page is not accessed in fast path and not necessary
-> and not modified. Then, it's not to be maintained as pointer.
-> 
-> This patch removes "page" from page_cgroup and add
-> page_cgroup_to_page() function. This uses some amount of FLAGS bit
-> as struct page does.
-> As side effect, nid, zid can be obtaind from page_cgroup itself.
-> 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> ---
->  include/linux/page_cgroup.h |   19 ++++++++++++++++---
->  mm/page_cgroup.c            |   42 ++++++++++++++++++++++++++++++++----------
->  2 files changed, 48 insertions(+), 13 deletions(-)
-> 
-> Index: mmotm-2.6.31-Jul16/include/linux/page_cgroup.h
-> ===================================================================
-> --- mmotm-2.6.31-Jul16.orig/include/linux/page_cgroup.h
-> +++ mmotm-2.6.31-Jul16/include/linux/page_cgroup.h
-> @@ -13,7 +13,7 @@
->  struct page_cgroup {
->  	unsigned long flags;
->  	struct mem_cgroup *mem_cgroup;
-> -	struct page *page;
-> +	/* block io tracking will use extra unsigned long bytes */
->  	struct list_head lru;		/* per cgroup LRU list */
->  };
->  
-> @@ -32,7 +32,12 @@ static inline void __init page_cgroup_in
->  #endif
->  
->  struct page_cgroup *lookup_page_cgroup(struct page *page);
-> +struct page *page_cgroup_to_page(struct page_cgroup *page);
->  
-> +/*
-> + * TOP MOST (NODE_SHIFT+ZONE_SHIFT or SECTION_SHIFT bits of "flags" are used
-> + * for detecting pfn as struct page does.
-> + */
->  enum {
->  	/* flags for mem_cgroup */
->  	PCG_LOCK,  /* page cgroup is locked */
-> @@ -71,14 +76,22 @@ CLEARPCGFLAG(AcctLRU, ACCT_LRU)
->  TESTPCGFLAG(AcctLRU, ACCT_LRU)
->  TESTCLEARPCGFLAG(AcctLRU, ACCT_LRU)
->  
-> +#ifdef NODE_NOT_IN_PAGE_FLAGS
->  static inline int page_cgroup_nid(struct page_cgroup *pc)
->  {
-> -	return page_to_nid(pc->page);
-> +	struct page *page= page_cgroup_to_page(pc);
-> +	return page_to_nid(page);
->  }
-> +#else
-> +static inline int page_cgroup_nid(struct page_cgroup *pc)
-> +{
-> +	return (pc->flags >> NODES_PGSHIFT) & NODES_MASK;
-> +}
-> +#endif
->  
->  static inline enum zone_type page_cgroup_zid(struct page_cgroup *pc)
->  {
-> -	return page_zonenum(pc->page);
-> +	return (pc->flags >> ZONEID_PGSHIFT) & ZONEID_MASK;
->  }
->  
->  static inline void lock_page_cgroup(struct page_cgroup *pc)
-> Index: mmotm-2.6.31-Jul16/mm/page_cgroup.c
-> ===================================================================
-> --- mmotm-2.6.31-Jul16.orig/mm/page_cgroup.c
-> +++ mmotm-2.6.31-Jul16/mm/page_cgroup.c
-> @@ -13,9 +13,12 @@
->  static void __meminit
->  __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
->  {
-> -	pc->flags = 0;
-> +	unsigned long flags;
-> +
->  	pc->mem_cgroup = NULL;
-> -	pc->page = pfn_to_page(pfn);
-> +	/* Copy NODE/ZONE/SECTION information from struct page */
-> +	flags = pfn_to_page(pfn)->flags;
-> +	pc->flags = flags & ~((1 << __NR_PAGEFLAGS) - 1);
->  	INIT_LIST_HEAD(&pc->lru);
->  }
->  static unsigned long total_usage;
-> @@ -42,6 +45,18 @@ struct page_cgroup *lookup_page_cgroup(s
->  	return base + offset;
->  }
->  
-> +struct page *page_cgroup_to_page(struct page_cgroup *pc)
-> +{
-> +	int nid = (page->flags >> SECTIONS_PGSHIFT) & SECTIONS_MASK;
-> +	unsigned long pfn, offset;
-> +
-> +	offset = pc - NODE_DATA(nid)->node_page_cgroup
-> +	pfn = NODE_DATA(nid)->node_start_pfn + offset;
-> +
-> +	return pfn_to_page(pfn);
-> +}
-> +
-> +
->  static int __init alloc_node_page_cgroup(int nid)
->  {
->  	struct page_cgroup *base, *pc;
-> @@ -104,6 +119,18 @@ struct page_cgroup *lookup_page_cgroup(s
->  	return section->page_cgroup + pfn;
->  }
->  
-> +struct page *page_cgroup_to_page(struct page_cgroup *pc)
-> +{
-> +	unsigned long pfn, sectionid;
-> +	struct mem_section *section;
-> +
-> +	sectionid = (pc->flags >> SECTIONS_PGSHIFT) & SECTIONS_MASK;
-> +	section = __nr_to_section(sectionid);
-> +
-> +	pfn = pc - section->page_cgroup;
-> +	return pfn_to_page(pfn);
-> +}
-> +
->  /* __alloc_bootmem...() is protected by !slab_available() */
->  static int __init_refok init_section_page_cgroup(unsigned long pfn)
->  {
-> @@ -128,15 +155,10 @@ static int __init_refok init_section_pag
->  		}
->  	} else {
->  		/*
-> - 		 * We don't have to allocate page_cgroup again, but
-> -		 * address of memmap may be changed. So, we have to initialize
-> -		 * again.
-> + 		 * We don't have to allocate page_cgroup again, and we don't
-> +		 * take care of address of memmap.
->  		 */
-> -		base = section->page_cgroup + pfn;
-> -		table_size = 0;
-> -		/* check address of memmap is changed or not. */
-> -		if (base->page == pfn_to_page(pfn))
-> -			return 0;
-> +		return 0;
->  	}
->  
->  	if (!base) {
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+> >  		} else {
+> >  			inc_mm_counter(mm, file_rss);
+> >  			page_add_file_rmap(page);
+> > Index: linux-2.6.31-rc3/mm/page-writeback.c
+> > ===================================================================
+> > --- linux-2.6.31-rc3.orig/mm/page-writeback.c
+> > +++ linux-2.6.31-rc3/mm/page-writeback.c
+> > @@ -23,6 +23,7 @@
+> >  #include <linux/init.h>
+> >  #include <linux/backing-dev.h>
+> >  #include <linux/task_io_accounting_ops.h>
+> > +#include <linux/biotrack.h>
+> >  #include <linux/blkdev.h>
+> >  #include <linux/mpage.h>
+> >  #include <linux/rmap.h>
+> > @@ -1247,6 +1248,7 @@ int __set_page_dirty_nobuffers(struct pa
+> >  			BUG_ON(mapping2 != mapping);
+> >  			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
+> >  			account_page_dirtied(page, mapping);
+> > +			blkio_cgroup_reset_owner_pagedirty(page, current->mm);
+> >  			radix_tree_tag_set(&mapping->page_tree,
+> >  				page_index(page), PAGECACHE_TAG_DIRTY);
+> >  		}
+> > Index: linux-2.6.31-rc3/mm/swap_state.c
+> > ===================================================================
+> > --- linux-2.6.31-rc3.orig/mm/swap_state.c
+> > +++ linux-2.6.31-rc3/mm/swap_state.c
+> > @@ -18,6 +18,7 @@
+> >  #include <linux/pagevec.h>
+> >  #include <linux/migrate.h>
+> >  #include <linux/page_cgroup.h>
+> > +#include <linux/biotrack.h>
+> >  
+> >  #include <asm/pgtable.h>
+> >  
+> > @@ -307,6 +308,7 @@ struct page *read_swap_cache_async(swp_e
+> >  		 */
+> >  		__set_page_locked(new_page);
+> >  		SetPageSwapBacked(new_page);
+> > +		blkio_cgroup_set_owner(new_page, current->mm);
+> >  		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
+> >  		if (likely(!err)) {
+> >  			/*
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > Please read the FAQ at  http://www.tux.org/lkml/
+> > 
