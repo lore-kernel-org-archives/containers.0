@@ -1,7 +1,8 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/5] Add an errno validation function
-Date: Wed, 22 Jul 2009 13:41:38 -0700
-Message-ID: <1248295301-30930-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 3/5] Add a ckpt_read_string() function to allow reading of a
+	variable-length (but length-capped) string from the checkpoint stream.
+Date: Wed, 22 Jul 2009 13:41:39 -0700
+Message-ID: <1248295301-30930-4-git-send-email-danms@us.ibm.com>
 References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,24 +23,67 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ checkpoint/restart.c       |   35 +++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h |    1 +
+ 2 files changed, 36 insertions(+), 0 deletions(-)
 
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 5cbe491..06fe47e 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -339,6 +339,41 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
+ 	return ret;
+ }
+ 
++/**
++ * ckpt_read_string - read a string (variable length)
++ * @ctx: checkpoint context
++ * @max: maximum acceptable length
++ * @str: pointer to buffer to store allocated string (caller must kfree())
++ *
++ * This can be used to read a variable-length string from the checkpoint
++ * stream. @max limits the size of the resulting buffer.  Returns zero on
++ * success, negative on failure.
++ */
++int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
++{
++	struct ckpt_hdr *h;
++	char *buf;
++	int len;
++	int ret = 0;
++
++	h = ckpt_read_buf_type(ctx, max, CKPT_HDR_STRING);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	buf = (char *)(h + 1);
++	len = h->len - sizeof(*h);
++
++	*str = kzalloc(len + 1, GFP_KERNEL);
++	if (!*str)
++		ret = -ENOMEM;
++	else
++		memcpy(*str, buf, len);
++
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
+ /***********************************************************************
+  * Restart
+  */
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 2e9772e..93efa10 100644
+index 93efa10..95940d4 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -261,6 +261,11 @@ extern void *restore_sighand(struct ckpt_ctx *ctx);
- 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
- 	} while (0)
- 
-+static inline int ckpt_validate_errno(int errno)
-+{
-+	/* Current highest errno is ~530; this should provide some sanity */
-+	return (errno >= 0) && (errno < 1024);
-+}
- 
- /* debugging flags */
- #define CKPT_DBASE	0x1		/* anything */
+@@ -72,6 +72,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
+ extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
+ extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
+ extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
++extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
+ extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
+ extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
+ extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
 -- 
 1.6.2.5
