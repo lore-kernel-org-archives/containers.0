@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 46/60] c/r: support for UTS namespace
-Date: Wed, 22 Jul 2009 06:00:08 -0400
-Message-ID: <1248256822-23416-47-git-send-email-orenl__17394.6967850954$1248261036$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 58/60] c/r: checkpoint and restore task credentials
+Date: Wed, 22 Jul 2009 06:00:20 -0400
+Message-ID: <1248256822-23416-59-git-send-email-orenl__536.178801167075$1248261249$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,534 +18,1077 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This patch adds a "phase" of checkpoint that saves out information about any
-namespaces the task(s) may have.  Do this by tracking the namespace objects
-of the tasks and making sure that tasks with the same namespace that follow
-get properly referenced in the checkpoint stream.
+This patch adds the checkpointing and restart of credentials
+(uids, gids, and capabilities) to Oren's c/r patchset (on top
+of v14).  It goes to great pains to re-use (and define when
+needed) common helpers, in order to make sure that as security
+code is modified, the cr code will be updated.  Some of the
+helpers should still be moved (i.e. _creds() functions should
+be in kernel/cred.c).
 
-Changes[v17]:
-  - Collect nsproxy->uts_ns
-  - Save uts string lengths once in ckpt_hdr_const
-  - Save and restore all fields of uts-ns
-  - Don't overwrite global uts-ns if !CONFIG_UTS_NS
-  - Replace sys_unshare() with create_uts_ns()
-  - Take uts_sem around access to uts data
-Changes:
-  - Remove the kernel restore path
-  - Punt on nested namespaces
-  - Use __NEW_UTS_LEN in nodename and domainname buffers
-  - Add a note to Documentation/checkpoint/internals.txt to indicate where
-    in the save/restore process the UTS information is kept
-  - Store (and track) the objref of the namespace itself instead of the
-    nsproxy (based on comments from Dave on IRC)
-  - Remove explicit check for non-root nsproxy
-  - Store the nodename and domainname lengths and use ckpt_write_string()
-    to store the actual name strings
-  - Catch failure of ckpt_obj_add_ptr() in ckpt_write_namespaces()
-  - Remove "types" bitfield and use the "is this new" flag to determine
-    whether or not we should write out a new ns descriptor
-  - Replace kernel restore path
-  - Move the namespace information to be directly after the task
-    information record
-  - Update Documentation to reflect new location of namespace info
-  - Support checkpoint and restart of nested UTS namespaces
+When building the credentials for the restarted process, I
+1. create a new struct cred as a copy of the running task's
+cred (using prepare_cred())
+2. always authorize any changes to the new struct cred
+based on the permissions of current_cred() (not the current
+transient state of the new cred).
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+While this may mean that certain transient_cred1->transient_cred2
+states are allowed which otherwise wouldn't be allowed, the
+fact remains that current_cred() is allowed to transition to
+transient_cred2.
+
+The reconstructed creds are applied to the task at the very
+end of the sys_restart call.  This ensures that any objects which
+need to be re-created (file, socket, etc) are re-created using
+the creds of the task calling sys_restart - preventing an unpriv
+user from creating a privileged object, and ensuring that a
+root task can restart a process which had started out privileged,
+created some privileged objects, then dropped its privilege.
+
+With these patches, the root user can restart checkpoint images
+(created by either hallyn or root) of user hallyn's tasks,
+resulting in a program owned by hallyn.
+
+Changelog:
+	Jun 15: Fix user_ns handling when !CONFIG_USER_N
+	        Set creator_ref=0 for root_ns (discard @flags)
+		Don't  overwrite global user-ns if CONFIG_USER_NS
+	Jun 10: Merge with ckpt-v16-dev (Oren Laadan)
+	Jun 01: Don't check ordering of groups in group_info, bc
+		set_groups() will sort it for us.
+	May 28: 1. Restore securebits
+		2. Address Alexey's comments: move prototypes out of
+		   sched.h, validate ngroups < NGROUPS_MAX, validate
+		   groups are sorted, and get rid of ckpt_hdr_cred->version.
+		3. remove bogus unused flag RESTORE_CREATE_USERNS
+	May 26: Move group, user, userns, creds c/r functions out
+		of checkpoint/process.c and into the appropriate files.
+	May 26: Define struct ckpt_hdr_task_creds and move task cred
+		objref c/r into {checkpoint_restore}_task_shared().
+	May 26: Take cred refs around checkpoint_write_creds()
+	May 20: Remove the limit on number of groups in groupinfo
+		at checkpoint time
+	May 20: Remove the depth limit on empty user namespaces
+	May 20: Better document checkpoint_user
+	May 18: fix more refcounting: if (userns 5, uid 0) had
+		no active tasks or child user_namespaces, then
+		it shouldn't exist at restart or it, its namespace,
+		and its whole chain of creators will be leaked.
+	May 14: fix some refcounting:
+		1. a new user_ns needs a ref to remain pinned
+		   by its root user
+		2. current_user_ns needs an extra ref bc objhash
+		   drops two on restart
+		3. cred needs a ref for the real credentials bc
+		   commit_creds eats one ref.
+	May 13: folded in fix to userns refcounting.
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+[orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org: merge with ckpt-v16-dev]
 ---
- checkpoint/Makefile              |    1 +
- checkpoint/checkpoint.c          |    5 +-
- checkpoint/namespace.c           |  100 ++++++++++++++++++++++++++++++++++++++
- checkpoint/objhash.c             |   26 ++++++++++
- checkpoint/process.c             |    2 +
- checkpoint/restart.c             |   32 ++++++++++++
- include/linux/checkpoint.h       |    5 ++
- include/linux/checkpoint_hdr.h   |   16 ++++++
- include/linux/checkpoint_types.h |    6 ++
- include/linux/utsname.h          |    1 +
- kernel/nsproxy.c                 |   47 +++++++++++++++++-
- kernel/utsname.c                 |    3 +-
- 12 files changed, 240 insertions(+), 4 deletions(-)
- create mode 100644 checkpoint/namespace.c
+ checkpoint/namespace.c           |   41 ++++++++++
+ checkpoint/objhash.c             |   82 ++++++++++++++++++++
+ checkpoint/process.c             |  111 ++++++++++++++++++++++++++-
+ include/linux/capability.h       |    6 +-
+ include/linux/checkpoint.h       |   12 +++
+ include/linux/checkpoint_hdr.h   |   59 ++++++++++++++
+ include/linux/checkpoint_types.h |    2 +
+ kernel/cred.c                    |  123 +++++++++++++++++++++++++++++
+ kernel/groups.c                  |   69 +++++++++++++++++
+ kernel/user.c                    |  158 ++++++++++++++++++++++++++++++++++++++
+ kernel/user_namespace.c          |   89 +++++++++++++++++++++
+ 11 files changed, 746 insertions(+), 6 deletions(-)
 
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index f56a7d6..bb2c0ca 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -8,5 +8,6 @@ obj-$(CONFIG_CHECKPOINT) += \
- 	checkpoint.o \
- 	restart.o \
- 	process.o \
-+	namespace.o \
- 	files.o \
- 	memory.o
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index af6b58b..39ee917 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -191,9 +191,12 @@ static void fill_kernel_const(struct ckpt_hdr_const *h)
- 	/* mm */
- 	h->mm_saved_auxv_len = sizeof(mm->saved_auxv);
- 	/* uts */
-+	h->uts_sysname_len = sizeof(uts->sysname);
-+	h->uts_nodename_len = sizeof(uts->nodename);
- 	h->uts_release_len = sizeof(uts->release);
- 	h->uts_version_len = sizeof(uts->version);
- 	h->uts_machine_len = sizeof(uts->machine);
-+	h->uts_domainname_len = sizeof(uts->domainname);
- }
- 
- /* write the checkpoint header */
-@@ -328,8 +331,6 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	rcu_read_lock();
- 	nsproxy = task_nsproxy(t);
--	if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
--		ret = -EPERM;
- 	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
- 		ret = -EPERM;
- 	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
 diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
-new file mode 100644
-index 0000000..49b8f0a
---- /dev/null
+index 49b8f0a..89af2c0 100644
+--- a/checkpoint/namespace.c
 +++ b/checkpoint/namespace.c
-@@ -0,0 +1,100 @@
-+/*
-+ *  Checkpoint namespaces
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DSYS
-+
-+#include <linux/nsproxy.h>
-+#include <linux/user_namespace.h>
-+
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
+@@ -98,3 +98,44 @@ void *restore_uts_ns(struct ckpt_ctx *ctx)
+ {
+ 	return (void *) do_restore_uts_ns(ctx);
+ }
 +
 +/*
-+ * uts_ns  -  this needs to compile even for !CONFIG_USER_NS, so
-+ *   the code may not reside in kernel/utsname.c (which wouldn't
-+ *   compile then).
++ * user_ns  -  trivial checkpoint/restore for !CONFIG_USER_NS case
 + */
-+static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
-+				struct uts_namespace *uts_ns)
++#ifndef CONFIG_USER_NS
++int checkpoint_userns(struct ckpt_ctx *ctx, void *ptr)
 +{
-+	struct ckpt_hdr_utsns *h;
-+	struct new_utsname *name;
++	struct ckpt_hdr_user_ns *h;
 +	int ret;
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_USER_NS);
 +	if (!h)
 +		return -ENOMEM;
-+
-+	down_read(&uts_sem);
-+	name = &uts_ns->name;
-+	memcpy(h->sysname, name->sysname, sizeof(name->sysname));
-+	memcpy(h->nodename, name->nodename, sizeof(name->nodename));
-+	memcpy(h->release, name->release, sizeof(name->release));
-+	memcpy(h->version, name->version, sizeof(name->version));
-+	memcpy(h->machine, name->machine, sizeof(name->machine));
-+	memcpy(h->domainname, name->domainname, sizeof(name->domainname));
-+	up_read(&uts_sem);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
 +	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
-+int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr)
++void *restore_userns(struct ckpt_ctx *ctx)
 +{
-+	return do_checkpoint_uts_ns(ctx, (struct uts_namespace *) ptr);
-+}
++	struct ckpt_hdr_user_ns *h;
++	struct user_namespace *ns;
 +
-+static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_utsns *h;
-+	struct uts_namespace *uts_ns = NULL;
-+	struct new_utsname *name;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
-+	if (IS_ERR(h))
-+		return (struct uts_namespace *) h;
-+
-+#ifdef CONFIG_UTS_NS
-+	uts_ns = create_uts_ns();
-+	if (!uts_ns) {
-+		uts_ns = ERR_PTR(-ENOMEM);
-+		goto out;
-+	}
-+	down_read(&uts_sem);
-+	name = &uts_ns->name;
-+	memcpy(name->sysname, h->sysname, sizeof(name->sysname));
-+	memcpy(name->nodename, h->nodename, sizeof(name->nodename));
-+	memcpy(name->release, h->release, sizeof(name->release));
-+	memcpy(name->version, h->version, sizeof(name->version));
-+	memcpy(name->machine, h->machine, sizeof(name->machine));
-+	memcpy(name->domainname, h->domainname, sizeof(name->domainname));
-+	up_read(&uts_sem);
-+#else
 +	/* complain if image contains multiple namespaces */
-+	if (ctx->stats.uts_ns) {
-+		uts_ns = ERR_PTR(-EEXIST);
-+		goto out;
-+	}
-+	uts_ns = current->nsproxy->uts_ns;
-+	get_uts_ns(uts_ns);
-+#endif
++	if (ctx->stats.user_ns)
++		return ERR_PTR(-EEXIST);
 +
-+	ctx->stats.uts_ns++;
-+ out:
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_USER_NS);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	if (h->creator_ref)
++		ns = ERR_PTR(-EINVAL);
++	else
++		ns = get_user_ns(current_user_ns());
++
++	ctx->stats.user_ns++;
 +	ckpt_hdr_put(ctx, h);
-+	return uts_ns;
++	return ns;
 +}
-+
-+void *restore_uts_ns(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_uts_ns(ctx);
-+}
++#endif
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 18ede6f..caa856c 100644
+index 29c7a04..15b9d66 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -148,6 +148,22 @@ static int obj_ns_users(void *ptr)
- 	return atomic_read(&((struct nsproxy *) ptr)->count);
+@@ -17,6 +17,7 @@
+ #include <linux/fdtable.h>
+ #include <linux/sched.h>
+ #include <linux/ipc_namespace.h>
++#include <linux/user_namespace.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
+@@ -182,6 +183,51 @@ static int obj_ipc_ns_users(void *ptr)
+ 	return atomic_read(&((struct ipc_namespace *) ptr)->count);
  }
  
-+static int obj_uts_ns_grab(void *ptr)
++static int obj_cred_grab(void *ptr)
 +{
-+	get_uts_ns((struct uts_namespace *) ptr);
++	get_cred((struct cred *) ptr);
 +	return 0;
 +}
 +
-+static void obj_uts_ns_drop(void *ptr)
++static void obj_cred_drop(void *ptr)
 +{
-+	put_uts_ns((struct uts_namespace *) ptr);
++	put_cred((struct cred *) ptr);
 +}
 +
-+static int obj_uts_ns_users(void *ptr)
++static int obj_user_grab(void *ptr)
 +{
-+	return atomic_read(&((struct uts_namespace *) ptr)->kref.refcount);
++	struct user_struct *u = ptr;
++	(void) get_uid(u);
++	return 0;
++}
++
++static void obj_user_drop(void *ptr)
++{
++	free_uid((struct user_struct *) ptr);
++}
++
++static int obj_userns_grab(void *ptr)
++{
++	get_user_ns((struct user_namespace *) ptr);
++	return 0;
++}
++
++static void obj_userns_drop(void *ptr)
++{
++	put_user_ns((struct user_namespace *) ptr);
++}
++
++static int obj_groupinfo_grab(void *ptr)
++{
++	get_group_info((struct group_info *) ptr);
++	return 0;
++}
++
++static void obj_groupinfo_drop(void *ptr)
++{
++	put_group_info((struct group_info *) ptr);
 +}
 +
  static struct ckpt_obj_ops ckpt_obj_ops[] = {
  	/* ignored object */
  	{
-@@ -205,6 +221,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.checkpoint = checkpoint_ns,
- 		.restore = restore_ns,
+@@ -259,6 +305,42 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_ipc_ns,
+ 		.restore = restore_ipc_ns,
  	},
-+	/* uts_ns object */
++	/* user_ns object */
 +	{
-+		.obj_name = "UTS_NS",
-+		.obj_type = CKPT_OBJ_UTS_NS,
-+		.ref_drop = obj_uts_ns_drop,
-+		.ref_grab = obj_uts_ns_grab,
-+		.ref_users = obj_uts_ns_users,
-+		.checkpoint = checkpoint_uts_ns,
-+		.restore = restore_uts_ns,
++		.obj_name = "USER_NS",
++		.obj_type = CKPT_OBJ_USER_NS,
++		.ref_drop = obj_userns_drop,
++		.ref_grab = obj_userns_grab,
++		.checkpoint = checkpoint_userns,
++		.restore = restore_userns,
++	},
++	/* struct cred */
++	{
++		.obj_name = "CRED",
++		.obj_type = CKPT_OBJ_CRED,
++		.ref_drop = obj_cred_drop,
++		.ref_grab = obj_cred_grab,
++		.checkpoint = checkpoint_cred,
++		.restore = restore_cred,
++	},
++	/* user object */
++	{
++		.obj_name = "USER",
++		.obj_type = CKPT_OBJ_USER,
++		.ref_drop = obj_user_drop,
++		.ref_grab = obj_user_grab,
++		.checkpoint = checkpoint_user,
++		.restore = restore_user,
++	},
++	/* struct groupinfo */
++	{
++		.obj_name = "GROUPINFO",
++		.obj_type = CKPT_OBJ_GROUPINFO,
++		.ref_drop = obj_groupinfo_drop,
++		.ref_grab = obj_groupinfo_grab,
++		.checkpoint = checkpoint_groupinfo,
++		.restore = restore_groupinfo,
 +	},
  };
  
  
 diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 40e83c9..245607b 100644
+index 245607b..f028822 100644
 --- a/checkpoint/process.c
 +++ b/checkpoint/process.c
-@@ -16,8 +16,10 @@
- #include <linux/posix-timers.h>
+@@ -17,6 +17,7 @@
  #include <linux/futex.h>
  #include <linux/poll.h>
-+#include <linux/utsname.h>
+ #include <linux/utsname.h>
++#include <linux/user_namespace.h>
  #include <linux/checkpoint.h>
  #include <linux/checkpoint_hdr.h>
-+#include <linux/syscalls.h>
- 
- 
- #ifdef CONFIG_FUTEX
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 972bee6..935caf6 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -281,6 +281,32 @@ void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type)
- 	return h;
+ #include <linux/syscalls.h>
+@@ -135,6 +136,45 @@ static int checkpoint_task_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ret;
  }
  
-+/**
-+ * ckpt_read_consume - consume the next object of expected type
-+ * @ctx: checkpoint context
-+ * @len: desired object length
-+ * @type: desired object type
-+ *
-+ * This can be used to skip an object in the input stream when the
-+ * data is unnecessary for the restart. @len indicates the length of
-+ * the object); if @len is zero the length is unconstrained.
-+ */
-+int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
++static int checkpoint_task_creds(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	struct ckpt_hdr *h;
++	int realcred_ref, ecred_ref;
++	struct cred *rcred, *ecred;
++	struct ckpt_hdr_task_creds *h;
++	int ret;
++
++	rcred = get_cred(t->real_cred);
++	ecred = get_cred(t->cred);
++
++	realcred_ref = checkpoint_obj(ctx, rcred, CKPT_OBJ_CRED);
++	if (realcred_ref < 0) {
++		ret = realcred_ref;
++		goto error;
++	}
++
++	ecred_ref = checkpoint_obj(ctx, ecred, CKPT_OBJ_CRED);
++	if (ecred_ref < 0) {
++		ret = ecred_ref;
++		goto error;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_CREDS);
++	if (!h) {
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	h->cred_ref = realcred_ref;
++	h->ecred_ref = ecred_ref;
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++error:
++	put_cred(rcred);
++	put_cred(ecred);
++	return ret;
++}
++
+ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+ 	struct ckpt_hdr_task_objs *h;
+@@ -150,8 +190,12 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	 * restored when it gets to restore, e.g. its memory.
+ 	 */
+ 
+-	ret = checkpoint_task_ns(ctx, t);
+-	ckpt_debug("ns: objref %d\n", ret);
++	ret = checkpoint_task_creds(ctx, t);
++	ckpt_debug("cred: objref %d\n", ret);
++	if (!ret) {
++		ret = checkpoint_task_ns(ctx, t);
++		ckpt_debug("ns: objref %d\n", ret);
++	}
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -430,6 +474,34 @@ static int restore_task_ns(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int restore_task_creds(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_task_creds *h;
++	struct cred *realcred, *ecred;
 +	int ret = 0;
 +
-+	h = ckpt_read_obj(ctx, len, 0);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_CREDS);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
-+	if (h->type != type)
-+		ret = -EINVAL;
++	realcred = ckpt_obj_fetch(ctx, h->cred_ref, CKPT_OBJ_CRED);
++	if (IS_ERR(realcred)) {
++		ret = PTR_ERR(realcred);
++		goto out;
++	}
++	ecred = ckpt_obj_fetch(ctx, h->ecred_ref, CKPT_OBJ_CRED);
++	if (IS_ERR(ecred)) {
++		ret = PTR_ERR(ecred);
++		goto out;
++	}
++	ctx->realcred = realcred;
++	ctx->ecred = ecred;
 +
++out:
 +	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
- /***********************************************************************
-  * Restart
-  */
-@@ -298,12 +324,18 @@ static int check_kernel_const(struct ckpt_hdr_const *h)
- 	if (h->mm_saved_auxv_len != sizeof(mm->saved_auxv))
- 		return -EINVAL;
- 	/* uts */
-+	if (h->uts_sysname_len != sizeof(uts->sysname))
-+		return -EINVAL;
-+	if (h->uts_nodename_len != sizeof(uts->nodename))
-+		return -EINVAL;
- 	if (h->uts_release_len != sizeof(uts->release))
- 		return -EINVAL;
- 	if (h->uts_version_len != sizeof(uts->version))
- 		return -EINVAL;
- 	if (h->uts_machine_len != sizeof(uts->machine))
- 		return -EINVAL;
-+	if (h->uts_domainname_len != sizeof(uts->domainname))
-+		return -EINVAL;
+ static int restore_task_objs(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_task_objs *h;
+@@ -440,7 +512,9 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 	 * and because shared objects are restored before they are
+ 	 * referenced. See comment in checkpoint_task_objs.
+ 	 */
+-	ret = restore_task_ns(ctx);
++	ret = restore_task_creds(ctx);
++	if (!ret)
++		ret = restore_task_ns(ctx);
+ 	if (ret < 0)
+ 		return ret;
  
- 	return 0;
+@@ -458,6 +532,33 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 	return ret;
  }
+ 
++static int restore_creds(struct ckpt_ctx *ctx)
++{
++	int ret;
++	const struct cred *old;
++	struct cred *rcred, *ecred;
++
++	rcred = ctx->realcred;
++	ecred = ctx->ecred;
++
++	/* commit_creds will take one ref for the eff creds, but
++	 * expects us to hold a ref for the obj creds, so take a
++	 * ref here */
++	get_cred(rcred);
++	ret = commit_creds(rcred);
++	if (ret)
++		return ret;
++
++	if (ecred == rcred)
++		return 0;
++
++	old =  override_creds(ecred); /* override_creds otoh takes new ref */
++	put_cred(old);
++
++	ctx->realcred = ctx->ecred = NULL;
++	return 0;
++}
++
+ int restore_restart_block(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_restart_block *h;
+@@ -591,6 +692,10 @@ int restore_task(struct ckpt_ctx *ctx)
+ 		goto out;
+ 	ret = restore_cpu(ctx);
+ 	ckpt_debug("cpu %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = restore_creds(ctx);
++	ckpt_debug("creds: ret %d\n", ret);
+  out:
+ 	return ret;
+ }
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index 3a74655..2f726f7 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -569,10 +569,10 @@ struct dentry;
+ extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
+ 
+ struct cred;
+-int apply_securebits(unsigned securebits, struct cred *new);
++extern int apply_securebits(unsigned securebits, struct cred *new);
+ struct ckpt_capabilities;
+-int restore_capabilities(struct ckpt_capabilities *h, struct cred *new);
+-void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred * cred);
++extern int restore_capabilities(struct ckpt_capabilities *h, struct cred *new);
++extern void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred *cred);
+ 
+ #endif /* __KERNEL__ */
+ 
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index e433b5c..0085ea8 100644
+index 2ee1bc2..0a8bfc7 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -66,6 +66,7 @@ extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
- extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
- extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
-+extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
+@@ -25,6 +25,7 @@
+ #include <linux/sched.h>
+ #include <linux/nsproxy.h>
+ #include <linux/ipc_namespace.h>
++#include <linux/user_namespace.h>
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
  
- /* ckpt kflags */
- #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
-@@ -131,6 +132,10 @@ extern int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_ns(struct ckpt_ctx *ctx);
+@@ -169,6 +170,17 @@ extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 			       struct ckpt_hdr_file *h);
  
-+/* uts-ns */
-+extern int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_uts_ns(struct ckpt_ctx *ctx);
++/* credentials */
++extern int checkpoint_groupinfo(struct ckpt_ctx *ctx, void *ptr);
++extern int checkpoint_user(struct ckpt_ctx *ctx, void *ptr);
++extern int checkpoint_cred(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_groupinfo(struct ckpt_ctx *ctx);
++extern void *restore_user(struct ckpt_ctx *ctx);
++extern void *restore_cred(struct ckpt_ctx *ctx);
 +
- /* file table */
- extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
++extern int checkpoint_userns(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_userns(struct ckpt_ctx *ctx);
++
+ /* memory */
+ extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
+ 
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index af18332..18ab78f 100644
+index 1f6a33d..ca02d9d 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -58,6 +58,7 @@ enum {
- 	CKPT_HDR_THREAD,
- 	CKPT_HDR_CPU,
- 	CKPT_HDR_NS,
-+	CKPT_HDR_UTS_NS,
+@@ -61,6 +61,11 @@ enum {
+ 	CKPT_HDR_UTS_NS,
+ 	CKPT_HDR_IPC_NS,
+ 	CKPT_HDR_CAPABILITIES,
++	CKPT_HDR_USER_NS,
++	CKPT_HDR_CRED,
++	CKPT_HDR_USER,
++	CKPT_HDR_GROUPINFO,
++	CKPT_HDR_TASK_CREDS,
  
  	/* 201-299: reserved for arch-dependent */
  
-@@ -97,6 +98,7 @@ enum obj_type {
- 	CKPT_OBJ_FILE,
- 	CKPT_OBJ_MM,
+@@ -110,6 +115,10 @@ enum obj_type {
  	CKPT_OBJ_NS,
-+	CKPT_OBJ_UTS_NS,
+ 	CKPT_OBJ_UTS_NS,
+ 	CKPT_OBJ_IPC_NS,
++	CKPT_OBJ_USER_NS,
++	CKPT_OBJ_CRED,
++	CKPT_OBJ_USER,
++	CKPT_OBJ_GROUPINFO,
  	CKPT_OBJ_MAX
  };
  
-@@ -107,9 +109,12 @@ struct ckpt_hdr_const {
- 	/* mm */
- 	__u16 mm_saved_auxv_len;
- 	/* uts */
-+	__u16 uts_sysname_len;
-+	__u16 uts_nodename_len;
- 	__u16 uts_release_len;
- 	__u16 uts_version_len;
- 	__u16 uts_machine_len;
-+	__u16 uts_domainname_len;
+@@ -183,6 +192,11 @@ struct ckpt_hdr_task {
+ 	__u32 exit_signal;
+ 	__u32 pdeath_signal;
+ 
++#ifdef CONFIG_AUDITSYSCALL
++	/* would audit want to track the checkpointed ids,
++	   or (more likely) who actually restarted? */
++#endif
++
+ 	__u64 set_child_tid;
+ 	__u64 clear_child_tid;
+ 
+@@ -190,6 +204,7 @@ struct ckpt_hdr_task {
+ 	__u32 compat_robust_futex_list; /* a compat __user ptr */
+ 	__u32 robust_futex_head_len;
+ 	__u64 robust_futex_list; /* a __user ptr */
++
  } __attribute__((aligned(8)));
  
- /* checkpoint image header */
-@@ -184,6 +189,7 @@ struct ckpt_hdr_task_ns {
- 
- struct ckpt_hdr_ns {
- 	struct ckpt_hdr h;
-+	__s32 uts_objref;
+ /* Posix capabilities */
+@@ -202,6 +217,50 @@ struct ckpt_capabilities {
+ 	__u32 padding;
  } __attribute__((aligned(8)));
  
- /* task's shared resources */
-@@ -261,6 +267,16 @@ struct ckpt_hdr_file_pipe_state {
- 	__s32 pipe_len;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_utsns {
++struct ckpt_hdr_task_creds {
 +	struct ckpt_hdr h;
-+	char sysname[__NEW_UTS_LEN + 1];
-+	char nodename[__NEW_UTS_LEN + 1];
-+	char release[__NEW_UTS_LEN + 1];
-+	char version[__NEW_UTS_LEN + 1];
-+	char machine[__NEW_UTS_LEN + 1];
-+	char domainname[__NEW_UTS_LEN + 1];
++	__s32 cred_ref;
++	__s32 ecred_ref;
 +} __attribute__((aligned(8)));
 +
- /* memory layout */
- struct ckpt_hdr_mm {
++struct ckpt_hdr_cred {
++	struct ckpt_hdr h;
++	__u32 uid, suid, euid, fsuid;
++	__u32 gid, sgid, egid, fsgid;
++	__s32 user_ref;
++	__s32 groupinfo_ref;
++	struct ckpt_capabilities cap_s;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_groupinfo {
++	struct ckpt_hdr h;
++	__u32 ngroups;
++	/*
++	 * This is followed by ngroups __u32s
++	 */
++	__u32 groups[0];
++} __attribute__((aligned(8)));
++
++/*
++ * todo - keyrings and LSM
++ * These may be better done with userspace help though
++ */
++struct ckpt_hdr_user_struct {
++	struct ckpt_hdr h;
++	__u32 uid;
++	__s32 userns_ref;
++} __attribute__((aligned(8)));
++
++/*
++ * The user-struct mostly tracks system resource usage.
++ * Most of it's contents therefore will simply be set
++ * correctly as restart opens resources
++ */
++struct ckpt_hdr_user_ns {
++	struct ckpt_hdr h;
++	__s32 creator_ref;
++} __attribute__((aligned(8)));
++
+ /* namespaces */
+ struct ckpt_hdr_task_ns {
  	struct ckpt_hdr h;
 diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 57cbc96..0a9c58b 100644
+index fb9b5b2..e98251b 100644
 --- a/include/linux/checkpoint_types.h
 +++ b/include/linux/checkpoint_types.h
-@@ -20,6 +20,10 @@
- #include <linux/ktime.h>
- #include <linux/wait.h>
+@@ -23,6 +23,7 @@
+ struct ckpt_stats {
+ 	int uts_ns;
+ 	int ipc_ns;
++	int user_ns;
+ };
  
-+struct ckpt_stats {
-+	int uts_ns;
-+};
-+
  struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
- 
-@@ -59,6 +63,8 @@ struct ckpt_ctx {
+@@ -65,6 +66,7 @@ struct ckpt_ctx {
  	int active_pid;			/* (next) position in pids array */
  	struct completion complete;	/* container root and other tasks on */
  	wait_queue_head_t waitq;	/* start, end, and restart ordering */
-+
-+	struct ckpt_stats stats;	/* statistics */
++	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
+ 
+ 	struct ckpt_stats stats;	/* statistics */
  };
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 5c8db56..27e02ca 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -16,6 +16,7 @@
+ #include <linux/init_task.h>
+ #include <linux/security.h>
+ #include <linux/cn_proc.h>
++#include <linux/checkpoint.h>
+ #include "cred-internals.h"
  
- #endif /* __KERNEL__ */
-diff --git a/include/linux/utsname.h b/include/linux/utsname.h
-index 3656b30..d6f24a9 100644
---- a/include/linux/utsname.h
-+++ b/include/linux/utsname.h
-@@ -50,6 +50,7 @@ static inline void get_uts_ns(struct uts_namespace *ns)
- 	kref_get(&ns->kref);
+ static struct kmem_cache *cred_jar;
+@@ -703,3 +704,125 @@ int cred_setfsgid(struct cred *new, gid_t gid, gid_t *old_fsgid)
+ 	}
+ 	return -EPERM;
  }
- 
-+extern struct uts_namespace *create_uts_ns(void);
- extern struct uts_namespace *copy_utsname(unsigned long flags,
- 					struct uts_namespace *ns);
- extern void free_uts_ns(struct kref *kref);
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 54cb987..4f48a68 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -245,6 +245,10 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
- 	if (ret < 0 || exists)
- 		goto out;
- 
-+	ret = ckpt_obj_collect(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
-+	if (ret < 0)
-+		goto out;
 +
- 	/* TODO: collect other namespaces here */
-  out:
- 	put_nsproxy(nsproxy);
-@@ -260,9 +264,14 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
- 	if (!h)
- 		return -ENOMEM;
- 
-+	ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
-+	if (ret <= 0)
-+		goto out;
-+	h->uts_objref = ret;
- 	/* TODO: Write other namespaces here */
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
-+ out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-@@ -277,16 +286,52 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_ns *h;
- 	struct nsproxy *nsproxy = NULL;
-+	struct uts_namespace *uts_ns;
++#ifdef CONFIG_CHECKPOINT
++static int do_checkpoint_cred(struct ckpt_ctx *ctx, const struct cred *cred)
++{
 +	int ret;
++	int groupinfo_ref, user_ref;
++	struct ckpt_hdr_cred *h;
++
++	groupinfo_ref = checkpoint_obj(ctx, cred->group_info,
++					CKPT_OBJ_GROUPINFO);
++	if (groupinfo_ref < 0)
++		return groupinfo_ref;
++	user_ref = checkpoint_obj(ctx, cred->user, CKPT_OBJ_USER);
++	if (user_ref < 0)
++		return user_ref;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_CRED);
++	if (!h)
++		return -ENOMEM;
++
++	h->uid = cred->uid;
++	h->suid = cred->suid;
++	h->euid = cred->euid;
++	h->fsuid = cred->fsuid;
++
++	h->gid = cred->gid;
++	h->sgid = cred->sgid;
++	h->egid = cred->egid;
++	h->fsgid = cred->fsgid;
++
++	checkpoint_capabilities(&h->cap_s, cred);
++
++	h->user_ref = user_ref;
++	h->groupinfo_ref = groupinfo_ref;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++int checkpoint_cred(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_cred(ctx, (struct cred *) ptr);
++}
++
++static struct cred *do_restore_cred(struct ckpt_ctx *ctx)
++{
++	struct cred *cred;
++	struct ckpt_hdr_cred *h;
++	struct user_struct *user;
++	struct group_info *groupinfo;
++	int ret = -EINVAL;
++	uid_t olduid;
++	gid_t oldgid;
++	int i;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CRED);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	cred = prepare_creds();
++	if (!cred)
++		goto error;
++
++
++	/* Do we care if the target user and target group were compatible?
++	 * Probably.  But then, we can't do any setuid without CAP_SETUID,
++	 * so we must have been privileged to abuse it... */
++	groupinfo = ckpt_obj_fetch(ctx, h->groupinfo_ref, CKPT_OBJ_GROUPINFO);
++	if (IS_ERR(groupinfo))
++		goto err_putcred;
++	user = ckpt_obj_fetch(ctx, h->user_ref, CKPT_OBJ_USER);
++	if (IS_ERR(user))
++		goto err_putcred;
++
++	/*
++	 * TODO: this check should  go into the common helper in
++	 * kernel/sys.c, and should account for user namespaces
++	 */
++	if (!capable(CAP_SETGID))
++		for (i = 0; i < groupinfo->ngroups; i++) {
++			if (!in_egroup_p(GROUP_AT(groupinfo, i)))
++				goto err_putcred;
++		}
++	ret = set_groups(cred, groupinfo);
++	if (ret < 0)
++		goto err_putcred;
++	free_uid(cred->user);
++	cred->user = get_uid(user);
++	ret = cred_setresuid(cred, h->uid, h->euid, h->suid);
++	if (ret < 0)
++		goto err_putcred;
++	ret = cred_setfsuid(cred, h->fsuid, &olduid);
++	if (olduid != h->fsuid && ret < 0)
++		goto err_putcred;
++	ret = cred_setresgid(cred, h->gid, h->egid, h->sgid);
++	if (ret < 0)
++		goto err_putcred;
++	ret = cred_setfsgid(cred, h->fsgid, &oldgid);
++	if (oldgid != h->fsgid && ret < 0)
++		goto err_putcred;
++	ret = restore_capabilities(&h->cap_s, cred);
++	if (ret)
++		goto err_putcred;
++
++	ckpt_hdr_put(ctx, h);
++	return cred;
++
++err_putcred:
++	abort_creds(cred);
++error:
++	ckpt_hdr_put(ctx, h);
++	return ERR_PTR(ret);
++}
++
++void *restore_cred(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_cred(ctx);
++}
++
++#endif
+diff --git a/kernel/groups.c b/kernel/groups.c
+index 2b45b2e..3612c3e 100644
+--- a/kernel/groups.c
++++ b/kernel/groups.c
+@@ -6,6 +6,7 @@
+ #include <linux/slab.h>
+ #include <linux/security.h>
+ #include <linux/syscalls.h>
++#include <linux/checkpoint.h>
+ #include <asm/uaccess.h>
  
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NS);
- 	if (IS_ERR(h))
- 		return (struct nsproxy *) h;
+ /* init to 2 - one for init_task, one to ensure it is never freed */
+@@ -286,3 +287,71 @@ int in_egroup_p(gid_t grp)
+ }
  
-+	ret = -EINVAL;
-+	if (h->uts_objref <= 0)
+ EXPORT_SYMBOL(in_egroup_p);
++
++#ifdef CONFIG_CHECKPOINT
++static int do_checkpoint_groupinfo(struct ckpt_ctx *ctx, struct group_info *g)
++{
++	int ret, i, size;
++	struct ckpt_hdr_groupinfo *h;
++
++	size = sizeof(*h) + g->ngroups * sizeof(__u32);
++	h = ckpt_hdr_get_type(ctx, size, CKPT_HDR_GROUPINFO);
++	if (!h)
++		return -ENOMEM;
++
++	h->ngroups = g->ngroups;
++	for (i = 0; i < g->ngroups; i++)
++		h->groups[i] = GROUP_AT(g, i);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++int checkpoint_groupinfo(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_groupinfo(ctx, (struct group_info *)ptr);
++}
++
++/*
++ * TODO - switch to reading in smaller blocks?
++ */
++#define MAX_GROUPINFO_SIZE (sizeof(*h)+NGROUPS_MAX*sizeof(gid_t))
++static struct group_info *do_restore_groupinfo(struct ckpt_ctx *ctx)
++{
++	struct group_info *g;
++	struct ckpt_hdr_groupinfo *h;
++	int i;
++
++	h = ckpt_read_buf_type(ctx, MAX_GROUPINFO_SIZE, CKPT_HDR_GROUPINFO);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	g = ERR_PTR(-EINVAL);
++	if (h->ngroups > NGROUPS_MAX)
 +		goto out;
 +
-+	uts_ns = ckpt_obj_fetch(ctx, h->uts_objref, CKPT_OBJ_UTS_NS);
-+	if (IS_ERR(uts_ns)) {
-+		ret = PTR_ERR(uts_ns);
++	for (i = 1; i < h->ngroups; i++)
++		if (h->groups[i-1] >= h->groups[i])
++			goto out;
++
++	g = groups_alloc(h->ngroups);
++	if (!g) {
++		g = ERR_PTR(-ENOMEM);
++		goto out;
++	}
++	for (i = 0; i < h->ngroups; i++)
++		GROUP_AT(g, i) = h->groups[i];
++
++out:
++	ckpt_hdr_put(ctx, h);
++	return g;
++}
++
++void *restore_groupinfo(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_groupinfo(ctx);
++}
++
++#endif
+diff --git a/kernel/user.c b/kernel/user.c
+index 2c000e7..a535ed6 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -16,6 +16,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/user_namespace.h>
++#include <linux/checkpoint.h>
+ #include "cred-internals.h"
+ 
+ struct user_namespace init_user_ns = {
+@@ -508,3 +509,160 @@ static int __init uid_cache_init(void)
+ }
+ 
+ module_init(uid_cache_init);
++
++#ifdef CONFIG_CHECKPOINT
++/*
++ * write the user struct
++ * TODO keyring will need to be dumped
++ *
++ * Here is what we're doing.  Remember a task can do clone(CLONE_NEWUSER)
++ * resulting in a cloned task in a new user namespace, with uid 0 in that
++ * new user_ns.  In that case, the parent's user (uid+user_ns) is the
++ * 'creator' of the new user_ns.
++ * Here, we call the user_ns of the ctx->root_task the 'root_ns'.  When we
++ * checkpoint a user-struct, we must store the chain of creators.  We
++ * must not do so recursively, this being the kernel.  In
++ * checkpoint_write_user() we walk and record in memory the list of creators up
++ * to either the latest user_struct which has already been saved, or the
++ * root_ns.  Then we walk that chain backward, writing out the user_ns and
++ * user_struct to the checkpoint image.
++ */
++#define UNSAVED_STRIDE 50
++static int do_checkpoint_user(struct ckpt_ctx *ctx, struct user_struct *u)
++{
++	struct user_namespace *ns, *root_ns;
++	struct ckpt_hdr_user_struct *h;
++	int ns_objref;
++	int ret, i, unsaved_ns_nr = 0;
++	struct user_struct *save_u;
++	struct user_struct **unsaved_creators;
++	int step = 1, size;
++
++	/* if we've already saved the userns, then life is good */
++	ns_objref = ckpt_obj_lookup(ctx, u->user_ns, CKPT_OBJ_USER_NS);
++	if (ns_objref)
++		goto write_user;
++
++	root_ns = task_cred_xxx(ctx->root_task, user)->user_ns;
++
++	if (u->user_ns == root_ns)
++		goto save_last_ns;
++
++	size = UNSAVED_STRIDE*sizeof(struct user_struct *);
++	unsaved_creators = kmalloc(size, GFP_KERNEL);
++	if (!unsaved_creators)
++		return -ENOMEM;
++	save_u = u;
++	do {
++		ns = save_u->user_ns;
++		save_u = ns->creator;
++		if (ckpt_obj_lookup(ctx, save_u, CKPT_OBJ_USER))
++			goto found;
++		unsaved_creators[unsaved_ns_nr++] = save_u;
++		if (unsaved_ns_nr == step * UNSAVED_STRIDE) {
++			step++;
++			size = step*UNSAVED_STRIDE*sizeof(struct user_struct *);
++			unsaved_creators = krealloc(unsaved_creators, size,
++							GFP_KERNEL);
++			if (!unsaved_creators)
++				return -ENOMEM;
++		}
++	} while (ns != root_ns);
++
++found:
++	for (i = unsaved_ns_nr-1; i >= 0; i--) {
++		ret = checkpoint_obj(ctx, unsaved_creators[i], CKPT_OBJ_USER);
++		if (ret < 0) {
++			kfree(unsaved_creators);
++			return ret;
++		}
++	}
++	kfree(unsaved_creators);
++
++save_last_ns:
++	ns_objref = checkpoint_obj(ctx, u->user_ns, CKPT_OBJ_USER_NS);
++	if (ns_objref < 0)
++		return ns_objref;
++
++write_user:
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_USER);
++	if (!h)
++		return -ENOMEM;
++
++	h->uid = u->uid;
++	h->userns_ref = ns_objref;
++
++	/* write out the user_struct */
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++int checkpoint_user(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_user(ctx, (struct user_struct *) ptr);
++}
++
++static int may_setuid(struct user_namespace *ns, uid_t uid)
++{
++	/*
++	 * this next check will one day become
++	 * if capable(CAP_SETUID, ns) return 1;
++	 * followed by uid_equiv(current_userns, current_uid, ns, uid)
++	 * instead of just uids.
++	 */
++	if (capable(CAP_SETUID))
++		return 1;
++
++	/*
++	 * this may be overly strict, but since we might end up
++	 * restarting a privileged program here, we do not want
++	 * someone with only CAP_SYS_ADMIN but no CAP_SETUID to
++	 * be able to create random userids even in a userns he
++	 * created.
++	 */
++	if (current_user()->user_ns != ns)
++		return 0;
++	if (current_uid() == uid ||
++		current_euid() == uid ||
++		current_suid() == uid)
++		return 1;
++	return 0;
++}
++
++static struct user_struct *do_restore_user(struct ckpt_ctx *ctx)
++{
++	struct user_struct *u;
++	struct user_namespace *ns;
++	struct ckpt_hdr_user_struct *h;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_USER);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	ns = ckpt_obj_fetch(ctx, h->userns_ref, CKPT_OBJ_USER_NS);
++	if (IS_ERR(ns)) {
++		u = ERR_PTR(PTR_ERR(ns));
 +		goto out;
 +	}
 +
-+#if defined(COFNIG_UTS_NS)
-+	ret = -ENOMEM;
-+	nsproxy = create_nsproxy();
-+	if (!nsproxy)
++	if (!may_setuid(ns, h->uid)) {
++		u = ERR_PTR(-EPERM);
++		goto out;
++	}
++	u = alloc_uid(ns, h->uid);
++	if (!u)
++		u = ERR_PTR(-EINVAL);
++
++out:
++	ckpt_hdr_put(ctx, h);
++	return u;
++}
++
++void *restore_user(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_user(ctx);
++}
++
++#endif
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index e624b0f..3a35b50 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -9,6 +9,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/slab.h>
+ #include <linux/user_namespace.h>
++#include <linux/checkpoint.h>
+ #include <linux/cred.h>
+ 
+ static struct user_namespace *_new_user_ns(struct user_struct *creator,
+@@ -103,3 +104,91 @@ void free_user_ns(struct kref *kref)
+ 	schedule_work(&ns->destroyer);
+ }
+ EXPORT_SYMBOL(free_user_ns);
++
++#ifdef CONFIG_CHECKPOINT
++/*
++ * do_checkpoint_userns() is only called from do_checkpoint_user().
++ * When called, we always know that either:
++ *   1. This is the root_ns (user_ns of the ctx->root_task),
++ *	in which case we set h->creator_ref = 0.
++ * or
++ *   2. The creator has already been written out to the
++ *	checkpoint image (and saved in the objhash)
++ */
++static int do_checkpoint_userns(struct ckpt_ctx *ctx, struct user_namespace *ns)
++{
++	struct ckpt_hdr_user_ns *h;
++	struct user_namespace *root_ns;
++	int creator_ref = 0;
++	int ret;
++
++	root_ns = task_cred_xxx(ctx->root_task, user)->user_ns;
++	if (ns != root_ns) {
++		creator_ref = ckpt_obj_lookup(ctx, ns->creator, CKPT_OBJ_USER);
++		if (!creator_ref)
++			return -EINVAL;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_USER_NS);
++	if (!h)
++		return -ENOMEM;
++	h->creator_ref = creator_ref;
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++int checkpoint_userns(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_userns(ctx, (struct user_namespace *) ptr);
++}
++
++static struct user_namespace *do_restore_userns(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_user_ns *h;
++	struct user_namespace *ns;
++	struct user_struct *new_root, *creator;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_USER_NS);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	if (!h->creator_ref) {
++		ns = get_user_ns(current_user_ns());
++		goto out;
++	}
++
++	creator = ckpt_obj_fetch(ctx, h->creator_ref, CKPT_OBJ_USER);
++	if (IS_ERR(creator)) {
++		ns = ERR_PTR(-EINVAL);
++		goto out;
++	}
++
++	ns = new_user_ns(creator, &new_root);
++	if (IS_ERR(ns))
 +		goto out;
 +
-+	get_uts_ns(uts_ns);
-+	nsproxy->uts_ns = uts_ns;
++	/* ns only referenced from new_root, which we discard below */
++	get_user_ns(ns);
 +
-+	get_ipc_ns(current->nsproxy->ipc_ns);
-+	nsproxy->ipc_ns = ipc_ns;
-+	get_pid_ns(current->nsproxy->pid_ns);
-+	nsproxy->pid_ns = current->nsproxy->pid_ns;
-+	get_mnt_ns(current->nsproxy->mnt_ns);
-+	nsproxy->mnt_ns = current->nsproxy->mnt_ns;
-+	get_net(current->nsproxy->net_ns);
-+	nsproxy->net_ns = current->nsproxy->net_ns;
-+#else
- 	nsproxy = current->nsproxy;
- 	get_nsproxy(nsproxy);
- 
--	/* TODO: add more namespaces here */
-+	BUG_ON(nsproxy->uts_ns != uts_ns);
-+#endif
- 
-+	/* TODO: add more namespaces here */
-+	ret = 0;
++	/* new_user_ns() doesn't bump creator's refcount */
++	get_uid(creator);
++
++	/*
++	 * Free the new root user.  If we actually needed it,
++	 * then it will show up later in the checkpoint image
++	 * The objhash will keep the userns pinned until then.
++	 */
++	free_uid(new_root);
 + out:
-+	if (ret < 0)
-+		nsproxy = ERR_PTR(ret);
- 	ckpt_hdr_put(ctx, h);
- 	return nsproxy;
- }
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index 8a82b4b..c82ed83 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -14,8 +14,9 @@
- #include <linux/utsname.h>
- #include <linux/err.h>
- #include <linux/slab.h>
-+#include <linux/checkpoint.h>
- 
--static struct uts_namespace *create_uts_ns(void)
-+struct uts_namespace *create_uts_ns(void)
- {
- 	struct uts_namespace *uts_ns;
- 
++	ctx->stats.user_ns++;
++	ckpt_hdr_put(ctx, h);
++	return ns;
++}
++
++void *restore_userns(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_userns(ctx);
++}
++#endif
 -- 
 1.6.0.4
