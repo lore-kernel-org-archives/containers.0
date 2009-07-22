@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 16/60] pids 6/7: Define do_fork_with_pids()
-Date: Wed, 22 Jul 2009 05:59:38 -0400
-Message-ID: <1248256822-23416-17-git-send-email-orenl__11543.7425942675$1248260650$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 56/60] c/r: clone_with_pids: define the s390 syscall
+Date: Wed, 22 Jul 2009 06:00:18 -0400
+Message-ID: <1248256822-23416-57-git-send-email-orenl__43002.7400645942$1248260765$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,101 +18,143 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-do_fork_with_pids() is same as do_fork(), except that it takes an
-additional, 'pid_set', parameter. This parameter, currently unused,
-specifies the set of target pids of the process in each of its pid
-namespaces.
+Hook up the clone_with_pids system call for s390x.  clone_with_pids()
+takes an additional argument over clone(), which we pass in through
+register 7.  Stub code for using the syscall looks like:
 
-Changelog[v3]:
-	- Fix "long-line" warning from checkpatch.pl
+struct target_pid_set {
+        int num_pids;
+        pid_t *target_pids;
+        unsigned long flags;
+};
 
-Changelog[v2]:
-	- To facilitate moving architecture-inpdendent code to kernel/fork.c
-	  pass in 'struct target_pid_set __user *' to do_fork_with_pids()
-	  rather than 'pid_t *' (next patch moves the arch-independent
-	  code to kernel/fork.c)
+    register unsigned long int __r2 asm ("2") = (unsigned long int)(stack);
+    register unsigned long int __r3 asm ("3") = (unsigned long int)(flags);
+    register unsigned long int __r4 asm ("4") = (unsigned long int)(NULL);
+    register unsigned long int __r5 asm ("5") = (unsigned long int)(NULL);
+    register unsigned long int __r6 asm ("6") = (unsigned long int)(NULL);
+    register unsigned long int __r7 asm ("7") = (unsigned long int)(setp);
+    register unsigned long int __result asm ("2");
+    __asm__ __volatile__(
+            " lghi %%r1,332\n"
+            " svc 0\n"
+            : "=d" (__result)
+            : "0" (__r2), "d" (__r3),
+              "d" (__r4), "d" (__r5), "d" (__r6), "d" (__r7)
+            : "1", "cc", "memory"
+    );
+            __result;
+    })
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+    struct target_pid_set pid_set;
+    int pids[1] = { 19799 };
+    pid_set.num_pids = 1;
+    pid_set.target_pids = &pids[0];
+    pid_set.flags = 0;
+
+    rc = do_clone_with_pids(topstack, clone_flags, setp);
+    if (rc == 0)
+	printf("Child\n");
+    else if (rc > 0)
+	printf("Parent: child pid %d\n", rc);
+    else
+	printf("Error %d\n", rc);
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/sched.h |    3 +++
- include/linux/types.h |    5 +++++
- kernel/fork.c         |   16 ++++++++++++++--
- 3 files changed, 22 insertions(+), 2 deletions(-)
+ arch/s390/include/asm/unistd.h  |    3 ++-
+ arch/s390/kernel/compat_linux.c |   19 +++++++++++++++++++
+ arch/s390/kernel/process.c      |   19 +++++++++++++++++++
+ arch/s390/kernel/syscalls.S     |    1 +
+ 4 files changed, 41 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 16a982e..e2ebb41 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2052,6 +2052,9 @@ extern int disallow_signal(int);
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index 5d1678a..2a84f9c 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -271,7 +271,8 @@
+ #define __NR_perf_counter_open	331
+ #define __NR_checkpoint		332
+ #define __NR_restart		333
+-#define NR_syscalls 334
++#define __NR_clone_with_pids	334
++#define NR_syscalls 335
  
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
-+				unsigned long, int __user *, int __user *,
-+				struct target_pid_set __user *pid_set);
- struct task_struct *fork_idle(int);
- 
- extern void set_task_comm(struct task_struct *tsk, char *from);
-diff --git a/include/linux/types.h b/include/linux/types.h
-index c42724f..d9efefe 100644
---- a/include/linux/types.h
-+++ b/include/linux/types.h
-@@ -204,6 +204,11 @@ struct ustat {
- 	char			f_fpack[6];
- };
- 
-+struct target_pid_set {
-+	int num_pids;
-+	pid_t *target_pids;
-+};
-+
- #endif	/* __KERNEL__ */
- #endif /*  __ASSEMBLY__ */
- #endif /* _LINUX_TYPES_H */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 6f90cf4..64d53d9 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1341,12 +1341,13 @@ struct task_struct * __cpuinit fork_idle(int cpu)
-  * It copies the process, and if successful kick-starts
-  * it and waits for it to finish using the VM if required.
-  */
--long do_fork(unsigned long clone_flags,
-+long do_fork_with_pids(unsigned long clone_flags,
- 	      unsigned long stack_start,
- 	      struct pt_regs *regs,
- 	      unsigned long stack_size,
- 	      int __user *parent_tidptr,
--	      int __user *child_tidptr)
-+	      int __user *child_tidptr,
-+	      struct target_pid_set __user *pid_setp)
- {
- 	struct task_struct *p;
- 	int trace = 0;
-@@ -1455,6 +1456,17 @@ long do_fork(unsigned long clone_flags,
- 	return nr;
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+index 9ab188d..c6dc681 100644
+--- a/arch/s390/kernel/compat_linux.c
++++ b/arch/s390/kernel/compat_linux.c
+@@ -818,6 +818,25 @@ asmlinkage long sys32_clone(void)
+ 		       parent_tidptr, child_tidptr);
  }
  
-+long do_fork(unsigned long clone_flags,
-+	      unsigned long stack_start,
-+	      struct pt_regs *regs,
-+	      unsigned long stack_size,
-+	      int __user *parent_tidptr,
-+	      int __user *child_tidptr)
++asmlinkage long sys32_clone_with_pids(void)
 +{
-+	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, NULL);
++	struct pt_regs *regs = task_pt_regs(current);
++	unsigned long clone_flags;
++	unsigned long newsp;
++	int __user *parent_tidptr, *child_tidptr;
++	void __user *upid_setp;
++
++	clone_flags = regs->gprs[3] & 0xffffffffUL;
++	newsp = regs->orig_gpr2 & 0x7fffffffUL;
++	parent_tidptr = compat_ptr(regs->gprs[4]);
++	child_tidptr = compat_ptr(regs->gprs[5]);
++	upid_setp = compat_ptr(regs->gprs[7]);
++	if (!newsp)
++		newsp = regs->gprs[15];
++	return do_fork_with_pids(clone_flags, newsp, regs, 0,
++		       parent_tidptr, child_tidptr, upid_setp);
 +}
 +
- #ifndef ARCH_MIN_MMSTRUCT_ALIGN
- #define ARCH_MIN_MMSTRUCT_ALIGN 0
- #endif
+ /*
+  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
+  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 5a43f27..263d3ab 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -247,6 +247,25 @@ SYSCALL_DEFINE0(clone)
+ 		       parent_tidptr, child_tidptr);
+ }
+ 
++SYSCALL_DEFINE0(clone_with_pids)
++{
++	struct pt_regs *regs = task_pt_regs(current);
++	unsigned long clone_flags;
++	unsigned long newsp;
++	int __user *parent_tidptr, *child_tidptr;
++	void __user *upid_setp;
++
++	clone_flags = regs->gprs[3];
++	newsp = regs->orig_gpr2;
++	parent_tidptr = (int __user *) regs->gprs[4];
++	child_tidptr = (int __user *) regs->gprs[5];
++	upid_setp = (void __user *) regs->gprs[7];
++	if (!newsp)
++		newsp = regs->gprs[15];
++	return do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
++			child_tidptr, upid_setp);
++}
++
+ /*
+  * This is trivial, and on the face of it looks like it
+  * could equally well be done in user mode.
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index 67518e2..db850e7 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -342,3 +342,4 @@ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo
+ SYSCALL(sys_perf_counter_open,sys_perf_counter_open,sys_perf_counter_open_wrapper)
+ SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper)
+ SYSCALL(sys_restart,sys_restart,sys_restore_wrapper)
++SYSCALL(sys_clone_with_pids,sys_clone_with_pids,sys_clone_with_pids_wrapper)
 -- 
 1.6.0.4
