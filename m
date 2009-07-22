@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC v17][PATCH 33/60] c/r: dump open file descriptors
-Date: Wed, 22 Jul 2009 05:59:55 -0400
-Message-ID: <1248256822-23416-34-git-send-email-orenl__11679.1057087996$1248261974$gmane$org@librato.com>
+Subject: [RFC v17][PATCH 49/60] c/r: save and restore sysvipc namespace basics
+Date: Wed, 22 Jul 2009 06:00:11 -0400
+Message-ID: <1248256822-23416-50-git-send-email-orenl__30190.672822255$1248261990$gmane$org@librato.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,123 +21,295 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dump the file table with 'struct ckpt_hdr_file_table, followed by all
-open file descriptors. Because the 'struct file' corresponding to an
-fd can be shared, they are assigned an objref and registered in the
-object hash. A reference to the 'file *' is kept for as long as it
-lives in the hash (the hash is only cleaned up at the end of the
-checkpoint).
+Add the helpers to checkpoint and restore the contents of 'struct
+kern_ipc_perm'. Add header structures for ipc state. Put place-holders
+to save and restore ipc state.
 
-Also provide generic_checkpoint_file() and generic_restore_file()
-which is good for normal files and directories. It does not support
-yet unlinked files or directories.
+Save and restores the common state (parameters) of ipc namespace.
+
+Generic code to iterate through the objects of sysvipc shared memory,
+message queues and semaphores. The logic to save and restore the state
+of these objects will be added in the next few patches.
+
+Right now, we return -EPERM if the user calling sys_restart() isn't
+allowed to create an object with the checkpointed uid.  We may prefer
+to simply use the caller's uid in that case - but that could lead to
+subtle userspace bugs?  Unsure, so going for the stricter behavior.
+
+TODO: restore kern_ipc_perms->security.
 
 Changelog[v17]:
-  - Only collect sub-objects of files_struct once
-  - Better file error debugging
-  - Use (new) d_unlinked()
-Changelog[v16]:
-  - Fix compile warning in checkpoint_bad()
-Changelog[v16]:
-  - Reorder patch (move earlier in series)
-  - Handle shared files_struct objects
-Changelog[v14]:
-  - File objects are dumped/restored prior to the first reference
-  - Introduce a per file-type restore() callback
-  - Use struct file_operations->checkpoint()
-  - Put code for generic file descriptors in a separate function
-  - Use one CKPT_FILE_GENERIC for both regular files and dirs
-  - Revert change to pr_debug(), back to ckpt_debug()
-  - Use only unsigned fields in checkpoint headers
-  - Rename:  ckpt_write_files() => checkpoint_fd_table()
-  - Rename:  ckpt_write_fd_data() => checkpoint_file()
-  - Discard field 'h->parent'
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-Changelog[v11]:
-  - Discard handling of opened symlinks (there is no such thing)
-  - ckpt_scan_fds() retries from scratch if hits size limits
-Changelog[v9]:
-  - Fix a couple of leaks in ckpt_write_files()
-  - Drop useless kfree from ckpt_scan_fds()
-Changelog[v8]:
-  - initialize 'coe' to workaround gcc false warning
-Changelog[v6]:
-  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
-    (even though it's not really needed)
+  - Fix include: use checkpoint.h not checkpoint_hdr.h
+  - Collect nsproxy->ipc_ns
+  - Restore objects in the right namespace
+  - If !CONFIG_IPC_NS only restore objects, not global settings
+  - Don't overwrite global ipc-ns if !CONFIG_IPC_NS
+  - Reset the checkpointed uid and gid info on ipc objects
+  - Fix compilation with CONFIG_SYSVIPC=n
+Changelog [Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>]
+  - Fix compilation with CONFIG_SYSVIPC=n
+  - Update to match UTS changes
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/Makefile              |    3 +-
- checkpoint/checkpoint.c          |   11 +
- checkpoint/files.c               |  382 ++++++++++++++++++++++++++++++++++++++
- checkpoint/objhash.c             |   53 ++++++
- checkpoint/process.c             |   34 ++++-
- checkpoint/sys.c                 |    1 +
- include/linux/checkpoint.h       |   15 ++
- include/linux/checkpoint_hdr.h   |   49 +++++
- include/linux/checkpoint_types.h |    6 +
- include/linux/fs.h               |    4 +
- 10 files changed, 556 insertions(+), 2 deletions(-)
- create mode 100644 checkpoint/files.c
+ checkpoint/checkpoint.c          |    2 -
+ checkpoint/objhash.c             |   28 ++++
+ include/linux/checkpoint.h       |   13 ++
+ include/linux/checkpoint_hdr.h   |   54 +++++++
+ include/linux/checkpoint_types.h |    1 +
+ init/Kconfig                     |    6 +
+ ipc/Makefile                     |    2 +-
+ ipc/checkpoint.c                 |  317 ++++++++++++++++++++++++++++++++++++++
+ ipc/namespace.c                  |    2 +-
+ ipc/util.h                       |   10 ++
+ kernel/nsproxy.c                 |   22 ++-
+ 11 files changed, 449 insertions(+), 8 deletions(-)
+ create mode 100644 ipc/checkpoint.c
 
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index 5aa6a75..1d0c058 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -7,4 +7,5 @@ obj-$(CONFIG_CHECKPOINT) += \
- 	objhash.o \
- 	checkpoint.o \
- 	restart.o \
--	process.o
-+	process.o \
-+	files.o
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index e126626..59b86d8 100644
+index 39ee917..e4f971e 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -18,6 +18,7 @@
- #include <linux/time.h>
- #include <linux/fs.h>
+@@ -331,8 +331,6 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	rcu_read_lock();
+ 	nsproxy = task_nsproxy(t);
+-	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
+-		ret = -EPERM;
+ 	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
+ 		ret = -EPERM;
+ 	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns)
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index caa856c..29c7a04 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -15,6 +15,8 @@
+ #include <linux/hash.h>
  #include <linux/file.h>
-+#include <linux/fs_struct.h>
- #include <linux/dcache.h>
- #include <linux/mount.h>
- #include <linux/utsname.h>
-@@ -573,6 +574,7 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	struct task_struct *task;
- 	struct nsproxy *nsproxy;
-+	struct fs_struct *fs;
+ #include <linux/fdtable.h>
++#include <linux/sched.h>
++#include <linux/ipc_namespace.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- 	/*
- 	 * No need for explicit cleanup here, because if an error
-@@ -612,6 +614,15 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 	if (!(ctx->uflags & CHECKPOINT_SUBTREE) && !ctx->root_init)
- 		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
- 
-+	/* root vfs (FIX: WILL CHANGE with mnt-ns etc */
-+	task_lock(ctx->root_task);
-+	fs = ctx->root_task->fs;
-+	read_lock(&fs->lock);
-+	ctx->fs_mnt = fs->root;
-+	path_get(&ctx->fs_mnt);
-+	read_unlock(&fs->lock);
-+	task_unlock(ctx->root_task);
-+
- 	return 0;
+@@ -164,6 +166,22 @@ static int obj_uts_ns_users(void *ptr)
+ 	return atomic_read(&((struct uts_namespace *) ptr)->kref.refcount);
  }
  
-diff --git a/checkpoint/files.c b/checkpoint/files.c
++static int obj_ipc_ns_grab(void *ptr)
++{
++	get_ipc_ns((struct ipc_namespace *) ptr);
++	return 0;
++}
++
++static void obj_ipc_ns_drop(void *ptr)
++{
++	put_ipc_ns((struct ipc_namespace *) ptr);
++}
++
++static int obj_ipc_ns_users(void *ptr)
++{
++	return atomic_read(&((struct ipc_namespace *) ptr)->count);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -231,6 +249,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_uts_ns,
+ 		.restore = restore_uts_ns,
+ 	},
++	/* ipc_ns object */
++	{
++		.obj_name = "IPC_NS",
++		.obj_type = CKPT_OBJ_IPC_NS,
++		.ref_drop = obj_ipc_ns_drop,
++		.ref_grab = obj_ipc_ns_grab,
++		.ref_users = obj_ipc_ns_users,
++		.checkpoint = checkpoint_ipc_ns,
++		.restore = restore_ipc_ns,
++	},
+ };
+ 
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 0085ea8..9d6b0cc 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -22,6 +22,9 @@
+ #ifdef __KERNEL__
+ #ifdef CONFIG_CHECKPOINT
+ 
++#include <linux/sched.h>
++#include <linux/nsproxy.h>
++#include <linux/ipc_namespace.h>
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
+ 
+@@ -136,6 +139,15 @@ extern void *restore_ns(struct ckpt_ctx *ctx);
+ extern int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr);
+ extern void *restore_uts_ns(struct ckpt_ctx *ctx);
+ 
++/* ipc-ns */
++#ifdef CONFIG_SYSVIPC
++extern int checkpoint_ipc_ns(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_ipc_ns(struct ckpt_ctx *ctx);
++#else
++#define checkpoint_ipc_ns  checkpoint_bad
++#define restore_ipc_ns  restore_bad
++#endif /* CONFIG_SYSVIPC */
++
+ /* file table */
+ extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
+@@ -204,6 +216,7 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
+ #define CKPT_DFILE	0x10		/* files and filesystem */
+ #define CKPT_DMEM	0x20		/* memory state */
+ #define CKPT_DPAGE	0x40		/* memory pages */
++#define CKPT_DIPC	0x80		/* sysvipc */
+ 
+ #define CKPT_DDEFAULT	0xffff		/* default debug level */
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 18ab78f..3159750 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -59,6 +59,7 @@ enum {
+ 	CKPT_HDR_CPU,
+ 	CKPT_HDR_NS,
+ 	CKPT_HDR_UTS_NS,
++	CKPT_HDR_IPC_NS,
+ 
+ 	/* 201-299: reserved for arch-dependent */
+ 
+@@ -73,6 +74,11 @@ enum {
+ 	CKPT_HDR_PGARR,
+ 	CKPT_HDR_MM_CONTEXT,
+ 
++	CKPT_HDR_IPC = 501,
++	CKPT_HDR_IPC_SHM,
++	CKPT_HDR_IPC_MSG,
++	CKPT_HDR_IPC_SEM,
++
+ 	CKPT_HDR_TAIL = 9001,
+ 
+ 	CKPT_HDR_ERROR = 9999,
+@@ -99,6 +105,7 @@ enum obj_type {
+ 	CKPT_OBJ_MM,
+ 	CKPT_OBJ_NS,
+ 	CKPT_OBJ_UTS_NS,
++	CKPT_OBJ_IPC_NS,
+ 	CKPT_OBJ_MAX
+ };
+ 
+@@ -190,6 +197,7 @@ struct ckpt_hdr_task_ns {
+ struct ckpt_hdr_ns {
+ 	struct ckpt_hdr h;
+ 	__s32 uts_objref;
++	__u32 ipc_objref;
+ } __attribute__((aligned(8)));
+ 
+ /* task's shared resources */
+@@ -326,4 +334,50 @@ struct ckpt_hdr_pgarr {
+ } __attribute__((aligned(8)));
+ 
+ 
++/* ipc commons */
++struct ckpt_hdr_ipcns {
++	struct ckpt_hdr h;
++	__u64 shm_ctlmax;
++	__u64 shm_ctlall;
++	__s32 shm_ctlmni;
++
++	__s32 msg_ctlmax;
++	__s32 msg_ctlmnb;
++	__s32 msg_ctlmni;
++
++	__s32 sem_ctl_msl;
++	__s32 sem_ctl_mns;
++	__s32 sem_ctl_opm;
++	__s32 sem_ctl_mni;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_ipc {
++	struct ckpt_hdr h;
++	__u32 ipc_type;
++	__u32 ipc_count;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_ipc_perms {
++	__s32 id;
++	__u32 key;
++	__u32 uid;
++	__u32 gid;
++	__u32 cuid;
++	__u32 cgid;
++	__u32 mode;
++	__u32 _padding;
++	__u64 seq;
++} __attribute__((aligned(8)));
++
++
++#define CKPT_TST_OVERFLOW_16(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
++
++#define CKPT_TST_OVERFLOW_32(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > INT_MAX))
++
++#define CKPT_TST_OVERFLOW_64(a, b) \
++	((sizeof(a) > sizeof(b)) && ((a) > LONG_MAX))
++
++
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 0a9c58b..9ffa492 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -22,6 +22,7 @@
+ 
+ struct ckpt_stats {
+ 	int uts_ns;
++	int ipc_ns;
+ };
+ 
+ struct ckpt_ctx {
+diff --git a/init/Kconfig b/init/Kconfig
+index a083161..21a7ca2 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -191,6 +191,12 @@ config SYSVIPC
+ 	  section 6.4 of the Linux Programmer's Guide, available from
+ 	  <http://www.tldp.org/guides.html>.
+ 
++config SYSVIPC_CHECKPOINT
++	bool
++	depends on SYSVIPC
++	depends on CHECKPOINT
++	default y
++
+ config SYSVIPC_SYSCTL
+ 	bool
+ 	depends on SYSVIPC
+diff --git a/ipc/Makefile b/ipc/Makefile
+index 4e1955e..b747127 100644
+--- a/ipc/Makefile
++++ b/ipc/Makefile
+@@ -9,4 +9,4 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
+ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
+ obj-$(CONFIG_IPC_NS) += namespace.o
+ obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
+-
++obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
 new file mode 100644
-index 0000000..5ff9925
+index 0000000..4eb1a97
 --- /dev/null
-+++ b/checkpoint/files.c
-@@ -0,0 +1,382 @@
++++ b/ipc/checkpoint.c
+@@ -0,0 +1,317 @@
 +/*
-+ *  Checkpoint file descriptors
++ *  Checkpoint logic and helpers
 + *
-+ *  Copyright (C) 2008-2009 Oren Laadan
++ *  Copyright (C) 2009 Oren Laadan
 + *
 + *  This file is subject to the terms and conditions of the GNU General Public
 + *  License.  See the file COPYING in the main directory of the Linux
@@ -145,689 +317,427 @@ index 0000000..5ff9925
 + */
 +
 +/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DFILE
++#define CKPT_DFLAG  CKPT_DIPC
 +
-+#include <linux/kernel.h>
-+#include <linux/module.h>
++#include <linux/ipc.h>
++#include <linux/msg.h>
 +#include <linux/sched.h>
-+#include <linux/file.h>
-+#include <linux/fdtable.h>
++#include <linux/ipc_namespace.h>
 +#include <linux/checkpoint.h>
 +#include <linux/checkpoint_hdr.h>
 +
++#include "util.h"
++
++/* for ckpt_debug */
++static char *ipc_ind_to_str[] = { "sem", "msg", "shm" };
++
++#define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
++#define msg_ids(ns)	((ns)->ids[IPC_MSG_IDS])
++#define sem_ids(ns)	((ns)->ids[IPC_SEM_IDS])
 +
 +/**************************************************************************
 + * Checkpoint
 + */
 +
-+/**
-+ * fill_fname - return pathname of a given file
-+ * @path: path name
-+ * @root: relative root
-+ * @buf: buffer for pathname
-+ * @len: buffer length (in) and pathname length (out)
-+ */
-+static char *fill_fname(struct path *path, struct path *root,
-+			char *buf, int *len)
++int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++			      struct kern_ipc_perm *perm)
 +{
-+	struct path tmp = *root;
-+	char *fname;
++	if (ipcperms(perm, S_IROTH))
++		return -EACCES;
 +
-+	BUG_ON(!buf);
-+	spin_lock(&dcache_lock);
-+	fname = __d_path(path, &tmp, buf, *len);
-+	spin_unlock(&dcache_lock);
-+	if (IS_ERR(fname))
-+		return fname;
-+	*len = (buf + (*len) - fname);
-+	/*
-+	 * FIX: if __d_path() changed these, it must have stepped out of
-+	 * init's namespace. Since currently we require a unified namespace
-+	 * within the container: simply fail.
-+	 */
-+	if (tmp.mnt != root->mnt || tmp.dentry != root->dentry)
-+		fname = ERR_PTR(-EBADF);
-+
-+	return fname;
-+}
-+
-+/**
-+ * checkpoint_fname - write a file name
-+ * @ctx: checkpoint context
-+ * @path: path name
-+ * @root: relative root
-+ */
-+int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
-+{
-+	char *buf, *fname;
-+	int ret, flen;
-+
-+	/*
-+	 * FIXME: we can optimize and save memory (and storage) if we
-+	 * share strings (through objhash) and reference them instead
-+	 */
-+
-+	flen = PATH_MAX;
-+	buf = kmalloc(flen, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	fname = fill_fname(path, root, buf, &flen);
-+	if (!IS_ERR(fname))
-+		ret = ckpt_write_obj_type(ctx, fname, flen,
-+					  CKPT_HDR_FILE_NAME);
-+	else
-+		ret = PTR_ERR(fname);
-+
-+	kfree(buf);
-+	return ret;
-+}
-+
-+#define CKPT_DEFAULT_FDTABLE  256		/* an initial guess */
-+
-+/**
-+ * scan_fds - scan file table and construct array of open fds
-+ * @files: files_struct pointer
-+ * @fdtable: (output) array of open fds
-+ *
-+ * Returns the number of open fds found, and also the file table
-+ * array via *fdtable. The caller should free the array.
-+ *
-+ * The caller must validate the file descriptors collected in the
-+ * array before using them, e.g. by using fcheck_files(), in case
-+ * the task's fdtable changes in the meantime.
-+ */
-+static int scan_fds(struct files_struct *files, int **fdtable)
-+{
-+	struct fdtable *fdt;
-+	int *fds = NULL;
-+	int i = 0, n = 0;
-+	int tot = CKPT_DEFAULT_FDTABLE;
-+
-+	/*
-+	 * We assume that all tasks possibly sharing the file table are
-+	 * frozen (or we are a single process and we checkpoint ourselves).
-+	 * Therefore, we can safely proceed after krealloc() from where we
-+	 * left off. Otherwise the file table may be modified by another
-+	 * task after we scan it. The behavior is this case is undefined,
-+	 * and either checkpoint or restart will likely fail.
-+	 */
-+ retry:
-+	fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
-+	if (!fds)
-+		return -ENOMEM;
-+
-+	rcu_read_lock();
-+	fdt = files_fdtable(files);
-+	for (/**/; i < fdt->max_fds; i++) {
-+		if (!fcheck_files(files, i))
-+			continue;
-+		if (n == tot) {
-+			rcu_read_unlock();
-+			tot *= 2;	/* won't overflow: kmalloc will fail */
-+			goto retry;
-+		}
-+		fds[n++] = i;
-+	}
-+	rcu_read_unlock();
-+
-+	*fdtable = fds;
-+	return n;
-+}
-+
-+int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			   struct ckpt_hdr_file *h)
-+{
-+	h->f_flags = file->f_flags;
-+	h->f_mode = file->f_mode;
-+	h->f_pos = file->f_pos;
-+	h->f_version = file->f_version;
-+
-+	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
++	h->id = perm->id;
++	h->key = perm->key;
++	h->uid = perm->uid;
++	h->gid = perm->gid;
++	h->cuid = perm->cuid;
++	h->cgid = perm->cgid;
++	h->mode = perm->mode & S_IRWXUGO;
++	h->seq = perm->seq;
 +
 +	return 0;
 +}
 +
-+int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
++static int checkpoint_ipc_any(struct ckpt_ctx *ctx,
++			      struct ipc_namespace *ipc_ns,
++			      int ipc_ind, int ipc_type,
++			      int (*func)(int id, void *p, void *data))
 +{
-+	struct ckpt_hdr_file_generic *h;
-+	int ret;
++	struct ckpt_hdr_ipc *h;
++	struct ipc_ids *ipc_ids = &ipc_ns->ids[ipc_ind];
++	int ret = -ENOMEM;
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	down_read(&ipc_ids->rw_mutex);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC);
 +	if (!h)
-+		return -ENOMEM;
-+
-+	/*
-+	 * FIXME: when we'll add support for unlinked files/dirs, we'll
-+	 * need to distinguish between unlinked filed and unlinked dirs.
-+	 */
-+	h->common.f_type = CKPT_FILE_GENERIC;
-+
-+	ret = checkpoint_file_common(ctx, file, &h->common);
-+	if (ret < 0)
-+		goto out;
-+	ret = ckpt_write_obj(ctx, &h->common.h);
-+	if (ret < 0)
-+		goto out;
-+	ret = checkpoint_fname(ctx, &file->f_path, &ctx->fs_mnt);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+EXPORT_SYMBOL(generic_file_checkpoint);
-+
-+/* checkpoint callback for file pointer */
-+int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	struct file *file = (struct file *) ptr;
-+
-+	if (!file->f_op || !file->f_op->checkpoint) {
-+		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
-+		return -EBADF;
-+	}
-+	if (d_unlinked(file->f_dentry)) {
-+		ckpt_debug("unlinked files are unsupported\n");
-+		return -EBADF;
-+	}
-+	return file->f_op->checkpoint(ctx, file);
-+}
-+
-+/**
-+ * ckpt_write_file_desc - dump the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ * @files: files_struct pointer
-+ * @fd: file descriptor
-+ *
-+ * Saves the state of the file descriptor; looks up the actual file
-+ * pointer in the hash table, and if found saves the matching objref,
-+ * otherwise calls ckpt_write_file to dump the file pointer too.
-+ */
-+static int checkpoint_file_desc(struct ckpt_ctx *ctx,
-+				struct files_struct *files, int fd)
-+{
-+	struct ckpt_hdr_file_desc *h;
-+	struct file *file = NULL;
-+	struct fdtable *fdt;
-+	int objref, ret;
-+	int coe = 0;	/* avoid gcc warning */
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	rcu_read_lock();
-+	fdt = files_fdtable(files);
-+	file = fcheck_files(files, fd);
-+	if (file) {
-+		coe = FD_ISSET(fd, fdt->close_on_exec);
-+		get_file(file);
-+	}
-+	rcu_read_unlock();
-+
-+	/* sanity check (although this shouldn't happen) */
-+	ret = -EBADF;
-+	if (!file)
 +		goto out;
 +
-+	/*
-+	 * if seen first time, this will add 'file' to the objhash, keep
-+	 * a reference to it, dump its state while at it.
-+	 */
-+	objref = checkpoint_obj(ctx, file, CKPT_OBJ_FILE);
-+	ckpt_debug("fd %d objref %d file %p coe %d)\n", fd, objref, file, coe);
-+	if (objref < 0) {
-+		ret = objref;
-+		goto out;
-+	}
-+
-+	h->fd_objref = objref;
-+	h->fd_descriptor = fd;
-+	h->fd_close_on_exec = coe;
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+out:
-+	ckpt_hdr_put(ctx, h);
-+	if (file)
-+		fput(file);
-+	return ret;
-+}
-+
-+static int do_checkpoint_file_table(struct ckpt_ctx *ctx,
-+				    struct files_struct *files)
-+{
-+	struct ckpt_hdr_file_table *h;
-+	int *fdtable = NULL;
-+	int nfds, n, ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_TABLE);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	nfds = scan_fds(files, &fdtable);
-+	if (nfds < 0) {
-+		ret = nfds;
-+		goto out;
-+	}
-+
-+	h->fdt_nfds = nfds;
++	h->ipc_type = ipc_type;
++	h->ipc_count = ipc_ids->in_use;
++	ckpt_debug("ipc-%s count %d\n", ipc_ind_to_str[ipc_ind], h->ipc_count);
 +
 +	ret = ckpt_write_obj(ctx, &h->h);
 +	ckpt_hdr_put(ctx, h);
 +	if (ret < 0)
 +		goto out;
 +
-+	ckpt_debug("nfds %d\n", nfds);
-+	for (n = 0; n < nfds; n++) {
-+		ret = checkpoint_file_desc(ctx, files, fdtable[n]);
-+		if (ret < 0)
-+			break;
-+	}
++	ret = idr_for_each(&ipc_ids->ipcs_idr, func, ctx);
++	ckpt_debug("ipc-%s ret %d\n", ipc_ind_to_str[ipc_ind], ret);
 + out:
-+	kfree(fdtable);
++	up_read(&ipc_ids->rw_mutex);
 +	return ret;
 +}
 +
-+/* checkpoint callback for file table */
-+int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr)
++static int do_checkpoint_ipc_ns(struct ckpt_ctx *ctx,
++				struct ipc_namespace *ipc_ns)
 +{
-+	return do_checkpoint_file_table(ctx, (struct files_struct *) ptr);
-+}
-+
-+/* checkpoint wrapper for file table */
-+int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct files_struct *files;
-+	int objref;
-+
-+	files = get_files_struct(t);
-+	if (!files)
-+		return -EBUSY;
-+	objref = checkpoint_obj(ctx, files, CKPT_OBJ_FILE_TABLE);
-+	put_files_struct(files);
-+
-+	return objref;
-+}
-+
-+/***********************************************************************
-+ * Collect
-+ */
-+
-+static int collect_file_desc(struct ckpt_ctx *ctx,
-+			     struct files_struct *files, int fd)
-+{
-+	struct fdtable *fdt;
-+	struct file *file;
++	struct ckpt_hdr_ipcns *h;
 +	int ret;
 +
-+	rcu_read_lock();
-+	fdt = files_fdtable(files);
-+	file = fcheck_files(files, fd);
-+	if (file)
-+		get_file(file);
-+	rcu_read_unlock();
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_NS);
++	if (!h)
++		return -ENOMEM;
 +
-+	if (!file)
-+		return -EAGAIN;
++	down_read(&shm_ids(ipc_ns).rw_mutex);
++	h->shm_ctlmax = ipc_ns->shm_ctlmax;
++	h->shm_ctlall = ipc_ns->shm_ctlall;
++	h->shm_ctlmni = ipc_ns->shm_ctlmni;
++	up_read(&shm_ids(ipc_ns).rw_mutex);
 +
-+	ret = ckpt_obj_collect(ctx, file, CKPT_OBJ_FILE);
-+	fput(file);
++	down_read(&msg_ids(ipc_ns).rw_mutex);
++	h->msg_ctlmax = ipc_ns->msg_ctlmax;
++	h->msg_ctlmnb = ipc_ns->msg_ctlmnb;
++	h->msg_ctlmni = ipc_ns->msg_ctlmni;
++	up_read(&msg_ids(ipc_ns).rw_mutex);
 +
-+	return ret;
-+}
++	down_read(&sem_ids(ipc_ns).rw_mutex);
++	h->sem_ctl_msl = ipc_ns->sem_ctls[0];
++	h->sem_ctl_mns = ipc_ns->sem_ctls[1];
++	h->sem_ctl_opm = ipc_ns->sem_ctls[2];
++	h->sem_ctl_mni = ipc_ns->sem_ctls[3];
++	up_read(&sem_ids(ipc_ns).rw_mutex);
 +
-+static int collect_file_table(struct ckpt_ctx *ctx, struct files_struct *files)
-+{
-+	int *fdtable;
-+	int exists;
-+	int nfds, n;
-+	int ret;
-+
-+	/* if already exists, don't proceed inside the struct */
-+	exists = ckpt_obj_lookup(ctx, files, CKPT_OBJ_FILE_TABLE);
-+
-+	ret = ckpt_obj_collect(ctx, files, CKPT_OBJ_FILE_TABLE);
-+	if (ret < 0 || exists)
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
 +		return ret;
 +
-+	nfds = scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
++#if 0 /* NEXT FEW PATCHES */
++	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
++				 CKPT_HDR_IPC_SHM, checkpoint_ipc_shm);
++	if (ret < 0)
++		return ret;
++	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
++				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
++	if (ret < 0)
++		return ret;
++	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
++				 CKPT_HDR_IPC_SEM, checkpoint_ipc_sem);
++#endif
++	return ret;
++}
 +
-+	for (n = 0; n < nfds; n++) {
-+		ret = collect_file_desc(ctx, files, fdtable[n]);
++int checkpoint_ipc_ns(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_ipc_ns(ctx, (struct ipc_namespace *) ptr);
++}
++
++/**************************************************************************
++ * Restart
++ */
++
++/*
++ * check whether current task may create ipc object with
++ * checkpointed uids and gids.
++ * Return 1 if ok, 0 if not.
++ */
++static int validate_created_perms(struct ckpt_hdr_ipc_perms *h)
++{
++	const struct cred *cred = current_cred();
++	uid_t uid = cred->uid, euid = cred->euid;
++
++	/* actually I don't know - is CAP_IPC_OWNER the right one? */
++	if (((h->uid != uid && h->uid == euid) ||
++			(h->cuid != uid && h->cuid != euid) ||
++			!in_group_p(h->cgid) ||
++			!in_group_p(h->gid)) &&
++			!capable(CAP_IPC_OWNER))
++		return 0;
++	return 1;
++}
++
++int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++			   struct kern_ipc_perm *perm)
++{
++	if (h->id < 0)
++		return -EINVAL;
++	if (CKPT_TST_OVERFLOW_16(h->uid, perm->uid) ||
++	    CKPT_TST_OVERFLOW_16(h->gid, perm->gid) ||
++	    CKPT_TST_OVERFLOW_16(h->cuid, perm->cuid) ||
++	    CKPT_TST_OVERFLOW_16(h->cgid, perm->cgid) ||
++	    CKPT_TST_OVERFLOW_16(h->mode, perm->mode))
++		return -EINVAL;
++	if (h->seq >= USHORT_MAX)
++		return -EINVAL;
++	if (h->mode & ~S_IRWXUGO)
++		return -EINVAL;
++
++	/* FIX: verify the ->mode field makes sense */
++
++	perm->id = h->id;
++	perm->key = h->key;
++
++	if (!validate_created_perms(h))
++		return -EPERM;
++	perm->uid = h->uid;
++	perm->gid = h->gid;
++	perm->cuid = h->cuid;
++	perm->cgid = h->cgid;
++	perm->mode = h->mode;
++	perm->seq = h->seq;
++	/*
++	 * Todo: restore perm->security.
++	 * At the moment it gets set by security_x_alloc() called through
++	 * ipcget()->ipcget_public()->ops-.getnew (->nequeue for instance)
++	 * We will want to ask the LSM to consider resetting the
++	 * checkpointed ->security, based on current_security(),
++	 * the checkpointed ->security, and the checkpoint file context.
++	 */
++
++	return 0;
++}
++
++static int restore_ipc_any(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns,
++			   int ipc_ind, int ipc_type,
++			   int (*func)(struct ckpt_ctx *ctx,
++				       struct ipc_namespace *ns))
++{
++	struct ckpt_hdr_ipc *h;
++	int n, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ckpt_debug("ipc-%s: count %d\n", ipc_ind_to_str[ipc_ind], h->ipc_count);
++
++	ret = -EINVAL;
++	if (h->ipc_type != ipc_type)
++		goto out;
++
++	ret = 0;
++	for (n = 0; n < h->ipc_count; n++) {
++		ret = (*func)(ctx, ipc_ns);
 +		if (ret < 0)
-+			break;
++			goto out;
 +	}
-+
-+	kfree(fdtable);
-+	return ret;
-+}
-+
-+int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct files_struct *files;
-+	int ret;
-+
-+	files = get_files_struct(t);
-+	if (!files)
-+		return -EBUSY;
-+	ret = collect_file_table(ctx, files);
-+	put_files_struct(files);
-+
-+	return ret;
-+}
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 3f23910..d77e8c4 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -13,6 +13,8 @@
- 
- #include <linux/kernel.h>
- #include <linux/hash.h>
-+#include <linux/file.h>
-+#include <linux/fdtable.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-@@ -52,6 +54,7 @@ struct ckpt_obj_hash {
- int checkpoint_bad(struct ckpt_ctx *ctx, void *ptr)
- {
- 	BUG();
-+	return 0;
- }
- 
- void *restore_bad(struct ckpt_ctx *ctx)
-@@ -71,6 +74,38 @@ static int obj_no_grab(void *ptr)
- 	return 0;
- }
- 
-+static int obj_file_table_grab(void *ptr)
-+{
-+	atomic_inc(&((struct files_struct *) ptr)->count);
-+	return 0;
-+}
-+
-+static void obj_file_table_drop(void *ptr)
-+{
-+	put_files_struct((struct files_struct *) ptr);
-+}
-+
-+static int obj_file_table_users(void *ptr)
-+{
-+	return atomic_read(&((struct files_struct *) ptr)->count);
-+}
-+
-+static int obj_file_grab(void *ptr)
-+{
-+	get_file((struct file *) ptr);
-+	return 0;
-+}
-+
-+static void obj_file_drop(void *ptr)
-+{
-+	fput((struct file *) ptr);
-+}
-+
-+static int obj_file_users(void *ptr)
-+{
-+	return atomic_long_read(&((struct file *) ptr)->f_count);
-+}
-+
- static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 	/* ignored object */
- 	{
-@@ -79,6 +114,24 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_drop = obj_no_drop,
- 		.ref_grab = obj_no_grab,
- 	},
-+	/* files_struct object */
-+	{
-+		.obj_name = "FILE_TABLE",
-+		.obj_type = CKPT_OBJ_FILE_TABLE,
-+		.ref_drop = obj_file_table_drop,
-+		.ref_grab = obj_file_table_grab,
-+		.ref_users = obj_file_table_users,
-+		.checkpoint = checkpoint_file_table,
-+	},
-+	/* file object */
-+	{
-+		.obj_name = "FILE",
-+		.obj_type = CKPT_OBJ_FILE,
-+		.ref_drop = obj_file_drop,
-+		.ref_grab = obj_file_grab,
-+		.ref_users = obj_file_users,
-+		.checkpoint = checkpoint_file,
-+	},
- };
- 
- 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 4da4e4a..61caa01 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -103,6 +103,30 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return ckpt_write_string(ctx, t->comm, TASK_COMM_LEN);
- }
- 
-+static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct ckpt_hdr_task_objs *h;
-+	int files_objref;
-+	int ret;
-+
-+	files_objref = checkpoint_obj_file_table(ctx, t);
-+	ckpt_debug("files: objref %d\n", files_objref);
-+	if (files_objref < 0) {
-+		ckpt_write_err(ctx, "task %d (%s), files_struct: %d",
-+			       task_pid_vnr(t), t->comm, files_objref);
-+		return files_objref;
-+	}
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
-+	if (!h)
-+		return -ENOMEM;
-+	h->files_objref = files_objref;
-+	ret = ckpt_write_obj(ctx, &h->h);
++ out:
++	ckpt_debug("ipc-%s: ret %d\n", ipc_ind_to_str[ipc_ind], ret);
 +	ckpt_hdr_put(ctx, h);
-+
 +	return ret;
 +}
 +
- /* dump the task_struct of a given task */
- int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
- {
-@@ -227,6 +251,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	if (t->exit_state)
- 		return 0;
- 
-+	ret = checkpoint_task_objs(ctx, t);
-+	ckpt_debug("objs %d\n", ret);
++static struct ipc_namespace *do_restore_ipc_ns(struct ckpt_ctx *ctx)
++{
++	struct ipc_namespace *ipc_ns = NULL;
++	struct ckpt_hdr_ipcns *h;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_NS);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	ret = -EINVAL;
++	if (h->shm_ctlmax < 0 || h->shm_ctlall < 0 || h->shm_ctlmni < 0)
++		goto out;
++	if (h->msg_ctlmax < 0 || h->msg_ctlmnb < 0 || h->msg_ctlmni < 0)
++		goto out;
++	if (h->sem_ctl_msl < 0 || h->sem_ctl_mns < 0 ||
++	    h->sem_ctl_opm < 0 || h->sem_ctl_mni < 0)
++		goto out;
++
++	/*
++	 * If !CONFIG_IPC_NS, do not restore the global IPC state, as
++	 * it is used by other processes. It is ok to try to restore
++	 * the {shm,msg,sem} objects: in the worst case the requested
++	 * identifiers will be in use.
++	 */
++#ifdef CONFIG_IPC_NS
++	ret = -ENOMEM;
++	ipc_ns = create_ipc_ns();
++	if (!ipc_ns)
++		goto out;
++
++	down_read(&shm_ids(ipc_ns).rw_mutex);
++	ipc_ns->shm_ctlmax = h->shm_ctlmax;
++	ipc_ns->shm_ctlall = h->shm_ctlall;
++	ipc_ns->shm_ctlmni = h->shm_ctlmni;
++	up_read(&shm_ids(ipc_ns).rw_mutex);
++
++	down_read(&msg_ids(ipc_ns).rw_mutex);
++	ipc_ns->msg_ctlmax = h->msg_ctlmax;
++	ipc_ns->msg_ctlmnb = h->msg_ctlmnb;
++	ipc_ns->msg_ctlmni = h->msg_ctlmni;
++	up_read(&msg_ids(ipc_ns).rw_mutex);
++
++	down_read(&sem_ids(ipc_ns).rw_mutex);
++	ipc_ns->sem_ctls[0] = h->sem_ctl_msl;
++	ipc_ns->sem_ctls[1] = h->sem_ctl_mns;
++	ipc_ns->sem_ctls[2] = h->sem_ctl_opm;
++	ipc_ns->sem_ctls[3] = h->sem_ctl_mni;
++	up_read(&sem_ids(ipc_ns).rw_mutex);
++#else
++	ret = -EEXIST;
++	/* complain if image contains multiple namespaces */
++	if (ctx->stats.ipc_ns)
++		goto out;
++	ipc_ns = current->nsproxy->ipc_ns;
++	get_ipc_ns(ipc_ns);
++#endif
++
++#if 0 /* NEXT FEW PATCHES */
++	ret = restore_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
++			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
 +	if (ret < 0)
 +		goto out;
- 	ret = checkpoint_thread(ctx, t);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-@@ -243,7 +271,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
- {
--	return 0;
-+	int ret;
-+
-+	ret = ckpt_collect_file_table(ctx, t);
-+
-+	return ret;
- }
- 
- /***********************************************************************
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index d16d48f..bc5620f 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -195,6 +195,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 		fput(ctx->file);
- 
- 	ckpt_obj_hash_free(ctx);
-+	path_put(&ctx->fs_mnt);
- 
- 	if (ctx->tasks_arr)
- 		task_arr_free(ctx);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index efd05cc..67845dc 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -124,12 +124,27 @@ extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
- 				    struct task_struct *t);
- extern int restore_restart_block(struct ckpt_ctx *ctx);
- 
-+/* file table */
-+extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
-+				     struct task_struct *t);
-+extern int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr);
-+
-+/* files */
-+extern int checkpoint_fname(struct ckpt_ctx *ctx,
-+			    struct path *path, struct path *root);
-+extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
-+
-+extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
-+				  struct ckpt_hdr_file *h);
-+
- 
- /* debugging flags */
- #define CKPT_DBASE	0x1		/* anything */
- #define CKPT_DSYS	0x2		/* generic (system) */
- #define CKPT_DRW	0x4		/* image read/write */
- #define CKPT_DOBJ	0x8		/* shared objects */
-+#define CKPT_DFILE	0x10		/* files and filesystem */
- 
- #define CKPT_DDEFAULT	0xffff		/* default debug level */
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 7c46638..3f8483e 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -52,12 +52,18 @@ enum {
- 
- 	CKPT_HDR_TREE = 101,
- 	CKPT_HDR_TASK,
-+	CKPT_HDR_TASK_OBJS,
- 	CKPT_HDR_RESTART_BLOCK,
- 	CKPT_HDR_THREAD,
- 	CKPT_HDR_CPU,
- 
- 	/* 201-299: reserved for arch-dependent */
- 
-+	CKPT_HDR_FILE_TABLE = 301,
-+	CKPT_HDR_FILE_DESC,
-+	CKPT_HDR_FILE_NAME,
-+	CKPT_HDR_FILE,
-+
- 	CKPT_HDR_TAIL = 9001,
- 
- 	CKPT_HDR_ERROR = 9999,
-@@ -78,6 +84,8 @@ struct ckpt_hdr_objref {
- /* shared objects types */
- enum obj_type {
- 	CKPT_OBJ_IGNORE = 0,
-+	CKPT_OBJ_FILE_TABLE,
-+	CKPT_OBJ_FILE,
- 	CKPT_OBJ_MAX
- };
- 
-@@ -155,6 +163,12 @@ struct ckpt_hdr_task {
- 	__u64 robust_futex_list; /* a __user ptr */
- } __attribute__((aligned(8)));
- 
-+/* task's shared resources */
-+struct ckpt_hdr_task_objs {
-+	struct ckpt_hdr h;
-+	__s32 files_objref;
-+} __attribute__((aligned(8)));
-+
- /* restart blocks */
- struct ckpt_hdr_restart_block {
- 	struct ckpt_hdr h;
-@@ -176,4 +190,39 @@ enum restart_block_type {
- 	CKPT_RESTART_BLOCK_FUTEX
- };
- 
-+/* file system */
-+struct ckpt_hdr_file_table {
-+	struct ckpt_hdr h;
-+	__s32 fdt_nfds;
-+} __attribute__((aligned(8)));
-+
-+/* file descriptors */
-+struct ckpt_hdr_file_desc {
-+	struct ckpt_hdr h;
-+	__s32 fd_objref;
-+	__s32 fd_descriptor;
-+	__u32 fd_close_on_exec;
-+} __attribute__((aligned(8)));
-+
-+enum file_type {
-+	CKPT_FILE_IGNORE = 0,
-+	CKPT_FILE_GENERIC,
-+	CKPT_FILE_MAX
-+};
-+
-+/* file objects */
-+struct ckpt_hdr_file {
-+	struct ckpt_hdr h;
-+	__u32 f_type;
-+	__u32 f_mode;
-+	__u32 f_flags;
-+	__u32 _padding;
-+	__u64 f_pos;
-+	__u64 f_version;
-+} __attribute__((aligned(8)));
-+
-+struct ckpt_hdr_file_generic {
-+	struct ckpt_hdr_file common;
-+} __attribute__((aligned(8)));
-+
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index bd78d19..c446510 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -12,6 +12,10 @@
- 
- #ifdef __KERNEL__
- 
-+#include <linux/list.h>
-+#include <linux/path.h>
-+#include <linux/fs.h>
-+
- #include <linux/sched.h>
- #include <linux/nsproxy.h>
- #include <linux/fs.h>
-@@ -40,6 +44,8 @@ struct ckpt_ctx {
- 
- 	struct ckpt_obj_hash *obj_hash;	/* repository for shared objects */
- 
-+	struct path fs_mnt;     /* container root (FIXME) */
-+
- 	char err_string[256];	/* checkpoint: error string */
- 
- 	/* [multi-process checkpoint] */
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 05d4745..2174957 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2313,7 +2313,11 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
- loff_t inode_get_bytes(struct inode *inode);
- void inode_set_bytes(struct inode *inode, loff_t bytes);
- 
-+#ifdef CONFIG_CHECKPOINT
-+extern int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
-+#else
- #define generic_file_checkpoint NULL
++	ret = restore_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
++			      CKPT_HDR_IPC_MSG, restore_ipc_msg);
++	if (ret < 0)
++		goto out;
++	ret = restore_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
++			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
 +#endif
++	if (ret < 0)
++		goto out;
++
++	ctx->stats.ipc_ns++;
++ out:
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0) {
++		put_ipc_ns(ipc_ns);
++		ipc_ns = ERR_PTR(ret);
++	}
++	return ipc_ns;
++}
++
++void *restore_ipc_ns(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_ipc_ns(ctx);
++}
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index a1094ff..8e5ea32 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -14,7 +14,7 @@
  
- extern int vfs_readdir(struct file *, filldir_t, void *);
+ #include "util.h"
  
+-static struct ipc_namespace *create_ipc_ns(void)
++struct ipc_namespace *create_ipc_ns(void)
+ {
+ 	struct ipc_namespace *ns;
+ 	int err;
+diff --git a/ipc/util.h b/ipc/util.h
+index 159a73c..8ae1f8e 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/unistd.h>
+ #include <linux/err.h>
++#include <linux/checkpoint.h>
+ 
+ #define SEQ_MULTIPLIER	(IPCMNI)
+ 
+@@ -175,4 +176,13 @@ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+ 	       void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
+ 
++struct ipc_namespace *create_ipc_ns(void);
++
++#ifdef CONFIG_CHECKPOINT
++extern int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++				     struct kern_ipc_perm *perm);
++extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
++				  struct kern_ipc_perm *perm);
++#endif
++
+ #endif
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 4f48a68..fddc724 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -248,6 +248,7 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ret = ckpt_obj_collect(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
+ 	if (ret < 0)
+ 		goto out;
++	ret = ckpt_obj_collect(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
+ 
+ 	/* TODO: collect other namespaces here */
+  out:
+@@ -268,6 +269,11 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+ 	if (ret <= 0)
+ 		goto out;
+ 	h->uts_objref = ret;
++	ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
++	if (ret < 0)
++		goto out;
++	h->ipc_objref = ret;
++
+ 	/* TODO: Write other namespaces here */
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
+@@ -287,6 +293,7 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 	struct ckpt_hdr_ns *h;
+ 	struct nsproxy *nsproxy = NULL;
+ 	struct uts_namespace *uts_ns;
++	struct ipc_namespace *ipc_ns;
+ 	int ret;
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NS);
+@@ -294,7 +301,8 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 		return (struct nsproxy *) h;
+ 
+ 	ret = -EINVAL;
+-	if (h->uts_objref <= 0)
++	if (h->uts_objref <= 0 ||
++	    h->ipc_objref <= 0)
+ 		goto out;
+ 
+ 	uts_ns = ckpt_obj_fetch(ctx, h->uts_objref, CKPT_OBJ_UTS_NS);
+@@ -302,8 +310,13 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 		ret = PTR_ERR(uts_ns);
+ 		goto out;
+ 	}
++	ipc_ns = ckpt_obj_fetch(ctx, h->ipc_objref, CKPT_OBJ_IPC_NS);
++	if (IS_ERR(ipc_ns)) {
++		ret = PTR_ERR(ipc_ns);
++		goto out;
++	}
+ 
+-#if defined(COFNIG_UTS_NS)
++#if defined(COFNIG_UTS_NS) || defined(CONFIG_IPC_NS)
+ 	ret = -ENOMEM;
+ 	nsproxy = create_nsproxy();
+ 	if (!nsproxy)
+@@ -311,9 +324,9 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 
+ 	get_uts_ns(uts_ns);
+ 	nsproxy->uts_ns = uts_ns;
+-
+-	get_ipc_ns(current->nsproxy->ipc_ns);
++	get_ipc_ns(ipc_ns);
+ 	nsproxy->ipc_ns = ipc_ns;
++
+ 	get_pid_ns(current->nsproxy->pid_ns);
+ 	nsproxy->pid_ns = current->nsproxy->pid_ns;
+ 	get_mnt_ns(current->nsproxy->mnt_ns);
+@@ -325,6 +338,7 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 	get_nsproxy(nsproxy);
+ 
+ 	BUG_ON(nsproxy->uts_ns != uts_ns);
++	BUG_ON(nsproxy->ipc_ns != ipc_ns);
+ #endif
+ 
+ 	/* TODO: add more namespaces here */
 -- 
 1.6.0.4
