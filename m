@@ -1,14 +1,23 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFCv2][PATCH] flexible array implementation
-Date: Wed, 22 Jul 2009 15:03:26 -0700
-Message-ID: <1248300206.24021.347.camel__25028.0665736229$1248300557$gmane$org@nimitz>
-References: <20090721220017.60A219D3@kernel>
-	<20090722183018.GE5878@count0.beaverton.ibm.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Thu, 23 Jul 2009 00:25:50 +0200
+Message-ID: <20090722222550.GA633@megiteam.pl>
+References: <20090713193058.GL18617@megiteam.pl>
+	<20090713202610.GA6447@us.ibm.com>
+	<20090713223444.GM18617@megiteam.pl>
+	<20090714064905.GA25278@us.ibm.com>
+	<20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
+	<20090715131923.GB21417@megiteam.pl>
+	<20090718205244.GA23625@us.ibm.com>
+	<20090719071531.GA20818@megiteam.pl>
+	<20090722064120.GA24373@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722183018.GE5878-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090722064120.GA24373-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,36 +27,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-07-22 at 11:30 -0700, Matt Helsley wrote:
-> > +static int __check_part_and_nr(struct flex_array *fa,
-> > +                            int part_nr, int element_nr)
-> > +{
-> > +     if (part_nr >= __nr_part_ptrs() ||
-> > +         element_nr > fa->nr_elements) {
-> > +             WARN(1, "bad flexible array element number: %d > %d\n",
-> > +                     element_nr, fa->nr_elements);
-> > +             return -EINVAL;
-> > +     }
-> > +     return 0;
-> > +}
+On wto, lip 21, 2009 at 11:41:20 -0700, Sukadev Bhattiprolu wrote:
+> I set 
+> 	CONFIG_SLUB_DEBUG=y
+> 	CONFIG_SLUB=y
+> 	CONFIG_SLUB_DEBUG_ON=y
+> 	# CONFIG_SLUB_STATS is not set
 > 
-> Should the above be inline? Does it make sense to optimize the "common"
-> case and penalize inappropriate access by putting an unlikely() in
-> there? Or is it too early for this stuff?
+> and tried 2.6.29, 2.6.31-rc3 and linux-mmotm from July 13, but have
+> not been able to repro either on an i386 machine or on a KVM guest.
+> 
+> I run your program ./tty-bug in a tight loop. I will try to run the
+> program overnight in a loop. 
+> 
+> Given that your program does not depend on NET_NS, can you see if you
+> can repro on 2.6.28 and see if we can bisect this problem ?
 
-I think I'll leave it to the compiler for now.  Since we also don't have
-a single user, I don't think we have an idea how hot of a path this
-might get used in.
+Immediate crash. I tried 2.6.18-something (Debian etch kernel) that I
+had lying around on the VM. The result:
 
-> I wonder how the *, /, and % ops will affect things that otherwise
-> would have been reduced to shifts and masks -- especially on the
-> "smaller" embedded archs.
+idr_remove called for id=0 which is not allocated.
+ [<c01b7abc>] idr_remove+0xd4/0x137
+ [<c01fa871>] release_mem+0x1d5/0x1e1
+ [<c01fb4ec>] release_dev+0x5d6/0x5ee
+ [<c011669e>] __wake_up+0x2a/0x3d
+ [<c01f9e1f>] tty_ldisc_enable+0x1f/0x21
+ [<c01fabf5>] init_dev+0x378/0x49f
+ [<c01fd2e4>] tty_open+0x2a9/0x2e8
+ [<c0161899>] chrdev_open+0x126/0x141
+ [<c0161773>] chrdev_open+0x0/0x141
+ [<c0158b65>] __dentry_open+0xc8/0x1ac
+ [<c0158cad>] nameidata_to_filp+0x19/0x28
+ [<c0158ce7>] do_filp_open+0x2b/0x31
+ [<c027fddd>] do_nanosleep+0x43/0x6a
+ [<c0125f96>] do_sigaction+0x99/0x156
+ [<c0158d2b>] do_sys_open+0x3e/0xb3
+ [<c0158dcd>] sys_open+0x16/0x18
+ [<c0102c7b>] syscall_call+0x7/0xb
 
-I'm generally fine with rounding all these sizes to powers-of-two.  But,
-I do think it's a wee bit premature at this point.
+(on the bright side, the machine is still usable afterwards).
 
--- Dave
+However, 2.6.26 (both mine and Debian) survives the test so it may indeed
+be a recent regression (was it broken again after fixing sometime
+between .18 and .26?)
+
+Bisecting...
+
+Best regards,
+ Grzegorz Nosek
