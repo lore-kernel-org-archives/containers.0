@@ -1,13 +1,15 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFCv2][PATCH] flexible array implementation
-Date: Thu, 23 Jul 2009 07:30:01 -0700
-Message-ID: <1248359401.24021.715.camel@nimitz>
-References: <20090721220017.60A219D3@kernel>  <4A67CEB7.2080505@zytor.com>
+From: "KAMEZAWA Hiroyuki" <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH] flexible array implementation v3
+Date: Thu, 23 Jul 2009 23:48:11 +0900 (JST)
+Message-ID: <3b45d0f54f0f9c96727e4f9d07b97008.squirrel__11401.1111473248$1248360574$gmane$org@webmail-b.css.fujitsu.com>
+References: <20090722175345.7154C2F2@kernel>
+	<20090723104450.e0d421ca.kamezawa.hiroyu@jp.fujitsu.com>
+	<1248357948.24021.692.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A67CEB7.2080505-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1248357948.24021.692.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,42 +19,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-07-22 at 19:45 -0700, H. Peter Anvin wrote:
-> > I call it a flexible array.  It does all of its work in
-> > PAGE_SIZE bits, so never does an order>0 allocation.
-> > The base level has PAGE_SIZE-2*sizeof(int) bytes of
-> > storage for pointers to the second level.  So, with a
-> > 32-bit arch, you get about 4MB (4183112 bytes) of total
-> > storage when the objects pack nicely into a page.  It
-> > is half that on 64-bit because the pointers are twice
-> > the size.
-> 
-> I'm wondering if there is any use case which would require scaling below
-> the PAGE_SIZE level... in which case it would be nice for it to
-> gracefully decay to a single kmalloc allocation + some metadata.
+Dave Hansen wrote:
+> On Thu, 2009-07-23 at 10:44 +0900, KAMEZAWA Hiroyuki wrote:
 
-For the pid_t case that actually spawned all this, I think it makes a
-ton of sense.  It should be pretty easy to just cannibalize the
-base->part[] pointers to use for data if (total*element_size <=
-bytes_allocated - sizeof(metadata)) in the base.  We'd have to store the
-requested allocation total, but that's not bad.
+>> The caller can't know whether
+>>  - there are no entry or
+>>  - NULL(0) is stored at the array.
+>>
+>> Then, he has to check gotten value is valid or not by himself.
+>
+> I think you may be reading this bit wrong.  Either that, or I badly
+> miscoded it. :)  The flex_array_get() code should returns NULL in cases
+> of error or the *address* of the data element.  It will actually return
+> an address pointing into the second-level page.
+>
+> NULL's two meaning here are:
+> 1. No element was ever put() here and thus there's no data page
+> 2. Your index was out of bounds
+>
+> (1) is a little fuzzy here.  It of course doesn't absolutely guarantee
+> that no put() was done since we just use the data page's existence to
+> tell.  This is certainly no worse than a normal C array would be,
+> though.
+>
+ok, maybe not necessary to handle.
 
-1. Do we use this mode *only* when using a small 'total'?  Or, do we
-   use the mode only when accessing a small range of elements, like
-   indexes < 511.
-2. Do we just use the mode when the indexes are large, but not sparse?
-   Say, when someone is only using indexes 1024->1535?
-3. Do we ever allocate less than 1 page (i.e. kmalloc(2048)) for the
-   base given a small enough 'total' requested?  If so, it gets much
-   harder to grow the array later on if we want to support resizing.
-4. Do we ever promote under the covers from this mode up to the full
-   two-level one?
 
-This also gives us more of a reason to store a flex_array->total and
-enforce that the array is not allowed to grow past that.
+>> Can't we return -ENOENT here(especially when prealloc() is called) ?
+>> But ah, anyway, all-zero elements in allocated array exists ;(
+>> and the user can get value from an entry never be put.
+>>
+>> If we can fill the first 4bytes of _unused_ index by some magic code
+>> like this
+>> #define FLEX_ARRAY_UNUSED_MAGIC		(0xa5a5a5a5)
+>> (if maintaining bitmap/status of usage is nonsense)
+>> and flex_array_get() can return -ENOENT, the users will feel easy.
+>>
+>> Overprotection ;) ?
+>
+> I intentionally didn't use kzalloc() for the data pages.  I figured that
+> users will either initialize it themselves or pass in __GFP_ZERO.  I've
+> added a comment to clarify this.
+>
 
--- Dave
+sorry for noise.
+I just felt that this code expects users know all they really do.
+As said, seems nice :) thank you.
+
+Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
