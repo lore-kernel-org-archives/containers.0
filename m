@@ -1,16 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v17][PATCH 22/60] c/r: external checkpoint of a task	other
-	than ourself
-Date: Thu, 23 Jul 2009 11:33:20 -0400
-Message-ID: <4A6882C0.6020302__16877.6755141609$1248363302$gmane$org@librato.com>
-References: <1248256822-23416-1-git-send-email-orenl@librato.com>
-	<1248256822-23416-23-git-send-email-orenl@librato.com>
-	<20090723144753.GA12416@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/5] Add an errno validation function
+Date: Thu, 23 Jul 2009 08:40:13 -0700
+Message-ID: <87fxcnpfvm.fsf@caffeine.danplanet.com>
+References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
+	<1248295301-30930-3-git-send-email-danms@us.ibm.com>
+	<4A67D654.2000206@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723144753.GA12416-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A67D654.2000206-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org> (Oren Laadan's message of "Wed\,
+	22 Jul 2009 23\:17\:40 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,68 +20,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+OL> How about:
+OL> 	return (errno >= 0 || IS_ERR_VALUE(errno));
 
+Yeah, sounds good.  It's a little more relaxed of a check, but better
+to consolidate with other uses.
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->> +/* setup checkpoint-specific parts of ctx */
->> +static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
->> +{
->> +	struct task_struct *task;
->> +	struct nsproxy *nsproxy;
->> +	int ret;
->> +
->> +	/*
->> +	 * No need for explicit cleanup here, because if an error
->> +	 * occurs then ckpt_ctx_free() is eventually called.
->> +	 */
->> +
->> +	ctx->root_pid = pid;
->> +
->> +	/* root task */
->> +	read_lock(&tasklist_lock);
->> +	task = find_task_by_vpid(pid);
->> +	if (task)
->> +		get_task_struct(task);
->> +	read_unlock(&tasklist_lock);
->> +	if (!task)
->> +		return -ESRCH;
->> +	else
->> +		ctx->root_task = task;
->> +
->> +	/* root nsproxy */
->> +	rcu_read_lock();
->> +	nsproxy = task_nsproxy(task);
->> +	if (nsproxy)
->> +		get_nsproxy(nsproxy);
->> +	rcu_read_unlock();
->> +	if (!nsproxy)
->> +		return -ESRCH;
->> +	else
->> +		ctx->root_nsproxy = nsproxy;
->> +
->> +	/* root freezer */
->> +	ctx->root_freezer = task;
->> +	geT_task_struct(task);
->> +
->> +	ret = may_checkpoint_task(ctx, task);
->> +	if (ret) {
->> +		ckpt_write_err(ctx, NULL);
->> +		put_task_struct(task);
->> +		put_task_struct(task);
->> +		put_nsproxy(nsproxy);
-> 
-> I don't think this is safe - the ckpt_ctx_free() will
-> free them a second time because you're not setting them
-> to NULL, right?
-
-Yes. Fortunately this hole chunk is removed by the 3rd-next patch.
-I'll make sure it's correct here too.
-
-Thanks,
-
-Oren.
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
