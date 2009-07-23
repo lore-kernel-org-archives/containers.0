@@ -1,9 +1,8 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Thu, 23 Jul 2009 12:32:45 -0700
-Message-ID: <20090723193245.GA25662@us.ibm.com>
-References: <20090714103129.GB12958@megiteam.pl>
-	<20090715044744.GA25745@us.ibm.com>
+Date: Thu, 23 Jul 2009 22:33:29 +0200
+Message-ID: <20090723203329.GC16322@megiteam.pl>
+References: <20090715044744.GA25745@us.ibm.com>
 	<20090715131923.GB21417@megiteam.pl>
 	<20090718205244.GA23625@us.ibm.com>
 	<20090719071531.GA20818@megiteam.pl>
@@ -11,12 +10,13 @@ References: <20090714103129.GB12958@megiteam.pl>
 	<20090722222550.GA633@megiteam.pl>
 	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
 	<20090723182620.GA16322@megiteam.pl>
+	<20090723193245.GA25662@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090723182620.GA16322-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <20090723193245.GA25662-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,42 +26,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-R3J6ZWdvcnogTm9zZWsgW3Jvb3RAbG9jYWxkb21haW4ucGxdIHdyb3RlOgp8IE9uIMWbcm8sIGxp
-cCAyMiwgMjAwOSBhdCAwNjo0ODo1NSAtMDcwMCwgSC4gUGV0ZXIgQW52aW4gd3JvdGU6CnwgPiA+
-IHwgQmlzZWN0aW5nLi4uCnwgCnwgT0ssIHRoZSBmaXJzdCBiYWQgY29tbWl0IGlzOgp8IGNvbW1p
-dCA0YTJiNWZkZGQ1M2I4MGVmY2IzMjY2ZWUzNmUyM2I4ZGUyOGU3NjFhCnwgQXV0aG9yOiBTdWth
-ZGV2IEJoYXR0aXByb2x1IDxzdWthZGV2QHVzLmlibS5jb20+CnwgRGF0ZTogICBNb24gT2N0IDEz
-IDEwOjQyOjQ5IDIwMDggKzAxMDAKfCAKfCAgICAgTW92ZSB0dHkgbG9va3VwL3Jlb3BlbiB0byBj
-YWxsZXIKfCAKfCAgICAgTW92ZSB0dHlfZHJpdmVyX2xvb2t1cF90dHkoKSBhbmQgdHR5X3Jlb3Bl
-bigpIGZyb20gdHR5X2luaXRfZGV2KCkKfCAgICAgaW50byB0dHlfb3BlbigpIChvbmUgb2YgdGhl
-IHR3byBjYWxsZXJzIG9mIHR0eV9pbml0X2RldigpKS4gIFRoZXNlCnwgICAgIGNhbGxzIGFyZSBu
-b3QgcmVhbGx5IHJlcXVpcmVkIGluIHB0bXhfb3BlbigpLCB0aGUgb3RoZXIgY2FsbGVyLAp8ICAg
-ICBzaW5jZSBwdG14X29wZW4oKSB3b3VsZCBiZSBzZXR0aW5nIHVwIGEgbmV3IHR0eS4KfCAKfCAg
-ICAgQ2hhbmdlbG9nW3YyXToKfCAgICAgICAgIC0gcmVtb3ZlIHRoZSBsb29rdXAgYW5kIHJlb3Bl
-biBjYWxscyBmcm9tIHB0bXhfb3Blbgp8ICAgICAgICAgLSBtZXJnZSB3aXRoIHJlY2VudCBjaGFu
-Z2VzIHRvIHR0eWRldiB0cmVlCnwgCnwgICAgIFNpZ25lZC1vZmYtYnk6IFN1a2FkZXYgQmhhdHRp
-cHJvbHUgPHN1a2FkZXZAdXMuaWJtLmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogQWxhbiBDb3gg
-PGFsYW5AcmVkaGF0LmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogTGludXMgVG9ydmFsZHMgPHRv
-cnZhbGRzQGxpbnV4LWZvdW5kYXRpb24ub3JnPgp8IAp8IEhvd2V2ZXIsIHdpdGggSEVBRCB0aGVy
-ZSB0aGUgYmVoYXZpb3VyIGlzIHNsaWdodGx5IGRpZmZlcmVudCBhcyB0aGUKfCBrZXJuZWwgZG9l
-cyBub3QgY3Jhc2ggKGxvdWRseSkgYW5kIHRoZSBvcGVuIHN1Y2NlZWRzIGJ1dCBzaWxlbnRseQp8
-IGxlYXZlcyB0aGUgdHR5IGxheWVyIGxvY2tlZCwgc28gaXQncyBqdXN0IGFzIGJhZC4KfCAKClll
-cywgSSB0aGluayB0aGlzIHdhcyBmaXhlZCBieSA4MDhmZmEzZDMwMjI1N2I5ZGMzN2IxNDEyYzFm
-Y2RmOTc2ZmNkZGFjCgp8IFRoZSBvb3BzIGl0c2VsZiBpcyBpbnRyb2R1Y2VkIGJ5Ogp8IGNvbW1p
-dCA1MjdiM2U0NzczNjI4YjMwZDAzMzIzYTJjYjVmYjBkODQ0NDE5OTBmCnwgQXV0aG9yOiBTdWth
-ZGV2IEJoYXR0aXByb2x1IDxzdWthZGV2QHVzLmlibS5jb20+CnwgRGF0ZTogICBNb24gT2N0IDEz
-IDEwOjQzOjA4IDIwMDggKzAxMDAKfCAKfCAgICAgU2ltcGxpZnkgZGV2cHRzX2dldF90dHkoKQp8
-IAp8ICAgICBBcyBwb2ludGVkIG91dCBieSBILiBQZXRlciBBbnZpbiwgc2luY2UgdGhlIGlub2Rl
-IGZvciB0aGUgcHR5IGlzIGtub3duLAp8ICAgICB3ZSBkb24ndCBuZWVkIHRvIGxvb2sgaXQgdXAu
-CnwgCnwgICAgIFNpZ25lZC1vZmYtYnk6IFN1a2FkZXYgQmhhdHRpcHJvbHUgPHN1a2FkZXZAdXMu
-aWJtLmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogQWxhbiBDb3ggPGFsYW5AcmVkaGF0LmNvbT4K
-fCAgICAgU2lnbmVkLW9mZi1ieTogTGludXMgVG9ydmFsZHMgPHRvcnZhbGRzQGxpbnV4LWZvdW5k
-YXRpb24ub3JnPgoKTWF5YmUgYmVmb3JlIHJldHVybmluZyB0aGUgdHR5LCB3ZSBuZWVkIHRvIHRh
-a2UgYW4gZXh0cmEgcmVmZXJlbmNlIG9uCnRoZSBkZW50cnkuCgpTdWthZGV2CgpfX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
-bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
-bGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On czw, lip 23, 2009 at 12:32:45 -0700, Sukadev Bhattiprolu wrote:
+> | OK, the first bad commit is:
+> | commit 4a2b5fddd53b80efcb3266ee36e23b8de28e761a
+> 
+> Yes, I think this was fixed by 808ffa3d302257b9dc37b1412c1fcdf976fcddac
+
+Any other tests I can do that will be helpful? E.g. 2.6.27 + 808ffa?
+
+> | The oops itself is introduced by:
+> | commit 527b3e4773628b30d03323a2cb5fb0d84441990f
+> | Author: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> | Date:   Mon Oct 13 10:43:08 2008 +0100
+> | 
+> |     Simplify devpts_get_tty()
+> | 
+> |     As pointed out by H. Peter Anvin, since the inode for the pty is known,
+> |     we don't need to look it up.
+> | 
+> |     Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> |     Signed-off-by: Alan Cox <alan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> |     Signed-off-by: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> 
+> Maybe before returning the tty, we need to take an extra reference on
+> the dentry.
+
+I tried that and while it did not oops, I wasn't sure where to dput it
+back, so it leaked like a sieve. I'm probably missing something obvious
+but I couldn't find a function whose calls balanced calls to
+devpts_get_tty.
+
+BTW, what would the semantics be? I.e. what can we do with a pty that has
+its master side long gone?
+
+Best regards,
+ Grzegorz Nosek
