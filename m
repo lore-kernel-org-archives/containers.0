@@ -1,22 +1,15 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Thu, 23 Jul 2009 15:11:50 -0700
-Message-ID: <4A68E026.1070608@zytor.com>
-References: <20090715044744.GA25745@us.ibm.com>
-	<20090715131923.GB21417@megiteam.pl>
-	<20090718205244.GA23625@us.ibm.com>
-	<20090719071531.GA20818@megiteam.pl>
-	<20090722064120.GA24373@us.ibm.com>
-	<20090722222550.GA633@megiteam.pl>
-	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
-	<20090723182620.GA16322@megiteam.pl>
-	<20090723193245.GA25662@us.ibm.com>
-	<20090723203329.GC16322@megiteam.pl>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
+Date: Thu, 23 Jul 2009 17:28:25 -0500
+Message-ID: <20090723222825.GA23596@us.ibm.com>
+References: <1248360514-20710-1-git-send-email-orenl@librato.com>
+	<1248360514-20710-2-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723203329.GC16322-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1248360514-20710-2-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,22 +19,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Grzegorz Nosek wrote:
-> 
-> I tried that and while it did not oops, I wasn't sure where to dput it
-> back, so it leaked like a sieve. I'm probably missing something obvious
-> but I couldn't find a function whose calls balanced calls to
-> devpts_get_tty.
-> 
-> BTW, what would the semantics be? I.e. what can we do with a pty that has
-> its master side long gone?
-> 
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> This patch adds checkpoint and restart of rlimit information
+> that is part of shared signal_struct.
 
-Nothing, but as long as something is keeping the pts file entry open, it
- should not be garbage-collected.
+...
 
-	-hpa
+>  static int restore_signal(struct ckpt_ctx *ctx)
+>  {
+>  	struct ckpt_hdr_signal *h;
+> +	struct rlimit rlim;
+> +	int i, ret;
+> 
+>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+>  	if (IS_ERR(h))
+>  		return PTR_ERR(h);
+> 
+> -	/* fill in later */
+> -
+> +	/* rlimit */
+> +	for (i = 0; i < RLIM_NLIMITS; i++) {
+> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
+> +		rlim.rlim_max = h->rlim[i].rlim_max;
+> +		ret = do_setrlimit(i, &rlim);
+
+...
+> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
+>  {
+> -	struct rlimit new_rlim, *old_rlim;
+> +	struct rlimit *old_rlim;
+>  	int retval;
+> 
+> -	if (resource >= RLIM_NLIMITS)
+> -		return -EINVAL;
+> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> -		return -EFAULT;
+> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> -		return -EINVAL;
+>  	old_rlim = current->signal->rlim + resource;
+> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
+> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
+>  	    !capable(CAP_SYS_RESOURCE))
+>  		return -EPERM;
+> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
+> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
+>  		return -EPERM;
+> 
+> -	retval = security_task_setrlimit(resource, &new_rlim);
+> +	retval = security_task_setrlimit(resource, new_rlim);
+>  	if (retval)
+>  		return retval;
+> 
+> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
+> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
+>  		/*
+>  		 * The caller is asking for an immediate RLIMIT_CPU
+>  		 * expiry.  But we use the zero value to mean "it was
+>  		 * never set".  So let's cheat and make it one second
+>  		 * instead
+>  		 */
+> -		new_rlim.rlim_cur = 1;
+> +		new_rlim->rlim_cur = 1;
+>  	}
+> 
+>  	task_lock(current->group_leader);
+> -	*old_rlim = new_rlim;
+> +	*old_rlim = *new_rlim;
+>  	task_unlock(current->group_leader);
+> 
+>  	if (resource != RLIMIT_CPU)
+> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+>  	 * very long-standing error, and fixing it now risks breakage of
+>  	 * applications, so we live with it
+>  	 */
+> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
+> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
+>  		goto out;
+> 
+> -	update_rlimit_cpu(new_rlim.rlim_cur);
+> +	update_rlimit_cpu(new_rlim->rlim_cur);
+>  out:
+>  	return 0;
+>  }
+> 
+> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+> +{
+> +	struct rlimit new_rlim;
+> +
+> +	if (resource >= RLIM_NLIMITS)
+> +		return -EINVAL;
+> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> +		return -EFAULT;
+> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> +		return -EINVAL;
+
+Should the above check go into do_setrlimit()?  No sense trusting
+the data sent to sys_checkpoint() any more than the data sent to
+sys_setrlimit().
+
+> +	return do_setrlimit(resource, &new_rlim);
+> +}
+> +
+>  /*
+>   * It would make sense to put struct rusage in the task_struct,
+>   * except that would make the task_struct be *really big*.  After
+> -- 
+> 1.6.0.4
