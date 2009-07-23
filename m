@@ -1,15 +1,22 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/4] Move the cgroup debug subsys into cgroup.c to
-	access internal state
-Date: Thu, 23 Jul 2009 15:51:20 +0900
-Message-ID: <20090723155120.04d8750f.kamezawa.hiroyu__39159.8483817235$1248332109$gmane$org@jp.fujitsu.com>
-References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
-	<20090722195035.7481.85657.stgit@menage.mtv.corp.google.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Thu, 23 Jul 2009 09:47:36 +0200
+Message-ID: <20090723074736.GA20236@megiteam.pl>
+References: <20090714064905.GA25278@us.ibm.com>
+	<20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
+	<20090715131923.GB21417@megiteam.pl>
+	<20090718205244.GA23625@us.ibm.com>
+	<20090719071531.GA20818@megiteam.pl>
+	<20090722064120.GA24373@us.ibm.com>
+	<20090722222550.GA633@megiteam.pl>
+	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722195035.7481.85657.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A67C187.5000201-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,260 +26,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 22 Jul 2009 12:50:35 -0700
-Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-
-> Move the cgroup debug subsys into cgroup.c to access internal state
-> 
-> While it's architecturally clean to have the cgroup debug subsystem be
-> completely independent of the cgroups framework, it limits its
-> usefulness for debugging the contents of internal data structures.
-> Move the debug subsystem code into the scope of all the cgroups data
-> structures to make more detailed debugging possible.
-> 
-> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
-
-Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
-> ---
-> 
->  kernel/Makefile       |    1 
->  kernel/cgroup.c       |   88 +++++++++++++++++++++++++++++++++++++++++
->  kernel/cgroup_debug.c |  105 -------------------------------------------------
->  3 files changed, 88 insertions(+), 106 deletions(-)
->  delete mode 100644 kernel/cgroup_debug.c
-> 
-> diff --git a/kernel/Makefile b/kernel/Makefile
-> index ecbd483..251adfe 100644
-> --- a/kernel/Makefile
-> +++ b/kernel/Makefile
-> @@ -58,7 +58,6 @@ obj-$(CONFIG_KEXEC) += kexec.o
->  obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
->  obj-$(CONFIG_COMPAT) += compat.o
->  obj-$(CONFIG_CGROUPS) += cgroup.o
-> -obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
->  obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
->  obj-$(CONFIG_CPUSETS) += cpuset.o
->  obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index abca7e5..6306757 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -3762,3 +3762,91 @@ css_get_next(struct cgroup_subsys *ss, int id,
->  	return ret;
->  }
->  
-> +#ifdef CONFIG_CGROUP_DEBUG
-> +static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
-> +						   struct cgroup *cont)
-> +{
-> +	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
-> +
-> +	if (!css)
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	return css;
-> +}
-> +
-> +static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
-> +{
-> +	kfree(cont->subsys[debug_subsys_id]);
-> +}
-> +
-> +static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
-> +{
-> +	return atomic_read(&cont->count);
-> +}
-> +
-> +static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
-> +{
-> +	return cgroup_task_count(cont);
-> +}
-> +
-> +static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
-> +{
-> +	return (u64)(long)current->cgroups;
-> +}
-> +
-> +static u64 current_css_set_refcount_read(struct cgroup *cont,
-> +					   struct cftype *cft)
-> +{
-> +	u64 count;
-> +
-> +	rcu_read_lock();
-> +	count = atomic_read(&current->cgroups->refcount);
-> +	rcu_read_unlock();
-> +	return count;
-> +}
-
-
-
-
-> +
-> +static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
-> +{
-> +	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
-> +}
-> +
-> +static struct cftype debug_files[] =  {
-> +	{
-> +		.name = "cgroup_refcount",
-> +		.read_u64 = cgroup_refcount_read,
-> +	},
-> +	{
-> +		.name = "taskcount",
-> +		.read_u64 = debug_taskcount_read,
-> +	},
-> +
-> +	{
-> +		.name = "current_css_set",
-> +		.read_u64 = current_css_set_read,
-> +	},
-> +
-> +	{
-> +		.name = "current_css_set_refcount",
-> +		.read_u64 = current_css_set_refcount_read,
-> +	},
-> +
-> +	{
-> +		.name = "releasable",
-> +		.read_u64 = releasable_read,
-> +	},
-> +};
-> +
-> +static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
-> +{
-> +	return cgroup_add_files(cont, ss, debug_files,
-> +				ARRAY_SIZE(debug_files));
-> +}
-> +
-> +struct cgroup_subsys debug_subsys = {
-> +	.name = "debug",
-> +	.create = debug_create,
-> +	.destroy = debug_destroy,
-> +	.populate = debug_populate,
-> +	.subsys_id = debug_subsys_id,
-> +};
-> +#endif /* CONFIG_CGROUP_DEBUG */
-> diff --git a/kernel/cgroup_debug.c b/kernel/cgroup_debug.c
-> deleted file mode 100644
-> index 0c92d79..0000000
-> --- a/kernel/cgroup_debug.c
-> +++ /dev/null
-> @@ -1,105 +0,0 @@
-> -/*
-> - * kernel/cgroup_debug.c - Example cgroup subsystem that
-> - * exposes debug info
-> - *
-> - * Copyright (C) Google Inc, 2007
-> - *
-> - * Developed by Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org)
-> - *
-> - */
-> -
-> -#include <linux/cgroup.h>
-> -#include <linux/fs.h>
-> -#include <linux/slab.h>
-> -#include <linux/rcupdate.h>
-> -
-> -#include <asm/atomic.h>
-> -
-> -static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
-> -						   struct cgroup *cont)
-> -{
-> -	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
-> -
-> -	if (!css)
-> -		return ERR_PTR(-ENOMEM);
-> -
-> -	return css;
-> -}
-> -
-> -static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
-> -{
-> -	kfree(cont->subsys[debug_subsys_id]);
-> -}
-> -
-> -static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
-> -{
-> -	return atomic_read(&cont->count);
-> -}
-> -
-> -static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
-> -{
-> -	u64 count;
-> -
-> -	count = cgroup_task_count(cont);
-> -	return count;
-> -}
-> -
-> -static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
-> -{
-> -	return (u64)(long)current->cgroups;
-> -}
-> -
-> -static u64 current_css_set_refcount_read(struct cgroup *cont,
-> -					   struct cftype *cft)
-> -{
-> -	u64 count;
-> -
-> -	rcu_read_lock();
-> -	count = atomic_read(&current->cgroups->refcount);
-> -	rcu_read_unlock();
-> -	return count;
-> -}
-> -
-> -static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
-> -{
-> -	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
-> -}
-> -
-> -static struct cftype files[] =  {
-> -	{
-> -		.name = "cgroup_refcount",
-> -		.read_u64 = cgroup_refcount_read,
-> -	},
-> -	{
-> -		.name = "taskcount",
-> -		.read_u64 = taskcount_read,
-> -	},
-> -
-> -	{
-> -		.name = "current_css_set",
-> -		.read_u64 = current_css_set_read,
-> -	},
-> -
-> -	{
-> -		.name = "current_css_set_refcount",
-> -		.read_u64 = current_css_set_refcount_read,
-> -	},
-> -
-> -	{
-> -		.name = "releasable",
-> -		.read_u64 = releasable_read,
-> -	},
-> -};
-> -
-> -static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
-> -{
-> -	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
-> -}
-> -
-> -struct cgroup_subsys debug_subsys = {
-> -	.name = "debug",
-> -	.create = debug_create,
-> -	.destroy = debug_destroy,
-> -	.populate = debug_populate,
-> -	.subsys_id = debug_subsys_id,
-> -};
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+T24gxZtybywgbGlwIDIyLCAyMDA5IGF0IDA2OjQ4OjU1IC0wNzAwLCBILiBQZXRlciBBbnZpbiB3
+cm90ZToKPiA+IHwgQmlzZWN0aW5nLi4uCgoyLjYuMjcgaXMgZ29vZCwgMi42LjI4IGlzIGJhZC4g
+U29tZSA2MDAtb2RkIHJldmlzaW9ucyBzdGlsbCB0byBnbyAod2lsbApjb250aW51ZSBpbiB0aGUg
+ZXZlbmluZykuCgo+IEludGVyZXN0aW5nLi4uIEkgaGF2ZSB0byBzYXkgSSdtIG1vcmUgdGhhbiBh
+IGJpdCBzdXJwcmlzZWQgdGhhdCB5b3UgY2FuCj4gbW91bnQgYSBmaWxlc3lzdGVtIG9uIHRvcCBv
+ZiBhIGNoYXJhY3RlciBkZXZpY2Ugbm9kZSBhdCBhbGwsIGJ1dCB0aGVyZQo+IGlzbid0IHJlYWxs
+eSBhIGZ1bmRhbWVudGFsIHJlYXNvbiB3aHkgeW91IGNvdWxkbid0IGRvIGl0LCBzby4uLgoKQWN0
+dWFsbHkgaXQncyBtb3VudGluZyBhIGRldmljZSBub2RlIG92ZXIgYSBkZXZpY2Ugbm9kZS4gSSB3
+YXMgcmVhbGx5CnN1cnByaXNlZCB3aGVuIEkgbGVhcm50IHRoYXQgeW91IGNhbiBtb3VudCAtLWJp
+bmQgb3RoZXIgdGhpbmdzIHRoYW4KZGlyZWN0b3JpZXMgYnV0IHRob3VnaHQgaXQgY291bGQgYmUg
+dGhlIGNsb3Nlc3QgYSBjb250YWluZXIgY2FuIGdldCB0byBhCnJlYWwgY29uc29sZS4gU28gbW91
+bnRpbmcgL2Rldi9wdHMvMCBvdmVyIC9kZXYvY29uc29sZSBzZWVtZWQgcXVpdGUKbmF0dXJhbCB0
+byBtZS4KCj4gSSBhbSBhc3N1bWluZyB0aGF0IHdoYXQgY2F1c2VzIHRoZSBwcm9ibGVtIGlzIHRo
+YXQgeW91IGhhdmUgZm91bmQgYSB3YXkKPiAodmZzbW91bnQpIHRvIGhvbGQgdGhlIHB0cyBkZXZp
+Y2Ugbm9kZSBidXN5IHdoaWNoIGRvZXNuJ3QgaW52b2x2ZSB0aGUKPiB0dHkgc3Vic3lzdGVtLiAg
+VGhpcyBpc24ndCBpbmhlcmVudGx5IGEgcHJvYmxlbSwgYnV0IGl0IGRvZXMgaGF2ZQo+IGltcGxp
+Y2F0aW9ucyBmb3IgZnJlZWluZzogaW4gcGFydGljdWxhciwgdGhlIHB0cyBub2RlIGNhbm5vdCBi
+ZSByZW1vdmVkCj4gdW50aWwgdGhlIHZmc21vdW50IGlzIGdvbmUsICphbmQqIHRoZSBkZXZpY2Ug
+bnVtYmVyIGNhbm5vdCBiZSByZWNsYWltZWQuCj4gIEl0IHNvdW5kcyBsaWtlIGl0J3MgdGhlIGxh
+dHRlciBwaWVjZSB3aGljaCBjYXVzZXMgcHJvYmxlbXMuCgpVcHRocmVhZCBJIHBvc3RlZCBhIHBh
+dGNoWzFdIHRoYXQgbWFrZXMgdHR5X2RyaXZlcl9sb29rdXBfdHR5KCkgcmV0dXJuCk5VTEwgKGxh
+dGVyIGNoYW5nZWQgdG8gRVJSX1BUUigtRUlPKSBhbmQgdmVyaWZpZWQgaXQgd29ya3MpIGluIHN1
+Y2ggYQpjYXNlLiBJZiB0aGUgaW5vZGUgY2FuIChhcyB5b3Ugc2F5KSBsZWdhbGx5IG91dGxpdmUg
+aXRzIG1hdGNoaW5nIHR0eV9zdHJ1Y3QsCkkgZ3Vlc3MgdGhlIHBhdGNoIHNob3VsZCBnbyBpbi4g
+SWYgaXQgY2Fubm90LCB3ZWxsLCB0aGUgcGF0Y2ggaXMgYm9ndXMuCgpCZXN0IHJlZ2FyZHMsCiBH
+cnplZ29yeiBOb3NlawoKWzFdIGh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvcGlw
+ZXJtYWlsL2NvbnRhaW5lcnMvMjAwOS1KdWx5LzAxOTE0MS5odG1sCl9fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
