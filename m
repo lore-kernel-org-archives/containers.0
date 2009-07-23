@@ -1,13 +1,23 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH] flexible array implementation v3
-Date: Thu, 23 Jul 2009 10:44:50 +0900
-Message-ID: <20090723104450.e0d421ca.kamezawa.hiroyu__25015.3168257841$1248313637$gmane$org@jp.fujitsu.com>
-References: <20090722175345.7154C2F2@kernel>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Wed, 22 Jul 2009 18:48:55 -0700
+Message-ID: <4A67C187.5000201@zytor.com>
+References: <20090713202610.GA6447@us.ibm.com>
+	<20090713223444.GM18617@megiteam.pl>
+	<20090714064905.GA25278@us.ibm.com>
+	<20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
+	<20090715131923.GB21417@megiteam.pl>
+	<20090718205244.GA23625@us.ibm.com>
+	<20090719071531.GA20818@megiteam.pl>
+	<20090722064120.GA24373@us.ibm.com>
+	<20090722222550.GA633@megiteam.pl>
+	<20090723012733.GB27764@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722175345.7154C2F2@kernel>
+In-Reply-To: <20090723012733.GB27764-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,97 +27,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 22 Jul 2009 10:53:45 -0700
-Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-
+On 07/22/2009 06:27 PM, Sukadev Bhattiprolu wrote:
+> | 
+> | Immediate crash. I tried 2.6.18-something (Debian etch kernel) that I
+> | had lying around on the VM. The result:
 > 
+> Interesting.
 > 
-> Changes from v2:
-> - renamed some of the index functions
-> - added preallocation function
-> - added flex_array_free_parts() for use with
->   statically allocated bases
-> - killed append() function
+> Attaching test program and Ccing Peter Anvin for any insights.
 > 
-> Changes from v1:
-> - to vs too typo
-> - added __check_part_and_nr() and gave it a warning
-> - fixed off-by-one check on __nr_part_ptrs()
-> - added FLEX_ARRAY_INIT() macro
-> - some kerneldoc comments about the capacity
->   with various sized objects
-> - comments to note lack of locking semantice
-> 
+> | idr_remove called for id=0 which is not allocated.
+> |  [<c01b7abc>] idr_remove+0xd4/0x137
+> |  [<c01fa871>] release_mem+0x1d5/0x1e1
+> |  [<c01fb4ec>] release_dev+0x5d6/0x5ee
+> |  [<c011669e>] __wake_up+0x2a/0x3d
+> |  [<c01f9e1f>] tty_ldisc_enable+0x1f/0x21
+> |  [<c01fabf5>] init_dev+0x378/0x49f
+> |  [<c01fd2e4>] tty_open+0x2a9/0x2e8
+> |  [<c0161899>] chrdev_open+0x126/0x141
+> |  [<c0161773>] chrdev_open+0x0/0x141
+> |  [<c0158b65>] __dentry_open+0xc8/0x1ac
+> |  [<c0158cad>] nameidata_to_filp+0x19/0x28
+> |  [<c0158ce7>] do_filp_open+0x2b/0x31
+> |  [<c027fddd>] do_nanosleep+0x43/0x6a
+> |  [<c0125f96>] do_sigaction+0x99/0x156
+> |  [<c0158d2b>] do_sys_open+0x3e/0xb3
+> |  [<c0158dcd>] sys_open+0x16/0x18
+> |  [<c0102c7b>] syscall_call+0x7/0xb
+> | 
+> | (on the bright side, the machine is still usable afterwards).
+> | 
+> | However, 2.6.26 (both mine and Debian) survives the test so it may indeed
+> | be a recent regression (was it broken again after fixing sometime
+> | between .18 and .26?)
+> | 
+> | Bisecting...
 
-Seems nice, thank you. but a nitpick..
+Interesting... I have to say I'm more than a bit surprised that you can
+mount a filesystem on top of a character device node at all, but there
+isn't really a fundamental reason why you couldn't do it, so...
 
-+struct flex_array *flex_array_alloc(int element_size, int total, gfp_t flags)
-+{
-+	struct flex_array *ret;
-+	int max_size = nr_base_part_ptrs() * __elements_per_part(element_size);
-+
-+	/* max_size will end up 0 if element_size > PAGE_SIZE */
-+	if (total > max_size)
-+		return NULL;
+I am assuming that what causes the problem is that you have found a way
+(vfsmount) to hold the pts device node busy which doesn't involve the
+tty subsystem.  This isn't inherently a problem, but it does have
+implications for freeing: in particular, the pts node cannot be removed
+until the vfsmount is gone, *and* the device number cannot be reclaimed.
+ It sounds like it's the latter piece which causes problems.
 
-Can't we store "total" somewhere and do error check ?
+	-hpa
 
-And some magic value as following can't be defined for 'total' ?
-
-#define FLEX_ARRAY_MAX_ELEMENTS		(-1) // Use maximum flex array.
-
-
-> +/**
-> + * flex_array_get - pull data back out of the array
-> + * @element_nr:	index of the element to fetch from the array
-> + *
-> + * Returns a pointer to the data at index @element_nr.  Note
-> + * that this is a copy of the data that was passed in.  If you
-> + * are using this to store pointers, you'll get back &ptr.
-> + *
-> + * Locking must be provided by the caller.
-> + */
-> +void *flex_array_get(struct flex_array *fa, int element_nr)
-> +{
-> +	int part_nr = fa_element_to_part_nr(fa, element_nr);
-> +	struct flex_array_part *part;
-> +	int offset;
-> +
-> +	if (__check_part_nr(fa, part_nr))
-> +		return NULL;
-return -EINVAL, here ?
-(Can't we compared with stored "total" ?)
-
-> +	if (!fa->parts[part_nr])
-> +		return NULL;
-> +
-
-The caller can't know whether
- - there are no entry or
- - NULL(0) is stored at the array.
-
-Then, he has to check gotten value is valid or not by himself.
-
-Can't we return -ENOENT here(especially when prealloc() is called) ?
-But ah, anyway, all-zero elements in allocated array exists ;(
-and the user can get value from an entry never be put.
-
-If we can fill the first 4bytes of _unused_ index by some magic code like this
-#define FLEX_ARRAY_UNUSED_MAGIC		(0xa5a5a5a5)
-(if maintaining bitmap/status of usage is nonsense)
-and flex_array_get() can return -ENOENT, the users will feel easy.
-
-Overprotection ;) ?
-
-
-Thanks,
--Kame
-
-> +	part = fa->parts[part_nr];
-> +	offset = index_inside_part(fa, element_nr);
-> +	return &part->elements[index_inside_part(fa, element_nr)];
-> +}
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
