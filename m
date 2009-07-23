@@ -1,12 +1,22 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: s390: set return value for self-checkpoint
-Date: Thu, 23 Jul 2009 13:21:25 -0500
-Message-ID: <20090723182125.GA18383@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: BUG in tty_open when using containers and ptrace
+Date: Thu, 23 Jul 2009 12:32:45 -0700
+Message-ID: <20090723193245.GA25662@us.ibm.com>
+References: <20090714103129.GB12958@megiteam.pl>
+	<20090715044744.GA25745@us.ibm.com>
+	<20090715131923.GB21417@megiteam.pl>
+	<20090718205244.GA23625@us.ibm.com>
+	<20090719071531.GA20818@megiteam.pl>
+	<20090722064120.GA24373@us.ibm.com>
+	<20090722222550.GA633@megiteam.pl>
+	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
+	<20090723182620.GA16322@megiteam.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20090723182620.GA16322-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,41 +26,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-If doing a self-checkpoint, then optimistically store 0 as the
-syscall return value to indicate success.
-
-This was being done for x86, but not yet being done for s390.
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/mm/checkpoint.c |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
-
-diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
-index a4a5da9..40dd417 100644
---- a/arch/s390/mm/checkpoint.c
-+++ b/arch/s390/mm/checkpoint.c
-@@ -54,6 +54,17 @@ static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
- 	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
- 
- 	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
-+	/*
-+	 * for checkpoint in process context (from within a container),
-+	 * the actual syscall is taking place at this very moment; so
-+	 * we (optimistically) subtitute the future return value (0) of
-+	 * this syscall into the orig_eax, so that upon restart it will
-+	 * succeed (or it will endlessly retry checkpoint...)
-+	 */
-+	if (op == CKPT_CPT && t==current) {
-+		BUG_ON(h->gprs[2] < 0);
-+		h->gprs[2] = 0;
-+	}
- 	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
- 	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
- 	CKPT_COPY_ARRAY(op, h->per_control_regs,
--- 
-1.6.1
+R3J6ZWdvcnogTm9zZWsgW3Jvb3RAbG9jYWxkb21haW4ucGxdIHdyb3RlOgp8IE9uIMWbcm8sIGxp
+cCAyMiwgMjAwOSBhdCAwNjo0ODo1NSAtMDcwMCwgSC4gUGV0ZXIgQW52aW4gd3JvdGU6CnwgPiA+
+IHwgQmlzZWN0aW5nLi4uCnwgCnwgT0ssIHRoZSBmaXJzdCBiYWQgY29tbWl0IGlzOgp8IGNvbW1p
+dCA0YTJiNWZkZGQ1M2I4MGVmY2IzMjY2ZWUzNmUyM2I4ZGUyOGU3NjFhCnwgQXV0aG9yOiBTdWth
+ZGV2IEJoYXR0aXByb2x1IDxzdWthZGV2QHVzLmlibS5jb20+CnwgRGF0ZTogICBNb24gT2N0IDEz
+IDEwOjQyOjQ5IDIwMDggKzAxMDAKfCAKfCAgICAgTW92ZSB0dHkgbG9va3VwL3Jlb3BlbiB0byBj
+YWxsZXIKfCAKfCAgICAgTW92ZSB0dHlfZHJpdmVyX2xvb2t1cF90dHkoKSBhbmQgdHR5X3Jlb3Bl
+bigpIGZyb20gdHR5X2luaXRfZGV2KCkKfCAgICAgaW50byB0dHlfb3BlbigpIChvbmUgb2YgdGhl
+IHR3byBjYWxsZXJzIG9mIHR0eV9pbml0X2RldigpKS4gIFRoZXNlCnwgICAgIGNhbGxzIGFyZSBu
+b3QgcmVhbGx5IHJlcXVpcmVkIGluIHB0bXhfb3BlbigpLCB0aGUgb3RoZXIgY2FsbGVyLAp8ICAg
+ICBzaW5jZSBwdG14X29wZW4oKSB3b3VsZCBiZSBzZXR0aW5nIHVwIGEgbmV3IHR0eS4KfCAKfCAg
+ICAgQ2hhbmdlbG9nW3YyXToKfCAgICAgICAgIC0gcmVtb3ZlIHRoZSBsb29rdXAgYW5kIHJlb3Bl
+biBjYWxscyBmcm9tIHB0bXhfb3Blbgp8ICAgICAgICAgLSBtZXJnZSB3aXRoIHJlY2VudCBjaGFu
+Z2VzIHRvIHR0eWRldiB0cmVlCnwgCnwgICAgIFNpZ25lZC1vZmYtYnk6IFN1a2FkZXYgQmhhdHRp
+cHJvbHUgPHN1a2FkZXZAdXMuaWJtLmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogQWxhbiBDb3gg
+PGFsYW5AcmVkaGF0LmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogTGludXMgVG9ydmFsZHMgPHRv
+cnZhbGRzQGxpbnV4LWZvdW5kYXRpb24ub3JnPgp8IAp8IEhvd2V2ZXIsIHdpdGggSEVBRCB0aGVy
+ZSB0aGUgYmVoYXZpb3VyIGlzIHNsaWdodGx5IGRpZmZlcmVudCBhcyB0aGUKfCBrZXJuZWwgZG9l
+cyBub3QgY3Jhc2ggKGxvdWRseSkgYW5kIHRoZSBvcGVuIHN1Y2NlZWRzIGJ1dCBzaWxlbnRseQp8
+IGxlYXZlcyB0aGUgdHR5IGxheWVyIGxvY2tlZCwgc28gaXQncyBqdXN0IGFzIGJhZC4KfCAKClll
+cywgSSB0aGluayB0aGlzIHdhcyBmaXhlZCBieSA4MDhmZmEzZDMwMjI1N2I5ZGMzN2IxNDEyYzFm
+Y2RmOTc2ZmNkZGFjCgp8IFRoZSBvb3BzIGl0c2VsZiBpcyBpbnRyb2R1Y2VkIGJ5Ogp8IGNvbW1p
+dCA1MjdiM2U0NzczNjI4YjMwZDAzMzIzYTJjYjVmYjBkODQ0NDE5OTBmCnwgQXV0aG9yOiBTdWth
+ZGV2IEJoYXR0aXByb2x1IDxzdWthZGV2QHVzLmlibS5jb20+CnwgRGF0ZTogICBNb24gT2N0IDEz
+IDEwOjQzOjA4IDIwMDggKzAxMDAKfCAKfCAgICAgU2ltcGxpZnkgZGV2cHRzX2dldF90dHkoKQp8
+IAp8ICAgICBBcyBwb2ludGVkIG91dCBieSBILiBQZXRlciBBbnZpbiwgc2luY2UgdGhlIGlub2Rl
+IGZvciB0aGUgcHR5IGlzIGtub3duLAp8ICAgICB3ZSBkb24ndCBuZWVkIHRvIGxvb2sgaXQgdXAu
+CnwgCnwgICAgIFNpZ25lZC1vZmYtYnk6IFN1a2FkZXYgQmhhdHRpcHJvbHUgPHN1a2FkZXZAdXMu
+aWJtLmNvbT4KfCAgICAgU2lnbmVkLW9mZi1ieTogQWxhbiBDb3ggPGFsYW5AcmVkaGF0LmNvbT4K
+fCAgICAgU2lnbmVkLW9mZi1ieTogTGludXMgVG9ydmFsZHMgPHRvcnZhbGRzQGxpbnV4LWZvdW5k
+YXRpb24ub3JnPgoKTWF5YmUgYmVmb3JlIHJldHVybmluZyB0aGUgdHR5LCB3ZSBuZWVkIHRvIHRh
+a2UgYW4gZXh0cmEgcmVmZXJlbmNlIG9uCnRoZSBkZW50cnkuCgpTdWthZGV2CgpfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
