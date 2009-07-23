@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v17][PATCH 19/60] c/r: documentation
-Date: Thu, 23 Jul 2009 09:24:54 -0500
-Message-ID: <20090723142454.GA10769__33606.6749565818$1248360161$gmane$org@us.ibm.com>
-References: <1248256822-23416-1-git-send-email-orenl@librato.com>
-	<1248256822-23416-20-git-send-email-orenl@librato.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFCv2][PATCH] flexible array implementation
+Date: Thu, 23 Jul 2009 07:30:01 -0700
+Message-ID: <1248359401.24021.715.camel@nimitz>
+References: <20090721220017.60A219D3@kernel>  <4A67CEB7.2080505@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1248256822-23416-20-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4A67CEB7.2080505-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,106 +17,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> +Security
-> +========
-> +
-> +The main question is whether sys_checkpoint() and sys_restart()
-> +require privileged or unprivileged operation.
-> +
-> +Early versions checked capable(CAP_SYS_ADMIN) assuming that we would
-> +attempt to remove the need for privilege, so that all users could
-> +safely use it. Arnd Bergmann pointed out that it'd make more sense to
-> +let unprivileged users use them now, so that we'll be more careful
-> +about the security as patches roll in.
-> +
-> +Checkpoint: the main concern is whether a task that performs the
-> +checkpoint of another task has sufficient privileges to access its
-> +state. We address this by requiring that the checkpointer task will be
-> +able to ptrace the target task, by means of ptrace_may_access() with
-> +read mode.
+On Wed, 2009-07-22 at 19:45 -0700, H. Peter Anvin wrote:
+> > I call it a flexible array.  It does all of its work in
+> > PAGE_SIZE bits, so never does an order>0 allocation.
+> > The base level has PAGE_SIZE-2*sizeof(int) bytes of
+> > storage for pointers to the second level.  So, with a
+> > 32-bit arch, you get about 4MB (4183112 bytes) of total
+> > storage when the objects pack nicely into a page.  It
+> > is half that on 64-bit because the pointers are twice
+> > the size.
+> 
+> I'm wondering if there is any use case which would require scaling below
+> the PAGE_SIZE level... in which case it would be nice for it to
+> gracefully decay to a single kmalloc allocation + some metadata.
 
-with access mode now, actually.
+For the pid_t case that actually spawned all this, I think it makes a
+ton of sense.  It should be pretty easy to just cannibalize the
+base->part[] pointers to use for data if (total*element_size <=
+bytes_allocated - sizeof(metadata)) in the base.  We'd have to store the
+requested allocation total, but that's not bad.
 
-> +Restart: the main concern is that we may allow an unprivileged user to
-> +feed the kernel with random data. To this end, the restart works in a
-> +way that does not skip the usual security checks. Task credentials,
-> +i.e. euid, reuid, and LSM security contexts currently come from the
-> +caller, not the checkpoint image.  When restoration of credentials
-> +becomes supported, then definitely the ability of the task that calls
-> +sys_restore() to setresuid/setresgid to those values must be checked.
+1. Do we use this mode *only* when using a small 'total'?  Or, do we
+   use the mode only when accessing a small range of elements, like
+   indexes < 511.
+2. Do we just use the mode when the indexes are large, but not sparse?
+   Say, when someone is only using indexes 1024->1535?
+3. Do we ever allocate less than 1 page (i.e. kmalloc(2048)) for the
+   base given a small enough 'total' requested?  If so, it gets much
+   harder to grow the array later on if we want to support resizing.
+4. Do we ever promote under the covers from this mode up to the full
+   two-level one?
 
-That is now possible, and this is done.
+This also gives us more of a reason to store a flex_array->total and
+enforce that the array is not allowed to grow past that.
 
-> +Keeping the restart procedure to operate within the limits of the
-> +caller's credentials means that there various scenarios that cannot
-> +be supported. For instance, a setuid program that opened a protected
-> +log file and then dropped privileges will fail the restart, because
-> +the user won't have enough credentials to reopen the file. In these
-> +cases, we should probably treat restarting like inserting a kernel
-> +module: surely the user can cause havoc by providing incorrect data,
-> +but then again we must trust the root account.
-> +
-> +So that's why we don't want CAP_SYS_ADMIN required up-front. That way
-> +we will be forced to more carefully review each of those features.
-> +However, this can be controlled with a sysctl-variable.
-> +
-> +
-> diff --git a/Documentation/checkpoint/usage.txt b/Documentation/checkpoint/usage.txt
-> new file mode 100644
-> index 0000000..ed34765
-> --- /dev/null
-> +++ b/Documentation/checkpoint/usage.txt
-> @@ -0,0 +1,193 @@
-> +
-> +	      How to use Checkpoint-Restart
-> +	=========================================
-> +
-> +
-> +API
-> +===
-> +
-> +The API consists of two new system calls:
-> +
-> +* int checkpoint(pid_t pid, int fd, unsigned long flag);
-> +
-> + Checkpoint a (sub-)container whose root task is identified by @pid,
-> + to the open file indicated by @fd. @flags may be on or more of:
-> +   - CHECKPOINT_SUBTREE : allow checkpoint of sub-container
-> + (other value are not allowed).
-> +
-> + Returns: a positive checkpoint identifier (ckptid) upon success, 0 if
-> + it returns from a restart, and -1 if an error occurs. The ckptid will
-> + uniquely identify a checkpoint image, for as long as the checkpoint
-> + is kept in the kernel (e.g. if one wishes to keep a checkpoint, or a
-> + partial checkpoint, residing in kernel memory).
-> +
-> +* int sys_restart(pid_t pid, int fd, unsigned long flags);
-> +
-> + Restart a process hierarchy from a checkpoint image that is read from
-> + the blob stored in the file indicated by @fd. The @flags' will have
-> + future meaning (must be 0 for now). @pid indicates the root of the
-> + hierarchy as seen in the coordinator's pid-namespace, and is expected
-> + to be a child of the coordinator. (Note that this argument may mean
-> + 'ckptid' to identify an in-kernel checkpoint image, with some @flags
-> + in the future).
-> +
-> + Returns: -1 if an error occurs, 0 on success when restarting from a
-> + "self" checkpoint, and return value of system call at the time of the
-> + checkpoint when restarting from an "external" checkpoint.
-
-Return value of the checkpointed (init) task's syscall at the time of
-external checkpoint?  If so, what's the use for this, as opposed to
-returning 0 as in the case of self-checkpoint?
-
-> + TODO: upon successful "external" restart, the container will end up
-> + in a frozen state.
-
-Should clone_with_pids() be mentioned here?
-
-thanks,
--serge
+-- Dave
