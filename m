@@ -1,16 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] Add a back-pointer from struct cg_cgroup_link to
-	struct cgroup
-Date: Thu, 23 Jul 2009 07:31:34 -0700
-Message-ID: <6599ad830907230731v13b18e17vbed373f57f878c85__5814.57277662611$1248359655$gmane$org@mail.gmail.com>
-References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
-	<20090722195040.7481.44939.stgit@menage.mtv.corp.google.com>
-	<4A6806D9.8020004@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v17][PATCH 19/60] c/r: documentation
+Date: Thu, 23 Jul 2009 09:24:54 -0500
+Message-ID: <20090723142454.GA10769__33606.6749565818$1248360161$gmane$org@us.ibm.com>
+References: <1248256822-23416-1-git-send-email-orenl@librato.com>
+	<1248256822-23416-20-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A6806D9.8020004-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1248256822-23416-20-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,23 +19,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 22, 2009 at 11:44 PM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
-> I think we need to cgroup_enable_task_cg_lists():
->
-> =A0 =A0 =A0 =A0if (!use_task_css_set_links)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0cgroup_enable_task_cg_lists();
->
-> Otherwise we'll see no tasks when reading this debug file
-> if use_task_css_set_links =3D=3D 0.
->
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> +Security
+> +========
+> +
+> +The main question is whether sys_checkpoint() and sys_restart()
+> +require privileged or unprivileged operation.
+> +
+> +Early versions checked capable(CAP_SYS_ADMIN) assuming that we would
+> +attempt to remove the need for privilege, so that all users could
+> +safely use it. Arnd Bergmann pointed out that it'd make more sense to
+> +let unprivileged users use them now, so that we'll be more careful
+> +about the security as patches roll in.
+> +
+> +Checkpoint: the main concern is whether a task that performs the
+> +checkpoint of another task has sufficient privileges to access its
+> +state. We address this by requiring that the checkpointer task will be
+> +able to ptrace the target task, by means of ptrace_may_access() with
+> +read mode.
 
-I think that's OK - the debug file should indicate the state of the
-kernel, not alter it. If there are no links, then no links should be
-printed.
+with access mode now, actually.
 
-Paul
+> +Restart: the main concern is that we may allow an unprivileged user to
+> +feed the kernel with random data. To this end, the restart works in a
+> +way that does not skip the usual security checks. Task credentials,
+> +i.e. euid, reuid, and LSM security contexts currently come from the
+> +caller, not the checkpoint image.  When restoration of credentials
+> +becomes supported, then definitely the ability of the task that calls
+> +sys_restore() to setresuid/setresgid to those values must be checked.
+
+That is now possible, and this is done.
+
+> +Keeping the restart procedure to operate within the limits of the
+> +caller's credentials means that there various scenarios that cannot
+> +be supported. For instance, a setuid program that opened a protected
+> +log file and then dropped privileges will fail the restart, because
+> +the user won't have enough credentials to reopen the file. In these
+> +cases, we should probably treat restarting like inserting a kernel
+> +module: surely the user can cause havoc by providing incorrect data,
+> +but then again we must trust the root account.
+> +
+> +So that's why we don't want CAP_SYS_ADMIN required up-front. That way
+> +we will be forced to more carefully review each of those features.
+> +However, this can be controlled with a sysctl-variable.
+> +
+> +
+> diff --git a/Documentation/checkpoint/usage.txt b/Documentation/checkpoint/usage.txt
+> new file mode 100644
+> index 0000000..ed34765
+> --- /dev/null
+> +++ b/Documentation/checkpoint/usage.txt
+> @@ -0,0 +1,193 @@
+> +
+> +	      How to use Checkpoint-Restart
+> +	=========================================
+> +
+> +
+> +API
+> +===
+> +
+> +The API consists of two new system calls:
+> +
+> +* int checkpoint(pid_t pid, int fd, unsigned long flag);
+> +
+> + Checkpoint a (sub-)container whose root task is identified by @pid,
+> + to the open file indicated by @fd. @flags may be on or more of:
+> +   - CHECKPOINT_SUBTREE : allow checkpoint of sub-container
+> + (other value are not allowed).
+> +
+> + Returns: a positive checkpoint identifier (ckptid) upon success, 0 if
+> + it returns from a restart, and -1 if an error occurs. The ckptid will
+> + uniquely identify a checkpoint image, for as long as the checkpoint
+> + is kept in the kernel (e.g. if one wishes to keep a checkpoint, or a
+> + partial checkpoint, residing in kernel memory).
+> +
+> +* int sys_restart(pid_t pid, int fd, unsigned long flags);
+> +
+> + Restart a process hierarchy from a checkpoint image that is read from
+> + the blob stored in the file indicated by @fd. The @flags' will have
+> + future meaning (must be 0 for now). @pid indicates the root of the
+> + hierarchy as seen in the coordinator's pid-namespace, and is expected
+> + to be a child of the coordinator. (Note that this argument may mean
+> + 'ckptid' to identify an in-kernel checkpoint image, with some @flags
+> + in the future).
+> +
+> + Returns: -1 if an error occurs, 0 on success when restarting from a
+> + "self" checkpoint, and return value of system call at the time of the
+> + checkpoint when restarting from an "external" checkpoint.
+
+Return value of the checkpointed (init) task's syscall at the time of
+external checkpoint?  If so, what's the use for this, as opposed to
+returning 0 as in the case of self-checkpoint?
+
+> + TODO: upon successful "external" restart, the container will end up
+> + in a frozen state.
+
+Should clone_with_pids() be mentioned here?
+
+thanks,
+-serge
