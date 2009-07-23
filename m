@@ -1,16 +1,15 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFCv2][PATCH] flexible array implementation
-Date: Wed, 22 Jul 2009 22:41:37 -0700
-Message-ID: <1248327697.24021.661.camel__7100.40358030728$1248327786$gmane$org@nimitz>
-References: <20090721220017.60A219D3@kernel>
-	<2f86c2480907221357j5a09fd9au890f815db3750187@mail.gmail.com>
-	<1248299464.24021.334.camel@nimitz>
-	<2f86c2480907221620u6da3a8e3h8273f6a9ee156f86@mail.gmail.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/4] CGroup: Support for named and empty hierarchies
+Date: Thu, 23 Jul 2009 14:45:20 +0900
+Message-ID: <20090723144520.ced5f8f1.kamezawa.hiroyu__42.0689270415053$1248328082$gmane$org@jp.fujitsu.com>
+References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
+	<20090723141301.05401a5c.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830907222237jcdac287tf4243e24024f8055@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2f86c2480907221620u6da3a8e3h8273f6a9ee156f86-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830907222237jcdac287tf4243e24024f8055-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,33 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-07-22 at 16:20 -0700, Benjamin Blum wrote:
-> 
-> >> How about a resize() function that can be
-> >> used to either grow or shrink the array?
-> >
-> > I think growing is out of the question.  It has a fixed maximum size
-> > already.  As for shrinking, there's probably a use case for when
-> > something is large, then shrinks back down.  But, I think I'd want to
-> > see a user for it, otherwise I'm just guessing at it too much.
-> 
-> Check out the reallocate logic in pidlist_uniq from my patch (the
-> series you linked).
-
-To me, it seems like you should just replace the cgroup_pidlist->list
-with a 'struct flex_array *'.  It sounds like you're concerned that a
-large cgroup_pidlist that was later shrunk would take up too much space.
-
-That's a valid concern and it would be quite possible to make a
-flex_array_clean() or truncate() or something similar.  Such a function,
-given an index, could clean out the array at all points past the given
-index.  Kinda the opposite of prealloc().
-
-At the same time, you could get the same effect by allocating a new flex
-array and doing copies like you are now with the normal arrays.  
-
--- Dave
+T24gV2VkLCAyMiBKdWwgMjAwOSAyMjozNzo1MyAtMDcwMApQYXVsIE1lbmFnZSA8bWVuYWdlQGdv
+b2dsZS5jb20+IHdyb3RlOgoKPiBPbiBXZWQsIEp1bCAyMiwgMjAwOSBhdCAxMDoxMyBQTSwgS0FN
+RVpBV0EKPiBIaXJveXVraTxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+IHdyb3RlOgo+
+ID4KPiA+IFRoYW5rIHlvdS4gSSdkIGxpa2UgdG8gbG9vayBpbnRvIHByb2NwcyBwYWNrYWdlIHRv
+IGFsbG93Cj4gPgo+ID4gwqAjcHMgLWxmIC1jZ3JvdXA9L3h4eHgveXl5Cj4gPiBvcgo+ID4gwqAj
+dG9wIC1jZ3JvdXA9L3h4eC95eXkKPiA+Cj4gCj4gV291bGRuJ3QgaXQgYmUgbGVzcyBpbnZhc2l2
+ZSB0byBjaGFuZ2UgcHJvY3BzIHNvIHRoYXQgZG9pbmcKPiAKPiBwcyA8cGlkMT4gPHBpZDI+IC4u
+Lgo+IAo+IG9ubHkgYWN0dWFsbHkgbG9va3MgYXQgL3Byb2MvPHBpZDE+LCAvcHJvYy88cGlkMj4s
+IGV0YywgcmF0aGVyIHRoYW4KPiBsb29raW5nIGF0IGFsbCBvZiB0aGVtIGFuZCB0aGVuIHRocm93
+aW5nIGF3YXkgYW55IHRoYXQgYXJlbid0IGluIHRoZQo+IHN1cHBsaWVkIGxpc3Q/Cj4gCj4gVGhl
+biB5b3UgY291bGQgZG8gd2hhdCB5b3Ugd2FudCB3aXRoIHBzICQoY2F0IC9kZXYvY2dyb3VwL3h4
+eHgveXl5L3Rhc2tzKQo+IApHb29kIHBvaW50LiBXaGVuIHlvdSB0cnkgc3RyYWNlCgojc3RyYWNl
+IHBzIC1lZiAtLXBpZCBYWFhYCgp5b3UnbGwgc2VlIHBzIHNjYW4gYWxsIHBpZHMuIFRoZSBzYW1l
+IGJlaGF2aW9yIGZvciBwa2lsbCwgcGdyZXAgZXRjLi4uCkFGQUlLLCB0aGlzIGlzIGEgYmVoYXZp
+b3IgZnJvbSBMaW51eCAyLjQgYWdlcy4KQnkgdGhpcywgcHMgLWVmIC0tcGlkPVhYWCBjYW4gdGFr
+ZSAxbXMgaWYgMjAwMCBwcm9jcyBhcmUgb24gc3lzdGVtLgojIEkgdGhpbmsgdGhpcyBpcyBiZWNh
+dXNlIHBzIHVzZXMgYW4gdW5pZmllZCBmaWx0ZXIgcm91dGluZS4KClNvLCBJIGhhdmUgdG8gcmV3
+cml0ZSBmaWx0ZXIgcm91dGluZSBvciBhZGQgY2dyb3VwIHN1cHBvcnQuCgpBYnl3YXksIGFkZGlu
+ZyBhIG5ldyB0b2dnbGUgc3dpdGNoIHRvICJ0b3AiLCAicGdyZXAiIGlzIHdvcnRoIHRvIGRvLCBJ
+IHRoaW5rLgoKVGhhbmtzLAotS2FtZQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
