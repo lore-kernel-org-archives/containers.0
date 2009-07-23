@@ -1,14 +1,16 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] CGroup: Support for named and empty hierarchies
-Date: Wed, 22 Jul 2009 22:37:53 -0700
-Message-ID: <6599ad830907222237jcdac287tf4243e24024f8055__42912.109293002$1248327517$gmane$org@mail.gmail.com>
-References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
-	<20090723141301.05401a5c.kamezawa.hiroyu@jp.fujitsu.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFCv2][PATCH] flexible array implementation
+Date: Wed, 22 Jul 2009 22:41:37 -0700
+Message-ID: <1248327697.24021.661.camel__7100.40358030728$1248327786$gmane$org@nimitz>
+References: <20090721220017.60A219D3@kernel>
+	<2f86c2480907221357j5a09fd9au890f815db3750187@mail.gmail.com>
+	<1248299464.24021.334.camel@nimitz>
+	<2f86c2480907221620u6da3a8e3h8273f6a9ee156f86@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723141301.05401a5c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <2f86c2480907221620u6da3a8e3h8273f6a9ee156f86-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,28 +20,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 22, 2009 at 10:13 PM, KAMEZAWA
-Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->
-> Thank you. I'd like to look into procps package to allow
->
-> =A0#ps -lf -cgroup=3D/xxxx/yyy
-> or
-> =A0#top -cgroup=3D/xxx/yyy
->
+On Wed, 2009-07-22 at 16:20 -0700, Benjamin Blum wrote:
+> 
+> >> How about a resize() function that can be
+> >> used to either grow or shrink the array?
+> >
+> > I think growing is out of the question.  It has a fixed maximum size
+> > already.  As for shrinking, there's probably a use case for when
+> > something is large, then shrinks back down.  But, I think I'd want to
+> > see a user for it, otherwise I'm just guessing at it too much.
+> 
+> Check out the reallocate logic in pidlist_uniq from my patch (the
+> series you linked).
 
-Wouldn't it be less invasive to change procps so that doing
+To me, it seems like you should just replace the cgroup_pidlist->list
+with a 'struct flex_array *'.  It sounds like you're concerned that a
+large cgroup_pidlist that was later shrunk would take up too much space.
 
-ps <pid1> <pid2> ...
+That's a valid concern and it would be quite possible to make a
+flex_array_clean() or truncate() or something similar.  Such a function,
+given an index, could clean out the array at all points past the given
+index.  Kinda the opposite of prealloc().
 
-only actually looks at /proc/<pid1>, /proc/<pid2>, etc, rather than
-looking at all of them and then throwing away any that aren't in the
-supplied list?
+At the same time, you could get the same effect by allocating a new flex
+array and doing copies like you are now with the normal arrays.  
 
-Then you could do what you want with ps $(cat /dev/cgroup/xxxx/yyy/tasks)
-
-Paul
+-- Dave
