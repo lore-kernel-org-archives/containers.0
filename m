@@ -1,17 +1,14 @@
-From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by tgid
-	at once
-Date: Fri, 24 Jul 2009 15:05:29 -0400
-Message-ID: <2f86c2480907241205m68b93268tfdf343f76b410bac__15685.775402426$1248462469$gmane$org@mail.gmail.com>
-References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
-	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
-	<20090724100220.GF11101@hawkmoon.kerlabs.com>
-	<20090724100807.GG11101@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v17][PATCH 00/60] Kernel based checkpoint/restart
+Date: Fri, 24 Jul 2009 14:09:53 -0500
+Message-ID: <20090724190953.GA22641__34704.1873414584$1248462733$gmane$org@us.ibm.com>
+References: <1248256822-23416-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090724100807.GG11101-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1248256822-23416-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,18 +18,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, menage
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 24, 2009 at 6:08 AM, Louis Rilling<Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org> wrote:
-> Patch 6 should really go before this one, both for
-> better understanding and safety.
->
-> Thanks,
->
-> Louis
->
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Application checkpoint/restart (c/r) is the ability to save the state
+> of a running application so that it can later resume its execution
+> from the time at which it was checkpointed, on the same or a different
+> machine.
+> 
+> This version introduces 'clone_with_pids()' syscall to preset pid(s)
+> for a child process. It is used by restart(2) to recreate process
+> hierarchy with the same pids as at checkpoint time.
+> 
+> It also adds a freezer state CHECKPOINTING to safeguard processes
+> during a checkpoint. Other important changes include support for
+> threads and zombies, credentials, signal handling, and improved
+> restart logic. See below for a more detailed changelog.
+> 
+> Compiled and tested against v2.6.31-rc3.
 
-I agree. I wrote patch 6 after patch 5 and didn't bother reworking the
-code a bit to make it come first. I'll switch them around in the next
-submission.
+With the s390 patch I recently sent on top of this set, all of my
+c/r tests pass, and ltp behaves the same as on plain v2.6.31-rc3
+(up to and including hanging on mallocstress).
+
+-serge
