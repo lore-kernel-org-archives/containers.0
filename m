@@ -1,16 +1,11 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
-Date: Fri, 24 Jul 2009 13:04:30 -0700
-Message-ID: <20090724200430.GK5878@count0.beaverton.ibm.com>
-References: <1248360514-20710-1-git-send-email-orenl@librato.com>
-	<1248360514-20710-2-git-send-email-orenl@librato.com>
-	<20090723222825.GA23596@us.ibm.com> <4A6910E5.4010605@librato.com>
+From: Stormo<ruga-Ms5Az06ZuSuzZXS1Dc/lvw@public.gmane.org>
+Subject: repairers
+Date: Fri, 24 Jul 2009 20:04:56 +0100
+Message-ID: <299C31D84F791DE831@sutrich.at>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A6910E5.4010605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,126 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 23, 2009 at 09:39:49PM -0400, Oren Laadan wrote:
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> >> This patch adds checkpoint and restart of rlimit information
-> >> that is part of shared signal_struct.
-> > 
-> > ...
-> > 
-> >>  static int restore_signal(struct ckpt_ctx *ctx)
-> >>  {
-> >>  	struct ckpt_hdr_signal *h;
-> >> +	struct rlimit rlim;
-> >> +	int i, ret;
-> >>
-> >>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
-> >>  	if (IS_ERR(h))
-> >>  		return PTR_ERR(h);
-> >>
-> >> -	/* fill in later */
-> >> -
-> >> +	/* rlimit */
-> >> +	for (i = 0; i < RLIM_NLIMITS; i++) {
-> >> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
-> >> +		rlim.rlim_max = h->rlim[i].rlim_max;
-> >> +		ret = do_setrlimit(i, &rlim);
-> > 
-> > ...
-> >> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
-> >>  {
-> >> -	struct rlimit new_rlim, *old_rlim;
-> >> +	struct rlimit *old_rlim;
-> >>  	int retval;
-> >>
-> >> -	if (resource >= RLIM_NLIMITS)
-> >> -		return -EINVAL;
-> >> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
-> >> -		return -EFAULT;
-> >> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
-> >> -		return -EINVAL;
-> >>  	old_rlim = current->signal->rlim + resource;
-> >> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
-> >> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
-> >>  	    !capable(CAP_SYS_RESOURCE))
-> >>  		return -EPERM;
-> >> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
-> >> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
-> >>  		return -EPERM;
-> >>
-> >> -	retval = security_task_setrlimit(resource, &new_rlim);
-> >> +	retval = security_task_setrlimit(resource, new_rlim);
-> >>  	if (retval)
-> >>  		return retval;
-> >>
-> >> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
-> >> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
-> >>  		/*
-> >>  		 * The caller is asking for an immediate RLIMIT_CPU
-> >>  		 * expiry.  But we use the zero value to mean "it was
-> >>  		 * never set".  So let's cheat and make it one second
-> >>  		 * instead
-> >>  		 */
-> >> -		new_rlim.rlim_cur = 1;
-> >> +		new_rlim->rlim_cur = 1;
-> >>  	}
-> >>
-> >>  	task_lock(current->group_leader);
-> >> -	*old_rlim = new_rlim;
-> >> +	*old_rlim = *new_rlim;
-> >>  	task_unlock(current->group_leader);
-> >>
-> >>  	if (resource != RLIMIT_CPU)
-> >> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
-> >>  	 * very long-standing error, and fixing it now risks breakage of
-> >>  	 * applications, so we live with it
-> >>  	 */
-> >> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
-> >> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
-> >>  		goto out;
-> >>
-> >> -	update_rlimit_cpu(new_rlim.rlim_cur);
-> >> +	update_rlimit_cpu(new_rlim->rlim_cur);
-> >>  out:
-> >>  	return 0;
-> >>  }
-> >>
-> >> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
-> >> +{
-> >> +	struct rlimit new_rlim;
-> >> +
-> >> +	if (resource >= RLIM_NLIMITS)
-> >> +		return -EINVAL;
-> >> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
-> >> +		return -EFAULT;
-> >> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
-> >> +		return -EINVAL;
-> > 
-> > Should the above check go into do_setrlimit()?  No sense trusting
-> > the data sent to sys_checkpoint() any more than the data sent to
-> > sys_setrlimit().
-> 
-> You are very correct.
-> 
-> I wonder though: moving the first check will change the order of
-> input sanitizing, which will change the syscall behavior on bad
-> input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
-> will return EFAULT.
-> 
-> Not that I really care that much, but I've seen a similar case
-> that confused LTP scripts into seeing the "wrong" error from a
-> syscall and failing a test.
-
-Unless the syscall documentation (if any) defines an order it checks
-things I think such a test is broken. If multiple "things" are wrong with
-a syscall then userspace should expect an error for any one of them.
-
-Cheers,
-	-Matt
+How to Last Longer For eMn - A Girl's Guide Foor Men Who Need More Staying Power.www.only9. org
