@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 12/24] io-controller: Introduce group idling
-Date: Fri, 24 Jul 2009 16:27:42 -0400
-Message-ID: <1248467274-32073-13-git-send-email-vgoyal__19867.0927006335$1248469932$gmane$org@redhat.com>
+Subject: [PATCH 11/24] io-controller: Debug hierarchical IO scheduling
+Date: Fri, 24 Jul 2009 16:27:41 -0400
+Message-ID: <1248467274-32073-12-git-send-email-vgoyal__3720.44914770431$1248469933$gmane$org@redhat.com>
 References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,456 +21,564 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o It is not always that IO from a process or group is continuous. There are
-  cases of dependent reads where next read is not issued till previous read
-  has finished. For such cases, CFQ introduced the notion of slice_idle,
-  where we idle on the queue for sometime hoping next request will come
-  and that's how fairness is provided otherwise queue will be deleted
-  immediately from the service tree and this process will not get the
-  fair share.
+o Littile debugging aid for hierarchical IO scheduling.
 
-o This patch introduces the similar concept at group level. Idle on the group
-  for a period of "group_idle" which is tunable through sysfs interface. So
-  if a group is empty and about to be deleted, we idle for the next request.
+o Enabled under CONFIG_DEBUG_GROUP_IOSCHED
 
-o This patch also introduces the notion of wait busy where we wait for one
-  extra group_idle period even if queue has consumed its time slice. The
-  reason being that group will loose its share upon removal from service
-  tree as some other entity will be picked for dispatch and vtime jump will
-  take place.
+o Currently it outputs more debug messages in blktrace output which helps
+  a great deal in debugging in hierarchical setup. It also creates additional
+  cgroup interfaces io.disk_queue and io.disk_dequeue to output some more
+  debugging data.
 
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/cfq-iosched.c |    3 +
- block/elevator-fq.c |  177 ++++++++++++++++++++++++++++++++++++++++++++++++---
- block/elevator-fq.h |   42 ++++++++++++
- 3 files changed, 213 insertions(+), 9 deletions(-)
+ block/Kconfig.iosched |    8 ++
+ block/elevator-fq.c   |  300 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ block/elevator-fq.h   |   38 ++++++-
+ 3 files changed, 339 insertions(+), 7 deletions(-)
 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index a362ce1..6238567 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -2124,6 +2124,9 @@ static struct elv_fs_entry cfq_attrs[] = {
- 	CFQ_ATTR(slice_idle),
- 	ELV_ATTR(slice_sync),
- 	ELV_ATTR(slice_async),
-+#ifdef CONFIG_GROUP_IOSCHED
-+	ELV_ATTR(group_idle),
-+#endif
- 	__ATTR_NULL
- };
+diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
+index a91a807..a7d0bf8 100644
+--- a/block/Kconfig.iosched
++++ b/block/Kconfig.iosched
+@@ -90,6 +90,14 @@ config DEFAULT_IOSCHED
+ 	default "cfq" if DEFAULT_CFQ
+ 	default "noop" if DEFAULT_NOOP
  
++config DEBUG_GROUP_IOSCHED
++	bool "Debug Hierarchical Scheduling support"
++	depends on CGROUPS && GROUP_IOSCHED
++	default n
++	---help---
++	  Enable some debugging hooks for hierarchical scheduling support.
++	  Currently it just outputs more information in blktrace output.
++
+ endmenu
+ 
+ endif
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index ca26960..396bdcd 100644
+index c546962..ca26960 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -21,6 +21,7 @@
- const int elv_slice_sync = HZ / 10;
- int elv_slice_async = HZ / 25;
- const int elv_slice_async_rq = 2;
-+int elv_group_idle = HZ / 125;
- static struct kmem_cache *elv_ioq_pool;
- 
- #define ELV_SLICE_SCALE		(5)
-@@ -52,7 +53,6 @@ elv_release_ioq(struct elevator_queue *eq, struct io_queue **ioq_ptr);
- #define for_each_entity_safe(entity, parent) \
- 	for (; entity && ({ parent = entity->parent; 1; }); entity = parent)
- 
--
- static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
- 						 int extract);
- 
-@@ -1579,6 +1579,7 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 		atomic_set(&iog->ref, 0);
- 		iog->deleting = 0;
- 
-+		elv_mark_iog_idle_window(iog);
- 		/*
- 		 * Take the initial reference that will be released on destroy
- 		 * This can be thought of a joint reference by cgroup and
-@@ -2217,6 +2218,8 @@ ssize_t __FUNC(struct elevator_queue *e, char *page)		\
- 		__data = jiffies_to_msecs(__data);			\
- 	return elv_var_show(__data, (page));				\
- }
-+SHOW_FUNCTION(elv_group_idle_show, efqd->elv_group_idle, 1);
-+EXPORT_SYMBOL(elv_group_idle_show);
- SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
- EXPORT_SYMBOL(elv_slice_sync_show);
- SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
-@@ -2239,6 +2242,8 @@ ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)\
- 		*(__PTR) = __data;					\
- 	return ret;							\
- }
-+STORE_FUNCTION(elv_group_idle_store, &efqd->elv_group_idle, 0, UINT_MAX, 1);
-+EXPORT_SYMBOL(elv_group_idle_store);
- STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
- EXPORT_SYMBOL(elv_slice_sync_store);
- STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
-@@ -2506,7 +2511,9 @@ static void __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
- 		ioq->slice_start = jiffies;
- 
- 		elv_clear_ioq_wait_request(ioq);
-+		elv_clear_iog_wait_request(iog);
- 		elv_clear_ioq_must_dispatch(ioq);
-+		elv_clear_iog_wait_busy_done(iog);
- 		elv_mark_ioq_slice_new(ioq);
- 
- 		del_timer(&efqd->idle_slice_timer);
-@@ -2634,14 +2641,19 @@ void __elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
- 	struct io_entity *entity = &ioq->entity;
- 	long slice_unused = 0, slice_used = 0, slice_overshoot = 0;
-+	struct io_group *iog = ioq_to_io_group(ioq);
- 
- 	assert_spin_locked(q->queue_lock);
- 	elv_log_ioq(efqd, ioq, "slice expired");
- 
--	if (elv_ioq_wait_request(ioq))
-+	if (elv_ioq_wait_request(ioq) || elv_iog_wait_request(iog)
-+	    || elv_iog_wait_busy(iog))
- 		del_timer(&efqd->idle_slice_timer);
- 
- 	elv_clear_ioq_wait_request(ioq);
-+	elv_clear_iog_wait_request(iog);
-+	elv_clear_iog_wait_busy(iog);
-+	elv_clear_iog_wait_busy_done(iog);
- 
- 	slice_used = jiffies - ioq->slice_start;
- 	if (!slice_used) {
-@@ -2783,6 +2795,8 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- {
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
- 	struct io_queue *ioq = rq->ioq;
-+	struct io_group *iog = ioq_to_io_group(ioq);
-+	int group_wait = 0;
- 
- 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
- 		return;
-@@ -2795,6 +2809,24 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- 	if (!elv_ioq_busy(ioq))
- 		elv_add_ioq_busy(efqd, ioq);
- 
-+	if (elv_iog_wait_request(iog)) {
-+		del_timer(&efqd->idle_slice_timer);
-+		elv_clear_iog_wait_request(iog);
-+		group_wait = 1;
-+	}
-+
-+	/*
-+	 * If we were waiting for a request on this group, wait is
-+	 * done. Schedule the next dispatch
-+	 */
-+	if (elv_iog_wait_busy(iog)) {
-+		del_timer(&efqd->idle_slice_timer);
-+		elv_clear_iog_wait_busy(iog);
-+		elv_mark_iog_wait_busy_done(iog);
-+		elv_schedule_dispatch(q);
-+		return;
-+	}
-+
- 	if (ioq == elv_active_ioq(q->elevator)) {
- 		/*
- 		 * Remember that we saw a request from this process, but
-@@ -2806,7 +2838,7 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- 		 * has other work pending, don't risk delaying until the
- 		 * idle timer unplug to continue working.
- 		 */
--		if (elv_ioq_wait_request(ioq)) {
-+		if (group_wait || elv_ioq_wait_request(ioq)) {
- 			del_timer(&efqd->idle_slice_timer);
- 			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
- 			    efqd->busy_queues > 1 || !blk_queue_plugged(q))
-@@ -2823,6 +2855,13 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
- 		 */
- 		elv_preempt_queue(q, ioq);
- 		__blk_run_queue(q);
-+	} else if (group_wait) {
-+		/*
-+		 * Got a request in the group we were waiting for. Request
-+		 * does not belong to active queue and we have not decided
-+		 * to preempt the current active queue. Schedule the dispatch.
-+		 */
-+		elv_schedule_dispatch(q);
+@@ -153,6 +153,119 @@ static void bfq_find_matching_entity(struct io_entity **entity,
+ 		*new_entity = parent_entity(*new_entity);
  	}
  }
- 
-@@ -2840,6 +2879,14 @@ static void elv_idle_slice_timer(unsigned long data)
- 	ioq = efqd->active_queue;
- 
- 	if (ioq) {
-+		struct io_group *iog = ioq_to_io_group(ioq);
 +
-+		elv_clear_iog_wait_request(iog);
-+
-+		if (elv_iog_wait_busy(iog)) {
-+			elv_clear_iog_wait_busy(iog);
-+			goto expire;
-+		}
- 
- 		/*
- 		 * We saw a request before the queue expired, let it through
-@@ -2889,6 +2936,32 @@ static void elv_ioq_arm_slice_timer(struct request_queue *q)
- 		eq->ops->elevator_arm_slice_timer_fn(q, ioq->sched_queue);
- }
- 
-+static void elv_iog_arm_slice_timer(struct request_queue *q,
-+				struct io_group *iog, int wait_for_busy)
++static inline struct io_group *io_entity_to_iog(struct io_entity *entity)
 +{
-+	struct elv_fq_data *efqd = &q->elevator->efqd;
-+	unsigned long sl;
++	struct io_group *iog = NULL;
 +
-+	if (!efqd->elv_group_idle || !elv_iog_idle_window(iog))
-+		return;
-+	/*
-+	 * This queue has consumed its time slice. We are waiting only for
-+	 * it to become busy before we select next queue for dispatch.
-+	 */
-+	if (wait_for_busy) {
-+		elv_mark_iog_wait_busy(iog);
-+		sl = efqd->elv_group_idle;
-+		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
-+		elv_log_iog(efqd, iog, "arm idle group: %lu wait busy=1", sl);
-+		return;
-+	}
-+
-+	elv_mark_iog_wait_request(iog);
-+	sl = efqd->elv_group_idle;
-+	mod_timer(&efqd->idle_slice_timer, jiffies + sl);
-+	elv_log_iog(efqd, iog, "arm_idle group: %lu", sl);
++	BUG_ON(entity == NULL);
++	if (entity->my_sched_data != NULL)
++		iog = container_of(entity, struct io_group, entity);
++	return iog;
 +}
 +
- /*
-  * If io scheduler has functionality of keeping track of close cooperator, check
-  * with it if it has got a closely co-operating queue.
-@@ -2926,6 +2999,8 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
- 	if (ioq == NULL)
- 		goto new_queue;
- 
-+	iog = ioq_to_io_group(ioq);
++/* Returns parent group of io group */
++static inline struct io_group *iog_parent(struct io_group *iog)
++{
++	struct io_group *piog;
 +
- 	/*
- 	 * Force dispatch. Continue to dispatch from current queue as long
- 	 * as it has requests.
-@@ -2937,11 +3012,48 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
- 			goto expire;
- 	}
- 
-+	/* We are waiting for this group to become busy before it expires.*/
-+	if (elv_iog_wait_busy(iog)) {
-+		ioq = NULL;
-+		goto keep_queue;
-+	}
++	if (!iog->entity.sched_data)
++		return NULL;
 +
- 	/*
- 	 * The active queue has run out of time, expire it and select new.
- 	 */
--	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
--		goto expire;
-+	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq)) {
++	/*
++	 * Not following entity->parent pointer as for top level groups
++	 * this pointer is NULL.
++	 */
++	piog = container_of(iog->entity.sched_data, struct io_group,
++					sched_data);
++	return piog;
++}
++
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++static void io_group_path(struct io_group *iog, char *buf, int buflen)
++{
++	unsigned short id = iog->iocg_id;
++	struct cgroup_subsys_state *css;
++
++	rcu_read_lock();
++
++	if (!id)
++		goto out;
++
++	css = css_lookup(&io_subsys, id);
++	if (!css)
++		goto out;
++
++	if (!css_tryget(css))
++		goto out;
++
++	cgroup_path(css->cgroup, buf, buflen);
++
++	css_put(css);
++
++	rcu_read_unlock();
++	return;
++out:
++	rcu_read_unlock();
++	buf[0] = '\0';
++	return;
++}
++
++/*
++ * An entity has been freshly added to active tree. Either it came from
++ * idle tree or it was not on any of the trees. Do the accounting.
++ */
++static inline void bfq_account_for_entity_addition(struct io_entity *entity)
++{
++	struct io_group *iog = io_entity_to_iog(entity);
++
++	if (iog) {
++		struct elv_fq_data *efqd;
++
 +		/*
-+		 * Queue has used up its slice. Wait busy is not on otherwise
-+		 * we wouldn't have been here. If this group will be deleted
-+		 * after the queue expiry, then make sure we have onece
-+		 * done wait busy on the group in an attempt to make it
-+		 * backlogged.
-+		 *
-+		 * Following check helps in two conditions.
-+		 * - If there are requests dispatched from the queue and
-+		 *   select_ioq() comes before a request completed from the
-+		 *   queue and got a chance to arm any of the idle timers.
-+		 *
-+		 * - If at request completion time slice had not expired and
-+		 *   we armed either a ioq timer or group timer but when
-+		 *   select_ioq() hits, slice has expired and it will expire
-+		 *   the queue without doing busy wait on group.
-+		 *
-+		 * In similar situations cfq lets delte the queue even if
-+		 * idle timer is armed. That does not impact fairness in non
-+		 * hierarhical setup due to weighted slice lengths. But in
-+		 * hierarchical setup where group slice lengths are derived
-+		 * from queue and is not proportional to group's weight, it
-+		 * harms the fairness of the group.
++		 * Keep track of how many times a group has been added
++		 * to active tree.
 +		 */
-+		if ((elv_iog_nr_active(iog) <= 1) && !ioq->nr_queued
-+		   && !elv_iog_wait_busy_done(iog) && efqd->elv_group_idle
-+		   && elv_iog_idle_window(iog)) {
-+			ioq = NULL;
-+			goto keep_queue;
-+		} else
-+			goto expire;
++		iog->queue++;
++		iog->queue_start = jiffies;
++
++		/* Log group addition event */
++		rcu_read_lock();
++		efqd = rcu_dereference(iog->key);
++		if (efqd)
++			elv_log_iog(efqd, iog, "add group weight=%u",
++					iog->entity.weight);
++		rcu_read_unlock();
 +	}
- 
- 	/*
- 	 * The active queue has requests and isn't expired, allow it to
-@@ -2973,6 +3085,13 @@ void *elv_fq_select_ioq(struct request_queue *q, int force)
- 		goto keep_queue;
- 	}
- 
-+	/* Check for group idling */
-+	if (elv_iog_idle_window(iog) && (elv_iog_nr_active(iog) <= 1)
-+	    && elv_ioq_nr_dispatched(ioq)) {
-+		ioq = NULL;
-+		goto keep_queue;
++}
++
++/*
++ * An entity got removed from active tree and either went to idle tree or
++ * not is on any of the tree. Do the accouting
++ */
++static inline void bfq_account_for_entity_deletion(struct io_entity *entity)
++{
++	struct io_group *iog = io_entity_to_iog(entity);
++
++	if (iog) {
++		struct elv_fq_data *efqd;
++
++		iog->dequeue++;
++		/* Keep a track of how long group was on active tree */
++		iog->queue_duration += jiffies_to_msecs(jiffies -
++						iog->queue_start);
++		iog->queue_start = 0;
++
++		/* Log group deletion event */
++		rcu_read_lock();
++		efqd = rcu_dereference(iog->key);
++		if (efqd)
++			elv_log_iog(efqd, iog, "del group weight=%u",
++					iog->entity.weight);
++		rcu_read_unlock();
 +	}
-+
- expire:
- 	elv_ioq_slice_expired(q);
- new_queue:
-@@ -3047,11 +3166,13 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 	const int sync = rq_is_sync(rq);
- 	struct io_queue *ioq;
- 	struct elv_fq_data *efqd = &q->elevator->efqd;
-+	struct io_group *iog;
- 
- 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
- 		return;
- 
- 	ioq = rq->ioq;
-+	iog = ioq_to_io_group(ioq);
- 	WARN_ON(!efqd->rq_in_driver);
- 	WARN_ON(!ioq->dispatched);
- 	efqd->rq_in_driver--;
-@@ -3070,6 +3191,12 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 			elv_ioq_set_prio_slice(q, ioq);
- 			elv_clear_ioq_slice_new(ioq);
- 		}
-+
-+		if (elv_ioq_class_idle(ioq)) {
-+			elv_ioq_slice_expired(q);
-+			goto done;
-+		}
-+
- 		/*
- 		 * If there are no requests waiting in this queue, and
- 		 * there are other queues ready to issue requests, AND
-@@ -3077,13 +3204,44 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 		 * mean seek distance, give them a chance to run instead
- 		 * of idling.
- 		 */
--		if (elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq))
-+		if (elv_ioq_slice_used(ioq)) {
-+			/* This is the last empty queue in the group and it
-+			 * has consumed its slice. If we expire it right away
-+			 * group might loose its share. Wait for an extra
-+			 * group_idle period for a request before queue
-+			 * expires.
-+			 */
-+			if ((elv_iog_nr_active(iog) <= 1) && !ioq->nr_queued) {
-+				elv_iog_arm_slice_timer(q, iog, 1);
-+				goto done;
-+			}
-+
-+			/* Expire the queue */
- 			elv_ioq_slice_expired(q);
--		else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq)
--			 && sync && !rq_noidle(rq))
-+		} else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq)
-+			   && sync && !rq_noidle(rq))
- 			elv_ioq_arm_slice_timer(q);
--	}
- 
-+		/*
-+		 * If this is the last queue in the group and we did not
-+		 * decide to idle on queue, idle on group.
-+		 */
-+		if (elv_active_ioq(q->elevator) && !ioq->nr_queued &&
-+		    !ioq->dispatched && !timer_pending(&efqd->idle_slice_timer)
-+		    && (elv_iog_nr_active(iog) <= 1)) {
-+			/*
-+			 * If queue has used up its slice, wait for the
-+			 * one extra group_idle period to let the group
-+			 * backlogged again. This is to avoid a group loosing
-+			 * its fair share.
-+			 */
-+			if (elv_ioq_slice_used(ioq))
-+				elv_iog_arm_slice_timer(q, iog, 1);
-+			else
-+				elv_iog_arm_slice_timer(q, iog, 0);
-+		}
-+	}
-+done:
- 	if (!efqd->rq_in_driver)
- 		elv_schedule_dispatch(q);
++}
++#endif /* DEBUG_GROUP_IOSCHED */
+ #else /* GROUP_IOSCHED */
+ #define for_each_entity(entity)	\
+ 	for (; entity != NULL; entity = NULL)
+@@ -186,6 +299,11 @@ is_same_group(struct io_entity *entity, struct io_entity *new_entity)
+ {
+ 	return 1;
  }
-@@ -3196,6 +3354,7 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
++
++static inline struct io_group *io_entity_to_iog(struct io_entity *entity)
++{
++	return NULL;
++}
+ #endif /* GROUP_IOSCHED */
  
- 	efqd->elv_slice[0] = elv_slice_async;
- 	efqd->elv_slice[1] = elv_slice_sync;
-+	efqd->elv_group_idle = elv_group_idle;
+ static inline int elv_prio_slice(struct elv_fq_data *efqd, int sync,
+@@ -426,6 +544,7 @@ static void bfq_active_insert(struct io_service_tree *st,
+ 	struct rb_node *node = &entity->rb_node;
  
+ 	bfq_insert(&st->active, entity);
++	entity->sched_data->nr_active++;
+ 
+ 	if (node->rb_left != NULL)
+ 		node = node->rb_left;
+@@ -485,6 +604,7 @@ static void bfq_active_remove(struct io_service_tree *st,
+ 
+ 	node = bfq_find_deepest(&entity->rb_node);
+ 	bfq_remove(&st->active, entity);
++	entity->sched_data->nr_active--;
+ 
+ 	if (node != NULL)
+ 		bfq_update_active_tree(node);
+@@ -571,6 +691,21 @@ static void bfq_forget_idle(struct io_service_tree *st)
+ 		bfq_put_idle_entity(st, first_idle);
+ }
+ 
++/*
++ * Returns the number of active entities a particular io group has. This
++ * includes number of active entities on service tree as well as the active
++ * entity which is being served currently, if any.
++ */
++
++static inline int elv_iog_nr_active(struct io_group *iog)
++{
++	struct io_sched_data *sd = &iog->sched_data;
++
++	if (sd->active_entity)
++		return sd->nr_active + 1;
++	else
++		return sd->nr_active;
++}
+ 
+ static struct io_service_tree *
+ __bfq_entity_update_prio(struct io_service_tree *old_st,
+@@ -752,6 +887,7 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ {
+ 	struct io_sched_data *sd = entity->sched_data;
+ 	struct io_service_tree *st = io_entity_service_tree(entity);
++	int newly_added = 0;
+ 
+ 	if (entity == sd->active_entity) {
+ 		BUG_ON(entity->tree != NULL);
+@@ -778,6 +914,7 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ 		bfq_idle_remove(st, entity);
+ 		entity->start = bfq_gt(st->vtime, entity->finish) ?
+ 				       st->vtime : entity->finish;
++		newly_added = 1;
+ 	} else {
+ 		/*
+ 		 * The finish time of the entity may be invalid, and
+@@ -790,6 +927,7 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ 
+ 		BUG_ON(entity->on_st);
+ 		entity->on_st = 1;
++		newly_added = 1;
+ 	}
+ 
+ 	st = __bfq_entity_update_prio(st, entity);
+@@ -831,6 +969,11 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ 		bfq_calc_finish(entity, entity->budget);
+ 	}
+ 	bfq_active_insert(st, entity);
++
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	if (newly_added)
++		bfq_account_for_entity_addition(entity);
++#endif
+ }
+ 
+ /**
+@@ -872,7 +1015,7 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 	struct io_sched_data *sd = entity->sched_data;
+ 	struct io_service_tree *st = io_entity_service_tree(entity);
+ 	int was_active = entity == sd->active_entity;
+-	int ret = 0;
++	int ret = 0, active_removed = 0;
+ 
+ 	if (!entity->on_st)
+ 		return 0;
+@@ -882,9 +1025,11 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 	if (was_active) {
+ 		bfq_calc_finish(entity, entity->service);
+ 		sd->active_entity = NULL;
+-	} else if (entity->tree == &st->active)
++		active_removed = 1;
++	} else if (entity->tree == &st->active) {
+ 		bfq_active_remove(st, entity);
+-	else if (entity->tree == &st->idle)
++		active_removed = 1;
++	} else if (entity->tree == &st->idle)
+ 		bfq_idle_remove(st, entity);
+ 	else if (entity->tree != NULL)
+ 		BUG();
+@@ -899,6 +1044,10 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 	BUG_ON(sd->active_entity == entity);
+ 	BUG_ON(sd->next_active == entity);
+ 
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	if (active_removed)
++		bfq_account_for_entity_deletion(entity);
++#endif
+ 	return ret;
+ }
+ 
+@@ -1208,6 +1357,67 @@ static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
  	return 0;
  }
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 1da7ecc..95c1d94 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -218,6 +218,7 @@ struct io_queue {
-  */
- struct io_group {
- 	struct io_entity entity;
-+	unsigned int flags;
- 	struct hlist_node elv_data_node;
- 	struct hlist_node group_node;
- 	struct io_sched_data sched_data;
-@@ -311,6 +312,8 @@ struct elv_fq_data {
- 	struct timer_list idle_slice_timer;
- 	struct work_struct unplug_work;
  
-+	unsigned int elv_group_idle;
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++static int io_cgroup_disk_queue_read(struct cgroup *cgroup,
++			struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg = NULL;
++	struct io_group *iog = NULL;
++	struct hlist_node *n;
 +
- 	/* Base slice length for sync and async queues */
- 	unsigned int elv_slice[2];
- 
-@@ -381,6 +384,42 @@ ELV_IO_QUEUE_FLAG_FNS(must_dispatch)
- ELV_IO_QUEUE_FLAG_FNS(idle_window)
- ELV_IO_QUEUE_FLAG_FNS(slice_new)
- 
-+#ifdef CONFIG_GROUP_IOSCHED
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
 +
-+enum elv_group_state_flags {
-+	ELV_GROUP_FLAG_idle_window,	  /* elevator group idling enabled */
-+	ELV_GROUP_FLAG_wait_request,	  /* waiting for a request */
-+	ELV_GROUP_FLAG_wait_busy,	  /* wait for this queue to get busy */
-+	ELV_GROUP_FLAG_wait_busy_done,	  /* Have already waited on this group*/
-+};
++	iocg = cgroup_to_io_cgroup(cgroup);
++	rcu_read_lock();
++	/* Loop through all the io groups and print statistics */
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev), iog->queue,
++					iog->queue_duration);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
 +
-+#define ELV_IO_GROUP_FLAG_FNS(name)					\
-+static inline void elv_mark_iog_##name(struct io_group *iog)		\
-+{                                                                       \
-+	(iog)->flags |= (1 << ELV_GROUP_FLAG_##name);			\
-+}                                                                       \
-+static inline void elv_clear_iog_##name(struct io_group *iog)		\
-+{                                                                       \
-+	(iog)->flags &= ~(1 << ELV_GROUP_FLAG_##name);			\
-+}                                                                       \
-+static inline int elv_iog_##name(struct io_group *iog)         		\
-+{                                                                       \
-+	return ((iog)->flags & (1 << ELV_GROUP_FLAG_##name)) != 0;	\
++	return 0;
 +}
 +
-+#else /* GROUP_IOSCHED */
++static int io_cgroup_disk_dequeue_read(struct cgroup *cgroup,
++			struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg = NULL;
++	struct io_group *iog = NULL;
++	struct hlist_node *n;
 +
-+#define ELV_IO_GROUP_FLAG_FNS(name)					\
-+static inline void elv_mark_iog_##name(struct io_group *iog) {}		\
-+static inline void elv_clear_iog_##name(struct io_group *iog) {}	\
-+static inline int elv_iog_##name(struct io_group *iog) { return 0; }
-+#endif /* GROUP_IOSCHED */
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
 +
-+ELV_IO_GROUP_FLAG_FNS(idle_window)
-+ELV_IO_GROUP_FLAG_FNS(wait_request)
-+ELV_IO_GROUP_FLAG_FNS(wait_busy)
-+ELV_IO_GROUP_FLAG_FNS(wait_busy_done)
++	iocg = cgroup_to_io_cgroup(cgroup);
++	spin_lock_irq(&iocg->lock);
++	/* Loop through all the io groups and print statistics */
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev), iog->dequeue);
++		}
++	}
++	spin_unlock_irq(&iocg->lock);
++	cgroup_unlock();
 +
- static inline struct io_service_tree *
- io_entity_service_tree(struct io_entity *entity)
++	return 0;
++}
++#endif
++
+ struct cftype bfqio_files[] = {
+ 	{
+ 		.name = "weight",
+@@ -1227,6 +1437,16 @@ struct cftype bfqio_files[] = {
+ 		.name = "disk_sectors",
+ 		.read_seq_string = io_cgroup_disk_sectors_read,
+ 	},
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	{
++		.name = "disk_queue",
++		.read_seq_string = io_cgroup_disk_queue_read,
++	},
++	{
++		.name = "disk_dequeue",
++		.read_seq_string = io_cgroup_disk_dequeue_read,
++	},
++#endif
+ };
+ 
+ static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+@@ -1367,6 +1587,11 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 		 */
+ 		elv_get_iog(iog);
+ 
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++		io_group_path(iog, iog->path, sizeof(iog->path));
++#endif
++
++
+ 		if (leaf == NULL) {
+ 			leaf = iog;
+ 			prev = leaf;
+@@ -1947,6 +2172,22 @@ EXPORT_SYMBOL(elv_del_idle_slice_timer);
+ static void elv_ioq_served(struct io_queue *ioq, unsigned long served)
  {
-@@ -480,6 +519,9 @@ static inline struct io_group *ioq_to_io_group(struct io_queue *ioq)
+ 	entity_served(&ioq->entity, served, ioq->nr_sectors);
++
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++		{
++			struct elv_fq_data *efqd = ioq->efqd;
++			struct io_group *iog = ioq_to_io_group(ioq);
++			elv_log_ioq(efqd, ioq, "ioq served: QSt=0x%lx QSs=0x%lx"
++				" QTt=0x%lx QTs=0x%lx GTt=0x%lx "
++				" GTs=0x%lx rq_queued=%d",
++				served, ioq->nr_sectors,
++				ioq->entity.total_service,
++				ioq->entity.total_sector_service,
++				iog->entity.total_service,
++				iog->entity.total_sector_service,
++				ioq->nr_queued);
++		}
++#endif
+ }
+ 
+ /*
+@@ -2238,10 +2479,29 @@ static void __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq,
+ 	if (ioq) {
+ 		struct io_group *iog = ioq_to_io_group(ioq);
+ 		elv_log_ioq(efqd, ioq, "set_active, busy=%d ioprio=%d"
+-				" weight=%u group_weight=%u",
++				" weight=%u rq_queued=%d group_weight=%u",
+ 				efqd->busy_queues,
+ 				ioq->entity.ioprio, ioq->entity.weight,
+-				iog_weight(iog));
++				ioq->nr_queued, iog_weight(iog));
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++			{
++				int nr_active = 0;
++				struct io_group *parent = NULL;
++
++				parent = iog_parent(iog);
++				if (parent)
++					nr_active = elv_iog_nr_active(parent);
++
++				elv_log_ioq(efqd, ioq, "set_active, ioq"
++				" nrgrps=%d QTt=0x%lx QTs=0x%lx GTt=0x%lx "
++				" GTs=0x%lx rq_queued=%d", nr_active,
++				ioq->entity.total_service,
++				ioq->entity.total_sector_service,
++				iog->entity.total_service,
++				iog->entity.total_sector_service,
++				ioq->nr_queued);
++			}
++#endif
+ 		ioq->slice_end = 0;
+ 		ioq->slice_start = jiffies;
+ 
+@@ -2301,10 +2561,23 @@ static void elv_add_ioq_busy(struct elv_fq_data *efqd, struct io_queue *ioq)
+ {
+ 	BUG_ON(elv_ioq_busy(ioq));
+ 	BUG_ON(ioq == efqd->active_queue);
+-	elv_log_ioq(efqd, ioq, "add to busy");
+ 	elv_activate_ioq(ioq, 0);
+ 	elv_mark_ioq_busy(ioq);
+ 	efqd->busy_queues++;
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	{
++		struct io_group *iog = ioq_to_io_group(ioq);
++		elv_log_ioq(efqd, ioq, "add to busy: QTt=0x%lx QTs=0x%lx"
++			" GTt=0x%lx GTs=0x%lx rq_queued=%d",
++			ioq->entity.total_service,
++			ioq->entity.total_sector_service,
++			iog->entity.total_service,
++			iog->entity.total_sector_service,
++			ioq->nr_queued);
++	}
++#else
++	elv_log_ioq(efqd, ioq, "add to busy");
++#endif
+ }
+ 
+ static void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
+@@ -2314,7 +2587,21 @@ static void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq,
+ 
+ 	BUG_ON(!elv_ioq_busy(ioq));
+ 	BUG_ON(ioq->nr_queued);
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	{
++		struct io_group *iog = ioq_to_io_group(ioq);
++		elv_log_ioq(efqd, ioq, "del from busy: QTt=0x%lx "
++			"QTs=0x%lx ioq GTt=0x%lx GTs=0x%lx "
++			"rq_queued=%d",
++			ioq->entity.total_service,
++			ioq->entity.total_sector_service,
++			iog->entity.total_service,
++			iog->entity.total_sector_service,
++			ioq->nr_queued);
++	}
++#else
+ 	elv_log_ioq(efqd, ioq, "del from busy");
++#endif
+ 	elv_clear_ioq_busy(ioq);
+ 	BUG_ON(efqd->busy_queues == 0);
+ 	efqd->busy_queues--;
+@@ -2503,6 +2790,7 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+ 	BUG_ON(!efqd);
+ 	BUG_ON(!ioq);
+ 	ioq->nr_queued++;
++	elv_log_ioq(efqd, ioq, "add rq: rq_queued=%d", ioq->nr_queued);
+ 
+ 	if (!elv_ioq_busy(ioq))
+ 		elv_add_ioq_busy(efqd, ioq);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index b7f9f82..1da7ecc 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -75,6 +75,7 @@ struct io_service_tree {
+ struct io_sched_data {
+ 	struct io_entity *active_entity;
+ 	struct io_entity *next_active;
++	int nr_active;
+ 	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
+ };
+ 
+@@ -243,6 +244,23 @@ struct io_group {
+ 
+ 	/* The device MKDEV(major, minor), this group has been created for */
+ 	dev_t	dev;
++
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++	/* How many times this group has been added to active tree */
++	unsigned long queue;
++
++	/* How long this group remained on active tree, in ms */
++	unsigned long queue_duration;
++
++	/* When was this group added to active tree */
++	unsigned long queue_start;
++
++	/* How many times this group has been removed from active tree */
++	unsigned long dequeue;
++
++	/* Store cgroup path */
++	char path[128];
++#endif
+ };
+ 
+ /**
+@@ -303,10 +321,29 @@ struct elv_fq_data {
+ };
+ 
+ /* Logging facilities. */
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++#define elv_log_ioq(efqd, ioq, fmt, args...) \
++{								\
++	blk_add_trace_msg((efqd)->queue, "elv%d%c %s " fmt, (ioq)->pid,	\
++			elv_ioq_sync(ioq) ? 'S' : 'A', \
++			ioq_to_io_group(ioq)->path, ##args); \
++}
++
++#define elv_log_iog(efqd, iog, fmt, args...) \
++{                                                                      \
++	blk_add_trace_msg((efqd)->queue, "elv %s " fmt, (iog)->path, ##args); \
++}
++
++#else
+ #define elv_log_ioq(efqd, ioq, fmt, args...) \
+ 	blk_add_trace_msg((efqd)->queue, "elv%d%c " fmt, (ioq)->pid,	\
+ 				elv_ioq_sync(ioq) ? 'S' : 'A', ##args)
+ 
++#define elv_log_iog(efqd, iog, fmt, args...) \
++	blk_add_trace_msg((efqd)->queue, "elv " fmt, ##args)
++
++#endif
++
+ #define elv_log(efqd, fmt, args...) \
+ 	blk_add_trace_msg((efqd)->queue, "elv " fmt, ##args)
+ 
+@@ -443,7 +480,6 @@ static inline struct io_group *ioq_to_io_group(struct io_queue *ioq)
  #ifdef CONFIG_GROUP_IOSCHED
  extern int io_group_allow_merge(struct request *rq, struct bio *bio);
  extern void elv_put_iog(struct io_group *iog);
-+extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
-+extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
-+					size_t count);
+-
  static inline void elv_get_iog(struct io_group *iog)
  {
  	atomic_inc(&iog->ref);
