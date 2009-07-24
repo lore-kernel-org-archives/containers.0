@@ -1,14 +1,16 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: + cgroups-fix-pid-namespace-bug.patch added to -mm tree
-Date: Fri, 24 Jul 2009 13:59:58 +0800
-Message-ID: <4A694DDE.3080605@cn.fujitsu.com>
-References: <200907022320.n62NKpKO022860@imap1.linux-foundation.org>	<4A69461D.6080201@cn.fujitsu.com>
-	<20090723225545.f2fd381a.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [Xen-devel] Re: [PATCH 7/9] blkio-cgroup-v9: Page tracking hooks
+Date: Fri, 24 Jul 2009 15:19:23 +0900
+Message-ID: <20090724151923.986dd932.kamezawa.hiroyu__43481.7811860286$1248416561$gmane$org@jp.fujitsu.com>
+References: <20090723164935.e97a3ccf.kamezawa.hiroyu@jp.fujitsu.com>
+	<20090723.190253.226783703.ryov@valinux.co.jp>
+	<5971c26b399a97f51dd10ea497617733.squirrel@webmail-b.css.fujitsu.com>
+	<20090724.144416.71112906.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723225545.f2fd381a.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20090724.144416.71112906.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +20,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Fri, 24 Jul 2009 13:26:53 +0800 Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+On Fri, 24 Jul 2009 14:44:16 +0900 (JST)
+Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
+ good solution to resolve such problem.
 > 
->>> Subject: cgroups: fix pid namespace bug
->>> From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->>>
->> Hi Andrew,
->>
->> Could you queue this fix for .31.
+> > My point is "don't allow anyone to use bandwidth of others."
+> > Considering job isolation, a thread who requests swap-out should be charg=
+> > ed
+> > against bandwidth.
 > 
-> Yup, I have it there already.
+> From another perspective, the swap-out is caused since the buggy
+> process uses a large amount of memory, so it can be considered as 
+> the bandwidth of logging process is used due to the buggy process.
 > 
->> I think there's no more objection to this patch or to queuing it
->> for .31 instead of .32. And then Benjamin can rebase his patchset
->> on top of it.
->>
+> Please consider the following case. If a thread who requests swap-out
+> is charged, the thread is charged other threads' I/O.
 > 
-> I have a note here that Paul Menage said the patch had "missing operations". 
-> Did that all get suitably resolved?
+>    (1)                          --------      (2)
+>    Process A                   |        |     Process B
+>    mmaps a large area in   --> | memory | <-- tries to allocate a page.
+>    the memory and writes       |        |
+>    data to there.               --------     (3)
+>                                    |         To get a free page,
+>                                    |         the data written by Proc.A
+>                                    |         is written out to the disk.
+>                                    V         The I/O is done by using
+>                                 ---------    Proc.B's bandwidth.
+>                                |  disk   |   
+>                                 ---------
 > 
+> Thus I think that page owners should be charged against bandwidth.
+> 
+Ok, no good way. yours is wrong, mine is wrong, too.
+plz find 3rd way, reasonable.
 
-Yes, resolved by the delta patch "cgroups-fix-pid-namespace-bug-fix.patch"
+Below is brief thinking.
+
+"Why process A should be charged to I/O when it just maps anon memory ?"
+I can't answer this.
+
+Even in yorr case, Process B requests memory and get penalty. It's
+very natural, I think.
+
+In usual case, 
+ - if process A maps ANON, there will be no I/O.
+ - if process A maps FILE, it will be charged to process A.
+ok ?
+
+Under memory pressure,
+ - if process A maps ANON, swap I/O should be charged to process B.
+ - if process A maps FILE, I/O should be charged to process A.
+maybe. 
+
+
+Anyway, there will be ineraction with dirty_ratio of memcg (not implemeted yet)
+and _Owner should be charged_ issue will be handled in this dirty_ratio layer.
+More consideration is necessary, I think.
+
+
+Bye,
+-Kame
