@@ -1,15 +1,13 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 4/4] Allow cgroup hierarchies to be created with no bound
-	subsystems
-Date: Fri, 24 Jul 2009 13:21:42 +0800
-Message-ID: <4A6944E6.1090405__8536.43662198937$1248413137$gmane$org@cn.fujitsu.com>
-References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
-	<20090722195045.7481.62013.stgit@menage.mtv.corp.google.com>
+Subject: Re: + cgroups-fix-pid-namespace-bug.patch added to -mm tree
+Date: Fri, 24 Jul 2009 13:26:53 +0800
+Message-ID: <4A69461D.6080201@cn.fujitsu.com>
+References: <200907022320.n62NKpKO022860@imap1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090722195045.7481.62013.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <200907022320.n62NKpKO022860-AB4EexQrvXRQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +17,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> Allow cgroup hierarchies to be created with no bound subsystems
-> 
-> This patch removes the restriction that a cgroup hierarchy must have
-> at least one bound subsystem.  The mount option "none" is treated as
-> an explicit request for no bound subsystems.
-> 
-> A hierarchy with no subsystems can be useful for plain task tracking,
-> and is also a step towards the support for multiply-bindable
-> subsystems.
-> 
-> As part of this change, the hierarchy id is no longer calculated from
-> the bitmask of subsystems in the hierarchy (since this is not
-> guaranteed to be unique) but is allocated via an ida.  Reference
-> counts on cgroups from css_set objects are now taken explicitly one
-> per hierarchy, rather than one per subsystem.
-> 
-> Example usage:
-> 
-> mount -t cgroup -o none,name=foo cgroup /mnt/cgroup
-> 
-> Based on the "no-op"/"none" subsystem concept proposed by
-> kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-> 
-> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Subject: cgroups: fix pid namespace bug
+> From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > 
 
-Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Hi Andrew,
+
+Could you queue this fix for .31.
+
+I think there's no more objection to this patch or to queuing it
+for .31 instead of .32. And then Benjamin can rebase his patchset
+on top of it.
+
+> The bug was introduced by commit cc31edceee04a7b87f2be48f9489ebb72d264844
+> ("cgroups: convert tasks file to use a seq_file with shared pid array").
+> 
+> We cache a pid array for all threads that are opening the same "tasks"
+> file, but the pids in the array are always from the namespace of the
+> last process that opened the file, so all other threads will read pids
+> from that namespace instead of their own namespaces.
+> 
+> To fix it, we maintain a list of pid arrays, which is keyed by pid_ns.
+> The list will be of length 1 at most time.
+> 
+> Reported-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Idea-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Reviewed-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Balbir Singh <balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> ---
