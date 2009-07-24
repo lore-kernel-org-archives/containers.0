@@ -1,16 +1,18 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
-Date: Fri, 24 Jul 2009 13:11:30 -0400
-Message-ID: <4A69EB42.1070305@librato.com>
-References: <1248360514-20710-1-git-send-email-orenl@librato.com>
-	<1248360514-20710-2-git-send-email-orenl@librato.com>
-	<20090723222825.GA23596@us.ibm.com> <4A6910E5.4010605@librato.com>
-	<20090724142235.GB6910@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by
+	tgid at once
+Date: Fri, 24 Jul 2009 10:23:20 -0700
+Message-ID: <20090724172320.GH5878__18528.1741469682$1248456421$gmane$org@count0.beaverton.ibm.com>
+References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
+	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
+	<20090724155041.GF5878@count0.beaverton.ibm.com>
+	<6599ad830907240901w4fc02097k83d0c1012708e6ee@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090724142235.GB6910-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <6599ad830907240901w4fc02097k83d0c1012708e6ee-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,140 +22,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Fri, Jul 24, 2009 at 09:01:46AM -0700, Paul Menage wrote:
+> On Fri, Jul 24, 2009 at 8:50 AM, Matt Helsley<matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> >
+> > There is much ado about not taking additional "global locks" in fork()
+> > paths.
+> >
+> > * The fork and exit callbacks cgroup_fork() and cgroup_exit(), don't
+> > * (usually) take cgroup_mutex. =A0These are the two most performance
+> > * critical pieces of code here.
+> > ...
+> >
+> > and as I recall cgroup_fork() doesn't ever take cgroup_mutex because it=
+ is
+> > so performance critical.
+> =
 
+> cgroup_mutex is a much bigger and heavier mutex than the new rwsem
+> being introduced in this patch. It's sort of the BKL of cgroups,
+> although where possible I'm encouraging use of finer-grained
+> alternatives (such as subsystem-specific locks, the per-hierarchy
+> lock, etc).
+> =
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>
->> Serge E. Hallyn wrote:
->>> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>>> This patch adds checkpoint and restart of rlimit information
->>>> that is part of shared signal_struct.
->>> ...
->>>
->>>>  static int restore_signal(struct ckpt_ctx *ctx)
->>>>  {
->>>>  	struct ckpt_hdr_signal *h;
->>>> +	struct rlimit rlim;
->>>> +	int i, ret;
->>>>
->>>>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
->>>>  	if (IS_ERR(h))
->>>>  		return PTR_ERR(h);
->>>>
->>>> -	/* fill in later */
->>>> -
->>>> +	/* rlimit */
->>>> +	for (i = 0; i < RLIM_NLIMITS; i++) {
->>>> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
->>>> +		rlim.rlim_max = h->rlim[i].rlim_max;
->>>> +		ret = do_setrlimit(i, &rlim);
->>> ...
->>>> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
->>>>  {
->>>> -	struct rlimit new_rlim, *old_rlim;
->>>> +	struct rlimit *old_rlim;
->>>>  	int retval;
->>>>
->>>> -	if (resource >= RLIM_NLIMITS)
->>>> -		return -EINVAL;
->>>> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
->>>> -		return -EFAULT;
->>>> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
->>>> -		return -EINVAL;
->>>>  	old_rlim = current->signal->rlim + resource;
->>>> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
->>>> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
->>>>  	    !capable(CAP_SYS_RESOURCE))
->>>>  		return -EPERM;
->>>> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
->>>> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
->>>>  		return -EPERM;
->>>>
->>>> -	retval = security_task_setrlimit(resource, &new_rlim);
->>>> +	retval = security_task_setrlimit(resource, new_rlim);
->>>>  	if (retval)
->>>>  		return retval;
->>>>
->>>> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
->>>> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
->>>>  		/*
->>>>  		 * The caller is asking for an immediate RLIMIT_CPU
->>>>  		 * expiry.  But we use the zero value to mean "it was
->>>>  		 * never set".  So let's cheat and make it one second
->>>>  		 * instead
->>>>  		 */
->>>> -		new_rlim.rlim_cur = 1;
->>>> +		new_rlim->rlim_cur = 1;
->>>>  	}
->>>>
->>>>  	task_lock(current->group_leader);
->>>> -	*old_rlim = new_rlim;
->>>> +	*old_rlim = *new_rlim;
->>>>  	task_unlock(current->group_leader);
->>>>
->>>>  	if (resource != RLIMIT_CPU)
->>>> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
->>>>  	 * very long-standing error, and fixing it now risks breakage of
->>>>  	 * applications, so we live with it
->>>>  	 */
->>>> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
->>>> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
->>>>  		goto out;
->>>>
->>>> -	update_rlimit_cpu(new_rlim.rlim_cur);
->>>> +	update_rlimit_cpu(new_rlim->rlim_cur);
->>>>  out:
->>>>  	return 0;
->>>>  }
->>>>
->>>> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
->>>> +{
->>>> +	struct rlimit new_rlim;
->>>> +
->>>> +	if (resource >= RLIM_NLIMITS)
->>>> +		return -EINVAL;
->>>> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
->>>> +		return -EFAULT;
->>>> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
->>>> +		return -EINVAL;
->>> Should the above check go into do_setrlimit()?  No sense trusting
->>> the data sent to sys_checkpoint() any more than the data sent to
->>> sys_setrlimit().
->> You are very correct.
->>
->> I wonder though: moving the first check will change the order of
->> input sanitizing, which will change the syscall behavior on bad
->> input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
->> will return EFAULT.
->>
->> Not that I really care that much, but I've seen a similar case
->> that confused LTP scripts into seeing the "wrong" error from a
->> syscall and failing a test.
-> 
-> Heh, I could be wrong, but when you mess up 2 ways, I don't think the kernel
-> needs to guarantee which one you'll be warned about :)  Of course there are
-> cases where that is well-defined (i.e. DAC-before-MAC).  Maybe we should ask at
-> linux-api?
+> > Assuming the above comments in kernel/cgroup.c
+> > are correct then this patch adds a performance regression by introducin=
+g a
+> > global mutex in the fork path, doesn't it?
+> =
 
-I totally agree with you - I don't think it's an API issue.
+> Yes, although to what magnitude isn't clear.
 
-I only wonder whether this would cause an LTP test or a libc test
-to fail (because it expected one error and got another). Of course,
-it would be a false negative, but would still happen.
+OK.
 
-Oh, well .. I'll just assume it doesn't break anything unless it
-is proved wrong :p
+> Alternatives that we looked at were:
+> =
 
-Oren.
+> - add a clone_rwsem to task_struct, and require that a clone operation
+> that's adding to the same thread group take a read lock on the
+> leader's clone_rwsem; then the effect would be localised to a single
+> process; but for a system that has one big multi-threaded server on
+> it, the effect would still be similar to a global lock
 
-> 
-> Putting the same check before both callers of do_setrlimit() isn't *that*
-> bad, and I suppose we can put a comment above do_setrlimit() saying that
-> that any new callers need to do that check themselves...
-> 
-> -serge
+Except most processes aren't big multi-threaded servers and not everyone
+runs such processes. They'll experience the overhead of a global lock
+when they don't have to. Again, it's a question of magnitudes we don't
+know I think.
+
+> =
+
+> - move the housekeeping done by cgroup_fork() inside the tasklist_lock
+> critical section in do_fork(); then cgroup_attach_proc() can rely on
+> the existing global tasklist_lock to provide the necessary
+> synchronization, rather than introducing a second global lock; the
+> downside is that it slightly increases the size of the section where
+> tasklist_lock is held for write.
+
+Well, I imagine holding tasklist_lock is worse than cgroup_mutex in some
+ways since it's used even more widely. Makes sense not to use it here..
+
+Cheers,
+	-Matt Helsley
