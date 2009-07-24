@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 03/24] io-controller: bfq support of in-class preemption
-Date: Fri, 24 Jul 2009 16:27:33 -0400
-Message-ID: <1248467274-32073-4-git-send-email-vgoyal__22395.0560823598$1248467495$gmane$org@redhat.com>
+Subject: [PATCH 24/24] map sync requests to group using bio tracking info
+Date: Fri, 24 Jul 2009 16:27:54 -0400
+Message-ID: <1248467274-32073-25-git-send-email-vgoyal__42481.5311715522$1248467602$gmane$org@redhat.com>
 References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,105 +21,127 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o Generally preemption is associated with cross class where if an request
-  from RT class is pending it will preempt the ongoing BE or IDLE class
-  request.
+o sync requests are mapped to the cgroup submitting tasks belongs to. This
+  is an experimental patch where sync requets can be mapped to the group
+  using bio tracking information and not submitting task's context.
 
-o CFQ also does in-class preemtions like a sync request queue preempting the
-  async request queue. In that case it looks like preempting queue gains
-  share and it is not fair.
+o This patch implements this functionality only for noop, deadline and AS.
 
-o Implement the similar functionality in bfq so that we can retain the
-  existing CFQ behavior.
+o Introducing this patch for experimental purposes to see if it is really
+  meaningful or not.
 
-o This patch creates a bypass path so that a queue can be put at the
-  front of the service tree (add_front, similar to CFQ), so that it will
-  be selected next to run. That's a different thing that in the process
-  this queue gains share.
+o This behavior is turned on by setting /sys/block/<disk>/queue/iosched/map_sync  varibale.
 
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   46 +++++++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 41 insertions(+), 5 deletions(-)
+ block/as-iosched.c       |    1 +
+ block/deadline-iosched.c |    1 +
+ block/elevator-fq.c      |    7 ++++++-
+ block/elevator-fq.h      |    9 +++++++++
+ block/noop-iosched.c     |    1 +
+ 5 files changed, 18 insertions(+), 1 deletions(-)
 
+diff --git a/block/as-iosched.c b/block/as-iosched.c
+index 1282a78..d412e36 100644
+--- a/block/as-iosched.c
++++ b/block/as-iosched.c
+@@ -1768,6 +1768,7 @@ static struct elv_fs_entry as_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ #endif
+ 	__ATTR_NULL
+ };
+diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
+index 9811a0e..b69c29f 100644
+--- a/block/deadline-iosched.c
++++ b/block/deadline-iosched.c
+@@ -465,6 +465,7 @@ static struct elv_fs_entry deadline_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ #endif
+ 	__ATTR_NULL
+ };
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index e5f39cf..f1ab0dc 100644
+index 746c548..66b10eb 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -267,7 +267,8 @@ static void bfq_get_entity(struct io_entity *entity)
- 		elv_get_ioq(ioq);
- }
+@@ -2073,6 +2073,7 @@ struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
+ 					int create)
+ {
+ 	struct page *page = NULL;
++	struct elv_fq_data *efqd = &q->elevator->efqd;
  
--static void bfq_init_entity(struct io_entity *entity, struct io_group *iog)
-+static inline void
-+bfq_init_entity(struct io_entity *entity, struct io_group *iog)
- {
- 	entity->sched_data = &iog->sched_data;
- }
-@@ -580,7 +581,7 @@ static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
-  * service received if @entity is active) of the queue to calculate its
-  * timestamps.
-  */
--static void __bfq_activate_entity(struct io_entity *entity)
-+static void __bfq_activate_entity(struct io_entity *entity, int add_front)
- {
- 	struct io_sched_data *sd = entity->sched_data;
- 	struct io_service_tree *st = io_entity_service_tree(entity);
-@@ -625,7 +626,42 @@ static void __bfq_activate_entity(struct io_entity *entity)
+ 	/*
+ 	 * Determine the group from task context. Even calls from
+@@ -2091,7 +2092,7 @@ struct io_group *io_get_io_group_bio(struct request_queue *q, struct bio *bio,
  	}
  
- 	st = __bfq_entity_update_prio(st, entity);
--	bfq_calc_finish(entity, entity->budget);
+ 	/* Map the sync bio to the right group using task context */
+-	if (elv_bio_sync(bio))
++	if (elv_bio_sync(bio) && !efqd->map_sync)
+ 		goto sync;
+ 
+ #ifdef CONFIG_TRACK_ASYNC_CONTEXT
+@@ -2812,6 +2813,8 @@ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+ EXPORT_SYMBOL(elv_slice_async_show);
+ SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
+ EXPORT_SYMBOL(elv_fairness_show);
++SHOW_FUNCTION(elv_map_sync_show, efqd->map_sync, 0);
++EXPORT_SYMBOL(elv_map_sync_show);
+ #undef SHOW_FUNCTION
+ 
+ #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+@@ -2838,6 +2841,8 @@ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
+ STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
+ EXPORT_SYMBOL(elv_fairness_store);
++STORE_FUNCTION(elv_map_sync_store, &efqd->map_sync, 0, 1, 0);
++EXPORT_SYMBOL(elv_map_sync_store);
+ #undef STORE_FUNCTION
+ 
+ void elv_schedule_dispatch(struct request_queue *q)
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 185550e..0581e55 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -347,6 +347,12 @@ struct elv_fq_data {
+ 	 * queue before new queue is scheduled in
+ 	 */
+ 	unsigned int fairness;
++
 +	/*
-+	 * This is to emulate cfq like functionality where preemption can
-+	 * happen with-in same class, like sync queue preempting async queue
-+	 * May be this is not a very good idea from fairness point of view
-+	 * as preempting queue gains share. Keeping it for now.
++	 * Get io group bio belongs to from bio and not from submitting task
++	 * context
 +	 */
-+	if (add_front) {
-+		struct io_entity *next_entity;
-+
-+		/*
-+		 * Determine the entity which will be dispatched next
-+		 * Use sd->next_active once hierarchical patch is applied
-+		 */
-+		next_entity = bfq_lookup_next_entity(sd, 0);
-+
-+		if (next_entity && next_entity != entity) {
-+			struct io_service_tree *new_st;
-+			u64 delta;
-+
-+			new_st = io_entity_service_tree(next_entity);
-+
-+			/*
-+			 * At this point, both entities should belong to
-+			 * same service tree as cross service tree preemption
-+			 * is automatically taken care by algorithm
-+			 */
-+			BUG_ON(new_st != st);
-+			entity->finish = next_entity->finish - 1;
-+			delta = bfq_delta(entity->budget, entity->weight);
-+			entity->start = entity->finish - delta;
-+			if (bfq_gt(entity->start, st->vtime))
-+				entity->start = st->vtime;
-+		}
-+	} else {
-+		bfq_calc_finish(entity, entity->budget);
-+	}
- 	bfq_active_insert(st, entity);
- }
++	unsigned int map_sync;
+ };
  
-@@ -633,9 +669,9 @@ static void __bfq_activate_entity(struct io_entity *entity)
-  * bfq_activate_entity - activate an entity.
-  * @entity: the entity to activate.
-  */
--static void bfq_activate_entity(struct io_entity *entity)
-+static void bfq_activate_entity(struct io_entity *entity, int add_front)
+ /* Logging facilities. */
+@@ -551,6 +557,9 @@ extern void elv_put_iog(struct io_group *iog);
+ extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
+ 					size_t count);
++extern ssize_t elv_map_sync_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_map_sync_store(struct elevator_queue *q, const char *name,
++					size_t count);
+ static inline void elv_get_iog(struct io_group *iog)
  {
--	__bfq_activate_entity(entity);
-+	__bfq_activate_entity(entity, add_front);
- }
- 
- /**
+ 	atomic_inc(&iog->ref);
+diff --git a/block/noop-iosched.c b/block/noop-iosched.c
+index 5811ea2..190f37b 100644
+--- a/block/noop-iosched.c
++++ b/block/noop-iosched.c
+@@ -87,6 +87,7 @@ static struct elv_fs_entry noop_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ 	__ATTR_NULL
+ };
+ #endif
 -- 
 1.6.0.6
