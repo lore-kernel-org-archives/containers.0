@@ -1,36 +1,145 @@
-From: Stephen Hemminger <shemminger@vyatta.com>
-Subject: Re: [PATCH 1/1] veth: don't free priv->status until dev->destructor
- (v2)
-Date: Fri, 24 Jul 2009 12:46:14 -0700
-Message-ID: <20090724124614.6acc5054@nehalam>
-References: <20090626162418.GA24828@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
+Date: Fri, 24 Jul 2009 13:04:30 -0700
+Message-ID: <20090724200430.GK5878@count0.beaverton.ibm.com>
+References: <1248360514-20710-1-git-send-email-orenl@librato.com>
+	<1248360514-20710-2-git-send-email-orenl@librato.com>
+	<20090723222825.GA23596@us.ibm.com> <4A6910E5.4010605@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20090626162418.GA24828@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, Sachin Sant <sachinp@in.ibm.com>, netdev <netdev@vger.kernel.org>, David Miller <davem@davemloft.net>, matthltc@us.ibm.com, lkml <linux-kernel@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A6910E5.4010605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 26 Jun 2009 11:24:18 -0500
-"Serge E. Hallyn" <serue@us.ibm.com> wrote:
+On Thu, Jul 23, 2009 at 09:39:49PM -0400, Oren Laadan wrote:
+> 
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> >> This patch adds checkpoint and restart of rlimit information
+> >> that is part of shared signal_struct.
+> > 
+> > ...
+> > 
+> >>  static int restore_signal(struct ckpt_ctx *ctx)
+> >>  {
+> >>  	struct ckpt_hdr_signal *h;
+> >> +	struct rlimit rlim;
+> >> +	int i, ret;
+> >>
+> >>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+> >>  	if (IS_ERR(h))
+> >>  		return PTR_ERR(h);
+> >>
+> >> -	/* fill in later */
+> >> -
+> >> +	/* rlimit */
+> >> +	for (i = 0; i < RLIM_NLIMITS; i++) {
+> >> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
+> >> +		rlim.rlim_max = h->rlim[i].rlim_max;
+> >> +		ret = do_setrlimit(i, &rlim);
+> > 
+> > ...
+> >> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
+> >>  {
+> >> -	struct rlimit new_rlim, *old_rlim;
+> >> +	struct rlimit *old_rlim;
+> >>  	int retval;
+> >>
+> >> -	if (resource >= RLIM_NLIMITS)
+> >> -		return -EINVAL;
+> >> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> >> -		return -EFAULT;
+> >> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> >> -		return -EINVAL;
+> >>  	old_rlim = current->signal->rlim + resource;
+> >> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
+> >> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
+> >>  	    !capable(CAP_SYS_RESOURCE))
+> >>  		return -EPERM;
+> >> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
+> >> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
+> >>  		return -EPERM;
+> >>
+> >> -	retval = security_task_setrlimit(resource, &new_rlim);
+> >> +	retval = security_task_setrlimit(resource, new_rlim);
+> >>  	if (retval)
+> >>  		return retval;
+> >>
+> >> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
+> >> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
+> >>  		/*
+> >>  		 * The caller is asking for an immediate RLIMIT_CPU
+> >>  		 * expiry.  But we use the zero value to mean "it was
+> >>  		 * never set".  So let's cheat and make it one second
+> >>  		 * instead
+> >>  		 */
+> >> -		new_rlim.rlim_cur = 1;
+> >> +		new_rlim->rlim_cur = 1;
+> >>  	}
+> >>
+> >>  	task_lock(current->group_leader);
+> >> -	*old_rlim = new_rlim;
+> >> +	*old_rlim = *new_rlim;
+> >>  	task_unlock(current->group_leader);
+> >>
+> >>  	if (resource != RLIMIT_CPU)
+> >> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+> >>  	 * very long-standing error, and fixing it now risks breakage of
+> >>  	 * applications, so we live with it
+> >>  	 */
+> >> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
+> >> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
+> >>  		goto out;
+> >>
+> >> -	update_rlimit_cpu(new_rlim.rlim_cur);
+> >> +	update_rlimit_cpu(new_rlim->rlim_cur);
+> >>  out:
+> >>  	return 0;
+> >>  }
+> >>
+> >> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+> >> +{
+> >> +	struct rlimit new_rlim;
+> >> +
+> >> +	if (resource >= RLIM_NLIMITS)
+> >> +		return -EINVAL;
+> >> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> >> +		return -EFAULT;
+> >> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> >> +		return -EINVAL;
+> > 
+> > Should the above check go into do_setrlimit()?  No sense trusting
+> > the data sent to sys_checkpoint() any more than the data sent to
+> > sys_setrlimit().
+> 
+> You are very correct.
+> 
+> I wonder though: moving the first check will change the order of
+> input sanitizing, which will change the syscall behavior on bad
+> input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
+> will return EFAULT.
+> 
+> Not that I really care that much, but I've seen a similar case
+> that confused LTP scripts into seeing the "wrong" error from a
+> syscall and failing a test.
 
-> Based on the commit msg on ae0e8e82205c903978a79ebf5e31c670b61fa5b4, it looks
+Unless the syscall documentation (if any) defines an order it checks
+things I think such a test is broken. If multiple "things" are wrong with
+a syscall then userspace should expect an error for any one of them.
 
->  	ether_setup(dev);
-> @@ -306,7 +320,7 @@ static void veth_setup(struct net_device *dev)
->  	dev->netdev_ops = &veth_netdev_ops;
->  	dev->ethtool_ops = &veth_ethtool_ops;
->  	dev->features |= NETIF_F_LLTX;
-> -	dev->destructor = free_netdev;
-> +	dev->destructor = veth_dev_free;
->
-
-This is still going to oops if sysfs statistics referenced
-after module unload because module is unloaded (code is gone)
-and veth_dev_free no longer exists.
-
-I'll respin the original patch (using free_netdev) and fix
-the statistics complaint.
+Cheers,
+	-Matt
