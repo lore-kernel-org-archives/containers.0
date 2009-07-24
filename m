@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 07/24] io-controller: cgroup related changes for hierarchical
-	group support
-Date: Fri, 24 Jul 2009 16:27:37 -0400
-Message-ID: <1248467274-32073-8-git-send-email-vgoyal__13906.4388153658$1248469915$gmane$org@redhat.com>
+Subject: [PATCH 23/24] io-controller: Support per cgroup per device weights
+	and io class
+Date: Fri, 24 Jul 2009 16:27:53 -0400
+Message-ID: <1248467274-32073-24-git-send-email-vgoyal__30660.8414430686$1248469920$gmane$org@redhat.com>
 References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,335 +22,422 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o This patch introduces some of the cgroup related code for io controller.
+This patch enables per-cgroup per-device weight and ioprio_class handling.
+A new cgroup interface "policy" is introduced. You can make use of this
+file to configure weight and ioprio_class for each device in a given cgroup.
+The original "weight" and "ioprio_class" files are still available. If you
+don't do special configuration for a particular device, "weight" and
+"ioprio_class" are used as default values in this device.
 
-Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+You can use the following format to play with the new interface.
+#echo dev_major:dev_minor weight ioprio_class > /patch/to/cgroup/policy
+weight=0 means removing the policy for device.
+
+Examples:
+Configure weight=300 ioprio_class=2 on /dev/hdb (8:16) in this cgroup
+# echo "8:16 300 2" > io.policy
+# cat io.policy
+dev	weight	class
+8:16	300	2
+
+Configure weight=500 ioprio_class=1 on /dev/hda (8:0) in this cgroup
+# echo "8:0 500 1" > io.policy
+# cat io.policy
+dev	weight	class
+8:0	500	1
+8:16	300	2
+
+Remove the policy for /dev/hda in this cgroup
+# echo 8:0 0 1 > io.policy
+# cat io.policy
+dev	weight	class
+8:16	300	2
+
+Changelog (v1 -> v2)
+- Rename some structures
+- Use spin_lock_irqsave() and spin_lock_irqrestore() version to prevent
+  from enabling the interrupts unconditionally.
+- Fix policy setup bug when switching to another io scheduler.
+- If a policy is available for a specific device, don't update weight and
+  io class when writing "weight" and "iprio_class".
+- Fix a bug when parsing policy string.
+
 Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-ioc.c               |    3 +
- block/elevator-fq.c           |  174 +++++++++++++++++++++++++++++++++++++++++
- block/elevator-fq.h           |   38 +++++++++-
- include/linux/cgroup_subsys.h |    6 ++
- include/linux/iocontext.h     |    5 +
- 5 files changed, 225 insertions(+), 1 deletions(-)
+ block/elevator-fq.c |  265 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ block/elevator-fq.h |   10 ++
+ 2 files changed, 271 insertions(+), 4 deletions(-)
 
-diff --git a/block/blk-ioc.c b/block/blk-ioc.c
-index d4ed600..0d56336 100644
---- a/block/blk-ioc.c
-+++ b/block/blk-ioc.c
-@@ -95,6 +95,9 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
- 		spin_lock_init(&ret->lock);
- 		ret->ioprio_changed = 0;
- 		ret->ioprio = 0;
-+#ifdef CONFIG_GROUP_IOSCHED
-+		ret->cgroup_changed = 0;
-+#endif
- 		ret->last_waited = jiffies; /* doesn't matter... */
- 		ret->nr_batch_requests = 0; /* because this is 0 */
- 		ret->aic = NULL;
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 8f8fe9a..d72e697 100644
+index c41e84e..746c548 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -25,6 +25,9 @@ static struct kmem_cache *elv_ioq_pool;
- #define ELV_SLICE_SCALE		(5)
- #define ELV_HW_QUEUE_MIN	(5)
+@@ -17,6 +17,7 @@
+ #include <linux/blktrace_api.h>
+ #include <linux/seq_file.h>
+ #include <linux/biotrack.h>
++#include <linux/genhd.h>
  
-+#define IO_DEFAULT_GRP_WEIGHT  500
-+#define IO_DEFAULT_GRP_CLASS   IOPRIO_CLASS_BE
-+
- #define IO_SERVICE_TREE_INIT   ((struct io_service_tree)		\
- 				{ RB_ROOT, RB_ROOT, NULL, NULL, 0, 0 })
- 
-@@ -898,6 +901,177 @@ static void io_flush_idle_tree(struct io_service_tree *st)
- 		__bfq_deactivate_entity(entity, 0);
+ /* Values taken from cfq */
+ const int elv_slice_sync = HZ / 10;
+@@ -1189,12 +1190,30 @@ bfq_init_entity(struct io_entity *entity, struct io_group *iog)
+ 	entity->sched_data = &iog->sched_data;
  }
  
-+/* Mainly hierarchical grouping code */
-+#ifdef CONFIG_GROUP_IOSCHED
+-static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
++static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
++							dev_t dev);
 +
-+struct io_cgroup io_root_cgroup = {
-+	.weight = IO_DEFAULT_GRP_WEIGHT,
-+	.ioprio_class = IO_DEFAULT_GRP_CLASS,
-+};
-+
-+static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
-+{
-+	return container_of(cgroup_subsys_state(cgroup, io_subsys_id),
-+			    struct io_cgroup, css);
-+}
-+
-+#define SHOW_FUNCTION(__VAR)						\
-+static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
-+				       struct cftype *cftype)		\
-+{									\
-+	struct io_cgroup *iocg;					\
-+	u64 ret;							\
-+									\
-+	if (!cgroup_lock_live_group(cgroup))				\
-+		return -ENODEV;						\
-+									\
-+	iocg = cgroup_to_io_cgroup(cgroup);				\
-+	spin_lock_irq(&iocg->lock);					\
-+	ret = iocg->__VAR;						\
-+	spin_unlock_irq(&iocg->lock);					\
-+									\
-+	cgroup_unlock();						\
-+									\
-+	return ret;							\
-+}
-+
-+SHOW_FUNCTION(weight);
-+SHOW_FUNCTION(ioprio_class);
-+#undef SHOW_FUNCTION
-+
-+#define STORE_FUNCTION(__VAR, __MIN, __MAX)				\
-+static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
-+					struct cftype *cftype,		\
-+					u64 val)			\
-+{									\
-+	struct io_cgroup *iocg;					\
-+	struct io_group *iog;						\
-+	struct hlist_node *n;						\
-+									\
-+	if (val < (__MIN) || val > (__MAX))				\
-+		return -EINVAL;						\
-+									\
-+	if (!cgroup_lock_live_group(cgroup))				\
-+		return -ENODEV;						\
-+									\
-+	iocg = cgroup_to_io_cgroup(cgroup);				\
-+									\
-+	spin_lock_irq(&iocg->lock);					\
-+	iocg->__VAR = (unsigned long)val;				\
-+	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
-+		iog->entity.new_##__VAR = (unsigned long)val;		\
-+		smp_wmb();						\
-+		iog->entity.ioprio_changed = 1;				\
-+	}								\
-+	spin_unlock_irq(&iocg->lock);					\
-+									\
-+	cgroup_unlock();						\
-+									\
-+	return 0;							\
-+}
-+
-+STORE_FUNCTION(weight, 1, WEIGHT_MAX);
-+STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
-+#undef STORE_FUNCTION
-+
-+struct cftype bfqio_files[] = {
-+	{
-+		.name = "weight",
-+		.read_u64 = io_cgroup_weight_read,
-+		.write_u64 = io_cgroup_weight_write,
-+	},
-+	{
-+		.name = "ioprio_class",
-+		.read_u64 = io_cgroup_ioprio_class_read,
-+		.write_u64 = io_cgroup_ioprio_class_write,
-+	},
-+};
-+
-+static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-+{
-+	return cgroup_add_files(cgroup, subsys, bfqio_files,
-+				ARRAY_SIZE(bfqio_files));
-+}
-+
-+static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
-+						struct cgroup *cgroup)
++static void
++io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog, dev_t dev)
+ {
+ 	struct io_entity *entity = &iog->entity;
++	struct io_policy_node *pn;
++	unsigned long flags;
+ 
+-	entity->weight = iocg->weight;
+-	entity->ioprio_class = entity->new_ioprio_class = iocg->ioprio_class;
++	spin_lock_irqsave(&iocg->lock, flags);
++	pn = policy_search_node(iocg, dev);
++	if (pn) {
++		entity->weight = pn->weight;
++		entity->new_weight = pn->weight;
++		entity->ioprio_class = pn->ioprio_class;
++		entity->new_ioprio_class = pn->ioprio_class;
++	} else {
++		entity->weight = iocg->weight;
++		entity->new_weight = iocg->weight;
++		entity->ioprio_class = iocg->ioprio_class;
++		entity->new_ioprio_class = iocg->ioprio_class;
++	}
++	spin_unlock_irqrestore(&iocg->lock, flags);
+ 	entity->ioprio_changed = 1;
+ 	entity->my_sched_data = &iog->sched_data;
+ }
+@@ -1314,6 +1333,227 @@ io_cgroup_lookup_group(struct io_cgroup *iocg, void *key)
+ 	return NULL;
+ }
+ 
++static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
++				  struct seq_file *m)
 +{
 +	struct io_cgroup *iocg;
++	struct io_policy_node *pn;
 +
-+	if (cgroup->parent != NULL) {
-+		iocg = kzalloc(sizeof(*iocg), GFP_KERNEL);
-+		if (iocg == NULL)
-+			return ERR_PTR(-ENOMEM);
-+	} else
-+		iocg = &io_root_cgroup;
++	iocg = cgroup_to_io_cgroup(cgrp);
 +
-+	spin_lock_init(&iocg->lock);
-+	INIT_HLIST_HEAD(&iocg->group_data);
-+	iocg->weight = IO_DEFAULT_GRP_WEIGHT;
-+	iocg->ioprio_class = IO_DEFAULT_GRP_CLASS;
++	if (list_empty(&iocg->policy_list))
++		goto out;
 +
-+	return &iocg->css;
++	seq_printf(m, "dev\tweight\tclass\n");
++
++	spin_lock_irq(&iocg->lock);
++	list_for_each_entry(pn, &iocg->policy_list, node) {
++		seq_printf(m, "%u:%u\t%u\t%hu\n", MAJOR(pn->dev),
++			   MINOR(pn->dev), pn->weight, pn->ioprio_class);
++	}
++	spin_unlock_irq(&iocg->lock);
++out:
++	return 0;
 +}
 +
-+/*
-+ * We cannot support shared io contexts, as we have no mean to support
-+ * two tasks with the same ioc in two different groups without major rework
-+ * of the main cic/bfqq data structures.  By now we allow a task to change
-+ * its cgroup only if it's the only owner of its ioc; the drawback of this
-+ * behavior is that a group containing a task that forked using CLONE_IO
-+ * will not be destroyed until the tasks sharing the ioc die.
-+ */
-+static int iocg_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-+			    struct task_struct *tsk)
++static inline void policy_insert_node(struct io_cgroup *iocg,
++					  struct io_policy_node *pn)
 +{
-+	struct io_context *ioc;
++	list_add(&pn->node, &iocg->policy_list);
++}
++
++/* Must be called with iocg->lock held */
++static inline void policy_delete_node(struct io_policy_node *pn)
++{
++	list_del(&pn->node);
++}
++
++/* Must be called with iocg->lock held */
++static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
++						 dev_t dev)
++{
++	struct io_policy_node *pn;
++
++	if (list_empty(&iocg->policy_list))
++		return NULL;
++
++	list_for_each_entry(pn, &iocg->policy_list, node) {
++		if (pn->dev == dev)
++			return pn;
++	}
++
++	return NULL;
++}
++
++static int check_dev_num(dev_t dev)
++{
++	int part = 0;
++	struct gendisk *disk;
++
++	disk = get_gendisk(dev, &part);
++	if (!disk || part)
++		return -ENODEV;
++
++	return 0;
++}
++
++static int policy_parse_and_set(char *buf, struct io_policy_node *newpn)
++{
++	char *s[4], *p, *major_s = NULL, *minor_s = NULL;
++	int ret;
++	unsigned long major, minor, temp;
++	int i = 0;
++	dev_t dev;
++
++	memset(s, 0, sizeof(s));
++	while ((p = strsep(&buf, " ")) != NULL) {
++		if (!*p)
++			continue;
++		s[i++] = p;
++
++		/* Prevent from inputing too many things */
++		if (i == 4)
++			break;
++	}
++
++	if (i != 3)
++		return -EINVAL;
++
++	p = strsep(&s[0], ":");
++	if (p != NULL)
++		major_s = p;
++	else
++		return -EINVAL;
++
++	minor_s = s[0];
++	if (!minor_s)
++		return -EINVAL;
++
++	ret = strict_strtoul(major_s, 10, &major);
++	if (ret)
++		return -EINVAL;
++
++	ret = strict_strtoul(minor_s, 10, &minor);
++	if (ret)
++		return -EINVAL;
++
++	dev = MKDEV(major, minor);
++
++	ret = check_dev_num(dev);
++	if (ret)
++		return ret;
++
++	newpn->dev = dev;
++
++	if (s[1] == NULL)
++		return -EINVAL;
++
++	ret = strict_strtoul(s[1], 10, &temp);
++	if (ret || temp > WEIGHT_MAX)
++		return -EINVAL;
++
++	newpn->weight =  temp;
++
++	if (s[2] == NULL)
++		return -EINVAL;
++
++	ret = strict_strtoul(s[2], 10, &temp);
++	if (ret || temp < IOPRIO_CLASS_RT || temp > IOPRIO_CLASS_IDLE)
++		return -EINVAL;
++	newpn->ioprio_class = temp;
++
++	return 0;
++}
++
++static int io_cgroup_policy_write(struct cgroup *cgrp, struct cftype *cft,
++			    const char *buffer)
++{
++	struct io_cgroup *iocg;
++	struct io_policy_node *newpn, *pn;
++	char *buf;
 +	int ret = 0;
++	int keep_newpn = 0;
++	struct hlist_node *n;
++	struct io_group *iog;
 +
-+	/* task_lock() is needed to avoid races with exit_io_context() */
-+	task_lock(tsk);
-+	ioc = tsk->io_context;
-+	if (ioc != NULL && atomic_read(&ioc->nr_tasks) > 1)
-+		/*
-+		 * ioc == NULL means that the task is either too young or
-+		 * exiting: if it has still no ioc the ioc can't be shared,
-+		 * if the task is exiting the attach will fail anyway, no
-+		 * matter what we return here.
-+		 */
-+		ret = -EINVAL;
-+	task_unlock(tsk);
++	buf = kstrdup(buffer, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
 +
++	newpn = kzalloc(sizeof(*newpn), GFP_KERNEL);
++	if (!newpn) {
++		ret = -ENOMEM;
++		goto free_buf;
++	}
++
++	ret = policy_parse_and_set(buf, newpn);
++	if (ret)
++		goto free_newpn;
++
++	if (!cgroup_lock_live_group(cgrp)) {
++		ret = -ENODEV;
++		goto free_newpn;
++	}
++
++	iocg = cgroup_to_io_cgroup(cgrp);
++	spin_lock_irq(&iocg->lock);
++
++	pn = policy_search_node(iocg, newpn->dev);
++	if (!pn) {
++		if (newpn->weight != 0) {
++			policy_insert_node(iocg, newpn);
++			keep_newpn = 1;
++		}
++		goto update_io_group;
++	}
++
++	if (newpn->weight == 0) {
++		/* weight == 0 means deleteing a policy */
++		policy_delete_node(pn);
++		goto update_io_group;
++	}
++
++	pn->weight = newpn->weight;
++	pn->ioprio_class = newpn->ioprio_class;
++
++update_io_group:
++	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {
++		if (iog->dev == newpn->dev) {
++			if (newpn->weight) {
++				iog->entity.new_weight = newpn->weight;
++				iog->entity.new_ioprio_class =
++						newpn->ioprio_class;
++				/*
++				 * iog weight and ioprio_class updating
++				 * actually happens if ioprio_changed is set.
++				 * So ensure ioprio_changed is not set until
++				 * new weight and new ioprio_class are updated.
++				 */
++				smp_wmb();
++				iog->entity.ioprio_changed = 1;
++			} else {
++				iog->entity.new_weight = iocg->weight;
++				iog->entity.new_ioprio_class =
++							iocg->ioprio_class;
++
++				/* The same as above */
++				smp_wmb();
++				iog->entity.ioprio_changed = 1;
++			}
++		}
++	}
++	spin_unlock_irq(&iocg->lock);
++
++	cgroup_unlock();
++
++free_newpn:
++	if (!keep_newpn)
++		kfree(newpn);
++free_buf:
++	kfree(buf);
 +	return ret;
 +}
 +
-+static void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-+			 struct cgroup *prev, struct task_struct *tsk)
-+{
-+	struct io_context *ioc;
+ #define SHOW_FUNCTION(__VAR)						\
+ static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
+ 				       struct cftype *cftype)		\
+@@ -1346,6 +1586,7 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
+ 	struct io_cgroup *iocg;					\
+ 	struct io_group *iog;						\
+ 	struct hlist_node *n;						\
++	struct io_policy_node *pn;					\
+ 									\
+ 	if (val < (__MIN) || val > (__MAX))				\
+ 		return -EINVAL;						\
+@@ -1358,6 +1599,9 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
+ 	spin_lock_irq(&iocg->lock);					\
+ 	iocg->__VAR = (unsigned long)val;				\
+ 	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
++		pn = policy_search_node(iocg, iog->dev);		\
++		if (pn)							\
++			continue;					\
+ 		iog->entity.new_##__VAR = (unsigned long)val;		\
+ 		smp_wmb();						\
+ 		iog->entity.ioprio_changed = 1;				\
+@@ -1496,6 +1740,12 @@ static int io_cgroup_disk_dequeue_read(struct cgroup *cgroup,
+ 
+ struct cftype bfqio_files[] = {
+ 	{
++		.name = "policy",
++		.read_seq_string = io_cgroup_policy_read,
++		.write_string = io_cgroup_policy_write,
++		.max_write_len = 256,
++	},
++	{
+ 		.name = "weight",
+ 		.read_u64 = io_cgroup_weight_read,
+ 		.write_u64 = io_cgroup_weight_write,
+@@ -1547,6 +1797,7 @@ static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
+ 	INIT_HLIST_HEAD(&iocg->group_data);
+ 	iocg->weight = IO_DEFAULT_GRP_WEIGHT;
+ 	iocg->ioprio_class = IO_DEFAULT_GRP_CLASS;
++	INIT_LIST_HEAD(&iocg->policy_list);
+ 
+ 	return &iocg->css;
+ }
+@@ -1649,7 +1900,7 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
+ 		iog->dev = MKDEV(major, minor);
+ 
+-		io_group_init_entity(iocg, iog);
++		io_group_init_entity(iocg, iog, iog->dev);
+ 		iog->my_entity = &iog->entity;
+ 
+ 		atomic_set(&iog->ref, 0);
+@@ -2121,6 +2372,7 @@ static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+ 	struct io_group *iog;
+ 	struct elv_fq_data *efqd;
+ 	unsigned long uninitialized_var(flags);
++	struct io_policy_node *pn, *pntmp;
+ 
+ 	/*
+ 	 * io groups are linked in two lists. One list is maintained
+@@ -2160,6 +2412,11 @@ remove_entry:
+ 	goto remove_entry;
+ 
+ done:
++	list_for_each_entry_safe(pn, pntmp, &iocg->policy_list, node) {
++		policy_delete_node(pn);
++		kfree(pn);
++	}
 +
-+	task_lock(tsk);
-+	ioc = tsk->io_context;
-+	if (ioc != NULL)
-+		ioc->cgroup_changed = 1;
-+	task_unlock(tsk);
-+}
-+
-+static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-+{
-+
-+	/* Implemented in later patch */
-+}
-+
-+struct cgroup_subsys io_subsys = {
-+	.name = "io",
-+	.create = iocg_create,
-+	.can_attach = iocg_can_attach,
-+	.attach = iocg_attach,
-+	.destroy = iocg_destroy,
-+	.populate = iocg_populate,
-+	.subsys_id = io_subsys_id,
-+	.use_id = 1,
-+};
-+#endif /* GROUP_IOSCHED */
- /* Elevator fair queuing function */
- static inline struct io_queue *elv_active_ioq(struct elevator_queue *e)
- {
+ 	free_css_id(&io_subsys, &iocg->css);
+ 	rcu_read_unlock();
+ 	BUG_ON(!hlist_empty(&iocg->group_data));
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index ed65a87..6711c85 100644
+index 44e9255..185550e 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -13,11 +13,13 @@
-  */
- 
- #include <linux/blkdev.h>
-+#include <linux/cgroup.h>
- 
- #ifndef _BFQ_SCHED_H
- #define _BFQ_SCHED_H
- 
- #define IO_IOPRIO_CLASSES	3
-+#define WEIGHT_MAX             1000
- 
- struct io_entity;
- struct io_queue;
-@@ -88,7 +90,7 @@ struct io_sched_data {
-  *             this entity; used for O(log N) lookups into active trees.
-  * @service: service received during the last round of service.
-  * @budget: budget used to calculate F_i; F_i = S_i + @budget / @weight.
-- * @weight: weight of the queue, calculated as IOPRIO_BE_NR - @ioprio.
-+ * @weight: the weight in use.
-  * @new_weight: when a weight change is requested, the new weight value
-  * @parent: parent entity, for hierarchical scheduling.
-  * @my_sched_data: for non-leaf nodes in the cgroup hierarchy, the
-@@ -178,8 +180,10 @@ struct io_queue {
- 	void *sched_queue;
+@@ -274,6 +274,13 @@ struct io_group {
+ 	struct request_list rl;
  };
  
-+#ifdef CONFIG_GROUP_IOSCHED
- struct io_group {
- 	struct io_entity entity;
-+	struct hlist_node group_node;
- 	struct io_sched_data sched_data;
- 	struct io_entity *my_entity;
- 
-@@ -190,8 +194,40 @@ struct io_group {
- 
- 	struct io_queue *async_queue[2][IOPRIO_BE_NR];
- 	struct io_queue *async_idle_queue;
-+	unsigned short iocg_id;
- };
- 
-+/**
-+ * struct io_cgroup - io cgroup data structure.
-+ * @css: subsystem state for io in the containing cgroup.
-+ * @weight: cgroup weight.
-+ * @ioprio_class: cgroup ioprio_class.
-+ * @lock: spinlock that protects @weight, @ioprio_class and @group_data.
-+ * @group_data: list containing the io_group belonging to this cgroup.
-+ *
-+ * @group_data is accessed using RCU, with @lock protecting the updates,
-+ * @weight and @ioprio_class are protected by @lock.
-+ */
-+struct io_cgroup {
-+	struct cgroup_subsys_state css;
-+
++struct io_policy_node {
++	struct list_head node;
++	dev_t dev;
 +	unsigned int weight;
 +	unsigned short ioprio_class;
-+
-+	spinlock_t lock;
-+	struct hlist_head group_data;
 +};
-+#else
-+struct io_group {
-+	struct io_sched_data sched_data;
 +
-+	/* async_queue and idle_queue are used only for cfq */
-+	struct io_queue *async_queue[2][IOPRIO_BE_NR];
-+	struct io_queue *async_idle_queue;
-+};
-+#endif /* CONFIG_GROUP_IOSCHED */
-+
-+
- struct elv_fq_data {
- 	struct io_group *root_group;
+ /**
+  * struct io_cgroup - io cgroup data structure.
+  * @css: subsystem state for io in the containing cgroup.
+@@ -291,6 +298,9 @@ struct io_cgroup {
+ 	unsigned int weight;
+ 	unsigned short ioprio_class;
  
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index 9c8d31b..baf544f 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -60,3 +60,9 @@ SUBSYS(net_cls)
- #endif
- 
- /* */
++	/* list of io_policy_node */
++	struct list_head policy_list;
 +
-+#ifdef CONFIG_GROUP_IOSCHED
-+SUBSYS(io)
-+#endif
-+
-+/* */
-diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
-index dd05434..0c8eebf 100644
---- a/include/linux/iocontext.h
-+++ b/include/linux/iocontext.h
-@@ -73,6 +73,11 @@ struct io_context {
- 	unsigned short ioprio;
- 	unsigned short ioprio_changed;
- 
-+#ifdef CONFIG_GROUP_IOSCHED
-+	/* If task changes the cgroup, elevator processes it asynchronously */
-+	unsigned short cgroup_changed;
-+#endif
-+
- 	/*
- 	 * For request batching
- 	 */
+ 	spinlock_t lock;
+ 	struct hlist_head group_data;
+ };
 -- 
 1.6.0.6
