@@ -1,13 +1,16 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: [signal 3/3] pending signals (private, shared)
-Date: Fri, 24 Jul 2009 15:13:56 +0200
-Message-ID: <20090724131356.GI11101@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
+Date: Fri, 24 Jul 2009 09:22:35 -0500
+Message-ID: <20090724142235.GB6910@us.ibm.com>
 References: <1248360514-20710-1-git-send-email-orenl@librato.com>
-	<1248360514-20710-3-git-send-email-orenl@librato.com>
+	<1248360514-20710-2-git-send-email-orenl@librato.com>
+	<20090723222825.GA23596@us.ibm.com> <4A6910E5.4010605@librato.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7396550442532312305=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1248360514-20710-3-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A6910E5.4010605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,189 +18,132 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> 
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> >> This patch adds checkpoint and restart of rlimit information
+> >> that is part of shared signal_struct.
+> > 
+> > ...
+> > 
+> >>  static int restore_signal(struct ckpt_ctx *ctx)
+> >>  {
+> >>  	struct ckpt_hdr_signal *h;
+> >> +	struct rlimit rlim;
+> >> +	int i, ret;
+> >>
+> >>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+> >>  	if (IS_ERR(h))
+> >>  		return PTR_ERR(h);
+> >>
+> >> -	/* fill in later */
+> >> -
+> >> +	/* rlimit */
+> >> +	for (i = 0; i < RLIM_NLIMITS; i++) {
+> >> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
+> >> +		rlim.rlim_max = h->rlim[i].rlim_max;
+> >> +		ret = do_setrlimit(i, &rlim);
+> > 
+> > ...
+> >> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
+> >>  {
+> >> -	struct rlimit new_rlim, *old_rlim;
+> >> +	struct rlimit *old_rlim;
+> >>  	int retval;
+> >>
+> >> -	if (resource >= RLIM_NLIMITS)
+> >> -		return -EINVAL;
+> >> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> >> -		return -EFAULT;
+> >> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> >> -		return -EINVAL;
+> >>  	old_rlim = current->signal->rlim + resource;
+> >> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
+> >> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
+> >>  	    !capable(CAP_SYS_RESOURCE))
+> >>  		return -EPERM;
+> >> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
+> >> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
+> >>  		return -EPERM;
+> >>
+> >> -	retval = security_task_setrlimit(resource, &new_rlim);
+> >> +	retval = security_task_setrlimit(resource, new_rlim);
+> >>  	if (retval)
+> >>  		return retval;
+> >>
+> >> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
+> >> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
+> >>  		/*
+> >>  		 * The caller is asking for an immediate RLIMIT_CPU
+> >>  		 * expiry.  But we use the zero value to mean "it was
+> >>  		 * never set".  So let's cheat and make it one second
+> >>  		 * instead
+> >>  		 */
+> >> -		new_rlim.rlim_cur = 1;
+> >> +		new_rlim->rlim_cur = 1;
+> >>  	}
+> >>
+> >>  	task_lock(current->group_leader);
+> >> -	*old_rlim = new_rlim;
+> >> +	*old_rlim = *new_rlim;
+> >>  	task_unlock(current->group_leader);
+> >>
+> >>  	if (resource != RLIMIT_CPU)
+> >> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+> >>  	 * very long-standing error, and fixing it now risks breakage of
+> >>  	 * applications, so we live with it
+> >>  	 */
+> >> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
+> >> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
+> >>  		goto out;
+> >>
+> >> -	update_rlimit_cpu(new_rlim.rlim_cur);
+> >> +	update_rlimit_cpu(new_rlim->rlim_cur);
+> >>  out:
+> >>  	return 0;
+> >>  }
+> >>
+> >> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+> >> +{
+> >> +	struct rlimit new_rlim;
+> >> +
+> >> +	if (resource >= RLIM_NLIMITS)
+> >> +		return -EINVAL;
+> >> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+> >> +		return -EFAULT;
+> >> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
+> >> +		return -EINVAL;
+> > 
+> > Should the above check go into do_setrlimit()?  No sense trusting
+> > the data sent to sys_checkpoint() any more than the data sent to
+> > sys_setrlimit().
+> 
+> You are very correct.
+> 
+> I wonder though: moving the first check will change the order of
+> input sanitizing, which will change the syscall behavior on bad
+> input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
+> will return EFAULT.
+> 
+> Not that I really care that much, but I've seen a similar case
+> that confused LTP scripts into seeing the "wrong" error from a
+> syscall and failing a test.
 
---===============7396550442532312305==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-25792-1248441206-0001-2"
-Content-Disposition: inline
+Heh, I could be wrong, but when you mess up 2 ways, I don't think the kernel
+needs to guarantee which one you'll be warned about :)  Of course there are
+cases where that is well-defined (i.e. DAC-before-MAC).  Maybe we should ask at
+linux-api?
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Putting the same check before both callers of do_setrlimit() isn't *that*
+bad, and I suppose we can put a comment above do_setrlimit() saying that
+that any new callers need to do that check themselves...
 
---=_bohort-25792-1248441206-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On 23/07/09 10:48 -0400, Oren Laadan wrote:
-> This patch adds checkpoint and restart of pending signals queues:
-> struct sigpending, both per-task t->sigpending and shared (per-
-> thread-group) t->signal->shared_sigpending.
->=20
-> To checkpoint pending signals (private/shared) we first detach the
-> signal queue (and copy the mask) to a separate struct sigpending.
-> This separate structure can be iterated through without locking.
->=20
-> Once the state is saved, we re-attaches (prepends) the original signal
-> queue back to the original struct sigpending.
->=20
-> Signals that arrive(d) in the meantime will be suitably queued after
-> these (for real-time signals). Repeated non-realtime signals will not
-> be queued because they will already be marked in the pending mask,
-> that remains as is. This is the expected behavior of non-realtime
-> signals.
->=20
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->  checkpoint/signal.c            |  255 ++++++++++++++++++++++++++++++++++=
-+++++-
->  include/linux/checkpoint_hdr.h |   23 ++++
->  2 files changed, 277 insertions(+), 1 deletions(-)
->=20
-> diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-> index b3f1d3e..940cc4a 100644
-> --- a/checkpoint/signal.c
-> +++ b/checkpoint/signal.c
-> @@ -166,12 +166,99 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int s=
-ighand_objref)
->   * signal checkpoint/restart
->   */
-> =20
-> +static void fill_siginfo(struct ckpt_hdr_siginfo *si, siginfo_t *info)
-> +{
-> +	si->signo =3D info->si_signo;
-> +	si->_errno =3D info->si_errno;
-> +	si->code =3D info->si_code;
-> +
-> +	/* TODO: convert info->si_uid to uid_objref */
-> +
-> +	switch(info->si_code & __SI_MASK) {
-> +	case __SI_TIMER:
-> +		si->pid =3D info->si_tid;
-> +		si->uid =3D info->si_overrun;
-> +		si->sigval_int =3D info->si_int;
-> +	si->utime =3D info->si_sys_private;
-> +		break;
-> +	case __SI_POLL:
-> +		si->pid =3D info->si_band;
-> +		si->sigval_int =3D info->si_fd;
-> +		break;
-> +	case __SI_FAULT:
-> +		si->sigval_ptr =3D (unsigned long) info->si_addr;
-> +#ifdef __ARCH_SI_TRAPNO
-> +		si->sigval_int =3D info->si_trapno;
-> +#endif
-> +		break;
-> +	case __SI_CHLD:
-> +		si->pid =3D info->si_pid;
-> +		si->uid =3D info->si_uid;
-> +		si->sigval_int =3D info->si_status;
-> +		si->stime =3D info->si_stime;
-> +		si->utime =3D info->si_utime;
-> +		break;
-> +	/*
-> +	 * case __SI_KILL:
-> +	 * case __SI_RT:
-> +	 * case __SI_MESGQ:
-> +	 */
-> +	default:
-> +		si->pid =3D info->si_pid;
-> +		si->uid =3D info->si_uid;
-> +		si->sigval_ptr =3D (unsigned long) info->si_ptr;
-> +		break;
-> +	}
-> +}
-> +
-> +/*
-> + * To checkpoint pending signals (private/shared) the caller moves the
-> + * signal queue (and copies the mask) to a separate struct sigpending,
-> + * therefore we can iterate through it without locking.
-> + * After we return, the caller re-attaches (prepends) the original
-> + * signal queue to the original struct sigpending. Thus, signals that
-> + * arrive(d) in the meantime will be suitably queued after these.
-> + * Finally, repeated non-realtime signals will not be queued because
-> + * they will already be marked in the pending mask, that remains as is.
-> + * This is the expected behavior of non-realtime signals.
-> + */
-> +static int checkpoint_sigpending(struct ckpt_ctx *ctx,
-> +				 struct sigpending *pending)
-> +{
-> +	struct ckpt_hdr_sigpending *h;
-> +	struct ckpt_hdr_siginfo *si;
-> +	struct sigqueue *q;
-> +	int nr_pending =3D 0;
-> +	int ret;
-> +
-> +	list_for_each_entry(q, &pending->list, list)
-> +		nr_pending++;
-> +	h =3D ckpt_hdr_get_type(ctx, nr_pending * sizeof(*si) + sizeof(*h),
-> +			      CKPT_HDR_SIGPENDING);
-> +	if (!h)
-> +		return -ENOMEM;
-> +
-> +	h->nr_pending =3D nr_pending;
-> +	fill_sigset(&h->signal, &pending->signal);
-> +
-> +	si =3D h->siginfo;
-> +	list_for_each_entry(q, &pending->list, list)
-> +		fill_siginfo(si++, &q->info);
-
-If q has SIGQUEUE_PREALLOC, we should probably abort the checkpoint, until =
-POSIX
-timers (only users AFAIK) are supported.
-
-Thanks,
-
-Louis
-
-> +
-> +	ret =3D ckpt_write_obj(ctx, &h->h);
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	return ret;
-> +}
-> +
-
-[...]
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-25792-1248441206-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkpps5QACgkQVKcRuvQ9Q1RxcgCdEHtWwz9QKJvmny38A2Od0IBE
-iXoAni9M/2Vg3vgPidKgurKUxJCeJ1St
-=mwCd
------END PGP SIGNATURE-----
-
---=_bohort-25792-1248441206-0001-2--
-
---===============7396550442532312305==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7396550442532312305==--
+-serge
