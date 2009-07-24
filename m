@@ -1,15 +1,13 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
-Date: Thu, 23 Jul 2009 21:39:49 -0400
-Message-ID: <4A6910E5.4010605@librato.com>
-References: <1248360514-20710-1-git-send-email-orenl@librato.com>
-	<1248360514-20710-2-git-send-email-orenl@librato.com>
-	<20090723222825.GA23596@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: s390: set return value for self-checkpoint
+Date: Thu, 23 Jul 2009 21:47:41 -0400
+Message-ID: <4A6912BD.1000408@cs.columbia.edu>
+References: <20090723182125.GA18383@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723222825.GA23596-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090723182125.GA18383-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,119 +18,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+Got it, thanks.
 
 Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->> This patch adds checkpoint and restart of rlimit information
->> that is part of shared signal_struct.
+> If doing a self-checkpoint, then optimistically store 0 as the
+> syscall return value to indicate success.
 > 
-> ...
+> This was being done for x86, but not yet being done for s390.
 > 
->>  static int restore_signal(struct ckpt_ctx *ctx)
->>  {
->>  	struct ckpt_hdr_signal *h;
->> +	struct rlimit rlim;
->> +	int i, ret;
->>
->>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
->>  	if (IS_ERR(h))
->>  		return PTR_ERR(h);
->>
->> -	/* fill in later */
->> -
->> +	/* rlimit */
->> +	for (i = 0; i < RLIM_NLIMITS; i++) {
->> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
->> +		rlim.rlim_max = h->rlim[i].rlim_max;
->> +		ret = do_setrlimit(i, &rlim);
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  arch/s390/mm/checkpoint.c |   11 +++++++++++
+>  1 files changed, 11 insertions(+), 0 deletions(-)
 > 
-> ...
->> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
->>  {
->> -	struct rlimit new_rlim, *old_rlim;
->> +	struct rlimit *old_rlim;
->>  	int retval;
->>
->> -	if (resource >= RLIM_NLIMITS)
->> -		return -EINVAL;
->> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
->> -		return -EFAULT;
->> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
->> -		return -EINVAL;
->>  	old_rlim = current->signal->rlim + resource;
->> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
->> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
->>  	    !capable(CAP_SYS_RESOURCE))
->>  		return -EPERM;
->> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
->> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
->>  		return -EPERM;
->>
->> -	retval = security_task_setrlimit(resource, &new_rlim);
->> +	retval = security_task_setrlimit(resource, new_rlim);
->>  	if (retval)
->>  		return retval;
->>
->> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
->> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
->>  		/*
->>  		 * The caller is asking for an immediate RLIMIT_CPU
->>  		 * expiry.  But we use the zero value to mean "it was
->>  		 * never set".  So let's cheat and make it one second
->>  		 * instead
->>  		 */
->> -		new_rlim.rlim_cur = 1;
->> +		new_rlim->rlim_cur = 1;
->>  	}
->>
->>  	task_lock(current->group_leader);
->> -	*old_rlim = new_rlim;
->> +	*old_rlim = *new_rlim;
->>  	task_unlock(current->group_leader);
->>
->>  	if (resource != RLIMIT_CPU)
->> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
->>  	 * very long-standing error, and fixing it now risks breakage of
->>  	 * applications, so we live with it
->>  	 */
->> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
->> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
->>  		goto out;
->>
->> -	update_rlimit_cpu(new_rlim.rlim_cur);
->> +	update_rlimit_cpu(new_rlim->rlim_cur);
->>  out:
->>  	return 0;
->>  }
->>
->> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
->> +{
->> +	struct rlimit new_rlim;
->> +
->> +	if (resource >= RLIM_NLIMITS)
->> +		return -EINVAL;
->> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
->> +		return -EFAULT;
->> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
->> +		return -EINVAL;
-> 
-> Should the above check go into do_setrlimit()?  No sense trusting
-> the data sent to sys_checkpoint() any more than the data sent to
-> sys_setrlimit().
-
-You are very correct.
-
-I wonder though: moving the first check will change the order of
-input sanitizing, which will change the syscall behavior on bad
-input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
-will return EFAULT.
-
-Not that I really care that much, but I've seen a similar case
-that confused LTP scripts into seeing the "wrong" error from a
-syscall and failing a test.
-
-Oren.
+> diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
+> index a4a5da9..40dd417 100644
+> --- a/arch/s390/mm/checkpoint.c
+> +++ b/arch/s390/mm/checkpoint.c
+> @@ -54,6 +54,17 @@ static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
+>  	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
+>  
+>  	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
+> +	/*
+> +	 * for checkpoint in process context (from within a container),
+> +	 * the actual syscall is taking place at this very moment; so
+> +	 * we (optimistically) subtitute the future return value (0) of
+> +	 * this syscall into the orig_eax, so that upon restart it will
+> +	 * succeed (or it will endlessly retry checkpoint...)
+> +	 */
+> +	if (op == CKPT_CPT && t==current) {
+> +		BUG_ON(h->gprs[2] < 0);
+> +		h->gprs[2] = 0;
+> +	}
+>  	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
+>  	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
+>  	CKPT_COPY_ARRAY(op, h->per_control_regs,
