@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 09/24] io-controller: cfq changes to use hierarchical fair
-	queuing code in elevaotor layer
-Date: Fri, 24 Jul 2009 16:27:39 -0400
-Message-ID: <1248467274-32073-10-git-send-email-vgoyal__43402.4384165697$1248469909$gmane$org@redhat.com>
+Subject: [PATCH 06/24] io-controller: core bfq scheduler changes for
+	hierarchical setup
+Date: Fri, 24 Jul 2009 16:27:36 -0400
+Message-ID: <1248467274-32073-7-git-send-email-vgoyal__43023.5114218251$1248469914$gmane$org@redhat.com>
 References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,144 +22,297 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make cfq hierarhical.
+o Some of the core bfq scheduler changes for hiearchical groups.
 
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
 Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |    8 ++++++
- block/cfq-iosched.c   |   62 +++++++++++++++++++++++++++++++++++++++++++++++-
- init/Kconfig          |    2 +-
- 3 files changed, 69 insertions(+), 3 deletions(-)
+ block/elevator-fq.c |  169 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ block/elevator-fq.h |    4 +
+ init/Kconfig        |    8 +++
+ 3 files changed, 165 insertions(+), 16 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index dd5224d..a91a807 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -54,6 +54,14 @@ config IOSCHED_CFQ
- 	  working environment, suitable for desktop systems.
- 	  This is the default I/O scheduler.
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index e302ca0..8f8fe9a 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -38,6 +38,69 @@ static struct kmem_cache *elv_ioq_pool;
+  */
+ #define WFQ_SERVICE_SHIFT	22
  
-+config IOSCHED_CFQ_HIER
-+	bool "CFQ Hierarchical Scheduling support"
-+	depends on IOSCHED_CFQ && CGROUPS
-+	select GROUP_IOSCHED
-+	default n
-+	---help---
-+	  Enable hierarhical scheduling in cfq.
++#ifdef CONFIG_GROUP_IOSCHED
++#define for_each_entity(entity)	\
++	for (; entity != NULL; entity = entity->parent)
 +
- choice
- 	prompt "Default I/O scheduler"
- 	default DEFAULT_CFQ
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 98fd508..a362ce1 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -1283,6 +1283,60 @@ static void cfq_init_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- 	cfqq->pid = pid;
++#define for_each_entity_safe(entity, parent) \
++	for (; entity && ({ parent = entity->parent; 1; }); entity = parent)
++
++
++static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
++						 int extract);
++
++static int bfq_update_next_active(struct io_sched_data *sd)
++{
++	struct io_group *iog;
++	struct io_entity *entity, *next_active;
++
++	if (sd->active_entity != NULL)
++		/* will update/requeue at the end of service */
++		return 0;
++
++	/*
++	 * NOTE: this can be improved in may ways, such as returning
++	 * 1 (and thus propagating upwards the update) only when the
++	 * budget changes, or caching the bfqq that will be scheduled
++	 * next from this subtree.  By now we worry more about
++	 * correctness than about performance...
++	 */
++	next_active = bfq_lookup_next_entity(sd, 0);
++	sd->next_active = next_active;
++
++	if (next_active != NULL) {
++		iog = container_of(sd, struct io_group, sched_data);
++		entity = iog->my_entity;
++		if (entity != NULL)
++			entity->budget = next_active->budget;
++	}
++
++	return 1;
++}
++
++static inline void bfq_check_next_active(struct io_sched_data *sd,
++					 struct io_entity *entity)
++{
++	BUG_ON(sd->next_active != entity);
++}
++#else /* GROUP_IOSCHED */
++#define for_each_entity(entity)	\
++	for (; entity != NULL; entity = NULL)
++
++#define for_each_entity_safe(entity, parent) \
++	for (parent = NULL; entity != NULL; entity = parent)
++
++static inline int bfq_update_next_active(struct io_sched_data *sd)
++{
++	return 0;
++}
++
++static inline void bfq_check_next_active(struct io_sched_data *sd,
++					 struct io_entity *entity)
++{
++}
++#endif /* GROUP_IOSCHED */
++
+ static inline int elv_prio_slice(struct elv_fq_data *efqd, int sync,
+ 					unsigned short prio)
+ {
+@@ -582,8 +645,10 @@ static struct io_entity *bfq_lookup_next_entity(struct io_sched_data *sd,
+ 		entity = __bfq_lookup_next_entity(st);
+ 		if (entity != NULL) {
+ 			if (extract) {
++				bfq_check_next_active(sd, entity);
+ 				bfq_active_remove(st, entity);
+ 				sd->active_entity = entity;
++				sd->next_active = NULL;
+ 			}
+ 			break;
+ 		}
+@@ -660,11 +725,8 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+ 	if (add_front) {
+ 		struct io_entity *next_entity;
+ 
+-		/*
+-		 * Determine the entity which will be dispatched next
+-		 * Use sd->next_active once hierarchical patch is applied
+-		 */
+-		next_entity = bfq_lookup_next_entity(sd, 0);
++		/* Determine the entity which will be dispatched next */
++		next_entity = sd->next_active;
+ 
+ 		if (next_entity && next_entity != entity) {
+ 			struct io_service_tree *new_st;
+@@ -696,7 +758,21 @@ static void __bfq_activate_entity(struct io_entity *entity, int add_front)
+  */
+ static void bfq_activate_entity(struct io_entity *entity, int add_front)
+ {
+-	__bfq_activate_entity(entity, add_front);
++	struct io_sched_data *sd;
++
++	for_each_entity(entity) {
++		__bfq_activate_entity(entity, add_front);
++
++		add_front = 0;
++		sd = entity->sched_data;
++		if (!bfq_update_next_active(sd))
++			/*
++			 * No need to propagate the activation to the
++			 * upper entities, as they will be updated when
++			 * the active entity is rescheduled.
++			 */
++			break;
++	}
  }
  
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
-+{
-+	struct cfq_queue *async_cfqq = cic_to_cfqq(cic, 0);
-+	struct cfq_queue *sync_cfqq = cic_to_cfqq(cic, 1);
-+	struct cfq_data *cfqd = cic->key;
-+	struct io_group *iog, *__iog;
-+	unsigned long flags;
-+	struct request_queue *q;
+ /**
+@@ -731,6 +807,8 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 		bfq_idle_remove(st, entity);
+ 	else if (entity->tree != NULL)
+ 		BUG();
++	if (was_active || sd->next_active == entity)
++		ret = bfq_update_next_active(sd);
+ 
+ 	if (!requeue || !bfq_gt(entity->finish, st->vtime))
+ 		bfq_forget_entity(st, entity);
+@@ -738,6 +816,7 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ 		bfq_idle_insert(st, entity);
+ 
+ 	BUG_ON(sd->active_entity == entity);
++	BUG_ON(sd->next_active == entity);
+ 
+ 	return ret;
+ }
+@@ -749,18 +828,62 @@ static int __bfq_deactivate_entity(struct io_entity *entity, int requeue)
+  */
+ static void bfq_deactivate_entity(struct io_entity *entity, int requeue)
+ {
+-	__bfq_deactivate_entity(entity, requeue);
++	struct io_sched_data *sd;
++	struct io_entity *parent;
 +
-+	if (unlikely(!cfqd))
-+		return;
++	for_each_entity_safe(entity, parent) {
++		sd = entity->sched_data;
 +
-+	q = cfqd->queue;
++		if (!__bfq_deactivate_entity(entity, requeue))
++			/*
++			 * The parent entity is still backlogged, and
++			 * we don't need to update it as it is still
++			 * under service.
++			 */
++			break;
 +
-+	spin_lock_irqsave(q->queue_lock, flags);
-+
-+	iog = io_get_io_group(q, 0);
-+
-+	if (async_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(async_cfqq);
-+		if (iog != __iog) {
-+			/* cgroup changed, drop the reference to async queue */
-+			cic_set_cfqq(cic, NULL, 0);
-+			cfq_put_queue(async_cfqq);
++		if (sd->next_active != NULL) {
++			/*
++			 * The parent entity is still backlogged and
++			 * the budgets on the path towards the root
++			 * need to be updated.
++			 */
++			goto update;
 +		}
-+	}
-+
-+	if (sync_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(sync_cfqq);
 +
 +		/*
-+		 * Drop reference to sync queue. A new sync queue will
-+		 * be assigned in new group upon arrival of a fresh request.
-+		 * If old queue has got requests, those reuests will be
-+		 * dispatched over a period of time and queue will be freed
-+		 * automatically.
++		 * If we reach there the parent is no more backlogged and
++		 * we want to propagate the dequeue upwards.
++		 *
 +		 */
-+		if (iog != __iog) {
-+			cic_set_cfqq(cic, NULL, 1);
-+			cfq_put_queue(sync_cfqq);
-+		}
++
++		requeue = 1;
 +	}
 +
-+	spin_unlock_irqrestore(q->queue_lock, flags);
-+}
++	return;
 +
-+static void cfq_ioc_set_cgroup(struct io_context *ioc)
-+{
-+	call_for_each_cic(ioc, changed_cgroup);
-+	ioc->cgroup_changed = 0;
-+}
-+#endif  /* CONFIG_IOSCHED_CFQ_HIER */
++update:
++	entity = parent;
++	for_each_entity(entity) {
++		__bfq_activate_entity(entity, 0);
 +
- static struct cfq_queue *
- cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 		     struct io_context *ioc, gfp_t gfp_mask)
-@@ -1294,7 +1348,7 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 	struct io_group *iog = NULL;
++		sd = entity->sched_data;
++		if (!bfq_update_next_active(sd))
++			break;
++	}
+ }
  
- retry:
--	iog = io_get_io_group(q);
-+	iog = io_get_io_group(q, 1);
+ static void entity_served(struct io_entity *entity, unsigned long served)
+ {
+ 	struct io_service_tree *st;
  
- 	cic = cfq_cic_lookup(cfqd, ioc);
- 	/* cic always exists here */
-@@ -1384,7 +1438,7 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
- 	const int ioprio_class = task_ioprio_class(ioc);
- 	struct cfq_queue *async_cfqq = NULL;
- 	struct cfq_queue *cfqq = NULL;
--	struct io_group *iog = io_get_io_group(cfqd->queue);
-+	struct io_group *iog = io_get_io_group(cfqd->queue, 1);
+-	st = io_entity_service_tree(entity);
+-	entity->service += served;
+-	BUG_ON(st->wsum == 0);
+-	st->vtime += bfq_delta(served, st->wsum);
+-	bfq_forget_idle(st);
++	for_each_entity(entity) {
++		st = io_entity_service_tree(entity);
++		entity->service += served;
++		BUG_ON(st->wsum == 0);
++		st->vtime += bfq_delta(served, st->wsum);
++		bfq_forget_idle(st);
++	}
+ }
  
- 	if (!is_sync) {
- 		async_cfqq = io_group_async_queue_prio(iog, ioprio_class,
-@@ -1540,6 +1594,10 @@ out:
- 	smp_read_barrier_depends();
- 	if (unlikely(ioc->ioprio_changed))
- 		cfq_ioc_set_ioprio(ioc);
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+	if (unlikely(ioc->cgroup_changed))
-+		cfq_ioc_set_cgroup(ioc);
-+#endif
- 	return cic;
- err_free:
- 	cfq_cic_free(cic);
+ /**
+@@ -1068,11 +1191,25 @@ static struct io_queue *elv_get_next_ioq(struct request_queue *q, int extract)
+ 		return NULL;
+ 
+ 	sd = &efqd->root_group->sched_data;
+-	entity = bfq_lookup_next_entity(sd, 1);
+ 
+-	BUG_ON(!entity);
+-	if (extract)
+-		entity->service = 0;
++	for (; sd != NULL; sd = entity->my_sched_data) {
++		entity = bfq_lookup_next_entity(sd, 1);
++		/*
++		 * entity can be null despite the fact that there are busy
++		 * queues. if all the busy queues are under a group which is
++		 * currently under service.
++		 * So if we are just looking for next ioq while something is
++		 * being served, null entity is not an error.
++		 */
++		BUG_ON(!entity && extract);
++
++		if (extract)
++			entity->service = 0;
++
++		if (!entity)
++			return NULL;
++	}
++
+ 	ioq = io_entity_to_ioq(entity);
+ 
+ 	return ioq;
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index d870360..ed65a87 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -72,6 +72,7 @@ struct io_service_tree {
+  */
+ struct io_sched_data {
+ 	struct io_entity *active_entity;
++	struct io_entity *next_active;
+ 	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
+ };
+ 
+@@ -178,7 +179,10 @@ struct io_queue {
+ };
+ 
+ struct io_group {
++	struct io_entity entity;
+ 	struct io_sched_data sched_data;
++	struct io_entity *my_entity;
++
+ 	/*
+ 	 * async queue for each priority case for RT and BE class.
+ 	 * Used only for cfq.
 diff --git a/init/Kconfig b/init/Kconfig
-index fa3edd6..7a368d8 100644
+index cb2c092..fa3edd6 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -613,7 +613,7 @@ config CGROUP_MEM_RES_CTLR_SWAP
+@@ -612,6 +612,14 @@ config CGROUP_MEM_RES_CTLR_SWAP
+ 	  Now, memory usage of swap_cgroup is 2 bytes per entry. If swap page
  	  size is 4096bytes, 512k per 1Gbytes of swap.
  
- config GROUP_IOSCHED
--	bool "Group IO Scheduler"
-+	bool
- 	depends on CGROUPS && ELV_FAIR_QUEUING
- 	default n
- 	---help---
++config GROUP_IOSCHED
++	bool "Group IO Scheduler"
++	depends on CGROUPS && ELV_FAIR_QUEUING
++	default n
++	---help---
++	  This feature lets IO scheduler recognize task groups and control
++	  disk bandwidth allocation to such task groups.
++
+ endif # CGROUPS
+ 
+ config MM_OWNER
 -- 
 1.6.0.6
