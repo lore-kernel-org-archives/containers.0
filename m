@@ -1,13 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cr: s390: set return value for self-checkpoint
-Date: Thu, 23 Jul 2009 21:47:41 -0400
-Message-ID: <4A6912BD.1000408@cs.columbia.edu>
-References: <20090723182125.GA18383@us.ibm.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH] flexible array implementation v4
+Date: Fri, 24 Jul 2009 11:02:28 +0800
+Message-ID: <4A692444.2030303__16520.4515251846$1248404688$gmane$org@cn.fujitsu.com>
+References: <20090723152647.D9391722@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090723182125.GA18383-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090723152647.D9391722@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,43 +17,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Dave Hansen wrote:
+> Remaining issues:
+> - How should we deal with out-of-range indexes, especially
+>   in flex_array_get() which returns void*?  ERR_PTR()?
+>   BUG_ON()?  return NULL (current behavior)?
+> - Should care be taken not to allow a flex_array_get() to
+>   an index where no flex_array_put() was done?
+> - Should we decay further than just packing things into the
+>   'base' page?  Should we actually kmalloc() less than a
+>   page at times when it will fit?
+> 
 
-Got it, thanks.
-
-Serge E. Hallyn wrote:
-> If doing a self-checkpoint, then optimistically store 0 as the
-> syscall return value to indicate success.
-> 
-> This was being done for x86, but not yet being done for s390.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  arch/s390/mm/checkpoint.c |   11 +++++++++++
->  1 files changed, 11 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
-> index a4a5da9..40dd417 100644
-> --- a/arch/s390/mm/checkpoint.c
-> +++ b/arch/s390/mm/checkpoint.c
-> @@ -54,6 +54,17 @@ static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
->  	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
->  
->  	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
-> +	/*
-> +	 * for checkpoint in process context (from within a container),
-> +	 * the actual syscall is taking place at this very moment; so
-> +	 * we (optimistically) subtitute the future return value (0) of
-> +	 * this syscall into the orig_eax, so that upon restart it will
-> +	 * succeed (or it will endlessly retry checkpoint...)
-> +	 */
-> +	if (op == CKPT_CPT && t==current) {
-> +		BUG_ON(h->gprs[2] < 0);
-> +		h->gprs[2] = 0;
-> +	}
->  	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
->  	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
->  	CKPT_COPY_ARRAY(op, h->per_control_regs,
+I sugguest find some candidate users and see how this flex_array
+fits them.
