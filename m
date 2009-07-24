@@ -1,14 +1,15 @@
-From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] flexible array implementation v4
-Date: Thu, 23 Jul 2009 20:26:47 -0700
-Message-ID: <2f86c2480907232026v143aef06t652796b489b7ad2c__10093.2321897291$1248406083$gmane$org@mail.gmail.com>
-References: <20090723152647.D9391722@kernel> <4A692444.2030303@cn.fujitsu.com>
-	<20090724120811.a581eea5.kamezawa.hiroyu@jp.fujitsu.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 4/4] Allow cgroup hierarchies to be created with no bound
+	subsystems
+Date: Fri, 24 Jul 2009 13:21:42 +0800
+Message-ID: <4A6944E6.1090405__8536.43662198937$1248413137$gmane$org@cn.fujitsu.com>
+References: <20090722194644.7481.47805.stgit@menage.mtv.corp.google.com>
+	<20090722195045.7481.62013.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090724120811.a581eea5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20090722195045.7481.62013.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,38 +19,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 23, 2009 at 8:08 PM, KAMEZAWA
-Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> On Fri, 24 Jul 2009 11:02:28 +0800
-> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
->> Dave Hansen wrote:
->> > Remaining issues:
->> > - How should we deal with out-of-range indexes, especially
->> > =A0 in flex_array_get() which returns void*? =A0ERR_PTR()?
->> > =A0 BUG_ON()? =A0return NULL (current behavior)?
->> > - Should care be taken not to allow a flex_array_get() to
->> > =A0 an index where no flex_array_put() was done?
->> > - Should we decay further than just packing things into the
->> > =A0 'base' page? =A0Should we actually kmalloc() less than a
->> > =A0 page at times when it will fit?
->> >
->>
->> I sugguest find some candidate users and see how this flex_array
->> fits them.
->>
-> Hmm, can't we rewrite cgroup->tasks file using this ?
-> I'll try some if I have time.
->
-> -Kame
->
->
->
+Paul Menage wrote:
+> Allow cgroup hierarchies to be created with no bound subsystems
+> 
+> This patch removes the restriction that a cgroup hierarchy must have
+> at least one bound subsystem.  The mount option "none" is treated as
+> an explicit request for no bound subsystems.
+> 
+> A hierarchy with no subsystems can be useful for plain task tracking,
+> and is also a step towards the support for multiply-bindable
+> subsystems.
+> 
+> As part of this change, the hierarchy id is no longer calculated from
+> the bitmask of subsystems in the hierarchy (since this is not
+> guaranteed to be unique) but is allocated via an ida.  Reference
+> counts on cgroups from css_set objects are now taken explicitly one
+> per hierarchy, rather than one per subsystem.
+> 
+> Example usage:
+> 
+> mount -t cgroup -o none,name=foo cgroup /mnt/cgroup
+> 
+> Based on the "no-op"/"none" subsystem concept proposed by
+> kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+> 
+> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 
 
-I can do that; it would go nicely on top of my procs file patch
-series, but probably wants to wait until after both patch series have
-been accepted (see http://lkml.org/lkml/2009/7/23/330 )
+Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
