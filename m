@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: [signal 2/3] checkpoint/restart of rlimit
-Date: Fri, 24 Jul 2009 09:22:35 -0500
-Message-ID: <20090724142235.GB6910@us.ibm.com>
-References: <1248360514-20710-1-git-send-email-orenl@librato.com>
-	<1248360514-20710-2-git-send-email-orenl@librato.com>
-	<20090723222825.GA23596@us.ibm.com> <4A6910E5.4010605@librato.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] flexible array implementation v4
+Date: Fri, 24 Jul 2009 08:07:04 -0700
+Message-ID: <6599ad830907240807k1c2cbf8cx97abdebddd42bfd3__40744.8038612076$1248448130$gmane$org@mail.gmail.com>
+References: <20090723152647.D9391722@kernel> <4A692444.2030303@cn.fujitsu.com>
+	<20090724120811.a581eea5.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A6910E5.4010605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20090724120811.a581eea5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,130 +18,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> >> This patch adds checkpoint and restart of rlimit information
-> >> that is part of shared signal_struct.
-> > 
-> > ...
-> > 
-> >>  static int restore_signal(struct ckpt_ctx *ctx)
-> >>  {
-> >>  	struct ckpt_hdr_signal *h;
-> >> +	struct rlimit rlim;
-> >> +	int i, ret;
-> >>
-> >>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
-> >>  	if (IS_ERR(h))
-> >>  		return PTR_ERR(h);
-> >>
-> >> -	/* fill in later */
-> >> -
-> >> +	/* rlimit */
-> >> +	for (i = 0; i < RLIM_NLIMITS; i++) {
-> >> +		rlim.rlim_cur = h->rlim[i].rlim_cur;
-> >> +		rlim.rlim_max = h->rlim[i].rlim_max;
-> >> +		ret = do_setrlimit(i, &rlim);
-> > 
-> > ...
-> >> +int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
-> >>  {
-> >> -	struct rlimit new_rlim, *old_rlim;
-> >> +	struct rlimit *old_rlim;
-> >>  	int retval;
-> >>
-> >> -	if (resource >= RLIM_NLIMITS)
-> >> -		return -EINVAL;
-> >> -	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
-> >> -		return -EFAULT;
-> >> -	if (new_rlim.rlim_cur > new_rlim.rlim_max)
-> >> -		return -EINVAL;
-> >>  	old_rlim = current->signal->rlim + resource;
-> >> -	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
-> >> +	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
-> >>  	    !capable(CAP_SYS_RESOURCE))
-> >>  		return -EPERM;
-> >> -	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
-> >> +	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
-> >>  		return -EPERM;
-> >>
-> >> -	retval = security_task_setrlimit(resource, &new_rlim);
-> >> +	retval = security_task_setrlimit(resource, new_rlim);
-> >>  	if (retval)
-> >>  		return retval;
-> >>
-> >> -	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
-> >> +	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
-> >>  		/*
-> >>  		 * The caller is asking for an immediate RLIMIT_CPU
-> >>  		 * expiry.  But we use the zero value to mean "it was
-> >>  		 * never set".  So let's cheat and make it one second
-> >>  		 * instead
-> >>  		 */
-> >> -		new_rlim.rlim_cur = 1;
-> >> +		new_rlim->rlim_cur = 1;
-> >>  	}
-> >>
-> >>  	task_lock(current->group_leader);
-> >> -	*old_rlim = new_rlim;
-> >> +	*old_rlim = *new_rlim;
-> >>  	task_unlock(current->group_leader);
-> >>
-> >>  	if (resource != RLIMIT_CPU)
-> >> @@ -1189,14 +1183,27 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
-> >>  	 * very long-standing error, and fixing it now risks breakage of
-> >>  	 * applications, so we live with it
-> >>  	 */
-> >> -	if (new_rlim.rlim_cur == RLIM_INFINITY)
-> >> +	if (new_rlim->rlim_cur == RLIM_INFINITY)
-> >>  		goto out;
-> >>
-> >> -	update_rlimit_cpu(new_rlim.rlim_cur);
-> >> +	update_rlimit_cpu(new_rlim->rlim_cur);
-> >>  out:
-> >>  	return 0;
-> >>  }
-> >>
-> >> +SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
-> >> +{
-> >> +	struct rlimit new_rlim;
-> >> +
-> >> +	if (resource >= RLIM_NLIMITS)
-> >> +		return -EINVAL;
-> >> +	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
-> >> +		return -EFAULT;
-> >> +	if (new_rlim.rlim_cur > new_rlim.rlim_max)
-> >> +		return -EINVAL;
-> > 
-> > Should the above check go into do_setrlimit()?  No sense trusting
-> > the data sent to sys_checkpoint() any more than the data sent to
-> > sys_setrlimit().
-> 
-> You are very correct.
-> 
-> I wonder though: moving the first check will change the order of
-> input sanitizing, which will change the syscall behavior on bad
-> input. E.g, setrlimit(4096, NULL) used to return EINVAL but now
-> will return EFAULT.
-> 
-> Not that I really care that much, but I've seen a similar case
-> that confused LTP scripts into seeing the "wrong" error from a
-> syscall and failing a test.
+On Thu, Jul 23, 2009 at 8:08 PM, KAMEZAWA
+Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> On Fri, 24 Jul 2009 11:02:28 +0800
+> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+>> Dave Hansen wrote:
+>> > Remaining issues:
+>> > - How should we deal with out-of-range indexes, especially
+>> > =A0 in flex_array_get() which returns void*? =A0ERR_PTR()?
+>> > =A0 BUG_ON()? =A0return NULL (current behavior)?
+>> > - Should care be taken not to allow a flex_array_get() to
+>> > =A0 an index where no flex_array_put() was done?
+>> > - Should we decay further than just packing things into the
+>> > =A0 'base' page? =A0Should we actually kmalloc() less than a
+>> > =A0 page at times when it will fit?
+>> >
+>>
+>> I sugguest find some candidate users and see how this flex_array
+>> fits them.
+>>
+> Hmm, can't we rewrite cgroup->tasks file using this ?
+> I'll try some if I have time.
 
-Heh, I could be wrong, but when you mess up 2 ways, I don't think the kernel
-needs to guarantee which one you'll be warned about :)  Of course there are
-cases where that is well-defined (i.e. DAC-before-MAC).  Maybe we should ask at
-linux-api?
+We could, but I've been leaning more towards Eric's suggestion of
+avoiding allocating the array entirely - see
 
-Putting the same check before both callers of do_setrlimit() isn't *that*
-bad, and I suppose we can put a comment above do_setrlimit() saying that
-that any new callers need to do that check themselves...
+http://lkml.org/lkml/2009/7/15/226
+http://lkml.org/lkml/2009/7/21/393
 
--serge
+Paul
