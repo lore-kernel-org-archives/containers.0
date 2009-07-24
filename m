@@ -1,8 +1,7 @@
 From: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/6] Quick vmalloc vs kmalloc fix to the case where array size
-	is too large
-Date: Thu, 23 Jul 2009 20:21:50 -0700
-Message-ID: <20090724032150.2463.49019.stgit@hastromil.mtv.corp.google.com>
+Subject: [PATCH 4/6] Changes css_set freeing mechanism to be under RCU
+Date: Thu, 23 Jul 2009 20:21:55 -0700
+Message-ID: <20090724032155.2463.80574.stgit@hastromil.mtv.corp.google.com>
 References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,115 +20,58 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quick vmalloc vs kmalloc fix to the case where array size is too large
+Changes css_set freeing mechanism to be under RCU
 
-Separates all pidlist allocation requests to a separate function that judges
-based on the requested size whether or not the array needs to be vmalloced or
-can be gotten via kmalloc, and similar for kfree/vfree. Should be replaced
-entirely with a kernel-wide solution to this general problem.
-
-Depends on cgroup-pidlist-namespace.patch, cgroup-procs.patch
+This is a prepatch for making the procs file writable. In order to free the
+old css_sets for each task to be moved as they're being moved, the freeing
+mechanism must be RCU-protected, or else we would have to have a call to
+synchronize_rcu() for each task before freeing its old css_set.
 
 Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
- kernel/cgroup.c |   47 ++++++++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 42 insertions(+), 5 deletions(-)
+ include/linux/cgroup.h |    3 +++
+ kernel/cgroup.c        |    8 +++++++-
+ 2 files changed, 10 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b3773a5..7e6b183 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -48,6 +48,7 @@
- #include <linux/namei.h>
- #include <linux/smp_lock.h>
- #include <linux/pid_namespace.h>
-+#include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
- 
- #include <asm/atomic.h>
- 
-@@ -2123,6 +2124,42 @@ int cgroup_scan_tasks(struct cgroup_scanner *scan)
-  */
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index b934b72..24e3f1a 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -260,6 +260,9 @@ struct css_set {
+ 	 * during subsystem registration (at boot time).
+ 	 */
+ 	struct cgroup_subsys_state *subsys[CGROUP_SUBSYS_COUNT];
++
++	/* For RCU-protected deletion */
++	struct rcu_head rcu_head;
+ };
  
  /*
-+ * The following two functions "fix" the issue where there are more pids
-+ * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
-+ * TODO: replace with a kernel-wide solution to this problem
-+ */
-+#define PIDLIST_TOO_LARGE(c) ((c) * sizeof(pid_t) > (PAGE_SIZE * 2))
-+static void *pidlist_allocate(int count)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 7e6b183..637a54e 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -288,6 +288,12 @@ static void unlink_css_set(struct css_set *cg)
+ 	}
+ }
+ 
++static void free_css_set_rcu(struct rcu_head *obj)
 +{
-+	if (PIDLIST_TOO_LARGE(count))
-+		return vmalloc(count * sizeof(pid_t));
-+	else
-+		return kmalloc(count * sizeof(pid_t), GFP_KERNEL);
-+}
-+static void pidlist_free(void *p)
-+{
-+	if (is_vmalloc_addr(p))
-+		vfree(p);
-+	else
-+		kfree(p);
-+}
-+static void *pidlist_resize(void *p, int newcount)
-+{
-+	void *newlist;
-+	/* note: if new alloc fails, old p will still be valid either way */
-+	if (is_vmalloc_addr(p)) {
-+		newlist = vmalloc(newcount * sizeof(pid_t));
-+		if (!newlist)
-+			return NULL;
-+		memcpy(newlist, p, newcount * sizeof(pid_t));
-+		vfree(p);
-+	} else {
-+		newlist = krealloc(p, newcount * sizeof(pid_t), GFP_KERNEL);
-+	}
-+	return newlist;
++	struct css_set *cg = container_of(obj, struct css_set, rcu_head);
++	kfree(cg);
 +}
 +
-+/*
-  * pidlist_uniq - given a kmalloc()ed list, strip out all duplicate entries
-  * If the new stripped list is sufficiently smaller and there's enough memory
-  * to allocate a new buffer, will let go of the unneeded memory. Returns the
-@@ -2161,7 +2198,7 @@ after:
- 	 * we'll just stay with what we've got.
- 	 */
- 	if (PIDLIST_REALLOC_DIFFERENCE(length, dest)) {
--		newlist = krealloc(list, dest * sizeof(pid_t), GFP_KERNEL);
-+		newlist = pidlist_resize(list, dest);
- 		if (newlist)
- 			*p = newlist;
+ static void __put_css_set(struct css_set *cg, int taskexit)
+ {
+ 	int i;
+@@ -317,7 +323,7 @@ static void __put_css_set(struct css_set *cg, int taskexit)
+ 		}
  	}
-@@ -2242,7 +2279,7 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
- 	 * show up until sometime later on.
- 	 */
- 	length = cgroup_task_count(cgrp);
--	array = kmalloc(length * sizeof(pid_t), GFP_KERNEL);
-+	array = pidlist_allocate(length);
- 	if (!array)
- 		return -ENOMEM;
- 	/* now, populate the array */
-@@ -2267,11 +2304,11 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
- 	}
- 	l = cgroup_pidlist_find(cgrp, type);
- 	if (!l) {
--		kfree(array);
-+		pidlist_free(array);
- 		return -ENOMEM;
- 	}
- 	/* store array, freeing old if necessary - lock already held */
--	kfree(l->list);
-+	pidlist_free(l->list);
- 	l->list = array;
- 	l->length = length;
- 	l->use_count++;
-@@ -2432,7 +2469,7 @@ static void cgroup_release_pid_array(struct cgroup_pidlist *l)
- 		/* we're the last user if refcount is 0; remove and free */
- 		list_del(&l->links);
- 		mutex_unlock(&l->owner->pidlist_mutex);
--		kfree(l->list);
-+		pidlist_free(l->list);
- 		put_pid_ns(l->key.ns);
- 		up_write(&l->mutex);
- 		kfree(l);
+ 	rcu_read_unlock();
+-	kfree(cg);
++	call_rcu(&cg->rcu_head, free_css_set_rcu);
+ }
+ 
+ /*
