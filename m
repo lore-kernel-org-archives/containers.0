@@ -1,15 +1,16 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V6
-Date: Mon, 27 Jul 2009 08:55:03 -0400
-Message-ID: <20090727125503.GA24449__43696.8919043013$1248699640$gmane$org@redhat.com>
-References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
-	<4A6D0C9A.3080600@cn.fujitsu.com>
+From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/6] Quick vmalloc vs kmalloc fix to the case where array
+	size is too large
+Date: Mon, 27 Jul 2009 11:49:39 -0400
+Message-ID: <2f86c2480907270849x65af933fnc58d3cb243649b1f__20928.4009798013$1248709942$gmane$org@mail.gmail.com>
+References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
+	<20090724032150.2463.49019.stgit@hastromil.mtv.corp.google.com>
+	<4A6D37A4.6020605@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A6D0C9A.3080600-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4A6D37A4.6020605-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,53 +20,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBKdWwgMjcsIDIwMDkgYXQgMTA6MTA6MzRBTSArMDgwMCwgR3VpIEppYW5mZW5nIHdy
-b3RlOgo+IEhp77yMCj4gCj4gSGVyZSBhcmUgc29tZSBmaW8gdGVzdCByZXN1bHRzIGZvciBJTyBD
-b250cm9sbGVyIFY2IGJ1aWx0IGFuZCBub3QgYnVpbHQuCj4gSW96b25lIHRlc3QgcmVzdWx0cyBh
-cmUgYWxzbyBhdHRhY2hlZC4KPiAKCkhpIEd1aSwKClRoYW5rcyBhIGxvdCBmb3Igc29tZSBwZXJm
-b3JtYW5jZSBudW1iZXJzLiBJdCBzZWVtcyB0byBiZSBhIG1peGVkIGNoYXJ0LgpQZXJmb3JtYW5j
-ZSBnYWlucyBhdCBzb21lIHBsYWNlcyBhbmQgbG9zcyBhdCBvdGhlcnMuIEkgYW0gY3VyaW91cyBh
-Ym91dAp0aGF0IC03LjAlIGZvciBub3JtYWwgd3JpdGVzLiBOb3Qgc3VyZSB3aGF0IGNhbiBjb250
-cmlidXRlIHRvIHRoYXQuCgpXaGF0IHdhcyB0aGUgdmFsdWUgb2YgImZhaXJuZXNzIiBwYXJhbWV0
-ZXIgd2hlbiB5b3UgcmFuIHRob3NlIHRlc3RzPyBDYW4geW91CnBsZWFzZSBzZXQgZmFpcm5lc3Mg
-PSAwIGFuZCByZS1ydW4gdGhlIHRlc3RzIChpZiB5b3UgaGF2ZSBhbHJlYWR5IG5vdCBkb25lIHNv
-KS4KCkJ5IGRlZmF1bHQgZmFpcm5lc3MgaXMgc2V0IHRvIDEgaW4gVjYuIFdpdGggZmFpcm5lc3Mg
-PSAwLCB3ZSBzaG91bGQgYmUgdmVyeQpjbG9zZSB0byBleGlzdGluZyBDRlEgYmVoYXZpb3IuIElm
-IG5vdCwgdGhlbiB3ZSBuZWVkIHRvIGRpdmUgZGVlcGVyIGFuZApzZWUgd2h5IHZhcmlhdGlvbnMg
-YXJlIGhhcHBlbmluZy4KCklzIGl0IGFsc28gcG9zc2libGUgdG8gcnVuIHRoZSBzYW1lIHRlc3Rz
-IHdpdGggVjcuIAoKVGhhbmtzClZpdmVrCgo+IEFyY2g6IFg4Ngo+IE1lbTogIDFHCj4gRGlzazog
-MzIwRwo+IElPIFNjaGVkdWxlcjogQ0ZRCj4gCj4gPT09PT09PT09PT09Cj4gQnkgbm9ybWFsIHJl
-YWQgYW5kIHdyaXRlIHN5c2NhbGwuCj4gCj4gQmxvY2sgU2l6ZTozMksKPiBGaWxlIFNpemU6IDFH
-ICogMTAKPiAKPiBNb2RlICAgICAgICAgICAgICAgICAgICBOb3JtYWwgcmVhZCAgIHwgICBSYW5k
-b20gcmVhZCAgIHwgICBOb3JtYWwgd3JpdGUgICB8ICAgUmFuZG9tIHdyaXRlIHwgRGlyZWN0IHJl
-YWQgfCBEaXJlY3Qgd3JpdGUKPiAKPiAyLjYuMzEtcmMxICAgICAgICAgICAgICA0Nyw5MzJLaUIv
-cyAgICAgICAzLDU2NktpQi9zICAgICAgICA0NSw2OTNLaUIvcyAgICAgICAgOCw1MDFLaUIvcyAg
-ICAgNTAsMDg4S2lCL3MgICA0Myw0NzNLaUIvcwo+IAo+IDIuNi4zMS1yYzEtVml2ZWstVjYgICAg
-IDQ3LDIzMUtpQi9zICAgICAgIDMsNDExS2lCL3MgICAgICAgIDQyLDQ1MUtpQi9zICAgICAgICA4
-LDcxNEtpQi9zICAgICA1MSwyODRLaUIvcyAgIDQyLDM0MUtpQi9zCj4gCj4gUGVyZm9ybWFuY2Ug
-ICAgICAgICAgICAgLTEuNSUgICAgICAgICAgICAgLTQuNCUgICAgICAgICAgICAgLTcuMCUgICAg
-ICAgICAgICAgICsyLjUlICAgICAgICAgICsyLjQlICAgICAgICAgLTIuNiUKPiAKPiA9PT09PT09
-PT09PT0KPiAKPiBCeSBtbWFwLgo+IAo+IEJsb2NrIFNpemU6MzJLCj4gRmlsZSBTaXplOiA1MDBN
-Cj4gCj4gTW9kZSAgICAgICAgICAgICAgICAgICAgTm9ybWFsIHJlYWQgICB8ICAgUmFuZG9tIHJl
-YWQgICB8ICAgTm9ybWFsIHdyaXRlICAgfCAgIFJhbmRvbSB3cml0ZQo+IAo+IDIuNi4zMS1yYzEg
-ICAgICAgICAgICAgIDQ5LDk1MUtpQi9zICAgICAgIDMsMjQ1S2lCL3MgICAgICAgIDIxLDk1MEtp
-Qi9zICAgICAgICAyLDc3MUtpQi9zCj4gCj4gMi42LjMxLXJjMS1WaXZlay1WNiAgICAgNDksOTUx
-S2lCL3MgICAgICAgMywxNTRLaUIvcyAgICAgICAgMjIsNTkzS2lCL3MgICAgICAgIDIsNjQ4S2lC
-L3MKPiAKPiBQZXJmb3JtYW5jZSAgICAgICAgICAgICAwJSAgICAgICAgICAgICAgICAtMi44JSAg
-ICAgICAgICAgICArMi45JSAgICAgICAgICAgICAgLTQuNCUKPiAKPiA9PT09PT09PT09PT0KPiAg
-Cj4gQnkgbGliYWlvIGNhbGxzCj4gCj4gQmxvY2sgU2l6ZTozMksKPiBGaWxlIFNpemU6IDUwME0K
-PiAKPiBNb2RlICAgICAgICAgICAgICAgICAgICBOb3JtYWwgcmVhZCAgIHwgIFJhbmRvbSByZWFk
-ICAgfCAgIE5vcm1hbCB3cml0ZSAgIHwgICBSYW5kb20gd3JpdGUKPiAKPiAyLjYuMzEtcmMxICAg
-ICAgICAgICAgICA0OSw0NDdLaUIvcyAgICAgICAzLDI5NktpQi9zICAgICAgICA1Nyw1MTlLaUIv
-cyAgICAgICAgMjEsMDkzS2lCL3MKPiAKPiAyLjYuMzEtcmMxLVZpdmVrLVY2ICAgICA1MCwxNDJL
-aUIvcyAgICAgICAzLDIzOEtpQi9zICAgICAgICA1Nyw3OTFLaUIvcyAgICAgICAgMjEsMjgzS2lC
-L3MKPiAKPiBQZXJmb3JtYW5jZSAgICAgICAgICAgICArMS40JSAgICAgICAgICAgICAtMS44JSAg
-ICAgICAgICAgICAwJSAgICAgICAgICAgICAgICAgKzAuMSUKPiAKPiA9PT09PT09PT09PT0KPiAK
-PiAKPiAKPiAKPiAKPiAKPiAKPiAKPiAKPiAKPiAKCgoKX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Mon, Jul 27, 2009 at 1:14 AM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> Ben Blum wrote:
+>> Quick vmalloc vs kmalloc fix to the case where array size is too large
+>>
+>> Separates all pidlist allocation requests to a separate function that judges
+>> based on the requested size whether or not the array needs to be vmalloced or
+>> can be gotten via kmalloc, and similar for kfree/vfree. Should be replaced
+>> entirely with a kernel-wide solution to this general problem.
+>>
+>> Depends on cgroup-pidlist-namespace.patch, cgroup-procs.patch
+>>
+>> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>>
+>
+> We'll either use flex_array or implement Paul's proposal, so I think
+> we can drop this patch?
+>
+>
+
+Depending how long they'll take, yes. This is meant to be an
+intermediate correctness patch.
