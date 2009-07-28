@@ -1,63 +1,61 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
-Date: Tue, 28 Jul 2009 13:22:37 -0400
-Message-ID: <4A6F33DD.7040804@librato.com>
-References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>	<1246994776-1882-3-git-send-email-danms@us.ibm.com> <1248468247.16746.12.camel@merlyn>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Deny CLONE_PARENT|CLONE_NEWPID combination
+Date: Tue, 28 Jul 2009 13:05:54 -0500
+Message-ID: <20090728180553.GB6427__44615.0691052482$1248804551$gmane$org@us.ibm.com>
+References: <20090728164406.GA17275@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1248468247.16746.12.camel@merlyn>
-Sender: netdev-owner@vger.kernel.org
-To: John Dykstra <john.dykstra1@gmail.com>
-Cc: Dan Smith <danms@us.ibm.com>, containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090728164406.GA17275-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-John Dykstra wrote:
-> On Tue, 2009-07-07 at 12:26 -0700, Dan Smith wrote:
->>  2. I don't do anything to redirect or freeze traffic flowing to or from the
->>     remote system (to prevent a RST from breaking things).  I expect that
->>     userspace will bring down a veth device or freeze traffic to the remote
->>     system to handle this case.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> Theoretically, you can drop any packet that's in flight (ingress or
-> egress), because IP doesn't guarantee delivery.  TCP is able to recover,
-> and a UDP or raw-socket application should already be designed to.  Of
-> course, retransmissions will have an impact on application performance
-> in the migration case, so that's got to be considered in the tradeoff.
-> Main goal should probably be avoiding anything that shoves either end
-> into slow-start.
-
-Sure. Still, the network needs to be blocked for the duration of the
-migration to ensure that the socket at the origin does not ACK any
-new data after the receive buffers have been saved.
-
+> Deny CLONE_PARENT|CLONE_NEWPID combination.
 > 
-> Thinking out loud, have you considered draining TCP buffers rather than
-> including them in the checkpoint?  You'd stop ingress traffic, and let
-> the app run until it had read everything in the socket buffer.  On the
-> egress side, you'd cork the app by telling it that buffers were full,
-> and then wait until the data already at the socket layer had been
-> transmitted.  Both are somewhat unbounded re time, and probably not
-> worth it, but maybe there's some variant of this idea that has value.
-> TCP transmit buffers on 10GE links can be pretty big...
-
-Hmmm... buffers can be big, but I would expect that in most case the
-memory footprint of the application will be bigger (unless all it
-does is some very simple receive-filter-send of data).
-
-Oren.
-
+> CLONE_PARENT was used to implement an older threading model.  For consistency
+> with the CLONE_THREAD check in copy_pid_ns(), disable CLONE_PARENT and
+> CLONE_SIGHAND with CLONE_NEWPID, at least until the required semantics of
+> the pid namespaces are clear.
 > 
-> BTW, if you see RSTs, that probably means you've created a protocol
-> violation due to a buggy restore.  Just blocking or dropping packets
-> shouldn't result in an RST unless it's very long.
+> Changelog[v3]:
+> 	Remove CLONE_SIGHAND and for now only fail CLONE_NEWPID|CLONE_PARENT.
+
+(FWIW your patch description does not reflect this...)
+
+> Changelog[v2]:
+> 	[Eric Biederman] Disable CLONE_SIGHAND also ?
 > 
->   --  John
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  kernel/pid_namespace.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Index: linux-mmotm/kernel/pid_namespace.c
+> ===================================================================
+> --- linux-mmotm.orig/kernel/pid_namespace.c	2009-07-16 10:03:01.000000000 -0700
+> +++ linux-mmotm/kernel/pid_namespace.c	2009-07-16 11:37:24.000000000 -0700
+> @@ -118,7 +118,7 @@
+>  {
+>  	if (!(flags & CLONE_NEWPID))
+>  		return get_pid_ns(old_ns);
+> -	if (flags & CLONE_THREAD)
+> +	if (flags & (CLONE_THREAD|CLONE_PARENT))
+>  		return ERR_PTR(-EINVAL);
+>  	return create_pid_namespace(old_ns);
+>  }
