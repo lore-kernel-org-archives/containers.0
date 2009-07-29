@@ -1,92 +1,97 @@
-From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by tgid
-	at once
-Date: Tue, 28 Jul 2009 17:23:01 -0700
-Message-ID: <2f86c2480907281723n7452c7f5l5a475e8120dccd83__3820.70582495562$1248827080$gmane$org@mail.gmail.com>
-References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
-	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
-	<20090724100220.GF11101@hawkmoon.kerlabs.com>
-	<2f86c2480907241452m74c50975k522c5a43a62e8459@mail.gmail.com>
+From: John Dykstra <john.dykstra1@gmail.com>
+Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
+Date: Wed, 29 Jul 2009 00:28:41 +0000
+Message-ID: <1248827321.7249.38.camel@Maple>
+References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
+	 <1246994776-1882-3-git-send-email-danms@us.ibm.com>
+	 <1248555754.16746.55.camel@merlyn>  <874oswer21.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2f86c2480907241452m74c50975k522c5a43a62e8459-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, menage
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <874oswer21.fsf@caffeine.danplanet.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Oren Laaden <orenl@cs.columbia.edu>, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 24, 2009 at 2:52 PM, Benjamin Blum<bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> On Fri, Jul 24, 2009 at 3:02 AM, Louis Rilling<Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>=
- wrote:
->> On 23/07/09 20:22 -0700, Ben Blum wrote:
->>> @@ -408,6 +409,15 @@ You can attach the current shell task by echoing 0:
->>>
->>> =A0# echo 0 > tasks
->>>
->>> +The cgroup.procs file is useful for managing all tasks in a threadgrou=
-p at
->>> +once. It works the same way as the tasks file, but moves all tasks in =
-the
->>> +threadgroup with the specified tgid.
->>> +
->>> +Writing the pid of a task that's not the threadgroup leader (i.e., a p=
-id
->>> +that isn't a tgid) is treated as invalid. Writing a '0' to cgroup.proc=
-s will
->>> +attach the writing task and all tasks in its threadgroup, but is inval=
-id if
->>> +the writing task is not the leader of the threadgroup.
->>> +
->>
->> This restriction sounds unfortunate and I'm not sure that there are good=
- reasons
->> for it (see below).
->
-> Would it be preferable to allow any thread in a threadgroup to move
-> the whole group to a new cgroup? Would that undermine the desired
-> restriction of the tasks file in which a thread needs to have
-> sufficient perms to move a thread that's not itself, or is the task
-> file's restriction there undesirable in the case of threadgroups?
+On Tue, 2009-07-28 at 09:00 -0700, Dan Smith wrote:
+> I think that we need to increment timers like this on restore anyway,
+> which should make sure that the TIME_WAIT timers run for the same
+> amount of wall-clock time regardless of how much time was spent in the
+> process of migration, right?
 
-Still wondering on what to do about this. Noting that this restriction
-approximately parallels the behaviour you'd get from using the tasks
-file, I think it'd be safer to leave it like this then possibly in the
-future lift the restriction, rather than make it currently lifted then
-decide in the future that we want to re-impose it.
+Agreed.
 
->>> + =A0 =A0 =A0* to move all tasks to the new cgroup. the only fail case =
-henceforth
->>> + =A0 =A0 =A0* is if the threadgroup leader has PF_EXITING set (in whic=
-h case all
->>> + =A0 =A0 =A0* the other threads get killed) - if other threads happen =
-to be
->>
->> This statement is wrong. A thread group leader can have PF_EXITING (and =
-even
->> become zombie) while other sub-threads continue their execution. For ins=
-tance it
->> is perfectly valid for a thread group leader to call sys_exit(), and no =
-other
->> thread will be affected.
->
-> Is that the case? Then, what becomes of his task_struct when he's
-> gone, since presumably all the sub-threads will need it. Does it just
-> hang around?
->
-> If so, would the desired behaviour be to proceed with moving all
-> sub-threads if the leader is exiting? (That's not a very big change
-> code-wise)
->
+> Since checkpoint is not aware of a potential migration, a regular
+> (i.e. not intended for migration) checkpoint operation on a task
+> running in the init netns will leave the TIME_WAIT socket in place
+> until the timer expires.
 
-I've fixed this, and also implemented the rwsem as threadgroup-local.
-If there's no more discussion on this version of the patch, I'll send
-out the revised series soon.
+Can this relationship be counted on--that checkpoints in the init
+namespace will be stored indefinitely, and that otherwise the
+checkpointed tree will be migrated in a bounded amount of time?  I think
+you'll need to differentiate the two cases to get proper network
+behavior, so there needs to be some reliable and documented indicator.
+
+Or should this be an advise option?
+
+> >> +		if (h->sock.state == TCP_LISTEN) {
+> >> +			ret = socket->ops->listen(socket, h->sock.backlog);
+> >> +			ckpt_debug("inet listen: %i", ret);
+> >> +			if (ret < 0)
+> >> +				goto out;
+> >> +
+> >> +			ret = sock_add_parent(ctx, socket->sk);
+> >> +			if (ret < 0)
+> >> +				goto out;
+> 
+> JD> So this is just dummied off as a proof-of-concept for LISTEN?
+> 
+> I'm not sure what you mean...
+
+It's not as functional as the rest of the code.  The listening address
+is hardwired and you're not restoring the socket state.  I'm assuming
+that was intended as a development step.
+
+> JD> At a minimum, you'll want to start the TCP retransmit timer if there is
+> JD> unacknowledged data outstanding.  And other timers for other states, as
+> JD> they're supported.
+> 
+> JD> And you probably do want to do slow-start again--disregard my babbling
+> JD> from yesterday. 
+
+It seems there's a wide range of requirements here.  A tree migrating
+within a rack doesn't want to do slow-start again, nor restart its RTT
+metrics.  But in the general case, you do need to.  Maybe the scaling of
+congestion window and RTT on restore should be a tunable.
+
+> JD>         	ret = sock_create(h->sock_common.family, h->sock.type, 0, &socket);
+> JD>         	if (ret < 0)
+> JD>         		return ERR_PTR(ret);
+>         
+> 
+> JD> You _really_ want to pass the actual protocol number to sock_create().
+> JD> The size of the sk it creates depends on this.  You'll quickly be in
+> JD> memory corruption hell without it.
+> 
+> You mean I need to verify that the protocol is one of IPPROTO_TCP,
+> IPPROTO_UDP, or PF_UNIX, right?
+
+Right now, you're passing zero.  For inet and inet6 sockets, you want to
+pass field num out of ckpt_hdr_socket_inet.  
+
+> JD> Network sockets also use sk->sk_wmem_alloc to track references to
+> JD> the sock from egress skb's
+> 
+> IIUC, this function is part of the framework's leak detection.  That
+> code looks to make sure objects don't gain any additional users
+> between the start and end of the checkpoint operation.  I think the
+> sk_refcnt satisfies that requirement here, no?
+
+As long as the function is only used for this, you're fine.  But it's
+named very generally, and if it get used in the future for something
+else, there might be a hole.
+
+  --  John
+
