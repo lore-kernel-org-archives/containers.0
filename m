@@ -1,97 +1,341 @@
-From: John Dykstra <john.dykstra1@gmail.com>
-Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
-Date: Wed, 29 Jul 2009 00:28:41 +0000
-Message-ID: <1248827321.7249.38.camel@Maple>
-References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
-	 <1246994776-1882-3-git-send-email-danms@us.ibm.com>
-	 <1248555754.16746.55.camel@merlyn>  <874oswer21.fsf@caffeine.danplanet.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v17][PATCH 17/60] pids 7/7: Define clone_with_pids syscall
+Date: Tue, 28 Jul 2009 17:44:55 -0700
+Message-ID: <20090729004455.GA22406__21974.6466762901$1248828532$gmane$org@us.ibm.com>
+References: <1248256822-23416-1-git-send-email-orenl@librato.com>
+	<1248256822-23416-18-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <874oswer21.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Oren Laaden <orenl@cs.columbia.edu>, Alexey Dobriyan <adobriyan@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1248256822-23416-18-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-07-28 at 09:00 -0700, Dan Smith wrote:
-> I think that we need to increment timers like this on restore anyway,
-> which should make sure that the TIME_WAIT timers run for the same
-> amount of wall-clock time regardless of how much time was spent in the
-> process of migration, right?
+Ccing Oleg Nesterov, Eric Biederman, Mike Waychinson, Ying Han
 
-Agreed.
+Note that this is a variant of an earlier clone_with_pids() interface, sent
+in Mar 2009 (http://lkml.org/lkml/2009/3/13/359).  Linus' major objection 
+was about security, as unprivileged tasks could read /var/run data and try
+to run with cached pids.
 
-> Since checkpoint is not aware of a potential migration, a regular
-> (i.e. not intended for migration) checkpoint operation on a task
-> running in the init netns will leave the TIME_WAIT socket in place
-> until the timer expires.
+This variant addresses that concern by requiring CAP_SYS_ADMIN to specify
+pids.  This makes sense since CAP_SYS_ADMIN is required to create a new
+pid namespace anyway.
 
-Can this relationship be counted on--that checkpoints in the init
-namespace will be stored indefinitely, and that otherwise the
-checkpointed tree will be migrated in a bounded amount of time?  I think
-you'll need to differentiate the two cases to get proper network
-behavior, so there needs to be some reliable and documented indicator.
+Sukadev
 
-Or should this be an advise option?
-
-> >> +		if (h->sock.state == TCP_LISTEN) {
-> >> +			ret = socket->ops->listen(socket, h->sock.backlog);
-> >> +			ckpt_debug("inet listen: %i", ret);
-> >> +			if (ret < 0)
-> >> +				goto out;
-> >> +
-> >> +			ret = sock_add_parent(ctx, socket->sk);
-> >> +			if (ret < 0)
-> >> +				goto out;
-> 
-> JD> So this is just dummied off as a proof-of-concept for LISTEN?
-> 
-> I'm not sure what you mean...
-
-It's not as functional as the rest of the code.  The listening address
-is hardwired and you're not restoring the socket state.  I'm assuming
-that was intended as a development step.
-
-> JD> At a minimum, you'll want to start the TCP retransmit timer if there is
-> JD> unacknowledged data outstanding.  And other timers for other states, as
-> JD> they're supported.
-> 
-> JD> And you probably do want to do slow-start again--disregard my babbling
-> JD> from yesterday. 
-
-It seems there's a wide range of requirements here.  A tree migrating
-within a rack doesn't want to do slow-start again, nor restart its RTT
-metrics.  But in the general case, you do need to.  Maybe the scaling of
-congestion window and RTT on restore should be a tunable.
-
-> JD>         	ret = sock_create(h->sock_common.family, h->sock.type, 0, &socket);
-> JD>         	if (ret < 0)
-> JD>         		return ERR_PTR(ret);
->         
-> 
-> JD> You _really_ want to pass the actual protocol number to sock_create().
-> JD> The size of the sk it creates depends on this.  You'll quickly be in
-> JD> memory corruption hell without it.
-> 
-> You mean I need to verify that the protocol is one of IPPROTO_TCP,
-> IPPROTO_UDP, or PF_UNIX, right?
-
-Right now, you're passing zero.  For inet and inet6 sockets, you want to
-pass field num out of ckpt_hdr_socket_inet.  
-
-> JD> Network sockets also use sk->sk_wmem_alloc to track references to
-> JD> the sock from egress skb's
-> 
-> IIUC, this function is part of the framework's leak detection.  That
-> code looks to make sure objects don't gain any additional users
-> between the start and end of the checkpoint operation.  I think the
-> sk_refcnt satisfies that requirement here, no?
-
-As long as the function is only used for this, you're fine.  But it's
-named very generally, and if it get used in the future for something
-else, there might be a hole.
-
-  --  John
-
+Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
+| From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| 
+| Container restart requires that a task have the same pid it had when it was
+| checkpointed. When containers are nested the tasks within the containers
+| exist in multiple pid namespaces and hence have multiple pids to specify
+| during restart.
+| 
+| clone_with_pids(), intended for use during restart, is the same as clone(),
+| except that it takes a 'target_pid_set' paramter. This parameter lets caller
+| choose specific pid numbers for the child process, in the process's active
+| and ancestor pid namespaces. (Descendant pid namespaces in general don't
+| matter since processes don't have pids in them anyway, but see comments
+| in copy_target_pids() regarding CLONE_NEWPID).
+| 
+| Unlike clone(), clone_with_pids() needs CAP_SYS_ADMIN, at least for now, to
+| prevent unprivileged processes from misusing this interface.
+| 
+| Call clone_with_pids as follows:
+| 
+| 	pid_t pids[] = { 0, 77, 99 };
+| 	struct target_pid_set pid_set;
+| 
+| 	pid_set.num_pids = sizeof(pids) / sizeof(int);
+| 	pid_set.target_pids = &pids;
+| 
+| 	syscall(__NR_clone_with_pids, flags, stack, NULL, NULL, NULL, &pid_set);
+| 
+| If a target-pid is 0, the kernel continues to assign a pid for the process in
+| that namespace. In the above example, pids[0] is 0, meaning the kernel will
+| assign next available pid to the process in init_pid_ns. But kernel will assign
+| pid 77 in the child pid namespace 1 and pid 99 in pid namespace 2. If either
+| 77 or 99 are taken, the system call fails with -EBUSY.
+| 
+| If 'pid_set.num_pids' exceeds the current nesting level of pid namespaces,
+| the system call fails with -EINVAL.
+| 
+| Its mostly an exploratory patch seeking feedback on the interface.
+| 
+| NOTE:
+| 	Compared to clone(), clone_with_pids() needs to pass in two more
+| 	pieces of information:
+| 
+| 		- number of pids in the set
+| 		- user buffer containing the list of pids.
+| 
+| 	But since clone() already takes 5 parameters, use a 'struct
+| 	target_pid_set'.
+| 
+| TODO:
+| 	- Gently tested.
+| 	- May need additional sanity checks in do_fork_with_pids().
+| 
+| Changelog[v3]:
+| 	- (Oren Laadan) Allow CLONE_NEWPID flag (by allocating an extra pid
+| 	  in the target_pids[] list and setting it 0. See copy_target_pids()).
+| 	- (Oren Laadan) Specified target pids should apply only to youngest
+| 	  pid-namespaces (see copy_target_pids())
+| 	- (Matt Helsley) Update patch description.
+| 
+| Changelog[v2]:
+| 	- Remove unnecessary printk and add a note to callers of
+| 	  copy_target_pids() to free target_pids.
+| 	- (Serge Hallyn) Mention CAP_SYS_ADMIN restriction in patch description.
+| 	- (Oren Laadan) Add checks for 'num_pids < 0' (return -EINVAL) and
+| 	  'num_pids == 0' (fall back to normal clone()).
+| 	- Move arch-independent code (sanity checks and copy-in of target-pids)
+| 	  into kernel/fork.c and simplify sys_clone_with_pids()
+| 
+| Changelog[v1]:
+| 	- Fixed some compile errors (had fixed these errors earlier in my
+| 	  git tree but had not refreshed patches before emailing them)
+| 
+| Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| ---
+|  arch/x86/include/asm/syscalls.h    |    2 +
+|  arch/x86/include/asm/unistd_32.h   |    1 +
+|  arch/x86/kernel/entry_32.S         |    1 +
+|  arch/x86/kernel/process_32.c       |   21 +++++++
+|  arch/x86/kernel/syscall_table_32.S |    1 +
+|  kernel/fork.c                      |  108 +++++++++++++++++++++++++++++++++++-
+|  6 files changed, 133 insertions(+), 1 deletions(-)
+| 
+| diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
+| index 372b76e..df3c4a8 100644
+| --- a/arch/x86/include/asm/syscalls.h
+| +++ b/arch/x86/include/asm/syscalls.h
+| @@ -40,6 +40,8 @@ long sys_iopl(struct pt_regs *);
+| 
+|  /* kernel/process_32.c */
+|  int sys_clone(struct pt_regs *);
+| +int sys_clone_with_pids(struct pt_regs *);
+| +int sys_vfork(struct pt_regs *);
+|  int sys_execve(struct pt_regs *);
+| 
+|  /* kernel/signal.c */
+| diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+| index 732a307..f65b750 100644
+| --- a/arch/x86/include/asm/unistd_32.h
+| +++ b/arch/x86/include/asm/unistd_32.h
+| @@ -342,6 +342,7 @@
+|  #define __NR_pwritev		334
+|  #define __NR_rt_tgsigqueueinfo	335
+|  #define __NR_perf_counter_open	336
+| +#define __NR_clone_with_pids	337
+| 
+|  #ifdef __KERNEL__
+| 
+| diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+| index c097e7d..c7bd1f6 100644
+| --- a/arch/x86/kernel/entry_32.S
+| +++ b/arch/x86/kernel/entry_32.S
+| @@ -718,6 +718,7 @@ ptregs_##name: \
+|  PTREGSCALL(iopl)
+|  PTREGSCALL(fork)
+|  PTREGSCALL(clone)
+| +PTREGSCALL(clone_with_pids)
+|  PTREGSCALL(vfork)
+|  PTREGSCALL(execve)
+|  PTREGSCALL(sigaltstack)
+| diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
+| index 59f4524..9965c06 100644
+| --- a/arch/x86/kernel/process_32.c
+| +++ b/arch/x86/kernel/process_32.c
+| @@ -443,6 +443,27 @@ int sys_clone(struct pt_regs *regs)
+|  	return do_fork(clone_flags, newsp, regs, 0, parent_tidptr, child_tidptr);
+|  }
+| 
+| +int sys_clone_with_pids(struct pt_regs *regs)
+| +{
+| +	unsigned long clone_flags;
+| +	unsigned long newsp;
+| +	int __user *parent_tidptr;
+| +	int __user *child_tidptr;
+| +	void __user *upid_setp;
+| +
+| +	clone_flags = regs->bx;
+| +	newsp = regs->cx;
+| +	parent_tidptr = (int __user *)regs->dx;
+| +	child_tidptr = (int __user *)regs->di;
+| +	upid_setp = (void __user *)regs->bp;
+| +
+| +	if (!newsp)
+| +		newsp = regs->sp;
+| +
+| +	return do_fork_with_pids(clone_flags, newsp, regs, 0, parent_tidptr,
+| +			child_tidptr, upid_setp);
+| +}
+| +
+|  /*
+|   * sys_execve() executes a new program.
+|   */
+| diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+| index d51321d..879e5ec 100644
+| --- a/arch/x86/kernel/syscall_table_32.S
+| +++ b/arch/x86/kernel/syscall_table_32.S
+| @@ -336,3 +336,4 @@ ENTRY(sys_call_table)
+|  	.long sys_pwritev
+|  	.long sys_rt_tgsigqueueinfo	/* 335 */
+|  	.long sys_perf_counter_open
+| +	.long ptregs_clone_with_pids
+| diff --git a/kernel/fork.c b/kernel/fork.c
+| index 64d53d9..29c66f0 100644
+| --- a/kernel/fork.c
+| +++ b/kernel/fork.c
+| @@ -1336,6 +1336,97 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+|  }
+| 
+|  /*
+| + * If user specified any 'target-pids' in @upid_setp, copy them from
+| + * user and return a pointer to a local copy of the list of pids. The
+| + * caller must free the list, when they are done using it.
+| + *
+| + * If user did not specify any target pids, return NULL (caller should
+| + * treat this like normal clone).
+| + *
+| + * On any errors, return the error code
+| + */
+| +static pid_t *copy_target_pids(void __user *upid_setp)
+| +{
+| +	int j;
+| +	int rc;
+| +	int size;
+| +	int unum_pids;		/* # of pids specified by user */
+| +	int knum_pids;		/* # of pids needed in kernel */
+| +	pid_t *target_pids;
+| +	struct target_pid_set pid_set;
+| +
+| +	if (!upid_setp)
+| +		return NULL;
+| +
+| +	rc = copy_from_user(&pid_set, upid_setp, sizeof(pid_set));
+| +	if (rc)
+| +		return ERR_PTR(-EFAULT);
+| +
+| +	unum_pids = pid_set.num_pids;
+| +	knum_pids = task_pid(current)->level + 1;
+| +
+| +	if (!unum_pids)
+| +		return NULL;
+| +
+| +	if (unum_pids < 0 || unum_pids > knum_pids)
+| +		return ERR_PTR(-EINVAL);
+| +
+| +	/*
+| +	 * To keep alloc_pid() simple, allocate an extra pid_t in target_pids[]
+| +	 * and set it to 0. This last entry in target_pids[] corresponds to the
+| +	 * (yet-to-be-created) descendant pid-namespace if CLONE_NEWPID was
+| +	 * specified. If CLONE_NEWPID was not specified, this last entry will
+| +	 * simply be ignored.
+| +	 */
+| +	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
+| +	if (!target_pids)
+| +		return ERR_PTR(-ENOMEM);
+| +
+| +	/*
+| +	 * A process running in a level 2 pid namespace has three pid namespaces
+| +	 * and hence three pid numbers. If this process is checkpointed,
+| +	 * information about these three namespaces are saved. We refer to these
+| +	 * namespaces as 'known namespaces'.
+| +	 *
+| +	 * If this checkpointed process is however restarted in a level 3 pid
+| +	 * namespace, the restarted process has an extra ancestor pid namespace
+| +	 * (i.e 'unknown namespace') and 'knum_pids' exceeds 'unum_pids'.
+| +	 *
+| +	 * During restart, the process requests specific pids for its 'known
+| +	 * namespaces' and lets kernel assign pids to its 'unknown namespaces'.
+| +	 *
+| +	 * Since the requested-pids correspond to 'known namespaces' and since
+| +	 * 'known-namespaces' are younger than (i.e descendants of) 'unknown-
+| +	 * namespaces', copy requested pids to the back-end of target_pids[]
+| +	 * (i.e before the last entry for CLONE_NEWPID mentioned above).
+| +	 * Any entries in target_pids[] not corresponding to a requested pid
+| +	 * will be set to zero and kernel assigns a pid in those namespaces.
+| +	 *
+| +	 * NOTE: The order of pids in target_pids[] is oldest pid namespace to
+| +	 * 	 youngest (target_pids[0] corresponds to init_pid_ns). i.e.
+| +	 * 	 the order is:
+| +	 *
+| +	 * 		- pids for 'unknown-namespaces' (if any)
+| +	 * 		- pids for 'known-namespaces' (requested pids)
+| +	 * 		- 0 in the last entry (for CLONE_NEWPID).
+| +	 */
+| +	j = knum_pids - unum_pids;
+| +	size = unum_pids * sizeof(pid_t);
+| +
+| +	rc = copy_from_user(&target_pids[j], pid_set.target_pids, size);
+| +	if (rc) {
+| +		rc = -EFAULT;
+| +		goto out_free;
+| +	}
+| +
+| +	return target_pids;
+| +
+| +out_free:
+| +	kfree(target_pids);
+| +	return ERR_PTR(rc);
+| +}
+| +
+| +/*
+|   *  Ok, this is the main fork-routine.
+|   *
+|   * It copies the process, and if successful kick-starts
+| @@ -1352,7 +1443,7 @@ long do_fork_with_pids(unsigned long clone_flags,
+|  	struct task_struct *p;
+|  	int trace = 0;
+|  	long nr;
+| -	pid_t *target_pids = NULL;
+| +	pid_t *target_pids;
+| 
+|  	/*
+|  	 * Do some preliminary argument and permissions checking before we
+| @@ -1386,6 +1477,17 @@ long do_fork_with_pids(unsigned long clone_flags,
+|  		}
+|  	}
+| 
+| +	target_pids = copy_target_pids(pid_setp);
+| +
+| +	if (target_pids) {
+| +		if (IS_ERR(target_pids))
+| +			return PTR_ERR(target_pids);
+| +
+| +		nr = -EPERM;
+| +		if (!capable(CAP_SYS_ADMIN))
+| +			goto out_free;
+| +	}
+| +
+|  	/*
+|  	 * When called from kernel_thread, don't do user tracing stuff.
+|  	 */
+| @@ -1453,6 +1555,10 @@ long do_fork_with_pids(unsigned long clone_flags,
+|  	} else {
+|  		nr = PTR_ERR(p);
+|  	}
+| +
+| +out_free:
+| +	kfree(target_pids);
+| +
+|  	return nr;
+|  }
+| 
+| -- 
+| 1.6.0.4
