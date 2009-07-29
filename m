@@ -1,32 +1,31 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
-Date: Tue, 28 Jul 2009 20:56:53 -0500
-Message-ID: <20090729015653.GA31730@us.ibm.com>
-References: <1248295301-30930-1-git-send-email-danms@us.ibm.com> <1248295301-30930-6-git-send-email-danms@us.ibm.com> <4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/4] CGroup: Support for named and empty hierarchies
+Date: Wed, 29 Jul 2009 15:30:13 +0800
+Message-ID: <4A6FFA85.3090409__45439.5731598654$1248852871$gmane$org@cn.fujitsu.com>
+References: <20090728232508.20156.17943.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <87ljm8czsf.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: Oren Laadan <orenl@librato.com>, containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090728232508.20156.17943.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms@us.ibm.com):
-> OL> Unless/until we decide otherwise, let's keep all ckpt_hdr_xxx
-> OL> definitions in a single place -- checkpoint_hdr.h
+Paul Menage wrote:
+> The following series implements support for named cgroup hierarchies,
+> and for cgroup hierarchies that have no bound subsystems.
 > 
-> That's how I initially had it, but Serge asked for it to be moved into
-> the network headers.  Serge?
+> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 
 
-Yes, it seems to me we want to keep those close to the maintainer's
-code rather than expect them to go browsing through cr headers when
-they change their own code.
-
-Of course just putting ckpt_hdr_xxx into the subsystems' headers
-isn't sufficient - we need to have better discussions with the
-maintainers about ways to make maintaining their subsystems with
-cr pretty much the same as it was without cr.
-
--serge
+Looks nice to me!
