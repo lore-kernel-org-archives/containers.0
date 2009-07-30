@@ -1,21 +1,17 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Thu, 30 Jul 2009 11:06:11 -0700
-Message-ID: <20090730180611.GA20872@us.ibm.com>
-References: <20090719071531.GA20818@megiteam.pl>
-	<20090722064120.GA24373@us.ibm.com>
-	<20090722222550.GA633@megiteam.pl>
-	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
-	<20090723182620.GA16322@megiteam.pl>
-	<20090723193245.GA25662@us.ibm.com>
-	<20090723203329.GC16322@megiteam.pl> <4A68E026.1070608@zytor.com>
-	<20090724073158.GA2617@megiteam.pl>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 05/24] io-controller: Modify cfq to make use of flat
+	elevator fair queuing
+Date: Thu, 30 Jul 2009 14:30:14 -0400
+Message-ID: <20090730183014.GA6067__23166.6675922044$1248978715$gmane$org@redhat.com>
+References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
+	<1248467274-32073-6-git-send-email-vgoyal@redhat.com>
+	<4A71BF76.6040709@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090724073158.GA2617-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <4A71BF76.6040709-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,69 +21,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+To: Jerome Marchand <jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
-| On Thu, Jul 23, 2009 at 03:11:50PM -0700, H. Peter Anvin wrote:
-| > Nothing, but as long as something is keeping the pts file entry open, it
-| >  should not be garbage-collected.
-| 
-| The pts is opened after the parent (holding the master side) exits, so the
-| ptm is not going away from under us while we have the pts open -- it's no
-| longer there at open() time.
-| 
-| The lifetime rules and relations for master tty_struct, slave tty_struct
-| and the corresponding devpts inode are still not completely clear to me
-| (what is holding what alive etc.), so I want to be 100% sure we're on the
-| same page.
-| 
-| In this case it looks like the ttys are gone but the inode still keeps a
-| pointer to the pts tty_struct. So we can either:
-|  1. overwrite the pointer with -EIO or something
-|  2. extend the life of the ttys to match the inode
-| 
-| As the end result from userspace perspective is the same (we have to
-| error out when opening the pts anyway -- as you implied above), I'd go for
-| the simpler (1).
-| 
-| BTW, I was mistaken about experimenting with the dentry refcount -- I
-| did it the other way around (tty_kref_get while creating the inode
-| IIRC). Sorry for the confusion.
+On Thu, Jul 30, 2009 at 05:42:46PM +0200, Jerome Marchand wrote:
+> Vivek Goyal wrote:
+> > @@ -1616,11 +1234,12 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
+> >  	struct cfq_data *cfqd = cic->key;
+> >  	struct cfq_queue *cfqq;
+> >  	unsigned long flags;
+> > +	struct request_queue *q = cfqd->queue;
+> 
+> cfqd may be NULL here. We'd better test it before using it.
+> 
 
-Well, I made some progress on this. In an earlier mail you mentioned
-that your test case "survives" in kernels without the bad commit.
+Thanks Jerome. 
 
-With the following patch the kernel seems to _survive_ but not sure if
-"surviving" meets your real needs (i.e does the pty continue to function
-as the console for the container) ? 
+Actually I will drop this chage altogether. This is not required. I don't
+know why did I change original code to introduce another local variable. 
 
-The way I understand, the child process does not get an open-file reference
-to the pty. So when the parent closes the pty, devpts_pty_kill() unhashes
-the dentry (although the bind mount() in the child has a reference count
-on dentry).
+Thanks
+Vivek
 
-Sukadev
-
----
-
-Index: linux-2.6.30/fs/devpts/inode.c
-===================================================================
---- linux-2.6.30.orig/fs/devpts/inode.c 2009-07-30 10:48:17.000000000 -0400
-+++ linux-2.6.30/fs/devpts/inode.c      2009-07-30 10:58:37.000000000 -0400
-@@ -519,8 +519,14 @@
-
- struct tty_struct *devpts_get_tty(struct inode *pts_inode, int number)
- {
-+       struct dentry *dentry;
-+
-        BUG_ON(pts_inode->i_rdev == MKDEV(TTYAUX_MAJOR, PTMX_MINOR));
-
-+       dentry = d_find_alias(pts_inode);
-+       if (IS_ERR(dentry))
-+               return NULL;
-+
-        if (pts_inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
-                return (struct tty_struct *)pts_inode->i_private;
-        return NULL;
+> >  
+> >  	if (unlikely(!cfqd))
+> >  		return;
+> >  
+> > -	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
+> > +	spin_lock_irqsave(q->queue_lock, flags);
+> >  
+> >  	cfqq = cic->cfqq[BLK_RW_ASYNC];
+> >  	if (cfqq) {
+> > @@ -1637,7 +1256,7 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
+> >  	if (cfqq)
+> >  		cfq_mark_cfqq_prio_changed(cfqq);
+> >  
+> > -	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
+> > +	spin_unlock_irqrestore(q->queue_lock, flags);
+> >  }
+> >  
+> >  static void cfq_ioc_set_ioprio(struct io_context *ioc)
+> 
+> 
+> --- block/cfq-iosched.c.orig	2009-07-29 10:22:08.000000000 +0200
+> +++ block/cfq-iosched.c	2009-07-30 17:25:05.000000000 +0200
+> @@ -1271,11 +1271,12 @@ static void changed_ioprio(struct io_con
+>  	struct cfq_data *cfqd = cic->key;
+>  	struct cfq_queue *cfqq;
+>  	unsigned long flags;
+> -	struct request_queue *q = cfqd->queue;
+> +	struct request_queue *q;
+>  
+>  	if (unlikely(!cfqd))
+>  		return;
+>  
+> +	q = cfqd->queue;
+>  	spin_lock_irqsave(q->queue_lock, flags);
+>  
+>  	cfqq = cic->cfqq[BLK_RW_ASYNC];
