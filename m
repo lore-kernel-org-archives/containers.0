@@ -1,70 +1,42 @@
-From: Jerome Marchand <jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 05/24] io-controller: Modify cfq to make use of flat
-	elevator fair queuing
-Date: Thu, 30 Jul 2009 17:42:46 +0200
-Message-ID: <4A71BF76.6040709__20976.3272935108$1248968784$gmane$org@redhat.com>
-References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
-	<1248467274-32073-6-git-send-email-vgoyal@redhat.com>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
+Date: Thu, 30 Jul 2009 08:49:57 -0700
+Message-ID: <878wi6yxui.fsf@caffeine.danplanet.com>
+References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
+	<1248295301-30930-6-git-send-email-danms@us.ibm.com>
+	<4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>
+	<4A6F6B19.9010508@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1248467274-32073-6-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4A6F6B19.9010508@librato.com> (Oren Laadan's message of "Tue\, 28 Jul 2009 17\:18\:17 -0400")
+Sender: netdev-owner@vger.kernel.org
+To: Oren Laadan <orenl@librato.com>
+Cc: containers@lists.osdl.org, Alexey Dobriyan <adobriyan@gmail.com>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> @@ -1616,11 +1234,12 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
->  	struct cfq_data *cfqd = cic->key;
->  	struct cfq_queue *cfqq;
->  	unsigned long flags;
-> +	struct request_queue *q = cfqd->queue;
+OL> Hmm.. then what happens when you have a circular dependency ?  For
+OL> example, three dgram sockets, A, B and C where: A->B, B->C and
+OL> C->A ('->' means connected).
 
-cfqd may be NULL here. We'd better test it before using it.
+So, I've been cooking up changes to the patch and a test for this
+case.  However, it seems like it's not valid, unless I'm missing
+something.  The man page for connect() says:
 
->  
->  	if (unlikely(!cfqd))
->  		return;
->  
-> -	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
-> +	spin_lock_irqsave(q->queue_lock, flags);
->  
->  	cfqq = cic->cfqq[BLK_RW_ASYNC];
->  	if (cfqq) {
-> @@ -1637,7 +1256,7 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
->  	if (cfqq)
->  		cfq_mark_cfqq_prio_changed(cfqq);
->  
-> -	spin_unlock_irqrestore(cfqd->queue->queue_lock, flags);
-> +	spin_unlock_irqrestore(q->queue_lock, flags);
->  }
->  
->  static void cfq_ioc_set_ioprio(struct io_context *ioc)
+  If the socket sockfd is of type SOCK_DGRAM then serv_addr is the
+  address to which datagrams are sent by default, and the only address
+  from which datagrams are received.
 
+So, even though you can connect() a DGRAM socket and then sendto()
+datagrams to a different location, it doesn't appear that the
+relationship between A and B is really valid, at least the connection
+between A and B is not functional.  In fact, in my testing, if you try
+to connect() C back to A, you get "Operation not permitted" because A
+is already connected elsewhere.
 
---- block/cfq-iosched.c.orig	2009-07-29 10:22:08.000000000 +0200
-+++ block/cfq-iosched.c	2009-07-30 17:25:05.000000000 +0200
-@@ -1271,11 +1271,12 @@ static void changed_ioprio(struct io_con
- 	struct cfq_data *cfqd = cic->key;
- 	struct cfq_queue *cfqq;
- 	unsigned long flags;
--	struct request_queue *q = cfqd->queue;
-+	struct request_queue *q;
- 
- 	if (unlikely(!cfqd))
- 		return;
- 
-+	q = cfqd->queue;
- 	spin_lock_irqsave(q->queue_lock, flags);
- 
- 	cfqq = cic->cfqq[BLK_RW_ASYNC];
+Thoughts?
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
