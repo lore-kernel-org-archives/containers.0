@@ -1,24 +1,31 @@
-From: John Dykstra <john.dykstra1@gmail.com>
+From: Dan Smith <danms@us.ibm.com>
 Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
-Date: Fri, 31 Jul 2009 19:35:48 +0000
-Message-ID: <1249068948.1104.0.camel@Maple>
+Date: Fri, 31 Jul 2009 12:40:55 -0700
+Message-ID: <87hbwsy720.fsf@caffeine.danplanet.com>
 References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
-	 <1246994776-1882-3-git-send-email-danms@us.ibm.com>
+	<1246994776-1882-3-git-send-email-danms@us.ibm.com>
+	<1249068948.1104.0.camel@Maple>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1246994776-1882-3-git-send-email-danms@us.ibm.com>
+In-Reply-To: <1249068948.1104.0.camel@Maple> (John Dykstra's message of "Fri\, 31 Jul 2009 19\:35\:48 +0000")
 Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
+To: John Dykstra <john.dykstra1@gmail.com>
 Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Oren Laaden <orenl@cs.columbia.edu>, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-07-07 at 12:26 -0700, Dan Smith wrote:
-> +       CKPT_COPY(op, hh->tcp.last_synq_overflow, sk->last_synq_overflow);
+>> +       CKPT_COPY(op, hh->tcp.last_synq_overflow, sk->last_synq_overflow);
 
-This sock field was removed from the mainline kernel by commit
-a0f82f64e26929776c58a5c93c2ecb38e3d82815.
+JD> This sock field was removed from the mainline kernel by commit
+JD> a0f82f64e26929776c58a5c93c2ecb38e3d82815.
 
-  --  John
+Ah, thanks for this.  I'm trying to get the UNIX patch updated with
+the latest round of feedback and then I'll take this and the other
+comments forward with the INET patch.
 
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
