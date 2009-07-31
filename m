@@ -1,97 +1,24 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 05/24] io-controller: Modify cfq to make use of flat
-	elevator fair queuing
-Date: Fri, 31 Jul 2009 09:18:13 -0400
-Message-ID: <20090731131813.GB3668__23478.1811167069$1249046469$gmane$org@redhat.com>
-References: <1248467274-32073-1-git-send-email-vgoyal@redhat.com>
-	<1248467274-32073-6-git-send-email-vgoyal@redhat.com>
-	<4A713E10.2030204@cn.fujitsu.com>
+From: John Dykstra <john.dykstra1@gmail.com>
+Subject: Re: [PATCH 2/2] c/r: Add AF_INET support (v3)
+Date: Fri, 31 Jul 2009 19:35:48 +0000
+Message-ID: <1249068948.1104.0.camel@Maple>
+References: <1246994776-1882-1-git-send-email-danms@us.ibm.com>
+	 <1246994776-1882-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A713E10.2030204-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1246994776-1882-3-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Oren Laaden <orenl@cs.columbia.edu>, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 30, 2009 at 02:30:40PM +0800, Gui Jianfeng wrote:
-> Vivek Goyal wrote:
-> ...
-> >  /*
-> >   * Check if new_cfqq should preempt the currently active queue. Return 0 for
-> > - * no or if we aren't sure, a 1 will cause a preempt.
-> > + * no or if we aren't sure, a 1 will cause a preemption attempt.
-> > + * Some of the preemption logic has been moved to common layer. Only cfq
-> > + * specific parts are left here.
-> >   */
-> >  static int
-> > -cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
-> > -		   struct request *rq)
-> > +cfq_should_preempt(struct request_queue *q, void *new_cfqq, struct request *rq)
-> >  {
-> > -	struct cfq_queue *cfqq;
-> > +	struct cfq_data *cfqd = q->elevator->elevator_data;
-> > +	struct cfq_queue *cfqq = elv_active_sched_queue(q->elevator);
-> >  
-> > -	cfqq = cfqd->active_queue;
-> >  	if (!cfqq)
-> >  		return 0;
-> >  
-> > -	if (cfq_slice_used(cfqq))
-> > +	if (elv_ioq_slice_used(cfqq->ioq))
-> >  		return 1;
-> >  
-> >  	if (cfq_class_idle(new_cfqq))
-> > @@ -2018,13 +1661,7 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
-> >  	if (rq_is_meta(rq) && !cfqq->meta_pending)
-> >  		return 1;
-> >  
-> > -	/*
-> > -	 * Allow an RT request to pre-empt an ongoing non-RT cfqq timeslice.
-> > -	 */
-> > -	if (cfq_class_rt(new_cfqq) && !cfq_class_rt(cfqq))
-> > -		return 1;
-> > -
-> > -	if (!cfqd->active_cic || !cfq_cfqq_wait_request(cfqq))
-> > +	if (!cfqd->active_cic || !elv_ioq_wait_request(cfqq->ioq))
-> >  		return 0;
-> >  
-> >  	/*
-> 
-> Hi Vivek,
-> 
-> cfq_should_preempt() will do the check "if (cfq_rq_close(cfqd, rq)) to see whether
-> it should preempt the current cfqq. From fairness point of view,  should we also 
-> check "fairness" value, if it's set fairness == 1, don't allow to preempt the current
-> cfqq?
+On Tue, 2009-07-07 at 12:26 -0700, Dan Smith wrote:
+> +       CKPT_COPY(op, hh->tcp.last_synq_overflow, sk->last_synq_overflow);
 
-Hi Gui,
+This sock field was removed from the mainline kernel by commit
+a0f82f64e26929776c58a5c93c2ecb38e3d82815.
 
-In V7, fairness=1 means that we try to dispatch request only from one
-queue at a time and wait for requests to finish from that queue before
-next queue is scheduled in. This helps in better disk time accounting for the
-queue.
+  --  John
 
-But currently this is not true for preemption path. So if we decide to
-preempt the current queue (either by elevator layer or by cfq), we expire
-the queue immediately and bring in the new one. So this is just not
-cfq_rq_close() but the whole preemption path.
-
-Currently I will leave it as it is but if we run into significant issues, 
-then we can fix it. It will require extra logic of keeping track that
-current queue has been preempted. Also keep track who preempted etc and
-as soon as last request from queue completes, expire it.
-
-Thanks
-Vivek
