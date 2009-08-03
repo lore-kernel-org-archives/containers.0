@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v17][PATCH 14/60] pids 4/7: Add target_pids parameter to
-	alloc_pid()
-Date: Mon, 3 Aug 2009 13:22:49 -0500
-Message-ID: <20090803182249.GA7493__49702.4897289977$1249323819$gmane$org@us.ibm.com>
+Subject: Re: [RFC v17][PATCH 16/60] pids 6/7: Define do_fork_with_pids()
+Date: Mon, 3 Aug 2009 13:26:40 -0500
+Message-ID: <20090803182640.GB7493__34614.5195341252$1249324055$gmane$org@us.ibm.com>
 References: <1248256822-23416-1-git-send-email-orenl@librato.com>
-	<1248256822-23416-15-git-send-email-orenl@librato.com>
+	<1248256822-23416-17-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1248256822-23416-15-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1248256822-23416-17-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,12 +25,21 @@ List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> 
-> This parameter is currently NULL, but will be used in a follow-on patch.
+...
+> +struct target_pid_set {
+> +	int num_pids;
+> +	pid_t *target_pids;
+> +};
 
-Note that patches 1-4 of the clone_with_pid() patchset should
-also be useful if we decide to re-create process trees in-kernel
-and not export clone_with_pid().  (Though maybe not immediately
-applicable to Alexey's current kthread_run()-based approach).
+Oren, I thought you had decided to add an extended flags field
+here, to support additional CLONE_ flags - such as CLONE_TIMENS?
+
+I mention it now because if you're still considering that
+long-term, then IMO the syscall should not be called clone_with_pids(),
+but clone_extended().  Otherwise, to support new clone flags we'll
+either have to use unshare2 (without clone support), or add yet
+another clone variant, OR use clone_with_pids() which is a poor name
+for something which will likely be used in cases without specifying
+pids, but specifying flags not support through any other interface.
 
 -serge
