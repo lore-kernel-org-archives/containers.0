@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/5] Add a ckpt_read_string() function (v2)
-Date: Mon,  3 Aug 2009 13:31:00 -0700
-Message-ID: <1249331463-11887-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 4/5] Export fill_fname() as ckpt_fill_fname()
+Date: Mon,  3 Aug 2009 13:31:02 -0700
+Message-ID: <1249331463-11887-5-git-send-email-danms@us.ibm.com>
 References: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,76 +20,55 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add a ckpt_read_string() function to allow reading of a variable-length
-(but length-capped) string from the checkpoint stream.
-
-Changes in v2:
- - Avoid memcpy() by reading into the allocated buffer directly
-
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    1 +
- 2 files changed, 37 insertions(+), 0 deletions(-)
+ checkpoint/files.c         |    8 ++++----
+ include/linux/checkpoint.h |    2 ++
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 65cafd9..641a7bd 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -285,6 +285,42 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
- 	return ret;
- }
- 
-+/**
-+ * ckpt_read_string - read a string (variable length)
-+ * @ctx: checkpoint context
-+ * @str: pointer to buffer to store allocated string (caller must kfree())
-+ * @max: maximum acceptable length
-+ *
-+ * This can be used to read a variable-length string from the checkpoint
-+ * stream. @max limits the size of the resulting buffer.  Returns zero on
-+ * success, negative on failure.
-+ */
-+int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
-+{
-+	int len;
-+	int ret = 0;
-+
-+	*str = NULL;
-+
-+	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
-+	if (len < 0)
-+		return len;
-+	else if (len > max)
-+		return -EINVAL;
-+
-+	*str = kzalloc(len + 1, GFP_KERNEL);
-+	if (!*str)
-+		ret = -ENOMEM;
-+
-+	ret = ckpt_kread(ctx, *str, len);
-+	if (ret < 0) {
-+		kfree(*str);
-+		*str = NULL;
-+	}
-+
-+	return ret;
-+}
-+
- /***********************************************************************
-  * Restart
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index bcdc774..555bc54 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -28,14 +28,14 @@
   */
+ 
+ /**
+- * fill_fname - return pathname of a given file
++ * ckpt_fill_fname - return pathname of a given file
+  * @path: path name
+  * @root: relative root
+  * @buf: buffer for pathname
+  * @len: buffer length (in) and pathname length (out)
+  */
+-static char *fill_fname(struct path *path, struct path *root,
+-			char *buf, int *len)
++char *ckpt_fill_fname(struct path *path, struct path *root,
++		      char *buf, int *len)
+ {
+ 	struct path tmp = *root;
+ 	char *fname;
+@@ -79,7 +79,7 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
+ 	if (!buf)
+ 		return -ENOMEM;
+ 
+-	fname = fill_fname(path, root, buf, &flen);
++	fname = ckpt_fill_fname(path, root, buf, &flen);
+ 	if (!IS_ERR(fname))
+ 		ret = ckpt_write_obj_type(ctx, fname, flen,
+ 					  CKPT_HDR_FILE_NAME);
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index b2c86a3..3536633 100644
+index 3536633..cab31d1 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -68,6 +68,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
- extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
-+extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
+@@ -72,6 +72,8 @@ extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
  extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
  extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
  extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
++extern char *ckpt_fill_fname(struct path *path, struct path *root,
++			     char *buf, int *len);
+ 
+ /* ckpt kflags */
+ #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
 -- 
 1.6.2.5
