@@ -1,11 +1,13 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: C/R support of UNIX sockets
-Date: Mon,  3 Aug 2009 13:30:58 -0700
-Message-ID: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/5] Add an errno validation function (v2)
+Date: Mon,  3 Aug 2009 13:30:59 -0700
+Message-ID: <1249331463-11887-2-git-send-email-danms@us.ibm.com>
+References: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1249331463-11887-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,20 +20,38 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is my latest series of patches supporting the goal of
-checkpoint/restart of AF_UNIX sockets.  Changes are detailed
-per-patch, but a brief description is:
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-  - Update the errno helper patch to compaire against MAX_ERRNO
-  - Update read_string() patch to use new _ckpt_read_obj_type()
-    behavior and avoid a memory copy
-  - Update the sock_bind() patch to include similar wrappers for
-    sock_getname() and sock_getpeer()
-  - Add a patch to export ckpt_fill_fname()
-  - Update the AF_UNIX patch to integrate received feedback
+Changes in v2:
+  - Compare against MAX_ERRNO instead of more stringent but obscure
+    constant
+---
+ include/linux/checkpoint.h |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
-Can some or all of these patches be included in the tree at this
-point?  I think that some of the helper items should be ready for
-that, and pulling in the UNIX patch will help make further
-changes more clear instead of me just posting the large patch
-each time.  Thoughts?
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 60d1116..b2c86a3 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -28,7 +28,7 @@
+ #include <linux/user_namespace.h>
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
+-
++#include <linux/err.h>
+ 
+ /* ckpt_ctx: kflags */
+ #define CKPT_CTX_CHECKPOINT_BIT		0
+@@ -257,6 +257,10 @@ extern void *restore_sighand(struct ckpt_ctx *ctx);
+ 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+ 	} while (0)
+ 
++static inline int ckpt_validate_errno(int errno)
++{
++	return (errno >= 0) && (errno < MAX_ERRNO);
++}
+ 
+ /* debugging flags */
+ #define CKPT_DBASE	0x1		/* anything */
+-- 
+1.6.2.5
