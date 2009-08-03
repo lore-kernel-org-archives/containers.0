@@ -1,15 +1,15 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 20/25] io-controller: map async requests to appropriate
-	cgroup
-Date: Mon, 03 Aug 2009 10:13:46 +0800
-Message-ID: <4A7647DA.5050607__3933.24022084034$1249265879$gmane$org@cn.fujitsu.com>
-References: <1246564917-19603-1-git-send-email-vgoyal@redhat.com>
-	<1246564917-19603-21-git-send-email-vgoyal@redhat.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 5/6] Lets ss->can_attach and ss->attach do whole
+	threadgroups at a time
+Date: Mon, 03 Aug 2009 10:22:25 +0800
+Message-ID: <4A7649E1.4000200__26956.9027507261$1249266321$gmane$org@cn.fujitsu.com>
+References: <20090731012908.27908.62208.stgit@hastromil.mtv.corp.google.com>
+	<20090731015149.27908.25403.stgit@hastromil.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1246564917-19603-21-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090731015149.27908.25403.stgit-/yCBOHwbXCxd3OlUiQof+WCaruZE5nAUZeezCHUQhQ4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,38 +19,161 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vml2ZWsgR295YWwgd3JvdGU6Ci4uLgo+ICsKPiArc3RydWN0IGlvX2dyb3VwICppb19nZXRfaW9f
-Z3JvdXBfYmlvKHN0cnVjdCByZXF1ZXN0X3F1ZXVlICpxLCBzdHJ1Y3QgYmlvICpiaW8sCj4gKwkJ
-CQkJaW50IGNyZWF0ZSkKPiArewo+ICsJc3RydWN0IHBhZ2UgKnBhZ2UgPSBOVUxMOwo+ICsKPiAr
-CS8qCj4gKwkgKiBEZXRlcm1pbmUgdGhlIGdyb3VwIGZyb20gdGFzayBjb250ZXh0LiBFdmVuIGNh
-bGxzIGZyb20KPiArCSAqIGJsa19nZXRfcmVxdWVzdCgpIHdoaWNoIGRvbid0IGhhdmUgYW55IGJp
-byBpbmZvIHdpbGwgYmUgbWFwcGVkCj4gKwkgKiB0byB0aGUgdGFzaydzIGdyb3VwCj4gKwkgKi8K
-PiArCWlmICghYmlvKQo+ICsJCWdvdG8gc3luYzsKPiArCj4gKwlpZiAoYmlvX2JhcnJpZXIoYmlv
-KSkgewo+ICsJCS8qCj4gKwkJICogTWFwIGJhcnJpZXIgcmVxdWVzdHMgdG8gcm9vdCBncm91cC4g
-TWF5IGJlIG1vcmUgc3BlY2lhbAo+ICsJCSAqIGJpbyBjYXNlcyBzaG91bGQgY29tZSBoZXJlCj4g
-KwkJICovCj4gKwkJcmV0dXJuIHEtPmVsZXZhdG9yLT5lZnFkLnJvb3RfZ3JvdXA7Cj4gKwl9Cj4g
-Kwo+ICsJLyogTWFwIHRoZSBzeW5jIGJpbyB0byB0aGUgcmlnaHQgZ3JvdXAgdXNpbmcgdGFzayBj
-b250ZXh0ICovCj4gKwlpZiAoZWx2X2Jpb19zeW5jKGJpbykpCj4gKwkJZ290byBzeW5jOwo+ICsK
-PiArI2lmZGVmIENPTkZJR19UUkFDS19BU1lOQ19DT05URVhUCj4gKwkvKiBEZXRlcm1pbmUgdGhl
-IGdyb3VwIGZyb20gaW5mbyBzdG9yZWQgaW4gcGFnZSAqLwo+ICsJcGFnZSA9IGJpb19pb3ZlY19p
-ZHgoYmlvLCAwKS0+YnZfcGFnZTsKPiArCXJldHVybiBpb19nZXRfaW9fZ3JvdXAocSwgcGFnZSwg
-Y3JlYXRlKTsKPiArI2VuZGlmCj4gKwo+ICtzeW5jOgo+ICsJcmV0dXJuIGlvX2dldF9pb19ncm91
-cChxLCBOVUxMLCBjcmVhdGUpOwoKRml4IGJ1aWxkIHdhcm5pbmcuCgpibG9jay9lbGV2YXRvci1m
-cS5jOiBJbiBmdW5jdGlvbiDigJhpb19nZXRfaW9fZ3JvdXBfYmlv4oCZOgpibG9jay9lbGV2YXRv
-ci1mcS5jOjIwNzU6IHdhcm5pbmc6IHVudXNlZCB2YXJpYWJsZSDigJhwYWdl4oCZCgotLS0KZGlm
-ZiAtLWdpdCBhL2Jsb2NrL2VsZXZhdG9yLWZxLmMgYi9ibG9jay9lbGV2YXRvci1mcS5jCmluZGV4
-IDY2YjEwZWIuLmQzMDRmNzkgMTAwNjQ0Ci0tLSBhL2Jsb2NrL2VsZXZhdG9yLWZxLmMKKysrIGIv
-YmxvY2svZWxldmF0b3ItZnEuYwpAQCAtMjEwMiw3ICsyMTAyLDcgQEAgc3RydWN0IGlvX2dyb3Vw
-ICppb19nZXRfaW9fZ3JvdXBfYmlvKHN0cnVjdCByZXF1ZXN0X3F1ZXVlICpxLCBzdHJ1Y3QgYmlv
-ICpiaW8sCiAjZW5kaWYKIAogc3luYzoKLQlyZXR1cm4gaW9fZ2V0X2lvX2dyb3VwKHEsIE5VTEws
-IGNyZWF0ZSk7CisJcmV0dXJuIGlvX2dldF9pb19ncm91cChxLCBwYWdlLCBjcmVhdGUpOwogfQog
-RVhQT1JUX1NZTUJPTChpb19nZXRfaW9fZ3JvdXBfYmlvKTsKCgo+ICt9Cj4gK0VYUE9SVF9TWU1C
-T0woaW9fZ2V0X2lvX2dyb3VwX2Jpbyk7Cj4gKwoKCi0tIApSZWdhcmRzCkd1aSBKaWFuZmVuZwoK
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
-cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
-czovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
-cw==
+09:51, Ben Blum wrote:
+> Lets ss->can_attach and ss->attach do whole threadgroups at a time
+> 
+> This patch alters the ss->can_attach and ss->attach functions to be able to
+> deal with a whole threadgroup at a time, for use in cgroup_attach_proc. (This
+> is a pre-patch to cgroup-procs-writable.patch.)
+> 
+> Currently, new mode of the attach function can only tell the subsystem about
+> the old cgroup of the threadgroup leader. No subsystem currently needs that
+> information for each thread that's being moved, but if one were to be added
+> (for example, one that counts tasks within a group) this bit would need to be
+> reworked a bit to tell the subsystem the right information.
+> 
+> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 
+> ---
+> 
+>  include/linux/cgroup.h   |    7 +++--
+>  kernel/cgroup.c          |    4 +--
+>  kernel/cgroup_freezer.c  |   15 +++++++++--
+>  kernel/cpuset.c          |   65 ++++++++++++++++++++++++++++++++++++----------
+>  kernel/ns_cgroup.c       |   16 ++++++++++-
+>  kernel/sched.c           |   37 ++++++++++++++++++++++++--
+>  mm/memcontrol.c          |    3 +-
+>  security/device_cgroup.c |    3 +-
+>  8 files changed, 122 insertions(+), 28 deletions(-)
+> 
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index 24e3f1a..8286758 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -408,10 +408,11 @@ struct cgroup_subsys {
+>  						  struct cgroup *cgrp);
+>  	int (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
+>  	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
+> -	int (*can_attach)(struct cgroup_subsys *ss,
+> -			  struct cgroup *cgrp, struct task_struct *tsk);
+> +	int (*can_attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
+> +			  struct task_struct *tsk, bool threadgroup);
+>  	void (*attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
+> -			struct cgroup *old_cgrp, struct task_struct *tsk);
+> +			struct cgroup *old_cgrp, struct task_struct *tsk,
+> +			bool threadgroup);
+
+Could you also update Documentation/cgroups/cgroups.txt?
+
+>  	void (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
+>  	void (*exit)(struct cgroup_subsys *ss, struct task_struct *task);
+>  	int (*populate)(struct cgroup_subsys *ss,
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index a12bc8e..ea05d6b 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -1324,7 +1324,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+>  
+>  	for_each_subsys(root, ss) {
+>  		if (ss->can_attach) {
+> -			retval = ss->can_attach(ss, cgrp, tsk);
+> +			retval = ss->can_attach(ss, cgrp, tsk, false);
+>  			if (retval)
+>  				return retval;
+>  		}
+> @@ -1362,7 +1362,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+>  
+>  	for_each_subsys(root, ss) {
+>  		if (ss->attach)
+> -			ss->attach(ss, cgrp, oldcgrp, tsk);
+> +			ss->attach(ss, cgrp, oldcgrp, tsk, false);
+>  	}
+>  	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
+>  	synchronize_rcu();
+> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+> index fb249e2..4e352ab 100644
+> --- a/kernel/cgroup_freezer.c
+> +++ b/kernel/cgroup_freezer.c
+> @@ -159,10 +159,9 @@ static bool is_task_frozen_enough(struct task_struct *task)
+>   */
+>  static int freezer_can_attach(struct cgroup_subsys *ss,
+>  			      struct cgroup *new_cgroup,
+> -			      struct task_struct *task)
+> +			      struct task_struct *task, bool threadgroup)
+>  {
+>  	struct freezer *freezer;
+> -
+
+Please reserve this blank line.
+
+>  	/*
+>  	 * Anything frozen can't move or be moved to/from.
+>  	 *
+> @@ -177,6 +176,18 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
+>  	if (freezer->state == CGROUP_FROZEN)
+>  		return -EBUSY;
+>  
+> +	if (threadgroup) {
+> +		struct task_struct *c;
+
+And better have a blank line here. ;)
+
+> +		rcu_read_lock();
+> +		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
+> +			if (is_task_frozen_enough(c)) {
+> +				rcu_read_unlock();
+> +				return -EBUSY;
+> +			}
+> +		}
+> +		rcu_read_unlock();
+> +	}
+> +
+>  	return 0;
+>  }
+>  
+> diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+> index 7e75a41..86397f4 100644
+> --- a/kernel/cpuset.c
+> +++ b/kernel/cpuset.c
+> @@ -1324,9 +1324,10 @@ static int fmeter_getrate(struct fmeter *fmp)
+>  static cpumask_var_t cpus_attach;
+>  
+>  /* Called by cgroups to determine if a cpuset is usable; cgroup_mutex held */
+> -static int cpuset_can_attach(struct cgroup_subsys *ss,
+> -			     struct cgroup *cont, struct task_struct *tsk)
+> +static int cpuset_can_attach(struct cgroup_subsys *ss, struct cgroup *cont,
+> +			     struct task_struct *tsk, bool threadgroup)
+>  {
+> +	int ret;
+>  	struct cpuset *cs = cgroup_cs(cont);
+>  
+>  	if (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed))
+> @@ -1343,18 +1344,50 @@ static int cpuset_can_attach(struct cgroup_subsys *ss,
+>  	if (tsk->flags & PF_THREAD_BOUND)
+>  		return -EINVAL;
+>  
+> -	return security_task_setscheduler(tsk, 0, NULL);
+> +	ret = security_task_setscheduler(tsk, 0, NULL);
+> +	if (ret)
+> +		return ret;
+> +	if (threadgroup) {
+> +		struct task_struct *c;
+
+ditto
+
+> +		rcu_read_lock();
+> +		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
+> +			ret = security_task_setscheduler(c, 0, NULL);
+> +			if (ret) {
+> +				rcu_read_unlock();
+> +				return ret;
+> +			}
+> +		}
+> +		rcu_read_unlock();
+> +	}
+> +	return 0;
+> +}
