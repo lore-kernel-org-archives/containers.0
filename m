@@ -1,15 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/5] Add a ckpt_read_string() function (v2)
-Date: Tue, 4 Aug 2009 14:13:34 -0500
-Message-ID: <20090804191334.GB10275@us.ibm.com>
-References: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
-	<1249331463-11887-3-git-send-email-danms@us.ibm.com>
+From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by tgid
+	at once
+Date: Tue, 4 Aug 2009 15:14:59 -0400
+Message-ID: <2f86c2480908041214r1f23c1b7q9a25b04e26c92a1a@mail.gmail.com>
+References: <20090731012908.27908.62208.stgit@hastromil.mtv.corp.google.com>
+	<20090731015154.27908.9639.stgit@hastromil.mtv.corp.google.com>
+	<20090803175452.GA5481@us.ibm.com>
+	<2f86c2480908031113y525b6cbdhe418b8a0364c7760@mail.gmail.com>
+	<20090803185556.GA8469@us.ibm.com> <20090803194555.GA10158@us.ibm.com>
+	<6599ad830908041148h6d3f3e9bxfef9f3eedec0ab6d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1249331463-11887-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <6599ad830908041148h6d3f3e9bxfef9f3eedec0ab6d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,89 +23,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Add a ckpt_read_string() function to allow reading of a variable-length
-> (but length-capped) string from the checkpoint stream.
-> 
-> Changes in v2:
->  - Avoid memcpy() by reading into the allocated buffer directly
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++++
->  include/linux/checkpoint.h |    1 +
->  2 files changed, 37 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 65cafd9..641a7bd 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -285,6 +285,42 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
->  	return ret;
->  }
-> 
-> +/**
-> + * ckpt_read_string - read a string (variable length)
-> + * @ctx: checkpoint context
-> + * @str: pointer to buffer to store allocated string (caller must kfree())
-> + * @max: maximum acceptable length
-> + *
-> + * This can be used to read a variable-length string from the checkpoint
-> + * stream. @max limits the size of the resulting buffer.  Returns zero on
-> + * success, negative on failure.
-> + */
-> +int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
-> +{
-> +	int len;
-> +	int ret = 0;
-> +
-> +	*str = NULL;
-> +
-> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
-> +	if (len < 0)
-> +		return len;
-> +	else if (len > max)
-> +		return -EINVAL;
-> +
-> +	*str = kzalloc(len + 1, GFP_KERNEL);
-> +	if (!*str)
-> +		ret = -ENOMEM;
+On Tue, Aug 4, 2009 at 2:48 PM, Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Aug 3, 2009 at 12:45 PM, Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+>>
+>> This is probably a stupid idea, but... =A0what about having zero
+>> overhead at clone(), and instead, at cgroup_task_migrate(),
+>> dequeue_task()ing all of the affected threads for the duration of
+>> the migrate?
+>>
+>
+> Or a simpler alternative - rather than taking the thread group
+> leader's rwsem in cgroup_fork(), always take current's rwsem. Then
+> you're always locking a (probably?) local rwsem and minimizing the
+> overhead. So not quite zero overhead in the fork path, but I'd be
+> surprised if it was measurable. In cgroup_attach_proc() you then have
+> to take the rwsem of every thread in the process. Kind of the
+> equivalent of a per-threadgroup big-reader lock.
 
-	would you like to return here as well?
-
-> +
-> +	ret = ckpt_kread(ctx, *str, len);
-> +	if (ret < 0) {
-> +		kfree(*str);
-> +		*str = NULL;
-> +	}
-> +
-> +	return ret;
-> +}
-> +
->  /***********************************************************************
->   * Restart
->   */
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index b2c86a3..3536633 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -68,6 +68,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
->  extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
-> +extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
->  extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
->  extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
->  extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
-> -- 
-> 1.6.2.5
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+Hmm, the tasklist_lock section in fork() is entirely inside the
+read-lock. Presumably then iterating the threadgroup list to take all
+rwsems is safe from a race in which one thread escapes?
