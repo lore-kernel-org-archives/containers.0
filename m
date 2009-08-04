@@ -1,18 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by tgid
-	at once
-Date: Tue, 4 Aug 2009 11:48:57 -0700
-Message-ID: <6599ad830908041148h6d3f3e9bxfef9f3eedec0ab6d@mail.gmail.com>
-References: <20090731012908.27908.62208.stgit@hastromil.mtv.corp.google.com>
-	<20090731015154.27908.9639.stgit@hastromil.mtv.corp.google.com>
-	<20090803175452.GA5481@us.ibm.com>
-	<2f86c2480908031113y525b6cbdhe418b8a0364c7760@mail.gmail.com>
-	<20090803185556.GA8469@us.ibm.com> <20090803194555.GA10158@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/5] Add an errno validation function (v2)
+Date: Tue, 4 Aug 2009 14:10:12 -0500
+Message-ID: <20090804191012.GA10275@us.ibm.com>
+References: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
+	<1249331463-11887-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090803194555.GA10158-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1249331463-11887-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,24 +19,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Aug 3, 2009 at 12:45 PM, Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->
-> This is probably a stupid idea, but... =A0what about having zero
-> overhead at clone(), and instead, at cgroup_task_migrate(),
-> dequeue_task()ing all of the affected threads for the duration of
-> the migrate?
->
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Changes in v2:
+>   - Compare against MAX_ERRNO instead of more stringent but obscure
+>     constant
+> ---
+>  include/linux/checkpoint.h |    6 +++++-
+>  1 files changed, 5 insertions(+), 1 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 60d1116..b2c86a3 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -28,7 +28,7 @@
+>  #include <linux/user_namespace.h>
+>  #include <linux/checkpoint_types.h>
+>  #include <linux/checkpoint_hdr.h>
+> -
+> +#include <linux/err.h>
+> 
+>  /* ckpt_ctx: kflags */
+>  #define CKPT_CTX_CHECKPOINT_BIT		0
+> @@ -257,6 +257,10 @@ extern void *restore_sighand(struct ckpt_ctx *ctx);
+>  			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+>  	} while (0)
+> 
+> +static inline int ckpt_validate_errno(int errno)
+> +{
+> +	return (errno >= 0) && (errno < MAX_ERRNO);
+> +}
 
-Or a simpler alternative - rather than taking the thread group
-leader's rwsem in cgroup_fork(), always take current's rwsem. Then
-you're always locking a (probably?) local rwsem and minimizing the
-overhead. So not quite zero overhead in the fork path, but I'd be
-surprised if it was measurable. In cgroup_attach_proc() you then have
-to take the rwsem of every thread in the process. Kind of the
-equivalent of a per-threadgroup big-reader lock.
+Maybe i should take a break and re-read in a few minutes, but
+don't you want this to be:
 
-Paul
+	return (errno > 0) && (errno <= MAX_ERRNO));
+> 
+>  /* debugging flags */
+>  #define CKPT_DBASE	0x1		/* anything */
+> -- 
+> 1.6.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
