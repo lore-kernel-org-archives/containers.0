@@ -1,46 +1,32 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] powerpc: vdso build fix (ckpt-v17)
-Date: Tue, 04 Aug 2009 15:58:12 -0500
-Message-ID: <m3hbwn70uz.fsf@pobox.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v7)
+Date: Tue, 4 Aug 2009 16:17:42 -0500
+Message-ID: <20090804211742.GC13499@us.ibm.com>
+References: <1249331463-11887-1-git-send-email-danms@us.ibm.com> <1249331463-11887-6-git-send-email-danms@us.ibm.com> <20090804205241.GF10275@us.ibm.com> <878whzl2cs.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <878whzl2cs.fsf@caffeine.danplanet.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, Alexey Dobriyan <adobriyan@gmail.com>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-arch/powerpc/kernel/vdso.c: In function 'arch_setup_additional_pages':
-arch/powerpc/kernel/vdso.c:244: error: 'ret' undeclared (first use in this function)
-arch/powerpc/kernel/vdso.c:244: error: (Each undeclared identifier is reported only once
-arch/powerpc/kernel/vdso.c:244: error: for each function it appears in.)
+Quoting Dan Smith (danms@us.ibm.com):
+> SH> Does this re-use of tmp make sense?  (It only would if
+> SH> dev_alloc_skb() did a generic prealloc for any subsequent
+> SH> skb_clone() which i don't think is the case)
+> 
+> No, this is cruft.
+> 
+> SH> Also, do you need any kind of lock on the queue to make this walk
+> SH> safe, or do ensure below (sorry i'm slow and haven't gotten there)
+> SH> that all tasks with an open fd for either end of this sock are
+> SH> frozen?
+> 
+> Hmm, it seems that holding the lock while processing the queue isn't
+> really the way to go.  Perhaps comparing the pid of the other end of
+> the socket against the list in the context is best?
 
-
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- arch/powerpc/kernel/vdso.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
-index c25213b..679b394 100644
---- a/arch/powerpc/kernel/vdso.c
-+++ b/arch/powerpc/kernel/vdso.c
-@@ -241,7 +241,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm,
- 
- 	/* for restart(2), double check that we got we asked for */
- 	if (start && vdso_base != start) {
--		ret = -EBUSY;
-+		rc = -EBUSY;
- 		goto fail_mmapsem;
- 	}
- 
--- 
-1.6.0.6
+I don't understand.  Which pid?
