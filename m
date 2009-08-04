@@ -1,110 +1,55 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add a ckpt_read_string() function (v3)
-Date: Tue, 4 Aug 2009 15:58:05 -0500
-Message-ID: <20090804205805.GA13499@us.ibm.com>
-References: <1249418420-807-1-git-send-email-danms@us.ibm.com>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v7)
+Date: Tue, 04 Aug 2009 14:02:11 -0700
+Message-ID: <878whzl2cs.fsf@caffeine.danplanet.com>
+References: <1249331463-11887-1-git-send-email-danms@us.ibm.com>
+	<1249331463-11887-6-git-send-email-danms@us.ibm.com>
+	<20090804205241.GF10275@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1249418420-807-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20090804205241.GF10275@us.ibm.com> (Serge E. Hallyn's message of "Tue\, 4 Aug 2009 15\:52\:41 -0500")
+Sender: netdev-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: containers@lists.osdl.org, Alexey Dobriyan <adobriyan@gmail.com>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Add a ckpt_read_string() function to allow reading of a variable-length
-> (but length-capped) string from the checkpoint stream.
-> 
-> Changes in v3:
->  - Return immediately on allocation failure instead of falling through to the
->    inevitable crash
-> 
-> Changes in v2:
->  - Avoid memcpy() by reading into the allocated buffer directly
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+SH> Does this re-use of tmp make sense?  (It only would if
+SH> dev_alloc_skb() did a generic prealloc for any subsequent
+SH> skb_clone() which i don't think is the case)
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+No, this is cruft.
 
-> ---
->  checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++++
->  include/linux/checkpoint.h |    1 +
->  2 files changed, 37 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 65cafd9..b1ffc54 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -285,6 +285,42 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
->  	return ret;
->  }
-> 
-> +/**
-> + * ckpt_read_string - read a string (variable length)
-> + * @ctx: checkpoint context
-> + * @str: pointer to buffer to store allocated string (caller must kfree())
-> + * @max: maximum acceptable length
-> + *
-> + * This can be used to read a variable-length string from the checkpoint
-> + * stream. @max limits the size of the resulting buffer.  Returns zero on
-> + * success, negative on failure.
-> + */
-> +int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
-> +{
-> +	int len;
-> +	int ret = 0;
-> +
-> +	*str = NULL;
-> +
-> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
-> +	if (len < 0)
-> +		return len;
-> +	else if (len > max)
-> +		return -EINVAL;
-> +
-> +	*str = kzalloc(len + 1, GFP_KERNEL);
-> +	if (!*str)
-> +		return -ENOMEM;
-> +
-> +	ret = ckpt_kread(ctx, *str, len);
-> +	if (ret < 0) {
-> +		kfree(*str);
-> +		*str = NULL;
-> +	}
-> +
-> +	return ret;
-> +}
-> +
->  /***********************************************************************
->   * Restart
->   */
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 87b683b..a6935b3 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -68,6 +68,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
->  extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
-> +extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
->  extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
->  extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
->  extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
-> -- 
-> 1.6.0.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+SH> Also, do you need any kind of lock on the queue to make this walk
+SH> safe, or do ensure below (sorry i'm slow and haven't gotten there)
+SH> that all tasks with an open fd for either end of this sock are
+SH> frozen?
+
+Hmm, it seems that holding the lock while processing the queue isn't
+really the way to go.  Perhaps comparing the pid of the other end of
+the socket against the list in the context is best?
+
+SH> what about UNIXCB(skb).creds and .secid?
+
+Yep, okay.
+
+SH> It looks like the above provides a way around needing
+SH> CAP_NET_ADMIN to set SOCK_DBG in sock->sk_flags?  You can probably
+SH> fix that by masking it out here, and if a flag in the checkpoint
+SH> image says it was on originally, then set it below through
+SH> setsockopt.
+
+Yep, okay.
+
+SH> Sanity checking on sk_type, sk_state, backlog etc should probably
+SH> also be added.
+
+I check type and state on restart globally and per-protocol.  Backlog
+could use it though too, yeah.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
