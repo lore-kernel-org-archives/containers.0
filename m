@@ -1,12 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [cr_tests PATCH] robust futex: handle -EINTR snafus
-Date: Tue, 4 Aug 2009 13:03:03 -0500
-Message-ID: <20090804180303.GA8419@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 4/4] c/r: support for real/virt/prof itimers (v2)
+Date: Tue, 04 Aug 2009 14:43:54 -0400
+Message-ID: <4A78816A.6080001@librato.com>
+References: <1249376956-27555-1-git-send-email-orenl@librato.com>
+	<1249376956-27555-5-git-send-email-orenl@librato.com>
+	<20090804141746.GQ29252@hawkmoon.kerlabs.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090804141746.GQ29252-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,145 +19,155 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[ will apply this patch to cr_tests unless Matt has comments ]
 
-Freezing the robust futex waiters makes the syscall return with
--EINTR.  The task then ends up caling futex_wait_restart.  If
-the futex value has already been changed by the parent, then
-the futex_wait_restart will return -EAGAIN.
 
-If that happens, have the kid create a file called 'TBROK'
-and exit so the parent can reap it.  The run.sh shell is
-rewritten so it will rerun the test if the file TBROK has
-been created.
+Louis Rilling wrote:
+> Hi Oren,
+> 
+> On 04/08/09  5:09 -0400, Oren Laadan wrote:
+>> This patch adds support for real/virt/prof itimers.
+>> Expiry and the interval values are both saved in nanoseconds.
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  checkpoint/signal.c            |   72 ++++++++++++++++++++++++++++++++++++++++
+>>  include/linux/checkpoint_hdr.h |    6 +++
+>>  2 files changed, 78 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+>> index c9da06b..18b3e2d 100644
+>> --- a/checkpoint/signal.c
+>> +++ b/checkpoint/signal.c
+>> @@ -15,6 +15,7 @@
+>>  #include <linux/signal.h>
+>>  #include <linux/errno.h>
+>>  #include <linux/resource.h>
+>> +#include <linux/timer.h>
+>>  #include <linux/checkpoint.h>
+>>  #include <linux/checkpoint_hdr.h>
+>>  
+>> @@ -264,6 +265,7 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+>>  	struct signal_struct *signal;
+>>  	struct sigpending shared_pending;
+>>  	struct rlimit *rlim;
+>> +	struct timeval tval;
+>>  	unsigned long flags;
+>>  	int i, ret;
+>>  
+>> @@ -299,6 +301,49 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+>>  		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
+>>  		h->rlim[i].rlim_max = rlim[i].rlim_max;
+>>  	}
+>> +
+>> +	/* real/virt/prof itimers */
+>> +	h->it_real_incr = ktime_to_ns(signal->it_real_incr);
+>> +	/*
+>> +	 * (a) If the timer is now active (did not expire), compute
+>> +	 * the time delta.
+>> +	 * (b) If the timer expired, and delivered the signal already,
+>> +	 * then set the expire (value) to the interval
+>> +	 * (c) If the timer expired but did not yet deliver the
+>> +	 * signal, then set the expire to the minimum possible, so it
+>> +	 * will expire immediately after restart succeeds.
+>> +	 */
+>> +	if (hrtimer_active(&signal->real_timer)) {
+>> +		ktime_t delta = hrtimer_get_remaining(&signal->real_timer);
+>> +		/*
+>> +		 * If the timer expired after the the test above, then
+>> +		 * set the expire to the minimum possible (because by
+>> +		 * now the pending signals have been saved already, but
+>> +		 * without the signal from this very expiry).
+>> +		 */
+>> +		ckpt_debug("active ! %lld\n", delta.tv64);
+>> +		if (delta.tv64 <= 0)
+>> +			delta.tv64 = NSEC_PER_USEC;
+>> +		h->it_real_value = ktime_to_ns(delta);
+>> +	} else if (sigismember(&signal->shared_pending.signal, SIGALRM)) {
+>> +		/* case (b) */
+>> +		h->it_real_value = h->it_real_incr;
+>> +	} else {
+>> +		/* case (c) */
+>> +		h->it_real_value =
+>> +			ktime_to_ns((ktime_t) { .tv64 = NSEC_PER_USEC });
+>> +	}
+> 
+> AFAICS the third case catches expired timers having not delivered the signal yet
+> as well as inactive timers. If the latter, at restart the timer will be
+> rearmed while it should not.
+> 
+> However, reading hrtimer code I understand that case (c) cannot happen. IOW if
+> the timer has expired but has not sent SIGALRM yet, then hrtimer_active()
+> returns true, and the first block already handles that case correctly.
 
-(note this has little to do with c/r, but rather with how
-the freezer affects the futex api)
+Yes, I re-read the code and (c) should not happen, because the timer
+cannot become inactive without having sent SIGALRM as long as we hold
+the siglock.
 
-To recreate a hang with the robust testcase without this fix,
-run the following script:
+> Moreover case (b) only happens if the timer was not automatically rearmed,
+> that is it_real_incr == 0. So in this case the signal was already sent (and
+> picked for checkpointing if not handled), and h->it_real_value should be set to
+> 0.
 
-==============================================================
- #!/bin/bash
+Here is the scenario I had in mind:
 
- #set -e
+1) kernel/hrtimer.c:__run_hrtimer() is called with the timer fires,
+sets the timer state to HRTIMER_STATE_CALLBACK and then invokes
+the callback.
 
-TEST=robust
+2) for itimers, the callback is kernel/itimer.c:it_real_fn(): it
+sends the signal and returns HRTIMER_NORESTART.
 
-source ../common.sh
+3) back to __run_hrtimer() which does _not_ call enqueue_hrtimer(),
+and then _clears_ the HRTIMER_STATE_CALLBACK. This results in the
+state being zero -- that is, hrtimer_active() will be false.
 
-lcv=0
-while [ $lcv -lt 100 ]; do
-	echo loop num $lcv
-	rm -f ./checkpoint-*
-	rm -f TBROK
-	./${TEST} &
-	TEST_PID=$!
-	while [ '!' -r "./checkpoint-ready" ]; do
-		sleep 1
-	done
-	freeze
-	echo ckpt $TEST_PID
-	ckpt $TEST_PID > checkpoint-${TEST}
-	thaw
-	touch "./checkpoint-done"
-	wait ${TEST_PID}
-	retval=$?
-	if [ -f "TBROK" ]; then
-		echo "XXX Futex snafu, re-running this test XXX"
-		lcv=$((lcv-1))
-		continue
-	fi
-	echo "Test ${TEST} done, returned $retval"
-	if [ $retval -ne 0 ]; then
-		echo FAIL
-		exit 1
-	else
-		echo PASS
-	fi
+So in #2 SIGALRM was sent, and then in #3 the timer became inactive
+without holding siglock, and not re-armed. (if it_real_incr > 0, it
+should and will be re-armed when the signal is dequeued).
 
-	lcv=$((lcv+1))
-done
+Therefore when we restart, we need to set it_real_incr to its saved
+value, and it_real_value to 0. Then, if SIGALRM was sent, it will
+be dequeued after restart, and depending on it_real_incr the timer
+will, or will not, be re-armed. If SIGALRM was not sent, then it
+must be that it_real_incr is also 0.
 
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- futex/robust.c |   10 +++++++++-
- futex/run.sh   |   13 +++++++++++--
- 2 files changed, 20 insertions(+), 3 deletions(-)
+IOW, in both cases (SIGALRM sent/not sent) of the inactive timer,
+the value of it_real_incr should be 0, therefore the code you
+suggest below is correct, except for the BUG_ON statement.
 
-diff --git a/futex/robust.c b/futex/robust.c
-index a52f638..6a5da78 100644
---- a/futex/robust.c
-+++ b/futex/robust.c
-@@ -103,10 +103,11 @@ void add_rfutex(struct futex *rf)
- 
- void acquire_rfutex(struct futex *rf, pid_t tid)
- {
--	int val = 0;
-+	int oldval, newval, val = 0;
- 
- 	rlist.list_op_pending = &rf->rlist; /* ARCH TODO make sure this assignment is atomic */
- 
-+	oldval = atomic_read(&rf->tid);
- 	tid = tid & FUTEX_TID_MASK;
- 	do {
- 		val = atomic_cmpxchg(&rf->tid, 0, tid);
-@@ -134,6 +135,13 @@ void acquire_rfutex(struct futex *rf, pid_t tid)
- 				continue;
- 			case EAGAIN:
- 				log("WARN", "EAGAIN while sleeping on futex\n");
-+				newval = atomic_read(&rf->tid);
-+				if (newval != oldval) {
-+					int ret = creat("TBROK", 0755);  
-+					if (ret == -1)
-+						fail++;
-+					return;
-+				}
- 				continue;
- 			case EINTR:
- 				log("WARN", "EINTR while sleeping on futex\n");
-diff --git a/futex/run.sh b/futex/run.sh
-index 1ed23ad..1545841 100755
---- a/futex/run.sh
-+++ b/futex/run.sh
-@@ -37,9 +37,13 @@ fi
- # mkdir /cg/1
- # chown -R $(id --name -u).$(id --name -g) /cg/1
- 
--for T in ${TESTS[@]} ; do
-+NUMTESTS=${#TESTS[@]}
-+CURTEST=0
-+
-+while [ $CURTEST -lt $NUMTESTS ]; do
-+	T=${TESTS[$CURTEST]}
- 	trap 'break' ERR EXIT
--	rm -f ./checkpoint-*
-+	rm -f ./checkpoint-* TBROK
- 	echo "Running test: ${T}"
- 	./${T} &
- 	TEST_PID=$!
-@@ -53,6 +57,10 @@ for T in ${TESTS[@]} ; do
- 	wait ${TEST_PID}
- 	retval=$?
- 	echo "Test ${T} done, returned $retval"
-+	if [ -f "TBROK" ]; then
-+		echo "BROK: Futex snafu, re-running this test"
-+		continue
-+	fi
- 	if [ $retval -ne 0 ]; then
- 		echo FAIL
- 		exit 1
-@@ -71,6 +79,7 @@ for T in ${TESTS[@]} ; do
- 		echo PASS
- 	fi
- 	trap "" ERR EXIT
-+	CURTEST=$((CURTEST+1))
- done
- 
- #rm -f ./checkpoint-*
--- 
-1.6.1.1
+(In restart, it's not a big deal if these values are "incorrect",
+because the worst harm it can do is send a superfluous SIGALRM).
+
+> 
+> So the following could be actually better:
+> 
+> 	h->it_real_incr = ktime_to_ns(signal->it_real_incr);
+> 	/*
+> 	 * (a) If the timer is now active, compute the time delta.
+> 	 * (b) Otherwise, siglock ensures that 	 */
+> 	if (hrtimer_active(&signal->real_timer)) {
+> 		ktime_t delta = hrtimer_get_remaining(&signal->real_timer);
+> 		/*
+> 		 * If the timer expired after the the test above, then
+> 		 * set the expire to the minimum possible (because by
+> 		 * now the pending signals have been saved already, but
+> 		 * the signal from this very expiry won't be sent before we
+> 		 * release t->sighand->siglock.
+> 		 */
+> 		ckpt_debug("active ! %lld\n", delta.tv64);
+> 		if (delta.tv64 <= 0)
+> 			delta.tv64 = NSEC_PER_USEC;
+> 		h->it_real_value = ktime_to_ns(delta);
+> 	} else {
+> 		BUG_ON(h->it_real_incr);
+> 		h->it_real_value = 0;
+> 	}
+> 
+> Louis
+
+Thanks,
+
+Oren.
