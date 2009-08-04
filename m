@@ -1,70 +1,54 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: Fix no-dot-config-targets pattern in linux/Makefile
-Date: Tue, 04 Aug 2009 04:20:45 -0400
-Message-ID: <4A77EF5D.7070501@librato.com>
-References: <1249328610.7138.23.camel@Maple>
+From: Oren Laadan <orenl@librato.com>
+Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
+Date: Tue, 04 Aug 2009 04:27:27 -0400
+Message-ID: <4A77F0EF.9090602@librato.com>
+References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>	<1248295301-30930-6-git-send-email-danms@us.ibm.com>	<4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>	<4A6F6B19.9010508@librato.com> <878wi6yxui.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1249328610.7138.23.camel@Maple>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: John Dykstra <john.dykstra1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <878wi6yxui.fsf@caffeine.danplanet.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, Alexey Dobriyan <adobriyan@gmail.com>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 
 
-John Dykstra wrote:
-> Oren, I'm not sure who you're accepting patches from, but...
+Dan Smith wrote:
+> OL> Hmm.. then what happens when you have a circular dependency ?  For
+> OL> example, three dgram sockets, A, B and C where: A->B, B->C and
+> OL> C->A ('->' means connected).
+> 
+> So, I've been cooking up changes to the patch and a test for this
+> case.  However, it seems like it's not valid, unless I'm missing
+> something.  The man page for connect() says:
+> 
+>   If the socket sockfd is of type SOCK_DGRAM then serv_addr is the
+>   address to which datagrams are sent by default, and the only address
+>   from which datagrams are received.
+> 
+> So, even though you can connect() a DGRAM socket and then sendto()
+> datagrams to a different location, it doesn't appear that the
+> relationship between A and B is really valid, at least the connection
+> between A and B is not functional.  In fact, in my testing, if you try
+> to connect() C back to A, you get "Operation not permitted" because A
+> is already connected elsewhere.
 
-I accept any good patch  :)
-(pushed to ckpt-v17-dev)
+Weird ... I have a faint memory of seeing that happen (which is
+why I brought it up).
+
+Does this mean that a situation of A->B and B->C is valid only as
+long as A->B is done first, otherwise A->B will fail because B will
+already be connected to C ?
+
+Then, the other problem is to restore correctly you need to mimic
+the behavior of sendto() because of the way the skb references the
+original socket for the write-buf accounting :(
+
+In turn, this means that during checkpoint you need to record the
+_origin_ of each buffer in the queue of afunix dgram sockets :((
+
+Sigh :(((
 
 Oren.
-
-
-> 
-> --
-> Kernel builds that specify targets in the checkpoint/ directory will
-> fail or be incorrect because the autoconfig files were not included.
-> One way to reproduce the problem is:
-> 
-> 	make checkpoint/sys.s
-> 
-> The problem is that this pattern in linux/Makefile matches files in the
-> checkpoint/ directory:
-> 
-> no-dot-config-targets := clean mrproper distclean \
->                          cscope TAGS tags help %docs check% \
->                          include/linux/version.h headers_% \
->                          kernelrelease kernelversion
-> 
-> Make the pattern more exact, per the current set of linux build targets.
-> 
-> Signed-off-by: John Dykstra <john.dykstra1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  Makefile |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/Makefile b/Makefile
-> index cf631d7..17445a6 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -400,7 +400,7 @@ endif
->  # of make so .config is not included in this case either (for *config).
->  
->  no-dot-config-targets := clean mrproper distclean \
-> -			 cscope TAGS tags help %docs check% \
-> +			 cscope TAGS tags help %docs checkstack \
->  			 include/linux/version.h headers_% \
->  			 kernelrelease kernelversion
->  
