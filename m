@@ -1,15 +1,11 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v17][PATCH 16/60] pids 6/7: Define do_fork_with_pids()
-Date: Tue, 04 Aug 2009 04:37:58 -0400
-Message-ID: <4A77F366.9020104__32604.5693633661$1249375117$gmane$org@librato.com>
-References: <1248256822-23416-1-git-send-email-orenl@librato.com>
-	<1248256822-23416-17-git-send-email-orenl@librato.com>
-	<20090803182640.GB7493@us.ibm.com>
+Subject: c/r: support for pending signals (v2)
+Date: Tue,  4 Aug 2009 05:09:12 -0400
+Message-ID: <1249376956-27555-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090803182640.GB7493-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,41 +15,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Luis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This is the 2nd round of c/r support for pending signals. This
+version adds process itimers (real/virtual/prof). Changes:
 
+  - Fix compilation warnings
+  - [Louis Rilling] Remove SIGQUEUE_PREALLOC flag from queued signals
+  - [Louis Rilling] Fail if task has posix-timers or SI_TIMER signal
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ...
->> +struct target_pid_set {
->> +	int num_pids;
->> +	pid_t *target_pids;
->> +};
-> 
-> Oren, I thought you had decided to add an extended flags field
-> here, to support additional CLONE_ flags - such as CLONE_TIMENS?
-
-Yes.
-
-> 
-> I mention it now because if you're still considering that
-> long-term, then IMO the syscall should not be called clone_with_pids(),
-> but clone_extended().  Otherwise, to support new clone flags we'll
-> either have to use unshare2 (without clone support), or add yet
-> another clone variant, OR use clone_with_pids() which is a poor name
-> for something which will likely be used in cases without specifying
-> pids, but specifying flags not support through any other interface.
-
-True.
-
-Also, Suka - any objections to rename 'struct target_pid_set' to
-simply 'struct pid_set' ?
-Actually, it could probably be (re)used internally in the patch that
-adds to cgroup a 'procs' file similar to 'tasks'
-(https://lists.linux-foundation.org/pipermail/containers/2009-July/019679.html)
+This applies on top of ckpt-v17-dev (44430daae5d6...)
 
 Oren.
