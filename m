@@ -1,53 +1,39 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
-Date: Tue, 04 Aug 2009 13:05:51 -0400
-Message-ID: <4A786A6F.10902@librato.com>
-References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>	<1248295301-30930-6-git-send-email-danms@us.ibm.com>	<4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>	<4A6F6B19.9010508@librato.com> <878wi6yxui.fsf@caffeine.danplanet.com>	<4A77F0EF.9090602@librato.com> <87ws5jlidl.fsf@caffeine.danplanet.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH] c/r: Fix no-dot-config-targets pattern in	linux/Makefile
+Date: Tue, 04 Aug 2009 13:07:57 -0400
+Message-ID: <4A786AED.1030101@librato.com>
+References: <1249328610.7138.23.camel@Maple> <4A77EF5D.7070501@librato.com>
+	<1249397406.7174.1.camel@Maple>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <87ws5jlidl.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1249397406.7174.1.camel@Maple>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: John Dykstra <john.dykstra1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Dan Smith wrote:
-> OL> Does this mean that a situation of A->B and B->C is valid only as
-> OL> long as A->B is done first, otherwise A->B will fail because B
-> OL> will already be connected to C ?
+John Dykstra wrote:
+> On Tue, 2009-08-04 at 04:20 -0400, Oren Laadan wrote:
+>> I accept any good patch  :)
 > 
-> Correct.
+> What's a good way to package the patch on the list so that you'll notice
+> it, but it will still be clear that it's not intended for mainline?
 
-Hmm.. this also means that if A->C already, then an attempt to also
-do B->C will fail :(
+Since c/r is not (yet) in mainline, 'c/r' prefix and cc'ing me should
+make it visible enough.
 
-> 
-> OL> Then, the other problem is to restore correctly you need to mimic
-> OL> the behavior of sendto() because of the way the skb references the
-> OL> original socket for the write-buf accounting :(
-> 
-> OL> In turn, this means that during checkpoint you need to record the
-> OL> _origin_ of each buffer in the queue of afunix dgram sockets :((
-> 
-> Or return EBUSY when there are skb's that are outstanding from before
-> the re-connect, right?
-
-Hmm.. I think that when you reconnect a dgram socket, it discards all
-unread pending data previous received, whether through connection or
-via sendto().
-
-What I meant is that restore (and therefore checkpoint) need to know
-how to handle skb's sent with sendto() but without proper connection,
-where the target socket is still unconnected.
-
-I'm ok with declaring this case unsupported for now and put it in the
-'todo' list, and meanwhile work towards getting the current afunix
-patches into the cr-dev tree. (As long as it doesn't it will be buried
-there forever...)
+Thanks,
 
 Oren.
-
