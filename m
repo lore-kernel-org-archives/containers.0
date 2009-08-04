@@ -1,21 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by
-	tgid at once
-Date: Tue, 4 Aug 2009 14:40:38 -0700
-Message-ID: <20090804214038.GA5141__17540.4122485363$1249422106$gmane$org@count0.beaverton.ibm.com>
-References: <20090731012908.27908.62208.stgit@hastromil.mtv.corp.google.com>
-	<20090731015154.27908.9639.stgit@hastromil.mtv.corp.google.com>
-	<20090803175452.GA5481@us.ibm.com>
-	<2f86c2480908031113y525b6cbdhe418b8a0364c7760@mail.gmail.com>
-	<20090803185556.GA8469@us.ibm.com>
-	<20090803194555.GA10158@us.ibm.com>
-	<6599ad830908031255j68ce047x7165bfefa62ed53c@mail.gmail.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Add a ckpt_read_string() function (v3)
+Date: Tue, 04 Aug 2009 16:56:34 -0500
+Message-ID: <m3eirr450t.fsf@pobox.com>
+References: <1249418420-807-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830908031255j68ce047x7165bfefa62ed53c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1249418420-807-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Dan Smith's
+	message of "Tue\,  4 Aug 2009 13\:40\:20 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,74 +18,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rafael Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>, Linux Power Management <linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[ Cc'ing Rafael and linux-pm for more eyes on proposed freezer usage. ]
+Hi Dan,
 
-On Mon, Aug 03, 2009 at 12:55:33PM -0700, Paul Menage wrote:
-> On Mon, Aug 3, 2009 at 12:45 PM, Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >
-> > This is probably a stupid idea, but... =A0what about having zero
-> > overhead at clone(), and instead, at cgroup_task_migrate(),
-> > dequeue_task()ing all of the affected threads for the duration of
-> > the migrate?
-> =
+Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> +/**
+> + * ckpt_read_string - read a string (variable length)
+> + * @ctx: checkpoint context
+> + * @str: pointer to buffer to store allocated string (caller must kfree())
+> + * @max: maximum acceptable length
+> + *
+> + * This can be used to read a variable-length string from the checkpoint
+> + * stream. @max limits the size of the resulting buffer.  Returns zero on
+> + * success, negative on failure.
+> + */
+> +int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
+> +{
+> +	int len;
+> +	int ret = 0;
+> +
+> +	*str = NULL;
+> +
+> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
+> +	if (len < 0)
+> +		return len;
+> +	else if (len > max)
+> +		return -EINVAL;
+> +
+> +	*str = kzalloc(len + 1, GFP_KERNEL);
+> +	if (!*str)
+> +		return -ENOMEM;
+> +
+> +	ret = ckpt_kread(ctx, *str, len);
+> +	if (ret < 0) {
+> +		kfree(*str);
+> +		*str = NULL;
+> +	}
+> +
+> +	return ret;
+> +}
 
-> That doesn't sound too unreasonable, actually - it would certainly
-> simplify things a fair bit. Is there a standard API for doing that?
+Maybe I'm missing the utility this provides, but I think this helper is
+trying to do too much.  It's often more straightforward to allow (or
+force, depending on your POV) the caller to handle the allocation if
+it's going to have to free it anyway.  It also allows the caller to
+choose its own allocation method, e.g. on-stack for small things, or
+maybe some filesystem-related code will need to use GFP_NOFS.
 
-I'm all for simplifying cgroup locking. I doubt anybody's against
-it, given the "right" simplification.
+So I imagine a simple wrapper to probe the length of the string would
+suffice?  Something like
 
-I'm not sure if the freezer is actually the right thing to
-use for this though. Perhaps CFS/scheduler folks could advise?
+ssize_t ckpt_next_string_length(struct ckpt_ctx *ctx)
+{
+        return _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
+}
 
-> dequeue_task() itself doesn't really look like a public API. I guess
-> that the task freezer would be one way to accomplish this?
- =
+...
 
-The freezer won't actually remove the task from the runqueue -- just
-cause it to go into a schedule() loop until it's thawed.
+len = ckpt_next_string_length(ctx);
+if (len < 1 || len > max)
+   return -EINVAL;
 
-[ Incidentally, sorry if this is a dumb question, but why don't frozen
-tasks go onto a special wait queue rather than loop around schedule() ? =
+buf = kzalloc(len, GFP_KERNEL);
+if (!buf)
+   return -ENOMEM;
 
-At least for the cgroup freezer I can imagine keeping the wait queue
-with the cgroup subsystem... ]
+rc = ckpt_kread(ctx, buf, len);
+if (rc < 0) {
+   kfree(buf)
+   return -EINVAL;
+}
 
-The freezer sends a fake signal to the task which will interrupt syscalls
-and userspace to handle the signal. So all of the frozen tasks would be
-looping around schedule() just inside the syscall entry layer "handling"
-the fake signal until they are thawed.
-
-This could interrupt a read of the cgroup pidlist for example.
-
-I don't think it's 100% reliable -- vfork-ing tasks could delay freezing
-the task "indefinitely" if the vfork'ing userspace tasks are =
-
-clueless/malicious.
-
-However the signaling code used there uses kick_process() which may be
-needed for this idea.
-
-So if I understand correctly it goes something like:
-
-for each thread
-	dequeue from runqueue onto ?what?
-	kick thread (I think this should ensure that the thread is no longer
-			"current" on any CPU since we dequeued..)
-
-<seems we'd need something to ensure that the previous operations on each
-thread have "completed" as far as all other cpus are concerned...>
-
-for each thread
-	cgroup migrate
-
-for each thread
-	enqueue back on runqueue from ?what? (is this still the right
-						queue?)
-
-Cheers,
-	-Matt Helsley
+kfree(buf);
