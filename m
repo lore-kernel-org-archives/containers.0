@@ -1,36 +1,48 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
-Date: Tue, 04 Aug 2009 10:13:09 -0700
-Message-ID: <87ocqvlcyi.fsf@caffeine.danplanet.com>
-References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
-	<1248295301-30930-6-git-send-email-danms@us.ibm.com>
-	<4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>
-	<4A6F6B19.9010508@librato.com> <878wi6yxui.fsf@caffeine.danplanet.com>
-	<4A77F0EF.9090602@librato.com> <87ws5jlidl.fsf@caffeine.danplanet.com>
-	<4A786A6F.10902@librato.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [cr][git]linux-cr branch, ckpt-v17-dev,
+	updated. v2.6.27-rc5-46174-g44430da
+Date: Tue, 04 Aug 2009 14:00:28 -0400
+Message-ID: <4A78773C.8010502@librato.com>
+References: <200908040819.n748JdW9019915@gorgona.ncl.cs.columbia.edu>
+	<87skg7lg3z.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4A786A6F.10902@librato.com> (Oren Laadan's message of "Tue\, 04 Aug 2009 13\:05\:51 -0400")
-Sender: netdev-owner@vger.kernel.org
-To: Oren Laadan <orenl@librato.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87skg7lg3z.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-OL> What I meant is that restore (and therefore checkpoint) need to
-OL> know how to handle skb's sent with sendto() but without proper
-OL> connection, where the target socket is still unconnected.
 
-I see.  I'll have to think on that a bit.
+Dan Smith wrote:
+> OL>  ipc/checkpoint_shm.c           |   23 +++++++-
+> 
+> This didn't compile for me until I made the following (untested)
+> change:
+> 
+> diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
+> index 48bf026..ac19ff0 100644
+> --- a/ipc/checkpoint_shm.c
+> +++ b/ipc/checkpoint_shm.c
+> @@ -112,7 +112,8 @@ int checkpoint_ipc_shm(int id, void *p, void *data)
+>         if (ret < 0)
+>                 goto out;
+>  
+> -       ret = checkpoint_memory_contents(ctx, NULL, file->f_dentry->d_inode);
+> +       ret = checkpoint_memory_contents(ctx, NULL,
+> +                                        shp->shm_file->f_dentry->d_inode);
 
-OL> I'm ok with declaring this case unsupported for now and put it in
-OL> the 'todo' list, and meanwhile work towards getting the current
-OL> afunix patches into the cr-dev tree. (As long as it doesn't it
-OL> will be buried there forever...)
+Doh !  thanks ...  (actually, 'inode' would do it :)
+Pushed to ckpt-v17-dev.
 
-Okay, I think that would be most productive :)
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+Oren.
