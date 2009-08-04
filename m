@@ -1,31 +1,38 @@
-From: John Dykstra <john.dykstra1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] c/r:  Fix no-dot-config-targets pattern in linux/Makefile
-Date: Tue, 04 Aug 2009 09:50:06 -0500
-Message-ID: <1249397406.7174.1.camel@Maple>
-References: <1249328610.7138.23.camel@Maple>  <4A77EF5D.7070501@librato.com>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Re: [PATCH 5/5] c/r: Add AF_UNIX support (v6)
+Date: Tue, 04 Aug 2009 08:16:06 -0700
+Message-ID: <87ws5jlidl.fsf@caffeine.danplanet.com>
+References: <1248295301-30930-1-git-send-email-danms@us.ibm.com>
+	<1248295301-30930-6-git-send-email-danms@us.ibm.com>
+	<4A6F2D62.9040005@librato.com> <87ljm8czsf.fsf@caffeine.danplanet.com>
+	<4A6F6B19.9010508@librato.com> <878wi6yxui.fsf@caffeine.danplanet.com>
+	<4A77F0EF.9090602@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A77EF5D.7070501-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4A77F0EF.9090602@librato.com> (Oren Laadan's message of "Tue\, 04 Aug 2009 04\:27\:27 -0400")
+Sender: netdev-owner@vger.kernel.org
+To: Oren Laadan <orenl@librato.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2009-08-04 at 04:20 -0400, Oren Laadan wrote:
-> 
-> I accept any good patch  :)
+OL> Does this mean that a situation of A->B and B->C is valid only as
+OL> long as A->B is done first, otherwise A->B will fail because B
+OL> will already be connected to C ?
 
-What's a good way to package the patch on the list so that you'll notice
-it, but it will still be clear that it's not intended for mainline?
+Correct.
 
-  --  John
+OL> Then, the other problem is to restore correctly you need to mimic
+OL> the behavior of sendto() because of the way the skb references the
+OL> original socket for the write-buf accounting :(
+
+OL> In turn, this means that during checkpoint you need to record the
+OL> _origin_ of each buffer in the queue of afunix dgram sockets :((
+
+Or return EBUSY when there are skb's that are outstanding from before
+the re-connect, right?
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
