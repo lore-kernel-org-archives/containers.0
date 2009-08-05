@@ -1,80 +1,58 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/4] cr_tests: Replace KERNELSRC envvar with a required
-	commandline option
-Date: Tue,  4 Aug 2009 21:42:28 -0700
-Message-ID: <1249447347-26415-2-git-send-email-matthltc@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/1] veth: don't free priv->status until dev->destructor (v2)
+Date: Tue, 04 Aug 2009 23:40:47 -0700
+Message-ID: <m1zlaeu5jk.fsf@fess.ebiederm.org>
+References: <20090626162418.GA24828@us.ibm.com>
+	<20090724124614.6acc5054@nehalam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933543AbZHEGlF@vger.kernel.org>
+In-Reply-To: <20090724124614.6acc5054@nehalam> (Stephen Hemminger's message of "Fri\, 24 Jul 2009 12\:46\:14 -0700")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Stephen Hemminger <shemminger@vyatta.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Sachin Sant <sachinp@in.ibm.com>, netdev <netdev@vger.kernel.org>, David Miller <davem@davemloft.net>, matthltc@us.ibm.com, lkml <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Replace KERNELSRC environment variable with an explicit commandline
-option which sets the variable in the rewrite-cr-header.sh script.
+Stephen Hemminger <shemminger@vyatta.com> writes:
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
----
- rewrite-cr-header.sh |   33 +++++++++++++++++++++++++++++++--
- 1 files changed, 31 insertions(+), 2 deletions(-)
+> On Fri, 26 Jun 2009 11:24:18 -0500
+> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
+>
+>> Based on the commit msg on ae0e8e82205c903978a79ebf5e31c670b61fa5b4, it looks
+>
+>>  	ether_setup(dev);
+>> @@ -306,7 +320,7 @@ static void veth_setup(struct net_device *dev)
+>>  	dev->netdev_ops = &veth_netdev_ops;
+>>  	dev->ethtool_ops = &veth_ethtool_ops;
+>>  	dev->features |= NETIF_F_LLTX;
+>> -	dev->destructor = free_netdev;
+>> +	dev->destructor = veth_dev_free;
+>>
+>
+> This is still going to oops if sysfs statistics referenced
+> after module unload because module is unloaded (code is gone)
+> and veth_dev_free no longer exists.
 
-diff --git a/rewrite-cr-header.sh b/rewrite-cr-header.sh
-index 63a2e88..bb334b8 100755
---- a/rewrite-cr-header.sh
-+++ b/rewrite-cr-header.sh
-@@ -6,11 +6,40 @@
- # Sanitize checkpoint/restart kernel headers for userspace.
- #
- 
--KERNELSRC=../oren
-+function usage()
-+{
-+	echo "Usage: $0 [-h|--help] -s|--kernel-src=DIR"
-+}
-+
-+OPTIONS=`getopt -o s:o:h --long kernel-src:,output:,help -- "$@"`
-+eval set -- "${OPTIONS}"
-+while true ; do
-+	case "$1" in
-+	-s|--kernel-src)
-+		KERNELSRC="$2"
-+		shift 2 ;;
-+	-h|--help)
-+		usage
-+		exit 0 ;;
-+	--)
-+		shift
-+		break ;;
-+	*)
-+		echo "Unknown option: $1"
-+		shift
-+		echo "Unparsed options: $@"
-+		usage 1>&2
-+		exit 2 ;;
-+	esac
-+done
-+
-+if [ -z "${KERNELSRC}" -o '!' -d "${KERNELSRC}" ]; then
-+	usage 1>&2
-+	exit 2
-+fi
- 
- ################################################################################
- 
--[ -z "${KERNELSRC}" ] && exit -1
- mv cr.h cr.h.bak || exit -1
- 
- (
--- 
-1.5.6.3
+Has anyone actually seen that cause an oops?
+
+The reason I am asking is that as I read the code we cannot have
+this problem.  At worst the destructor callback is delayed until:
+
+veth_exit
+  rtnl_link_unregister
+    rtnl_unlock
+      netdev_run_todo
+        dev->destructor
+
+
+Similarly even if the sysfs filehandle is open we have called:
+
+netdev_unregister_kobject
+  ...
+    sysfs_addrm_finish
+      sysfs_deactivate
+
+Which guarantees that sysfs_get_active_two will fail and all
+subsequent actions on that file will fail.
+
+Eric
