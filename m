@@ -1,58 +1,116 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 1/1] veth: don't free priv->status until dev->destructor (v2)
-Date: Tue, 04 Aug 2009 23:40:47 -0700
-Message-ID: <m1zlaeu5jk.fsf@fess.ebiederm.org>
-References: <20090626162418.GA24828@us.ibm.com>
-	<20090724124614.6acc5054@nehalam>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by
+	tgid at once
+Date: Wed, 5 Aug 2009 12:20:57 +0200
+Message-ID: <20090805102057.GT29252__6238.17596720091$1249467744$gmane$org@hawkmoon.kerlabs.com>
+References: <20090731012908.27908.62208.stgit@hastromil.mtv.corp.google.com>
+	<20090731015154.27908.9639.stgit@hastromil.mtv.corp.google.com>
+	<20090803175452.GA5481@us.ibm.com>
+	<2f86c2480908031113y525b6cbdhe418b8a0364c7760@mail.gmail.com>
+	<20090803185556.GA8469@us.ibm.com>
+	<20090803194555.GA10158@us.ibm.com>
+	<6599ad830908041148h6d3f3e9bxfef9f3eedec0ab6d@mail.gmail.com>
+	<2f86c2480908041214r1f23c1b7q9a25b04e26c92a1a@mail.gmail.com>
+	<6599ad830908041228w67bc6f7fh57e28f244e1923b3@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933543AbZHEGlF@vger.kernel.org>
-In-Reply-To: <20090724124614.6acc5054@nehalam> (Stephen Hemminger's message of "Fri\, 24 Jul 2009 12\:46\:14 -0700")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Stephen Hemminger <shemminger@vyatta.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Sachin Sant <sachinp@in.ibm.com>, netdev <netdev@vger.kernel.org>, David Miller <davem@davemloft.net>, matthltc@us.ibm.com, lkml <linux-kernel@vger.kernel.org>
+Content-Type: multipart/mixed; boundary="===============4374069383552712668=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830908041228w67bc6f7fh57e28f244e1923b3-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Stephen Hemminger <shemminger@vyatta.com> writes:
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> On Fri, 26 Jun 2009 11:24:18 -0500
-> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
->
->> Based on the commit msg on ae0e8e82205c903978a79ebf5e31c670b61fa5b4, it looks
->
->>  	ether_setup(dev);
->> @@ -306,7 +320,7 @@ static void veth_setup(struct net_device *dev)
->>  	dev->netdev_ops = &veth_netdev_ops;
->>  	dev->ethtool_ops = &veth_ethtool_ops;
->>  	dev->features |= NETIF_F_LLTX;
->> -	dev->destructor = free_netdev;
->> +	dev->destructor = veth_dev_free;
->>
->
-> This is still going to oops if sysfs statistics referenced
-> after module unload because module is unloaded (code is gone)
-> and veth_dev_free no longer exists.
+--===============4374069383552712668==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-24649-1249467624-0001-2"
+Content-Disposition: inline
 
-Has anyone actually seen that cause an oops?
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-The reason I am asking is that as I read the code we cannot have
-this problem.  At worst the destructor callback is delayed until:
+--=_bohort-24649-1249467624-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-veth_exit
-  rtnl_link_unregister
-    rtnl_unlock
-      netdev_run_todo
-        dev->destructor
+On 04/08/09 12:28 -0700, Paul Menage wrote:
+> On Tue, Aug 4, 2009 at 12:14 PM, Benjamin Blum<bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> >
+> > Hmm, the tasklist_lock section in fork() is entirely inside the
+> > read-lock. Presumably then iterating the threadgroup list to take all
+> > rwsems is safe from a race in which one thread escapes?
+> >
+>=20
+> I think so - the write-side locking would be something like:
+>=20
+> again:
+>   read_lock(&tasklist_lock);
+>   find first not-yet-locked task t
+>   while (t !=3D group_leader) {
+>     if (!down_write_trylock(&t->threadgroup_stability_mutex)) {
+>       get_task_struct(t);
+>       read_unlock(&tasklist_lock);
+>       down_write(&t->threadgroup_stability_mutex);
+>       put_task_struct(t);
+>       goto again;
+>     }
+>     t =3D t->next_thread;
+>   }
+>   read_unlock(&tasklist_lock);
 
+The downside of this is teaching lockdep about this recursive locking. Not =
+that
+simple actually... so that such cases are currently handled using a higher-=
+level
+lock that prevents races in locking the whole chain (there was one such exa=
+mple
+for locking all vmas with KVM). IIUC, the intent here is to avoid such
+higher-level lock.
 
-Similarly even if the sysfs filehandle is open we have called:
+Louis
 
-netdev_unregister_kobject
-  ...
-    sysfs_addrm_finish
-      sysfs_deactivate
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
 
-Which guarantees that sysfs_get_active_two will fail and all
-subsequent actions on that file will fail.
+--=_bohort-24649-1249467624-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Eric
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkp5XQkACgkQVKcRuvQ9Q1Sm0wCfXbE4OFiSty/OI+C5K8txTat5
+9EgAoNCJZbOv9eCNIXXibuSO+YY64Y3P
+=Q8i+
+-----END PGP SIGNATURE-----
+
+--=_bohort-24649-1249467624-0001-2--
+
+--===============4374069383552712668==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============4374069383552712668==--
