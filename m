@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v4][PATCH 1/7] Factor out code to allocate pidmap page
-Date: Wed, 5 Aug 2009 23:22:33 -0700
-Message-ID: <20090806062233.GA5619@us.ibm.com>
+Subject: [RFC][v4][PATCH 2/7]: Have alloc_pidmap() return actual error code
+Date: Wed, 5 Aug 2009 23:23:03 -0700
+Message-ID: <20090806062303.GB5619@us.ibm.com>
 References: <20090806061056.GA1044@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,86 +23,76 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-Subject: [RFC][v4][PATCH 1/7] Factor out code to allocate pidmap page
+Subject: [RFC][v4][PATCH 2/7]: Have alloc_pidmap() return actual error code
 
-To implement support for clone_with_pids() system call we would
-need to allocate pidmap page in more than one place. Move this
-code to a new function alloc_pidmap_page().
+alloc_pidmap() can fail either because all pid numbers are in use or
+because memory allocation failed.  With support for setting a specific
+pid number, alloc_pidmap() would also fail if either the given pid
+number is invalid or in use.
 
-Changelog[v2]:
-	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
-	  -ENOMEM on error instead of -1.
+Rather than have callers assume -ENOMEM, have alloc_pidmap() return
+the actual error.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/pid.c |   46 ++++++++++++++++++++++++++++++----------------
- 1 files changed, 30 insertions(+), 16 deletions(-)
+ kernel/fork.c |    5 +++--
+ kernel/pid.c  |    9 ++++++---
+ 2 files changed, 9 insertions(+), 5 deletions(-)
 
+Index: linux-2.6/kernel/fork.c
+===================================================================
+--- linux-2.6.orig/kernel/fork.c	2009-08-05 17:00:22.000000000 -0700
++++ linux-2.6/kernel/fork.c	2009-08-05 17:02:45.000000000 -0700
+@@ -1124,10 +1124,11 @@
+ 		goto bad_fork_cleanup_io;
+ 
+ 	if (pid != &init_struct_pid) {
+-		retval = -ENOMEM;
+ 		pid = alloc_pid(p->nsproxy->pid_ns);
+-		if (!pid)
++		if (IS_ERR(pid)) {
++			retval = PTR_ERR(pid);
+ 			goto bad_fork_cleanup_io;
++		}
+ 
+ 		if (clone_flags & CLONE_NEWPID) {
+ 			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
 Index: linux-2.6/kernel/pid.c
 ===================================================================
---- linux-2.6.orig/kernel/pid.c	2009-08-05 17:00:22.000000000 -0700
-+++ linux-2.6/kernel/pid.c	2009-08-05 17:02:40.000000000 -0700
-@@ -122,9 +122,34 @@
- 	atomic_inc(&map->nr_free);
- }
- 
-+static int alloc_pidmap_page(struct pidmap *map)
-+{
-+	void *page;
-+
-+	if (likely(map->page))
-+		return 0;
-+
-+	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+
-+	/*
-+	 * Free the page if someone raced with us installing it:
-+	 */
-+	spin_lock_irq(&pidmap_lock);
-+	if (map->page)
-+		kfree(page);
-+	else
-+		map->page = page;
-+	spin_unlock_irq(&pidmap_lock);
-+
-+	if (unlikely(!map->page))
-+		return -ENOMEM;
-+
-+	return 0;
-+}
-+
- static int alloc_pidmap(struct pid_namespace *pid_ns)
- {
--	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-+	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
- 	struct pidmap *map;
- 
- 	pid = last + 1;
-@@ -134,21 +159,10 @@
+--- linux-2.6.orig/kernel/pid.c	2009-08-05 17:02:40.000000000 -0700
++++ linux-2.6/kernel/pid.c	2009-08-05 17:02:45.000000000 -0700
+@@ -158,6 +158,7 @@
+ 	offset = pid & BITS_PER_PAGE_MASK;
  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
++	rc = -EAGAIN;
  	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (map->page)
--				kfree(page);
--			else
--				map->page = page;
--			spin_unlock_irq(&pidmap_lock);
--			if (unlikely(!map->page))
--				break;
--		}
-+		rc = alloc_pidmap_page(map);
-+		if (rc)
-+			break;
-+
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
+ 		rc = alloc_pidmap_page(map);
+ 		if (rc)
+@@ -188,12 +189,14 @@
+ 		} else {
+ 			map = &pid_ns->pidmap[0];
+ 			offset = RESERVED_PIDS;
+-			if (unlikely(last == offset))
++			if (unlikely(last == offset)) {
++				rc = -EAGAIN;
+ 				break;
++			}
+ 		}
+ 		pid = mk_pid(pid_ns, map, offset);
+ 	}
+-	return -1;
++	return rc;
+ }
+ 
+ int next_pidmap(struct pid_namespace *pid_ns, int last)
+@@ -298,7 +301,7 @@
+ 		free_pidmap(pid->numbers + i);
+ 
+ 	kmem_cache_free(ns->pid_cachep, pid);
+-	pid = NULL;
++	pid = ERR_PTR(nr);
+ 	goto out;
+ }
