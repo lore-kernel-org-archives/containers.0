@@ -1,23 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by tgid
-	at once
-Date: Thu, 6 Aug 2009 04:40:37 -0700
-Message-ID: <6599ad830908060440g2f6cbed6xdc54c7096cd3745e__15125.7717087448$1249558902$gmane$org@mail.gmail.com>
-References: <20090803194555.GA10158@us.ibm.com>
-	<2f86c2480908041214r1f23c1b7q9a25b04e26c92a1a@mail.gmail.com>
-	<6599ad830908041228w67bc6f7fh57e28f244e1923b3@mail.gmail.com>
-	<20090805102057.GT29252@hawkmoon.kerlabs.com>
-	<6599ad830908050911t6f23f810i65fe8fe17f3ee698@mail.gmail.com>
-	<20090805164218.GB26446@hawkmoon.kerlabs.com>
-	<2f86c2480908051701s57120404q475edbedb58cdca1@mail.gmail.com>
-	<20090806095854.GD26446@hawkmoon.kerlabs.com>
-	<6599ad830908060328y21a008c1pc5ed5c27e0ec905d@mail.gmail.com>
-	<20090806112450.GF26446@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v4][PATCH 7/7]: Define clone_extended() syscall
+Date: Thu, 6 Aug 2009 08:38:47 -0500
+Message-ID: <20090806133847.GA28392@us.ibm.com>
+References: <20090806061056.GA1044@us.ibm.com>
+	<20090806062505.GG5619@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090806112450.GF26446-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090806062505.GG5619-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,29 +19,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Peter
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Aug 6, 2009 at 4:24 AM, Louis Rilling<Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org> wrote:
->
-> You meant signal_struct, right? sighand_struct can be shared by several
-> thread groups, while signal_struct can't.
->
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> Subject: [RFC][v4][PATCH 7/7]: Define clone_extended() syscall
+> 
+> Container restart requires that a task have the same pid it had when it was
+> checkpointed. When containers are nested the tasks within the containers
+> exist in multiple pid namespaces and hence have multiple pids to specify
+> during restart.
+> 
+> This patch defines, a new system call, clone_extended() which is like clone(),
+> but takes a new 'pid_set' parameter.  This parameter lets caller choose
+> specific pid numbers for the child process, in the process's active and
+> ancestor pid namespaces. (Descendant pid namespaces in general don't matter
+> since processes don't have pids in them anyway, but see comments in
+> copy_target_pids() regarding CLONE_NEWPID).
+> 
+> Unlike clone(), however, clone_extended() needs CAP_SYS_ADMIN, at least for
+> now, to prevent unprivileged processes from misusing this interface.
 
-No, I meant sighand_struct. I realise that it *can* be shared between
-processes, but I didn't think that NPTL actually did so. (Are there
-common cases of this happening?) And in cases where it was shared, it
-wouldn't affect correctness, but simply create the potential for a
-little more contention.
+It only needs that when specifying pids.
 
-I agree that signal_struct might in principle be a better place for
-it, but the first cacheline of signal_struct appears to be occupied
-with performance-sensitive things (a couple of counters and a queue
-used in do_wait()) already, whereas the first cacheline of
-sighand_struct only appears to be used incremented/decremented during
-fork/exit, and when delivering a bunch of mostly-fatal signals.
+> While the main motivation for this interface is the need to let a process
+> choose its 'pid numbers', the clone_extended() interface uses 64-bit clone
+> flags.  The 'higher' portion of the clone flags are unused and are only
+> included to preclude yet another version of clone when a new clone flag is
+> needed. 
+> 
+> ===== Interface:
+> 
+> Compared to clone(), clone_extended() needs to pass in three more pieces
+> of information:
+> 
+> 	- additional 32-bit of clone_flags
+> 	- number of pids in the set
+> 	- user buffer containing the list of pids.
+> 
+> But since clone() already takes 5 parameters and some (all ?) architectures
+> are restricted to 6 parameters to a system-call, additional data-structures
+> (and copy_from_user()) are needed.
+> 
+> The proposed interface for clone_extended() is:
+> 
+> 	struct clone_tid_info {
+> 		void *parent_tid; 	/* parent_tid_ptr parameter */
+> 		void *child_tid; 	/* child_tid_ptr parameter */
+> 	};
+> 
+> 	struct pid_set {
+> 		int num_pids;
+> 		pid_t *pids;
+> 	};
+> 
+> 	int clone_extended(int flags_low, int flags_high, void *child_stack,
+> 			void *unused, struct clone_tid_info *tid_ptrs,
+> 			struct pid_set *pid_setp);
 
-But having said that, if having it in signal_struct isn't considered a
-potential performance hit, it would be fine there too.
+I was thinking additional flags would be passed in the (renamed)
+struct pid_set.
 
-Paul
+-serge
