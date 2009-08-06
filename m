@@ -1,22 +1,24 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by
-	tgid at once
-Date: Thu, 6 Aug 2009 13:24:50 +0200
-Message-ID: <20090806112450.GF26446@hawkmoon.kerlabs.com>
-References: <20090803194555.GA10158@us.ibm.com>
-	<6599ad830908041148h6d3f3e9bxfef9f3eedec0ab6d@mail.gmail.com>
-	<2f86c2480908041214r1f23c1b7q9a25b04e26c92a1a@mail.gmail.com>
-	<6599ad830908041228w67bc6f7fh57e28f244e1923b3@mail.gmail.com>
+	tgid  at once
+Date: Thu, 06 Aug 2009 13:39:21 +0200
+Message-ID: <1249558761.32113.262.camel__16824.2165389985$1249558885$gmane$org@twins>
+References: <2f86c2480908031113y525b6cbdhe418b8a0364c7760@mail.gmail.com>
 	<20090805102057.GT29252@hawkmoon.kerlabs.com>
 	<6599ad830908050911t6f23f810i65fe8fe17f3ee698@mail.gmail.com>
 	<20090805164218.GB26446@hawkmoon.kerlabs.com>
 	<2f86c2480908051701s57120404q475edbedb58cdca1@mail.gmail.com>
 	<20090806095854.GD26446@hawkmoon.kerlabs.com>
 	<6599ad830908060328y21a008c1pc5ed5c27e0ec905d@mail.gmail.com>
+	<1249554853.32113.145.camel@twins>
+	<6599ad830908060342m1fc8cdd2me25af248a8e0e183@mail.gmail.com>
+	<1249556540.32113.191.camel@twins>
+	<6599ad830908060424r72e1aa12g2b246785e7bc039c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5954098345873509569=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830908060328y21a008c1pc5ed5c27e0ec905d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830908060424r72e1aa12g2b246785e7bc039c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,91 +26,62 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, paulmck <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
-
---===============5954098345873509569==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-27638-1249557857-0001-2"
-Content-Disposition: inline
-
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
-
---=_bohort-27638-1249557857-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On 06/08/09  3:28 -0700, Paul Menage wrote:
-> On Thu, Aug 6, 2009 at 2:58 AM, Louis Rilling<Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org> =
-wrote:
+On Thu, 2009-08-06 at 04:24 -0700, Paul Menage wrote:
+> On Thu, Aug 6, 2009 at 4:02 AM, Peter Zijlstra<a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> wrote:
 > >
-> > mutex_lock_nested is not enough, since this would require putting each =
-thread's
-> > mutex in a different class. Again, something like mutex_lock_nest_lock(=
-) is
-> > the solution, especially since Peter's recent improvement.
+> > Taking that many locks in general, some apps (JVM based usually) tend to
+> > be thread heavy and can easily have hundreds of them, even on relatively
+> 
+> Oh, I'm well aware that apps can be heavily multi-threaded - we have
+> much worse cases at Google.
+> 
 > >
->=20
-> OK, well if lockdep can't currently handle the "writer takes a lock on
-> every thread" model, then maybe we should go with a simpler model
-> until someone shows a performance issue with it? Ben's original
-> patches had a per-task_struct lock, and a thread forking with CLONE_VM
-> would down_read() its group leader's lock. Something that's even
-> simpler (doesn't have to deal with thread group leader changing due to
-> an execve()), and avoids the per-task_struct overhead would be to put
-> the lock in sighand_struct instead (so only one per process). The
-> procs file writer does a down_write(&tsk->sighand->fork_sem), and
-> cgroup_fork() can do a down_read(&current->sighand->fork_sem) if
-> flags&CLONE_SIGHAND.
->=20
-> If you put it as the second member of sighand_struct, there wouldn't
-> even be any extra cacheline bouncing in the common case, since
-> copy_sighand() would already have brought that line into cache in
-> order to do atomic_inc(&current->sighand->count)
+> > Now that's not real nice is it ;-)
+> 
+> Not particularly - but who exactly is going to be moving processes
+> with thousands of threads between cgroups on a lockdep-enabled debug
+> kernel?
 
-You meant signal_struct, right? sighand_struct can be shared by several
-thread groups, while signal_struct can't.
+All it takes are: 8 or 48 (or soon 2048) depending on your particular
+annotation. I might and then I'd have to come and kick you ;-)
 
-Louis
+Really, lockdep not being able to deal with something is a strong
+indication that you're doing something wonky.
 
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
+Stronger, you can even do wonky things which lockdep thinks are
+absolutely fine.
 
---=_bohort-27638-1249557857-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+And doing wonky things should be avoided :-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+Luckily we seem to have found a sensible solution.
 
-iEYEARECAAYFAkp6vYIACgkQVKcRuvQ9Q1Q9KQCfZsbhnDsilu6sMsQ0GZZMhUE8
-4OkAn1ZZ3ptJnvxU7kfhfdfmgncFPWqE
-=LVXe
------END PGP SIGNATURE-----
+> What benefits does the additional complexity of SRCU give, over the
+> simple solution of putting an rwsem in the same cache line as
+> sighand->count ?
 
---=_bohort-27638-1249557857-0001-2--
+I said:
 
---===============5954098345873509569==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+> Then again, clone() might already serialize on the process as a whole
+> (not sure though, Oleg/Ingo?), in which case you can indeed take a
+> process wide lock.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5954098345873509569==--
+Which looking up sighand->count seems to be the case:
+
+static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
+{
+        struct sighand_struct *sig;
+
+        if (clone_flags & CLONE_SIGHAND) {
+                atomic_inc(&current->sighand->count);
+                return 0;
+        }
+
+
+So yes, putting a rwsem in there sounds fine, you're already bouncing
+it.
