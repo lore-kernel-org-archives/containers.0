@@ -1,21 +1,23 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: BUG in tty_open when using containers and ptrace
-Date: Fri, 7 Aug 2009 12:08:02 -0700
-Message-ID: <20090807190802.GB16671@us.ibm.com>
-References: <20090722222550.GA633@megiteam.pl>
-	<20090723012733.GB27764@us.ibm.com> <4A67C187.5000201@zytor.com>
-	<20090723182620.GA16322@megiteam.pl>
-	<20090723193245.GA25662@us.ibm.com>
-	<20090723203329.GC16322@megiteam.pl> <4A68E026.1070608@zytor.com>
-	<20090724073158.GA2617@megiteam.pl>
-	<20090730180611.GA20872@us.ibm.com>
-	<1249077522.9378.95.camel@eskarina>
+From: Benjamin Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 6/6] Makes procs file writable to move all threads by tgid
+	at once
+Date: Fri, 7 Aug 2009 18:41:21 -0700
+Message-ID: <2f86c2480908071841h13009856hd8fcae167b1fadbf__14612.8771514215$1249695816$gmane$org@mail.gmail.com>
+References: <20090803194555.GA10158@us.ibm.com>
+	<6599ad830908041228w67bc6f7fh57e28f244e1923b3@mail.gmail.com>
+	<20090805102057.GT29252@hawkmoon.kerlabs.com>
+	<6599ad830908050911t6f23f810i65fe8fe17f3ee698@mail.gmail.com>
+	<20090805164218.GB26446@hawkmoon.kerlabs.com>
+	<2f86c2480908051701s57120404q475edbedb58cdca1@mail.gmail.com>
+	<20090806095854.GD26446@hawkmoon.kerlabs.com>
+	<6599ad830908060328y21a008c1pc5ed5c27e0ec905d@mail.gmail.com>
+	<20090806112450.GF26446@hawkmoon.kerlabs.com>
+	<6599ad830908060440g2f6cbed6xdc54c7096cd3745e@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1249077522.9378.95.camel@eskarina>
+In-Reply-To: <6599ad830908060440g2f6cbed6xdc54c7096cd3745e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,61 +27,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Grzegorz Nosek [root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org] wrote:
-| Hi,
-| 
-| Dnia 2009-07-30, czw o godzinie 11:06 -0700, Sukadev Bhattiprolu pisze:
-| > Well, I made some progress on this. In an earlier mail you mentioned
-| > that your test case "survives" in kernels without the bad commit.
-| > 
-| > With the following patch the kernel seems to _survive_ but not sure if
-| > "surviving" meets your real needs (i.e does the pty continue to function
-| > as the console for the container) ? 
-| 
-| Both my patch and yours make the console open fail and I'm not sure we
-| can do much better. I don't think this matters (too much) either as the
-| supervisor (libvirt_lxc) exits only on container shutdown, so there's
-| nothing much we can do to the container anyway.
+On Thu, Aug 6, 2009 at 4:40 AM, Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Thu, Aug 6, 2009 at 4:24 AM, Louis Rilling<Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org> wrote:
+>>
+>> You meant signal_struct, right? sighand_struct can be shared by several
+>> thread groups, while signal_struct can't.
+>>
+>
+> No, I meant sighand_struct. I realise that it *can* be shared between
+> processes, but I didn't think that NPTL actually did so. (Are there
+> common cases of this happening?) And in cases where it was shared, it
+> wouldn't affect correctness, but simply create the potential for a
+> little more contention.
+>
+> I agree that signal_struct might in principle be a better place for
+> it, but the first cacheline of signal_struct appears to be occupied
+> with performance-sensitive things (a couple of counters and a queue
+> used in do_wait()) already, whereas the first cacheline of
+> sighand_struct only appears to be used incremented/decremented during
+> fork/exit, and when delivering a bunch of mostly-fatal signals.
+>
+> But having said that, if having it in signal_struct isn't considered a
+> potential performance hit, it would be fine there too.
+>
+> Paul
+>
 
-Ok.  Hope you had some luck with the console and libvirtd.
+I'm presently rewriting the locking scheme here to have the rwsem live
+in sighand_struct, and writing two new functions lock_threadgroup_fork
+and unlock_threadgroup_fork (for use in cgroup_attach_proc) which will
+live in cgroup.c but are generic enough that they could be used by
+anybody who wants to do threadgroup-wide fork-sensitive changes. I'm
+also having the fork_lock under an #ifdef CONFIG_CGROUPS, which could
+be expanded to, say, CONFIG_FORK_LOCK_THREADGROUP (which CGROUPS would
+depend upon) if somebody else ever wanted to use this lock as well.
+For genericness, I'll have the down_read and up_read on the lock in
+do_fork() directly (instead of cgroup_fork and cgroup_post_fork as it
+is in this version of the patch).
 
-FWIW, should we push this patch upstream ? It would at least prevent
-the kernel crash and be consistent with the behavior before newptsinstance
-changes ?
-
-Peter, what do you think about this patch ?
-
----
-Index: linux-2.6.30/fs/devpts/inode.c
-===================================================================
---- linux-2.6.30.orig/fs/devpts/inode.c 2009-07-30 10:48:17.000000000 -0400
-+++ linux-2.6.30/fs/devpts/inode.c      2009-08-04 11:43:51.000000000 -0400
-@@ -519,11 +519,22 @@
-
- struct tty_struct *devpts_get_tty(struct inode *pts_inode, int number)
- {
-+       struct dentry *dentry;
-+       struct tty_struct *tty;
-+
-        BUG_ON(pts_inode->i_rdev == MKDEV(TTYAUX_MAJOR, PTMX_MINOR));
-
-+       dentry = d_find_alias(pts_inode);
-+       if (!dentry)
-+               return NULL;
-+
-+       tty = NULL;
-        if (pts_inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
--               return (struct tty_struct *)pts_inode->i_private;
--       return NULL;
-+               tty = (struct tty_struct *)pts_inode->i_private;
-+
-+       dput(dentry);
-+
-+       return tty;
- }
-
- void devpts_pty_kill(struct tty_struct *tty)
+If there are no more comments/discussion on the locking scheme, I'll
+resubmit the patch series with these changes approximately Monday.
