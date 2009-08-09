@@ -1,7 +1,7 @@
-From: Williams Bliss <michelangelo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Email Database of business owners in the USA
-Date: Sat, 8 Aug 2009 08:37:05 -0400
-Message-ID: <62ddccb6-04ed-4317-ad26-41c1216f7336@Maul.fmas.local>
+From: Jaswinder Singh Rajput <jaswinder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] CGROUPS: includecheck fix for include/linux/page_cgroup.h
+Date: Sun, 09 Aug 2009 20:15:45 +0530
+Message-ID: <1249829145.2957.20.camel@ht.satnam>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,24 +15,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: inharg-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, steiniger-zqRNUXuvxA0b1SvskN2V4Q@public.gmane.org, david-yFklZrYQ/X9IUzPp0tv8EdBc4/FLrbF6@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-This list has phone, fax, email, contact name and many more 
+fix the following 'make includecheck' warning:
 
-2,000,000 total records all with emails
+  include/linux/page_cgroup.h: linux/swap.h is included more than once.
 
-Price for new customers -  $291  - This week only
+Signed-off-by: Jaswinder Singh Rajput <jaswinderrajput-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/page_cgroup.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-send email to:      Jamie-PW+jtCAwT1AY+s2iCV5gB4f9cp2AZj2V@public.gmane.org
-
-  
-
-
-
-
-
-
-
-Forward email to exit-PW+jtCAwT1AY+s2iCV5gB4f9cp2AZj2V@public.gmane.org to purge you from our records
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index 13f126c..ada779f 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -105,14 +105,14 @@ static inline void __init page_cgroup_init_flatmem(void)
+ 
+ #endif
+ 
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ #include <linux/swap.h>
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ extern unsigned short swap_cgroup_record(swp_entry_t ent, unsigned short id);
+ extern unsigned short lookup_swap_cgroup(swp_entry_t ent);
+ extern int swap_cgroup_swapon(int type, unsigned long max_pages);
+ extern void swap_cgroup_swapoff(int type);
+ #else
+-#include <linux/swap.h>
+ 
+ static inline
+ unsigned short swap_cgroup_record(swp_entry_t ent, unsigned short id)
+-- 
+1.6.0.6
