@@ -1,13 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/5] Export fill_fname() as ckpt_fill_fname()
-Date: Mon, 10 Aug 2009 08:32:58 -0700
-Message-ID: <1249918379-29414-5-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/5] Add an errno validation function (v2)
+Date: Mon, 10 Aug 2009 13:31:06 -0500
+Message-ID: <20090810183106.GA24373@us.ibm.com>
 References: <1249918379-29414-1-git-send-email-danms@us.ibm.com>
+	<1249918379-29414-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1249918379-29414-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1249918379-29414-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,59 +19,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/files.c         |    8 ++++----
- include/linux/checkpoint.h |    2 ++
- 2 files changed, 6 insertions(+), 4 deletions(-)
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 78cd9b7..7aecac9 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -28,14 +28,14 @@
-  */
- 
- /**
-- * fill_fname - return pathname of a given file
-+ * ckpt_fill_fname - return pathname of a given file
-  * @path: path name
-  * @root: relative root
-  * @buf: buffer for pathname
-  * @len: buffer length (in) and pathname length (out)
-  */
--static char *fill_fname(struct path *path, struct path *root,
--			char *buf, int *len)
-+char *ckpt_fill_fname(struct path *path, struct path *root,
-+		      char *buf, int *len)
- {
- 	struct path tmp = *root;
- 	char *fname;
-@@ -79,7 +79,7 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
- 	if (!buf)
- 		return -ENOMEM;
- 
--	fname = fill_fname(path, root, buf, &flen);
-+	fname = ckpt_fill_fname(path, root, buf, &flen);
- 	if (!IS_ERR(fname))
- 		ret = ckpt_write_obj_type(ctx, fname, flen,
- 					  CKPT_HDR_FILE_NAME);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a6935b3..c3c9436 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -72,6 +72,8 @@ extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
- extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
- extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
- extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
-+extern char *ckpt_fill_fname(struct path *path, struct path *root,
-+			     char *buf, int *len);
- 
- /* ckpt kflags */
- #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
--- 
-1.6.2.5
+Ok, I do think it should be <= MAX_ERRNO but it's not particularly
+urgent atm :)  So with or without that change:
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+> Changes in v2:
+>   - Compare against MAX_ERRNO instead of more stringent but obscure
+>     constant
+> ---
+>  include/linux/checkpoint.h |    6 +++++-
+>  1 files changed, 5 insertions(+), 1 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 45cf0fe..87b683b 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -28,7 +28,7 @@
+>  #include <linux/user_namespace.h>
+>  #include <linux/checkpoint_types.h>
+>  #include <linux/checkpoint_hdr.h>
+> -
+> +#include <linux/err.h>
+> 
+>  /* ckpt_ctx: kflags */
+>  #define CKPT_CTX_CHECKPOINT_BIT		0
+> @@ -267,6 +267,10 @@ extern void *restore_sighand(struct ckpt_ctx *ctx);
+>  			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+>  	} while (0)
+> 
+> +static inline int ckpt_validate_errno(int errno)
+> +{
+> +	return (errno >= 0) && (errno < MAX_ERRNO);
+> +}
+> 
+>  /* debugging flags */
+>  #define CKPT_DBASE	0x1		/* anything */
+> -- 
+> 1.6.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
