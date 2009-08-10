@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/5] Add a ckpt_read_string() function (v3)
-Date: Mon, 10 Aug 2009 08:32:56 -0700
-Message-ID: <1249918379-29414-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/5] Add an errno validation function (v2)
+Date: Mon, 10 Aug 2009 08:32:55 -0700
+Message-ID: <1249918379-29414-2-git-send-email-danms@us.ibm.com>
 References: <1249918379-29414-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,81 +20,38 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add a ckpt_read_string() function to allow reading of a variable-length
-(but length-capped) string from the checkpoint stream.
-
-Changes in v3:
- - Return immediately on allocation failure instead of falling through to the
-   inevitable crash
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Changes in v2:
- - Avoid memcpy() by reading into the allocated buffer directly
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+  - Compare against MAX_ERRNO instead of more stringent but obscure
+    constant
 ---
- checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    1 +
- 2 files changed, 37 insertions(+), 0 deletions(-)
+ include/linux/checkpoint.h |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 65cafd9..b1ffc54 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -285,6 +285,42 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
- 	return ret;
- }
- 
-+/**
-+ * ckpt_read_string - read a string (variable length)
-+ * @ctx: checkpoint context
-+ * @str: pointer to buffer to store allocated string (caller must kfree())
-+ * @max: maximum acceptable length
-+ *
-+ * This can be used to read a variable-length string from the checkpoint
-+ * stream. @max limits the size of the resulting buffer.  Returns zero on
-+ * success, negative on failure.
-+ */
-+int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
-+{
-+	int len;
-+	int ret = 0;
-+
-+	*str = NULL;
-+
-+	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
-+	if (len < 0)
-+		return len;
-+	else if (len > max)
-+		return -EINVAL;
-+
-+	*str = kzalloc(len + 1, GFP_KERNEL);
-+	if (!*str)
-+		return -ENOMEM;
-+
-+	ret = ckpt_kread(ctx, *str, len);
-+	if (ret < 0) {
-+		kfree(*str);
-+		*str = NULL;
-+	}
-+
-+	return ret;
-+}
-+
- /***********************************************************************
-  * Restart
-  */
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 87b683b..a6935b3 100644
+index 45cf0fe..87b683b 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -68,6 +68,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
- extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
- extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
-+extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
- extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
- extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
- extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
+@@ -28,7 +28,7 @@
+ #include <linux/user_namespace.h>
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
+-
++#include <linux/err.h>
+ 
+ /* ckpt_ctx: kflags */
+ #define CKPT_CTX_CHECKPOINT_BIT		0
+@@ -267,6 +267,10 @@ extern void *restore_sighand(struct ckpt_ctx *ctx);
+ 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+ 	} while (0)
+ 
++static inline int ckpt_validate_errno(int errno)
++{
++	return (errno >= 0) && (errno < MAX_ERRNO);
++}
+ 
+ /* debugging flags */
+ #define CKPT_DBASE	0x1		/* anything */
 -- 
 1.6.2.5
