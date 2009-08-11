@@ -1,8 +1,8 @@
 From: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/7] Lets ss->can_attach and ss->attach do whole threadgroups
-	at a time
-Date: Mon, 10 Aug 2009 17:57:56 -0700
-Message-ID: <20090811005756.21950.94037.stgit__47185.0705951967$1249952741$gmane$org@hastromil.mtv.corp.google.com>
+Subject: [PATCH 7/7] Makes procs file writable to move all threads by tgid at
+	once
+Date: Mon, 10 Aug 2009 17:58:06 -0700
+Message-ID: <20090811005806.21950.94843.stgit__40142.0298767791$1249952933$gmane$org@hastromil.mtv.corp.google.com>
 References: <20090811004737.21950.29188.stgit@hastromil.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,364 +21,559 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Lets ss->can_attach and ss->attach do whole threadgroups at a time
+Makes procs file writable to move all threads by tgid at once
 
-This patch alters the ss->can_attach and ss->attach functions to be able to
-deal with a whole threadgroup at a time, for use in cgroup_attach_proc. (This
-is a pre-patch to cgroup-procs-writable.patch.)
+This patch adds functionality that enables users to move all threads in a
+threadgroup at once to a cgroup by writing the tgid to the 'cgroup.procs'
+file. This current implementation makes use of a per-threadgroup rwsem that's
+taken for reading in the fork() path to prevent newly forking threads within
+the threadgroup from "escaping" while the move is in progress.
 
-Currently, new mode of the attach function can only tell the subsystem about
-the old cgroup of the threadgroup leader. No subsystem currently needs that
-information for each thread that's being moved, but if one were to be added
-(for example, one that counts tasks within a group) this bit would need to be
-reworked a bit to tell the subsystem the right information.
+There is a gap between releasing the fork_mutex and calling each subsystem's
+attach function, which could possibly lead to problems if the subsystem relies
+on something that could change in the meantime as caused by forking threads.
+No particular issue seems apparent, but were some subsystem to have a problem
+here, the per-threadgroup fork mutex could be held longer until after the
+attach calls are done.
 
 Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
- Documentation/cgroups/cgroups.txt |   12 +++++--
- include/linux/cgroup.h            |    7 ++--
- kernel/cgroup.c                   |    4 +-
- kernel/cgroup_freezer.c           |   15 ++++++++
- kernel/cpuset.c                   |   66 +++++++++++++++++++++++++++++--------
- kernel/ns_cgroup.c                |   16 ++++++++-
- kernel/sched.c                    |   35 ++++++++++++++++++--
- mm/memcontrol.c                   |    3 +-
- security/device_cgroup.c          |    3 +-
- 9 files changed, 131 insertions(+), 30 deletions(-)
+ Documentation/cgroups/cgroups.txt |   13 +
+ kernel/cgroup.c                   |  401 +++++++++++++++++++++++++++++++++----
+ 2 files changed, 371 insertions(+), 43 deletions(-)
 
 diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 6eb1a97..568b320 100644
+index 568b320..e9d244c 100644
 --- a/Documentation/cgroups/cgroups.txt
 +++ b/Documentation/cgroups/cgroups.txt
-@@ -501,7 +501,7 @@ rmdir() will fail with it. From this behavior, pre_destroy() can be
- called multiple times against a cgroup.
+@@ -9,6 +9,7 @@ Portions Copyright (C) 2004 BULL SA.
+ Portions Copyright (c) 2004-2006 Silicon Graphics, Inc.
+ Modified by Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+ Modified by Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
++Modified by Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
  
- int can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--	       struct task_struct *task)
-+	       struct task_struct *task, bool threadgroup)
- (cgroup_mutex held by caller)
+ CONTENTS:
+ =========
+@@ -228,6 +229,7 @@ Each cgroup is represented by a directory in the cgroup file system
+ containing the following files describing that cgroup:
  
- Called prior to moving a task into a cgroup; if the subsystem
-@@ -509,14 +509,20 @@ returns an error, this will abort the attach operation.  If a NULL
- task is passed, then a successful result indicates that *any*
- unspecified task can be moved into the cgroup. Note that this isn't
- called on a fork. If this method returns 0 (success) then this should
--remain valid while the caller holds cgroup_mutex.
-+remain valid while the caller holds cgroup_mutex. If threadgroup is
-+true, then a successful result indicates that all threads in the given
-+thread's threadgroup can be moved together.
+  - tasks: list of tasks (by pid) attached to that cgroup
++ - cgroup.procs: list of unique tgids in the cgroup
+  - notify_on_release flag: run the release agent on exit?
+  - release_agent: the path to use for release notifications (this file
+    exists in the top cgroup only)
+@@ -374,7 +376,7 @@ Now you want to do something with this cgroup.
  
- void attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--	    struct cgroup *old_cgrp, struct task_struct *task)
-+	    struct cgroup *old_cgrp, struct task_struct *task,
-+	    bool threadgroup)
- (cgroup_mutex held by caller)
+ In this directory you can find several files:
+ # ls
+-notify_on_release tasks
++cgroup.procs notify_on_release tasks
+ (plus whatever files added by the attached subsystems)
  
- Called after the task has been attached to the cgroup, to allow any
- post-attachment activity that requires memory allocations or blocking.
-+If threadgroup is true, the subsystem should take care of all threads
-+in the specified thread's threadgroup. Currently does not support any
-+subsystem that might need the old_cgrp for every thread in the group.
+ Now attach your shell to this cgroup:
+@@ -408,6 +410,15 @@ You can attach the current shell task by echoing 0:
  
- void fork(struct cgroup_subsy *ss, struct task_struct *task)
+ # echo 0 > tasks
  
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 24e3f1a..8286758 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -408,10 +408,11 @@ struct cgroup_subsys {
- 						  struct cgroup *cgrp);
- 	int (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
- 	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
--	int (*can_attach)(struct cgroup_subsys *ss,
--			  struct cgroup *cgrp, struct task_struct *tsk);
-+	int (*can_attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
-+			  struct task_struct *tsk, bool threadgroup);
- 	void (*attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
--			struct cgroup *old_cgrp, struct task_struct *tsk);
-+			struct cgroup *old_cgrp, struct task_struct *tsk,
-+			bool threadgroup);
- 	void (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
- 	void (*exit)(struct cgroup_subsys *ss, struct task_struct *task);
- 	int (*populate)(struct cgroup_subsys *ss,
++The cgroup.procs file is useful for managing all tasks in a threadgroup at
++once. It works the same way as the tasks file, but moves all tasks in the
++threadgroup with the specified tgid.
++
++Writing the pid of a task that's not the threadgroup leader (i.e., a pid
++that isn't a tgid) is treated as invalid. Writing a '0' to cgroup.procs will
++attach the writing task and all tasks in its threadgroup, but is invalid if
++the writing task is not the leader of the threadgroup.
++
+ 3. Kernel API
+ =============
+ 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index a12bc8e..ea05d6b 100644
+index 1d0d733..0ea5cf4 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1324,7 +1324,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->can_attach) {
--			retval = ss->can_attach(ss, cgrp, tsk);
-+			retval = ss->can_attach(ss, cgrp, tsk, false);
- 			if (retval)
- 				return retval;
- 		}
-@@ -1362,7 +1362,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->attach)
--			ss->attach(ss, cgrp, oldcgrp, tsk);
-+			ss->attach(ss, cgrp, oldcgrp, tsk, false);
- 	}
- 	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
- 	synchronize_rcu();
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index fb249e2..59e9ef6 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -159,7 +159,7 @@ static bool is_task_frozen_enough(struct task_struct *task)
-  */
- static int freezer_can_attach(struct cgroup_subsys *ss,
- 			      struct cgroup *new_cgroup,
--			      struct task_struct *task)
-+			      struct task_struct *task, bool threadgroup)
- {
- 	struct freezer *freezer;
- 
-@@ -177,6 +177,19 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
- 	if (freezer->state == CGROUP_FROZEN)
- 		return -EBUSY;
- 
-+	if (threadgroup) {
-+		struct task_struct *c;
-+
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
-+			if (is_task_frozen_enough(c)) {
-+				rcu_read_unlock();
-+				return -EBUSY;
-+			}
-+		}
-+		rcu_read_unlock();
-+	}
-+
- 	return 0;
+@@ -1297,6 +1297,87 @@ static void get_first_subsys(const struct cgroup *cgrp,
+ 		*subsys_id = test_ss->subsys_id;
  }
  
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 7e75a41..b5cb469 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1324,9 +1324,10 @@ static int fmeter_getrate(struct fmeter *fmp)
- static cpumask_var_t cpus_attach;
- 
- /* Called by cgroups to determine if a cpuset is usable; cgroup_mutex held */
--static int cpuset_can_attach(struct cgroup_subsys *ss,
--			     struct cgroup *cont, struct task_struct *tsk)
-+static int cpuset_can_attach(struct cgroup_subsys *ss, struct cgroup *cont,
-+			     struct task_struct *tsk, bool threadgroup)
- {
-+	int ret;
- 	struct cpuset *cs = cgroup_cs(cont);
- 
- 	if (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed))
-@@ -1343,18 +1344,51 @@ static int cpuset_can_attach(struct cgroup_subsys *ss,
- 	if (tsk->flags & PF_THREAD_BOUND)
- 		return -EINVAL;
- 
--	return security_task_setscheduler(tsk, 0, NULL);
-+	ret = security_task_setscheduler(tsk, 0, NULL);
-+	if (ret)
-+		return ret;
-+	if (threadgroup) {
-+		struct task_struct *c;
++/*
++ * cgroup_task_migrate - move a task from one cgroup to another.
++ *
++ * 'guarantee' is set if the caller promises that a new css_set for the task
++ * will already exist. If not set, this function might sleep, and can fail
++ * with -ENOMEM. Otherwise, it can only fail with -ESRCH.
++ */
++static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
++			       struct task_struct *tsk, int guarantee)
++{
++	struct css_set *oldcg;
++	struct css_set *newcg;
 +
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			ret = security_task_setscheduler(c, 0, NULL);
-+			if (ret) {
-+				rcu_read_unlock();
-+				return ret;
-+			}
++	/*
++	 * get old css_set. we need to take task_lock and refcount it, because
++	 * an exiting task can change its css_set to init_css_set and drop its
++	 * old one without taking cgroup_mutex.
++	 */
++	task_lock(tsk);
++	oldcg = tsk->cgroups;
++	get_css_set(oldcg);
++	task_unlock(tsk);
++
++	/*
++	 * locate or allocate a new css_set for this task. 'guarantee' tells
++	 * us whether or not we are sure that a new css_set already exists;
++	 * in that case, we are not allowed to fail or sleep, as we won't need
++	 * malloc.
++	 */
++	if (guarantee) {
++		/*
++		 * our caller promises us that the css_set we want already
++		 * exists, so we use find_existing_css_set directly.
++		 */
++		struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
++		read_lock(&css_set_lock);
++		newcg = find_existing_css_set(oldcg, cgrp, template);
++		BUG_ON(!newcg);
++		get_css_set(newcg);
++		read_unlock(&css_set_lock);
++	} else {
++		might_sleep();
++		/* find_css_set will give us newcg already referenced. */
++		newcg = find_css_set(oldcg, cgrp);
++		if (!newcg) {
++			put_css_set(oldcg);
++			return -ENOMEM;
 +		}
-+		rcu_read_unlock();
 +	}
++	put_css_set(oldcg);
++
++	/*
++	 * we cannot move a task that's declared itself as exiting, as once
++	 * PF_EXITING is set, the tsk->cgroups pointer is no longer safe.
++	 */
++	task_lock(tsk);
++	if (tsk->flags & PF_EXITING) {
++		task_unlock(tsk);
++		put_css_set(newcg);
++		return -ESRCH;
++	}
++	rcu_assign_pointer(tsk->cgroups, newcg);
++	task_unlock(tsk);
++
++	/* Update the css_set linked lists if we're using them */
++	write_lock(&css_set_lock);
++	if (!list_empty(&tsk->cg_list))
++		list_move(&tsk->cg_list, &newcg->tasks);
++	write_unlock(&css_set_lock);
++
++	/*
++	 * We just gained a reference on oldcg by taking it from the task. As
++	 * trading it for newcg is protected by cgroup_mutex, we're safe to
++	 * drop it here; it will be freed under RCU.
++	 */
++	put_css_set(oldcg);
++
++	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
 +	return 0;
 +}
 +
-+static void cpuset_attach_task(struct task_struct *tsk, nodemask_t *to,
-+			       struct cpuset *cs)
-+{
-+	int err;
-+	/*
-+	 * can_attach beforehand should guarantee that this doesn't fail.
-+	 * TODO: have a better way to handle failure here
-+	 */
-+	err = set_cpus_allowed_ptr(tsk, cpus_attach);
-+	WARN_ON_ONCE(err);
-+
-+	task_lock(tsk);
-+	cpuset_change_task_nodemask(tsk, to);
-+	task_unlock(tsk);
-+	cpuset_update_task_spread_flag(cs, tsk);
-+
- }
- 
--static void cpuset_attach(struct cgroup_subsys *ss,
--			  struct cgroup *cont, struct cgroup *oldcont,
--			  struct task_struct *tsk)
-+static void cpuset_attach(struct cgroup_subsys *ss, struct cgroup *cont,
-+			  struct cgroup *oldcont, struct task_struct *tsk,
-+			  bool threadgroup)
+ /**
+  * threadgroup_fork_lock - block all CLONE_THREAD forks in the threadgroup
+  * @tsk: the task whose threadgroup should be locked
+@@ -1366,11 +1447,9 @@ void threadgroup_fork_unlock(struct sighand_struct *sighand)
+  */
+ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
  {
- 	nodemask_t from, to;
- 	struct mm_struct *mm;
- 	struct cpuset *cs = cgroup_cs(cont);
- 	struct cpuset *oldcs = cgroup_cs(oldcont);
--	int err;
+-	int retval = 0;
++	int retval;
+ 	struct cgroup_subsys *ss;
+ 	struct cgroup *oldcgrp;
+-	struct css_set *cg;
+-	struct css_set *newcg;
+ 	struct cgroupfs_root *root = cgrp->root;
+ 	int subsys_id;
  
- 	if (cs == &top_cpuset) {
- 		cpumask_copy(cpus_attach, cpu_possible_mask);
-@@ -1363,15 +1397,19 @@ static void cpuset_attach(struct cgroup_subsys *ss,
- 		guarantee_online_cpus(cs, cpus_attach);
- 		guarantee_online_mems(cs, &to);
+@@ -1389,75 +1468,307 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 		}
  	}
--	err = set_cpus_allowed_ptr(tsk, cpus_attach);
--	if (err)
--		return;
  
 -	task_lock(tsk);
--	cpuset_change_task_nodemask(tsk, &to);
+-	cg = tsk->cgroups;
+-	get_css_set(cg);
 -	task_unlock(tsk);
--	cpuset_update_task_spread_flag(cs, tsk);
-+	/* do per-task migration stuff possibly for each in the threadgroup */
-+	cpuset_attach_task(tsk, &to, cs);
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			cpuset_attach_task(c, &to, cs);
-+		}
-+		rcu_read_unlock();
-+	}
- 
-+	/* change mm; only needs to be done once even if threadgroup */
- 	from = oldcs->mems_allowed;
- 	to = cs->mems_allowed;
- 	mm = get_task_mm(tsk);
-diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
-index 5aa854f..2a5dfec 100644
---- a/kernel/ns_cgroup.c
-+++ b/kernel/ns_cgroup.c
-@@ -42,8 +42,8 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
-  *       (hence either you are in the same cgroup as task, or in an
-  *        ancestor cgroup thereof)
-  */
--static int ns_can_attach(struct cgroup_subsys *ss,
--		struct cgroup *new_cgroup, struct task_struct *task)
-+static int ns_can_attach(struct cgroup_subsys *ss, struct cgroup *new_cgroup,
-+			 struct task_struct *task, bool threadgroup)
- {
- 	if (current != task) {
- 		if (!capable(CAP_SYS_ADMIN))
-@@ -56,6 +56,18 @@ static int ns_can_attach(struct cgroup_subsys *ss,
- 	if (!cgroup_is_descendant(new_cgroup, task))
- 		return -EPERM;
- 
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
-+			if (!cgroup_is_descendant(new_cgroup, c)) {
-+				rcu_read_unlock();
-+				return -EPERM;
-+			}
-+		}
-+		rcu_read_unlock();
++	retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, 0);
++	if (retval)
++		return retval;
++
++	for_each_subsys(root, ss) {
++		if (ss->attach)
++			ss->attach(ss, cgrp, oldcgrp, tsk, false);
 +	}
 +
- 	return 0;
- }
- 
-diff --git a/kernel/sched.c b/kernel/sched.c
-index 3393c18..770fde6 100644
---- a/kernel/sched.c
-+++ b/kernel/sched.c
-@@ -10194,8 +10194,7 @@ cpu_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
- }
- 
- static int
--cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--		      struct task_struct *tsk)
-+cpu_cgroup_can_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- {
- #ifdef CONFIG_RT_GROUP_SCHED
- 	if (!sched_rt_can_attach(cgroup_tg(cgrp), tsk))
-@@ -10205,15 +10204,45 @@ cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 	if (tsk->sched_class != &fair_sched_class)
- 		return -EINVAL;
- #endif
++	synchronize_rcu();
++
+ 	/*
+-	 * Locate or allocate a new css_set for this task,
+-	 * based on its final set of cgroups
++	 * wake up rmdir() waiter. the rmdir should fail since the cgroup
++	 * is no longer empty.
+ 	 */
++	cgroup_wakeup_rmdir_waiters(cgrp);
++	return 0;
++}
++
++/*
++ * cgroup_attach_proc works in two stages, the first of which prefetches all
++ * new css_sets needed (to make sure we have enough memory before committing
++ * to the move) and stores them in a list, of entries of the following type.
++ * TODO: possible optimization: use css_set->rcu_head for chaining instead
++ */
++struct cg_list_entry {
++	struct css_set *cg;
++	struct list_head links;
++};
++
++static bool css_set_check_fetched(struct cgroup *cgrp,
++				  struct task_struct *tsk, struct css_set *cg,
++				  struct list_head *newcg_list)
++{
++	struct css_set *newcg;
++	struct cg_list_entry *cg_entry;
++	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
++
++	read_lock(&css_set_lock);
++	newcg = find_existing_css_set(cg, cgrp, template);
++	if (newcg)
++		get_css_set(newcg);
++	read_unlock(&css_set_lock);
++
++	/* doesn't exist at all? */
++	if (!newcg)
++		return false;
++	/* see if it's already in the list */
++	list_for_each_entry(cg_entry, newcg_list, links) {
++		if (cg_entry->cg == newcg) {
++			put_css_set(newcg);
++			return true;
++		}
++	}
++
++	/* not found */
++	put_css_set(newcg);
++	return false;
++}
++
++/*
++ * Find the new css_set and store it in the list in preparation for moving
++ * the given task to the given cgroup. Returns 0 on success, -ENOMEM if we
++ * run out of memory.
++ */
++static int css_set_prefetch(struct cgroup *cgrp, struct css_set *cg,
++			    struct list_head *newcg_list)
++{
++	struct css_set *newcg;
++	struct cg_list_entry *cg_entry;
++	/* ensure a new css_set will exist for this thread */
+ 	newcg = find_css_set(cg, cgrp);
+-	put_css_set(cg);
+ 	if (!newcg)
+ 		return -ENOMEM;
++	/* add new element to list */
++	cg_entry = kmalloc(sizeof(struct cg_list_entry), GFP_KERNEL);
++	if (!cg_entry) {
++		put_css_set(newcg);
++		return -ENOMEM;
++	}
++	cg_entry->cg = newcg;
++	list_add(&cg_entry->links, newcg_list);
 +	return 0;
 +}
  
-+static int
-+cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
-+		      struct task_struct *tsk, bool threadgroup)
+-	task_lock(tsk);
+-	if (tsk->flags & PF_EXITING) {
++/**
++ * cgroup_attach_proc - attach all threads in a threadgroup to a cgroup
++ * @cgrp: the cgroup to attach to
++ * @leader: the threadgroup leader task_struct of the group to be attached
++ *
++ * Call holding cgroup_mutex. Will take task_lock of each thread in leader's
++ * threadgroup individually in turn.
++ */
++int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
 +{
-+	int retval = cpu_cgroup_can_attach_task(cgrp, tsk);
-+	if (retval)
-+		return retval;
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			retval = cpu_cgroup_can_attach_task(cgrp, c);
-+			if (retval) {
-+				rcu_read_unlock();
++	int retval;
++	struct cgroup_subsys *ss;
++	struct cgroup *oldcgrp;
++	struct css_set *oldcg;
++	struct cgroupfs_root *root = cgrp->root;
++	int subsys_id;
++	/* threadgroup list cursor */
++	struct task_struct *tsk;
++	/*
++	 * we need to make sure we have css_sets for all the tasks we're
++	 * going to move -before- we actually start moving them, so that in
++	 * case we get an ENOMEM we can bail out before making any changes.
++	 */
++	struct list_head newcg_list;
++	struct cg_list_entry *cg_entry;
++	/* needed for locking the threadgroup */
++	struct sighand_struct *threadgroup_sighand;
++
++	/* first, make sure this came from a valid tgid */
++	if (!thread_group_leader(leader))
++		return -EINVAL;
++	/*
++	 * check that we can legitimately attach to the cgroup.
++	 */
++	for_each_subsys(root, ss) {
++		if (ss->can_attach) {
++			retval = ss->can_attach(ss, cgrp, leader, true);
++			if (retval)
 +				return retval;
-+			}
 +		}
-+		rcu_read_unlock();
 +	}
- 	return 0;
- }
- 
- static void
- cpu_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--			struct cgroup *old_cont, struct task_struct *tsk)
-+		  struct cgroup *old_cont, struct task_struct *tsk
-+		  bool threadgroup)
- {
- 	sched_move_task(tsk);
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			sched_move_task(c);
++
++	get_first_subsys(cgrp, NULL, &subsys_id);
++
++	/*
++	 * step 1: make sure css_sets exist for all threads to be migrated.
++	 * we use find_css_set, which allocates a new one if necessary.
++	 */
++	INIT_LIST_HEAD(&newcg_list);
++	oldcgrp = task_cgroup(leader, subsys_id);
++	if (cgrp != oldcgrp) {
++		/* get old css_set */
++		task_lock(leader);
++		if (leader->flags & PF_EXITING) {
++			task_unlock(leader);
++			goto prefetch_loop;
 +		}
-+		rcu_read_unlock();
++		oldcg = leader->cgroups;
++		get_css_set(oldcg);
++		task_unlock(leader);
++		/* acquire new one */
++		retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
++		put_css_set(oldcg);
++		if (retval)
++			goto list_teardown;
 +	}
- }
++prefetch_loop:
++	rcu_read_lock();
++	/*
++	 * if we need to fetch a new css_set for this task, we must exit the
++	 * rcu_read section because allocating it can sleep. afterwards, we'll
++	 * need to restart iteration on the threadgroup list - the whole thing
++	 * will be O(nm) in the number of threads and css_sets; as the typical
++	 * case only has one css_set for all of them, usually O(n).
++	 */
++	list_for_each_entry_rcu(tsk, &leader->thread_group, thread_group) {
++		/* nothing to do if this task is already in the cgroup */
++		oldcgrp = task_cgroup(tsk, subsys_id);
++		if (cgrp == oldcgrp)
++			continue;
++		/* get old css_set pointer */
++		task_lock(tsk);
++		if (tsk->flags & PF_EXITING) {
++			/* ignore this task if it's going away */
++			task_unlock(tsk);
++			continue;
++		}
++		oldcg = tsk->cgroups;
++		get_css_set(oldcg);
+ 		task_unlock(tsk);
+-		put_css_set(newcg);
+-		return -ESRCH;
++		/* see if the new one for us is already in the list? */
++		if (css_set_check_fetched(cgrp, tsk, oldcg, &newcg_list)) {
++			/* was already there, nothing to do. */
++			put_css_set(oldcg);
++		} else {
++			/* we don't already have it. get new one. */
++			rcu_read_unlock();
++			retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
++			put_css_set(oldcg);
++			if (retval)
++				goto list_teardown;
++			/* begin iteration again. */
++			goto prefetch_loop;
++		}
+ 	}
+-	rcu_assign_pointer(tsk->cgroups, newcg);
+-	task_unlock(tsk);
++	rcu_read_unlock();
  
- #ifdef CONFIG_FAIR_GROUP_SCHED
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 6ceb6f2..d9e9cf4 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2584,7 +2584,8 @@ static int mem_cgroup_populate(struct cgroup_subsys *ss,
- static void mem_cgroup_move_task(struct cgroup_subsys *ss,
- 				struct cgroup *cont,
- 				struct cgroup *old_cont,
--				struct task_struct *p)
-+				struct task_struct *p,
-+				bool threadgroup)
- {
- 	mutex_lock(&memcg_tasklist);
+-	/* Update the css_set linked lists if we're using them */
+-	write_lock(&css_set_lock);
+-	if (!list_empty(&tsk->cg_list)) {
+-		list_del(&tsk->cg_list);
+-		list_add(&tsk->cg_list, &newcg->tasks);
++	/*
++	 * step 2: now that we're guaranteed success wrt the css_sets, proceed
++	 * to move all tasks to the new cgroup. Even if the threadgroup leader
++	 * is PF_EXITING, we still proceed to move all of its sub-threads to
++	 * the new cgroup; if everybody is PF_EXITING, we'll just end up doing
++	 * nothing, which is ok.
++	 */
++	oldcgrp = task_cgroup(leader, subsys_id);
++	/* if leader is already there, skip moving him */
++	if (cgrp != oldcgrp) {
++		retval = cgroup_task_migrate(cgrp, oldcgrp, leader, 1);
++		BUG_ON(retval != 0 && retval != -ESRCH);
+ 	}
+-	write_unlock(&css_set_lock);
++	/*
++	 * now move all the rest of the threads - need to lock against
++	 * possible races with fork().
++	 */
++	threadgroup_sighand = threadgroup_fork_lock(leader);
++	if (unlikely(!threadgroup_sighand)) {
++		/*
++		 * it is okay to have a failure case after the move-the-leader
++		 * code, because we will only have failed here if the leader
++		 * was PF_EXITING, and then task_migrate on him will have done
++		 * nothing.
++		 */
++		retval = -ESRCH;
++		goto list_teardown;
++	}
++	rcu_read_lock();
++	list_for_each_entry_rcu(tsk, &leader->thread_group, thread_group) {
++		/* leave current thread as it is if it's already there */
++		oldcgrp = task_cgroup(tsk, subsys_id);
++		if (cgrp == oldcgrp)
++			continue;
++		/* we don't care whether these threads are exiting */
++		retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, 1);
++		BUG_ON(retval != 0 && retval != -ESRCH);
++	}
++	rcu_read_unlock();
++	threadgroup_fork_unlock(threadgroup_sighand);
+ 
++	/*
++	 * step 3: attach whole threadgroup to each subsystem
++	 * TODO: if ever a subsystem needs to know the oldcgrp for each task
++	 * being moved, this call will need to be reworked to communicate that
++	 * information.
++	 */
+ 	for_each_subsys(root, ss) {
+ 		if (ss->attach)
+-			ss->attach(ss, cgrp, oldcgrp, tsk, false);
++			ss->attach(ss, cgrp, oldcgrp, tsk, true);
+ 	}
+-	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
+-	synchronize_rcu();
+-	put_css_set(cg);
+ 
  	/*
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index b8186ba..6cf8fd2 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -61,7 +61,8 @@ static inline struct dev_cgroup *task_devcgroup(struct task_struct *task)
- struct cgroup_subsys devices_subsys;
+-	 * wake up rmdir() waiter. the rmdir should fail since the cgroup
+-	 * is no longer empty.
++	 * step 4: success! ...and cleanup
+ 	 */
++	synchronize_rcu();
+ 	cgroup_wakeup_rmdir_waiters(cgrp);
+-	return 0;
++	retval = 0;
++list_teardown:
++	/* no longer need the list of css_sets, so get rid of it */
++	while (!list_empty(&newcg_list)) {
++		/* pop from the list */
++		cg_entry = list_first_entry(&newcg_list, struct cg_list_entry,
++					    links);
++		list_del(&cg_entry->links);
++		/* drop the refcount */
++		put_css_set(cg_entry->cg);
++		kfree(cg_entry);
++	}
++	/* done! */
++	return retval;
+ }
  
- static int devcgroup_can_attach(struct cgroup_subsys *ss,
--		struct cgroup *new_cgroup, struct task_struct *task)
-+		struct cgroup *new_cgroup, struct task_struct *task,
-+		bool threadgroup)
+ /*
+- * Attach task with pid 'pid' to cgroup 'cgrp'. Call with cgroup_mutex
+- * held. May take task_lock of task
++ * Find the task_struct of the task to attach by vpid and pass it along to the
++ * function to attach either it or all tasks in its threadgroup. Will take
++ * cgroup_mutex; may take task_lock of task.
+  */
+-static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
++static int attach_task_by_pid(struct cgroup *cgrp, u64 pid,
++			      int attach(struct cgroup *,
++					 struct task_struct *))
  {
- 	if (current != task && !capable(CAP_SYS_ADMIN))
- 			return -EPERM;
+ 	struct task_struct *tsk;
+ 	const struct cred *cred = current_cred(), *tcred;
+ 	int ret;
+ 
++	if (!cgroup_lock_live_group(cgrp))
++		return -ENODEV;
++
+ 	if (pid) {
+ 		rcu_read_lock();
+ 		tsk = find_task_by_vpid(pid);
+ 		if (!tsk || tsk->flags & PF_EXITING) {
+ 			rcu_read_unlock();
++			cgroup_unlock();
+ 			return -ESRCH;
+ 		}
+-
++		/*
++		 * even if we're attaching all tasks in the thread group, we
++		 * only need to check permissions on the group leader, because
++		 * even if another task has different permissions, the group
++		 * leader will have sufficient access to change it.
++		 */
+ 		tcred = __task_cred(tsk);
+ 		if (cred->euid &&
+ 		    cred->euid != tcred->uid &&
+ 		    cred->euid != tcred->suid) {
+ 			rcu_read_unlock();
++			cgroup_unlock();
+ 			return -EACCES;
+ 		}
+ 		get_task_struct(tsk);
+@@ -1467,19 +1778,25 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
+ 		get_task_struct(tsk);
+ 	}
+ 
+-	ret = cgroup_attach_task(cgrp, tsk);
++	/*
++	 * Note that the check for whether the task is its threadgroup leader
++	 * is done in cgroup_attach_proc. This means that writing 0 to the
++	 * procs file will only work if the writing task is the leader.
++	 */
++	ret = attach(cgrp, tsk);
+ 	put_task_struct(tsk);
++	cgroup_unlock();
+ 	return ret;
+ }
+ 
+ static int cgroup_tasks_write(struct cgroup *cgrp, struct cftype *cft, u64 pid)
+ {
+-	int ret;
+-	if (!cgroup_lock_live_group(cgrp))
+-		return -ENODEV;
+-	ret = attach_task_by_pid(cgrp, pid);
+-	cgroup_unlock();
+-	return ret;
++	return attach_task_by_pid(cgrp, pid, cgroup_attach_task);
++}
++
++static int cgroup_procs_write(struct cgroup *cgrp, struct cftype *cft, u64 tgid)
++{
++	return attach_task_by_pid(cgrp, tgid, cgroup_attach_proc);
+ }
+ 
+ /**
+@@ -2638,9 +2955,9 @@ static struct cftype files[] = {
+ 	{
+ 		.name = CGROUP_FILE_GENERIC_PREFIX "procs",
+ 		.open = cgroup_procs_open,
+-		/* .write_u64 = cgroup_procs_write, TODO */
++		.write_u64 = cgroup_procs_write,
+ 		.release = cgroup_pidlist_release,
+-		.mode = S_IRUGO,
++		.mode = S_IRUGO | S_IWUSR,
+ 	},
+ 	{
+ 		.name = "notify_on_release",
