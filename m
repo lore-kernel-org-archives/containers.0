@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: C/R support of UNIX sockets
-Date: Wed, 12 Aug 2009 02:12:34 -0400
-Message-ID: <4A825D52.5020000@librato.com>
-References: <1249918379-29414-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH 1/5] Add an errno validation function (v2)
+Date: Wed, 12 Aug 2009 02:12:46 -0400
+Message-ID: <4A825D5E.5010606@librato.com>
+References: <1249918379-29414-1-git-send-email-danms@us.ibm.com>	<1249918379-29414-2-git-send-email-danms@us.ibm.com>	<20090810183106.GA24373@us.ibm.com>
+	<87k51b5xi6.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1249918379-29414-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87k51b5xi6.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,18 +23,18 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Pulled the first four into ckpt-v17-dev.
-See my reply to the fifth.
-
-Oren.
-
+Fixed at import (left Signed-off-by: as is)
 
 Dan Smith wrote:
-> This is my latest UNIX C/R patch set.  The helper patches are unchanged from
-> the last versions posted (and acked) on this list.  The final UNIX patch
-> includes critical fixes identified by review as well as TODO comments to
-> identify issues that need further work.
+> SH> Ok, I do think it should be <= MAX_ERRNO but it's not particularly
+> SH> urgent atm :) So with or without that change:
 > 
-> I have code to address most of the TODO issues which I will submit to the
-> list after these patches are in the tree.
+> Yep, me too, I forgot to change that.
+> 
+> SH> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> So, I'll be glad to re-post this patch (by itself) with the ack and
+> the change, or Oren can just do it when he imports it.
+> 
+> Thanks!
 > 
