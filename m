@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/5] Add a ckpt_read_string() function (v3)
-Date: Wed, 12 Aug 2009 02:17:36 -0400
-Message-ID: <4A825E80.70807@librato.com>
-References: <1249918379-29414-1-git-send-email-danms@us.ibm.com>
-	<1249918379-29414-3-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH] Add script to, given a kernel source tree, automatically
+	write the cr.h
+Date: Wed, 12 Aug 2009 02:28:57 -0400
+Message-ID: <4A826129.2010304@librato.com>
+References: <1249429388-12900-1-git-send-email-matthltc@us.ibm.com>
+	<20090804234948.GE18261@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1249918379-29414-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090804234948.GE18261-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,110 +19,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-I ended up adding:
+If I understand correctly you want to avoid needing the kernel
+sources (or headers) in order to compile user-cr - so you would
+suggest to auto-generate the a header file and add it as a source
+file to user-cr ?
 
-	int ckpt_read_payload(ctx, void **ptr, int max, int type)
-
-It returns the length of the payload actually read and allocated; caller
-should free the buffer.
-
-and:
-
-	char *ckpt_read_string(ctx, max)
-
-It reads the payload of size up to @max (including terminating null!)
-into allocated buffer that the caller should free. It returns this
-buffer.
-
-To play it safe, it forces a '\0' at the end of the buffer, in case
-a malicious user didn't provide it. This way, the caller can safely
-assume that it is indeed a null terminated string.
-
-This is slightly different than your prototype, so you need to
-update the fifth patch.
+(If this doesn't make any sense -- I'll blame the hour ...)
 
 Oren.
 
 
-Dan Smith wrote:
-> Add a ckpt_read_string() function to allow reading of a variable-length
-> (but length-capped) string from the checkpoint stream.
+Matt Helsley wrote:
+> Oren,
 > 
-> Changes in v3:
->  - Return immediately on allocation failure instead of falling through to the
->    inevitable crash
+> 	Could this script or something like it be useful for user-cr
+> rather than always using KERNELSRC and KERNELBUILD?
 > 
-> Changes in v2:
->  - Avoid memcpy() by reading into the allocated buffer directly
+> Cheers,
+> 	-Matt Helsley
+> On Tue, Aug 04, 2009 at 04:43:08PM -0700, Matt Helsley wrote:
+>> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> ---
 > 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/restart.c       |   36 ++++++++++++++++++++++++++++++++++++
->  include/linux/checkpoint.h |    1 +
->  2 files changed, 37 insertions(+), 0 deletions(-)
+> <snip>
 > 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 65cafd9..b1ffc54 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -285,6 +285,42 @@ int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type)
->  	return ret;
->  }
->  
-> +/**
-> + * ckpt_read_string - read a string (variable length)
-> + * @ctx: checkpoint context
-> + * @str: pointer to buffer to store allocated string (caller must kfree())
-> + * @max: maximum acceptable length
-> + *
-> + * This can be used to read a variable-length string from the checkpoint
-> + * stream. @max limits the size of the resulting buffer.  Returns zero on
-> + * success, negative on failure.
-> + */
-> +int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max)
-> +{
-> +	int len;
-> +	int ret = 0;
-> +
-> +	*str = NULL;
-> +
-> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_STRING);
-> +	if (len < 0)
-> +		return len;
-> +	else if (len > max)
-> +		return -EINVAL;
-> +
-> +	*str = kzalloc(len + 1, GFP_KERNEL);
-> +	if (!*str)
-> +		return -ENOMEM;
-> +
-> +	ret = ckpt_kread(ctx, *str, len);
-> +	if (ret < 0) {
-> +		kfree(*str);
-> +		*str = NULL;
-> +	}
-> +
-> +	return ret;
-> +}
-> +
->  /***********************************************************************
->   * Restart
->   */
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 87b683b..a6935b3 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -68,6 +68,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
->  extern int _ckpt_read_nbuffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
->  extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
-> +extern int ckpt_read_string(struct ckpt_ctx *ctx, char **str, int max);
->  extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
->  extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
->  extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
+>> diff --git a/rewrite-cr-header.sh b/rewrite-cr-header.sh
+>> new file mode 100755
+>> index 0000000..22f92c7
+>> --- /dev/null
+>> +++ b/rewrite-cr-header.sh
+>> @@ -0,0 +1,64 @@
+>> +#!/bin/bash
+>> +#
+>> +# Rewrite the contents of cr.h
+>> +#
+>> +
+>> +KERNELSRC=../oren
+>> +
+>> +################################################################################
+>> +
+>> +[ -z "${KERNELSRC}" ] && exit -1
+>> +mv cr.h cr.h.bak || exit -1
+>> +
+>> +(
+>> +COND='#if'
+>> +set -e
+>> +echo '/* AUTOMATICALLY GENERATED by rewrite-cr-header.sh */'
+>> +
+>> +#
+>> +# Include non-__KERNEL__ sections of include/linux/checkpoint.h using
+>> +# cpp to expand only the directives of the kernel header.
+>> +#
+>> +# The first 6 lines of cpp output write some trashy #define/#undef lines
+>> +# we don't want. Would it be better to throw everything away until we see
+>> +# "#define _LINUX_CHECKPOINT_H_" ??
+>> +#
+>> +cpp -CC -P -U__KERNEL__ -undef -nostdinc -fdirectives-only ${KERNELSRC}/include/linux/checkpoint.h | tail -n '+6'
+>> +
+>> +find ${KERNELSRC}/arch -name 'unistd*.h' -print | sort | \
+>> +while read UNISTDH ; do
+>> +	REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]+__NR_(checkpoint|restart)[[:space:]]+[[:digit:]]+'
+>> +
+>> +	[ -z "${UNISTDH}" ] && continue
+>> +	KARCH=$(echo "${UNISTDH}" | sed -e 's|.*/arch/\([^/]\+\)/.*|\1|')
+>> +	BITNESS=$(basename "${UNISTDH}" | sed -e 's/unistd_*\([12346]\+\)\.h/\1/')
+>> +
+>> +	# Map KARCH to something suitable for CPP e.g. __i386__
+>> +	case "${KARCH}" in
+>> +	x86)	if [ "${BITNESS}" == "32" ]; then
+>> +			CPPARCH=i386
+>> +		else
+>> +			CPPARCH=x86_64
+>> +		fi
+>> +		;;
+>> +	s390*)	CPPARCH=s390x ;;
+>> +	*)	CPPARCH="${KARCH}" ;;
+>> +	esac
+>> +
+>> +	grep -q -E "${REGEX}" ${UNISTDH} || {
+>> +		echo '/* '"${CPPARCH}"' unsupported. */'
+>> +		continue
+>> +	}
+>> +
+>> +	echo -e "${COND} __${CPPARCH}__\\n"
+>> +	grep -E "${REGEX}" ${UNISTDH} | \
+>> +	sed -e 's/^[[:space:]]*#define[[:space:]]\+__NR_\([^[:space:]]\+\)[[:space:]]\+\([^[:space:]]\+\).*$/#ifndef __NR_\1\n#define __NR_\1 \2\n#endif\n/'
+>> +	COND='#elif'
+>> +done
+>> +echo -e '#else\n#error "Architecture does not have definitons for __NR_(checkpoint|restart)"\n#endif'
+>> +) > cr.h || {
+>> +	mv -f cr.h.bak cr.h
+>> +	exit -1
+>> +}
+>> +
+>> +rm -f cr.h.bak
+>> -- 
+>> 1.5.6.3
+>>
+>>
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
