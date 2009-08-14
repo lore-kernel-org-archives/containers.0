@@ -1,15 +1,12 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] flexible array implementation v4
-Date: Fri, 14 Aug 2009 12:02:05 -0700
-Message-ID: <1250276525.10725.6749.camel__7946.03544422916$1250276626$gmane$org@nimitz>
-References: <20090723152647.D9391722@kernel>
-	<20090724163814.08c7eee3.akpm@linux-foundation.org>
-	<e9c3a7c20908141056o32ce1204k6751b43271aa88ab@mail.gmail.com>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][git]linux-cr branch, ckpt-v17-dev,
+	updated. v2.6.27-rc5-46185-ge861b44
+Date: Fri, 14 Aug 2009 16:21:36 -0400
+Message-ID: <200908142021.n7EKLa1o012185@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <e9c3a7c20908141056o32ce1204k6751b43271aa88ab-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,195 +16,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: vda.linux-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-08-14 at 10:56 -0700, Dan Williams wrote:
-> On Fri, Jul 24, 2009 at 4:38 PM, Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> > On Thu, 23 Jul 2009 08:26:47 -0700
-> > Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> >
-> >>  linux-2.6.git-dave/include/linux/flex_array.h |   46 ++++
-> >>  linux-2.6.git-dave/lib/Makefile               |    2
-> >>  linux-2.6.git-dave/lib/flex_array.c           |  269 ++++++++++++++++++++++++++
-> >
-> > I haven't looked at this lately but I merged it.
-> >
-> > As it's obviously non-injurious, we could slip it into 2.6.31 for
-> > convenience's sake but without any callers that's just runtime bloat.
-> > So I guess we wait for some additional callers to come along and prove
-> > its worth.
-> 
-> I am considering using this for managing the descriptor ring in a
-> device driver, but I am concerned with the overhead of the divides.
-> Would it be acceptable to round the element size to the next
-> power-of-2 value so we can replace all the divides with shifts?
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-I think we have two options.  We can programatically determine and store
-the shift, like this (during allocation):
+The branch, ckpt-v17-dev has been updated
+       via  e861b44b93a6e14571bcc2f9d68b46ca8c44a734 (commit)
+       via  ab84defe5b093ecec3a4a1abf2bc32f768e3205e (commit)
+      from  d8a68a4242a854ed585caa81d3aed61965c91e55 (commit)
 
-	if (can_shift)
-		fa->element_size = -log2(element_size);
-	else
-		fa->element_size = element_size;
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-Then, when dividing, we look for the "negative" offset size and do:
+- Log -----------------------------------------------------------------
+commit e861b44b93a6e14571bcc2f9d68b46ca8c44a734
+Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date:   Fri Aug 14 16:14:18 2009 -0400
 
-	if (element_size < 0)
-		index = foo >> fa->element_size;
-	else
-		index = foo / fa->element_size;
+    Fix off-by-one buffer length passed to ckpt_write_string()
+    
+    Reading and writing of strings expect the buffer length to include
+    the terminating NULL (reading will also enforce it). This patch
+    fixes the call from sock_unix_write_cwd() to include it.
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Or, we can do what I'm doing in this patch.  If you want to specify the
-index sizes to flex_array_put/get(), there's a flex_array_put_es()
-(element size) variant.  It should inline enough to let the compiler
-take care of this for us and turn the divides into shifts.
+commit ab84defe5b093ecec3a4a1abf2bc32f768e3205e
+Author: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date:   Fri Aug 14 08:35:53 2009 -0700
 
-I just hacked this up *REALLY* quickly.  Not even compile tested.  I'll
-look at it in some more detail early next week.  I'm not even positive
-this will work.  Just releasing early and often. :)
+    Fix kfree() corruption in sock_read_buffer_sendmsg()
+    
+    The memcpy_from_iovec() function that the unix sendmsg functions use modifies
+    the struct msghdr.  Since the current code uses the msg.iovec_base pointer
+    in the msghdr for the kmalloc() and kfree(), we end up freeing the wrong
+    pointer.  This patch stores the original address in a separate pointer and
+    corrects the kfree() call to use it.
+    
+    Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+    Tested-By: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-diff --git a/include/linux/flex_array.h b/include/linux/flex_array.h
-index 23c1ec7..9052704 100644
---- a/include/linux/flex_array.h
-+++ b/include/linux/flex_array.h
-@@ -36,6 +36,47 @@ struct flex_array {
- 	.total_nr_elements = (total),	\
- } } }
- 
-+static inline int __elements_per_part(int element_size)
-+{
-+	return FLEX_ARRAY_PART_SIZE / element_size;
-+}
-+
-+static int __fa_element_to_part_nr(struct flex_array *fa, int element_size
-+		int element_nr)
-+{
-+	return element_nr / __elements_per_part(element_size);
-+}
-+
-+static int __fa_index_inside_part(struct flex_array *fa, int element_size,
-+		int element_nr)
-+{
-+	return element_nr % __elements_per_part(element_size);
-+}
-+
-+void *flex_array_get_es(struct flex_array *fa, int element_nr, int element_size);
-+{
-+	int part_nr = __fa_element_to_part_nr(fa, element_nr, element_size);
-+	int index_inside_part = index_inside_part(fa, element_nr);
-+
-+	if (element_nr >= fa->total_nr_elements)
-+		return -ENOSPC;
-+
-+	return flex_array_get_precalc(fa, part_nr, index_inside_part);
-+}
-+
-+int flex_array_put_es(struct flex_array *fa, int element_nr, int element_size,
-+		      void *src, gfp_t flags);
-+{
-+	int part_nr = __fa_element_to_part_nr(fa, element_nr, element_size);
-+	int index_inside = index_inside_part(fa, element_nr);
-+
-+	if (element_nr >= fa->total_nr_elements)
-+		return NULL;
-+
-+	return flex_array_put_precalc(fa, part_nr, index_inside, src, flags);
-+}
-+
-+
- struct flex_array *flex_array_alloc(int element_size, int total, gfp_t flags);
- int flex_array_prealloc(struct flex_array *fa, int start, int end, gfp_t flags);
- void flex_array_free(struct flex_array *fa);
-diff --git a/lib/flex_array.c b/lib/flex_array.c
-index 08f1636..0b2030d 100644
---- a/lib/flex_array.c
-+++ b/lib/flex_array.c
-@@ -115,11 +115,6 @@ struct flex_array *flex_array_alloc(int element_size, int total, gfp_t flags)
- 	return ret;
- }
- 
--static int fa_element_to_part_nr(struct flex_array *fa, int element_nr)
--{
--	return element_nr / __elements_per_part(fa->element_size);
--}
--
- /**
-  * flex_array_free_parts - just free the second-level pages
-  * @src:	address of data to copy into the array
-@@ -153,7 +148,7 @@ static int fa_index_inside_part(struct flex_array *fa, int element_nr)
- 
- static int index_inside_part(struct flex_array *fa, int element_nr)
- {
--	int part_offset = fa_index_inside_part(fa, element_nr);
-+	int part_offset = fa_index_inside_part(fa, fa->element_size, element_nr);
- 	return part_offset * fa->element_size;
- }
- 
-@@ -176,6 +171,17 @@ __fa_get_part(struct flex_array *fa, int part_nr, gfp_t flags)
- 	return part;
- }
- 
-+
-+static int fa_element_to_part_nr(struct flex_array *fa, int element_nr)
-+{
-+	return __fa_element_to_part_nr(fa, fa->element_size, element_nr);
-+}
-+
-+static int fa_index_inside_part(struct flex_array *fa, int element_nr)
-+{
-+	return __fa_index_inside_part(fa, fa->element_size, element_nr);
-+}
-+
- /**
-  * flex_array_put - copy data into the array at @element_nr
-  * @src:	address of data to copy into the array
-@@ -188,9 +194,17 @@ __fa_get_part(struct flex_array *fa, int part_nr, gfp_t flags)
-  *
-  * Locking must be provided by the caller.
-  */
--int flex_array_put(struct flex_array *fa, int element_nr, void *src, gfp_t flags)
-+int flex_array_put(struct flex_array *fa, int element_nr, void *src,
-+		   gfp_t flags)
- {
- 	int part_nr = fa_element_to_part_nr(fa, element_nr);
-+	int index_inside = index_inside_part(fa, element_nr);
-+
-+	return flex_array_put_precalc(fa, part_nr, index_inside, src, flags);
-+}
-+int flex_array_put_precalc(struct flex_array *fa, int part_nr,
-+			   int index_inside_part, void *src, gfp_t flags)
-+{
- 	struct flex_array_part *part;
- 	void *dst;
- 
-@@ -253,15 +267,23 @@ int flex_array_prealloc(struct flex_array *fa, int start, int end, gfp_t flags)
- void *flex_array_get(struct flex_array *fa, int element_nr)
- {
- 	int part_nr = fa_element_to_part_nr(fa, element_nr);
--	struct flex_array_part *part;
-+	int index_inside_part = index_inside_part(fa, element_nr);
- 
- 	if (element_nr >= fa->total_nr_elements)
- 		return NULL;
-+
-+	return flex_array_get_precalc(fa, part_nr, index_inside_part);
-+}
-+void *flex_array_get_precalc(struct flex_array *fa, int part_nr,
-+			     int index_inside_part)
-+{
-+	struct flex_array_part *part;
-+
- 	if (!fa->parts[part_nr])
- 		return NULL;
- 	if (elements_fit_in_base(fa))
- 		part = (struct flex_array_part *)&fa->parts[0];
- 	else
- 		part = fa->parts[part_nr];
--	return &part->elements[index_inside_part(fa, element_nr)];
-+	return &part->elements[index_inside_part];
- }
+-----------------------------------------------------------------------
+
+Summary of changes:
+ net/unix/checkpoint.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
 
--- Dave
+hooks/post-receive
+--
+linux-cr
