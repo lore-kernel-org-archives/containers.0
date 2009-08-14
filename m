@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 2/4] c/r: [signal] checkpoint/restart of rlimit
-Date: Fri, 14 Aug 2009 18:07:14 -0400
-Message-ID: <1250287636-16463-3-git-send-email-orenl@librato.com>
+Subject: [PATCH 4/4] c/r: [signal] support for real/virt/prof itimers
+Date: Fri, 14 Aug 2009 18:07:16 -0400
+Message-ID: <1250287636-16463-5-git-send-email-orenl@librato.com>
 References: <1250287636-16463-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,242 +21,203 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Luis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds checkpoint and restart of rlimit information
-that is part of shared signal_struct.
+This patch adds support for real/virt/prof itimers.
+Expiry and the interval values are both saved in nanoseconds.
+
+Changelog[v1]:
+  - [Louis Rilling] Fix saving of signal->it_real_incr if not expired
+  - Fix restoring of signal->it_real_incr if expire is zero
+  - Save virt/prof expire relative to process accumulated time
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |    2 ++
- checkpoint/restart.c           |    3 +++
- checkpoint/signal.c            |   27 +++++++++++++++++++++++----
- include/linux/checkpoint_hdr.h |   17 +++++++++++++++++
- include/linux/resource.h       |    4 ++++
- kernel/sys.c                   |   36 +++++++++++++++++++++++-------------
- 6 files changed, 72 insertions(+), 17 deletions(-)
+ checkpoint/signal.c            |   82 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint_hdr.h |    6 +++
+ include/linux/posix-timers.h   |    9 ++++
+ kernel/posix-cpu-timers.c      |    9 ----
+ 4 files changed, 97 insertions(+), 9 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index c368270..870b16d 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -199,6 +199,8 @@ static void fill_kernel_const(struct ckpt_hdr_const *h)
- 	h->uts_version_len = sizeof(uts->version);
- 	h->uts_machine_len = sizeof(uts->machine);
- 	h->uts_domainname_len = sizeof(uts->domainname);
-+	/* rlimit */
-+	h->rlimit_nlimits = RLIM_NLIMITS;
- }
- 
- /* write the checkpoint header */
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index e44b82a..3639a53 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -371,6 +371,9 @@ static int check_kernel_const(struct ckpt_hdr_const *h)
- 		return -EINVAL;
- 	if (h->uts_domainname_len != sizeof(uts->domainname))
- 		return -EINVAL;
-+	/* rlimit */
-+	if (h->rlimit_nlimits != RLIM_NLIMITS)
-+		return -EINVAL;
- 
- 	return 0;
- }
 diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-index 70df7c4..b3f1d3e 100644
+index 25eef8c..3cfedd4 100644
 --- a/checkpoint/signal.c
 +++ b/checkpoint/signal.c
-@@ -14,6 +14,7 @@
- #include <linux/sched.h>
+@@ -15,6 +15,8 @@
  #include <linux/signal.h>
  #include <linux/errno.h>
-+#include <linux/resource.h>
+ #include <linux/resource.h>
++#include <linux/timer.h>
++#include <linux/posix-timers.h>
  #include <linux/checkpoint.h>
  #include <linux/checkpoint_hdr.h>
  
-@@ -168,13 +169,22 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
- static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	struct ckpt_hdr_signal *h;
-+	struct signal_struct *signal;
-+	struct rlimit *rlim;
- 	int ret;
+@@ -264,6 +266,8 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	struct signal_struct *signal;
+ 	struct sigpending shared_pending;
+ 	struct rlimit *rlim;
++	struct timeval tval;
++	cputime_t cputime;
+ 	unsigned long flags;
+ 	int i, ret;
  
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
- 	if (!h)
- 		return -ENOMEM;
- 
--	/* fill in later */
-+	signal = t->signal;
-+	rlim = signal->rlim;
+@@ -300,6 +304,46 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
+ 		h->rlim[i].rlim_max = rlim[i].rlim_max;
+ 	}
 +
-+	/* rlimit */
-+	for (i = 0; i < RLIM_NLIMITS; i++) {
-+		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
-+		h->rlim[i].rlim_max = rlim[i].rlim_max;
++	/* real/virt/prof itimers */
++	if (hrtimer_active(&signal->real_timer)) {
++		/* For an active timer compute the time delta */
++		ktime_t delta = hrtimer_get_remaining(&signal->real_timer);
++		/*
++		 * If the timer expired after the the test above, then
++		 * set the expire to the minimum possible (because by
++		 * now the pending signal have been saved already, but
++		 * the signal from this very expiry won't be sent before
++		 * we release t->sighand->siglock).
++		 */
++		ckpt_debug("active ! %lld\n", delta.tv64);
++		if (delta.tv64 <= 0)
++			delta.tv64 = NSEC_PER_USEC;
++		h->it_real_value = ktime_to_ns(delta);
++	} else {
++		/*
++		 * Timer is inactive; if @it_real_incr is 0 the timer
++		 * will not be re-armed. Beacuse we hold siglock, if
++		 * @it_real_incr > 0, the timer must have just expired
++		 * but not yet re-armed, and we have a SIGALRM pending
++		 * - that will trigger timer re-arm after restart.
++		 */
++		h->it_real_value = 0;
 +	}
++	h->it_real_incr = ktime_to_ns(signal->it_real_incr);
++
++	cputime = cputime_sub(signal->it_virt_expires, virt_ticks(t));
++	cputime_to_timeval(cputime, &tval);
++	h->it_virt_value = timeval_to_ns(&tval);
++	cputime_to_timeval(signal->it_virt_incr, &tval);
++	h->it_virt_incr = timeval_to_ns(&tval);
++
++	cputime = cputime_sub(signal->it_prof_expires, prof_ticks(t));
++	cputime_to_timeval(cputime, &tval);
++	h->it_prof_value = timeval_to_ns(&tval);
++	cputime_to_timeval(signal->it_prof_incr, &tval);
++	h->it_prof_incr = timeval_to_ns(&tval);
++
+ 	unlock_task_sighand(t, &flags);
  
  	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
-@@ -190,15 +200,24 @@ int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- static int restore_signal(struct ckpt_ctx *ctx)
- {
+@@ -417,6 +461,7 @@ static int restore_signal(struct ckpt_ctx *ctx)
  	struct ckpt_hdr_signal *h;
-+	struct rlimit rlim;
-+	int i, ret;
+ 	struct sigpending new_pending;
+ 	struct sigpending *pending;
++	struct itimerval itimer;
+ 	struct rlimit rlim;
+ 	int i, ret;
  
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
+@@ -437,12 +482,49 @@ static int restore_signal(struct ckpt_ctx *ctx)
+ 	if (ret < 0)
+ 		goto out;
  
--	/* fill in later */
--
-+	/* rlimit */
-+	for (i = 0; i < RLIM_NLIMITS; i++) {
-+		rlim.rlim_cur = h->rlim[i].rlim_cur;
-+		rlim.rlim_max = h->rlim[i].rlim_max;
-+		ret = do_setrlimit(i, &rlim);
-+		if (ret < 0)
-+			break;
-+	}
-+ out:
++	/*
++	 * Reset real/virt/prof itimer (in case they were set), to
++	 * prevent unwanted signals after flushing current signals
++	 * and before restoring original real/virt/prof itimer.
++	 */
++	itimer.it_value = (struct timeval) { .tv_sec = 0, .tv_usec = 0 };
++	itimer.it_interval =  (struct timeval) { .tv_sec = 0, .tv_usec = 0 };
++	do_setitimer(ITIMER_REAL, &itimer, NULL);
++	do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
++	do_setitimer(ITIMER_PROF, &itimer, NULL);
++
+ 	spin_lock_irq(&current->sighand->siglock);
+ 	pending = &current->signal->shared_pending;
+ 	flush_sigqueue(pending);
+ 	pending->signal = new_pending.signal;
+ 	list_splice_init(&new_pending.list, &pending->list);
+ 	spin_unlock_irq(&current->sighand->siglock);
++
++	/* real/virt/prof itimers */
++	itimer.it_value = ns_to_timeval(h->it_real_value);
++	itimer.it_interval = ns_to_timeval(h->it_real_incr);
++	ret = do_setitimer(ITIMER_REAL, &itimer, NULL);
++	if (ret < 0)
++		goto out;
++	/*
++	 * If expire is 0 but incr > 0 then we have a SIGALRM pending.
++	 * It should re-arm the timer when handled. But do_setitimer()
++	 * above already ignored @it_real_incr because @it_real_value
++	 * that was zero. So we set it manually. (This is safe against
++	 * malicious input, because in the worst case will generate an
++	 * unexpected SIGALRM to this process).
++	 */
++	if (!h->it_real_value && h->it_real_incr)
++		current->signal->it_real_incr = ns_to_ktime(h->it_real_incr);
++
++	itimer.it_value = ns_to_timeval(h->it_virt_value);
++	itimer.it_interval = ns_to_timeval(h->it_virt_incr);
++	ret = do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
++	if (ret < 0)
++		goto out;
++	itimer.it_value = ns_to_timeval(h->it_prof_value);
++	itimer.it_interval = ns_to_timeval(h->it_prof_incr);
++	ret = do_setitimer(ITIMER_PROF, &itimer, NULL);
+  out:
  	ckpt_hdr_put(ctx, h);
--	return 0;
-+	return ret;
- }
- 
- int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
+ 	return ret;
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 92b8da6..fc49958 100644
+index fc631a0..53d3f37 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -152,6 +152,8 @@ struct ckpt_hdr_const {
- 	__u16 uts_version_len;
- 	__u16 uts_machine_len;
- 	__u16 uts_domainname_len;
-+	/* rlimit */
-+	__u16 rlimit_nlimits;
- } __attribute__((aligned(8)));
- 
- /* checkpoint image header */
-@@ -444,8 +446,23 @@ struct ckpt_hdr_sighand {
- 	struct ckpt_hdr_sigaction action[0];
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_rlimit {
-+	__u64 rlim_cur;
-+	__u64 rlim_max;
-+} __attribute__((aligned(8)));
-+
-+/* cannot include <linux/resource.h> from userspace, so define: */
-+#define CKPT_RLIM_NLIMITS  16
-+#ifdef __KERNEL__
-+#include <linux/resource.h>
-+#if CKPT_RLIM_NLIMITS != RLIM_NLIMITS
-+#error CKPT_RLIM_NLIMIT size is wrong per asm-generic/resource.h
-+#endif
-+#endif
-+
+@@ -486,6 +486,12 @@ struct ckpt_hdr_rlimit {
  struct ckpt_hdr_signal {
  	struct ckpt_hdr h;
-+	struct ckpt_hdr_rlimit rlim[CKPT_RLIM_NLIMITS];
+ 	struct ckpt_hdr_rlimit rlim[CKPT_RLIM_NLIMITS];
++	__u64 it_real_value;
++	__u64 it_real_incr;
++	__u64 it_virt_value;
++	__u64 it_virt_incr;
++	__u64 it_prof_value;
++	__u64 it_prof_incr;
  } __attribute__((aligned(8)));
  
  struct ckpt_hdr_signal_task {
-diff --git a/include/linux/resource.h b/include/linux/resource.h
-index 40fc7e6..87e1bf3 100644
---- a/include/linux/resource.h
-+++ b/include/linux/resource.h
-@@ -72,4 +72,8 @@ struct rlimit {
+diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
+index d0d6a66..7dd69c3 100644
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -125,4 +125,13 @@ void update_rlimit_cpu(unsigned long rlim_new);
  
- int getrusage(struct task_struct *p, int who, struct rusage __user *ru);
+ int invalid_clockid(const clockid_t which_clock);
  
-+#ifdef __KERNEL__
-+extern int do_setrlimit(unsigned int resource, struct rlimit *rlim);
-+#endif
-+
- #endif
-diff --git a/kernel/sys.c b/kernel/sys.c
-index da4f9e0..0979a3f 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -1144,40 +1144,39 @@ SYSCALL_DEFINE2(old_getrlimit, unsigned int, resource,
- 
- #endif
- 
--SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
-+int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
- {
--	struct rlimit new_rlim, *old_rlim;
-+	struct rlimit *old_rlim;
- 	int retval;
- 
- 	if (resource >= RLIM_NLIMITS)
- 		return -EINVAL;
--	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
--		return -EFAULT;
--	if (new_rlim.rlim_cur > new_rlim.rlim_max)
-+	if (new_rlim->rlim_cur > new_rlim->rlim_max)
- 		return -EINVAL;
-+
- 	old_rlim = current->signal->rlim + resource;
--	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
-+	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
- 	    !capable(CAP_SYS_RESOURCE))
- 		return -EPERM;
--	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
-+	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
- 		return -EPERM;
- 
--	retval = security_task_setrlimit(resource, &new_rlim);
-+	retval = security_task_setrlimit(resource, new_rlim);
- 	if (retval)
- 		return retval;
- 
--	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
-+	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
- 		/*
- 		 * The caller is asking for an immediate RLIMIT_CPU
- 		 * expiry.  But we use the zero value to mean "it was
- 		 * never set".  So let's cheat and make it one second
- 		 * instead
- 		 */
--		new_rlim.rlim_cur = 1;
-+		new_rlim->rlim_cur = 1;
- 	}
- 
- 	task_lock(current->group_leader);
--	*old_rlim = new_rlim;
-+	*old_rlim = *new_rlim;
- 	task_unlock(current->group_leader);
- 
- 	if (resource != RLIMIT_CPU)
-@@ -1189,14 +1188,25 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
- 	 * very long-standing error, and fixing it now risks breakage of
- 	 * applications, so we live with it
- 	 */
--	if (new_rlim.rlim_cur == RLIM_INFINITY)
-+	if (new_rlim->rlim_cur == RLIM_INFINITY)
- 		goto out;
- 
--	update_rlimit_cpu(new_rlim.rlim_cur);
-+	update_rlimit_cpu(new_rlim->rlim_cur);
- out:
- 	return 0;
- }
- 
-+SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
++static inline cputime_t prof_ticks(struct task_struct *p)
 +{
-+	struct rlimit new_rlim;
-+
-+	if (resource >= RLIM_NLIMITS)
-+		return -EINVAL;
-+	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
-+		return -EFAULT;
-+	return do_setrlimit(resource, &new_rlim);
++	return cputime_add(p->utime, p->stime);
++}
++static inline cputime_t virt_ticks(struct task_struct *p)
++{
++	return p->utime;
 +}
 +
- /*
-  * It would make sense to put struct rusage in the task_struct,
-  * except that would make the task_struct be *really big*.  After
+ #endif
+diff --git a/kernel/posix-cpu-timers.c b/kernel/posix-cpu-timers.c
+index bece7c0..63c1c14 100644
+--- a/kernel/posix-cpu-timers.c
++++ b/kernel/posix-cpu-timers.c
+@@ -167,15 +167,6 @@ static void bump_cpu_timer(struct k_itimer *timer,
+ 	}
+ }
+ 
+-static inline cputime_t prof_ticks(struct task_struct *p)
+-{
+-	return cputime_add(p->utime, p->stime);
+-}
+-static inline cputime_t virt_ticks(struct task_struct *p)
+-{
+-	return p->utime;
+-}
+-
+ int posix_cpu_clock_getres(const clockid_t which_clock, struct timespec *tp)
+ {
+ 	int error = check_clock(which_clock);
 -- 
 1.6.0.4
