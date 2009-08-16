@@ -1,14 +1,11 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 22/24] io-controller: Support per cgroup per device weights
-	and io class
-Date: Sun, 16 Aug 2009 15:30:44 -0400
-Message-ID: <1250451046-9966-23-git-send-email-vgoyal__5889.54144991494$1250452903$gmane$org@redhat.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
+Subject: [RFC] IO scheduler based IO controller V8
+Date: Sun, 16 Aug 2009 15:30:22 -0400
+Message-ID: <1250451046-9966-1-git-send-email-vgoyal__23335.8771227815$1250452952$gmane$org@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250451046-9966-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,419 +19,363 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch enables per-cgroup per-device weight and ioprio_class handling.
-A new cgroup interface "policy" is introduced. You can make use of this
-file to configure weight and ioprio_class for each device in a given cgroup.
-The original "weight" and "ioprio_class" files are still available. If you
-don't do special configuration for a particular device, "weight" and
-"ioprio_class" are used as default values in this device.
 
-You can use the following format to play with the new interface.
-#echo dev_major:dev_minor weight ioprio_class > /patch/to/cgroup/policy
-weight=0 means removing the policy for device.
+Hi All,
 
-Examples:
-Configure weight=300 ioprio_class=2 on /dev/hdb (8:16) in this cgroup
-# echo "8:16 300 2" > io.policy
-# cat io.policy
-dev	weight	class
-8:16	300	2
+Here is the V8 of the IO controller patches generated on top of 2.6.31-rc6.
 
-Configure weight=500 ioprio_class=1 on /dev/hda (8:0) in this cgroup
-# echo "8:0 500 1" > io.policy
-# cat io.policy
-dev	weight	class
-8:0	500	1
-8:16	300	2
+Previous versions of the patches was posted here.
 
-Remove the policy for /dev/hda in this cgroup
-# echo 8:0 0 1 > io.policy
-# cat io.policy
-dev	weight	class
-8:16	300	2
+(V1) http://lkml.org/lkml/2009/3/11/486
+(V2) http://lkml.org/lkml/2009/5/5/275
+(V3) http://lkml.org/lkml/2009/5/26/472
+(V4) http://lkml.org/lkml/2009/6/8/580
+(V5) http://lkml.org/lkml/2009/6/19/279
+(V6) http://lkml.org/lkml/2009/7/2/369
+(V7) http://lkml.org/lkml/2009/7/24/253
 
-Changelog (v1 -> v2)
-- Rename some structures
-- Use spin_lock_irqsave() and spin_lock_irqrestore() version to prevent
-  from enabling the interrupts unconditionally.
-- Fix policy setup bug when switching to another io scheduler.
-- If a policy is available for a specific device, don't update weight and
-  io class when writing "weight" and "iprio_class".
-- Fix a bug when parsing policy string.
+Changes from V7
+===============
+- Replaced BFQ with CFS+CFQ like hierarchical scheduler.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- block/elevator-fq.c |  263 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- block/elevator-fq.h |   10 ++
- 2 files changed, 269 insertions(+), 4 deletions(-)
+  Moving to time domain as service parameter had broken BFQ's assumptions
+  about how long a queue runs (queue can run more than budget) and that in
+  turn has potential to break the O(1) gurantees of BFQ.
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index e2600a5..70d0ecf 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -15,6 +15,7 @@
- #include <linux/blktrace_api.h>
- #include <linux/seq_file.h>
- #include <linux/biotrack.h>
-+#include <linux/genhd.h>
- #include "elevator-fq.h"
+  In addition, BFQ was relatively complex and not sure if benefits were
+  proportionate in time domain setup. Hence for the time being trying to
+  replace BFQ with a simpler scheduler and see how well does it perform.
+
+  This scheduler borrows the ideas from CFS and CFQ. Time slices to queues are
+  allocated based on their priority (like CFQ). These disk times are converted
+  to virtual disk time and we keep track of each queue's vdisktime and each
+  service tree's min_vdisktime to determine who has consumed how much disk
+  time and who should run next (like CFS).
+
+- Fixed few issues reported by Jerome Marchand.
+
+  Apart from this there are miscellaneous cleaups like getting rid of not so
+  necessary comments, function renames, debug code re-organization etc.
  
- const int elv_slice_sync = HZ / 10;
-@@ -862,12 +863,26 @@ EXPORT_SYMBOL(elv_io_group_set_async_queue);
- #ifdef CONFIG_GROUP_IOSCHED
- static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup);
+Limitations
+===========
+
+- This IO controller provides the bandwidth control at the IO scheduler
+  level (leaf node in stacked hiearchy of logical devices). So there can
+  be cases (depending on configuration) where application does not see
+  proportional BW division at higher logical level device.
+
+  LWN has written an article about the issue here.
+
+	http://lwn.net/Articles/332839/
+
+How to solve the issue of fairness at higher level logical devices
+==================================================================
+(Do we really need it? That's not where the contention for resources is.)
+
+Couple of suggestions have come forward.
+
+- Implement IO control at IO scheduler layer and then with the help of
+  some daemon, adjust the weight on underlying devices dynamiclly, depending
+  on what kind of BW gurantees are to be achieved at higher level logical
+  block devices.
+
+- Also implement a higher level IO controller along with IO scheduler
+  based controller and let user choose one depending on his needs.
+
+  A higher level controller does not know about the assumptions/policies
+  of unerldying IO scheduler, hence it has the potential to break down
+  the IO scheduler's policy with-in cgroup. A lower level controller
+  can work with IO scheduler much more closely and efficiently.
  
--static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+							dev_t dev);
-+static void
-+io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog, dev_t dev)
- {
- 	struct io_entity *entity = &iog->entity;
-+	struct io_policy_node *pn;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&iocg->lock, flags);
-+	pn = policy_search_node(iocg, dev);
-+	if (pn) {
-+		entity->weight = pn->weight;
-+		entity->ioprio_class = pn->ioprio_class;
-+	} else {
-+		entity->weight = iocg->weight;
-+		entity->ioprio_class = iocg->ioprio_class;
-+	}
-+	spin_unlock_irqrestore(&iocg->lock, flags);
- 
--	entity->weight = iocg->weight;
--	entity->ioprio_class = iocg->ioprio_class;
- 	entity->ioprio_changed = 1;
- 	entity->my_sd = &iog->sched_data;
- }
-@@ -1007,6 +1022,229 @@ io_cgroup_lookup_group(struct io_cgroup *iocg, void *key)
- 	return NULL;
- }
- 
-+static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
-+				  struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *pn;
-+
-+	iocg = cgroup_to_io_cgroup(cgrp);
-+
-+	if (list_empty(&iocg->policy_list))
-+		goto out;
-+
-+	seq_printf(m, "dev\tweight\tclass\n");
-+
-+	spin_lock_irq(&iocg->lock);
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		seq_printf(m, "%u:%u\t%u\t%hu\n", MAJOR(pn->dev),
-+			   MINOR(pn->dev), pn->weight, pn->ioprio_class);
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+out:
-+	return 0;
-+}
-+
-+static inline void policy_insert_node(struct io_cgroup *iocg,
-+					  struct io_policy_node *pn)
-+{
-+	list_add(&pn->node, &iocg->policy_list);
-+}
-+
-+/* Must be called with iocg->lock held */
-+static inline void policy_delete_node(struct io_policy_node *pn)
-+{
-+	list_del(&pn->node);
-+}
-+
-+/* Must be called with iocg->lock held */
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+						 dev_t dev)
-+{
-+	struct io_policy_node *pn;
-+
-+	if (list_empty(&iocg->policy_list))
-+		return NULL;
-+
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		if (pn->dev == dev)
-+			return pn;
-+	}
-+
-+	return NULL;
-+}
-+
-+static int check_dev_num(dev_t dev)
-+{
-+	int part = 0;
-+	struct gendisk *disk;
-+
-+	disk = get_gendisk(dev, &part);
-+	if (!disk || part)
-+		return -ENODEV;
-+
-+	return 0;
-+}
-+
-+static int policy_parse_and_set(char *buf, struct io_policy_node *newpn)
-+{
-+	char *s[4], *p, *major_s = NULL, *minor_s = NULL;
-+	int ret;
-+	unsigned long major, minor, temp;
-+	int i = 0;
-+	dev_t dev;
-+
-+	memset(s, 0, sizeof(s));
-+	while ((p = strsep(&buf, " ")) != NULL) {
-+		if (!*p)
-+			continue;
-+		s[i++] = p;
-+
-+		/* Prevent from inputing too many things */
-+		if (i == 4)
-+			break;
-+	}
-+
-+	if (i != 3)
-+		return -EINVAL;
-+
-+	p = strsep(&s[0], ":");
-+	if (p != NULL)
-+		major_s = p;
-+	else
-+		return -EINVAL;
-+
-+	minor_s = s[0];
-+	if (!minor_s)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(major_s, 10, &major);
-+	if (ret)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(minor_s, 10, &minor);
-+	if (ret)
-+		return -EINVAL;
-+
-+	dev = MKDEV(major, minor);
-+
-+	ret = check_dev_num(dev);
-+	if (ret)
-+		return ret;
-+
-+	newpn->dev = dev;
-+
-+	if (s[1] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[1], 10, &temp);
-+	if (ret || temp > IO_WEIGHT_MAX)
-+		return -EINVAL;
-+
-+	newpn->weight =  temp;
-+
-+	if (s[2] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[2], 10, &temp);
-+	if (ret || temp < IOPRIO_CLASS_RT || temp > IOPRIO_CLASS_IDLE)
-+		return -EINVAL;
-+	newpn->ioprio_class = temp;
-+
-+	return 0;
-+}
-+
-+static void update_iog_weight_prio(struct io_group *iog, struct io_cgroup *iocg,
-+					struct io_policy_node *pn)
-+{
-+	if (pn->weight) {
-+		iog->entity.weight = pn->weight;
-+		iog->entity.ioprio_class = pn->ioprio_class;
-+		/*
-+		 * iog weight and ioprio_class updating actually happens if
-+		 * ioprio_changed is set. So ensure ioprio_changed is not set
-+		 * until new weight and new ioprio_class are updated.
-+		 */
-+		smp_wmb();
-+		iog->entity.ioprio_changed = 1;
-+	} else {
-+		iog->entity.weight = iocg->weight;
-+		iog->entity.ioprio_class = iocg->ioprio_class;
-+
-+		/* The same as above */
-+		smp_wmb();
-+		iog->entity.ioprio_changed = 1;
-+	}
-+}
-+
-+static int io_cgroup_policy_write(struct cgroup *cgrp, struct cftype *cft,
-+			    const char *buffer)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *newpn, *pn;
-+	char *buf;
-+	int ret = 0;
-+	int keep_newpn = 0;
-+	struct hlist_node *n;
-+	struct io_group *iog;
-+
-+	buf = kstrdup(buffer, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	newpn = kzalloc(sizeof(*newpn), GFP_KERNEL);
-+	if (!newpn) {
-+		ret = -ENOMEM;
-+		goto free_buf;
-+	}
-+
-+	ret = policy_parse_and_set(buf, newpn);
-+	if (ret)
-+		goto free_newpn;
-+
-+	if (!cgroup_lock_live_group(cgrp)) {
-+		ret = -ENODEV;
-+		goto free_newpn;
-+	}
-+
-+	iocg = cgroup_to_io_cgroup(cgrp);
-+	spin_lock_irq(&iocg->lock);
-+
-+	pn = policy_search_node(iocg, newpn->dev);
-+	if (!pn) {
-+		if (newpn->weight != 0) {
-+			policy_insert_node(iocg, newpn);
-+			keep_newpn = 1;
-+		}
-+		goto update_io_group;
-+	}
-+
-+	if (newpn->weight == 0) {
-+		/* weight == 0 means deleteing a policy */
-+		policy_delete_node(pn);
-+		goto update_io_group;
-+	}
-+
-+	pn->weight = newpn->weight;
-+	pn->ioprio_class = newpn->ioprio_class;
-+
-+update_io_group:
-+	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {
-+		if (iog->dev == newpn->dev)
-+			update_iog_weight_prio(iog, iocg, newpn);
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+
-+	cgroup_unlock();
-+
-+free_newpn:
-+	if (!keep_newpn)
-+		kfree(newpn);
-+free_buf:
-+	kfree(buf);
-+	return ret;
-+}
-+
- #define SHOW_FUNCTION(__VAR)						\
- static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
- 				       struct cftype *cftype)		\
-@@ -1039,6 +1277,7 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	struct io_cgroup *iocg;					\
- 	struct io_group *iog;						\
- 	struct hlist_node *n;						\
-+	struct io_policy_node *pn;					\
- 									\
- 	if (val < (__MIN) || val > (__MAX))				\
- 		return -EINVAL;						\
-@@ -1051,6 +1290,9 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	spin_lock_irq(&iocg->lock);					\
- 	iocg->__VAR = (unsigned long)val;				\
- 	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
-+		pn = policy_search_node(iocg, iog->dev);		\
-+		if (pn)							\
-+			continue;					\
- 		iog->entity.__VAR = (unsigned long)val;		\
- 		smp_wmb();						\
- 		iog->entity.ioprio_changed = 1;				\
-@@ -1186,6 +1428,12 @@ static int io_cgroup_disk_dequeue_read(struct cgroup *cgroup,
- 
- struct cftype io_files[] = {
- 	{
-+		.name = "policy",
-+		.read_seq_string = io_cgroup_policy_read,
-+		.write_string = io_cgroup_policy_write,
-+		.max_write_len = 256,
-+	},
-+	{
- 		.name = "weight",
- 		.read_u64 = io_cgroup_weight_read,
- 		.write_u64 = io_cgroup_weight_write,
-@@ -1236,6 +1484,7 @@ static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
- 	INIT_HLIST_HEAD(&iocg->group_data);
- 	iocg->weight = IO_WEIGHT_DEFAULT;
- 	iocg->ioprio_class = IOPRIO_CLASS_BE;
-+	INIT_LIST_HEAD(&iocg->policy_list);
- 
- 	return &iocg->css;
- }
-@@ -1329,7 +1578,7 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
- 		iog->dev = MKDEV(major, minor);
- 
--		io_group_init_entity(iocg, iog);
-+		io_group_init_entity(iocg, iog, iog->dev);
- 
- 		atomic_set(&iog->ref, 0);
- 
-@@ -1675,6 +1924,7 @@ static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
- 	struct io_group *iog;
- 	struct elv_fq_data *efqd;
- 	unsigned long uninitialized_var(flags);
-+	struct io_policy_node *pn, *pntmp;
- 
- 	/*
- 	 * io groups are linked in two lists. One list is maintained
-@@ -1714,6 +1964,11 @@ remove_entry:
- 	goto remove_entry;
- 
- done:
-+	list_for_each_entry_safe(pn, pntmp, &iocg->policy_list, node) {
-+		policy_delete_node(pn);
-+		kfree(pn);
-+	}
-+
- 	free_css_id(&io_subsys, &iocg->css);
- 	rcu_read_unlock();
- 	BUG_ON(!hlist_empty(&iocg->group_data));
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index f8e46f7..53e5a03 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -136,12 +136,22 @@ struct io_group {
- 	struct request_list rl;
- };
- 
-+struct io_policy_node {
-+	struct list_head node;
-+	dev_t dev;
-+	unsigned int weight;
-+	unsigned short ioprio_class;
-+};
-+
- struct io_cgroup {
- 	struct cgroup_subsys_state css;
- 
- 	unsigned int weight;
- 	unsigned short ioprio_class;
- 
-+	/* list of io_policy_node */
-+	struct list_head policy_list;
-+
- 	spinlock_t lock;
- 	struct hlist_head group_data;
- };
--- 
-1.6.0.6
+Other active IO controller developments
+=======================================
+
+IO throttling
+-------------
+
+  This is a max bandwidth controller and not the proportional one. Secondly
+  it is a second level controller which can break the IO scheduler's
+  policy/assumtions with-in cgroup. 
+
+dm-ioband
+---------
+
+ This is a proportional bandwidth controller implemented as device mapper
+ driver. It is also a second level controller which can break the
+ IO scheduler's policy/assumptions with-in cgroup.
+
+TODO
+====
+- code cleanups, testing, bug fixing, optimizations, benchmarking etc...
+
+Testing
+=======
+
+I have been able to do some testing as follows. All my testing is with ext3
+file system with a SATA drive which supports queue depth of 31.
+
+Test1 (Isolation between two KVM virtual machines)
+==================================================
+Created two KVM virtual machines. Partitioned a disk on host in two partitions
+and gave one partition to each virtual machine. Put both the virtual machines
+in two different cgroup of weight 1000 and 500 each. Virtual machines created
+ext3 file system on the partitions exported from host and did buffered writes.
+Host seems writes as synchronous and virtual machine with higher weight gets
+double the disk time of virtual machine of lower weight. Used deadline
+scheduler in this test case.
+
+Some more details about configuration are in documentation patch.
+
+Test2 (Fairness for synchronous reads)
+======================================
+- Two dd in two cgroups with cgrop weights 1000 and 500. Ran two "dd" in those
+  cgroups (With CFQ scheduler and /sys/block/<device>/queue/fairness = 1)
+
+  Higher weight dd finishes first and at that point of time my script takes
+  care of reading cgroup files io.disk_time and io.disk_sectors for both the
+  groups and display the results.
+
+  dd if=/mnt/$BLOCKDEV/zerofile1 of=/dev/null &
+  dd if=/mnt/$BLOCKDEV/zerofile2 of=/dev/null &
+
+  group1 time=8:16 2452 group1 sectors=8:16 457856
+  group2 time=8:16 1317 group2 sectors=8:16 247008
+
+  234179072 bytes (234 MB) copied, 3.90912 s, 59.9 MB/s
+  234179072 bytes (234 MB) copied, 5.15548 s, 45.4 MB/s
+
+First two fields in time and sectors statistics represent major and minor
+number of the device. Third field represents disk time in milliseconds and
+number of sectors transferred respectively.
+
+This patchset tries to provide fairness in terms of disk time received. group1
+got almost double of group2 disk time (At the time of first dd finish). These
+time and sectors statistics can be read using io.disk_time and io.disk_sector
+files in cgroup. More about it in documentation file.
+
+Test3 (Reader Vs Buffered Writes)
+================================
+Buffered writes can be problematic and can overwhelm readers, especially with
+noop and deadline. IO controller can provide isolation between readers and
+buffered (async) writers.
+
+First I ran the test without io controller to see the severity of the issue.
+Ran a hostile writer and then after 10 seconds started a reader and then
+monitored the completion time of reader. Reader reads a 256 MB file. Tested
+this with noop scheduler.
+
+sample script
+------------
+sync
+echo 3 > /proc/sys/vm/drop_caches
+time dd if=/dev/zero of=/mnt/sdb/reader-writer-zerofile bs=4K count=2097152
+conv=fdatasync &
+sleep 10
+time dd if=/mnt/sdb/256M-file of=/dev/null &
+
+Results
+-------
+8589934592 bytes (8.6 GB) copied, 106.045 s, 81.0 MB/s (Writer)
+268435456 bytes (268 MB) copied, 96.5237 s, 2.8 MB/s (Reader)
+
+Now it was time to test io controller whether it can provide isolation between
+readers and writers with noop. I created two cgroups of weight 1000 each and
+put reader in group1 and writer in group 2 and ran the test again. Upon
+comletion of reader, my scripts read io.disk_time and io.disk_sectors cgroup
+files to get an estimate how much disk time each group got and how many
+sectors each group did IO for. 
+
+For more accurate accounting of disk time for buffered writes with queuing
+hardware I had to set /sys/block/<disk>/queue/iosched/fairness to "1".
+
+sample script
+-------------
+echo $$ > /cgroup/bfqio/test2/tasks
+dd if=/dev/zero of=/mnt/$BLOCKDEV/testzerofile bs=4K count=2097152 &
+sleep 10
+echo noop > /sys/block/$BLOCKDEV/queue/scheduler
+echo  1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
+echo $$ > /cgroup/bfqio/test1/tasks
+dd if=/mnt/$BLOCKDEV/256M-file of=/dev/null &
+wait $!
+# Some code for reading cgroup files upon completion of reader.
+-------------------------
+
+Results
+=======
+68435456 bytes (268 MB) copied, 6.87668 s, 39.0 MB/s
+
+group1 time=8:16 3719 group1 sectors=8:16 524816
+group2 time=8:16 3659 group2 sectors=8:16 638712
+
+Note, reader finishes now much lesser time and both group1 and group2
+got almost 3 seconds of disk time. Hence io-controller provides isolation
+from buffered writes.
+
+Test4 (AIO)
+===========
+
+AIO reads
+-----------
+Set up two fio, AIO read jobs in two cgroup with weight 1000 and 500
+respectively. I am using cfq scheduler. Following are some lines from my test
+script.
+
+---------------------------------------------------------------
+echo 1000 > /cgroup/bfqio/test1/io.weight
+echo 500 > /cgroup/bfqio/test2/io.weight
+
+fio_args="--ioengine=libaio --rw=read --size=512M --direct=1"
+echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
+
+echo $$ > /cgroup/bfqio/test1/tasks
+fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/
+--output=/mnt/$BLOCKDEV/fio1/test1.log
+--exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
+
+echo $$ > /cgroup/bfqio/test2/tasks
+fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/
+--output=/mnt/$BLOCKDEV/fio2/test2.log &
+----------------------------------------------------------------
+
+test1 and test2 are two groups with weight 1000 and 500 respectively.
+"read-and-display-group-stats.sh" is one small script which reads the
+test1 and test2 cgroup files to determine how much disk time each group
+got till first fio job finished.
+
+Results
+------
+test1 statistics: time=8:16 17686   sectors=8:16 1049664
+test2 statistics: time=8:16 9036   sectors=8:16 585152
+
+Above shows that by the time first fio (higher weight), finished, group
+test1 got 17686 ms of disk time and group test2 got 9036 ms of disk time.
+similarly the statistics for number of sectors transferred are also shown.
+
+Note that disk time given to group test1 is almost double of group2 disk
+time.
+
+AIO writes
+----------
+Set up two fio, AIO direct write jobs in two cgroup with weight 1000 and 500
+respectively. I am using cfq scheduler. Following are some lines from my test
+script.
+
+------------------------------------------------
+echo 1000 > /cgroup/bfqio/test1/io.weight
+echo 500 > /cgroup/bfqio/test2/io.weight
+fio_args="--ioengine=libaio --rw=write --size=512M --direct=1"
+
+echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
+
+echo $$ > /cgroup/bfqio/test1/tasks
+fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/
+--output=/mnt/$BLOCKDEV/fio1/test1.log
+--exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
+
+echo $$ > /cgroup/bfqio/test2/tasks
+fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/
+--output=/mnt/$BLOCKDEV/fio2/test2.log &
+-------------------------------------------------
+
+test1 and test2 are two groups with weight 1000 and 500 respectively.
+"read-and-display-group-stats.sh" is one small script which reads the
+test1 and test2 cgroup files to determine how much disk time each group
+got till first fio job finished.
+
+Following are the results.
+
+test1 statistics: time=8:16 25509   sectors=8:16 1049688
+test2 statistics: time=8:16 12863   sectors=8:16 527104
+
+Above shows that by the time first fio (higher weight), finished, group
+test1 got almost double the disk time of group test2.
+
+Test5 (Fairness for async writes, Buffered Write Vs Buffered Write)
+===================================================================
+Fairness for async writes is tricky and biggest reason is that async writes
+are cached in higher layers (page cahe) as well as possibly in file system
+layer also (btrfs, xfs etc), and are dispatched to lower layers not necessarily
+in proportional manner.
+
+For example, consider two dd threads reading /dev/zero as input file and doing
+writes of huge files. Very soon we will cross vm_dirty_ratio and dd thread will
+be forced to write out some pages to disk before more pages can be dirtied. But
+not necessarily dirty pages of same thread are picked. It can very well pick
+the inode of lesser priority dd thread and do some writeout. So effectively
+higher weight dd is doing writeouts of lower weight dd pages and we don't see
+service differentation.
+
+IOW, the core problem with async write fairness is that higher weight thread
+does not throw enought IO traffic at IO controller to keep the queue
+continuously backlogged. In my testing, there are many .2 to .8 second
+intervals where higher weight queue is empty and in that duration lower weight
+queue get lots of job done giving the impression that there was no service
+differentiation.
+
+In summary, from IO controller point of view async writes support is there.
+Because page cache has not been designed in such a manner that higher 
+prio/weight writer can do more write out as compared to lower prio/weight
+writer, gettting service differentiation is hard and it is visible in some
+cases and not visible in some cases.
+
+Do we really care that much for fairness among two writer cgroups? One can
+choose to do direct writes or sync writes if fairness for writes really
+matters for him.
+
+Following is the only case where it is hard to ensure fairness between cgroups.
+
+- Buffered writes Vs Buffered Writes.
+
+So to test async writes I created two partitions on a disk and created ext3
+file systems on both the partitions.  Also created two cgroups and generated
+lots of write traffic in two cgroups (50 fio threads) and watched the disk
+time statistics in respective cgroups at the interval of 2 seconds. Thanks to
+ryo tsuruta for the test case.
+
+*****************************************************************
+sync
+echo 3 > /proc/sys/vm/drop_caches
+
+fio_args="--size=64m --rw=write --numjobs=50 --group_reporting"
+
+echo $$ > /cgroup/bfqio/test1/tasks
+fio $fio_args --name=test1 --directory=/mnt/sdd1/fio/ --output=/mnt/sdd1/fio/test1.log &
+
+echo $$ > /cgroup/bfqio/test2/tasks
+fio $fio_args --name=test2 --directory=/mnt/sdd2/fio/ --output=/mnt/sdd2/fio/test2.log &
+*********************************************************************** 
+
+And watched the disk time and sector statistics for the both the cgroups
+every 2 seconds using a script. How is snippet from output.
+
+test1 statistics: time=8:16 1631   sectors=8:16 1680 dq=8:16 2
+test2 statistics: time=8:16 896   sectors=8:16 976 dq=8:16 1
+
+test1 statistics: time=8:16 6031   sectors=8:16 88536 dq=8:16 5
+test2 statistics: time=8:16 3192   sectors=8:16 4080 dq=8:16 1
+
+test1 statistics: time=8:16 10425   sectors=8:16 390496 dq=8:16 5
+test2 statistics: time=8:16 5272   sectors=8:16 77896 dq=8:16 4
+
+test1 statistics: time=8:16 15396   sectors=8:16 747256 dq=8:16 5
+test2 statistics: time=8:16 7852   sectors=8:16 235648 dq=8:16 4
+
+test1 statistics: time=8:16 20302   sectors=8:16 1180168 dq=8:16 5
+test2 statistics: time=8:16 10297   sectors=8:16 391208 dq=8:16 4
+
+test1 statistics: time=8:16 25244   sectors=8:16 1579928 dq=8:16 6
+test2 statistics: time=8:16 12748   sectors=8:16 613096 dq=8:16 4
+
+test1 statistics: time=8:16 30095   sectors=8:16 1927848 dq=8:16 6
+test2 statistics: time=8:16 15135   sectors=8:16 806112 dq=8:16 4
+
+First two fields in time and sectors statistics represent major and minor
+number of the device. Third field represents disk time in milliseconds and
+number of sectors transferred respectively.
+
+So disk time consumed by group1 is almost double of group2 in this case.
+
+Thanks
+Vivek
