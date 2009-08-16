@@ -1,14 +1,10 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V8
-Date: Sun, 16 Aug 2009 15:53:02 -0400
-Message-ID: <20090816195302.GA4949__35438.1585646935$1250453840$gmane$org@redhat.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
+From: Egley <hayloft-VjKQkMBZc+eXRzIyuiKcjQ@public.gmane.org>
+Subject: ed itself from th
+Date: Mon, 17 Aug 2009 02:50:45 +0400
+Message-ID: <4F8C884A.3040306@wapcenneti.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------050608020701010909040103"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1250451046-9966-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,376 +14,337 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, righi.andr
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Aug 16, 2009 at 03:30:22PM -0400, Vivek Goyal wrote:
-> 
-> Hi All,
-> 
-> Here is the V8 of the IO controller patches generated on top of 2.6.31-rc6.
-> 
+This is a multi-part message in MIME format.
+--------------050608020701010909040103
+Content-Type: text/plain; charset=;iso-8859-11; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Forgot to mention that for ease of patching a consolidated patch is here.
+And smoking and telling a story. And if he does address his neighbour a
+little as if she were a meeting at a bye-election, open air, he at any
+rate never addresses her as if she were a duty and no one had ever
+wanted to kiss her. To Delancey all women have had lovers and husbands
+and children and religious conversions and railway accidents. Old maids
+and clergymen's wives adore him. I don't know what it was that made him
+write originally. Perhaps it was his name--Delancey Woburn sounds like
+the author--or the hero--of a serial. Or it may have been that his
+exuberant desire for self-expression had burst through the four walls of
+practical professions. He had, I believe, considered the stage and the
+church. Journalism would have seemed to me the obvious outlet but he
+preferred literature. "Creation is such _fun_," he would explain,
+beaming. And, of course, he was tremendously successful. Delancey was
+designed on a pattern of success. That was one of the obvious defects I
+was talking about. Delancey has missed his 
 
-http://people.redhat.com/~vgoyal/io-controller/io-scheduler-based-io-controller-v8.patch
+--------------050608020701010909040103
+Content-Type: image/jpeg;
+ name="perikaryal.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="perikaryal.jpg"
 
-Thanks
-Vivek
+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
 
-> Previous versions of the patches was posted here.
-> 
-> (V1) http://lkml.org/lkml/2009/3/11/486
-> (V2) http://lkml.org/lkml/2009/5/5/275
-> (V3) http://lkml.org/lkml/2009/5/26/472
-> (V4) http://lkml.org/lkml/2009/6/8/580
-> (V5) http://lkml.org/lkml/2009/6/19/279
-> (V6) http://lkml.org/lkml/2009/7/2/369
-> (V7) http://lkml.org/lkml/2009/7/24/253
-> 
-> Changes from V7
-> ===============
-> - Replaced BFQ with CFS+CFQ like hierarchical scheduler.
-> 
->   Moving to time domain as service parameter had broken BFQ's assumptions
->   about how long a queue runs (queue can run more than budget) and that in
->   turn has potential to break the O(1) gurantees of BFQ.
-> 
->   In addition, BFQ was relatively complex and not sure if benefits were
->   proportionate in time domain setup. Hence for the time being trying to
->   replace BFQ with a simpler scheduler and see how well does it perform.
-> 
->   This scheduler borrows the ideas from CFS and CFQ. Time slices to queues are
->   allocated based on their priority (like CFQ). These disk times are converted
->   to virtual disk time and we keep track of each queue's vdisktime and each
->   service tree's min_vdisktime to determine who has consumed how much disk
->   time and who should run next (like CFS).
-> 
-> - Fixed few issues reported by Jerome Marchand.
-> 
->   Apart from this there are miscellaneous cleaups like getting rid of not so
->   necessary comments, function renames, debug code re-organization etc.
->  
-> Limitations
-> ===========
-> 
-> - This IO controller provides the bandwidth control at the IO scheduler
->   level (leaf node in stacked hiearchy of logical devices). So there can
->   be cases (depending on configuration) where application does not see
->   proportional BW division at higher logical level device.
-> 
->   LWN has written an article about the issue here.
-> 
-> 	http://lwn.net/Articles/332839/
-> 
-> How to solve the issue of fairness at higher level logical devices
-> ==================================================================
-> (Do we really need it? That's not where the contention for resources is.)
-> 
-> Couple of suggestions have come forward.
-> 
-> - Implement IO control at IO scheduler layer and then with the help of
->   some daemon, adjust the weight on underlying devices dynamiclly, depending
->   on what kind of BW gurantees are to be achieved at higher level logical
->   block devices.
-> 
-> - Also implement a higher level IO controller along with IO scheduler
->   based controller and let user choose one depending on his needs.
-> 
->   A higher level controller does not know about the assumptions/policies
->   of unerldying IO scheduler, hence it has the potential to break down
->   the IO scheduler's policy with-in cgroup. A lower level controller
->   can work with IO scheduler much more closely and efficiently.
->  
-> Other active IO controller developments
-> =======================================
-> 
-> IO throttling
-> -------------
-> 
->   This is a max bandwidth controller and not the proportional one. Secondly
->   it is a second level controller which can break the IO scheduler's
->   policy/assumtions with-in cgroup. 
-> 
-> dm-ioband
-> ---------
-> 
->  This is a proportional bandwidth controller implemented as device mapper
->  driver. It is also a second level controller which can break the
->  IO scheduler's policy/assumptions with-in cgroup.
-> 
-> TODO
-> ====
-> - code cleanups, testing, bug fixing, optimizations, benchmarking etc...
-> 
-> Testing
-> =======
-> 
-> I have been able to do some testing as follows. All my testing is with ext3
-> file system with a SATA drive which supports queue depth of 31.
-> 
-> Test1 (Isolation between two KVM virtual machines)
-> ==================================================
-> Created two KVM virtual machines. Partitioned a disk on host in two partitions
-> and gave one partition to each virtual machine. Put both the virtual machines
-> in two different cgroup of weight 1000 and 500 each. Virtual machines created
-> ext3 file system on the partitions exported from host and did buffered writes.
-> Host seems writes as synchronous and virtual machine with higher weight gets
-> double the disk time of virtual machine of lower weight. Used deadline
-> scheduler in this test case.
-> 
-> Some more details about configuration are in documentation patch.
-> 
-> Test2 (Fairness for synchronous reads)
-> ======================================
-> - Two dd in two cgroups with cgrop weights 1000 and 500. Ran two "dd" in those
->   cgroups (With CFQ scheduler and /sys/block/<device>/queue/fairness = 1)
-> 
->   Higher weight dd finishes first and at that point of time my script takes
->   care of reading cgroup files io.disk_time and io.disk_sectors for both the
->   groups and display the results.
-> 
->   dd if=/mnt/$BLOCKDEV/zerofile1 of=/dev/null &
->   dd if=/mnt/$BLOCKDEV/zerofile2 of=/dev/null &
-> 
->   group1 time=8:16 2452 group1 sectors=8:16 457856
->   group2 time=8:16 1317 group2 sectors=8:16 247008
-> 
->   234179072 bytes (234 MB) copied, 3.90912 s, 59.9 MB/s
->   234179072 bytes (234 MB) copied, 5.15548 s, 45.4 MB/s
-> 
-> First two fields in time and sectors statistics represent major and minor
-> number of the device. Third field represents disk time in milliseconds and
-> number of sectors transferred respectively.
-> 
-> This patchset tries to provide fairness in terms of disk time received. group1
-> got almost double of group2 disk time (At the time of first dd finish). These
-> time and sectors statistics can be read using io.disk_time and io.disk_sector
-> files in cgroup. More about it in documentation file.
-> 
-> Test3 (Reader Vs Buffered Writes)
-> ================================
-> Buffered writes can be problematic and can overwhelm readers, especially with
-> noop and deadline. IO controller can provide isolation between readers and
-> buffered (async) writers.
-> 
-> First I ran the test without io controller to see the severity of the issue.
-> Ran a hostile writer and then after 10 seconds started a reader and then
-> monitored the completion time of reader. Reader reads a 256 MB file. Tested
-> this with noop scheduler.
-> 
-> sample script
-> ------------
-> sync
-> echo 3 > /proc/sys/vm/drop_caches
-> time dd if=/dev/zero of=/mnt/sdb/reader-writer-zerofile bs=4K count=2097152
-> conv=fdatasync &
-> sleep 10
-> time dd if=/mnt/sdb/256M-file of=/dev/null &
-> 
-> Results
-> -------
-> 8589934592 bytes (8.6 GB) copied, 106.045 s, 81.0 MB/s (Writer)
-> 268435456 bytes (268 MB) copied, 96.5237 s, 2.8 MB/s (Reader)
-> 
-> Now it was time to test io controller whether it can provide isolation between
-> readers and writers with noop. I created two cgroups of weight 1000 each and
-> put reader in group1 and writer in group 2 and ran the test again. Upon
-> comletion of reader, my scripts read io.disk_time and io.disk_sectors cgroup
-> files to get an estimate how much disk time each group got and how many
-> sectors each group did IO for. 
-> 
-> For more accurate accounting of disk time for buffered writes with queuing
-> hardware I had to set /sys/block/<disk>/queue/iosched/fairness to "1".
-> 
-> sample script
-> -------------
-> echo $$ > /cgroup/bfqio/test2/tasks
-> dd if=/dev/zero of=/mnt/$BLOCKDEV/testzerofile bs=4K count=2097152 &
-> sleep 10
-> echo noop > /sys/block/$BLOCKDEV/queue/scheduler
-> echo  1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
-> echo $$ > /cgroup/bfqio/test1/tasks
-> dd if=/mnt/$BLOCKDEV/256M-file of=/dev/null &
-> wait $!
-> # Some code for reading cgroup files upon completion of reader.
-> -------------------------
-> 
-> Results
-> =======
-> 68435456 bytes (268 MB) copied, 6.87668 s, 39.0 MB/s
-> 
-> group1 time=8:16 3719 group1 sectors=8:16 524816
-> group2 time=8:16 3659 group2 sectors=8:16 638712
-> 
-> Note, reader finishes now much lesser time and both group1 and group2
-> got almost 3 seconds of disk time. Hence io-controller provides isolation
-> from buffered writes.
-> 
-> Test4 (AIO)
-> ===========
-> 
-> AIO reads
-> -----------
-> Set up two fio, AIO read jobs in two cgroup with weight 1000 and 500
-> respectively. I am using cfq scheduler. Following are some lines from my test
-> script.
-> 
-> ---------------------------------------------------------------
-> echo 1000 > /cgroup/bfqio/test1/io.weight
-> echo 500 > /cgroup/bfqio/test2/io.weight
-> 
-> fio_args="--ioengine=libaio --rw=read --size=512M --direct=1"
-> echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
-> 
-> echo $$ > /cgroup/bfqio/test1/tasks
-> fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/
-> --output=/mnt/$BLOCKDEV/fio1/test1.log
-> --exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
-> 
-> echo $$ > /cgroup/bfqio/test2/tasks
-> fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/
-> --output=/mnt/$BLOCKDEV/fio2/test2.log &
-> ----------------------------------------------------------------
-> 
-> test1 and test2 are two groups with weight 1000 and 500 respectively.
-> "read-and-display-group-stats.sh" is one small script which reads the
-> test1 and test2 cgroup files to determine how much disk time each group
-> got till first fio job finished.
-> 
-> Results
-> ------
-> test1 statistics: time=8:16 17686   sectors=8:16 1049664
-> test2 statistics: time=8:16 9036   sectors=8:16 585152
-> 
-> Above shows that by the time first fio (higher weight), finished, group
-> test1 got 17686 ms of disk time and group test2 got 9036 ms of disk time.
-> similarly the statistics for number of sectors transferred are also shown.
-> 
-> Note that disk time given to group test1 is almost double of group2 disk
-> time.
-> 
-> AIO writes
-> ----------
-> Set up two fio, AIO direct write jobs in two cgroup with weight 1000 and 500
-> respectively. I am using cfq scheduler. Following are some lines from my test
-> script.
-> 
-> ------------------------------------------------
-> echo 1000 > /cgroup/bfqio/test1/io.weight
-> echo 500 > /cgroup/bfqio/test2/io.weight
-> fio_args="--ioengine=libaio --rw=write --size=512M --direct=1"
-> 
-> echo 1 > /sys/block/$BLOCKDEV/queue/iosched/fairness
-> 
-> echo $$ > /cgroup/bfqio/test1/tasks
-> fio $fio_args --name=test1 --directory=/mnt/$BLOCKDEV/fio1/
-> --output=/mnt/$BLOCKDEV/fio1/test1.log
-> --exec_postrun="../read-and-display-group-stats.sh $maj_dev $minor_dev" &
-> 
-> echo $$ > /cgroup/bfqio/test2/tasks
-> fio $fio_args --name=test2 --directory=/mnt/$BLOCKDEV/fio2/
-> --output=/mnt/$BLOCKDEV/fio2/test2.log &
-> -------------------------------------------------
-> 
-> test1 and test2 are two groups with weight 1000 and 500 respectively.
-> "read-and-display-group-stats.sh" is one small script which reads the
-> test1 and test2 cgroup files to determine how much disk time each group
-> got till first fio job finished.
-> 
-> Following are the results.
-> 
-> test1 statistics: time=8:16 25509   sectors=8:16 1049688
-> test2 statistics: time=8:16 12863   sectors=8:16 527104
-> 
-> Above shows that by the time first fio (higher weight), finished, group
-> test1 got almost double the disk time of group test2.
-> 
-> Test5 (Fairness for async writes, Buffered Write Vs Buffered Write)
-> ===================================================================
-> Fairness for async writes is tricky and biggest reason is that async writes
-> are cached in higher layers (page cahe) as well as possibly in file system
-> layer also (btrfs, xfs etc), and are dispatched to lower layers not necessarily
-> in proportional manner.
-> 
-> For example, consider two dd threads reading /dev/zero as input file and doing
-> writes of huge files. Very soon we will cross vm_dirty_ratio and dd thread will
-> be forced to write out some pages to disk before more pages can be dirtied. But
-> not necessarily dirty pages of same thread are picked. It can very well pick
-> the inode of lesser priority dd thread and do some writeout. So effectively
-> higher weight dd is doing writeouts of lower weight dd pages and we don't see
-> service differentation.
-> 
-> IOW, the core problem with async write fairness is that higher weight thread
-> does not throw enought IO traffic at IO controller to keep the queue
-> continuously backlogged. In my testing, there are many .2 to .8 second
-> intervals where higher weight queue is empty and in that duration lower weight
-> queue get lots of job done giving the impression that there was no service
-> differentiation.
-> 
-> In summary, from IO controller point of view async writes support is there.
-> Because page cache has not been designed in such a manner that higher 
-> prio/weight writer can do more write out as compared to lower prio/weight
-> writer, gettting service differentiation is hard and it is visible in some
-> cases and not visible in some cases.
-> 
-> Do we really care that much for fairness among two writer cgroups? One can
-> choose to do direct writes or sync writes if fairness for writes really
-> matters for him.
-> 
-> Following is the only case where it is hard to ensure fairness between cgroups.
-> 
-> - Buffered writes Vs Buffered Writes.
-> 
-> So to test async writes I created two partitions on a disk and created ext3
-> file systems on both the partitions.  Also created two cgroups and generated
-> lots of write traffic in two cgroups (50 fio threads) and watched the disk
-> time statistics in respective cgroups at the interval of 2 seconds. Thanks to
-> ryo tsuruta for the test case.
-> 
-> *****************************************************************
-> sync
-> echo 3 > /proc/sys/vm/drop_caches
-> 
-> fio_args="--size=64m --rw=write --numjobs=50 --group_reporting"
-> 
-> echo $$ > /cgroup/bfqio/test1/tasks
-> fio $fio_args --name=test1 --directory=/mnt/sdd1/fio/ --output=/mnt/sdd1/fio/test1.log &
-> 
-> echo $$ > /cgroup/bfqio/test2/tasks
-> fio $fio_args --name=test2 --directory=/mnt/sdd2/fio/ --output=/mnt/sdd2/fio/test2.log &
-> *********************************************************************** 
-> 
-> And watched the disk time and sector statistics for the both the cgroups
-> every 2 seconds using a script. How is snippet from output.
-> 
-> test1 statistics: time=8:16 1631   sectors=8:16 1680 dq=8:16 2
-> test2 statistics: time=8:16 896   sectors=8:16 976 dq=8:16 1
-> 
-> test1 statistics: time=8:16 6031   sectors=8:16 88536 dq=8:16 5
-> test2 statistics: time=8:16 3192   sectors=8:16 4080 dq=8:16 1
-> 
-> test1 statistics: time=8:16 10425   sectors=8:16 390496 dq=8:16 5
-> test2 statistics: time=8:16 5272   sectors=8:16 77896 dq=8:16 4
-> 
-> test1 statistics: time=8:16 15396   sectors=8:16 747256 dq=8:16 5
-> test2 statistics: time=8:16 7852   sectors=8:16 235648 dq=8:16 4
-> 
-> test1 statistics: time=8:16 20302   sectors=8:16 1180168 dq=8:16 5
-> test2 statistics: time=8:16 10297   sectors=8:16 391208 dq=8:16 4
-> 
-> test1 statistics: time=8:16 25244   sectors=8:16 1579928 dq=8:16 6
-> test2 statistics: time=8:16 12748   sectors=8:16 613096 dq=8:16 4
-> 
-> test1 statistics: time=8:16 30095   sectors=8:16 1927848 dq=8:16 6
-> test2 statistics: time=8:16 15135   sectors=8:16 806112 dq=8:16 4
-> 
-> First two fields in time and sectors statistics represent major and minor
-> number of the device. Third field represents disk time in milliseconds and
-> number of sectors transferred respectively.
-> 
-> So disk time consumed by group1 is almost double of group2 in this case.
-> 
-> Thanks
-> Vivek
+--------------050608020701010909040103
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------050608020701010909040103--
