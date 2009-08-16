@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 01/24] io-controller: Documentation
-Date: Sun, 16 Aug 2009 15:30:23 -0400
-Message-ID: <1250451046-9966-2-git-send-email-vgoyal__11446.6155333959$1250452991$gmane$org@redhat.com>
+Subject: [PATCH 07/24] io-controller: Common hierarchical fair queuing code in
+	elevaotor layer
+Date: Sun, 16 Aug 2009 15:30:29 -0400
+Message-ID: <1250451046-9966-8-git-send-email-vgoyal__39786.289810627$1250453072$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,448 +22,776 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o Documentation for io-controller.
+o This patch enables hierarchical fair queuing in common layer. It is
+  controlled by config option CONFIG_GROUP_IOSCHED.
 
+o Requests keep a reference on ioq and ioq keeps  keep a reference
+  on groups. For async queues in CFQ, and single ioq in other
+  schedulers, io_group also keeps are reference on io_queue. This
+  reference on ioq is dropped when the queue is released
+  (elv_release_ioq). So the queue can be freed.
+
+  When a queue is released, it puts the reference to io_group and the
+  io_group is released after all the queues are released. Child groups
+  also take reference on parent groups, and release it when they are
+  destroyed.
+
+o Reads of iocg->group_data are not always iocg->lock; so all the operations
+  on that list are still protected by RCU. All modifications to
+  iocg->group_data should always done under iocg->lock.
+
+  Whenever iocg->lock and queue_lock can both be held, queue_lock should
+  be held first. This avoids all deadlocks. In order to avoid race
+  between cgroup deletion and elevator switch the following algorithm is
+  used:
+
+	- Cgroup deletion path holds iocg->lock and removes iog entry
+	  to iocg->group_data list. Then it drops iocg->lock, holds
+	  queue_lock and destroys iog. So in this path, we never hold
+	  iocg->lock and queue_lock at the same time. Also, since we
+	  remove iog from iocg->group_data under iocg->lock, we can't
+	  race with elevator switch.
+
+	- Elevator switch path does not remove iog from
+	  iocg->group_data list directly. It first hold iocg->lock,
+	  scans iocg->group_data again to see if iog is still there;
+	  it removes iog only if it finds iog there. Otherwise, cgroup
+	  deletion must have removed it from the list, and cgroup
+	  deletion is responsible for removing iog.
+
+  So the path which removes iog from iocg->group_data list does
+  the final removal of iog by calling __io_destroy_group()
+  function.
+
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/block/00-INDEX          |    2 +
- Documentation/block/io-controller.txt |  415 +++++++++++++++++++++++++++++++++
- 2 files changed, 417 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/block/io-controller.txt
+ block/cfq-iosched.c |    2 +
+ block/elevator-fq.c |  479 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ block/elevator-fq.h |   35 ++++
+ block/elevator.c    |    4 +
+ 4 files changed, 509 insertions(+), 11 deletions(-)
 
-diff --git a/Documentation/block/00-INDEX b/Documentation/block/00-INDEX
-index 961a051..dc8bf95 100644
---- a/Documentation/block/00-INDEX
-+++ b/Documentation/block/00-INDEX
-@@ -10,6 +10,8 @@ capability.txt
- 	- Generic Block Device Capability (/sys/block/<disk>/capability)
- deadline-iosched.txt
- 	- Deadline IO scheduler tunables
-+io-controller.txt
-+	- IO controller for provding hierarchical IO scheduling
- ioprio.txt
- 	- Block io priorities (in CFQ scheduler)
- request.txt
-diff --git a/Documentation/block/io-controller.txt b/Documentation/block/io-controller.txt
-new file mode 100644
-index 0000000..8591676
---- /dev/null
-+++ b/Documentation/block/io-controller.txt
-@@ -0,0 +1,415 @@
-+				IO Controller
-+				=============
-+
-+Overview
-+========
-+
-+This patchset implements a proportional weight IO controller. That is one
-+can create cgroups and assign prio/weights to those cgroups and task group
-+will get access to disk proportionate to the weight of the group.
-+
-+These patches modify elevator layer and individual IO schedulers to do
-+IO control hence this io controller works only on block devices which use
-+one of the standard io schedulers can not be used with any xyz logical block
-+device.
-+
-+The assumption/thought behind modifying IO scheduler is that resource control
-+is primarily needed on leaf nodes where the actual contention for resources is
-+present and not on intertermediate logical block devices.
-+
-+Consider following hypothetical scenario. Lets say there are three physical
-+disks, namely sda, sdb and sdc. Two logical volumes (lv0 and lv1) have been
-+created on top of these. Some part of sdb is in lv0 and some part is in lv1.
-+
-+			    lv0      lv1
-+			  /	\  /     \
-+			sda      sdb      sdc
-+
-+Also consider following cgroup hierarchy
-+
-+				root
-+				/   \
-+			       A     B
-+			      / \    / \
-+			     T1 T2  T3  T4
-+
-+A and B are two cgroups and T1, T2, T3 and T4 are tasks with-in those cgroups.
-+Assuming T1, T2, T3 and T4 are doing IO on lv0 and lv1. These tasks should
-+get their fair share of bandwidth on disks sda, sdb and sdc. There is no
-+IO control on intermediate logical block nodes (lv0, lv1).
-+
-+So if tasks T1 and T2 are doing IO on lv0 and T3 and T4 are doing IO on lv1
-+only, there will not be any contetion for resources between group A and B if
-+IO is going to sda or sdc. But if actual IO gets translated to disk sdb, then
-+IO scheduler associated with the sdb will distribute disk bandwidth to
-+group A and B proportionate to their weight.
-+
-+CFQ already has the notion of fairness and it provides differential disk
-+access based on priority and class of the task. Just that it is flat and
-+with cgroup stuff, it needs to be made hierarchical to achive a good
-+hierarchical control on IO.
-+
-+Rest of the IO schedulers (noop, deadline and AS) don't have any notion
-+of fairness among various threads. They maintain only one queue where all
-+the IO gets queued (internally this queue is split in read and write queue
-+for deadline and AS). With this patchset, now we maintain one queue per
-+cgropu per device and then try to do fair queuing among those queues.
-+
-+One of the concerns raised with modifying IO schedulers was that we don't
-+want to replicate the code in all the IO schedulers. These patches share
-+the fair queuing code which has been moved to a common layer (elevator
-+layer). Hence we don't end up replicating code across IO schedulers. Following
-+diagram depicts the concept.
-+
-+			--------------------------------
-+			| Elevator Layer + Fair Queuing |
-+			--------------------------------
-+			 |	     |	     |       |
-+			NOOP     DEADLINE    AS     CFQ
-+
-+Design
-+======
-+This patchset takes the inspiration from CFS cpu scheduler and CFQ to come
-+up with core of hierarchical scheduling. Like CFQ we give time slices to
-+every queue based on their priority. Like CFS, this disktime given to a
-+queue is converted to virtual disk time based on queue's weight (vdisktime)
-+and based on this vdisktime we decide which is the queue next to be
-+dispatched.
-+
-+From data structure point of view, one can think of a tree per device, where
-+io groups and io queues are hanging and are being scheduled using B-WF2Q+
-+algorithm. io_queue, is end queue where requests are actually stored and
-+dispatched from (like cfqq).
-+
-+These io queues are primarily created by and managed by end io schedulers
-+depending on its semantics. For example, noop, deadline and AS ioschedulers
-+keep one io queues per cgroup and cfqq keeps one io queue per io_context in
-+a cgroup (apart from async queues).
-+
-+A request is mapped to an io group by elevator layer and which io queue it
-+is mapped to with in group depends on ioscheduler. Currently "current" task
-+is used to determine the cgroup (hence io group) of the request. Down the
-+line we need to make use of bio-cgroup patches to map delayed writes to
-+right group.
-+
-+Going back to old behavior
-+==========================
-+In new scheme of things essentially we are creating hierarchical fair
-+queuing logic in elevator layer and chaning IO schedulers to make use of
-+that logic so that end IO schedulers start supporting hierarchical scheduling.
-+
-+Elevator layer continues to support the old interfaces. So even if fair queuing
-+is enabled at elevator layer, one can have both new hierchical scheduler as
-+well as old non-hierarchical scheduler operating.
-+
-+Also noop, deadline and AS have option of enabling hierarchical scheduling.
-+If it is selected, fair queuing is done in hierarchical manner. If hierarchical
-+scheduling is disabled, noop, deadline and AS should retain their existing
-+behavior.
-+
-+CFQ is the only exception where one can not disable fair queuing as it is
-+needed for provding fairness among various threads even in non-hierarchical
-+mode.
-+
-+Various user visible config options
-+===================================
-+CONFIG_IOSCHED_NOOP_HIER
-+	- Enables hierchical fair queuing in noop. Not selecting this option
-+	  leads to old behavior of noop.
-+
-+CONFIG_IOSCHED_DEADLINE_HIER
-+	- Enables hierchical fair queuing in deadline. Not selecting this
-+	  option leads to old behavior of deadline.
-+
-+CONFIG_IOSCHED_AS_HIER
-+	- Enables hierchical fair queuing in AS. Not selecting this option
-+	  leads to old behavior of AS.
-+
-+CONFIG_IOSCHED_CFQ_HIER
-+	- Enables hierarchical fair queuing in CFQ. Not selecting this option
-+	  still does fair queuing among various queus but it is flat and not
-+	  hierarchical.
-+
-+CGROUP_BLKIO
-+	- This option enables blkio-cgroup controller for IO tracking
-+	  purposes. That means, by this controller one can attribute a write
-+	  to the original cgroup and not assume that it belongs to submitting
-+	  thread.
-+
-+CONFIG_TRACK_ASYNC_CONTEXT
-+	- Currently CFQ attributes the writes to the submitting thread and
-+	  caches the async queue pointer in the io context of the process.
-+	  If this option is set, it tells cfq and elevator fair queuing logic
-+	  that for async writes make use of IO tracking patches and attribute
-+	  writes to original cgroup and not to write submitting thread.
-+
-+	  This should be primarily useful when lots of asynchronous writes
-+	  are being submitted by pdflush threads and we need to assign the
-+	  writes to right group.
-+
-+CONFIG_DEBUG_GROUP_IOSCHED
-+	- Throws extra debug messages in blktrace output helpful in doing
-+	  doing debugging in hierarchical setup.
-+
-+	- Also allows for export of extra debug statistics like group queue
-+	  and dequeue statistics on device through cgroup interface.
-+
-+Config options selected automatically
-+=====================================
-+These config options are not user visible and are selected/deselected
-+automatically based on IO scheduler configurations.
-+
-+CONFIG_ELV_FAIR_QUEUING
-+	- Enables/Disables the fair queuing logic at elevator layer.
-+
-+CONFIG_GROUP_IOSCHED
-+	- Enables/Disables hierarchical queuing and associated cgroup bits.
-+
-+HOWTO
-+=====
-+You can do a very simple testing of running two dd threads in two different
-+cgroups. Here is what you can do.
-+
-+- Enable hierarchical scheduling in io scheuduler of your choice (say cfq).
-+	CONFIG_IOSCHED_CFQ_HIER=y
-+
-+- Enable IO tracking for async writes.
-+	CONFIG_TRACK_ASYNC_CONTEXT=y
-+
-+  (This will automatically select CGROUP_BLKIO)
-+
-+- Compile and boot into kernel and mount IO controller and blkio io tracking
-+  controller.
-+
-+	mount -t cgroup -o io,blkio none /cgroup
-+
-+- Create two cgroups
-+	mkdir -p /cgroup/test1/ /cgroup/test2
-+
-+- Set weights of group test1 and test2
-+	echo 1000 > /cgroup/test1/io.weight
-+	echo 500 > /cgroup/test2/io.weight
-+
-+- Set "fairness" parameter to 1 at the disk you are testing.
-+
-+  echo 1 > /sys/block/<disk>/queue/iosched/fairness
-+
-+- Create two same size files (say 512MB each) on same disk (file1, file2) and
-+  launch two dd threads in different cgroup to read those files. Make sure
-+  right io scheduler is being used for the block device where files are
-+  present (the one you compiled in hierarchical mode).
-+
-+	sync
-+	echo 3 > /proc/sys/vm/drop_caches
-+
-+	dd if=/mnt/sdb/zerofile1 of=/dev/null &
-+	echo $! > /cgroup/test1/tasks
-+	cat /cgroup/test1/tasks
-+
-+	dd if=/mnt/sdb/zerofile2 of=/dev/null &
-+	echo $! > /cgroup/test2/tasks
-+	cat /cgroup/test2/tasks
-+
-+- At macro level, first dd should finish first. To get more precise data, keep
-+  on looking at (with the help of script), at io.disk_time and io.disk_sectors
-+  files of both test1 and test2 groups. This will tell how much disk time
-+  (in milli seconds), each group got and how many secotors each group
-+  dispatched to the disk. We provide fairness in terms of disk time, so
-+  ideally io.disk_time of cgroups should be in proportion to the weight.
-+
-+Some High Level Test setups
-+===========================
-+One of the use cases of IO controller is to provide some kind of IO isolation
-+between multiple virtual machines on the same host. Following is one
-+example setup which worked for me.
-+
-+
-+			     KVM	     KVM
-+			    Guest1	    Guest2
-+			   ---------      ----------
-+			  |  -----  |    |  ------  |
-+			  | | vdb | |    | | vdb  | |
-+			  |  -----  |    |   ------ |
-+			   ---------      ----------
-+
-+			   ---------------------------
-+			  | Host		      |
-+			  |         -------------     |
-+			  |        | sdb1 | sdb2 |    |
-+			  |         -------------     |
-+			   ---------------------------
-+
-+On host machine, I had a spare SATA disk. I created two partitions sdb1
-+and sdb2 and gave this partitions as additional storage to kvm guests. sdb1
-+to KVM guest1 and sdb2 KVM guest2. These storage appeared as /dev/vdb in
-+both the guests. Formatted the /dev/vdb and created ext3 file system and
-+started a 1G file writeout in both the guests. Before writeout I had created
-+two cgroups of weight 1000 and 500 and put virtual machines in two different
-+groups.
-+
-+Following is write I started in both the guests.
-+
-+dd if=/dev/zero of=/mnt/vdb/zerofile1 bs=4K count=262144 conv=fdatasync
-+
-+Following are the results on host with "deadline" scheduler.
-+
-+group1 time=8:16 16946 group1 sectors=8:16 2104896
-+group2 time=8:16 8253 group2 sectors=8:16 998928
-+
-+Virtual machine with cgroup weight 1000 got almost double the time of virtual
-+machine with weight 500.
-+
-+What Works and What Does not
-+============================
-+Service differentiation at application level can be noticed only if completely
-+parallel IO paths are created from application to IO scheduler and there
-+are no serializations introduced by any intermediate layer. For example,
-+in some cases file system and page cache layer introduce serialization and
-+we don't see service difference between higher weight and lower weight
-+process groups.
-+
-+For example, when I start an O_SYNC write out on an ext3 file system (file
-+is being created newly), I see lots of activity from kjournald. I have not
-+gone into details yet, but my understanding is that there are lot more
-+journal commits and kjournald kind of introduces serialization between two
-+processes. So even if you put these two processes in two different cgroups
-+with different weights, higher weight process will not see more IO done.
-+
-+It does work very well when we bypass filesystem layer and IO is raw. For
-+example in above virtual machine case, host sees raw synchronous writes
-+coming from two guest machines and filesystem layer at host is not introducing
-+any kind of serialization hence we can see the service difference.
-+
-+It also works very well for reads even on the same file system as for reads
-+file system journalling activity does not kick in and we can create parallel
-+IO paths from application to all the way down to IO scheduler and get more
-+IO done on the IO path with higher weight.
-+
-+Regarding "fairness" parameter
-+==============================
-+IO controller has introduced a "fairness" tunable for every io scheduler.
-+Currently this tunable can assume values 0, 1.
-+
-+If fairness is set to 1, then IO controller waits for requests to finish from
-+previous queue before requests from new queue are dispatched. This helps in
-+doing better accouting of disk time consumed by a queue. If this is not done
-+then on a queuing hardware, there can be requests from multiple queues and
-+we will not have any idea which queue consumed how much of disk time.
-+
-+Details of cgroup files
-+=======================
-+- io.ioprio_class
-+	- Specifies class of the cgroup (RT, BE, IDLE). This is default io
-+	  class of the group on all the devices until and unless overridden by
-+	  per device rule. (See io.policy).
-+
-+	  1 = RT; 2 = BE, 3 = IDLE
-+
-+- io.weight
-+	- Specifies per cgroup weight. This is default weight of the group
-+	  on all the devices until and unless overridden by per device rule.
-+	  (See io.policy).
-+
-+	  Currently allowed range of weights is from 1 to 1000.
-+
-+- io.disk_time
-+	- disk time allocated to cgroup per device in milliseconds. First
-+	  two fields specify the major and minor number of the device and
-+	  third field specifies the disk time allocated to group in
-+	  milliseconds.
-+
-+- io.disk_sectors
-+	- number of sectors transferred to/from disk by the group. First
-+	  two fields specify the major and minor number of the device and
-+	  third field specifies the number of sectors transferred by the
-+	  group to/from the device.
-+
-+- io.disk_queue
-+	- Debugging aid only enabled if CONFIG_DEBUG_GROUP_IOSCHED=y. This
-+	  gives the statistics about how many a times a group was queued
-+	  on service tree of the device. First two fields specify the major
-+	  and minor number of the device and third field specifies the number
-+	  of times a group was queued on a particular device.
-+
-+- io.disk_queue
-+	- Debugging aid only enabled if CONFIG_DEBUG_GROUP_IOSCHED=y. This
-+	  gives the statistics about how many a times a group was de-queued
-+	  or removed from the service tree of the device. This basically gives
-+	  and idea if we can generate enough IO to create continuously
-+	  backlogged groups. First two fields specify the major and minor
-+	  number of the device and third field specifies the number
-+	  of times a group was de-queued on a particular device.
-+
-+- io.policy
-+	- One can specify per cgroup per device rules using this interface.
-+	  These rules override the default value of group weight and class as
-+	  specified by io.weight and io.ioprio_class.
-+
-+	  Following is the format.
-+
-+	#echo dev_maj:dev_minor weight ioprio_class > /patch/to/cgroup/io.policy
-+
-+	weight=0 means removing a policy.
-+
-+	Examples:
-+
-+	Configure weight=300 ioprio_class=2 on /dev/hdb (8:16) in this cgroup
-+	# echo 8:16 300 2 > io.policy
-+	# cat io.policy
-+	dev	weight	class
-+	8:16	300	2
-+
-+	Configure weight=500 ioprio_class=1 on /dev/hda (8:0) in this cgroup
-+	# echo 8:0 500 1 > io.policy
-+	# cat io.policy
-+	dev	weight	class
-+	8:0	500	1
-+	8:16	300	2
-+
-+	Remove the policy for /dev/hda in this cgroup
-+	# echo 8:0 0 1 > io.policy
-+	# cat io.policy
-+	dev	weight	class
-+	8:16	300	2
-+
-+About configuring request desriptors
-+====================================
-+Traditionally there are 128 request desriptors allocated per request queue
-+where io scheduler is operating (/sys/block/<disk>/queue/nr_requests). If these
-+request descriptors are exhausted, processes will put to sleep and woken
-+up once request descriptors are available.
-+
-+With io controller and cgroup stuff, one can not afford to allocate requests
-+from single pool as one group might allocate lots of requests and then tasks
-+from other groups might be put to sleep and this other group might be a
-+higher weight group. Hence to make sure that a group always can get the
-+request descriptors it is entitled to, one needs to make request descriptor
-+limit per group on every queue.
-+
-+A new parameter /sys/block/<disk>/queue/nr_group_requests has been introduced
-+and this parameter controlls the maximum number of requests per group.
-+nr_requests still continues to control total number of request descriptors
-+on the queue.
-+
-+Ideally one should set nr_requests to be following.
-+
-+nr_requests = number_of_cgroups * nr_group_requests
-+
-+This will make sure that at any point of time nr_group_requests number of
-+request descriptors will be available for any of the cgroups.
-+
-+Currently default nr_requests=512 and nr_group_requests=128. This will make
-+sure that apart from root group one can create 3 more group without running
-+into any issues. If one decides to create more cgorus, nr_requests and
-+nr_group_requests should be adjusted accordingly.
-+
-+Issues
-+======
-+- How to do more accurate disk time accounting, especially with CFQ. We
-+  don't start disk time accounting till first request from the queue has
-+  completed. But there are cases like above virtual machine setup, where
-+  closely cooperating threads issue 1-2 request per thread/io context and
-+  expire. That means many a times, queue does not get serviced for a long
-+  period and gets expired immediately after dispatching one request. First
-+  request is free so we are left with queue disk time as zero and that's
-+  problematic.
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 4bde1c8..decb654 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1356,6 +1356,8 @@ alloc_cfqq:
+ 
+ 			/* call it after cfq has initialized queue prio */
+ 			elv_init_ioq_io_group(ioq, iog);
++			/* ioq reference on iog */
++			elv_get_iog(iog);
+ 			cfq_log_cfqq(cfqd, cfqq, "alloced");
+ 		} else {
+ 			cfqq = &cfqd->oom_cfqq;
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index 3940c61..8d91ff7 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -515,6 +515,7 @@ void elv_put_ioq(struct io_queue *ioq)
+ {
+ 	struct elv_fq_data *efqd = ioq->efqd;
+ 	struct elevator_queue *e = efqd->eq;
++	struct io_group *iog;
+ 
+ 	BUG_ON(atomic_read(&ioq->ref) <= 0);
+ 	if (!atomic_dec_and_test(&ioq->ref))
+@@ -522,12 +523,14 @@ void elv_put_ioq(struct io_queue *ioq)
+ 	BUG_ON(ioq->nr_queued);
+ 	BUG_ON(elv_ioq_busy(ioq));
+ 	BUG_ON(efqd->active_queue == ioq);
++	iog = ioq_to_io_group(ioq);
+ 
+ 	/* Can be called by outgoing elevator. Don't use q */
+ 	BUG_ON(!e->ops->elevator_free_sched_queue_fn);
+ 	e->ops->elevator_free_sched_queue_fn(e, ioq->sched_queue);
+ 	elv_log_ioq(efqd, ioq, "put_queue");
+ 	elv_free_ioq(ioq);
++	elv_put_iog(iog);
+ }
+ EXPORT_SYMBOL(elv_put_ioq);
+ 
+@@ -734,6 +737,27 @@ void elv_io_group_set_async_queue(struct io_group *iog, int ioprio_class,
+ EXPORT_SYMBOL(elv_io_group_set_async_queue);
+ 
+ #ifdef CONFIG_GROUP_IOSCHED
++static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup);
++
++static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
++{
++	struct io_entity *entity = &iog->entity;
++
++	entity->weight = iocg->weight;
++	entity->ioprio_class = iocg->ioprio_class;
++	entity->ioprio_changed = 1;
++	entity->my_sd = &iog->sched_data;
++}
++
++static void io_group_set_parent(struct io_group *iog, struct io_group *parent)
++{
++	struct io_entity *entity = &iog->entity;
++
++	init_io_entity_parent(entity, &parent->entity);
++
++	/* Child group reference on parent group. */
++	elv_get_iog(parent);
++}
+ 
+ struct io_cgroup io_root_cgroup = {
+ 	.weight = IO_WEIGHT_DEFAULT,
+@@ -746,6 +770,27 @@ static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
+ 			    struct io_cgroup, css);
+ }
+ 
++/*
++ * Search the io_group for efqd into the hash table (by now only a list)
++ * of bgrp.  Must be called under rcu_read_lock().
++ */
++static struct io_group *
++io_cgroup_lookup_group(struct io_cgroup *iocg, void *key)
++{
++	struct io_group *iog;
++	struct hlist_node *n;
++	void *__key;
++
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		__key = rcu_dereference(iog->key);
++		if (__key == key)
++			return iog;
++	}
++
++	return NULL;
++}
++
++
+ #define SHOW_FUNCTION(__VAR)						\
+ static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
+ 				       struct cftype *cftype)		\
+@@ -885,12 +930,6 @@ static void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
+ 	task_unlock(tsk);
+ }
+ 
+-static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+-{
+-
+-	/* Implemented in later patch */
+-}
+-
+ struct cgroup_subsys io_subsys = {
+ 	.name = "io",
+ 	.create = iocg_create,
+@@ -902,24 +941,210 @@ struct cgroup_subsys io_subsys = {
+ 	.use_id = 1,
+ };
+ 
++static inline unsigned int iog_weight(struct io_group *iog)
++{
++	return iog->entity.weight;
++}
++
++static struct io_group *
++io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog, *leaf = NULL, *prev = NULL;
++	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
++
++	for (; cgroup != NULL; cgroup = cgroup->parent) {
++		iocg = cgroup_to_io_cgroup(cgroup);
++
++		iog = io_cgroup_lookup_group(iocg, key);
++		if (iog != NULL) {
++			/*
++			 * All the cgroups in the path from there to the
++			 * root must have a io_group for efqd, so we don't
++			 * need any more allocations.
++			 */
++			break;
++		}
++
++		iog = kzalloc_node(sizeof(*iog), flags, q->node);
++		if (!iog)
++			goto cleanup;
++
++		iog->iocg_id = css_id(&iocg->css);
++
++		io_group_init_entity(iocg, iog);
++
++		atomic_set(&iog->ref, 0);
++
++		/*
++		 * Take the initial reference that will be released on destroy
++		 * This can be thought of a joint reference by cgroup and
++		 * elevator which will be dropped by either elevator exit
++		 * or cgroup deletion path depending on who is exiting first.
++		 */
++		elv_get_iog(iog);
++
++		if (leaf == NULL) {
++			leaf = iog;
++			prev = leaf;
++		} else {
++			io_group_set_parent(prev, iog);
++			/*
++			 * Build a list of allocated nodes using the efqd
++			 * filed, that is still unused and will be initialized
++			 * only after the node will be connected.
++			 */
++			prev->key = iog;
++			prev = iog;
++		}
++	}
++
++	return leaf;
++
++cleanup:
++	while (leaf != NULL) {
++		prev = leaf;
++		leaf = leaf->key;
++		kfree(prev);
++	}
++
++	return NULL;
++}
++
++static void io_group_chain_link(struct request_queue *q, void *key,
++				struct cgroup *cgroup, struct io_group *leaf,
++				struct elv_fq_data *efqd)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog, *next, *prev = NULL;
++	unsigned long flags;
++
++	assert_spin_locked(q->queue_lock);
++
++	for (; cgroup != NULL && leaf != NULL; cgroup = cgroup->parent) {
++		iocg = cgroup_to_io_cgroup(cgroup);
++		next = leaf->key;
++
++		iog = io_cgroup_lookup_group(iocg, key);
++		BUG_ON(iog != NULL);
++
++		spin_lock_irqsave(&iocg->lock, flags);
++
++		rcu_assign_pointer(leaf->key, key);
++		hlist_add_head_rcu(&leaf->group_node, &iocg->group_data);
++		hlist_add_head(&leaf->elv_data_node, &efqd->group_list);
++
++		spin_unlock_irqrestore(&iocg->lock, flags);
++
++		prev = leaf;
++		leaf = next;
++	}
++
++	BUG_ON(cgroup == NULL && leaf != NULL);
++
++	/*
++	 * This connects the topmost element of the allocated chain to the
++	 * parent group.
++	 */
++	if (cgroup != NULL && prev != NULL) {
++		iocg = cgroup_to_io_cgroup(cgroup);
++		iog = io_cgroup_lookup_group(iocg, key);
++		io_group_set_parent(prev, iog);
++	}
++}
++
++static struct io_group *io_find_alloc_group(struct request_queue *q,
++			struct cgroup *cgroup, struct elv_fq_data *efqd,
++			int create)
++{
++	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
++	struct io_group *iog = NULL;
++	/* Note: Use efqd as key */
++	void *key = efqd;
++
++	/*
++	 * Take a refenrece to css object. Don't want to map a bio to
++	 * a group if it has been marked for deletion
++	 */
++
++	if (!css_tryget(&iocg->css))
++		return iog;
++
++	iog = io_cgroup_lookup_group(iocg, key);
++	if (iog != NULL || !create)
++		goto end;
++
++	iog = io_group_chain_alloc(q, key, cgroup);
++	if (iog != NULL)
++		io_group_chain_link(q, key, cgroup, iog, efqd);
++
++end:
++	css_put(&iocg->css);
++	return iog;
++}
++
++/*
++ * Search for the io group current task belongs to. If create=1, then also
++ * create the io group if it is not already there.
++ *
++ * Note: This function should be called with queue lock held. It returns
++ * a pointer to io group without taking any reference. That group will
++ * be around as long as queue lock is not dropped (as group reclaim code
++ * needs to get hold of queue lock). So if somebody needs to use group
++ * pointer even after dropping queue lock, take a reference to the group
++ * before dropping queue lock.
++ */
++struct io_group *elv_io_get_io_group(struct request_queue *q, int create)
++{
++	struct cgroup *cgroup;
++	struct io_group *iog;
++	struct elv_fq_data *efqd = q->elevator->efqd;
++
++	assert_spin_locked(q->queue_lock);
++
++	rcu_read_lock();
++	cgroup = task_cgroup(current, io_subsys_id);
++	iog = io_find_alloc_group(q, cgroup, efqd, create);
++	if (!iog) {
++		if (create)
++			iog = efqd->root_group;
++		else
++			/*
++			 * bio merge functions doing lookup don't want to
++			 * map bio to root group by default
++			 */
++			iog = NULL;
++	}
++	rcu_read_unlock();
++	return iog;
++}
++EXPORT_SYMBOL(elv_io_get_io_group);
++
+ static void io_free_root_group(struct elevator_queue *e)
+ {
+ 	struct io_group *iog = e->efqd->root_group;
++	struct io_cgroup *iocg = &io_root_cgroup;
++
++	spin_lock_irq(&iocg->lock);
++	hlist_del_rcu(&iog->group_node);
++	spin_unlock_irq(&iocg->lock);
+ 
+ 	put_io_group_queues(e, iog);
+-	kfree(iog);
++	elv_put_iog(iog);
+ }
+ 
+ static struct io_group *io_alloc_root_group(struct request_queue *q,
+ 					struct elevator_queue *e, void *key)
+ {
+ 	struct io_group *iog;
++	struct io_cgroup *iocg = &io_root_cgroup;
+ 	int i;
+ 
+ 	iog = kmalloc_node(sizeof(*iog), GFP_KERNEL | __GFP_ZERO, q->node);
+ 	if (iog == NULL)
+ 		return NULL;
+ 
++	elv_get_iog(iog);
+ 	iog->entity.parent = NULL;
+ 	iog->entity.my_sd = &iog->sched_data;
+ 	iog->key = key;
+@@ -927,11 +1152,215 @@ static struct io_group *io_alloc_root_group(struct request_queue *q,
+ 	for (i = 0; i < IO_IOPRIO_CLASSES; i++)
+ 		iog->sched_data.service_tree[i] = ELV_SERVICE_TREE_INIT;
+ 
++	spin_lock_irq(&iocg->lock);
++	rcu_assign_pointer(iog->key, key);
++	hlist_add_head_rcu(&iog->group_node, &iocg->group_data);
++	iog->iocg_id = css_id(&iocg->css);
++	spin_unlock_irq(&iocg->lock);
++
+ 	return iog;
+ }
+ 
++static void io_group_free_rcu(struct rcu_head *head)
++{
++	struct io_group *iog;
++
++	iog = container_of(head, struct io_group, rcu_head);
++	kfree(iog);
++}
++
++/*
++ * This cleanup function does the last bit of things to destroy cgroup.
++ * It should only get called after io_destroy_group has been invoked.
++ */
++static void io_group_cleanup(struct io_group *iog)
++{
++	struct io_service_tree *st;
++	int i;
++
++	BUG_ON(iog->sched_data.active_entity != NULL);
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++) {
++		st = iog->sched_data.service_tree + i;
++		BUG_ON(!RB_EMPTY_ROOT(&st->active));
++		BUG_ON(st->active_entity != NULL);
++	}
++
++	/*
++	 * Wait for any rcu readers to exit before freeing up the group.
++	 * Primarily useful when elv_io_get_io_group() is called without queue
++	 * lock to access some group data from bdi_congested_group() path.
++	 */
++	call_rcu(&iog->rcu_head, io_group_free_rcu);
++}
++
++void elv_put_iog(struct io_group *iog)
++{
++	struct io_group *parent_iog = NULL;
++	struct io_entity *parent;
++
++	BUG_ON(atomic_read(&iog->ref) <= 0);
++	if (!atomic_dec_and_test(&iog->ref))
++		return;
++
++	parent = parent_entity(&iog->entity);
++	if (parent)
++		parent_iog = iog_of(parent);
++
++	io_group_cleanup(iog);
++
++	if (parent_iog)
++		elv_put_iog(parent_iog);
++}
++EXPORT_SYMBOL(elv_put_iog);
++
++/*
++ * After the group is destroyed, no new sync IO should come to the group.
++ * It might still have pending IOs in some busy queues. It should be able to
++ * send those IOs down to the disk. The async IOs (due to dirty page writeback)
++ * would go in the root group queues after this, as the group does not exist
++ * anymore.
++ */
++static void __io_destroy_group(struct elv_fq_data *efqd, struct io_group *iog)
++{
++	hlist_del(&iog->elv_data_node);
++	put_io_group_queues(efqd->eq, iog);
++
++	/*
++	 * Put the reference taken at the time of creation so that when all
++	 * queues are gone, group can be destroyed.
++	 */
++	elv_put_iog(iog);
++}
++
++static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++{
++	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
++	struct io_group *iog;
++	struct elv_fq_data *efqd;
++	unsigned long uninitialized_var(flags);
++
++	/*
++	 * io groups are linked in two lists. One list is maintained
++	 * in elevator (efqd->group_list) and other is maintained
++	 * per cgroup structure (iocg->group_data).
++	 *
++	 * While a cgroup is being deleted, elevator also might be
++	 * exiting and both might try to cleanup the same io group
++	 * so need to be little careful.
++	 *
++	 * (iocg->group_data) is protected by iocg->lock. To avoid deadlock,
++	 * we can't hold the queue lock while holding iocg->lock. So we first
++	 * remove iog from iocg->group_data under iocg->lock. Whoever removes
++	 * iog from iocg->group_data should call __io_destroy_group to remove
++	 * iog.
++	 */
++
++	rcu_read_lock();
++
++remove_entry:
++	spin_lock_irqsave(&iocg->lock, flags);
++
++	if (hlist_empty(&iocg->group_data)) {
++		spin_unlock_irqrestore(&iocg->lock, flags);
++		goto done;
++	}
++	iog = hlist_entry(iocg->group_data.first, struct io_group,
++			  group_node);
++	efqd = rcu_dereference(iog->key);
++	hlist_del_rcu(&iog->group_node);
++	iog->iocg_id = 0;
++	spin_unlock_irqrestore(&iocg->lock, flags);
++
++	spin_lock_irqsave(efqd->queue->queue_lock, flags);
++	__io_destroy_group(efqd, iog);
++	spin_unlock_irqrestore(efqd->queue->queue_lock, flags);
++	goto remove_entry;
++
++done:
++	free_css_id(&io_subsys, &iocg->css);
++	rcu_read_unlock();
++	BUG_ON(!hlist_empty(&iocg->group_data));
++	kfree(iocg);
++}
++
++/*
++ * This functions checks if iog is still in iocg->group_data, and removes it.
++ * If iog is not in that list, then cgroup destroy path has removed it, and
++ * we do not need to remove it.
++ */
++static void
++io_group_check_and_destroy(struct elv_fq_data *efqd, struct io_group *iog)
++{
++	struct io_cgroup *iocg;
++	unsigned long flags;
++	struct cgroup_subsys_state *css;
++
++	rcu_read_lock();
++
++	css = css_lookup(&io_subsys, iog->iocg_id);
++
++	if (!css)
++		goto out;
++
++	iocg = container_of(css, struct io_cgroup, css);
++
++	spin_lock_irqsave(&iocg->lock, flags);
++
++	if (iog->iocg_id) {
++		hlist_del_rcu(&iog->group_node);
++		__io_destroy_group(efqd, iog);
++	}
++
++	spin_unlock_irqrestore(&iocg->lock, flags);
++out:
++	rcu_read_unlock();
++}
++
++static void release_elv_io_groups(struct elevator_queue *e)
++{
++	struct hlist_node *pos, *n;
++	struct io_group *iog;
++	struct elv_fq_data *efqd = e->efqd;
++
++	hlist_for_each_entry_safe(iog, pos, n, &efqd->group_list,
++					elv_data_node) {
++		io_group_check_and_destroy(efqd, iog);
++	}
++}
++
++/*
++ * if bio sumbmitting task and rq don't belong to same io_group, it can't
++ * be merged
++ */
++int elv_io_group_allow_merge(struct request *rq, struct bio *bio)
++{
++	struct request_queue *q = rq->q;
++	struct io_queue *ioq = rq->ioq;
++	struct io_group *iog, *__iog;
++
++	if (!elv_iosched_fair_queuing_enabled(q->elevator))
++		return 1;
++
++	/* Determine the io group of the bio submitting task */
++	iog = elv_io_get_io_group(q, 0);
++	if (!iog) {
++		/* May be task belongs to a differet cgroup for which io
++		 * group has not been setup yet. */
++		return 0;
++	}
++
++	/* Determine the io group of the ioq, rq belongs to*/
++	__iog = ioq_to_io_group(ioq);
++
++	return (iog == __iog);
++}
++
+ #else /* CONFIG_GROUP_IOSCHED */
+ 
++static inline unsigned int iog_weight(struct io_group *iog) { return 0; }
++static inline void release_elv_io_groups(struct elevator_queue *e) {}
++
+ static struct io_group *io_alloc_root_group(struct request_queue *q,
+ 					struct elevator_queue *e, void *key)
+ {
+@@ -1008,8 +1437,13 @@ __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq, int coop)
+ 	struct elevator_queue *eq = q->elevator;
+ 
+ 	if (ioq) {
+-		elv_log_ioq(efqd, ioq, "set_active, busy=%d",
+-						efqd->busy_queues);
++		struct io_group *iog = ioq_to_io_group(ioq);
++		elv_log_ioq(efqd, ioq, "set_active, busy=%d class=%hu prio=%hu"
++				" weight=%u group_weight=%u qued=%d",
++				efqd->busy_queues, ioq->entity.ioprio_class,
++				ioq->entity.ioprio, ioq->entity.weight,
++				iog_weight(iog), ioq->nr_queued);
++
+ 		ioq->slice_start = ioq->slice_end = 0;
+ 		ioq->dispatch_start = jiffies;
+ 
+@@ -1174,6 +1608,7 @@ static int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
+ 	struct io_queue *ioq;
+ 	struct elevator_queue *eq = q->elevator;
+ 	struct io_entity *entity, *new_entity;
++	struct io_group *iog = NULL, *new_iog = NULL;
+ 
+ 	ioq = elv_active_ioq(eq);
+ 
+@@ -1206,9 +1641,16 @@ static int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
+ 		return 1;
+ 
+ 	/*
+-	 * Check with io scheduler if it has additional criterion based on
+-	 * which it wants to preempt existing queue.
++	 * If both the queues belong to same group, check with io scheduler
++	 * if it has additional criterion based on which it wants to
++	 * preempt existing queue.
+ 	 */
++	iog = ioq_to_io_group(ioq);
++	new_iog = ioq_to_io_group(new_ioq);
++
++	if (iog != new_iog)
++		return 0;
++
+ 	if (eq->ops->elevator_should_preempt_fn) {
+ 		void *sched_queue = elv_ioq_sched_queue(new_ioq);
+ 
+@@ -1354,6 +1796,10 @@ static inline struct io_queue *elv_close_cooperator(struct request_queue *q,
+ 	if (new_ioq)
+ 		elv_log_ioq(e->efqd, ioq, "cooperating ioq=%d", new_ioq->pid);
+ 
++	/* Only select co-operating queue if it belongs to same group as ioq */
++	if (new_ioq && !is_same_group(&ioq->entity, &new_ioq->entity))
++		return NULL;
++
+ 	return new_ioq;
+ }
+ 
+@@ -1596,6 +2042,7 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ 	efqd->idle_slice_timer.data = (unsigned long) efqd;
+ 
+ 	INIT_WORK(&efqd->unplug_work, elv_kick_queue);
++	INIT_HLIST_HEAD(&efqd->group_list);
+ 
+ 	efqd->elv_slice[0] = elv_slice_async;
+ 	efqd->elv_slice[1] = elv_slice_sync;
+@@ -1613,12 +2060,22 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ void elv_exit_fq_data(struct elevator_queue *e)
+ {
+ 	struct elv_fq_data *efqd = e->efqd;
++	struct request_queue *q = efqd->queue;
+ 
+ 	if (!elv_iosched_fair_queuing_enabled(e))
+ 		return;
+ 
+ 	elv_shutdown_timer_wq(e);
+ 
++	spin_lock_irq(q->queue_lock);
++	release_elv_io_groups(e);
++	spin_unlock_irq(q->queue_lock);
++
++	elv_shutdown_timer_wq(e);
++
++	/* Wait for iog->key accessors to exit their grace periods. */
++	synchronize_rcu();
++
+ 	BUG_ON(timer_pending(&efqd->idle_slice_timer));
+ 	io_free_root_group(e);
+ }
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 6998e69..671f366 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -92,6 +92,7 @@ struct io_group {
+ 	atomic_t ref;
+ 	struct io_sched_data sched_data;
+ 	struct hlist_node group_node;
++	struct hlist_node elv_data_node;
+ 	unsigned short iocg_id;
+ 	/*
+ 	 * async queue for each priority case for RT and BE class.
+@@ -101,6 +102,7 @@ struct io_group {
+ 	struct io_queue *async_queue[2][IOPRIO_BE_NR];
+ 	struct io_queue *async_idle_queue;
+ 	void *key;
++	struct rcu_head rcu_head;
+ };
+ 
+ struct io_cgroup {
+@@ -134,6 +136,9 @@ struct io_group {
+ struct elv_fq_data {
+ 	struct io_group *root_group;
+ 
++	/* List of io groups hanging on this elevator */
++	struct hlist_head group_list;
++
+ 	struct request_queue *queue;
+ 	struct elevator_queue *eq;
+ 	unsigned int busy_queues;
+@@ -314,6 +319,28 @@ static inline struct io_queue *elv_get_oom_ioq(struct elevator_queue *eq)
+ 	return &eq->efqd->oom_ioq;
+ }
+ 
++#ifdef CONFIG_GROUP_IOSCHED
++
++extern int elv_io_group_allow_merge(struct request *rq, struct bio *bio);
++extern void elv_put_iog(struct io_group *iog);
++extern struct io_group *elv_io_get_io_group(struct request_queue *q,
++						int create);
++
++static inline void elv_get_iog(struct io_group *iog)
++{
++	atomic_inc(&iog->ref);
++}
++
++#else /* !GROUP_IOSCHED */
++
++static inline int elv_io_group_allow_merge(struct request *rq, struct bio *bio)
++{
++	return 1;
++}
++
++static inline void elv_get_iog(struct io_group *iog) {}
++static inline void elv_put_iog(struct io_group *iog) {}
++
+ static inline struct io_group *
+ elv_io_get_io_group(struct request_queue *q, int create)
+ {
+@@ -321,6 +348,8 @@ elv_io_get_io_group(struct request_queue *q, int create)
+ 	return q->elevator->efqd->root_group;
+ }
+ 
++#endif /* GROUP_IOSCHED */
++
+ extern ssize_t elv_slice_sync_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_slice_sync_store(struct elevator_queue *q, const char *name,
+ 						size_t count);
+@@ -404,5 +433,11 @@ static inline void *elv_select_ioq(struct request_queue *q, int force)
+ {
+ 	return NULL;
+ }
++
++static inline int elv_io_group_allow_merge(struct request *rq, struct bio *bio)
++
++{
++	return 1;
++}
+ #endif /* CONFIG_ELV_FAIR_QUEUING */
+ #endif /* _ELV_SCHED_H */
+diff --git a/block/elevator.c b/block/elevator.c
+index ea4042e..b2725cd 100644
+--- a/block/elevator.c
++++ b/block/elevator.c
+@@ -122,6 +122,10 @@ int elv_rq_merge_ok(struct request *rq, struct bio *bio)
+ 	    !bio_failfast_driver(bio)	 != !blk_failfast_driver(rq))
+ 		return 0;
+ 
++	/* If rq and bio belongs to different groups, dont allow merging */
++	if (!elv_io_group_allow_merge(rq, bio))
++		return 0;
++
+ 	if (!elv_iosched_allow_merge(rq, bio))
+ 		return 0;
+ 
 -- 
 1.6.0.6
