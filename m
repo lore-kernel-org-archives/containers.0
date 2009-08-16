@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 23/24] io-controller: map sync requests to group using bio
-	tracking info
-Date: Sun, 16 Aug 2009 15:30:45 -0400
-Message-ID: <1250451046-9966-24-git-send-email-vgoyal__24134.9240219735$1250452247$gmane$org@redhat.com>
+Subject: [PATCH 09/24] io-controller: Export disk time used and nr sectors
+	dipatched through cgroups
+Date: Sun, 16 Aug 2009 15:30:31 -0400
+Message-ID: <1250451046-9966-10-git-send-email-vgoyal__29045.2458932579$1250452404$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,127 +22,166 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o sync requests are mapped to the cgroup submitting tasks belongs to. This
-  is an experimental patch where sync requets can be mapped to the group
-  using bio tracking information and not submitting task's context.
+o This patch exports some statistics through cgroup interface. Two of the
+  statistics currently exported are actual disk time assigned to the cgroup
+  and actual number of sectors dispatched to disk on behalf of this cgroup.
 
-o This patch implements this functionality only for noop, deadline and AS.
-
-o Introducing this patch for experimental purposes to see if it is really
-  meaningful or not.
-
-o This behavior is turned on by setting /sys/block/<disk>/queue/iosched/map_sync  varibale.
-
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/as-iosched.c       |    1 +
- block/deadline-iosched.c |    1 +
- block/elevator-fq.c      |    7 ++++++-
- block/elevator-fq.h      |    9 +++++++++
- block/noop-iosched.c     |    1 +
- 5 files changed, 18 insertions(+), 1 deletions(-)
+ block/elevator-fq.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h |   10 +++++++
+ 2 files changed, 86 insertions(+), 0 deletions(-)
 
-diff --git a/block/as-iosched.c b/block/as-iosched.c
-index 8ea9398..2a72da1 100644
---- a/block/as-iosched.c
-+++ b/block/as-iosched.c
-@@ -1769,6 +1769,7 @@ static struct elv_fs_entry as_attrs[] = {
- 	ELV_ATTR(fairness),
- 	ELV_ATTR(slice_sync),
- 	ELV_ATTR(group_idle),
-+	ELV_ATTR(map_sync),
- #endif
- 	__ATTR_NULL
- };
-diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
-index cc9c8c3..80377a9 100644
---- a/block/deadline-iosched.c
-+++ b/block/deadline-iosched.c
-@@ -466,6 +466,7 @@ static struct elv_fs_entry deadline_attrs[] = {
- 	ELV_ATTR(fairness),
- 	ELV_ATTR(slice_sync),
- 	ELV_ATTR(group_idle),
-+	ELV_ATTR(map_sync),
- #endif
- 	__ATTR_NULL
- };
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 70d0ecf..2f7a419 100644
+index 8d91ff7..de13d30 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -681,6 +681,8 @@ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
- EXPORT_SYMBOL(elv_slice_async_show);
- SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
- EXPORT_SYMBOL(elv_fairness_show);
-+SHOW_FUNCTION(elv_map_sync_show, efqd->map_sync, 0);
-+EXPORT_SYMBOL(elv_map_sync_show);
- #undef SHOW_FUNCTION
+@@ -13,6 +13,7 @@
  
- #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
-@@ -707,6 +709,8 @@ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
- EXPORT_SYMBOL(elv_slice_async_store);
- STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
- EXPORT_SYMBOL(elv_fairness_store);
-+STORE_FUNCTION(elv_map_sync_store, &efqd->map_sync, 0, 1, 0);
-+EXPORT_SYMBOL(elv_map_sync_store);
+ #include <linux/blkdev.h>
+ #include <linux/blktrace_api.h>
++#include <linux/seq_file.h>
+ #include "elevator-fq.h"
+ 
+ const int elv_slice_sync = HZ / 10;
+@@ -257,6 +258,8 @@ entity_served(struct io_entity *entity, unsigned long served,
+ 	for_each_entity(entity) {
+ 		entity->vdisktime += elv_delta_fair(served, entity);
+ 		update_min_vdisktime(entity->st);
++		entity->total_time += served;
++		entity->total_sectors += nr_sectors;
+ 	}
+ }
+ 
+@@ -850,6 +853,66 @@ STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
+ STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
  #undef STORE_FUNCTION
  
- void elv_schedule_dispatch(struct request_queue *q)
-@@ -1713,6 +1717,7 @@ struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
- 						struct bio *bio, int create)
- {
- 	struct page *page = NULL;
-+	struct elv_fq_data *efqd = q->elevator->efqd;
++static int io_cgroup_disk_time_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
++
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	iocg = cgroup_to_io_cgroup(cgroup);
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_time);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
++
++	return 0;
++}
++
++static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
++
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	iocg = cgroup_to_io_cgroup(cgroup);
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_sectors);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
++
++	return 0;
++}
++
+ struct cftype io_files[] = {
+ 	{
+ 		.name = "weight",
+@@ -861,6 +924,14 @@ struct cftype io_files[] = {
+ 		.read_u64 = io_cgroup_ioprio_class_read,
+ 		.write_u64 = io_cgroup_ioprio_class_write,
+ 	},
++	{
++		.name = "disk_time",
++		.read_seq_string = io_cgroup_disk_time_read,
++	},
++	{
++		.name = "disk_sectors",
++		.read_seq_string = io_cgroup_disk_sectors_read,
++	},
+ };
  
- 	/*
- 	 * Determine the group from task context. Even calls from
-@@ -1731,7 +1736,7 @@ struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
- 	}
+ static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+@@ -952,6 +1023,8 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 	struct io_cgroup *iocg;
+ 	struct io_group *iog, *leaf = NULL, *prev = NULL;
+ 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
++	unsigned int major, minor;
++	struct backing_dev_info *bdi = &q->backing_dev_info;
  
- 	/* Map the sync bio to the right group using task context */
--	if (elv_bio_sync(bio))
-+	if (elv_bio_sync(bio) && !efqd->map_sync)
- 		goto sync;
+ 	for (; cgroup != NULL; cgroup = cgroup->parent) {
+ 		iocg = cgroup_to_io_cgroup(cgroup);
+@@ -972,6 +1045,9 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
  
- #ifdef CONFIG_TRACK_ASYNC_CONTEXT
+ 		iog->iocg_id = css_id(&iocg->css);
+ 
++		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
++		iog->dev = MKDEV(major, minor);
++
+ 		io_group_init_entity(iocg, iog);
+ 
+ 		atomic_set(&iog->ref, 0);
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 53e5a03..57ff85f 100644
+index 671f366..e1d5bdd 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -205,6 +205,12 @@ struct elv_fq_data {
- 	 * queue before new queue is scheduled in
- 	 */
- 	unsigned int fairness;
+@@ -52,6 +52,13 @@ struct io_entity {
+ 
+ 	unsigned short ioprio, ioprio_class;
+ 	int ioprio_changed;
 +
 +	/*
-+	 * Get io group bio belongs to from bio and not from submitting task
-+	 * context
++	 * Keep track of total service received by this entity. Keep the
++	 * stats both for time slices and number of sectors dispatched
 +	 */
-+	unsigned int map_sync;
++	unsigned long total_time;
++	unsigned long total_sectors;
  };
  
- /* Logging facilities. */
-@@ -436,6 +442,9 @@ extern struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
- extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
- extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
- 					size_t count);
-+extern ssize_t elv_map_sync_show(struct elevator_queue *q, char *name);
-+extern ssize_t elv_map_sync_store(struct elevator_queue *q, const char *name,
-+					size_t count);
- extern void elv_io_group_congestion_threshold(struct request_queue *q,
- 						struct io_group *iog);
- static inline void elv_get_iog(struct io_group *iog)
-diff --git a/block/noop-iosched.c b/block/noop-iosched.c
-index 4ba496f..887bba1 100644
---- a/block/noop-iosched.c
-+++ b/block/noop-iosched.c
-@@ -88,6 +88,7 @@ static struct elv_fs_entry noop_attrs[] = {
- 	ELV_ATTR(fairness),
- 	ELV_ATTR(slice_sync),
- 	ELV_ATTR(group_idle),
-+	ELV_ATTR(map_sync),
- 	__ATTR_NULL
+ /*
+@@ -103,6 +110,9 @@ struct io_group {
+ 	struct io_queue *async_idle_queue;
+ 	void *key;
+ 	struct rcu_head rcu_head;
++
++	/* The device MKDEV(major, minor), this group has been created for */
++	dev_t	dev;
  };
- #endif
+ 
+ struct io_cgroup {
 -- 
 1.6.0.6
