@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 12/24] io-controller: Wait for requests to complete from last
-	queue before new queue is scheduled
-Date: Sun, 16 Aug 2009 15:30:34 -0400
-Message-ID: <1250451046-9966-13-git-send-email-vgoyal__6400.26282421804$1250452537$gmane$org@redhat.com>
+Subject: [PATCH 06/24] io-controller: cgroup related changes for hierarchical
+	group support
+Date: Sun, 16 Aug 2009 15:30:28 -0400
+Message-ID: <1250451046-9966-7-git-send-email-vgoyal__38316.586710471$1250452614$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,133 +22,281 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o Currently one can dispatch requests from multiple queues to the disk. This
-  is true for hardware which supports queuing. So if a disk support queue
-  depth of 31 it is possible that 20 requests are dispatched from queue 1
-  and then next queue is scheduled in which dispatches more requests.
+o This patch introduces some of the cgroup related code for io controller.
 
-o This multiple queue dispatch introduces issues for accurate accounting of
-  disk time consumed by a particular queue. For example, if one async queue
-  is scheduled in, it can dispatch 31 requests to the disk and then it will
-  be expired and a new sync queue might get scheduled in. These 31 requests
-  might take a long time to finish but this time is never accounted to the
-  async queue which dispatched these requests.
-
-o This patch introduces the functionality where we wait for all the requests
-  to finish from previous queue before next queue is scheduled in. That way
-  a queue is more accurately accounted for disk time it has consumed. Note
-  this still does not take care of errors introduced by disk write caching.
-
-o Because above behavior can result in reduced throughput, this behavior will
-  be enabled only if user sets "fairness" tunable to 1.
-
-o This patch helps in achieving more isolation between reads and buffered
-  writes in different cgroups. buffered writes typically utilize full queue
-  depth and then expire the queue. On the contarary, sequential reads
-  typicaly driver queue depth of 1. So despite the fact that writes are
-  using more disk time it is never accounted to write queue because we don't
-  wait for requests to finish after dispatching these. This patch helps
-  do more accurate accounting of disk time, especially for buffered writes
-  hence providing better fairness hence better isolation between two cgroups
-  running read and write workloads.
-
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/cfq-iosched.c |    1 +
- block/elevator-fq.c |   19 +++++++++++++++++++
- block/elevator-fq.h |   10 +++++++++-
- 3 files changed, 29 insertions(+), 1 deletions(-)
+ block/blk-ioc.c               |    3 +
+ block/elevator-fq.c           |  167 +++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h           |   14 ++++
+ include/linux/cgroup_subsys.h |    6 ++
+ include/linux/iocontext.h     |    5 +
+ 5 files changed, 195 insertions(+), 0 deletions(-)
 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 11ae473..52c4710 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -2123,6 +2123,7 @@ static struct elv_fs_entry cfq_attrs[] = {
- 	ELV_ATTR(slice_async),
- #ifdef CONFIG_GROUP_IOSCHED
- 	ELV_ATTR(group_idle),
-+	ELV_ATTR(fairness),
- #endif
- 	__ATTR_NULL
- };
+diff --git a/block/blk-ioc.c b/block/blk-ioc.c
+index d4ed600..0d56336 100644
+--- a/block/blk-ioc.c
++++ b/block/blk-ioc.c
+@@ -95,6 +95,9 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
+ 		spin_lock_init(&ret->lock);
+ 		ret->ioprio_changed = 0;
+ 		ret->ioprio = 0;
++#ifdef CONFIG_GROUP_IOSCHED
++		ret->cgroup_changed = 0;
++#endif
+ 		ret->last_waited = jiffies; /* doesn't matter... */
+ 		ret->nr_batch_requests = 0; /* because this is 0 */
+ 		ret->aic = NULL;
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 09377d0..b1b7dc8 100644
+index ae81d06..3940c61 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -677,6 +677,8 @@ SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
- EXPORT_SYMBOL(elv_slice_sync_show);
- SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
- EXPORT_SYMBOL(elv_slice_async_show);
-+SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
-+EXPORT_SYMBOL(elv_fairness_show);
- #undef SHOW_FUNCTION
+@@ -735,6 +735,173 @@ EXPORT_SYMBOL(elv_io_group_set_async_queue);
  
- #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
-@@ -701,6 +703,8 @@ STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
- EXPORT_SYMBOL(elv_slice_sync_store);
- STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
- EXPORT_SYMBOL(elv_slice_async_store);
-+STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
-+EXPORT_SYMBOL(elv_fairness_store);
- #undef STORE_FUNCTION
+ #ifdef CONFIG_GROUP_IOSCHED
  
- void elv_schedule_dispatch(struct request_queue *q)
-@@ -2260,6 +2264,17 @@ void *elv_select_ioq(struct request_queue *q, int force)
- 	}
- 
- expire:
-+	if (efqd->fairness && !force && ioq && ioq->dispatched) {
-+		/*
-+		 * If there are request dispatched from this queue, don't
-+		 * dispatch requests from new queue till all the requests from
-+		 * this queue have completed.
-+		 */
-+		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
-+				" disp=%lu", ioq->dispatched);
-+		ioq = NULL;
-+		goto keep_queue;
-+	}
- 	elv_slice_expired(q);
- new_queue:
- 	ioq = elv_set_active_ioq(q, new_ioq);
-@@ -2375,6 +2390,10 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 				goto done;
- 			}
- 
-+			/* Wait for requests to finish from this queue */
-+			if (efqd->fairness && ioq->dispatched)
-+				goto done;
++struct io_cgroup io_root_cgroup = {
++	.weight = IO_WEIGHT_DEFAULT,
++	.ioprio_class = IOPRIO_CLASS_BE,
++};
 +
- 			/* Expire the queue */
- 			elv_slice_expired(q);
- 			goto done;
++static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
++{
++	return container_of(cgroup_subsys_state(cgroup, io_subsys_id),
++			    struct io_cgroup, css);
++}
++
++#define SHOW_FUNCTION(__VAR)						\
++static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
++				       struct cftype *cftype)		\
++{									\
++	struct io_cgroup *iocg;					\
++	u64 ret;							\
++									\
++	if (!cgroup_lock_live_group(cgroup))				\
++		return -ENODEV;						\
++									\
++	iocg = cgroup_to_io_cgroup(cgroup);				\
++	spin_lock_irq(&iocg->lock);					\
++	ret = iocg->__VAR;						\
++	spin_unlock_irq(&iocg->lock);					\
++									\
++	cgroup_unlock();						\
++									\
++	return ret;							\
++}
++
++SHOW_FUNCTION(weight);
++SHOW_FUNCTION(ioprio_class);
++#undef SHOW_FUNCTION
++
++#define STORE_FUNCTION(__VAR, __MIN, __MAX)				\
++static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
++					struct cftype *cftype,		\
++					u64 val)			\
++{									\
++	struct io_cgroup *iocg;					\
++	struct io_group *iog;						\
++	struct hlist_node *n;						\
++									\
++	if (val < (__MIN) || val > (__MAX))				\
++		return -EINVAL;						\
++									\
++	if (!cgroup_lock_live_group(cgroup))				\
++		return -ENODEV;						\
++									\
++	iocg = cgroup_to_io_cgroup(cgroup);				\
++									\
++	spin_lock_irq(&iocg->lock);					\
++	iocg->__VAR = (unsigned long)val;				\
++	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
++		iog->entity.__VAR = (unsigned long)val;		\
++		smp_wmb();						\
++		iog->entity.ioprio_changed = 1;				\
++	}								\
++	spin_unlock_irq(&iocg->lock);					\
++									\
++	cgroup_unlock();						\
++									\
++	return 0;							\
++}
++
++STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
++STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
++#undef STORE_FUNCTION
++
++struct cftype io_files[] = {
++	{
++		.name = "weight",
++		.read_u64 = io_cgroup_weight_read,
++		.write_u64 = io_cgroup_weight_write,
++	},
++	{
++		.name = "ioprio_class",
++		.read_u64 = io_cgroup_ioprio_class_read,
++		.write_u64 = io_cgroup_ioprio_class_write,
++	},
++};
++
++static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++{
++	return cgroup_add_files(cgroup, subsys, io_files, ARRAY_SIZE(io_files));
++}
++
++static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
++						struct cgroup *cgroup)
++{
++	struct io_cgroup *iocg;
++
++	if (cgroup->parent != NULL) {
++		iocg = kzalloc(sizeof(*iocg), GFP_KERNEL);
++		if (iocg == NULL)
++			return ERR_PTR(-ENOMEM);
++	} else
++		iocg = &io_root_cgroup;
++
++	spin_lock_init(&iocg->lock);
++	INIT_HLIST_HEAD(&iocg->group_data);
++	iocg->weight = IO_WEIGHT_DEFAULT;
++	iocg->ioprio_class = IOPRIO_CLASS_BE;
++
++	return &iocg->css;
++}
++
++/*
++ * We cannot support shared io contexts, as we have no mean to support
++ * two tasks with the same ioc in two different groups without major rework
++ * of the main cic data structures.  By now we allow a task to change
++ * its cgroup only if it's the only owner of its ioc; the drawback of this
++ * behavior is that a group containing a task that forked using CLONE_IO
++ * will not be destroyed until the tasks sharing the ioc die.
++ */
++static int iocg_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
++			    struct task_struct *tsk)
++{
++	struct io_context *ioc;
++	int ret = 0;
++
++	/* task_lock() is needed to avoid races with exit_io_context() */
++	task_lock(tsk);
++	ioc = tsk->io_context;
++	if (ioc != NULL && atomic_read(&ioc->nr_tasks) > 1)
++		/*
++		 * ioc == NULL means that the task is either too young or
++		 * exiting: if it has still no ioc the ioc can't be shared,
++		 * if the task is exiting the attach will fail anyway, no
++		 * matter what we return here.
++		 */
++		ret = -EINVAL;
++	task_unlock(tsk);
++
++	return ret;
++}
++
++static void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
++			 struct cgroup *prev, struct task_struct *tsk)
++{
++	struct io_context *ioc;
++
++	task_lock(tsk);
++	ioc = tsk->io_context;
++	if (ioc != NULL)
++		ioc->cgroup_changed = 1;
++	task_unlock(tsk);
++}
++
++static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++{
++
++	/* Implemented in later patch */
++}
++
++struct cgroup_subsys io_subsys = {
++	.name = "io",
++	.create = iocg_create,
++	.can_attach = iocg_can_attach,
++	.attach = iocg_attach,
++	.destroy = iocg_destroy,
++	.populate = iocg_populate,
++	.subsys_id = io_subsys_id,
++	.use_id = 1,
++};
++
+ static void io_free_root_group(struct elevator_queue *e)
+ {
+ 	struct io_group *iog = e->efqd->root_group;
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 5f2cb8b..9b9ebf4 100644
+index 402231a..6998e69 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -179,6 +179,12 @@ struct elv_fq_data {
+@@ -12,6 +12,7 @@
+  */
  
- 	/* Fallback dummy ioq for extreme OOM conditions */
- 	struct io_queue oom_ioq;
-+
-+	/*
-+	 * If set to 1, waits for all request completions from current
-+	 * queue before new queue is scheduled in
-+	 */
-+	unsigned int fairness;
+ #include <linux/blkdev.h>
++#include <linux/cgroup.h>
+ 
+ #ifndef _ELV_SCHED_H
+ #define _ELV_SCHED_H
+@@ -90,6 +91,8 @@ struct io_group {
+ 	struct io_entity entity;
+ 	atomic_t ref;
+ 	struct io_sched_data sched_data;
++	struct hlist_node group_node;
++	unsigned short iocg_id;
+ 	/*
+ 	 * async queue for each priority case for RT and BE class.
+ 	 * Used only for cfq.
+@@ -100,6 +103,17 @@ struct io_group {
+ 	void *key;
  };
  
- /* Logging facilities. */
-@@ -436,7 +442,9 @@ extern ssize_t elv_slice_sync_store(struct elevator_queue *q, const char *name,
- extern ssize_t elv_slice_async_show(struct elevator_queue *q, char *name);
- extern ssize_t elv_slice_async_store(struct elevator_queue *q, const char *name,
- 						size_t count);
--
-+extern ssize_t elv_fairness_show(struct elevator_queue *q, char *name);
-+extern ssize_t elv_fairness_store(struct elevator_queue *q, const char *name,
-+					size_t count);
- /* Functions used by elevator.c */
- extern struct elv_fq_data *elv_alloc_fq_data(struct request_queue *q,
- 					struct elevator_queue *e);
++struct io_cgroup {
++	struct cgroup_subsys_state css;
++
++	unsigned int weight;
++	unsigned short ioprio_class;
++
++	spinlock_t lock;
++	struct hlist_head group_data;
++};
++
++
+ #else /* CONFIG_GROUP_IOSCHED */
+ 
+ struct io_group {
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 9c8d31b..baf544f 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -60,3 +60,9 @@ SUBSYS(net_cls)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_GROUP_IOSCHED
++SUBSYS(io)
++#endif
++
++/* */
+diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
+index 4da4a75..b343594 100644
+--- a/include/linux/iocontext.h
++++ b/include/linux/iocontext.h
+@@ -73,6 +73,11 @@ struct io_context {
+ 	unsigned short ioprio;
+ 	unsigned short ioprio_changed;
+ 
++#ifdef CONFIG_GROUP_IOSCHED
++	/* If task changes the cgroup, elevator processes it asynchronously */
++	unsigned short cgroup_changed;
++#endif
++
+ 	/*
+ 	 * For request batching
+ 	 */
 -- 
 1.6.0.6
