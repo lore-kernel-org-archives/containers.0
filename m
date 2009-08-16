@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/24] io-controller: cgroup related changes for hierarchical
-	group support
-Date: Sun, 16 Aug 2009 15:30:28 -0400
-Message-ID: <1250451046-9966-7-git-send-email-vgoyal__38316.586710471$1250452614$gmane$org@redhat.com>
+Subject: [PATCH 05/24] io-controller: Core scheduler changes to support
+	hierarhical scheduling
+Date: Sun, 16 Aug 2009 15:30:27 -0400
+Message-ID: <1250451046-9966-6-git-send-email-vgoyal__32541.0238853239$1250452688$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,281 +22,305 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o This patch introduces some of the cgroup related code for io controller.
+o This patch introduces core changes in fair queuing scheduler to support
+  hierarhical/group scheduling. It is enabled by CONFIG_GROUP_IOSCHED.
 
 Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
 Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-ioc.c               |    3 +
- block/elevator-fq.c           |  167 +++++++++++++++++++++++++++++++++++++++++
- block/elevator-fq.h           |   14 ++++
- include/linux/cgroup_subsys.h |    6 ++
- include/linux/iocontext.h     |    5 +
- 5 files changed, 195 insertions(+), 0 deletions(-)
+ block/elevator-fq.c |  158 ++++++++++++++++++++++++++++++++++++++++++++++++---
+ block/elevator-fq.h |   19 ++++++
+ init/Kconfig        |    8 +++
+ 3 files changed, 177 insertions(+), 8 deletions(-)
 
-diff --git a/block/blk-ioc.c b/block/blk-ioc.c
-index d4ed600..0d56336 100644
---- a/block/blk-ioc.c
-+++ b/block/blk-ioc.c
-@@ -95,6 +95,9 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
- 		spin_lock_init(&ret->lock);
- 		ret->ioprio_changed = 0;
- 		ret->ioprio = 0;
-+#ifdef CONFIG_GROUP_IOSCHED
-+		ret->cgroup_changed = 0;
-+#endif
- 		ret->last_waited = jiffies; /* doesn't matter... */
- 		ret->nr_batch_requests = 0; /* because this is 0 */
- 		ret->aic = NULL;
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index ae81d06..3940c61 100644
+index 8bbe1ec..ae81d06 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -735,6 +735,173 @@ EXPORT_SYMBOL(elv_io_group_set_async_queue);
+@@ -137,6 +137,88 @@ static inline struct io_group *iog_of(struct io_entity *entity)
+ 	return NULL;
+ }
  
- #ifdef CONFIG_GROUP_IOSCHED
- 
-+struct io_cgroup io_root_cgroup = {
-+	.weight = IO_WEIGHT_DEFAULT,
-+	.ioprio_class = IOPRIO_CLASS_BE,
-+};
++#ifdef CONFIG_GROUP_IOSCHED
++/* check for entity->parent so that loop is not executed for root entity. */
++#define for_each_entity(entity)	\
++	for (; entity && entity->parent; entity = entity->parent)
 +
-+static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
++/* Do the two (enqueued) entities belong to the same group ? */
++static inline int
++is_same_group(struct io_entity *entity, struct io_entity *new_entity)
 +{
-+	return container_of(cgroup_subsys_state(cgroup, io_subsys_id),
-+			    struct io_cgroup, css);
++	if (parent_entity(entity) == parent_entity(new_entity))
++		return 1;
++
++	return 0;
 +}
 +
-+#define SHOW_FUNCTION(__VAR)						\
-+static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
-+				       struct cftype *cftype)		\
-+{									\
-+	struct io_cgroup *iocg;					\
-+	u64 ret;							\
-+									\
-+	if (!cgroup_lock_live_group(cgroup))				\
-+		return -ENODEV;						\
-+									\
-+	iocg = cgroup_to_io_cgroup(cgroup);				\
-+	spin_lock_irq(&iocg->lock);					\
-+	ret = iocg->__VAR;						\
-+	spin_unlock_irq(&iocg->lock);					\
-+									\
-+	cgroup_unlock();						\
-+									\
-+	return ret;							\
-+}
-+
-+SHOW_FUNCTION(weight);
-+SHOW_FUNCTION(ioprio_class);
-+#undef SHOW_FUNCTION
-+
-+#define STORE_FUNCTION(__VAR, __MIN, __MAX)				\
-+static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
-+					struct cftype *cftype,		\
-+					u64 val)			\
-+{									\
-+	struct io_cgroup *iocg;					\
-+	struct io_group *iog;						\
-+	struct hlist_node *n;						\
-+									\
-+	if (val < (__MIN) || val > (__MAX))				\
-+		return -EINVAL;						\
-+									\
-+	if (!cgroup_lock_live_group(cgroup))				\
-+		return -ENODEV;						\
-+									\
-+	iocg = cgroup_to_io_cgroup(cgroup);				\
-+									\
-+	spin_lock_irq(&iocg->lock);					\
-+	iocg->__VAR = (unsigned long)val;				\
-+	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
-+		iog->entity.__VAR = (unsigned long)val;		\
-+		smp_wmb();						\
-+		iog->entity.ioprio_changed = 1;				\
-+	}								\
-+	spin_unlock_irq(&iocg->lock);					\
-+									\
-+	cgroup_unlock();						\
-+									\
-+	return 0;							\
-+}
-+
-+STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
-+STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
-+#undef STORE_FUNCTION
-+
-+struct cftype io_files[] = {
-+	{
-+		.name = "weight",
-+		.read_u64 = io_cgroup_weight_read,
-+		.write_u64 = io_cgroup_weight_write,
-+	},
-+	{
-+		.name = "ioprio_class",
-+		.read_u64 = io_cgroup_ioprio_class_read,
-+		.write_u64 = io_cgroup_ioprio_class_write,
-+	},
-+};
-+
-+static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++/* return depth at which a io entity is present in the hierarchy */
++static inline int depth_entity(struct io_entity *entity)
 +{
-+	return cgroup_add_files(cgroup, subsys, io_files, ARRAY_SIZE(io_files));
++	int depth = 0;
++
++	for_each_entity(entity)
++		depth++;
++
++	return depth;
 +}
 +
-+static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
-+						struct cgroup *cgroup)
++static void find_matching_io_entity(struct io_entity **entity,
++			struct io_entity **new_entity)
 +{
-+	struct io_cgroup *iocg;
++	int entity_depth, new_entity_depth;
 +
-+	if (cgroup->parent != NULL) {
-+		iocg = kzalloc(sizeof(*iocg), GFP_KERNEL);
-+		if (iocg == NULL)
-+			return ERR_PTR(-ENOMEM);
-+	} else
-+		iocg = &io_root_cgroup;
++	/*
++	 * preemption test can be made between sibling entities who are in the
++	 * same group i.e who have a common parent. Walk up the hierarchy of
++	 * both entities until we find their ancestors who are siblings of
++	 * common parent.
++	 */
 +
-+	spin_lock_init(&iocg->lock);
-+	INIT_HLIST_HEAD(&iocg->group_data);
-+	iocg->weight = IO_WEIGHT_DEFAULT;
-+	iocg->ioprio_class = IOPRIO_CLASS_BE;
++	/* First walk up until both entities are at same depth */
++	entity_depth = depth_entity(*entity);
++	new_entity_depth = depth_entity(*new_entity);
 +
-+	return &iocg->css;
++	while (entity_depth > new_entity_depth) {
++		entity_depth--;
++		*entity = parent_entity(*entity);
++	}
++
++	while (new_entity_depth > entity_depth) {
++		new_entity_depth--;
++		*new_entity = parent_entity(*new_entity);
++	}
++
++	while (!is_same_group(*entity, *new_entity)) {
++		*entity = parent_entity(*entity);
++		*new_entity = parent_entity(*new_entity);
++	}
 +}
-+
-+/*
-+ * We cannot support shared io contexts, as we have no mean to support
-+ * two tasks with the same ioc in two different groups without major rework
-+ * of the main cic data structures.  By now we allow a task to change
-+ * its cgroup only if it's the only owner of its ioc; the drawback of this
-+ * behavior is that a group containing a task that forked using CLONE_IO
-+ * will not be destroyed until the tasks sharing the ioc die.
-+ */
-+static int iocg_can_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-+			    struct task_struct *tsk)
++struct io_group *ioq_to_io_group(struct io_queue *ioq)
 +{
-+	struct io_context *ioc;
-+	int ret = 0;
-+
-+	/* task_lock() is needed to avoid races with exit_io_context() */
-+	task_lock(tsk);
-+	ioc = tsk->io_context;
-+	if (ioc != NULL && atomic_read(&ioc->nr_tasks) > 1)
-+		/*
-+		 * ioc == NULL means that the task is either too young or
-+		 * exiting: if it has still no ioc the ioc can't be shared,
-+		 * if the task is exiting the attach will fail anyway, no
-+		 * matter what we return here.
-+		 */
-+		ret = -EINVAL;
-+	task_unlock(tsk);
-+
-+	return ret;
++	return iog_of(parent_entity(&ioq->entity));
 +}
++EXPORT_SYMBOL(ioq_to_io_group);
 +
-+static void iocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
-+			 struct cgroup *prev, struct task_struct *tsk)
++static inline struct io_sched_data *
++io_entity_sched_data(struct io_entity *entity)
 +{
-+	struct io_context *ioc;
-+
-+	task_lock(tsk);
-+	ioc = tsk->io_context;
-+	if (ioc != NULL)
-+		ioc->cgroup_changed = 1;
-+	task_unlock(tsk);
++	return &iog_of(parent_entity(entity))->sched_data;
 +}
 +
-+static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++#else /* GROUP_IOSCHED */
++#define for_each_entity(entity)	\
++	for (; entity != NULL; entity = NULL)
++
++static void find_matching_io_entity(struct io_entity **entity,
++			struct io_entity **new_entity) { }
++
++static inline int
++is_same_group(struct io_entity *entity, struct io_entity *new_entity)
 +{
-+
-+	/* Implemented in later patch */
++	return 1;
 +}
 +
-+struct cgroup_subsys io_subsys = {
-+	.name = "io",
-+	.create = iocg_create,
-+	.can_attach = iocg_can_attach,
-+	.attach = iocg_attach,
-+	.destroy = iocg_destroy,
-+	.populate = iocg_populate,
-+	.subsys_id = io_subsys_id,
-+	.use_id = 1,
-+};
-+
- static void io_free_root_group(struct elevator_queue *e)
+ static inline struct elv_fq_data *efqd_of(struct io_entity *entity)
  {
- 	struct io_group *iog = e->efqd->root_group;
+ 	return ioq_of(entity)->efqd;
+@@ -155,6 +237,7 @@ io_entity_sched_data(struct io_entity *entity)
+ 
+ 	return &efqd->root_group->sched_data;
+ }
++#endif /* GROUP_IOSCHED */
+ 
+ static inline void
+ init_io_entity_service_tree(struct io_entity *entity, struct io_entity *parent)
+@@ -171,8 +254,10 @@ static void
+ entity_served(struct io_entity *entity, unsigned long served,
+ 				unsigned long nr_sectors)
+ {
+-	entity->vdisktime += elv_delta_fair(served, entity);
+-	update_min_vdisktime(entity->st);
++	for_each_entity(entity) {
++		entity->vdisktime += elv_delta_fair(served, entity);
++		update_min_vdisktime(entity->st);
++	}
+ }
+ 
+ static void place_entity(struct io_service_tree *st, struct io_entity *entity,
+@@ -384,14 +469,23 @@ static void put_prev_ioq(struct io_queue *ioq)
+ {
+ 	struct io_entity *entity = &ioq->entity;
+ 
+-	put_prev_io_entity(entity);
++	for_each_entity(entity) {
++		put_prev_io_entity(entity);
++	}
+ }
+ 
+ static void dequeue_ioq(struct io_queue *ioq)
+ {
+ 	struct io_entity *entity = &ioq->entity;
+ 
+-	dequeue_io_entity(entity);
++	for_each_entity(entity) {
++		struct io_sched_data *sd = io_entity_sched_data(entity);
++
++		dequeue_io_entity(entity);
++		/* Don't dequeue parent if it has other entities besides us */
++		if (sd->nr_active)
++			break;
++	}
+ 	elv_put_ioq(ioq);
+ 	return;
+ }
+@@ -402,7 +496,12 @@ static void enqueue_ioq(struct io_queue *ioq)
+ 	struct io_entity *entity = &ioq->entity;
+ 
+ 	elv_get_ioq(ioq);
+-	enqueue_io_entity(entity);
++
++	for_each_entity(entity) {
++		if (entity->on_st)
++			break;
++		enqueue_io_entity(entity);
++	}
+ }
+ 
+ static inline void
+@@ -634,6 +733,38 @@ void elv_io_group_set_async_queue(struct io_group *iog, int ioprio_class,
+ }
+ EXPORT_SYMBOL(elv_io_group_set_async_queue);
+ 
++#ifdef CONFIG_GROUP_IOSCHED
++
++static void io_free_root_group(struct elevator_queue *e)
++{
++	struct io_group *iog = e->efqd->root_group;
++
++	put_io_group_queues(e, iog);
++	kfree(iog);
++}
++
++static struct io_group *io_alloc_root_group(struct request_queue *q,
++					struct elevator_queue *e, void *key)
++{
++	struct io_group *iog;
++	int i;
++
++	iog = kmalloc_node(sizeof(*iog), GFP_KERNEL | __GFP_ZERO, q->node);
++	if (iog == NULL)
++		return NULL;
++
++	iog->entity.parent = NULL;
++	iog->entity.my_sd = &iog->sched_data;
++	iog->key = key;
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++)
++		iog->sched_data.service_tree[i] = ELV_SERVICE_TREE_INIT;
++
++	return iog;
++}
++
++#else /* CONFIG_GROUP_IOSCHED */
++
+ static struct io_group *io_alloc_root_group(struct request_queue *q,
+ 					struct elevator_queue *e, void *key)
+ {
+@@ -662,6 +793,8 @@ static void io_free_root_group(struct elevator_queue *e)
+ 	kfree(iog);
+ }
+ 
++#endif /* CONFIG_GROUP_IOSCHED */
++
+ /*
+  * Should be called after ioq prio and class has been initialized as prio
+  * class data will be used to determine which service tree in the group
+@@ -687,9 +820,11 @@ static struct io_queue *elv_get_next_ioq(struct request_queue *q)
+ 		return NULL;
+ 
+ 	sd = &efqd->root_group->sched_data;
+-	entity = lookup_next_io_entity(sd);
+-	if (!entity)
+-		return NULL;
++	for (; sd != NULL; sd = entity->my_sd) {
++		entity = lookup_next_io_entity(sd);
++		if (!entity)
++			return NULL;
++	}
+ 
+ 	ioq = ioq_of(entity);
+ 	return ioq;
+@@ -882,6 +1017,13 @@ static int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
+ 	new_entity = &new_ioq->entity;
+ 
+ 	/*
++	 * In hierarchical setup, one need to traverse up the hierarchy
++	 * till both the queues are children of same parent to make a
++	 * decision whether to do the preemption or not.
++	 */
++	find_matching_io_entity(&entity, &new_entity);
++
++	/*
+ 	 * Allow an RT request to pre-empt an ongoing non-RT cfqq timeslice.
+ 	 */
+ 
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 402231a..6998e69 100644
+index 11c7728..402231a 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -12,6 +12,7 @@
-  */
+@@ -85,6 +85,23 @@ struct io_queue {
+ 	void *sched_queue;
+ };
  
- #include <linux/blkdev.h>
-+#include <linux/cgroup.h>
- 
- #ifndef _ELV_SCHED_H
- #define _ELV_SCHED_H
-@@ -90,6 +91,8 @@ struct io_group {
++#ifdef CONFIG_GROUP_IOSCHED /* CONFIG_GROUP_IOSCHED */
++struct io_group {
++	struct io_entity entity;
++	atomic_t ref;
++	struct io_sched_data sched_data;
++	/*
++	 * async queue for each priority case for RT and BE class.
++	 * Used only for cfq.
++	 */
++
++	struct io_queue *async_queue[2][IOPRIO_BE_NR];
++	struct io_queue *async_idle_queue;
++	void *key;
++};
++
++#else /* CONFIG_GROUP_IOSCHED */
++
+ struct io_group {
  	struct io_entity entity;
- 	atomic_t ref;
  	struct io_sched_data sched_data;
-+	struct hlist_node group_node;
-+	unsigned short iocg_id;
- 	/*
- 	 * async queue for each priority case for RT and BE class.
- 	 * Used only for cfq.
-@@ -100,6 +103,17 @@ struct io_group {
+@@ -98,6 +115,8 @@ struct io_group {
  	void *key;
  };
  
-+struct io_cgroup {
-+	struct cgroup_subsys_state css;
++#endif /* CONFIG_GROUP_IOSCHED */
 +
-+	unsigned int weight;
-+	unsigned short ioprio_class;
-+
-+	spinlock_t lock;
-+	struct hlist_head group_data;
-+};
-+
-+
- #else /* CONFIG_GROUP_IOSCHED */
+ struct elv_fq_data {
+ 	struct io_group *root_group;
  
- struct io_group {
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index 9c8d31b..baf544f 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -60,3 +60,9 @@ SUBSYS(net_cls)
- #endif
+diff --git a/init/Kconfig b/init/Kconfig
+index 3f7e609..29f701d 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -612,6 +612,14 @@ config CGROUP_MEM_RES_CTLR_SWAP
+ 	  Now, memory usage of swap_cgroup is 2 bytes per entry. If swap page
+ 	  size is 4096bytes, 512k per 1Gbytes of swap.
  
- /* */
++config GROUP_IOSCHED
++	bool "Group IO Scheduler"
++	depends on CGROUPS && ELV_FAIR_QUEUING
++	default n
++	---help---
++	  This feature lets IO scheduler recognize task groups and control
++	  disk bandwidth allocation to such task groups.
 +
-+#ifdef CONFIG_GROUP_IOSCHED
-+SUBSYS(io)
-+#endif
-+
-+/* */
-diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
-index 4da4a75..b343594 100644
---- a/include/linux/iocontext.h
-+++ b/include/linux/iocontext.h
-@@ -73,6 +73,11 @@ struct io_context {
- 	unsigned short ioprio;
- 	unsigned short ioprio_changed;
+ endif # CGROUPS
  
-+#ifdef CONFIG_GROUP_IOSCHED
-+	/* If task changes the cgroup, elevator processes it asynchronously */
-+	unsigned short cgroup_changed;
-+#endif
-+
- 	/*
- 	 * For request batching
- 	 */
+ config MM_OWNER
 -- 
 1.6.0.6
