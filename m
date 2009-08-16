@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 08/24] io-controller: cfq changes to use hierarchical fair
-	queuing code in elevaotor layer
-Date: Sun, 16 Aug 2009 15:30:30 -0400
-Message-ID: <1250451046-9966-9-git-send-email-vgoyal__5578.34084979749$1250452059$gmane$org@redhat.com>
+Subject: [PATCH 23/24] io-controller: map sync requests to group using bio
+	tracking info
+Date: Sun, 16 Aug 2009 15:30:45 -0400
+Message-ID: <1250451046-9966-24-git-send-email-vgoyal__24134.9240219735$1250452247$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,145 +22,127 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make cfq hierarhical.
+o sync requests are mapped to the cgroup submitting tasks belongs to. This
+  is an experimental patch where sync requets can be mapped to the group
+  using bio tracking information and not submitting task's context.
 
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+o This patch implements this functionality only for noop, deadline and AS.
+
+o Introducing this patch for experimental purposes to see if it is really
+  meaningful or not.
+
+o This behavior is turned on by setting /sys/block/<disk>/queue/iosched/map_sync  varibale.
+
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |    8 ++++++
- block/cfq-iosched.c   |   63 ++++++++++++++++++++++++++++++++++++++++++++++--
- init/Kconfig          |    2 +-
- 3 files changed, 69 insertions(+), 4 deletions(-)
+ block/as-iosched.c       |    1 +
+ block/deadline-iosched.c |    1 +
+ block/elevator-fq.c      |    7 ++++++-
+ block/elevator-fq.h      |    9 +++++++++
+ block/noop-iosched.c     |    1 +
+ 5 files changed, 18 insertions(+), 1 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index dd5224d..a91a807 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -54,6 +54,14 @@ config IOSCHED_CFQ
- 	  working environment, suitable for desktop systems.
- 	  This is the default I/O scheduler.
+diff --git a/block/as-iosched.c b/block/as-iosched.c
+index 8ea9398..2a72da1 100644
+--- a/block/as-iosched.c
++++ b/block/as-iosched.c
+@@ -1769,6 +1769,7 @@ static struct elv_fs_entry as_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ #endif
+ 	__ATTR_NULL
+ };
+diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
+index cc9c8c3..80377a9 100644
+--- a/block/deadline-iosched.c
++++ b/block/deadline-iosched.c
+@@ -466,6 +466,7 @@ static struct elv_fs_entry deadline_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ #endif
+ 	__ATTR_NULL
+ };
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index 70d0ecf..2f7a419 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -681,6 +681,8 @@ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+ EXPORT_SYMBOL(elv_slice_async_show);
+ SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
+ EXPORT_SYMBOL(elv_fairness_show);
++SHOW_FUNCTION(elv_map_sync_show, efqd->map_sync, 0);
++EXPORT_SYMBOL(elv_map_sync_show);
+ #undef SHOW_FUNCTION
  
-+config IOSCHED_CFQ_HIER
-+	bool "CFQ Hierarchical Scheduling support"
-+	depends on IOSCHED_CFQ && CGROUPS
-+	select GROUP_IOSCHED
-+	default n
-+	---help---
-+	  Enable hierarhical scheduling in cfq.
-+
- choice
- 	prompt "Default I/O scheduler"
- 	default DEFAULT_CFQ
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index decb654..6c1f87a 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -1285,6 +1285,60 @@ static void cfq_init_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- 	cfqq->pid = pid;
- }
+ #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+@@ -707,6 +709,8 @@ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
+ STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
+ EXPORT_SYMBOL(elv_fairness_store);
++STORE_FUNCTION(elv_map_sync_store, &efqd->map_sync, 0, 1, 0);
++EXPORT_SYMBOL(elv_map_sync_store);
+ #undef STORE_FUNCTION
  
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
-+{
-+	struct cfq_queue *async_cfqq = cic_to_cfqq(cic, 0);
-+	struct cfq_queue *sync_cfqq = cic_to_cfqq(cic, 1);
-+	struct cfq_data *cfqd = cic->key;
-+	struct io_group *iog, *__iog;
-+	unsigned long flags;
-+	struct request_queue *q;
-+
-+	if (unlikely(!cfqd))
-+		return;
-+
-+	q = cfqd->queue;
-+
-+	spin_lock_irqsave(q->queue_lock, flags);
-+
-+	iog = elv_io_get_io_group(q, 0);
-+
-+	if (async_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(async_cfqq);
-+		if (iog != __iog) {
-+			/* cgroup changed, drop the reference to async queue */
-+			cic_set_cfqq(cic, NULL, 0);
-+			cfq_put_queue(async_cfqq);
-+		}
-+	}
-+
-+	if (sync_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(sync_cfqq);
-+
-+		/*
-+		 * Drop reference to sync queue. A new sync queue will
-+		 * be assigned in new group upon arrival of a fresh request.
-+		 * If old queue has got requests, those reuests will be
-+		 * dispatched over a period of time and queue will be freed
-+		 * automatically.
-+		 */
-+		if (iog != __iog) {
-+			cic_set_cfqq(cic, NULL, 1);
-+			cfq_put_queue(sync_cfqq);
-+		}
-+	}
-+
-+	spin_unlock_irqrestore(q->queue_lock, flags);
-+}
-+
-+static void cfq_ioc_set_cgroup(struct io_context *ioc)
-+{
-+	call_for_each_cic(ioc, changed_cgroup);
-+	ioc->cgroup_changed = 0;
-+}
-+#endif  /* CONFIG_IOSCHED_CFQ_HIER */
-+
- static struct cfq_queue *
- cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 		     struct io_context *ioc, gfp_t gfp_mask)
-@@ -1296,7 +1350,7 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 	struct io_group *iog = NULL;
+ void elv_schedule_dispatch(struct request_queue *q)
+@@ -1713,6 +1717,7 @@ struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
+ 						struct bio *bio, int create)
+ {
+ 	struct page *page = NULL;
++	struct elv_fq_data *efqd = q->elevator->efqd;
  
- retry:
--	iog = elv_io_get_io_group(q, 0);
-+	iog = elv_io_get_io_group(q, 1);
+ 	/*
+ 	 * Determine the group from task context. Even calls from
+@@ -1731,7 +1736,7 @@ struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
+ 	}
  
- 	cic = cfq_cic_lookup(cfqd, ioc);
- 	/* cic always exists here */
-@@ -1385,7 +1439,7 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
- 	const int ioprio_class = task_ioprio_class(ioc);
- 	struct cfq_queue *async_cfqq = NULL;
- 	struct cfq_queue *cfqq = NULL;
--	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 0);
-+	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 1);
+ 	/* Map the sync bio to the right group using task context */
+-	if (elv_bio_sync(bio))
++	if (elv_bio_sync(bio) && !efqd->map_sync)
+ 		goto sync;
  
- 	if (!is_sync) {
- 		async_cfqq = elv_io_group_async_queue_prio(iog, ioprio_class,
-@@ -1540,7 +1594,10 @@ out:
- 	smp_read_barrier_depends();
- 	if (unlikely(ioc->ioprio_changed))
- 		cfq_ioc_set_ioprio(ioc);
--
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+	if (unlikely(ioc->cgroup_changed))
-+		cfq_ioc_set_cgroup(ioc);
-+#endif
- 	return cic;
- err_free:
- 	cfq_cic_free(cic);
-diff --git a/init/Kconfig b/init/Kconfig
-index 29f701d..afcaa86 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -613,7 +613,7 @@ config CGROUP_MEM_RES_CTLR_SWAP
- 	  size is 4096bytes, 512k per 1Gbytes of swap.
+ #ifdef CONFIG_TRACK_ASYNC_CONTEXT
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 53e5a03..57ff85f 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -205,6 +205,12 @@ struct elv_fq_data {
+ 	 * queue before new queue is scheduled in
+ 	 */
+ 	unsigned int fairness;
++
++	/*
++	 * Get io group bio belongs to from bio and not from submitting task
++	 * context
++	 */
++	unsigned int map_sync;
+ };
  
- config GROUP_IOSCHED
--	bool "Group IO Scheduler"
-+	bool
- 	depends on CGROUPS && ELV_FAIR_QUEUING
- 	default n
- 	---help---
+ /* Logging facilities. */
+@@ -436,6 +442,9 @@ extern struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
+ extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
+ 					size_t count);
++extern ssize_t elv_map_sync_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_map_sync_store(struct elevator_queue *q, const char *name,
++					size_t count);
+ extern void elv_io_group_congestion_threshold(struct request_queue *q,
+ 						struct io_group *iog);
+ static inline void elv_get_iog(struct io_group *iog)
+diff --git a/block/noop-iosched.c b/block/noop-iosched.c
+index 4ba496f..887bba1 100644
+--- a/block/noop-iosched.c
++++ b/block/noop-iosched.c
+@@ -88,6 +88,7 @@ static struct elv_fs_entry noop_attrs[] = {
+ 	ELV_ATTR(fairness),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(map_sync),
+ 	__ATTR_NULL
+ };
+ #endif
 -- 
 1.6.0.6
