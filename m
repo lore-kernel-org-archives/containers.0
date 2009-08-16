@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 24/24] io-controller: debug elevator fair queuing support
-Date: Sun, 16 Aug 2009 15:30:46 -0400
-Message-ID: <1250451046-9966-25-git-send-email-vgoyal__5599.67197846181$1250451904$gmane$org@redhat.com>
+Subject: [PATCH 08/24] io-controller: cfq changes to use hierarchical fair
+	queuing code in elevaotor layer
+Date: Sun, 16 Aug 2009 15:30:30 -0400
+Message-ID: <1250451046-9966-9-git-send-email-vgoyal__5578.34084979749$1250452059$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,115 +22,145 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o More debugging help to debug elevator fair queuing support. Enabled under
-  CONFIG_DEBUG_ELV_FAIR_QUEUING. Currently it prints vdisktime related
-  trace messages in blktrace.
+Make cfq hierarhical.
 
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |    9 +++++++++
- block/elevator-fq.c   |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 55 insertions(+), 1 deletions(-)
+ block/Kconfig.iosched |    8 ++++++
+ block/cfq-iosched.c   |   63 ++++++++++++++++++++++++++++++++++++++++++++++--
+ init/Kconfig          |    2 +-
+ 3 files changed, 69 insertions(+), 4 deletions(-)
 
 diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 8b507c4..edcd317 100644
+index dd5224d..a91a807 100644
 --- a/block/Kconfig.iosched
 +++ b/block/Kconfig.iosched
-@@ -15,6 +15,15 @@ config ELV_FAIR_QUEUING
- 	  other ioschedulers can make use of it.
- 	  If unsure, say N.
+@@ -54,6 +54,14 @@ config IOSCHED_CFQ
+ 	  working environment, suitable for desktop systems.
+ 	  This is the default I/O scheduler.
  
-+config DEBUG_ELV_FAIR_QUEUING
-+	bool "Debug elevator fair queuing"
-+	depends on ELV_FAIR_QUEUING
++config IOSCHED_CFQ_HIER
++	bool "CFQ Hierarchical Scheduling support"
++	depends on IOSCHED_CFQ && CGROUPS
++	select GROUP_IOSCHED
 +	default n
 +	---help---
-+	  Enable some debugging hooks for elevator fair queuing support.
-+	  Currently it just outputs more information about vdisktime in
-+	  blktrace output .
++	  Enable hierarhical scheduling in cfq.
 +
- config IOSCHED_NOOP
- 	bool
- 	default y
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 2f7a419..d04e925 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -34,6 +34,24 @@ static struct kmem_cache *elv_ioq_pool;
- #define ELV_SERVICE_TREE_INIT   ((struct io_service_tree)	\
- 				{ RB_ROOT, NULL, 0, NULL, 0})
+ choice
+ 	prompt "Default I/O scheduler"
+ 	default DEFAULT_CFQ
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index decb654..6c1f87a 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1285,6 +1285,60 @@ static void cfq_init_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
+ 	cfqq->pid = pid;
+ }
  
-+#ifdef CONFIG_DEBUG_ELV_FAIR_QUEUING
-+#define elv_log_entity(entity, fmt, args...) 			\
-+{                                                               \
-+{								\
-+	struct io_queue *ioq = ioq_of(entity);			\
-+	struct io_group *iog = iog_of(entity);			\
-+								\
-+	if (ioq) {						\
-+		elv_log_ioq(ioq->efqd, ioq, fmt, ##args);	\
-+	} else	{						\
-+		elv_log_iog((struct elv_fq_data *)iog->key, iog, fmt, ##args);\
-+	}							\
-+}								\
-+}
-+#else
-+#define elv_log_entity(entity, fmt, args...)
-+#endif
-+
- static inline struct io_queue *ioq_of(struct io_entity *entity)
- {
- 	if (entity->my_sd == NULL)
-@@ -350,15 +368,39 @@ static inline void debug_update_stats_enqueue(struct io_entity *entity) {}
- static inline void debug_update_stats_dequeue(struct io_entity *entity) {}
- #endif /* DEBUG_GROUP_IOSCHED */
- 
-+#ifdef CONFIG_DEBUG_ELV_FAIR_QUEUING
-+static inline void debug_entity_vdisktime(struct io_entity *entity,
-+					unsigned long served, u64 delta)
++#ifdef CONFIG_IOSCHED_CFQ_HIER
++static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
 +{
-+	struct elv_fq_data *efqd;
-+	struct io_group *iog;
++	struct cfq_queue *async_cfqq = cic_to_cfqq(cic, 0);
++	struct cfq_queue *sync_cfqq = cic_to_cfqq(cic, 1);
++	struct cfq_data *cfqd = cic->key;
++	struct io_group *iog, *__iog;
++	unsigned long flags;
++	struct request_queue *q;
 +
-+	elv_log_entity(entity, "vdisktime=%llu service=%lu delta=%llu"
-+				" entity->weight=%u", entity->vdisktime,
-+				served, delta, entity->weight);
++	if (unlikely(!cfqd))
++		return;
 +
-+	iog = iog_of(parent_entity(entity));
-+	efqd = iog->key;
-+	elv_log_iog(efqd, iog, "min_vdisktime=%llu", entity->st->min_vdisktime);
++	q = cfqd->queue;
++
++	spin_lock_irqsave(q->queue_lock, flags);
++
++	iog = elv_io_get_io_group(q, 0);
++
++	if (async_cfqq != NULL) {
++		__iog = cfqq_to_io_group(async_cfqq);
++		if (iog != __iog) {
++			/* cgroup changed, drop the reference to async queue */
++			cic_set_cfqq(cic, NULL, 0);
++			cfq_put_queue(async_cfqq);
++		}
++	}
++
++	if (sync_cfqq != NULL) {
++		__iog = cfqq_to_io_group(sync_cfqq);
++
++		/*
++		 * Drop reference to sync queue. A new sync queue will
++		 * be assigned in new group upon arrival of a fresh request.
++		 * If old queue has got requests, those reuests will be
++		 * dispatched over a period of time and queue will be freed
++		 * automatically.
++		 */
++		if (iog != __iog) {
++			cic_set_cfqq(cic, NULL, 1);
++			cfq_put_queue(sync_cfqq);
++		}
++	}
++
++	spin_unlock_irqrestore(q->queue_lock, flags);
 +}
-+#else /* DEBUG_ELV_FAIR_QUEUING */
-+static inline void debug_entity_vdisktime(struct io_entity *entity,
-+					unsigned long served, u64 delta) {}
-+#endif /* DEBUG_ELV_FAIR_QUEUING */
 +
- static void
- entity_served(struct io_entity *entity, unsigned long served,
- 				unsigned long nr_sectors)
- {
- 	for_each_entity(entity) {
--		entity->vdisktime += elv_delta_fair(served, entity);
-+		u64 delta;
++static void cfq_ioc_set_cgroup(struct io_context *ioc)
++{
++	call_for_each_cic(ioc, changed_cgroup);
++	ioc->cgroup_changed = 0;
++}
++#endif  /* CONFIG_IOSCHED_CFQ_HIER */
 +
-+		delta = elv_delta_fair(served, entity);
-+		entity->vdisktime += delta;
- 		update_min_vdisktime(entity->st);
- 		entity->total_time += served;
- 		entity->total_sectors += nr_sectors;
-+		debug_entity_vdisktime(entity, served, delta);
- 	}
- }
+ static struct cfq_queue *
+ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
+ 		     struct io_context *ioc, gfp_t gfp_mask)
+@@ -1296,7 +1350,7 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
+ 	struct io_group *iog = NULL;
  
-@@ -391,6 +433,9 @@ static void place_entity(struct io_service_tree *st, struct io_entity *entity,
- 		vdisktime = st->min_vdisktime;
+ retry:
+-	iog = elv_io_get_io_group(q, 0);
++	iog = elv_io_get_io_group(q, 1);
  
- 	entity->vdisktime = max_vdisktime(st->min_vdisktime, vdisktime);
-+	elv_log_entity(entity, "place_entity: vdisktime=%llu"
-+			" min_vdisktime=%llu", entity->vdisktime,
-+			st->min_vdisktime);
- }
+ 	cic = cfq_cic_lookup(cfqd, ioc);
+ 	/* cic always exists here */
+@@ -1385,7 +1439,7 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
+ 	const int ioprio_class = task_ioprio_class(ioc);
+ 	struct cfq_queue *async_cfqq = NULL;
+ 	struct cfq_queue *cfqq = NULL;
+-	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 0);
++	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 1);
  
- static inline void io_entity_update_prio(struct io_entity *entity)
+ 	if (!is_sync) {
+ 		async_cfqq = elv_io_group_async_queue_prio(iog, ioprio_class,
+@@ -1540,7 +1594,10 @@ out:
+ 	smp_read_barrier_depends();
+ 	if (unlikely(ioc->ioprio_changed))
+ 		cfq_ioc_set_ioprio(ioc);
+-
++#ifdef CONFIG_IOSCHED_CFQ_HIER
++	if (unlikely(ioc->cgroup_changed))
++		cfq_ioc_set_cgroup(ioc);
++#endif
+ 	return cic;
+ err_free:
+ 	cfq_cic_free(cic);
+diff --git a/init/Kconfig b/init/Kconfig
+index 29f701d..afcaa86 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -613,7 +613,7 @@ config CGROUP_MEM_RES_CTLR_SWAP
+ 	  size is 4096bytes, 512k per 1Gbytes of swap.
+ 
+ config GROUP_IOSCHED
+-	bool "Group IO Scheduler"
++	bool
+ 	depends on CGROUPS && ELV_FAIR_QUEUING
+ 	default n
+ 	---help---
 -- 
 1.6.0.6
