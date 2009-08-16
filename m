@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 09/24] io-controller: Export disk time used and nr sectors
-	dipatched through cgroups
-Date: Sun, 16 Aug 2009 15:30:31 -0400
-Message-ID: <1250451046-9966-10-git-send-email-vgoyal__29045.2458932579$1250452404$gmane$org@redhat.com>
+Subject: [PATCH 12/24] io-controller: Wait for requests to complete from last
+	queue before new queue is scheduled
+Date: Sun, 16 Aug 2009 15:30:34 -0400
+Message-ID: <1250451046-9966-13-git-send-email-vgoyal__6400.26282421804$1250452537$gmane$org@redhat.com>
 References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,166 +22,133 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o This patch exports some statistics through cgroup interface. Two of the
-  statistics currently exported are actual disk time assigned to the cgroup
-  and actual number of sectors dispatched to disk on behalf of this cgroup.
+o Currently one can dispatch requests from multiple queues to the disk. This
+  is true for hardware which supports queuing. So if a disk support queue
+  depth of 31 it is possible that 20 requests are dispatched from queue 1
+  and then next queue is scheduled in which dispatches more requests.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+o This multiple queue dispatch introduces issues for accurate accounting of
+  disk time consumed by a particular queue. For example, if one async queue
+  is scheduled in, it can dispatch 31 requests to the disk and then it will
+  be expired and a new sync queue might get scheduled in. These 31 requests
+  might take a long time to finish but this time is never accounted to the
+  async queue which dispatched these requests.
+
+o This patch introduces the functionality where we wait for all the requests
+  to finish from previous queue before next queue is scheduled in. That way
+  a queue is more accurately accounted for disk time it has consumed. Note
+  this still does not take care of errors introduced by disk write caching.
+
+o Because above behavior can result in reduced throughput, this behavior will
+  be enabled only if user sets "fairness" tunable to 1.
+
+o This patch helps in achieving more isolation between reads and buffered
+  writes in different cgroups. buffered writes typically utilize full queue
+  depth and then expire the queue. On the contarary, sequential reads
+  typicaly driver queue depth of 1. So despite the fact that writes are
+  using more disk time it is never accounted to write queue because we don't
+  wait for requests to finish after dispatching these. This patch helps
+  do more accurate accounting of disk time, especially for buffered writes
+  hence providing better fairness hence better isolation between two cgroups
+  running read and write workloads.
+
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++
- block/elevator-fq.h |   10 +++++++
- 2 files changed, 86 insertions(+), 0 deletions(-)
+ block/cfq-iosched.c |    1 +
+ block/elevator-fq.c |   19 +++++++++++++++++++
+ block/elevator-fq.h |   10 +++++++++-
+ 3 files changed, 29 insertions(+), 1 deletions(-)
 
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 11ae473..52c4710 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -2123,6 +2123,7 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	ELV_ATTR(slice_async),
+ #ifdef CONFIG_GROUP_IOSCHED
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(fairness),
+ #endif
+ 	__ATTR_NULL
+ };
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 8d91ff7..de13d30 100644
+index 09377d0..b1b7dc8 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -13,6 +13,7 @@
+@@ -677,6 +677,8 @@ SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
+ EXPORT_SYMBOL(elv_slice_sync_show);
+ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+ EXPORT_SYMBOL(elv_slice_async_show);
++SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
++EXPORT_SYMBOL(elv_fairness_show);
+ #undef SHOW_FUNCTION
  
- #include <linux/blkdev.h>
- #include <linux/blktrace_api.h>
-+#include <linux/seq_file.h>
- #include "elevator-fq.h"
- 
- const int elv_slice_sync = HZ / 10;
-@@ -257,6 +258,8 @@ entity_served(struct io_entity *entity, unsigned long served,
- 	for_each_entity(entity) {
- 		entity->vdisktime += elv_delta_fair(served, entity);
- 		update_min_vdisktime(entity->st);
-+		entity->total_time += served;
-+		entity->total_sectors += nr_sectors;
- 	}
- }
- 
-@@ -850,6 +853,66 @@ STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
- STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
+ #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+@@ -701,6 +703,8 @@ STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_sync_store);
+ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
++STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
++EXPORT_SYMBOL(elv_fairness_store);
  #undef STORE_FUNCTION
  
-+static int io_cgroup_disk_time_read(struct cgroup *cgroup,
-+				struct cftype *cftype, struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_group *iog;
-+	struct hlist_node *n;
-+
-+	if (!cgroup_lock_live_group(cgroup))
-+		return -ENODEV;
-+
-+	iocg = cgroup_to_io_cgroup(cgroup);
-+
-+	rcu_read_lock();
-+	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
+ void elv_schedule_dispatch(struct request_queue *q)
+@@ -2260,6 +2264,17 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	}
+ 
+ expire:
++	if (efqd->fairness && !force && ioq && ioq->dispatched) {
 +		/*
-+		 * There might be groups which are not functional and
-+		 * waiting to be reclaimed upon cgoup deletion.
++		 * If there are request dispatched from this queue, don't
++		 * dispatch requests from new queue till all the requests from
++		 * this queue have completed.
 +		 */
-+		if (iog->key) {
-+			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
-+					MINOR(iog->dev),
-+					iog->entity.total_time);
-+		}
++		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
++				" disp=%lu", ioq->dispatched);
++		ioq = NULL;
++		goto keep_queue;
 +	}
-+	rcu_read_unlock();
-+	cgroup_unlock();
-+
-+	return 0;
-+}
-+
-+static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
-+				struct cftype *cftype, struct seq_file *m)
-+{
-+	struct io_cgroup *iocg;
-+	struct io_group *iog;
-+	struct hlist_node *n;
-+
-+	if (!cgroup_lock_live_group(cgroup))
-+		return -ENODEV;
-+
-+	iocg = cgroup_to_io_cgroup(cgroup);
-+
-+	rcu_read_lock();
-+	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
-+		/*
-+		 * There might be groups which are not functional and
-+		 * waiting to be reclaimed upon cgoup deletion.
-+		 */
-+		if (iog->key) {
-+			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
-+					MINOR(iog->dev),
-+					iog->entity.total_sectors);
-+		}
-+	}
-+	rcu_read_unlock();
-+	cgroup_unlock();
-+
-+	return 0;
-+}
-+
- struct cftype io_files[] = {
- 	{
- 		.name = "weight",
-@@ -861,6 +924,14 @@ struct cftype io_files[] = {
- 		.read_u64 = io_cgroup_ioprio_class_read,
- 		.write_u64 = io_cgroup_ioprio_class_write,
- 	},
-+	{
-+		.name = "disk_time",
-+		.read_seq_string = io_cgroup_disk_time_read,
-+	},
-+	{
-+		.name = "disk_sectors",
-+		.read_seq_string = io_cgroup_disk_sectors_read,
-+	},
- };
+ 	elv_slice_expired(q);
+ new_queue:
+ 	ioq = elv_set_active_ioq(q, new_ioq);
+@@ -2375,6 +2390,10 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 				goto done;
+ 			}
  
- static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-@@ -952,6 +1023,8 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 	struct io_cgroup *iocg;
- 	struct io_group *iog, *leaf = NULL, *prev = NULL;
- 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
-+	unsigned int major, minor;
-+	struct backing_dev_info *bdi = &q->backing_dev_info;
- 
- 	for (; cgroup != NULL; cgroup = cgroup->parent) {
- 		iocg = cgroup_to_io_cgroup(cgroup);
-@@ -972,6 +1045,9 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 
- 		iog->iocg_id = css_id(&iocg->css);
- 
-+		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
-+		iog->dev = MKDEV(major, minor);
++			/* Wait for requests to finish from this queue */
++			if (efqd->fairness && ioq->dispatched)
++				goto done;
 +
- 		io_group_init_entity(iocg, iog);
- 
- 		atomic_set(&iog->ref, 0);
+ 			/* Expire the queue */
+ 			elv_slice_expired(q);
+ 			goto done;
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 671f366..e1d5bdd 100644
+index 5f2cb8b..9b9ebf4 100644
 --- a/block/elevator-fq.h
 +++ b/block/elevator-fq.h
-@@ -52,6 +52,13 @@ struct io_entity {
+@@ -179,6 +179,12 @@ struct elv_fq_data {
  
- 	unsigned short ioprio, ioprio_class;
- 	int ioprio_changed;
+ 	/* Fallback dummy ioq for extreme OOM conditions */
+ 	struct io_queue oom_ioq;
 +
 +	/*
-+	 * Keep track of total service received by this entity. Keep the
-+	 * stats both for time slices and number of sectors dispatched
++	 * If set to 1, waits for all request completions from current
++	 * queue before new queue is scheduled in
 +	 */
-+	unsigned long total_time;
-+	unsigned long total_sectors;
++	unsigned int fairness;
  };
  
- /*
-@@ -103,6 +110,9 @@ struct io_group {
- 	struct io_queue *async_idle_queue;
- 	void *key;
- 	struct rcu_head rcu_head;
-+
-+	/* The device MKDEV(major, minor), this group has been created for */
-+	dev_t	dev;
- };
- 
- struct io_cgroup {
+ /* Logging facilities. */
+@@ -436,7 +442,9 @@ extern ssize_t elv_slice_sync_store(struct elevator_queue *q, const char *name,
+ extern ssize_t elv_slice_async_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_slice_async_store(struct elevator_queue *q, const char *name,
+ 						size_t count);
+-
++extern ssize_t elv_fairness_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_fairness_store(struct elevator_queue *q, const char *name,
++					size_t count);
+ /* Functions used by elevator.c */
+ extern struct elv_fq_data *elv_alloc_fq_data(struct request_queue *q,
+ 					struct elevator_queue *e);
 -- 
 1.6.0.6
