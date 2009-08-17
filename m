@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][PATCH] user-cr: Extract kernel headers
-Date: Mon, 17 Aug 2009 17:00:35 -0400
-Message-ID: <4A89C4F3.1090306@librato.com>
-References: <20090817152403.GA11415@count0.beaverton.ibm.com>
-	<20090817163356.GB11415@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 2/3] c/r: add checkpoint/restore methods to struct
+	proto_ops
+Date: Mon, 17 Aug 2009 17:07:13 -0400
+Message-ID: <4A89C681.7030307@librato.com>
+References: <1250539931-12951-1-git-send-email-orenl@librato.com>	<1250539931-12951-3-git-send-email-orenl@librato.com>
+	<87r5va5g1g.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090817163356.GB11415-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <87r5va5g1g.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +19,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Matt Helsley wrote:
-> On Mon, Aug 17, 2009 at 08:24:03AM -0700, Matt Helsley wrote:
->> Using kernel headers directly from userspace is strongly discouraged.
->> This patch attempts to sanitize kernel headers for userspace by
->> extracting non-__KERNEL__ portions of the various checkpoint headers
->> and placing them in a similar organization of userspace headers.
->>
->> The script is run from the top level of the user-cr source tree like:
->>
->> 	./scripts/extract-headers.sh -s <path-to-kern-source> -o ./include
->>
->>
->> The patch includes a copy of the auto-generated headers and adjusts
->> the user-cr programs to use them.
->>
->> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>
->> TODO: Builds on i386. Probably needs more testing, especially on
->> 	other non-i386, non-32-bit platforms.
+Dan Smith wrote:
+> OL> -	if ((h->sock.type != SOCK_DGRAM) && (h->sock.type != SOCK_STREAM)) {
+> OL> -		ckpt_debug("Socket type %i not supported", h->sock.type);
+> OL> +	if (h->sock.type & ~SOCK_TYPE_MASK)
+> OL>  		return ERR_PTR(-EINVAL);
+> OL> -	}
 > 
-> Argh. Still one build problem that the script doesn't resolve. From the
-> kernel headers:
-> 
-> #include <linux/socket.h>
-> #include <linux/un.h>
-> 
-> I think these need to be changed to use sys/ instead of linux/ but I
-> can't see a good way to do this without hardcoding it into the script
-> or replacing _all_ "linux/" includes with "sys/" (but I haven't checked
-> if that will work much less if it's a good solution..). Would be nice
-> to know if anyone has preferences or knows kernel/user header conventions
-> I don't....
+> The idea here was to prevent a rewritten checkpoint stream from
+> causing us to call sock_create() with a type that we don't support.
+> Checking the mask may be functionally equivalent right now, but may
+> open the door for an interesting failure later, no?
 
-I don't either .. but - I'd guess that s;linux/;sys/; should work ?
-(you probably mean the ones in include/linux/checkpoint_hdr.h...)
+I figured that if we called a sock_create() for a type that isn't
+supported by checkpoint/restart, we will catch it down the code by
+testing sock->ops->restore. That way, I don't need to "teach"
+sock_file_restore() about socket types and protocols.
+
+> 
+> OL>  static const struct proto_ops unix_seqpacket_ops = {
+> OL> @@ -565,6 +569,8 @@ static const struct proto_ops unix_seqpacket_ops = {
+> OL>  	.recvmsg =	unix_dgram_recvmsg,
+> OL>  	.mmap =		sock_no_mmap,
+> OL>  	.sendpage =	sock_no_sendpage,
+> OL> +	.checkpoint =	sock_unix_checkpoint,
+> OL> +	.restore =	sock_unix_restore,
+> OL>  };
+> 
+> Have you tested SEQPACKET?  I haven't.
+
+Hehe ... I guess I'm too eager :)
+
+Do you see any reason why it should work ?  The only difference (for
+afunix) between dgram and seqpacket is the requirement that the socket
+be connected - see unix_seqpacket_sendmsg().
+
+> 
+> Other than that, it looks fine to me and fails the same set of tests
+> that the current tree does.
+> 
+
+Thanks,
 
 Oren.
