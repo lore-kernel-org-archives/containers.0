@@ -1,8 +1,8 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 6/8] Lets ss->can_attach and ss->attach do whole threadgroups
-	at a time
-Date: Tue, 18 Aug 2009 16:58:38 -0700
-Message-ID: <20090818235837.22531.86001.stgit@menage.mtv.corp.google.com>
+Subject: [PATCH 7/8] Adds functionality to read/write lock CLONE_THREAD
+	fork()ing per-threadgroup
+Date: Tue, 18 Aug 2009 16:58:43 -0700
+Message-ID: <20090818235843.22531.57310.stgit@menage.mtv.corp.google.com>
 References: <20090818235059.22531.42618.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,365 +25,276 @@ List-Id: containers.vger.kernel.org
 From: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 
-Lets ss->can_attach and ss->attach do whole threadgroups at a time
+Adds functionality to read/write lock CLONE_THREAD fork()ing per-threadgroup
 
-This patch alters the ss->can_attach and ss->attach functions to be able to
-deal with a whole threadgroup at a time, for use in cgroup_attach_proc. (This
-is a pre-patch to cgroup-procs-writable.patch.)
-
-Currently, new mode of the attach function can only tell the subsystem about
-the old cgroup of the threadgroup leader. No subsystem currently needs that
-information for each thread that's being moved, but if one were to be added
-(for example, one that counts tasks within a group) this bit would need to be
-reworked a bit to tell the subsystem the right information.
+This patch adds an rwsem that lives in a threadgroup's sighand_struct (next to
+the sighand's atomic count, to piggyback on its cacheline), and two functions
+in kernel/cgroup.c (for now) for easily+safely obtaining and releasing it. If
+another part of the kernel later wants to use such a locking mechanism, the
+CONFIG_CGROUPS ifdefs should be changed to a higher-up flag that CGROUPS and
+the other system would both depend on, and the lock/unlock functions could be
+moved to sched.c or so.
 
 Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
 
- Documentation/cgroups/cgroups.txt |   12 +++++--
- include/linux/cgroup.h            |    7 ++--
- kernel/cgroup.c                   |    4 +-
- kernel/cgroup_freezer.c           |   15 ++++++++
- kernel/cpuset.c                   |   66 +++++++++++++++++++++++++++++--------
- kernel/ns_cgroup.c                |   16 ++++++++-
- kernel/sched.c                    |   35 ++++++++++++++++++--
- mm/memcontrol.c                   |    3 +-
- security/device_cgroup.c          |    3 +-
- 9 files changed, 131 insertions(+), 30 deletions(-)
+ include/linux/cgroup.h    |   14 +++++--
+ include/linux/init_task.h |    9 +++++
+ include/linux/sched.h     |   15 ++++++++
+ kernel/cgroup.c           |   87 ++++++++++++++++++++++++++++++++++++++++++++-
+ kernel/fork.c             |    9 +++--
+ 5 files changed, 125 insertions(+), 9 deletions(-)
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 4bccfc1..455d4e6 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -521,7 +521,7 @@ rmdir() will fail with it. From this behavior, pre_destroy() can be
- called multiple times against a cgroup.
- 
- int can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--	       struct task_struct *task)
-+	       struct task_struct *task, bool threadgroup)
- (cgroup_mutex held by caller)
- 
- Called prior to moving a task into a cgroup; if the subsystem
-@@ -529,14 +529,20 @@ returns an error, this will abort the attach operation.  If a NULL
- task is passed, then a successful result indicates that *any*
- unspecified task can be moved into the cgroup. Note that this isn't
- called on a fork. If this method returns 0 (success) then this should
--remain valid while the caller holds cgroup_mutex.
-+remain valid while the caller holds cgroup_mutex. If threadgroup is
-+true, then a successful result indicates that all threads in the given
-+thread's threadgroup can be moved together.
- 
- void attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--	    struct cgroup *old_cgrp, struct task_struct *task)
-+	    struct cgroup *old_cgrp, struct task_struct *task,
-+	    bool threadgroup)
- (cgroup_mutex held by caller)
- 
- Called after the task has been attached to the cgroup, to allow any
- post-attachment activity that requires memory allocations or blocking.
-+If threadgroup is true, the subsystem should take care of all threads
-+in the specified thread's threadgroup. Currently does not support any
-+subsystem that might need the old_cgrp for every thread in the group.
- 
- void fork(struct cgroup_subsy *ss, struct task_struct *task)
- 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 3ac78a2..b62bb92 100644
+index b62bb92..642a47f 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -425,10 +425,11 @@ struct cgroup_subsys {
- 						  struct cgroup *cgrp);
- 	int (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
- 	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
--	int (*can_attach)(struct cgroup_subsys *ss,
--			  struct cgroup *cgrp, struct task_struct *tsk);
-+	int (*can_attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
-+			  struct task_struct *tsk, bool threadgroup);
- 	void (*attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
--			struct cgroup *old_cgrp, struct task_struct *tsk);
-+			struct cgroup *old_cgrp, struct task_struct *tsk,
-+			bool threadgroup);
- 	void (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
- 	void (*exit)(struct cgroup_subsys *ss, struct task_struct *task);
- 	int (*populate)(struct cgroup_subsys *ss,
+@@ -30,10 +30,12 @@ extern int cgroup_init(void);
+ extern void cgroup_lock(void);
+ extern bool cgroup_lock_live_group(struct cgroup *cgrp);
+ extern void cgroup_unlock(void);
+-extern void cgroup_fork(struct task_struct *p);
++extern void cgroup_fork(struct task_struct *p, unsigned long clone_flags);
+ extern void cgroup_fork_callbacks(struct task_struct *p);
+-extern void cgroup_post_fork(struct task_struct *p);
++extern void cgroup_post_fork(struct task_struct *p, unsigned long clone_flags);
+ extern void cgroup_exit(struct task_struct *p, int run_callbacks);
++extern void cgroup_fork_failed(struct task_struct *p, int run_callbacks,
++			       unsigned long clone_flags);
+ extern int cgroupstats_build(struct cgroupstats *stats,
+ 				struct dentry *dentry);
+ 
+@@ -568,10 +570,14 @@ unsigned short css_depth(struct cgroup_subsys_state *css);
+ 
+ static inline int cgroup_init_early(void) { return 0; }
+ static inline int cgroup_init(void) { return 0; }
+-static inline void cgroup_fork(struct task_struct *p) {}
++static inline void cgroup_fork(struct task_struct *p,
++			       unsigned long clone_flags) {}
+ static inline void cgroup_fork_callbacks(struct task_struct *p) {}
+-static inline void cgroup_post_fork(struct task_struct *p) {}
++static inline void cgroup_post_fork(struct task_struct *p,
++				    unsigned long clone_flags) {}
+ static inline void cgroup_exit(struct task_struct *p, int callbacks) {}
++static inline void cgroup_fork_failed(struct task_struct *p, int callbacks,
++				      unsigned long clone_flags) {}
+ 
+ static inline void cgroup_lock(void) {}
+ static inline void cgroup_unlock(void) {}
+diff --git a/include/linux/init_task.h b/include/linux/init_task.h
+index 20cbdd2..42da017 100644
+--- a/include/linux/init_task.h
++++ b/include/linux/init_task.h
+@@ -41,7 +41,16 @@ extern struct nsproxy init_nsproxy;
+ 	INIT_IPC_NS(ipc_ns)						\
+ }
+ 
++#ifdef CONFIG_CGROUPS
++# define INIT_THREADGROUP_FORK_LOCK(sighand)				\
++	.threadgroup_fork_lock = 					\
++		__RWSEM_INITIALIZER(sighand.threadgroup_fork_lock),
++#else
++# define INIT_THREADGROUP_FORK_LOCK(sighand)
++#endif
++
+ #define INIT_SIGHAND(sighand) {						\
++	INIT_THREADGROUP_FORK_LOCK(sighand)				\
+ 	.count		= ATOMIC_INIT(1), 				\
+ 	.action		= { { { .sa_handler = NULL, } }, },		\
+ 	.siglock	= __SPIN_LOCK_UNLOCKED(sighand.siglock),	\
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index e6aa408..f3d5275 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -479,6 +479,21 @@ extern int get_dumpable(struct mm_struct *mm);
+ #define MMF_INIT_MASK		(MMF_DUMPABLE_MASK | MMF_DUMP_FILTER_MASK)
+ 
+ struct sighand_struct {
++#ifdef CONFIG_CGROUPS
++	/*
++	 * The threadgroup_fork_lock is used to prevent any threads in a
++	 * threadgroup from forking with CLONE_THREAD while held for writing,
++	 * used for threadgroup-wide operations that are fork-sensitive. It
++	 * lives here next to sighand.count as a cacheline optimization.
++	 *
++	 * TODO: if anybody besides cgroups uses this lock, change the
++	 * CONFIG_CGROUPS to a higher-up CONFIG_* that the other user and
++	 * cgroups would both depend upon. Also, they'll want to move where
++	 * the readlock happens - it currently lives in kernel/cgroup.c in
++	 * cgroup_{fork,post_fork,fork_failed}().
++	 */
++	struct rw_semaphore	threadgroup_fork_lock;
++#endif
+ 	atomic_t		count;
+ 	struct k_sigaction	action[_NSIG];
+ 	spinlock_t		siglock;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 9f9e154..fb3ba27 100644
+index fb3ba27..d49488f 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1552,7 +1552,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->can_attach) {
--			retval = ss->can_attach(ss, cgrp, tsk);
-+			retval = ss->can_attach(ss, cgrp, tsk, false);
- 			if (retval)
- 				return retval;
- 		}
-@@ -1590,7 +1590,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->attach)
--			ss->attach(ss, cgrp, oldcgrp, tsk);
-+			ss->attach(ss, cgrp, oldcgrp, tsk, false);
- 	}
- 	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
- 	synchronize_rcu();
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index fb249e2..59e9ef6 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -159,7 +159,7 @@ static bool is_task_frozen_enough(struct task_struct *task)
-  */
- static int freezer_can_attach(struct cgroup_subsys *ss,
- 			      struct cgroup *new_cgroup,
--			      struct task_struct *task)
-+			      struct task_struct *task, bool threadgroup)
- {
- 	struct freezer *freezer;
- 
-@@ -177,6 +177,19 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
- 	if (freezer->state == CGROUP_FROZEN)
- 		return -EBUSY;
- 
-+	if (threadgroup) {
-+		struct task_struct *c;
-+
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
-+			if (is_task_frozen_enough(c)) {
-+				rcu_read_unlock();
-+				return -EBUSY;
-+			}
-+		}
-+		rcu_read_unlock();
-+	}
-+
- 	return 0;
+@@ -1529,6 +1529,65 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
  }
  
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 7e75a41..b5cb469 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1324,9 +1324,10 @@ static int fmeter_getrate(struct fmeter *fmp)
- static cpumask_var_t cpus_attach;
- 
- /* Called by cgroups to determine if a cpuset is usable; cgroup_mutex held */
--static int cpuset_can_attach(struct cgroup_subsys *ss,
--			     struct cgroup *cont, struct task_struct *tsk)
-+static int cpuset_can_attach(struct cgroup_subsys *ss, struct cgroup *cont,
-+			     struct task_struct *tsk, bool threadgroup)
- {
-+	int ret;
- 	struct cpuset *cs = cgroup_cs(cont);
- 
- 	if (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed))
-@@ -1343,18 +1344,51 @@ static int cpuset_can_attach(struct cgroup_subsys *ss,
- 	if (tsk->flags & PF_THREAD_BOUND)
- 		return -EINVAL;
- 
--	return security_task_setscheduler(tsk, 0, NULL);
-+	ret = security_task_setscheduler(tsk, 0, NULL);
-+	if (ret)
-+		return ret;
-+	if (threadgroup) {
-+		struct task_struct *c;
+ /**
++ * threadgroup_fork_lock - block all CLONE_THREAD forks in the threadgroup
++ * @tsk: the task whose threadgroup should be locked
++ *
++ * Takes the threadgroup_lock_mutex in the threadgroup's sighand_struct, by
++ * means of searching the threadgroup list for a live thread in the group.
++ * Returns the sighand_struct that should be given to threadgroup_fork_unlock,
++ * or NULL if all threads in the group are exiting and have cleared their
++ * sighand pointers.
++ */
++struct sighand_struct *threadgroup_fork_lock(struct task_struct *tsk)
++{
++	struct sighand_struct *sighand;
++	struct task_struct *p;
 +
++	/* tasklist lock protects sighand_struct's disappearance in exit(). */
++	read_lock(&tasklist_lock);
++	if (likely(tsk->sighand)) {
++		/* simple case - check the thread we were given first */
++		sighand = tsk->sighand;
++	} else {
++		sighand = NULL;
++		/*
++		 * tsk is exiting; try to find another thread in the group
++		 * whose sighand pointer is still alive.
++		 */
 +		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			ret = security_task_setscheduler(c, 0, NULL);
-+			if (ret) {
-+				rcu_read_unlock();
-+				return ret;
++		list_for_each_entry_rcu(p, &tsk->thread_group, thread_group) {
++			if (p->sighand) {
++				sighand = tsk->sighand;
++				break;
 +			}
 +		}
 +		rcu_read_unlock();
 +	}
-+	return 0;
++	/* prevent sighand from vanishing before we let go of tasklist_lock */
++	if (likely(sighand))
++		atomic_inc(&sighand->count);
++
++	/* done searching. */
++	read_unlock(&tasklist_lock);
++
++	if (likely(sighand))
++		down_write(&sighand->threadgroup_fork_lock);
++	return sighand;
 +}
 +
-+static void cpuset_attach_task(struct task_struct *tsk, nodemask_t *to,
-+			       struct cpuset *cs)
++/**
++ * threadgroup_fork_lock - let threadgroup resume CLONE_THREAD forks.
++ * @sighand: the threadgroup's sighand that threadgroup_fork_lock gave back
++ *
++ * Lets go of the threadgroup_fork_lock, and drops the sighand reference.
++ */
++void threadgroup_fork_unlock(struct sighand_struct *sighand)
 +{
-+	int err;
-+	/*
-+	 * can_attach beforehand should guarantee that this doesn't fail.
-+	 * TODO: have a better way to handle failure here
-+	 */
-+	err = set_cpus_allowed_ptr(tsk, cpus_attach);
-+	WARN_ON_ONCE(err);
++	up_write(&sighand->threadgroup_fork_lock);
++	__cleanup_sighand(sighand);
++}
 +
-+	task_lock(tsk);
-+	cpuset_change_task_nodemask(tsk, to);
-+	task_unlock(tsk);
-+	cpuset_update_task_spread_flag(cs, tsk);
-+
++/**
+  * cgroup_attach_task - attach task 'tsk' to cgroup 'cgrp'
+  * @cgrp: the cgroup the task is attaching to
+  * @tsk: the task to be attached
+@@ -3421,8 +3480,10 @@ static struct file_operations proc_cgroupstats_operations = {
+  * At the point that cgroup_fork() is called, 'current' is the parent
+  * task, and the passed argument 'child' points to the child task.
+  */
+-void cgroup_fork(struct task_struct *child)
++void cgroup_fork(struct task_struct *child, unsigned long clone_flags)
+ {
++	if (clone_flags & CLONE_THREAD)
++		down_read(&current->sighand->threadgroup_fork_lock);
+ 	task_lock(current);
+ 	child->cgroups = current->cgroups;
+ 	get_css_set(child->cgroups);
+@@ -3459,7 +3520,7 @@ void cgroup_fork_callbacks(struct task_struct *child)
+  * with the first call to cgroup_iter_start() - to guarantee that the
+  * new task ends up on its list.
+  */
+-void cgroup_post_fork(struct task_struct *child)
++void cgroup_post_fork(struct task_struct *child, unsigned long clone_flags)
+ {
+ 	if (use_task_css_set_links) {
+ 		write_lock(&css_set_lock);
+@@ -3469,6 +3530,8 @@ void cgroup_post_fork(struct task_struct *child)
+ 		task_unlock(child);
+ 		write_unlock(&css_set_lock);
+ 	}
++	if (clone_flags & CLONE_THREAD)
++		up_read(&current->sighand->threadgroup_fork_lock);
+ }
+ /**
+  * cgroup_exit - detach cgroup from exiting task
+@@ -3540,6 +3603,26 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
  }
  
--static void cpuset_attach(struct cgroup_subsys *ss,
--			  struct cgroup *cont, struct cgroup *oldcont,
--			  struct task_struct *tsk)
-+static void cpuset_attach(struct cgroup_subsys *ss, struct cgroup *cont,
-+			  struct cgroup *oldcont, struct task_struct *tsk,
-+			  bool threadgroup)
- {
- 	nodemask_t from, to;
- 	struct mm_struct *mm;
- 	struct cpuset *cs = cgroup_cs(cont);
- 	struct cpuset *oldcs = cgroup_cs(oldcont);
--	int err;
- 
- 	if (cs == &top_cpuset) {
- 		cpumask_copy(cpus_attach, cpu_possible_mask);
-@@ -1363,15 +1397,19 @@ static void cpuset_attach(struct cgroup_subsys *ss,
- 		guarantee_online_cpus(cs, cpus_attach);
- 		guarantee_online_mems(cs, &to);
- 	}
--	err = set_cpus_allowed_ptr(tsk, cpus_attach);
--	if (err)
--		return;
- 
--	task_lock(tsk);
--	cpuset_change_task_nodemask(tsk, &to);
--	task_unlock(tsk);
--	cpuset_update_task_spread_flag(cs, tsk);
-+	/* do per-task migration stuff possibly for each in the threadgroup */
-+	cpuset_attach_task(tsk, &to, cs);
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			cpuset_attach_task(c, &to, cs);
-+		}
-+		rcu_read_unlock();
-+	}
- 
-+	/* change mm; only needs to be done once even if threadgroup */
- 	from = oldcs->mems_allowed;
- 	to = cs->mems_allowed;
- 	mm = get_task_mm(tsk);
-diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
-index 5aa854f..2a5dfec 100644
---- a/kernel/ns_cgroup.c
-+++ b/kernel/ns_cgroup.c
-@@ -42,8 +42,8 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
-  *       (hence either you are in the same cgroup as task, or in an
-  *        ancestor cgroup thereof)
-  */
--static int ns_can_attach(struct cgroup_subsys *ss,
--		struct cgroup *new_cgroup, struct task_struct *task)
-+static int ns_can_attach(struct cgroup_subsys *ss, struct cgroup *new_cgroup,
-+			 struct task_struct *task, bool threadgroup)
- {
- 	if (current != task) {
- 		if (!capable(CAP_SYS_ADMIN))
-@@ -56,6 +56,18 @@ static int ns_can_attach(struct cgroup_subsys *ss,
- 	if (!cgroup_is_descendant(new_cgroup, task))
- 		return -EPERM;
- 
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
-+			if (!cgroup_is_descendant(new_cgroup, c)) {
-+				rcu_read_unlock();
-+				return -EPERM;
-+			}
-+		}
-+		rcu_read_unlock();
-+	}
+ /**
++ * cgroup_fork_failed - undo operations for fork failure
++ * @tsk: pointer to  task_struct of exiting process
++ * @run_callback: run exit callbacks?
++ *
++ * Description: Undo cgroup operations after cgroup_fork in fork failure.
++ *
++ * We release the read lock that was taken in cgroup_fork(), since it is
++ * supposed to be dropped in cgroup_post_fork in the success case. The other
++ * thing that wants to be done is detaching the failed child task from the
++ * cgroup, so we wrap cgroup_exit.
++ */
++void cgroup_fork_failed(struct task_struct *tsk, int run_callbacks,
++			unsigned long clone_flags)
++{
++	if (clone_flags & CLONE_THREAD)
++		up_read(&current->sighand->threadgroup_fork_lock);
++	cgroup_exit(tsk, run_callbacks);
++}
 +
++/**
+  * cgroup_clone - clone the cgroup the given subsystem is attached to
+  * @tsk: the task to be moved
+  * @subsys: the given subsystem
+diff --git a/kernel/fork.c b/kernel/fork.c
+index a010918..0db5289 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -806,6 +806,9 @@ static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
+ 		return -ENOMEM;
+ 	atomic_set(&sig->count, 1);
+ 	memcpy(sig->action, current->sighand->action, sizeof(sig->action));
++#ifdef CONFIG_CGROUPS
++	init_rwsem(&sig->threadgroup_fork_lock);
++#endif
  	return 0;
  }
  
-diff --git a/kernel/sched.c b/kernel/sched.c
-index a2f8788..b7e3541 100644
---- a/kernel/sched.c
-+++ b/kernel/sched.c
-@@ -10336,8 +10336,7 @@ cpu_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
- }
+@@ -1097,7 +1100,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	monotonic_to_bootbased(&p->real_start_time);
+ 	p->io_context = NULL;
+ 	p->audit_context = NULL;
+-	cgroup_fork(p);
++	cgroup_fork(p, clone_flags);
+ #ifdef CONFIG_NUMA
+ 	p->mempolicy = mpol_dup(p->mempolicy);
+  	if (IS_ERR(p->mempolicy)) {
+@@ -1315,7 +1318,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	spin_unlock(&current->sighand->siglock);
+ 	write_unlock_irq(&tasklist_lock);
+ 	proc_fork_connector(p);
+-	cgroup_post_fork(p);
++	cgroup_post_fork(p, clone_flags);
+ 	perf_counter_fork(p);
+ 	return p;
  
- static int
--cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--		      struct task_struct *tsk)
-+cpu_cgroup_can_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- {
- #ifdef CONFIG_RT_GROUP_SCHED
- 	if (!sched_rt_can_attach(cgroup_tg(cgrp), tsk))
-@@ -10347,15 +10346,45 @@ cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 	if (tsk->sched_class != &fair_sched_class)
- 		return -EINVAL;
+@@ -1347,7 +1350,7 @@ bad_fork_cleanup_policy:
+ 	mpol_put(p->mempolicy);
+ bad_fork_cleanup_cgroup:
  #endif
-+	return 0;
-+}
- 
-+static int
-+cpu_cgroup_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
-+		      struct task_struct *tsk, bool threadgroup)
-+{
-+	int retval = cpu_cgroup_can_attach_task(cgrp, tsk);
-+	if (retval)
-+		return retval;
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			retval = cpu_cgroup_can_attach_task(cgrp, c);
-+			if (retval) {
-+				rcu_read_unlock();
-+				return retval;
-+			}
-+		}
-+		rcu_read_unlock();
-+	}
- 	return 0;
- }
- 
- static void
- cpu_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
--			struct cgroup *old_cont, struct task_struct *tsk)
-+		  struct cgroup *old_cont, struct task_struct *tsk
-+		  bool threadgroup)
- {
- 	sched_move_task(tsk);
-+	if (threadgroup) {
-+		struct task_struct *c;
-+		rcu_read_lock();
-+		list_for_each_entry_rcu(c, &tsk->thread_group, thread_group) {
-+			sched_move_task(c);
-+		}
-+		rcu_read_unlock();
-+	}
- }
- 
- #ifdef CONFIG_FAIR_GROUP_SCHED
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 4f51885..53498d1 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -3128,7 +3128,8 @@ static int mem_cgroup_populate(struct cgroup_subsys *ss,
- static void mem_cgroup_move_task(struct cgroup_subsys *ss,
- 				struct cgroup *cont,
- 				struct cgroup *old_cont,
--				struct task_struct *p)
-+				struct task_struct *p,
-+				bool threadgroup)
- {
- 	mutex_lock(&memcg_tasklist);
- 	/*
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index b8186ba..6cf8fd2 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -61,7 +61,8 @@ static inline struct dev_cgroup *task_devcgroup(struct task_struct *task)
- struct cgroup_subsys devices_subsys;
- 
- static int devcgroup_can_attach(struct cgroup_subsys *ss,
--		struct cgroup *new_cgroup, struct task_struct *task)
-+		struct cgroup *new_cgroup, struct task_struct *task,
-+		bool threadgroup)
- {
- 	if (current != task && !capable(CAP_SYS_ADMIN))
- 			return -EPERM;
+-	cgroup_exit(p, cgroup_callbacks_done);
++	cgroup_fork_failed(p, cgroup_callbacks_done, clone_flags);
+ 	delayacct_tsk_free(p);
+ 	module_put(task_thread_info(p)->exec_domain->module);
+ bad_fork_cleanup_count:
