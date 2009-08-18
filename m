@@ -1,67 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] Improve debug output from ckpt_notify_error()
-Date: Tue, 18 Aug 2009 15:03:01 -0400
-Message-ID: <4A8AFAE5.6040404@librato.com>
-References: <20090817203423.GA12194@count0.beaverton.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090817203423.GA12194-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Socket C/R additional features
+Date: Tue, 18 Aug 2009 12:57:12 -0700
+Message-ID: <1250625435-16299-1-git-send-email-danms@us.ibm.com>
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: orenl@librato.com
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+This is an updated version of my previous patch set, with the fourth patch
+removed.  This is rebased on current v17-dev and includes Serge's
+recommended changes to may_setgid().
 
-
-Matt Helsley wrote:
->     Make ckpt_debug() report a more useful location than the
->     line of some generic debug/error wrapper.
->     
->     Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Nice, and pushed to ckpt-v17-dev.
-
-Oren.
-
-> 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 3d3d4ed..febc9b7 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -485,13 +485,20 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
->  	return get_active_pid(ctx) == pid;
->  }
->  
-> -static inline void ckpt_notify_error(struct ckpt_ctx *ctx)
-> +static inline void _ckpt_notify_error(struct ckpt_ctx *ctx)
->  {
-> -	ckpt_debug("ctx with root pid %d (%p)", ctx->root_pid, ctx);
->  	ckpt_set_ctx_error(ctx);
->  	complete(&ctx->complete);
->  }
->  
-> +/* Need to call ckpt_debug such that it will get the correct source location */
-> +#define ckpt_notify_error(ctx) \
-> +do { \
-> +	ckpt_debug("ctx with root pid %d (%p)", ctx->root_pid, ctx); \
-> +	_ckpt_notify_error(ctx); \
-> +} while(0)
-> +
-> +
->  int ckpt_activate_next(struct ckpt_ctx *ctx)
->  {
->  	struct task_struct *task;
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
