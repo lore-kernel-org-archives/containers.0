@@ -1,12 +1,14 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: c/r: support for pending signals (v3)
-Date: Wed, 19 Aug 2009 11:12:58 +0200
-Message-ID: <20090819091258.GK19275@hawkmoon.kerlabs.com>
-References: <1250287636-16463-1-git-send-email-orenl@librato.com>
+From: Jerome Marchand <jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 02/24] io-controller: Core of the elevator fair queuing
+Date: Wed, 19 Aug 2009 18:01:34 +0200
+Message-ID: <4A8C21DE.1080001__29559.4658623033$1250697814$gmane$org@redhat.com>
+References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
+	<1250451046-9966-3-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7744266675809428643=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250287636-16463-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1250451046-9966-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,76 +16,58 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Hi Vivek,
 
---===============7744266675809428643==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-12332-1250673142-0001-2"
-Content-Disposition: inline
+Vivek Goyal wrote:
+> o This is core of the io scheduler implemented at elevator layer. This is a mix
+>   of cpu CFS scheduler and CFQ IO scheduler. Some of the bits from CFS have
+>   to be derived so that we can support hierarchical scheduling. Without
+>   cgroups or with-in group, we should essentially get same behavior as CFQ.
+> 
+> o This patch only shows non-hierarchical bits. Hierarhical code comes in later
+>   patches.
+> 
+> o This code is the building base of introducing fair queuing logic in common
+>   elevator layer so that it can be used by all the four IO schedulers.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+> +static void enqueue_io_entity(struct io_entity *entity)
+> +{
+> +	struct io_service_tree *st = entity->st;
+> +	struct io_sched_data *sd = io_entity_sched_data(entity);
+> +
+> +	/* In case task ioprio class changed while entity was off tree */
+> +	io_entity_update_prio(entity);
+> +	st->nr_active++;
+> +	sd->nr_active++;
+> +	entity->on_st = 1;
+> +	place_entity(st, entity, 0);
+> +	__enqueue_io_entity(st, entity);
+> +}
 
---=_bohort-12332-1250673142-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> +static void put_prev_io_entity(struct io_entity *entity)
+> +{
+> +	struct io_service_tree *st = entity->st;
+> +	struct io_sched_data *sd = io_entity_sched_data(entity);
+> +
+> +	st->active_entity = NULL;
+> +	sd->active_entity = NULL;
+> +
+> +	if (unlikely(entity->ioprio_changed)) {
+> +		dequeue_io_entity(entity);
+> +		io_entity_update_prio(entity);
 
-On 14/08/09 18:07 -0400, Oren Laadan wrote:
-> Version 3 of pending signals c/r addresses previous comments.
-> Changes:
->=20
-> - [Louis Rilling] Fix saving of signal->it_real_incr if not expired
-> - Fix restoring of signal->it_real_incr if expire is zero
-> - Save virt/prof expire relative to process accumulated time
->=20
-> Applies on top of ckpt-v17-dev (66cd5c7dd7...)
+That call to io_entity_update_prio() looks redundant with the one in
+enqueue_io_entity().
 
-Hi Oren,
+> +		enqueue_io_entity(entity);
+> +	} else
+> +		__enqueue_io_entity(st, entity);
+> +}
 
-This looks good now. FWIW:
-
-Reviewed-by: Louis Rilling <louis.rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-12332-1250673142-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkqLwhoACgkQVKcRuvQ9Q1QI8wCeOPz77qvio6QBXwnxwLfuNMUW
-KtAAn1dIeM61Bvfd+pnQjamb+HQyN3q1
-=xzVB
------END PGP SIGNATURE-----
-
---=_bohort-12332-1250673142-0001-2--
-
---===============7744266675809428643==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7744266675809428643==--
+Jerome
