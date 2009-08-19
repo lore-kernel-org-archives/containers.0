@@ -1,15 +1,12 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 03/24] io-controller: Common flat fair queuing code in
-	elevaotor layer
-Date: Wed, 19 Aug 2009 11:36:22 +0800
-Message-ID: <4A8B7336.7010800__45715.7703851864$1250658956$gmane$org@cn.fujitsu.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
-	<1250451046-9966-4-git-send-email-vgoyal@redhat.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: c/r: support for pending signals (v3)
+Date: Wed, 19 Aug 2009 11:12:58 +0200
+Message-ID: <20090819091258.GK19275@hawkmoon.kerlabs.com>
+References: <1250287636-16463-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7744266675809428643=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250451046-9966-4-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1250287636-16463-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,48 +14,76 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> +
-> +static void elv_preempt_queue(struct request_queue *q, struct io_queue *ioq)
-> +{
-> +	elv_log_ioq(q->elevator->efqd, ioq, "preempt");
-> +	elv_slice_expired(q);
-> +
-> +	/*
-> +	 * Put the new queue at the front of the of the current list,
-> +	 * so we know that it will be selected next.
-> +	 */
-> +
-> +	requeue_ioq(ioq);
-> +	ioq->slice_start = ioq->slice_end = 0;
+--===============7744266675809428643==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-12332-1250673142-0001-2"
+Content-Disposition: inline
 
-I think this assignment is redundant because these two members will be reset
-when this ioq is scheduled.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- block/elevator-fq.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+--=_bohort-12332-1250673142-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index d04e925..b3c387d 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -2650,7 +2650,6 @@ static void elv_preempt_queue(struct request_queue *q, struct io_queue *ioq)
- 		 */
- 
- 		requeue_ioq(ioq);
--		ioq->slice_start = ioq->slice_end = 0;
- 		elv_mark_ioq_slice_new(ioq);
- 	}
- }
--- 
-1.5.4.rc3
+On 14/08/09 18:07 -0400, Oren Laadan wrote:
+> Version 3 of pending signals c/r addresses previous comments.
+> Changes:
+>=20
+> - [Louis Rilling] Fix saving of signal->it_real_incr if not expired
+> - Fix restoring of signal->it_real_incr if expire is zero
+> - Save virt/prof expire relative to process accumulated time
+>=20
+> Applies on top of ckpt-v17-dev (66cd5c7dd7...)
+
+Hi Oren,
+
+This looks good now. FWIW:
+
+Reviewed-by: Louis Rilling <louis.rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-12332-1250673142-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkqLwhoACgkQVKcRuvQ9Q1QI8wCeOPz77qvio6QBXwnxwLfuNMUW
+KtAAn1dIeM61Bvfd+pnQjamb+HQyN3q1
+=xzVB
+-----END PGP SIGNATURE-----
+
+--=_bohort-12332-1250673142-0001-2--
+
+--===============7744266675809428643==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============7744266675809428643==--
