@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [RFC][PATCH 1/3] c/r: [objhash] add ckpt_obj_reserve()
-Date: Tue, 18 Aug 2009 20:42:27 -0400
-Message-ID: <1250642549-23656-2-git-send-email-orenl@librato.com>
+Subject: [RFC][PATCH 2/3] c/r: [pty 1/2] allow allocation of desired pty slave
+Date: Tue, 18 Aug 2009 20:42:28 -0400
+Message-ID: <1250642549-23656-3-git-send-email-orenl@librato.com>
 References: <1250642549-23656-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,77 +20,141 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Use ckpt_obj_reserve() during checkpoint to reserve an objref that
-will not be otherwise used for any other object in checkpoint. Such an
-objref can be useful for restart to add objects that were not there at
-checkpoint.
+During restart, we need to allocate pty slaves with the same
+identifiers as recorded during checkpoint. Modify the allocation code
+to allow an in-kernel caller to request a specific slave identifier.
 
-One use case for this is ptys (subsequent patches): when restoring a
-master pty, we create a file pointer, which must be kept somewhere and
-later cleaned up. The hash is a good place to store it.
+For this, add a new field to task_struct - 'required_id'. It will
+hold the desired identifier when restoring a (master) pty.
+
+The code in ptmx_open() will use this value only for tasks that try to
+open /dev/ptmx that are restarting (PF_RESTARTING), and if the value
+isn't CKPT_REQUIRED_NONE (-1).
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/objhash.c       |   20 +++++++++++++++++++-
- include/linux/checkpoint.h |    1 +
- 2 files changed, 20 insertions(+), 1 deletions(-)
+ checkpoint/sys.c           |    7 +++++++
+ drivers/char/pty.c         |    9 +++++++--
+ fs/devpts/inode.c          |   10 ++++++++--
+ include/linux/checkpoint.h |    2 ++
+ include/linux/devpts_fs.h  |    2 +-
+ include/linux/sched.h      |    1 +
+ 6 files changed, 26 insertions(+), 5 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index dc0a10a..2ea71bd 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -465,6 +465,11 @@ static struct ckpt_obj *obj_find_by_objref(struct ckpt_ctx *ctx, int objref)
- 	return NULL;
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 525182a..3db18f7 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -339,6 +339,13 @@ SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
+ 	return ret;
  }
  
-+static inline int obj_alloc_objref(struct ckpt_ctx *ctx)
++static int __init checkpoint_init(void)
 +{
-+	return ctx->obj_hash->next_free_objref++;
++	init_task.required_id = CKPT_REQUIRED_NONE;
++	return 0;
 +}
++__initcall(checkpoint_init);
 +
- /**
-  * ckpt_obj_new - add an object to the obj_hash
-  * @ctx: checkpoint context
-@@ -498,7 +503,7 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
  
- 	if (!objref) {
- 		/* use @obj->ptr to index, assign objref (checkpoint) */
--		obj->objref = ctx->obj_hash->next_free_objref++;;
-+		obj->objref = obj_alloc_objref(ctx);
- 		i = hash_long((unsigned long) ptr, CKPT_OBJ_HASH_NBITS);
- 	} else {
- 		/* use @obj->objref to index (restart) */
-@@ -637,6 +642,19 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
- }
+ /* 'ckpt_debug_level' controls the verbosity level of c/r code */
+ #ifdef CONFIG_CHECKPOINT_DEBUG
+diff --git a/drivers/char/pty.c b/drivers/char/pty.c
+index 6e6942c..326c2e9 100644
+--- a/drivers/char/pty.c
++++ b/drivers/char/pty.c
+@@ -633,12 +633,17 @@ static int __ptmx_open(struct inode *inode, struct file *filp)
+ {
+ 	struct tty_struct *tty;
+ 	int retval;
+-	int index;
++	int index = 0;
  
- /**
-+ * ckpt_obj_reserve - reserve an objref
-+ * @ctx: checkpoint context
-+ *
-+ * The reserved objref will not be used for subsequent objects. This
-+ * gives an objref that can be safely used during restart without a
-+ * matching object in checkpoint.  [used during checkpoint].
-+ */
-+int ckpt_obj_reserve(struct ckpt_ctx *ctx)
-+{
-+	return obj_alloc_objref(ctx);
-+}
-+
-+/**
-  * checkpoint_obj - if not already in hash, add object and checkpoint
-  * @ctx: checkpoint context
-  * @ptr: pointer to object
+ 	nonseekable_open(inode, filp);
+ 
++#ifdef CONFIG_CHECKPOINT
++	/* when restarting, request specific index */
++	if (current->flags & PF_RESTARTING)
++		index = (int) current->required_id;
++#endif
+ 	/* find a device that is not in use. */
+-	index = devpts_new_index(inode);
++	index = devpts_new_index(inode, index);
+ 	if (index < 0)
+ 		return index;
+ 
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index 75efb02..8921726 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -433,7 +433,7 @@ static struct file_system_type devpts_fs_type = {
+  * to the System V naming convention
+  */
+ 
+-int devpts_new_index(struct inode *ptmx_inode)
++int devpts_new_index(struct inode *ptmx_inode, int req_idx)
+ {
+ 	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
+ 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+@@ -445,7 +445,8 @@ retry:
+ 		return -ENOMEM;
+ 
+ 	mutex_lock(&allocated_ptys_lock);
+-	ida_ret = ida_get_new(&fsi->allocated_ptys, &index);
++	index = (req_idx >= 0 ? req_idx : 0);
++	ida_ret = ida_get_new_above(&fsi->allocated_ptys, index, &index);
+ 	if (ida_ret < 0) {
+ 		mutex_unlock(&allocated_ptys_lock);
+ 		if (ida_ret == -EAGAIN)
+@@ -453,6 +454,11 @@ retry:
+ 		return -EIO;
+ 	}
+ 
++	if (req_idx >= 0 && index != req_idx) {
++		ida_remove(&fsi->allocated_ptys, index);
++		mutex_unlock(&allocated_ptys_lock);
++		return -EBUSY;
++	}
+ 	if (index >= pty_limit) {
+ 		ida_remove(&fsi->allocated_ptys, index);
+ 		mutex_unlock(&allocated_ptys_lock);
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 761cad5..1d050f8 100644
+index 1d050f8..473164e 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -121,6 +121,7 @@ extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
- 			    enum obj_type type);
- extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
- 			   enum obj_type type);
-+extern int ckpt_obj_reserve(struct ckpt_ctx *ctx);
+@@ -46,6 +46,8 @@
+ #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
+ #define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
  
- extern void ckpt_ctx_get(struct ckpt_ctx *ctx);
- extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
++#define CKPT_REQUIRED_NONE  ((unsigned long) -1L)
++
+ extern void exit_checkpoint(struct task_struct *tsk);
+ 
+ extern int ckpt_kwrite(struct ckpt_ctx *ctx, void *buf, int count);
+diff --git a/include/linux/devpts_fs.h b/include/linux/devpts_fs.h
+index 5ce0e5f..14948ee 100644
+--- a/include/linux/devpts_fs.h
++++ b/include/linux/devpts_fs.h
+@@ -17,7 +17,7 @@
+ 
+ #ifdef CONFIG_UNIX98_PTYS
+ 
+-int devpts_new_index(struct inode *ptmx_inode);
++int devpts_new_index(struct inode *ptmx_inode, int req_idx);
+ void devpts_kill_index(struct inode *ptmx_inode, int idx);
+ /* mknod in devpts */
+ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty);
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 0e67de7..f6f1350 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1481,6 +1481,7 @@ struct task_struct {
+ #endif /* CONFIG_TRACING */
+ #ifdef CONFIG_CHECKPOINT
+ 	struct ckpt_ctx *checkpoint_ctx;
++	unsigned long required_id;
+ #endif
+ };
+ 
 -- 
 1.6.0.4
