@@ -1,11 +1,13 @@
-From: Rita <rita.webmaster-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Web Design & Development /SEO Services
-Date: Thu, 20 Aug 2009 12:25:24 +0530
-Message-ID: <8201225.THGFDWWJ@gmail.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 1/2] Check for valid destructor pointer before calling it.
+Date: Thu, 20 Aug 2009 08:28:21 -0400
+Message-ID: <4A8D4165.4080708@librato.com>
+References: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,52 +17,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dear Sir/Madam,
 
-Are you looking for affordable website designing & development services?
-Or want that your website should generate more traffic with high sales volume?
 
-Look no further, as we have a reliable and experienced team to take care of your web related services like Website designing, development,
-redesigning, CMS, SEO, Online shopping stores, ecommerce solutions, content writing and many other web services.
+Matt Helsley wrote:
+> Not every use of deferqueue will have a destructor function so
+> we need to check it before calling it.
+> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Website Designing & Development Services;
-We are having an experienced team of web designers & developers and we offer 24 hour support to our clients. We are based in New Delhi, India &
-have the advantage of offering high end web solutions in affordable budget.
+Yup.
 
-We specialize in;
-1. Static websites (Html based websites)
-2. Flash based websites & presentations.
-3. Dynamic websites in PHP, ASP & .Net(ASPX).
-4. Database driven websites.
-5. E-commerce Solutions / Online Shopping Websites.
-6. Product Catalogue Websites.
-7. XML /AJAX integrated websites.
-8. Content Management System (CMS)
-9. Websites in DIV/CSS
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Search Engine Optimization (SEO) Services;
-Have you got your website optimized with the latest methodology LSI to get the maximum exposure in the search engines?
-Is your website ranking low in the search engines or has less traffic?
-
-Leave all your worries, because with our "Satisfaction Guarantee" we enable you to get the maximum return for the money that you spent on your
-SEO campaign. We follow Ethical & White Hat SEO techniques to get your website rank high in the Search Engines on industry specific keywords.
-
-Our SEO Package includes;
-1. Analysis & Recommendations.
-2. On-page Optimization.
-3. Off-page Optimization.
-4. Social Media Optimization.
-5. Advanced Optimization.
-
-We also offer custom made packages both for Website Design, Development & SEO services.
-
-We guarantee High Rankings in Search Engines like Google, MSN & Yahoo on the 1st to 10th positions.
-
-Best Regards,
-
-Rita
-
-P.S - This is the email sent by the individual and n0t by a robot. If do not wish to receive further emails, kindly reply back with the subject as Unsubscribe.
+> ---
+>  kernel/deferqueue.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
+> 
+> diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+> index 3fb388b..1204c8b 100644
+> --- a/kernel/deferqueue.c
+> +++ b/kernel/deferqueue.c
+> @@ -53,7 +53,8 @@ void deferqueue_destroy(struct deferqueue_head *h)
+>  
+>  		pr_debug("%s: freeing non-empty queue\n", __func__);
+>  		list_for_each_entry_safe(dq, n, &h->list, list) {
+> -			dq->destructor(dq->data);
+> +			if (dq->destructor)
+> +				dq->destructor(dq->data);
+>  			list_del(&dq->list);
+>  			kfree(dq);
+>  		}
