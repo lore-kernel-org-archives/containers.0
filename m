@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/11] cr_tests: Fix potential double close of pipe
-	descriptors.
-Date: Wed, 19 Aug 2009 21:58:05 -0700
-Message-ID: <f9c5e9db602b732f8c3ddaf52c0b34c14db6a336.1250744013.git.matthltc@us.ibm.com>
+Subject: [PATCH 07/11] cr_tests: Compress more of the error handling code
+	using trap.
+Date: Wed, 19 Aug 2009 21:58:10 -0700
+Message-ID: <0a55d0f0ad3a30a6bc4ecb380e072a2667ef4622.1250744013.git.matthltc@us.ibm.com>
 References: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,65 +22,66 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Don't double-close the pipe. Also there's only one pipe so get rid of
-the plural form of the label :).
-
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 ---
- futex/robust.c |   10 ++++------
- 1 files changed, 4 insertions(+), 6 deletions(-)
+ futex/run.sh |   29 ++++++++++++++++-------------
+ 1 files changed, 16 insertions(+), 13 deletions(-)
 
-diff --git a/futex/robust.c b/futex/robust.c
-index 304c35f..05fd4e9 100644
---- a/futex/robust.c
-+++ b/futex/robust.c
-@@ -347,7 +347,7 @@ int main(int argc, char **argv)
- 			  MAP_ANONYMOUS|MAP_SHARED, -1, 0);
- 	if (test_futex == MAP_FAILED) {
- 		log_error("mmap shared futex");
--		goto exit_pipes;
-+		goto exit_pipe;
- 	}
+diff --git a/futex/run.sh b/futex/run.sh
+index 434a844..5587520 100755
+--- a/futex/run.sh
++++ b/futex/run.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
  
- 	/* Should already be zero but let's be clear about that. */
-@@ -356,7 +356,7 @@ int main(int argc, char **argv)
+-#set -e
++set -e
  
- 	if (set_robust_list(&rlist, sizeof(rlist))) {
- 		log_error("set_robust_list");
--		goto exit_pipes;
-+		goto exit_pipe;
- 	}
- 	check_rlist(0);
+ source ../common.sh
  
-@@ -384,10 +384,9 @@ int main(int argc, char **argv)
- 		log("INFO", "killing %d child tasks.\n", i);
- 		for (; --i > -1;)
- 			kill(kids[i], SIGTERM);
--		goto exit_pipes;
-+		goto exit_pipe;
- 	}
+@@ -80,23 +80,24 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 		echo "BROK: Futex snafu, re-running this test"
+ 		continue
+ 	fi
+-	if [ $retval -ne 0 ]; then
+-		echo FAIL
+-		exit 1
+-	else
+-		echo PASS
+-	fi
++	err_msg="FAIL"
++	[ $retval -eq 0 ]
++	err_msg="BROK"
++	echo PASS
  
--	close(children_ready[1]);
- 	do {
- 		char status;
+ 	# now try restarting
++	err_msg="FAIL"
++	# We need to pass -p to mktree since futexes often store the
++	# pid of the task that owns the futex in the futex, even in
++	# the uncontended cases where the kernel is entirely unaware
++	# of the futex. --copy-status ensures that we trap on error.
+ 	${MKTREE} -p --copy-status < checkpoint-${T}
+ 	retval=$?
++	err_msg="BROK"
+ 	echo "Restart of test ${T} done, returned $retval"
+-	if [ $retval -ne 0 ]; then
+-		echo FAIL
+-		exit 1
+-	else
+-		echo PASS
+-	fi
++	err_msg="FAIL"
++	[ $retval -eq 0 ];
++	echo PASS
+ 	trap '' ERR EXIT
+ 	CURTEST=$((CURTEST+1))
+ done
+@@ -106,3 +107,5 @@ trap '' ERR EXIT
  
-@@ -398,7 +397,6 @@ int main(int argc, char **argv)
- 		else
- 			fail++;
- 	} while (pass + fail < N);
--	close(children_ready[0]);
- 
- 	/* Now that all the children are waiting on the futex, wake one. */
- 	log("INFO", "Parent waking one child\n");
-@@ -408,7 +406,7 @@ int main(int argc, char **argv)
- 	log("INFO", "Parent exiting.\n");
- 	if (pass && !fail)
- 		excode = EXIT_SUCCESS;
--exit_pipes:
-+exit_pipe:
- 	close(children_ready[0]);
- 	close(children_ready[1]);
- exit_logs:
+ # rmdir /cg/1
+ # umount /cg
++
++exit ${failed}
 -- 
 1.5.6.3
