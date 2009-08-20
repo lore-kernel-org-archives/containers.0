@@ -1,15 +1,14 @@
-From: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Subject: Re: [PATCH] dm-ioband-v1.12.3: I/O bandwidth controller
-Date: Thu, 20 Aug 2009 12:37:41 +1000
-Message-ID: <20090820023740.GA12528__32461.0748714351$1250735898$gmane$org@verge.net.au>
-References: <20090731.130333.104034609.ryov@valinux.co.jp>
-	<20090807.103640.104065157.ryov@valinux.co.jp>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 4/8] Use vmalloc for large cgroups pidlist allocations
+Date: Thu, 20 Aug 2009 10:37:36 +0800
+Message-ID: <4A8CB6F0.1020308__39469.8247583166$1250735981$gmane$org@cn.fujitsu.com>
+References: <20090818235059.22531.42618.stgit@menage.mtv.corp.google.com>
+	<20090818235827.22531.60306.stgit@menage.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090807.103640.104065157.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090818235827.22531.60306.stgit-u3IScbYxn0zHt/MElyovVYaSKrA+ACpX0E9HWUfgJXw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Aug 07, 2009 at 10:36:40AM +0900, Ryo Tsuruta wrote:
-> Hi Alasdair,
+Paul Menage wrote:
+> From: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 > 
-> Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> > Hi Alasdair,
-> > 
-> > This is dm-ioband v1.12.3 release that is a minor update to avoid
-> > sparse warnings other than related to the event tracing. (I used
-> > sparse-2009-07-29.)
-> > 
-> > This patch can be applied to the current dm-devel tree and 2.6.31-rc4,
-> > so could you please replace dm-add-ioband.patch in your tree with this?
-> > And I would appreciate it if you would let me know your thoughts about
-> > merging dm-ioband to upstream.
 > 
-> The dm-ioband patch in the dm-devel tree is still older. Could you
-> please update it with the new patch? And could you please let me know
-> your thoughts about dm-ioband?
+> Use vmalloc for large cgroups pidlist allocations
+> 
+> Separates all pidlist allocation requests to a separate function that judges
+> based on the requested size whether or not the array needs to be vmalloced or
+> can be gotten via kmalloc, and similar for kfree/vfree.
+> 
+> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 
 
-Hi Alasdiar,
+Acked-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-I'm wondering if you see any problems with merging dm-ioband at this time.
-I'm eager to address any such concerns.
+> ---
+> 
+>  kernel/cgroup.c |   47 ++++++++++++++++++++++++++++++++++++++++++-----
+>  1 files changed, 42 insertions(+), 5 deletions(-)
+> 
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index d207871..7e2b285 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -50,6 +50,7 @@
+>  #include <linux/smp_lock.h>
+>  #include <linux/pid_namespace.h>
+>  #include <linux/idr.h>
+> +#include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
+>  
+>  #include <asm/atomic.h>
+>  
+> @@ -2351,6 +2352,42 @@ int cgroup_scan_tasks(struct cgroup_scanner *scan)
+>   */
+>  
+>  /*
+> + * The following two functions "fix" the issue where there are more pids
+> + * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
+> + * TODO: replace with a kernel-wide solution to this problem
+> + */
+
+I come to realize the "procs" file will make it much harder to convert
+vmalloc/kmalloc with a different solution..
