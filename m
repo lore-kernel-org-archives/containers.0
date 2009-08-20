@@ -1,8 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 03/11] cr_tests: Always report an exit code that could
-	indicate failure.
-Date: Wed, 19 Aug 2009 21:58:06 -0700
-Message-ID: <76a291414f32bcd5af54b641e0be556868af9cbe.1250744013.git.matthltc@us.ibm.com>
+Subject: [PATCH 10/11] cr_tests: Extend the "INFO" tag to the samples
+Date: Wed, 19 Aug 2009 21:58:13 -0700
+Message-ID: <268af3eef5ce4494dbf0438fa4b4caf6cc865c40.1250744013.git.matthltc@us.ibm.com>
 References: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,59 +21,28 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Restructure the exit paths of the children to always report the exit and
-check the pass/fail variables before exiting.
+When we dump samples during a signal use the INFO tag. This
+should extend the use of LTP-style tags throughout all of the
+log output.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 ---
- futex/robust.c |   13 ++++++++-----
- 1 files changed, 8 insertions(+), 5 deletions(-)
+ futex/plain.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/futex/robust.c b/futex/robust.c
-index 05fd4e9..f63b7d1 100644
---- a/futex/robust.c
-+++ b/futex/robust.c
-@@ -259,13 +259,14 @@ int kid(int i)
+diff --git a/futex/plain.c b/futex/plain.c
+index bc7f50c..daf1bef 100644
+--- a/futex/plain.c
++++ b/futex/plain.c
+@@ -95,7 +95,7 @@ again:
+ 
+ void dump (const char *prefix)
  {
- 	if (set_robust_list(&rlist, sizeof(rlist)) < 0) {
- 		log_error("set_robust_list");
--		fail++;
- 		send_parent_status(&children_ready[1], CHILD_ERROR);
--		return -1;
-+		fail++;
-+		goto do_exit;
- 	}
- 	if (check_rlist(i) != 0) {
- 		send_parent_status(&children_ready[1], CHILD_ERROR);
--		return -1;
-+		fail++;
-+		goto do_exit;
- 	}
- 
- 	log("INFO", "signaling ready for checkpointing\n");
-@@ -274,18 +275,20 @@ int kid(int i)
- 
- 	if (check_rlist(i) != 0) {
- 		send_parent_status(&children_ready[1], CHILD_ERROR);
--		return -1;
-+		fail++;
-+		goto do_exit;
- 	}
- 
- 	send_parent_status(&children_ready[1], CHILD_READY);
- 	acquire_rfutex(test_futex, gettid());
-+	pass++;
- 
- 	/*
- 	 * Now exit instead of releasing the futex. This should cause
- 	 * the kernel to wake the next waiter with FUTEX_OWNER_DIED.
- 	 */
-+do_exit:
- 	log("INFO", "exiting\n");
--	pass++;
- 	if (pass && !fail)
- 		exit(EXIT_SUCCESS);
- 	exit(EXIT_FAILURE);
+-	fprintf(logfp, "%s children past 1: %d\t children past 2: %d\t futex: %d\n",
++	log("INFO","%s children past 1: %d\t children past 2: %d\t futex: %d\n",
+ 	       prefix,
+ 	       atomic_read(&dumb_barrier[0]),
+ 	       atomic_read(&dumb_barrier[1]),
 -- 
 1.5.6.3
