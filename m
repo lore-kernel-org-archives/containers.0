@@ -1,7 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 11/11] cr_tests: Exit with failure when appropriate.
-Date: Wed, 19 Aug 2009 21:58:14 -0700
-Message-ID: <0f8a0d94dcf8e26ce5b9421a6a3d34a0f1cdede3.1250744013.git.matthltc@us.ibm.com>
+Subject: [PATCH 05/11] cr_tests: Fixup run.sh to use the same variable
+	expansion convention.
+Date: Wed, 19 Aug 2009 21:58:08 -0700
+Message-ID: <1c1379a67c3c60a79d04c2b82ef44289ce446d82.1250744013.git.matthltc@us.ibm.com>
 References: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,41 +22,33 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Without this change it's virtually impossible indicate failure.
-
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 ---
- futex/plain.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ futex/run.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/futex/plain.c b/futex/plain.c
-index daf1bef..3b51176 100644
---- a/futex/plain.c
-+++ b/futex/plain.c
-@@ -110,7 +110,7 @@ void sig_dump(int signum)
- int main(int argc, char **argv)
- {
- 	pid_t kids[N];
--	int i, num_killed = 0;
-+	int i, num_killed = 0, excode = EXIT_FAILURE;
+diff --git a/futex/run.sh b/futex/run.sh
+index 305f9d1..e54c228 100755
+--- a/futex/run.sh
++++ b/futex/run.sh
+@@ -51,7 +51,7 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 		sleep 1
+ 	done
+ 	freeze
+-	ckpt $TEST_PID > checkpoint-$T
++	ckpt ${TEST_PID} > checkpoint-${T}
+ 	thaw
+ 	touch "./checkpoint-done"
+ 	wait ${TEST_PID}
+@@ -69,7 +69,7 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 	fi
  
- 	/* FIXME eventually stdio streams should be harmless */
- 	close(0);
-@@ -180,11 +180,12 @@ int main(int argc, char **argv)
- 		if (num_killed)
- 			log("INFO", "killed %d remaining child tasks.\n",
- 				num_killed);
--	}
-+	} else
-+		excode = EXIT_SUCCESS;
- 	dump("After 2:");
- 
- 	do_wait(N);
- 	dump("After 3:");
- 	fclose(logfp);
--	exit(0);
-+	exit(excode);
- }
+ 	# now try restarting
+-	$MKTREE -p --copy-status < checkpoint-$T
++	${MKTREE} -p --copy-status < checkpoint-${T}
+ 	retval=$?
+ 	echo "Restart of test ${T} done, returned $retval"
+ 	if [ $retval -ne 0 ]; then
 -- 
 1.5.6.3
