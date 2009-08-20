@@ -1,16 +1,16 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/8] Adds functionality to read/write lock CLONE_THREAD
-	fork()ing per-threadgroup
-Date: Wed, 19 Aug 2009 19:45:11 -0700
-Message-ID: <6599ad830908191945k7c5f86b6j3ea4194f0dffa9ce__47003.2765916132$1250736406$gmane$org@mail.gmail.com>
-References: <20090818235059.22531.42618.stgit@menage.mtv.corp.google.com>
-	<20090818235843.22531.57310.stgit@menage.mtv.corp.google.com>
-	<4A8CB750.7040509@cn.fujitsu.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 4/8] Use vmalloc for large cgroups pidlist allocations
+Date: Thu, 20 Aug 2009 10:54:25 +0800
+Message-ID: <4A8CBAE1.9010408__43567.5251683735$1250737180$gmane$org@cn.fujitsu.com>
+References: <20090818235059.22531.42618.stgit@menage.mtv.corp.google.com>	
+	<20090818235827.22531.60306.stgit@menage.mtv.corp.google.com>	
+	<4A8CB6F0.1020308@cn.fujitsu.com>
+	<6599ad830908191941g77db4e69ve46bc8623f77d97f@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A8CB750.7040509-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <6599ad830908191941g77db4e69ve46bc8623f77d97f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,20 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 19, 2009 at 7:39 PM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
->> + =A0 =A0 =A0 =A0 =A0 =A0 list_for_each_entry_rcu(p, &tsk->thread_group,=
- thread_group) {
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (p->sighand) {
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 sighand =3D ts=
-k->sighand;
->
-> s/tsk->sighand/p->sighand
+Paul Menage wrote:
+> On Wed, Aug 19, 2009 at 7:37 PM, Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> I come to realize the "procs" file will make it much harder to convert
+>> vmalloc/kmalloc with a different solution..
+>>
+> 
+> Why do you think that?
+> 
 
-Good catch, thanks. Fixed.
-
-Paul
+To avoid showing duplicate threadgroup pids, when dealing with a
+thread, you have to check backwards to see if it's group pid
+has been printed. Maybe it doesn't add much extra cost with your
+proposal, we'll see.
