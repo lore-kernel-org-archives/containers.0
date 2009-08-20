@@ -1,14 +1,11 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/11] cr_tests: Add timeout to robust futex test.
-Date: Wed, 19 Aug 2009 22:08:38 -0700
-Message-ID: <20090820050838.GF29801@count0.beaverton.ibm.com>
-References: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc@us.ibm.com>
+Subject: [PATCH 1/2] Check for valid destructor pointer before calling it.
+Date: Wed, 19 Aug 2009 22:17:43 -0700
+Message-ID: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,69 +15,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 19, 2009 at 09:58:04PM -0700, Matt Helsley wrote:
-> The robust futex test can hang if the kernel fails to properly set the
-> robust list pointer. This currently happens during restart. The test should not
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Argh. Forgot to update the description and remove this sentence. I do
-not wish to report a bug :).
+Not every use of deferqueue will have a destructor function so
+we need to check it before calling it.
 
-Nonetheless, the patch is a nice way to ensure the test
-doesn't hang under as many circumstances as possible.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/deferqueue.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-> hang and instead should report failure.
-> 
-> Use a timeout to ensure that hangs are caught and reported as failure.
-> The timeout should return ETIMEDOUT. This limits the total amount of
-> time checkpoint/restart can take so a suitable timeout is essential here.
-> 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> ---
->  futex/robust.c |   11 ++++++++---
->  1 files changed, 8 insertions(+), 3 deletions(-)
-> 
-> diff --git a/futex/robust.c b/futex/robust.c
-> index 1025515..304c35f 100644
-> --- a/futex/robust.c
-> +++ b/futex/robust.c
-> @@ -103,6 +103,10 @@ void add_rfutex(struct futex *rf)
-> 
->  void acquire_rfutex(struct futex *rf, pid_t tid)
->  {
-> +	struct timespec timeout = {
-> +		.tv_sec = 5,
-> +		.tv_nsec = 0
-> +	};
->  	int oldval, newval, val = 0;
-> 
->  	rlist.list_op_pending = &rf->rlist; /* ARCH TODO make sure this assignment is atomic */
-> @@ -126,7 +130,7 @@ void acquire_rfutex(struct futex *rf, pid_t tid)
->  		val = __sync_or_and_fetch(&rf->tid.counter, FUTEX_WAITERS);
->  		log("INFO", "futex(FUTEX_WAIT, %x)\n", val);
->  		if (futex(&rf->tid.counter, FUTEX_WAIT, val,
-> -			  NULL, NULL, 0) == 0)
-> +			  &timeout, NULL, 0) == 0)
->  			break;
->  		log("INFO", "futex returned with errno %d (%s).\n", errno, strerror(errno));
->  		switch(errno) {
-> @@ -147,8 +151,9 @@ void acquire_rfutex(struct futex *rf, pid_t tid)
->  				log("WARN", "EINTR while sleeping on futex\n");
->  				continue;
->  			case ETIMEDOUT:
-> -				log("WARN", "ETIMEDOUT while sleeping on futex\n");
-> -				continue;
-> +				log("FAIL", "ETIMEDOUT while sleeping on futex.\n");
-> +				fail++;
-> +				return;
->  			case EACCES:
->  				log("FAIL", "FUTEX_WAIT EACCES - no read access to futex memory\n");
->  				fail++;
-> -- 
-> 1.5.6.3
-> 
-> 
+diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+index 3fb388b..1204c8b 100644
+--- a/kernel/deferqueue.c
++++ b/kernel/deferqueue.c
+@@ -53,7 +53,8 @@ void deferqueue_destroy(struct deferqueue_head *h)
+ 
+ 		pr_debug("%s: freeing non-empty queue\n", __func__);
+ 		list_for_each_entry_safe(dq, n, &h->list, list) {
+-			dq->destructor(dq->data);
++			if (dq->destructor)
++				dq->destructor(dq->data);
+ 			list_del(&dq->list);
+ 			kfree(dq);
+ 		}
+-- 
+1.5.6.3
