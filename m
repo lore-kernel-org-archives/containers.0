@@ -1,8 +1,8 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 07/11] cr_tests: Compress more of the error handling code
-	using trap.
-Date: Wed, 19 Aug 2009 21:58:10 -0700
-Message-ID: <0a55d0f0ad3a30a6bc4ecb380e072a2667ef4622.1250744013.git.matthltc@us.ibm.com>
+Subject: [PATCH 09/11] cr_tests: Checkpoint/restart the logs produced by
+	futex/run.sh
+Date: Wed, 19 Aug 2009 21:58:12 -0700
+Message-ID: <d443a880b17c324b497d0923dfe478d700572fac.1250744013.git.matthltc@us.ibm.com>
 References: <de6ca903a5d388cc10694ff95530b27d5142f1eb.1250744013.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,66 +22,46 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Checkpoint/restart the logs produced by futex/run.sh, keeping copies of
+the originals for later comparison between resumed and restarted runs.
+
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 ---
- futex/run.sh |   29 ++++++++++++++++-------------
- 1 files changed, 16 insertions(+), 13 deletions(-)
+ futex/run.sh |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
 diff --git a/futex/run.sh b/futex/run.sh
-index 434a844..5587520 100755
+index 0e0b2eb..ae80111 100755
 --- a/futex/run.sh
 +++ b/futex/run.sh
-@@ -1,6 +1,6 @@
- #!/bin/bash
- 
--#set -e
-+set -e
- 
- source ../common.sh
- 
-@@ -80,23 +80,24 @@ while [ $CURTEST -lt $NUMTESTS ]; do
- 		echo "BROK: Futex snafu, re-running this test"
- 		continue
- 	fi
--	if [ $retval -ne 0 ]; then
--		echo FAIL
--		exit 1
--	else
--		echo PASS
--	fi
-+	err_msg="FAIL"
-+	[ $retval -eq 0 ]
-+	err_msg="BROK"
-+	echo PASS
+@@ -67,6 +67,8 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 	done
+ 	freeze
+ 	trap 'thaw; do_err; break' ERR EXIT
++	sync
++	cp log.${T} log.${T}.pre-ckpt
+ 	err_msg="FAIL"
+ 	ckpt ${TEST_PID} > checkpoint-${T}
+ 	err_msg="BROK"
+@@ -86,6 +88,8 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 	echo PASS
  
  	# now try restarting
-+	err_msg="FAIL"
-+	# We need to pass -p to mktree since futexes often store the
-+	# pid of the task that owns the futex in the futex, even in
-+	# the uncontended cases where the kernel is entirely unaware
-+	# of the futex. --copy-status ensures that we trap on error.
++	mv log.${T} log.${T}.post-ckpt
++	cp log.${T}.pre-ckpt log.${T}
+ 	err_msg="FAIL"
+ 	# We need to pass -p to mktree since futexes often store the
+ 	# pid of the task that owns the futex in the futex, even in
+@@ -94,6 +98,9 @@ while [ $CURTEST -lt $NUMTESTS ]; do
  	${MKTREE} -p --copy-status < checkpoint-${T}
  	retval=$?
-+	err_msg="BROK"
+ 	err_msg="BROK"
++	mv log.${T} log.${T}.post-rstr
++	# Now we can do something _like_:
++	#         diff log.${T}.post-ckpt log.${T}.post-rstr
  	echo "Restart of test ${T} done, returned $retval"
--	if [ $retval -ne 0 ]; then
--		echo FAIL
--		exit 1
--	else
--		echo PASS
--	fi
-+	err_msg="FAIL"
-+	[ $retval -eq 0 ];
-+	echo PASS
- 	trap '' ERR EXIT
- 	CURTEST=$((CURTEST+1))
- done
-@@ -106,3 +107,5 @@ trap '' ERR EXIT
- 
- # rmdir /cg/1
- # umount /cg
-+
-+exit ${failed}
+ 	err_msg="FAIL"
+ 	[ $retval -eq 0 ];
 -- 
 1.5.6.3
