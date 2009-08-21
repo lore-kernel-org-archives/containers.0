@@ -1,17 +1,17 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 4/8] Use vmalloc for large cgroups pidlist allocations
-Date: Fri, 21 Aug 2009 08:53:01 +0800
-Message-ID: <4A8DEFED.5090408__11815.498423721$1250816184$gmane$org@cn.fujitsu.com>
-References: <20090818235059.22531.42618.stgit@menage.mtv.corp.google.com>
-	<20090818235827.22531.60306.stgit@menage.mtv.corp.google.com>
-	<20090820141400.f6d3d5a6.akpm@linux-foundation.org>
-	<20090820163510.27942b62@bike.lwn.net>
-	<alpine.DEB.2.00.0908201542440.29906@chino.kir.corp.google.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] IO-Controller: clear ioq wait flag if a request goes
+	into that ioq
+Date: Fri, 21 Aug 2009 08:57:27 +0800
+Message-ID: <4A8DF0F7.6070100__34406.3408942477$1250816503$gmane$org@cn.fujitsu.com>
+References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
+	<1250451046-9966-12-git-send-email-vgoyal@redhat.com>
+	<4A8CAAE2.1030804@cn.fujitsu.com>
+	<20090820134221.GC10615@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.DEB.2.00.0908201542440.29906-X6Q0R45D7oAcqpCFd4KODRPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <20090820134221.GC10615-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,34 +21,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-David Rientjes wrote:
-> On Thu, 20 Aug 2009, Jonathan Corbet wrote:
+Vivek Goyal wrote:
+> On Thu, Aug 20, 2009 at 09:46:10AM +0800, Gui Jianfeng wrote:
+>> Vivek Goyal wrote:
+>> ...
+>>>  		/*
+>>>  		 * Remember that we saw a request from this process, but
+>>> @@ -1940,7 +2013,7 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+>>>  		 * has other work pending, don't risk delaying until the
+>>>  		 * idle timer unplug to continue working.
+>>>  		 */
+>>> -		if (elv_ioq_wait_request(ioq)) {
+>>> +		if (group_wait || elv_ioq_wait_request(ioq)) {
+>> Hi Vivek,
+>>
+>> I guess we need to clear ioq_wait_request flags if there are requests to 
+>> go in this ioq. Otherwise, once waitting request on ioq, it will go into
+>> this path every time when a request is enqueued.
+>>
+>> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > 
->> On Thu, 20 Aug 2009 14:14:00 -0700
->> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
->>
->>> Hang on.  Isn't this why Dave just wrote and I just rush-merged
->>> lib/flex_array.c?
->>>
->>> Was that code evaluated for this application and judged unsuitable?  If so,
->>> for what reason?
->> Should it be helpful: I wrote an overview of the flex_array API here:
->>
->> 	http://lwn.net/Articles/345273/
->>
->> I could format it up for addition to Documentation/ if people want.
->>
+> Hi Gui,
 > 
-> It's definitely helpful for this use case, flex array can store 261,632 
-> pid_t's on 64 bit.
+> It does sound like that we need to clear ioq wait_request flag here. In
+> fact upstream CFQ code is also not clearing this flag. Looking at the
+> code, can't think why it should not be cleared here.
+> 
+> Can you please also generate a patch for CFQ and post to lkml.
 > 
 
-flex_array surely can be used here, or implement Paul's proposal:
-	http://lkml.org/lkml/2009/7/15/226
+Sure, will do.
 
-Note both solutions will probably make the output pid list unsorted.
-Or maybe we can implement flex_array_sort().
+-- 
+Regards
+Gui Jianfeng
