@@ -1,10 +1,13 @@
-From: Quelette Heasley <link-5nD/qHpP+EIAvxtiuMwx3w@public.gmane.org>
-Subject: der; Weary, yet eage
-Date: Sat, 22 Aug 2009 19:02:41 +0300
-Message-ID: <E115904A.7080609@almus.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Sun, 23 Aug 2009 18:18:17 +0200
+Message-ID: <4A916BC9.8040905@free.fr>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------010809020902070401070707"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,231 +17,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------010809020902070401070707
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+Krzysztof Taraszka wrote:
+> Hello,
+> 
+> I am running lxc on my debian unstable sandbox and I have a few question
+> about memory managament inside linux containers based on lxc project.
+> 
+> I have got linux kernel 2.6.30.5 with enabled :
+> 
+> +Resource counter
+> ++ Memory Resource Controller for Control Groups
+>  +++ Memory Resource Controller Swap Extension(EXPERIMENTAL)
+> 
+> lxc-checkconfig pass all checks.
+> 
+> I read about cgroups memory managament (Documentation/cgroups/memory.txt)
+> and I tried to pass those value to my debian sandbox.
+> 
+> And...
+> 'free -m' and 'top/htop' still show all available memory inside container
+> (also If I set 32M for lxc.cgroup.memory.limit_in_bytes and
+> lxc.cgroup.memory.usage_in_bytes; and 64M for
+> lxc.cgroup.memory.memsw.usage_in_bytes and
+> lxc.cgroup.memory.memsw.limit_in_bytes free and top show all resources).
+> 
+> What I did wrong? Does the container always show all available memory
+> resources  without cgroup limitations?
 
-Fe to the Bourbon, Not leave one poor corner for native Italian
-exertion? France, it is foully done! and you, poor foolish England,--
-You, who a twelvemonth ago said nations must choose for themselves, you
-Could not, of course, interfere,--you, now, when a nation has chosen----
-Pardon this folly! The Times will, of course, have announced the
-occasion, Told you the news of to-day; and although it was slightly in
-error When it proclaimed as a fact the Apollo was sold to a Yankee, You
-may believe when it tells you the French are at Civita Vecchia. II.
-Claude to Eustace. Dulce it is, and decorum, no doubt, for the country
-to fall,--to Offer one's blood an oblation to Freedom, and die for the
-Cause; yet Still, individual culture is also something, and no man Finds
-quite distinct the assurance that he of all others is called on, Or
-would be justified even, in taking away from the world that Precious
-creature, himself. Nature sent him here to abide here; Else why send him
-at all? Nature wants him still, it is likely; On the whole, we are meant
-to look after ourselves; it is certain Each has to eat for himself,
-digest for himself, and in general Care for his own dear life, and see
-to his own preservation; Nature's intentions, in most things uncertain,
-in this are decisive; Which, on the whole, I conjecture the Romans will
-follow, and I shall. So we cling to our rocks like limpets; Ocean may
-bluster, Over and under and round us; we open our shells to imbibe our
-Nourishment, close them again, and are safe, fulfilling the purpose
-Nature intended,--a wise one, of course, and a noble, we doubt not.
-Sweet it may be and decorous, perhaps, for the country to die; but, On
-the whole, we conclude the Romans won't do 
+At the first glance I would say the configuration is correct.
+But AFAIR, the memory cgroup is not isolated, if you specify 32MB you 
+will see all the memory available on the system either if you are not 
+allowed to use more than 32MB. If you create a program which allocates 
+64MB within a container configured with 32MB, and you "touch" the pages 
+(may be that can be done with one mmap call with the MAP_POPULATE 
+option), you should see the application swapping and the 
+"memory.failcnt" increasing.
 
---------------010809020902070401070707
-Content-Type: image/jpeg;
- name="morasses.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="morasses.jpg"
+IMHO, showing all the memory available for the system instead of showing 
+the allowed memory with the cgroup is weird but maybe there is a good 
+reason to do that.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++u7Kf
-r6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O////////
-////////////////////////////////////////////////////////////wAARCAFOAUgDASIA
-AhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQA
-AAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3
-ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWm
-p6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEA
-AwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSEx
-BhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElK
-U1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3
-uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooop
-jCiiigAooooAKKKKACkXv9aWkXpQAtFFFABSL90UN90/SloAKKKKAE/iP0oo/iP0paAEPSlpD0pa
-AEHU/WlpB1P1paBBRRRQAUjfdP0paRvun6UALSd6Nwoz35oAWikDA0tAxD900tI33T9KWgQUUUUA
-FFFFABSN900tIen40ALRRRQMKKjnYpbyMpwVUkH8KKBElFJn1BFKCD0oGFFFFABRRRQAUUUUAFIv
-3RS0i/dFAC0UUUAI33T9KWkP3TS0CCiikyPWgYD7x+lLTc/MeD0pefYUCA9KMgd6Qj3NKAMCgBAe
-TwTS5PpSAgE896cOQaAG5OccUvPqKQ5BBNG4eo/OldAByO4/KkIJU5pRyeqn8aV8gH6UwDBHp+VH
-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
---------------010809020902070401070707
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+   -- Daniel
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------010809020902070401070707--
+ps: cc'ed the containers@
