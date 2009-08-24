@@ -1,23 +1,23 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [Devel] Re: [lxc-devel] Memory Resources
-Date: Mon, 24 Aug 2009 16:18:25 +0900
-Message-ID: <20090824161825.c40a85a2.kamezawa.hiroyu@jp.fujitsu.com>
-References: <ac1c4bf20908231117sb180e78q3eed64db3573ec35@mail.gmail.com>
-	<ac1c4bf20908231138j2ce7bb48v69a8ac8ede6bc314@mail.gmail.com>
-	<ac1c4bf20908231222t182e6ca6u716b98e13d85cbad@mail.gmail.com>
-	<4A91A103.6020207@free.fr>
-	<ac1c4bf20908231318v1586c2ciffd3df5fe1b70c20@mail.gmail.com>
+From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Mon, 24 Aug 2009 12:58:21 +0200
+Message-ID: <ac1c4bf20908240358g4c2942b9n37d76fc933ebe1eb@mail.gmail.com>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
 	<4A91ADE1.9090204@free.fr>
-	<ac1c4bf20908231412m634fdf9h686f6bd24eb95a14@mail.gmail.com>
-	<20090824092739.70d56a5b.kamezawa.hiroyu@jp.fujitsu.com>
-	<90D306BE6EBC8D428A824FBBA7A3113DE076E221@ronja.maurer-it.com>
-	<20090824155835.94f6b88f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090824071757.GQ29572@balbir.in.ibm.com>
+	<ac1c4bf20908231758i13fef75p6f8a0fd7a4a425ec@mail.gmail.com>
+	<4A924D11.80002@free.fr>
+	<ac1c4bf20908240125q1e126cdq2d2b7659ca167d52@mail.gmail.com>
+	<4A924F5C.1000208@fr.ibm.com>
+	<ac1c4bf20908240138l67cfabfcid2bb7224a1f6ab24@mail.gmail.com>
+	<4A925794.7050808@free.fr>
+	<ac1c4bf20908240245ydbc1b9bxacfcf2398049505c@mail.gmail.com>
+	<4A92676A.1080609@free.fr>
+Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090824071757.GQ29572-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <4A92676A.1080609-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,49 +27,208 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org" <kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>, Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 24 Aug 2009 12:47:57 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+2009/8/24 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 
-> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2009-08-24 15:58:35]:
-> 
-> > On Mon, 24 Aug 2009 08:17:06 +0200
-> > Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org> wrote:
-> > 
-> > > > > how about memsw_limit for swap? :>
-> > > > > I am looking for swap usage statistics from cgroup right now from
-> > > > > memcontrol.c :) but as you did the idea is good and should be add to
-> > > > the
-> > > > > kernel and lxc-tools :)
-> > > > >
-> > > > 
-> > > > Hmm, why meminfo is necessary ? For cheating top/free/... etc ?
-> > > 
-> > > Many servers use that info to control the use of resources. For example, they do not span any more server processes if memory is low.
-> > > 
-> > > If you do not have that info correct, all those programs fails (they try to allocate much more resources than available).
-> > > 
-> > 
-> > Hm, duplicating information for keeping binary compatibility for apps ?
-> > What other stat does ? 
-> > For example, 
-> > 	- load average
-> > 	- cpu usage %user, %sys, %iowait, etc..
-> > 	- fork-per-sec
-> > 
-> > One difficulty I think of is that memcg's limit-usage doesn't means "free".
-> > But, hmm, showing "meminfo" in popular/user-friendly format is not very bad.
-> > Balbir, how do you think ?
-> >
-> 
-> Sorry, I've missed the context and unable to follow the discussion.
-> IIUC, the request is to show per-container statistics?
->  
-per-container "meminfo" i.e. the same format information as "meminfo".
-(Then, duplicating information of memory.stat")
+> Krzysztof Taraszka wrote:
+>
+>> 2009/8/24 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>
+>>
+>>
+>>> Krzysztof Taraszka wrote:
+>>>
+>>>
+>>>
+>>>> 2009/8/24 Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+>>>>
+>>>>
+>>>>
+>>>>
+>>>>
+>>>>> Krzysztof Taraszka wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>>> 2009/8/24 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>>>>>
+>>>>>>  Krzysztof Taraszka wrote:
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>>  2009/8/23 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>> (...)
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>  With the lxc tools I did:
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>>    lxc-execute -n foo /bin/bash
+>>>>>>>>>    echo 268435456 > /cgroup/foo/memory.limit_in_bytes
+>>>>>>>>>    mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+>>>>>>>>>    for i in $(seq 1 100); do sleep 3600 & done
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>> (...)
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>  :)
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>>  hmmm... I think that access to the cgroup inside container is very
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>> risk
+>>>>>>>> because I am able to manage for example memory resources (what if I
+>>>>>>>> am
+>>>>>>>> not
+>>>>>>>> the host owner and... I can give me via non-secure mounted /cgroup
+>>>>>>>> (inside
+>>>>>>>> container) all available memory resources...).
+>>>>>>>> I think that the /proc/meminfo should be pass to the container in
+>>>>>>>> the
+>>>>>>>> other
+>>>>>>>> way, but this is the topic for the other thread.
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>  It is not a problem, I did it in this way because it's easy to test
+>>>>>>>> but
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>> in
+>>>>>>> a real use case, the memory limit is setup by the lxc configuration
+>>>>>>> file
+>>>>>>> and
+>>>>>>> the cgroup directory will be no longer accessible from the container.
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>> So.. how there will be another method (more secure) for giving
+>>>>>> /proc/meminfo
+>>>>>> with limits to the container, right?
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>> Same method. The lxc tools can be configured with a fstab to mount more
+>>>>> mount points, furthermore if memory.meminfo is available I will add the
+>>>>> code
+>>>>> to mount it automatically to /proc/meminfo in the lxc tools.
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>> Hmm... setup_fs() from lxc_init.c or another way?
+>>>>
+>>>>
+>>>>
+>>>>
+>>> No, I was thinking in the setup_cgroup() function in conf.c.
+>>>
+>>> Something like:
+>>>
+>>> ...
+>>>
+>>> if (!access("/var/lib/lxc/mycontainer/nsgroup/memory.meminfo"), F_OK) {
+>>>  mount("/var/lib/lxc/mycontainer/nsgroup/memory.meminfo",
+>>> "/proc/meminfo",
+>>> MS_BIND, ...);
+>>> }
+>>>
+>>> ...
+>>>
+>>>
+>>> but a bit more clean :)
+>>>
+>>>
+>>>
+>>
+>>
+>> hmm... ok, got it, but don't know why does it won't work ;)
+>>
+>> @@ -999,12 +999,14 @@
+>>  static int setup_cgroup(const char *name)
+>>  {
+>>     char filename[MAXPATHLEN];
+>> +    char meminfofilename[MAXPATHLEN];
+>>     char line[MAXPATHLEN];
+>>     struct stat s;
+>>     int ret;
+>>
+>>     snprintf(filename, MAXPATHLEN, LXCPATH "/%s/cgroup", name);
+>> -
+>> +    snprintf(meminfofilename, MAXPATHLEN, LXCPATH
+>> "/%s/nsgroup/memory.meminfo", name);
+>> +
+>>     if (stat(filename, &s)) {
+>>         SYSERROR("failed to stat '%s'", filename);
+>>         return -1;
+>> @@ -1024,6 +1026,10 @@
+>>
+>>     INFO("cgroup has been setup");
+>>
+>> +    /* mount memory.meminfo as /proc/meminfo */
+>> +    if (!access(meminfofilename, F_OK)) {
+>> +        mount(meminfofilename, "/proc/meminfo", "none", MS_BIND, 0);
+>> +     }
+>>     return 0;
+>>  }
+>>
+>>
+>> hmm... any idea Daniel? :)
+>>
+>>
+> Yep, can you check the return code of the mount call and return an error ?
+> if (mount(....)) {
+>   SYSERROR("failed to mount '%s' to '/proc/meminfo'", meminfofilename);
+>   return -1;
+> }
+> at least to verify if this does not fail.
+> and maybe add an INFO trace if the mount is successful saying
+> "/proc/meminfo" is setup with the cgroup.
+>
+> ps : you should launch the command with the "-l INFO" to see the message.
+>
 
-Thanks,
--Kame
+
+Weird. I made a test and move the mount the /proc/meminfo to the
+setup_console() and it did not take effect. mount() did not fail (there were
+no failed log).
+Why I moved this part of code? Well.. I was wonder that what was happend if
+I mount /proc/meminfo after the setup_mount() to override /proc/meminfo.
+Don't have idea what can I do next ;) Daniel?
+
+-- 
+Krzysztof Taraszka
