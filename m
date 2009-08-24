@@ -1,74 +1,101 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: [PATCH 2/3] Expose may_setuid() in user.h and add may_setgid() (v2)
-Date: Mon, 24 Aug 2009 10:28:03 -0700
-Message-ID: <1251134884-24491-3-git-send-email-danms@us.ibm.com>
+From: Dave Hansen <dave@linux.vnet.ibm.com>
+Subject: Re: [PATCH 1/3] Set socket flags on restore using
+ sock_setsockopt() where possible (v2)
+Date: Mon, 24 Aug 2009 10:48:10 -0700
+Message-ID: <1251136090.22398.7523.camel@nimitz>
 References: <1251134884-24491-1-git-send-email-danms@us.ibm.com>
+	 <1251134884-24491-2-git-send-email-danms@us.ibm.com>
+Mime-Version: 1.0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1251134884-24491-1-git-send-email-danms@us.ibm.com>
+In-Reply-To: <1251134884-24491-2-git-send-email-danms@us.ibm.com>
 Sender: netdev-owner@vger.kernel.org
-To: containers@lists.osdl.org
-Cc: orenl@librato.com, netdev@vger.kernel.org, Serge Hallyn <serue@us.ibm.com>
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Make these helpers available to others.
+On Mon, 2009-08-24 at 10:28 -0700, Dan Smith wrote:
+> 
+> +static int sock_restore_flags(struct socket *sock,
+> +                             struct ckpt_hdr_socket *h)
+> +{
+> +       int ret;
+> +       int v = 1;
+> +       unsigned long sk_flags = h->sock.flags;
+> +       unsigned long sock_flags = h->socket.flags;
+> +
+> +       if (test_and_clear_bit(SOCK_URGINLINE, &sk_flags)) {
+> +               ret = sock_setsockopt(sock, SOL_SOCKET, SO_OOBINLINE,
+> +                                     (char *)&v, sizeof(v));
+> +               if (ret)
+> +                       return ret;
+> +       }
+> +
+> +       if (test_and_clear_bit(SOCK_KEEPOPEN, &sk_flags)) {
+> +               ret = sock_setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+> +                                     (char *)&v, sizeof(v));
+> +               if (ret)
+> +                       return ret;
+> +       }
 
-Changes in v2:
- - Avoid checking the groupinfo in ctx->realcred against the current in
-   may_setgid()
+Would it make more sense to do this programatically?
 
-Cc: Serge Hallyn <serue@us.ibm.com>
-Signed-off-by: Dan Smith <danms@us.ibm.com>
----
- include/linux/user.h |    9 +++++++++
- kernel/user.c        |   13 ++++++++++++-
- 2 files changed, 21 insertions(+), 1 deletions(-)
+cr_sock_restore_flag(struct socket *sock, unsigned long sck_flag,
+		     struct ckpt_hdr_socket *h, unsigned long sock_flag)
+{
+	unsigned long sk_flags = h->sock.flags;
+	unsigned long sock_flags = h->socket.flags;
 
-diff --git a/include/linux/user.h b/include/linux/user.h
-index 68daf84..c231e9c 100644
---- a/include/linux/user.h
-+++ b/include/linux/user.h
-@@ -1 +1,10 @@
-+#ifndef _LINUX_USER_H
-+#define _LINUX_USER_H
-+
- #include <asm/user.h>
-+#include <linux/sched.h>
-+
-+extern int may_setuid(struct user_namespace *ns, uid_t uid);
-+extern int may_setgid(gid_t gid);
-+
-+#endif
-diff --git a/kernel/user.c b/kernel/user.c
-index a535ed6..a78fde7 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -604,7 +604,7 @@ int checkpoint_user(struct ckpt_ctx *ctx, void *ptr)
- 	return do_checkpoint_user(ctx, (struct user_struct *) ptr);
- }
- 
--static int may_setuid(struct user_namespace *ns, uid_t uid)
-+int may_setuid(struct user_namespace *ns, uid_t uid)
- {
- 	/*
- 	 * this next check will one day become
-@@ -631,6 +631,17 @@ static int may_setuid(struct user_namespace *ns, uid_t uid)
- 	return 0;
- }
- 
-+int may_setgid(gid_t gid)
-+{
-+	if (capable(CAP_SETGID))
-+		return 1;
-+
-+	if (in_egroup_p(gid))
-+		return 1;
-+
-+	return 0;
-+}
-+
- static struct user_struct *do_restore_user(struct ckpt_ctx *ctx)
- {
- 	struct user_struct *u;
--- 
-1.6.2.5
+	
+	if (!test_and_clear_bit(sk, &sk_flags))
+		return 0;
+
+	return sock_setsockopt(sock, sock_flag, SO_OOBINLINE,
+ 			       (char *)&v, sizeof(v));
+}
+
+Then, each call becomes:
+
+	ret = cr_sock_restore_flag(sock, cr_sock, SOCK_URGINLINE, SO_OOBINLINE);
+	if (ret)
+		return ret;
+
+	ret = cr_sock_restore_flag(sock, cr_sock, SOCK_KEEPOPEN, SO_KEEPALIVE);
+	if (ret)
+		return ret;
+
+Or, you could spell the flags out in a (better named) structure:
+
+struct sock_flagpair
+{
+	unsigned long sock_flag;
+	unsigned long sk_flag;
+}	
+
+struct sock_flagpair sock_flagpairs[] = {
+	{ SOCK_URGINLINE, SO_OOBINLINE },
+	{ SOCK_KEEPOPEN, SO_KEEPALIVE},
+	...
+};
+
+And just walk through the array to do the restore:
+
+static int sock_restore_flags(struct socket *sock,
+                             struct ckpt_hdr_socket *h)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sock_flagpairs); i++) {
+		int ret;
+		unsigned long sock_flag = sock_flagpairs[i].sock_flag;
+		unsigned long sk_flag = sock_flagpairs[i].sk_flag;
+		ret = cr_sock_restore_flag(sock, cr_sock, sock_flag, sk_flag);
+		if (ret)
+			break;
+	}
+	...
+}
+
+-- Dave
 
