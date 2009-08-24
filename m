@@ -1,15 +1,25 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 12/24] io-controller: Wait for requests to complete from
-	last queue before new queue is scheduled
-Date: Mon, 24 Aug 2009 11:30:34 +0800
-Message-ID: <4A92095A.4070804__33192.0720790096$1251084805$gmane$org@cn.fujitsu.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
-	<1250451046-9966-13-git-send-email-vgoyal@redhat.com>
+From: Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
+Subject: RE: [Devel] Re: [lxc-devel] Memory Resources
+Date: Mon, 24 Aug 2009 08:17:06 +0200
+Message-ID: <90D306BE6EBC8D428A824FBBA7A3113DE076E221@ronja.maurer-it.com>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
+	<4A916BC9.8040905@free.fr>
+	<ac1c4bf20908230959j4cda58cel3bcf4f3822d50bb1@mail.gmail.com>
+	<4A9183B2.7090005@free.fr>
+	<ac1c4bf20908231117sb180e78q3eed64db3573ec35@mail.gmail.com>
+	<ac1c4bf20908231138j2ce7bb48v69a8ac8ede6bc314@mail.gmail.com>
+	<ac1c4bf20908231222t182e6ca6u716b98e13d85cbad@mail.gmail.com>
+	<4A91A103.6020207@free.fr>
+	<ac1c4bf20908231318v1586c2ciffd3df5fe1b70c20@mail.gmail.com>
+	<4A91ADE1.9090204@free.fr>
+	<ac1c4bf20908231412m634fdf9h686f6bd24eb95a14@mail.gmail.com>
+	<20090824092739.70d56a5b.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250451046-9966-13-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090824092739.70d56a5b.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,66 +29,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org" <kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-...
->  void elv_schedule_dispatch(struct request_queue *q)
-> @@ -2260,6 +2264,17 @@ void *elv_select_ioq(struct request_queue *q, int force)
->  	}
->  
->  expire:
-> +	if (efqd->fairness && !force && ioq && ioq->dispatched) {
-> +		/*
-> +		 * If there are request dispatched from this queue, don't
-> +		 * dispatch requests from new queue till all the requests from
-> +		 * this queue have completed.
-> +		 */
-> +		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
-> +				" disp=%lu", ioq->dispatched);
-> +		ioq = NULL;
-> +		goto keep_queue;
-> +	}
->  	elv_slice_expired(q);
->  new_queue:
->  	ioq = elv_set_active_ioq(q, new_ioq);
-> @@ -2375,6 +2390,10 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
->  				goto done;
->  			}
->  
-> +			/* Wait for requests to finish from this queue */
-> +			if (efqd->fairness && ioq->dispatched)
+> > how about memsw_limit for swap? :>
+> > I am looking for swap usage statistics from cgroup right now from
+> > memcontrol.c :) but as you did the idea is good and should be add to
+> the
+> > kernel and lxc-tools :)
+> >
+> 
+> Hmm, why meminfo is necessary ? For cheating top/free/... etc ?
 
-Since we have the routing to access to ioq->dispatched, why not to use it.
+Many servers use that info to control the use of resources. For example, they do not span any more server processes if memory is low.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- block/elevator-fq.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+If you do not have that info correct, all those programs fails (they try to allocate much more resources than available).
 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index d04e925..f1e0de5 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -3120,7 +3120,7 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 			}
- 
- 			/* Wait for requests to finish from this queue */
--			if (efqd->fairness && ioq->dispatched)
-+			if (efqd->fairness && elv_ioq_nr_dispatched(ioq))
- 				goto done;
- 
- 			/* Expire the queue */
-@@ -3135,7 +3135,7 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 		 * If this is the last queue in the group and we did not
- 		 * decide to idle on queue, idle on group.
- 		 */
--		if (elv_iog_should_idle(ioq) && !ioq->dispatched
-+		if (elv_iog_should_idle(ioq) && !elv_ioq_nr_dispatched(ioq)
- 		    && !timer_pending(&efqd->idle_slice_timer)) {
- 			/*
- 			 * If queue has used up its slice, wait for the
--- 
-1.5.4.rc3
+- Dietmar
