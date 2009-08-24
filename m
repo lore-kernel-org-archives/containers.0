@@ -1,10 +1,23 @@
-From: Tremelling Rassel <lamely-O9qItY1VkwPpIgCt6eIbzw@public.gmane.org>
-Subject: You? Now a good map--" "Is it peradventure that manner
-Date: Sun, 23 Aug 2009 23:28:10 +0200
-Message-ID: <3FB4914A.8060303@cocsc.org.uk>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Mon, 24 Aug 2009 09:27:39 +0900
+Message-ID: <20090824092739.70d56a5b.kamezawa.hiroyu@jp.fujitsu.com>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
+	<4A916BC9.8040905@free.fr>
+	<ac1c4bf20908230959j4cda58cel3bcf4f3822d50bb1@mail.gmail.com>
+	<4A9183B2.7090005@free.fr>
+	<ac1c4bf20908231117sb180e78q3eed64db3573ec35@mail.gmail.com>
+	<ac1c4bf20908231138j2ce7bb48v69a8ac8ede6bc314@mail.gmail.com>
+	<ac1c4bf20908231222t182e6ca6u716b98e13d85cbad@mail.gmail.com>
+	<4A91A103.6020207@free.fr>
+	<ac1c4bf20908231318v1586c2ciffd3df5fe1b70c20@mail.gmail.com>
+	<4A91ADE1.9090204@free.fr>
+	<ac1c4bf20908231412m634fdf9h686f6bd24eb95a14@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------020407020806090803030709"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <ac1c4bf20908231412m634fdf9h686f6bd24eb95a14-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,221 +27,348 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------020407020806090803030709
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+On Sun, 23 Aug 2009 23:12:24 +0200
+Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org> wrote:
 
- surety, no; and wherefore should I? Have I not a tongue, and cannot I
-say all that myself?" "But _your_ saying it, you know, and somebody
-else's saying it, is different." "Different? How might that be? I fear
-me I do not understand." "Don't _understand_? Land of--why, you see--you
-see--why, great Scott, can't you understand a little thing like that?
-Can't you understand the difference between your--_why_ do you look so
-innocent and idiotic!" "I? In truth I know not, but an it were the will
-of God." "Yes, yes, I reckon that's about the size of it. Don't mind my
-seeming excited; I'm not. Let us change the subject. Now as to this
-castle, with forty-five princesses in it, and three ogres at the head of
-it, tell me--where is this harem?" "Harem?" "The _castle_, you
-understand; where is the castle?" "Oh, as to that, it is great, and
-strong, and well beseen, and lieth in a far country. Yes, it is many
-leagues." "_How_ many?" "Ah, fair sir, it were woundily hard to tell,
-they are so many, and do so lap the one upon the other, and being made
-all in the same image and tincted with the same color, one may not know
-the one league from its fellow, nor how to count them except they be
-taken apart, and ye wit well it were God's work to do that, being not
-within man's capacity; for ye will note--" "Hold on, hold on, never mind
-about the distance; _whereabouts_ does the castle lie? What's the
-direction fr
+> :) excelent :)
+> 
+> my ugly patch printing right now undefinied data but the idea was the same
+> :)
+> how about memsw_limit for swap? :>
+> I am looking for swap usage statistics from cgroup right now from
+> memcontrol.c :) but as you did the idea is good and should be add to the
+> kernel and lxc-tools :)
+> 
 
---------------020407020806090803030709
-Content-Type: image/jpeg;
- name="displaying.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="displaying.jpg"
+Hmm, why meminfo is necessary ? For cheating top/free/... etc ?
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++u7Kf
-r6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O////////
-////////////////////////////////////////////////////////////wAARCAE+AWUDASIA
-AhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQA
-AAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3
-ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWm
-p6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEA
-AwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSEx
-BhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElK
-U1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3
-uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDToooo
-GFFFFACUUtJQAUUUUALTW7fWlobt9aYC0UmRS0AFFFJSAWmr0p1NXpQAo6UtIOgpaYBRRRSAQ9qW
-k7iloAKKKKACiiigAooooAKTrQaKYC0UUUgCmnqKdTe5oAdRRRQAUUlFAC0UlFAC0UlFAC0nU0Ud
-6AMvWf8Alj/wL+lFGs9Yf+Bf0ooEatFFFAwopKKBBRS0lABS0lGKAClpMjtzRmmFwoxS0lAw5ozS
-0UAJSL0pcUi9KQCjoKWkHSlpgFFFFIBO9LSd6WgAooooAKKSloAKKKKAE70tIaWmAUUUlIBab/Ea
-UmkHJ4IoEOopMe5oHSgYUtJS0AFFFFABRRRQAUnelpO5oAy9Z6w/j/SijWesP4/0ooEalFHUc0dO
-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
-NAFvWv8Alj/wL+lFVLu7a6CblClc9O+cUUAf/9k=
---------------020407020806090803030709
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------020407020806090803030709--
+
+Thanks,
+-Kame
+
+
+
+> 
+> 2009/8/23 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> 
+> > Krzysztof Taraszka wrote:
+> >
+> >> 2009/8/23 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> >>
+> >>  Krzysztof Taraszka wrote:
+> >>>
+> >>>  2009/8/23 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+> >>>>
+> >>>>
+> >>>>
+> >>>>  2009/8/23 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>>>  2009/8/23 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> >>>>>>
+> >>>>>>
+> >>>>>>
+> >>>>>>  Krzysztof Taraszka wrote:
+> >>>>>>>
+> >>>>>>>
+> >>>>>>>
+> >>>>>>>  2009/8/23 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> >>>>>>>>
+> >>>>>>>>  Krzysztof Taraszka wrote:
+> >>>>>>>>
+> >>>>>>>>
+> >>>>>>>>   Hello,
+> >>>>>>>>>
+> >>>>>>>>>
+> >>>>>>>>>  I am running lxc on my debian unstable sandbox and I have a few
+> >>>>>>>>>> question
+> >>>>>>>>>> about memory managament inside linux containers based on lxc
+> >>>>>>>>>> project.
+> >>>>>>>>>>
+> >>>>>>>>>> I have got linux kernel 2.6.30.5 with enabled :
+> >>>>>>>>>>
+> >>>>>>>>>> +Resource counter
+> >>>>>>>>>> ++ Memory Resource Controller for Control Groups
+> >>>>>>>>>>  +++ Memory Resource Controller Swap Extension(EXPERIMENTAL)
+> >>>>>>>>>>
+> >>>>>>>>>> lxc-checkconfig pass all checks.
+> >>>>>>>>>>
+> >>>>>>>>>> I read about cgroups memory managament
+> >>>>>>>>>> (Documentation/cgroups/memory.txt)
+> >>>>>>>>>> and I tried to pass those value to my debian sandbox.
+> >>>>>>>>>>
+> >>>>>>>>>> And...
+> >>>>>>>>>> 'free -m' and 'top/htop' still show all available memory inside
+> >>>>>>>>>> container
+> >>>>>>>>>> (also If I set 32M for lxc.cgroup.memory.limit_in_bytes and
+> >>>>>>>>>> lxc.cgroup.memory.usage_in_bytes; and 64M for
+> >>>>>>>>>> lxc.cgroup.memory.memsw.usage_in_bytes and
+> >>>>>>>>>> lxc.cgroup.memory.memsw.limit_in_bytes free and top show all
+> >>>>>>>>>> resources).
+> >>>>>>>>>>
+> >>>>>>>>>> What I did wrong? Does the container always show all available
+> >>>>>>>>>> memory
+> >>>>>>>>>> resources  without cgroup limitations?
+> >>>>>>>>>>
+> >>>>>>>>>>  At the first glance I would say the configuration is correct.
+> >>>>>>>>>>
+> >>>>>>>>>>
+> >>>>>>>>>>  But AFAIR, the memory cgroup is not isolated, if you specify 32MB
+> >>>>>>>>> you
+> >>>>>>>>> will
+> >>>>>>>>> see all the memory available on the system either if you are not
+> >>>>>>>>> allowed to
+> >>>>>>>>> use more than 32MB. If you create a program which allocates 64MB
+> >>>>>>>>> within
+> >>>>>>>>> a
+> >>>>>>>>> container configured with 32MB, and you "touch" the pages (may be
+> >>>>>>>>> that
+> >>>>>>>>> can
+> >>>>>>>>> be done with one mmap call with the MAP_POPULATE option), you
+> >>>>>>>>> should
+> >>>>>>>>> see the
+> >>>>>>>>> application swapping and the "memory.failcnt" increasing.
+> >>>>>>>>>
+> >>>>>>>>> IMHO, showing all the memory available for the system instead of
+> >>>>>>>>> showing
+> >>>>>>>>> the allowed memory with the cgroup is weird but maybe there is a
+> >>>>>>>>> good
+> >>>>>>>>> reason
+> >>>>>>>>> to do that.
+> >>>>>>>>>
+> >>>>>>>>>
+> >>>>>>>>>
+> >>>>>>>>>
+> >>>>>>>>>
+> >>>>>>>>>  Thank you Daniel for your reply.
+> >>>>>>>> I think that LXC should isolate memory available for containers like
+> >>>>>>>> Vserver
+> >>>>>>>> or FreeVPS do (memory + swap) if .cgroup.memory.* and
+> >>>>>>>> lxc.cgroup.memory.memsw.* is set.
+> >>>>>>>> Is there any possibility to make a patch for linux kernel /
+> >>>>>>>> lxc-tools
+> >>>>>>>> to
+> >>>>>>>> show the limitations inside cointainers propertly? I think is a good
+> >>>>>>>> idea
+> >>>>>>>> and it should be apply as soon as possible.
+> >>>>>>>>
+> >>>>>>>>
+> >>>>>>>>
+> >>>>>>>>  Maybe a solution can be to add a new memory.meminfo file in the
+> >>>>>>> same
+> >>>>>>> format than /proc/meminfo, so it will be possible to mount --bind
+> >>>>>>> /cgroup/foo/memory.meminfo to /proc/meminfo for the container.
+> >>>>>>>
+> >>>>>>>
+> >>>>>>>
+> >>>>>>>  Yes, I thought the same. This should allow the user-space tools
+> >>>>>> based on
+> >>>>>> /proc/meminfo (such as comand line "free") show limited information :)
+> >>>>>>
+> >>>>>>
+> >>>>>>
+> >>>>>>  Hmmm... does the memory.stat is a good start point for make new one
+> >>>>> object
+> >>>>> memory.meminfo similar to /proc/meminfo? If so, I can play by my self
+> >>>>> with
+> >>>>> lxc-tools code.
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>> Hmmm... Daniel, I have got a question (that do I thinking in the right
+> >>>> way).
+> >>>> here is an output from /proc/meminfo from openvz:
+> >>>>
+> >>>>
+> >>>> MemTotal:             262144 kB
+> >>>> MemFree:            232560 kB
+> >>>> Buffers:             0 kB
+> >>>> Cached:            0 kB
+> >>>> SwapCached:        0 kB
+> >>>> Active:            0 kB
+> >>>> Inactive:            0 kB
+> >>>> HighTotal:            0 kB
+> >>>> HighFree:            0 kB
+> >>>> LowTotal:             262144 kB
+> >>>> LowFree:            232560 kB
+> >>>> SwapTotal:        0 kB
+> >>>> SwapFree:        0 kB
+> >>>> Dirty:             0 kB
+> >>>> Writeback:        0 kB
+> >>>> AnonPages:        0 kB
+> >>>> Mapped:            0 kB
+> >>>> Slab:                0 kB
+> >>>> SReclaimable:            0 kB
+> >>>> SUnreclaim:              0 kB
+> >>>> PageTables:              0 kB
+> >>>> NFS_Unstable:           0 kB
+> >>>> Bounce:                  0 kB
+> >>>> WritebackTmp:            0 kB
+> >>>> CommitLimit:             0 kB
+> >>>> Committed_AS:            0 kB
+> >>>> VmallocTotal:            0 kB
+> >>>> VmallocUsed:             0 kB
+> >>>> VmallocChunk:            0 kB
+> >>>> HugePages_Total:    0
+> >>>> HugePages_Free:    0
+> >>>> HugePages_Rsvd:   0
+> >>>> HugePages_Surp:    0
+> >>>> Hugepagesize:         2048 kB
+> >>>>
+> >>>> most of values are 0.
+> >>>>
+> >>>> I have an question about SwapTotal and SwapFree for LXC.
+> >>>> As I thinking that:
+> >>>>
+> >>>> MemTotal might be: hierarchical_memory_limit
+> >>>> MemFree might be: hierarchical_memory_limit - cache
+> >>>>
+> >>>>
+> >>>>  I am not a memory expert, but isn't MemFree : hierarchical_memory_limit
+> >>> -
+> >>> rss ?
+> >>>
+> >>>  the
+> >>>>
+> >>>> SwapTotal might be: hierarchical_memsw_limit
+> >>>> SwapFree might be: hierarchical_memsw_limit - rss
+> >>>>
+> >>>> rss - # of bytes of anonymous and swap cache memory
+> >>>> I don't know at all that hierarchical_memsw_limit is an good value for
+> >>>> swap
+> >>>> total, because as I read it is a mem+swap at all.
+> >>>>
+> >>>> Does the lxc memory.meminfo might look like above? Where can I get the
+> >>>> Hugepagesize?
+> >>>>
+> >>>>
+> >>>>  Right, I agree most of the interesting information to create a
+> >>> memory.meminfo is already there in another file and another format.
+> >>> Probably
+> >>> some informations in memory.stat can be moved to memory.meminfo and this
+> >>> one
+> >>> can be step by step filled with cgroup memory statistic informations.
+> >>> IMO,
+> >>> if the memory controller displays memory statistics like a proc/meminfo
+> >>> file
+> >>> format, that will make consistency for these informations and make
+> >>> trivial
+> >>> the isolation/virtualization with a simple mount-bind.
+> >>>
+> >>>
+> >>>
+> >>>  Hmm..
+> >> might be. Right now I am looking for and writing new function in
+> >> mm/memcontrol.c file for writing some stats in memory.meminfo file for
+> >> tests.
+> >> Dirty and ugly part of code, but if it will work as we thought
+> >> (mount-bind)
+> >> and as you wrote above, that will be very simple.
+> >> I am going to look how does the /proc/meminfo is doing by the openvz.
+> >> mm/memcontrol.c was wrote by xemul from openvz and balbir from ibm.
+> >> If I am thinking in the right way, guys from openvz made their own patch
+> >> for
+> >> meminfo based on the mm/memcontrol.c. If I am wrong - where do they taking
+> >> meminfo data? :)
+> >>
+> >
+> > I did this ugly patch patch for MemTotal/MemFree - maybe wrong :)
+> >
+> > Index: linux-2.6/mm/memcontrol.c
+> > ===================================================================
+> > --- linux-2.6.orig/mm/memcontrol.c      2009-06-23 12:00:52.000000000 +0200
+> > +++ linux-2.6/mm/memcontrol.c   2009-08-23 22:49:02.000000000 +0200
+> > @@ -2200,6 +2200,27 @@ static int mem_cgroup_swappiness_write(s
+> >  }
+> >
+> >
+> > +static int mem_cgroup_meminfo(struct cgroup *cgrp, struct cftype *cft,
+> > +                             struct seq_file *seq)
+> > +{
+> > +#define K(x) ((x) << 10)
+> > +
+> > +       struct mem_cgroup *mem_cont = mem_cgroup_from_cont(cgrp);
+> > +       struct mcs_total_stat mystat = { };
+> > +       unsigned long long limit, memsw_limit;
+> > +
+> > +       mem_cgroup_get_local_stat(mem_cont, &mystat);
+> > +       memcg_get_hierarchical_limit(mem_cont, &limit, &memsw_limit);
+> > +
+> > +       seq_printf(seq,
+> > +                  "MemTotal:       %8llu kB\n"
+> > +                  "MemFree:        %8llu kB\n",
+> > +                  limit / 1024, (limit - mystat.stat[MCS_RSS]) / 1024);
+> > +
+> > +       return 0;
+> > +#undef K
+> > +}
+> > +
+> >  static struct cftype mem_cgroup_files[] = {
+> >        {
+> >                .name = "usage_in_bytes",
+> > @@ -2242,6 +2263,10 @@ static struct cftype mem_cgroup_files[]
+> >                .read_u64 = mem_cgroup_swappiness_read,
+> >                .write_u64 = mem_cgroup_swappiness_write,
+> >        },
+> > +       {
+> > +               .name = "meminfo",
+> > +               .read_seq_string = mem_cgroup_meminfo,
+> > +       },
+> >  };
+> >
+> >  #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+> >
+> >
+> > With the lxc tools I did:
+> >
+> >        lxc-execute -n foo /bin/bash
+> >        echo 268435456 > /cgroup/foo/memory.limit_in_bytes
+> >        mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+> >        for i in $(seq 1 100); do sleep 3600 & done
+> >
+> > And the result for "free" is:
+> >
+> > free:
+> >
+> >             total       used       free     shared    buffers     cached
+> > Mem:        262144       9692     252452          0          0          0
+> > -/+ buffers/cache:       9692     252452
+> > Swap:            0          0          0
+> >
+> >
+> > and for "top":
+> >
+> > top - 22:57:37 up 8 min,  1 user,  load average: 0.00, 0.02, 0.00
+> > Tasks: 104 total,   1 running, 103 sleeping,   0 stopped,   0 zombie
+> > Cpu(s):  0.3%us,  1.0%sy,  0.0%ni, 98.4%id,  0.0%wa,  0.0%hi,  0.3%si,
+> > 0.0%st
+> > Mem:    262144k total,     9864k used,   252280k free,        0k buffers
+> > Swap:        0k total,        0k used,        0k free,        0k cached
+> >
+> >  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+> >  337 root      20   0 14748 1132  872 R  1.0  0.4   0:00.24 top
+> >    1 root      20   0  8136  484  408 S  0.0  0.2   0:00.00 lxc-init
+> >    2 root      20   0 89980 1724 1348 S  0.0  0.7   0:00.70 bash
+> >   25 root      20   0 86916  612  524 S  0.0  0.2   0:00.00 sleep
+> >  232 root      20   0 86916  616  524 S  0.0  0.2   0:00.00 sleep
+> >  233 root      20   0 86916  612  524 S  0.0  0.2   0:00.00 sleep
+> >  234 root      20   0 86916  612  524 S  0.0  0.2   0:00.00 sleep
+> >  235 root      20   0 86916  612  524 S  0.0  0.2   0:00.00 sleep
+> > .....
+> >
+> >
+> > :)
+> >
+> >
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
