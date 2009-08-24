@@ -1,14 +1,11 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] Set the CHECKPOINTED flag on objects before calling
-	checkpoint
-Date: Mon, 24 Aug 2009 10:11:56 -0700
-Message-ID: <1251133918-8117-2-git-send-email-danms@us.ibm.com>
-References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
+Subject: [RFC] Change socket checkpoint to retain DGRAM source addresses
+Date: Mon, 24 Aug 2009 10:11:55 -0700
+Message-ID: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251133918-8117-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,32 +18,22 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This helps prevent infinite recursion where the checkpoint() operation on an
-object could potentially result in another checkpoint() of itself.
+This is a proposed change to the way sockets are checkpointed.
+It makes the socket itself a proper objhash object, which can be
+checkpointed or restored as part of reading the stream (like many
+of the other first-class objects).  Thus, we worry about
+checkpointing and restoring the socket-typed file, and read the
+related socket object(s) as a matter of course.
 
-UNIX sockets would easily encounter this when we call checkpoint on all
-related sockets, which would in turn try to checkpoint us again.
+By doing this, we are able to checkpoint sockets we find that
+aren't attached to descriptors.  This is used in the final patch
+to make sure that a socket buffer's owner socket has been
+checkpointed, allowing us to use that socket to re-send the
+buffer on restore (thus retaining the source address).
 
+I've got a unit test for this that sets up three sockets, and
+loads some in-flight buffers before checkpoint, verifying that
+after checkpoint, recvfrom() sees them from the appropriate
+source socket.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/objhash.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
-
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index dc0a10a..019077b 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -677,9 +677,8 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
- 
- 		/* invoke callback to actually dump the state */
- 		BUG_ON(!obj->ops->checkpoint);
--		ret = obj->ops->checkpoint(ctx, ptr);
--
- 		obj->flags |= CKPT_OBJ_CHECKPOINTED;
-+		ret = obj->ops->checkpoint(ctx, ptr);
- 	}
- 
- 	obj->flags |= CKPT_OBJ_VISITED;
--- 
-1.6.2.5
+Does this approach seem reasonable?  
