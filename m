@@ -1,8 +1,8 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] Make sockets proper objhash objects and use
-	checkpoint_obj() on them
-Date: Mon, 24 Aug 2009 10:11:57 -0700
-Message-ID: <1251133918-8117-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/3] Set the CHECKPOINTED flag on objects before calling
+	checkpoint
+Date: Mon, 24 Aug 2009 10:11:56 -0700
+Message-ID: <1251133918-8117-2-git-send-email-danms@us.ibm.com>
 References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,285 +21,32 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This changes the checkpoint/restart procedure for sockets a bit.  The
-socket file header is now checkpointed separately from the socket itself,
-which allows us to checkpoint a socket without arriving at it from a
-file descriptor.  Thus, most sockets will be checkpointed as a result
-of processing the file table, calling sock_file_checkpoint(fd), which
-in turn calls checkpoint_obj(socket).
+This helps prevent infinite recursion where the checkpoint() operation on an
+object could potentially result in another checkpoint() of itself.
 
-However, we may arrive at some sockets while checkpointing other objects,
-such as the other end of an AF_UNIX socket with buffers in flight.  This
-patch just opens that door, which is utilized by the next patch.
+UNIX sockets would easily encounter this when we call checkpoint on all
+related sockets, which would in turn try to checkpoint us again.
+
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c           |    2 +
- include/linux/checkpoint_hdr.h |    4 +-
- include/net/sock.h             |    2 +
- net/checkpoint.c               |  116 ++++++++++++++++++++++++++++-----------
- net/unix/checkpoint.c          |    3 +-
- 5 files changed, 91 insertions(+), 36 deletions(-)
+ checkpoint/objhash.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 019077b..4f26e86 100644
+index dc0a10a..019077b 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -381,6 +381,8 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.obj_type = CKPT_OBJ_SOCK,
- 		.ref_drop = obj_sock_drop,
- 		.ref_grab = obj_sock_grab,
-+		.checkpoint = checkpoint_sock,
-+		.restore = restore_sock,
- 	},
- };
+@@ -677,9 +677,8 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
  
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 78f1f27..39b3cb4 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -68,6 +68,7 @@ enum {
- 	CKPT_HDR_USER,
- 	CKPT_HDR_GROUPINFO,
- 	CKPT_HDR_TASK_CREDS,
-+	CKPT_HDR_SOCKET,
- 
- 	/* 201-299: reserved for arch-dependent */
- 
-@@ -367,6 +368,7 @@ struct ckpt_hdr_file_pipe {
- 
- /* socket */
- struct ckpt_hdr_socket {
-+	struct ckpt_hdr h;
- 	struct { /* struct socket */
- 		__u64 flags;
- 		__u8 state;
-@@ -425,7 +427,7 @@ struct ckpt_hdr_socket_unix {
- 
- struct ckpt_hdr_file_socket {
- 	struct ckpt_hdr_file common;
--	struct ckpt_hdr_socket socket;
-+	__s32 sock_objref;
- } __attribute__((aligned(8)));
- 
- struct ckpt_hdr_utsns {
-diff --git a/include/net/sock.h b/include/net/sock.h
-index 8e3b050..0db1ca3 100644
---- a/include/net/sock.h
-+++ b/include/net/sock.h
-@@ -1644,6 +1644,8 @@ extern __u32 sysctl_rmem_default;
- /* Checkpoint/Restart Functions */
- struct ckpt_ctx;
- struct ckpt_hdr_file;
-+extern int checkpoint_sock(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_sock(struct ckpt_ctx *ctx);
- extern int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
- extern struct file *sock_file_restore(struct ckpt_ctx *ctx,
- 				      struct ckpt_hdr_file *h);
-diff --git a/net/checkpoint.c b/net/checkpoint.c
-index fdbf8e7..c84511e 100644
---- a/net/checkpoint.c
-+++ b/net/checkpoint.c
-@@ -411,31 +411,26 @@ static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
- 		return 0;
- }
- 
--int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-+static int do_sock_checkpoint(struct ckpt_ctx *ctx, struct sock *sk)
- {
--	struct ckpt_hdr_file_socket *h;
--	struct socket *sock = file->private_data;
--	struct sock *sk = sock->sk;
- 	int ret;
-+	struct socket *sock = sk->sk_socket;
-+	struct ckpt_hdr_socket *h;
- 
- 	if (!sock->ops->checkpoint) {
- 		ckpt_write_err(ctx, "socket (proto_ops: %pS)", sock->ops);
- 		return -ENOSYS;
- 	}
- 
--	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET);
- 	if (!h)
- 		return -ENOMEM;
- 
--	h->common.f_type = CKPT_FILE_SOCKET;
+ 		/* invoke callback to actually dump the state */
+ 		BUG_ON(!obj->ops->checkpoint);
+-		ret = obj->ops->checkpoint(ctx, ptr);
 -
- 	/* part I: common to all sockets */
--	ret = sock_cptrst(ctx, sk, &h->socket, CKPT_CPT);
--	if (ret < 0)
--		goto out;
--	ret = checkpoint_file_common(ctx, file, &h->common);
-+	ret = sock_cptrst(ctx, sk, h, CKPT_CPT);
- 	if (ret < 0)
- 		goto out;
-+
- 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
- 	if (ret < 0)
- 		goto out;
-@@ -452,6 +447,42 @@ int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
- 			goto out;
- 		ret = sock_write_buffers(ctx, &sk->sk_write_queue);
- 	}
-+
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+int checkpoint_sock(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	return do_sock_checkpoint(ctx, (struct sock *)ptr);
-+}
-+
-+int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-+{
-+	struct ckpt_hdr_file_socket *h;
-+	struct socket *sock = file->private_data;
-+	struct sock *sk = sock->sk;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->common.f_type = CKPT_FILE_SOCKET;
-+
-+	h->sock_objref = checkpoint_obj(ctx, sk, CKPT_OBJ_SOCK);
-+	if (h->sock_objref < 0) {
-+		ret = h->sock_objref;
-+		goto out;
-+	}
-+
-+	ret = checkpoint_file_common(ctx, file, &h->common);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -511,35 +542,30 @@ static struct file *sock_alloc_attach_fd(struct socket *sock)
- 	return file;
- }
- 
--struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+static struct sock *do_sock_restore(struct ckpt_ctx *ctx)
- {
--	struct ckpt_hdr_file_socket *hh = (struct ckpt_hdr_file_socket *) ptr;
--	struct ckpt_hdr_socket *h = &hh->socket;
-+	struct ckpt_hdr_socket *h;
- 	struct socket *sock;
--	struct file *file;
- 	int ret;
- 
--	if (ptr->h.type != CKPT_HDR_FILE  ||
--	    ptr->h.len != sizeof(*hh) || ptr->f_type != CKPT_FILE_SOCKET)
--		return ERR_PTR(-EINVAL);
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET);
-+	if (IS_ERR(h))
-+		return ERR_PTR(PTR_ERR(h));
- 
- 	/* silently clear flags, e.g. SOCK_NONBLOCK or SOCK_CLOEXEC */
- 	h->sock.type &= SOCK_TYPE_MASK;
- 
- 	ret = sock_create(h->sock_common.family, h->sock.type, 0, &sock);
- 	if (ret < 0)
--		return ERR_PTR(ret);
-+		goto err;
- 
-+	/* part II and III: per-protocol restore */
- 	if (!sock->ops->restore) {
- 		ckpt_debug("proto_ops lacks checkpoint: %pS\n", sock->ops);
- 		ret = -EINVAL;
- 		goto err;
+ 		obj->flags |= CKPT_OBJ_CHECKPOINTED;
++		ret = obj->ops->checkpoint(ctx, ptr);
  	}
  
--	/*
--	 * part II: per socket type state
--	 * (also takes care of part III: socket buffer)
--	 */
- 	ret = sock->ops->restore(ctx, sock, h);
- 	if (ret < 0)
- 		goto err;
-@@ -549,21 +575,45 @@ struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 	if (ret < 0)
- 		goto err;
- 
--	file = sock_alloc_attach_fd(sock);
--	if (IS_ERR(file)) {
--		ret = PTR_ERR(file);
--		goto err;
--	}
-+	ckpt_hdr_put(ctx, h);
-+
-+	return sock->sk;
-+ err:
-+	ckpt_hdr_put(ctx, h);
-+	sock_release(sock);
-+
-+	return ERR_PTR(ret);
-+}
-+
-+void *restore_sock(struct ckpt_ctx *ctx)
-+{
-+	return do_sock_restore(ctx);
-+}
-+
-+struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+{
-+	struct ckpt_hdr_file_socket *h = (struct ckpt_hdr_file_socket *)ptr;
-+	struct sock *sk;
-+	struct file *file;
-+	int ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE || ptr->f_type != CKPT_FILE_SOCKET)
-+		return ERR_PTR(-EINVAL);
-+
-+	sk = ckpt_obj_fetch(ctx, h->sock_objref, CKPT_OBJ_SOCK);
-+	if (IS_ERR(sk))
-+		return ERR_PTR(PTR_ERR(sk));
-+
-+	file = sock_alloc_attach_fd(sk->sk_socket);
-+	if (IS_ERR(file))
-+		return file;
- 
- 	ret = restore_file_common(ctx, file, ptr);
- 	if (ret < 0) {
- 		fput(file);
--		file = ERR_PTR(ret);
-+		return ERR_PTR(ret);
- 	}
--	return file;
- 
-- err:
--	sock_release(sock);
--	return ERR_PTR(ret);
-+	return file;
- }
- 
-diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
-index 366bc80..cda8434 100644
---- a/net/unix/checkpoint.c
-+++ b/net/unix/checkpoint.c
-@@ -57,7 +57,6 @@ static int unix_write_cwd(struct ckpt_ctx *ctx,
- int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- {
- 	struct unix_sock *sk = unix_sk(sock->sk);
--	struct unix_sock *pr = unix_sk(sk->peer);
- 	struct ckpt_hdr_socket_unix *un;
- 	int new;
- 	int ret = -ENOMEM;
-@@ -86,7 +85,7 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- 		goto out;
- 
- 	if (sk->peer)
--		un->peer = ckpt_obj_lookup_add(ctx, pr, CKPT_OBJ_SOCK, &new);
-+		un->peer = checkpoint_obj(ctx, sk->peer, CKPT_OBJ_SOCK);
- 	else
- 		un->peer = 0;
- 
+ 	obj->flags |= CKPT_OBJ_VISITED;
 -- 
 1.6.2.5
