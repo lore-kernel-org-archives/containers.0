@@ -1,15 +1,23 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] [RFC] Add checkpoint/restart support for epoll files.
-Date: Mon, 24 Aug 2009 16:27:25 -0500
-Message-ID: <20090824212725.GA25030@us.ibm.com>
-References: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc@us.ibm.com>
-	<e820d207a3b1a3228ded29bce9b29f2179ab598b.1250745409.git.matthltc@us.ibm.com>
+From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Tue, 25 Aug 2009 01:03:29 +0200
+Message-ID: <ac1c4bf20908241603o5e9f72b3j2b95e5ef60ee4cca@mail.gmail.com>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
+	<4A92676A.1080609@free.fr>
+	<ac1c4bf20908240327u424bd021t8848cf1cafb24ada@mail.gmail.com>
+	<4A9275CB.7030108@free.fr>
+	<ac1c4bf20908240431p1fda5a15qd26629618397696@mail.gmail.com>
+	<4A929F83.80207@free.fr>
+	<ac1c4bf20908240926j401003dft11f50d3be1466f90@mail.gmail.com>
+	<4A92C01E.5010809@free.fr>
+	<ac1c4bf20908240936t1bee38e3h9388298f435f056c@mail.gmail.com>
+	<ac1c4bf20908241222w127f9f7em5175213281491a8d@mail.gmail.com>
+Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <e820d207a3b1a3228ded29bce9b29f2179ab598b.1250745409.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <ac1c4bf20908241222w127f9f7em5175213281491a8d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,438 +27,193 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Save/restore epoll items during checkpoint/restart respectively.
-> 
-> Tests for the cr_tests suite to follow. Tests pass on i386.
-> 
-> TODOs (search the patch for "TODO") that could probably use some
-> comments:
-> 
-> What to do when there's a "possible checkpoint obj leak"? (search patch
-> 	for this string to see what I'm talking about)
-> 
-> Ensure get_current_user will be correct (a userns question/issue?).
-> 
-> kmalloc failures should be dealt with more kindly than just error-out
-> 	because epoll is made to poll many thousands of file
-> 	descriptors.
-> 	This seems like a more general problem with some of the
-> 	ckpt_hdr* functions than an epoll problem but...
-> 
-> Pick better errnos for some cases.
-> 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-> ---
->  checkpoint/files.c               |   35 +++++
->  checkpoint/restart.c             |    2 +-
->  fs/eventpoll.c                   |  280 +++++++++++++++++++++++++++++++++++++-
->  include/linux/checkpoint.h       |    1 +
->  include/linux/checkpoint_hdr.h   |   14 ++
->  include/linux/checkpoint_types.h |    2 +
->  include/linux/eventpoll.h        |   14 ++-
->  7 files changed, 345 insertions(+), 3 deletions(-)
-> 
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index 204055b..8f86dcc 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -21,6 +21,8 @@
->  #include <linux/syscalls.h>
->  #include <linux/checkpoint.h>
->  #include <linux/checkpoint_hdr.h>
-> +#include <linux/deferqueue.h>
-> +#include <linux/eventpoll.h>
->  #include <net/sock.h>
-> 
-> 
-> @@ -289,11 +291,24 @@ static int do_checkpoint_file_table(struct ckpt_ctx *ctx,
->  		goto out;
-> 
->  	ckpt_debug("nfds %d\n", nfds);
-> +	ctx->files_deferq = deferqueue_create();
-> +	if (!ctx->files_deferq) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
->  	for (n = 0; n < nfds; n++) {
->  		ret = checkpoint_file_desc(ctx, files, fdtable[n]);
->  		if (ret < 0)
->  			break;
->  	}
-> +	if (!ret) {
-> +		ret = deferqueue_run(ctx->files_deferq);
-> +		if (ret > 0) {
-> +			pr_warning("c/r: files deferqueue had %d entries\n", ret);
-> +			ret = 0;
-> +		}
-> +	}
-> +	deferqueue_destroy(ctx->files_deferq);
->   out:
->  	kfree(fdtable);
->  	return ret;
-> @@ -572,6 +587,14 @@ static struct restore_file_ops restore_file_ops[] = {
->  		.file_type = CKPT_FILE_SOCKET,
->  		.restore = sock_file_restore,
->  	},
-> +#ifdef CONFIG_EPOLL
-> +	/* epoll */
-> +	{
-> +		.file_name = "EPOLL",
-> +		.file_type = CKPT_FILE_EPOLL,
-> +		.restore = ep_file_restore,
-> +	},
-> +#endif
->  };
-> 
->  static struct file *do_restore_file(struct ckpt_ctx *ctx)
-> @@ -692,11 +715,23 @@ static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
->  	if (ret < 0)
->  		goto out;
-> 
-> +	ret = -ENOMEM;
-> +	ctx->files_deferq = deferqueue_create();
-> +	if (!ctx->files_deferq)
-> +		goto out;
->  	for (i = 0; i < h->fdt_nfds; i++) {
->  		ret = restore_file_desc(ctx);
->  		if (ret < 0)
->  			break;
->  	}
-> +	if (!ret) {
-> +		ret = deferqueue_run(ctx->files_deferq);
-> +		if (ret > 0) {
-> +			pr_warning("c/r: files deferqueue had %d entries\n", ret);
-> +			ret = 0;
-> +		}
-> +	}
-> +	deferqueue_destroy(ctx->files_deferq);
->   out:
->  	ckpt_hdr_put(ctx, h);
->  	if (!ret) {
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 4fdae78..3a7d914 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -164,7 +164,7 @@ int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len)
->   *
->   * Return: new buffer allocated on success, error pointer otherwise
->   */
-> -static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
-> +void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
->  {
->  	struct ckpt_hdr hh;
->  	struct ckpt_hdr *h;
-> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-> index 085c5c0..7f7070f 100644
-> --- a/fs/eventpoll.c
-> +++ b/fs/eventpoll.c
-> @@ -671,10 +671,19 @@ static unsigned int ep_eventpoll_poll(struct file *file, poll_table *wait)
->  	return pollflags != -1 ? pollflags : 0;
->  }
-> 
-> +#ifdef CONFIG_CHECKPOINT
-> +static int ep_eventpoll_checkpoint(struct ckpt_ctx *ctx, struct file *file);
-> +static int ep_file_collect(struct ckpt_ctx *ctx, struct file *file);
-> +#else
-> +#define ep_eventpoll_checkpoint NULL
+2009/8/24 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
 
-Don't forget ep_file_collect here.
+>
+>
+> 2009/8/24 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+>
+> 2009/8/24 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>
+>>> Krzysztof Taraszka wrote:
+>>>
+>>>> 2009/8/24 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>>>
+>>>>
+>>>>> [ snip ]
+>>>>>
+>>>>>   i think that /proc/meminfo should be mounted after /proc . why? i
+>>>>>> think
+>>>>>>
+>>>>>>> that, because mounting /proc may override /proc/meminfo
+>>>>>>>> Am I right? :)
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>  Ha ! haha ! arrgh ! no way ! You are right :/
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>  Hehe ;)
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>  In the case of application container, lxc mounts /proc but in the
+>>>>>>> case of
+>>>>>>> system container it is the system who do that so after the
+>>>>>>> /proc/meminfo
+>>>>>>> has
+>>>>>>> been mounted.
+>>>>>>>
+>>>>>>> Maybe we can look at modifying fs/proc/meminfo.c instead. Let me do a
+>>>>>>> small
+>>>>>>> patch for the kernel...
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>  Okey. I am waiting for your patch :)
+>>>>>>
+>>>>>>  Quick and dirty patch but at least working. It is no synced on the
+>>>>> latest
+>>>>> kernel version.
+>>>>> I do not really like to touch fs/proc/meminfo.c but it's an example
+>>>>> here.
+>>>>>
+>>>>>
+>>>>
+>>>> Hi Daniel,
+>>>>
+>>>> I tried to compile my kernel tree (2.6.30.5) with your patch using
+>>>> gcc-4.4,
+>>>> gcc-4.3 and gcc-4.2 and i got this error on every gcc when linking
+>>>> kernel:
+>>>>
+>>>> mm/built-in.o: In function `mem_cgroup_info':
+>>>> (.text+0x27651): undefined reference to `__udivdi3'
+>>>> mm/built-in.o: In function `mem_cgroup_info':
+>>>> (.text+0x27678): undefined reference to `__udivdi3'
+>>>> mm/built-in.o: In function `mem_cgroup_info':
+>>>> (.text+0x276b0): undefined reference to `__udivdi3'
+>>>> mm/built-in.o: In function `mem_cgroup_info':
+>>>> (.text+0x276dd): undefined reference to `__udivdi3'
+>>>> make: *** [.tmp_vmlinux1] Error 1
+>>>>
+>>>> this can be gcc based error. What kernel and gcc did you use for compile
+>>>> your kernel?
+>>>>
+>>>
+>>> I used a 2.6.30 kernel and
+>>> gcc (GCC) 4.3.0 20080428 (Red Hat 4.3.0-8)
+>>> Compiled on a x86_64 host.
+>>>
+>>> Do you have any warning at the compile time ?
+>>>
+>>>
+>> No, did not see any warnings when memcontrol.c or fs/meminfo.c was
+>> compiled.
+>> Anyway, I will try to build in on the stable (lenny) version of debian
+>> (right now I am working on unstable debian tree).
+>> That might be gcc from unstable problem.
+>>
+>> I will let you know what exactly problem is.
+>>
+>>
+> ok Daniel,
+>
+> i found a problem. I am runnning my debian box under vmware 32bit box so
+> your patch can not be compiled propertly on the 32bit system, so I decided
+> to make a little change in your patch.
+> I used shift operation instead of div. in the asm/div64.h is macro do_div()
+> but using shift instead of div is easier that implementing do_div macro, so
+> here is a small patch:
+>
+> --- memcontrol.c.orig    2009-08-24 21:19:36.000000000 +0200
+> +++ memcontrol.c    2009-08-24 21:20:37.000000000 +0200
+> @@ -1834,14 +1834,13 @@
+>          si_swapinfo(info);
+>
+>      if (limit != LLONG_MAX) {
+> -        info->totalram = limit / info->mem_unit;
+> -        info->freeram = (limit - mystat.stat[MCS_RSS]) / info->mem_unit;
+> +        info->totalram = limit >> info->mem_unit;
+> +        info->freeram = (limit - mystat.stat[MCS_RSS]) >> info->mem_unit;
+>      }
+>
+>      if (memsw_limit != LLONG_MAX) {
+> -        info->totalswap = memsw_limit / info->mem_unit;
+> -        info->freeswap = (memsw_limit - swap_in_u) / info->mem_unit;
+> -
+> +        info->totalswap = memsw_limit >> info->mem_unit;
+> +        info->freeswap = (memsw_limit - swap_in_u) >> info->mem_unit;
+>      }
+>
+>      return 0;
+>
+>
+> I hope that simple change won't to break on your 64bit :)
+>
+>
+>
+Agrhhh!
+It broken at all ;) I forgot that shift operation is true only when the
+divisor is a power of 2 (if x=2^a then c=c/x is the same as c=c>>x).
+So.. my last patch only fix compilation on 32bit machines but totaly
+breaking show values by /proc/meminfo.
 
-> +#endif
-> +
->  /* File callbacks that implement the eventpoll file behaviour */
->  static const struct file_operations eventpoll_fops = {
->  	.release	= ep_eventpoll_release,
-> -	.poll		= ep_eventpoll_poll
-> +	.poll		= ep_eventpoll_poll,
-> +	.checkpoint 	= ep_eventpoll_checkpoint,
-> +	.collect 	= ep_file_collect,
->  };
-> 
->  /* Fast test to see if the file is an evenpoll file */
-> @@ -1413,6 +1422,275 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event __user *, events,
-> 
->  #endif /* HAVE_SET_RESTORE_SIGMASK */
-> 
-> +#ifdef CONFIG_CHECKPOINT
-> +#include <linux/checkpoint.h>
-> +#include <linux/checkpoint_hdr.h>
-> +#include <linux/deferqueue.h>
-> +
-> +static int ep_file_collect(struct ckpt_ctx *ctx, struct file *file)
-> +{
-> +	struct rb_node *rbp;
-> +	struct eventpoll *ep;
-> +	int ret = 0;
-> +
-> +	if (!is_file_epoll(file))
-> +		return 0;
-> +
-> +	ep = file->private_data;
-> +	mutex_lock(&ep->mtx);
-> +	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp)) {
-> +		struct epitem *epi;
-> +
-> +		epi = rb_entry(rbp, struct epitem, rbn);
-> +		ret = ckpt_obj_collect(ctx, epi->ffd.file, CKPT_OBJ_FILE);
-> +		if (ret < 0)
-> +			break;
-> +	}
-> +	mutex_unlock(&ep->mtx);
-> +	return ret;
-> +}
-> +
-> +struct epoll_deferq_entry {
-> +	struct ckpt_ctx *ctx;
-> +	struct file *epfile;
-> +};
-> +
-> +static int ep_items_checkpoint(void *data)
-> +{
-> +	struct epoll_deferq_entry *ep_dq_entry = data;
-> +	struct ckpt_ctx *ctx;
-> +	struct file *file;
-> +	struct ckpt_eventpoll_items *h;
-> +	struct rb_node *rbp;
-> +	struct eventpoll *ep;
-> +	int i, ret = -ENOMEM;
-> +
-> +	file = ep_dq_entry->epfile;
-> +	ctx = ep_dq_entry->ctx;
-> +
-> +	ep = file->private_data;
-> +	mutex_lock(&ep->mtx);
-> +	for (i = 0, rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp), i++) {}
-> +	mutex_unlock(&ep->mtx);
-> +
-> +	/* TODO likely allocation failure when lots of epoll items */
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h) + i*sizeof(h->items[0]),
-> +			      CKPT_HDR_FILE_EPOLL_ITEMS);
-> +	if (!h)
-> +		goto out;
-> +
-> +	ret = -ENODEV;
-> +	h->num_items = i;
-> +	h->epfile_objref = ckpt_obj_lookup(ctx, file, CKPT_OBJ_FILE);
-> +	if (h->epfile_objref <= 0)
-> +		goto out;
-> +
-> +	ret = 0;
-> +	mutex_lock(&ep->mtx);
-> +	for (i = 0, rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp), i++) {
-> +		struct epitem *epi;
-> +		int objref;
-> +
-> +		epi = rb_entry(rbp, struct epitem, rbn);
-> +		objref = ckpt_obj_lookup(ctx, epi->ffd.file, CKPT_OBJ_FILE);
-> +		if (objref <= 0) {
-> +			/* TODO error -- possible checkpoint obj leak */
-> +			ret = -ENODEV;
-> +			break;
-> +		}
-> +		h->items[i].fd = epi->ffd.fd;
-> +		h->items[i].file_objref = objref;
-> +		h->items[i].events = epi->event.events;
-> +		h->items[i].data = epi->event.data;
-> +	}
-> +	mutex_unlock(&ep->mtx);
-> +	if (h && !ret)
-> +		ret = ckpt_write_obj(ctx, &h->h);
-> +	if (!ret && (i != h->num_items)) {
-> +		/* TODO error -- possible checkpoint obj leak */
-> +	}
-> +out:
-> +	if (h)
-> +		ckpt_hdr_put(ctx, &h->h);
-> +	return ret;
-> +}
-> +
-> +static int ep_eventpoll_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-> +{
-> +	struct ckpt_hdr_file *h;
-> +	struct epoll_deferq_entry ep_dq_entry;
-> +	int ret = -ENOMEM;
-> +
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-> +	if (!h)
-> +		goto out_print;
-> +	h->f_type = CKPT_FILE_EPOLL;
-> +	ret = checkpoint_file_common(ctx, file, h);
-> +	if (ret < 0)
-> +		goto out;
-> +	ret = ckpt_write_obj(ctx, &h->h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	/*
-> +	 * Defer saving the epoll items until all of the ffd.file pointers
-> +	 * have an objref; after the file table has been checkpointed.
-> +	 */
-> +	ep_dq_entry.ctx = ctx;
-> +	ep_dq_entry.epfile = file;
-> +	ret = deferqueue_add(ctx->files_deferq, &ep_dq_entry,
-> +			     sizeof(ep_dq_entry), ep_items_checkpoint, NULL);
-> +out:
-> +	ckpt_hdr_put(ctx, h);
-> +out_print:
-> +	return ret;
-> +}
-> +
-> +static int ep_items_restore(void *data)
-> +{
-> +	struct ckpt_ctx *ctx = *((struct ckpt_ctx**)data);
-> +	struct ckpt_eventpoll_items *h;
-> +	struct eventpoll *ep;
-> +	struct file *epfile = NULL;
-> +	int ret, i = 0, remaining_watches;
-> +
-> +	/*
-> +	 * TODO possible kmalloc failure due to too many watches.
-> +	 */
-> +	h = ckpt_read_obj(ctx, 0,
-> +			  sizeof(*h) + max_user_watches*sizeof(h->items[0]));
-> +	if (IS_ERR(h))
-> +		return PTR_ERR(h);
-> +
-> +	ret = -EINVAL;
-> +	if ((h->h.type != CKPT_HDR_FILE_EPOLL_ITEMS) ||
-> +	    (h->h.len < sizeof(*h)))
-> +		goto out;
-> +
-> +	/* Make sure the items match the size we expect */
-> +	if (h->num_items != ((h->h.len - sizeof(*h)) / sizeof(h->items[0])))
-> +		goto out;
-> +
-> +	epfile = ckpt_obj_fetch(ctx, h->epfile_objref, CKPT_OBJ_FILE);
-> +	if (IS_ERR(epfile)) {
-> +		ret = PTR_ERR(epfile);
-> +		goto out;
-> +	}
-> +	ret = -ENOMSG;
-> +	if (!is_file_epoll(epfile))
-> +		goto out;
-> +
-> +	ep = epfile->private_data;
-> +
-> +	ret = -ENOSPC;
-> +	remaining_watches = (max_user_watches -
-> +			     atomic_read(&ep->user->epoll_watches));
-> +	if (h->num_items > remaining_watches)
-> +		goto out;
-> +
-> +	ret = 0;
-> +	/* Restore the epoll items/watches */
-> +	for (i = 0; !ret && i < h->num_items; i++) {
-> +		/*
-> +		 * Loop body like multiple epoll_ctl(ep, ADD, event)
-> +		 * calls except we've already done much of the checking.
-> +		 */
-> +		struct epoll_event epev;
-> +		struct epitem *epi;
-> +		struct file *tfile;
-> +
-> +		epev.events = h->items[i].events;
-> +		epev.data = h->items[i].data;
-> +
-> +		/* Get the file* for the target file */
-> +		if (h->items[i].file_objref <= 0) {
-> +			ret = -EINVAL;
-> +			break;
-> +		}
-> +
-> +		tfile = ckpt_obj_fetch(ctx, h->items[i].file_objref,
-> +				       CKPT_OBJ_FILE);
-> +		if (IS_ERR(tfile)) {
-> +			ret = PTR_ERR(tfile);
-> +			break;
-> +		}
-> +
-> +		/* The target file must support poll */
-> +		if (!tfile->f_op || !tfile->f_op->poll) {
-> +			ret = -EPERM;
-> +			break;
-> +		}
-> +
-> +		/* Cannot add an epoll file descriptor inside itself. */
-> +		if (epfile == tfile) {
-> +			ret = -EINVAL;
-> +			break;
-> +		}
-> +
-> +		mutex_lock(&ep->mtx);
-> +		epi = ep_find(ep, tfile, h->items[i].fd);
-> +		if (!epi) {
-> +			epev.events |= POLLERR | POLLHUP;
-> +			ret = ep_insert(ep, &epev, tfile, h->items[i].fd);
-> +		} else
-> +			ret = -EEXIST;
-> +		mutex_unlock(&ep->mtx);
-> +	}
-> +out:
-> +	ckpt_hdr_put(ctx, h);
-> +	return ret;
-> +}
-> +
-> +/* TODO confirm that get_current_user() has been restored */
+But.. I make another one which using do_div() macro and working as I wish.
+It should look like that and it works for me :)
 
-Not sure what you mean.  At this point, the task's credentials
-are still the ones used when it called sys_restart().  We won't
-update them until the end of the restart operation.  However the
-normal file restore operations should have reset the file->f_cred
-to the checkpointed value - including hierarchical user namespaces.
+--- memcontrol.c.orig    2009-08-24 21:19:36.000000000 +0200
++++ memcontrol.c    2009-08-25 00:56:30.000000000 +0200
+@@ -40,6 +40,7 @@
+ #include "internal.h"
 
-> +struct file* ep_file_restore(struct ckpt_ctx *ctx,
-> +			     struct ckpt_hdr_file *h)
-> +{
-> +	struct file *epfile;
-> +	int epfd, ret;
-> +
-> +	if (h->h.type != CKPT_HDR_FILE ||
-> +	    h->h.len  != sizeof(*h) ||
-> +	    h->f_type != CKPT_FILE_EPOLL)
-> +		return ERR_PTR(-EINVAL);
-> +
-> +	/*
-> +	 * TODO Normally h->f_flags contains flags that epoll_create() won't
-> +	 * accept. Right now we pass only those flags it will accept here
-> +	 * and restore the rest during the "common" file restore. Check
-> +	 * to make sure we're not missing anything.
-> +	 */
-> +	epfd = sys_epoll_create1(h->f_flags & EPOLL_CLOEXEC);
-> +	if (epfd < 0)
-> +		return ERR_PTR(epfd);
-> +	epfile = fget(epfd);
-> +	if (!epfile)
-> +		return ERR_PTR(-ENOENT); /* TODO pick better error? */
-> +
-> +	ret = restore_file_common(ctx, epfile, h);
-> +	if (ret < 0)
-> +		goto fput_out;
-> +
-> +	/*
-> +	 * Now we have the file and file descriptor but the epoll set is empty.
-> +	 * Defer restoring the epoll set until we encounter its corresponding
-> +	 * items. Note that this effectively counts the number of
-> +	 * ckpt_eventpoll_items blocks we should expect -- we rely on the
-> +	 * epfile_objref of those blocks to associate them with the proper
-> +	 * file.
-> +	 */
-> +	ret = deferqueue_add(ctx->files_deferq, &ctx, sizeof(ctx),
-> +			     ep_items_restore, NULL);
-> +	if (ret < 0) {
-> +fput_out:
-> +		fput(epfile);
-> +		epfile = ERR_PTR(ret);
-> +	}
-> +	sys_close(epfd);
-> +	return epfile;
-> +}
-> +
-> +#endif /* CONFIG_CHECKPOINT */
-> +
+ #include <asm/uaccess.h>
++#include <asm/div64.h>
+
+ struct cgroup_subsys mem_cgroup_subsys __read_mostly;
+ #define MEM_CGROUP_RECLAIM_RETRIES    5
+@@ -1834,14 +1835,27 @@
+         si_swapinfo(info);
+
+     if (limit != LLONG_MAX) {
+-        info->totalram = limit / info->mem_unit;
+-        info->freeram = (limit - mystat.stat[MCS_RSS]) / info->mem_unit;
++
++        u64 dd_totalram, dd_freeram;
++
++        dd_totalram = limit;
++        do_div(dd_totalram, info->mem_unit);
++        dd_freeram = (limit - mystat.stat[MCS_RSS]);
++        do_div(dd_freeram, info->mem_unit);
++        info->totalram = dd_totalram;
++        info->freeram = dd_freeram;
+     }
+
+     if (memsw_limit != LLONG_MAX) {
+-        info->totalswap = memsw_limit / info->mem_unit;
+-        info->freeswap = (memsw_limit - swap_in_u) / info->mem_unit;
+
++        u64 dd_totalswap, dd_freeswap;
++
++        dd_totalswap = memsw_limit;
++        do_div(dd_totalswap, info->mem_unit);
++        dd_freeswap = memsw_limit - swap_in_u;
++        do_div(dd_freeswap, info->mem_unit);
++        info->totalswap = dd_totalswap;
++        info->freeswap = dd_freeswap;
+     }
+
+     return 0;
+
+this should work for 32 & 64bit systems.
+
+-- 
+Krzysztof Taraszka
+dzimi-k0Z414SquRyhPH1hqNUYSQ@public.gmane.org
