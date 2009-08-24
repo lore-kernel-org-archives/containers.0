@@ -1,7 +1,7 @@
-From: Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
-Subject: RE: [Devel] Re: [lxc-devel] Memory Resources
-Date: Mon, 24 Aug 2009 08:17:06 +0200
-Message-ID: <90D306BE6EBC8D428A824FBBA7A3113DE076E221@ronja.maurer-it.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [Devel] Re: [lxc-devel] Memory Resources
+Date: Mon, 24 Aug 2009 15:58:35 +0900
+Message-ID: <20090824155835.94f6b88f.kamezawa.hiroyu@jp.fujitsu.com>
 References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
 	<4A916BC9.8040905@free.fr>
 	<ac1c4bf20908230959j4cda58cel3bcf4f3822d50bb1@mail.gmail.com>
@@ -14,12 +14,12 @@ References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>
 	<4A91ADE1.9090204@free.fr>
 	<ac1c4bf20908231412m634fdf9h686f6bd24eb95a14@mail.gmail.com>
 	<20090824092739.70d56a5b.kamezawa.hiroyu@jp.fujitsu.com>
+	<90D306BE6EBC8D428A824FBBA7A3113DE076E221@ronja.maurer-it.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090824092739.70d56a5b.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <90D306BE6EBC8D428A824FBBA7A3113DE076E221-jRgWbcutxcWenyD9vqZGNUEOCMrvLtNR@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,21 +29,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org" <kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org" <kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>, "lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> > how about memsw_limit for swap? :>
-> > I am looking for swap usage statistics from cgroup right now from
-> > memcontrol.c :) but as you did the idea is good and should be add to
-> the
-> > kernel and lxc-tools :)
-> >
+On Mon, 24 Aug 2009 08:17:06 +0200
+Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org> wrote:
+
+> > > how about memsw_limit for swap? :>
+> > > I am looking for swap usage statistics from cgroup right now from
+> > > memcontrol.c :) but as you did the idea is good and should be add to
+> > the
+> > > kernel and lxc-tools :)
+> > >
+> > 
+> > Hmm, why meminfo is necessary ? For cheating top/free/... etc ?
 > 
-> Hmm, why meminfo is necessary ? For cheating top/free/... etc ?
+> Many servers use that info to control the use of resources. For example, they do not span any more server processes if memory is low.
+> 
+> If you do not have that info correct, all those programs fails (they try to allocate much more resources than available).
+> 
 
-Many servers use that info to control the use of resources. For example, they do not span any more server processes if memory is low.
+Hm, duplicating information for keeping binary compatibility for apps ?
+What other stat does ? 
+For example, 
+	- load average
+	- cpu usage %user, %sys, %iowait, etc..
+	- fork-per-sec
 
-If you do not have that info correct, all those programs fails (they try to allocate much more resources than available).
+One difficulty I think of is that memcg's limit-usage doesn't means "free".
+But, hmm, showing "meminfo" in popular/user-friendly format is not very bad.
+Balbir, how do you think ?
 
-- Dietmar
+If you write a patch, plz onto the newest mmotm.
+*And*, now, Nishimura-san is posting "show # of swap usage directly" patch.
+It will be a help for you.
+
+Thanks,
+-Kame
