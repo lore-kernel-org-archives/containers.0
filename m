@@ -1,79 +1,56 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 2/3] Expose may_setuid() in user.h and add may_setgid()
- (v2)
-Date: Tue, 25 Aug 2009 01:53:58 -0400
-Message-ID: <4A937C76.9080503@librato.com>
-References: <1251134884-24491-1-git-send-email-danms@us.ibm.com> <1251134884-24491-3-git-send-email-danms@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 1/3] Set the CHECKPOINTED flag on objects before calling
+	checkpoint
+Date: Tue, 25 Aug 2009 01:53:43 -0400
+Message-ID: <4A937C67.20603@librato.com>
+References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
+	<1251133918-8117-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1251134884-24491-3-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Serge Hallyn <serue@us.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1251133918-8117-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Added, thanks.
+Right, added.
 
 Dan Smith wrote:
-> Make these helpers available to others.
+> This helps prevent infinite recursion where the checkpoint() operation on an
+> object could potentially result in another checkpoint() of itself.
 > 
-> Changes in v2:
->  - Avoid checking the groupinfo in ctx->realcred against the current in
->    may_setgid()
+> UNIX sockets would easily encounter this when we call checkpoint on all
+> related sockets, which would in turn try to checkpoint us again.
 > 
-> Cc: Serge Hallyn <serue@us.ibm.com>
-> Signed-off-by: Dan Smith <danms@us.ibm.com>
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  include/linux/user.h |    9 +++++++++
->  kernel/user.c        |   13 ++++++++++++-
->  2 files changed, 21 insertions(+), 1 deletions(-)
+>  checkpoint/objhash.c |    3 +--
+>  1 files changed, 1 insertions(+), 2 deletions(-)
 > 
-> diff --git a/include/linux/user.h b/include/linux/user.h
-> index 68daf84..c231e9c 100644
-> --- a/include/linux/user.h
-> +++ b/include/linux/user.h
-> @@ -1 +1,10 @@
-> +#ifndef _LINUX_USER_H
-> +#define _LINUX_USER_H
-> +
->  #include <asm/user.h>
-> +#include <linux/sched.h>
-> +
-> +extern int may_setuid(struct user_namespace *ns, uid_t uid);
-> +extern int may_setgid(gid_t gid);
-> +
-> +#endif
-> diff --git a/kernel/user.c b/kernel/user.c
-> index a535ed6..a78fde7 100644
-> --- a/kernel/user.c
-> +++ b/kernel/user.c
-> @@ -604,7 +604,7 @@ int checkpoint_user(struct ckpt_ctx *ctx, void *ptr)
->  	return do_checkpoint_user(ctx, (struct user_struct *) ptr);
->  }
+> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> index dc0a10a..019077b 100644
+> --- a/checkpoint/objhash.c
+> +++ b/checkpoint/objhash.c
+> @@ -677,9 +677,8 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
 >  
-> -static int may_setuid(struct user_namespace *ns, uid_t uid)
-> +int may_setuid(struct user_namespace *ns, uid_t uid)
->  {
->  	/*
->  	 * this next check will one day become
-> @@ -631,6 +631,17 @@ static int may_setuid(struct user_namespace *ns, uid_t uid)
->  	return 0;
->  }
+>  		/* invoke callback to actually dump the state */
+>  		BUG_ON(!obj->ops->checkpoint);
+> -		ret = obj->ops->checkpoint(ctx, ptr);
+> -
+>  		obj->flags |= CKPT_OBJ_CHECKPOINTED;
+> +		ret = obj->ops->checkpoint(ctx, ptr);
+>  	}
 >  
-> +int may_setgid(gid_t gid)
-> +{
-> +	if (capable(CAP_SETGID))
-> +		return 1;
-> +
-> +	if (in_egroup_p(gid))
-> +		return 1;
-> +
-> +	return 0;
-> +}
-> +
->  static struct user_struct *do_restore_user(struct ckpt_ctx *ctx)
->  {
->  	struct user_struct *u;
+>  	obj->flags |= CKPT_OBJ_VISITED;
