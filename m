@@ -1,14 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Remove struct timeval from socket header
-Date: Mon, 24 Aug 2009 19:04:43 -0500
-Message-ID: <20090825000443.GA9174@us.ibm.com>
-References: <1251137994-17972-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [RFC] Change socket checkpoint to retain DGRAM source addresses
+Date: Mon, 24 Aug 2009 19:06:32 -0500
+Message-ID: <20090825000632.GB9174@us.ibm.com>
+References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1251137994-17972-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251133918-8117-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,89 +23,29 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This patch removes the 'struct timeval' from the socket header and replaces
-> it with a fixed-size type as suggested by Oren.
+> This is a proposed change to the way sockets are checkpointed.
+> It makes the socket itself a proper objhash object, which can be
+> checkpointed or restored as part of reading the stream (like many
+> of the other first-class objects).  Thus, we worry about
+> checkpointing and restoring the socket-typed file, and read the
+> related socket object(s) as a matter of course.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> By doing this, we are able to checkpoint sockets we find that
+> aren't attached to descriptors.  This is used in the final patch
+> to make sure that a socket buffer's owner socket has been
+> checkpointed, allowing us to use that socket to re-send the
+> buffer on restore (thus retaining the source address).
+> 
+> I've got a unit test for this that sets up three sockets, and
+> loads some in-flight buffers before checkpoint, verifying that
+> after checkpoint, recvfrom() sees them from the appropriate
+> source socket.
+> 
+> Does this approach seem reasonable?  
+
+I think so...  and so far haven't found any problems in the
+code itself.  Will look a little more, but so far
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> ---
->  include/linux/checkpoint_hdr.h |    5 +++--
->  net/checkpoint.c               |   22 ++++++++++++++++++++--
->  2 files changed, 23 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 5473a4f..01be039 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -385,6 +385,9 @@ struct ckpt_hdr_socket {
->  		__s64 rcvlowat;
->  		__u64 flags;
-> 
-> +		__s64 rcvtimeo;
-> +		__s64 sndtimeo;
-> +
->  		__u32 err;
->  		__u32 err_soft;
->  		__u32 priority;
-> @@ -400,8 +403,6 @@ struct ckpt_hdr_socket {
->  		__u8 no_check;
-> 
->  		struct linger linger;
-> -		struct timeval rcvtimeo;
-> -		struct timeval sndtimeo;
->  	} sock __attribute__ ((aligned(8)));
->  } __attribute__ ((aligned(8)));
-> 
-> diff --git a/net/checkpoint.c b/net/checkpoint.c
-> index a7e7db0..2c62d54 100644
-> --- a/net/checkpoint.c
-> +++ b/net/checkpoint.c
-> @@ -349,6 +349,24 @@ static int sock_restore_flags(struct socket *sock,
->         return 0;
->  }
-> 
-> +static int sock_copy_timeval(int op, struct sock *sk,
-> +			     int sockopt, __s64 *saved)
-> +{
-> +	struct timeval tv;
-> +
-> +	if (op == CKPT_CPT) {
-> +		if (CKPT_COPY_SOPT(op, sk, sockopt, &tv))
-> +			return -EINVAL;
-> +		*saved = timeval_to_ns(&tv);
-> +	} else {
-> +		tv = ns_to_timeval(*saved);
-> +		if (CKPT_COPY_SOPT(op, sk, sockopt, &tv))
-> +			return -EINVAL;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
->  static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
->  		       struct ckpt_hdr_socket *h, int op)
->  {
-> @@ -392,12 +410,12 @@ static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
->  		return -EINVAL;
->  	}
-> 
-> -	if (CKPT_COPY_SOPT(op, sk, SO_SNDTIMEO, &h->sock.sndtimeo)) {
-> +	if (sock_copy_timeval(op, sk, SO_SNDTIMEO, &h->sock.sndtimeo)) {
->  		ckpt_debug("Failed to set SO_SNDTIMEO");
->  		return -EINVAL;
->  	}
-> 
-> -	if (CKPT_COPY_SOPT(op, sk, SO_RCVTIMEO, &h->sock.rcvtimeo)) {
-> +	if (sock_copy_timeval(op, sk, SO_RCVTIMEO, &h->sock.rcvtimeo)) {
->  		ckpt_debug("Failed to set SO_RCVTIMEO");
->  		return -EINVAL;
->  	}
-> -- 
-> 1.6.2.5
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+-serge
