@@ -1,17 +1,16 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/3] Make sockets proper objhash objects and use
-	checkpoint_obj() on them
-Date: Tue, 25 Aug 2009 07:52:47 -0700
-Message-ID: <87y6p8q728.fsf@caffeine.danplanet.com>
-References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
-	<1251133918-8117-3-git-send-email-danms@us.ibm.com>
-	<4A937031.10300@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/3] c/r: [pty 1/2] allow allocation of desired
+	pty slave
+Date: Tue, 25 Aug 2009 09:58:17 -0500
+Message-ID: <20090825145817.GA22351@us.ibm.com>
+References: <1250642549-23656-1-git-send-email-orenl@librato.com>
+	<1250642549-23656-3-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A937031.10300-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org> (Oren Laadan's message of "Tue\,
-	25 Aug 2009 01\:01\:37 -0400")
+Content-Disposition: inline
+In-Reply-To: <1250642549-23656-3-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,74 +21,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OL> It's perhaps more accurate to s/most sockets/some sockets/. It may
-OL> be more likely for a socket to be checkpointed as a peer of
-OL> another process, or as the sender of an skb.
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> During restart, we need to allocate pty slaves with the same
+> identifiers as recorded during checkpoint. Modify the allocation code
+> to allow an in-kernel caller to request a specific slave identifier.
+> 
+> For this, add a new field to task_struct - 'required_id'. It will
+> hold the desired identifier when restoring a (master) pty.
 
-Um, how about "most of the time" ?  I definitely think that the
-(overwhelmingly) common case is a pair of sockets each attached to a
-file descriptor.
+This is really unfortunate.
 
-OL> Now that you made 'struct sock' a 1st class object, they deserve to
-OL> enjoy 1st class treatment :p  That also means proper collect() method
-OL> - probably starting with the f_op ...
+I assume you left the rather generic name 'required_id' because
+you intend to use it for other calls as well?  Which is even
+more unfortunate...
 
-Okay.
+I know I'm generally the one who pushes for re-using existing
+helpers as much as possible, both to avoid missing existing
+security checks, and to prevent future code changes which forget
+to update the c/r code.
 
-OL> I may be mistaken, but I suspect that the suggested implementation
-OL> cannot limit the depth of recursive calls to checkpoint_obj(). For
-OL> instance, consider a dgram socket that received data from another
-OL> dgram socket, that received data from another dgram, ad infinitum.
+But in this case I don't think re-using fopen to ask the kernel
+to create a new device with more info than fopen usually gets is
+right.  Unfortunately, actually coming up with 'the right way' is
+escaping me at the moment :)
 
-At the very least, a single receive socket is limited in how many
-skb's may be queued for it, which limits an attacker's ability to
-reach the "ad infinitum" case, I'd say.  Do we need something more?
+Though... then again...  your code is hardcoded for devpts and
+opening /dev/ptmx anyway, so surely we can create a new helper
+which takes a devpts_ns and index and returns the new devpts
+tty_struct without using the current->required_id?
 
-OL> I'm thinking about the two other use cases that I mentioned:
-OL> "dangling" (not-referenced by a file) and "pending" (not yet
-OL> accepted) sockets.
+Then, if we ever want to support a tty type other than unix98,
+maybe we can more generally split up more like:
 
-OL> In both cases (well, at least with "pending"), the 'struct sock'
-OL> exist but the 'struct socket' does not exit until after the socket
-OL> is attached to a file descriptor. IIRC, the lifespan of 'struct
-OL> socket' is coupled to that of the referencing file.
+	1. add 'struct tty_struct *make_tty(struct tty_driver *driver,
+			void *data) to tty_operations.  It is
+			undefined for all but devpts.
+	2. for devpts, the void *data includes an int devpts_ns_id
+			and index
+	3. the container-level checkpoint stores a relation between
+		pathnames and devpts_ns_id.  devpts_ns_id is valid
+		only for one checkpoint image.  The pathname is
+		where that devpts_ns is mounted.  If we ever start
+		checkpointing and restoring fs mounts from kernel,
+		then we can tweak this treatment.  For now it is
+		assumed (and verified) that at restart, pathname is
+		in fact where a devpts instance is mounted.
+	4. the tty_struct itself is checkpointed and restored.  It
+		is restored using make_tty() in tty_operations,
+		and for devpts the void *data  is a struct storing
+		the devpts_ns_id and index.
+	5. when a struct file for a devpts is restored, the tty_struct
+		will already have been re-created.  The  tty_struct's objref
+		is stored in the file struct checkpoint data.
 
-OL> In that case, I guess it make more sense to leave the 'struct
-OL> socket' related data within ckpt_hdr_file_socket.
+It requires more finagling of the file/inode/tty_struct relationship
+though...  But I don't see required_id being acceptable upstream.
 
-Hmm, not by my reading.  From what I can tell, the accept operation
-converts a pending socket into a regular one (for lack of a better
-term) by doing a sock_graft().  In fact, it takes the 'struct socket'
-of the pending one, and a 'struct socket' attached to the file handle
-and grafts the former onto the latter.  So, the pending socket's
-'struct socket' *does* exist, unless I'm missing something.
+Of course I've been wrong about such things before.
 
-The dangling case isn't quite as clear, so I'll need to investigate
-further.  While sock_close() prevents further ->ops calls, I don't see
-that it (or ops->release()) actually dissociates the 'struct socket'
-from the 'struct sock' until later.
-
->> +		return ERR_PTR(PTR_ERR(sk));
-
-OL> Nit: I vaguely recall some disapproval of such construct...
-OL> How about '(struct file *) sk' ?
-
-Casting it to the wrong type seems less desirable to me.  I was
-following the lead of:
-
-  % fgrep -r 'ERR_PTR(PTR_ERR' . | wc -l
-  36
-
-and:
-
-  % fgrep -r 'ERR_PTR(PTR_ERR' checkpoint
-  checkpoint/namespace.c:		return ERR_PTR(PTR_ERR(h));
-  checkpoint/signal.c:		return ERR_PTR(PTR_ERR(h));
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+-serge
