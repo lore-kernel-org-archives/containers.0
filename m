@@ -1,15 +1,16 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/3] Make sockets proper objhash objects and use
-	checkpoint_obj() on them
-Date: Tue, 25 Aug 2009 13:55:08 -0400
-Message-ID: <4A94257C.5060702@librato.com>
-References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>	<1251133918-8117-3-git-send-email-danms@us.ibm.com>	<4A937031.10300@librato.com>
-	<87y6p8q728.fsf@caffeine.danplanet.com>
+Subject: Re: [RFC][PATCH 2/3] c/r: [pty 1/2] allow allocation of desired	pty
+	slave
+Date: Tue, 25 Aug 2009 14:28:12 -0400
+Message-ID: <4A942D3C.8030504@librato.com>
+References: <1250642549-23656-1-git-send-email-orenl@librato.com>
+	<1250642549-23656-3-git-send-email-orenl@librato.com>
+	<20090825145817.GA22351@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87y6p8q728.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <20090825145817.GA22351-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,82 +20,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Dan Smith wrote:
-> OL> It's perhaps more accurate to s/most sockets/some sockets/. It may
-> OL> be more likely for a socket to be checkpointed as a peer of
-> OL> another process, or as the sender of an skb.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>> During restart, we need to allocate pty slaves with the same
+>> identifiers as recorded during checkpoint. Modify the allocation code
+>> to allow an in-kernel caller to request a specific slave identifier.
+>>
+>> For this, add a new field to task_struct - 'required_id'. It will
+>> hold the desired identifier when restoring a (master) pty.
 > 
-> Um, how about "most of the time" ?  I definitely think that the
-> (overwhelmingly) common case is a pair of sockets each attached to a
-> file descriptor.
-> 
-> OL> Now that you made 'struct sock' a 1st class object, they deserve to
-> OL> enjoy 1st class treatment :p  That also means proper collect() method
-> OL> - probably starting with the f_op ...
-> 
-> Okay.
-> 
-> OL> I may be mistaken, but I suspect that the suggested implementation
-> OL> cannot limit the depth of recursive calls to checkpoint_obj(). For
-> OL> instance, consider a dgram socket that received data from another
-> OL> dgram socket, that received data from another dgram, ad infinitum.
-> 
-> At the very least, a single receive socket is limited in how many
-> skb's may be queued for it, which limits an attacker's ability to
-> reach the "ad infinitum" case, I'd say.  Do we need something more?
+> This is really unfortunate.
 
-Multiple buffers adds iteration, and one level of recursion. I had in
-mind a slightly different scenario: instead of many buffers for one
-socket, many sockets "chained" -
-
-Assume N sockets S_1...S_n, all dgram, none is connected. Each socket
-S_i send one packet to S_i+1.  Suppose you first checkpoint S_n, then
-you'll need to checkpoint S_n-1, for which you'll need to checkpoint
-S_n-2 etc.
-
-> OL> I'm thinking about the two other use cases that I mentioned:
-> OL> "dangling" (not-referenced by a file) and "pending" (not yet
-> OL> accepted) sockets.
-> 
-> OL> In both cases (well, at least with "pending"), the 'struct sock'
-> OL> exist but the 'struct socket' does not exit until after the socket
-> OL> is attached to a file descriptor. IIRC, the lifespan of 'struct
-> OL> socket' is coupled to that of the referencing file.
-> 
-> OL> In that case, I guess it make more sense to leave the 'struct
-> OL> socket' related data within ckpt_hdr_file_socket.
-> 
-> Hmm, not by my reading.  From what I can tell, the accept operation
-
-You are right: sock_init_data() sets it up, and I believe it is
-for the entire lifetime of the sock/socket.
-
->>> +		return ERR_PTR(PTR_ERR(sk));
-> 
-> OL> Nit: I vaguely recall some disapproval of such construct...
-> OL> How about '(struct file *) sk' ?
-> 
-> Casting it to the wrong type seems less desirable to me.  I was
-> following the lead of:
-> 
->   % fgrep -r 'ERR_PTR(PTR_ERR' . | wc -l
->   36
-
-Yep. That settles it then :)
+:(
 
 > 
-> and:
-> 
->   % fgrep -r 'ERR_PTR(PTR_ERR' checkpoint
->   checkpoint/namespace.c:		return ERR_PTR(PTR_ERR(h));
->   checkpoint/signal.c:		return ERR_PTR(PTR_ERR(h));
+> I assume you left the rather generic name 'required_id' because
+> you intend to use it for other calls as well?  Which is even
+> more unfortunate...
 
-(FWIW, this was criticized ...)
+:'(
+
+> 
+> I know I'm generally the one who pushes for re-using existing
+> helpers as much as possible, both to avoid missing existing
+> security checks, and to prevent future code changes which forget
+> to update the c/r code.
+> 
+> But in this case I don't think re-using fopen to ask the kernel
+> to create a new device with more info than fopen usually gets is
+> right.  Unfortunately, actually coming up with 'the right way' is
+> escaping me at the moment :)
+> 
+> Though... then again...  your code is hardcoded for devpts and
+> opening /dev/ptmx anyway, so surely we can create a new helper
+> which takes a devpts_ns and index and returns the new devpts
+> tty_struct without using the current->required_id?
+
+The problem is that the way pty works: the index allocation takes
+place inside ptmx_open(). As it is, I can't find of a way to
+directly transfer a piece of data to it, because all we do is
+call filp_open().
+
+For this, we need add new functionality for pty code to
+
+a) Allocate a master PTY without the corresponding file; this
+function will be called from ptmx_open() and from restart code,
+and will accept the "desired index" variable.
+
+b) Attach an existing (master) PTY to a file pointer. This
+will also be called from ptmx_open() and from restart code.
+
+and
+
+c) For restart only, manually do the work of filp_open() to
+create a file, dentry, inode etc. This is what I really wanted
+to avoid.
+
+> 
+> Then, if we ever want to support a tty type other than unix98,
+> maybe we can more generally split up more like:
+
+Other tty types have index that is indicated by the device minor
+number (e.g. old style PTYs) or no index considerations :)
 
 Oren.
+
+> 
+> 	1. add 'struct tty_struct *make_tty(struct tty_driver *driver,
+> 			void *data) to tty_operations.  It is
+> 			undefined for all but devpts.
+> 	2. for devpts, the void *data includes an int devpts_ns_id
+> 			and index
+> 	3. the container-level checkpoint stores a relation between
+> 		pathnames and devpts_ns_id.  devpts_ns_id is valid
+> 		only for one checkpoint image.  The pathname is
+> 		where that devpts_ns is mounted.  If we ever start
+> 		checkpointing and restoring fs mounts from kernel,
+> 		then we can tweak this treatment.  For now it is
+> 		assumed (and verified) that at restart, pathname is
+> 		in fact where a devpts instance is mounted.
+> 	4. the tty_struct itself is checkpointed and restored.  It
+> 		is restored using make_tty() in tty_operations,
+> 		and for devpts the void *data  is a struct storing
+> 		the devpts_ns_id and index.
+> 	5. when a struct file for a devpts is restored, the tty_struct
+> 		will already have been re-created.  The  tty_struct's objref
+> 		is stored in the file struct checkpoint data.
+> 
+> It requires more finagling of the file/inode/tty_struct relationship
+> though...  But I don't see required_id being acceptable upstream.
+> 
+> Of course I've been wrong about such things before.
+> 
+> -serge
