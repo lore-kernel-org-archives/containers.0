@@ -1,13 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: how to do not allow to mount /cgroup inside container?
-Date: Tue, 25 Aug 2009 14:47:35 +0200
-Message-ID: <4A93DD67.5030905@free.fr>
-References: <ac1c4bf20908250517j43d49f9fv1b5d6d5beae8aa@mail.gmail.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Remove struct timeval from socket header
+Date: Tue, 25 Aug 2009 06:37:56 -0700
+Message-ID: <87d46krp3f.fsf@caffeine.danplanet.com>
+References: <1251137994-17972-1-git-send-email-danms@us.ibm.com>
+	<20090825074902.GE8078@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ac1c4bf20908250517j43d49f9fv1b5d6d5beae8aa-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20090825074902.GE8078-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org> (Matt Helsley's
+	message of "Tue\, 25 Aug 2009 00\:49\:02 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,30 +19,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Krzysztof Taraszka wrote:
-> Hi,
->
-> I was looking for possibility to secure lxc container to do not allow 'root
-> container user'  from changing limits from cgroup. Right now without STACK64
-> or SELinux he can do this easily.
-> I read the http://www.ibm.com/developerworks/linux/library/l-lxc-security/cookbook
-> and decided to use STACK64 kernel mechanism.
-> Well... mounting cgroup inside container fails (great!, i am looked for that
-> ;)) but networking fails too (interface bring up, sshd bring up, connection
-> beetween host and container is, but 'mtr', 'ping' even 'apt-get update'
-> fails and I do not know why). I secure my container exactly like in the
-> cookbook.
->
-> Is there any other possilbility to have secure container without network
-> problems or any hint now to enable networking with stack64 enabled? If so,
-> maybe the l-lxc-security cookbook have to updated? Maybe another kernel
-> patch to do not allow container to mount cgroup when the mount call come
-> from container?
->
-> Any ideas?
->   
-I think Serge can help you on this area (Cc'ed).
+MH> I think I can guess the reason Oren suggested this but I shouldn't
+MH> have to -- it should be in the changelog instead of simply saying
+MH> oren suggested it.
+
+Okay, I thought "fixed-size type" was clear enough, but noted.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
