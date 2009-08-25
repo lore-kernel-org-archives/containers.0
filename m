@@ -1,111 +1,200 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 3/3] Save and restore UNIX socket peer credentials (v2)
-Date: Tue, 25 Aug 2009 01:54:07 -0400
-Message-ID: <4A937C7F.5020008@librato.com>
-References: <1251134884-24491-1-git-send-email-danms@us.ibm.com> <1251134884-24491-4-git-send-email-danms@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH] Set socket flags on restore using sock_setsockopt() where
+	possible (v3)
+Date: Tue, 25 Aug 2009 01:54:21 -0400
+Message-ID: <4A937C8D.1070302@librato.com>
+References: <1251140047-14246-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1251134884-24491-4-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1251140047-14246-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Added, thanks.
+This one added, too.
 
 Dan Smith wrote:
-> This saves the uid/gid of the sk_peercred structure in the checkpoint
-> stream.  On restart, it uses may_setuid() and may_setgid() to determine
-> if the uid/gid from the checkpoint stream may be used.
+> Fail on the TIMESTAMPING_* flags for the moment, with a TODO in place to
+> handle them later.
+> 
+> Also remove other explicit flag checks because they're no longer copied
+> blindly into the socket object, so existing checks will be sufficient.
 > 
 > Changes in v3:
->  - Fix error path when may_setuid() or may_setgid() fail
+>  - Move socket flag restore procedures into some common functions and a
+>    mapping list.  While definitely nicer to look at, my diffstat shows it
+>    as only saving a single line of code over the previous, while dropping
+>    the ability to print symbolic flag names in the error messages.
 > 
 > Changes in v2:
->  - Adjust for may_setgid() change
+>  - Avoid removing the sock->sk_socket check before sync'ing the socket.flags
+>  - Rename sock_rst_flags() to sock_restore_flags()
+>  - Rebase on top of Oren's cleanup patch
 > 
-> Acked-by: Serge Hallyn <serue@us.ibm.com>
-> Signed-off-by: Dan Smith <danms@us.ibm.com>
+> Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  include/linux/checkpoint_hdr.h |    2 ++
->  net/unix/checkpoint.c          |   30 +++++++++++++++++-------------
->  2 files changed, 19 insertions(+), 13 deletions(-)
+>  net/checkpoint.c |  112 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+>  1 files changed, 101 insertions(+), 11 deletions(-)
 > 
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 4d5c22a..78f1f27 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -414,6 +414,8 @@ struct ckpt_hdr_socket_unix {
->  	struct ckpt_hdr h;
->  	__s32 this;
->  	__s32 peer;
-> +	__u32 peercred_uid;
-> +	__u32 peercred_gid;
->  	__u32 flags;
->  	__u32 laddr_len;
->  	__u32 raddr_len;
-> diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
-> index 81252e3..4aff931 100644
-> --- a/net/unix/checkpoint.c
-> +++ b/net/unix/checkpoint.c
-> @@ -3,6 +3,7 @@
->  #include <linux/fs_struct.h>
->  #include <linux/checkpoint.h>
->  #include <linux/checkpoint_hdr.h>
-> +#include <linux/user.h>
->  #include <net/af_unix.h>
->  #include <net/tcp_states.h>
+> diff --git a/net/checkpoint.c b/net/checkpoint.c
+> index c64483e..44dc3f1 100644
+> --- a/net/checkpoint.c
+> +++ b/net/checkpoint.c
+> @@ -178,10 +178,6 @@ static int sock_cptrst_verify(struct ckpt_hdr_socket *h)
+>  	if (!ckpt_validate_errno(h->sock.err))
+>  		return -EINVAL;
 >  
-> @@ -94,6 +95,9 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
->  		goto out;
+> -	/* None of our supported types use this flag */
+> -	if (h->sock.flags & SOCK_DESTROY)
+> -		return -EINVAL;
+> -
+>  	return 0;
+>  }
+>  
+> @@ -238,11 +234,96 @@ static int sock_cptrst_bufopts(int op, struct sock *sk,
+>  	return 0;
+>  }
+>  
+> +struct sock_flag_mapping {
+> +	int opt;
+> +	int flag;
+> +};
+> +
+> +struct sock_flag_mapping sk_flag_map[] = {
+> +	{SO_OOBINLINE, SOCK_URGINLINE},
+> +	{SO_KEEPALIVE, SOCK_KEEPOPEN},
+> +	{SO_BROADCAST, SOCK_BROADCAST},
+> +	{SO_TIMESTAMP, SOCK_RCVTSTAMP},
+> +	{SO_TIMESTAMPNS, SOCK_RCVTSTAMPNS},
+> +	{SO_DEBUG, SOCK_DBG},
+> +	{SO_DONTROUTE, SOCK_LOCALROUTE},
+> +};
+> +
+> +struct sock_flag_mapping sock_flag_map[] = {
+> +	{SO_PASSCRED, SOCK_PASSCRED},
+> +};
+> +
+> +static int sock_restore_flag(struct socket *sock,
+> +			     unsigned long *flags,
+> +			     int flag,
+> +			     int option)
+> +{
+> +	int v = 1;
+> +	int ret = 0;
+> +
+> +	if (test_and_clear_bit(flag, flags))
+> +		ret = sock_setsockopt(sock, SOL_SOCKET, option,
+> +				      (char *)&v, sizeof(v));
+> +
+> +	return ret;
+> +}
+> +
+> +
+> +static int sock_restore_flags(struct socket *sock,
+> +                             struct ckpt_hdr_socket *h)
+> +{
+> +       int ret;
+> +       int i;
+> +       unsigned long sk_flags = h->sock.flags;
+> +       unsigned long sock_flags = h->socket.flags;
+> +
+> +       for (i = 0; i < ARRAY_SIZE(sk_flag_map); i++) {
+> +	       int opt = sk_flag_map[i].opt;
+> +	       int flag = sk_flag_map[i].flag;
+> +	       ret = sock_restore_flag(sock, &sk_flags, flag, opt);
+> +	       if (ret) {
+> +		       ckpt_debug("Failed to set skopt %i: %i\n", opt, ret);
+> +		       return ret;
+> +	       }
+> +       }
+> +
+> +       for (i = 0; i < ARRAY_SIZE(sock_flag_map); i++) {
+> +	       int opt = sock_flag_map[i].opt;
+> +	       int flag = sock_flag_map[i].flag;
+> +	       ret = sock_restore_flag(sock, &sock_flags, flag, opt);
+> +	       if (ret) {
+> +		       ckpt_debug("Failed to set sockopt %i: %i\n", opt, ret);
+> +		       return ret;
+> +	       }
+> +       }
+> +
+> +       /* TODO: Handle SOCK_TIMESTAMPING_* flags */
+> +       if (test_bit(SOCK_TIMESTAMPING_TX_HARDWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_TX_SOFTWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_RX_HARDWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_RX_SOFTWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_SOFTWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_RAW_HARDWARE, &sk_flags) ||
+> +           test_bit(SOCK_TIMESTAMPING_SYS_HARDWARE, &sk_flags)) {
+> +               ckpt_debug("SOF_TIMESTAMPING_* flags are not supported\n");
+> +               return -ENOSYS;
+> +       }
+> +
+> +       /* Anything that is still set in the flags that isn't part of
+> +        * our protocol's default set, indicates an error
+> +        */
+> +       if (sk_flags & ~sock->sk->sk_flags) {
+> +               ckpt_debug("Unhandled sock flags: %lx\n", sk_flags);
+> +               return -EINVAL;
+> +       }
+> +
+> +       return 0;
+> +}
+> +
+>  static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
+>  		       struct ckpt_hdr_socket *h, int op)
+>  {
+>  	if (sk->sk_socket) {
+> -		CKPT_COPY(op, h->socket.flags, sk->sk_socket->flags);
+>  		CKPT_COPY(op, h->socket.state, sk->sk_socket->state);
 >  	}
 >  
-> +	un->peercred_uid = sock->sk->sk_peercred.uid;
-> +	un->peercred_gid = sock->sk->sk_peercred.gid;
-> +
->  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) un);
->  	if (ret < 0)
->  		goto out;
-> @@ -217,19 +221,6 @@ static int unix_join(struct ckpt_ctx *ctx,
->  	unix_sk(a)->peer = b;
->  	unix_sk(b)->peer = a;
+> @@ -259,12 +340,6 @@ static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
+>  	CKPT_COPY(op, h->sock.state, sk->sk_state);
+>  	CKPT_COPY(op, h->sock.backlog, sk->sk_max_ack_backlog);
 >  
 > -	/* TODO:
-> -	 * Checkpoint the credentials, restore them here if the values match
-> -	 * the restored creds or we may_setuid()
+> -	 * Break out setting each of the flags to use setsockopt() or
+> -	 * perform proper security check
 > -	 */
+> -	CKPT_COPY(op, h->sock.flags, sk->sk_flags);
 > -
-> -	a->sk_peercred.pid = task_tgid_vnr(current);
-> -	a->sk_peercred.uid = ctx->realcred->uid;
-> -	a->sk_peercred.gid = ctx->realcred->gid;
-> -
-> -	b->sk_peercred.pid = a->sk_peercred.pid;
-> -	b->sk_peercred.uid = a->sk_peercred.uid;
-> -	b->sk_peercred.gid = a->sk_peercred.gid;
-> -
->  	if (!UNIX_ADDR_EMPTY(un->raddr_len))
->  		addr = unix_makeaddr(&un->raddr, un->raddr_len);
->  	else if (!UNIX_ADDR_EMPTY(un->laddr_len))
-> @@ -295,6 +286,19 @@ static int unix_restore_connected(struct ckpt_ctx *ctx,
->  		goto out;
+>  	if (sock_cptrst_bufopts(op, sk, h))
+>  		return -EINVAL;
+>  
+> @@ -298,6 +373,21 @@ static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
+>  		return -EINVAL;
 >  	}
 >  
-> +	this->sk_peercred.pid = task_tgid_vnr(current);
-> +
-> +	if (may_setuid(ctx->realcred->user->user_ns, un->peercred_uid) &&
-> +	    may_setgid(un->peercred_gid)) {
-> +		this->sk_peercred.uid = un->peercred_uid;
-> +		this->sk_peercred.gid = un->peercred_gid;
+> +	if (op == CKPT_CPT) {
+> +		h->sock.flags = sk->sk_flags;
+> +		h->socket.flags = sk->sk_socket->flags;
 > +	} else {
-> +		ckpt_debug("peercred %i:%i would require setuid",
-> +			   un->peercred_uid, un->peercred_gid);
-> +		ret = -EPERM;
-> +		goto out;
+> +		int ret;
+> +		mm_segment_t old_fs;
+> +
+> +		old_fs = get_fs();
+> +		set_fs(KERNEL_DS);
+> +		ret = sock_restore_flags(sk->sk_socket, h);
+> +		set_fs(old_fs);
+> +		if (ret)
+> +			return ret;
 > +	}
 > +
->  	/* Prime the socket's buffer limit with the maximum.  These will be
->  	 * overwritten with the values in the checkpoint stream in a later
->  	 * phase.
+>  	if ((h->socket.state == SS_CONNECTED) &&
+>  	    (h->sock.state != TCP_ESTABLISHED)) {
+>  		ckpt_debug("socket/sock in inconsistent state: %i/%i",
