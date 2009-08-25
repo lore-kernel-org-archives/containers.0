@@ -1,53 +1,79 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: alloc_pid() should return -ENOMEM on failure
-Date: Tue, 25 Aug 2009 01:53:14 -0400
-Message-ID: <4A937C4A.9010109@librato.com>
-References: <20090819194654.GA22851@us.ibm.com>
+From: Oren Laadan <orenl@librato.com>
+Subject: Re: [PATCH 2/3] Expose may_setuid() in user.h and add may_setgid()
+ (v2)
+Date: Tue, 25 Aug 2009 01:53:58 -0400
+Message-ID: <4A937C76.9080503@librato.com>
+References: <1251134884-24491-1-git-send-email-danms@us.ibm.com> <1251134884-24491-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090819194654.GA22851-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1251134884-24491-3-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, Serge Hallyn <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
 
 Added, thanks.
 
-Sukadev Bhattiprolu wrote:
-> The clone_with_pids() patchset changed alloc_pid() to return an error
-> code in the pointer. alloc_pid() should then return -ENOMEM rather than
-> NULL when memory allocations fails.
+Dan Smith wrote:
+> Make these helpers available to others.
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Changes in v2:
+>  - Avoid checking the groupinfo in ctx->realcred against the current in
+>    may_setgid()
 > 
-> Index: linux-cr/kernel/pid.c
-> ===================================================================
-> --- linux-cr.orig/kernel/pid.c	2009-08-19 12:43:45.000000000 -0700
-> +++ linux-cr/kernel/pid.c	2009-08-19 12:45:33.000000000 -0700
-> @@ -290,8 +290,10 @@
->  	int tpid;
+> Cc: Serge Hallyn <serue@us.ibm.com>
+> Signed-off-by: Dan Smith <danms@us.ibm.com>
+> ---
+>  include/linux/user.h |    9 +++++++++
+>  kernel/user.c        |   13 ++++++++++++-
+>  2 files changed, 21 insertions(+), 1 deletions(-)
+> 
+> diff --git a/include/linux/user.h b/include/linux/user.h
+> index 68daf84..c231e9c 100644
+> --- a/include/linux/user.h
+> +++ b/include/linux/user.h
+> @@ -1 +1,10 @@
+> +#ifndef _LINUX_USER_H
+> +#define _LINUX_USER_H
+> +
+>  #include <asm/user.h>
+> +#include <linux/sched.h>
+> +
+> +extern int may_setuid(struct user_namespace *ns, uid_t uid);
+> +extern int may_setgid(gid_t gid);
+> +
+> +#endif
+> diff --git a/kernel/user.c b/kernel/user.c
+> index a535ed6..a78fde7 100644
+> --- a/kernel/user.c
+> +++ b/kernel/user.c
+> @@ -604,7 +604,7 @@ int checkpoint_user(struct ckpt_ctx *ctx, void *ptr)
+>  	return do_checkpoint_user(ctx, (struct user_struct *) ptr);
+>  }
 >  
->  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
-> -	if (!pid)
-> +	if (!pid) {
-> +		pid = ERR_PTR(-ENOMEM);
->  		goto out;
-> +	}
+> -static int may_setuid(struct user_namespace *ns, uid_t uid)
+> +int may_setuid(struct user_namespace *ns, uid_t uid)
+>  {
+>  	/*
+>  	 * this next check will one day become
+> @@ -631,6 +631,17 @@ static int may_setuid(struct user_namespace *ns, uid_t uid)
+>  	return 0;
+>  }
 >  
->  	tmp = ns;
->  	for (i = ns->level; i >= 0; i--) {
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> +int may_setgid(gid_t gid)
+> +{
+> +	if (capable(CAP_SETGID))
+> +		return 1;
+> +
+> +	if (in_egroup_p(gid))
+> +		return 1;
+> +
+> +	return 0;
+> +}
+> +
+>  static struct user_struct *do_restore_user(struct ckpt_ctx *ctx)
+>  {
+>  	struct user_struct *u;
