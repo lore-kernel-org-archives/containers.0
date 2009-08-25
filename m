@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 1/2] c/r: tighten logic to protect against bogus pids in input
-Date: Tue, 25 Aug 2009 02:09:24 -0400
-Message-ID: <1251180567-21957-2-git-send-email-orenl@librato.com>
+Subject: [PATCH 1/2] mktree: add support to ghost tasks (TASK_GHOST)
+Date: Tue, 25 Aug 2009 02:09:26 -0400
+Message-ID: <1251180567-21957-4-git-send-email-orenl@librato.com>
 References: <1251180567-21957-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,133 +20,249 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-During restart, each process that completes its restore will wake up
-the next process in line, using the pid provided in the image file.
-A malicious user could provide bogus pids and cause arbitrary tasks to
-be woken up.
-
-This patch tightens the checks and requires that to wake-up a task by
-pid during restart, the target task must belong to (have) the same
-restart context (task->checkpoint_ctx) as the current process.
-
-Also, update in-code comments about restart and zombie logic.
-
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/restart.c |   35 ++++++++++++++++++++---------------
- 1 files changed, 20 insertions(+), 15 deletions(-)
+ mktree.c |  123 ++++++++++++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 80 insertions(+), 43 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 856a416..ea49203 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -462,12 +462,12 @@ static int restore_read_tree(struct ckpt_ctx *ctx)
- 		return PTR_ERR(h);
+diff --git a/mktree.c b/mktree.c
+index e42407f..6c6eb98 100644
+--- a/mktree.c
++++ b/mktree.c
+@@ -144,12 +144,13 @@ struct task {
+ 	pid_t real_parent;	/* pid of task's real parent */
+ };
  
- 	ret = -EINVAL;
--	if (h->nr_tasks < 0)
-+	if (h->nr_tasks <= 0)
- 		goto out;
+-#define TASK_ROOT	0x1	/* */
+-#define TASK_DEAD	0x2	/* */
+-#define TASK_THREAD	0x4	/* */
+-#define TASK_SIBLING	0x8	/* */
+-#define TASK_SESSION	0x10	/* */
+-#define TASK_NEWPID	0x20	/* */
++#define TASK_ROOT	0x1	/* root task */
++#define TASK_GHOST	0x2	/* dead task (pid used as sid/pgid) */
++#define TASK_THREAD	0x4	/* thread (non leader) */
++#define TASK_SIBLING	0x8	/* creator's sibling (use CLONE_PARENT) */
++#define TASK_SESSION	0x10	/* inherits creator's original sid */
++#define TASK_NEWPID	0x20	/* starts a new pid namespace */
++#define TASK_DEAD	0x40	/* dead task (dummy) */
  
- 	ctx->nr_pids = h->nr_tasks;
- 	size = sizeof(*ctx->pids_arr) * ctx->nr_pids;
--	if (size < 0)		/* overflow ? */
-+	if (size <= 0)		/* overflow ? */
- 		goto out;
+ struct ckpt_ctx {
+ 	pid_t init_pid;
+@@ -843,10 +844,12 @@ static int ckpt_build_tree(struct ckpt_ctx *ctx)
+ 			ckpt_dbg_cont(" prev %d", task->prev_sib->pid);
+ 		if (task->phantom)
+ 			ckpt_dbg_cont(" placeholder %d", task->phantom->pid);
+-		ckpt_dbg_cont(" %c%c%c%c",
++		ckpt_dbg_cont(" %c%c%c%c%c%c",
+ 		       (task->flags & TASK_THREAD) ? 'T' : ' ',
+ 		       (task->flags & TASK_SIBLING) ? 'P' : ' ',
+ 		       (task->flags & TASK_SESSION) ? 'S' : ' ',
++		       (task->flags & TASK_NEWPID) ? 'N' : ' ',
++		       (task->flags & TASK_GHOST) ? 'G' : ' ',
+ 		       (task->flags & TASK_DEAD) ? 'D' : ' ');
+ 		ckpt_dbg_cont("\n");
+ 	}
+@@ -855,7 +858,7 @@ static int ckpt_build_tree(struct ckpt_ctx *ctx)
+ 	return 0;
+ }		
  
- 	ctx->pids_arr = kmalloc(size, GFP_KERNEL);
-@@ -520,8 +520,11 @@ int ckpt_activate_next(struct ckpt_ctx *ctx)
+-static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid)
++static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid, pid_t ppid)
+ {
+ 	struct task *task;
  
- 	rcu_read_lock();
- 	task = find_task_by_pid_ns(pid, ctx->root_nsproxy->pid_ns);
--	if (task)
-+	/* target task must have same restart context */
-+	if (task && task->checkpoint_ctx == ctx)
- 		wake_up_process(task);
-+	else
-+		task = NULL;
- 	rcu_read_unlock();
+@@ -864,12 +867,13 @@ static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid)
  
- 	if (!task) {
-@@ -568,9 +571,8 @@ static int do_restore_task(void)
- 	int ret;
+ 	task = &ctx->tasks_arr[ctx->tasks_nr++];
  
- 	/*
--	 * Wait for coordinator to make become visible, then grab a
--	 * reference to its restart context. If we're the last task to
--	 * do it, notify the coordinator.
-+	 * Wait for coordinator to become visible, then grab a
-+	 * reference to its restart context.
- 	 */
- 	ret = wait_event_interruptible(waitq, current->checkpoint_ctx);
- 	if (ret < 0)
-@@ -610,8 +612,9 @@ static int do_restore_task(void)
- 		goto out;
+-	task->flags = TASK_DEAD;
++	task->flags = TASK_GHOST;
  
- 	/*
--	 * zombie: we're done here; Save @ctx on task_struct, to be
--	 * used to ckpt_activate_next(), and released, from do_exit().
-+	 * zombie: we're done here; do_exit() will notice the @ctx on
-+	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
-+	 * will call ckpt_activate_next() and release the @ctx.
- 	 */
- 	if (ret)
- 		do_exit(current->exit_code);
-@@ -638,11 +641,11 @@ static int do_restore_task(void)
++	/* */
+ 	task->pid = pid;
+-	task->ppid = ckpt_init_task(ctx)->pid;
++	task->ppid = ppid;
+ 	task->tgid = pid;
+-	task->sid = pid;
++	task->sid = ppid;
+ 
+ 	task->children = NULL;
+ 	task->next_sib = NULL;
+@@ -892,36 +896,38 @@ static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid)
+ 
+ static int ckpt_init_tree(struct ckpt_ctx *ctx)
+ {
++	struct ckpt_hdr_pids *pids_arr = ctx->pids_arr;
++	int pids_nr = ctx->pids_nr;
+ 	struct task *task;
+-	pid_t init_sid;
+-	pid_t init_pid;
+-	pid_t init_pgid;
++	pid_t root_sid;
++	pid_t root_pid;
++	pid_t root_pgid;
+ 	int i;
+ 
+-	init_pid = ctx->pids_arr[0].vpid;
+-	init_sid = ctx->pids_arr[0].vsid;
+-	init_pgid = ctx->pids_arr[0].vpgid;
++	root_pid = pids_arr[0].vpid;
++	root_sid = pids_arr[0].vsid;
++	root_pgid = pids_arr[0].vpgid;
+ 
+ 	/* XXX for out-of-container subtrees */
+-	for (i = 0; i < ctx->pids_nr; i++) {
+-		if (ctx->pids_arr[i].vsid == init_sid)
+-			ctx->pids_arr[i].vsid = init_pid;
+-		if (ctx->pids_arr[i].vpgid == init_sid)
+-			ctx->pids_arr[i].vpgid = init_pid;
+-		if (ctx->pids_arr[i].vpgid == init_pgid)
+-			ctx->pids_arr[i].vpgid = init_pid;
++	for (i = 0; i < pids_nr; i++) {
++		if (pids_arr[i].vsid == root_sid)
++			pids_arr[i].vsid = root_pid;
++		if (pids_arr[i].vpgid == root_sid)
++			pids_arr[i].vpgid = root_pid;
++		if (pids_arr[i].vpgid == root_pgid)
++			pids_arr[i].vpgid = root_pid;
+ 	}
+ 
+ 	/* populate with known tasks */
+-	for (i = 0; i < ctx->pids_nr; i++) {
++	for (i = 0; i < pids_nr; i++) {
+ 		task = &ctx->tasks_arr[i];
+ 
+ 		task->flags = 0;
+ 
+-		task->pid = ctx->pids_arr[i].vpid;
+-		task->ppid = ctx->pids_arr[i].vppid;
+-		task->tgid = ctx->pids_arr[i].vtgid;
+-		task->sid = ctx->pids_arr[i].vsid;
++		task->pid = pids_arr[i].vpid;
++		task->ppid = pids_arr[i].vppid;
++		task->tgid = pids_arr[i].vtgid;
++		task->sid = pids_arr[i].vsid;
+ 
+ 		task->children = NULL;
+ 		task->next_sib = NULL;
+@@ -936,19 +942,32 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
+ 			return -1;
+ 	}
+ 
+-	ctx->tasks_nr = ctx->pids_nr;
++	ctx->tasks_nr = pids_nr;
+ 
+ 	/* add pids unaccounted for (no tasks) */
+-	for (i = 0; i < ctx->pids_nr; i++) {
+-		if (ckpt_setup_task(ctx, ctx->pids_arr[i].vsid) < 0)
++	for (i = 0; i < pids_nr; i++) {
++		/* session leader's parent is root task */
++		if (ckpt_setup_task(ctx, pids_arr->vsid, root_pid) < 0)
+ 			return -1;
+-		if (ckpt_setup_task(ctx, ctx->pids_arr[i].vpgid) < 0)
++
++		/*
++		 * If pgrp != sid, pgrp owner's parent is sid. Other
++		 * tasks with same pgrp will need to have threir sid
++		 * matching, too, when the kernel restores their pgrp.
++		 * If pgrp == sid, then the call above would have
++		 * ensured that the pid is hashed: ckpt_setup_task()
++		 * will return promptly.
++		 */
++		if (ckpt_setup_task(ctx, pids_arr->vpgid, pids_arr->vsid) < 0)
+ 			return -1;
++
++		pids_arr++;
+ 	}
+ 
+ 	/* mark root task(s) */
+ 	ctx->tasks_arr[0].flags |= TASK_ROOT;
+ 
++	ckpt_dbg("total tasks (including ghosts): %d\n", ctx->tasks_nr);
+ 	return 0;
  }
  
- /**
-- * prepare_descendants - set ->restart_tsk of all descendants
-+ * prepare_descendants - set ->checkpoint_ctx of all descendants
-  * @ctx: checkpoint context
-  * @root: root process for restart
+@@ -970,10 +989,11 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
+  * flags, pid, tgid, sid, pgid, and pointers to the a creator, next
+  * and previous sibling, and first child task. Note that the creator
+  * may not necessarily correspond to the parent. The possible flags
+- * are TASK_DEAD, TASK_THREAD, TASK_SESSION (that asks inherit a
+- * session id), and TASK_SIBLING (that asks to inherit the parent via
+- * CLONE_PARENT). The algorithm loops through all the entries in the
+- * table:
++ * are TASK_ROOT, TASK_GHOST, TASK_THREAD, TASK_SIBLING (that asks to
++ * inherit the parent via CLONE_PARENT), TASK_SESSION (that asks to
++ * inherit a session id), TASK_NEWPID (that asks to start a new pid
++ * namespace), and TASK_DEAD. The algorithm loops through all the
++ * entries in the table:
   *
-- * Called by the coodinator to set the ->restart_tsk pointer of the
-+ * Called by the coodinator to set the ->checkpoint_ctx pointer of the
-  * root task and all its descendants.
-  */
- static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
-@@ -662,7 +665,7 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 			break;
- 		}
- 		/*
--		 * Set task->restart_tsk of all non-zombie descendants.
-+		 * Set task->checkpoint_ctx of all non-zombie descendants.
- 		 * If a descendant already has a ->checkpoint_ctx, it
- 		 * must be a coordinator (for a different restart ?) so
- 		 * we fail.
-@@ -727,6 +730,7 @@ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
+  * If the entry is a thread and not the thread group leader, we set
+  * the creator to be the thread group leader and set TASK_THREAD.
+@@ -1023,7 +1043,7 @@ static int ckpt_set_creator(struct ckpt_ctx *ctx, struct task *task)
+ 	struct task *creator;
  
- 	init_completion(&ctx->complete);
- 
-+	BUG_ON(ctx->active_pid != -1);
- 	ret = ckpt_activate_next(ctx);
- 	if (ret < 0)
- 		return ret;
-@@ -839,7 +843,7 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 		if (ret < 0)
- 			goto out;
- 	} else {
--		/* prepare descendants' t->restart_tsk point to coord */
-+		/* prepare descendants' t->checkpoint_ctx point to coord */
- 		ret = prepare_descendants(ctx, ctx->root_task);
- 		if (ret < 0)
- 			goto out;
-@@ -970,11 +974,12 @@ void exit_checkpoint(struct task_struct *tsk)
- {
- 	struct ckpt_ctx *ctx;
- 
--	ctx = tsk->checkpoint_ctx;
--	tsk->checkpoint_ctx = NULL;
-+	/* no one else will touch this, because @tsk is dead already */
-+	ctx = xchg(&tsk->checkpoint_ctx, NULL);
- 
--	/* restarting zombies will acrivate next task in restart */
-+	/* restarting zombies will activate next task in restart */
- 	if (tsk->flags & PF_RESTARTING) {
-+		BUG_ON(ctx->active_pid == -1);
- 		if (ckpt_activate_next(ctx) < 0)
- 			pr_warning("c/r: [%d] failed zombie exit\n", tsk->pid);
+ 	if (task == ckpt_init_task(ctx)) {
+-		ckpt_err("pid %d: init - no creator\n", ckpt_init_task(ctx)->pid);
++		ckpt_err("pid %d: no init creator\n", ckpt_init_task(ctx)->pid);
+ 		return -1;
  	}
+ 
+@@ -1230,6 +1250,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ {
+ 	struct task *child;
+ 	struct pid_swap swap;
++	unsigned long flags = 0;
+ 	pid_t newpid;
+ 	int ret;
+ 
+@@ -1307,9 +1328,20 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 	}
+ 	close(ctx->pipe_out);
+ 
++	/*
++	 * Ghost tasks are not restarted and end up dead, but their
++	 * pids are referred to by other tasks' pgids (also sids, that
++	 * are already properly set by now). Therefore, they stick
++	 * around until those tasks actually restore their pgrp, and
++	 * then exit (more precisely, killed). The RESTART_GHOST flag
++	 * tells the kernel that they are not to be restored.
++	 */
++	if (task->flags & TASK_GHOST)
++		flags |= RESTART_GHOST;
++
+ 	/* on success this doesn't return */
+-	ckpt_dbg("about to call sys_restart()\n");
+-	ret = restart(0, STDIN_FILENO, 0);
++	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
++	ret = restart(0, STDIN_FILENO, flags);
+ 	if (ret < 0)
+ 		perror("task restore failed");
+ 	return ret;
+@@ -1561,7 +1593,10 @@ static int ckpt_adjust_pids(struct ckpt_ctx *ctx)
+ 	memcpy(ctx->copy_arr, ctx->pids_arr, len);
+ 
+ 	/* read in 'pid_swap' data and adjust ctx->pids_arr */
+-	for (n = 0; n < ctx->pids_nr; n++) {
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		/* don't expect data from dead tasks */
++		if (ctx->tasks_arr[n].flags & TASK_DEAD)
++			continue;
+ 		ret = read(ctx->pipe_in, &swap, sizeof(swap));
+ 		if (ret < 0)
+ 			ckpt_abort(ctx, "read pipe");
+@@ -1576,8 +1611,10 @@ static int ckpt_adjust_pids(struct ckpt_ctx *ctx)
+ 				ctx->copy_arr[m].vpid = swap.new;
+ 			if (ctx->pids_arr[m].vtgid == swap.old)
+ 				ctx->copy_arr[m].vtgid = swap.new;
+-			if (ctx->pids_arr[m].vppid == swap.old)
+-				ctx->copy_arr[m].vppid = swap.new;
++			if (ctx->pids_arr[m].vpgid == swap.old)
++				ctx->copy_arr[m].vpgid = swap.new;
++			else if (ctx->pids_arr[m].vpgid == -swap.old)
++				ctx->copy_arr[m].vpgid = -swap.new;
+ 		}
+ 	}
+ 
 -- 
 1.6.0.4
