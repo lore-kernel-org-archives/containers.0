@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: how to do not allow to mount /cgroup inside container?
-Date: Tue, 25 Aug 2009 12:45:09 -0500
-Message-ID: <20090825174509.GA26679@us.ibm.com>
-References: <ac1c4bf20908250517j43d49f9fv1b5d6d5beae8aa@mail.gmail.com>
-	<4A93DD67.5030905@free.fr> <20090825140537.GA19644@us.ibm.com>
-	<ac1c4bf20908250743t9c30c27ud3ff649003465334@mail.gmail.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 2/3] Make sockets proper objhash objects and use
+	checkpoint_obj() on them
+Date: Tue, 25 Aug 2009 13:55:08 -0400
+Message-ID: <4A94257C.5060702@librato.com>
+References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>	<1251133918-8117-3-git-send-email-danms@us.ibm.com>	<4A937031.10300@librato.com>
+	<87y6p8q728.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <ac1c4bf20908250743t9c30c27ud3ff649003465334-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <87y6p8q728.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,64 +19,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Krzysztof Taraszka (krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org):
-> 2009/8/25 Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> > Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> > > Krzysztof Taraszka wrote:
-> > >> Hi,
-> > >>
-> > >> I was looking for possibility to secure lxc container to do not allow
-> > 'root
-> > >> container user'  from changing limits from cgroup. Right now without
-> > STACK64
-> > >> or SELinux he can do this easily.
-> > >> I read the
-> > http://www.ibm.com/developerworks/linux/library/l-lxc-security/cookbook
-> > >> and decided to use STACK64 kernel mechanism.
-> > >> Well... mounting cgroup inside container fails (great!, i am looked for
-> > that
-> > >> ;)) but networking fails too (interface bring up, sshd bring up,
-> > connection
-> > >> beetween host and container is, but 'mtr', 'ping' even 'apt-get update'
-> > >> fails and I do not know why). I secure my container exactly like in the
-> > >> cookbook.
-> >
-> > Yeah, smack's use of cipso can make things tricky, and it's possible things
-> > have changed a bit recently.  Although I'm currently running smack in my
-> > everyday s390 kernel to test checkpointing of its labels, and networking
-> > is working fine.
-> 
-> 
-> > Can you give me a few details - what distro, smack policy, and precise
-> > kernel
-> > version are you using, for starters?
-> >
-> 
-> debian lenny amd64,
-> kernel 2.6.30.5
-> lxc-tools from git
-> 
-> lxc1amd64:~# cat /etc/smackaccesses
-> debian _ rwa
-> _ debian rwa
-> _ host rwax
-> host _ rwax
 
-Ok, I think what you want to do is use /smack/netlabel as shown around line
-425 in linux-2.6/Documentation/Smack.txt.  I haven't played with it yet,
-but will tomorrow if you don't get a chance.  So basically I think you should
-be able to do:
 
-echo 127.0.0.1 -CIPSO > /smack/netlabel
-echo 0.0.0.0/0 @      > /smack/netlabel
+Dan Smith wrote:
+> OL> It's perhaps more accurate to s/most sockets/some sockets/. It may
+> OL> be more likely for a socket to be checkpointed as a peer of
+> OL> another process, or as the sender of an skb.
+> 
+> Um, how about "most of the time" ?  I definitely think that the
+> (overwhelmingly) common case is a pair of sockets each attached to a
+> file descriptor.
+> 
+> OL> Now that you made 'struct sock' a 1st class object, they deserve to
+> OL> enjoy 1st class treatment :p  That also means proper collect() method
+> OL> - probably starting with the f_op ...
+> 
+> Okay.
+> 
+> OL> I may be mistaken, but I suspect that the suggested implementation
+> OL> cannot limit the depth of recursive calls to checkpoint_obj(). For
+> OL> instance, consider a dgram socket that received data from another
+> OL> dgram socket, that received data from another dgram, ad infinitum.
+> 
+> At the very least, a single receive socket is limited in how many
+> skb's may be queued for it, which limits an attacker's ability to
+> reach the "ad infinitum" case, I'd say.  Do we need something more?
 
-to open up the network.
+Multiple buffers adds iteration, and one level of recursion. I had in
+mind a slightly different scenario: instead of many buffers for one
+socket, many sockets "chained" -
 
-Does that work?
+Assume N sockets S_1...S_n, all dgram, none is connected. Each socket
+S_i send one packet to S_i+1.  Suppose you first checkpoint S_n, then
+you'll need to checkpoint S_n-1, for which you'll need to checkpoint
+S_n-2 etc.
 
--serge
+> OL> I'm thinking about the two other use cases that I mentioned:
+> OL> "dangling" (not-referenced by a file) and "pending" (not yet
+> OL> accepted) sockets.
+> 
+> OL> In both cases (well, at least with "pending"), the 'struct sock'
+> OL> exist but the 'struct socket' does not exit until after the socket
+> OL> is attached to a file descriptor. IIRC, the lifespan of 'struct
+> OL> socket' is coupled to that of the referencing file.
+> 
+> OL> In that case, I guess it make more sense to leave the 'struct
+> OL> socket' related data within ckpt_hdr_file_socket.
+> 
+> Hmm, not by my reading.  From what I can tell, the accept operation
+
+You are right: sock_init_data() sets it up, and I believe it is
+for the entire lifetime of the sock/socket.
+
+>>> +		return ERR_PTR(PTR_ERR(sk));
+> 
+> OL> Nit: I vaguely recall some disapproval of such construct...
+> OL> How about '(struct file *) sk' ?
+> 
+> Casting it to the wrong type seems less desirable to me.  I was
+> following the lead of:
+> 
+>   % fgrep -r 'ERR_PTR(PTR_ERR' . | wc -l
+>   36
+
+Yep. That settles it then :)
+
+> 
+> and:
+> 
+>   % fgrep -r 'ERR_PTR(PTR_ERR' checkpoint
+>   checkpoint/namespace.c:		return ERR_PTR(PTR_ERR(h));
+>   checkpoint/signal.c:		return ERR_PTR(PTR_ERR(h));
+
+(FWIW, this was criticized ...)
+
+Oren.
