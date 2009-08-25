@@ -1,16 +1,17 @@
-From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
-Subject: Re: how to do not allow to mount /cgroup inside container?
-Date: Tue, 25 Aug 2009 16:51:43 +0200
-Message-ID: <ac1c4bf20908250751n159f0258ta84c7372e2cd01cf@mail.gmail.com>
-References: <ac1c4bf20908250517j43d49f9fv1b5d6d5beae8aa@mail.gmail.com>
-	<4A93DD67.5030905@free.fr> <20090825140537.GA19644@us.ibm.com>
-	<ac1c4bf20908250743t9c30c27ud3ff649003465334@mail.gmail.com>
-Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] Make sockets proper objhash objects and use
+	checkpoint_obj() on them
+Date: Tue, 25 Aug 2009 07:52:47 -0700
+Message-ID: <87y6p8q728.fsf@caffeine.danplanet.com>
+References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
+	<1251133918-8117-3-git-send-email-danms@us.ibm.com>
+	<4A937031.10300@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ac1c4bf20908250743t9c30c27ud3ff649003465334-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4A937031.10300-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org> (Oren Laadan's message of "Tue\,
+	25 Aug 2009 01\:01\:37 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,143 +21,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2009/8/25 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+OL> It's perhaps more accurate to s/most sockets/some sockets/. It may
+OL> be more likely for a socket to be checkpointed as a peer of
+OL> another process, or as the sender of an skb.
 
-> 2009/8/25 Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->
->> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
->> > Krzysztof Taraszka wrote:
->> >> Hi,
->> >>
->> >> I was looking for possibility to secure lxc container to do not allow
->> 'root
->> >> container user'  from changing limits from cgroup. Right now without
->> STACK64
->> >> or SELinux he can do this easily.
->> >> I read the
->> http://www.ibm.com/developerworks/linux/library/l-lxc-security/cookbook
->> >> and decided to use STACK64 kernel mechanism.
->> >> Well... mounting cgroup inside container fails (great!, i am looked for
->> that
->> >> ;)) but networking fails too (interface bring up, sshd bring up,
->> connection
->> >> beetween host and container is, but 'mtr', 'ping' even 'apt-get update'
->> >> fails and I do not know why). I secure my container exactly like in the
->> >> cookbook.
->>
->> Yeah, smack's use of cipso can make things tricky, and it's possible
->> things
->> have changed a bit recently.  Although I'm currently running smack in my
->> everyday s390 kernel to test checkpointing of its labels, and networking
->> is working fine.
->
->
->> Can you give me a few details - what distro, smack policy, and precise
->> kernel
->> version are you using, for starters?
->>
->
-> debian lenny amd64,
-> kernel 2.6.30.5
-> lxc-tools from git
->
-> lxc1amd64:~# cat /etc/smackaccesses
-> debian _ rwa
-> _ debian rwa
-> _ host rwax
-> host _ rwax
->
-> where "debian" is container, "host" is a host.
->
-> I did this:
->
-> for f in `find /root/rootfs.debian`; do
->     attr -S -s SMACK64 -V debian $f
-> done
->
-> on the container fs.
->
-> container startup script look like here:
->
-> lxc1amd64:~# cat vs1.sh
-> #!/bin/sh
-> cp /bin/dropmacadmin /root/rootfs.debian/bin/
-> attr -S -s SMACK64 -V debian /root/rootfs.debian/bin/dropmacadmin
-> echo debian > /proc/self/attr/current
-> lxc-start -n debian /bin/dropmacadmin /sbin/init
->
-> /etc/fstab inside container look like:
->
-> debian:~# cat /etc/fstab
-> tmpfs  /dev/shm   tmpfs  defaults,smackfsroot=debian,smackfsdef=debian  0 0
->
-> And here is some output when I tried to do ping to the wp.pl, tried to
-> apt-get update and tried to ping gateway
->
-> debian:~# ping wp.pl
-> PING wp.pl (212.77.100.101) 56(84) bytes of data.
-> From 10.177.128.1 icmp_seq=1 Parameter problem: pointer = 20
-> From 10.177.128.1 icmp_seq=2 Parameter problem: pointer = 20
-> ^C
-> --- wp.pl ping statistics ---
-> 2 packets transmitted, 0 received, +2 errors, 100% packet loss, time 1001ms
->
-> debian:~# apt-get update
-> Err http://ftp.debian.org lenny Release.gpg
->   Could not connect to ftp.debian.org:80 (130.89.149.226). - connect (71
-> Protocol error)
-> Err http://ftp.debian.org lenny/main Translation-en_US
->   Could not connect to ftp.debian.org:80 (130.89.149.226). - connect (71
-> Protocol error)
-> Ign http://ftp.debian.org lenny Release
-> Ign http://ftp.debian.org lenny/main Packages/DiffIndex
-> Ign http://ftp.debian.org lenny/main Packages
-> Err http://ftp.debian.org lenny/main Packages
->   Could not connect to ftp.debian.org:80 (130.89.149.226). - connect (71
-> Protocol error)
-> W: Failed to fetch http://ftp.debian.org/debian/dists/lenny/Release.gpg
-> Could not connect to ftp.debian.org:80 (130.89.149.226). - connect (71
-> Protocol error)
->
-> W: Failed to fetch
-> http://ftp.debian.org/debian/dists/lenny/main/i18n/Translation-en_US.gz
-> Could not connect to ftp.debian.org:80 (130.89.149.226). - connect (71
-> Protocol error)
->
-> W: Failed to fetch
-> http://ftp.debian.org/debian/dists/lenny/main/binary-amd64/Packages  Could
-> not connect to ftp.debian.org:80 (130.89.149.226). - connect (71 Protocol
-> error)
->
-> E: Some index files failed to download, they have been ignored, or old ones
-> used instead.
-> debian:~# ping 192.168.1.1
-> PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
-> 64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=0.085 ms
-> unknown option 86
-> 64 bytes from 192.168.1.1: icmp_seq=2 ttl=64 time=0.136 ms
-> unknown option 86
-> 64 bytes from 192.168.1.1: icmp_seq=3 ttl=64 time=0.116 ms
-> unknown option 86
-> ^C
-> --- 192.168.1.1 ping statistics ---
-> 3 packets transmitted, 3 received, 0% packet loss, time 2005ms
-> rtt min/avg/max/mdev = 0.085/0.112/0.136/0.022 ms
->
-> did you changed your smack policy or you have the same as mine?
->
->
+Um, how about "most of the time" ?  I definitely think that the
+(overwhelmingly) common case is a pair of sockets each attached to a
+file descriptor.
 
-Oh, I forgot to add that smack-utils I got from here:
+OL> Now that you made 'struct sock' a 1st class object, they deserve to
+OL> enjoy 1st class treatment :p  That also means proper collect() method
+OL> - probably starting with the f_op ...
 
-https://launchpad.net/~anthonywrather/+archive/ppa/+files/smack-util_0.2-0ubuntu0~ppa3.tar.gz
+Okay.
 
-because this link won't work:
-http://schaufler-ca.com/data/080616/smack-util-0.1.tar
+OL> I may be mistaken, but I suspect that the suggested implementation
+OL> cannot limit the depth of recursive calls to checkpoint_obj(). For
+OL> instance, consider a dgram socket that received data from another
+OL> dgram socket, that received data from another dgram, ad infinitum.
+
+At the very least, a single receive socket is limited in how many
+skb's may be queued for it, which limits an attacker's ability to
+reach the "ad infinitum" case, I'd say.  Do we need something more?
+
+OL> I'm thinking about the two other use cases that I mentioned:
+OL> "dangling" (not-referenced by a file) and "pending" (not yet
+OL> accepted) sockets.
+
+OL> In both cases (well, at least with "pending"), the 'struct sock'
+OL> exist but the 'struct socket' does not exit until after the socket
+OL> is attached to a file descriptor. IIRC, the lifespan of 'struct
+OL> socket' is coupled to that of the referencing file.
+
+OL> In that case, I guess it make more sense to leave the 'struct
+OL> socket' related data within ckpt_hdr_file_socket.
+
+Hmm, not by my reading.  From what I can tell, the accept operation
+converts a pending socket into a regular one (for lack of a better
+term) by doing a sock_graft().  In fact, it takes the 'struct socket'
+of the pending one, and a 'struct socket' attached to the file handle
+and grafts the former onto the latter.  So, the pending socket's
+'struct socket' *does* exist, unless I'm missing something.
+
+The dangling case isn't quite as clear, so I'll need to investigate
+further.  While sock_close() prevents further ->ops calls, I don't see
+that it (or ops->release()) actually dissociates the 'struct socket'
+from the 'struct sock' until later.
+
+>> +		return ERR_PTR(PTR_ERR(sk));
+
+OL> Nit: I vaguely recall some disapproval of such construct...
+OL> How about '(struct file *) sk' ?
+
+Casting it to the wrong type seems less desirable to me.  I was
+following the lead of:
+
+  % fgrep -r 'ERR_PTR(PTR_ERR' . | wc -l
+  36
+
+and:
+
+  % fgrep -r 'ERR_PTR(PTR_ERR' checkpoint
+  checkpoint/namespace.c:		return ERR_PTR(PTR_ERR(h));
+  checkpoint/signal.c:		return ERR_PTR(PTR_ERR(h));
 
 -- 
-Krzysztof Taraszka
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
