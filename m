@@ -1,14 +1,14 @@
-From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/24] io-controller: Documentation
-Date: Mon, 24 Aug 2009 23:36:31 -0400
-Message-ID: <4A935C3F.10207__8500.52019018239$1251171496$gmane$org@redhat.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
-	<1250451046-9966-2-git-send-email-vgoyal@redhat.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 2/2] [RFC] Add checkpoint/restart support for epoll files.
+Date: Tue, 25 Aug 2009 00:17:08 -0400
+Message-ID: <4A9365C4.3010305@librato.com>
+References: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc@us.ibm.com>	<e820d207a3b1a3228ded29bce9b29f2179ab598b.1250745409.git.matthltc@us.ibm.com>	<20090824212725.GA25030@us.ibm.com>
+	<20090825020146.GC8078@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250451046-9966-2-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090825020146.GC8078-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,19 +18,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> o Documentation for io-controller.
+
+
+Matt Helsley wrote:
+> On Mon, Aug 24, 2009 at 04:27:25PM -0500, Serge E. Hallyn wrote:
+>> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>>> Save/restore epoll items during checkpoint/restart respectively.
+
+[...]
+
+>>> +/* TODO confirm that get_current_user() has been restored */
+>> Not sure what you mean.  At this point, the task's credentials
+>> are still the ones used when it called sys_restart().  We won't
+>> update them until the end of the restart operation.  However the
+>> normal file restore operations should have reset the file->f_cred
+>> to the checkpointed value - including hierarchical user namespaces.
 > 
-> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> I wanted to check to ensure that we're properly enforcing the epoll
+> watch limits for the restarted tasks. So the patch looks good because
+> it restore the "common" file pieces before the epoll items/watches.
+> See below if you're curious where/how that happens. I think I can
+> remove this TODO now.
 
-IMHO the IO scheduler is the right place to do IO scheduling,
-so this gets my ACK :)
+Good point. Me thinks it deserves a comment in the code ?
 
-Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
--- 
-All rights reversed.
+Oren.
