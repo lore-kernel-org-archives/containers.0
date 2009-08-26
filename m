@@ -1,17 +1,19 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 2/3] Make sockets proper objhash objects and use
 	checkpoint_obj() on them
-Date: Tue, 25 Aug 2009 19:47:17 -0700
-Message-ID: <20090826024717.GG8078@count0.beaverton.ibm.com>
+Date: Tue, 25 Aug 2009 19:53:40 -0700
+Message-ID: <20090826025340.GH8078@count0.beaverton.ibm.com>
 References: <1251133918-8117-1-git-send-email-danms@us.ibm.com>
 	<1251133918-8117-3-git-send-email-danms@us.ibm.com>
 	<4A937031.10300@librato.com>
+	<87y6p8q728.fsf@caffeine.danplanet.com>
+	<4A94257C.5060702@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A937031.10300-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4A94257C.5060702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,115 +27,77 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 25, 2009 at 01:01:37AM -0400, Oren Laadan wrote:
-> Hi Dan,
+On Tue, Aug 25, 2009 at 01:55:08PM -0400, Oren Laadan wrote:
+> 
 > 
 > Dan Smith wrote:
-> > This changes the checkpoint/restart procedure for sockets a bit.  The
-> > socket file header is now checkpointed separately from the socket itself,
-> > which allows us to checkpoint a socket without arriving at it from a
-> > file descriptor.  Thus, most sockets will be checkpointed as a result
-> > of processing the file table, calling sock_file_checkpoint(fd), which
-> > in turn calls checkpoint_obj(socket).
-> 
-> It's perhaps more accurate to s/most sockets/some sockets/. It may
-> be more likely for a socket to be checkpointed as a peer of another
-> process, or as the sender of an skb.
-> 
-> The patch looks fine - see a few comment below.
-> 
-> Now that you made 'struct sock' a 1st class object, they deserve to
-> enjoy 1st class treatment :p  That also means proper collect() method
-> - probably starting with the f_op ...
-> 
-> I may be mistaken, but I suspect that the suggested implementation
-> cannot limit the depth of recursive calls to checkpoint_obj(). For
-> instance, consider a dgram socket that received data from another
-> dgram socket, that received data from another dgram, ad infinitum.
-> 
+> > OL> It's perhaps more accurate to s/most sockets/some sockets/. It may
+> > OL> be more likely for a socket to be checkpointed as a peer of
+> > OL> another process, or as the sender of an skb.
 > > 
-> > However, we may arrive at some sockets while checkpointing other objects,
-> > such as the other end of an AF_UNIX socket with buffers in flight.  This
-> > patch just opens that door, which is utilized by the next patch.
+> > Um, how about "most of the time" ?  I definitely think that the
+> > (overwhelmingly) common case is a pair of sockets each attached to a
+> > file descriptor.
 > > 
-> > Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  checkpoint/objhash.c           |    2 +
-> >  include/linux/checkpoint_hdr.h |    4 +-
-> >  include/net/sock.h             |    2 +
-> >  net/checkpoint.c               |  116 ++++++++++++++++++++++++++++-----------
-> >  net/unix/checkpoint.c          |    3 +-
-> >  5 files changed, 91 insertions(+), 36 deletions(-)
+> > OL> Now that you made 'struct sock' a 1st class object, they deserve to
+> > OL> enjoy 1st class treatment :p  That also means proper collect() method
+> > OL> - probably starting with the f_op ...
 > > 
-> > diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-> > index 019077b..4f26e86 100644
-> > --- a/checkpoint/objhash.c
-> > +++ b/checkpoint/objhash.c
-> > @@ -381,6 +381,8 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
-> >  		.obj_type = CKPT_OBJ_SOCK,
-> >  		.ref_drop = obj_sock_drop,
-> >  		.ref_grab = obj_sock_grab,
-> > +		.checkpoint = checkpoint_sock,
-> > +		.restore = restore_sock,
-> >  	},
-> >  };
-> >  
-> > diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> > index 78f1f27..39b3cb4 100644
-> > --- a/include/linux/checkpoint_hdr.h
-> > +++ b/include/linux/checkpoint_hdr.h
-> > @@ -68,6 +68,7 @@ enum {
-> >  	CKPT_HDR_USER,
-> >  	CKPT_HDR_GROUPINFO,
-> >  	CKPT_HDR_TASK_CREDS,
-> > +	CKPT_HDR_SOCKET,
-> >  
-> >  	/* 201-299: reserved for arch-dependent */
-> >  
-> > @@ -367,6 +368,7 @@ struct ckpt_hdr_file_pipe {
-> >  
-> >  /* socket */
-> >  struct ckpt_hdr_socket {
-> > +	struct ckpt_hdr h;
-> >  	struct { /* struct socket */
-> >  		__u64 flags;
-> >  		__u8 state;
-> > @@ -425,7 +427,7 @@ struct ckpt_hdr_socket_unix {
-> >  
-> >  struct ckpt_hdr_file_socket {
-> >  	struct ckpt_hdr_file common;
-> > -	struct ckpt_hdr_socket socket;
-> > +	__s32 sock_objref;
-> >  } __attribute__((aligned(8)));
+> > Okay.
+> > 
+> > OL> I may be mistaken, but I suspect that the suggested implementation
+> > OL> cannot limit the depth of recursive calls to checkpoint_obj(). For
+> > OL> instance, consider a dgram socket that received data from another
+> > OL> dgram socket, that received data from another dgram, ad infinitum.
+> > 
+> > At the very least, a single receive socket is limited in how many
+> > skb's may be queued for it, which limits an attacker's ability to
+> > reach the "ad infinitum" case, I'd say.  Do we need something more?
 > 
-> I'm thinking about the two other use cases that I mentioned:
-> "dangling" (not-referenced by a file) and "pending" (not yet
-> accepted) sockets.
+> Multiple buffers adds iteration, and one level of recursion. I had in
+> mind a slightly different scenario: instead of many buffers for one
+> socket, many sockets "chained" -
 > 
-> In both cases (well, at least with "pending"), the 'struct sock'
-> exist but the 'struct socket' does not exit until after the
-> socket is attached to a file descriptor. IIRC, the lifespan of
-> 'struct socket' is coupled to that of the referencing file.
+> Assume N sockets S_1...S_n, all dgram, none is connected. Each socket
+> S_i send one packet to S_i+1.  Suppose you first checkpoint S_n, then
+> you'll need to checkpoint S_n-1, for which you'll need to checkpoint
+> S_n-2 etc.
 > 
-> In that case, I guess it make more sense to leave the 'struct
-> socket' related data within ckpt_hdr_file_socket.
+> > OL> I'm thinking about the two other use cases that I mentioned:
+> > OL> "dangling" (not-referenced by a file) and "pending" (not yet
+> > OL> accepted) sockets.
+> > 
+> > OL> In both cases (well, at least with "pending"), the 'struct sock'
+> > OL> exist but the 'struct socket' does not exit until after the socket
+> > OL> is attached to a file descriptor. IIRC, the lifespan of 'struct
+> > OL> socket' is coupled to that of the referencing file.
+> > 
+> > OL> In that case, I guess it make more sense to leave the 'struct
+> > OL> socket' related data within ckpt_hdr_file_socket.
+> > 
+> > Hmm, not by my reading.  From what I can tell, the accept operation
 > 
-> [...]
+> You are right: sock_init_data() sets it up, and I believe it is
+> for the entire lifetime of the sock/socket.
 > 
-> > +	sk = ckpt_obj_fetch(ctx, h->sock_objref, CKPT_OBJ_SOCK);
-> > +	if (IS_ERR(sk))
-> > +		return ERR_PTR(PTR_ERR(sk));
+> >>> +		return ERR_PTR(PTR_ERR(sk));
+> > 
+> > OL> Nit: I vaguely recall some disapproval of such construct...
+> > OL> How about '(struct file *) sk' ?
+> > 
+> > Casting it to the wrong type seems less desirable to me.  I was
+> > following the lead of:
+> > 
+> >   % fgrep -r 'ERR_PTR(PTR_ERR' . | wc -l
+> >   36
 > 
-> Nit: I vaguely recall some disapproval of such construct...
-> How about '(struct file *) sk' ?
+> Yep. That settles it then :)
 
-This pattern raised an objection from me. At first glance
-ERR_PTR(PTR_ERR(x)) looks redundant. But it's just a way of
-casting to another pointer type. I think we'd be better off with the
-necessary cast or a new ERR macro in err.h specifically for this situation.
-Maybe something like:
+Hmm, OK. For some reason I thought that pattern only showed up in
+checkpoint/*...
 
-#define EPOINTER(x) ((void*)x)
+I still think it would be nice to see a macro specifically for this.
+I can submit a patch for that myself though.
 
 Cheers,
-	-Matt Helsley
+	-Matt
