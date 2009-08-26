@@ -1,18 +1,10 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] [RFC] Add checkpoint/restart support for epoll files.
-Date: Wed, 26 Aug 2009 02:00:43 -0700
-Message-ID: <20090826090043.GI8078@count0.beaverton.ibm.com>
-References: <6d896e12f316e5ff5f44bd13ae1482dab7f9253a.1250745409.git.matthltc@us.ibm.com>
-	<e820d207a3b1a3228ded29bce9b29f2179ab598b.1250745409.git.matthltc@us.ibm.com>
-	<4A8D7AE2.1030705@cs.columbia.edu>
-	<20090825051723.GD8078@count0.beaverton.ibm.com>
-	<4A94227C.9050101@librato.com>
+From: Merten Heon <atelier-vIGAzec5chGGJF8kTBkM5w@public.gmane.org>
+Subject: lifornia 207.85 Kansas
+Date: Wed, 26 Aug 2009 18:09:29 +0800
+Message-ID: <4A950921.4060404@ouwestomp.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------050704060908010703090408"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A94227C.9050101-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,203 +14,204 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 25, 2009 at 01:42:20PM -0400, Oren Laadan wrote:
-> 
-> 
-> Matt Helsley wrote:
-> > On Thu, Aug 20, 2009 at 12:33:38PM -0400, Oren Laadan wrote:
-> >> Hi Matt,
-> >>
-> >> I like the approach of the patch and use of deferqueue.
-> >> See comments below.
-> >>
-> >> Matt Helsley wrote:
-> >>> Save/restore epoll items during checkpoint/restart respectively.
-> >>>
-> >>> Tests for the cr_tests suite to follow. Tests pass on i386.
-> >>>
-> >>> TODOs (search the patch for "TODO") that could probably use some
-> >>> comments:
-> >>>
-> 
-> [...]
-> 
-> >>> +
-> >>> +struct epoll_deferq_entry {
-> >>> +	struct ckpt_ctx *ctx;
-> >>> +	struct file *epfile;
-> >>> +};
-> >> I suggest that:
-> >>
-> >> 1) Add 'int fd' here,
-> >> 2) in ckpt_eventpoll_items use the fd (instead of file objref)
-> >>
-> >> The motivation is security: if, on restart, you rely on a file objref,
-> >> then malicious user can change the file objref and the restart logic
-> >> may end up populating some other process's event poll items.
-> >>
-> >> Instead, by using an fd, we ensure that the restarting process will
-> >> only modify a file that it actually owns.
-> > 
-> > The fd saved with the items is not necessarily matched with the file*
-> > anymore. For example userspace could do:
-> > 
-> > fda = open("/dev/null", O_RDONLY);
-> > epoll_ctl(efd, EPOLL_CTL_ADD, fda, ...);
-> > fdb = dup(fda);
-> > dup2(0, fda);
-> > <checkpoint here>
-> > epoll_ctl(efd, EPOLL_CTL_MOD, fda, ...);
-> > 
-> > Saving the fd would associate stdin with the epoll item and not
-> > /dev/null.
-> > 
-> > So we can't use the fd in place of the file reference.
-> 
-> You are totally right. I was confused by the fact that epoll data
-> does save the original fd, and assumed it was "updated" at close()
-> and dup() time. But not...
-> 
-> ... which makes me wonder: is it impossible for a user to delete
-> the original fd from the epoll using epoll_ctl(.., EPOLL_CTL_DEL...) ?
-> 
-> This is related to my concern during restart: the input can provide
-> _any_ file objref that is valid at that time during restart, and
-> plug in files owned by different processes than intended.
-> 
-> I'm unsure to what extent this is a security concern, and what's
-> the right approach to solve it.
+This is a multi-part message in MIME format.
+--------------050704060908010703090408
+Content-Type: text/plain; charset=ISO-8859-2; format=flowed
+Content-Transfer-Encoding: 7bit
 
-If it is a security concern (and I don't think it's any more a concern
-than the other objrefs) then my hunch is that namespaces ought to be
-able to help somehow, but I haven't really thought that through.
+Njoy very much, nevertheless there are many discouraging things in
+connection with it. But then I know we cannot always have smooth
+sailing. If everything was all smooth there would be no need of much
+work. I am only too glad to do something for the Master, though I know I
+am one that is fitted only to quietly fill in a little chink in the
+great work that is to be done. When I remember that we are not all given
+the same number of talents, I a
 
-> Looking at ep_cmp_ffd(), it uses both the file pointer and the fd
-> to find a matching entry in the RB tree; So I'd think that in that
-> case you need to save both the original FD and the objref of the
-> file, no ?
+--------------050704060908010703090408
+Content-Type: image/jpeg;
+ name="debunks.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="debunks.jpg"
 
-Yup. I believe that's what's in the patch I posted.  Each item has the
-fd, events, and data that it was registered with plus a file objref.
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAESASQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSpuce9Opq9TQAcnrxQBinU0mgTFJo3Uwt
+TC9VYm5LupdwNQbqA9Fg5ixRUSyYqXgjI6VLRSYGikpaBhRRRQAUUUUAFFFFABRRRQAUCigU
+gCiijtQAUd6KTvTAWomlJ6cDNS4yCPaoliHVjn2oAjBySByanj+4SRjmjIHQUBwGA9elADsU
+YoxRQFhO9GaO/NHb8aBBj15pRRSCgZkav/x8p/uD+Zoo1f8A4+U/3B/M0UAbFMXqRT6b0GaA
+AnFRs1I71CzHnFWkZtjy1MLc8Ammnkijn/EGqIFLHPUCgk8UnAo4piHBqnhfJ2nv0qqT6U6I
+nzFx60mik9S7z9aXrQaQ/eFZGwtFFFABRQKKACiiigAooooAKB0ooB4oAKSloHSgApO5paT3
+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
+--------------050704060908010703090408
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> 
-> >>> +static int ep_items_restore(void *data)
-> >>> +{
-> >>> +	struct ckpt_ctx *ctx = *((struct ckpt_ctx**)data);
-> >> This is really obfuscated :(
-> > 
-> > Tell that to the author of deferqueue. ;) Since deferqueue does memcpy()
-> > there's really not a better way to pass the ctx pointer.
-> 
-> Next time I'll use my right to remain silent :p
-> 
-> Seriously, maybe we can add a wrapper for this (common ?) case of
-> a passing a single pointer as data. Do you think this interface
-> may be usedful:
-> 
-> deferqueue_add_ptr(head, ptr, func, dtor)
-> {
-> 	return deferqueue(head, &ptr, sizeof(ptr), func, dtor);
-> }
-> 
-> and
-> 
-> void *deferqueue_data_ptr(void *data)
-> {
-> 	return *((void **) data);
-> }
-> 
-> [...]
-
-Seems like a great idea to me.
-
-> >>> +	struct ckpt_eventpoll_items *h;
-> >>> +	struct eventpoll *ep;
-> >>> +	struct file *epfile = NULL;
-> >>> +	int ret, i = 0, remaining_watches;
-> >>> +
-> >>> +	/*
-> >>> +	 * TODO possible kmalloc failure due to too many watches.
-> >>> +	 */
-> >>> +	h = ckpt_read_obj(ctx, 0,
-> >>> +			  sizeof(*h) + max_user_watches*sizeof(h->items[0]));
-> >> Any reason to perfer ckpt_read_obj() over ckpt_read_buf_type() ?
-> >> (it will rid the check for type/len below).
-> > 
-> > So I could read it all at once rather than fiddle with reading the
-> > header and chunking all of the input. I wanted to get something simple
-> > working first and then make it work with thousands of watches.
-> 
-> Hmm.. ckpt_read_buf_type() calls ckpt_read_obj() like you do, then
-> checks that the type matches.  So you are left with the h->h.len sanity
-> check only.
-> 
-> [...]
-
-So I looked at how pids are handled again. There's a slight difference
-in that I also record the epfile objref and number of "items", so I
-found I couldn't use similar code. I'm still working on this part of the
-patch but I've already incorporated your suggestions for the next post.
-
-> >>> +	if (!is_file_epoll(epfile))
-> >>> +		goto out;
-> >>> +
-> >>> +	ep = epfile->private_data;
-> >>> +
-> >>> +	ret = -ENOSPC;
-> >>> +	remaining_watches = (max_user_watches -
-> >>> +			     atomic_read(&ep->user->epoll_watches));
-> >>> +	if (h->num_items > remaining_watches)
-> >>> +		goto out;
-> >> This is tested anyway by ep_insert() below. Besides, it's racy here
-> >> (user may  have another restart in parallel, and the check-modify isn't
-> >> atomic. Unlike with ep_insert(), this check is for a bunch of fd's not
-> >> a single one.
-> > 
-> > Yes, it's racy. However, we're restarting so we're primarily adding watches.
-> > It's also possible we're restarting thousands of watches only to fail
-> > when we add the last few. This avoids all that useless work when possible.
-> 
-> Is this concern worth taking the code out of its "usual" place (the
-> common epoll code) and making a special case here ?
-
-I don't think it's worth that.
-
-Incidentally, the next version will factor out and re-use half of epoll_ctl().
-The main benefit will be maintenance since it saves only about 5 lines.
-
-> >>
-> >> struct ckpt_hdr_eventpoll_item {
-> > 	     ^^^^^
-> > I strongly dislike this name change idea. There's no header for each item and 
-> > it's obviously part of the checkpoint image. If anything, too many
-> > things have "_hdr_" in their names when they lack a ckpt_hdr or don't
-> > need one: ckpt_hdr_const, ckpt_hdr_pids, ckpt_hdr_socket, ckpt_hdr_sigset,
-> > ckpt_hdr_sigaction, ckpt_hdr_siginfo, ckpt_hdr_rlimit, ckpt_hdr_ipc_perms*)
-> 
-> I have no strong opinion in either way, and what you say makes sense.
-> I do strongly prefer a single common convention to all "ckpt_hdr"-less
-> structures (and one to all "ckpt_hdr"-full ones). When the patches for
-> this show up, I'll pull them :)
-
-OK, I think this might deserve a code comment in the patches:
-
-/*
- * All struct ckpt_hdr_* structs have a struct ckpt_hdr (usually as
- * their first member).
- */
-
-> 
-> > 
-> > (*We shouldn't need two adjacent headers for ckpt_hdr_ipc_{shm,msg,sem}.)
-> 
-> Right. I'll remove the ckpt-hdr from ckpt_{hdr_}ipc_perms.
-
-Great, thanks.
-
-Cheers,
-	-Matt Helsley
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------050704060908010703090408--
