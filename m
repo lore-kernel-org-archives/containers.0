@@ -1,14 +1,14 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 02/24] io-controller: Core of the elevator fair queuing
-Date: Thu, 27 Aug 2009 10:49:40 +0800
-Message-ID: <4A95F444.9040705__28322.3967221149$1251341600$gmane$org@cn.fujitsu.com>
-References: <1250451046-9966-1-git-send-email-vgoyal@redhat.com>
-	<1250451046-9966-3-git-send-email-vgoyal@redhat.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [Test Result] I/O bandwidth Control by dm-ioband -
+	partition-based environment
+Date: Thu, 27 Aug 2009 15:20:42 +0900 (JST)
+Message-ID: <20090827.152042.104028330.ryov__44957.9984452159$1251354118$gmane$org@valinux.co.jp>
+References: <2891419e0908261846v4fa19791q4552975f10dd64e5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1250451046-9966-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <2891419e0908261846v4fa19791q4552975f10dd64e5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,33 +18,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vml2ZWsgR295YWwgd3JvdGU6Ci4uLgo+ICtzdGF0aWMgdm9pZCB1cGRhdGVfbWluX3ZkaXNrdGlt
-ZShzdHJ1Y3QgaW9fc2VydmljZV90cmVlICpzdCkKPiArewo+ICsJdTY0IHZkaXNrdGltZTsKPiAr
-Cj4gKwlpZiAoc3QtPmFjdGl2ZV9lbnRpdHkpCj4gKwkJdmRpc2t0aW1lID0gc3QtPmFjdGl2ZV9l
-bnRpdHktPnZkaXNrdGltZTsKPiArCj4gKwlpZiAoc3QtPnJiX2xlZnRtb3N0KSB7Cj4gKwkJc3Ry
-dWN0IGlvX2VudGl0eSAqZW50aXR5ID0gcmJfZW50cnkoc3QtPnJiX2xlZnRtb3N0LAo+ICsJCQkJ
-CQlzdHJ1Y3QgaW9fZW50aXR5LCByYl9ub2RlKTsKPiArCj4gKwkJaWYgKCFzdC0+YWN0aXZlX2Vu
-dGl0eSkKPiArCQkJdmRpc2t0aW1lID0gZW50aXR5LT52ZGlza3RpbWU7Cj4gKwkJZWxzZQo+ICsJ
-CQl2ZGlza3RpbWUgPSBtaW5fdmRpc2t0aW1lKHZkaXNrdGltZSwgZW50aXR5LT52ZGlza3RpbWUp
-Owo+ICsJfQo+ICsKPiArCXN0LT5taW5fdmRpc2t0aW1lID0gbWF4X3ZkaXNrdGltZShzdC0+bWlu
-X3ZkaXNrdGltZSwgdmRpc2t0aW1lKTsKPiArfQoKYmxvY2svZWxldmF0b3ItZnEuYzogSW4gZnVu
-Y3Rpb24g4oCYZWx2X2lvcV9zbGljZV9leHBpcmVk4oCZOgpibG9jay9lbGV2YXRvci1mcS5jOjEz
-Mjogd2FybmluZzog4oCYdmRpc2t0aW1l4oCZIG1heSBiZSB1c2VkIHVuaW5pdGlhbGl6ZWQgaW4g
-dGhpcyBmdW5jdGlvbgpMRCAgICAgIGJsb2NrL2J1aWx0LWluLm8KCldlJ2QgYmV0dGVyIGluaXRp
-YWxpemUgdmRpc2t0aW1lIGF0IGZpcnN0LgoKU2lnbmVkLW9mZi1ieTogR3VpIEppYW5mZW5nIDxn
-dWlqaWFuZmVuZ0Bjbi5mdWppdHN1LmNvbT4KLS0tCiBibG9jay9lbGV2YXRvci1mcS5jIHwgICAg
-MiArKwogMSBmaWxlcyBjaGFuZ2VkLCAyIGluc2VydGlvbnMoKyksIDAgZGVsZXRpb25zKC0pCgpk
-aWZmIC0tZ2l0IGEvYmxvY2svZWxldmF0b3ItZnEuYyBiL2Jsb2NrL2VsZXZhdG9yLWZxLmMKaW5k
-ZXggZDA0ZTkyNS4uYTQxNjFjMiAxMDA2NDQKLS0tIGEvYmxvY2svZWxldmF0b3ItZnEuYworKysg
-Yi9ibG9jay9lbGV2YXRvci1mcS5jCkBAIC0xMzEsNiArMTMxLDggQEAgc3RhdGljIHZvaWQgdXBk
-YXRlX21pbl92ZGlza3RpbWUoc3RydWN0IGlvX3NlcnZpY2VfdHJlZSAqc3QpCiB7CiAJdTY0IHZk
-aXNrdGltZTsKIAorCXZkaXNrdGltZSA9IHN0LT5taW5fdmRpc2t0aW1lOworCiAJaWYgKHN0LT5h
-Y3RpdmVfZW50aXR5KQogCQl2ZGlza3RpbWUgPSBzdC0+YWN0aXZlX2VudGl0eS0+dmRpc2t0aW1l
-OwogCi0tIAoxLjUuNC5yYzMKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi Dong-Jae,
+
+# I've added dm-devel to Cc:.
+
+Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> Hi Ryo
+> 
+> I attached new test result file(ioband-partition-based-evaluation.xls)in
+> this mail.
+
+Thanks for your great job.
+
+> In this time, it is not virtualization environment.
+> I evaluated partition-based use cases before I do it in vitualization
+> environment.
+> because I think the two cases are smilar each other.
+> 
+> The detailed information about the evaluation can be referred in attached
+> file.
+> 
+> If you have any questions or comments after examine it,
+> please give me your opinion.
+
+I would like to know the throughput without dm-ioband in your
+environment. Because the total throughput of range-bw policy is
+8000KB/s, which means the device has a capability to perform over
+8000KB/s, but the total throughput of weight policy is lower than
+the range-bw policy. In my environment, there is no significant
+difference in average throughput between with and without dm-ioband.
+I ran fio in the way described in your result file. Here are the
+results of my environment. The throughputs were calculated from
+"iostat -k 1" outputs.
+
+            buffered write test
+           Avg. throughput [KB/s]
+        w/o ioband     w/ioband
+sdb2         14485         5788
+sdb3         12494        22295
+total        26979        28030
+
+Thanks,
+Ryo Tsuruta
