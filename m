@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 15/23] io-controller: noop changes for hierarchical fair
-	queuing
-Date: Fri, 28 Aug 2009 17:31:04 -0400
-Message-ID: <1251495072-7780-16-git-send-email-vgoyal__12416.5289257236$1251495163$gmane$org@redhat.com>
+Subject: [PATCH 09/23] io-controller: Export disk time used and nr sectors
+	dipatched through cgroups
+Date: Fri, 28 Aug 2009 17:30:58 -0400
+Message-ID: <1251495072-7780-10-git-send-email-vgoyal__30882.3896725245$1251495168$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,76 +22,166 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsv
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch changes noop to use queue scheduling code from elevator layer.
-One can go back to old noop by deselecting CONFIG_IOSCHED_NOOP_HIER.
+o This patch exports some statistics through cgroup interface. Two of the
+  statistics currently exported are actual disk time assigned to the cgroup
+  and actual number of sectors dispatched to disk on behalf of this cgroup.
 
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |   11 +++++++++++
- block/noop-iosched.c  |   14 ++++++++++++++
- 2 files changed, 25 insertions(+), 0 deletions(-)
+ block/elevator-fq.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h |   10 +++++++
+ 2 files changed, 86 insertions(+), 0 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index a7d0bf8..28cd500 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -25,6 +25,17 @@ config IOSCHED_NOOP
- 	  that do their own scheduling and require only minimal assistance from
- 	  the kernel.
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index 8e40b64..563db2d 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -13,6 +13,7 @@
  
-+config IOSCHED_NOOP_HIER
-+	bool "Noop Hierarchical Scheduling support"
-+	depends on IOSCHED_NOOP && CGROUPS
-+	select ELV_FAIR_QUEUING
-+	select GROUP_IOSCHED
-+	default n
-+	---help---
-+	  Enable hierarhical scheduling in noop. In this mode noop keeps
-+	  one IO queue per cgroup instead of a global queue. Elevator
-+	  fair queuing logic ensures fairness among various queues.
-+
- config IOSCHED_AS
- 	tristate "Anticipatory I/O scheduler"
- 	default y
-diff --git a/block/noop-iosched.c b/block/noop-iosched.c
-index 731dbf2..4ba496f 100644
---- a/block/noop-iosched.c
-+++ b/block/noop-iosched.c
-@@ -6,6 +6,7 @@
- #include <linux/bio.h>
- #include <linux/module.h>
- #include <linux/init.h>
-+#include "elevator-fq.h"
+ #include <linux/blkdev.h>
+ #include <linux/blktrace_api.h>
++#include <linux/seq_file.h>
+ #include "elevator-fq.h"
  
- struct noop_queue {
- 	struct list_head queue;
-@@ -82,6 +83,15 @@ static void noop_free_noop_queue(struct elevator_queue *e, void *sched_queue)
- 	kfree(nq);
+ const int elv_slice_sync = HZ / 10;
+@@ -257,6 +258,8 @@ entity_served(struct io_entity *entity, unsigned long served,
+ 	for_each_entity(entity) {
+ 		entity->vdisktime += elv_delta_fair(served, entity);
+ 		update_min_vdisktime(entity->st);
++		entity->total_time += served;
++		entity->total_sectors += nr_sectors;
+ 	}
  }
  
-+#ifdef CONFIG_IOSCHED_NOOP_HIER
-+static struct elv_fs_entry noop_attrs[] = {
-+	ELV_ATTR(fairness),
-+	ELV_ATTR(slice_sync),
-+	ELV_ATTR(group_idle),
-+	__ATTR_NULL
-+};
-+#endif
+@@ -854,6 +857,66 @@ STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
+ STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
+ #undef STORE_FUNCTION
+ 
++static int io_cgroup_disk_time_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
 +
- static struct elevator_type elevator_noop = {
- 	.ops = {
- 		.elevator_merge_req_fn		= noop_merged_requests,
-@@ -92,6 +102,10 @@ static struct elevator_type elevator_noop = {
- 		.elevator_alloc_sched_queue_fn	= noop_alloc_noop_queue,
- 		.elevator_free_sched_queue_fn	= noop_free_noop_queue,
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	iocg = cgroup_to_io_cgroup(cgroup);
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_time);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
++
++	return 0;
++}
++
++static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
++{
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
++
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	iocg = cgroup_to_io_cgroup(cgroup);
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_sectors);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
++
++	return 0;
++}
++
+ struct cftype io_files[] = {
+ 	{
+ 		.name = "weight",
+@@ -865,6 +928,14 @@ struct cftype io_files[] = {
+ 		.read_u64 = io_cgroup_ioprio_class_read,
+ 		.write_u64 = io_cgroup_ioprio_class_write,
  	},
-+#ifdef CONFIG_IOSCHED_NOOP_HIER
-+	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
-+	.elevator_attrs = noop_attrs,
-+#endif
- 	.elevator_name = "noop",
- 	.elevator_owner = THIS_MODULE,
++	{
++		.name = "disk_time",
++		.read_seq_string = io_cgroup_disk_time_read,
++	},
++	{
++		.name = "disk_sectors",
++		.read_seq_string = io_cgroup_disk_sectors_read,
++	},
  };
+ 
+ static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+@@ -956,6 +1027,8 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 	struct io_cgroup *iocg;
+ 	struct io_group *iog, *leaf = NULL, *prev = NULL;
+ 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
++	unsigned int major, minor;
++	struct backing_dev_info *bdi = &q->backing_dev_info;
+ 
+ 	for (; cgroup != NULL; cgroup = cgroup->parent) {
+ 		iocg = cgroup_to_io_cgroup(cgroup);
+@@ -976,6 +1049,9 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 
+ 		iog->iocg_id = css_id(&iocg->css);
+ 
++		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
++		iog->dev = MKDEV(major, minor);
++
+ 		io_group_init_entity(iocg, iog);
+ 
+ 		atomic_set(&iog->ref, 0);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 56d0bfc..9757e39 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -53,6 +53,13 @@ struct io_entity {
+ 
+ 	unsigned short ioprio, ioprio_class;
+ 	int ioprio_changed;
++
++	/*
++	 * Keep track of total service received by this entity. Keep the
++	 * stats both for time slices and number of sectors dispatched
++	 */
++	unsigned long total_time;
++	unsigned long total_sectors;
+ };
+ 
+ /*
+@@ -104,6 +111,9 @@ struct io_group {
+ 	struct io_queue *async_idle_queue;
+ 	void *key;
+ 	struct rcu_head rcu_head;
++
++	/* The device MKDEV(major, minor), this group has been created for */
++	dev_t	dev;
+ };
+ 
+ struct io_cgroup {
 -- 
 1.6.0.6
