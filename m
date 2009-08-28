@@ -1,13 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/1] signal c/r: don't play with zero timeouts
-Date: Fri, 28 Aug 2009 11:21:57 -0400
-Message-ID: <4A97F615.8070703@librato.com>
-References: <20090827184934.GA20580@us.ibm.com>
+From: Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+Subject: Re: [Test Result] I/O bandwidth Control by dm-ioband - partition-based
+	environment
+Date: Fri, 28 Aug 2009 11:58:57 -0400
+Message-ID: <4A97FEC1.1010500@ds.jp.nec.com>
+References: <2891419e0908261846v4fa19791q4552975f10dd64e5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090827184934.GA20580-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <2891419e0908261846v4fa19791q4552975f10dd64e5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,45 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hello Dong-Jae,
 
-Yep. Pushed...
+Dong-Jae Kang wrote, on 08/26/2009 09:46 PM:
+> Hi Ryo
+>
+> I attached new test result file(ioband-partition-based-evaluation.xls)in
+> this mail.
+> In this time, it is not virtualization environment.
+> I evaluated partition-based use cases before I do it in vitualization
+> environment.
+> because I think the two cases are smilar each other.
+>
+> The detailed information about the evaluation can be referred in attached
+> file.
+>
+> If you have any questions or comments after examine it,
+> please give me your opinion.
+>
+> Thank you.
 
-Serge E. Hallyn wrote:
-> If it_virt_expires or it_prof_expires is zero, then don't
-> subtract {virt,prof}_ticks(t) from it.  This is the same
-> thing do_getitimer() does, and it fixes my issues with
-> the signals c/r patchset on s390.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/signal.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
-> 
-> diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-> index 960356c..15b7cdc 100644
-> --- a/checkpoint/signal.c
-> +++ b/checkpoint/signal.c
-> @@ -382,13 +382,17 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
->  	}
->  	h->it_real_incr = ktime_to_ns(signal->it_real_incr);
->  
-> -	cputime = cputime_sub(signal->it_virt_expires, virt_ticks(t));
-> +	cputime = signal->it_virt_expires;
-> +	if (!cputime_eq(cputime, cputime_zero))
-> +		cputime = cputime_sub(signal->it_virt_expires, virt_ticks(t));
->  	cputime_to_timeval(cputime, &tval);
->  	h->it_virt_value = timeval_to_ns(&tval);
->  	cputime_to_timeval(signal->it_virt_incr, &tval);
->  	h->it_virt_incr = timeval_to_ns(&tval);
->  
-> -	cputime = cputime_sub(signal->it_prof_expires, prof_ticks(t));
-> +	cputime = signal->it_prof_expires;
-> +	if (!cputime_eq(cputime, cputime_zero))
-> +		cputime = cputime_sub(signal->it_prof_expires, prof_ticks(t));
->  	cputime_to_timeval(cputime, &tval);
->  	h->it_prof_value = timeval_to_ns(&tval);
->  	cputime_to_timeval(signal->it_prof_incr, &tval);
+Good work.
+Please let me ask silly questions.
+
+(1) About what "target" means
+I guess "device" means writing to device files directly
+(--filename=/dev/mapper/ioband1)
+and "directory" means mounting these device files and writing to some directory
+on the filesystem
+(--filename=/mnt/ioband1/test.dat, I'm assuming mount /dev/mapper/ioband1 on
+/mnt/ioband1),
+am I wright?
+
+(2) Conditions  in RDF sheet
+Conditions in sheet "RDF" and "RBF" are same but results are slightly different.
+Should "Mode" in RDF sheet be "Direct"?
+
+
+Regards,
+Muuhh
+
+-- 
+IKEDA, Munehiro
+   NEC Corporation of America
+     m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
