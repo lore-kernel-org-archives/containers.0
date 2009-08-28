@@ -1,10 +1,13 @@
-From: Trifiletti <infantility-kQkhx1s5OfFknbxzx/v8hQ@public.gmane.org>
-Subject: ppy or wretched, saved
-Date: Fri, 28 Aug 2009 18:45:18 -0300
-Message-ID: <4A984E54.9030305__28051.3085694567$1251496188$gmane$org@relevans.dk>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 11/23] io-controller: Introduce group idling
+Date: Fri, 28 Aug 2009 17:31:00 -0400
+Message-ID: <1251495072-7780-12-git-send-email-vgoyal__28345.1849515133$1251496214$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------020506030303050607070901"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1251495072-7780-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,214 +17,525 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------020506030303050607070901
-Content-Type: text/plain; charset=ISO-8859-6; format=flowed
-Content-Transfer-Encoding: 7bit
+o It is not always that IO from a process or group is continuous. There are
+  cases of dependent reads where next read is not issued till previous read
+  has finished. For such cases, CFQ introduced the notion of slice_idle,
+  where we idle on the queue for sometime hoping next request will come
+  and that's how fairness is provided otherwise queue will be deleted
+  immediately from the service tree and this process will not get the
+  fair share.
 
-House in the city, and meet the most famous man 'on this side of the
-bay,' why, of course, I said I'd come. But, gods! I didn't know it would
-be like this, although Jack said the tail of a wild mustang couldn't get
-him through the front door. Being on my first visit to the widely
-renowned California, I thought it my duty to see all the sights. Where
-did you come from?" "Oh, I live here. I've lived here for twenty-four
-years." "Great Scott!" His eyes bulged. "You've lived in this hou
+o This patch introduces the similar concept at group level. Idle on the group
+  for a period of "group_idle" which is tunable through sysfs interface. So
+  if a group is empty and about to be deleted, we idle for the next request.
 
---------------020506030303050607070901
-Content-Type: image/jpeg;
- name="illogicality.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="illogicality.jpg"
+o This patch also introduces the notion of wait busy where we wait for one
+  extra group_idle period even if queue has consumed its time slice. The
+  reason being that group will loose its share upon removal from service
+  tree as some other entity will be picked for dispatch and vtime jump will
+  take place.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAE9ASUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDTHU0HoaB1NB6GgBaKKTIpAAzgUgPXigHg
-cGjOM8UwF6cmkxnk/lRznJFLk+lAC009/pS5pD3+lAC9xS0ncUtABRRRSAKKKQ9DQADoKF+6
-KOgoXoKYB3FLSd6WgAooopAFFFFABTf4/wAKdTf4/wAKYC9zS0nc0tABRRSZFIBaKTPtRz6U
-wFopOfSjPsaAA9RS0mRkUtAGXrf/ACx/4F/SijW/+WP/AAL+lFAGnnk0hzg8Uo6mg9DQAY9a
-PpS0UAIOgoHU0DoKTODQAtLTc0uaAFppA5+lOpp7/SgA5zS59aD1FLQAUUmKOfrQAtIehoz+
-FB6GgAPQ0DoKD0NA6CgA7mlpO5paACiiikAUUUmaAFpv8X4UvP0pMfN+FMAzycc0vP0o70tA
-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
-yJIsBRgw+bofpRWdRQB//9k=
---------------020506030303050607070901
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ block/cfq-iosched.c |    5 +-
+ block/elevator-fq.c |  207 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ block/elevator-fq.h |   44 +++++++++++-
+ 3 files changed, 247 insertions(+), 9 deletions(-)
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------020506030303050607070901--
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 6c1f87a..11ae473 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -980,7 +980,7 @@ static int cfq_dispatch_requests(struct request_queue *q, int force)
+ 	 */
+ 	if (elv_nr_busy_ioq(q->elevator) > 1 && ((!cfq_cfqq_sync(cfqq) &&
+ 	    cfqq->slice_dispatch >= cfq_prio_to_maxrq(cfqd, cfqq)) ||
+-	    cfq_class_idle(cfqq))) {
++	    (cfq_class_idle(cfqq) && !elv_iog_should_idle(cfqq->ioq)))) {
+ 		cfq_slice_expired(cfqd);
+ 	}
+ 
+@@ -2121,6 +2121,9 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	CFQ_ATTR(slice_idle),
+ 	ELV_ATTR(slice_sync),
+ 	ELV_ATTR(slice_async),
++#ifdef CONFIG_GROUP_IOSCHED
++	ELV_ATTR(group_idle),
++#endif
+ 	__ATTR_NULL
+ };
+ 
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index cb348fa..6ea5be4 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -19,6 +19,7 @@
+ const int elv_slice_sync = HZ / 10;
+ int elv_slice_async = HZ / 25;
+ const int elv_slice_async_rq = 2;
++int elv_group_idle = HZ / 125;
+ static struct kmem_cache *elv_ioq_pool;
+ 
+ /*
+@@ -251,6 +252,17 @@ init_io_entity_service_tree(struct io_entity *entity, struct io_entity *parent)
+ 	entity->st = &parent_iog->sched_data.service_tree[idx];
+ }
+ 
++/*
++ * Returns the number of active entities a particular io group has. This
++ * includes number of active entities on service trees as well as the active
++ * entity which is being served currently, if any.
++ */
++
++static inline int elv_iog_nr_active(struct io_group *iog)
++{
++	return iog->sched_data.nr_active;
++}
++
+ #ifdef CONFIG_DEBUG_GROUP_IOSCHED
+ static void io_group_path(struct io_group *iog)
+ {
+@@ -663,6 +675,8 @@ ssize_t __FUNC(struct elevator_queue *e, char *page)		\
+ 		__data = jiffies_to_msecs(__data);			\
+ 	return elv_var_show(__data, (page));				\
+ }
++SHOW_FUNCTION(elv_group_idle_show, efqd->elv_group_idle, 1);
++EXPORT_SYMBOL(elv_group_idle_show);
+ SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
+ EXPORT_SYMBOL(elv_slice_sync_show);
+ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+@@ -685,6 +699,8 @@ ssize_t __FUNC(struct elevator_queue *e, const char *page, size_t count)\
+ 		*(__PTR) = __data;					\
+ 	return ret;							\
+ }
++STORE_FUNCTION(elv_group_idle_store, &efqd->elv_group_idle, 0, UINT_MAX, 1);
++EXPORT_SYMBOL(elv_group_idle_store);
+ STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_sync_store);
+ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+@@ -846,6 +862,31 @@ static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
+ 	entity->my_sd = &iog->sched_data;
+ }
+ 
++/* Check if we plan to idle on the group associated with this queue or not */
++int elv_iog_should_idle(struct io_queue *ioq)
++{
++	struct io_group *iog = ioq_to_io_group(ioq);
++	struct elv_fq_data *efqd = ioq->efqd;
++
++	/*
++	 * No idling on group if group idle is disabled or idling is disabled
++	 * for this group. Currently for root group idling is disabled.
++	 */
++	if (!efqd->elv_group_idle || !elv_iog_idle_window(iog))
++		return 0;
++
++	/*
++	 * If this is last active queue in group with no request queued, we
++	 * need to idle on group before expiring the queue to make sure group
++	 * does not loose its share.
++	 */
++	if ((elv_iog_nr_active(iog) <= 1) && !ioq->nr_queued)
++		return 1;
++
++	return 0;
++}
++EXPORT_SYMBOL(elv_iog_should_idle);
++
+ static void io_group_set_parent(struct io_group *iog, struct io_group *parent)
+ {
+ 	struct io_entity *entity = &iog->entity;
+@@ -1213,6 +1254,7 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 
+ 		atomic_set(&iog->ref, 0);
+ 
++		elv_mark_iog_idle_window(iog);
+ 		/*
+ 		 * Take the initial reference that will be released on destroy
+ 		 * This can be thought of a joint reference by cgroup and
+@@ -1628,6 +1670,10 @@ static void io_free_root_group(struct elevator_queue *e)
+ 	kfree(iog);
+ }
+ 
++/* No group idling in flat mode */
++int elv_iog_should_idle(struct io_queue *ioq) { return 0; }
++EXPORT_SYMBOL(elv_iog_should_idle);
++
+ #endif /* CONFIG_GROUP_IOSCHED */
+ 
+ /*
+@@ -1688,7 +1734,9 @@ __elv_set_active_ioq(struct elv_fq_data *efqd, struct io_queue *ioq, int coop)
+ 		ioq->dispatch_start = jiffies;
+ 
+ 		elv_clear_ioq_wait_request(ioq);
++		elv_clear_iog_wait_request(iog);
+ 		elv_clear_ioq_must_dispatch(ioq);
++		elv_clear_iog_wait_busy_done(iog);
+ 		elv_mark_ioq_slice_new(ioq);
+ 
+ 		del_timer(&efqd->idle_slice_timer);
+@@ -1787,14 +1835,19 @@ void elv_ioq_slice_expired(struct request_queue *q, struct io_queue *ioq)
+ {
+ 	struct elv_fq_data *efqd = q->elevator->efqd;
+ 	long slice_used = 0, slice_overshoot = 0;
++	struct io_group *iog = ioq_to_io_group(ioq);
+ 
+ 	assert_spin_locked(q->queue_lock);
+ 	elv_log_ioq(efqd, ioq, "slice expired");
+ 
+-	if (elv_ioq_wait_request(ioq))
++	if (elv_ioq_wait_request(ioq) || elv_iog_wait_request(iog)
++	    || elv_iog_wait_busy(iog))
+ 		del_timer(&efqd->idle_slice_timer);
+ 
+ 	elv_clear_ioq_wait_request(ioq);
++	elv_clear_iog_wait_request(iog);
++	elv_clear_iog_wait_busy(iog);
++	elv_clear_iog_wait_busy_done(iog);
+ 
+ 	/*
+ 	 * Queue got expired before even a single request completed or
+@@ -1928,6 +1981,8 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+ {
+ 	struct elv_fq_data *efqd = q->elevator->efqd;
+ 	struct io_queue *ioq = rq->ioq;
++	struct io_group *iog = ioq_to_io_group(ioq);
++	int group_wait = 0;
+ 
+ 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
+ 		return;
+@@ -1940,6 +1995,24 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+ 	if (!elv_ioq_busy(ioq))
+ 		elv_add_ioq_busy(efqd, ioq);
+ 
++	if (elv_iog_wait_request(iog)) {
++		del_timer(&efqd->idle_slice_timer);
++		elv_clear_iog_wait_request(iog);
++		group_wait = 1;
++	}
++
++	/*
++	 * If we were waiting for a request on this group, wait is
++	 * done. Schedule the next dispatch
++	 */
++	if (elv_iog_wait_busy(iog)) {
++		del_timer(&efqd->idle_slice_timer);
++		elv_clear_iog_wait_busy(iog);
++		elv_mark_iog_wait_busy_done(iog);
++		elv_schedule_dispatch(q);
++		return;
++	}
++
+ 	if (ioq == elv_active_ioq(q->elevator)) {
+ 		/*
+ 		 * Remember that we saw a request from this process, but
+@@ -1951,7 +2024,7 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+ 		 * has other work pending, don't risk delaying until the
+ 		 * idle timer unplug to continue working.
+ 		 */
+-		if (elv_ioq_wait_request(ioq)) {
++		if (group_wait || elv_ioq_wait_request(ioq)) {
+ 			del_timer(&efqd->idle_slice_timer);
+ 			if (blk_rq_bytes(rq) > PAGE_CACHE_SIZE ||
+ 			    efqd->busy_queues > 1 || !blk_queue_plugged(q))
+@@ -1968,6 +2041,13 @@ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+ 		 */
+ 		elv_preempt_queue(q, ioq);
+ 		__blk_run_queue(q);
++	} else if (group_wait) {
++		/*
++		 * Got a request in the group we were waiting for. Request
++		 * does not belong to active queue and we have not decided
++		 * to preempt the current active queue. Schedule the dispatch.
++		 */
++		elv_schedule_dispatch(q);
+ 	}
+ }
+ 
+@@ -1985,6 +2065,14 @@ static void elv_idle_slice_timer(unsigned long data)
+ 	ioq = efqd->active_queue;
+ 
+ 	if (ioq) {
++		struct io_group *iog = ioq_to_io_group(ioq);
++
++		elv_clear_iog_wait_request(iog);
++
++		if (elv_iog_wait_busy(iog)) {
++			elv_clear_iog_wait_busy(iog);
++			goto expire;
++		}
+ 
+ 		/*
+ 		 * We saw a request before the queue expired, let it through
+@@ -2028,6 +2116,32 @@ static void elv_ioq_arm_slice_timer(struct request_queue *q)
+ 		eq->ops->elevator_arm_slice_timer_fn(q, ioq->sched_queue);
+ }
+ 
++static void elv_iog_arm_slice_timer(struct request_queue *q,
++				struct io_group *iog, int wait_for_busy)
++{
++	struct elv_fq_data *efqd = q->elevator->efqd;
++	unsigned long sl;
++
++	if (!efqd->elv_group_idle || !elv_iog_idle_window(iog))
++		return;
++	/*
++	 * This queue has consumed its time slice. We are waiting only for
++	 * it to become busy before we select next queue for dispatch.
++	 */
++	if (wait_for_busy) {
++		elv_mark_iog_wait_busy(iog);
++		sl = efqd->elv_group_idle;
++		mod_timer(&efqd->idle_slice_timer, jiffies + sl);
++		elv_log_iog(efqd, iog, "arm idle group: %lu wait busy=1", sl);
++		return;
++	}
++
++	elv_mark_iog_wait_request(iog);
++	sl = efqd->elv_group_idle;
++	mod_timer(&efqd->idle_slice_timer, jiffies + sl);
++	elv_log_iog(efqd, iog, "arm_idle group: %lu", sl);
++}
++
+ /*
+  * If io scheduler has functionality of keeping track of close cooperator, check
+  * with it if it has got a closely co-operating queue.
+@@ -2057,6 +2171,7 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ {
+ 	struct elv_fq_data *efqd = q->elevator->efqd;
+ 	struct io_queue *new_ioq = NULL, *ioq = elv_active_ioq(q->elevator);
++	struct io_group *iog;
+ 
+ 	if (!elv_nr_busy_ioq(q->elevator))
+ 		return NULL;
+@@ -2064,6 +2179,8 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	if (ioq == NULL)
+ 		goto new_queue;
+ 
++	iog = ioq_to_io_group(ioq);
++
+ 	/*
+ 	 * Force dispatch. Continue to dispatch from current queue as long
+ 	 * as it has requests.
+@@ -2075,11 +2192,47 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 			goto expire;
+ 	}
+ 
++	/* We are waiting for this group to become busy before it expires.*/
++	if (elv_iog_wait_busy(iog)) {
++		ioq = NULL;
++		goto keep_queue;
++	}
++
+ 	/*
+ 	 * The active queue has run out of time, expire it and select new.
+ 	 */
+-	if (elv_ioq_slice_used(ioq) && !elv_ioq_must_dispatch(ioq))
+-		goto expire;
++	if ((elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq))
++	     && !elv_ioq_must_dispatch(ioq)) {
++		/*
++		 * Queue has used up its slice. Wait busy is not on otherwise
++		 * we wouldn't have been here. If this group will be deleted
++		 * after the queue expiry, then make sure we have onece
++		 * done wait busy on the group in an attempt to make it
++		 * backlogged.
++		 *
++		 * Following check helps in two conditions.
++		 * - If there are requests dispatched from the queue and
++		 *   select_ioq() comes before a request completed from the
++		 *   queue and got a chance to arm any of the idle timers.
++		 *
++		 * - If at request completion time slice had not expired and
++		 *   we armed either a ioq timer or group timer but when
++		 *   select_ioq() hits, slice has expired and it will expire
++		 *   the queue without doing busy wait on group.
++		 *
++		 * In similar situations cfq lets delte the queue even if
++		 * idle timer is armed. That does not impact fairness in non
++		 * hierarhical setup due to weighted slice lengths. But in
++		 * hierarchical setup where group slice lengths are derived
++		 * from queue and is not proportional to group's weight, it
++		 * harms the fairness of the group.
++		 */
++		if (elv_iog_should_idle(ioq) && !elv_iog_wait_busy_done(iog)) {
++			ioq = NULL;
++			goto keep_queue;
++		} else
++			goto expire;
++	}
+ 
+ 	/*
+ 	 * The active queue has requests and isn't expired, allow it to
+@@ -2111,6 +2264,12 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 		goto keep_queue;
+ 	}
+ 
++	/* Check for group idling */
++	if (elv_iog_should_idle(ioq) && elv_ioq_nr_dispatched(ioq)) {
++		ioq = NULL;
++		goto keep_queue;
++	}
++
+ expire:
+ 	elv_slice_expired(q);
+ new_queue:
+@@ -2182,11 +2341,13 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 	const int sync = rq_is_sync(rq);
+ 	struct io_queue *ioq;
+ 	struct elv_fq_data *efqd = q->elevator->efqd;
++	struct io_group *iog;
+ 
+ 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
+ 		return;
+ 
+ 	ioq = rq->ioq;
++	iog = ioq_to_io_group(ioq);
+ 	WARN_ON(!efqd->rq_in_driver);
+ 	WARN_ON(!ioq->dispatched);
+ 	efqd->rq_in_driver--;
+@@ -2212,13 +2373,44 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 		 * mean seek distance, give them a chance to run instead
+ 		 * of idling.
+ 		 */
+-		if (elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq))
++		if (elv_ioq_slice_used(ioq) || elv_ioq_class_idle(ioq)) {
++			/*
++			 * This is the last empty queue in the group and it
++			 * has consumed its slice. If we expire it right away
++			 * group might loose its share. Wait for an extra
++			 * group_idle period for a request before queue
++			 * expires.
++			 */
++			if (elv_iog_should_idle(ioq)) {
++				elv_iog_arm_slice_timer(q, iog, 1);
++				goto done;
++			}
++
++			/* Expire the queue */
+ 			elv_slice_expired(q);
+-		else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq)
++			goto done;
++		} else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq)
+ 			 && sync && !rq_noidle(rq))
+ 			elv_ioq_arm_slice_timer(q);
++		/*
++		 * If this is the last queue in the group and we did not
++		 * decide to idle on queue, idle on group.
++		 */
++		if (elv_iog_should_idle(ioq) && !ioq->dispatched
++		    && !timer_pending(&efqd->idle_slice_timer)) {
++			/*
++			 * If queue has used up its slice, wait for the
++			 * one extra group_idle period to let the group
++			 * backlogged again. This is to avoid a group loosing
++			 * its fair share.
++			 */
++			if (elv_ioq_slice_used(ioq))
++				elv_iog_arm_slice_timer(q, iog, 1);
++			else
++				elv_iog_arm_slice_timer(q, iog, 0);
++		}
+ 	}
+-
++done:
+ 	if (!efqd->rq_in_driver)
+ 		elv_schedule_dispatch(q);
+ }
+@@ -2295,6 +2487,7 @@ int elv_init_fq_data(struct request_queue *q, struct elevator_queue *e)
+ 
+ 	efqd->elv_slice[0] = elv_slice_async;
+ 	efqd->elv_slice[1] = elv_slice_sync;
++	efqd->elv_group_idle = elv_group_idle;
+ 
+ 	return 0;
+ }
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 154014c..0a34c7f 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -98,6 +98,7 @@ struct io_queue {
+ struct io_group {
+ 	struct io_entity entity;
+ 	atomic_t ref;
++	unsigned int flags;
+ 	struct io_sched_data sched_data;
+ 	struct hlist_node group_node;
+ 	struct hlist_node elv_data_node;
+@@ -172,6 +173,8 @@ struct elv_fq_data {
+ 	struct timer_list idle_slice_timer;
+ 	struct work_struct unplug_work;
+ 
++	unsigned int elv_group_idle;
++
+ 	/* Base slice length for sync and async queues */
+ 	unsigned int elv_slice[2];
+ 
+@@ -240,6 +243,42 @@ ELV_IO_QUEUE_FLAG_FNS(idle_window)
+ ELV_IO_QUEUE_FLAG_FNS(slice_new)
+ ELV_IO_QUEUE_FLAG_FNS(sync)
+ 
++#ifdef CONFIG_GROUP_IOSCHED
++
++enum elv_group_state_flags {
++	ELV_GROUP_FLAG_idle_window,	  /* elevator group idling enabled */
++	ELV_GROUP_FLAG_wait_request,	  /* waiting for a request */
++	ELV_GROUP_FLAG_wait_busy,	  /* wait for this queue to get busy */
++	ELV_GROUP_FLAG_wait_busy_done,	  /* Have already waited on this group*/
++};
++
++#define ELV_IO_GROUP_FLAG_FNS(name)					\
++static inline void elv_mark_iog_##name(struct io_group *iog)		\
++{                                                                       \
++	(iog)->flags |= (1 << ELV_GROUP_FLAG_##name);			\
++}                                                                       \
++static inline void elv_clear_iog_##name(struct io_group *iog)		\
++{                                                                       \
++	(iog)->flags &= ~(1 << ELV_GROUP_FLAG_##name);			\
++}                                                                       \
++static inline int elv_iog_##name(struct io_group *iog)         		\
++{                                                                       \
++	return ((iog)->flags & (1 << ELV_GROUP_FLAG_##name)) != 0;	\
++}
++
++#else /* GROUP_IOSCHED */
++
++#define ELV_IO_GROUP_FLAG_FNS(name)					\
++static inline void elv_mark_iog_##name(struct io_group *iog) {}		\
++static inline void elv_clear_iog_##name(struct io_group *iog) {}	\
++static inline int elv_iog_##name(struct io_group *iog) { return 0; }
++#endif /* GROUP_IOSCHED */
++
++ELV_IO_GROUP_FLAG_FNS(idle_window)
++ELV_IO_GROUP_FLAG_FNS(wait_request)
++ELV_IO_GROUP_FLAG_FNS(wait_busy)
++ELV_IO_GROUP_FLAG_FNS(wait_busy_done)
++
+ static inline void elv_get_ioq(struct io_queue *ioq)
+ {
+ 	atomic_inc(&ioq->ref);
+@@ -365,7 +404,9 @@ extern int elv_io_group_allow_merge(struct request *rq, struct bio *bio);
+ extern void elv_put_iog(struct io_group *iog);
+ extern struct io_group *elv_io_get_io_group(struct request_queue *q,
+ 						int create);
+-
++extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
++					size_t count);
+ static inline void elv_get_iog(struct io_group *iog)
+ {
+ 	atomic_inc(&iog->ref);
+@@ -433,6 +474,7 @@ extern void elv_io_group_set_async_queue(struct io_group *iog, int ioprio_class,
+ extern struct io_queue *elv_alloc_ioq(struct request_queue *q, gfp_t gfp_mask);
+ extern void elv_free_ioq(struct io_queue *ioq);
+ extern struct io_group *ioq_to_io_group(struct io_queue *ioq);
++extern int elv_iog_should_idle(struct io_queue *ioq);
+ 
+ #else /* CONFIG_ELV_FAIR_QUEUING */
+ static inline struct elv_fq_data *
+-- 
+1.6.0.6
