@@ -1,10 +1,23 @@
-From: Doussan <shelterbelt-WXZD2uWtJcnndw41FSlgOA@public.gmane.org>
-Subject: ne could follow us, and least
-Date: Fri, 28 Aug 2009 08:55:37 +0200
-Message-ID: <4A977F64.1090305@linea-verde.nl>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Fri, 28 Aug 2009 11:32:56 +0200
+Message-ID: <4A97A448.5050506@free.fr>
+References: <ac1c4bf20908230513q383fb338ne02e8f19f6ef18a6@mail.gmail.com>	
+	<ac1c4bf20908240245ydbc1b9bxacfcf2398049505c@mail.gmail.com>	
+	<4A92676A.1080609@free.fr>	
+	<ac1c4bf20908240327u424bd021t8848cf1cafb24ada@mail.gmail.com>	
+	<4A9275CB.7030108@free.fr>	
+	<ac1c4bf20908240431p1fda5a15qd26629618397696@mail.gmail.com>	
+	<4A929F83.80207@free.fr>	
+	<20090826104312.97ff028f.kamezawa.hiroyu@jp.fujitsu.com>	
+	<4A952689.9020704@free.fr>	
+	<ac1c4bf20908260650x3311d5d3q44631a30205089b7@mail.gmail.com>
+	<ac1c4bf20908261625g71dff96cu77190056540cbb7@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------010403060805040303010304"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <ac1c4bf20908261625g71dff96cu77190056540cbb7-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,224 +27,152 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------010403060805040303010304
-Content-Type: text/plain; charset=ISO-8859-4; format=flowed
-Content-Transfer-Encoding: 7bit
+Krzysztof Taraszka wrote:
+> 2009/8/26 Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+>
+>   
+>> 2009/8/26 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>>
+>>     
+>>> KAMEZAWA Hiroyuki wrote:
+>>>
+>>>       
+>>>> On Mon, 24 Aug 2009 16:11:15 +0200
+>>>> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+>>>>
+>>>>
+>>>>
+>>>>         
+>>>>> [ snip ]
+>>>>>
+>>>>>
+>>>>>           
+>>>>>>  i think that /proc/meminfo should be mounted after /proc . why? i
+>>>>>>             
+>>>>>>>> think
+>>>>>>>> that, because mounting /proc may override /proc/meminfo
+>>>>>>>> Am I right? :)
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>                 
+>>>>>>> Ha ! haha ! arrgh ! no way ! You are right :/
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>               
+>>>>>> Hehe ;)
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>             
+>>>>>>> In the case of application container, lxc mounts /proc but in the case
+>>>>>>> of
+>>>>>>> system container it is the system who do that so after the
+>>>>>>> /proc/meminfo has
+>>>>>>> been mounted.
+>>>>>>>
+>>>>>>> Maybe we can look at modifying fs/proc/meminfo.c instead. Let me do a
+>>>>>>> small
+>>>>>>> patch for the kernel...
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>               
+>>>>>> Okey. I am waiting for your patch :)
+>>>>>>
+>>>>>>
+>>>>>>             
+>>>>> Quick and dirty patch but at least working. It is no synced on the
+>>>>> latest kernel version.
+>>>>> I do not really like to touch fs/proc/meminfo.c but it's an example
+>>>>> here.
+>>>>>
+>>>>>
+>>>>>
+>>>>>           
+>>>> I'll strongly Nack to this.
+>>>> plz find a way to ln -s /path_to_cgroup/memory.meminfo
+>>>> /mycontainer/meminfo
+>>>>
+>>>>
+>>>>         
+>>> Yep, I agree with you, I don't like this approach.
+>>>
+>>> We are trying to solve the problem of the userspace tools which look at
+>>> the /proc/meminfo file to display memory informations. That looks weird to
+>>> set a max memory usage of 256MB via the cgroup and having the 'free' command
+>>> showing 4GB of total memory. More than looking weird, Dietmar explained that
+>>> can puzzle applications relying on these informations for taking some
+>>> decisions.
+>>>
+>>> If we consider having /cgroup/mycontainer/memory.meminfo with memory
+>>> information in the same format than /proc/meminfo, that solves partially the
+>>> problem:
+>>> - we run an application container, the application won't mount /proc so
+>>> the lxc tools do that for the application (at least to isolate the pids
+>>> information), it is easy to mount --bind /cgroup/mycontainer/memory.meminfo
+>>> to /proc/meminfo before the application takes the control, that is to say
+>>> before 'exec'. Tested and verified with the memory tools (free, top, etc
+>>> ...)
+>>>
+>>> - we run a system container, we can do this mount-bind but when the
+>>> application, aka /sbin/init, takes the control, the /proc is mounted by the
+>>> system services, so we lose the /proc/meminfo we previously set. Hence
+>>> meminfo in the cgroup directory does not solve the problem for this use
+>>> case.
+>>>
+>>> Any ideas ?
+>>>
+>>>
+>>>       
+>> If I may... I have been thinking about that last few days and... I think
+>> that mounting /proc/meminfo can be done with mounted cgrop and secured by
+>> SMACK64.
+>> I will test it tonight and give you raport how does it works for me.
+>>
+>>
+>>     
+>
+> Okey.
+> I made few tests and this two ways work:
+>
+> First way:
+> =======
+> lxc. smack enabled, policy loaded. cgroup not labeled.
+>
+> a) start container
+> b) mount cgroup inside container
+> c) mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+> d) secure the /cgroup on the host (ie: attr -S -s SMACK64 -V host /cgroup).
+>
+> this step can be done inside lxc tools ;)
+>
+> Second way:
+> ==========
+> lxc. smack enabled, policy loaded. cgroup not labeled.
+>
+> a) do not label whole /cgrop directory (DO NOT DO: attr -S -s SMACK64 -V
+> host /cgroup). Label dedicate files only (for example: /cgroup/cpuset.cpus,
+> /cgroup/vs1/cpuset.cpus, etc). Do not label the /cgrop/vs1 directory. Label
+> with vs1 label only /cgroup/vs1/memory.meminfo. All other files label with
+> host label to do not allow read them.
+> b) start container
+> c) mount cgroup inside container
+> d) mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+>
+> steps: b, c, d can be done inside lxc tools. step a can't and it is base on
+> the admin policy.
+>
+> I think that the first solution is more automatic and can be done by lxc
+> tools (maybe command line switch? I can prepare a patch for that.
+>   
 
-Orous smoke. Mrs. Almayer's back was bent, and her head and shoulders
-hidden in the deep box. Her hands rummaged in the interior, where a soft
-clink as of silver money could be heard. She did not notice at first her
-daughter's approach, and Nina, standing silently by her, looked down on
-many little canvas bags ranged in the bottom of the chest, wherefrom her
-mother extracted handfuls of shining guilders and Mexican dollars,
-letting them stream slowly back again through her claw-like fingers. The
-music of tinkling silver seemed to delight her, and her eyes sparkled
-with the reflected gleam of freshly- minted coins. She was muttering to
-herself: "And this, and this, and yet this! Soon he will give more--as
-much more as I ask. He is a great Rajah--a Son of Heaven! And she will
-be a Ranee--he 
-
---------------010403060805040303010304
-Content-Type: image/jpeg;
- name="geminal.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="geminal.jpg"
-
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAFcAS0DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDRooooGFFFFABRRRQADqfrRQOn40UAFFFF
-ABRRRQAUHp+NFB6fjQAUUUUAFHaijtQIO1A6n60dqB1P1oAQfdH0pT0/GkH3R9KU9PxoGC/d
-H0ooX7o+lFAB7UUGigQn8JP1pR0pP4T+NLQMKT+L8KWmn+L6UAKnT/PpS0Dp+NFABRRRQAHq
-KB1NH8Q+lA6n60AA6ms/VpJI/K2Oy5znacelaA6n61maz/yx/wCBf0oEadFFFAwooooAKKKK
-AAdPxooHT8aKACiiigAooooAKRulLSN0oAUdKKB0ooAKO1FHagQdqB1P1o7Ug6n60DBfuj6U
-p6fjQv3R9KD0/GgAX7o+lFC/dH0ooAD0oFFA6UCE/hP40tJ/CfxpaBhTT/F9KdTT/F9KAHDp
-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
-pWmOp+tZms/8sf8AgX9KAP/Z
---------------010403060805040303010304
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------010403060805040303010304--
+I do not know smack, what does smack here ? Will this solution avoid the 
+container to overwrite /proc/meminfo by remounting /proc ?
