@@ -1,93 +1,33 @@
-From: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: [PATCH 2/5] cr: checkpoint the active LSM and add
-	RESTART_KEEP_LSM flag
-Date: Sat, 29 Aug 2009 17:59:23 -0500
-Message-ID: <20090829225923.GB12549@hallyn.com>
-References: <20090828210041.GA27878@us.ibm.com> <20090828210208.GA28048@us.ibm.com> <4A98B1D7.9050108@schaufler-ca.com>
+From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 07/23] io-controller: Common hierarchical fair queuing
+	code in elevaotor layer
+Date: Sat, 29 Aug 2009 19:04:38 -0400
+Message-ID: <4A99B406.2060209__42855.226310394$1251587153$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-8-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4A98B1D7.9050108@schaufler-ca.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Casey Schaufler <casey@schaufler-ca.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, Stephen Smalley <sds@epoch.ncsc.mil>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1251495072-7780-8-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Casey Schaufler (casey@schaufler-ca.com):
-> Serge E. Hallyn wrote:
-> > [ patch 1 was a trivial non-security patch so if you didn't see
-> > it, you didn't miss anything ]
-> >
-> > The RESTART_KEEP_LSM flag indicates that the LSM should
-> > attempt to reuse checkpointed security labels.  It is always
-> > invalid when the LSM at restart differs from that at checkpoint.
-> > It is currently only usable for capabilities.
-> >   
-> 
-> Can you imagine a scenario in which restoring a process on a
-> system with a different LSM configuration makes any sense at all?
+Vivek Goyal wrote:
+> o This patch enables hierarchical fair queuing in common layer. It is
+>   controlled by config option CONFIG_GROUP_IOSCHED.
 
-Without RESTART_KEEP_LSM absolutely.
+Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-With RESTART_KEEP_LSM, on a system with a different LSM loaded,
-certainly not.
-
-With RESTART_KEEP_LSM, on a system with the same LSM but a different
-policy, yes I do.  If any checkpointed contexts have been invalidated
-in the new policy, then restart with RESTART_KEEP_LSM should fail (*1).
-If the contexts are still valid, then it seems reasonable to
-assume that bin_t, user_t, etc, still basically mean what they
-meant before.  No reason to refuse restart just because I loaded
-a policy module for postfix, imo.
-
-I could add both an lsm-module and lsm-policy version to the
-checkpoint header, where the lsm-policy might be a sha1sum of
-the whole policy, but that seems like overkill, a lot of
-overhead, and probably a maintenance headache for the lsm-module
-version.
-
-> Goodness gracious, even if the "old" environment and the "new"
-> are both SELinux and the policies are different I can't see how
-> you could make any sort of claim that restoring the process is
-> safe.
-
-In what sense do you mean 'unsafe'?  The initial creation or
-access to any checkpointed resource always happens with the
-sys_restart() caller's and existing object's contexts, so there
-should be no opportunity for accessing data which the old policy
-allowed but the new does not.  It's possible that the task will
-fail because of a more restrictive new policy, but so be it.
-
->  The same goes for having file based capabilities on one
-> and not on the other.
-
-A task running as uid 500 with cap_dac_read_search=ep could have
-been started at least 3 ways:
-	1. a uid 500 task executing a file with cap_dac_read_search=ep
-	file caps
-	2. a root task executing a file which does prctl(PR_SET_KEEPCAPS),
-	setuid(500), and drops the other caps,
-	3. a uid 500 task executing a setuid root version of the
-	file in (2).
-
-When we are restarting a task, we don't really care which of
-the above ways it might have gotten its privileges.
-
-I certainly could be overlooking something - what do you see as the
-safety problem?
-
-> It seems that the check you've chosen is necessary, but far from
-> sufficient.
-
-Thanks much for giving this some thought.  Without doubt this
-is tricky business, and I was definately hoping for some serious
-discussion.
-
-thanks,
--serge
-
-*1 - Hmm, in Smack, if the caller has CAP_MAC_ADMIN, then he
-can load new, currently undefined types, right?  I guess that
-could be a problem, though again I assume the new type should
-simply have no accesses and so shouldn't be unsafe.
+-- 
+All rights reversed.
