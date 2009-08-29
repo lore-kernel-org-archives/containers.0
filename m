@@ -1,15 +1,15 @@
 From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 07/23] io-controller: Common hierarchical fair queuing
-	code in elevaotor layer
-Date: Sat, 29 Aug 2009 19:04:38 -0400
-Message-ID: <4A99B406.2060209__42855.226310394$1251587153$gmane$org@redhat.com>
+Subject: Re: [PATCH 08/23] io-controller: cfq changes to use hierarchical
+	fair queuing code in elevaotor layer
+Date: Sat, 29 Aug 2009 19:11:36 -0400
+Message-ID: <4A99B5A8.9050201__1560.79830271683$1251587661$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<1251495072-7780-8-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-9-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251495072-7780-8-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251495072-7780-9-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,8 +24,13 @@ Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> o This patch enables hierarchical fair queuing in common layer. It is
->   controlled by config option CONFIG_GROUP_IOSCHED.
+> Make cfq hierarhical.
+> 
+> Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+> Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+> Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
