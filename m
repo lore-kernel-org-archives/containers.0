@@ -1,14 +1,15 @@
 From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 02/23] io-controller: Core of the elevator fair queuing
-Date: Fri, 28 Aug 2009 18:26:56 -0400
-Message-ID: <4A9859B0.6090906__30523.4343665235$1251498494$gmane$org@redhat.com>
+Subject: Re: [PATCH 03/23] io-controller: Common flat fair queuing code in
+	elevaotor layer
+Date: Fri, 28 Aug 2009 21:29:23 -0400
+Message-ID: <4A988473.7010208__36706.3757185408$1251509445$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<1251495072-7780-3-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-4-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251495072-7780-3-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251495072-7780-4-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,20 +24,22 @@ Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> o This is core of the io scheduler implemented at elevator layer. This is a mix
->   of cpu CFS scheduler and CFQ IO scheduler. Some of the bits from CFS have
->   to be derived so that we can support hierarchical scheduling. Without
->   cgroups or with-in group, we should essentially get same behavior as CFQ.
+> This is common fair queuing code in elevator layer. This is controlled by
+> config option CONFIG_ELV_FAIR_QUEUING. This patch initially only introduces
+> flat fair queuing support where there is only one group, "root group" and all
+> the tasks belong to root group.
 > 
-> o This patch only shows non-hierarchical bits. Hierarhical code comes in later
->   patches.
+> This elevator layer changes are backward compatible. That means any ioscheduler
+> using old interfaces will continue to work.
 > 
-> o This code is the building base of introducing fair queuing logic in common
->   elevator layer so that it can be used by all the four IO schedulers.
+> This is essentially a lot of CFQ logic moved into common layer so that other
+> IO schedulers can make use of that in hierarhical scheduling setup.
 > 
+> Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 > Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
 > Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-> Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
