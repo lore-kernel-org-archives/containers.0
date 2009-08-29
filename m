@@ -1,234 +1,109 @@
-From: Thorsten <reest-uRmUjHq01jbpF0ayh/rvLA@public.gmane.org>
-Subject: see any one not introduced by one of tho
-Date: Sun, 30 Aug 2009 00:31:42 +0100
-Message-ID: <4A99B885.9020609@bmk-group.co.uk>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 3/5] cr: add generic LSM c/r support
+Date: Sat, 29 Aug 2009 16:40:08 -0700
+Message-ID: <4A99BC58.9040205@schaufler-ca.com>
+References: <20090828210041.GA27878@us.ibm.com> <20090828210417.GC28048@us.ibm.com> <4A98AEDE.1000105@schaufler-ca.com> <20090829224147.GA12549@hallyn.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------050803040704050809030106"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090829224147.GA12549@hallyn.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, Stephen Smalley <sds@epoch.ncsc.mil>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------050803040704050809030106
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+Serge E. Hallyn wrote:
+> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>   
+>> Serge E. Hallyn wrote:
+>>     
+> ...
+>   
+>>> Briefly, all security fields must be exported by the LSM as a simple
+>>> null-terminated string.  They are checkpointed through the
+>>> security_checkpoint_obj() helper, because we must pass it an extra
+>>> sectype field.  Splitting SECURITY_OBJ_SEC into one type per object
+>>> type would not work because, in Smack, one void* security is used for
+>>> all object types.
+>>>       
+>> I do not understand why the Smack behavior is a limitation here.
+>>     
+>
+> Well it's not the Smack behavior, it's the combination of Smack's
+> and SELinux's behavior :)
+>   
 
-Tives--sound motives, motives of political import. I desire another
-wedding for Mademoiselle de Lavedan. I wish it so, Bardelys, and I look
-to be obeyed." For a moment temptation had me by the throat. Here was an
-unlooked-for chance to shake from me a business which reflection was
-already rendering odious. I had but to call together my friends of
-yesternight, and with them the Comte de Chatellerault, and inform them
-that by the King was I forbidden to go awooing Roxalanne de Lavedan. So
-should my wager be dissolved. And then
+OK. That's what I thought.
 
---------------050803040704050809030106
-Content-Type: image/jpeg;
- name="accruing.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="accruing.jpg"
+> In the end what I have here is probably best anyway - what is
+> stored in the object hash is not a security struct as known
+> by any LSM, but a generic object label.  So at
+> object_hash_types[CKPT_OBJ_SEC]->restore(), we don't re-create
+> an actual security struct, but just a string which is later
+> used by security_xyztype_restore() to create an actual label.
+>   
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAFHAW8DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDTo70Ud6BB3oo70UwCiiigAo70UUAA6mgd
-6QdTSjvSAKKKKYAOgopB0FLQAUUUUAFNP3xTqaPvmgY6iiigAoo/Gj8aBBRRRQAUd6KO9AB3
-NFA70UAFAooFABRRRQAU1OlOpqdKAHUUUUAB7UHoaD2oPQ0gAUUCimAUUUUAA6UUDoKKACii
-oL6R4bR3jOGGMH8aAJ6KKKQCd6Wk70UALRmkx9aMUwFopMUYpAA6mlHekHU0UALRSZpc0wAd
-KKB0ooAKKKKACmj75p3Wmj75oGOooo9KBBmjNFIe31oAWiiigAo70Ud6AAd6KB3oyKACgUc0
-n40ALmjNJ07UUALz6UijAo/z1oxQAtFJijFIBT2oPQ0lBPFAhRRSA0tAwooopgA6CigdBRQA
-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
---------------050803040704050809030106
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+That's completely reasonable and in keeping with the Smack
+mindset. Of course, it's easiest if the string is the actual
+label. Smack wins!
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------050803040704050809030106--
+>   
+>>>   But we must pass the sectype field because in
+>>> SELinux a different type of structure is stashed in each object type.
+>>>       
+>> But each can be expressed as a context, can't it?
+>>     
+>
+> A set of contexts (root_u:root_r:root_t:::system_u:system_r\
+> :system_t::...).
+>
+> There would be a problem if it were stored as a more
+> structured type, and if the ->restore handler wanted to
+> re-create an actual task_security_struct, ipc_security_struct,
+> etc.  So the last paragraph in the patch intro was just trying to
+> explain why the intermediate layer, storing a generic string on
+> the c/r object hash, needs to be there.  The thing that is
+> not possible is to place the actual void *security or a struct
+> task_security_struct on the objhash.
+>   
+
+Right. Now why do you need a set of contexts?
+
+> ...
+>
+>   
+>>> +	/* str will be alloc'ed for us by the LSM.  We will free it when
+>>> +	 * we clear out our hashtable */
+>>>   
+>>>       
+>> Why do you think that you need a copy? Sure, SELinux always gives you
+>> a copy, but Smack keeps "contexts" around and making a copy is not only
+>> unnecessary, but wasteful. If you free the "context" with the appropriate
+>> call (security_release_secctx) you will get the "free allocated memory"
+>> behavior desired by SELinux and the "do nothing" behavior of Smack. For
+>> free, assuming that you also fix your Smack hook so that it works in the
+>> way Smack deems "Correct".
+>>     
+>
+> Hmm, that should be doable.  Mind you these are not the same as
+> secctx's returned by secid_to_secctx.
+
+Now why is that? If they are different things, what are they?
+
+What is the difference between a secctx and a context?
+I got a bit confused because the word "context" has been
+used to refer to the thing represented by a secctx for a
+long time.
+
+>   Though selinux_release_secctx 
+> is implemented as a simple kfree, so it would 'just work.'  I'm
+> not sure if it's better to just re-use it, or introduce a new
+> security_release_context() that does the same thing...
+>
+> thanks,
+> -serge
+>
+>
+>   
+
