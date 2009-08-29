@@ -1,13 +1,14 @@
 From: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: [PATCH 3/5] cr: add generic LSM c/r support
-Date: Sat, 29 Aug 2009 17:41:47 -0500
-Message-ID: <20090829224147.GA12549@hallyn.com>
-References: <20090828210041.GA27878@us.ibm.com> <20090828210417.GC28048@us.ibm.com> <4A98AEDE.1000105@schaufler-ca.com>
+Subject: Re: [PATCH 2/5] cr: checkpoint the active LSM and add
+	RESTART_KEEP_LSM flag
+Date: Sat, 29 Aug 2009 17:59:23 -0500
+Message-ID: <20090829225923.GB12549@hallyn.com>
+References: <20090828210041.GA27878@us.ibm.com> <20090828210208.GA28048@us.ibm.com> <4A98B1D7.9050108@schaufler-ca.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <4A98AEDE.1000105@schaufler-ca.com>
+In-Reply-To: <4A98B1D7.9050108@schaufler-ca.com>
 Sender: linux-security-module-owner@vger.kernel.org
 To: Casey Schaufler <casey@schaufler-ca.com>
 Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, Stephen Smalley <sds@epoch.ncsc.mil>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>
@@ -15,62 +16,78 @@ List-Id: containers.vger.kernel.org
 
 Quoting Casey Schaufler (casey@schaufler-ca.com):
 > Serge E. Hallyn wrote:
-...
-> > Briefly, all security fields must be exported by the LSM as a simple
-> > null-terminated string.  They are checkpointed through the
-> > security_checkpoint_obj() helper, because we must pass it an extra
-> > sectype field.  Splitting SECURITY_OBJ_SEC into one type per object
-> > type would not work because, in Smack, one void* security is used for
-> > all object types.
-> 
-> I do not understand why the Smack behavior is a limitation here.
-
-Well it's not the Smack behavior, it's the combination of Smack's
-and SELinux's behavior :)
-
-In the end what I have here is probably best anyway - what is
-stored in the object hash is not a security struct as known
-by any LSM, but a generic object label.  So at
-object_hash_types[CKPT_OBJ_SEC]->restore(), we don't re-create
-an actual security struct, but just a string which is later
-used by security_xyztype_restore() to create an actual label.
-
-> >   But we must pass the sectype field because in
-> > SELinux a different type of structure is stashed in each object type.
-> 
-> But each can be expressed as a context, can't it?
-
-A set of contexts (root_u:root_r:root_t:::system_u:system_r\
-:system_t::...).
-
-There would be a problem if it were stored as a more
-structured type, and if the ->restore handler wanted to
-re-create an actual task_security_struct, ipc_security_struct,
-etc.  So the last paragraph in the patch intro was just trying to
-explain why the intermediate layer, storing a generic string on
-the c/r object hash, needs to be there.  The thing that is
-not possible is to place the actual void *security or a struct
-task_security_struct on the objhash.
-
-...
-
-> > +	/* str will be alloc'ed for us by the LSM.  We will free it when
-> > +	 * we clear out our hashtable */
+> > [ patch 1 was a trivial non-security patch so if you didn't see
+> > it, you didn't miss anything ]
+> >
+> > The RESTART_KEEP_LSM flag indicates that the LSM should
+> > attempt to reuse checkpointed security labels.  It is always
+> > invalid when the LSM at restart differs from that at checkpoint.
+> > It is currently only usable for capabilities.
 > >   
 > 
-> Why do you think that you need a copy? Sure, SELinux always gives you
-> a copy, but Smack keeps "contexts" around and making a copy is not only
-> unnecessary, but wasteful. If you free the "context" with the appropriate
-> call (security_release_secctx) you will get the "free allocated memory"
-> behavior desired by SELinux and the "do nothing" behavior of Smack. For
-> free, assuming that you also fix your Smack hook so that it works in the
-> way Smack deems "Correct".
+> Can you imagine a scenario in which restoring a process on a
+> system with a different LSM configuration makes any sense at all?
 
-Hmm, that should be doable.  Mind you these are not the same as
-secctx's returned by secid_to_secctx.  Though selinux_release_secctx 
-is implemented as a simple kfree, so it would 'just work.'  I'm
-not sure if it's better to just re-use it, or introduce a new
-security_release_context() that does the same thing...
+Without RESTART_KEEP_LSM absolutely.
+
+With RESTART_KEEP_LSM, on a system with a different LSM loaded,
+certainly not.
+
+With RESTART_KEEP_LSM, on a system with the same LSM but a different
+policy, yes I do.  If any checkpointed contexts have been invalidated
+in the new policy, then restart with RESTART_KEEP_LSM should fail (*1).
+If the contexts are still valid, then it seems reasonable to
+assume that bin_t, user_t, etc, still basically mean what they
+meant before.  No reason to refuse restart just because I loaded
+a policy module for postfix, imo.
+
+I could add both an lsm-module and lsm-policy version to the
+checkpoint header, where the lsm-policy might be a sha1sum of
+the whole policy, but that seems like overkill, a lot of
+overhead, and probably a maintenance headache for the lsm-module
+version.
+
+> Goodness gracious, even if the "old" environment and the "new"
+> are both SELinux and the policies are different I can't see how
+> you could make any sort of claim that restoring the process is
+> safe.
+
+In what sense do you mean 'unsafe'?  The initial creation or
+access to any checkpointed resource always happens with the
+sys_restart() caller's and existing object's contexts, so there
+should be no opportunity for accessing data which the old policy
+allowed but the new does not.  It's possible that the task will
+fail because of a more restrictive new policy, but so be it.
+
+>  The same goes for having file based capabilities on one
+> and not on the other.
+
+A task running as uid 500 with cap_dac_read_search=ep could have
+been started at least 3 ways:
+	1. a uid 500 task executing a file with cap_dac_read_search=ep
+	file caps
+	2. a root task executing a file which does prctl(PR_SET_KEEPCAPS),
+	setuid(500), and drops the other caps,
+	3. a uid 500 task executing a setuid root version of the
+	file in (2).
+
+When we are restarting a task, we don't really care which of
+the above ways it might have gotten its privileges.
+
+I certainly could be overlooking something - what do you see as the
+safety problem?
+
+> It seems that the check you've chosen is necessary, but far from
+> sufficient.
+
+Thanks much for giving this some thought.  Without doubt this
+is tricky business, and I was definately hoping for some serious
+discussion.
 
 thanks,
 -serge
+
+*1 - Hmm, in Smack, if the caller has CAP_MAC_ADMIN, then he
+can load new, currently undefined types, right?  I guess that
+could be a problem, though again I assume the new type should
+simply have no accesses and so shouldn't be unsafe.
