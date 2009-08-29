@@ -1,251 +1,214 @@
-From: Casey Schaufler <casey@schaufler-ca.com>
-Subject: Re: [PATCH 2/5] cr: checkpoint the active LSM and add RESTART_KEEP_LSM
- flag
-Date: Fri, 28 Aug 2009 21:43:03 -0700
-Message-ID: <4A98B1D7.9050108@schaufler-ca.com>
-References: <20090828210041.GA27878@us.ibm.com> <20090828210208.GA28048@us.ibm.com>
+From: Zachar <unifiable-ehWRM/mS1+SEVqv0pETR8A@public.gmane.org>
+Subject: diameter i
+Date: Sat, 29 Aug 2009 09:11:30 -0400
+Message-ID: <4A99273F.5020602@dalhoeve.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090828210208.GA28048@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, Stephen Smalley <sds@epoch.ncsc.mil>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>
+Content-Type: multipart/mixed; boundary="------------030603010304030205040604"
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> [ patch 1 was a trivial non-security patch so if you didn't see
-> it, you didn't miss anything ]
->
-> The RESTART_KEEP_LSM flag indicates that the LSM should
-> attempt to reuse checkpointed security labels.  It is always
-> invalid when the LSM at restart differs from that at checkpoint.
-> It is currently only usable for capabilities.
->   
+This is a multi-part message in MIME format.
+--------------030603010304030205040604
+Content-Type: text/plain; charset=ISO-8859-14; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Can you imagine a scenario in which restoring a process on a
-system with a different LSM configuration makes any sense at all?
-Goodness gracious, even if the "old" environment and the "new"
-are both SELinux and the policies are different I can't see how
-you could make any sort of claim that restoring the process is
-safe. The same goes for having file based capabilities on one
-and not on the other.
+H Tourte. Those of his make that I have handled are certainly very fine
+in
 
-It seems that the check you've chosen is necessary, but far from
-sufficient.
+--------------030603010304030205040604
+Content-Type: image/jpeg;
+ name="historicize.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="historicize.jpg"
 
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAE9ASwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSo70UUCAUUdDRQMKMUUUCDFFFFABRRRQA
+UdqKD0oAO1FHYUtACUUUUAFAoPApBn1pgLRSfN60c+tAC0Ugye9KM96ACiiigAoooJoAKTOT
+QcmkXq1IY6iiigQYpAOKWkwKAFopMe9HNAC0UcGigAb7prK1G4lhmVY3KgpnA+prVP3TWNqv
+/Hwn+5/U0DNmjvRR3oEFFFBPamAZpM0hOKYWosK5Jupciod9G+nYVyaimK/rT6TKvcKDRSHm
+kAUtAooAKKKKACgdKQnAoyfSmAtFJk+lGTQAtFIMkc0n3RkGgB1FFFIBOTS8CgdTR1oAKaSE
+JyevOKeKrtuaQ4HegY4yEngYp8blm5PamCHoWb8qeoVCSBQA6ilpKYgooopABo5+tFFACHBB
+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
+2Q==
+--------------030603010304030205040604
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> (For capabilities, restart without RESTART_KEEP_LSM is technically
-> not implemented.  There actually might be a use case for that,
-> but the safety of it is dubious so for now we always re-create
-> checkpointed capability sets whether RESTART_KEEP_LSM is
-> specified or not)
->
-> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
-> ---
->  Documentation/checkpoint/readme.txt |   25 +++++++++++++++++++++++++
->  checkpoint/checkpoint.c             |    6 ++++++
->  checkpoint/restart.c                |   19 +++++++++++++++++++
->  include/linux/checkpoint.h          |    6 ++++--
->  include/linux/checkpoint_hdr.h      |    3 ++-
->  include/linux/checkpoint_types.h    |    2 ++
->  include/linux/security.h            |    8 ++++++++
->  security/security.c                 |    5 +++++
->  8 files changed, 71 insertions(+), 3 deletions(-)
->
-> diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-> index e84dc39..a60e001 100644
-> --- a/Documentation/checkpoint/readme.txt
-> +++ b/Documentation/checkpoint/readme.txt
-> @@ -328,6 +328,31 @@ So that's why we don't want CAP_SYS_ADMIN required up-front. That way
->  we will be forced to more carefully review each of those features.
->  However, this can be controlled with a sysctl-variable.
->  
-> +LSM
-> +===
-> +
-> +Security modules use custom labels on subjects and objects to
-> +further mediate access decisions beyond DAC controls.  When
-> +checkpoint applications, these labels are [ work in progress ]
-> +checkpointed along with the objects.  At restart, the
-> +RESTART_KEEP_LSM flag tells the kernel whether re-created objects
-> +whould keep their checkpointed labels, or get automatically
-> +recalculated labels.  Since checkpointed labels will only make
-> +sense to the same LSM which was active at checkpoint time,
-> +sys_restart() with the RESTART_KEEP_LSM flag will fail with
-> +-EINVAL if the LSM active at restart is not the same as that
-> +active at checkpoint.  If RESTART_KEEP_LSM is not specified,
-> +then objects will be given whatever default labels the LSM and
-> +their optional policy decide.  Of course, when RESTART_KEEP_LSM
-> +is specified, the LSM may choose a different label than the
-> +checkpointed one, or fail the entire restart if the caller
-> +does not have permission to create objects with the checkpointed
-> +label.
-> +
-> +It should always be safe to take a checkpoint of an application
-> +under LSM_1, and restart it without the RESTART_KEEP_LSM flag
-> +under LSM_2.
-> +
->  
->  Kernel interfaces
->  =================
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index c19f812..70e3fac 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -250,6 +250,12 @@ static int checkpoint_write_header(struct ckpt_ctx *ctx)
->  	if (ret < 0)
->  		return ret;
->  
-> +	memset(ctx->lsm_name, 0, SECURITY_NAME_MAX + 1);
-> +	strlcpy(ctx->lsm_name, security_get_lsm_name(), SECURITY_NAME_MAX + 1);
-> +	ret = ckpt_write_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
-> +	if (ret < 0)
-> +		return ret;
-> +
->  	return checkpoint_write_header_arch(ctx);
->  }
->  
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index ed42b4b..f0ca1f6 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -423,6 +423,25 @@ static int restore_read_header(struct ckpt_ctx *ctx)
->  	if (ret < 0)
->  		goto out;
->  
-> +	ret = _ckpt_read_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
-> +	if (ret < 0)
-> +		goto out;
-> +	if (ctx->uflags & RESTART_KEEP_LSM) {
-> +		char *cur = security_get_lsm_name();
-> +		if (strncmp(cur, ctx->lsm_name, SECURITY_NAME_MAX + 1) != 0) {
-> +			pr_warning("c/r: checkpointed LSM %s, current is %s.\n",
-> +				ctx->lsm_name, cur);
-> +			return -EINVAL;
-> +		}
-> +		/* to be implemented later, per-lsm */
-> +		if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
-> +				strcmp(ctx->lsm_name, "default") != 0) {
-> +			pr_warning("c/r: RESTART_KEEP_LSM unsupported for %s\n",
-> +					ctx->lsm_name);
-> +			return -ENOSYS;
-> +		}
-> +	}
-> +
->  	ret = restore_read_header_arch(ctx);
->   out:
->  	kfree(uts);
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 06e3eb0..3a800a6 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -10,7 +10,7 @@
->   *  distribution for more details.
->   */
->  
-> -#define CHECKPOINT_VERSION  1
-> +#define CHECKPOINT_VERSION  2
->  
->  /* checkpoint user flags */
->  #define CHECKPOINT_SUBTREE	0x1
-> @@ -18,6 +18,7 @@
->  /* restart user flags */
->  #define RESTART_TASKSELF	0x1
->  #define RESTART_FROZEN		0x2
-> +#define RESTART_KEEP_LSM	0x4
->  
->  #ifdef __KERNEL__
->  #ifdef CONFIG_CHECKPOINT
-> @@ -44,7 +45,8 @@
->  
->  /* ckpt_ctx: uflags */
->  #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
-> -#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
-> +#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN | \
-> +					 RESTART_KEEP_LSM)
->  
->  extern void exit_checkpoint(struct task_struct *tsk);
->  
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 06bc6e2..2b166dc 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -176,10 +176,11 @@ struct ckpt_hdr_header {
->  	__u64 uflags;	/* uflags from checkpoint */
->  
->  	/*
-> -	 * the header is followed by three strings:
-> +	 * the header is followed by four strings:
->  	 *   char release[const.uts_release_len];
->  	 *   char version[const.uts_version_len];
->  	 *   char machine[const.uts_machine_len];
-> +	 *   char lsm_name[SECURITY_NAME_MAX + 1]
->  	 */
->  } __attribute__((aligned(8)));
->  
-> diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-> index a18846f..680750d 100644
-> --- a/include/linux/checkpoint_types.h
-> +++ b/include/linux/checkpoint_types.h
-> @@ -19,6 +19,7 @@
->  #include <linux/fs.h>
->  #include <linux/ktime.h>
->  #include <linux/wait.h>
-> +#include <linux/security.h>
->  
->  struct ckpt_stats {
->  	int uts_ns;
-> @@ -36,6 +37,7 @@ struct ckpt_ctx {
->  	struct task_struct *root_task;		/* [container] root task */
->  	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
->  	struct task_struct *root_freezer;	/* [container] root task */
-> +	char lsm_name[SECURITY_NAME_MAX + 1];   /* security module at ckpt */
->  
->  	unsigned long kflags;	/* kerenl flags */
->  	unsigned long uflags;	/* user flags */
-> diff --git a/include/linux/security.h b/include/linux/security.h
-> index 5eff459..f1033a4 100644
-> --- a/include/linux/security.h
-> +++ b/include/linux/security.h
-> @@ -1776,6 +1776,8 @@ int security_secid_to_secctx(u32 secid, char **secdata, u32 *seclen);
->  int security_secctx_to_secid(const char *secdata, u32 seclen, u32 *secid);
->  void security_release_secctx(char *secdata, u32 seclen);
->  
-> +char *security_get_lsm_name(void);
-> +
->  #else /* CONFIG_SECURITY */
->  struct security_mnt_opts {
->  };
-> @@ -1798,6 +1800,12 @@ static inline int security_init(void)
->  	return 0;
->  }
->  
-> +#define DEFAULT_LSM_NAME "lsm_none"
-> +static inline char *security_get_lsm_name(void)
-> +{
-> +	return DEFAULT_LSM_NAME;
-> +}
-> +
->  static inline int security_ptrace_may_access(struct task_struct *child,
->  					     unsigned int mode)
->  {
-> diff --git a/security/security.c b/security/security.c
-> index dc7674f..3829156 100644
-> --- a/security/security.c
-> +++ b/security/security.c
-> @@ -122,6 +122,11 @@ int register_security(struct security_operations *ops)
->  	return 0;
->  }
->  
-> +char *security_get_lsm_name(void)
-> +{
-> +	return security_ops->name;
-> +}
-> +
->  /* Security operations */
->  
->  int security_ptrace_may_access(struct task_struct *child, unsigned int mode)
->   
-
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------030603010304030205040604--
