@@ -1,14 +1,14 @@
 From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 10/23] io-controller: Debug hierarchical IO scheduling
-Date: Sat, 29 Aug 2009 20:10:34 -0400
-Message-ID: <4A99C37A.1020809__363.473923835222$1251591106$gmane$org@redhat.com>
+Subject: Re: [PATCH 11/23] io-controller: Introduce group idling
+Date: Sat, 29 Aug 2009 20:38:20 -0400
+Message-ID: <4A99C9FC.2010004__24848.4547286809$1251593206$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<1251495072-7780-11-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-12-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251495072-7780-11-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251495072-7780-12-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,16 +23,24 @@ Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> o Littile debugging aid for hierarchical IO scheduling.
+> o It is not always that IO from a process or group is continuous. There are
+>   cases of dependent reads where next read is not issued till previous read
+>   has finished. For such cases, CFQ introduced the notion of slice_idle,
+>   where we idle on the queue for sometime hoping next request will come
+>   and that's how fairness is provided otherwise queue will be deleted
+>   immediately from the service tree and this process will not get the
+>   fair share.
 > 
-> o Enabled under CONFIG_DEBUG_GROUP_IOSCHED
+> o This patch introduces the similar concept at group level. Idle on the group
+>   for a period of "group_idle" which is tunable through sysfs interface. So
+>   if a group is empty and about to be deleted, we idle for the next request.
 > 
-> o Currently it outputs more debug messages in blktrace output which helps
->   a great deal in debugging in hierarchical setup. It also creates additional
->   cgroup interfaces io.disk_queue and io.disk_dequeue to output some more
->   debugging data.
+> o This patch also introduces the notion of wait busy where we wait for one
+>   extra group_idle period even if queue has consumed its time slice. The
+>   reason being that group will loose its share upon removal from service
+>   tree as some other entity will be picked for dispatch and vtime jump will
+>   take place.
 > 
-> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
