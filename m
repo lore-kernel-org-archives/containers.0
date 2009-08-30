@@ -1,242 +1,249 @@
-From: Bramblett Niccum <governor-21/5SzCgq1M@public.gmane.org>
-Subject: see, cuckoo, I can't help it. I suppose I'm
-Date: Sun, 30 Aug 2009 19:37:55 +0200
-Message-ID: <4A9AB75D.3060306@decay.nl>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 2/5] cr: checkpoint the active LSM and add	RESTART_KEEP_LSM
+ flag
+Date: Sun, 30 Aug 2009 11:58:28 -0700
+Message-ID: <4A9ACBD4.4020804@schaufler-ca.com>
+References: <20090828210041.GA27878@us.ibm.com> <20090828210208.GA28048@us.ibm.com> <4A98B1D7.9050108@schaufler-ca.com> <20090829225923.GB12549@hallyn.com> <4A99C1B6.6080504@schaufler-ca.com> <20090830134809.GA14699@hallyn.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------040503020502060505050101"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20090830134809.GA14699@hallyn.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, Stephen Smalley <sds@epoch.ncsc.mil>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------040503020502060505050101
-Content-Type: text/plain; charset=ISO-8859-10; format=flowed
-Content-Transfer-Encoding: 7bit
+Serge E. Hallyn wrote:
+> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>   
+>> Serge E. Hallyn wrote:
+>>     
+>>> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>>>   
+>>>       
+>>>> Serge E. Hallyn wrote:
+>>>>     
+>>>>         
+>>>>> [ patch 1 was a trivial non-security patch so if you didn't see
+>>>>> it, you didn't miss anything ]
+>>>>>
+>>>>> The RESTART_KEEP_LSM flag indicates that the LSM should
+>>>>> attempt to reuse checkpointed security labels.  It is always
+>>>>> invalid when the LSM at restart differs from that at checkpoint.
+>>>>> It is currently only usable for capabilities.
+>>>>>   
+>>>>>       
+>>>>>           
+>>>> Can you imagine a scenario in which restoring a process on a
+>>>> system with a different LSM configuration makes any sense at all?
+>>>>     
+>>>>         
+>>> Without RESTART_KEEP_LSM absolutely.
+>>>   
+>>>       
+>> Wow. I run a program on a system with the default LSM and get all
+>> sorts of passwords for network based services, then take it to an
+>> SELinux system that has a different firewall configuration based on
+>> the assumption that SELinux will prevent the program from getting
+>> that information. You'd allow that?
+>>     
+>
+> ?
+>
+> What exactly would refusing the restart prevent?
+>
+> You already have the passwords in the checkpoint file, so you're
+> not protecting those.
+>   
 
-More. But I'll tell you how we could get to hear more about him, I
-think, ma'am. From what Miss Griselda says, I believe he is staying at
-Mr. Crouch's farm, and that, you know, ma'am, belongs to my Lady
-Lavander, though it is a good way from Merrybrow Hall. My lady is pretty
-sure to know about the child, for she knows all that goes on among her
-tenants, and I remember hearing that a little gentleman and his nurse
-had come to Mr. Crouch's to lodge for six months." Miss Grizzel listened
-attentively. "Thank you, Dorcas," she said, when the old servant had
-left off speaking. "You have behaved with your usual discretion. I shall
-drive over to Merrybrow to-morrow, and make inquiry. And you may tell
-Miss Griselda in the morning what I purpose doing; but tell her also
-that, as a punishment for her rudeness and ill-temper, she must have
-breakfast in her own room to-morrow, and not see me till I send for her.
-Had she restrained her temper and explained the matter, all this
-distress might have been saved." Dorcas did not wait till "to-morrow
-morning"; she could not bear to think of Griselda's unhappiness. From
-her mistress's room she went straight to the little girl's, going in
-very softly, so as not to d
 
---------------040503020502060505050101
-Content-Type: image/jpeg;
- name="catalyzer.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="catalyzer.jpg"
+I seem to be having some trouble presenting my point. It's not about
+the passwords. It's not about the firewall configuration. It's not
+even really about the SELinux policy. It's about the total security
+configuration of the system. This is a problem with checkpoint/restart
+in general and there isn't much we can do about reassigning user id
+and other bad things that can happen.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAERAWUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDRx60DpS0g+lMYtFGPejApAIDwKBmgdBQO
-goEHPoPzo59KWimMTn0ozS0dOtABnNFJn8KM+9Ari0mOfSl696TnPrQAc0Z/ClooGJz6ijn1
-FGPSjmgA59RRz7UZpaAEwfWjn1paKAE59qOcdqBQaQgGcUvNIDxS80AhOfUUZ/H6UY9aWmMb
-zn8aXFGOfxpc0CCikPXNGPU0DFpGbauf50v0pHXcuCcGkBEZG9cfSlWRvX+tAhXuSaURIBgD
-9aBEmSVB45pM+1LgYwO1JigYA8ClpB060fh+VMBaQ9DRzQTwaADHpRzS0UAV7m7S227wx3Zx
-tH/16Kqa1/yx/wCBf0opCNMDmgUo60nA70DDtRRnPGKTFAAOgoBGBQAMCgdBTEGfr+VGfr+V
-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
-FAzM1r/lj/wL+lFFFAj/2Q==
---------------040503020502060505050101
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+If the admin decides that an action is acceptable because the SELinux
+policy prevents some other action it had better be the case that a
+process was never allowed to perform that "other action". If you allow
+restart across policy changes you can't be sure that the process has
+not performed such an "other action". Processes are not stateless.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------040503020502060505050101--
+> The program was running under xyz_t, which on the old system was
+> allowed to make some change the fw configuration, but is not under
+> the new.  Then after restart, it will be labeled as xyz_t, and
+> won't be allowed to make the change.
+>
+> When a program running as abc_t calls sys_restart() do restart
+> the task under xyz_t, then
+> 	1. everything which is re-created for the task will
+> 	   need to be allowed (under current policy) to
+> 	   abc_t.
+> 	2. abc_t will need to be allowed process_t:restore to
+> 	   xyz_t.
+>
+> What exactly can the abc_t task do if allowed to restart,
+> which it couldn't otherwise do?
+
+That's the point. It does not have to do the bad thing, it has
+already been done. The cat is out of the bag. The process now has
+state that it couldn't get under the new policy. The new policy
+allows the process to do something that it could not had it
+started under the new policy.
+
+>   (1) If it can read the checkpoint
+> files, it can access the checkpointed keys either way.  (2) If
+> the new policy allows xyz_t to do something it couldn't do
+> before, and abc_t is allowed to transition to xyz_t, then abc_t
+> could presumably start any program under xyz_t to do what it
+> wants.  That is limited by the need to be able to create a file
+> of an appropriate entry type.  That's why before I was thinking
+> of passing the type of the checkpoint file to security_cred_restore()
+> as well.  and (3) If under the new policy xyz_t is NOT allowed to do
+> something which the old policy could do, then after restart it
+> won't be allowed to do it either.
+>
+> Quoting your example again:
+>
+>   
+>> Wow. I run a program on a system with the default LSM and get all
+>> sorts of passwords for network based services, then take it to an
+>>     
+>
+> XXX Here you already have gotten the passwords under the old
+> policy.  So the restart has nothing to do with whether you can
+> get the keys which let you get the information.  Then,
+>
+>   
+>> SELinux system that has a different firewall configuration based on
+>> the assumption that SELinux will prevent the program from getting
+>> that information. You'd allow that?
+>>     
+>
+> XXX The sys_restart() process will make sure that the process calling
+> sys_restart() is authorized to recreate anything (i.e. open
+> connections, open files, etc) which the task had open at checkpoint,
+> and anything done after checkpoint will still be authorized by
+> the new policy.
+>
+> So really the big problem I see is that I've introduced a way
+> to disassociate the type you can restore to, from the file (and
+> contents of the file) you can execute to restore into the
+> type.
+>
+> I think that can be helped by more liberal use of relabel_froms
+> and passing the type of a checkpoint file along to
+> security_cred_restore().  Passing the type of the checkpoint
+> file allows us to at least ensure that the file was created
+> by a process of a type which is also authorized to be a part
+> of the chain to restarting a task of xyz_t.  Adding the
+> relabel_from to file restore()s may be necessary to prevent
+> a leak of MAC perms.  Again, the process calling sys_restore()
+> must originally have been authorized to open the file with
+> the requested permissions, and must be allowed
+> 	allow restore_t target_file_t:file restore;
+> permissions.  But it seems reasonable to add to that the
+> requirement to be allowed to
+> 	allow restore_t orig_file_t:file relabel_from;
+>
+> Now in the meantime, please note that there is nothing stopping
+> you from ensuring that only my_only_restore_t is allowed to
+> transition to anything, and having the program which transitions
+> to that domain and calls sys_restart() first compare policy
+> versions.
+>
+>   
+>>> With RESTART_KEEP_LSM, on a system with a different LSM loaded,
+>>> certainly not.
+>>>
+>>> With RESTART_KEEP_LSM, on a system with the same LSM but a different
+>>> policy, yes I do.  If any checkpointed contexts have been invalidated
+>>> in the new policy, then restart with RESTART_KEEP_LSM should fail (*1).
+>>> If the contexts are still valid, then it seems reasonable to
+>>> assume that bin_t, user_t, etc, still basically mean what they
+>>> meant before.  No reason to refuse restart just because I loaded
+>>> a policy module for postfix, imo.
+>>>   
+>>>       
+>> Again, Wow. How can you tell that a process that ran for a while
+>> under another policy can not have done anything that would make
+>> it unsafe under the current policy?
+>>     
+>
+> If it 'did something' before checkpoint, then either
+> 	1. the system is already changed as a result,
+> 	   and whether we restore or not has no further
+> 	   effect.
+> or
+> 	2. the process ended up with some resource which
+> 	   it couldn't have gotten under the new policy.
+> 	   In that case, if the task doing sys_restart()
+> 	   is not allowed to re-create the resource (file
+> 	   handle to /etc/shadow, socket, whatever) then
+> 	   the checkpoint will fail.  If the task doing
+> 	   sys_restart() *is* allowed to re-create it,
+> 	   but the target context xyz_t would not have
+> 	   been, then I don't consider that a leak.  As
+> 	   I said above, it could compare policy versions
+> 	   in user-space ahead of time or the user could have
+> 	   used a more appropriate context from which to
+> 	   call sys_restart().
+>
+>   
+>>  And what if the program is the
+>> very one with the changed policy? How can you tell?
+>>     
+>
+> Well then either
+> 	1. the checkpoint was taken before it changed the
+> 	   policy, so it will try to do so again (and
+> 	   hopefully fail)
+> 	2. the checkpoint was taken after it changed the
+> 	   policy, so the policy hasn't actually changed
+> 	   between checkpoint and restart.
+>
+> and in any case, if the program was authorized to change
+> policy, then the program calling sys_restart() on it should
+> have required some tremendously trusted type to begin with.
+>
+>   
+>> ...
+>
+> Then I would argue the user (who has authorization to restart this
+> beast and therefore is hopefully not malicious) should have compared
+> policies before doing sys_restart...
+>   
+
+I'm a firm believer in malicious users. That, and users who are
+sufficiently stupid to be indistinguishable from malicious users.
+That, and users who are sufficiently clever to do the same things
+that a malicious user would do in order to do something that looks
+like a really good idea, but that is not.
+
+> It seems I could save a lot of time arguing by proposing that
+>
+> 	1. each LSM keep a policy version (sha1sum or whatever
+> 	   suits it) updated at every policy update
+> 	2. a new security_app_restore() hook passes in the
+> 	   the checkpoint header, so that the LSM can choose
+> 	   to verify the checkpoint file type and the policy
+> 	   version.  Checkpoint file type check might be done
+> 	   even if !(flags & RESTART_KEEP_LSM)...
+>
+> but I'm still not convinced this isn't just better done by
+> userspace if it wants to.  Because we are not protecting
+> against a malicious user, as he can get the info he got
+> from checkpoint() using ptrace, so we are only protecting
+> the user from himself.
+>
+> Maybe I should wait a day to send this, since perhaps
+> on an afternoon walk I'll see the error of my ways...
+>
+> thanks,
+> -serge
+>
+>
+>   
+
