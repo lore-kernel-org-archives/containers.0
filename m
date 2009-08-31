@@ -1,15 +1,15 @@
 From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 14/23] io-conroller: Prepare elevator layer for single
-	queue schedulers
-Date: Sun, 30 Aug 2009 22:49:08 -0400
-Message-ID: <4A9B3A24.7050202__28120.5615880483$1251687070$gmane$org@redhat.com>
+Subject: Re: [PATCH 15/23] io-controller: noop changes for hierarchical fair
+	queuing
+Date: Sun, 30 Aug 2009 22:52:59 -0400
+Message-ID: <4A9B3B0B.9090009__12321.1099453785$1251687244$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<1251495072-7780-15-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-16-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251495072-7780-15-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251495072-7780-16-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,23 +24,15 @@ Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> Elevator layer now has support for hierarchical fair queuing. cfq has
-> been migrated to make use of it and now it is time to do groundwork for
-> noop, deadline and AS.
-> 
-> noop deadline and AS don't maintain separate queues for different processes.
-> There is only one single queue. Effectively one can think that in hierarchical
-> setup, there will be one queue per cgroup where requests from all the
-> processes in the cgroup will be queued.
-> 
-> Generally io scheduler takes care of creating queues. Because there is
-> only one queue here, we have modified common layer to take care of queue
-> creation and some other functionality. This special casing helps in keeping
-> the changes to noop, deadline and AS to the minimum.
+> This patch changes noop to use queue scheduling code from elevator layer.
+> One can go back to old noop by deselecting CONFIG_IOSCHED_NOOP_HIER.
 > 
 > Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+Not sure why noop needs hierarchical fair queueing
+support, but this patch is so small we might as well
+take it to keep things consistent between schedulers.
 
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
