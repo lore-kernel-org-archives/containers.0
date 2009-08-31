@@ -1,21 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [lxc-devel] Memory Resources
-Date: Mon, 31 Aug 2009 11:31:14 -0500
-Message-ID: <20090831163114.GA13896@us.ibm.com>
-References: <4A929F83.80207@free.fr>
-	<20090826104312.97ff028f.kamezawa.hiroyu@jp.fujitsu.com>
-	<4A952689.9020704@free.fr>
-	<ac1c4bf20908260650x3311d5d3q44631a30205089b7@mail.gmail.com>
-	<ac1c4bf20908261625g71dff96cu77190056540cbb7@mail.gmail.com>
-	<4A97A448.5050506@free.fr> <20090831134045.GD4837@us.ibm.com>
-	<4A9BE134.5040804@free.fr> <20090831145423.GA8107@us.ibm.com>
-	<4A9BE9A9.1080907@free.fr>
+From: Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+Subject: Re: [Test Result] I/O bandwidth Control by dm-ioband - partition-based
+	environment
+Date: Mon, 31 Aug 2009 12:40:29 -0400
+Message-ID: <4A9BFCFD.6080702@ds.jp.nec.com>
+References: <2891419e0908261846v4fa19791q4552975f10dd64e5@mail.gmail.com>	
+	<4A97FEC1.1010500@ds.jp.nec.com>
+	<2891419e0908310016k7aa8acc6o548c1ce5a31ba2ba@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A9BE9A9.1080907-GANU6spQydw@public.gmane.org>
+In-Reply-To: <2891419e0908310016k7aa8acc6o548c1ce5a31ba2ba-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,46 +20,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org, Dietmar Maurer <dietmar-YTcQvvOqK21BDgjK7y7TUQ@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> Serge E. Hallyn wrote:
->>> The idea of Kamezawa-san to use a fuse proc is maybe a good idea in 
->>> this  case. So we can address the entire /proc specific informations. 
->>> For      
->>
->> I agree, nice idea.  And hopefully pretty simple to whip up for the
->> meminfo and cpuinfo files as an example.
->>
->> Are you thinking a fuse fs which takes a config file, holds an open
->> ref to its ancestor /proc, and for each file looks in a config file to
->> decide whether to show userspace:
->> 	1. nothing
->> 	2. the underlying file, unprocessed
->> 	3. a simple ascii file instead
->> 	4. the underlying file, processed?
->>   
+Hello Dong-Jae,
+
+Dong-Jae Kang wrote, on 08/31/2009 03:16 AM:
+> Hi Munehiro Ikeda
+> Thanks for your attention.
+> and sorry for late reply.
+
+No problem.
+
+
+> 2009/8/29 Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
+> <mailto:m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>>
 >
-> Yes, exactly :)
-> But, I am not sure how to retrieve the container context, I mean how to  
-> pick and return the right information.
-> eg: in the container foo, when looking at /proc/meminfo, fuse-lxcfs  
-> should process /cgroup/foo/(somefiles), how to know the request is  
-> coming from 'foo' without doing multiple mount, one in each container ?
+>     Hello Dong-Jae,
+>
+>     Dong-Jae Kang wrote, on 08/26/2009 09:46 PM:
+>
+>         Hi Ryo
+>
+>         I attached new test result
+>         file(ioband-partition-based-evaluation.xls)in
+>         this mail.
+>         In this time, it is not virtualization environment.
+>         I evaluated partition-based use cases before I do it in
+>         vitualization
+>         environment.
+>         because I think the two cases are smilar each other.
+>
+>         The detailed information about the evaluation can be referred in
+>         attached
+>         file.
+>
+>         If you have any questions or comments after examine it,
+>         please give me your opinion.
+>
+>         Thank you.
+>
+>
+>     Good work.
+>     Please let me ask silly questions.
+>
+>     (1) About what "target" means
+>     I guess "device" means writing to device files directly
+>     (--filename=/dev/mapper/ioband1)
+>     and "directory" means mounting these device files and writing to
+>     some directory
+>     on the filesystem
+>     (--filename=/mnt/ioband1/test.dat, I'm assuming mount
+>     /dev/mapper/ioband1 on
+>     /mnt/ioband1),
+>     am I wright?
+>
+> Yes, you are right.
+> I also think the terms can leave misunderstanding. :)
+>
+>
+>     (2) Conditions  in RDF sheet
+>     Conditions in sheet "RDF" and "RBF" are same but results are
+>     slightly different.
+>     Should "Mode" in RDF sheet be "Direct"?
+>
+> As the Report sheet in the file shows,
+> "D" in RDF means Direct I/O and "B" in RBF means Buffered I/O(delayed I/O).
+> I think the reason for difference in result, especially several
+> fluctuation in RBF, is
+> related with buffer cache  and pdflushd daemon.
+> So, generally, I/O bandwidth controll in direct I/O mode is
+> more accurate than that of buffered I/O mode.
 
-Why without doing one mount per container?  :)
+Alright, I see.  Completely no fluctuation in direct write is interesting.
+Thank you for the explanation.
 
-I figure the container can be responsible for the actual mounting,
-if it cares.  The host/kernel should keep it *safe* for the container
-to use unfiltered /proc (, /sys, /cgroup, etc), but the container
-can be responsible for filtering it however much it feels necessary.
+Muuhh
 
-(That fits with the 2006 kernel summit pseudo-decree that we are not
-trying to fake a container into thinking it is a real host, only
-make the container useful.)
-
-Are you worried about the extra memory overhead?
-
--serge
+-- 
+IKEDA, Munehiro
+   NEC Corporation of America
+     m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
