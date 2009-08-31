@@ -1,60 +1,231 @@
-From: Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>
-Subject: Re: [PATCH 3/5] cr: add generic LSM c/r support
-Date: Mon, 31 Aug 2009 08:45:50 -0400
-Message-ID: <1251722750.16143.31.camel@moss-pluto.epoch.ncsc.mil>
-References: <20090828210041.GA27878@us.ibm.com>
-	 <20090828210417.GC28048@us.ibm.com> <4A98AEDE.1000105@schaufler-ca.com>
-	 <20090829224147.GA12549@hallyn.com> <4A99BC58.9040205@schaufler-ca.com>
-	 <20090830135800.GC14699@hallyn.com>  <4A9ACD0A.9050004@schaufler-ca.com>
+From: Kuzyk <diplomatist-//txVbyXg5Gl71IX8RolBA@public.gmane.org>
+Subject: Sions of thankfulness, and seemed anything but pleased
+Date: Mon, 31 Aug 2009 15:02:19 +0200
+Message-ID: <4A9BC950.2060409@henkstoeten.nl>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-Return-path: <owner-selinux-MESi4pFTnrejpDF0oNHs+n7yKkN/O5/Z@public.gmane.org>
-In-Reply-To: <4A9ACD0A.9050004-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Sender: owner-selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org
-To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: multipart/mixed; boundary="------------020801090103030708070603"
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, 2009-08-30 at 12:03 -0700, Casey Schaufler wrote:
-> Serge E. Hallyn wrote:
-> > Quoting Casey Schaufler (casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org):
-> >   
-> >> Serge E. Hallyn wrote:
-> >>     
-> >>> Quoting Casey Schaufler (casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org):
-> >>>       
-> >>>> But each can be expressed as a context, can't it?
-> >>>>     
-> >>>>         
-> >>> A set of contexts (root_u:root_r:root_t:::system_u:system_r\
-> >>> :system_t::...).
-> >>>
-> >>> There would be a problem if it were stored as a more
-> >>> structured type, and if the ->restore handler wanted to
-> >>> re-create an actual task_security_struct, ipc_security_struct,
-> >>> etc.  So the last paragraph in the patch intro was just trying to
-> >>> explain why the intermediate layer, storing a generic string on
-> >>> the c/r object hash, needs to be there.  The thing that is
-> >>> not possible is to place the actual void *security or a struct
-> >>> task_security_struct on the objhash.
-> >>>   
-> >>>       
-> >> Right. Now why do you need a set of contexts?
-> >>     
-> >
-> > Because for SELinux, for instance, when checkpointing a security
-> > context for a task, we want to checkpoint the actual context,
-> > the fscreate context, the sockcreate context, keycreate context,
-> > and the task create (exec_create) context.
-> >   
-> 
-> My. That is quite a lot of contexts to keep track of.
+This is a multi-part message in MIME format.
+--------------020801090103030708070603
+Content-Type: text/plain; charset=ISO-8859-11; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Doesn't Smack also have at least one case where it supports multiple
-distinct contexts for different purposes on a single object (e.g.
-sockets)?
+ murdered Allen Grebble, the Mayor of Rye. It appears that Breeds had a
+dispute about some property with Thomas Lamb, and learning that he was
+about to see a friend off by a ship sailing to France on the night of
+March 17th planned his murder. Mr. Lamb, for reasons not stated, changed
+his mind, and induced his neighbour Mr. Grebble to take his place. On
+returning home and passing the churchyard, Breeds rushed upon him and
+mortally wounded him with a knife. The unfortunate man was able to walk
+home, but shortly expired while seated in his chair. His servant was
+suspected of murdering him, but Breeds's strange conduct soon brought
+the crime home to him. He was tried, found guilty, and condemned to
+death, and to be hung in chains. The gibbet was set up on a marsh
+situated at the west end of the town, now known as "Gibbet Marsh." Here
+it stood for many years; but when all the mortal remains had dropped
+away from the ironwork with the exception of the upper part of the
+skull, the Corporation took possession of it, and it is now in their
+custody. Mr. Lewis Evans, has given, in his article on "Witchcraft in
+Hertfordshire," an account of the murder of John and Ruth Osborn,
+suspected of witchcraft. Notice had been given at various market towns
+in the neighbourhood of Tring that on a certain day the man and his wife
+would be ducked at Long Marston, in Tring Parish. On the appointed day,
+April 22nd, 1757, says Mr. Evans, Ruth Osborn, and her husband John,
+sought sanctuary in the church, but the "bigotted and superstitious
+rioters," who had assembled in crowds from the whole district round, not
+finding their victims, smashed the workhouse windows and half destroyed
+it, caught its govern
 
--- 
-Stephen Smalley
-National Security Agency
+--------------020801090103030708070603
+Content-Type: image/jpeg;
+ name="potbellied.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="potbellied.jpg"
+
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAEpATADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDTopKKAFooopjCkHSlpB0oAWiiigAoopD0
+pCDtR3oo70xgelB7Cg9KP4qBAaKO9LSGIKB0oFA6UxC0gpaQUDA0etB6UCkAHsKD0pP4vwpT
+0oAT+Gl7Un8NL2oAWk9aWk9aYAeaAcilpo6mgBaMetFLSAKKKKYBRRRQAUyR/LjdyMhQTj6U
++obr/j1m/wBw/wAqAJfejIpaTpQAtFJgUYoELSDpRQOlAC0UUn40gFpD0owaD0pgLSd6Pxo7
+0AB6UfxUEcUhHegBe9GaDS0hiCgdKBRkAZ6CmIOaBmmmT+6PxNN3N64+lS5odiQg0YqLPuaN
+31/Op5x2JCMEGlx71Hv9/wA6dvB68U1JBYcRgUUHpRVCD8aKM0UwDmjBBJ4oB5qCRsOcnFIC
+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
+N/uH+VSjqaiuv+PWb/cP8qAP/9k=
+--------------020801090103030708070603
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------020801090103030708070603--
