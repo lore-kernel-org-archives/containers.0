@@ -1,15 +1,15 @@
 From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
-	track async bios.
-Date: Mon, 31 Aug 2009 13:34:54 -0400
-Message-ID: <4A9C09BE.4060404__35611.2044690692$1251740171$gmane$org@redhat.com>
+Subject: Re: [PATCH 19/23] io-controller: map async requests to appropriate
+	cgroup
+Date: Mon, 31 Aug 2009 13:39:55 -0400
+Message-ID: <4A9C0AEB.6000506__26236.7683732466$1251740467$gmane$org@redhat.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<1251495072-7780-19-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-20-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251495072-7780-19-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1251495072-7780-20-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,16 +24,26 @@ Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7
 List-Id: containers.vger.kernel.org
 
 Vivek Goyal wrote:
-> o blkio_cgroup patches from Ryo to track async bios.
+> o So far we were assuming that a bio/rq belongs to the task who is submitting
+>   it. It did not hold good in case of async writes. This patch makes use of
+>   blkio_cgroup pataches to attribute the aysnc writes to right group instead
+>   of task submitting the bio.
 > 
-> o This functionality is used to determine the group of async IO from page
->   instead of context of submitting task.
+> o For sync requests, we continue to assume that io belongs to the task
+>   submitting it. Only in case of async requests, we make use of io tracking
+>   patches to track the owner cgroup.
 > 
-> Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-> Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> o So far cfq always caches the async queue pointer. With async requests now
+>   not necessarily being tied to submitting task io context, caching the
+>   pointer will not help for async queues. This patch introduces a new config
+>   option CONFIG_TRACK_ASYNC_CONTEXT. If this option is not set, cfq retains
+>   old behavior where async queue pointer is cached in task context. If it
+>   is set, async queue pointer is not cached and we take help of bio
+>   tracking patches to determine group bio belongs to and then map it to
+>   async queue of that group.
+> 
+> Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-This seems to be the most complex part of the code so far,
-but I see why this code is necessary.
 
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
