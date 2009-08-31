@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cr_tests: Add two testcases for epoll checkpoint/restart.
-Date: Mon, 31 Aug 2009 10:24:44 -0500
-Message-ID: <20090831152443.GA9673@us.ibm.com>
-References: <1250744745-1360-1-git-send-email-matthltc@us.ibm.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [lxc-devel] Memory Resources
+Date: Mon, 31 Aug 2009 17:47:18 +0200
+Message-ID: <4A9BF086.1070505@free.fr>
+References: <4A9275CB.7030108@free.fr>	<ac1c4bf20908240431p1fda5a15qd26629618397696@mail.gmail.com>	<4A929F83.80207@free.fr>	<20090826104312.97ff028f.kamezawa.hiroyu@jp.fujitsu.com>	<4A952689.9020704@free.fr>	<ac1c4bf20908260650x3311d5d3q44631a30205089b7@mail.gmail.com>	<ac1c4bf20908261625g71dff96cu77190056540cbb7@mail.gmail.com>	<4A97A448.5050506@free.fr>
+	<20090831134045.GD4837@us.ibm.com>	<4A9BE134.5040804@free.fr>
+	<20090831145423.GA8107@us.ibm.com> <4A9BE9A9.1080907@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1250744745-1360-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A9BE9A9.1080907-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,104 +19,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-...
-> diff --git a/epoll/Makefile b/epoll/Makefile
-> new file mode 100644
-> index 0000000..e1e3351
-> --- /dev/null
-> +++ b/epoll/Makefile
-> @@ -0,0 +1,21 @@
-> +.PHONY: clean all
-> +
-> +LIBS := ../libcrtest/libcrtest.a
-> +CFLAGS := -Wall $(ARCHOPTS) -I./libfutex -I../ -I../libcrtest
+Daniel Lezcano wrote:
+> Serge E. Hallyn wrote:
+>   
+>> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>>   
+>>     
+>>> Serge E. Hallyn wrote:
+>>>     
+>>>       
+>>>> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>>>>   
+>>>>       
+>>>>         
+>>>>> Krzysztof Taraszka wrote:
+>>>>>     
+>>>>>         
+>>>>>           
+>>>>>> Okey.
+>>>>>> I made few tests and this two ways work:
+>>>>>>
+>>>>>> First way:
+>>>>>> =======
+>>>>>> lxc. smack enabled, policy loaded. cgroup not labeled.
+>>>>>>
+>>>>>> a) start container
+>>>>>> b) mount cgroup inside container
+>>>>>> c) mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+>>>>>> d) secure the /cgroup on the host (ie: attr -S -s SMACK64 -V host /cgroup).
+>>>>>>
+>>>>>> this step can be done inside lxc tools ;)
+>>>>>>
+>>>>>> Second way:
+>>>>>> ==========
+>>>>>> lxc. smack enabled, policy loaded. cgroup not labeled.
+>>>>>>
+>>>>>> a) do not label whole /cgrop directory (DO NOT DO: attr -S -s SMACK64 -V
+>>>>>> host /cgroup). Label dedicate files only (for example: /cgroup/cpuset.cpus,
+>>>>>> /cgroup/vs1/cpuset.cpus, etc). Do not label the /cgrop/vs1 directory. Label
+>>>>>> with vs1 label only /cgroup/vs1/memory.meminfo. All other files label with
+>>>>>> host label to do not allow read them.
+>>>>>> b) start container
+>>>>>> c) mount cgroup inside container
+>>>>>> d) mount --bind /cgroup/foo/memory.meminfo /proc/meminfo
+>>>>>>
+>>>>>> steps: b, c, d can be done inside lxc tools. step a can't and it is base on
+>>>>>> the admin policy.
+>>>>>>
+>>>>>> I think that the first solution is more automatic and can be done by lxc
+>>>>>> tools (maybe command line switch? I can prepare a patch for that.
+>>>>>>         
+>>>>>>           
+>>>>>>             
+>>>>> I do not know smack, what does smack here ? Will this solution avoid 
+>>>>> the container to overwrite /proc/meminfo by remounting /proc ?
+>>>>>     
+>>>>>         
+>>>>>           
+>>>> Right, in the first way he is labeling the whole cgroupfs with a label
+>>>> which prevents the container from mounting it.  In the second way,
+>>>> the specific files are labeled.
+>>>>   
+>>>>       
+>>>>         
+>>> Ah, got it ! :)
+>>>
+>>> The idea of Kamezawa-san to use a fuse proc is maybe a good idea in this  
+>>> case. So we can address the entire /proc specific informations. For  
+>>>     
+>>>       
+>> I agree, nice idea.  And hopefully pretty simple to whip up for the
+>> meminfo and cpuinfo files as an example.
+>>
+>> Are you thinking a fuse fs which takes a config file, holds an open
+>> ref to its ancestor /proc, and for each file looks in a config file to
+>> decide whether to show userspace:
+>> 	1. nothing
+>> 	2. the underlying file, unprocessed
+>> 	3. a simple ascii file instead
+>> 	4. the underlying file, processed?
+>>   
+>>     
+>
+> Yes, exactly :)
+> But, I am not sure how to retrieve the container context, I mean how to 
+> pick and return the right information.
+> eg: in the container foo, when looking at /proc/meminfo, fuse-lxcfs 
+> should process /cgroup/foo/(somefiles), how to know the request is 
+> coming from 'foo' without doing multiple mount, one in each container ?
+>
+>   
+>>> example, like the /proc/meminfo, there is the /proc/cpuinfo. If you  
+>>> restrict the usage to a subset of your cpus with cpuset and you look at  
+>>> /proc/cpuinfo, you see all the cpus; it is not a big problem until a  
+>>> computation application looks at this file and choose to fork(n cpus)  
+>>> and set the affinity of each process to each cpu ... AFAIR, this is the  
+>>> case for HPC applications.
+>>>     
+>>>       
+Krzysztof,
 
-libfutex?
-
-You also mention futexes in several places where i think you mean
-epoll.
-
-> diff --git a/epoll/empty.c b/epoll/empty.c
-> new file mode 100644
-> index 0000000..c8c2109
-> --- /dev/null
-> +++ b/epoll/empty.c
-> @@ -0,0 +1,83 @@
-> +/*
-> + * Make sure epoll sets stay empty across c/r.
-> + *
-> + * epoll create
-> + * checkpoint
-> + * close epoll
-> + */
-> +/* pretty standard stuff really */
-> +#include <stdio.h>
-> +#include <stdlib.h>
-> +#include <errno.h>
-> +#include <unistd.h>
-> +#include <string.h>
-> +
-> +/* open() */
-> +#include <sys/types.h>
-> +#include <sys/stat.h>
-> +#include <fcntl.h>
-> +
-> +/* waitpid() and W* status macros */
-> +#include <sys/wait.h>
-> +
-> +/* epoll syscalls */
-> +#include <sys/epoll.h>
-> +
-> +#include "libcrtest/libcrtest.h"
-> +
-> +#define LOG_FILE	"log.empty"
-> +FILE *logfp = NULL;
-> +
-> +/*
-> + * Log output with a tag (INFO, WARN, FAIL, PASS) and a format.
-> + * Adds information about the thread originating the message.
-> + *
-> + * Flush the log after every write to make sure we get consistent, and
-> + * complete logs.
-> + */
-> +#define log(tag, fmt, ...) \
-> +do { \
-> +	pid_t __tid = getpid(); \
-
-gettid()?
-
-> +	fprintf(logfp, ("%s: thread %d: " fmt), (tag), __tid, ##__VA_ARGS__ ); \
-> +	fflush(logfp); \
-> +	fsync(fileno(logfp)); \
-> +} while(0)
-> +
-> +/* like perror() except to the log */
-> +#define log_error(s) log("FAIL", "%s: %s\n", (s), strerror(errno))
-> +
-> +int main (int argc, char **argv)
-> +{
-> +	int efd;
-> +
-> +	/* FIXME eventually stdio streams should be harmless */
-> +	close(0);
-> +	logfp = fopen(LOG_FILE, "w");
-> +	if (!logfp) {
-> +		perror("could not open logfile");
-> +		exit(1);
-> +	}
-> +	dup2(fileno(logfp), 1); /* redirect stdout and stderr to the log file */
-> +	dup2(fileno(logfp), 2);
-
-Hmm?  Does dup2 automatically close first?  Manpage suggests not,
-so shouldn't you do so?
-
-No other comments...  will wait to apply until the updated kernel
-patches hit the list - and the tree.
-
-thanks,
--serge
+what do think about this solution ?
