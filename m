@@ -1,17 +1,10 @@
-From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
-	track async bios.
-Date: Tue, 01 Sep 2009 10:53:42 -0400
-Message-ID: <4A9D3576.70801__11684.89394845$1251816916$gmane$org@redhat.com>
-References: <4A9C09BE.4060404@redhat.com> <20090831185640.GF3758@redhat.com>
-	<e98e18940908311651s26de5b70ye6f4a82402956309@mail.gmail.com>
-	<20090901.160004.226800357.ryov@valinux.co.jp>
-	<20090901141142.GA13709@redhat.com>
+From: Danis <homeomorph-HxLUcYxN4bpWk0Htik3J/w@public.gmane.org>
+Subject: Ing; and in all cases too terrified to believe in it. H
+Date: Tue, 01 Sep 2009 17:47:01 +0200
+Message-ID: <4A9D4165.4020407@travidia.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------060808040904020205040106"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090901141142.GA13709-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,28 +14,199 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> On Tue, Sep 01, 2009 at 04:00:04PM +0900, Ryo Tsuruta wrote:
+This is a multi-part message in MIME format.
+--------------060808040904020205040106
+Content-Type: text/plain; charset=ISO-8859-6; format=flowed
+Content-Transfer-Encoding: 7bit
 
->> I think that swap writeouts should be charged to the memory hogging
->> process, because the process consumes more resources and it should get
->> a penalty.
-> 
-> A process requesting memory gets IO penalty? 
+Dy' form. For see, I write my lists of five, five, and seven, on bits of
+pasteboard; I hinge my rods to these; and you can brandish the school of
+1400 in your left hand, and of 1500 in your right, like--railway
+signals;--and I wish all railway signals were as clear. Once learn,
+thoroughly, the groups in this artificially contracted form, and you can
+refine and complete afterwards at your leisure. 55. And thus actually
+flour
 
-There is no easy answer here.
+--------------060808040904020205040106
+Content-Type: image/jpeg;
+ name="ages.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="ages.jpg"
 
-On the one hand, you want to charge the process that uses
-the resources.
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAEKAW0DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooopgIvf60tIvf60tABRRRnFAgopuaTd
+QFx9FR7qN9OwrklFND56076dKQ7id6Wk70tAwooooAKKKKACiiigAooooAKKKKACiiigAooo
+oAKKKKACiiigAooooAKKKKAE70tJnmlpAFFFFMAooooAKKKKQgrM1r/lj/wL+ladZms/8sf+
+Bf0pjNOiiigBF7/WlpF7/Wl6DNACE4+tNLYprNUbPTSIbHl6YWqNnxSEkng1ViLkm6kL461G
+ecd6OwFOwrku+nxS4bB6Gq/I60m7miw0y/3NLR3/AAorM2CkpaKACimM56KcD1pmBWbn2Hyk
+wx6iiocD0FL+lHOOxLRUYYjv+dODeo/KqUkKw6ijIPSge9UIKKKKACiiigAooHWoWkJJ5oAm
+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
+--------------060808040904020205040106
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-On the other hand, if a lower resource use / higher priority
-process tries to free up some of those resources, it should
-not have its IO requests penalized (and get slowed down)
-because of something the first process did...
-
--- 
-All rights reversed.
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------060808040904020205040106--
