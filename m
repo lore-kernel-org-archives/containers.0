@@ -1,8 +1,7 @@
-From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
-Subject: LXC quota support
-Date: Tue, 1 Sep 2009 18:30:25 +0200
-Message-ID: <ac1c4bf20909010930q5721c9bas2ea3722e94657820@mail.gmail.com>
-Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: C/R demo for Linux Plumbers
+Date: Tue, 01 Sep 2009 13:55:43 -0400
+Message-ID: <4A9D601F.7010105@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,20 +15,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
 
-I am looking for quota support for LXC containers. For example, I would like
-to have two containers.  One of them may have 20GB, second 50GB.
-I found this one patch:
-https://lists.linux-foundation.org/pipermail/containers/2009-February/015807.htmland
-I have a question. Does there is another implemented method for have
-disk quota for container and his cgrop ? How about rootfs available disk
-space information ? If no, is there any ideas how to and when the disk quota
-will be implemented?
+The linux Linux Plumbers will take place in about three weeks.
+I'm interested in preparing a nice demo working for the c/r
+presentation. Something visible.
 
--- 
-K
+For example, start a sort of a "session", checkpoint, reboot,
+and then restart the session. The session can be 'screen', or
+even 'sshd' (w/o persistent connections).
+
+It's also an opportunity to boost development particularly of
+pieces necessary for such a demo :)
+
+Ideas, comment and code are welcome.
+
+Oren.
