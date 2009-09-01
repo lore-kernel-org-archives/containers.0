@@ -1,13 +1,10 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [lxc-devel] LXC quota support
-Date: Tue, 01 Sep 2009 20:32:49 +0200
-Message-ID: <4A9D68D1.5030807@free.fr>
-References: <ac1c4bf20909010930q5721c9bas2ea3722e94657820@mail.gmail.com>
+From: Kendig <tenex-tpQgjFfJQSOEVqv0pETR8A@public.gmane.org>
+Subject: Initiative. What was inevitable for Ruskin's unique mind was yet wron
+Date: Tue, 01 Sep 2009 14:36:19 -0400
+Message-ID: <4A9D6937.5020906@concorde.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------040406030509050709010305"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ac1c4bf20909010930q5721c9bas2ea3722e94657820-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,33 +14,228 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Krzysztof Taraszka wrote:
-> Hello,
-> 
-> I am looking for quota support for LXC containers. For example, I would like
-> to have two containers.  One of them may have 20GB, second 50GB.
-> I found this one patch:
-> https://lists.linux-foundation.org/pipermail/containers/2009-February/015807.htmland
-> I have a question. Does there is another implemented method for have
-> disk quota for container and his cgrop ? How about rootfs available disk
-> space information ? If no, is there any ideas how to and when the disk quota
-> will be implemented?
+This is a multi-part message in MIME format.
+--------------040406030509050709010305
+Content-Type: text/plain; charset=ISO-8859-6; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Anqui did a first try with this patch. The feature was positively 
-received but not in this form. I don't know what is the status of this 
-work, but maybe Anqui can give an answer :) - Cc'ed.
+Nothing to the Metopes of the Parthenon. Retrace your steps as much as
+you like from the Palace of Versailles to the Castle of Heidelberg. From
+the Castle of Heidelberg to the Notre Dame of Paris. From the Notre Dame
+to the Alhambra. From the Alhambra to St. Sophia. From St. Sophia to the
+Coliseum. From the Coliseum to the Propyleans. You may recede with ages,
+you do not recede in art. The Pyramids and the Iliad stand on a fore
+plan. Masterpieces have the same level--the Absolute. Once the Absolute
+is reached, all is reached." And Schopenhauer says, "Only true works of
+art have eternal youth and enduring power like nature and life
+themselves. For they belong to no age, but to humanity--they cannot grow
+old, but appear to us ever fresh and new, down to the latest ages." Let
+us disclaim then any such word as Modern in relation to art,
+particularly in relation to a philosophy which has to do with the
+principle and essence of art. Is a Philosophy of Art possible? There
+must be some who will think it is impossible. Have we a philosophy that
+explains such an apparently simple thing as how one knows anything--or
+of simple consciousness? Every philosopher that has attempted to explain
+consciousness or how we know, takes refuge in assumptions. At any
+Philosophical Society, if you ask for the explanation of simple
+Consciousness, the avalanche of answers, each differing from the other,
+will bewilder you. We know the outward appearance of an object, of which
+we say that we know it, but what is it _in itself_? Of that we are as
+much in the dark as we are of the mind that knows. We say, each of us--I
+know, but in philosophy we are not clear whether there is a thing that
+knows. We know we are conscious, but we know nothing but that bare fact.
+We do not know how an object swims into our consciousness. We do not
+know in the scientific meaning of knowledge, how we come to know any
+object. Our abysmal ignorance is this, that, of the thing known, and of
+that which knows
 
-Anqui ? Did you tried to implement quotas with the directory hierarchy 
-level as suggested Paul ?
+--------------040406030509050709010305
+Content-Type: image/jpeg;
+ name="gape.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="gape.jpg"
 
-Krzysztof, one solution to restrict disk usage to a container can be to 
-create an disk image of 20GB, mount it on a directory, install the 
-rootfs on it and use this directory as the rootfs for the container.
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAFZATcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooJA60m4UgFooooAKKKKACiiigAooooA
+KKKKACiiigAooooAKKKKACijvRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFADW
+BJo2e9O70UAVNRXFjJ+H8xRTtS/48ZPw/mKKYFgDv3paAciikAnT6UtB6UDoKACiiigAoooo
+AKKKKBBRRRQMKKKKACgUUUAFJuFLmmr0pgLkUbhS4oo0ATcKNwpaTHPQUaAGR60tJgelJge9
+GgDqKbt9DS4b1osAtFJ831oyfSiwC0UA5FFIAooooAKKKKACiiigA70Ud6KAK2pf8eMn4fzF
+FGpf8eMn4fzFFMCx0+lG4UtFIBPvfSloooAKKKKACiiigAooooAKKKKACiiigAooooAKRelL
+SJ0pgLRRRSAKB3ooHegAoPSikPSgAXpS0i9KWgAooooABRQKKACiiigAooooAKKKKADvRR3o
+oAral/x4yfh/MUUal/x4yfh/MUUwLNFFFIAooooAKKKTmgBaKOaOaACijmjmgQUUfjRigYUZ
+FGKKBBmkz7UtIelAC0idKWkTpT6DFooopAFIRz1paKAEwfWj5qWigBB0paKKACiiigAFFAoo
+AKKKKACiiigAooooAO9FJ3pc+1MCrqX/AB4yfh/MUUaln7DJ+H8xRQBaooopAFFFHWgA60Ci
+gUAFFFFABRRRQIKKKKBhRRRQAUHpRSHpQAtInSloAxxTAKKMgdSKb5i+9TdBYdRTd49DS7h6
+4+oougsxaBR9KO9MAoooJxQAUd6TmjBz1oAUUUgB9aOR70ALRRn8KTq1AC0UmPegCgQtFFFA
+wooooAral/x4yfh/MUUal/x4yfh/MUUwLNFFFIAooooAKBRSZ9PzoELRTc0m6qsK4+jioy1J
+vosFyWiot9OWUE4P50WC4+iiipKCg9KKOtAgJCrk1GWJ9h6CkZtzZ7DpSZrNyuaJC0UmaM1N
+xhRkjvTd3OKN3HNK4WHhse30pwk/vfnUWc0hNNSsFiyfbmjiooHJBX05FSZ9RWqd1ch6C0UZ
+zRTEAqNpCGIHapBwMmo2iDMSGIpgIJSeuD9BT0bcemOKZ5PI+c0+NNrZzQA4etA70hGKUUgC
+iiigAooooAral/x4yfh/MUUmpf8AHjJ+H8xRTAtUUUUgCiikdtq+5piBm7dqYWphemF6tIhy
+Hl6aXqMvxmkLZxjvTsTckLU0vxnrTDyOecUYPTpTsK47fkUhemn60gBZgo6mgDQQ7kUnuKWg
+DaAPTiisjYKRjhSfalpGGUYeoqWNEGeKQntTc0Vhc1FJ455FBJ5pM+tGaVxi55B9qMcdqQtT
+S1IB2cCmM1NZqmggLHc/A7D1qkmwehJaoQpZu9TUUVulZWMm7sCM0mcUtHc0xDH+5+NIKJRm
+Mj1OKpzEiIOzFNzqCR2FMdtC7zTZJPLQsarDZHcIsT5Dg7huzj3oJLK24kgKdhPf3oBIvdhS
+dD9aXsKQ9KQhaKKKACiiigCtqX/HjJ+H8xRRqX/HjJ+H8xRTAs0UUUgCoblsFfpU1Rzp5kfH
+UdKqO4nsVd1J3HtTc460u6tTAXH86MCkzRmgBc0hNJmmk0AKTVm0j/5aH6CoreEytk/cHX3q
+90GBwKiT6GkY9QooorM0CjOKKQ9KBFedCjZHQ1Duq+eeCBioXtlY/Kce1ZSh2NFLuVt1G6pf
+sr9iKBac8tU8jK5kQFqVUeQ4UVbS3jTtk+9SjgcDFUodxOfYhitlXBfk+lSjnOaWk/i+taJJ
+bEN3Fx70c+tFFMQc0maWimAx/ufjUEymQIBgYcMc+1SXQfyf3RwwIqqLqRfvxfkcUrjUW9ic
+Iq5Cqoz1xjmndgMDiqwu17o4/Kg3jHhIiT70XKs+xodh9KKRCTGhbrgZpaCBF+6KWkX7opaA
+CiiigCtqX/HjJ+H8xRRqX/HjJ+H8xRTAs0UUUgCiiimBHNAsvPRvX1qo8Dp1GR6ir9ApqTRL
+imZnNHNaLIrfeUGmGCMtjb+tXzonkKPNSw25chn4T+dW1hjXkKM+p5p5ApOfYah3GjaoCrgA
+dhS5HuaXijNQUJk+lHzegpaKQxMN60hHHU06jFAhNo96D696WoriXyoxxlmYKo9SaYyUdKT+
+L8KhkleKN2l2qoA+Zee/pUksoiySrEAZJAyKQDsA0bRVU3WGuCXxGgQqwGetTieNnKqWJDbT
+hCQD9cU7sB+33pCCOc9KdRRcBPm9jRk+lKOKKAE3eoNG4UtGBRoBFcTCKPcV3JuAbnoPWo5p
+EifYdzfKXOBnAFTyRLJGyMPlYYNVUgmMUzS4MzR7F57Y/qaAAPGQpZCu5Sy5A+YAZ7E09GRm
+jVSP3gyMDt70kVuUSKRy7vEnCcdcdOKS1hkhm3MuRMMtj/lmeuP1oC5YilSaJXTO09M049Kr
+WW6K2jieNwwznjjrVnqfpSAWiiigAooooAral/x4yfh/MUUal/x4yfh/MUUwLNFBOKTd7UAL
+RSZFLkUAIxIUkAsQM4HeoTcoLZJlBbfgKo6kntU+aqR2zLOFJHkIxdBnue34c0ATrKphWQuC
+D3XOKTzo+G3jB4H1qCKGeK2hjBxtJ3hWwT1xzUawvA6zPjiVzjPJDD1/CgC011AsZcyfKG25
+wetK8wRC/lyEAZPy9vxqrBDJLEGbap+0+byeo9qmmtjNJId6lXUAbhnb9KALCsrKGU5UjINL
+TIwI4kTOdqgZ9cU8HNFgCiiikAUUUUAFRXEXmxjnDKwZT6EVLUF3N5MYwPmY8elA0m3ZCTwy
+zwvGzoAwGAB75pJ7ZpXkIYEOuAGz8v0qZ3ZImbZyMnGadG2+NW6bgDQFna5T+wsYZU3j94qA
+HHTbUphk88MhEY37mIYncPTb09OaGnKrI4UbUfaR3NPeYhpAqA+WMklsds8cUXHyMlopFYMo
+I6EZFNmcxwu4xlVJGfpQSPoz61WS4cwea3lthN5VTg9M0qXkckMcmDh32Y9D70wLFIM0yCUT
+RLIgO1ux69aVZELtGGG9eSvcUhEN1JIjxAEKhYZb/H2qR5HDRINuXzk4yOKJozKybXwUYEj/
+AD3pPICiIKeY84JGetI1vGyFgcsrA9Vcrx3xSST7ZERRnLBWPYZpUQovysMs+5iR/Kkkt0kI
+IAHzhj709RLlvqJ5zFmB2rhioznmpulRyxPIjR7l2EjtyBUtApW6CZ9qWiiggKKKKBlbUv8A
+jxk/D+Yoo1L/AI8ZPw/mKKYFhulLTW6U7B9aACjAo59aM+tACYFQ+epuGjVS20cketT1UdJD
+eExjaSvXseaTbLgk73J2cLMse05bPPbpTuhPXp2qOVXM8bquQme/XIqQ7vMOACNvrzmi7E0t
+LDFlDRyPtPyEjBPXApIpfMK/dGRnHOaWBHTzMhRuYsOc4z/n1o8t2kjeQrlAeF7k0XZXu6kt
+HeijvTMwooopAJn0o59aWigBOfrUV2rPbkKAfbv1qakbpQNOzuRiJhAybgS2evQA0qq6whAy
+hgAAccVIOlFAczIZYBKx4UKTk46miaLfu2gAsMFtxH6DrUopaLD52IihUVRztAFJInmROmcb
+lIz6ZpcelGfWgkr/AGZhAYtsR+QqGxg9MZqFrSRXttg4BUyAEYyO/wDOr9HNMCpalra1WOSO
+TcueFXdnnPaoFEsCRXEisG35kYnjDeo6+nFaOaATQK5nKVSx8yWJZJEYmTLbWBzxzj6VLy19
+cgrI4G3Gx9uOPqKcbiIl5JIciN9pfAODkc+vpTnMBnkG2TzBjcUDenHSgY6YukSyISPL+ZlJ
+zlccj61CskrvCC5UXBLDH8KgZA/xqdXil3wbiW28qc5wR7/WmsbbyIsvhRxGwPPHHFAEF3NJ
+B5saux+QOCeo+YDFWJnZby2QEhW35HrgUn+jozqzBmY7WLHP4U+OFY2DfMzAbQWOcCgClbSy
+SfZ8NIJGYszM3ysozkAZ6/h7+9aVQi3jWFYtpKqcjnkHOc5qXmgBaKQcmlxSAq6l/wAeMn4f
+zFFGpf8AHjJ+H8xRTAsnpS5FI3SloAKKMCjFIA+lGeKMe9J0oAWk/j/CjHvR/F+FAC0UUUwC
+jvRR3pABOBQOBTWdRjLAc+tHmKehz9BmgB1FN3HsjH9KMv8A3R+JoAdSHpSfP6qP1oIbHLD8
+BQAo7ilpgDf3/wBKXa39/wDSgBw6UU0K39/9KMP/AHh/3z/9emA6im/P/sn8cUZbuufoaQCk
+CjApN/qrD8M0eYndgPrxQIdgUDpSBlboQfoaUUAVEtCwmWVm2PKW2gjBGcik2st5O5MqK23B
+Rd2ePoauUUDM9opFuJ7lAxZApXcMbxt5/wA+tNTK2NmGBBEoJ46AE1op0pTTApSHyfNEWWYy
+ZMbL94nFXTSE80fzNAASB1NAINKBijGaQCDqaWmr1NOoAral/wAeMn4fzFFGpf8AHjJ+H8xR
+TAsN0paRulLR0ACMjqR9Kbtb+/8AmKdRSAb8/qp/DFHz/wCzTqKAG/P6rSYfd1XpTsjOMjJ6
+UZ+f8KYCYf8AvKP+A/8A16Nrd3P4Cq63bu86xwhvJODluT16DHtSNfqYEeJdzyNtVSe/v+n5
+0AWdnqzH8aNi55UH681Xe4kguYo5NrJLwCoxg/n7im3xmMsCQuVZtx47kDIFAFvGB8ox9KC6
+g4LKCexNZpummlgYL++QSZTB644oj8t9KkkkO9zncx5Oe39KAL0tzDCf3j7fwJqRG3DO1h7E
+YrLutw0iAOcncPywcfpWrnnrSAr/AGksZRFGXMXXnHPPA/KmC7L3EMRiKeYpY7uo6/4Uy1jm
+tI5YhHvOSyMOh+vPHQUGK4N3DcOi5VMMA3fn/EUwJ7qVoLcyKFIXqD9aj+1t+5QIpkmAYAHh
+R7/r+VLdJNPbPGsYBbHJYetM+zSg28qgCSJQhBP3h/kmgB01zNCspeIYQAhgeDyP8acLzf5S
+RJ5krqGYA4CD3NMuIrmeOZMKqEDauec5GefzpkcEliBIg3oVHnLnkYHUf5/+sAX6jlmWEZk3
+BcctjIFMs53uIfMdAoJwuO9RajIrWrxruLkhQAp9aQFiKeOcExOGxjOKkVgwypB+hrN0tTBJ
+PHL8jAAkH0GeaggRnslUMMGXmMtt8zp0NMDYKg/eUH6ikCL6Y+hIqnbKj3MqtvhYYzCrYA9w
+R/nml0x5JYS7yuxDEYOOeBQBb2ejsKMN/f8AzFV7y5e3eFV2ASEglh06e/vSTXbwqDtSUsdo
+VG5pAWFDY4Kn8MUp3+q1Ct1GYo3TLLI4T3BPrSNdFbhYTEd7DI+Yf57UwJsPnqtHz7uq1DFd
+GaSRUiOYzhssP89qHuSs6QmI72G4c9Ov+FAE+H/vKP8AgP8A9enDpUEN0JJZImRkkTnHXIqb
+OfakAi9TTqReppaAK2pf8eMn4fzFFJqX/HjJ+H8xRTAst0paRulLQAUUUnX6UgDntSMVRCzH
+gDmnVWnbzphCPuLy/wDhQOKuyPy2mRpmJDnlfarEEgmQMfvDhh70hIxjcAewz1qusnkT7/4G
+4b/GlsaNcyEhjnhlunETEuxKHIx1PXmgacVt41VwsqMW3dRn/IFXuaZMzJEzDtzTMlq7Ef2d
+pLhJpSvyfdQcjPr/ACqR4leaOQk5jzgfWmSSFZUA+6fvfj0pr7mWYgn5en4UXK5WSeRCLjz9
+oEnrmkEVuh3BEXBB46ZpjkNIkg6Jj9aXZ5kcx7scD8P/AK9Fw5e5MZFDBSeW6e9IHBZlA5Xr
+VcsJP3w/gCn/AB/SpYCNpcnG9jj+n8qVxuNkK0rbiiJuI684ApDI+E3Lgs20ikk8vzGJkKN/
+Fg4zTcu0ascsEkyDjkii4+VEzOVeNcfeJ/lUfnts8zaPL+vOKXd5s0ZUHC5JOPao3RWBjj3c
+nBHYUAkupK8mHKrjPck1IudoJ647GoGCrM5kXIbGOM0+E+XDGH4JOBRcTWmgrOqEIqsTjOFH
+SlSTdnqpHUN2pinZcPu43YINFwwMD7SDgDOPTP8A+ui4WWwEwzHBCP6ZGaVoInVFKDCcrg4K
+/lSTqvkORgYGVI7Go5CRcCQdVQEj2yc07go32JooI4WYopBY5JJyaZbW6W0ZRWJBbPNNRi9y
+r5O1gQB7CrNFyWrFW6tnmkgeMr+7bJDHGen+FNlhkd4dsIXbIrEgjpVzAoxTEZ0ltIl1H5Iz
+C0iuVH8JHX/P+FSyRSNqcMgU7AhBb061cAxRQBnwwlLi4aWJyGfKkD3NK0DPfQuqOsYQgnoR
+1q93pc0AVLaGWCWRHAdHO7zMjP0NWtooPUUuaVwDGKKM0c0AVtS/48ZPw/mKKTUs/YZPw/mK
+KYFhulOpG6UuKAEPXFLSc560uPekBHPL5UZYcseFHvUUEZAC9WPLGq00++XePujhB/Wr0Gdg
+LDDHrS3Zq1yxMu/BGpgA/wB3FXLyPa2cfK1QX0ZOqQkA4O3+daM6CSMqabVyYSsyvZTFgYnP
+zL90+oqyw3KQehGKyA7xTZ6Oh4Fa0UizRh16H9KSHUjZ3RXjjdoH3DD8AZ9un61NAhWPDjk8
+n8akpP4qaRLk2Qx2+2F42bO7v6elSxJ5cYXOcd/Wqssso1COASkI6luFGe/r9KiF3NFPI8h3
+Q+aYzx9zHeiwnJvcvJCiIUA+VutACBAfl2LyD2FQWbCRJ8kOpmYeoI4qs0LJcCxD/uZDv6cg
+en6UWC7L5liAVtwOemBkn6YqN7uCOPfv43bSAOQeeo7dKr4WDUwZMLGIwsZJ4Xj1/Oq1zA9x
+JPNCp8sEdBw3qR6//XpiNWWeOJ40cnMhwuB/n1qIX0TRmQByi9Tt6VDOftN3beUCQjb2yMYG
+R/hUFtDO2nSLGSCWOVI6jAoA1DIgiMoOUA3ZHpUS3sBRWLFVY4BZSB+fSmKUbTXESlQI2G0j
+kHFUSB/Z8SmQlw3EJHXk+nNAGnJNBuMcjx5HUMadGIyuYwpU916GqKNIdUmZIwW8sHazY7Di
+qw3+WgZ9iSSkOo42e3txmlYDV8hPfAP3c8U/YPNL+q7cVTlb7LewCM4SQ7WQdPY/r+lQpdyq
+r2+/M/m7FY9MdP6frRYd2aBj/eIwwAoIxUlZ8V88rWyIAXb/AFgP8/yBNSLeSOsjpASqHbtz
+hvywadhXLlFVYb3z2cRxSHYeen9SKka6jWRY23B2GQNpJ/T6UgJqKZFMk27y2yVOCMEEfgaf
+QAneg0veg0MQh6ilpD1FLQMKKKKAKupf8eMn4fzFFGpf8eMn4fzFFMC0RmiiikAgqvey4Xyw
+cFvvY7D/AOvVkfeqpLaO8jsGU7jnnihlwtfUgt1Dy5YgAc4q8HX+8PzqmbKUdlP0ak+xTeg/
+76qVdGkuWTvcfdTTi6jEWCnH/wBerbSL/eH51Q+xTeg/76pPsM3oP++qd2Ryx7i3wQ4dWG7o
+QDSWNwI5NrHCv+hoGnynug+rH/CnjTWP3pFA74GaNbl3jy2uaHNJ/EKUDAAznA6mk/iqjArv
+bSPdrOJFUoMKNucjnryPWnpboqSo/wA6yOWII9amopARQW6W8WyPOM55Pen7ELiQqN4GAcci
+nUYoAP6UZpOTS9Ov60wKc1zIlyI0wegP1q5Wdbfvr0uegy1aNStTSqkrIKKKKZmJgZzgZPem
+PBE5YvGpLjDE96kpOpxQBEtuglEuCzjgFmzj/OaaLVFvDc5OSOmOh6Z/n+dWB3opgVY7NUvm
+uMjB5A9Cep/nUEtpM4OY1aYv8swO3A9SPWtDocUpoAzrWFoppzcCXLNkFN2D1/u0SAnUoDGx
+I2HDMCf730rRAooApWYK3c3nkic9h90r7fl/nmrtBAJBI5HSkzigBaQkUYz1opAIScjilyfS
+g9RS0AICDS0EZpOnXpQBW1L/AI8ZPw/mKKNS/wCPGT8P5iimBaozRRSAT3paD0NUrq8aCfbt
+DDGaaVwLtFUY712GfIOPUGh78J1T8jRYReorP/tJf+eZ/Oj+0l/55mnysLmh3orOOpc8Rfr/
+APWpp1CTsgHpRysLmnmkGBWU19M2eQPoKja4mbrI34cU+Rhc2dwprTIvVlH1NZMcbT7suBtG
+47ielJ5MmzdsOMZ/D1o5QuabXkI/jH4VGb+MdAxqq9ownMSMGwMk+nHpS/ZQA5aUBVCnOM9a
+dkF2THUB2Qn60x75mUqEAyMU37Mu3hju8rzOnH0ptzEkLbFJLDqc+30/xpSskVTTckhIJzCS
+QAc1N9uf+6KgiH+kRArj5h1781YdFkndWDAANgngD3+lEUkgqSvJsT7c/wDdFKL494wfxoaC
+NUchS21VI5+9nvUn2dSvkhjt83r/AMBzT0I1EF8vdT+FPW9jPXIquLZXQOr4UqW5HoaRbVnX
+KMDknb74osguy4LmI/xj8akEinoQazHiZEDNjBAI59ajo5QubGQSDQOuayQzL0Yj6GnieQfx
+n8aXKO5qZHrRWeLuUdxTheN3UGlysLovUgGeTVQXnqn5Uv2wf3TRysLlsdKKqfbB/dNH2wf3
+TS5WF0WyDkUVVS63SKuzgkCrQ6ChqwwoPIoopAVNR/48ZR6Y/mKKNT/485PfH8xRTAt0UUUg
+A9DWZfIZL1VHcf1NaZ6H6VRuopGufMQZAXHXnvTTsBBNMc7EIVBx9ajlkUyRsVyAfmGOtSCK
+aMYERb64NRvDcOcmM1pGyRnrct/ZI9+35M+Zv/4BUX2eOWMSfdUq74A54PSotl16P93Z+HpQ
+Eugu0BtuCMex60fMoe1rGkbSEsyhFYAcHk+tWJoUe5Ziu8mRVI9Bgc8VWWK7yGG4EDaPmxx6
+UfZLhidx+91y1HzAmVLYR9R1aPceeSeD+ApRNArzY+RSeChweB2x7/hUa2DfxOB9BmnrYJ/E
+7H6cUroepXtpEj8zfu+ZCowM9akNyOyn/U+X+PrVgWcI6qT9TThBAn8K8etHMgsU2umaUybF
+BYbWHYikzKysqoQrYyFWrvmQp0KjtxS+aD0R2+imlzBYoFpd20khsbcdOPSgrIziNiSw4AJz
+ipbsNuD7GUHjkVEoklkJQEsT2rJt7HZGKdprsDoyMNzDP16VL9nnPfP/AAKnLYy5yyg/8Cqy
+FnAwI1/76rRSZzTjFbMrLFcKjKCMNjPPpTfIuBwM4znhu/rVzbP/AM81/wC+qT98P+WOfowo
+5mRYqH7QM8NyNvTtTd7qgR0yq9AwPFXd7DrFJ+AzSeco+8GX/eGKfMFilJIZNuRjaoWmVobo
+X7oe/NJ5ER/hH4GnzCsUaKum1jPTI+hphtB2cj6inzILFaipzav2ZaabaT0B/Gi6CxFS08wS
+D+GjyZP7pp3QhlFSeVJ/dNHkyf3TSuAQ/wCuT/eH860h0FUIoZBKhK8BhV8dBUyKQUUUVAyp
+qf8Ax5v+H8xRRqPNlKfoP1FFMC3RTQDjrR831oAceh+lQyNhjgZJPSpMnkEdqaSFkJNADfKk
+PJcD2xSFJFGchhUyrkZb8qYCy8kECgCPe392geY5wAB7044ycdOtOB4CryfagBvkt/z1wfpx
+SfMhw/IPcVKikqdwwfWmOwAKt1HNADDveYRowX5c5IzSiB2GTK34YH+NIp23JPpGf5iod7SL
+kOAAcAk0b6A3YsLbxEkNuY+7Gni2hH/LMH6805huOM4yp5FUgZZSM5+f9034Yyf/AEKgC8Ai
+kBQoPbFNE8RCkOCGO0e5qo1vNk+WOYzhOexzn8sj8qke1Yu2wgKACmezcf4frQBJO0UkQ3gs
+C2ABwSeaIjHGVRIyu5S3I54x1/OgwMYUjJQ7f7y7geKQW21UAkIKgrn1BoHd2sNNwz4KsIwY
+w4yOue1I1yzbdmV/dhzhc9akNuNiIJMBVC9BStCP4H2fLtOPSgQ9pQkIc85xjHfNNM+0fMjB
+s7Qo7n2oaJTH5e7CgDb7YpDCzYJlJcNuUkcDjHSgA+1RAgEsDzxtJIx1p8c0chwjA8ZqNLdl
+lMhYEsGz9Tj/AAoihaNoc4+SLYcevH+FAErRxt95FP1FMNrCf4MfQkVLRQBXa2QfcZ1+h/xp
+nluPuzf99LmrT9P8+lUXNyLgKmwxtzkj7tAEilxKEYqcjPFSAEjIxzUX/LyP9w/zFPeTy4Qw
+B6Y+lIB+1h2H50hyOopomRI1Jyueg7/WnsQQpByCaAuIASMgUYb0/WlXOwYxnHFIJNx2qMN3
+z2pjSuKAQy5HepB0FMJ+Zf8Aep46CgQUhP50pOKB6mkBV1IYsJPw/mKKXUv+PGT8P5iimBZH
+QUUg6CloARuv4Go5Rk59Dg1I3b6Go2YKxz+tACgsi45I/lSFWK8saRXA+64x6E5FLuB+8wI9
+BTELEmVJP8VMRWz1wRwak80e1IXUnOcH1FIYDeCRyc9zTSvz8nPc0pk7GQD6YzSbhjAyfoM5
+oEIF33ByDtKEZH1ojh8vGAoPvz/hTvmPRW/LFG1z/CB9TQMcDhtzNk4xTvMpnlt/eUfhml8s
+93P4CgBfM+tJvP8Ak0eUvcsfxpfLT+4PxGaQDDIO5FJ5g7EfhUoAHQAfQUfNTAj8z3/SjzPf
+9KkyaUZ70AReZ7/pSeYO7L+NTUUgIw/pil3n/JpxRT1UH8KTy0/ugfTigA8yl8z6U3yh2LD8
+aTyz/f8AzFMBZGYr8gUn3NQ5mHWLd/umpdj9ip/Skw/93P0NAEK7mnDFGUbSOfqKnUZQe4pM
+t3DflTdyjvj9KAFljMgCkZGck05hjH1poYdn/WjI7tn8aAsLhjF8hwxHB9KaYMAeW2HH8R7/
+AFpdwHRv1o3f7f60DTsPI+Zf96nDJA7VErLvHzAnPrUw6CgQgGKWiikBW1L/AI8ZPw/mKKNS
+/wCPGT8P5iimBZpMClopAIRSnpxRSHpQApAPUZpNo9B+VLRQAm0eg/KjaPQflS0UAA46UGig
+0AFFFFABRRRQAUUUUAFFB4oz7UAFFH4UfhQAUUfhR+FABRRmjNABRiiigBMUY9KWigBOfWjm
+l6UUAIeeoBpMD+6Pyp1FACbR6D8qNo9B+VLRQAdOlFFFABRRRQBW1L/jxk/D+Yoo1L/jxk/D
++YopgWaKKBSAKD0ooPSgA6UUdqB0oAKKKKACg0UGgAooooAKKKzNS/5afh/SgDQaaNPvSIvb
+lgKiN/bL1lH4AmsGigDZfU7cA4LH6CmHVogBtjc/XArJopgav9rx/wDPJvzo/teP/nk351lU
+UAav9rx/88m/OnDVoccpID7Af41kUUAba6lbE8uR9VNSLe2zYxMv48fzrAopWA6RHRgNrK3H
+Y5p1czW7Zfx/hQBZooooAKOn0oooAKKB0FFABRRRQAUUUUAFFFFAFbUv+PGT8P5iik1L/jwk
+/D+Yopgf/9k=
+--------------040406030509050709010305
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-  -- Daniel
-
-ps: The disk image should be a sparse file ;)
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------040406030509050709010305--
