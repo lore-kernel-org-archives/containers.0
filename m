@@ -1,234 +1,77 @@
-From: Litalien Fabus <irritably-lvnzPu31/A38ieA+OfB7GQ@public.gmane.org>
-Subject: S you! Good by." And I sailed for Gallipoli. FOOTNOTES
-Date: Tue, 01 Sep 2009 05:18:49 +0200
-Message-ID: <4A9C9206.8060304@scouting-pvg.nl>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 3/5] cr: add generic LSM c/r support
+Date: Mon, 31 Aug 2009 22:49:45 -0700
+Message-ID: <4A9CB5F9.3000509@schaufler-ca.com>
+References: <20090828210041.GA27878@us.ibm.com>	 <20090828210417.GC28048@us.ibm.com> <4A98AEDE.1000105@schaufler-ca.com>	 <20090829224147.GA12549@hallyn.com> <4A99BC58.9040205@schaufler-ca.com>	 <20090830135800.GC14699@hallyn.com>  <4A9ACD0A.9050004@schaufler-ca.com> <1251722750.16143.31.camel@moss-pluto.epoch.ncsc.mil>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------080801030304080507070609"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <1251722750.16143.31.camel@moss-pluto.epoch.ncsc.mil>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Stephen Smalley <sds@epoch.ncsc.mil>
+Cc: "Serge E. Hallyn" <serge@hallyn.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, James Morris <jmorris@namei.org>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------080801030304080507070609
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+Stephen Smalley wrote:
+> On Sun, 2009-08-30 at 12:03 -0700, Casey Schaufler wrote:
+>   
+>> Serge E. Hallyn wrote:
+>>     
+>>> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>>>   
+>>>       
+>>>> Serge E. Hallyn wrote:
+>>>>     
+>>>>         
+>>>>> Quoting Casey Schaufler (casey@schaufler-ca.com):
+>>>>>       
+>>>>>           
+>>>>>> But each can be expressed as a context, can't it?
+>>>>>>     
+>>>>>>         
+>>>>>>             
+>>>>> A set of contexts (root_u:root_r:root_t:::system_u:system_r\
+>>>>> :system_t::...).
+>>>>>
+>>>>> There would be a problem if it were stored as a more
+>>>>> structured type, and if the ->restore handler wanted to
+>>>>> re-create an actual task_security_struct, ipc_security_struct,
+>>>>> etc.  So the last paragraph in the patch intro was just trying to
+>>>>> explain why the intermediate layer, storing a generic string on
+>>>>> the c/r object hash, needs to be there.  The thing that is
+>>>>> not possible is to place the actual void *security or a struct
+>>>>> task_security_struct on the objhash.
+>>>>>   
+>>>>>       
+>>>>>           
+>>>> Right. Now why do you need a set of contexts?
+>>>>     
+>>>>         
+>>> Because for SELinux, for instance, when checkpointing a security
+>>> context for a task, we want to checkpoint the actual context,
+>>> the fscreate context, the sockcreate context, keycreate context,
+>>> and the task create (exec_create) context.
+>>>   
+>>>       
+>> My. That is quite a lot of contexts to keep track of.
+>>     
+>
+> Doesn't Smack also have at least one case where it supports multiple
+> distinct contexts for different purposes on a single object (e.g.
+> sockets)?
+>   
 
-Wing. But alas! my bird, for me!" In the porch with roses burning All
-across, she sitteth lonely. O, her soul is dark with dread! Round and
-round her slow wheel turning, Lady brow down-dropped serenely, Lady hand
-uplifted queenly, Pausing in the spinning only To rejoin the broken
-thread,-- Pausing only for the winding, With the carded silken binding
-Of the flax, the distaff-head. All along the branches creeping, To their
-leafy beds of sleeping Go the blue-birds and the brown; Blackbird
-stoppeth now his clamor, And the little yellowhammer Droppeth head in
-winglet down. Now the rocks rise bleak and barren Through the twilight,
-gray and still; In the marsh-land now the heron Clappeth close his horny
-bill. Death-watch now begins his drumming And the fire-fly, going,
-coming, Weaveth zigzag lines of light,-- Lines of zigzag,
-golden-threaded, Up the marshy valley, shaded O'er and o'er with vapors
-white. Now the lily, open-hearted, Of her dragon-fly deserted, Swinging
-on the wind so low, Gives herself, with trust audacious, To the wild
-warm wave that washes Through her fingers, soft and slow. O the eyes of
-Mona's mother! Dim they grow with tears unshed; For
+Smack does support associating labels with incoming and/or
+outgoing packets from a particular socket. I haven't looked
+carefully at how the checkpoint/restart scheme is handling
+sockets in general, so I couldn't say if its going to get the
+rest of it right, either. In any case, that's something that
+is strictly in the realm of privileged processes for which
+checkpoint/restart is going to be one hairy potato.
 
---------------080801030304080507070609
-Content-Type: image/jpeg;
- name="ideatum.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="ideatum.jpg"
+Processes that use this mechanism will be quite rare. The
+Smack port multiplexer (smackpolyport) that I'll be talking
+about in Portland and a small set of security enforcing
+applications should be about it.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAE1ARoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDTzRRSZ9KQhaMikx6mj6CgA7ZpaQdKMUAL
-RSUuPegAoo5ozQADoKTvSjoKO9ABRRRQAUGjNIaAFoowPSjA9KACg9KMD0pCBjpQAtIaXA9K
-Q4oAWgd6MD0oHSgBD1FLSDkk0uPWgAzR9aKKAAUUUnU0ALRRzRj3oAB0FFIBxS496ACucuv+
-Pqb/AH2/nXR81zl1zdTf75/nQB0WPWl/SiigA4FGaOgppNNIBc0maYWppeqsTcl3UAiod9G+
-iwXLH40VEsmOtS9elS1YaEHSjvSjoKTvSGLRR1ooAKTHSlzQe1ABzRmiigA/Gg0UGgAzSHnF
-LR6UAJzQKWkAoAF6fWlpqninUDYUfXims21SagZyepoET717c0ueARxmoFVmGcEfWrAGFA64
-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
---------------080801030304080507070609
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------080801030304080507070609--
