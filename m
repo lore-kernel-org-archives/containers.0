@@ -1,152 +1,64 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/3] c/r: [pty 2/2] support for pseudo terminals
-Date: Wed, 2 Sep 2009 09:48:37 -0500
-Message-ID: <20090902144837.GA15116@us.ibm.com>
-References: <1250642549-23656-1-git-send-email-orenl@librato.com>
-	<1250642549-23656-4-git-send-email-orenl@librato.com>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH 2/5] cr: checkpoint the active LSM and add RESTART_KEEP_LSM
+ flag
+Date: Wed, 02 Sep 2009 09:36:36 -0700
+Message-ID: <4A9E9F14.2010103@schaufler-ca.com>
+References: <20090828210041.GA27878@us.ibm.com> <20090830134809.GA14699@hallyn.com> <4A9ACBD4.4020804@schaufler-ca.com> <200909012229.48973.russell@coker.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="M9NhX3UHpAaciwkO"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1250642549-23656-4-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <200909012229.48973.russell@coker.com.au>
+Sender: linux-security-module-owner@vger.kernel.org
+To: russell@coker.com.au
+Cc: "Serge E. Hallyn" <serge@hallyn.com>, Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, "Eric W. Biederman" <ebiederm@xmission.com>, David Howells <dhowells@redhat.com>, Alexey Dobriyan <adobriyan@gmail.com>, Casey Schaufler <casey@schaufler-ca.com>
 List-Id: containers.vger.kernel.org
 
+Russell Coker wrote:
+> On Mon, 31 Aug 2009, Casey Schaufler <casey@schaufler-ca.com> wrote:
+>   
+>> I seem to be having some trouble presenting my point. It's not about
+>> the passwords. It's not about the firewall configuration. It's not
+>> even really about the SELinux policy. It's about the total security
+>> configuration of the system. This is a problem with checkpoint/restart
+>> in general and there isn't much we can do about reassigning user id
+>> and other bad things that can happen.
+>>
+>> If the admin decides that an action is acceptable because the SELinux
+>> policy prevents some other action it had better be the case that a
+>> process was never allowed to perform that "other action". If you allow
+>> restart across policy changes you can't be sure that the process has
+>> not performed such an "other action". Processes are not stateless.
+>>     
+>
+> Of course we potentially have the same issue when changing a boolean, and when 
+> loading a new policy on a running system.  In a realistic scenario, if you 
+> make a change that allows a process context to write to a public data store 
+> while at the same time denying read access to secret data then you also need 
+> to purge the contents of any files that the process may open for read/write.
+>
+> Similar problems can also occur using Unix permissions and certain 
+> combinations of chmod with setuid/setgid bits.  Of course most potential 
+> cases of triggering this issue with Unix permissions are extremely contrived 
+> and wouldn't be a likely attack scenario.  The best example I can think of 
+> with Unix permissions is access to sound devices.  If a system is configured 
+> to add the "audio" supplementary group to a user's session when they login at 
+> the console then they can keep a detached process running to maintain access 
+> to the audio devices (and anything else permitted to that group).
+>   
 
---M9NhX3UHpAaciwkO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Checkpoint/restart has traditionally been interesting in the
+mainframe and supercomputer space. These environments have very
+different security profiles from a user desktop. No one at the
+[.......] National Supercomputer Centre cares if you can save
+your rogue game as soon as you pick up the Amulet of Yendor and
+restart it if you get killed on the way up. These environments
+are concerned with leaking data between the groups that have
+funded the facility, which is why they are very often customers
+of advanced access control technologies. I don't know that I see
+a really good security story for C/R in the desktop space, and
+as Russell points out, there are plenty of opportunities to
+exploit the feature. This is of course well outside the scope of
+what goes on within an LSM, where the specific issues are more
+or less contained.
 
-All right, I'm not sure how to go about this - i want to have a conversation
-involving patches without making it seem like I want any of the patches
-pushed yet :)  To get this working on s390, I needed the two attached
-patches.  Then the testcase under git://git.sr71.net/~hallyn/cr_tests.git
-under cr_tests/pty/ passes with your code.
-
-I'd still like to get a more invasive approach working where we directly
-ask the pty code to create the pty with the right index.  I'm playing with
-it right now, but of course having some trouble figuring out what to do
-for the master end and how best to construct a filp to pass to
-the main pty_create function.  I'll take a few more stabs and send out
-what I have later (or announce defeat).
-
-There is certainly something to be said for the un-invasiveness of
-your approach (and that it works).
-
-In either case, we will need to figure out how to deal with devpts
-namespaces.  Perhaps we separately checkpoint a 'devpts_mnt'.  It
-just stores the mountpoint of the mount.  At restart, we don't
-recreate those, we just confirm that the mountpoints still exist.
-Then, each pty entry has a ref to its devpts mount, and we use the
-mountpoint to construct ${mountpoint}/ptmx and pass that to
-filp_open() or ptmx_create)( to create the pty entry.
-
--serge
-
---M9NhX3UHpAaciwkO
-Content-Type: text/x-diff; charset=us-ascii
-Content-Disposition: attachment; filename="0001-pty-cr-s390-define-CKPT_TTY_NCC.patch"
-
-From 552f3df7802a8833276a0aac69b92c1bce385dbf Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Tue, 1 Sep 2009 12:36:28 -0400
-Subject: [PATCH 1/2] pty cr: s390: define CKPT_TTY_NCC
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/include/asm/checkpoint_hdr.h |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
-
-diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
-index 1976355..609fc4c 100644
---- a/arch/s390/include/asm/checkpoint_hdr.h
-+++ b/arch/s390/include/asm/checkpoint_hdr.h
-@@ -90,6 +90,14 @@ struct ckpt_hdr_mm_context {
- #endif
- #endif
- 
-+#define CKPT_TTY_NCC  8
-+#ifdef __KERNEL__
-+#include <linux/tty.h>
-+#if CKPT_TTY_NCC != NCC
-+#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
-+#endif
-+#endif
-+
- struct ckpt_hdr_header_arch {
- 	struct ckpt_hdr h;
- };
--- 
-1.6.1
-
-
---M9NhX3UHpAaciwkO
-Content-Type: text/x-diff; charset=us-ascii
-Content-Disposition: attachment; filename="0002-cr-bugfixes-of-oren-s-code.patch"
-
-From 68b12cb69f2741052eba60658404e4eec221d112 Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Tue, 1 Sep 2009 21:34:12 -0400
-Subject: [PATCH 2/2] cr: bugfixes of oren's code
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- drivers/char/tty_io.c          |    6 +++++-
- include/linux/checkpoint_hdr.h |    2 +-
- 2 files changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
-index 9d98bb8..b8f8d79 100644
---- a/drivers/char/tty_io.c
-+++ b/drivers/char/tty_io.c
-@@ -2730,7 +2730,11 @@ static int checkpoint_tty_ldisc(struct ckpt_ctx *ctx, struct tty_struct *tty)
- 	h->column = tty->column;
- 	h->datalen = tty->read_cnt;
- 	h->canon_column = tty->canon_column;
--	h->canon_datalen = tty->canon_head - tty->read_tail;
-+	h->canon_datalen = tty->canon_head;
-+	if (tty->canon_head > tty->read_tail)
-+		h->canon_datalen -= tty->read_tail;
-+	else
-+		h->canon_datalen += N_TTY_BUF_SIZE - tty->read_tail;
- 	h->canon_data = tty->canon_data;
- 
- 	datalen = tty->read_cnt;
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 5febdc7..492b4d5 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -688,7 +688,7 @@ struct ckpt_hdr_ldisc_n_tty {
- 	struct ckpt_hdr h;
- 
- 	__u32 column;
--	__u32 datalen;
-+	__s32 datalen;
- 	__u32 canon_column;
- 	__u32 canon_datalen;
- 	__u32 canon_data;
--- 
-1.6.1
-
-
---M9NhX3UHpAaciwkO
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---M9NhX3UHpAaciwkO--
