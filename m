@@ -1,10 +1,14 @@
-From: Aalbers <guaranty-vVtjqHukPFOEVqv0pETR8A@public.gmane.org>
-Subject: ld than I am." "Wh
-Date: Wed, 02 Sep 2009 17:19:05 +0200
-Message-ID: <4A9E8AF4.3010408@roosberg.nl>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/3] c/r: [pty 2/2] support for pseudo terminals
+Date: Wed, 2 Sep 2009 09:48:37 -0500
+Message-ID: <20090902144837.GA15116@us.ibm.com>
+References: <1250642549-23656-1-git-send-email-orenl@librato.com>
+	<1250642549-23656-4-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------040709070509010708020909"
+Content-Type: multipart/mixed; boundary="M9NhX3UHpAaciwkO"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1250642549-23656-4-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,220 +18,128 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------040709070509010708020909
-Content-Type: text/plain; charset=ISO-8859-9; format=flowed
-Content-Transfer-Encoding: 7bit
 
-Hen either one of two things happens to you: Either he begins to think
-you are too small for him and he turns around and buys goods from some
-other sucker, y'understand, _oder_ he goes to work and throws away his
-money left and right on oitermobiles _oder_ fiddles, and sooner or later
-he busts up on you; and that's the way it goes." "You shouldn't worry
-yourself, Kleiman," Morris cried, turning around in his chair. "Felix
-Geigermann ain't going to fail just yet a while." "Me worry?" Kleiman
-retorted. "For my part, Felix Geigermann could fail to-morrow yet; he
-don't owe me one cent, nor never would. I ain't looking to sell no goods
-to fiddlers, Perlmutter. I am dealing only with merchants."
-"Furthermore," Morris went on, "if Felix Geigermann hears it you are
-making a break like this--that he's going to fail yet, and all sorts of
-crooks you are calling him, Kleiman--he would sue you in the courts for
-a hundred thousand dollars yet. From a big mouth a feller could get
-himself into a whole lot of trouble." Kleiman scrambled hastily to his
-feet and seized his hat. "What are you talking nonsense, Perlmutter?" he
-exclaimed. "I ain't said nothing out of the way about Geigermann. You
-are the one what's putting the words into my mouth already. Did you ever
-hear anything like it!--I am saying Geigermann is going to fail? An
-idee! I never said nothing of the kind. All I am saying is what is right
-here in the paper, black on white; and if you don't believe me you could
-read it for yourself." He handed the paper to Morris; and, as the latter
-commenced to read over the Geigermann parag
+--M9NhX3UHpAaciwkO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
---------------040709070509010708020909
-Content-Type: image/jpeg;
- name="trusties.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="trusties.jpg"
+All right, I'm not sure how to go about this - i want to have a conversation
+involving patches without making it seem like I want any of the patches
+pushed yet :)  To get this working on s390, I needed the two attached
+patches.  Then the testcase under git://git.sr71.net/~hallyn/cr_tests.git
+under cr_tests/pty/ passes with your code.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAEJAUUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDRxS0UlAC0lFLQAg6n60HqPrQOp+tB6j60
-ALSZ7DpSMe350wtTSJbH5ozURek31Vibk26lyDUG+nB6VhqRNSHHemq/Y0+pKTG4NH1JFOoo
-GNA46mlx7mkA4GOKXn0/KgAx7mkI4PJpcg0N90/SgAx7mkI4PJp314prMnI3flzSbQC49zRj
-3NJvX3/Kl3D3/Ki6HZhj3NGPc0vGOtJn05piEI4PJoPHc0HOOaXGKAEGcmlxQOppaAEpkrkH
-aOBUlMdFZ8nmgCEEnoC1SxowYE8CnbgOgpGfapY9AM0APPWikRt0at6jNFABS0UUAFIen40t
-Ien40AZus/8ALH/gX9KKNZ/5Y/8AAv6UUAadJRRigQUUUmfTmgYo6mhjgZ9OlIM5NRztiMc9
-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
---------------040709070509010708020909
+I'd still like to get a more invasive approach working where we directly
+ask the pty code to create the pty with the right index.  I'm playing with
+it right now, but of course having some trouble figuring out what to do
+for the master end and how best to construct a filp to pass to
+the main pty_create function.  I'll take a few more stabs and send out
+what I have later (or announce defeat).
+
+There is certainly something to be said for the un-invasiveness of
+your approach (and that it works).
+
+In either case, we will need to figure out how to deal with devpts
+namespaces.  Perhaps we separately checkpoint a 'devpts_mnt'.  It
+just stores the mountpoint of the mount.  At restart, we don't
+recreate those, we just confirm that the mountpoints still exist.
+Then, each pty entry has a ref to its devpts mount, and we use the
+mountpoint to construct ${mountpoint}/ptmx and pass that to
+filp_open() or ptmx_create)( to create the pty entry.
+
+-serge
+
+--M9NhX3UHpAaciwkO
+Content-Type: text/x-diff; charset=us-ascii
+Content-Disposition: attachment; filename="0001-pty-cr-s390-define-CKPT_TTY_NCC.patch"
+
+From 552f3df7802a8833276a0aac69b92c1bce385dbf Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 1 Sep 2009 12:36:28 -0400
+Subject: [PATCH 1/2] pty cr: s390: define CKPT_TTY_NCC
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/include/asm/checkpoint_hdr.h |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index 1976355..609fc4c 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -90,6 +90,14 @@ struct ckpt_hdr_mm_context {
+ #endif
+ #endif
+ 
++#define CKPT_TTY_NCC  8
++#ifdef __KERNEL__
++#include <linux/tty.h>
++#if CKPT_TTY_NCC != NCC
++#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
++#endif
++#endif
++
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ };
+-- 
+1.6.1
+
+
+--M9NhX3UHpAaciwkO
+Content-Type: text/x-diff; charset=us-ascii
+Content-Disposition: attachment; filename="0002-cr-bugfixes-of-oren-s-code.patch"
+
+From 68b12cb69f2741052eba60658404e4eec221d112 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 1 Sep 2009 21:34:12 -0400
+Subject: [PATCH 2/2] cr: bugfixes of oren's code
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ drivers/char/tty_io.c          |    6 +++++-
+ include/linux/checkpoint_hdr.h |    2 +-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 9d98bb8..b8f8d79 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -2730,7 +2730,11 @@ static int checkpoint_tty_ldisc(struct ckpt_ctx *ctx, struct tty_struct *tty)
+ 	h->column = tty->column;
+ 	h->datalen = tty->read_cnt;
+ 	h->canon_column = tty->canon_column;
+-	h->canon_datalen = tty->canon_head - tty->read_tail;
++	h->canon_datalen = tty->canon_head;
++	if (tty->canon_head > tty->read_tail)
++		h->canon_datalen -= tty->read_tail;
++	else
++		h->canon_datalen += N_TTY_BUF_SIZE - tty->read_tail;
+ 	h->canon_data = tty->canon_data;
+ 
+ 	datalen = tty->read_cnt;
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 5febdc7..492b4d5 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -688,7 +688,7 @@ struct ckpt_hdr_ldisc_n_tty {
+ 	struct ckpt_hdr h;
+ 
+ 	__u32 column;
+-	__u32 datalen;
++	__s32 datalen;
+ 	__u32 canon_column;
+ 	__u32 canon_datalen;
+ 	__u32 canon_data;
+-- 
+1.6.1
+
+
+--M9NhX3UHpAaciwkO
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -237,4 +149,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------040709070509010708020909--
+--M9NhX3UHpAaciwkO--
