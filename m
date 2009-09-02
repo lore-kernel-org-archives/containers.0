@@ -1,10 +1,16 @@
-From: Gaxiola Braithwaite <undedicated-avFY/Q+4q5E@public.gmane.org>
-Subject: a rule the public recognizes
-Date: Wed, 02 Sep 2009 11:47:51 +0300
-Message-ID: <4A9E3076.3030808@aens.nl>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
+	track async bios.
+Date: Wed, 02 Sep 2009 18:52:51 +0900 (JST)
+Message-ID: <20090902.185251.193693849.ryov__13045.294621452$1251885357$gmane$org@valinux.co.jp>
+References: <e98e18940908311651s26de5b70ye6f4a82402956309@mail.gmail.com>
+	<20090901.160004.226800357.ryov@valinux.co.jp>
+	<20090901141142.GA13709@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------060806060202090903080303"
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090901141142.GA13709-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,227 +20,141 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------060806060202090903080303
-Content-Type: text/plain; charset=ISO-8859-11; format=flowed
-Content-Transfer-Encoding: 7bit
+Hi Vivek,
 
- journalist in charge of a woman's page is paid as a rule from twenty to
-thirty-five or forty dollars a week. Few women journalists are paid
-larger sums. A number of other positions are held by women in connection
-with weekly newspapers, magazines and publishing offices. Salaries vary
-all the way from ten or twelve to thirty or forty dollars a week. The
-average salary for the woman journalist who has proved her ability is in
-the neighbourhood of twenty-five dollars a week. Many newspapers and
-some p
+> > > > - The primary use case of tracking async context seems be that if a
+> > > > =A0process T1 in group G1 mmaps a big file and then another process=
+ T2 in
+> > > > =A0group G2, asks for memory and triggers reclaim and generates wri=
+tes of
+> > > > =A0the file pages mapped by T1, then these writes should not be cha=
+rged to
+> > > > =A0T2, hence blkio_cgroup pages.
+> > > >
+> > > > =A0But the flip side of this might be that group G2 is a low weight=
+ group
+> > > > =A0and probably too busy also right now, which will delay the write=
+ out
+> > > > =A0and possibly T2 will wait longer for memory to be allocated.
+> > =
 
---------------060806060202090903080303
-Content-Type: image/jpeg;
- name="expansively.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="expansively.jpg"
+> > In order to avoid this wait, dm-ioband issues IO which has a page with
+> > PG_Reclaim as early as possible.
+> > =
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAFOAUUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSOADSLnbSkYBoX7opgNxx+dPximnp+Bp1
-ABRRSZHrSAP4jQOlGee9A6UxC0UlLSAKQgZFLSHqKYw5+tGR34paQ9RQIWmv0x60u0fSkbt9
-aAHUUmaWkMT+IUtNxz3/ADpcfX86YC0UmPr+dGPr+dIBaKTH1/OjA9/zoAQdRSnpSYz6j8aC
-OKBDh0oopM+goGA6ClzimjoP6Uox2piDJ7CkI5GTTqQ9RQMXGKQdKWkHSgAHShvumgdKG+6a
-AFooopAFFFFAGXrQ/wBT/wAC/pRRrX/LH/gX9KKANM9DSKflFOpAAOlADe3507HvSHp+Bp1M
-BMCloopAJ/EaWk/iNL2oAKKKKACkPUUtIeooAWkpBnJ5pcnuKAsGaRu31p2aa3b60xC9etGP
-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
---------------060806060202090903080303
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+> =
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------060806060202090903080303--
+> So in above case IO is still charged to G2 but you keep a track if page is
+> PG_Reclaim then releae the this bio before other bios queued up in the
+> group?
+
+Yes, the bio with PG_Reclaim page is given priority over the other bios.
+
+> > > > - At one point of time Andrew mentioned that buffered writes are ge=
+nerally a
+> > > > =A0big problem and one needs to map these to owner's group. Though =
+I am not
+> > > > =A0very sure what specific problem he was referring to. Can we attr=
+ibute
+> > > > =A0buffered writes to pdflush threads and move all pdflush threads =
+in a
+> > > > =A0cgroup to limit system wide write out activity?
+> > =
+
+> > I think that buffered writes also should be controlled per cgroup as
+> > well as synchronous writes.
+> > =
+
+> =
+
+> But it is hard to achieve fairness for buffered writes becase we don't
+> create complete parallel IO paths and not necessarily higher weight
+> process dispatches more buffered writes to IO scheduler. (Due to page
+> cache buffered write logic).
+> =
+
+> So in some cases we might see buffered write fairness and in other cases
+> not. For example, run two dd processes in two groups doing buffered writes
+> and it is hard to achieve fairness between these.
+> =
+
+> That's why the idea that if we can't ensure Buffered write vs Buffered
+> write fairness in all the cases, then does it make sense to attribute
+> buffered writes to pdflush and put pdflush threads into a separate group
+> to limit system wide write out activity. =
+
+
+If all buffered writes are treated as system wide activities, it does
+not mean that bandwidth is being controlled. It is true that pdflush
+doesn't do I/O according to weight, but bandwidth (including for
+bufferd writes) should be reserved for each cgroup.
+
+> > > > - Somebody also gave an example where there is a memory hogging pro=
+cess and
+> > > > =A0possibly pushes out some processes to swap. It does not sound fa=
+ir to
+> > > > =A0charge those proccess for that swap writeout. These processes ne=
+ver
+> > > > =A0requested swap IO.
+> > =
+
+> > I think that swap writeouts should be charged to the memory hogging
+> > process, because the process consumes more resources and it should get
+> > a penalty.
+> > =
+
+> =
+
+> A process requesting memory gets IO penalty? IMHO, swapping is a kernel =
+
+> mechanism and kernel's way of providing extended RAM. If we want to solve
+> the issue of memory hogging by a process then right way to solve is to use
+> memory controller and not by charging the process for IO activity.
+> Instead, proabably a more suitable way is to charge swap activity to root
+> group (where by default all the kernel related activity goes).   =
+
+
+No. In the current blkio-cgroup, a process which uses a large amount
+of memory gets penalty, not a memory requester.
+
+As you wrote, using both io-controller and memory controller are
+required to prevent swap-out caused by memory consumption on another
+cgroup.
+
+> > > > - If there are multiple buffered writers in the system, then those =
+writers
+> > > > =A0can also be forced to writeout some pages to disk before they are
+> > > > =A0allowed to dirty more pages. As per the page cache design, any w=
+riter
+> > > > =A0can pick any inode and start writing out pages. So it can happen=
+ a
+> > > > =A0weight group task is writting out pages dirtied by a lower weigh=
+t group
+> > > > =A0task. If, async bio is mapped to owner's group, it might happen =
+that
+> > > > =A0higher weight group task might be made to sleep on lower weight =
+group
+> > > > =A0task because request descriptors are all consumed up.
+> > =
+
+> > As mentioned above, in dm-ioband, the bio is charged to the page owner
+> > and issued immediately.
+> =
+
+> But you are doing it only for selected pages and not for all buffered
+> writes?
+
+I'm sorry, I wrote wrong on the previous mail, IO for writing out
+page-cache pages is not issued immediately, it is throttled by
+dm-ioband.
+
+Anyway, there is a case where a higher weight group task is made
+to sleep, but if we reserve the memory for each cgroup by memory
+controller in advance, we can avoid the task put to sleep.
+
+Thanks,
+Ryo Tsuruta
