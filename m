@@ -1,11 +1,16 @@
-From: "Jonah doorstep" <thunderbirdsorptrzkia-o4pdN5UO/dM@public.gmane.org>
-Subject: RE: Yes I have dental and medical lists
-Date: Wed, 2 Sep 2009 03:27:51 -0700
-Message-ID: <200909021027.n82ARmTx020730@smtp1.linux-foundation.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [Test Result] I/O bandwidth Control by dm-ioband -
+	partition-based environment
+Date: Wed, 02 Sep 2009 20:18:40 +0900 (JST)
+Message-ID: <20090902.201840.226792198.ryov__14950.9387244054$1251890397$gmane$org@valinux.co.jp>
+References: <2891419e0908280324v32e7ba3fq88eb754052cbf094@mail.gmail.com>
+	<20090831.111233.226777940.ryov@valinux.co.jp>
+	<2891419e0908310308w31c46180nce72d271cd947c98@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <2891419e0908310308w31c46180nce72d271cd947c98-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,42 +20,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: thierry.sautier-rmrEuHu2utxWj0EZb7rXcA@public.gmane.org
-Cc: christlh-Kx4bGX/NEpX2fBVCVOL8/A@public.gmane.org, kmugu-B9Gk7ihICwTQT0dZR+AlfA@public.gmane.org, mshami-s7p20SfEDVaVc3sceRu5cw@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi Dong-Jae,
 
+Dong-Jae Kang <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> Hi Ryo
+> Sorry for late reply.
+> 
+> Mr Lee and I tested total bandwidth as you requested and the result is like
+> attached file.
 
-Licensed Medical Doctors in the US 
+Thank you for your work.
 
-788,442 in total <> 17,061 emails
+> I know file attaching is not proper in mailing list,
+> but I selected it for efficient and easy communication. sorry :)
+> 
+> And Buffed-Device case can be some strange,
+> it has too much variation in total bandwidth, So you had better to see as
+> only reference.
+> The rests didn't have big fluctuation such like Buffered-Device case.
+> 
+> if you have another request about the result,
+> reply to me about that.
 
-Featuring coverage for more than 30 specialties like Internal Medicine, Family Practice, Opthalmology, Anesthesiologists, Cardiologists and more
+Could you try the test on the weight policy with increaing token to
+1280? I guess that the throughput difference between without and with
+dm-ioband is caused since the token is a little small against the disk
+speed.
 
-Sort by over a dozen different fields
+> Additionally, I will try to inform the test results in cgroup environment of
+> you in case by case.
+> What do you think about it?
 
-Price for new customers -  $395
+I would like to know the reason for the diffirence between debug patch
+and iostat in the prvious test you did (total_bandwidth_result.xls).
 
-
-=== We will give you the lists below at no extra charge if you order this week ===
-
-Pharmaceutical Companies in the United States
-Names and email addresses of 47,000 employees in high-ranking positions
-
-American Hospitals
-Full data for all the major positions in more than 7k facilities
-
-Database of American Dentists
-More than half a million listings [worth $499 alone!]
-
-List of US Chiropractors
-100k Chiropractors offices with full contact data including email, postal address, phone and fax
-
-Email us at:      Lenora-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
-
-  
-
-good until September 5 
-
-
-Send us an email to exit-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org we will discontinue from the list
+Thanks,
+Ryo Tsuruta
