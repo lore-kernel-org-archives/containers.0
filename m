@@ -1,15 +1,10 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [lxc-devel] LXC quota support
-Date: Thu, 03 Sep 2009 10:49:36 +0200
-Message-ID: <4A9F8320.6090001@free.fr>
-References: <ac1c4bf20909010930q5721c9bas2ea3722e94657820@mail.gmail.com>
-	<4A9D68D1.5030807@free.fr>
-	<d95d44a20909021953x7779a2dfpcc38e5915ae5515b@mail.gmail.com>
+From: Burgener <advantaging-T3zhh/bG/lmtG0bUXCXiUA@public.gmane.org>
+Subject: The child Charlie. He was willing, when in the house, to do w
+Date: Thu, 03 Sep 2009 11:13:31 +0200
+Message-ID: <4A9F871D.3010202@alihatami.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------030104090407090804020902"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <d95d44a20909021953x7779a2dfpcc38e5915ae5515b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,60 +14,205 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-anqin wrote:
-> On Wed, Sep 2, 2009 at 2:32 AM, Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
->> Krzysztof Taraszka wrote:
->>> Hello,
->>>
->>> I am looking for quota support for LXC containers. For example, I would
->>> like
->>> to have two containers.  One of them may have 20GB, second 50GB.
->>> I found this one patch:
->>>
->>> https://lists.linux-foundation.org/pipermail/containers/2009-February/015807.htmland
->>> I have a question. Does there is another implemented method for have
->>> disk quota for container and his cgrop ? How about rootfs available disk
->>> space information ? If no, is there any ideas how to and when the disk
->>> quota
->>> will be implemented?
->> Anqui did a first try with this patch. The feature was positively received
->> but not in this form. I don't know what is the status of this work, but
->> maybe Anqui can give an answer :) - Cc'ed.
->>
->> Anqui ? Did you tried to implement quotas with the directory hierarchy level
->> as suggested Paul ?
->>
-> 
-> Yes, I am still in this work. I have attached a tag to directory
-> hierarchy which
-> can account the space consumption of each sub-directories and its files for
-> different task groups. The way indeed can calculate the total disk consumpton
-> of each group and limit its quota, however other trouble occurs when facing
-> access control and security issue. I am dealing with the issue.
+This is a multi-part message in MIME format.
+--------------030104090407090804020902
+Content-Type: text/plain; charset=ISO-8859-3; format=flowed
+Content-Transfer-Encoding: 7bit
 
+ by Mr. Payson to take the team and go to tow
 
-Excellent !
+--------------030104090407090804020902
+Content-Type: image/jpeg;
+ name="teloic.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="teloic.jpg"
 
-If you have a patchset, even not working nor tested or not compiled, I 
-will be happy to review it.
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAE4AVkDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooopjCiiigApB940uaTNAri0Um6jcKAu
+LSHqKXr0pD1FAxaKKKACiiigAooooAR+lLTX6U6gQUUUUDCkbt9aWkP3hQDDvS0neloAKKKK
+ACiiigAooooATuKWk70tACHpS0h6UtABRRRQAUUUUAFFFBoAQUtFFABXM101czSA6aiiimAU
+hP5UE9qYzUEtji1MLUwvTC1VYhyJd9JvqEv7GkLHPtTsTcnEmKlRw49xVPdT7dj5wHrSaKUt
+S3RRRUmoUUUhIVSTQA7p34pu5f7wqIksctzRWfOOxIWUjGRmlBB6EH8ajopc7CxLRUYJHQ04
+P6j8qpSQWHUh+8KXryOlHGR61YhO9LSd6WgAooooAKKKKACigEHuKO2aAE70tBoyKAEPSlpp
+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
+B//Z
+--------------030104090407090804020902
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
->> Krzysztof, one solution to restrict disk usage to a container can be to
->> create an disk image of 20GB, mount it on a directory, install the rootfs on
->> it and use this directory as the rootfs for the container.
->>
-> 
-> This is another way to achieve same functionalities, by 'dd'ing image file
-> with given quota and mounting as rootfs of task group. However, it is not
-> easy to change the limited quota dynamically. This is not flexible enough
-> for performance control (in green computing) and resource enforcement
-> (in cloud computing).
-
-Yep, agreed.
-
-Thanks Anquin
-
-   -- Daniel
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------030104090407090804020902--
