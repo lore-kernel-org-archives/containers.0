@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 3/3] [RFC] Track socket buffer owners
-Date: Wed, 02 Sep 2009 21:52:24 -0400
-Message-ID: <4A9F2158.4010405@librato.com>
-References: <1251915760-20118-1-git-send-email-danms@us.ibm.com>
-	<1251915760-20118-4-git-send-email-danms@us.ibm.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
+	track async bios.
+Date: Thu, 03 Sep 2009 11:24:23 +0900 (JST)
+Message-ID: <20090903.112423.226782505.ryov__25488.1109613509$1251944706$gmane$org@valinux.co.jp>
+References: <20090901141142.GA13709@redhat.com>
+	<20090902.185251.193693849.ryov@valinux.co.jp>
+	<20090902135821.GB5012@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1251915760-20118-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090902135821.GB5012-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,209 +20,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi Vivek,
 
+Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > > > > > - Somebody also gave an example where there is a memory hogging=
+ process and
+> > > > > > =A0possibly pushes out some processes to swap. It does not soun=
+d fair to
+> > > > > > =A0charge those proccess for that swap writeout. These processe=
+s never
+> > > > > > =A0requested swap IO.
+> > > > =
 
-Dan Smith wrote:
-> This patch is a superset of the previous attempt to store socket buffers
-> with their owners.  It defers the writing and reading of the socket buffers
-> until after the end of the file phase to avoid a recursive nose-dive of
-> checkpointing socket owners.
-> 
-> This also moves the join logic to the deferqueue as well, since that too
-> can lead us down a deep hole.  The buffer restore logic may perform a join
-> if it decides that the join is inevitable (but not yet performed) and
-> necessary.
-> 
-> Note that I've been staring at this for too long, so I'm sending it as an
-> RFC with hopes that it's not too much of a mess.
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > > > I think that swap writeouts should be charged to the memory hogging
+> > > > process, because the process consumes more resources and it should =
+get
+> > > > a penalty.
+> > > > =
 
-Nice, so this solves the chicken-and-egg of socket/peer and the recursion
-of dgram socket "chains".
+> > > =
 
-IIUC, sockets discovered while writing the receive buffers (being the
-source of an skb) are checkpointed on the fly. In particular, they are
-then added to the defer queue.
+> > > A process requesting memory gets IO penalty? IMHO, swapping is a kern=
+el =
 
-IOW, they are added to a list that is being traversed (executing the
-deferred tasks). I think it's OK: deferqueue_add() uses list_add_tail()
-and deferqueue_run user() uses list_for_each_entry_safe().
+> > > mechanism and kernel's way of providing extended RAM. If we want to s=
+olve
+> > > the issue of memory hogging by a process then right way to solve is t=
+o use
+> > > memory controller and not by charging the process for IO activity.
+> > > Instead, proabably a more suitable way is to charge swap activity to =
+root
+> > > group (where by default all the kernel related activity goes).   =
 
-This probably deserves a comment ?
+> > =
 
-[...]
+> > No. In the current blkio-cgroup, a process which uses a large amount
+> > of memory gets penalty, not a memory requester.
+> > =
 
->  
-> +struct ckpt_hdr_socket_buffer {
-> +	struct ckpt_hdr h;
-> +	__s32 src_objref;
-> +	__s32 dst_objref;
-> +};
+> =
 
-Super nit: perhaps use 'sk_objref' for socket, and 'peer_objref' for
-peer. The latter won't be used in inet sockets. Also, while effectively
-a no-op, dst_objref is "source" for send buffers :p
+> At ioband level you just get to see bio and page. How do you decide wheter
+> this bio is being issued by a process which is a memory hog?
+> =
 
-[...]
+> In fact requester of memory could be anybody. It could be memory hog or a
+> different process. So are you saying that you got a mechanism where you =
 
- > +int sock_deferred_write_buffers(void *data)
-> +{
-> +	struct dq_buffers *dq = (struct dq_buffers *)data;
-> +	struct ckpt_ctx *ctx = dq->ctx;
-> +	int ret;
-> +	int dst_objref;
-> +
-> +	dst_objref = ckpt_obj_lookup(ctx, dq->sk, CKPT_OBJ_SOCK);
-> +	if (dst_objref < 0) {
-> +		ckpt_write_err(ctx,
-> +			       "Unable to get objref of owner socket: %i\n",
-> +			       dst_objref);
-> +		return dst_objref;
-> +	}
-> +
-> +	ret = sock_write_buffers(ctx, &dq->sk->sk_receive_queue, dst_objref);
-> +	ckpt_debug("write recv buffers: %i\n", ret);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret = sock_write_buffers(ctx, &dq->sk->sk_write_queue, dst_objref);
-								^^^^^^^ :p
+> can detect that a process is memory hog and charge swap activity to it.
+> IOW, if there are two processes A and B and assume A is the memory hog and
+> then B requests for memory which triggers lot of swap IO, then you can
+> charge all that IO to memory hog A?
 
-> +	ckpt_debug("write send buffers: %i\n", ret);
-> +
-> +	return ret;
-> +}
-> +
-> +int sock_defer_write_buffers(struct ckpt_ctx *ctx, struct sock *sk)
-> +{
-> +	struct dq_buffers dq;
-> +
-> +	dq.ctx = ctx;
-> +	dq.sk = sk;
-> +
-> +	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
-> +			      sock_deferred_write_buffers,
-> +			      sock_deferred_write_buffers);
+When an annoymou page is allocated, blkio-cgroup sets an ID to the
+page. And then when the page is going to swap out, dm-ioband can know
+who the owner of the page is by retrieving ID from the page.
 
-The dtor should be NULL ?
+In the above case, since the pages of the process A are swapped-out, =
 
-[...]
+dm-ioband charges swap IO to the process A.
 
- >  static int sock_restore_flags(struct socket *sock,
-> -                             struct ckpt_socket *h)
-> +                             struct ckpt_hdr_socket *h)
->  {
->         int ret;
->         int i;
-> @@ -309,6 +376,9 @@ static int sock_restore_flags(struct socket *sock,
->                 return -ENOSYS;
->         }
->  
-> +       if (test_and_clear_bit(SOCK_DEAD, &sk_flags))
-> +	       sock_flag(sock->sk, SOCK_DEAD);
-> +
+> Can you please point me to the relevant code in dm-ioband?
+> =
 
-I think this snippet belongs to the 1st patch.
+> IMHO, to keep things simple, all swapping activity should be charged to
+> root group and be considered as kernel activity and user space not be
+> charged for that.
 
-[...]
-
-> +struct dq_join {
-> +	struct ckpt_ctx *ctx;
-> +	int src_ref;
-> +	int dst_ref;
-> +};
-> +
-> +struct dq_buffers {
-> +	struct ckpt_ctx *ctx;
-> +	int sk_ref; /* objref of the socket these buffers belong to */
-> +};
-
-Another nit:  s/ref/objref/  (consistency...)
-
-[...]
-
-> +static int unix_defer_join(struct ckpt_ctx *ctx,
-> +			   int src_ref,
-> +			   int dst_ref)
-> +{
-> +	struct dq_join dq;
-> +
-> +	dq.ctx = ctx;
-> +	dq.src_ref = src_ref;
-> +	dq.dst_ref = dst_ref;
-> +
-> +	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
-> +			      unix_deferred_join, unix_deferred_join);
-
-Here, too, dtor should be NULL ?
-
-[...]
-
-> +
-> +	/* If we don't have a destination or a peer and we know the
-> +	 * destination of this skb, then we must need to join with our
-> +	 * peer
-> +	 */
-> +	if (!addrlen && !unix_sk(sk)->peer && (h->dst_objref != 0)) {
-
-IIUC, h->dst_objref should always be > 0, no ?
-
-[...]
-
-> +static int unix_deferred_restore_buffers(void *data)
-> +{
-> +	struct dq_buffers *dq = (struct dq_buffers *)data;
-> +	struct ckpt_ctx *ctx = dq->ctx;
-> +	struct sock *sk;
-> +	struct sockaddr *addr = NULL;
-> +	unsigned int addrlen = 0;
-> +	int ret;
-> +
-> +	sk = ckpt_obj_fetch(ctx, dq->sk_ref, CKPT_OBJ_SOCK);
-> +	if (!sk) {
-> +		ckpt_debug("Missing sock ref %i\n", dq->sk_ref);
-> +		return -EINVAL;
-> +	}
-> +
-> +	if ((sk->sk_type == SOCK_DGRAM) && (unix_sk(sk)->addr != NULL)) {
-> +		addr = (struct sockaddr *)&unix_sk(sk)->addr->name;
-> +		addrlen = unix_sk(sk)->addr->len;
-> +	}
-> +
-> +	ret = unix_read_buffers(ctx, addr, addrlen);
-> +	ckpt_debug("read recv buffers: %i\n", ret);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret = unix_read_buffers(ctx, addr, addrlen);
-> +	ckpt_debug("read send buffers: %i\n", ret);
-> +	if (ret != 0)
-> +		ret = -EINVAL; /* No send buffers for UNIX sockets */
-
-Change to "if (ret > 0)", otherwise you may mask out a real error.
-
-> +
-> +	return ret;
-> +}
-> +
-> +static int unix_defer_restore_buffers(struct ckpt_ctx *ctx, int sk_ref)
-> +{
-> +	struct dq_buffers dq;
-> +
-> +	dq.ctx = ctx;
-> +	dq.sk_ref = sk_ref;
-> +
-> +	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
-> +			      unix_deferred_restore_buffers,
-> +			      unix_deferred_restore_buffers);
-
-... dtor should be NULL.
-
-[...]
-
-Oren.
+Thanks,
+Ryo Tsuruta
