@@ -1,18 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
-	track async bios.
-Date: Wed, 2 Sep 2009 22:40:14 -0400
-Message-ID: <20090903024014.GA8644__48831.9142409184$1251945798$gmane$org@redhat.com>
-References: <20090901141142.GA13709@redhat.com>
-	<20090902.185251.193693849.ryov@valinux.co.jp>
-	<20090902135821.GB5012@redhat.com>
-	<20090903.112423.226782505.ryov@valinux.co.jp>
+From: anqin <anqin.qin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [lxc-devel] LXC quota support
+Date: Thu, 3 Sep 2009 10:53:15 +0800
+Message-ID: <d95d44a20909021953x7779a2dfpcc38e5915ae5515b@mail.gmail.com>
+References: <ac1c4bf20909010930q5721c9bas2ea3722e94657820@mail.gmail.com>
+	<4A9D68D1.5030807@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090903.112423.226782505.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <4A9D68D1.5030807-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,97 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 03, 2009 at 11:24:23AM +0900, Ryo Tsuruta wrote:
-> Hi Vivek,
-> =
+On Wed, Sep 2, 2009 at 2:32 AM, Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org> wrot=
+e:
+> Krzysztof Taraszka wrote:
+>>
+>> Hello,
+>>
+>> I am looking for quota support for LXC containers. For example, I would
+>> like
+>> to have two containers. =A0One of them may have 20GB, second 50GB.
+>> I found this one patch:
+>>
+>> https://lists.linux-foundation.org/pipermail/containers/2009-February/01=
+5807.htmland
+>> I have a question. Does there is another implemented method for have
+>> disk quota for container and his cgrop ? How about rootfs available disk
+>> space information ? If no, is there any ideas how to and when the disk
+>> quota
+>> will be implemented?
+>
+> Anqui did a first try with this patch. The feature was positively received
+> but not in this form. I don't know what is the status of this work, but
+> maybe Anqui can give an answer :) - Cc'ed.
+>
+> Anqui ? Did you tried to implement quotas with the directory hierarchy le=
+vel
+> as suggested Paul ?
+>
 
-> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > > > > > > - Somebody also gave an example where there is a memory hoggi=
-ng process and
-> > > > > > > =A0possibly pushes out some processes to swap. It does not so=
-und fair to
-> > > > > > > =A0charge those proccess for that swap writeout. These proces=
-ses never
-> > > > > > > =A0requested swap IO.
-> > > > > =
-
-> > > > > I think that swap writeouts should be charged to the memory hoggi=
-ng
-> > > > > process, because the process consumes more resources and it shoul=
-d get
-> > > > > a penalty.
-> > > > > =
-
-> > > > =
-
-> > > > A process requesting memory gets IO penalty? IMHO, swapping is a ke=
-rnel =
-
-> > > > mechanism and kernel's way of providing extended RAM. If we want to=
- solve
-> > > > the issue of memory hogging by a process then right way to solve is=
- to use
-> > > > memory controller and not by charging the process for IO activity.
-> > > > Instead, proabably a more suitable way is to charge swap activity t=
-o root
-> > > > group (where by default all the kernel related activity goes).   =
-
-> > > =
-
-> > > No. In the current blkio-cgroup, a process which uses a large amount
-> > > of memory gets penalty, not a memory requester.
-> > > =
-
-> > =
-
-> > At ioband level you just get to see bio and page. How do you decide whe=
-ter
-> > this bio is being issued by a process which is a memory hog?
-> > =
-
-> > In fact requester of memory could be anybody. It could be memory hog or=
- a
-> > different process. So are you saying that you got a mechanism where you =
-
-> > can detect that a process is memory hog and charge swap activity to it.
-> > IOW, if there are two processes A and B and assume A is the memory hog =
-and
-> > then B requests for memory which triggers lot of swap IO, then you can
-> > charge all that IO to memory hog A?
-> =
-
-> When an annoymou page is allocated, blkio-cgroup sets an ID to the
-> page. And then when the page is going to swap out, dm-ioband can know
-> who the owner of the page is by retrieving ID from the page.
-> =
-
-> In the above case, since the pages of the process A are swapped-out, =
-
-> dm-ioband charges swap IO to the process A.
-> =
+Yes, I am still in this work. I have attached a tag to directory
+hierarchy which
+can account the space consumption of each sub-directories and its files for
+different task groups. The way indeed can calculate the total disk consumpt=
+on
+of each group and limit its quota, however other trouble occurs when facing
+access control and security issue. I am dealing with the issue.
 
 
-But this does not mean that in all cases memory hog is being charged for
-swap IO, as you have said. So if a process A has done some anonymous page
-allocations and later a memory hog B comes in and forces swap out of A, =
+> Krzysztof, one solution to restrict disk usage to a container can be to
+> create an disk image of 20GB, mount it on a directory, install the rootfs=
+ on
+> it and use this directory as the rootfs for the container.
+>
 
-you will charge A for swap activity which does not seem fair as B is
-memory hog here?
+This is another way to achieve same functionalities, by 'dd'ing image file
+with given quota and mounting as rootfs of task group. However, it is not
+easy to change the limited quota dynamically. This is not flexible enough
+for performance control (in green computing) and resource enforcement
+(in cloud computing).
 
-Thanks
-Vivek
 
-> > Can you please point me to the relevant code in dm-ioband?
-> > =
 
-> > IMHO, to keep things simple, all swapping activity should be charged to
-> > root group and be considered as kernel activity and user space not be
-> > charged for that.
-> =
 
-> Thanks,
-> Ryo Tsuruta
+
+Best,
+
+Anqin
