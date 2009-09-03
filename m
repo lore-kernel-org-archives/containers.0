@@ -1,14 +1,16 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: a room for blkio-cgroup in struct page_cgroup
-Date: Thu, 03 Sep 2009 14:09:32 +0900 (JST)
-Message-ID: <20090903.140932.189713001.ryov__22062.6912582249$1251954719$gmane$org@valinux.co.jp>
-References: <20090902.205137.71100180.ryov@valinux.co.jp>
-	<ff13736137802f78cf492d13c43c1af1.squirrel@webmail-b.css.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] Make sockets proper objhash objects and use
+	checkpoint_obj() on them (v2)
+Date: Thu, 3 Sep 2009 00:40:58 -0500
+Message-ID: <20090903054058.GA7189@us.ibm.com>
+References: <1251915760-20118-1-git-send-email-danms@us.ibm.com>
+	<1251915760-20118-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ff13736137802f78cf492d13c43c1af1.squirrel-n3SY6/QrmYVJe+uFzlzAcYO9/linGGC/AL8bYrjMMd8@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1251915760-20118-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +20,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Kamezawa-san,
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> +static int do_sock_checkpoint(struct ckpt_ctx *ctx, struct sock *sk)
+> +{
+> +	struct socket *sock;
+> +	int ret;
+> +
+> +	if (sk->sk_socket)
+> +		return __do_sock_checkpoint(ctx, sk);
+> +
+> +	/* Temporarily adopt this orphan socket */
+> +	ret = sock_create(sk->sk_family, sk->sk_type, 0, &sock);
+> +	if (ret < 0)
+> +		return ret;
+> +	sock_graft(sk, sock);
+> +
+> +	ret = __do_sock_checkpoint(ctx, sk);
 
-"KAMEZAWA Hiroyuki" <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> Ryo Tsuruta wrote:
-> > Hi Kamezawa-san,
-> >
-> > As you wrote before (http://lkml.org/lkml/2009/7/22/65)
-> >> To be honest, what I expected in these days for people of blockio
-> >> cgroup is like following for getting room for themselves.
-> > <<snip>>
-> >> --- mmotm-2.6.31-Jul16.orig/include/linux/page_cgroup.h
-> >> +++ mmotm-2.6.31-Jul16/include/linux/page_cgroup.h
-> >> @@ -13,7 +13,7 @@
-> >>  struct page_cgroup {
-> >>       unsigned long flags;
-> >>       struct mem_cgroup *mem_cgroup;
-> >> -     struct page *page;
-> >> +     /* block io tracking will use extra unsigned long bytes */
-> >>       struct list_head lru;       /* per cgroup LRU list */
-> >> };
-> >
-> > Have you already added a room for blkio_cgroup in struct page_cgroup?
-> No.
-> 
-> > If not, I would like you to apply the above change to mmotm.
-> >
-> Plz wait until October. We're deadly busy and some amount of more important
-> patches are piled up in front of us. I have no objections if you add
-> a pointer or id  because I know I can reduce 8(4)bytes later.
-> Just add (a small) member for a while and ignore page_cgroup's size.
-> I'll fix later.
+I'm sure I sound like an idiot, but... at restore, a socket will
+be created for sk now.  Is that a problem?  I don't see where
+sk_free() will cause that sock to be freed, and you are not
+attaching it do a file whose close would cause it to be released...
 
-Thank you very much, but I've already added unsigned long member in the
-last posted patch...
-
-> > The latest blkio-cgroup has reflected the comments you pointed out.
-> > I would also like you to give me any comments on it and consider
-> > merging blkio-cgroup to mmotm.
-> >
-> BTW, do you all have cosensus about implementation ?
-
-Not yet, it is under discussion now.
-
-Thanks,
-Ryo Tsuruta
+-serge
