@@ -1,8 +1,8 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/3] Make sockets proper objhash objects and use
 	checkpoint_obj() on them (v2)
-Date: Thu, 3 Sep 2009 10:46:00 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0909031036460.10571@takamine.ncl.cs.columbia.edu>
+Date: Thu, 3 Sep 2009 09:43:41 -0500
+Message-ID: <20090903144341.GA13182@us.ibm.com>
 References: <1251915760-20118-1-git-send-email-danms@us.ibm.com>
 	<1251915760-20118-2-git-send-email-danms@us.ibm.com>
 	<20090903054058.GA7189@us.ibm.com>
@@ -11,6 +11,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <87eiqoyvkz.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -25,8 +26,7 @@ To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 3 Sep 2009, Dan Smith wrote:
-
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > SH> I'm sure I sound like an idiot, but... at restore, a socket will
 > SH> be created for sk now.  Is that a problem?  I don't see where
 > SH> sk_free() will cause that sock to be freed, and you are not
@@ -51,20 +51,9 @@ On Thu, 3 Sep 2009, Dan Smith wrote:
 > freed when the objhash does its final obj_ref_drop() at tear-down
 > time.
 
-Hmm... one little detail is missing: if this is a dead socket,
-then the reason we checkpoint it is either:
+Yes.  On the struct sock.  But what will drop the ref on the struct
+socket?  Or has one of your later patches, not yet in ckpt-v17-dev,
+added that?  Or, am I just missing a place where sock_put() will
+actually sock_release(sk->sk_socket)?
 
-1) because it is a peer of some other socket: on restart we will
-'join' them and bump the reference. This reference will be removed
-when the other socket is closed - and the (dead) sk will be freed.
-
-2) because it is the source of an skb sent to another socket. The
-unix socket code will take an extra reference to the (dead) sk
-in the skb that is placed in the other socket's receive queue. 
-This reference will be dropped when the skb is consumed and the
-(dead) sk will be freed.
-
-(In both cases, the extra reference keeps the dead sk around after
-the objhash is cleaned up).
-
-Oren.
+-serge
