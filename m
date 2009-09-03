@@ -1,17 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/3] c/r: [pty 2/2] support for pseudo terminals
-Date: Wed, 2 Sep 2009 23:41:03 -0500
-Message-ID: <20090903044103.GA5671@us.ibm.com>
-References: <1250642549-23656-1-git-send-email-orenl@librato.com>
-	<1250642549-23656-4-git-send-email-orenl@librato.com>
-	<20090902144837.GA15116@us.ibm.com> <4A9EF7A9.4060507@librato.com>
-	<20090902230549.GB26324@us.ibm.com> <4A9F0323.2090000@librato.com>
+From: Buczak Stanhope <arcticises-gj5DZOg+E4MImVDyUPgkwQ@public.gmane.org>
+Subject: N't a question for you of conceiving, imagining,
+	comparing. It isn't a questi
+Date: Thu, 03 Sep 2009 06:42:56 +0200
+Message-ID: <4A9F4919.1030902@vitographics.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------020704050403050603080109"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4A9F0323.2090000-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,86 +15,222 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> >> Thanks for the patches (the first was already in). I'll leave
-> >> out the change to signed type, though.
-> > 
-> > Yup, "oops".
-> > 
-> >> Serge E. Hallyn wrote:
-> >>> All right, I'm not sure how to go about this - i want to have a conversation
-> >>> involving patches without making it seem like I want any of the patches
-> >>> pushed yet :)  To get this working on s390, I needed the two attached
-> >>> patches.  Then the testcase under git://git.sr71.net/~hallyn/cr_tests.git
-> >>> under cr_tests/pty/ passes with your code.
-> >>>
-> >>> I'd still like to get a more invasive approach working where we directly
-> >>> ask the pty code to create the pty with the right index.  I'm playing with
-> >>> it right now, but of course having some trouble figuring out what to do
-> >>> for the master end and how best to construct a filp to pass to
-> >>> the main pty_create function.  I'll take a few more stabs and send out
-> >>> what I have later (or announce defeat).
-> >>>
-> >>> There is certainly something to be said for the un-invasiveness of
-> >>> your approach (and that it works).
-> >>>
-> >>> In either case, we will need to figure out how to deal with devpts
-> >>> namespaces.  Perhaps we separately checkpoint a 'devpts_mnt'.  It
-> >>> just stores the mountpoint of the mount.  At restart, we don't
-> >>> recreate those, we just confirm that the mountpoints still exist.
-> >>> Then, each pty entry has a ref to its devpts mount, and we use the
-> >>> mountpoint to construct ${mountpoint}/ptmx and pass that to
-> >>> filp_open() or ptmx_create)( to create the pty entry.
-> >> Yes, I was thinking along these lines. I think it's very much
-> >> related to the whole mount-namespaces issues; I guess it's time
-> >> to address both.
-> > 
-> > Ooooh, I'm not sure it is :)  In fact my approach to devpts should
-> > artfully avoid having to address generic mounts namespaces :)
-> 
-> lol .. I suppose I misinterpreted then. Perhaps you can take a
-> stab at it ?
+This is a multi-part message in MIME format.
+--------------020704050403050603080109
+Content-Type: text/plain; charset=ISO-8859-10; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Sure, should be pretty simple.  May wait until next week though,
-if only to wait for comments on the requested_id vs. ptmx_create().
+Eper, unremunerated but fairly amused and, in the absence of other near
+ties, not disreputably occupied. The rest of the world of course thought
+him queer, but she, she only, knew how, and above all why, queer; which
+was precisely what enabled her to dispose the concealing veil in the
+right folds. She took his gaiety from him--since it had to pass with
+them for gaiety--as she took everything else; but she certainly so far
+justified by her unerring touch his finer sense of the degree to which
+he had ended by convincing her. _She_ at least never spoke of the secret
+of his life except as "the real truth about you," and she had in fact a
+wonderful way of making it seem, as such, the secret of her own life
+too. That was in fine how he so constantly felt her as allowing for him;
+he couldn't on the whole call it anything else. He allowed for himself,
+but she, exactly, allowed still more; partly because, better placed for
+a sight of the matter, she traced his unhappy perversion through reaches
+of its course into which he could scarce follow it. He knew how he felt,
+but, besides knowing that, she knew how he looked as well; he knew each
+of the things of importance he was insidiously kept from doing, but she
+could add up the amount they made, understand how much, with a lighter
+weight on his spirit, he might have done, and thereby establish how,
+clever as he was, he fell short. Above all she was in the secret of the
+difference between the forms he went through--those of his little office
+under Government, those of caring for his modest patrimony, for his
+library, for his garden in the country, for the people in London whose
+invitat
 
-OTOH - if we're going to consider spitting out full mountinfo in
-the ckpt image (per below), then I'll wait until we've discussed
-that more too.
+--------------020704050403050603080109
+Content-Type: image/jpeg;
+ name="protocolize.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="protocolize.jpg"
 
-> > Well, if we *were* to address mountsns now, I'd suggest we simply
-> > store meaningful /proc/pid/mountinfo data for each task in the
-> > checkpoint image, and just verify it at restart, returning error
-> > if they're not the same.  That way we can continue to defer
-> > the decision on whether mktree or the kernel will restore mounts.
-> 
-> What is "meaningful" data, and how would you "verify" it ?
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
+u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
+////////////////////////////////////////////////////////////////////wAAR
+CAFSARcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooooAKQdKWkHQUAB7UHtR3o7imAtFFFA
+BRRRSAKKKKYBTScHrinU1epoANx7AmgZ706igBuORk5pT0NB7UHofpQNAOgpaQdBS0CCiiig
+BB3paQd6WgAooopAFJ3paTvQAtIaWkNAIKMUtFACDpS0g6CloAaWVFLMwVfUnFFV9R/48JPw
+/mKKALVFFFABSDoKWkHSgA70d6O9HemAtFFFABRRRSAKKKKACmr1NOpq9TTAdRRSUAB6ig9D
+9KPwoPT8KBgOgpaQdBRQIKWijpQAg70tIO9LQAUUUgpALSd6XFJ3pgLSGlpDSAWiiigBB0FH
+egdBRQBW1H/jwk/D+Yoo1H/jwk/D+YooAs0UtFMBM0AfypaQCkAnOaXnNHejvQMMn0oyfSjm
+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
+jUnrgUUUAKOgpaKKYFXUf+PCT8P5iiiikB//2Q==
+--------------020704050403050603080109
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Meaningful data is, for each task,
-	mount ns id
-	for each mount,
-		mount source, targets, types, propagation (peer group
-		and relation to it).
-Also for the container init, whether its netns is shared with its
-parent, and any mounts which are new in it over its parent.
-
-> At restart the mount data may be substantially (and intentionally)
-> different. For instance, what used to be a local mount at checkpoint
-> may be an NFS mount at restart....
-
-Yup.  OTOH if a task in the container did
-	'mount --bind dataset.bak/b dataset/a'
-then that should be safe to repeat.
-
-Whereas the nfs mount presumably is for the whole job's fs, which
-likely was not mounted by the job itself.
-
--serge
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------020704050403050603080109--
