@@ -1,16 +1,17 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 18/23] io-controller: blkio_cgroup patches from Ryo to
-	track async bios.
-Date: Thu, 03 Sep 2009 12:41:44 +0900 (JST)
-Message-ID: <20090903.124144.104054881.ryov__25168.2029491805$1251949407$gmane$org@valinux.co.jp>
-References: <20090902135821.GB5012@redhat.com>
-	<20090903.112423.226782505.ryov@valinux.co.jp>
-	<20090903024014.GA8644@redhat.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/3] c/r: [pty 2/2] support for pseudo terminals
+Date: Wed, 2 Sep 2009 23:41:03 -0500
+Message-ID: <20090903044103.GA5671@us.ibm.com>
+References: <1250642549-23656-1-git-send-email-orenl@librato.com>
+	<1250642549-23656-4-git-send-email-orenl@librato.com>
+	<20090902144837.GA15116@us.ibm.com> <4A9EF7A9.4060507@librato.com>
+	<20090902230549.GB26324@us.ibm.com> <4A9F0323.2090000@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090903024014.GA8644-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A9F0323.2090000-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,41 +21,86 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Vivek,
-
-Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > > At ioband level you just get to see bio and page. How do you decide wheter
-> > > this bio is being issued by a process which is a memory hog?
-> > > 
-> > > In fact requester of memory could be anybody. It could be memory hog or a
-> > > different process. So are you saying that you got a mechanism where you 
-> > > can detect that a process is memory hog and charge swap activity to it.
-> > > IOW, if there are two processes A and B and assume A is the memory hog and
-> > > then B requests for memory which triggers lot of swap IO, then you can
-> > > charge all that IO to memory hog A?
-> > 
-> > When an annoymou page is allocated, blkio-cgroup sets an ID to the
-> > page. And then when the page is going to swap out, dm-ioband can know
-> > who the owner of the page is by retrieving ID from the page.
-> > 
-> > In the above case, since the pages of the process A are swapped-out, 
-> > dm-ioband charges swap IO to the process A.
-> > 
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > 
-> But this does not mean that in all cases memory hog is being charged for
-> swap IO, as you have said. So if a process A has done some anonymous page
-> allocations and later a memory hog B comes in and forces swap out of A, 
-> you will charge A for swap activity which does not seem fair as B is
-> memory hog here?
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> >> Thanks for the patches (the first was already in). I'll leave
+> >> out the change to signed type, though.
+> > 
+> > Yup, "oops".
+> > 
+> >> Serge E. Hallyn wrote:
+> >>> All right, I'm not sure how to go about this - i want to have a conversation
+> >>> involving patches without making it seem like I want any of the patches
+> >>> pushed yet :)  To get this working on s390, I needed the two attached
+> >>> patches.  Then the testcase under git://git.sr71.net/~hallyn/cr_tests.git
+> >>> under cr_tests/pty/ passes with your code.
+> >>>
+> >>> I'd still like to get a more invasive approach working where we directly
+> >>> ask the pty code to create the pty with the right index.  I'm playing with
+> >>> it right now, but of course having some trouble figuring out what to do
+> >>> for the master end and how best to construct a filp to pass to
+> >>> the main pty_create function.  I'll take a few more stabs and send out
+> >>> what I have later (or announce defeat).
+> >>>
+> >>> There is certainly something to be said for the un-invasiveness of
+> >>> your approach (and that it works).
+> >>>
+> >>> In either case, we will need to figure out how to deal with devpts
+> >>> namespaces.  Perhaps we separately checkpoint a 'devpts_mnt'.  It
+> >>> just stores the mountpoint of the mount.  At restart, we don't
+> >>> recreate those, we just confirm that the mountpoints still exist.
+> >>> Then, each pty entry has a ref to its devpts mount, and we use the
+> >>> mountpoint to construct ${mountpoint}/ptmx and pass that to
+> >>> filp_open() or ptmx_create)( to create the pty entry.
+> >> Yes, I was thinking along these lines. I think it's very much
+> >> related to the whole mount-namespaces issues; I guess it's time
+> >> to address both.
+> > 
+> > Ooooh, I'm not sure it is :)  In fact my approach to devpts should
+> > artfully avoid having to address generic mounts namespaces :)
+> 
+> lol .. I suppose I misinterpreted then. Perhaps you can take a
+> stab at it ?
 
-I think this charging policy is not bad, but I think I can understand
-you think it's not fair. Do you think it's fair if all IO is carged to B?
+Sure, should be pretty simple.  May wait until next week though,
+if only to wait for comments on the requested_id vs. ptmx_create().
 
-We should use both io and memory controller together, as you wrote, 
+OTOH - if we're going to consider spitting out full mountinfo in
+the ckpt image (per below), then I'll wait until we've discussed
+that more too.
 
-Thanks,
-Ryo Tsuruta
+> > Well, if we *were* to address mountsns now, I'd suggest we simply
+> > store meaningful /proc/pid/mountinfo data for each task in the
+> > checkpoint image, and just verify it at restart, returning error
+> > if they're not the same.  That way we can continue to defer
+> > the decision on whether mktree or the kernel will restore mounts.
+> 
+> What is "meaningful" data, and how would you "verify" it ?
+
+Meaningful data is, for each task,
+	mount ns id
+	for each mount,
+		mount source, targets, types, propagation (peer group
+		and relation to it).
+Also for the container init, whether its netns is shared with its
+parent, and any mounts which are new in it over its parent.
+
+> At restart the mount data may be substantially (and intentionally)
+> different. For instance, what used to be a local mount at checkpoint
+> may be an NFS mount at restart....
+
+Yup.  OTOH if a task in the container did
+	'mount --bind dataset.bak/b dataset/a'
+then that should be safe to repeat.
+
+Whereas the nfs mount presumably is for the whole job's fs, which
+likely was not mounted by the job itself.
+
+-serge
