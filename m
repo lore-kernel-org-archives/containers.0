@@ -1,18 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/3] Make sockets proper objhash objects and use
 	checkpoint_obj() on them (v2)
-Date: Thu, 3 Sep 2009 09:43:41 -0500
-Message-ID: <20090903144341.GA13182@us.ibm.com>
+Date: Thu, 03 Sep 2009 08:08:08 -0700
+Message-ID: <8763c0yskn.fsf@caffeine.danplanet.com>
 References: <1251915760-20118-1-git-send-email-danms@us.ibm.com>
 	<1251915760-20118-2-git-send-email-danms@us.ibm.com>
 	<20090903054058.GA7189@us.ibm.com>
 	<87eiqoyvkz.fsf@caffeine.danplanet.com>
+	<20090903144341.GA13182@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87eiqoyvkz.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <20090903144341.GA13182-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Thu\, 3 Sep 2009 09\:43\:41 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,38 +23,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> SH> I'm sure I sound like an idiot, but... at restore, a socket will
-> SH> be created for sk now.  Is that a problem?  I don't see where
-> SH> sk_free() will cause that sock to be freed, and you are not
-> SH> attaching it do a file whose close would cause it to be
-> SH> released...
-> 
-> In the regular socket code, the reference that is taken during
-> allocation is assumed to be for the owning object (the file).  So,
-> they don't take another ref when they actually attach it to a file.
-> 
-> The objhash assumes that for all objects on restore, the allocation
-> routine for the object has already incremented the reference count for
-> it as the owner.  If you look at restore_obj() it drops the ref count
-> right after stuffing the object in the hash because the act of
-> insertion grabs a reference.  On checkpoint, this is the reference for
-> the hash.  On restore, it would be redundant because it is the first
-> owner (not a file, etc).
-> 
-> My code takes *another* reference when it attaches to a file, if
-> appropriate.  In the case of the adopted socket, only the objhash
-> holds a reference to it, so unless it was joined to a peer, it will be
-> freed when the objhash does its final obj_ref_drop() at tear-down
-> time.
+SH> Yes.  On the struct sock.  But what will drop the ref on the
+SH> struct socket?  Or has one of your later patches, not yet in
+SH> ckpt-v17-dev, added that?  Or, am I just missing a place where
+SH> sock_put() will actually sock_release(sk->sk_socket)?
 
-Yes.  On the struct sock.  But what will drop the ref on the struct
-socket?  Or has one of your later patches, not yet in ckpt-v17-dev,
-added that?  Or, am I just missing a place where sock_put() will
-actually sock_release(sk->sk_socket)?
+Hmm, I see what you mean.  I can't find any path where sock_put() will
+release the struct socket.  What's weird is that there is a WARN_ON()
+in af_unix.c:354 that should get tripped if we call sk_free() when we
+still have a socket.  I don't see that, but now I'm not sure why.
 
--serge
+Perhaps what we should do is orphan the struct sock before we add it
+to the hash and then graft it onto a new struct socket before
+attaching it to a struct file?
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
