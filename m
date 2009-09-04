@@ -1,9 +1,11 @@
-From: Angelle Bergseng <exogenously-HdlSM3/DUiVR1XaPKSDiLQ@public.gmane.org>
-Subject: T Jack remembered him; he was "Mr Macki
-Date: Fri, 04 Sep 2009 01:12:37 +0200
-Message-ID: <4AA04D2E.8040402@terreetcite.org>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][git]linux-cr branch, ckpt-v17-dev,
+	updated. v2.6.27-rc5-46206-ga34b0e0
+Date: Fri, 4 Sep 2009 00:42:26 -0400
+Message-ID: <200909040442.n844gQnv010173@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------080609020209050809040501"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,209 +16,169 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------080609020209050809040501
-Content-Type: text/plain; charset=ISO-8859-11; format=flowed
-Content-Transfer-Encoding: 7bit
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-Cienda Montijo, and although the road was abominable, and the heat
-intense, Jack declared that he had never so thoroughly enjoyed a drive
-in his life. For the country was somewhat rugged, and the scenery
-therefore very lovely, the road being bordered on either side by fields
-of tobacco and sugar, and here and there a patch of cool green Indian
-corn, divided from the road by low hedges which were just then a perfect
-blaze of multi-coloured flowers of various descriptions. It was a fairly
-busy scene, too, for the tobacco was ripe, and the fields were alive
-with labourers of all colours, from the full-blooded negro to the pure
-Spaniard, gathering the crop. At length, when they had been travelling
-for about a couple of hours, and when, despite the charm of everything
-that he saw around him, Jack began to grow conscious of the fact that he
-was aching in every joint from the rolling and jolting of the carriage,
-the vehicle turned off the main road i
+The branch, ckpt-v17-dev has been updated
+       via  a34b0e08104452ef2d3eff49d6530915701cdbc8 (commit)
+       via  82dd88568ff45f515e7801a5be2b199dbe277696 (commit)
+      from  ec1611a161a6f51e693ec660afe8559b58d63241 (commit)
 
---------------080609020209050809040501
-Content-Type: image/jpeg;
- name="chandelle.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="chandelle.jpg"
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDADIiJSwlHzIsKSw4NTI7S31RS0VFS5ltc1p9tZ++
-u7Kfr6zI4f/zyNT/16yv+v/9////////wfD/////////////2wBDATU4OEtCS5NRUZP/zq/O
-////////////////////////////////////////////////////////////////////wAAR
-CAE9AUQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDSooooAKKKKACjuKO9HegAooooAKKKKAG/
-xGnU0dTTu9Agooo7UDCiiigAo7UCjtQAUUUUAFHaijtQAUUUUAFFFFABRRRQAUUUUAFFFFAB
-RRRQAUUUd6ACiiigAooooAhmuoYHCyvtJGcYJorN1j/j6X/cH8zRQBsUUUUAFFFJ1+lABkZo
-yM0tHegAopMelLQAUUUUANHU07vTR1NO70CCjtRR2oGFJ1+lLRQAUdqKKBBRRRQMKO1FJ+NA
-haKKKACiiigAooooAKKPxooGFFFFABRRRQAUd6KO9ABRRRQAUUUUAY+sf8fS/wC4P5mijWP+
-Ppf9wfzNFAGxRRRQIQ+metLSHtS0AFFFFACY+tB/GlpD0NABj6/nRj6/nS0UAJ0paKKACkpa
-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
---------------080609020209050809040501
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+- Log -----------------------------------------------------------------
+commit a34b0e08104452ef2d3eff49d6530915701cdbc8
+Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date:   Thu Sep 3 16:31:33 2009 -0400
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------080609020209050809040501--
+    c/r: interface to pass simple pointers as data with deferqueue
+    
+    This patch adds two interfaces to simplify the case of passing
+    a single pointer as data for deferqueue:
+    
+    deferqueue_add_ptr(deferqueue, ptr, func, dtor): enqueue a deferred
+    work whos data is @ptr.
+    
+    deferqueue_data_ptr(data): convert a deferqueue @data to a void *
+    pointer.
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+    Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+commit 82dd88568ff45f515e7801a5be2b199dbe277696
+Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date:   Mon Jul 13 06:58:15 2009 -0700
+
+    Add the checkpoint operation for opened files of generic filesystems
+    
+    These patches extend the use of the generic file checkpoint operation to
+    non-extX filesystems which have lseek operations that ensure we can save
+    and restore the files for later use. Note that this does not include
+    things like FUSE, network filesystems, or pseudo-filesystem kernel
+    interfaces.
+    
+    Only compile and boot tested (on x86-32).
+    
+    [Oren Laadan] Folded patch series into a single patch; original post
+    included 36 separate patches for individual filesystems:
+    
+      [PATCH 01/36] Add the checkpoint operation for affs files and directories.
+      [PATCH 02/36] Add the checkpoint operation for befs directories.
+      [PATCH 03/36] Add the checkpoint operation for bfs files and directories.
+      [PATCH 04/36] Add the checkpoint operation for btrfs files and directories.
+      [PATCH 05/36] Add the checkpoint operation for cramfs directories.
+      [PATCH 06/36] Add the checkpoint operation for ecryptfs files and directories.
+      [PATCH 07/36] Add the checkpoint operation for fat files and directories.
+      [PATCH 08/36] Add the checkpoint operation for freevxfs directories.
+      [PATCH 09/36] Add the checkpoint operation for hfs files and directories.
+      [PATCH 10/36] Add the checkpoint operation for hfsplus files and directories.
+      [PATCH 11/36] Add the checkpoint operation for hpfs files and directories.
+      [PATCH 12/36] Add the checkpoint operation for hppfs files and directories.
+      [PATCH 13/36] Add the checkpoint operation for iso directories.
+      [PATCH 14/36] Add the checkpoint operation for jffs2 files and directories.
+      [PATCH 15/36] Add the checkpoint operation for jfs files and directories.
+      [PATCH 16/36] Add the checkpoint operation for regular nfs files and directories. Skip the various /proc files for now.
+      [PATCH 17/36] Add the checkpoint operation for ntfs directories.
+      [PATCH 18/36] Add the checkpoint operation for openromfs directories. Explicitly skip the properties for now.
+      [PATCH 19/36] Add the checkpoint operation for qnx4 files and directories.
+      [PATCH 20/36] Add the checkpoint operation for reiserfs files and directories.
+      [PATCH 21/36] Add the checkpoint operation for romfs directories.
+      [PATCH 22/36] Add the checkpoint operation for squashfs directories.
+      [PATCH 23/36] Add the checkpoint operation for sysv filesystem files and directories.
+      [PATCH 24/36] Add the checkpoint operation for ubifs files and directories.
+      [PATCH 25/36] Add the checkpoint operation for udf filesystem files and directories.
+      [PATCH 26/36] Add the checkpoint operation for xfs files and directories.
+      [PATCH 27/36] Add checkpoint operation for efs directories.
+      [PATCH 28/36] Add the checkpoint operation for generic, read-only files. At present, some/all files of the following filesystems use this generic definition:
+      [PATCH 29/36] Add checkpoint operation for minix filesystem files and directories.
+      [PATCH 30/36] Add checkpoint operations for omfs files and directories.
+      [PATCH 31/36] Add checkpoint operations for ufs files and directories.
+      [PATCH 32/36] Add checkpoint operations for ramfs files. NOTE: since simple_dir_operations are shared between multiple filesystems including ramfs, it's not currently possible to checkpoint open ramfs directories.
+      [PATCH 33/36] Add the checkpoint operation for adfs files and directories.
+      [PATCH 34/36] Add the checkpoint operation to exofs files and directories.
+      [PATCH 35/36] Add the checkpoint operation to nilfs2 files and directories.
+      [PATCH 36/36] Add checkpoint operations for UML host filesystem files and directories.
+    
+    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+    Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+    Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+-----------------------------------------------------------------------
+
+Summary of changes:
+ fs/adfs/dir.c               |    1 +
+ fs/adfs/file.c              |    1 +
+ fs/affs/dir.c               |    1 +
+ fs/affs/file.c              |    1 +
+ fs/befs/linuxvfs.c          |    1 +
+ fs/bfs/dir.c                |    1 +
+ fs/bfs/file.c               |    1 +
+ fs/btrfs/file.c             |    1 +
+ fs/btrfs/inode.c            |    1 +
+ fs/btrfs/super.c            |    1 +
+ fs/cramfs/inode.c           |    1 +
+ fs/ecryptfs/file.c          |    2 ++
+ fs/ecryptfs/miscdev.c       |    1 +
+ fs/efs/dir.c                |    1 +
+ fs/exofs/dir.c              |    1 +
+ fs/exofs/file.c             |    1 +
+ fs/fat/dir.c                |    1 +
+ fs/fat/file.c               |    1 +
+ fs/freevxfs/vxfs_lookup.c   |    1 +
+ fs/hfs/dir.c                |    1 +
+ fs/hfs/inode.c              |    1 +
+ fs/hfsplus/dir.c            |    1 +
+ fs/hfsplus/inode.c          |    1 +
+ fs/hostfs/hostfs_kern.c     |    2 ++
+ fs/hpfs/dir.c               |    1 +
+ fs/hpfs/file.c              |    1 +
+ fs/hppfs/hppfs.c            |    2 ++
+ fs/isofs/dir.c              |    1 +
+ fs/jffs2/dir.c              |    1 +
+ fs/jffs2/file.c             |    1 +
+ fs/jfs/file.c               |    1 +
+ fs/jfs/namei.c              |    1 +
+ fs/minix/dir.c              |    1 +
+ fs/minix/file.c             |    1 +
+ fs/nfs/dir.c                |    1 +
+ fs/nfs/file.c               |    1 +
+ fs/nilfs2/dir.c             |    2 +-
+ fs/nilfs2/file.c            |    1 +
+ fs/ntfs/dir.c               |    1 +
+ fs/ntfs/file.c              |    3 ++-
+ fs/omfs/dir.c               |    1 +
+ fs/omfs/file.c              |    1 +
+ fs/openpromfs/inode.c       |    2 ++
+ fs/qnx4/dir.c               |    1 +
+ fs/qnx4/file.c              |    1 +
+ fs/ramfs/file-mmu.c         |    1 +
+ fs/ramfs/file-nommu.c       |    1 +
+ fs/read_write.c             |    1 +
+ fs/reiserfs/dir.c           |    1 +
+ fs/reiserfs/file.c          |    1 +
+ fs/romfs/mmap-nommu.c       |    1 +
+ fs/romfs/super.c            |    1 +
+ fs/squashfs/dir.c           |    3 ++-
+ fs/sysv/dir.c               |    1 +
+ fs/sysv/file.c              |    1 +
+ fs/ubifs/debug.c            |    1 +
+ fs/ubifs/dir.c              |    1 +
+ fs/ubifs/file.c             |    1 +
+ fs/udf/dir.c                |    1 +
+ fs/udf/file.c               |    1 +
+ fs/ufs/dir.c                |    1 +
+ fs/ufs/file.c               |    1 +
+ fs/xfs/linux-2.6/xfs_file.c |    2 ++
+ include/linux/deferqueue.h  |   20 ++++++++++++++++++++
+ 64 files changed, 90 insertions(+), 3 deletions(-)
+
+
+hooks/post-receive
+--
+linux-cr
