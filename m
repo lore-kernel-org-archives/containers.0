@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v5][PATCH 4/8]: Add target_pid parameter to alloc_pidmap()
-Date: Mon, 7 Sep 2009 14:15:06 -0700
-Message-ID: <20090907211506.GD6685@us.ibm.com>
+Subject: [RFC][v5][PATCH 5/8]: Add target_pids parameter to alloc_pid()
+Date: Mon, 7 Sep 2009 14:15:29 -0700
+Message-ID: <20090907211529.GE6685__2490.20759151808$1252357902$gmane$org@us.ibm.com>
 References: <20090907211302.GA5892@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,80 +24,82 @@ List-Id: containers.vger.kernel.org
 
 
 
-Subject: [RFC][v5][PATCH 4/8]: Add target_pid parameter to alloc_pidmap()
+Subject: [RFC][v5][PATCH 5/8]: Add target_pids parameter to alloc_pid()
 
-With support for setting a specific pid number for a process,
-alloc_pidmap() will need a 'target_pid' parameter.
-
-Changelog[v3]:
-	- (Eric Biederman): Avoid set_pidmap() function. Added couple of
-	  checks for target_pid in alloc_pidmap() itself.
-Changelog[v2]:
-	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
-	  actually checks for 'pid <= 0' for completeness).
+This parameter is currently NULL, but will be used in a follow-on patch.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ include/linux/pid.h |    2 +-
+ kernel/fork.c       |    3 ++-
+ kernel/pid.c        |    9 +++++++--
+ 3 files changed, 10 insertions(+), 4 deletions(-)
 
+Index: linux-mmotm/include/linux/pid.h
+===================================================================
+--- linux-mmotm.orig/include/linux/pid.h	2009-09-05 20:58:11.000000000 -0700
++++ linux-mmotm/include/linux/pid.h	2009-09-05 21:19:16.000000000 -0700
+@@ -119,7 +119,7 @@
+ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ 
+-extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
+Index: linux-mmotm/kernel/fork.c
+===================================================================
+--- linux-mmotm.orig/kernel/fork.c	2009-09-05 21:15:33.000000000 -0700
++++ linux-mmotm/kernel/fork.c	2009-09-05 21:19:16.000000000 -0700
+@@ -983,6 +983,7 @@
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
++	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1159,7 +1160,7 @@
+ 		goto bad_fork_cleanup_io;
+ 
+ 	if (pid != &init_struct_pid) {
+-		pid = alloc_pid(p->nsproxy->pid_ns);
++		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
+ 		if (IS_ERR(pid)) {
+ 			retval = PTR_ERR(pid);
+ 			goto bad_fork_cleanup_io;
 Index: linux-mmotm/kernel/pid.c
 ===================================================================
---- linux-mmotm.orig/kernel/pid.c	2009-09-05 21:17:36.000000000 -0700
-+++ linux-mmotm/kernel/pid.c	2009-09-05 21:19:11.000000000 -0700
-@@ -146,16 +146,22 @@
- 	return 0;
+--- linux-mmotm.orig/kernel/pid.c	2009-09-05 21:19:11.000000000 -0700
++++ linux-mmotm/kernel/pid.c	2009-09-05 21:19:16.000000000 -0700
+@@ -268,13 +268,14 @@
+ 	call_rcu(&pid->rcu, delayed_put_pid);
  }
  
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+-struct pid *alloc_pid(struct pid_namespace *ns)
++struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
  {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
- 	int rc = -EAGAIN;
- 	int pid_max = pid_ns->pid_max;
- 	struct pidmap *map;
+ 	struct pid *pid;
+ 	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
+ 	struct upid *upid;
++	int tpid;
  
--	pid = last + 1;
--	if (pid >= pid_max)
--		pid = RESERVED_PIDS;
-+	if (target_pid) {
-+		pid = target_pid;
-+		if (pid < 0 || pid >= pid_max)
-+			return -EINVAL;
-+	} else {
-+		pid = last + 1;
-+		if (pid >= pid_max)
-+			pid = RESERVED_PIDS;
-+	}
- 	offset = pid & BITS_PER_PAGE_MASK;
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-@@ -168,9 +174,14 @@
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
- 					atomic_dec(&map->nr_free);
--					pid_ns->last_pid = pid;
-+					if (!target_pid)
-+						pid_ns->last_pid = pid;
- 					return pid;
-+				} else if (target_pid) {
-+					rc = -EBUSY;
-+					break;
- 				}
-+
- 				offset = find_next_offset(map, offset);
- 				pid = mk_pid(pid_ns, map, offset);
- 			/*
-@@ -196,6 +207,7 @@
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
-+
- 	return rc;
- }
- 
-@@ -272,7 +284,7 @@
+ 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
+ 	if (!pid) {
+@@ -284,7 +285,11 @@
  
  	tmp = ns;
  	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
-+		nr = alloc_pidmap(tmp, 0);
+-		nr = alloc_pidmap(tmp, 0);
++		tpid = 0;
++		if (target_pids)
++			tpid = target_pids[i];
++
++		nr = alloc_pidmap(tmp, tpid);
  		if (nr < 0)
  			goto out_free;
