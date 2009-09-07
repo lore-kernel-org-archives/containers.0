@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v5][PATCH 2/8]: Have alloc_pidmap() return actual error code
-Date: Mon, 7 Sep 2009 14:14:21 -0700
-Message-ID: <20090907211421.GB6685@us.ibm.com>
+Subject: [RFC][v5][PATCH 3/8] Make pid_max a pid_ns property
+Date: Mon, 7 Sep 2009 14:14:45 -0700
+Message-ID: <20090907211445.GC6685__47901.6210338615$1252357864$gmane$org@us.ibm.com>
 References: <20090907211302.GA5892@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,89 +24,109 @@ List-Id: containers.vger.kernel.org
 
 
 
-Subject: [RFC][v5][PATCH 2/8]: Have alloc_pidmap() return actual error code
+From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC][v5][PATCH 3/8] Make pid_max a pid_ns property
 
-alloc_pidmap() can fail either because all pid numbers are in use or
-because memory allocation failed.  With support for setting a specific
-pid number, alloc_pidmap() would also fail if either the given pid
-number is invalid or in use.
+Remove the pid_max global, and make it a property of the
+pid_namespace.  When a pid_ns is created, it inherits
+the parent's pid_ns.
 
-Rather than have callers assume -ENOMEM, have alloc_pidmap() return
-the actual error.
+Fixing up sysctl (trivial akin to ipc version, but
+potentially tedious to get right for all CONFIG*
+combinations) is left for later.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Changelog[v2]:
+	- Port to newer kernel
+	- Make pid_max a local variable in alloc_pidmap() to simplify code/patch
+
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/fork.c |    5 +++--
- kernel/pid.c  |    9 ++++++---
- 2 files changed, 9 insertions(+), 5 deletions(-)
+ include/linux/pid_namespace.h |    1 +
+ kernel/pid.c                  |   14 +++++++-------
+ kernel/pid_namespace.c        |    6 ++++--
+ kernel/sysctl.c               |    4 ++--
+ 4 files changed, 14 insertions(+), 11 deletions(-)
 
-Index: linux-2.6/kernel/fork.c
+Index: linux-2.6/include/linux/pid_namespace.h
 ===================================================================
---- linux-2.6.orig/kernel/fork.c	2009-09-07 13:10:39.000000000 -0700
-+++ linux-2.6/kernel/fork.c	2009-09-07 13:11:39.000000000 -0700
-@@ -1110,10 +1110,11 @@
- 		goto bad_fork_cleanup_io;
+--- linux-2.6.orig/include/linux/pid_namespace.h	2009-08-05 13:00:21.000000000 -0700
++++ linux-2.6/include/linux/pid_namespace.h	2009-09-07 13:12:04.000000000 -0700
+@@ -30,6 +30,7 @@
+ #ifdef CONFIG_BSD_PROCESS_ACCT
+ 	struct bsd_acct_struct *bacct;
+ #endif
++	int pid_max;
+ };
  
- 	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
- 		pid = alloc_pid(p->nsproxy->pid_ns);
--		if (!pid)
-+		if (IS_ERR(pid)) {
-+			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-+		}
- 
- 		if (clone_flags & CLONE_NEWPID) {
- 			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
+ extern struct pid_namespace init_pid_ns;
 Index: linux-2.6/kernel/pid.c
 ===================================================================
---- linux-2.6.orig/kernel/pid.c	2009-09-07 13:11:30.000000000 -0700
-+++ linux-2.6/kernel/pid.c	2009-09-07 13:11:39.000000000 -0700
-@@ -150,7 +150,7 @@
- static int alloc_pidmap(struct pid_namespace *pid_ns)
+--- linux-2.6.orig/kernel/pid.c	2009-09-07 13:11:39.000000000 -0700
++++ linux-2.6/kernel/pid.c	2009-09-07 13:12:04.000000000 -0700
+@@ -43,8 +43,6 @@
+ static int pidhash_shift;
+ struct pid init_struct_pid = INIT_STRUCT_PID;
+ 
+-int pid_max = PID_MAX_DEFAULT;
+-
+ #define RESERVED_PIDS		300
+ 
+ int pid_max_min = RESERVED_PIDS + 1;
+@@ -78,6 +76,7 @@
+ 	.last_pid = 0,
+ 	.level = 0,
+ 	.child_reaper = &init_task,
++	.pid_max = PID_MAX_DEFAULT,
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+@@ -151,6 +150,7 @@
  {
  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
--	int rc;
-+	int rc = -EAGAIN;
+ 	int rc = -EAGAIN;
++	int pid_max = pid_ns->pid_max;
  	struct pidmap *map;
  
  	pid = last + 1;
-@@ -189,12 +189,14 @@
- 		} else {
- 			map = &pid_ns->pidmap[0];
- 			offset = RESERVED_PIDS;
--			if (unlikely(last == offset))
-+			if (unlikely(last == offset)) {
-+				rc = -EAGAIN;
- 				break;
-+			}
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
--	return -1;
-+	return rc;
- }
+Index: linux-2.6/kernel/pid_namespace.c
+===================================================================
+--- linux-2.6.orig/kernel/pid_namespace.c	2009-08-05 13:00:23.000000000 -0700
++++ linux-2.6/kernel/pid_namespace.c	2009-09-07 13:12:04.000000000 -0700
+@@ -87,6 +87,7 @@
  
- int next_pidmap(struct pid_namespace *pid_ns, int last)
-@@ -263,8 +265,10 @@
- 	struct upid *upid;
+ 	kref_init(&ns->kref);
+ 	ns->level = level;
++	ns->pid_max = parent_pid_ns->pid_max;
+ 	ns->parent = get_pid_ns(parent_pid_ns);
  
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
--	if (!pid)
-+	if (!pid) {
-+		pid = ERR_PTR(-ENOMEM);
- 		goto out;
-+	}
+ 	set_bit(0, ns->pidmap[0].page);
+Index: linux-2.6/kernel/sysctl.c
+===================================================================
+--- linux-2.6.orig/kernel/sysctl.c	2009-09-07 13:10:39.000000000 -0700
++++ linux-2.6/kernel/sysctl.c	2009-09-07 13:13:23.000000000 -0700
+@@ -55,6 +55,7 @@
  
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
-@@ -299,7 +303,7 @@
- 		free_pidmap(pid->numbers + i);
+ #include <asm/uaccess.h>
+ #include <asm/processor.h>
++#include <linux/pid_namespace.h>
  
- 	kmem_cache_free(ns->pid_cachep, pid);
--	pid = NULL;
-+	pid = ERR_PTR(nr);
- 	goto out;
- }
+ #ifdef CONFIG_X86
+ #include <asm/nmi.h>
+@@ -78,7 +79,6 @@
+ extern int core_uses_pid;
+ extern int suid_dumpable;
+ extern char core_pattern[];
+-extern int pid_max;
+ extern int min_free_kbytes;
+ extern int pid_max_min, pid_max_max;
+ extern int sysctl_drop_caches;
+@@ -670,7 +670,7 @@
+ 	{
+ 		.ctl_name	= KERN_PIDMAX,
+ 		.procname	= "pid_max",
+-		.data		= &pid_max,
++		.data		= &init_pid_ns.pid_max,
+ 		.maxlen		= sizeof (int),
+ 		.mode		= 0644,
+ 		.proc_handler	= &proc_dointvec_minmax,
