@@ -1,52 +1,118 @@
-From: Casey Schaufler <casey@schaufler-ca.com>
-Subject: Re: [RFC PATCH 2/2] cr: debug security_checkpoint_header and	security_may_restart
-Date: Mon, 07 Sep 2009 11:31:31 -0700
-Message-ID: <4AA55183.4020407@schaufler-ca.com>
-References: <20090903222824.GB27377@us.ibm.com> <20090903222853.GA27556@us.ibm.com> <4AA0A3AE.9040106@schaufler-ca.com> <20090904134611.GA11508@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][v5] clone_with_pids() system call
+Date: Mon, 7 Sep 2009 14:13:02 -0700
+Message-ID: <20090907211302.GA5892@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090904134611.GA11508@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Casey Schaufler <casey@schaufler-ca.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Casey Schaufler (casey@schaufler-ca.com):
->   
->> Serge E. Hallyn wrote:
->>     
->>> This patch, for debugging only, introduces a silly admin-controlled
->>> 'policy version' for smack.  By default the version is 1.  An
->>> admin (with CAP_MAC_ADMIN) can change it by echoing a new value
->>> into /smack/version.
->>>   
->>>       
->> The scheme you have suggested is just one step off of completely
->> acceptable for real. More detail below, but if you make the "version"
->> a string instead of a number I'm happy with it. In particular, a
->> string that would itself be a valid Smack label makes everything
->> really simple.
->>     
->
-> Presumably at many sites the version will be a unique string not
-> used as a label anywhere else.  That's ok?
->
->   
->> It would take me a few days, but if you're not in a real hurry or
->> you're lazier than I am (yeah, right) I could provide a patch that
->> does it. Or, if I haven't been completely incomprehensible, you
->> could do a revision.
->>     
->
-> Heh, I'm in no hurry.  I'll mark this to do midway next week, if
-> you haven't gotten around to it first.  Thanks!
->   
+
+To support application checkpoint/restart, a task must have the same pid it
+had when it was checkpointed.  When containers are nested, the tasks within
+the containers exist in multiple pid namespaces and hence have multiple pids
+to specify during restart.
+
+This patchset implements a new system call, clone_with_pids() that lets a
+process specify the pids of the child process.
+
+Patches 1 through 6 are helpers and we believe they are needed for application
+restart, regardless of the kernel implementation of application restart.
+
+Patch 8/8 defines a prototype of the new system call.
+
+Changelog[v5]:
+	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
+	  into this set)
+	- (Eric Biederman): Avoid the new function, set_pidmap() - added
+	  couple of checks on 'target_pid' in alloc_pidmap() itself.
+
+=== IMPORTANT TODO:
+
+clone() system call has another limitation - all available bits in clone-flags
+are in use and any new clone-flag will need a variant of the clone() system
+call. 
+
+It appears to make sense to try and extend this new system call to address
+this limitation as well. The basic requirements of a new clone system call
+could then be summarized as:
+
+	- do everything clone() does today, and
+	- give application an ability to choose pids for the child process
+	  in all ancestor pid namespaces, and
+	- allow more clone_flags
+
+Contstraints:
+
+	- system-calls are restricted to 6 parameters and clone() already
+	  takes 5 parameters, any extension to clone() interface would require
+	  one or more copy_from_user().
+
+	- does copy_from_user() of a few words have a significant impact on
+	  the total cost of clone() ?
+
+Based on these requirements and constraints, we have been exploring a couple
+of system call interfaces and appreciate any iput.  
+
+1. =====
+
+	#if 64bit
+	#define CLONE_FLAGS_WORDS	1
+	#else
+	#define CLONE_FLAGS_WORDS	2
+	#endif
+
+        struct pid_set {
+                int num_pids;
+                pid_t *pids;
+        };
+
+	typedef struct {
+		unsigned long flags[CLONE_FLAGS_WORDS];
+	} clone_flags_t;
+
+	int clone_extended(clone_flags_t *flags, void *child_stack, int *unused,
+		int *parent_tid, int *child_tid, struct pid_set *pid_set);
+
+	Pros:
+		- extendible clone_flags (like sigset_t)
+
+	Cons:
+		- copy_from_user() needed on all architectures (we maybe able
+		  to play some tricks with 'clone_flags_t' to avoid the copy
+		  on 64-bit archtitectures till N_CLONE_FLAGS exceeds 64).
+
+		- Both applications and kernel must use interfaces equivalent
+		  to sigsetops(3) to test/set/clear clone flags.
+2. ======
+
+	struct clone_info {
+		int num_clone_high_words;
+		int *flags_high;
+		struct pid_set pid_set;
+	}
+
+        int clone_extended(int flags_low, void *child_stack, void *unused,
+		int *parent_tid, int *child_tid, struct clone_info *clone_info);
+
+	Pros:
+		- copy_from_user() needed only for new flags and pid_set
+
+	Cons:
+		- splitting the high and low clone-flags is awkward ?
 
 
-I hate to be a bother, but what tree are you basing these patches on?
-Suspect that I missed a round of patches along the way, and can't apply
-the ones I do have.
-
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
