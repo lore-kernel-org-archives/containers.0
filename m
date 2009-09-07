@@ -1,14 +1,13 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [RFC] IO scheduler based IO controller V9
-Date: Mon, 07 Sep 2009 10:14:06 +0800
-Message-ID: <4AA46C6E.4010109__12914.2524594956$1252289828$gmane$org@cn.fujitsu.com>
+Date: Mon, 07 Sep 2009 15:40:53 +0800
+Message-ID: <4AA4B905.8010801__30003.1895087615$1252309490$gmane$org@cn.fujitsu.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<4A9DC33E.6000408@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4A9DC33E.6000408-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1251495072-7780-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,12 +23,82 @@ List-Id: containers.vger.kernel.org
 
 Hi Vivek,
 
-Here is the vanilla kernel and V9 comparision.
+I happened to encount a bug when i test IO Controller V9.
+When there are three tasks to run concurrently in three group,
+that is, one is parent group, and other two tasks are running 
+in two different child groups respectively to read or write 
+files in some disk, say disk "hdb", The task may hang up, and 
+other tasks which access into "hdb" will also hang up.
 
-                           Normal Read  |  Random Read  |  Normal Write  |  Random Write
+The bug only happens when using AS io scheduler.
+The following scirpt can reproduce this bug in my box.
 
-vanilla(Avg of 3 times)   67580 KiB/s     3540 KiB/s      61964 KiB/s      9823 KiB/s
+===========
+#!/bin/sh
 
-V9(Avg of 3 times)        68954 KiB/s     3567 KiB/s      60654 KiB/s      9858 KiB/s
+mkdir /cgroup
+mount -t cgroup -o io,blkio io  /cgroup
 
-Performance                +2.0%           +0.7%          -2.1%             +0.3%
+echo anticipatory > /sys/block/hdb/queue/scheduler
+
+mkdir /cgroup/test1
+echo 100 > /cgroup/test1/io.weight
+
+mkdir /cgroup/test2
+echo 400 > /cgroup/test2/io.weight
+
+mkdir /cgroup/test2/test3
+echo 400 > /cgroup/test2/test3/io.weight
+
+mkdir /cgroup/test2/test4
+echo 400 > /cgroup/test2/test4/io.weight
+
+#./rwio -r -f /hdb2/2000M.3 &
+dd if=/hdb2/2000M.3 of=/dev/null &
+pid4=$!
+echo $pid4 > /cgroup/test2/test3/tasks
+echo "pid4: $pid4"
+
+#./rwio -r -f /hdb2/2000M.1 &
+dd if=/hdb2/2000M.1 of=/dev/null &
+pid1=$!
+echo $pid1 > /cgroup/test1/tasks
+echo "pid1 $pid1"
+
+#./rwio -r -f /hdb2/2000M.2 &
+dd if=/hdb2/2000M.2 of=/dev/null &
+pid2=$!
+echo $pid2 > /cgroup/test2/test4/tasks
+echo "pid2 $pid2"
+
+sleep 20
+
+for ((;1;))
+{
+        ps -p $pid1 > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+                break
+        fi
+
+        kill -9 $pid1 > /dev/null 2>&1
+}
+for ((;1;))
+{
+        ps -p $pid2 > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+                break
+        fi
+
+        kill -9 $pid2 > /dev/null 2>&1
+}
+
+
+kill -9 $pid4 > /dev/null 2>&1
+
+rmdir /cgroup/test2/test3
+rmdir /cgroup/test2/test4
+rmdir /cgroup/test2
+rmdir /cgroup/test1
+
+umount /cgroup
+rmdir /cgroup
