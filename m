@@ -1,12 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v5] clone_with_pids() system call
-Date: Mon, 7 Sep 2009 14:13:02 -0700
-Message-ID: <20090907211302.GA5892@us.ibm.com>
+Subject: [RFC][v5][PATCH 1/8]: Factor out code to allocate pidmap page
+Date: Mon, 7 Sep 2009 14:13:58 -0700
+Message-ID: <20090907211358.GA6685__36765.2093097151$1252357810$gmane$org@us.ibm.com>
+References: <20090907211302.GA5892@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20090907211302.GA5892-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,98 +23,90 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-To support application checkpoint/restart, a task must have the same pid it
-had when it was checkpointed.  When containers are nested, the tasks within
-the containers exist in multiple pid namespaces and hence have multiple pids
-to specify during restart.
 
-This patchset implements a new system call, clone_with_pids() that lets a
-process specify the pids of the child process.
+Subject: [RFC][v5][PATCH 1/8]: Factor out code to allocate pidmap page
 
-Patches 1 through 6 are helpers and we believe they are needed for application
-restart, regardless of the kernel implementation of application restart.
+To simplify alloc_pidmap(), move code to allocate a pid map page to a
+separate function.
 
-Patch 8/8 defines a prototype of the new system call.
+Changelog[v3]:
+	- Earlier version of patchset called alloc_pidmap_page() from two
+	  places. But now its called from only one place. Even so, moving
+	  this code out into a separate function simplifies alloc_pidmap().
+Changelog[v2]:
+	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
+	  -ENOMEM on error instead of -1.
 
-Changelog[v5]:
-	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
-	  into this set)
-	- (Eric Biederman): Avoid the new function, set_pidmap() - added
-	  couple of checks on 'target_pid' in alloc_pidmap() itself.
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/pid.c |   46 ++++++++++++++++++++++++++++++----------------
+ 1 files changed, 30 insertions(+), 16 deletions(-)
 
-=== IMPORTANT TODO:
-
-clone() system call has another limitation - all available bits in clone-flags
-are in use and any new clone-flag will need a variant of the clone() system
-call. 
-
-It appears to make sense to try and extend this new system call to address
-this limitation as well. The basic requirements of a new clone system call
-could then be summarized as:
-
-	- do everything clone() does today, and
-	- give application an ability to choose pids for the child process
-	  in all ancestor pid namespaces, and
-	- allow more clone_flags
-
-Contstraints:
-
-	- system-calls are restricted to 6 parameters and clone() already
-	  takes 5 parameters, any extension to clone() interface would require
-	  one or more copy_from_user().
-
-	- does copy_from_user() of a few words have a significant impact on
-	  the total cost of clone() ?
-
-Based on these requirements and constraints, we have been exploring a couple
-of system call interfaces and appreciate any iput.  
-
-1. =====
-
-	#if 64bit
-	#define CLONE_FLAGS_WORDS	1
-	#else
-	#define CLONE_FLAGS_WORDS	2
-	#endif
-
-        struct pid_set {
-                int num_pids;
-                pid_t *pids;
-        };
-
-	typedef struct {
-		unsigned long flags[CLONE_FLAGS_WORDS];
-	} clone_flags_t;
-
-	int clone_extended(clone_flags_t *flags, void *child_stack, int *unused,
-		int *parent_tid, int *child_tid, struct pid_set *pid_set);
-
-	Pros:
-		- extendible clone_flags (like sigset_t)
-
-	Cons:
-		- copy_from_user() needed on all architectures (we maybe able
-		  to play some tricks with 'clone_flags_t' to avoid the copy
-		  on 64-bit archtitectures till N_CLONE_FLAGS exceeds 64).
-
-		- Both applications and kernel must use interfaces equivalent
-		  to sigsetops(3) to test/set/clear clone flags.
-2. ======
-
-	struct clone_info {
-		int num_clone_high_words;
-		int *flags_high;
-		struct pid_set pid_set;
-	}
-
-        int clone_extended(int flags_low, void *child_stack, void *unused,
-		int *parent_tid, int *child_tid, struct clone_info *clone_info);
-
-	Pros:
-		- copy_from_user() needed only for new flags and pid_set
-
-	Cons:
-		- splitting the high and low clone-flags is awkward ?
-
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Index: linux-2.6/kernel/pid.c
+===================================================================
+--- linux-2.6.orig/kernel/pid.c	2009-09-07 13:08:50.000000000 -0700
++++ linux-2.6/kernel/pid.c	2009-09-07 13:11:30.000000000 -0700
+@@ -122,9 +122,35 @@
+ 	atomic_inc(&map->nr_free);
+ }
+ 
++static int alloc_pidmap_page(struct pidmap *map)
++{
++	void *page;
++
++	if (likely(map->page))
++		return 0;
++
++	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
++
++	/*
++	 * Free the page if someone raced with us installing it:
++	 */
++	spin_lock_irq(&pidmap_lock);
++	if (map->page)
++		kfree(page);
++	else
++		map->page = page;
++	spin_unlock_irq(&pidmap_lock);
++
++	if (unlikely(!map->page))
++		return -ENOMEM;
++
++	return 0;
++}
++
+ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ {
+ 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
++	int rc;
+ 	struct pidmap *map;
+ 
+ 	pid = last + 1;
+@@ -134,21 +160,10 @@
+ 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+ 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+ 	for (i = 0; i <= max_scan; ++i) {
+-		if (unlikely(!map->page)) {
+-			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+-			/*
+-			 * Free the page if someone raced with us
+-			 * installing it:
+-			 */
+-			spin_lock_irq(&pidmap_lock);
+-			if (map->page)
+-				kfree(page);
+-			else
+-				map->page = page;
+-			spin_unlock_irq(&pidmap_lock);
+-			if (unlikely(!map->page))
+-				break;
+-		}
++		rc = alloc_pidmap_page(map);
++		if (rc)
++			break;
++
+ 		if (likely(atomic_read(&map->nr_free))) {
+ 			do {
+ 				if (!test_and_set_bit(offset, map->page)) {
