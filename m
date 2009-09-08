@@ -1,15 +1,15 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 5/6] c/r: correctly restore pgid
-Date: Tue, 08 Sep 2009 09:33:04 -0400
-Message-ID: <4AA65D10.6000702@librato.com>
-References: <1252074054-22241-1-git-send-email-orenl@librato.com>
-	<1252074054-22241-6-git-send-email-orenl@librato.com>
-	<20090908030445.GB16460@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO scheduler based IO controller V9
+Date: Tue, 8 Sep 2009 09:53:52 -0400
+Message-ID: <20090908135352.GC15974__38722.3156555139$1252418227$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<4AA4B905.8010801@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090908030445.GB16460-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AA4B905.8010801-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,130 +19,101 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->> The main challenge with restoring the pgid of tasks is that the
->> original "owner" (the process with that pid) might have exited
->> already. I call these "ghost" pgids. 'mktree' does create these
->> processes, but they then exit without participating in the restart.
->>
->> To solve this, this patch introduces a RESTART_GHOST flag, used for
->> "ghost" owners that are created only to pass their pgid to other
->> tasks. ('mktree' now makes them call restart(2) instead of exiting).
->>
->> When a "ghost" task calls restart(2), it will be placed on a wait
->> queue until the restart completes and then exit. This guarantees that
->> the pgid that it owns remains available for all (regular) restarting
->> tasks for when they need it.
->>
->> Regular tasks perform the restart as before, except that they also
->> now restore their old pgrp, which is guaranteed to exist.
->>
->> Changelog [v1]:
->>   - Verify that pgid owner is a thread-group-leader.
->>   - Handle the case of pgid/sid == 0 using root's parent pid-ns
->>
->> Signed-off-by: Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
->> ---
->>  checkpoint/process.c             |  106 ++++++++++++++++++++++++-
->>  checkpoint/restart.c             |  158 ++++++++++++++++++++++++++------------
->>  checkpoint/sys.c                 |    3 +-
->>  include/linux/checkpoint.h       |   11 ++-
->>  include/linux/checkpoint_hdr.h   |    3 +
->>  include/linux/checkpoint_types.h |    6 +-
->>  6 files changed, 230 insertions(+), 57 deletions(-)
->>
->> diff --git a/checkpoint/process.c b/checkpoint/process.c
->> index 40b2580..5d6bdb9 100644
->> --- a/checkpoint/process.c
->> +++ b/checkpoint/process.c
->> @@ -23,6 +23,57 @@
->>  #include <linux/syscalls.h>
->>
->>
->> +pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
->> +{
->> +	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
->> +}
->> +
->> +/* must be called with tasklist_lock or rcu_read_lock() held */
->> +struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
->> +{
->> +	struct task_struct *p;
->> +	struct pid *pgrp;
->> +
->> +	if (pgid == 0) {
->> +		/*
->> +		 * At checkpoint the pgid owner lived in an ancestor
->> +		 * pid-ns. The best we can do (sanely and safely) is
->> +		 * to examine the parent of this restart's root: if in
->> +		 * a distinct pid-ns, use its pgrp; otherwise fail.
->> +		 */
->> +		p = ctx->root_task->real_parent;
->> +		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
->> +			return NULL;
->> +		pgrp = task_pgrp(p);
->> +	} else {
->> +		/*
->> +		 * Find the owner process of this pgid (it must exist
->> +		 * if pgrp exists). It must be a thread group leader.
->> +		 */
->> +		pgrp = find_vpid(pgid);
->> +		p = pid_task(pgrp, PIDTYPE_PID);
->> +		if (!p || !thread_group_leader(p))
->> +			return NULL;
->> +		/*
->> +		 * The pgrp must "belong" to our restart tree (compare
->> +		 * p->checkpoint_ctx to ours). This prevents malicious
->> +		 * input from (guessing and) using unrelated pgrps. If
->> +		 * the owner is dead, then it doesn't have a context,
->> +		 * so instead compare against its (real) parent's.
->> +		 */
->> +		if (p->exit_state == EXIT_ZOMBIE)
->> +			p = p->real_parent;
->> +		if (p->checkpoint_ctx != ctx)
->> +			return NULL;
->> +	}
->> +
->> +	if (task_session(current) != task_session(p))
->> +		return NULL;
->> +
->> +	return pgrp;
->> +}
->> +
->> +
->>  #ifdef CONFIG_FUTEX
->>  static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
->>  					struct task_struct *t)
->> @@ -94,8 +145,8 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
->>  		h->exit_signal = t->exit_signal;
->>  		h->pdeath_signal = t->pdeath_signal;
->>
->> -		h->set_child_tid = t->set_child_tid;
->> -		h->clear_child_tid = t->clear_child_tid;
->> +		h->set_child_tid = (unsigned long) t->set_child_tid;
+On Mon, Sep 07, 2009 at 03:40:53PM +0800, Gui Jianfeng wrote:
+> Hi Vivek,
 > 
-> note that set_child_tid is an int (signed), not a long.  Same on
-> x86, but not on other arches.  Shouldn't lose info so could be worse.
-
-{set,clear}_child_tid are both pointers to user space: it's an address
-in userspace, so we save it as 'unsigned long'.
-
-{clear,set}_child_tid is defined in include/linux/sched.h ... how can
-it differ for different archs ?
-
+> I happened to encount a bug when i test IO Controller V9.
+> When there are three tasks to run concurrently in three group,
+> that is, one is parent group, and other two tasks are running 
+> in two different child groups respectively to read or write 
+> files in some disk, say disk "hdb", The task may hang up, and 
+> other tasks which access into "hdb" will also hang up.
 > 
-> On the whole,
+> The bug only happens when using AS io scheduler.
+> The following scirpt can reproduce this bug in my box.
 > 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Thanks. I got a few fixes for the code piles up and now c/r of 'screen'
-with a couple of shells is working :)
+Thanks for the testing it out Gui. I will run this test case on my machine
+and see if I can reproduce this issue on my box and try to fix it.
 
-Oren.
+Is your box completely hung or IO scheduler don't seem to be doing
+anything. Can you try to swith the io scheduler to something else (after
+it appears to be hung), and see if switch is successful and new scheduler
+starts working?
+
+Thanks
+Vivek
+
+> ===========
+> #!/bin/sh
+> 
+> mkdir /cgroup
+> mount -t cgroup -o io,blkio io  /cgroup
+> 
+> echo anticipatory > /sys/block/hdb/queue/scheduler
+> 
+> mkdir /cgroup/test1
+> echo 100 > /cgroup/test1/io.weight
+> 
+> mkdir /cgroup/test2
+> echo 400 > /cgroup/test2/io.weight
+> 
+> mkdir /cgroup/test2/test3
+> echo 400 > /cgroup/test2/test3/io.weight
+> 
+> mkdir /cgroup/test2/test4
+> echo 400 > /cgroup/test2/test4/io.weight
+> 
+> #./rwio -r -f /hdb2/2000M.3 &
+> dd if=/hdb2/2000M.3 of=/dev/null &
+> pid4=$!
+> echo $pid4 > /cgroup/test2/test3/tasks
+> echo "pid4: $pid4"
+> 
+> #./rwio -r -f /hdb2/2000M.1 &
+> dd if=/hdb2/2000M.1 of=/dev/null &
+> pid1=$!
+> echo $pid1 > /cgroup/test1/tasks
+> echo "pid1 $pid1"
+> 
+> #./rwio -r -f /hdb2/2000M.2 &
+> dd if=/hdb2/2000M.2 of=/dev/null &
+> pid2=$!
+> echo $pid2 > /cgroup/test2/test4/tasks
+> echo "pid2 $pid2"
+> 
+> sleep 20
+> 
+> for ((;1;))
+> {
+>         ps -p $pid1 > /dev/null 2>&1
+>         if [ $? -ne 0 ]; then
+>                 break
+>         fi
+> 
+>         kill -9 $pid1 > /dev/null 2>&1
+> }
+> for ((;1;))
+> {
+>         ps -p $pid2 > /dev/null 2>&1
+>         if [ $? -ne 0 ]; then
+>                 break
+>         fi
+> 
+>         kill -9 $pid2 > /dev/null 2>&1
+> }
+> 
+> 
+> kill -9 $pid4 > /dev/null 2>&1
+> 
+> rmdir /cgroup/test2/test3
+> rmdir /cgroup/test2/test4
+> rmdir /cgroup/test2
+> rmdir /cgroup/test1
+> 
+> umount /cgroup
+> rmdir /cgroup
