@@ -1,15 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v5][PATCH 8/8]: Define clone_with_pids() syscall
-Date: Tue, 08 Sep 2009 13:19:08 -0500
-Message-ID: <m3zl95l2oz.fsf__5962.19734657115$1252434067$gmane$org@pobox.com>
-References: <20090907211302.GA5892@us.ibm.com>
-	<20090907211700.GH6685@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO scheduler based IO controller V9
+Date: Tue, 8 Sep 2009 15:19:41 -0400
+Message-ID: <20090908191941.GF15974__44572.9609266438$1252437810$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<4AA4B905.8010801@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090907211700.GH6685-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
-	message of "Mon\, 7 Sep 2009 14\:17\:00 -0700")
+Content-Disposition: inline
+In-Reply-To: <4AA4B905.8010801-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +19,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Suka,
+On Mon, Sep 07, 2009 at 03:40:53PM +0800, Gui Jianfeng wrote:
+> Hi Vivek,
+> 
+> I happened to encount a bug when i test IO Controller V9.
+> When there are three tasks to run concurrently in three group,
+> that is, one is parent group, and other two tasks are running 
+> in two different child groups respectively to read or write 
+> files in some disk, say disk "hdb", The task may hang up, and 
+> other tasks which access into "hdb" will also hang up.
+> 
+> The bug only happens when using AS io scheduler.
+> The following scirpt can reproduce this bug in my box.
+> 
 
-I ran across an issue with this on ppc64.
+Hi Gui,
 
-> +static pid_t *copy_target_pids(void __user *upid_setp)
-> +{
-> +	int j;
-> +	int rc;
-> +	int size;
-> +	int unum_pids;		/* # of pids specified by user */
-> +	int knum_pids;		/* # of pids needed in kernel */
-> +	pid_t *target_pids;
-> +	struct pid_set pid_set;
-> +
-> +	if (!upid_setp)
-> +		return NULL;
-> +
-> +	rc = copy_from_user(&pid_set, upid_setp, sizeof(pid_set));
+I tried reproducing this on my system and can't reproduce it. All the
+three processes get killed and system does not hang.
 
-This doesn't work on a 64-bit kernel when the process is 32-bit and uses
-the definition of struct pid_set provided in types.h:
+Can you please dig deeper a bit into it. 
 
-+struct pid_set {
-+	int num_pids;
-+	pid_t *pids;
-+};
+- If whole system hangs or it is just IO to disk seems to be hung.
+- Does io scheduler switch on the device work
+- If the system is not hung, can you capture the blktrace on the device.
+  Trace might give some idea, what's happening.
 
-Shouldn't the pids field be u64 or some other type of fixed size?
+Thanks
+Vivek
+ 
+> ===========
+> #!/bin/sh
+> 
+> mkdir /cgroup
+> mount -t cgroup -o io,blkio io  /cgroup
+> 
+> echo anticipatory > /sys/block/hdb/queue/scheduler
+> 
+> mkdir /cgroup/test1
+> echo 100 > /cgroup/test1/io.weight
+> 
+> mkdir /cgroup/test2
+> echo 400 > /cgroup/test2/io.weight
+> 
+> mkdir /cgroup/test2/test3
+> echo 400 > /cgroup/test2/test3/io.weight
+> 
+> mkdir /cgroup/test2/test4
+> echo 400 > /cgroup/test2/test4/io.weight
+> 
+> #./rwio -r -f /hdb2/2000M.3 &
+> dd if=/hdb2/2000M.3 of=/dev/null &
+> pid4=$!
+> echo $pid4 > /cgroup/test2/test3/tasks
+> echo "pid4: $pid4"
+> 
+> #./rwio -r -f /hdb2/2000M.1 &
+> dd if=/hdb2/2000M.1 of=/dev/null &
+> pid1=$!
+> echo $pid1 > /cgroup/test1/tasks
+> echo "pid1 $pid1"
+> 
+> #./rwio -r -f /hdb2/2000M.2 &
+> dd if=/hdb2/2000M.2 of=/dev/null &
+> pid2=$!
+> echo $pid2 > /cgroup/test2/test4/tasks
+> echo "pid2 $pid2"
+> 
+> sleep 20
+> 
+> for ((;1;))
+> {
+>         ps -p $pid1 > /dev/null 2>&1
+>         if [ $? -ne 0 ]; then
+>                 break
+>         fi
+> 
+>         kill -9 $pid1 > /dev/null 2>&1
+> }
+> for ((;1;))
+> {
+>         ps -p $pid2 > /dev/null 2>&1
+>         if [ $? -ne 0 ]; then
+>                 break
+>         fi
+> 
+>         kill -9 $pid2 > /dev/null 2>&1
+> }
+> 
+> 
+> kill -9 $pid4 > /dev/null 2>&1
+> 
+> rmdir /cgroup/test2/test3
+> rmdir /cgroup/test2/test4
+> rmdir /cgroup/test2
+> rmdir /cgroup/test1
+> 
+> umount /cgroup
+> rmdir /cgroup
