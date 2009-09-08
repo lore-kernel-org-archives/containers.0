@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/6] c/r: correctly restore pgid
-Date: Tue, 8 Sep 2009 09:00:56 -0500
-Message-ID: <20090908140056.GA873@us.ibm.com>
-References: <1252074054-22241-1-git-send-email-orenl@librato.com>
-	<1252074054-22241-6-git-send-email-orenl@librato.com>
-	<20090908030445.GB16460@us.ibm.com> <4AA65D10.6000702@librato.com>
+Subject: Re: [RFC][v5][PATCH 4/8]: Add target_pid parameter to alloc_pidmap()
+Date: Tue, 8 Sep 2009 09:16:42 -0500
+Message-ID: <20090908141641.GA2939__26872.6642513231$1252420029$gmane$org@us.ibm.com>
+References: <20090907211302.GA5892@us.ibm.com>
+	<20090907211506.GD6685@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AA65D10.6000702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20090907211506.GD6685-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,133 +19,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
 > 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> >> The main challenge with restoring the pgid of tasks is that the
-> >> original "owner" (the process with that pid) might have exited
-> >> already. I call these "ghost" pgids. 'mktree' does create these
-> >> processes, but they then exit without participating in the restart.
-> >>
-> >> To solve this, this patch introduces a RESTART_GHOST flag, used for
-> >> "ghost" owners that are created only to pass their pgid to other
-> >> tasks. ('mktree' now makes them call restart(2) instead of exiting).
-> >>
-> >> When a "ghost" task calls restart(2), it will be placed on a wait
-> >> queue until the restart completes and then exit. This guarantees that
-> >> the pgid that it owns remains available for all (regular) restarting
-> >> tasks for when they need it.
-> >>
-> >> Regular tasks perform the restart as before, except that they also
-> >> now restore their old pgrp, which is guaranteed to exist.
-> >>
-> >> Changelog [v1]:
-> >>   - Verify that pgid owner is a thread-group-leader.
-> >>   - Handle the case of pgid/sid == 0 using root's parent pid-ns
-> >>
-> >> Signed-off-by: Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
-> >> ---
-> >>  checkpoint/process.c             |  106 ++++++++++++++++++++++++-
-> >>  checkpoint/restart.c             |  158 ++++++++++++++++++++++++++------------
-> >>  checkpoint/sys.c                 |    3 +-
-> >>  include/linux/checkpoint.h       |   11 ++-
-> >>  include/linux/checkpoint_hdr.h   |    3 +
-> >>  include/linux/checkpoint_types.h |    6 +-
-> >>  6 files changed, 230 insertions(+), 57 deletions(-)
-> >>
-> >> diff --git a/checkpoint/process.c b/checkpoint/process.c
-> >> index 40b2580..5d6bdb9 100644
-> >> --- a/checkpoint/process.c
-> >> +++ b/checkpoint/process.c
-> >> @@ -23,6 +23,57 @@
-> >>  #include <linux/syscalls.h>
-> >>
-> >>
-> >> +pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
-> >> +{
-> >> +	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
-> >> +}
-> >> +
-> >> +/* must be called with tasklist_lock or rcu_read_lock() held */
-> >> +struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
-> >> +{
-> >> +	struct task_struct *p;
-> >> +	struct pid *pgrp;
-> >> +
-> >> +	if (pgid == 0) {
-> >> +		/*
-> >> +		 * At checkpoint the pgid owner lived in an ancestor
-> >> +		 * pid-ns. The best we can do (sanely and safely) is
-> >> +		 * to examine the parent of this restart's root: if in
-> >> +		 * a distinct pid-ns, use its pgrp; otherwise fail.
-> >> +		 */
-> >> +		p = ctx->root_task->real_parent;
-> >> +		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
-> >> +			return NULL;
-> >> +		pgrp = task_pgrp(p);
-> >> +	} else {
-> >> +		/*
-> >> +		 * Find the owner process of this pgid (it must exist
-> >> +		 * if pgrp exists). It must be a thread group leader.
-> >> +		 */
-> >> +		pgrp = find_vpid(pgid);
-> >> +		p = pid_task(pgrp, PIDTYPE_PID);
-> >> +		if (!p || !thread_group_leader(p))
-> >> +			return NULL;
-> >> +		/*
-> >> +		 * The pgrp must "belong" to our restart tree (compare
-> >> +		 * p->checkpoint_ctx to ours). This prevents malicious
-> >> +		 * input from (guessing and) using unrelated pgrps. If
-> >> +		 * the owner is dead, then it doesn't have a context,
-> >> +		 * so instead compare against its (real) parent's.
-> >> +		 */
-> >> +		if (p->exit_state == EXIT_ZOMBIE)
-> >> +			p = p->real_parent;
-> >> +		if (p->checkpoint_ctx != ctx)
-> >> +			return NULL;
-> >> +	}
-> >> +
-> >> +	if (task_session(current) != task_session(p))
-> >> +		return NULL;
-> >> +
-> >> +	return pgrp;
-> >> +}
-> >> +
-> >> +
-> >>  #ifdef CONFIG_FUTEX
-> >>  static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
-> >>  					struct task_struct *t)
-> >> @@ -94,8 +145,8 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
-> >>  		h->exit_signal = t->exit_signal;
-> >>  		h->pdeath_signal = t->pdeath_signal;
-> >>
-> >> -		h->set_child_tid = t->set_child_tid;
-> >> -		h->clear_child_tid = t->clear_child_tid;
-> >> +		h->set_child_tid = (unsigned long) t->set_child_tid;
-> > 
-> > note that set_child_tid is an int (signed), not a long.  Same on
-> > x86, but not on other arches.  Shouldn't lose info so could be worse.
+> Subject: [RFC][v5][PATCH 4/8]: Add target_pid parameter to alloc_pidmap()
 > 
-> {set,clear}_child_tid are both pointers to user space: it's an address
-> in userspace, so we save it as 'unsigned long'.
+> With support for setting a specific pid number for a process,
+> alloc_pidmap() will need a 'target_pid' parameter.
 > 
-> {clear,set}_child_tid is defined in include/linux/sched.h ... how can
-> it differ for different archs ?
+> Changelog[v3]:
+> 	- (Eric Biederman): Avoid set_pidmap() function. Added couple of
+> 	  checks for target_pid in alloc_pidmap() itself.
+> Changelog[v2]:
+> 	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
+> 	  actually checks for 'pid <= 0' for completeness).
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-sizeof long differs for different archs.  Not the type of x_child_tid.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> > 
-> > On the whole,
-> > 
-> > Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> Thanks. I got a few fixes for the code piles up and now c/r of 'screen'
-> with a couple of shells is working :)
-
-Cool!
+> Index: linux-mmotm/kernel/pid.c
+> ===================================================================
+> --- linux-mmotm.orig/kernel/pid.c	2009-09-05 21:17:36.000000000 -0700
+> +++ linux-mmotm/kernel/pid.c	2009-09-05 21:19:11.000000000 -0700
+> @@ -146,16 +146,22 @@
+>  	return 0;
+>  }
+> 
+> -static int alloc_pidmap(struct pid_namespace *pid_ns)
+> +static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
+>  {
+>  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+>  	int rc = -EAGAIN;
+>  	int pid_max = pid_ns->pid_max;
+>  	struct pidmap *map;
+> 
+> -	pid = last + 1;
+> -	if (pid >= pid_max)
+> -		pid = RESERVED_PIDS;
+> +	if (target_pid) {
+> +		pid = target_pid;
+> +		if (pid < 0 || pid >= pid_max)
+> +			return -EINVAL;
+> +	} else {
+> +		pid = last + 1;
+> +		if (pid >= pid_max)
+> +			pid = RESERVED_PIDS;
+> +	}
+>  	offset = pid & BITS_PER_PAGE_MASK;
+>  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+>  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+> @@ -168,9 +174,14 @@
+>  			do {
+>  				if (!test_and_set_bit(offset, map->page)) {
+>  					atomic_dec(&map->nr_free);
+> -					pid_ns->last_pid = pid;
+> +					if (!target_pid)
+> +						pid_ns->last_pid = pid;
+>  					return pid;
+> +				} else if (target_pid) {
+> +					rc = -EBUSY;
+> +					break;
+>  				}
+> +
+>  				offset = find_next_offset(map, offset);
+>  				pid = mk_pid(pid_ns, map, offset);
+>  			/*
+> @@ -196,6 +207,7 @@
+>  		}
+>  		pid = mk_pid(pid_ns, map, offset);
+>  	}
+> +
+>  	return rc;
+>  }
+> 
+> @@ -272,7 +284,7 @@
+> 
+>  	tmp = ns;
+>  	for (i = ns->level; i >= 0; i--) {
+> -		nr = alloc_pidmap(tmp);
+> +		nr = alloc_pidmap(tmp, 0);
+>  		if (nr < 0)
+>  			goto out_free;
