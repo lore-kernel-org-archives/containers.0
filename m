@@ -1,15 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 3/6] c/r: [pty 2/2] support for pseudo terminals
-Date: Tue, 08 Sep 2009 09:19:58 -0400
-Message-ID: <4AA659FE.6040808@librato.com>
+Subject: Re: [PATCH 5/6] c/r: correctly restore pgid
+Date: Tue, 08 Sep 2009 09:33:04 -0400
+Message-ID: <4AA65D10.6000702@librato.com>
 References: <1252074054-22241-1-git-send-email-orenl@librato.com>
-	<1252074054-22241-4-git-send-email-orenl@librato.com>
-	<20090908085013.GQ12824@hawkmoon.kerlabs.com>
+	<1252074054-22241-6-git-send-email-orenl@librato.com>
+	<20090908030445.GB16460@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090908085013.GQ12824-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+In-Reply-To: <20090908030445.GB16460-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,75 +19,130 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Louis Rilling wrote:
-> On 04/09/09 10:20 -0400, Oren Laadan wrote:
->> This patch adds support for checkpoint and restart of pseudo terminals
->> (PTYs). Since PTYs are shared (pointed to by file, and signal), they
->> are managed via objhash.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>> The main challenge with restoring the pgid of tasks is that the
+>> original "owner" (the process with that pid) might have exited
+>> already. I call these "ghost" pgids. 'mktree' does create these
+>> processes, but they then exit without participating in the restart.
 >>
->> PTYs are master/slave pairs; The code arranges for the master to
->> always be checkpointed first, followed by the slave. This is important
->> since during restart both ends are created when restoring the master.
+>> To solve this, this patch introduces a RESTART_GHOST flag, used for
+>> "ghost" owners that are created only to pass their pgid to other
+>> tasks. ('mktree' now makes them call restart(2) instead of exiting).
 >>
->> In this patch only UNIX98 style PTYs are supported.
+>> When a "ghost" task calls restart(2), it will be placed on a wait
+>> queue until the restart completes and then exit. This guarantees that
+>> the pgid that it owns remains available for all (regular) restarting
+>> tasks for when they need it.
 >>
->> Currently only PTYs that are referenced by open files are handled.
->> Thus PTYs checkpoint starts with a file in tty_file_checkpoint(). It
->> will first checkpoint the master and slave PTYs via tty_checkpoint(),
->> and then complete the saving of the file descriptor. This means that
->> in the image file, the order of objects is: master-tty, slave-tty,
->> file-desc.
+>> Regular tasks perform the restart as before, except that they also
+>> now restore their old pgrp, which is guaranteed to exist.
 >>
->> During restart, to restore the master side, we open the /dev/ptmx
->> device and get a file handle. But at this point we don't know the
->> designated objref for this file, because the file is due later on in
->> the image stream. On the other hand, we can't just fput() the file
->> because it will close the PTY too.
+>> Changelog [v1]:
+>>   - Verify that pgid owner is a thread-group-leader.
+>>   - Handle the case of pgid/sid == 0 using root's parent pid-ns
 >>
->> Instead, when we checkpoint the master PTY, we _reserve_ an objref
->> for the file (which won't be further used in checkpoint). Then at
->> restart, use it to insert the file to objhash.
+>> Signed-off-by: Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
+>> ---
+>>  checkpoint/process.c             |  106 ++++++++++++++++++++++++-
+>>  checkpoint/restart.c             |  158 ++++++++++++++++++++++++++------------
+>>  checkpoint/sys.c                 |    3 +-
+>>  include/linux/checkpoint.h       |   11 ++-
+>>  include/linux/checkpoint_hdr.h   |    3 +
+>>  include/linux/checkpoint_types.h |    6 +-
+>>  6 files changed, 230 insertions(+), 57 deletions(-)
 >>
->> TODO:
+>> diff --git a/checkpoint/process.c b/checkpoint/process.c
+>> index 40b2580..5d6bdb9 100644
+>> --- a/checkpoint/process.c
+>> +++ b/checkpoint/process.c
+>> @@ -23,6 +23,57 @@
+>>  #include <linux/syscalls.h>
 >>
->> * Better sanitize input from checkpoint image on restore
->> * Check the locking when saving/restoring tty_struct state
->> * Echo position/buffer isn't saved (is it needed ?)
->> * Handle multiple devpts mounts (namespaces)
->> * Paths of ptmx and slaves are hard coded (/dev/ptmx, /dev/pts/...)
 >>
->> Changelog[v1]:
->>   - Adjust include/asm/checkpoint_hdr.h for s390 architecture
->>   - Add NCC to kernel constants header (ckpt_hdr_const)
->>   - [Serge Hallyn] fix calculation of canon_datalen
->>
->> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> 
-> [...]
-> 
->> diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
->> index a3afa0c..b8f8d79 100644
->> --- a/drivers/char/tty_io.c
->> +++ b/drivers/char/tty_io.c
->> @@ -570,7 +582,9 @@ static void do_tty_hangup(struct work_struct *work)
->>  	set_bit(TTY_HUPPED, &tty->flags);
->>  	spin_unlock_irqrestore(&tty->ctrl_lock, flags);
->>  
->> -	/* Account for the p->signal references we killed */
->> +	/* Account
+>> +pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
+>> +{
+>> +	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
+>> +}
 >> +
->> +	   for the p->signal references we killed */
->>  	while (refs--)
->>  		tty_kref_put(tty);
->>  
+>> +/* must be called with tasklist_lock or rcu_read_lock() held */
+>> +struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
+>> +{
+>> +	struct task_struct *p;
+>> +	struct pid *pgrp;
+>> +
+>> +	if (pgid == 0) {
+>> +		/*
+>> +		 * At checkpoint the pgid owner lived in an ancestor
+>> +		 * pid-ns. The best we can do (sanely and safely) is
+>> +		 * to examine the parent of this restart's root: if in
+>> +		 * a distinct pid-ns, use its pgrp; otherwise fail.
+>> +		 */
+>> +		p = ctx->root_task->real_parent;
+>> +		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
+>> +			return NULL;
+>> +		pgrp = task_pgrp(p);
+>> +	} else {
+>> +		/*
+>> +		 * Find the owner process of this pgid (it must exist
+>> +		 * if pgrp exists). It must be a thread group leader.
+>> +		 */
+>> +		pgrp = find_vpid(pgid);
+>> +		p = pid_task(pgrp, PIDTYPE_PID);
+>> +		if (!p || !thread_group_leader(p))
+>> +			return NULL;
+>> +		/*
+>> +		 * The pgrp must "belong" to our restart tree (compare
+>> +		 * p->checkpoint_ctx to ours). This prevents malicious
+>> +		 * input from (guessing and) using unrelated pgrps. If
+>> +		 * the owner is dead, then it doesn't have a context,
+>> +		 * so instead compare against its (real) parent's.
+>> +		 */
+>> +		if (p->exit_state == EXIT_ZOMBIE)
+>> +			p = p->real_parent;
+>> +		if (p->checkpoint_ctx != ctx)
+>> +			return NULL;
+>> +	}
+>> +
+>> +	if (task_session(current) != task_session(p))
+>> +		return NULL;
+>> +
+>> +	return pgrp;
+>> +}
+>> +
+>> +
+>>  #ifdef CONFIG_FUTEX
+>>  static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
+>>  					struct task_struct *t)
+>> @@ -94,8 +145,8 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+>>  		h->exit_signal = t->exit_signal;
+>>  		h->pdeath_signal = t->pdeath_signal;
+>>
+>> -		h->set_child_tid = t->set_child_tid;
+>> -		h->clear_child_tid = t->clear_child_tid;
+>> +		h->set_child_tid = (unsigned long) t->set_child_tid;
 > 
-> Nit: this hunk is certainly not needed ;)
+> note that set_child_tid is an int (signed), not a long.  Same on
+> x86, but not on other arches.  Shouldn't lose info so could be worse.
 
-Hmm... lemme think about it ... :p
+{set,clear}_child_tid are both pointers to user space: it's an address
+in userspace, so we save it as 'unsigned long'.
+
+{clear,set}_child_tid is defined in include/linux/sched.h ... how can
+it differ for different archs ?
+
+> 
+> On the whole,
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Thanks. I got a few fixes for the code piles up and now c/r of 'screen'
+with a couple of shells is working :)
 
 Oren.
