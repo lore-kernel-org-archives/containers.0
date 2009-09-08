@@ -1,15 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V9
-Date: Tue, 8 Sep 2009 15:19:41 -0400
-Message-ID: <20090908191941.GF15974__44572.9609266438$1252437810$gmane$org@redhat.com>
-References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<4AA4B905.8010801@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] cr: pty: don't use required_id, change ptmx_open()
+Date: Tue, 8 Sep 2009 14:51:31 -0500
+Message-ID: <20090908195131.GA23683@us.ibm.com>
+References: <20090902233111.GA27125@us.ibm.com> <4AA69EEB.9040706@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AA4B905.8010801-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4AA69EEB.9040706-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,105 +18,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Sep 07, 2009 at 03:40:53PM +0800, Gui Jianfeng wrote:
-> Hi Vivek,
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> > +	file = alloc_file(nd.path.mnt, ptmxdentry, FMODE_READ|FMODE_WRITE, &tty_fops);
+> > +	path_put(&nd.path);
+> > +	if (!file) {
+> > +		dput(ptmxdentry);
+> > +		return ERR_PTR(-EINVAL);
+> > +	}
+> > +
+> > +	ret = security_dentry_open(file, current_cred());
+> > +	if (ret) {
+> > +		fput(file);
+> > +		return ERR_PTR(ret);
+> > +	}
+> > +	/* check write access perms to file */
 > 
-> I happened to encount a bug when i test IO Controller V9.
-> When there are three tasks to run concurrently in three group,
-> that is, one is parent group, and other two tasks are running 
-> in two different child groups respectively to read or write 
-> files in some disk, say disk "hdb", The task may hang up, and 
-> other tasks which access into "hdb" will also hang up.
-> 
-> The bug only happens when using AS io scheduler.
-> The following scirpt can reproduce this bug in my box.
-> 
+> I bet the above can be done by reusing lookup and __dentry_open()
+> functions from fs/open.c and fs/namei.c ...
 
-Hi Gui,
+With lookup_create()?  Hmm, yeah - I think there are reasons I can't do
+that, but I'll just try and see where it gets us.
 
-I tried reproducing this on my system and can't reproduce it. All the
-three processes get killed and system does not hang.
+> > +
+> > +	lock_kernel();  /* tty_open does it... */
+> > +	ret = open_create_pty(fdir, h->index, file);
+> > +	unlock_kernel();
+> > +	if (ret) {
+> > +		fput(file);
+> > +		return ERR_PTR(ret);
+> > +	}
+> > +	ckpt_debug("master file %p (obj %d)\n", file, h->file_objref);
+> > +
+> > +	/*
+> > +	 * Add file to objhash to ensure proper cleanup later
+> > +	 * (it isn't referenced elsewhere). Use h->file_objref
+> > +	 * which was explicitly during checkpoint for this.
+> > +	 */
+> > +	ret = ckpt_obj_insert(ctx, file, h->file_objref, CKPT_OBJ_FILE);
+> > +	if (ret < 0) {
+> > +		fput(file);
+> > +		return ERR_PTR(ret);
+> > +	}
+> 
+> Can do this in caller. So
+> 
+> > +
+> > +	tty = file->private_data;
+> > +	fput(file);   /* objhash took a ref */
+> > +
+> > +	return tty;
+> > +}
+> > +
+> > +struct tty_struct *pty_open_by_master(struct ckpt_ctx *ctx,
+> > +		struct ckpt_hdr_tty *h)
+> > +{
+> > +	struct file *fdir;
+> > +	struct tty_struct *tty;
+> > +	/*
+> > +	 * we need to pick a way to specify which devpts
+> > +	 * mountpoint to use.  For now, we'll just use
+> > +	 * whatever /dev/ptmx points to
+> > +	 */
+> > +	fdir = filp_open("/dev/pts", O_RDONLY, 0);
+> > +	if (IS_ERR(fdir))
+> > +		return ERR_PTR(PTR_ERR(fdir));
+> 
+> Does this mean that to restore a subtree on a system without
+> devpts-ns it won't work ?  (no /dev/pts/ptmx)
 
-Can you please dig deeper a bit into it. 
+Yes.  I figured once we settle on devpts ns handling, we can
+trivially special-case the DEVPTS_MULTIPLE_INSTANCES=n case
+to use /dev/ptmx.
 
-- If whole system hangs or it is just IO to disk seems to be hung.
-- Does io scheduler switch on the device work
-- If the system is not hung, can you capture the blktrace on the device.
-  Trace might give some idea, what's happening.
+Since we're punting on devpts namespaces anyway I guess the
+pty_open_by_master() can just open /dev/ptmx directly for
+now.
 
-Thanks
-Vivek
- 
-> ===========
-> #!/bin/sh
-> 
-> mkdir /cgroup
-> mount -t cgroup -o io,blkio io  /cgroup
-> 
-> echo anticipatory > /sys/block/hdb/queue/scheduler
-> 
-> mkdir /cgroup/test1
-> echo 100 > /cgroup/test1/io.weight
-> 
-> mkdir /cgroup/test2
-> echo 400 > /cgroup/test2/io.weight
-> 
-> mkdir /cgroup/test2/test3
-> echo 400 > /cgroup/test2/test3/io.weight
-> 
-> mkdir /cgroup/test2/test4
-> echo 400 > /cgroup/test2/test4/io.weight
-> 
-> #./rwio -r -f /hdb2/2000M.3 &
-> dd if=/hdb2/2000M.3 of=/dev/null &
-> pid4=$!
-> echo $pid4 > /cgroup/test2/test3/tasks
-> echo "pid4: $pid4"
-> 
-> #./rwio -r -f /hdb2/2000M.1 &
-> dd if=/hdb2/2000M.1 of=/dev/null &
-> pid1=$!
-> echo $pid1 > /cgroup/test1/tasks
-> echo "pid1 $pid1"
-> 
-> #./rwio -r -f /hdb2/2000M.2 &
-> dd if=/hdb2/2000M.2 of=/dev/null &
-> pid2=$!
-> echo $pid2 > /cgroup/test2/test4/tasks
-> echo "pid2 $pid2"
-> 
-> sleep 20
-> 
-> for ((;1;))
-> {
->         ps -p $pid1 > /dev/null 2>&1
->         if [ $? -ne 0 ]; then
->                 break
->         fi
-> 
->         kill -9 $pid1 > /dev/null 2>&1
-> }
-> for ((;1;))
-> {
->         ps -p $pid2 > /dev/null 2>&1
->         if [ $? -ne 0 ]; then
->                 break
->         fi
-> 
->         kill -9 $pid2 > /dev/null 2>&1
-> }
-> 
-> 
-> kill -9 $pid4 > /dev/null 2>&1
-> 
-> rmdir /cgroup/test2/test3
-> rmdir /cgroup/test2/test4
-> rmdir /cgroup/test2
-> rmdir /cgroup/test1
-> 
-> umount /cgroup
-> rmdir /cgroup
+Or, maybe we're better off handling the namespaces.  Because
+without doing that, we are hard-coding pathnames in the kernel
+left and right, and that's Bad(tm).
+
+thanks,
+-serge
