@@ -1,16 +1,16 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/6] c/r: [pty 1/2] allow allocation of desired pty slave
-Date: Tue, 8 Sep 2009 16:04:22 +0200
-Message-ID: <20090908140422.GR12824@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/6] c/r: correctly restore pgid
+Date: Tue, 8 Sep 2009 09:00:56 -0500
+Message-ID: <20090908140056.GA873@us.ibm.com>
 References: <1252074054-22241-1-git-send-email-orenl@librato.com>
-	<1252074054-22241-3-git-send-email-orenl@librato.com>
-	<20090904152644.GA15253@us.ibm.com>
-	<20090908080944.GP12824@hawkmoon.kerlabs.com>
-	<4AA659C7.5020700@librato.com>
+	<1252074054-22241-6-git-send-email-orenl@librato.com>
+	<20090908030445.GB16460@us.ibm.com> <4AA65D10.6000702@librato.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0960095559340064440=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AA659C7.5020700-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AA65D10.6000702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,118 +18,135 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
-
---===============0960095559340064440==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-27779-1252418622-0001-2"
-Content-Disposition: inline
-
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
-
---=_bohort-27779-1252418622-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On 08/09/09  9:19 -0400, Oren Laadan wrote:
->=20
->=20
-> Louis Rilling wrote:
-> > On 04/09/09 10:26 -0500, Serge E. Hallyn wrote:
-> >> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> >>> During restart, we need to allocate pty slaves with the same
-> >>> identifiers as recorded during checkpoint. Modify the allocation code
-> >>> to allow an in-kernel caller to request a specific slave identifier.
-> >>>
-> >>> For this, add a new field to task_struct - 'required_id'. It will
-> >>> hold the desired identifier when restoring a (master) pty.
-> >>>
-> >>> The code in ptmx_open() will use this value only for tasks that try to
-> >>> open /dev/ptmx that are restarting (PF_RESTARTING), and if the value
-> >>> isn't CKPT_REQUIRED_NONE (-1).
-> >> So noone has indicated any preference for this versus the ptmx_create()
-> >> approach...
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> 
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> >> The main challenge with restoring the pgid of tasks is that the
+> >> original "owner" (the process with that pid) might have exited
+> >> already. I call these "ghost" pgids. 'mktree' does create these
+> >> processes, but they then exit without participating in the restart.
 > >>
-> >> I'm satisfied knowing we have a working fallback in case task->require=
-d_id
-> >> is deemed unacceptable.
+> >> To solve this, this patch introduces a RESTART_GHOST flag, used for
+> >> "ghost" owners that are created only to pass their pgid to other
+> >> tasks. ('mktree' now makes them call restart(2) instead of exiting).
 > >>
-> >> However I'd like to not have linux-kernel folks think us morons for not
-> >> having considered that.  Can you add a message to the changelog saying
-> >> why we're going with this approach (namely, that it lets us re-use
-> >> filp_open() instead of having to do a custom alloc_file in a new code-=
-path,
-> >> which introduces maintenance duplication for file permission checking
-> >> paths)?
-> >=20
-> > As far as I am concerned, I do have a preference for the ptmx_create()
-> > approach. This task->required_id field reminds me the former approach t=
-aken for
-> > restarting pids and (and SYSV IPC ids IIRC) from userspace, that was pr=
-oposed
-> > last year and actually deemed unacceptable [ IIRC, this was an argument=
- in favor
-> > of a restart() syscall ]. I know that it's not the same since ->require=
-d_id is
-> > not set from userspace and used in a later syscall, but still ...
-> >=20
-> > Moreover I see no reason whey there would be no way to refactorize ptmx=
- code and
-> > have less duplicated code with the ptmx_create() approach.
->=20
-> I basically agree - I simply took the easiest/fastest path; if the ptmx
-> code is properly refactored, we should use that instead.
->=20
-> Did you have a chance to look at Serge's attempt to do exactly that ?
-> https://lists.linux-foundation.org/pipermail/containers/2009-September/02=
-0363.html
+> >> When a "ghost" task calls restart(2), it will be placed on a wait
+> >> queue until the restart completes and then exit. This guarantees that
+> >> the pgid that it owns remains available for all (regular) restarting
+> >> tasks for when they need it.
+> >>
+> >> Regular tasks perform the restart as before, except that they also
+> >> now restore their old pgrp, which is guaranteed to exist.
+> >>
+> >> Changelog [v1]:
+> >>   - Verify that pgid owner is a thread-group-leader.
+> >>   - Handle the case of pgid/sid == 0 using root's parent pid-ns
+> >>
+> >> Signed-off-by: Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
+> >> ---
+> >>  checkpoint/process.c             |  106 ++++++++++++++++++++++++-
+> >>  checkpoint/restart.c             |  158 ++++++++++++++++++++++++++------------
+> >>  checkpoint/sys.c                 |    3 +-
+> >>  include/linux/checkpoint.h       |   11 ++-
+> >>  include/linux/checkpoint_hdr.h   |    3 +
+> >>  include/linux/checkpoint_types.h |    6 +-
+> >>  6 files changed, 230 insertions(+), 57 deletions(-)
+> >>
+> >> diff --git a/checkpoint/process.c b/checkpoint/process.c
+> >> index 40b2580..5d6bdb9 100644
+> >> --- a/checkpoint/process.c
+> >> +++ b/checkpoint/process.c
+> >> @@ -23,6 +23,57 @@
+> >>  #include <linux/syscalls.h>
+> >>
+> >>
+> >> +pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
+> >> +{
+> >> +	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
+> >> +}
+> >> +
+> >> +/* must be called with tasklist_lock or rcu_read_lock() held */
+> >> +struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
+> >> +{
+> >> +	struct task_struct *p;
+> >> +	struct pid *pgrp;
+> >> +
+> >> +	if (pgid == 0) {
+> >> +		/*
+> >> +		 * At checkpoint the pgid owner lived in an ancestor
+> >> +		 * pid-ns. The best we can do (sanely and safely) is
+> >> +		 * to examine the parent of this restart's root: if in
+> >> +		 * a distinct pid-ns, use its pgrp; otherwise fail.
+> >> +		 */
+> >> +		p = ctx->root_task->real_parent;
+> >> +		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
+> >> +			return NULL;
+> >> +		pgrp = task_pgrp(p);
+> >> +	} else {
+> >> +		/*
+> >> +		 * Find the owner process of this pgid (it must exist
+> >> +		 * if pgrp exists). It must be a thread group leader.
+> >> +		 */
+> >> +		pgrp = find_vpid(pgid);
+> >> +		p = pid_task(pgrp, PIDTYPE_PID);
+> >> +		if (!p || !thread_group_leader(p))
+> >> +			return NULL;
+> >> +		/*
+> >> +		 * The pgrp must "belong" to our restart tree (compare
+> >> +		 * p->checkpoint_ctx to ours). This prevents malicious
+> >> +		 * input from (guessing and) using unrelated pgrps. If
+> >> +		 * the owner is dead, then it doesn't have a context,
+> >> +		 * so instead compare against its (real) parent's.
+> >> +		 */
+> >> +		if (p->exit_state == EXIT_ZOMBIE)
+> >> +			p = p->real_parent;
+> >> +		if (p->checkpoint_ctx != ctx)
+> >> +			return NULL;
+> >> +	}
+> >> +
+> >> +	if (task_session(current) != task_session(p))
+> >> +		return NULL;
+> >> +
+> >> +	return pgrp;
+> >> +}
+> >> +
+> >> +
+> >>  #ifdef CONFIG_FUTEX
+> >>  static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
+> >>  					struct task_struct *t)
+> >> @@ -94,8 +145,8 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+> >>  		h->exit_signal = t->exit_signal;
+> >>  		h->pdeath_signal = t->pdeath_signal;
+> >>
+> >> -		h->set_child_tid = t->set_child_tid;
+> >> -		h->clear_child_tid = t->clear_child_tid;
+> >> +		h->set_child_tid = (unsigned long) t->set_child_tid;
+> > 
+> > note that set_child_tid is an int (signed), not a long.  Same on
+> > x86, but not on other arches.  Shouldn't lose info so could be worse.
+> 
+> {set,clear}_child_tid are both pointers to user space: it's an address
+> in userspace, so we save it as 'unsigned long'.
+> 
+> {clear,set}_child_tid is defined in include/linux/sched.h ... how can
+> it differ for different archs ?
 
-I only had a quick look. Will try to look closer, but don't rely on me being
-quick at this.
+sizeof long differs for different archs.  Not the type of x_child_tid.
 
-Thanks,
+> > 
+> > On the whole,
+> > 
+> > Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Thanks. I got a few fixes for the code piles up and now c/r of 'screen'
+> with a couple of shells is working :)
 
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-27779-1252418622-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkqmZGYACgkQVKcRuvQ9Q1Q9lACgitU7/9aF7Xc93df2kU6gSD6e
-YjkAnA15bDNKr+lEfTnA2MU7zi4U82Ka
-=1b51
------END PGP SIGNATURE-----
-
---=_bohort-27779-1252418622-0001-2--
-
---===============0960095559340064440==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============0960095559340064440==--
+Cool!
