@@ -1,16 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 5/6] c/r: correctly restore pgid
-Date: Tue, 08 Sep 2009 12:40:46 -0400
-Message-ID: <4AA6890E.50002@librato.com>
-References: <1252074054-22241-1-git-send-email-orenl@librato.com>
-	<1252074054-22241-6-git-send-email-orenl@librato.com>
-	<20090908030445.GB16460@us.ibm.com> <4AA65D10.6000702@librato.com>
-	<20090908140056.GA873@us.ibm.com>
+Subject: Re: [RFC] cr: pty: don't use required_id, change ptmx_open()
+Date: Tue, 08 Sep 2009 14:14:03 -0400
+Message-ID: <4AA69EEB.9040706@librato.com>
+References: <20090902233111.GA27125@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090908140056.GA873-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090902233111.GA27125-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,136 +18,243 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+I assume this will be the preferred approach. See comments
+below.
 
 Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>
->> Serge E. Hallyn wrote:
->>> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>>> The main challenge with restoring the pgid of tasks is that the
->>>> original "owner" (the process with that pid) might have exited
->>>> already. I call these "ghost" pgids. 'mktree' does create these
->>>> processes, but they then exit without participating in the restart.
->>>>
->>>> To solve this, this patch introduces a RESTART_GHOST flag, used for
->>>> "ghost" owners that are created only to pass their pgid to other
->>>> tasks. ('mktree' now makes them call restart(2) instead of exiting).
->>>>
->>>> When a "ghost" task calls restart(2), it will be placed on a wait
->>>> queue until the restart completes and then exit. This guarantees that
->>>> the pgid that it owns remains available for all (regular) restarting
->>>> tasks for when they need it.
->>>>
->>>> Regular tasks perform the restart as before, except that they also
->>>> now restore their old pgrp, which is guaranteed to exist.
->>>>
->>>> Changelog [v1]:
->>>>   - Verify that pgid owner is a thread-group-leader.
->>>>   - Handle the case of pgid/sid == 0 using root's parent pid-ns
->>>>
->>>> Signed-off-by: Oren Laadan <orenl-3n9FKfXVdfcggxPgtCmjjw@public.gmane.org>
->>>> ---
->>>>  checkpoint/process.c             |  106 ++++++++++++++++++++++++-
->>>>  checkpoint/restart.c             |  158 ++++++++++++++++++++++++++------------
->>>>  checkpoint/sys.c                 |    3 +-
->>>>  include/linux/checkpoint.h       |   11 ++-
->>>>  include/linux/checkpoint_hdr.h   |    3 +
->>>>  include/linux/checkpoint_types.h |    6 +-
->>>>  6 files changed, 230 insertions(+), 57 deletions(-)
->>>>
->>>> diff --git a/checkpoint/process.c b/checkpoint/process.c
->>>> index 40b2580..5d6bdb9 100644
->>>> --- a/checkpoint/process.c
->>>> +++ b/checkpoint/process.c
->>>> @@ -23,6 +23,57 @@
->>>>  #include <linux/syscalls.h>
->>>>
->>>>
->>>> +pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
->>>> +{
->>>> +	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
->>>> +}
->>>> +
->>>> +/* must be called with tasklist_lock or rcu_read_lock() held */
->>>> +struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
->>>> +{
->>>> +	struct task_struct *p;
->>>> +	struct pid *pgrp;
->>>> +
->>>> +	if (pgid == 0) {
->>>> +		/*
->>>> +		 * At checkpoint the pgid owner lived in an ancestor
->>>> +		 * pid-ns. The best we can do (sanely and safely) is
->>>> +		 * to examine the parent of this restart's root: if in
->>>> +		 * a distinct pid-ns, use its pgrp; otherwise fail.
->>>> +		 */
->>>> +		p = ctx->root_task->real_parent;
->>>> +		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
->>>> +			return NULL;
->>>> +		pgrp = task_pgrp(p);
->>>> +	} else {
->>>> +		/*
->>>> +		 * Find the owner process of this pgid (it must exist
->>>> +		 * if pgrp exists). It must be a thread group leader.
->>>> +		 */
->>>> +		pgrp = find_vpid(pgid);
->>>> +		p = pid_task(pgrp, PIDTYPE_PID);
->>>> +		if (!p || !thread_group_leader(p))
->>>> +			return NULL;
->>>> +		/*
->>>> +		 * The pgrp must "belong" to our restart tree (compare
->>>> +		 * p->checkpoint_ctx to ours). This prevents malicious
->>>> +		 * input from (guessing and) using unrelated pgrps. If
->>>> +		 * the owner is dead, then it doesn't have a context,
->>>> +		 * so instead compare against its (real) parent's.
->>>> +		 */
->>>> +		if (p->exit_state == EXIT_ZOMBIE)
->>>> +			p = p->real_parent;
->>>> +		if (p->checkpoint_ctx != ctx)
->>>> +			return NULL;
->>>> +	}
->>>> +
->>>> +	if (task_session(current) != task_session(p))
->>>> +		return NULL;
->>>> +
->>>> +	return pgrp;
->>>> +}
->>>> +
->>>> +
->>>>  #ifdef CONFIG_FUTEX
->>>>  static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
->>>>  					struct task_struct *t)
->>>> @@ -94,8 +145,8 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
->>>>  		h->exit_signal = t->exit_signal;
->>>>  		h->pdeath_signal = t->pdeath_signal;
->>>>
->>>> -		h->set_child_tid = t->set_child_tid;
->>>> -		h->clear_child_tid = t->clear_child_tid;
->>>> +		h->set_child_tid = (unsigned long) t->set_child_tid;
->>> note that set_child_tid is an int (signed), not a long.  Same on
->>> x86, but not on other arches.  Shouldn't lose info so could be worse.
->> {set,clear}_child_tid are both pointers to user space: it's an address
->> in userspace, so we save it as 'unsigned long'.
->>
->> {clear,set}_child_tid is defined in include/linux/sched.h ... how can
->> it differ for different archs ?
+> Ok so here is the patch to do unix98 pty restore by making
+> invasive changes to ptmx_open() instead of using
+> task_struct->required_id to pass an index.  Patch generated
+> against the cr tree with the original pty patches, as I
+> assume that will be easier to read.
 > 
-> sizeof long differs for different archs.  Not the type of x_child_tid.
+> Break ptmx_open() into a ptmx_create() which is used both
+> by ptmx_open itself, and fs/devpts/inode.c:open_create_pty().
+> The latter function is used only during sys_restart() when
+> a unix98 pty must be restored.
+> 
+> Either with or without this patch, the pty test at
+> 	git://git.sr71.net/~hallyn/cr_tests.git
+> under the pty/ directory.  The question then is which is
+> a more likely approach to be acceptable upstream.  The
+> task->required_id approach is imo 'hacky', but it actually
+> does a much better job of re-using existing helpers, and
+> therefore is more maintainable.  So part of me DOES prefer
+> the original required_id approach.
+> 
+> This is purely RFC, so comments very much appreciated.
+> 
+> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> --
+>  checkpoint/sys.c           |    8 ---
+>  drivers/char/pty.c         |   16 +++---
+>  drivers/char/tty_io.c      |  112 +++++++++++++++++++++++++++++++++++----------
+>  fs/devpts/inode.c          |   55 ++++++++++++++++++++--
+>  include/linux/checkpoint.h |    2 
+>  include/linux/devpts_fs.h  |    2 
+>  include/linux/sched.h      |    1 
+>  7 files changed, 151 insertions(+), 45 deletions(-)
+> 
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index 3db18f7..b1fdbd7 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -339,14 +339,6 @@ SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
+>  	return ret;
+>  }
+>  
+> -static int __init checkpoint_init(void)
+> -{
+> -	init_task.required_id = CKPT_REQUIRED_NONE;
+> -	return 0;
+> -}
+> -__initcall(checkpoint_init);
+> -
+> -
+>  /* 'ckpt_debug_level' controls the verbosity level of c/r code */
+>  #ifdef CONFIG_CHECKPOINT_DEBUG
+>  
+> diff --git a/drivers/char/pty.c b/drivers/char/pty.c
+> index afdab5e..79e86e4 100644
+> --- a/drivers/char/pty.c
+> +++ b/drivers/char/pty.c
+> @@ -28,6 +28,8 @@
+>  #include <linux/uaccess.h>
+>  #include <linux/bitops.h>
+>  #include <linux/devpts_fs.h>
+> +#include <linux/file.h>
+> +#include <linux/mount.h>
+>  
+>  #include <asm/system.h>
+>  
+> @@ -629,20 +631,13 @@ static const struct tty_operations pty_unix98_ops = {
+>   *		allocated_ptys_lock handles the list of free pty numbers
+>   */
+>  
+> -static int __ptmx_open(struct inode *inode, struct file *filp)
+> +int ptmx_create(struct inode *inode, struct file *filp, int index)
+>  {
+>  	struct tty_struct *tty;
+>  	int retval;
+> -	int index = -1;
+>  
+>  	nonseekable_open(inode, filp);
+>  
+> -#ifdef CONFIG_CHECKPOINT
+> -	/* when restarting, request specific index */
+> -	if (current->flags & PF_RESTARTING)
+> -		index = (int) current->required_id;
+> -#endif
+> -	/* find a device that is not in use. */
+>  	index = devpts_new_index(inode, index);
+>  	if (index < 0)
+>  		return index;
+> @@ -675,6 +670,11 @@ out:
+>  	return retval;
+>  }
+>  
+> +static int __ptmx_open(struct inode *inode, struct file *filp)
+> +{
+> +	return ptmx_create(inode, filp, UNSPECIFIED_PTY_INDEX);
+> +}
+> +
+>  static int ptmx_open(struct inode *inode, struct file *filp)
+>  {
+>  	int ret;
+> diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+> index b8f8d79..d27ec36 100644
+> --- a/drivers/char/tty_io.c
+> +++ b/drivers/char/tty_io.c
+> @@ -79,6 +79,7 @@
+>  #include <linux/devpts_fs.h>
+>  #include <linux/file.h>
+>  #include <linux/fdtable.h>
+> +#include <linux/namei.h>
+>  #include <linux/console.h>
+>  #include <linux/timer.h>
+>  #include <linux/ctype.h>
+> @@ -2982,13 +2983,97 @@ static int restore_tty_ldisc(struct ckpt_ctx *ctx,
+>  	return 0;
+>  }
+>  
+> -#define CKPT_PTMX_PATH  "/dev/ptmx"
+> +#define PTMXNAME "ptmx"
+> +struct tty_struct *pty_open_by_master_in_ns(struct ckpt_ctx *ctx,
+> +		struct ckpt_hdr_tty *h, struct file *fdir)
 
-Sure. In all ckpt headers, all pointers allway get a __u64 regardless
-of arch, to cover both 32- and 64-bit.
+I assume you split this to two functions so that in the future you
+could feed a different "base" directory (for a different devpts mount).
+To simplify this patch, perhaps we can defer it until we do that ?
+
+Nit: s/pty_open_by_master_in_ns/pty_open_by_index/ ?
+
+Instead of passing ckpt_hdr_tty, maybe instead make it return the
+file pointer, and pass the desired index instead:
+	struct file *pty_open_by_index(char *path, int index)
+
+By letting the caller decide on the path, and what to do with the
+resulting file pointer, I hope the c/r code will be more separate
+and therefore easier to follow ?
+
+> +{
+> +	struct tty_struct *tty;
+> +	struct file *file;
+> +	int ret;
+> +	struct qstr ptmxname;
+> +	struct dentry *ptmxdentry;
+> +	struct nameidata nd;
+> +
+> +	ret = file_permission(fdir, MAY_EXEC);
+> +	if (ret)
+> +		return ERR_PTR(ret);
+> +	nd.path = fdir->f_path;
+> +	path_get(&nd.path);
+> +	ptmxname.name = PTMXNAME;
+> +	ptmxname.len = strlen(ptmxname.name);
+> +	mutex_lock(&fdir->f_dentry->d_inode->i_mutex);
+> +	ptmxdentry = d_hash_and_lookup(fdir->f_dentry, &ptmxname);
+> +	mutex_unlock(&fdir->f_dentry->d_inode->i_mutex);
+> +	if (!ptmxdentry) {
+> +		path_put(&nd.path);
+> +		return ERR_PTR(-ENOENT);
+> +	}
+
+Need to verify that the resulting dentry points to a ptmx device.
+(With current code, user can arrange for something else in /dev/pts)
+
+> +
+> +	/* should get mode from the file handle... */
+
+Should be ok, since restore_file_common() should restore the mode...
+
+> +	file = alloc_file(nd.path.mnt, ptmxdentry, FMODE_READ|FMODE_WRITE, &tty_fops);
+> +	path_put(&nd.path);
+> +	if (!file) {
+> +		dput(ptmxdentry);
+> +		return ERR_PTR(-EINVAL);
+> +	}
+> +
+> +	ret = security_dentry_open(file, current_cred());
+> +	if (ret) {
+> +		fput(file);
+> +		return ERR_PTR(ret);
+> +	}
+> +	/* check write access perms to file */
+
+I bet the above can be done by reusing lookup and __dentry_open()
+functions from fs/open.c and fs/namei.c ...
+
+> +
+> +	lock_kernel();  /* tty_open does it... */
+> +	ret = open_create_pty(fdir, h->index, file);
+> +	unlock_kernel();
+> +	if (ret) {
+> +		fput(file);
+> +		return ERR_PTR(ret);
+> +	}
+> +	ckpt_debug("master file %p (obj %d)\n", file, h->file_objref);
+> +
+> +	/*
+> +	 * Add file to objhash to ensure proper cleanup later
+> +	 * (it isn't referenced elsewhere). Use h->file_objref
+> +	 * which was explicitly during checkpoint for this.
+> +	 */
+> +	ret = ckpt_obj_insert(ctx, file, h->file_objref, CKPT_OBJ_FILE);
+> +	if (ret < 0) {
+> +		fput(file);
+> +		return ERR_PTR(ret);
+> +	}
+
+Can do this in caller. So
+
+> +
+> +	tty = file->private_data;
+> +	fput(file);   /* objhash took a ref */
+> +
+> +	return tty;
+> +}
+> +
+> +struct tty_struct *pty_open_by_master(struct ckpt_ctx *ctx,
+> +		struct ckpt_hdr_tty *h)
+> +{
+> +	struct file *fdir;
+> +	struct tty_struct *tty;
+> +	/*
+> +	 * we need to pick a way to specify which devpts
+> +	 * mountpoint to use.  For now, we'll just use
+> +	 * whatever /dev/ptmx points to
+> +	 */
+> +	fdir = filp_open("/dev/pts", O_RDONLY, 0);
+> +	if (IS_ERR(fdir))
+> +		return ERR_PTR(PTR_ERR(fdir));
+
+Does this mean that to restore a subtree on a system without
+devpts-ns it won't work ?  (no /dev/pts/ptmx)
+
+[...]
 
 Oren.
-
-> 
->>> On the whole,
->>>
->>> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->> Thanks. I got a few fixes for the code piles up and now c/r of 'screen'
->> with a couple of shells is working :)
-> 
-> Cool!
