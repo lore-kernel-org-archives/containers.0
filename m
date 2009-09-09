@@ -1,64 +1,37 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Understanding CPU containers
-Date: Wed, 9 Sep 2009 09:03:31 -0500
-Message-ID: <20090909140331.GB21476@us.ibm.com>
-References: <c7704c490909090330m494bc910n170f04c09cdeeeea@mail.gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC PATCH 2/2] cr: debug security_checkpoint_header and
+	security_may_restart
+Date: Wed, 9 Sep 2009 09:35:42 -0500
+Message-ID: <20090909143542.GA23322@us.ibm.com>
+References: <20090903222824.GB27377@us.ibm.com> <20090903222853.GA27556@us.ibm.com> <4AA0A3AE.9040106@schaufler-ca.com> <20090904134611.GA11508@us.ibm.com> <4AA55183.4020407@schaufler-ca.com> <20090908041221.GB25161@us.ibm.com> <4AA73278.4030301@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <c7704c490909090330m494bc910n170f04c09cdeeeea-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+In-Reply-To: <4AA73278.4030301@schaufler-ca.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Casey Schaufler <casey@schaufler-ca.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
 List-Id: containers.vger.kernel.org
 
-Quoting Mukesh G (mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi,
->        I am trying to understand the behavior of CPU containers as I
-> am unable to explain few things.
+Quoting Casey Schaufler (casey@schaufler-ca.com):
+> Serge E. Hallyn wrote:
+> > Quoting Casey Schaufler (casey@schaufler-ca.com):
+> > Sorry, the c/r tree is at:
+> >
+> > git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+> >   
+> 
+> The four patches from 08/28 (2-5) and the two from 09/03
+> are not happy applying to this tree. Am I missing a patch?
+> 
 
-...
+There was this patch which was 1/5
+	https://lists.linux-foundation.org/pipermail/containers/2009-August/020212.html
 
-> Observations
-> =
-
->         - Unless the cpu resources are overcommitted, there is no
-> value in the allocating shares to the containers.
-
-Right.  And that observation (which is correct - there is no throttling
-if cpu is available) explains the rest.
-
->         - 2048 vs 1024 cpu containers, the scale is 2X, except for 16 byt=
-es
->  =A0=A0=A0=A0=A0=A0=A0- 512 vs 1024 cpu containers, there is no differenc=
-e at all,
-> except for 16 bytes
->  =A0=A0=A0=A0=A0=A0=A0- 512 vs 1024 cpu containers, there is no differenc=
-e for 8192
-> bytes as the remaining 2 openssl runs are complete.
->  =A0=A0=A0=A0=A0=A0=A0- For CPU bound, there has to be an over commit on =
-the CPUs
-> otherwise the share allocation does not matter
->         - One cannot dynamically assign cpus to the container, by
-> default, it runs on the no of cores available.
-> =
-
-> Any pointers are helpful
-
-Hmm, there isn't a file under Documentation/cgroups?  That should
-be fixed...  Meanwhile, the code is mainly in kernel/sched.c.  You
-can start with the cgroup subsys definition at
-	struct cgroup_subsys cpu_cgroup_subsys =3D { ...
-(around line 10313) and fan out from there.
+But there have also been some changes since that posting to the
+git tree.  You could rewind the git tree to the state it was in
+on aug 28, but I'll need to forward-port my patches anyway, so
+let me do that this afternoon and resend the patchset.
 
 -serge
