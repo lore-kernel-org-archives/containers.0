@@ -1,69 +1,36 @@
-From: Casey Schaufler <casey@schaufler-ca.com>
-Subject: Re: [RFC PATCH 2/2] cr: debug security_checkpoint_header and	security_may_restart
-Date: Tue, 08 Sep 2009 21:43:36 -0700
-Message-ID: <4AA73278.4030301@schaufler-ca.com>
-References: <20090903222824.GB27377@us.ibm.com> <20090903222853.GA27556@us.ibm.com> <4AA0A3AE.9040106@schaufler-ca.com> <20090904134611.GA11508@us.ibm.com> <4AA55183.4020407@schaufler-ca.com> <20090908041221.GB25161@us.ibm.com>
+From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 25/23] io-controller: fix queue vs group fairness
+Date: Wed, 09 Sep 2009 00:44:55 -0400
+Message-ID: <4AA732C7.70003__47373.7617758617$1252471572$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<20090908222827.GC3558@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20090908041221.GB25161@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>, Casey Schaufler <casey@schaufler-ca.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090908222827.GC3558-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Casey Schaufler (casey@schaufler-ca.com):
->   
->> Serge E. Hallyn wrote:
->>     
->>> Quoting Casey Schaufler (casey@schaufler-ca.com):
->>>   
->>>       
->>>> Serge E. Hallyn wrote:
->>>>     
->>>>         
->>>>> This patch, for debugging only, introduces a silly admin-controlled
->>>>> 'policy version' for smack.  By default the version is 1.  An
->>>>> admin (with CAP_MAC_ADMIN) can change it by echoing a new value
->>>>> into /smack/version.
->>>>>   
->>>>>       
->>>>>           
->>>> The scheme you have suggested is just one step off of completely
->>>> acceptable for real. More detail below, but if you make the "version"
->>>> a string instead of a number I'm happy with it. In particular, a
->>>> string that would itself be a valid Smack label makes everything
->>>> really simple.
->>>>     
->>>>         
->>> Presumably at many sites the version will be a unique string not
->>> used as a label anywhere else.  That's ok?
->>>
->>>   
->>>       
->>>> It would take me a few days, but if you're not in a real hurry or
->>>> you're lazier than I am (yeah, right) I could provide a patch that
->>>> does it. Or, if I haven't been completely incomprehensible, you
->>>> could do a revision.
->>>>     
->>>>         
->>> Heh, I'm in no hurry.  I'll mark this to do midway next week, if
->>> you haven't gotten around to it first.  Thanks!
->>>   
->>>       
->> I hate to be a bother, but what tree are you basing these patches on?
->> Suspect that I missed a round of patches along the way, and can't apply
->> the ones I do have.
->>     
->
-> Sorry, the c/r tree is at:
->
-> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
->   
+Vivek Goyal wrote:
+> o I found an issue during test and that is if there is a mix of queue and group
+>   at same level, there can be fairness issue. For example, consider following
+>   case.
 
-The four patches from 08/28 (2-5) and the two from 09/03
-are not happy applying to this tree. Am I missing a patch?
+Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
+(assuming the cleanups are done in V10 - the artifact of
+  a wraparound hitting exactly 0 should not be an issue)
 
+-- 
+All rights reversed.
