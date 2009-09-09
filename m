@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: restart (mktree) program usage
-Date: Wed, 09 Sep 2009 18:26:04 -0400
-Message-ID: <4AA82B7C.8080107@librato.com>
-References: <20090909055636.GA27622@us.ibm.com>
+Subject: Re: [PATCH 2/3] Add post-file deferqueue (v2)
+Date: Wed, 09 Sep 2009 18:32:51 -0400
+Message-ID: <4AA82D13.6040008@librato.com>
+References: <1252508756-4278-1-git-send-email-danms@us.ibm.com>
+	<1252508756-4278-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090909055636.GA27622-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1252508756-4278-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,78 +18,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Sukadev Bhattiprolu wrote:
-> I have a usage question on the 'restart' (formerly mktree) program.
+Dan Smith wrote:
+> This is the deferq bit of Matt's patch, which is needed by the subsequent
+> socket patch.
 > 
-> In the following container c/r case: 
+> Changes in v2:
+>  - Allocate and destroy the deferqueue at context alloc/free time
 > 
-> 	- create a container
-> 	- log in to the container,
-> 	- restore filesystem(s) from snapshot
-> 	- restart application from checkpoint
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-FWIW, I'd expect that future versions of 'restart' will be capable
-of doing this entire setup, (filesystem(s) included), as it matures.
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Note that this use case that you suggest will only work to restart
-subtrees; it is unsuitable for full containers (with pids) because
-the pid of init (1) will already be in use.
+(but see comment below).
 
-Perhaps we should think of some "plugin" architecture for 'restart'
-that will allow the user to ask it to execute some work at between
-creating a new container and actually restarting into it ?
+> ---
+>  checkpoint/files.c               |   17 +++++++++++++++++
+>  checkpoint/sys.c                 |    7 +++++++
+>  include/linux/checkpoint_types.h |    1 +
+>  3 files changed, 25 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> index 204055b..3d99823 100644
+> --- a/checkpoint/files.c
+> +++ b/checkpoint/files.c
+> @@ -21,6 +21,7 @@
+>  #include <linux/syscalls.h>
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+> +#include <linux/deferqueue.h>
+>  #include <net/sock.h>
+>  
+>  
+> @@ -294,6 +295,14 @@ static int do_checkpoint_file_table(struct ckpt_ctx *ctx,
+>  		if (ret < 0)
+>  			break;
+>  	}
+> +	if (!ret) {
+> +		ret = deferqueue_run(ctx->files_deferq);
+> +		if (ret > 0) {
+> +			pr_warning("c/r: files deferqueue had %d entries\n",
+> +				   ret);
+> +			ret = 0;
 
-> 
-> On restart, suppose the user wants to restore the original pids.
-> But he does not want to create a new pid-ns, (since he just created
-> the container, and is sure the original pids are available).
-> 
-> To accomplish this the user has to specify the arguments in the following
-> order right  (since -pids implies --pidns).
-> 
-> 	restart --pids --no-pidns
-> 
-> IOW, the order of the arguments matters.
-> 
-> Would it be easier to understand if --pids did not imply --pidns ?
+I'm unsure why the warning; perhaps you mean "ckpt_debug()" ?
 
-Either that, or simply change the semantics such that the order
-does not matter:
+> +		}
+> +	}
+>   out:
+>  	kfree(fdtable);
+>  	return ret;
+> @@ -697,6 +706,14 @@ static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
+>  		if (ret < 0)
+>  			break;
+>  	}
+> +	if (!ret) {
+> +		ret = deferqueue_run(ctx->files_deferq);
+> +		if (ret > 0) {
+> +			pr_warning("c/r: files deferqueue had %d entries\n",
+> +				   ret);
+> +			ret = 0;
 
-> 
-> (Or in fact the reverse seems to make more sense -i.e --pidns implies
-> --pids, with a new option, --no-pids if user absolutely hates the pids
-> he was dealt before checkpoint :-)
-> 
-> 	$ restart
-> 		don't create pid ns, don't try to restore pids
-> 
-> 	$ restart --pids
-> 		try to restore original pids, don't create pid-ns
-> 
-> 	$ restart --pidns
-> 		create new pid-namespace and restore original pids
-> 
-> 	$ restart --pidns --no-pids
-> 	$ restart --no-pids --pidns
-> 		create new pid-namespace, DO NOT restore pids
-
-Yes, something like that.
+Ditto.
 
 Oren.
-
-> 
-> Or maybe drop implying and let user explicitly specify one, none or
-> both of --pids, --pidns ?
-> 
-> Sukadev
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
