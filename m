@@ -1,61 +1,94 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [RFC PATCH 2/2] cr: debug security_checkpoint_header and
-	security_may_restart
-Date: Wed, 9 Sep 2009 14:46:59 -0500
-Message-ID: <20090909194659.GA1065@us.ibm.com>
-References: <20090903222824.GB27377@us.ibm.com> <20090903222853.GA27556@us.ibm.com> <4AA0A3AE.9040106@schaufler-ca.com> <20090904134611.GA11508@us.ibm.com> <4AA55183.4020407@schaufler-ca.com> <20090908041221.GB25161@us.ibm.com> <4AA73278.4030301@schaufler-ca.com> <20090909143542.GA23322@us.ibm.com> <4AA7C138.6000205@schaufler-ca.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: restart (mktree) program usage
+Date: Wed, 09 Sep 2009 18:26:04 -0400
+Message-ID: <4AA82B7C.8080107@librato.com>
+References: <20090909055636.GA27622@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4AA7C138.6000205@schaufler-ca.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Casey Schaufler <casey@schaufler-ca.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090909055636.GA27622-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Casey Schaufler (casey@schaufler-ca.com):
-> Serge E. Hallyn wrote:
-> > Quoting Casey Schaufler (casey@schaufler-ca.com):
-> >   
-> >> Serge E. Hallyn wrote:
-> >>     
-> >>> Quoting Casey Schaufler (casey@schaufler-ca.com):
-> >>> Sorry, the c/r tree is at:
-> >>>
-> >>> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
-> >>>   
-> >>>       
-> >> The four patches from 08/28 (2-5) and the two from 09/03
-> >> are not happy applying to this tree. Am I missing a patch?
-> >>
-> >>     
-> >
-> > There was this patch which was 1/5
-> > 	https://lists.linux-foundation.org/pipermail/containers/2009-August/020212.html
-> >
-> > But there have also been some changes since that posting to the
-> > git tree.  You could rewind the git tree to the state it was in
-> > on aug 28, but I'll need to forward-port my patches anyway, so
-> > let me do that this afternoon and resend the patchset.
-> >
-> >   
+
+
+Sukadev Bhattiprolu wrote:
+> I have a usage question on the 'restart' (formerly mktree) program.
 > 
-> I figured it was something like that. Thank you.
+> In the following container c/r case: 
+> 
+> 	- create a container
+> 	- log in to the container,
+> 	- restore filesystem(s) from snapshot
+> 	- restart application from checkpoint
 
-Actually the patches still apply cleanly.  But it turns out
-that when you clone the linux-cr tree, it pulls the ckpt-v17
-branch, and only the ckpt-v17 branch.  It is hugely different
-from the ckpt-v17-dev tree, which is the one you want.  So
-assuming you created a kernel tree by doing git clone
-git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git (as opposed
-to tweaking your .git/config in another git tree), then you
-want to:
+FWIW, I'd expect that future versions of 'restart' will be capable
+of doing this entire setup, (filesystem(s) included), as it matures.
 
-	git fetch origin ckpt-v17-dev:ckpt-v17-dev
-	git checkout ckpt-v17-dev
+Note that this use case that you suggest will only work to restart
+subtrees; it is unsuitable for full containers (with pids) because
+the pid of init (1) will already be in use.
 
-The lsm c/r patches should apply cleanly there.
+Perhaps we should think of some "plugin" architecture for 'restart'
+that will allow the user to ask it to execute some work at between
+creating a new container and actually restarting into it ?
 
-thanks,
--serge
+> 
+> On restart, suppose the user wants to restore the original pids.
+> But he does not want to create a new pid-ns, (since he just created
+> the container, and is sure the original pids are available).
+> 
+> To accomplish this the user has to specify the arguments in the following
+> order right  (since -pids implies --pidns).
+> 
+> 	restart --pids --no-pidns
+> 
+> IOW, the order of the arguments matters.
+> 
+> Would it be easier to understand if --pids did not imply --pidns ?
+
+Either that, or simply change the semantics such that the order
+does not matter:
+
+> 
+> (Or in fact the reverse seems to make more sense -i.e --pidns implies
+> --pids, with a new option, --no-pids if user absolutely hates the pids
+> he was dealt before checkpoint :-)
+> 
+> 	$ restart
+> 		don't create pid ns, don't try to restore pids
+> 
+> 	$ restart --pids
+> 		try to restore original pids, don't create pid-ns
+> 
+> 	$ restart --pidns
+> 		create new pid-namespace and restore original pids
+> 
+> 	$ restart --pidns --no-pids
+> 	$ restart --no-pids --pidns
+> 		create new pid-namespace, DO NOT restore pids
+
+Yes, something like that.
+
+Oren.
+
+> 
+> Or maybe drop implying and let user explicitly specify one, none or
+> both of --pids, --pidns ?
+> 
+> Sukadev
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
