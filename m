@@ -1,59 +1,61 @@
-From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [RFC][v5][PATCH 8/8]: Define clone_with_pids() syscall
-Date: Wed, 9 Sep 2009 11:34:22 -0700 (PDT)
-Message-ID: <alpine.LFD.2.01.0909091129400.7458__27774.5972540744$1252521417$gmane$org@localhost.localdomain>
-References: <20090907211302.GA5892@us.ibm.com>
-	<20090907211700.GH6685@us.ibm.com> <m3zl95l2oz.fsf@pobox.com>
-	<200909091419.50496.arnd@arndb.de> <4AA7CF1F.3020408@zytor.com>
-	<20090909180303.GA21048@us.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC PATCH 2/2] cr: debug security_checkpoint_header and
+	security_may_restart
+Date: Wed, 9 Sep 2009 14:46:59 -0500
+Message-ID: <20090909194659.GA1065@us.ibm.com>
+References: <20090903222824.GB27377@us.ibm.com> <20090903222853.GA27556@us.ibm.com> <4AA0A3AE.9040106@schaufler-ca.com> <20090904134611.GA11508@us.ibm.com> <4AA55183.4020407@schaufler-ca.com> <20090908041221.GB25161@us.ibm.com> <4AA73278.4030301@schaufler-ca.com> <20090909143542.GA23322@us.ibm.com> <4AA7C138.6000205@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090909180303.GA21048-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <4AA7C138.6000205@schaufler-ca.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Casey Schaufler <casey@schaufler-ca.com>
+Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
 List-Id: containers.vger.kernel.org
 
-
-
-On Wed, 9 Sep 2009, Sukadev Bhattiprolu wrote:
+Quoting Casey Schaufler (casey@schaufler-ca.com):
+> Serge E. Hallyn wrote:
+> > Quoting Casey Schaufler (casey@schaufler-ca.com):
+> >   
+> >> Serge E. Hallyn wrote:
+> >>     
+> >>> Quoting Casey Schaufler (casey@schaufler-ca.com):
+> >>> Sorry, the c/r tree is at:
+> >>>
+> >>> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+> >>>   
+> >>>       
+> >> The four patches from 08/28 (2-5) and the two from 09/03
+> >> are not happy applying to this tree. Am I missing a patch?
+> >>
+> >>     
+> >
+> > There was this patch which was 1/5
+> > 	https://lists.linux-foundation.org/pipermail/containers/2009-August/020212.html
+> >
+> > But there have also been some changes since that posting to the
+> > git tree.  You could rewind the git tree to the state it was in
+> > on aug 28, but I'll need to forward-port my patches anyway, so
+> > let me do that this afternoon and resend the patchset.
+> >
+> >   
 > 
-> BTW, would it work if we defined 
-> 
-> 	struct pid_set {
-> 		u64 pids;
-> 		int num_pids;
-> 	}
-> 
-> where ->pids can be still be a pointer ? The data structure would
-> have the same size on all architectures.
+> I figured it was something like that. Thank you.
 
-I don't think that's all that great. Just go with the C90 version, we 
-already have that thing in the kernel, and
+Actually the patches still apply cleanly.  But it turns out
+that when you clone the linux-cr tree, it pulls the ckpt-v17
+branch, and only the ckpt-v17 branch.  It is hugely different
+from the ckpt-v17-dev tree, which is the one you want.  So
+assuming you created a kernel tree by doing git clone
+git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git (as opposed
+to tweaking your .git/config in another git tree), then you
+want to:
 
-	struct pid_set {
-		int num_pids;
-		pid_t pids[];
-	};
+	git fetch origin ckpt-v17-dev:ckpt-v17-dev
+	git checkout ckpt-v17-dev
 
-looks simple and straightforward. And it even makes your example simpler, 
-doesn't it? Ie now it's just
+The lsm c/r patches should apply cleanly there.
 
-	struct pid_set pids = { 3, { 0, 97, 99 } };
-
-and gcc should do the right thing.
-
-(Of course, in any real case it would be dynamically allocated, but 
-whatever).
-
-		Linus
+thanks,
+-serge
