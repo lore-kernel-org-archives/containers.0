@@ -1,16 +1,11 @@
-From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V9
-Date: Wed, 9 Sep 2009 11:41:10 +0200
-Message-ID: <20090909094109.GS18599__7144.5140325979$1252489421$gmane$org@kernel.dk>
-References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<4AA4B905.8010801@cn.fujitsu.com>
-	<20090908191941.GF15974@redhat.com>
+From: Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Understanding CPU containers
+Date: Wed, 9 Sep 2009 16:00:27 +0530
+Message-ID: <c7704c490909090330m494bc910n170f04c09cdeeeea@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090908191941.GF15974-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,36 +15,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 08 2009, Vivek Goyal wrote:
-> On Mon, Sep 07, 2009 at 03:40:53PM +0800, Gui Jianfeng wrote:
-> > Hi Vivek,
-> > 
-> > I happened to encount a bug when i test IO Controller V9.
-> > When there are three tasks to run concurrently in three group,
-> > that is, one is parent group, and other two tasks are running 
-> > in two different child groups respectively to read or write 
-> > files in some disk, say disk "hdb", The task may hang up, and 
-> > other tasks which access into "hdb" will also hang up.
-> > 
-> > The bug only happens when using AS io scheduler.
-> > The following scirpt can reproduce this bug in my box.
-> > 
-> 
-> Hi Gui,
-> 
-> I tried reproducing this on my system and can't reproduce it. All the
-> three processes get killed and system does not hang.
+Hi,
+       I am trying to understand the behavior of CPU containers as I
+am unable to explain few things.
+- Built the latest kernel 2.6.30.5 and installed on my Intel core2Duo deskt=
+op
 
-The key factor is likely the old IDE driver, since this is IO scheduler
-related. It probably works if Gui uses libata instead, and you can
-probably reproduce if you could use drivers/ide/ on a disk.
+- Mounted the cpu subsystem using
 
-So the likely culprit is probably a missing queue restart somewhere on
-IO completion.
+      - mount -t cgroup -ocpu cgroup /containers/cpu/
 
--- 
-Jens Axboe
+- Created 3 sub directories under /containers/cpu
+
+        - 512 for cpu.shares=3D512
+
+        - 1024 for cpu.shares=3D1024
+
+        - 2048 for cpu.shares=3D2048
+
+- Created 3 bash terminals and attached each one to the individual cpu
+sub system using the /bin/echo command. This essentially allows any
+process created by the shells to be automatically added to the cpu
+subsystem to which the shell belongs
+
+- Ran a compute intensive benchmark =93openssl speed aes-256-cbc=94
+benchmark on all the shells at the same time.
+
+- Enclosing the numbers from the run=85
+
+    - Observed CPU Utilization : 99.8 , 49.9 , 49.9
+
+Results from the run
+
+The 'numbers' are in 1000s of bytes per second processed.
+
+CPU shares allocation
+
+                            16 bytes                     64 bytes
+            256 bytes=A0=A0           1024 bytes=A0=A0           8192 bytes
+
+512                        35459.95k=A0=A0=A0                43441.75k
+          46660.35k=A0=A0=A0         46707.71k=A0=A0=A0           77040.30k
+
+1024                      57448.63k                    44050.54k
+          46558.98k            46633.03k              47252.76k
+
+2048                    71186.36k                    87142.02k
+        92513.79k            93769.05k              94795.09k
+
+1024 vs 512          1.62                            1.01
+            0.99                     0.99                      0.61
+
+2048 vs 1024         1.23                           1.97
+           1.98                      2.01                     2
+
+Observations
+
+        - Unless the cpu resources are overcommitted, there is no
+value in the allocating shares to the containers.
+        - 2048 vs 1024 cpu containers, the scale is 2X, except for 16 bytes
+ =A0=A0=A0=A0=A0=A0=A0- 512 vs 1024 cpu containers, there is no difference =
+at all,
+except for 16 bytes
+ =A0=A0=A0=A0=A0=A0=A0- 512 vs 1024 cpu containers, there is no difference =
+for 8192
+bytes as the remaining 2 openssl runs are complete.
+ =A0=A0=A0=A0=A0=A0=A0- For CPU bound, there has to be an over commit on th=
+e CPUs
+otherwise the share allocation does not matter
+        - One cannot dynamically assign cpus to the container, by
+default, it runs on the no of cores available.
+
+Any pointers are helpful
+
+Thanks
+
+Mukesh
