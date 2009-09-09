@@ -1,7 +1,7 @@
-From: "Gustavo Estrada" <GustavofilmstripMoody-JkKINXIMNXHYu+t9eBqR0dBPR1lH4CV8@public.gmane.org>
-Subject: 68% off,Luxury Watches
-Date: Tue, 8 Sep 2009 18:27:00 +0400
-Message-ID: <40068.4704691686$1252452211@news.gmane.org>
+From: "Jamal Shields" <JamalbloodshedBeasley-VrAHqWKD8M/KoJ9pep836A@public.gmane.org>
+Subject: Luxury Watches On Sale 58% off
+Date: Wed, 9 Sep 2009 09:16:19 -0900
+Message-ID: <20378.204555209$1252457337@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,6 +20,6 @@ To: clusters_sig-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, bugme-janitors-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, fastboot-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, virtualization-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The latest luxury timepieces online with great 68% OFF in Sep.
+The latest luxury timepieces online with great 58% OFF in Sep.
 Over 6300+ Watches available
-http://healy.ibukskea.cn/
+http://commutate.iexvdaea.cn/
