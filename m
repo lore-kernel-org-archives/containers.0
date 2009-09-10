@@ -1,17 +1,14 @@
-From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V9
-Date: Thu, 10 Sep 2009 11:20:13 +0800
-Message-ID: <4AA8706D.3050802__13241.2631683566$1252552965$gmane$org@cn.fujitsu.com>
-References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<4AA4B905.8010801@cn.fujitsu.com>
-	<20090908191941.GF15974@redhat.com>
-	<4AA75B71.5060109@cn.fujitsu.com>
-	<20090909150537.GD8256@redhat.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][v6][PATCH 6/9]: Add target_pids parameter to copy_process()
+Date: Wed, 9 Sep 2009 23:11:43 -0700
+Message-ID: <20090910061143.GE25883__45662.2541686103$1252562873$gmane$org@us.ibm.com>
+References: <20090910060627.GA24343@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090909150537.GD8256-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090910060627.GA24343-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,83 +18,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vml2ZWsgR295YWwgd3JvdGU6Cj4gT24gV2VkLCBTZXAgMDksIDIwMDkgYXQgMDM6Mzg6MjVQTSAr
-MDgwMCwgR3VpIEppYW5mZW5nIHdyb3RlOgo+PiBWaXZlayBHb3lhbCB3cm90ZToKPj4+IE9uIE1v
-biwgU2VwIDA3LCAyMDA5IGF0IDAzOjQwOjUzUE0gKzA4MDAsIEd1aSBKaWFuZmVuZyB3cm90ZToK
-Pj4+PiBIaSBWaXZlaywKPj4+Pgo+Pj4+IEkgaGFwcGVuZWQgdG8gZW5jb3VudCBhIGJ1ZyB3aGVu
-IGkgdGVzdCBJTyBDb250cm9sbGVyIFY5Lgo+Pj4+IFdoZW4gdGhlcmUgYXJlIHRocmVlIHRhc2tz
-IHRvIHJ1biBjb25jdXJyZW50bHkgaW4gdGhyZWUgZ3JvdXAsCj4+Pj4gdGhhdCBpcywgb25lIGlz
-IHBhcmVudCBncm91cCwgYW5kIG90aGVyIHR3byB0YXNrcyBhcmUgcnVubmluZyAKPj4+PiBpbiB0
-d28gZGlmZmVyZW50IGNoaWxkIGdyb3VwcyByZXNwZWN0aXZlbHkgdG8gcmVhZCBvciB3cml0ZSAK
-Pj4+PiBmaWxlcyBpbiBzb21lIGRpc2ssIHNheSBkaXNrICJoZGIiLCBUaGUgdGFzayBtYXkgaGFu
-ZyB1cCwgYW5kIAo+Pj4+IG90aGVyIHRhc2tzIHdoaWNoIGFjY2VzcyBpbnRvICJoZGIiIHdpbGwg
-YWxzbyBoYW5nIHVwLgo+Pj4+Cj4+Pj4gVGhlIGJ1ZyBvbmx5IGhhcHBlbnMgd2hlbiB1c2luZyBB
-UyBpbyBzY2hlZHVsZXIuCj4+Pj4gVGhlIGZvbGxvd2luZyBzY2lycHQgY2FuIHJlcHJvZHVjZSB0
-aGlzIGJ1ZyBpbiBteSBib3guCj4+Pj4KPj4+IEhpIEd1aSwKPj4+Cj4+PiBJIHRyaWVkIHJlcHJv
-ZHVjaW5nIHRoaXMgb24gbXkgc3lzdGVtIGFuZCBjYW4ndCByZXByb2R1Y2UgaXQuIEFsbCB0aGUK
-Pj4+IHRocmVlIHByb2Nlc3NlcyBnZXQga2lsbGVkIGFuZCBzeXN0ZW0gZG9lcyBub3QgaGFuZy4K
-Pj4+Cj4+PiBDYW4geW91IHBsZWFzZSBkaWcgZGVlcGVyIGEgYml0IGludG8gaXQuIAo+Pj4KPj4+
-IC0gSWYgd2hvbGUgc3lzdGVtIGhhbmdzIG9yIGl0IGlzIGp1c3QgSU8gdG8gZGlzayBzZWVtcyB0
-byBiZSBodW5nLgo+PiAgICAgT25seSB3aGVuIHRoZSB0YXNrIGlzIHRyeWluZyBkbyBJTyB0byBk
-aXNrIGl0IHdpbGwgaGFuZyB1cC4KPj4KPj4+IC0gRG9lcyBpbyBzY2hlZHVsZXIgc3dpdGNoIG9u
-IHRoZSBkZXZpY2Ugd29yawo+PiAgICAgeWVzLCBpbyBzY2hlZHVsZXIgY2FuIGJlIHN3aXRjaGVk
-LCBhbmQgdGhlIGh1bmcgdGFzayB3aWxsIGJlIHJlc3VtZWQuCj4+Cj4+PiAtIElmIHRoZSBzeXN0
-ZW0gaXMgbm90IGh1bmcsIGNhbiB5b3UgY2FwdHVyZSB0aGUgYmxrdHJhY2Ugb24gdGhlIGRldmlj
-ZS4KPj4+ICAgVHJhY2UgbWlnaHQgZ2l2ZSBzb21lIGlkZWEsIHdoYXQncyBoYXBwZW5pbmcuCj4+
-IEkgcnVuIGEgImZpbmQiIHRhc2sgdG8gZG8gc29tZSBpbyBvbiB0aGF0IGRpc2ssIGl0IHNlZW1z
-IHRoYXQgdGFzayBoYW5ncyAKPj4gd2hlbiBpdCBpcyBpc3N1aW5nIGdldGRlbnRzKCkgc3lzY2Fs
-bC4KPj4ga2VybmVsIGdlbmVyYXRlcyB0aGUgZm9sbG93aW5nIG1lc3NhZ2U6Cj4+Cj4+IElORk86
-IHRhc2sgZmluZDozMjYwIGJsb2NrZWQgZm9yIG1vcmUgdGhhbiAxMjAgc2Vjb25kcy4KPj4gImVj
-aG8gMCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190YXNrX3RpbWVvdXRfc2VjcyIgZGlzYWJsZXMg
-dGhpcyBtZXNzYWdlLgo+PiBmaW5kICAgICAgICAgIEQgYTFlOTU3ODcgIDE5MTIgIDMyNjAgICAy
-ODk3IDB4MDAwMDAwMDQKPj4gIGY2YWYyZGI4IDAwMDAwMDk2IGY2NjAwNzVjIGExZTk1Nzg3IDAw
-MDAwMDMyIGY2NjAwMjcwIGY2NjAwNTA4IGMyMDM3ODIwCj4+ICAwMDAwMDAwMCBjMDllMDgyMCBm
-NjU1ZjBjMCBmNmFmMmQ4YyBmZmZlYmJmMSAwMDAwMDAwMCBjMDQ0NzMyMyBmNzE1MmExYwo+PiAg
-MDAwNmExNDQgZjcxNTJhMWMgMDAwNmExNDQgZjZhZjJlMDQgZjZhZjJkYjAgYzA0NDM4ZGYgYzIw
-Mzc4MjAgYzIwMzc4MjAKPj4gQ2FsbCBUcmFjZToKPj4gIFs8YzA0NDczMjM+XSA/IGdldG5zdGlt
-ZW9mZGF5KzB4NTcvMHhlMAo+PiAgWzxjMDQ0MzhkZj5dID8ga3RpbWVfZ2V0X3RzKzB4NGEvMHg0
-ZQo+PiAgWzxjMDY4YWI2OD5dIGlvX3NjaGVkdWxlKzB4NDcvMHg3OQo+PiAgWzxjMDRjMTJlZT5d
-IHN5bmNfYnVmZmVyKzB4MzYvMHgzYQo+PiAgWzxjMDY4YWUxND5dIF9fd2FpdF9vbl9iaXQrMHgz
-Ni8weDVkCj4+ICBbPGMwNGMxMmI4Pl0gPyBzeW5jX2J1ZmZlcisweDAvMHgzYQo+PiAgWzxjMDY4
-YWU5Mz5dIG91dF9vZl9saW5lX3dhaXRfb25fYml0KzB4NTgvMHg2MAo+PiAgWzxjMDRjMTJiOD5d
-ID8gc3luY19idWZmZXIrMHgwLzB4M2EKPj4gIFs8YzA0NDBmYTQ+XSA/IHdha2VfYml0X2Z1bmN0
-aW9uKzB4MC8weDQzCj4+ICBbPGMwNGMxMjQ5Pl0gX193YWl0X29uX2J1ZmZlcisweDE5LzB4MWMK
-Pj4gIFs8ZjgxZTQxODY+XSBleHQzX2JyZWFkKzB4NWUvMHg3OSBbZXh0M10KPj4gIFs8ZjgxZTc3
-YTg+XSBodHJlZV9kaXJibG9ja190b190cmVlKzB4MWYvMHgxMjAgW2V4dDNdCj4+ICBbPGY4MWU3
-OTIzPl0gZXh0M19odHJlZV9maWxsX3RyZWUrMHg3YS8weDFiYiBbZXh0M10KPj4gIFs8YzA0YTAx
-Zjk+XSA/IGttZW1fY2FjaGVfYWxsb2MrMHg4Ni8weGYzCj4+ICBbPGMwNDRjNDI4Pl0gPyB0cmFj
-ZV9oYXJkaXJxc19vbl9jYWxsZXIrMHgxMDcvMHgxMmYKPj4gIFs8YzA0NGM0NWI+XSA/IHRyYWNl
-X2hhcmRpcnFzX29uKzB4Yi8weGQKPj4gIFs8ZjgxZTA5ZTQ+XSA/IGV4dDNfcmVhZGRpcisweDll
-LzB4NjkyIFtleHQzXQo+PiAgWzxmODFlMGIzND5dIGV4dDNfcmVhZGRpcisweDFlZS8weDY5MiBb
-ZXh0M10KPj4gIFs8YzA0YjExMDA+XSA/IGZpbGxkaXI2NCsweDAvMHhjZAo+PiAgWzxjMDY4Yjg2
-YT5dID8gbXV0ZXhfbG9ja19raWxsYWJsZV9uZXN0ZWQrMHgyYjEvMHgyYzUKPj4gIFs8YzA2OGI4
-NzQ+XSA/IG11dGV4X2xvY2tfa2lsbGFibGVfbmVzdGVkKzB4MmJiLzB4MmM1Cj4+ICBbPGMwNGIx
-MmRiPl0gPyB2ZnNfcmVhZGRpcisweDQ2LzB4OTQKPj4gIFs8YzA0YjEyZmQ+XSB2ZnNfcmVhZGRp
-cisweDY4LzB4OTQKPj4gIFs8YzA0YjExMDA+XSA/IGZpbGxkaXI2NCsweDAvMHhjZAo+PiAgWzxj
-MDRiMTM4Nz5dIHN5c19nZXRkZW50czY0KzB4NWUvMHg5Zgo+PiAgWzxjMDQwMjhiND5dIHN5c2Vu
-dGVyX2RvX2NhbGwrMHgxMi8weDMyCj4+IDEgbG9jayBoZWxkIGJ5IGZpbmQvMzI2MDoKPj4gICMw
-OiAgKCZzYi0+c190eXBlLT5pX211dGV4X2tleSM3KXsrLisuKy59LCBhdDogWzxjMDRiMTJkYj5d
-IHZmc19yZWFkZGlyKzB4NDYvMHg5NAo+Pgo+PiBleHQzIGNhbGxzIHdhaXRfb25fYnVmZmVyKCkg
-dG8gd2FpdCBidWZmZXIsIGFuZCBzY2hlZHVsZSB0aGUgdGFzayBvdXQgaW4gVEFTS19VTklOVEVS
-UlVQVElCTEUKPj4gc3RhdGUsIGFuZCBJIGZvdW5kIHRoaXMgdGFzayB3aWxsIGJlIHJlc3VtZWQg
-YWZ0ZXIgYSBxdWl0ZSBsb25nIHBlcmlvZChtb3JlIHRoYW4gMTAgbWlucykuCj4gCj4gVGhhbmtz
-IEd1aS4gQXMgSmVucyBzYWlkLCBpdCBkb2VzIGxvb2sgbGlrZSBhIGNhc2Ugb2YgbWlzc2luZyBx
-dWV1ZQo+IHJlc3RhcnQgc29tZXdoZXJlIGFuZCBub3cgd2UgYXJlIHN0dWNrLCBubyByZXF1ZXN0
-cyBhcmUgYmVpbmcgZGlzcGF0Y2hlZAo+IHRvIHRoZSBkaXNrIGFuZCBxdWV1ZSBpcyBhbHJlYWR5
-IHVucGx1Z2dlZC4KPiAKPiBDYW4geW91IHBsZWFzZSBhbHNvIHRyeSBjYXB0dXJpbmcgdGhlIHRy
-YWNlIG9mIGV2ZW50cyBhdCBpbyBzY2hlZHVsZXIKPiAoYmxrdHJhY2UpIHRvIHNlZSBob3cgZGlk
-IHdlIGdldCBpbnRvIHRoYXQgc2l0dWF0aW9uLgoKICBPaywgSSdsbCB0cnkuCgo+IAo+IEFyZSB5
-b3UgdXNpbmcgaWRlIGRyaXZlcnMgYW5kIG5vdCBsaWJhdGE/IEFzIGplbnMgc2FpZCwgSSB3aWxs
-IHRyeSB0byBtYWtlCj4gdXNlIG9mIGlkZSBkcml2ZXJzIGFuZCBzZWUgaWYgSSBjYW4gcmVwcm9k
-dWNlIGl0LgoKICBIaSBWaXZlaywgSmVucywKCiAgeWVzLCBpIHVzZWQgdGhlIG9sZCBpZGUgZHJp
-dmVyLiBTbyBJIHN3aXRjaCB0byBsaWJhdGEgaW5zdGVhZChkZWFjdGl2YXRlIHRoZSAKICB3aG9s
-ZSDigJxBVEEvQVRBUEkvTUZNL1JMTCBzdXBwb3J04oCdKSwgdGhlIGJ1ZyBzdGlsbCBleGlzdHMg
-YW5kIEkgY2FuIHJlcHJvZHVjZQogIGl0IGJ5IHRoYXQgc2NyaXB0LgoKPiAKPiBUaGFua3MKPiBW
-aXZlawo+IAo+IAo+IAoKLS0gClJlZ2FyZHMKR3VpIEppYW5mZW5nCgpfX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
-b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+
+Subject: [RFC][v6][PATCH 6/9]: Add target_pids parameter to copy_process()
+
+Add a 'target_pids' parameter to copy_process().  The new parameter will be
+used in a follow-on patch when clone_with_pids() is implemented.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/fork.c |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+Index: linux-2.6/kernel/fork.c
+===================================================================
+--- linux-2.6.orig/kernel/fork.c	2009-09-09 19:07:36.000000000 -0700
++++ linux-2.6/kernel/fork.c	2009-09-09 19:07:40.000000000 -0700
+@@ -935,12 +935,12 @@ static struct task_struct *copy_process(
+ 					unsigned long stack_size,
+ 					int __user *child_tidptr,
+ 					struct pid *pid,
++					pid_t *target_pids,
+ 					int trace)
+ {
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
+-	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1319,7 +1319,7 @@ struct task_struct * __cpuinit fork_idle
+ 	struct pt_regs regs;
+ 
+ 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
+-			    &init_struct_pid, 0);
++			    &init_struct_pid, NULL, 0);
+ 	if (!IS_ERR(task))
+ 		init_idle(task, cpu);
+ 
+@@ -1342,6 +1342,7 @@ long do_fork(unsigned long clone_flags,
+ 	struct task_struct *p;
+ 	int trace = 0;
+ 	long nr;
++	pid_t *target_pids = NULL;
+ 
+ 	/*
+ 	 * Do some preliminary argument and permissions checking before we
+@@ -1382,7 +1383,7 @@ long do_fork(unsigned long clone_flags,
+ 		trace = tracehook_prepare_clone(clone_flags);
+ 
+ 	p = copy_process(clone_flags, stack_start, regs, stack_size,
+-			 child_tidptr, NULL, trace);
++			 child_tidptr, NULL, target_pids, trace);
+ 	/*
+ 	 * Do this prior waking up the new thread - the thread pointer
+ 	 * might get invalid after that point, if the thread exits quickly.
