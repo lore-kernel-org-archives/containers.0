@@ -1,16 +1,16 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][v6][PATCH 8/9]: Define clone_with_pids() syscall
-Date: Thu, 10 Sep 2009 14:28:37 -0700
-Message-ID: <20090910212837.GA31459__39039.8290394389$1252620358$gmane$org@us.ibm.com>
+Subject: Re: [RFC][v6][PATCH 7/9]: Define do_fork_with_pids()
+Date: Thu, 10 Sep 2009 14:29:53 -0700
+Message-ID: <20090910212953.GB31459__17762.456162791$1252620480$gmane$org@us.ibm.com>
 References: <20090910060627.GA24343@us.ibm.com>
-	<20090910061301.GG25883@us.ibm.com>
-	<200909100931.25585.arnd@arndb.de>
+	<20090910061227.GF25883@us.ibm.com>
+	<200909100905.35817.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <200909100931.25585.arnd-r2nGTMty4D4@public.gmane.org>
+In-Reply-To: <200909100905.35817.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,39 +25,21 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 Arnd Bergmann [arnd-r2nGTMty4D4@public.gmane.org] wrote:
+| On Thursday 10 September 2009, Sukadev Bhattiprolu wrote:
+| > +long do_fork(unsigned long clone_flags,
+| > +             unsigned long stack_start,
+| > +             struct pt_regs *regs,
+| > +             unsigned long stack_size,
+| > +             int __user *parent_tidptr,
+| > +             int __user *child_tidptr)
+| > +{
+| > +       return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
+| > +                       parent_tidptr, child_tidptr, NULL);
+| > +}
+| > +
 | 
-| I wonder if we can avoid spreading copies of this function across
-| all architectures.
-| 
-| Would it be possible to define it like this?
+| How about making this one a static inline in linux/sched.h?
 
-Since this is a variant of clone() and clone is listed as a PTREGSCALL(),
-I pass in the pt_regs.
+Yes. I will inline do_fork().
 
-arch/x86/kernel/entry_32.S lists clone() under this comment:
-
-/*
- * System calls that need a pt_regs pointer.
- */
-
-Is there a guideline on what system calls use/need pt_regs ?
-
-Thanks,
-
-Suakdev
-
-| 
-| asmlinkage long
-| clone_with_pids(int flags, unsigned long child_stack_base, int __user *parent_tid_ptr,
-|                        int __user *child_tid_ptr, struct pid_set __user *pid_setp)
-| {
-| 	if (!child_stack_base) {
-| 		struct pt_regs *regs;
-| 
-| 		regs = task_pt_regs(current);
-| 		child_stack_base = user_stack_pointer(regs);
-| 	}
-| 
-| 	return do_fork_with_pids(clone_flags, child_stack_base, 0,
-| 		parent_tid_ptr, child_tid_ptr, pid_setp);
-| }
+Sukadev
