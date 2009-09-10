@@ -1,142 +1,84 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 1/1] mktree: accept the lsm_name field in header and add -k
-	flag
-Date: Thu, 10 Sep 2009 15:23:31 -0500
-Message-ID: <20090910202331.GE7072@us.ibm.com>
-References: <20090910202219.GA6778@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 07/23] io-controller: Common hierarchical fair queuing
+	code in elevaotor layer
+Date: Thu, 10 Sep 2009 16:11:48 -0400
+Message-ID: <20090910201148.GA3617__13303.8639593453$1252616893$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<1251495072-7780-8-git-send-email-vgoyal@redhat.com>
+	<4A9F3319.8040509@ds.jp.nec.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090910202219.GA6778@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
+In-Reply-To: <4A9F3319.8040509-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[ This patch is against the userspace checkpoint/restart code,
-available at git://git.ncl.cs.columbia.edu/pub/git/user-cr.git ]
+On Wed, Sep 02, 2009 at 11:08:09PM -0400, Munehiro Ikeda wrote:
+> Hi,
+> 
+> Vivek Goyal wrote, on 08/28/2009 05:30 PM:
+> > +static struct io_group *io_find_alloc_group(struct request_queue *q,
+> > +			struct cgroup *cgroup, struct elv_fq_data *efqd,
+> > +			int create)
+> > +{
+> > +	struct io_cgroup *iocg = cgroup_to_io_cgroup(cgroup);
+> > +	struct io_group *iog = NULL;
+> > +	/* Note: Use efqd as key */
+> > +	void *key = efqd;
+> > +
+> > +	/*
+> > +	 * Take a refenrece to css object. Don't want to map a bio to
+> > +	 * a group if it has been marked for deletion
+> > +	 */
+> > +
+> > +	if (!css_tryget(&iocg->css))
+> > +		return iog;
+> 
+> cgroup_to_io_cgroup() returns NULL if only blkio subsystem
+> is mounted but io subsystem is not.  It can cause NULL pointer
+> access.
+> 
 
-The checkpoint file header now has an 11-character string
-containing the name of the active LSM, following the uts
-info, and a variable length buffer type conaining LSM-specific
-version information (for instance a sha1sum of policy).
-Handle these.
+Good catch Muuhh.  Thanks. Applied for next release.
 
-Also add a -k (--keeplsm) flag to tell mktree to set the
-RESTART_KEEP_LSM flag to sys_restart().
+Thanks
+Vivek
 
-Signed-off-by: Serge Hallyn <serue@us.ibm.com>
----
- mktree.c |   32 ++++++++++++++++++++++++++++++--
- 1 files changed, 30 insertions(+), 2 deletions(-)
-
-diff --git a/mktree.c b/mktree.c
-index 2d8d796..3785ebc 100644
---- a/mktree.c
-+++ b/mktree.c
-@@ -45,6 +45,7 @@ static char usage_str[] =
- "\t -P,--no-pidns         do not create a new pid namspace (default)\n"
- "\t    --pids             restore original pids (default with --pidns)\n"
- "\t -w,--wait             wait for (root) task to termiate (default)\n"
-+"\t -k,--keeplsm          Try to recreate original LSM labels on all objects\n"
- "\t    --show-status      show exit status of (root) task (implies -w)\n"
- "\t    --copy-status      imitate exit status of (root) task (implies -w)\n"
- "\t -W,--no-wait          do not wait for (root) task to terminate\n"
-@@ -259,6 +260,8 @@ struct args {
- 	char *freezer;
- };
- 
-+int keep_lsm;
-+
- static void usage(char *str)
- {
- 	fprintf(stderr, "%s", str);
-@@ -273,6 +276,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		{ "pidns-signal",	required_argument,	NULL, '4' },
- 		{ "no-pidns",	no_argument,		NULL, 'P' },
- 		{ "pids",	no_argument,		NULL, 3 },
-+		{ "keeplsm",	no_argument,		NULL, 'k' },
- 		{ "wait",	no_argument,		NULL, 'w' },
- 		{ "show-status",	no_argument,	NULL, 1 },
- 		{ "copy-status",	no_argument,	NULL, 2 },
-@@ -282,7 +286,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		{ "debug",	no_argument,		NULL, 'd' },
- 		{ NULL,		0,			NULL, 0 }
- 	};
--	static char optc[] = "hdvpPwWF:";
-+	static char optc[] = "hdvpPkwWF:";
- 
- 	int sig;
- 
-@@ -320,6 +324,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 			args->pids = 1;
- 			args->pidns = 1;  /* implied */
- 			break;
-+		case 'k':
-+			keep_lsm = RESTART_KEEP_LSM;
-+			break;
- 		case 'w':
- 			args->wait = 1;
- 			break;
-@@ -750,6 +757,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
- 	if (ctx->args->freezer)
- 		flags |= RESTART_FROZEN;
- 
-+	flags |= keep_lsm;
- 	ret = restart(root_pid, STDIN_FILENO, flags);
- 
- 	if (ret < 0) {
-@@ -1309,7 +1317,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
- 
- 	/* on success this doesn't return */
- 	ckpt_dbg("about to call sys_restart()\n");
--	ret = restart(0, STDIN_FILENO, 0);
-+	ret = restart(0, STDIN_FILENO, keep_lsm);
- 	if (ret < 0)
- 		perror("task restore failed");
- 	return ret;
-@@ -1704,6 +1712,7 @@ static int ckpt_read_obj_buffer(struct ckpt_ctx *ctx, void *buf, int n)
-  * read/write the checkpoint image: similar to in-kernel code
-  */
- 
-+#define SECURITY_NAME_MAX 10
- static int ckpt_read_header(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_header *h;
-@@ -1737,6 +1746,16 @@ static int ckpt_read_header(struct ckpt_ctx *ctx)
- 	if (ret < 0)
- 		return ret;
- 
-+	ptr += ((struct ckpt_hdr *) ptr)->len;
-+	ret = ckpt_read_obj_buffer(ctx, ptr, SECURITY_NAME_MAX + 1);
-+	if (ret < 0)
-+		return ret;
-+
-+	ptr += ((struct ckpt_hdr *) ptr)->len;
-+	ret = ckpt_read_obj_type(ctx, ptr, 200, CKPT_HDR_LSM_INFO);
-+	if (ret < 0)
-+		return ret;
-+
- 	/* FIXME: skip version validation for now */
- 
- 	return 0;
-@@ -1815,6 +1834,15 @@ static int ckpt_write_header(struct ckpt_ctx *ctx)
- 		return ret;
- 	ptr += ((struct ckpt_hdr *) ptr)->len;
- 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
-+	if (ret < 0)
-+		return ret;
-+	ptr += ((struct ckpt_hdr *) ptr)->len;
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
-+	if (ret < 0)
-+		return ret;
-+
-+	ptr += ((struct ckpt_hdr *) ptr)->len;
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
- 
- 	return ret;
- }
--- 
-1.6.1.1
-
+> Signed-off-by: Munehiro "Muuhh" Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+> ---
+>  block/elevator-fq.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+> index b723c12..6714e73 100644
+> --- a/block/elevator-fq.c
+> +++ b/block/elevator-fq.c
+> @@ -1827,7 +1827,7 @@ static struct io_group *io_find_alloc_group(struct request_queue *q,
+>          * a group if it has been marked for deletion
+>          */
+>  
+> -       if (!css_tryget(&iocg->css))
+> +       if (!iocg || !css_tryget(&iocg->css))
+>                 return iog;
+>  
+>         iog = io_cgroup_lookup_group(iocg, key);
+> -- 
+> 1.6.2.5
+> 
+> 
+> -- 
+> IKEDA, Munehiro
+>   NEC Corporation of America
+>     m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
