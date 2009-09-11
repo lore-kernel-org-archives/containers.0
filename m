@@ -1,12 +1,18 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] cr: add a few more ckpt_write_err()s
-Date: Thu, 10 Sep 2009 17:33:44 -0500
-Message-ID: <20090910223344.GA11718@us.ibm.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] io-controller: Fix task hanging when there are more than
+	one groups
+Date: Fri, 11 Sep 2009 09:15:42 +0800
+Message-ID: <4AA9A4BE.30005__33971.6419847265$1252631921$gmane$org@cn.fujitsu.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<4AA4B905.8010801@cn.fujitsu.com>
+	<20090908191941.GF15974@redhat.com>
+	<4AA75B71.5060109@cn.fujitsu.com>
+	<20090909150537.GD8256@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20090909150537.GD8256-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,253 +22,162 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The main point is for new-comers to the checkpoint/restart tree to
-be able to help us debug their otherwise mysterious checkpoint failures.
+Vivek Goyal wrote:
+> On Wed, Sep 09, 2009 at 03:38:25PM +0800, Gui Jianfeng wrote:
+>> Vivek Goyal wrote:
+>>> On Mon, Sep 07, 2009 at 03:40:53PM +0800, Gui Jianfeng wrote:
+>>>> Hi Vivek,
+>>>>
+>>>> I happened to encount a bug when i test IO Controller V9.
+>>>> When there are three tasks to run concurrently in three group,
+>>>> that is, one is parent group, and other two tasks are running 
+>>>> in two different child groups respectively to read or write 
+>>>> files in some disk, say disk "hdb", The task may hang up, and 
+>>>> other tasks which access into "hdb" will also hang up.
+>>>>
+>>>> The bug only happens when using AS io scheduler.
+>>>> The following scirpt can reproduce this bug in my box.
+>>>>
+>>> Hi Gui,
+>>>
+>>> I tried reproducing this on my system and can't reproduce it. All the
+>>> three processes get killed and system does not hang.
+>>>
+>>> Can you please dig deeper a bit into it. 
+>>>
+>>> - If whole system hangs or it is just IO to disk seems to be hung.
+>>     Only when the task is trying do IO to disk it will hang up.
+>>
+>>> - Does io scheduler switch on the device work
+>>     yes, io scheduler can be switched, and the hung task will be resumed.
+>>
+>>> - If the system is not hung, can you capture the blktrace on the device.
+>>>   Trace might give some idea, what's happening.
+>> I run a "find" task to do some io on that disk, it seems that task hangs 
+>> when it is issuing getdents() syscall.
+>> kernel generates the following message:
+>>
+>> INFO: task find:3260 blocked for more than 120 seconds.
+>> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+>> find          D a1e95787  1912  3260   2897 0x00000004
+>>  f6af2db8 00000096 f660075c a1e95787 00000032 f6600270 f6600508 c2037820
+>>  00000000 c09e0820 f655f0c0 f6af2d8c fffebbf1 00000000 c0447323 f7152a1c
+>>  0006a144 f7152a1c 0006a144 f6af2e04 f6af2db0 c04438df c2037820 c2037820
+>> Call Trace:
+>>  [<c0447323>] ? getnstimeofday+0x57/0xe0
+>>  [<c04438df>] ? ktime_get_ts+0x4a/0x4e
+>>  [<c068ab68>] io_schedule+0x47/0x79
+>>  [<c04c12ee>] sync_buffer+0x36/0x3a
+>>  [<c068ae14>] __wait_on_bit+0x36/0x5d
+>>  [<c04c12b8>] ? sync_buffer+0x0/0x3a
+>>  [<c068ae93>] out_of_line_wait_on_bit+0x58/0x60
+>>  [<c04c12b8>] ? sync_buffer+0x0/0x3a
+>>  [<c0440fa4>] ? wake_bit_function+0x0/0x43
+>>  [<c04c1249>] __wait_on_buffer+0x19/0x1c
+>>  [<f81e4186>] ext3_bread+0x5e/0x79 [ext3]
+>>  [<f81e77a8>] htree_dirblock_to_tree+0x1f/0x120 [ext3]
+>>  [<f81e7923>] ext3_htree_fill_tree+0x7a/0x1bb [ext3]
+>>  [<c04a01f9>] ? kmem_cache_alloc+0x86/0xf3
+>>  [<c044c428>] ? trace_hardirqs_on_caller+0x107/0x12f
+>>  [<c044c45b>] ? trace_hardirqs_on+0xb/0xd
+>>  [<f81e09e4>] ? ext3_readdir+0x9e/0x692 [ext3]
+>>  [<f81e0b34>] ext3_readdir+0x1ee/0x692 [ext3]
+>>  [<c04b1100>] ? filldir64+0x0/0xcd
+>>  [<c068b86a>] ? mutex_lock_killable_nested+0x2b1/0x2c5
+>>  [<c068b874>] ? mutex_lock_killable_nested+0x2bb/0x2c5
+>>  [<c04b12db>] ? vfs_readdir+0x46/0x94
+>>  [<c04b12fd>] vfs_readdir+0x68/0x94
+>>  [<c04b1100>] ? filldir64+0x0/0xcd
+>>  [<c04b1387>] sys_getdents64+0x5e/0x9f
+>>  [<c04028b4>] sysenter_do_call+0x12/0x32
+>> 1 lock held by find/3260:
+>>  #0:  (&sb->s_type->i_mutex_key#7){+.+.+.}, at: [<c04b12db>] vfs_readdir+0x46/0x94
+>>
+>> ext3 calls wait_on_buffer() to wait buffer, and schedule the task out in TASK_UNINTERRUPTIBLE
+>> state, and I found this task will be resumed after a quite long period(more than 10 mins).
+> 
+> Thanks Gui. As Jens said, it does look like a case of missing queue
+> restart somewhere and now we are stuck, no requests are being dispatched
+> to the disk and queue is already unplugged.
+> 
+> Can you please also try capturing the trace of events at io scheduler
+> (blktrace) to see how did we get into that situation.
+> 
+> Are you using ide drivers and not libata? As jens said, I will try to make
+> use of ide drivers and see if I can reproduce it.
+> 
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Hi Vivek, Jens,
+
+Currently, If there's only the root cgroup and no other child cgroup available, io-controller will
+optimize to stop expiring the current ioq, and we thought the current ioq belongs to root group. But
+in some cases, this assumption is not true. Consider the following scenario, if there is a child cgroup
+located in root cgroup, and task A is running in the child cgroup, and task A issues some IOs. Then we
+kill task A and remove the child cgroup, at this time, there is only root cgroup available. But the ioq
+is still under service, and from now on, this ioq won't expire because "only root" optimization.
+The following patch ensures the ioq do belongs to the root group if there's only root group existing.
+
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- checkpoint/checkpoint.c |   28 +++++++++++++++++++++++-----
- checkpoint/files.c      |   37 ++++++++++++++++++++++++++++++-------
- checkpoint/memory.c     |   17 ++++++++++++++---
- 3 files changed, 67 insertions(+), 15 deletions(-)
+ block/elevator-fq.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index c19f812..7beee08 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -295,6 +295,8 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	if (t->exit_state == EXIT_DEAD) {
- 		pr_warning("c/r: task %d is EXIT_DEAD\n", task_pid_vnr(t));
-+		__ckpt_write_err(ctx, "task %d (%s) in state EXIT_DEAD",
-+				 task_pid_vnr(t), t->comm);
- 		return -EAGAIN;
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index b723c12..3f86552 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -2338,9 +2338,10 @@ void elv_reset_request_ioq(struct request_queue *q, struct request *rq)
  	}
+ }
  
-@@ -335,12 +337,21 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	rcu_read_lock();
- 	nsproxy = task_nsproxy(t);
--	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns)
-+	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns) {
-+		__ckpt_write_err(ctx, "task %d (%s) in bad mnt_ns",
-+				 task_pid_vnr(t), t->comm);
- 		ret = -EPERM;
--	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns)
-+	}
-+	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns) {
-+		__ckpt_write_err(ctx, "task %d (%s) in bad pid_ns",
-+				 task_pid_vnr(t), t->comm);
- 		ret = -EPERM;
--	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns)
-+	}
-+	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
-+		__ckpt_write_err(ctx, "task %d (%s) in bad net_ns",
-+				 task_pid_vnr(t), t->comm);
- 		ret = -EPERM;
-+	}
- 	rcu_read_unlock();
- 
- 	return ret;
-@@ -629,8 +640,11 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 	/* container init ? */
- 	ctx->root_init = is_container_init(task);
- 
--	if (!(ctx->uflags & CHECKPOINT_SUBTREE) && !ctx->root_init)
-+	if (!(ctx->uflags & CHECKPOINT_SUBTREE) && !ctx->root_init) {
-+		ckpt_write_err(ctx, "Task is not container init"
-+			" and CHECKPOINT_SUBTREE was not specified");
- 		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
-+	}
- 
- 	/* root vfs (FIX: WILL CHANGE with mnt-ns etc */
- 	task_lock(ctx->root_task);
-@@ -669,9 +683,12 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 		 * and then compare to the objects' real user counts.
- 		 */
- 		ret = collect_objects(ctx);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_write_err(ctx, "Error %d collecting objects", ret);
- 			goto out;
-+		}
- 		if (!ckpt_obj_contained(ctx)) {
-+			ckpt_write_err(ctx, "Container had leaks");
- 			ret = -EAGAIN;
- 			goto out;
- 		}
-@@ -689,6 +706,7 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 
- 	/* verify that all objects were indeed visited */
- 	if (!ckpt_obj_visited(ctx)) {
-+		ckpt_write_err(ctx, "Not all objects were visited");
- 		ret = -EAGAIN;
- 		goto out;
- 	}
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 204055b..d16916a 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -84,8 +84,11 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
- 	if (!IS_ERR(fname))
- 		ret = ckpt_write_obj_type(ctx, fname, flen,
- 					  CKPT_HDR_FILE_NAME);
--	else
-+	else {
-+		ckpt_write_err(ctx, "Error writing file name for %s\n",
-+			path->dentry->d_name.name);
- 		ret = PTR_ERR(fname);
-+	}
- 
- 	kfree(buf);
- 	return ret;
-@@ -192,16 +195,23 @@ EXPORT_SYMBOL(generic_file_checkpoint);
- int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+-static inline int is_only_root_group(void)
++static inline int is_only_root_group(struct elv_fq_data *efqd)
  {
- 	struct file *file = (struct file *) ptr;
-+	int ret;
+-	if (list_empty(&io_root_cgroup.css.cgroup->children))
++	if (list_empty(&io_root_cgroup.css.cgroup->children) &&
++	    efqd->busy_queues == 1 && efqd->root_group->ioq)
+ 		return 1;
  
- 	if (!file->f_op || !file->f_op->checkpoint) {
-+		ckpt_write_err(ctx, "Unsupproted file type: %pS", file->f_op);
- 		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
- 		return -EBADF;
- 	}
- 	if (d_unlinked(file->f_dentry)) {
-+		ckpt_write_err(ctx, "Unlinked file: %s", file->f_dentry->d_name.name);
- 		ckpt_debug("unlinked files are unsupported\n");
- 		return -EBADF;
- 	}
--	return file->f_op->checkpoint(ctx, file);
-+	ret = file->f_op->checkpoint(ctx, file);
-+	if (ret)
-+		ckpt_write_err(ctx, "f_op->checkpoint returned %d for %s",
-+			ret, file->f_dentry->d_name.name);
-+	return ret;
+ 	return 0;
+@@ -2383,7 +2384,7 @@ static void io_free_root_group(struct elevator_queue *e)
+ int elv_iog_should_idle(struct io_queue *ioq) { return 0; }
+ EXPORT_SYMBOL(elv_iog_should_idle);
+ 
+-static inline int is_only_root_group(void)
++static inline int is_only_root_group(struct elv_fq_data *efqd)
+ {
+ 	return 1;
  }
+@@ -2547,7 +2548,7 @@ elv_iosched_expire_ioq(struct request_queue *q, int slice_expired, int force)
+ 	struct elevator_queue *e = q->elevator;
+ 	struct io_queue *ioq = elv_active_ioq(q->elevator);
+ 	int ret = 1;
+-
++	
+ 	if (e->ops->elevator_expire_ioq_fn) {
+ 		ret = e->ops->elevator_expire_ioq_fn(q, ioq->sched_queue,
+ 							slice_expired, force);
+@@ -2969,7 +2970,7 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	 * single queue ioschedulers (noop, deadline, AS).
+ 	 */
  
- /**
-@@ -238,8 +248,10 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+-	if (is_only_root_group() && elv_iosched_single_ioq(q->elevator))
++	if (is_only_root_group(efqd) && elv_iosched_single_ioq(q->elevator))
+ 		goto keep_queue;
  
- 	/* sanity check (although this shouldn't happen) */
- 	ret = -EBADF;
--	if (!file)
-+	if (!file) {
-+		ckpt_write_err(ctx, "File no longer exists?");
- 		goto out;
-+	}
+ 	/* We are waiting for this group to become busy before it expires.*/
+@@ -3180,7 +3181,7 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 		 * unnecessary overhead.
+ 		 */
  
- 	/*
- 	 * if seen first time, this will add 'file' to the objhash, keep
-@@ -312,8 +324,10 @@ int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
- 	int objref;
- 
- 	files = get_files_struct(t);
--	if (!files)
-+	if (!files) {
-+		ckpt_write_err(ctx, "couldn't get files struct");
- 		return -EBUSY;
-+	}
- 	objref = checkpoint_obj(ctx, files, CKPT_OBJ_FILE_TABLE);
- 	put_files_struct(files);
- 
-@@ -332,8 +346,12 @@ int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file)
- 	if (ret <= 0)
- 		return ret;
- 	/* if first time for this file (ret > 0), invoke ->collect() */
--	if (file->f_op->collect)
-+	if (file->f_op->collect) {
- 		ret = file->f_op->collect(ctx, file);
-+		if (ret)
-+			ckpt_write_err(ctx, "Error %d collecing file %s",
-+				ret, file->f_dentry->d_name.name);
-+	}
- 	return ret;
- }
- 
-@@ -351,8 +369,10 @@ static int collect_file_desc(struct ckpt_ctx *ctx,
- 		get_file(file);
- 	rcu_read_unlock();
- 
--	if (!file)
-+	if (!file) {
-+		ckpt_write_err(ctx, "Failed to get file");
- 		return -EAGAIN;
-+	}
- 
- 	ret = ckpt_collect_file(ctx, file);
- 	fput(file);
-@@ -392,8 +412,11 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
- 	int ret;
- 
- 	files = get_files_struct(t);
--	if (!files)
-+	if (!files) {
-+		ckpt_write_err(ctx, "Could not get files struct task %d (%s)",
-+				 task_pid_vnr(t), t->comm);
- 		return -EBUSY;
-+	}
- 	ret = collect_file_table(ctx, files);
- 	put_files_struct(files);
- 
-diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-index 487efbd..a6bbd1f 100644
---- a/checkpoint/memory.c
-+++ b/checkpoint/memory.c
-@@ -556,6 +556,7 @@ int generic_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
- 
- 	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
- 		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
-+		ckpt_write_err(ctx, "unsupported VMA %#lx", vma->vm_flags);
- 		return -ENOSYS;
- 	}
- 
-@@ -645,6 +646,7 @@ static int anonymous_checkpoint(struct ckpt_ctx *ctx,
- 	/* should be private anonymous ... verify that this is the case */
- 	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
- 		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
-+		ckpt_write_err(ctx, "unsupported VMA %#lx", vma->vm_flags);
- 		return -ENOSYS;
- 	}
- 
-@@ -711,8 +713,11 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
- 			ret = (*vma->vm_ops->checkpoint)(ctx, vma);
- 		else
- 			ret = -ENOSYS;
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_write_err(ctx, "vma checkpoint returrned %d",
-+				ret);
- 			goto out;
-+		}
- 	}
- 
- 	ret = checkpoint_mm_context(ctx, mm);
-@@ -758,15 +763,21 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
- 	down_read(&mm->mmap_sem);
- 	if (mm->exe_file) {
- 		ret = ckpt_collect_file(ctx, mm->exe_file);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_write_err(ctx, "Err %d collecting mm->exe_file",
-+					ret);
- 			goto out;
-+		}
- 	}
- 	for (vma = mm->mmap; vma; vma = vma->vm_next) {
- 		file = vma->vm_file;
- 		if (file) {
- 			ret = ckpt_collect_file(ctx, file);
--			if (ret < 0)
-+			if (ret < 0) {
-+				ckpt_write_err(ctx, "Err %d collecting vm_file",
-+					ret);
- 				break;
-+			}
- 		}
- 	}
-  out:
+-		if (is_only_root_group() &&
++		if (is_only_root_group(ioq->efqd) &&
+ 			elv_iosched_single_ioq(q->elevator)) {
+ 			elv_log_ioq(efqd, ioq, "select: only root group,"
+ 					" no expiry");
 -- 
-1.6.1
+1.5.4.rc3
