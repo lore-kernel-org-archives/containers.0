@@ -1,15 +1,15 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][v6][PATCH 8/9]: Define clone_with_pids() syscall
-Date: Fri, 11 Sep 2009 13:12:27 +0200
-Message-ID: <200909111312.27497.arnd__49576.5787586153$1252667818$gmane$org@arndb.de>
-References: <20090910060627.GA24343@us.ibm.com>
-	<200909111231.30495.arnd@arndb.de>
-	<20090911110056.GA12824@hawkmoon.kerlabs.com>
+From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: IO controller Mini-Summit 2009
+Date: Fri, 11 Sep 2009 16:46:32 +0530
+Message-ID: <20090911111632.GF4474@linux.vnet.ibm.com>
+References: <20090826.203251.260094379.ryov@valinux.co.jp>
+Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090911110056.GA12824-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090826.203251.260094379.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +19,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ioband-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, kunai-de/tnXTf+JLsfHDXvbKv3Xf5DAMn2ifp@public.gmane.org, osonoi-de/tnXTf+JLsfHDXvbKv3Xf5DAMn2ifp@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Friday 11 September 2009, Louis Rilling wrote:
-> On 11/09/09 12:31 +0200, Arnd Bergmann wrote:
-> > On Thursday 10 September 2009, Sukadev Bhattiprolu wrote:
-> > > Since this is a variant of clone() and clone is listed as a PTREGSCALL(),
-> > > I pass in the pt_regs.
-> > > 
-> > > arch/x86/kernel/entry_32.S lists clone() under this comment:
-> > > 
-> > > /*
-> > >  * System calls that need a pt_regs pointer.
-> > >  */
-> > > 
-> > > Is there a guideline on what system calls use/need pt_regs ?
-> > 
-> > You need pt_regs if you access any registers from the user task
-> > other than the argument registers. In case of clone(), this is
-> > the user stack pointer.
+On Wed, Aug 26, 2009 at 08:32:51PM +0900, Ryo Tsuruta wrote:
+> Hi All,
 > 
-> AFAICS clone() actually needs all registers (see x86 copy_thread() for
-> instance). Any variant of clone() will have this requirement.
+> As I have notified before, The 1st Linux IO controller Mini-Summit
+> will be held in Tokyo Japan on Oct 17 -- day before the 9th Linux
+> kernel summit. So I would like to propose the following topics for 
+> the mini-summit and discuss about them.
+> 
+> - Multiple IO controller development projects
+>   - There are two activities for the development of IO controller,
+>     Vivek's io-controller and dm-ioband. Do we have to pick one of
+>     them to put into the mainline? How to advance the development?
+> 
+> - Extensions of struct bio
+>   - Make a bio point to the io_context of a process which creates the
+>     I/O request. This allows to pass the IO scheduling class and
+>     priority information to IO controller even if the IO is submitted
+>     by another process which does not create the request, such as a
+>     worker thread.
+>   - Add a new flag to struct bio to identify the bio as urgent. This
+>     gives IO controller a chance to handle the bio as high priority.
+>     This flag should be set if the bio is created for the page-out
+>     operation.
+> 
+> - I/O tracking and charging policy
+>   - Which process, a page-requesting process or a page-returning
+>     process, should be charged for the I/O caused by page reclaim?
+>     We should consider two cases where the IO flushes anonymous pages
+>     and file mapped pages.
+> 
+> I think this is a good opportunity to meet face-to-face to discuss
+> about IO controller development. I would like to many developers to
+> join this mini-summit. Please visit the following URL for more
+> information about the mini-summit.
+> http://apps.sourceforge.net/trac/ioband/wiki/iosummit
+> If you would like to join the mini-summit, please e-mail to me or post
+> on the wiki page, 
+> (You need an account on SourceForge.net to edit the wiki page.)
+> 
+> All comments, questions, suggestions and anything else are appreciated.
+> 
 
-Right, but that part (do_fork) is already handled in common code, which
-function calls into architecture specific code.
+Hi Ryo,
 
-The point I was making is that the sys_clone() and sys_clone_with_pids()
-functions themselves only access the argument registers, the stack
-pointer and pass those down to do_fork, along with pt_regs.
+Would you be having a remote dial-in for folks who cannot attend in
+person?
 
-	Arnd <><
+thanks,
+-- 
+regards,
+Dhaval
