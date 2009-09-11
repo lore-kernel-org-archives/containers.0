@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/3] Add post-file deferqueue (v2)
-Date: Fri, 11 Sep 2009 15:43:30 -0400
-Message-ID: <4AAAA862.1020608@librato.com>
-References: <1252508756-4278-1-git-send-email-danms@us.ibm.com>	<1252508756-4278-3-git-send-email-danms@us.ibm.com>	<4AA82D13.6040008@librato.com>
-	<87hbv9lfup.fsf@caffeine.danplanet.com>
+Subject: Re: [PATCH 1/3] Make sockets proper objhash objects and use
+	checkpoint_obj() on them (v2)
+Date: Fri, 11 Sep 2009 15:46:49 -0400
+Message-ID: <4AAAA929.6000008@librato.com>
+References: <1252508756-4278-1-git-send-email-danms@us.ibm.com>	<1252508756-4278-2-git-send-email-danms@us.ibm.com>	<4AA833F5.3040706@librato.com>
+	<87d45xlfhz.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87hbv9lfup.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <87d45xlfhz.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,10 +26,23 @@ List-Id: containers.vger.kernel.org
 
 
 Dan Smith wrote:
-> OL> I'm unsure why the warning; perhaps you mean "ckpt_debug()" ?
+> OL> Did you also address this ?
 > 
-> This is just copied from Matt's patch.  Feel free to change it when
-> you put it in or I can send another one.
+> Sorry, I meant to put something in the intro mail about this.
+> 
+> OL> [The reason sk_free() expects no sk_socket is because the socket
+> OL> at this point must have been released already via
+> OL> proto_ops->release().  The callback is assumed to orphan the
+> OL> socket].
+> 
+> Right, which is why we're not seeing the warning.  I've got a
+> follow-on patch to the current set started but wanted to avoid packing
+> more onto these two patches.  If you'd like me to resubmit the set and
+> include that patch (when finished) I'll do that.
 > 
 
-Nah ... no need to resend.
+I prefer not to pull in code that we know has a leak, but rather
+wait for the fixed version. I'll take the 2nd patch (post-file
+deferqueue) now.
+
+Oren.
