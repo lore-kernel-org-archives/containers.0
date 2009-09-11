@@ -1,15 +1,15 @@
 From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Understanding CPU containers
-Date: Fri, 11 Sep 2009 16:51:25 +0530
-Message-ID: <20090911112124.GG4474@linux.vnet.ibm.com>
-References: <c7704c490909090330m494bc910n170f04c09cdeeeea@mail.gmail.com>
+Subject: Re: Cgroups RT scheduling
+Date: Fri, 11 Sep 2009 16:53:52 +0530
+Message-ID: <20090911112352.GH4474@linux.vnet.ibm.com>
+References: <b6a2d2e20909090849m16a9f452h353d5a75ee61c625@mail.gmail.com>
 Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <c7704c490909090330m494bc910n170f04c09cdeeeea-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <b6a2d2e20909090849m16a9f452h353d5a75ee61c625-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,64 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Bharata B Rao <bharata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Rolando Martins <rolando.martins-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCBTZXAgMDksIDIwMDkgYXQgMDQ6MDA6MjdQTSArMDUzMCwgTXVrZXNoIEcgd3JvdGU6
-Cj4gSGksCj4gICAgICAgIEkgYW0gdHJ5aW5nIHRvIHVuZGVyc3RhbmQgdGhlIGJlaGF2aW9yIG9m
-IENQVSBjb250YWluZXJzIGFzIEkKPiBhbSB1bmFibGUgdG8gZXhwbGFpbiBmZXcgdGhpbmdzLgo+
-IC0gQnVpbHQgdGhlIGxhdGVzdCBrZXJuZWwgMi42LjMwLjUgYW5kIGluc3RhbGxlZCBvbiBteSBJ
-bnRlbCBjb3JlMkR1byBkZXNrdG9wCj4gCj4gLSBNb3VudGVkIHRoZSBjcHUgc3Vic3lzdGVtIHVz
-aW5nCj4gCj4gICAgICAgLSBtb3VudCAtdCBjZ3JvdXAgLW9jcHUgY2dyb3VwIC9jb250YWluZXJz
-L2NwdS8KPiAKPiAtIENyZWF0ZWQgMyBzdWIgZGlyZWN0b3JpZXMgdW5kZXIgL2NvbnRhaW5lcnMv
-Y3B1Cj4gCj4gICAgICAgICAtIDUxMiBmb3IgY3B1LnNoYXJlcz01MTIKPiAKPiAgICAgICAgIC0g
-MTAyNCBmb3IgY3B1LnNoYXJlcz0xMDI0Cj4gCj4gICAgICAgICAtIDIwNDggZm9yIGNwdS5zaGFy
-ZXM9MjA0OAo+IAo+IC0gQ3JlYXRlZCAzIGJhc2ggdGVybWluYWxzIGFuZCBhdHRhY2hlZCBlYWNo
-IG9uZSB0byB0aGUgaW5kaXZpZHVhbCBjcHUKPiBzdWIgc3lzdGVtIHVzaW5nIHRoZSAvYmluL2Vj
-aG8gY29tbWFuZC4gVGhpcyBlc3NlbnRpYWxseSBhbGxvd3MgYW55Cj4gcHJvY2VzcyBjcmVhdGVk
-IGJ5IHRoZSBzaGVsbHMgdG8gYmUgYXV0b21hdGljYWxseSBhZGRlZCB0byB0aGUgY3B1Cj4gc3Vi
-c3lzdGVtIHRvIHdoaWNoIHRoZSBzaGVsbCBiZWxvbmdzCj4gCj4gLSBSYW4gYSBjb21wdXRlIGlu
-dGVuc2l2ZSBiZW5jaG1hcmsg4oCcb3BlbnNzbCBzcGVlZCBhZXMtMjU2LWNiY+KAnQo+IGJlbmNo
-bWFyayBvbiBhbGwgdGhlIHNoZWxscyBhdCB0aGUgc2FtZSB0aW1lLgo+IAo+IC0gRW5jbG9zaW5n
-IHRoZSBudW1iZXJzIGZyb20gdGhlIHJ1buKApgo+IAo+ICAgICAtIE9ic2VydmVkIENQVSBVdGls
-aXphdGlvbiA6IDk5LjggLCA0OS45ICwgNDkuOQo+IAo+IFJlc3VsdHMgZnJvbSB0aGUgcnVuCj4g
-Cj4gVGhlICdudW1iZXJzJyBhcmUgaW4gMTAwMHMgb2YgYnl0ZXMgcGVyIHNlY29uZCBwcm9jZXNz
-ZWQuCj4gCj4gQ1BVIHNoYXJlcyBhbGxvY2F0aW9uCj4gCj4gICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgIDE2IGJ5dGVzICAgICAgICAgICAgICAgICAgICAgNjQgYnl0ZXMKPiAgICAgICAgICAg
-ICAyNTYgYnl0ZXPCoMKgICAgICAgICAgICAxMDI0IGJ5dGVzwqDCoCAgICAgICAgICAgODE5MiBi
-eXRlcwo+IAo+IDUxMiAgICAgICAgICAgICAgICAgICAgICAgIDM1NDU5Ljk1a8KgwqDCoCAgICAg
-ICAgICAgICAgICA0MzQ0MS43NWsKPiAgICAgICAgICAgNDY2NjAuMzVrwqDCoMKgICAgICAgICAg
-NDY3MDcuNzFrwqDCoMKgICAgICAgICAgICA3NzA0MC4zMGsKPiAKPiAxMDI0ICAgICAgICAgICAg
-ICAgICAgICAgIDU3NDQ4LjYzayAgICAgICAgICAgICAgICAgICAgNDQwNTAuNTRrCj4gICAgICAg
-ICAgIDQ2NTU4Ljk4ayAgICAgICAgICAgIDQ2NjMzLjAzayAgICAgICAgICAgICAgNDcyNTIuNzZr
-Cj4gCj4gMjA0OCAgICAgICAgICAgICAgICAgICAgNzExODYuMzZrICAgICAgICAgICAgICAgICAg
-ICA4NzE0Mi4wMmsKPiAgICAgICAgIDkyNTEzLjc5ayAgICAgICAgICAgIDkzNzY5LjA1ayAgICAg
-ICAgICAgICAgOTQ3OTUuMDlrCj4gCj4gMTAyNCB2cyA1MTIgICAgICAgICAgMS42MiAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAxLjAxCj4gICAgICAgICAgICAgMC45OSAgICAgICAgICAgICAg
-ICAgICAgIDAuOTkgICAgICAgICAgICAgICAgICAgICAgMC42MQo+IAo+IDIwNDggdnMgMTAyNCAg
-ICAgICAgIDEuMjMgICAgICAgICAgICAgICAgICAgICAgICAgICAxLjk3Cj4gICAgICAgICAgICAx
-Ljk4ICAgICAgICAgICAgICAgICAgICAgIDIuMDEgICAgICAgICAgICAgICAgICAgICAyCj4gCj4g
-T2JzZXJ2YXRpb25zCj4gCj4gICAgICAgICAtIFVubGVzcyB0aGUgY3B1IHJlc291cmNlcyBhcmUg
-b3ZlcmNvbW1pdHRlZCwgdGhlcmUgaXMgbm8KPiB2YWx1ZSBpbiB0aGUgYWxsb2NhdGluZyBzaGFy
-ZXMgdG8gdGhlIGNvbnRhaW5lcnMuCj4gICAgICAgICAtIDIwNDggdnMgMTAyNCBjcHUgY29udGFp
-bmVycywgdGhlIHNjYWxlIGlzIDJYLCBleGNlcHQgZm9yIDE2IGJ5dGVzCj4gIMKgwqDCoMKgwqDC
-oMKgLSA1MTIgdnMgMTAyNCBjcHUgY29udGFpbmVycywgdGhlcmUgaXMgbm8gZGlmZmVyZW5jZSBh
-dCBhbGwsCj4gZXhjZXB0IGZvciAxNiBieXRlcwo+ICDCoMKgwqDCoMKgwqDCoC0gNTEyIHZzIDEw
-MjQgY3B1IGNvbnRhaW5lcnMsIHRoZXJlIGlzIG5vIGRpZmZlcmVuY2UgZm9yIDgxOTIKPiBieXRl
-cyBhcyB0aGUgcmVtYWluaW5nIDIgb3BlbnNzbCBydW5zIGFyZSBjb21wbGV0ZS4KCih3b3JkIHdy
-YXBwaW5nIGhhcyBicm9rZW4geW91ciB0YWJsZSBmb3IgbWUuIEkgd2lsbCB0cnkgdG8gZGVjaXBo
-ZXIgaXQKYW5kIHBvc3Qgb2JzZXJ2YXRpb25zIG9uIGl0IGxhdGVyIG9uLikKCj4gIMKgwqDCoMKg
-wqDCoMKgLSBGb3IgQ1BVIGJvdW5kLCB0aGVyZSBoYXMgdG8gYmUgYW4gb3ZlciBjb21taXQgb24g
-dGhlIENQVXMKPiBvdGhlcndpc2UgdGhlIHNoYXJlIGFsbG9jYXRpb24gZG9lcyBub3QgbWF0dGVy
-CgpCaGFyYXRhIGhhcyBwb3N0ZWQgc29tZSBwYXRjaGVzIHJlY2VudGx5IGF0Cmh0dHA6Ly9sd24u
-bmV0L0FydGljbGVzLzM0ODU3OC8gd2hpY2ggYWxsb3cgb25lIHRvIHRocm90dGxlIHRoZSBhbW91
-bnQKb2YgQ1BVIGJhbmR3aWR0aCBhdmFpbGFibGUgdG8gYSBjZ3JvdXAuIEFueSBmZWVkYmFjayBv
-biB0aGF0IHdpbGwgYmUKZ3JlYXQhCgo+ICAgICAgICAgLSBPbmUgY2Fubm90IGR5bmFtaWNhbGx5
-IGFzc2lnbiBjcHVzIHRvIHRoZSBjb250YWluZXIsIGJ5Cj4gZGVmYXVsdCwgaXQgcnVucyBvbiB0
-aGUgbm8gb2YgY29yZXMgYXZhaWxhYmxlLgoKUmlnaHQuIEJ1dCB5b3UgY2FuIHVzZSBjcHVzZXRz
-IHRvIGNhcnZlIG91dCB0aGUgc3lzdGVtIGlmIHlvdSB3YW50IHRvLgoKLS0gCnJlZ2FyZHMsCkRo
-YXZhbApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
-YWluZXJz
+[Adding peterz to the cc]
+
+On Wed, Sep 09, 2009 at 04:49:52PM +0100, Rolando Martins wrote:
+> Hi,
+> 
+> I would like to confirm the following:
+> cpuset.sched_load_balance doesn't work with RT, right?
+> You cannot have tasks for sub-domain 2 to utilize bandwidth of
+> sub-domain 3, right?
+> 
+>                               __1__
+>                              /        \
+>                             2         3
+>                       (50% rt)  (50% rt )
+> 
+> For my application domain;) it would be interesting to have
+> rt_runtime_ns as a min. of allocated rt and not a max.
+> Ex. If an application of domain 2 needs to go up to 100% and domain 3
+> is idle, then it would be cool to let it utilize the full bandwidth.
+> (we also could have a hard upper limit in each sub-domain, like
+> hard_up=0.8, i.e. even if we could get 100%, we will only utilize
+> 80%).
+> 
+
+As far as I understand, all RT group scheduling assures is a certain
+bandwidth which you cannot exceed in a given time period. It doesn't
+provide the guarantee (that I think you are looking for) that you want.
+
+Peter should be able to tell more about future plans.
+
+Thanks,
+-- 
+regards,
+Dhaval
