@@ -1,15 +1,11 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [Bugme-new] [Bug 14150] New: BUG: soft lockup - CPU#3 stuck for
-	61s!, while running cpu controller latency testcase on two containers
-	parallaly
-Date: Fri, 11 Sep 2009 14:28:13 -0700
-Message-ID: <20090911142813.dc823bf1.akpm@linux-foundation.org>
-References: <bug-14150-10286@http.bugzilla.kernel.org/>
+From: "Ayala sibyl" <Keyhxbztgzubxiw-Yw6GUaMkS99jitOJ6T5g7Lyq0pUa53/3@public.gmane.org>
+Subject: Re: doctor data
+Date: 11 Sep 2009 22:35:07 -0300
+Message-ID: <W03VNN0064R6sKBEr8p000000d4@w03vnn0064.locaweb.com.br>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <bug-14150-10286-V0hAGp6uBxO456/isadD/XN4h3HLQggn@public.gmane.org/>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,148 +15,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir Singh <balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bugzilla-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org
+To: hr-2DbsSQhoe5d9N1IH3in7ow@public.gmane.org
+Cc: christlh-Kx4bGX/NEpX2fBVCVOL8/A@public.gmane.org, mshami-s7p20SfEDVaVc3sceRu5cw@public.gmane.org, ba8013b93-fHTHtPhtvzrQT0dZR+AlfA@public.gmane.org, kmugu-B9Gk7ihICwTQT0dZR+AlfA@public.gmane.org, info-I6Ty0Rm1GJCaTynMi1HDakEOCMrvLtNR@public.gmane.org, info-Hb5qq8MSHddWk0Htik3J/w@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, thierry.sautier-rmrEuHu2utxWj0EZb7rXcA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+The package below is valued at over $2000 when purchased individually
 
-(switched to email.  Please respond via emailed reply-to-all, not via the
-bugzilla web interface).
+Currently Practicing Medical Doctors in America 
 
-On Thu, 10 Sep 2009 09:32:30 GMT
-bugzilla-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org wrote:
+788,713 in total * 17,638 emails
 
-> http://bugzilla.kernel.org/show_bug.cgi?id=14150
-> 
->            Summary: BUG: soft lockup - CPU#3 stuck for 61s!, while running
->                     cpu controller latency testcase on two containers
->                     parallaly
->            Product: Process Management
->            Version: 2.5
->     Kernel Version: 2.6.31-rc7
->           Platform: All
->         OS/Version: Linux
->               Tree: Mainline
->             Status: NEW
->           Severity: high
->           Priority: P1
->          Component: Scheduler
->         AssignedTo: mingo-X9Un+BFzKDI@public.gmane.org
->         ReportedBy: risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
->                 CC: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org,
->                     risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
->         Regression: No
-> 
-> 
-> Created an attachment (id=23055)
->  --> (http://bugzilla.kernel.org/attachment.cgi?id=23055)
-> Config-file-used
-> 
-> Hitting this soft lock issue while running this scenario on 2.6.31-rc7 kernel
-> on SystemX 32 bit on multiple machines.
-> 
-> Scenario:
->     - While running cpu controller latency testcase from LTP same time on two
-> containers.
-> 
-> Steps:
-> 1. Compile ltp-full-20090731.tgz on host.
-> 2. Create two container (Used lxc tool
-> (http://sourceforge.net/projects/lxc/lxc-0.6.3.tar.gz) for creating container )
-> e.g:
->     lxc-create -n foo1
->     lxc-create -n foo2
-> On first shell:
->     lxc-execute -n foo1 -f /usr/etc/lxc/lxc-macvlan.conf /bin/bash
-> on Second shell:
->     lxc-execute -n foo2 -f /usr/etc/lxc/lxc-macvlan.conf /bin/bash
-> 
-> 3. Either you run cpu_latency testcase alone or run "./runltp -f controllers"
-> at same time on both the containers.
-> 4. After testcase execution completes, you can see this message in dmesg.
-> 
-> Expected Result:
->     - Should not reproduce soft lock up issue.
-> - This reproduces 3 times out of 5 tries.
-> 
-> hrtimer: interrupt too slow, forcing clock min delta to 5843235 ns
-> hrtimer: interrupt too slow, forcing clock min delta to 5842476 ns
-> Clocksource tsc unstable (delta = 18749057581 ns)
-> BUG: soft lockup - CPU#3 stuck for 61s! [cpuctl_latency_:17174]
-> Modules linked in: bridge stp llc bnep sco l2cap bluetooth sunrpc ipv6
-> p4_clockmod dm_multipath uinput qla2xxx ata_generic pata_acpi usb_storage e1000
-> scsi_transport_fc joydev scsi_tgt i2c_piix4 pata_serverworks pcspkr serio_raw
-> mptspi mptscsih mptbase scsi_transport_spi radeon ttm drm i2c_algo_bit i2c_core
-> [last unloaded: scsi_wait_scan]
-> 
-> Pid: 17174, comm: cpuctl_latency_ Tainted: G        W  (2.6.31-rc7 #1) IBM
-> eServer BladeCenter HS40 -[883961X]-                    
-> EIP: 0060:[<c058aded>] EFLAGS: 00000283 CPU: 3
-> EIP is at find_next_bit+0x9/0x79
-> EAX: c2c437a0 EBX: f3d433c0 ECX: 00000000 EDX: 00000020
-> ESI: c2c436bc EDI: 00000000 EBP: f063be6c ESP: f063be64
->  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-> CR0: 80050033 CR2: 008765a4 CR3: 314d7000 CR4: 000006d0
-> DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
-> DR6: ffff0ff0 DR7: 00000400
-> Call Trace:
->  [<c0427b6e>] cpumask_next+0x17/0x19
->  [<c042c28d>] tg_shares_up+0x53/0x149
->  [<c0424082>] ? tg_nop+0x0/0xc
->  [<c0424082>] ? tg_nop+0x0/0xc
->  [<c042406e>] walk_tg_tree+0x63/0x77
->  [<c042c23a>] ? tg_shares_up+0x0/0x149
->  [<c042e836>] update_shares+0x5d/0x65
->  [<c0432af3>] rebalance_domains+0x114/0x460
->  [<c0403393>] ? restore_all_notrace+0x0/0x18
->  [<c0432e75>] run_rebalance_domains+0x36/0xa3
->  [<c043c324>] __do_softirq+0xbc/0x173
->  [<c043c416>] do_softirq+0x3b/0x5f
->  [<c043c52d>] irq_exit+0x3a/0x68
->  [<c0417846>] smp_apic_timer_interrupt+0x6d/0x7b
->  [<c0403c9b>] apic_timer_interrupt+0x2f/0x34
-> BUG: soft lockup - CPU#2 stuck for 61s! [watchdog/2:11]
-> Modules linked in: bridge stp llc bnep sco l2cap bluetooth sunrpc ipv6
-> p4_clockmod dm_multipath uinput qla2xxx ata_generic pata_acpi usb_storage e1000
-> scsi_transport_fc joydev scsi_tgt i2c_piix4 pata_serverworks pcspkr serio_raw
-> mptspi mptscsih mptbase scsi_transport_spi radeon ttm drm i2c_algo_bit i2c_core
-> [last unloaded: scsi_wait_scan]
-> 
-> Pid: 11, comm: watchdog/2 Tainted: G        W  (2.6.31-rc7 #1) IBM eServer
-> BladeCenter HS40 -[883961X]-                    
-> EIP: 0060:[<c042c313>] EFLAGS: 00000246 CPU: 2
-> EIP is at tg_shares_up+0xd9/0x149
-> EAX: 00000000 EBX: f09b3c00 ECX: f0baac00 EDX: 00000100
-> ESI: 00000002 EDI: 00000400 EBP: f6cb7de0 ESP: f6cb7db8
->  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
-> CR0: 8005003b CR2: 08070680 CR3: 009c8000 CR4: 000006d0
-> DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
-> DR6: ffff0ff0 DR7: 00000400
-> Call Trace:
->  [<c0424082>] ? tg_nop+0x0/0xc
->  [<c0424082>] ? tg_nop+0x0/0xc
->  [<c042406e>] walk_tg_tree+0x63/0x77
->  [<c042c23a>] ? tg_shares_up+0x0/0x149
->  [<c042e836>] update_shares+0x5d/0x65
->  [<c0432af3>] rebalance_domains+0x114/0x460
->  [<c0432e75>] run_rebalance_domains+0x36/0xa3
->  [<c043c324>] __do_softirq+0xbc/0x173
->  [<c043c416>] do_softirq+0x3b/0x5f
->  [<c043c52d>] irq_exit+0x3a/0x68
->  [<c0417846>] smp_apic_timer_interrupt+0x6d/0x7b
->  [<c0403c9b>] apic_timer_interrupt+0x2f/0x34
->  [<c0430d37>] ? finish_task_switch+0x5d/0xc4
->  [<c0744b11>] schedule+0x74c/0x7b2
->  [<c0590e28>] ? trace_hardirqs_on_thunk+0xc/0x10
->  [<c0403393>] ? restore_all_notrace+0x0/0x18
->  [<c0471e19>] ? watchdog+0x0/0x79
->  [<c0471e19>] ? watchdog+0x0/0x79
->  [<c0471e63>] watchdog+0x4a/0x79
->  [<c0449a53>] kthread+0x70/0x75
->  [<c04499e3>] ? kthread+0x0/0x75
->  [<c0403e93>] kernel_thread_helper+0x7/0x10
-> [root@hs40 ltp-full-20090731]# uname -a
-> Linux hs40.in.ibm.com 2.6.31-rc7 #1 SMP Thu Sep 3 10:14:41 IST 2009 i686 i686
-> i386 GNU/Linux
-> [root@hs40 ltp-full-20090731]#
-> 
+Featuring the most complete contact information in many different areas of medicine
+
+Over a dozen sortable fields
+
+
+Listing of American Pharma Companies
+Personal email addresses (47,000 in total) and names for top level executives
+
+Hospitals in the US
+more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+
+American Dentists
+Practically every dentist in the US is listed here
+
+Chiropractors in the USA
+Complete data for all chiropractors in America (a $250 value)
+
+
+reduced price is now: 
+$399 for all 5 datasets
+
+Email us at:      Larry-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
+
+  
+
+exp. mar SEPTEMBER 18
+
+
+Send us an email to exit-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org we will discontinue from the list
