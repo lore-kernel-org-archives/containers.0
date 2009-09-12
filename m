@@ -1,7 +1,7 @@
-From: "Ayala sibyl" <Keyhxbztgzubxiw-Yw6GUaMkS99jitOJ6T5g7Lyq0pUa53/3@public.gmane.org>
-Subject: Re: doctor data
-Date: 11 Sep 2009 22:35:07 -0300
-Message-ID: <W03VNN0064R6sKBEr8p000000d4@w03vnn0064.locaweb.com.br>
+From: "Cora X Sanford" <jptytjfNestor-kqMC8Kbks+VKBd5Qah50Cw@public.gmane.org>
+Subject: [***SPAM*** Score/Req: 15.7/5.0] re: datasets of dentists
+Date: Sat, 12 Sep 2009 05:23:52 -0700
+Message-ID: <200909121223.n8CCNqRr017622@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,42 +15,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hr-2DbsSQhoe5d9N1IH3in7ow@public.gmane.org
-Cc: christlh-Kx4bGX/NEpX2fBVCVOL8/A@public.gmane.org, mshami-s7p20SfEDVaVc3sceRu5cw@public.gmane.org, ba8013b93-fHTHtPhtvzrQT0dZR+AlfA@public.gmane.org, kmugu-B9Gk7ihICwTQT0dZR+AlfA@public.gmane.org, info-I6Ty0Rm1GJCaTynMi1HDakEOCMrvLtNR@public.gmane.org, info-Hb5qq8MSHddWk0Htik3J/w@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, thierry.sautier-rmrEuHu2utxWj0EZb7rXcA@public.gmane.org
+To: owusueric2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org, info-J5kXQKJk+w0sYtaaK7K+xw@public.gmane.org, ydjilb-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hphager-YDxpq3io04c@public.gmane.org, visionxxx65-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, vylyxf-OCLjedvcGqbQT0dZR+AlfA@public.gmane.org, barbara_wittenberg-S0/GAf8tV78@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The package below is valued at over $2000 when purchased individually
+Here is the package deal we're running for this week
 
-Currently Practicing Medical Doctors in America 
+Fully Licensed MDs in America 
 
-788,713 in total * 17,638 emails
+788,610 in total * 17,374 emails
 
 Featuring the most complete contact information in many different areas of medicine
 
 Over a dozen sortable fields
 
 
-Listing of American Pharma Companies
-Personal email addresses (47,000 in total) and names for top level executives
+List of American Pharma Companies
+47,000 personal emails and names of decision makers
 
-Hospitals in the US
-more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+List of US Hospitals
+complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
 
-American Dentists
-Practically every dentist in the US is listed here
+Contact List of American Dentists
+More than half a million listings [worth $499 alone!]
 
 Chiropractors in the USA
-Complete data for all chiropractors in America (a $250 value)
+Complete data for all chiropractors in the USA (a $250 value)
 
 
-reduced price is now: 
-$399 for all 5 datasets
+Cost just slashed -  
+$397 for all 5 datasets
 
-Email us at:      Larry-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
+send email to:      Sheri-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
 
   
 
-exp. mar SEPTEMBER 18
+valid until  SEPTEMBER 18
 
 
-Send us an email to exit-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org we will discontinue from the list
+to terminate please send a blank message to exit-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
