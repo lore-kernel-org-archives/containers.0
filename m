@@ -1,11 +1,15 @@
-From: "Cora X Sanford" <jptytjfNestor-kqMC8Kbks+VKBd5Qah50Cw@public.gmane.org>
-Subject: [***SPAM*** Score/Req: 15.7/5.0] re: datasets of dentists
-Date: Sat, 12 Sep 2009 05:23:52 -0700
-Message-ID: <200909121223.n8CCNqRr017622@smtp1.linux-foundation.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] IO scheduler based IO controller V9
+Date: Sun, 13 Sep 2009 14:54:47 -0400
+Message-ID: <20090913185447.GA11003__40728.8758004599$1252868299$gmane$org@redhat.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<4AA918C1.6070907@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AA918C1.6070907-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,41 +19,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: owusueric2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org, info-J5kXQKJk+w0sYtaaK7K+xw@public.gmane.org, ydjilb-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hphager-YDxpq3io04c@public.gmane.org, visionxxx65-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, vylyxf-OCLjedvcGqbQT0dZR+AlfA@public.gmane.org, barbara_wittenberg-S0/GAf8tV78@public.gmane.org
+To: Jerome Marchand <jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Here is the package deal we're running for this week
+On Thu, Sep 10, 2009 at 05:18:25PM +0200, Jerome Marchand wrote:
+> Vivek Goyal wrote:
+> > Hi All,
+> > 
+> > Here is the V9 of the IO controller patches generated on top of 2.6.31-rc7.
+>  
+> Hi Vivek,
+> 
+> I've run some postgresql benchmarks for io-controller. Tests have been
+> made with 2.6.31-rc6 kernel, without io-controller patches (when
+> relevant) and with io-controller v8 and v9 patches.
+> I set up two instances of the TPC-H database, each running in their
+> own io-cgroup. I ran two clients to these databases and tested on each
+> that simple request:
+> $ select count(*) from LINEITEM;
+> where LINEITEM is the biggest table of TPC-H (6001215 entries,
+> 720MB). That request generates a steady stream of IOs.
+> 
+> Time is measure by psql (\timing switched on). Each test is run twice
+> or more if there is any significant difference between the first two
+> runs. Before each run, the cache is flush:
+> $ echo 3 > /proc/sys/vm/drop_caches
+> 
+> 
+> Results with 2 groups of same io policy (BE) and same io weight (1000):
+> 
+> 	w/o io-scheduler	io-scheduler v8		io-scheduler v9
+> 	first	second		first	second		first	second
+> 	DB	DB		DB	DB		DB	DB
+> 
+> CFQ	48.4s	48.4s		48.2s	48.2s		48.1s	48.5s
+> Noop	138.0s	138.0s		48.3s	48.4s		48.5s	48.8s
+> AS	46.3s	47.0s		48.5s	48.7s		48.3s	48.5s
+> Deadl.	137.1s	137.1s		48.2s	48.3s		48.3s	48.5s
+> 
+> As you can see, there is no significant difference for CFQ
+> scheduler. There is big improvement for noop and deadline schedulers
+> (why is that happening?). The performance with anticipatory scheduler
+> is a bit lower (~4%).
+> 
 
-Fully Licensed MDs in America 
+Ok, I think what's happening here is that by default slice lenght for
+a queue is 100ms. When you put two instances of DB in two different
+groups, one streaming reader can run at max for 100ms at a go and then 
+we switch to next reader.
 
-788,610 in total * 17,374 emails
+But when both the readers are in root group, then AS lets run one reader
+to run at max 250ms (sometimes 125ms and sometimes 250ms based on at what
+time as_fifo_expired() was invoked).
 
-Featuring the most complete contact information in many different areas of medicine
+So because a reader gets to run longer at one stretch in root group, it
+reduces number of seeks and leads to little enhanced throughput.
 
-Over a dozen sortable fields
+If you change the /sys/block/<disk>/queue/iosched/slice_sync to 250 ms, then
+one group queue can run at max for 250ms before we switch the queue. In
+this case you should be able to get same performance as in root group.
 
-
-List of American Pharma Companies
-47,000 personal emails and names of decision makers
-
-List of US Hospitals
-complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
-
-Contact List of American Dentists
-More than half a million listings [worth $499 alone!]
-
-Chiropractors in the USA
-Complete data for all chiropractors in the USA (a $250 value)
-
-
-Cost just slashed -  
-$397 for all 5 datasets
-
-send email to:      Sheri-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
-
-  
-
-valid until  SEPTEMBER 18
-
-
-to terminate please send a blank message to exit-GAJ2dpP1HkYffRCeu55lGaHonnlKzd3f@public.gmane.org
+Thanks
+Vivek
