@@ -1,8 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] Make sockets proper objhash objects and use
-	checkpoint_obj() on them (v3)
-Date: Mon, 14 Sep 2009 09:48:42 -0700
-Message-ID: <1252946924-4401-2-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 2/3] Track socket buffer owners (v3)
+Date: Mon, 14 Sep 2009 09:48:43 -0700
+Message-ID: <1252946924-4401-3-git-send-email-danms@us.ibm.com>
 References: <1252946924-4401-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,444 +20,730 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This changes the checkpoint/restart procedure for sockets a bit.  The
-socket file header is now checkpointed separately from the socket itself,
-which allows us to checkpoint a socket without arriving at it from a
-file descriptor.  Thus, most sockets will be checkpointed as a result
-of processing the file table, calling sock_file_checkpoint(fd), which
-in turn calls checkpoint_obj(socket).
+This patch is a superset of the previous attempt to store socket buffers
+with their owners.  It defers the writing and reading of the socket buffers
+until after the end of the file phase to avoid a recursive nose-dive of
+checkpointing socket owners.
 
-However, we may arrive at some sockets while checkpointing other objects,
-such as the other end of an AF_UNIX socket with buffers in flight.  This
-patch just opens that door, which is utilized by the next patch.
+This also moves the join logic to the deferqueue as well, since that too
+can lead us down a deep hole.  The buffer restore logic may perform a join
+if it decides that the join is inevitable (but not yet performed) and
+necessary.
 
 Changes in v3:
- - Fix failure to actually set the SOCK_DEAD flag on restore
+ - Reverse order of length and capable(CAP_NET_ADMIN) checks to avoid
+   setting PF_SUPERPRIV too early, per Serge's recommendation
 
 Changes in v2:
- - If we attempt to checkpoint an orphan socket, create a struct socket
-   to adopt it for the purposes of the checkpoint
+ - Add comment about using deferqueue_add() in a function that could have
+   been called during deferqueue_run()
+ - Change 'ref' to 'objref' in several variable names
+ - Move SOCK_DEAD flag detection to initial patch
+ - Catch errors from unix_read_buffers(), even on the should-be-missing
+   send buffers
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c           |    2 +
- include/linux/checkpoint_hdr.h |    6 +-
- include/linux/net.h            |    4 +-
- include/net/af_unix.h          |    4 +-
- include/net/sock.h             |    2 +
- net/checkpoint.c               |  153 +++++++++++++++++++++++++++++++---------
- net/unix/checkpoint.c          |   11 ++--
- 7 files changed, 136 insertions(+), 46 deletions(-)
+ include/linux/checkpoint.h     |    3 -
+ include/linux/checkpoint_hdr.h |    6 +
+ net/checkpoint.c               |  120 +++++++++------
+ net/unix/checkpoint.c          |  336 ++++++++++++++++++++++++++--------------
+ 4 files changed, 303 insertions(+), 162 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index a9a10d1..a410346 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -381,6 +381,8 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.obj_type = CKPT_OBJ_SOCK,
- 		.ref_drop = obj_sock_drop,
- 		.ref_grab = obj_sock_grab,
-+		.checkpoint = checkpoint_sock,
-+		.restore = restore_sock,
- 	},
- };
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 761cad5..88861a1 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -84,9 +84,6 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
+ 			      struct socket *socket,
+ 			      struct sockaddr *loc, unsigned *loc_len,
+ 			      struct sockaddr *rem, unsigned *rem_len);
+-extern struct ckpt_hdr_socket_queue *
+-ckpt_sock_read_buffer_hdr(struct ckpt_ctx *ctx,
+-			  uint32_t *bufsize);
  
+ /* ckpt kflags */
+ #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 06bc6e2..b75562c 100644
+index b75562c..f70a9d0 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -70,6 +70,7 @@ enum {
- 	CKPT_HDR_USER,
- 	CKPT_HDR_GROUPINFO,
- 	CKPT_HDR_TASK_CREDS,
-+	CKPT_HDR_SOCKET,
+@@ -414,6 +414,12 @@ struct ckpt_hdr_socket_queue {
+ 	__u32 total_bytes;
+ } __attribute__ ((aligned(8)));
  
- 	/* 201-299: reserved for arch-dependent */
- 
-@@ -368,7 +369,8 @@ struct ckpt_hdr_file_pipe {
- } __attribute__((aligned(8)));
- 
- /* socket */
--struct ckpt_socket {
-+struct ckpt_hdr_socket {
++struct ckpt_hdr_socket_buffer {
 +	struct ckpt_hdr h;
- 	struct { /* struct socket */
- 		__u64 flags;
- 		__u8 state;
-@@ -428,7 +430,7 @@ struct ckpt_hdr_socket_unix {
- 
- struct ckpt_hdr_file_socket {
- 	struct ckpt_hdr_file common;
--	struct ckpt_socket socket;
-+	__s32 sock_objref;
- } __attribute__((aligned(8)));
- 
- struct ckpt_hdr_utsns {
-diff --git a/include/linux/net.h b/include/linux/net.h
-index 27187a4..96c7e22 100644
---- a/include/linux/net.h
-+++ b/include/linux/net.h
-@@ -148,7 +148,7 @@ struct msghdr;
- struct module;
- 
- struct ckpt_ctx;
--struct ckpt_socket;
-+struct ckpt_hdr_socket;
- 
- struct proto_ops {
- 	int		family;
-@@ -197,7 +197,7 @@ struct proto_ops {
- 	int		(*checkpoint)(struct ckpt_ctx *ctx,
- 				      struct socket *sock);
- 	int		(*restore)(struct ckpt_ctx *ctx, struct socket *sock,
--				   struct ckpt_socket *h);
-+				   struct ckpt_hdr_socket *h);
- };
- 
- struct net_proto_family {
-diff --git a/include/net/af_unix.h b/include/net/af_unix.h
-index 1a1fd20..61f666b 100644
---- a/include/net/af_unix.h
-+++ b/include/net/af_unix.h
-@@ -71,10 +71,10 @@ static inline void unix_sysctl_unregister(struct net *net) {}
- 
- #ifdef CONFIG_CHECKPOINT
- struct ckpt_ctx;
--struct ckpt_socket;
-+struct ckpt_hdr_socket;
- extern int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock);
- extern int unix_restore(struct ckpt_ctx *ctx, struct socket *sock,
--			struct ckpt_socket *h);
-+			struct ckpt_hdr_socket *h);
- #else
- #define unix_checkpoint NULL
- #define unix_restore NULL
-diff --git a/include/net/sock.h b/include/net/sock.h
-index 8e3b050..0db1ca3 100644
---- a/include/net/sock.h
-+++ b/include/net/sock.h
-@@ -1644,6 +1644,8 @@ extern __u32 sysctl_rmem_default;
- /* Checkpoint/Restart Functions */
- struct ckpt_ctx;
- struct ckpt_hdr_file;
-+extern int checkpoint_sock(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_sock(struct ckpt_ctx *ctx);
- extern int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
- extern struct file *sock_file_restore(struct ckpt_ctx *ctx,
- 				      struct ckpt_hdr_file *h);
++	__s32 sk_objref;
++	__s32 pr_objref;
++};
++
+ #define CKPT_UNIX_LINKED 1
+ struct ckpt_hdr_socket_unix {
+ 	struct ckpt_hdr h;
 diff --git a/net/checkpoint.c b/net/checkpoint.c
-index 2541e81..373f9af 100644
+index 373f9af..d22341a 100644
 --- a/net/checkpoint.c
 +++ b/net/checkpoint.c
-@@ -166,7 +166,7 @@ int ckpt_sock_getnames(struct ckpt_ctx *ctx, struct socket *sock,
+@@ -23,6 +23,12 @@
+ 
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
++#include <linux/deferqueue.h>
++
++struct dq_buffers {
++	struct ckpt_ctx *ctx;
++	struct sock *sk;
++};
+ 
+ static int sock_copy_buffers(struct sk_buff_head *from,
+ 			     struct sk_buff_head *to,
+@@ -58,6 +64,7 @@ static int sock_copy_buffers(struct sk_buff_head *from,
+ 			break; /* The queue changed as we read it */
+ 
+ 		skb_morph(skbs[i], skb);
++		skbs[i]->sk = skb->sk;
+ 		skb_queue_tail(to, skbs[i]);
+ 
+ 		*total_bytes += skb->len;
+@@ -82,12 +89,15 @@ static int sock_copy_buffers(struct sk_buff_head *from,
+ }
+ 
+ static int __sock_write_buffers(struct ckpt_ctx *ctx,
+-				struct sk_buff_head *queue)
++				struct sk_buff_head *queue,
++				int dst_objref)
+ {
+ 	struct sk_buff *skb;
+-	int ret = 0;
+ 
+ 	skb_queue_walk(queue, skb) {
++		struct ckpt_hdr_socket_buffer *h;
++		int ret = 0;
++
+ 		/* FIXME: This could be a false positive for non-unix
+ 		 *        buffers, so add a type check here in the
+ 		 *        future
+@@ -104,16 +114,35 @@ static int __sock_write_buffers(struct ckpt_ctx *ctx,
+ 		 * information contained in the skb.
+ 		 */
+ 
++		h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
++		if (!h)
++			return -ENOMEM;
++
++		BUG_ON(!skb->sk);
++		ret = checkpoint_obj(ctx, skb->sk, CKPT_OBJ_SOCK);
++		if (ret < 0)
++			goto end;
++		h->sk_objref = ret;
++		h->pr_objref = dst_objref;
++
++		ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++		if (ret < 0)
++			goto end;
++
+ 		ret = ckpt_write_obj_type(ctx, skb->data, skb->len,
+-					  CKPT_HDR_SOCKET_BUFFER);
+-		if (ret)
++					  CKPT_HDR_BUFFER);
++	end:
++		ckpt_hdr_put(ctx, h);
++		if (ret < 0)
+ 			return ret;
+ 	}
+ 
  	return 0;
  }
  
--static int sock_cptrst_verify(struct ckpt_socket *h)
-+static int sock_cptrst_verify(struct ckpt_hdr_socket *h)
+-static int sock_write_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
++static int sock_write_buffers(struct ckpt_ctx *ctx,
++			      struct sk_buff_head *queue,
++			      int dst_objref)
  {
- 	uint8_t userlocks_mask = SOCK_SNDBUF_LOCK | SOCK_RCVBUF_LOCK |
- 		                 SOCK_BINDADDR_LOCK | SOCK_BINDPORT_LOCK;
-@@ -204,7 +204,7 @@ static int sock_cptrst_opt(int op, struct socket *sock,
- 	sock_cptrst_opt(op, sk->sk_socket, name, (char *)opt, sizeof(*opt))
- 
- static int sock_cptrst_bufopts(int op, struct sock *sk,
--			       struct ckpt_socket *h)
-+			       struct ckpt_hdr_socket *h)
- 
- {
- 	if (CKPT_COPY_SOPT(op, sk, SO_RCVBUF, &h->sock.rcvbuf))
-@@ -270,7 +270,7 @@ static int sock_restore_flag(struct socket *sock,
- 
- 
- static int sock_restore_flags(struct socket *sock,
--                             struct ckpt_socket *h)
-+                             struct ckpt_hdr_socket *h)
- {
-        int ret;
-        int i;
-@@ -309,6 +309,9 @@ static int sock_restore_flags(struct socket *sock,
-                return -ENOSYS;
-        }
- 
-+       if (test_and_clear_bit(SOCK_DEAD, &sk_flags))
-+	       sock_set_flag(sock->sk, SOCK_DEAD);
-+
-        /* Anything that is still set in the flags that isn't part of
-         * our protocol's default set, indicates an error
-         */
-@@ -339,7 +342,7 @@ static int sock_copy_timeval(int op, struct sock *sk,
- }
- 
- static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
--		       struct ckpt_socket *h, int op)
-+		       struct ckpt_hdr_socket *h, int op)
- {
- 	if (sk->sk_socket) {
- 		CKPT_COPY(op, h->socket.state, sk->sk_socket->state);
-@@ -428,31 +431,26 @@ static int sock_cptrst(struct ckpt_ctx *ctx, struct sock *sk,
- 		return 0;
- }
- 
--int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-+static int __do_sock_checkpoint(struct ckpt_ctx *ctx, struct sock *sk)
- {
--	struct ckpt_hdr_file_socket *h;
--	struct socket *sock = file->private_data;
--	struct sock *sk = sock->sk;
- 	int ret;
-+	struct socket *sock = sk->sk_socket;
-+	struct ckpt_hdr_socket *h;
- 
- 	if (!sock->ops->checkpoint) {
- 		ckpt_write_err(ctx, "socket (proto_ops: %pS)", sock->ops);
- 		return -ENOSYS;
- 	}
- 
--	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET);
- 	if (!h)
- 		return -ENOMEM;
- 
--	h->common.f_type = CKPT_FILE_SOCKET;
--
- 	/* part I: common to all sockets */
--	ret = sock_cptrst(ctx, sk, &h->socket, CKPT_CPT);
--	if (ret < 0)
--		goto out;
--	ret = checkpoint_file_common(ctx, file, &h->common);
-+	ret = sock_cptrst(ctx, sk, h, CKPT_CPT);
- 	if (ret < 0)
- 		goto out;
-+
+ 	struct ckpt_hdr_socket_queue *h;
+ 	struct sk_buff_head tmpq;
+@@ -132,7 +161,7 @@ static int sock_write_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+ 	h->skb_count = ret;
  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
- 	if (ret < 0)
- 		goto out;
-@@ -463,12 +461,71 @@ int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
- 		goto out;
+ 	if (!ret)
+-		ret = __sock_write_buffers(ctx, &tmpq);
++		ret = __sock_write_buffers(ctx, &tmpq, dst_objref);
  
- 	/* part III: socket buffers */
--	if (sk->sk_state != TCP_LISTEN) {
-+	if ((sk->sk_state != TCP_LISTEN) && (!sock_flag(sk, SOCK_DEAD))) {
- 		ret = sock_write_buffers(ctx, &sk->sk_receive_queue);
- 		if (ret)
- 			goto out;
- 		ret = sock_write_buffers(ctx, &sk->sk_write_queue);
- 	}
-+
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+static int do_sock_checkpoint(struct ckpt_ctx *ctx, struct sock *sk)
+  out:
+ 	ckpt_hdr_put(ctx, h);
+@@ -141,6 +170,46 @@ static int sock_write_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+ 	return ret;
+ }
+ 
++int sock_deferred_write_buffers(void *data)
 +{
-+	struct socket *sock;
++	struct dq_buffers *dq = (struct dq_buffers *)data;
++	struct ckpt_ctx *ctx = dq->ctx;
 +	int ret;
++	int dst_objref;
 +
-+	if (sk->sk_socket)
-+		return __do_sock_checkpoint(ctx, sk);
++	dst_objref = ckpt_obj_lookup(ctx, dq->sk, CKPT_OBJ_SOCK);
++	if (dst_objref < 0) {
++		ckpt_write_err(ctx,
++			       "Unable to get objref of owner socket: %i\n",
++			       dst_objref);
++		return dst_objref;
++	}
 +
-+	/* Temporarily adopt this orphan socket */
-+	ret = sock_create(sk->sk_family, sk->sk_type, 0, &sock);
++	ret = sock_write_buffers(ctx, &dq->sk->sk_receive_queue, dst_objref);
++	ckpt_debug("write recv buffers: %i\n", ret);
 +	if (ret < 0)
 +		return ret;
-+	sock_graft(sk, sock);
 +
-+	ret = __do_sock_checkpoint(ctx, sk);
-+
-+	sock_orphan(sk);
-+	sock->sk = NULL;
-+	sock_release(sock);
++	ret = sock_write_buffers(ctx, &dq->sk->sk_write_queue, dst_objref);
++	ckpt_debug("write send buffers: %i\n", ret);
 +
 +	return ret;
 +}
 +
-+int checkpoint_sock(struct ckpt_ctx *ctx, void *ptr)
++int sock_defer_write_buffers(struct ckpt_ctx *ctx, struct sock *sk)
 +{
-+	return do_sock_checkpoint(ctx, (struct sock *)ptr);
++	struct dq_buffers dq;
++
++	dq.ctx = ctx;
++	dq.sk = sk;
++
++	/* NB: This is safe to do inside deferqueue_run() since it uses
++	 * list_for_each_safe()
++	 */
++	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
++			      sock_deferred_write_buffers, NULL);
 +}
 +
-+int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ int ckpt_sock_getnames(struct ckpt_ctx *ctx, struct socket *sock,
+ 		       struct sockaddr *loc, unsigned *loc_len,
+ 		       struct sockaddr *rem, unsigned *rem_len)
+@@ -462,10 +531,9 @@ static int __do_sock_checkpoint(struct ckpt_ctx *ctx, struct sock *sk)
+ 
+ 	/* part III: socket buffers */
+ 	if ((sk->sk_state != TCP_LISTEN) && (!sock_flag(sk, SOCK_DEAD))) {
+-		ret = sock_write_buffers(ctx, &sk->sk_receive_queue);
++		ret = sock_defer_write_buffers(ctx, sk);
+ 		if (ret)
+ 			goto out;
+-		ret = sock_write_buffers(ctx, &sk->sk_write_queue);
+ 	}
+ 
+  out:
+@@ -531,42 +599,6 @@ int sock_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	return ret;
+ }
+ 
+-struct ckpt_hdr_socket_queue *ckpt_sock_read_buffer_hdr(struct ckpt_ctx *ctx,
+-							uint32_t *bufsize)
+-{
+-	struct ckpt_hdr_socket_queue *h;
+-	int err = 0;
+-
+-	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
+-	if (IS_ERR(h))
+-		return h;
+-
+-	if (!bufsize) {
+-		if (h->total_bytes != 0) {
+-			ckpt_debug("Expected empty buffer, got %u\n",
+-				   h->total_bytes);
+-			err = -EINVAL;
+-		}
+-	} else if (h->total_bytes > *bufsize) {
+-		/* NB: We let CAP_NET_ADMIN override the system buffer limit
+-		 *     as setsockopt() does
+-		 */
+-		if (capable(CAP_NET_ADMIN))
+-			*bufsize = h->total_bytes;
+-		else {
+-			ckpt_debug("Buffer total %u exceeds limit %u\n",
+-			   h->total_bytes, *bufsize);
+-			err = -EINVAL;
+-		}
+-	}
+-
+-	if (err) {
+-		ckpt_hdr_put(ctx, h);
+-		return ERR_PTR(err);
+-	} else
+-		return h;
+-}
+-
+ static struct file *sock_alloc_attach_fd(struct socket *sock)
+ {
+ 	struct file *file;
+diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
+index 395f6fd..60f6a0c 100644
+--- a/net/unix/checkpoint.c
++++ b/net/unix/checkpoint.c
+@@ -4,11 +4,23 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ #include <linux/user.h>
++#include <linux/deferqueue.h>
+ #include <net/af_unix.h>
+ #include <net/tcp_states.h>
+ 
+ #define UNIX_ADDR_EMPTY(a) (a <= sizeof(short))
+ 
++struct dq_join {
++	struct ckpt_ctx *ctx;
++	int src_objref;
++	int dst_objref;
++};
++
++struct dq_buffers {
++	struct ckpt_ctx *ctx;
++	int sk_objref; /* objref of the socket these buffers belong to */
++};
++
+ static inline int unix_need_cwd(struct sockaddr_un *addr, unsigned long len)
+ {
+ 	return (!UNIX_ADDR_EMPTY(len)) &&
+@@ -16,6 +28,57 @@ static inline int unix_need_cwd(struct sockaddr_un *addr, unsigned long len)
+ 		(addr->sun_path[0] != '/');
+ }
+ 
++static int unix_join(struct sock *src, struct sock *dst)
 +{
-+	struct ckpt_hdr_file_socket *h;
-+	struct socket *sock = file->private_data;
-+	struct sock *sk = sock->sk;
-+	int ret;
++	if (unix_sk(src)->peer != NULL)
++		return 0; /* We're second */
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	if (!h)
-+		return -ENOMEM;
++	sock_hold(dst);
++	unix_sk(src)->peer = dst;
 +
-+	h->common.f_type = CKPT_FILE_SOCKET;
++	return 0;
 +
-+	h->sock_objref = checkpoint_obj(ctx, sk, CKPT_OBJ_SOCK);
-+	if (h->sock_objref < 0) {
-+		ret = h->sock_objref;
++}
++
++static int unix_deferred_join(void *data)
++{
++	struct dq_join *dq = (struct dq_join *)data;
++	struct ckpt_ctx *ctx = dq->ctx;
++	struct sock *src;
++	struct sock *dst;
++
++	src = ckpt_obj_fetch(ctx, dq->src_objref, CKPT_OBJ_SOCK);
++	if (!src) {
++		ckpt_debug("Missing src sock ref %i\n", dq->src_objref);
++		return -EINVAL;
++	}
++
++	dst = ckpt_obj_fetch(ctx, dq->dst_objref, CKPT_OBJ_SOCK);
++	if (!src) {
++		ckpt_debug("Missing dst sock ref %i\n", dq->dst_objref);
++		return -EINVAL;
++	}
++
++	return unix_join(src, dst);
++}
++
++static int unix_defer_join(struct ckpt_ctx *ctx,
++			   int src_objref,
++			   int dst_objref)
++{
++	struct dq_join dq;
++
++	dq.ctx = ctx;
++	dq.src_objref = src_objref;
++	dq.dst_objref = dst_objref;
++
++	/* NB: This is safe to do inside deferqueue_run() since it uses
++	 * list_for_each_safe()
++	 */
++	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
++			      unix_deferred_join, NULL);
++}
++
+ static int unix_write_cwd(struct ckpt_ctx *ctx,
+ 			  struct sock *sk, const char *sockpath)
+ {
+@@ -109,24 +172,63 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
+ 	return ret;
+ }
+ 
+-static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx, struct sock *sk)
++static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
++				    struct sockaddr *addr,
++				    unsigned int addrlen)
+ {
+ 	struct msghdr msg;
+ 	struct kvec kvec;
++	struct ckpt_hdr_socket_buffer *h;
++	struct sock *sk;
++	uint8_t sock_shutdown;
++	uint8_t peer_shutdown = 0;
+ 	void *buf;
+ 	int ret = 0;
+ 	int len;
++	int sndbuf;
+ 
+ 	memset(&msg, 0, sizeof(msg));
+ 
+-	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_SOCKET_BUFFER);
+-	if (len < 0)
+-		return len;
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
++	if (len < 0) {
++		ret = len;
++		goto out;
++	}
+ 
+ 	if (len > SKB_MAX_ALLOC) {
+ 		ckpt_debug("Socket buffer too big (%i > %lu)",
+ 			   len, SKB_MAX_ALLOC);
+-		return -ENOSPC;
++		ret = -ENOSPC;
 +		goto out;
 +	}
 +
-+	ret = checkpoint_file_common(ctx, file, &h->common);
-+	if (ret < 0)
++	sk = ckpt_obj_fetch(ctx, h->sk_objref, CKPT_OBJ_SOCK);
++	if (IS_ERR(sk)) {
++		ret = PTR_ERR(sk);
 +		goto out;
++	}
 +
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -525,27 +582,31 @@ static struct file *sock_alloc_attach_fd(struct socket *sock)
- 		file = ERR_PTR(err);
- 	}
- 
-+	/* Since objhash assumes the initial reference for a socket,
-+	 * we bump it here for this descriptor, unlike other places in the
-+	 * socket code which assume the descriptor is the owner.
++	/* If we don't have a destination or a peer and we know the
++	 * destination of this skb, then we must need to join with our
++	 * peer
 +	 */
-+	sock_hold(sock->sk);
-+
- 	return file;
- }
- 
--struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+struct sock *do_sock_restore(struct ckpt_ctx *ctx)
- {
--	struct ckpt_hdr_file_socket *hh = (struct ckpt_hdr_file_socket *) ptr;
--	struct ckpt_socket *h = &hh->socket;
-+	struct ckpt_hdr_socket *h;
- 	struct socket *sock;
--	struct file *file;
- 	int ret;
- 
--	if (ptr->h.type != CKPT_HDR_FILE  ||
--	    ptr->h.len != sizeof(*hh) || ptr->f_type != CKPT_FILE_SOCKET)
--		return ERR_PTR(-EINVAL);
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET);
-+	if (IS_ERR(h))
-+		return ERR_PTR(PTR_ERR(h));
- 
- 	/* silently clear flags, e.g. SOCK_NONBLOCK or SOCK_CLOEXEC */
- 	h->sock.type &= SOCK_TYPE_MASK;
- 
- 	ret = sock_create(h->sock_common.family, h->sock.type, 0, &sock);
- 	if (ret < 0)
--		return ERR_PTR(ret);
-+		goto err;
- 
- 	if (!sock->ops->restore) {
- 		ckpt_debug("proto_ops lacks checkpoint: %pS\n", sock->ops);
-@@ -566,21 +627,45 @@ struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 	if (ret < 0)
- 		goto err;
- 
--	file = sock_alloc_attach_fd(sock);
--	if (IS_ERR(file)) {
--		ret = PTR_ERR(file);
--		goto err;
--	}
-+	ckpt_hdr_put(ctx, h);
-+
-+	return sock->sk;
-+ err:
-+	ckpt_hdr_put(ctx, h);
-+	sock_release(sock);
-+
-+	return ERR_PTR(ret);
-+}
-+
-+void *restore_sock(struct ckpt_ctx *ctx)
-+{
-+	return do_sock_restore(ctx);
-+}
-+
-+struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+{
-+	struct ckpt_hdr_file_socket *h = (struct ckpt_hdr_file_socket *)ptr;
-+	struct sock *sk;
-+	struct file *file;
-+	int ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE || ptr->f_type != CKPT_FILE_SOCKET)
-+		return ERR_PTR(-EINVAL);
-+
-+	sk = ckpt_obj_fetch(ctx, h->sock_objref, CKPT_OBJ_SOCK);
-+	if (IS_ERR(sk))
-+		return ERR_PTR(PTR_ERR(sk));
-+
-+	file = sock_alloc_attach_fd(sk->sk_socket);
-+	if (IS_ERR(file))
-+		return file;
- 
- 	ret = restore_file_common(ctx, file, ptr);
- 	if (ret < 0) {
- 		fput(file);
--		file = ERR_PTR(ret);
-+		return ERR_PTR(ret);
++	if (!addrlen && !unix_sk(sk)->peer) {
++		struct sock *pr;
++		pr = ckpt_obj_fetch(ctx, h->pr_objref, CKPT_OBJ_SOCK);
++		if (IS_ERR(pr)) {
++			ckpt_debug("Failed to get our peer: %li\n", PTR_ERR(pr));
++			ret = PTR_ERR(pr);
++			goto out;
++		}
++		ret = unix_join(sk, pr);
++		if (ret < 0) {
++			ckpt_debug("Failed to join: %i\n", ret);
++			goto out;
++		}
  	}
--	return file;
  
-- err:
--	sock_release(sock);
--	return ERR_PTR(ret);
-+	return file;
- }
- 
-diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
-index 08e664b..395f6fd 100644
---- a/net/unix/checkpoint.c
-+++ b/net/unix/checkpoint.c
-@@ -57,7 +57,6 @@ static int unix_write_cwd(struct ckpt_ctx *ctx,
- int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- {
- 	struct unix_sock *sk = unix_sk(sock->sk);
--	struct unix_sock *pr = unix_sk(sk->peer);
- 	struct ckpt_hdr_socket_unix *un;
- 	int new;
- 	int ret = -ENOMEM;
-@@ -86,7 +85,7 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
+ 	kvec.iov_len = len;
+@@ -139,54 +241,125 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx, struct sock *sk)
+ 	if (ret < 0)
  		goto out;
  
- 	if (sk->peer)
--		un->peer = ckpt_obj_lookup_add(ctx, pr, CKPT_OBJ_SOCK, &new);
-+		un->peer = checkpoint_obj(ctx, sk->peer, CKPT_OBJ_SOCK);
- 	else
- 		un->peer = 0;
++	msg.msg_name = addr;
++	msg.msg_namelen = addrlen;
++
++	/* If peer is shutdown, unshutdown it for this process */
++	sock_shutdown = sk->sk_shutdown;
++	sk->sk_shutdown &= ~SHUTDOWN_MASK;
++
++	/* Unshutdown peer too, if necessary */
++	if (unix_sk(sk)->peer) {
++		peer_shutdown = unix_sk(sk)->peer->sk_shutdown;
++		unix_sk(sk)->peer->sk_shutdown &= ~SHUTDOWN_MASK;
++	}
++
++	/* Make sure there's room in the send buffer */
++	sndbuf = sk->sk_sndbuf;
++	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < len) &&
++	    capable(CAP_NET_ADMIN))
++		sk->sk_sndbuf += len;
++	else
++		sk->sk_sndbuf = sysctl_wmem_max;
++
+ 	ret = kernel_sendmsg(sk->sk_socket, &msg, &kvec, 1, len);
+-	ckpt_debug("kernel_sendmsg(%i): %i\n", len, ret);
++	ckpt_debug("kernel_sendmsg(%i,%i): %i\n", h->sk_objref, len, ret);
+ 	if ((ret > 0) && (ret != len))
+ 		ret = -ENOMEM;
++
++	sk->sk_sndbuf = sndbuf;
++	sk->sk_shutdown = sock_shutdown;
++	if (peer_shutdown)
++		unix_sk(sk)->peer->sk_shutdown = peer_shutdown;
+  out:
++	ckpt_hdr_put(ctx, h);
+ 	kfree(buf);
  
-@@ -237,7 +236,7 @@ static int unix_join(struct ckpt_ctx *ctx,
+ 	return ret;
  }
  
+ static int unix_read_buffers(struct ckpt_ctx *ctx,
+-			     struct sock *sk, uint32_t *bufsize)
++			     struct sockaddr *addr,
++			     unsigned int addrlen)
+ {
+-	uint8_t sock_shutdown;
+ 	struct ckpt_hdr_socket_queue *h;
+ 	int ret = 0;
+ 	int i;
+ 
+-	h = ckpt_sock_read_buffer_hdr(ctx, bufsize);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
+ 
+-	/* If peer is shutdown, unshutdown it for this process */
+-	sock_shutdown = sk->sk_shutdown;
+-	sk->sk_shutdown &= ~SHUTDOWN_MASK;
+-
+ 	for (i = 0; i < h->skb_count; i++) {
+-		ret = sock_read_buffer_sendmsg(ctx, sk);
++		ret = sock_read_buffer_sendmsg(ctx, addr, addrlen);
+ 		ckpt_debug("read_buffer_sendmsg(%i): %i\n", i, ret);
+ 		if (ret < 0)
+-			break;
++			goto out;
+ 
+ 		if (ret > h->total_bytes) {
+ 			ckpt_debug("Buffers exceeded claim");
+ 			ret = -EINVAL;
+-			break;
++			goto out;
+ 		}
+ 
+ 		h->total_bytes -= ret;
+ 		ret = 0;
+ 	}
+ 
+-	sk->sk_shutdown = sock_shutdown;
++	ret = h->skb_count;
++ out:
+ 	ckpt_hdr_put(ctx, h);
+ 
+ 	return ret;
+ }
+ 
++static int unix_deferred_restore_buffers(void *data)
++{
++	struct dq_buffers *dq = (struct dq_buffers *)data;
++	struct ckpt_ctx *ctx = dq->ctx;
++	struct sock *sk;
++	struct sockaddr *addr = NULL;
++	unsigned int addrlen = 0;
++	int ret;
++
++	sk = ckpt_obj_fetch(ctx, dq->sk_objref, CKPT_OBJ_SOCK);
++	if (!sk) {
++		ckpt_debug("Missing sock ref %i\n", dq->sk_objref);
++		return -EINVAL;
++	}
++
++	if ((sk->sk_type == SOCK_DGRAM) && (unix_sk(sk)->addr != NULL)) {
++		addr = (struct sockaddr *)&unix_sk(sk)->addr->name;
++		addrlen = unix_sk(sk)->addr->len;
++	}
++
++	ret = unix_read_buffers(ctx, addr, addrlen);
++	ckpt_debug("read recv buffers: %i\n", ret);
++	if (ret < 0)
++		return ret;
++
++	ret = unix_read_buffers(ctx, addr, addrlen);
++	ckpt_debug("read send buffers: %i\n", ret);
++	if (ret > 0)
++		ret = -EINVAL; /* No send buffers for UNIX sockets */
++
++	return ret;
++}
++
++static int unix_defer_restore_buffers(struct ckpt_ctx *ctx, int sk_objref)
++{
++	struct dq_buffers dq;
++
++	dq.ctx = ctx;
++	dq.sk_objref = sk_objref;
++
++	/* NB: This is safe to do inside deferqueue_run() since it uses
++	 * list_for_each_safe()
++	 */
++	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
++			      unix_deferred_restore_buffers, NULL);
++}
++
+ static struct unix_address *unix_makeaddr(struct sockaddr_un *sun_addr,
+ 					  unsigned len)
+ {
+@@ -206,91 +379,33 @@ static struct unix_address *unix_makeaddr(struct sockaddr_un *sun_addr,
+ 	return addr;
+ }
+ 
+-static int unix_join(struct ckpt_ctx *ctx,
+-		     struct sock *a, struct sock *b,
+-		     struct ckpt_hdr_socket_unix *un)
+-{
+-	struct unix_address *addr = NULL;
+-
+-	/* FIXME: Do we need to call some security hooks here? */
+-
+-	sock_hold(a);
+-	sock_hold(b);
+-
+-	unix_sk(a)->peer = b;
+-	unix_sk(b)->peer = a;
+-
+-	if (!UNIX_ADDR_EMPTY(un->raddr_len))
+-		addr = unix_makeaddr(&un->raddr, un->raddr_len);
+-	else if (!UNIX_ADDR_EMPTY(un->laddr_len))
+-		addr = unix_makeaddr(&un->laddr, un->laddr_len);
+-
+-	if (IS_ERR(addr))
+-		return PTR_ERR(addr);
+-	else if (addr) {
+-		atomic_inc(&addr->refcnt); /* Held by both ends */
+-		unix_sk(a)->addr = unix_sk(b)->addr = addr;
+-	}
+-
+-	return 0;
+-}
+-
  static int unix_restore_connected(struct ckpt_ctx *ctx,
--				  struct ckpt_socket *h,
-+				  struct ckpt_hdr_socket *h,
+ 				  struct ckpt_hdr_socket *h,
  				  struct ckpt_hdr_socket_unix *un,
  				  struct socket *sock)
  {
-@@ -423,7 +422,7 @@ static int unix_fakebind(struct socket *sock,
- 	return 0;
+-	struct sock *this = ckpt_obj_fetch(ctx, un->this, CKPT_OBJ_SOCK);
+-	struct sock *peer = ckpt_obj_fetch(ctx, un->peer, CKPT_OBJ_SOCK);
+-	struct socket *tmp = NULL;
++	struct sock *sk = sock->sk;
++	struct sockaddr *addr = NULL;
++	unsigned int addrlen = 0;
+ 	int ret;
+-
+-	if (!IS_ERR(this) && !IS_ERR(peer)) {
+-		/* We're last */
+-		struct socket *old = this->sk_socket;
+-
+-		old->sk = NULL;
+-		sock_release(old);
+-		sock_graft(this, sock);
+-
+-	} else if ((PTR_ERR(this) == -EINVAL) && (PTR_ERR(peer) == -EINVAL)) {
+-		/* We're first */
+-		int family = sock->sk->sk_family;
+-		int type = sock->sk->sk_type;
+-
+-		ret = sock_create(family, type, 0, &tmp);
+-		ckpt_debug("sock_create: %i\n", ret);
+-		if (ret)
+-			goto out;
+-
+-		this = sock->sk;
+-		peer = tmp->sk;
+-
+-		ret = ckpt_obj_insert(ctx, this, un->this, CKPT_OBJ_SOCK);
+-		if (ret < 0)
+-			goto out;
+-
+-		ret = ckpt_obj_insert(ctx, peer, un->peer, CKPT_OBJ_SOCK);
+-		if (ret < 0)
+-			goto out;
+-
+-		ret = unix_join(ctx, this, peer, un);
+-		ckpt_debug("unix_join: %i\n", ret);
+-		if (ret)
+-			goto out;
+-
+-	} else {
+-		ckpt_debug("Order Error\n");
+-		ret = PTR_ERR(this);
+-		goto out;
++	unsigned long flags = h->sock.flags;
++	int dead = test_bit(SOCK_DEAD, &flags);
++
++	if (un->peer == 0) {
++		/* These get propagated to the msghdr, so only set them
++		 * if we're not connected to a peer, else we'll get an error
++		 * when we sendmsg()
++		 */
++		addr = (struct sockaddr *)&un->laddr;
++		addrlen = un->laddr_len;
+ 	}
+ 
+-	this->sk_peercred.pid = task_tgid_vnr(current);
++	sk->sk_peercred.pid = task_tgid_vnr(current);
+ 
+ 	if (may_setuid(ctx->realcred->user->user_ns, un->peercred_uid) &&
+ 	    may_setgid(un->peercred_gid)) {
+-		this->sk_peercred.uid = un->peercred_uid;
+-		this->sk_peercred.gid = un->peercred_gid;
++		sk->sk_peercred.uid = un->peercred_uid;
++		sk->sk_peercred.gid = un->peercred_gid;
+ 	} else {
+ 		ckpt_debug("peercred %i:%i would require setuid",
+ 			   un->peercred_uid, un->peercred_gid);
+@@ -298,30 +413,16 @@ static int unix_restore_connected(struct ckpt_ctx *ctx,
+ 		goto out;
+ 	}
+ 
+-	/* Prime the socket's buffer limit with the maximum.  These will be
+-	 * overwritten with the values in the checkpoint stream in a later
+-	 * phase.
+-	 */
+-	peer->sk_userlocks |= SOCK_SNDBUF_LOCK;
+-	peer->sk_sndbuf = sysctl_wmem_max;
+-
+-	/* Read my buffers and sendmsg() them back to me via my peer */
+-
+-	/* TODO: handle the unconnected case, as well, as the case
+-	 *       where sendto() has been used on some of the buffers
+-	 */
+-
+-	ret = unix_read_buffers(ctx, peer, &peer->sk_sndbuf);
+-	ckpt_debug("unix_read_buffers: %i\n", ret);
+-	if (ret)
+-		goto out;
++	if (!dead && (un->peer > 0)) {
++		ret = unix_defer_join(ctx, un->this, un->peer);
++		ckpt_debug("unix_defer_join: %i\n", ret);
++		if (ret)
++			goto out;
++	}
+ 
+-	/* Read peer's buffers and expect 0 */
+-	ret = unix_read_buffers(ctx, peer, NULL);
++	if (!dead)
++		ret = unix_defer_restore_buffers(ctx, un->this);
+  out:
+-	if (tmp && ret)
+-		sock_release(tmp);
+-
+ 	return ret;
  }
  
--static int unix_restore_bind(struct ckpt_socket *h,
-+static int unix_restore_bind(struct ckpt_hdr_socket *h,
- 			     struct ckpt_hdr_socket_unix *un,
- 			     struct socket *sock,
- 			     const char *path)
-@@ -440,7 +439,7 @@ static int unix_restore_bind(struct ckpt_socket *h,
- }
+@@ -429,8 +530,12 @@ static int unix_restore_bind(struct ckpt_hdr_socket *h,
+ {
+ 	struct sockaddr *addr = (struct sockaddr *)&un->laddr;
+ 	unsigned long len = un->laddr_len;
++	unsigned long flags = h->sock.flags;
++	int dead = test_bit(SOCK_DEAD, &flags);
  
- /* Some easy pre-flight checks before we get underway */
--static int unix_precheck(struct socket *sock, struct ckpt_socket *h)
-+static int unix_precheck(struct socket *sock, struct ckpt_hdr_socket *h)
+-	if (!un->laddr.sun_path[0])
++	if (dead)
++		return unix_fakebind(sock, &un->laddr, len);
++	else if (!un->laddr.sun_path[0])
+ 		return sock_bind(sock, addr, len);
+ 	else if (!(un->flags & CKPT_UNIX_LINKED))
+ 		return unix_fakebind(sock, &un->laddr, len);
+@@ -442,6 +547,7 @@ static int unix_restore_bind(struct ckpt_hdr_socket *h,
+ static int unix_precheck(struct socket *sock, struct ckpt_hdr_socket *h)
  {
  	struct net *net = sock_net(sock->sk);
++	unsigned long sk_flags = h->sock.flags;
  
-@@ -471,7 +470,7 @@ static int unix_precheck(struct socket *sock, struct ckpt_socket *h)
- }
+ 	if ((h->socket.state == SS_CONNECTING) ||
+ 	    (h->socket.state == SS_DISCONNECTING) ||
+@@ -461,7 +567,7 @@ static int unix_precheck(struct socket *sock, struct ckpt_hdr_socket *h)
+ 		return -EINVAL;
+ 	}
  
- int unix_restore(struct ckpt_ctx *ctx, struct socket *sock,
--		      struct ckpt_socket *h)
-+		      struct ckpt_hdr_socket *h)
- 
- {
- 	struct ckpt_hdr_socket_unix *un;
+-	if (h->sock.flags & SOCK_USE_WRITE_QUEUE) {
++	if (test_bit(SOCK_USE_WRITE_QUEUE, &sk_flags)) {
+ 		ckpt_debug("AF_UNIX socket has SOCK_USE_WRITE_QUEUE set");
+ 		return -EINVAL;
+ 	}
 -- 
 1.6.2.5
