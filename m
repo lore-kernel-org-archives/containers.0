@@ -1,15 +1,14 @@
-From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: [patch 1/4][resend] fuse-procfs: proxy proc files
-Date: Mon, 14 Sep 2009 22:38:58 +0200
-Message-ID: <ac1c4bf20909141338p3e13c1d6sc71899b7859bd963@mail.gmail.com>
-References: <20090904162556.407556958@mai-009101017029.toulouse-stg.fr.ibm.com>
+Date: Mon, 14 Sep 2009 23:13:30 +0200
+Message-ID: <4AAEB1FA.3070102@free.fr>
+References: <20090904162556.407556958@mai-009101017029.toulouse-stg.fr.ibm.com>	
 	<20090904165149.491603361@mai-009101017029.toulouse-stg.fr.ibm.com>
-Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
+	<ac1c4bf20909141338p3e13c1d6sc71899b7859bd963@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------070907010306050401040100"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090904165149.491603361-+lpkiSBCrgqwGcPS5fe+fxcU4LlsiAD9x8DZ0lRKBDr1ENwx4SLHqw@public.gmane.org>
+In-Reply-To: <ac1c4bf20909141338p3e13c1d6sc71899b7859bd963-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,285 +18,171 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Daniel,
+This is a multi-part message in MIME format.
+--------------070907010306050401040100
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-right now I do not have any new tasks so I can take a look your patches
-and... they won't to apply (patches from 2 to 4).
-Can you send me your current procfs.c single file with patches added?
-
-Thanks
-
--- 
-K
-
-2009/9/4 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-
-> This patch makes possible to mount the fuse-procfs on top of /proc
-> and display the content of /proc via fuse.
+Krzysztof Taraszka wrote:
+> Hi Daniel,
 >
-> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-> ---
->  procfs.c |  246
-> +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 246 insertions(+)
+> right now I do not have any new tasks so I can take a look your patches
+> and... they won't to apply (patches from 2 to 4).
+> Can you send me your current procfs.c single file with patches added?
 >
-> Index: lxcfs/procfs.c
-> ===================================================================
-> --- /dev/null
-> +++ lxcfs/procfs.c
-> @@ -0,0 +1,246 @@
-> +
-> +#include <fuse.h>
-> +
-> +#include <stdio.h>
-> +#include <stdlib.h>
-> +#include <string.h>
-> +#include <libgen.h>
-> +#include <errno.h>
-> +#include <dirent.h>
-> +#include <mntent.h>
-> +#include <limits.h>
-> +#include <fcntl.h>
-> +#include <sys/types.h>
-> +#include <sys/stat.h>
-> +#include <sys/param.h>
-> +
-> +enum {
-> +       PROCFS_PROXY,
-> +};
-> +
-> +struct procfs_info {
-> +       DIR *procdir;
-> +       DIR *subdir;
-> +};
-> +
-> +struct proxy_file {
-> +       int fd;
-> +};
-> +
-> +struct procfs_file {
-> +       int type;
-> +       union {
-> +               struct proxy_file proxy;
-> +       } file;
-> +};
-> +
-> +static int procfs_readlink(const char *path, char *buf, size_t bufsiz)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +       char *bname = strchr(path, '/');
-> +       int ret;
-> +
-> +       if (strcmp(path, "/"))
-> +               bname += 1;
-> +
-> +       ret = readlinkat(dirfd(fsinfo->procdir), bname, buf, bufsiz);
-> +       if (ret < 0)
-> +               return -errno;
-> +
-> +       buf[ret] = '\0';
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_getattr(const char *path, struct stat *stbuf)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +       char *bname = strchr(path, '/');
-> +
-> +       if (strcmp(path, "/"))
-> +               bname += 1;
-> +
-> +       if (fstatat(dirfd(fsinfo->procdir), bname, stbuf,
-> AT_SYMLINK_NOFOLLOW))
-> +               return -errno;
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_open(const char *path, struct fuse_file_info *fi)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +       char *bname = strchr(path, '/');
-> +       struct procfs_file *pfile;
-> +
-> +       if (strcmp(path, "/"))
-> +               bname += 1;
-> +
-> +       pfile = malloc(sizeof(*pfile));
-> +       if (!pfile)
-> +               return -ENOMEM;
-> +
-> +       pfile->type = PROCFS_PROXY;
-> +       pfile->file.proxy.fd = openat(dirfd(fsinfo->procdir), bname,
-> fi->flags);
-> +       if (pfile->file.proxy.fd < 0) {
-> +               free(pfile);
-> +               return -errno;
-> +       }
-> +
-> +       fi->fh = (typeof(fi->fh))pfile;
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_read(const char *path, char *buf, size_t size,
-> +                     off_t offset, struct fuse_file_info *fi)
-> +{
-> +       int ret;
-> +       struct procfs_file *pfile = (typeof(pfile))fi->fh;;
-> +
-> +       switch (pfile->type) {
-> +
-> +       case PROCFS_PROXY:
-> +               ret = read(pfile->file.proxy.fd, buf, size);
-> +               if (ret < 0)
-> +                       return -errno;
-> +               break;
-> +       }
-> +
-> +       return ret;
-> +}
-> +
-> +static int procfs_write(const char *path, const char *buf, size_t size,
-> +                      off_t offset, struct fuse_file_info *fi)
-> +{
-> +       int ret;
-> +       struct procfs_file *pfile = (typeof(pfile))fi->fh;;
-> +
-> +       switch (pfile->type) {
-> +
-> +       case PROCFS_PROXY:
-> +               ret = write(pfile->file.proxy.fd, buf, size);
-> +               if (ret < 0)
-> +                       return -errno;
-> +               break;
-> +       }
-> +
-> +       return ret;
-> +}
-> +
-> +static int procfs_release(const char *path, struct fuse_file_info *fi)
-> +{
-> +       struct procfs_file *pfile = (typeof(pfile))fi->fh;;
-> +
-> +       switch (pfile->type) {
-> +
-> +       case PROCFS_PROXY:
-> +               if (close(pfile->file.proxy.fd))
-> +                       return -errno;
-> +               break;
-> +       }
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_opendir(const char *path, struct fuse_file_info *fi)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +       char *bname = strchr(path, '/');
-> +       int fd;
-> +
-> +       if (!strcmp(path, "/")) {
-> +               fsinfo->subdir = fsinfo->procdir;
-> +               return 0;
-> +       }
-> +
-> +       fd = openat(dirfd(fsinfo->procdir), bname + 1, O_DIRECTORY);
-> +       if (fd < 0)
-> +               return -errno;
-> +
-> +       fsinfo->subdir = fdopendir(fd);
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_readdir(const char *path, void *buf, fuse_fill_dir_t
-> filler,
-> +                        off_t offset, struct fuse_file_info *fi)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +        struct dirent dirent, *direntp;
-> +
-> +       if (!offset)
-> +               rewinddir(fsinfo->subdir);
-> +
-> +        while (!readdir_r(fsinfo->subdir, &dirent, &direntp) && direntp)
-> +               if (filler(buf, direntp->d_name, NULL, offset++))
-> +                       break;
-> +
-> +       return 0;
-> +}
-> +
-> +static int procfs_releasedir(const char *path, struct fuse_file_info *fi)
-> +{
-> +       struct fuse_context *context = fuse_get_context();
-> +       struct procfs_info *fsinfo = context->private_data;
-> +       DIR *subdir = fsinfo->subdir;
-> +
-> +       fsinfo->subdir = NULL;
-> +       if (subdir && subdir != fsinfo->procdir)
-> +               closedir(subdir);
-> +
-> +       return 0;
-> +}
-> +
-> +static void *procfs_init(struct fuse_conn_info *conn)
-> +{
-> +       struct procfs_info *fsinfo;
-> +
-> +       fsinfo = malloc(sizeof(*fsinfo));
-> +       if (!fsinfo)
-> +               return NULL;
-> +
-> +       fsinfo->procdir = opendir("/proc");
-> +       if (!fsinfo->procdir)
-> +               goto out_free_fsinfo;
-> +
-> +       fsinfo->subdir = NULL;
-> +out:
-> +       return fsinfo;
-> +
-> +out_free_fsinfo:
-> +       free(fsinfo);
-> +       fsinfo = NULL;
-> +       goto out;
-> +}
-> +
-> +static void procfs_destroy(void *private_data)
-> +{
-> +       struct procfs_info *fsinfo = private_data;
-> +
-> +       closedir(fsinfo->procdir);
-> +       free(fsinfo);
-> +}
-> +
-> +static struct fuse_operations procfs_ops = {
-> +       .readlink   = procfs_readlink,
-> +       .getattr    = procfs_getattr,
-> +       .open       = procfs_open,
-> +       .read       = procfs_read,
-> +       .write      = procfs_write,
-> +       .opendir    = procfs_opendir,
-> +       .releasedir = procfs_releasedir,
-> +       .readdir    = procfs_readdir,
-> +       .release    = procfs_release,
-> +       .init       = procfs_init,
-> +       .destroy    = procfs_destroy,
-> +};
-> +
-> +int main(int argc, char *argv[])
-> +{
-> +       return fuse_main(argc, argv, &procfs_ops, NULL);
-> +}
->
->
+> Thanks
+>   
+Sure, in attachment the procfs.tar.gz which is a directory containing 
+the patches.
+Just untar and quilt push -a.
+
+  -- Daniel
+
+
+
+--------------070907010306050401040100
+Content-Type: application/x-gzip;
+ name="procfs.tar.gz"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="procfs.tar.gz"
+
+H4sIAHGxrkoAA+09a3Pbxq75av2Krc+0kUxRFqmHHbvONKdx2sxJ7I6d3p7etqOhJcriMUVq
+SMqO25v/fgHsg8uXHn4l91acNpbIXSwWwGIBEAvNonA4jnefPebVhmtvr8f/9ruZv+J6Zll2
+r9PrtHud/rM2fO7uPWO9R8VKXPM4cSLGno1898+hE4RV7ZY9/z96zTj/Z04ynLiPJAfr8d8C
+/netPWvD/6e4cvx3P858J3ASLwxMJxiZw3A6dYMkblGDO46BDO7n+J7y37J6PZv4397rdNsW
+rH/btuzuM9Z+0JlWXH9z/p/PL/7jDpMDJjjNgOts5MbDyLtwmcN8L0l8lyUTL2ZJ5A2vbqHl
+yK29icLpAXvtBJ7rs3ecNOzbEX1vCVJ9N45ctzWOXtZqa0KvnXuXgTsyw/HYvLhdfRzTNGuM
+i3RryP6HMbZnMeNeFwC02NgDLIcTJ7h0R02212ZeELsRrpK4bjSa0GLk+i5+r5uNWu1tMHI/
+HjD/Iy0tgU7t6P4XTpCDbYWRd5nCBkTzw333HTOtZp8ZVrPTZ999VzN2d2oG22Hfh7Nb6DxJ
+WH3YYHa7/WJl+kJ3AvEBGQYjXUbOlMFHbMDicJzcOJF7yG7DOYOOLHJHXgx8vZgnLvOI+7th
+RBCm4cgb3+LNORArAhEAMXCjaczCMX354eRn9oMbuJHjs5/mF743ZO+8oQt0Z05MIGZ4N564
+I3ZxS13eIBbnAgv2JgTIpMkOmevB84hdu1EM35kNgxAI7CWgNlkYsbqTIPIRC2fYsQEY3zLf
+SdK+LUWDV/NkAl1WF07ZEYUU/47nMBfOLvzz8fZAo6/LxqHvhzdecKkI7eANWCghCwEb35kR
+/sRxNvIiWMZhBCQNCEQYEVlDNvFGLs5NUHwYBgmuRHgCSzCehDdAQPiCoAChKJ3ga3fsBR4J
+OWHGmAlLFpfCbjqaAODEyEqQBC8gSJELbOOYwU2HPacJPq8EA0iO3ADkKJxSfxo4ByKeOKPw
+phqGWJ+LgUy9KAqj5ykXE9WUJd4UxODGBWKOWBAm7MIDdTUFOUqQRtAs9EccWhOkHVsCXy4I
+jgNTHruRGwyhVSCEHQnK+81c2FSb9BcQxo9uMmStVgtJH7kgYt61698SqJswumI3ILHZIVMW
+K+R/mQDNwsCVayacxTjNIQgKIFx3L1s0YoMmBfv78Ip5vCUpNI+vI057QA7XyI0HKOutOVs5
+2VD5ZVvBSAiP4BDPCfB4HgxRblh8G1OTOvThVGi0KpWIR4LJpRFE0/0IX0fwFaiE7XdrrMb+
+4QVDfw4C/S2untYEVL5+M05GXoh3s/d876JwM4KVhTdRTdpt1JO9dtPqgKJkbjCfsr9qbOun
+s9Pv35wP3r89Ozs9a9bYp0PAQarRH/zwAiYMkObDZA7Tu0FuCJnz/iTNQ2vcFCpZCi5+BV7i
+lPlS0eQmy3ESPdIAIRBH9o/nF6K7Q7KCDa6dyHMufIHEjePTXQEQWyeghRQAWkiDiRNPSB04
+sJspqYi1FcUZweVDduaSUNVZdJHiosTYQ5UaCzZykgnVN/CCcUjUfv32jO0I4hzK73yyh5xN
+e8imfrf5ArlUAUXcnsSuEw0nA9gBHB3nwxwXxSNcOQdceEFKI2KenAywEJQKaNBJGBJZ1QKS
+uhToTAzLzk8DjYgBB1l9h9ZAHTrGCSqsiO00ZXuUlQHC5ZPZaRyqXrC0Rvleqrf3pztA3TIe
+459qYEjCbrdp9Zix32122pyIMNVhCcZTd4od6fMR4d8CNeU6sO6P1ENxJ78yuIE3AxEispHq
+5wQ74PKpaSBSCqhXSFDTjmhUjAgafIoTEibYW9SudoELhziT7jgA5SbyEjdVrlIRFSXv4y1R
+R3FmPMpLRm4WnDYwAydRKl3sGHI6gTOlKZHuxE3xEhdHoiwNAYKWTkKrFfcIfDIMo8iNZyFs
+DrhsgeZowUQuaCn3GiFBO04ETpKAm8xK95QKnppfkbsghjFK13UIO90OrpH87KXpRUA0UtxE
+zmyGSArNz1AQoqnQdtDAdYYTdoUbJ2xK2JvbPCy5nbnK9I/TnUWuTjRRHE1WZDc0SwIEnlE2
++VElC0SvWeRdg9XGV7/qGIdTF+gGyMczd+iNSfBJsoCnip+lSiojKzgVpB7H6y9aWP1O02qD
+rW3tN61+UT2p/pziOn55yp/TkgTy3gK5wALjFgRYuonc5kHlgFzEuAHfONyUQyNPIU5L+vjk
+w9mvUtWLHr/9IdbyX2wbtubtJjv5+d079im/gO+EAmdjGRJC8EqQEIoEEPlGVzgCIaTrXo9c
+mE5fKv2lcP8hUD7/8dXr018GP746/3Fw/va/j1nHTh/yLT33UM3fAaU6neFuitIOCkcZNDDP
+Mco2ODc47K3UPrimxdQ5bjt4Z4Bt61xRX7m3SjlnNidq2agRSXhfgtwEKaEPnA77faID2Cj7
+SIdVBwGYoEXmUcAkMPaJT3RHOCBI71Fq6TN4sFszFAdR3oUMo4b1veAqsw/NnGQi96KL+Vhu
+Rww+wycxLX1Poj3zY8J25Icjfv/STeSzutiskOswabttN/c05mso4aItooPLdMzqMOpwOqtz
+DLd3txuAzdbWBWlp44hZJPFbuztcl2Iz1EfCE0FOcjApjakriCrMDCTVfKnZUQgbgAtam8cn
+p8AhHIDm0SUhtq215wEIjz3z5XgCVKqj2gnHdX6j0ZihTimZw3QOUHQbDKeyxaX1iFXPRjOS
+uOUBc6deDeLhFo1nviQ9fsQyprFgV69D07SttdmlKCcGwX9bHKEWCKj5knpyTo49Qu+TnDkI
+rzP3E1RFfPdQ1gVNvBRt+PPvXw/TpzQe9W6NR9CM+2t1sDzHo7okkDBNwZsSpCNO+M5lrOhV
+Cu5b1kYSfu5IX/mVi//yrybhbnKH2hRW7t1DwIvjv7bdbndl/Nfas/cw/tvr9zbx36e4VPxX
+hIdST467oMKFHPu364Z8PwiNBOYgQLoGA4Wbbs6F53sJOZfoUJFVJoZ0hkM3jmsUJPbime/c
+gr/gJMrKQGsaNqHWw8WH7e7+/eLDZkl82O528gHingoQx19YhHiv2bHAsADXGmMfuOXkwx+k
+LJugbEvDIXfy5svddG0/PYThlnryBiBg1Iwyd9u4k7ttPKS7LYGRS1qAlsVoXZjC8V5jZpJU
+aktO7e3cnrwQTAkAJNa9aVUKl+a4Om4KyvJohrHVIn8PrqMMJVDMWzij7CMKLvBHS2Igq4UY
+Sh11o9JRNzKOOuflOg4qGFhFtOgjwt4qwYZ/JjuLcTvTUFiUOa/38jqXO3XGYmdRUEQ6d6/O
+zl79Sm5dPWmAHwBSCHYzfNxl8vNv7T/QZF/kKxqLfcV7+Hnk1+6TP2cJf65oK4M/5CRJlDOX
+7+ZMsa0SJb3D7VroIlqihZvh7JZw68hjOsJJDSeRsMKf7z5vHC4UWUEf6Xau7JQhdV70gCyG
+Zb/IeP0reBJ39DbvRiBzOYHygLlfIlw3YxUC34eMVptLWbejglJredBfEaIEWvNs3x+/527n
+MtcUVca6fqeR9TuNJX5n+jznMkJTAmK+FEpzq+Cg5f3LBjZa1xE1wBE1viQ3k/hu8fXTx/da
+a3riktFuFAWhdLTNpbw200hTWwSZeAjHalpkX3abVkVUoGBApMGP+MZD/6GuUZeiEbh0cBvO
+SMMB8g9wACSruEdDce6pYBWZJ7GbKIZuXUCzK9pRMqMQNw8EjWAQDqyEFRpwYhnxDPsgi/Ro
+R0pkNeaWCGdokzGP355KRigiwx8ZdbGJwnbbqqQwmaAFEj8KhflQD0ViAe2z07jfQwVq2Ha7
+affWo3GZvBcNW06wCuMWiJbZ2Yp7ibYuucpu8OV5KF0GmsrjrCg+mYxKXM5e5NbQD+Ny5sJu
+ZhY5KLQzcmttnpqacoKNK3LFwNxvyDCcdFeFygS9vB7b+GtrfGNtdDr7+O41FR5pTQuLw0vq
+OcuFxBgdkZxB3dQt3OyjBjcELkNMEponA5zpgO8sfM+m7SMdkrbdetle3CzYvU3iAOGTNdIz
++GQfIT6Ghs/IhTmGt4Osq1/DZwfpwtMQruiEbJ7I+1G9NCR/WMuTAIcg3vOvpDiUkYdOicgz
+2H+BZlOn9yITyCZ+CdqJoesZj4gWGEk1ykl+P8fBlqNcPq18bD43CbnbdsCd6ADi+7gV0Pt9
+cqgdL6jjBye6HErnHD5f//aH0CuS7Ch31Jq3xDZgqCn5j7nnxkc01Nuy94Rc5rVq7r17NvJA
+tvdlFM5nA0pwyayoaeJcSBynQQLSA0YgE5d0NnjWxQ7/e5g+f/P23TGuO1KInJ/qGY4MagP1
+gkWLXj4QzWF74vDqHIXtaLuhd0dzmFvD6p68pHRnwN5MEG69LpA9wmmLAbiGJvMWFwe9vcH8
+KHobzimjss7QBByxbf/jcJsoyVXnV8L+5wBBPgKQ85ibi9S2wb75BhsjJmWNUe9DUz7YdkOY
+2rjBDGe32LLJ9OZcfrEFJ2Gbf1HKl4xgPpWx4/sXzvBK5hSOvQiYG4SBCXjJ2Y0xN5Pmk6dl
+1exyCMP0kJt3w/tTOuynrCjwLUluDKSU1EOxSAAQhmA0mebCKiQaeUBagUvuVrpPwPDbFHvd
+jV1/vCtm0mQ72EWTNOrhe4H72/tX//7p1Ycf3x2f/FEq5GViPNYclDVEWEwut2bG8dAJxkQP
+gPY1hm4QMSJpjlaZRZqEV3VsCJ0OMiiIZzhM4VnqBK/YRIj77nZ2fDEVaDSaz6hRI2UY1x88
+ekSyw6kJd3xv6uEKTu/MY+fSTe/EN84s1whvyVarB1iXGg2GFgtcw9aT0ja8BNHHQXICJJ9W
+PgIZFrK4laPUjviQMScNYU4U9Pn2rpsMd1GNgsAobLglUNGB1gV9iYt9Cq/VcWSOKwZntIWn
+Aghf8ccNYQ1mzEi4J+d1BJuj74dDGSOU82ykgOQdrmmkZSmiIJppI0IBZeEICv+piLGyOAUg
+NaMYzIggGdc5h2jB7cJ/0C2MblskeiAkg4vbxM0QCT9KMZczA/UnRFrpBAWWa4XM7NLmWXON
+bKcM3ouRpMWwHpLUZXUkqXkWSVJEA20JL0UT/sQ3a1NUKYAVsVXtK9CVmuMR0V2HuKp9Gbq6
+8lPS21Z7JDdINSx0h8rgVnwO0EG6h5RQ7FDvI2lV1kWJRL5H5SBK0kUPXcbVVOSqx7loK/xT
+hY4vD2GVpEVRNIR0Gr0TU3GRR9kNKpR4uTcvw6R+CIY8/SMJ1WSSyICn5BD/qLZIMT3fDdJ9
+gc9NV8Ft/lCYFQWOoNz7/ki84FFMKmsv0NHbKzEotNeQVh0yolbaIz9Euj74LGCuaIuIlUtM
+3n7vTj+EieMfCFvk631/zq7++Xuw3ZTWOFN0ZS9fMqtN4yMsIwOMGUhMDhLPNUmI5SBZXQE1
+Fbcaqw1wDvPSkS4fIFV+KwPV0VZA83incM1UojTMU13CZat6Bd4hqPa0S2uJLlqo2harytKn
+Wt+cRktp2iaKfu4cpM31+a4F+X/3OvOtX0vOf3f6tq3O/9t7WP9hr7+3t8n/e4pL5f/x3FnK
++aNkvHuk+02dKxc+h3Hs4SEXPBuAnh0PB6UH4ii3MJzhkQJ+ekrP++OnYsTxKtGAXXsOAbhn
+AuB7wI8UPB4QZ11m5HICe/Y9z4wDQFukNKZJgb1+NinwsZMAd0fu9W4w9/2q1L92Ew+sNHG6
+eDq8ZhQPV2ZuqsOVRtnhSqPscKV2E5pdukHuJrnkuXt4/DBIcjd5UK8AEva/OHdzPAwSP4/Q
+bbyLO3m+Ld5HW6Lk9syJnKkggUiINPIJkZn0w2z+o5HLfzSy+Y+FrmmumKFyxUrhZ1rxPC9D
+5XkZC/O8VCZXIVR1nwMeug21TspN3vBaLeVmpZSZQoSqJFvGyGbLpE6tJMLyvAyihiCDdKfV
+G+jyuBO0/g1uY1Lb89/bz0tssVLGlOeCacYtdgHpSgD+l8iRtdiALcc4oeUcoAk32asPg/Nf
+3797e/Kvwcnpm9N3705/QdDFZJbVqH2/gO2XQfGFaWdrsUO6QrlAqfCIVBhJZIoZxUwxBaQi
+O8p4uOwoY2l2FOCXfflfkmXA32Wtkty2XJbWDwxxv3i96FCq8O6WIiKZqEVs/Nh1ryoyb9pN
+dn58/K/B+fEHsborskooTl/M/zDWzKAytgq6tSQ3RL2M/FRI6ajiTnnOTjY7fwGT/iZcWjUJ
+69HY9JSxnTtSamk+0zrEWLI3rZ2E9AVuT8rGlUJd3IyEtpZZMrzoyRHLbQS6Cm9r2nvVDYQZ
+zGqy0wGY58fffzg9+1VtI2LTqLDkiniNJG+A3+tsD+Xs5IlFtLwkS31MZwB9gx/dSGRj3ek1
+whMIgfbGHztzp078abId/mFWrtUi98YLRnoOFady9j2/SLD5StBwkG/dZN/I4cSHGaWNyM9y
+2XJy8gC+eGa+HA24dcHTEDhuhiHWscpuXI3FpLy++EWr+afaKlMOa5nIi2wRbkzym0Bf8emr
+wlIl4qn0OJ2lVWRcmiEZiOnhx1KVr89en0XRoBXZdKlFK25o61/MVyOFLOV0JCt7iVSG7TyY
+LBHK0zMX0Vi8Zs3lRxraG0yZ4WjkkgONfIZj5QvNpfmNJCtLyYzvQLKyhVtCdVZkAWEdJ53f
+WmGmNCVRHueTbjtjNH4mnkEn94QPzfQG4h49l+cB9eeFE4F56PSQ7KPcQ16HSMJFVubhooaq
+pScKObcLOkONngch7mUOJWafi2OJ4Aa3qLpdDkO8x58KXmeeinsqyLU0j5SEYu08UuB1Jggq
+I7OPGgRVg2hB0C6FQL9/8+7VD+dH5iUzXw8wxWtw+uYN2M+Df779cH7U78LtNz+fHw/w//86
+Pjt/e3pyZO9h4x9Ofh6cn/589v1xzXj3WoDxkRBIPT7zAxVlrv3OTkIWuDeYJIfFh1ytXNLT
+xv9z739iF7O2H3iMxe9/2m3basv6Dx2qE231ulZn8/7nKa7iC79apgaI+5GC4iYWfyp7XlYj
+pLa4inSNvxY35zMstyXufW46/F2v3PovYc39x1hW/9vqW9r7X+tZ2wad0N+s/6e4ChVRLLtz
+t7efprqKFVGsdrdQMvvFl1oSpdvDQ34GFe3Ciijl7wtZxftCVjPF+0Iz977QzBdQMT/huVlz
+d6dm3qmerHnPerLmfevJmvepJ2s+QD1ZE8+QmKVvYM3cG1gz+wbWXF6BprxJpgIN5yADDrIH
+ryXLcG5U+q9LZW9BKh+hZKsWsOBK/+4FYUT/h64Ho8A+XDkYNdOSajAaFXLFYLT55WrBZFHM
+Zwbwp3qBF/x+DWudPzksPvBG8kW9lK2Hq6nLHqymLi8xYaN0vthr2nta2dN8CdqSQrNVWRV5
+LSmIuam6fZ+q2whDyKEggPiGLAbcnSQtgS/ObN4pr+Vh6nptZVeOWia8zI9YEQ9YoZjdrUIx
+L3DR5iVW+pmzwovqID1MgVwqicQpg081laYKK61fEIkOEfPTz912v2l3ymsdpCfHy2vNygog
+JeFw6sqRrVfHEEU8KXfUcStzxlEcGlMkyJxqKWQjWDK+mjnR6M9bX7dtf87Up22tMo3wgsSf
+5HoQu0MkvAilVbebY8PCc1Tqy6HIVghDRMcLRy3z8fKVKwpk4+UlNSWy8XIShxdUdb/LC7ms
+V70gE0dnuTg6ViPAk01uImK/9Mq6JBxfK1YtEAIkGy2KqbOVgvWsIlhfWUuBan5j8US0zPrN
+br5O1cJzCXqRkbY8Tb+CJfaIBxoecKlpb0mrD0OulERTZVEuTKLJvhLVsjW+oJdt9zlzkjUe
+m9JW1DjIlh1DWeV01mIVWakTC0pQ13rpN027yfPamYNUJcPmTg5lMIDde5nSLvabL+k4z/XU
+ZlLsllPu+T7lY+WpUSn/T3q2aU1B0nenUj2wOWz0BV8Lzv+UxP7vNsaS9z973X5fq//dwfrf
+nfam/veTXOr8D/1MHPcmhfef/9WxNQ8EnYQ3WLh74ly7hZM/F25y44qgBf7OiPiVO6z+Tb91
+w39jrea7yfNYVg/HH3yLnKlLP49Gv8Ph4+/ygWVW4kXz3yapjcLgeaJ+oQR/q+4Ba4ezfv9e
+54RKI+X9QunwzhcbJye/gNzee/4Gm372hoICuZbp2SFWcnaIlZ0dojpeFv89Cu6Zy7LmpXGN
+JfXKV4hrLCj/TG4UUasDPnV3wa8DySM6ZYWRS4MJRrGosoiXre37GwuLIdeMO9Y7Jjuk/Hdt
+VH3YFgCB6cC//KaEE9VFlzdvT15jBon4KmulpbaFAqm7w5/zt2v6FBbdt6sKGFeWd175l2vW
++3Uao+TXaQwx3EOctmElpWP1Qtdta91Szk9NiWUHXZaWRObVWHugbQxrf+Fv4BSTQb+8ytWZ
+NG75S4RUwl5SojRlm5dL7XAivGha9npU0J1RVXr4frnclXPE5qkbs7L4lJejWuPEUhZBlkk2
+r1pFFmkSw7Y6TatbXUa5lKSZ9Gq2ML0ayP1w6dUPBUnWScxyqZCqXc2vLVwFXjB3+UK/Q9Y3
+28qc1SiE7/iPyJLKtzv7ao9fLRd89bh5IeSe2WvV/kVESisNIQ/SDZhsB9VU3KHW2jEl71Bt
+2pndWsRr+WhatJbTWsvmnwyBWqBuonqKDCuuIBmVx5/e9qiiFPNgIehYwR1ggeT/V1nTACfj
+wWwA1eOzvIGQPXRjHT515Ny2+M++9V+sHzmvrODLKlPES8Lk2eK+2rpoFow8rbjvWsWGF0Xe
+q4r6EnFsestk7++vW2N3ndTzJQV5V6ohXFZs93N77Q93ifhPazbcfbQxKMiDeb0V+b9wqfy/
+Xgfrv3Rse+8Z6z0aRtr1N4//aPxvXbtR7IXBg4+xLP+73ab6P929NvAd439Wt7+3yf98ksv+
+f6TLNtfm2lyba3Ntrs21uTbX5tpcm2tzba7Ntbk21+baXNnrfwGnnlH9AKAAAA==
+--------------070907010306050401040100
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------070907010306050401040100--
