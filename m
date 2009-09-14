@@ -1,14 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 3/9] blkio-cgroup-v12: The new page_cgroup framework
-Date: Mon, 14 Sep 2009 21:29:09 +0900 (JST)
-Message-ID: <20090914.212909.71094050.ryov__28931.2708461241$1252932123$gmane$org@valinux.co.jp>
+Subject: [PATCH 4/9] blkio-cgroup-v12: Refactoring io-context initialization
+Date: Mon, 14 Sep 2009 21:29:46 +0900 (JST)
+Message-ID: <20090914.212946.104038099.ryov__24065.1518608958$1252932200$gmane$org@valinux.co.jp>
 References: <20090914.212805.193688121.ryov@valinux.co.jp>
 	<20090914.212839.226798134.ryov@valinux.co.jp>
+	<20090914.212909.71094050.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090914.212839.226798134.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20090914.212909.71094050.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,155 +22,71 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch makes the page_cgroup framework be able to be used even if
-the compile option of the cgroup memory controller is off.
-So blkio-cgroup can use this framework without the memory controller.
+This patch refactors io_context initialization.
 
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
 ---
- include/linux/memcontrol.h  |    6 ++++++
- include/linux/mmzone.h      |    4 ++--
- include/linux/page_cgroup.h |    5 +++--
- init/Kconfig                |    4 ++++
- mm/Makefile                 |    3 ++-
- mm/memcontrol.c             |    6 ++++++
- mm/page_cgroup.c            |    3 +--
- 7 files changed, 24 insertions(+), 7 deletions(-)
+ block/blk-ioc.c           |   30 +++++++++++++++++-------------
+ include/linux/iocontext.h |    1 +
+ 2 files changed, 18 insertions(+), 13 deletions(-)
 
-Index: linux-2.6.31/include/linux/memcontrol.h
+Index: linux-2.6.31/block/blk-ioc.c
 ===================================================================
---- linux-2.6.31.orig/include/linux/memcontrol.h
-+++ linux-2.6.31/include/linux/memcontrol.h
-@@ -37,6 +37,8 @@ struct mm_struct;
-  * (Of course, if memcg does memory allocation in future, GFP_KERNEL is sane.)
-  */
- 
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
-+
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -121,6 +123,10 @@ void mem_cgroup_update_mapped_file_stat(
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-Index: linux-2.6.31/include/linux/mmzone.h
-===================================================================
---- linux-2.6.31.orig/include/linux/mmzone.h
-+++ linux-2.6.31/include/linux/mmzone.h
-@@ -605,7 +605,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -956,7 +956,7 @@ struct mem_section {
- 
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
-Index: linux-2.6.31/include/linux/page_cgroup.h
-===================================================================
---- linux-2.6.31.orig/include/linux/page_cgroup.h
-+++ linux-2.6.31/include/linux/page_cgroup.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- #include <linux/bit_spinlock.h>
- /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -14,6 +14,7 @@ struct page_cgroup {
- 	unsigned long flags;
- 	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+	unsigned long blkio_cgroup_id;
- 	struct list_head lru;		/* per cgroup LRU list */
- };
- 
-@@ -83,7 +84,7 @@ static inline void unlock_page_cgroup(st
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+--- linux-2.6.31.orig/block/blk-ioc.c
++++ linux-2.6.31/block/blk-ioc.c
+@@ -84,24 +84,28 @@ void exit_io_context(void)
+ 	}
  }
  
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_CGROUP_PAGE */
- struct page_cgroup;
- 
- static inline void __meminit pgdat_page_cgroup_init(struct pglist_data *pgdat)
-Index: linux-2.6.31/init/Kconfig
-===================================================================
---- linux-2.6.31.orig/init/Kconfig
-+++ linux-2.6.31/init/Kconfig
-@@ -614,6 +614,10 @@ config CGROUP_MEM_RES_CTLR_SWAP
- 
- endif # CGROUPS
- 
-+config CGROUP_PAGE
-+	def_bool y
-+	depends on CGROUP_MEM_RES_CTLR
-+
- config MM_OWNER
- 	bool
- 
-Index: linux-2.6.31/mm/Makefile
-===================================================================
---- linux-2.6.31.orig/mm/Makefile
-+++ linux-2.6.31/mm/Makefile
-@@ -39,6 +39,7 @@ else
- obj-$(CONFIG_SMP) += allocpercpu.o
- endif
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
- obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
- obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
-Index: linux-2.6.31/mm/memcontrol.c
-===================================================================
---- linux-2.6.31.orig/mm/memcontrol.c
-+++ linux-2.6.31/mm/memcontrol.c
-@@ -129,6 +129,12 @@ struct mem_cgroup_lru_info {
- 	struct mem_cgroup_per_node *nodeinfo[MAX_NUMNODES];
- };
- 
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
++void init_io_context(struct io_context *ioc)
 +{
-+	pc->mem_cgroup = NULL;
-+	INIT_LIST_HEAD(&pc->lru);
++	atomic_long_set(&ioc->refcount, 1);
++	atomic_set(&ioc->nr_tasks, 1);
++	spin_lock_init(&ioc->lock);
++	ioc->ioprio_changed = 0;
++	ioc->ioprio = 0;
++	ioc->last_waited = jiffies; /* doesn't matter... */
++	ioc->nr_batch_requests = 0; /* because this is 0 */
++	ioc->aic = NULL;
++	INIT_RADIX_TREE(&ioc->radix_root, GFP_ATOMIC | __GFP_HIGH);
++	INIT_HLIST_HEAD(&ioc->cic_list);
++	ioc->ioc_data = NULL;
 +}
 +
- /*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
-Index: linux-2.6.31/mm/page_cgroup.c
-===================================================================
---- linux-2.6.31.orig/mm/page_cgroup.c
-+++ linux-2.6.31/mm/page_cgroup.c
-@@ -14,9 +14,8 @@ static void __meminit
- __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
+ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
  {
- 	pc->flags = 0;
--	pc->mem_cgroup = NULL;
- 	pc->page = pfn_to_page(pfn);
--	INIT_LIST_HEAD(&pc->lru);
-+	__init_mem_page_cgroup(pc);
+ 	struct io_context *ret;
+ 
+ 	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
+-	if (ret) {
+-		atomic_long_set(&ret->refcount, 1);
+-		atomic_set(&ret->nr_tasks, 1);
+-		spin_lock_init(&ret->lock);
+-		ret->ioprio_changed = 0;
+-		ret->ioprio = 0;
+-		ret->last_waited = jiffies; /* doesn't matter... */
+-		ret->nr_batch_requests = 0; /* because this is 0 */
+-		ret->aic = NULL;
+-		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
+-		INIT_HLIST_HEAD(&ret->cic_list);
+-		ret->ioc_data = NULL;
+-	}
++	if (ret)
++		init_io_context(ret);
+ 
+ 	return ret;
  }
- static unsigned long total_usage;
+Index: linux-2.6.31/include/linux/iocontext.h
+===================================================================
+--- linux-2.6.31.orig/include/linux/iocontext.h
++++ linux-2.6.31/include/linux/iocontext.h
+@@ -104,6 +104,7 @@ int put_io_context(struct io_context *io
+ void exit_io_context(void);
+ struct io_context *get_io_context(gfp_t gfp_flags, int node);
+ struct io_context *alloc_io_context(gfp_t gfp_flags, int node);
++void init_io_context(struct io_context *ioc);
+ void copy_io_context(struct io_context **pdst, struct io_context **psrc);
+ #else
+ static inline void exit_io_context(void)
