@@ -1,14 +1,14 @@
-From: Jerome Marchand <jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] IO scheduler based IO controller V9
-Date: Mon, 14 Sep 2009 16:31:09 +0200
-Message-ID: <4AAE53AD.1080206@redhat.com>
-References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
-	<4AA918C1.6070907@redhat.com> <20090913185447.GA11003@redhat.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 1/1] cr: ext4: use filemap_checkpoint for ext4 file backed
+	mmaps
+Date: Mon, 14 Sep 2009 10:48:12 -0400
+Message-ID: <4AAE57AC.50901@librato.com>
+References: <20090911212008.GA15329@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090913185447.GA11003-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090911212008.GA15329-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,73 +18,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> On Thu, Sep 10, 2009 at 05:18:25PM +0200, Jerome Marchand wrote:
->> Vivek Goyal wrote:
->>> Hi All,
->>>
->>> Here is the V9 of the IO controller patches generated on top of 2.6.31-rc7.
->>  
->> Hi Vivek,
->>
->> I've run some postgresql benchmarks for io-controller. Tests have been
->> made with 2.6.31-rc6 kernel, without io-controller patches (when
->> relevant) and with io-controller v8 and v9 patches.
->> I set up two instances of the TPC-H database, each running in their
->> own io-cgroup. I ran two clients to these databases and tested on each
->> that simple request:
->> $ select count(*) from LINEITEM;
->> where LINEITEM is the biggest table of TPC-H (6001215 entries,
->> 720MB). That request generates a steady stream of IOs.
->>
->> Time is measure by psql (\timing switched on). Each test is run twice
->> or more if there is any significant difference between the first two
->> runs. Before each run, the cache is flush:
->> $ echo 3 > /proc/sys/vm/drop_caches
->>
->>
->> Results with 2 groups of same io policy (BE) and same io weight (1000):
->>
->> 	w/o io-scheduler	io-scheduler v8		io-scheduler v9
->> 	first	second		first	second		first	second
->> 	DB	DB		DB	DB		DB	DB
->>
->> CFQ	48.4s	48.4s		48.2s	48.2s		48.1s	48.5s
->> Noop	138.0s	138.0s		48.3s	48.4s		48.5s	48.8s
->> AS	46.3s	47.0s		48.5s	48.7s		48.3s	48.5s
->> Deadl.	137.1s	137.1s		48.2s	48.3s		48.3s	48.5s
->>
->> As you can see, there is no significant difference for CFQ
->> scheduler. There is big improvement for noop and deadline schedulers
->> (why is that happening?). The performance with anticipatory scheduler
->> is a bit lower (~4%).
->>
-> 
-> Ok, I think what's happening here is that by default slice lenght for
-> a queue is 100ms. When you put two instances of DB in two different
-> groups, one streaming reader can run at max for 100ms at a go and then 
-> we switch to next reader.
-> 
-> But when both the readers are in root group, then AS lets run one reader
-> to run at max 250ms (sometimes 125ms and sometimes 250ms based on at what
-> time as_fifo_expired() was invoked).
-> 
-> So because a reader gets to run longer at one stretch in root group, it
-> reduces number of seeks and leads to little enhanced throughput.
-> 
-> If you change the /sys/block/<disk>/queue/iosched/slice_sync to 250 ms, then
-> one group queue can run at max for 250ms before we switch the queue. In
-> this case you should be able to get same performance as in root group.
-> 
-> Thanks
-> Vivek
 
-Indeed. When I run the benchmark with slice_sync = 250ms, I get results
-close to the one for both instances running within the root group:
-first group 46.1s and second group 46.4s.
+queued for ckpt-v18.
 
-Jerome
+Serge E. Hallyn wrote:
+> I don't know if this is "the right thing" to do, or if
+> there will be special ext4 cases which this doesn't handle,
+> but all of my cr_tests pass with this patch applied on F11
+> with an ext4 rootfs (and fail without on trying to checkpoint
+> a library on ext4fs bc it has its own vm_ops but no
+> vm_ops->checkpoint()).
+> 
+> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  fs/ext4/file.c     |    3 +++
+>  include/linux/mm.h |    1 +
+>  mm/filemap.c       |    2 +-
+>  3 files changed, 5 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+> index a99bcc3..cdac137 100644
+> --- a/fs/ext4/file.c
+> +++ b/fs/ext4/file.c
+> @@ -133,6 +133,9 @@ force_commit:
+>  static struct vm_operations_struct ext4_file_vm_ops = {
+>  	.fault		= filemap_fault,
+>  	.page_mkwrite   = ext4_page_mkwrite,
+> +#ifdef CONFIG_CHECKPOINT
+> +	.checkpoint	= filemap_checkpoint,
+> +#endif
+>  };
+>  
+>  static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
+> diff --git a/include/linux/mm.h b/include/linux/mm.h
+> index 5f341ac..5b9b217 100644
+> --- a/include/linux/mm.h
+> +++ b/include/linux/mm.h
+> @@ -1185,6 +1185,7 @@ extern void truncate_inode_pages_range(struct address_space *,
+>  
+>  /* generic vm_area_ops exported for stackable file systems */
+>  extern int filemap_fault(struct vm_area_struct *, struct vm_fault *);
+> +extern int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
+>  
+>  /* mm/page-writeback.c */
+>  int write_one_page(struct page *page, int wait);
+> diff --git a/mm/filemap.c b/mm/filemap.c
+> index 0c4906f..eb7653d 100644
+> --- a/mm/filemap.c
+> +++ b/mm/filemap.c
+> @@ -1650,7 +1650,7 @@ page_not_uptodate:
+>  EXPORT_SYMBOL(filemap_fault);
+>  
+>  #ifdef CONFIG_CHECKPOINT
+> -static int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+> +int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+>  {
+>  	struct file *file = vma->vm_file;
+>  	int vma_objref;
