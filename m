@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] Add a cleanup routine for objhash socket objects
-Date: Tue, 15 Sep 2009 09:52:11 -0700
-Message-ID: <1253033531-6764-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/2] Add a 'cleanup' function to objhash object operations
+Date: Tue, 15 Sep 2009 09:52:10 -0700
+Message-ID: <1253033531-6764-2-git-send-email-danms@us.ibm.com>
 References: <1253033531-6764-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,45 +21,37 @@ To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This cleanup routine checks for unattached sockets that we instantiated
-and calls sock_release() on them to avoid leaking the struct socket when
-their buffers are consumed and the struct sock is free'd.
+This patch adds a 'cleanup' function to the object operations structure,
+which is called during objhash teardown before the final reference is
+dropped.  It provides a way to perform some object cleanup when checkpoint
+or restart operation is finished, in scenarios where the final reference
+count cannot be anticipated.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
+ checkpoint/objhash.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 9750483..5626707 100644
+index a410346..9750483 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -247,6 +247,18 @@ static void obj_sock_drop(void *ptr)
- 	sock_put((struct sock *) ptr);
- }
- 
-+static void cleanup_sock(void *ptr)
-+{
-+	struct sock *sk = (struct sock *) ptr;
-+
-+	if (sk->sk_socket && !sk->sk_socket->file) {
-+		struct socket *sock = sk->sk_socket;
-+		sock_orphan(sk);
-+		sock->sk = NULL;
-+		sock_release(sock);
-+	}
-+}
-+
- static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 	/* ignored object */
- 	{
-@@ -384,6 +396,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_grab = obj_sock_grab,
- 		.checkpoint = checkpoint_sock,
- 		.restore = restore_sock,
-+		.cleanup = cleanup_sock,
- 	},
+@@ -34,6 +34,7 @@ struct ckpt_obj_ops {
+ 	int (*ref_users)(void *ptr);
+ 	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+ 	void *(*restore)(struct ckpt_ctx *ctx);
++	void (*cleanup)(void *ptr);
  };
  
+ struct ckpt_obj {
+@@ -399,6 +400,8 @@ static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
+ 
+ 	for (i = 0; i < CKPT_OBJ_HASH_TOTAL; i++) {
+ 		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
++			if (obj->ops->cleanup)
++				obj->ops->cleanup(obj->ptr);
+ 			obj->ops->ref_drop(obj->ptr);
+ 			kfree(obj);
+ 		}
 -- 
 1.6.2.5
