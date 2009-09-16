@@ -1,10 +1,9 @@
 From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr annotated tag, v2.6.30, created. v2.6.30
-Date: Wed, 16 Sep 2009 14:36:45 -0400
-Message-ID: <200909161836.n8GIajrI001359@gorgona.ncl.cs.columbia.edu>
+Subject: [cr][git]linux-cr annotated tag, v2.6.28-rc9, created. v2.6.28-rc9
+Date: Wed, 16 Sep 2009 14:36:34 -0400
+Message-ID: <200909161836.n8GIaYPO001141@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8274370792989429840=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,215 +17,304 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+--===============8274370792989429840==
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n8GItkuL005162
+
 This is an automated email from the git hooks/post-receive script. It was
 generated because a ref change was pushed to the repository containing
 the project "linux-cr".
 
-The annotated tag, v2.6.30 has been created
-        at  fa9c4d0983f98945b32d6bd0dfc1ba1b02d3773c (tag)
-   tagging  07a2039b8eb0af4ff464efd3dfd95de5c02648c6 (commit)
-  replaces  v2.6.30-rc8
+The annotated tag, v2.6.28-rc9 has been created
+        at  7d4b1bcc5e7411fc9e63f610c16e5de8fe6dfde8 (tag)
+   tagging  929096fe9ff1f4b3645cf3919527ab47e8d5e17c (commit)
+  replaces  v2.6.28-rc8
  tagged by  Linus Torvalds
-        on  Tue Jun 9 20:05:37 2009 -0700
+        on  Thu Dec 18 17:20:31 2008 -0800
 
 - Log -----------------------------------------------------------------
-Linux 2.6.30
+Linux 2.6.28-rc9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEABECAAYFAkovIwUACgkQF3YsRnbiHLsL3wCglu4uk4E4/fnfHBd1fsa4peac
-xn4AnA9/pAzYCPACryp69le49dFtKil3
-=yjIU
+iEYEABECAAYFAklK9uMACgkQF3YsRnbiHLto7gCdGYELkT6rjEXcVPqCjNgBMeMf
+dF8Ani+Xgbq0untQW0wafgtEaIKuRbBz
+=3DTspS
 -----END PGP SIGNATURE-----
 
-Adam Jackson (1):
-      drm: ignore EDID with really tiny modes.
+Alan Cox (1):
+      USB: tty: SprogII DCC controller identifiers
 
-Al Viro (1):
-      ext3/4 with synchronous writes gets wedged by Postfix
+Alan D. Brunelle (1):
+      Commands needing to be retried require a complete re-initialization.
 
-Alan Cox (3):
-      ivtv: Fix PCI DMA direction
-      [libata] pata_ali: Use IGN_SIMPLEX
-      pata_netcell: Fix typo
+Alan Stern (2):
+      usb-storage: update unusual_devs entry for Nokia 5310
+      USB: skip Set-Interface(0) if already in altsetting 0
 
-Alessandro Rubini (1):
-      [ARM] 5543/1: arm: serial amba: add missing declaration in serial.h
+Alexander Beregalov (1):
+      IA64: HP_SIMETH needs to depend upon NET
 
-Anand Gadiyar (1):
-      omap_hsmmc: Trivial fix for a typo in comment
+Anders Blomdell (1):
+      avr32: Enable pullup on USART TX lines
 
-Avi Kivity (2):
-      KVM: Explicity initialize cpus_hardware_enabled
-      kvm: fix kvm reboot crash when MAXSMP is used
+Andrew Ewert (1):
+      USB: ftdi_sio: Adding Ewert Energy System's CANdapter PID
 
-Ben Nizette (1):
-      mmc/omap: Use disable_irq_nosync() from within irq handlers.
+Arnd Bergmann (1):
+      powerpc/cell/axon-msi: Fix MSI after kexec
 
-Ben Skeggs (1):
-      drm: don't associate _DRM_DRIVER maps with a master
+Baruch Siach (1):
+      enc28j60: use netif_rx_ni() to deliver RX packets
 
-Chris Mason (1):
-      Btrfs: Fix oops and use after free during space balancing
+Ben Dooks (1):
+      i2c-s3c2410: fix check for being in suspend.
 
-Dave Airlie (2):
-      drm: fix irq naming for kms drivers.
-      drm/radeon: fix ring free alignment calculations
+Brian King (1):
+      powerpc: Check for valid hugepage size in hugetlb_get_unmapped_area
 
-Dave Jones (1):
-      [CPUFREQ] powernow-k8: check space_id of _PCT registers to be FFH
+CS=C3=89CSY L=C3=A1szl=C3=B3 (1):
+      USB: storage: unusual_devs.h: Nokia 3109c addition
+
+Catalin Marinas (1):
+      slob: do not pass the SLAB flags as GFP in kmem_cache_create()
+
+Dan Williams (3):
+      ioat: wait for self-test completion
+      dmaengine: protect 'id' from concurrent registrations
+      async_xor: dma_map destination DMA_BIDIRECTIONAL
+
+Dave Hansen (1):
+      powerpc: Fix bootmem reservation on uninitialized node
 
 Dave Liu (1):
-      sdhci-of: Fix the wrong accessor to HOSTVER register
+      powerpc/fsl-booke: Fix the miss interrupt restore
 
-Eric Anholt (1):
-      drm/i915: Remove a bad BUG_ON in the fence management code.
+David Brownell (1):
+      USB: gadget: fix rndis working at high speed
 
-Eric Dumazet (1):
-      r8169: fix crash when large packets are received
+David Daney (3):
+      MIPS: Use EI/DI for MIPS R2.
+      MIPS: Add missing calls to plat_unmap_dma_mem.
+      MIPS: IP32: Update defconfig
 
-Eric Lammerts (1):
-      fix oops when using console=ttymxcN with N > 0
+David S. Miller (2):
+      sungem: Make PCS PHY support partially work again.
+      sparc: We need to implement arch_ptrace_stop().
 
-FUJITA Tomonori (1):
-      bsg: setting rq->bio to NULL
+Dmitri Vorobiev (1):
+      MIPS: Kconfig: Fix the arch-specific header path
 
-Hugh Dickins (1):
-      integrity: fix IMA inode leak
+Dmitry Baryshkov (1):
+      STAGING: Move staging drivers back to staging-specific menu
 
-Ian Kent (1):
-      autofs4: remove hashed check in validate_wait()
+Doug Leith (1):
+      tcp: tcp_vegas cong avoid fix
 
-James Bottomley (1):
-      pata_legacy: wait for async probing
+Frederik Deweerdt (1):
+      ACPI toshiba: only register rfkill if bt is enabled
 
-Jan Kara (1):
-      jbd: fix race in buffer processing in commit code
+Greg Kroah-Hartman (2):
+      USB: fix problem with usbtmc driver not loading properly
+      xilinx_hwicap: remove improper wording in license statement
 
-Jaswinder Singh Rajput (2):
-      drm/i915: intel_lvds.c fix section mismatch
-      MIPS: ioctl.h: Fix headers_check warnings
+Guillaume Knispel (1):
+      powerpc: Fix corruption error in rh_alloc_fixed()
 
-Jonathan Cameron (1):
-      [ARM] pxa/imote2: fix UCAM sensor board ADC model number
+Haavard Skinnemoen (2):
+      ATSTK1006: Fix boot from NAND flash
+      avr32: favr-32 build fix
 
-Keith Packard (3):
-      drm: add newlines to text sysfs files
-      drm: set permissions on edid file to 0444
-      drm: Hook up DPMS property handling in drm_crtc.c. Add drm_helper_connector_dpms.
+Hans-Christian Egtvedt (1):
+      avr32: remove .note.gnu.build-id section when making vmlinux.bin
 
-Kevin Hilman (1):
-      mtd: davinci nand: update clock naming
+Harvey Harrison (2):
+      i2c-pmcmsp: Fix endianness misannotation
+      i2c-highlander: Trivial endian casting fixes
+
+Hermann Lauer (1):
+      sungem: improve ethtool output with internal pcs and serdes
+
+Ingo Brueckl (2):
+      unicode table for cp437
+      console ASCII glyph 1:1 mapping
+
+Jan Sembera (1):
+      ipv6: silence log messages for locally generated multicast
+
+Jarek Poplawski (1):
+      drivers/net: starfire: Fix napi ->poll() weight handling
+
+Jeff Kirsher (1):
+      e1000e: fix double release of mutex
+
+Jeff Layton (1):
+      cifs: fix buffer overrun in parse_DFS_referrals
+
+Jesper Dangaard Brouer (1):
+      SCHED: netem: Correct documentation comment in code.
+
+Joel Becker (1):
+      ocfs2: Add JBD2 compat feature bit.
+
+Johann Felix Soden (1):
+      driver core: fix using 'ret' variable in unregister_dynamic_debug_m=
+odule
+
+John McCutchan (1):
+      Maintainer email fixes for inotify
+
+Josh Boyer (1):
+      powerpc/40x: Add proper BOOTCFLAGS for cuboot-acadia
+
+Julia Lawall (1):
+      [ARM] arch/arm/common/sa1111.c: Correct error handling code
+
+KOSAKI Motohiro (1):
+      mm: Don't touch uninitialized variable in do_pages_stat_array()
+
+Krzysztof Halasa (1):
+      net: kernel BUG at drivers/net/phy/mdio_bus.c:165!
 
 Kumar Gala (1):
-      sdhci-of: Add fsl,esdhc as a valid compatible to bind against
+      powerpc/fsl-booke: Fix problem with _tlbil_va being interrupted
 
-Linus Torvalds (20):
-      Merge branch 'drm-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/airlied/drm-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/anholt/drm-intel
-      Revert "drm: don't associate _DRM_DRIVER maps with a master"
-      Merge branch 'fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/davej/cpufreq
-      Merge branch 'upstream-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/jgarzik/libata-dev
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable
-      Merge branch 'upstream-linus2' of git://git.kernel.org/pub/scm/linux/kernel/git/jgarzik/libata-dev
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/jbarnes/pci-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/drzeus/mmc
-      Merge master.kernel.org:/home/rmk/linux-2.6-arm
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/bart/ide-2.6
-      Merge branch 'kvm-updates/2.6.30' of git://git.kernel.org/pub/scm/virt/kvm/kvm
-      Merge branch 'upstream' of git://ftp.linux-mips.org/pub/scm/upstream-linus
-      async: Fix lack of boot-time console due to insufficient synchronization
-      Merge branch 'for-linus' of git://neil.brown.name/md
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
+Linus Torvalds (23):
+      Revert "radeonfb: accelerate imageblit and other improvements"
+      Merge branch 'upstream' of git://ftp.linux-mips.org/pub/scm/upstrea=
+m-linus
       Merge branch 'for-linus' of git://git.kernel.dk/linux-2.6-block
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/rusty/linux-2.6-for-linus
-      Linux 2.6.30
+      Merge branch 'i2c-for-linus' of git://jdelvare.pck.nerim.net/jdelva=
+re-2.6
+      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/jwboyer/powerpc-4xx
+      Revert "sched_clock: prevent scd->clock from moving backwards"
+      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/galak/powerpc
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
+      Merge master.kernel.org:/home/rmk/linux-2.6-arm
+      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/paulus/powerpc
+      Merge branch 'sh/for-2.6.28' of git://git.kernel.org/pub/scm/linux/=
+kernel/git/lethal/sh-2.6
+      Merge branch 'upstream-linus' of git://git.kernel.org/pub/scm/linux=
+/kernel/git/jgarzik/libata-dev
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/ieee1394/linux1394-2.6
+      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/galak/powerpc
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-c=
+ore-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb-2.6
+      Merge branch 'upstream-linus' of git://git.kernel.org/pub/scm/linux=
+/kernel/git/mfasheh/ocfs2
+      Merge branch 'i2c-fixes' of git://aeryn.fluff.org.uk/bjdooks/linux
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/sparc-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
+      Merge branch 'fixes' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/hskinnemoen/avr32-2.6
+      Merge branch 'fixes' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/djbw/async_tx
+      Linux 2.6.28-rc9
 
-Martin Fuzzey (3):
-      [ARM] 5534/1: kmalloc must return a cache line aligned buffer
-      mxcmmc : Reset the SDHC hardware if software timeout occurs.
-      mxcmmc: Fix missing return value checking in DMA setup code.
+Marcel Holtmann (1):
+      driver core: add newlines to debugging enabled/disabled messages
 
-Matthieu Castet (1):
-      SSB: BCM47xx: Export ssb_watchdog_timer_set
+Matt Fleming (1):
+      sh: maple: Do not pass SLAB_POISON to kmem_cache_create()
 
-Mike Frysinger (2):
-      kbuild: fix detection of CONFIG_FRAME_WARN=0
-      shm: fix unused warnings on nommu
+Matthew Arnold (1):
+      USB: add 5372:2303 to pl2303
 
-Minoru Usui (1):
-      cls_cgroup: Fix oops when user send improperly 'tc filter add' request
+Michael Chan (1):
+      bnx2: Fix bug in bnx2_free_rx_mem().
 
-NeilBrown (3):
-      md/raid5: use conf->raid_disks in preference to mddev->raid_disk
-      md/raid5 - avoid deadlocks in get_active_stripe during reshape
-      md/raid5: fix bug in reshape code when chunk_size decreases.
+Michael Halcrow (1):
+      eCryptfs: Update maintainers
 
-Nicolas Pitre (3):
-      mvsdio: allow automatic loading when modular
-      mvsdio: ignore high speed timing requests from the core
-      mvsdio: fix config failure with some high speed SDHC cards
+Mike Ditto (1):
+      i2c-cpm: Detect and report NAK right away instead of timing out
 
-Oleg Nesterov (2):
-      ptrace: tracehook_report_clone: fix false positives
-      ptrace: revert "ptrace_detach: the wrong wakeup breaks the ERESTARTxxx logic"
+Mike Frysinger (1):
+      pcmcia: blackfin: fix bug - add missing ; to MODULE macro
 
-Peter Botha (1):
-      char: mxser, fix ISA board lookup
+Mike Provencher (1):
+      USB: pl2303: add id for Hewlett-Packard LD220-HP POS pole display
 
-Philipp Zabel (1):
-      [ARM] pxa: fix pxa27x_udc default pullup GPIO
+Neil Horman (1):
+      netpoll: fix race on poll_list resulting in garbage entry
 
-Rabin Vincent (1):
-      mx[23]: don't put clock lookups in __initdata
+Nicolas Pitre (2):
+      [ARM] 5341/2: there is no copy_page on nommu ARM
+      [ARM] 5348/1: fix documentation wrt location of the alignment trap =
+interface
 
-Ralf Baechle (2):
-      MIPS: Sibyte: Honor CONFIG_CMDLINE
-      MIPS: Outline udelay and fix a few issues.
+Oliver Neukum (1):
+      USB: set correct configuration in probe of ti_usb_3410_5052
 
-Russell King (3):
-      [ARM] ARMv7 errata: only apply fixes when running on applicable CPU
-      Merge branch 'for-rmk' of git://git.pengutronix.de/git/imx/linux-2.6
-      Merge branch 'fix' of git://git.kernel.org/pub/scm/linux/kernel/git/ycmiao/pxa-linux-2.6
+Ozan Sener (1):
+      USB: Unusual devs patch for Nokia 3500c
+
+Pablo Neira Ayuso (1):
+      netfilter: ctnetlink: fix missing CTA_NAT_SEQ_UNSPEC
+
+Paul Menage (1):
+      cgroups: fix a race between rmdir and remount
+
+Paul Moore (1):
+      netlabel: Compiler warning and NULL pointer dereference fix
+
+Paul Mundt (1):
+      sh: Disable GENERIC_HARDIRQS_NO__DO_IRQ for unconverted platforms.
+
+Pete Zaitcev (1):
+      usbmon: drop bogus 0t from usbmon.txt
+
+Peter Korsgaard (1):
+      USB: Documentation/usb/gadget_serial.txt: update to match driver us=
+e_acm behaviour
+
+Phil Endecott (1):
+      USB: fix comment about endianness of descriptors
+
+Randy Dunlap (1):
+      [ARM] fix kernel-doc syntax
+
+Russell King (1):
+      [ARM] Ensure linux/hardirqs.h is included where required
 
 Rusty Russell (1):
-      lguest: fix 'unhandled trap 13' with CONFIG_CC_STACKPROTECTOR
+      Define smp_call_function_many for UP
 
-Salman Qazi (1):
-      drivers/char/mem.c: avoid OOM lockup during large reads from /dev/zero
+R=C3=A9mi Denis-Courmont (1):
+      Phonet: keep TX queue disabled when the device is off
 
-Sascha Hauer (1):
-      mxcmmc: decrease minimum frequency to make MMC cards work
+Sakari Ailus (2):
+      tlan: Fix small (< 64 bytes) datagram transmissions
+      tlan: Fix pci memory unmapping
 
-Sergei Shtylyov (3):
-      pata_efar: fix PIO2 underclocking
-      pdc202xx_old: fix 'pdc20246_dma_ops'
-      pdc202xx_old: fix resetproc() method
+Samuel Ortiz (1):
+      irda: Add irda_skb_cb qdisc related padding
 
-Tejun Heo (1):
-      ahci: add warning messages for hp laptops with broken suspend
+Stefan Richter (1):
+      ieee1394: add quirk fix for Freecom HDD
 
-Theodore Ts'o (1):
-      Fix nobh_truncate_page() to not pass stack garbage to get_block()
+Steven Rostedt (1):
+      netfilter: update rwlock initialization for nat_table
 
-Ville Syrjala (1):
-      ata_piix: Add HP Compaq nc6000 to the broken poweroff list
+Tao Ma (1):
+      ocfs2: Always update xattr search when creating bucket.
 
-Yan Zheng (1):
-      Btrfs: set device->total_disk_bytes when adding new device
+Tejun Heo (3):
+      libata: fix Seagate NCQ+FLUSH blacklist
+      pata_hpt366: fix cable detection,
+      pata_hpt366: no ATAPI DMA
 
-Yinghai Lu (3):
-      x86/pci: fix mmconfig detection with 32bit near 4g
-      cpumask: introduce zalloc_cpumask_var
-      cpumask: alloc zeroed cpumask for static cpumask_var_ts
+Zachary Amsden (1):
+      x86 Fix VMI crash on boot in 2.6.28-rc8
 
-Yoichi Yuasa (2):
-      MIPS: Kconfig: Remove "Support for" from Cavium system type
-      MIPS: Cobalt: PCI bus is always required to obtain the board ID
-
-Yu Zhao (1):
-      PCI: use fixed-up device class when configuring device
+cwm97m (1):
+      jme: Fixed a typo
 
 -----------------------------------------------------------------------
 
@@ -234,3 +322,15 @@ Yu Zhao (1):
 hooks/post-receive
 --
 linux-cr
+
+--===============8274370792989429840==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============8274370792989429840==--
