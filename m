@@ -1,11 +1,11 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/9] powerpc: reserve checkpoint arch identifiers
-Date: Wed, 16 Sep 2009 03:56:53 -0500
-Message-ID: <1253091418-14807-5-git-send-email-ntl@pobox.com>
+Subject: [PATCH 1/9] checkpoint: fix integer-pointer conversion warnings
+Date: Wed, 16 Sep 2009 03:56:50 -0500
+Message-ID: <1253091418-14807-2-git-send-email-ntl@pobox.com>
 References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1253091418-14807-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -21,23 +21,35 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- include/linux/checkpoint_hdr.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 06bc6e2..851cdf2 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -110,6 +110,8 @@ enum {
- 	/* do not change order (will break ABI) */
- 	CKPT_ARCH_X86_32 = 1,
- 	CKPT_ARCH_S390X,
-+	CKPT_ARCH_PPC32,
-+	CKPT_ARCH_PPC64,
- };
- 
- /* shared objrects (objref) */
--- 
-1.6.0.6
+ICBDQyAgICAgIGNoZWNrcG9pbnQvcHJvY2Vzcy5vCmNoZWNrcG9pbnQvcHJvY2Vzcy5jOiBJbiBm
+dW5jdGlvbiDigJhjaGVja3BvaW50X3Rhc2tfc3RydWN04oCZOgpjaGVja3BvaW50L3Byb2Nlc3Mu
+Yzo5Nzogd2FybmluZzogYXNzaWdubWVudCBtYWtlcyBpbnRlZ2VyIGZyb20gcG9pbnRlciB3aXRo
+b3V0IGEgY2FzdApjaGVja3BvaW50L3Byb2Nlc3MuYzo5ODogd2FybmluZzogYXNzaWdubWVudCBt
+YWtlcyBpbnRlZ2VyIGZyb20gcG9pbnRlciB3aXRob3V0IGEgY2FzdApjaGVja3BvaW50L3Byb2Nl
+c3MuYzogSW4gZnVuY3Rpb24g4oCYcmVzdG9yZV90YXNrX3N0cnVjdOKAmToKY2hlY2twb2ludC9w
+cm9jZXNzLmM6NDc1OiB3YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIHBvaW50ZXIgZnJvbSBpbnRl
+Z2VyIHdpdGhvdXQgYSBjYXN0CmNoZWNrcG9pbnQvcHJvY2Vzcy5jOjQ3Njogd2FybmluZzogYXNz
+aWdubWVudCBtYWtlcyBwb2ludGVyIGZyb20gaW50ZWdlciB3aXRob3V0IGEgY2FzdAoKU2lnbmVk
+LW9mZi1ieTogTmF0aGFuIEx5bmNoIDxudGxAcG9ib3guY29tPgotLS0KIGNoZWNrcG9pbnQvcHJv
+Y2Vzcy5jIHwgICAgOCArKysrLS0tLQogMSBmaWxlcyBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKyks
+IDQgZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvY2hlY2twb2ludC9wcm9jZXNzLmMgYi9jaGVj
+a3BvaW50L3Byb2Nlc3MuYwppbmRleCA0MTU2NmRiLi5iN2Y0YTQzIDEwMDY0NAotLS0gYS9jaGVj
+a3BvaW50L3Byb2Nlc3MuYworKysgYi9jaGVja3BvaW50L3Byb2Nlc3MuYwpAQCAtOTQsOCArOTQs
+OCBAQCBzdGF0aWMgaW50IGNoZWNrcG9pbnRfdGFza19zdHJ1Y3Qoc3RydWN0IGNrcHRfY3R4ICpj
+dHgsIHN0cnVjdCB0YXNrX3N0cnVjdCAqdCkKIAkJaC0+ZXhpdF9zaWduYWwgPSB0LT5leGl0X3Np
+Z25hbDsKIAkJaC0+cGRlYXRoX3NpZ25hbCA9IHQtPnBkZWF0aF9zaWduYWw7CiAKLQkJaC0+c2V0
+X2NoaWxkX3RpZCA9IHQtPnNldF9jaGlsZF90aWQ7Ci0JCWgtPmNsZWFyX2NoaWxkX3RpZCA9IHQt
+PmNsZWFyX2NoaWxkX3RpZDsKKwkJaC0+c2V0X2NoaWxkX3RpZCA9ICh1bnNpZ25lZCBsb25nKXQt
+PnNldF9jaGlsZF90aWQ7CisJCWgtPmNsZWFyX2NoaWxkX3RpZCA9ICh1bnNpZ25lZCBsb25nKXQt
+PmNsZWFyX2NoaWxkX3RpZDsKIAkJc2F2ZV90YXNrX3JvYnVzdF9mdXRleF9saXN0KGgsIHQpOwog
+CX0KIApAQCAtNDcyLDggKzQ3Miw4IEBAIHN0YXRpYyBpbnQgcmVzdG9yZV90YXNrX3N0cnVjdChz
+dHJ1Y3QgY2twdF9jdHggKmN0eCkKIAkJdC0+ZXhpdF9zaWduYWwgPSBoLT5leGl0X3NpZ25hbDsK
+IAkJdC0+cGRlYXRoX3NpZ25hbCA9IGgtPnBkZWF0aF9zaWduYWw7CiAKLQkJdC0+c2V0X2NoaWxk
+X3RpZCA9IGgtPnNldF9jaGlsZF90aWQ7Ci0JCXQtPmNsZWFyX2NoaWxkX3RpZCA9IGgtPmNsZWFy
+X2NoaWxkX3RpZDsKKwkJdC0+c2V0X2NoaWxkX3RpZCA9ICh2b2lkIF9fdXNlciAqKWgtPnNldF9j
+aGlsZF90aWQ7CisJCXQtPmNsZWFyX2NoaWxkX3RpZCA9ICh2b2lkIF9fdXNlciAqKWgtPmNsZWFy
+X2NoaWxkX3RpZDsKIAkJcmVzdG9yZV90YXNrX3JvYnVzdF9mdXRleF9saXN0KGgpOwogCX0KIAot
+LSAKMS42LjAuNgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
