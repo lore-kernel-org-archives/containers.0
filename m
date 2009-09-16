@@ -1,11 +1,14 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 0/4] user-cr: powerpc support etc
-Date: Wed, 16 Sep 2009 04:27:47 -0500
-Message-ID: <1253093271-16357-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH 2/4] restart: (build fix hack) define sa_family_t and struct
+	linger
+Date: Wed, 16 Sep 2009 04:27:49 -0500
+Message-ID: <1253093271-16357-3-git-send-email-ntl@pobox.com>
+References: <1253093271-16357-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1253093271-16357-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,21 +22,30 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Patch 1 is an obvious fix, I think.
-
-The rest is an assortment of hacks I've employed to get this building
-and working on powerpc.
-
-Nathan Lynch (4):
-  fix rename fallout
-  restart: (build fix hack) define sa_family_t and struct linger
-  mktree: initial powerpc support hacks
-  makefile hack for powerpc
-
- Makefile      |    5 +++-
- clone_ppc32.S |   79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- powerpc_asm.h |   46 +++++++++++++++++++++++++++++++++
- restart.c     |   31 ++++++++++++++++++++++
- 4 files changed, 160 insertions(+), 1 deletions(-)
- create mode 100644 clone_ppc32.S
- create mode 100644 powerpc_asm.h
+cmVzdGFydC5jIGRvZXNuJ3QgYnVpbGQgYWdhaW5zdCBleHBvcnRlZCBrZXJuZWwgaGVhZGVyczoK
+CiQgbWFrZSBDUFBGTEFHUz0tSSRQV0QvLi4vbGludXgtMi42LmdpdC91c3IvaW5jbHVkZQpjYyAt
+ZyAtV2FsbCAtV3N0cmljdC1wcm90b3R5cGVzIC1Xbm8tdHJpZ3JhcGhzIC1JLi4vbGludXgvaW5j
+bHVkZSAtSS4uL2xpbnV4L2FyY2gvL2luY2x1ZGUgLURDSEVDS1BPSU5UX0RFQlVHIC1EX19SRUVO
+VFJBTlQgLXB0aHJlYWQgLUkvaG9tZS9uYXRoYW5sL2RldmVsL3VzZXItY3IuZ2l0Ly4uL2xpbnV4
+LTIuNi5naXQvdXNyL2luY2x1ZGUgcmVzdGFydC5jIGNsb25lX3BwYzMyLm8gLW8gcmVzdGFydApJ
+biBmaWxlIGluY2x1ZGVkIGZyb20gL2hvbWUvbmF0aGFubC9kZXZlbC91c2VyLWNyLmdpdC8uLi9s
+aW51eC0yLjYuZ2l0L3Vzci9pbmNsdWRlL2xpbnV4L2NoZWNrcG9pbnRfaGRyLmg6MTYsCiAgICAg
+ICAgICAgICAgICAgZnJvbSByZXN0YXJ0LmM6NDI6Ci9ob21lL25hdGhhbmwvZGV2ZWwvdXNlci1j
+ci5naXQvLi4vbGludXgtMi42LmdpdC91c3IvaW5jbHVkZS9saW51eC91bi5oOjc6IGVycm9yOiBl
+eHBlY3RlZCBzcGVjaWZpZXItcXVhbGlmaWVyLWxpc3QgYmVmb3JlIOKAmHNhX2ZhbWlseV904oCZ
+CkluIGZpbGUgaW5jbHVkZWQgZnJvbSByZXN0YXJ0LmM6NDI6Ci9ob21lL25hdGhhbmwvZGV2ZWwv
+dXNlci1jci5naXQvLi4vbGludXgtMi42LmdpdC91c3IvaW5jbHVkZS9saW51eC9jaGVja3BvaW50
+X2hkci5oOjQwNzogZXJyb3I6IGZpZWxkIOKAmGxpbmdlcuKAmSBoYXMgaW5jb21wbGV0ZSB0eXBl
+Cm1ha2U6ICoqKiBbcmVzdGFydF0gRXJyb3IgMQoKSSBhbSBub3Qgc3VyZSB3aGF0IHRoZSByaWdo
+dCBmaXggaXMuICBUaGlzIGlzIG5vdCBpdC4KLS0tCiByZXN0YXJ0LmMgfCAgICA3ICsrKysrKysK
+IDEgZmlsZXMgY2hhbmdlZCwgNyBpbnNlcnRpb25zKCspLCAwIGRlbGV0aW9ucygtKQoKZGlmZiAt
+LWdpdCBhL3Jlc3RhcnQuYyBiL3Jlc3RhcnQuYwppbmRleCAyZDhkNzk2Li5iOTNhMmUxIDEwMDY0
+NAotLS0gYS9yZXN0YXJ0LmMKKysrIGIvcmVzdGFydC5jCkBAIC0xMCw2ICsxMCwxMyBAQAogCiAj
+ZGVmaW5lIF9HTlVfU09VUkNFCiAKKy8qIEhhY2tzIGFob3kgKi8KK3R5cGVkZWYgdW5zaWduZWQg
+c2hvcnQJc2FfZmFtaWx5X3Q7CitzdHJ1Y3QgbGluZ2VyIHsKKwlpbnQJCWxfb25vZmY7CS8qIExp
+bmdlciBhY3RpdmUJCSovCisJaW50CQlsX2xpbmdlcjsJLyogSG93IGxvbmcgdG8gbGluZ2VyIGZv
+cgkqLworfTsKKwogI2luY2x1ZGUgPHN0ZGlvLmg+CiAjaW5jbHVkZSA8c3RkbGliLmg+CiAjaW5j
+bHVkZSA8c3RyaW5nLmg+Ci0tIAoxLjYuMC42CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5v
+cmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
