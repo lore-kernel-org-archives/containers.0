@@ -1,15 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/9] checkpoint: fix integer-pointer conversion warnings
-Date: Wed, 16 Sep 2009 11:08:30 -0400
-Message-ID: <4AB0FF6E.6010505@librato.com>
+Subject: Re: [PATCH 0/9] powerpc checkpoint/restart kernel support
+Date: Wed, 16 Sep 2009 11:11:04 -0400
+Message-ID: <4AB10008.8040401@librato.com>
 References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
-	<1253091418-14807-2-git-send-email-ntl@pobox.com>
-	<20090916142137.GA13476@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090916142137.GA13476-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1253091418-14807-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,38 +17,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CgpTZXJnZSBFLiBIYWxseW4gd3JvdGU6Cj4gUXVvdGluZyBOYXRoYW4gTHluY2ggKG50bEBwb2Jv
-eC5jb20pOgo+PiAgIENDICAgICAgY2hlY2twb2ludC9wcm9jZXNzLm8KPj4gY2hlY2twb2ludC9w
-cm9jZXNzLmM6IEluIGZ1bmN0aW9uIOKAmGNoZWNrcG9pbnRfdGFza19zdHJ1Y3TigJk6Cj4+IGNo
-ZWNrcG9pbnQvcHJvY2Vzcy5jOjk3OiB3YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIGludGVnZXIg
-ZnJvbSBwb2ludGVyIHdpdGhvdXQgYSBjYXN0Cj4+IGNoZWNrcG9pbnQvcHJvY2Vzcy5jOjk4OiB3
-YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIGludGVnZXIgZnJvbSBwb2ludGVyIHdpdGhvdXQgYSBj
-YXN0Cj4+IGNoZWNrcG9pbnQvcHJvY2Vzcy5jOiBJbiBmdW5jdGlvbiDigJhyZXN0b3JlX3Rhc2tf
-c3RydWN04oCZOgo+PiBjaGVja3BvaW50L3Byb2Nlc3MuYzo0NzU6IHdhcm5pbmc6IGFzc2lnbm1l
-bnQgbWFrZXMgcG9pbnRlciBmcm9tIGludGVnZXIgd2l0aG91dCBhIGNhc3QKPj4gY2hlY2twb2lu
-dC9wcm9jZXNzLmM6NDc2OiB3YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIHBvaW50ZXIgZnJvbSBp
-bnRlZ2VyIHdpdGhvdXQgYSBjYXN0Cj4+Cj4+IFNpZ25lZC1vZmYtYnk6IE5hdGhhbiBMeW5jaCA8
-bnRsQHBvYm94LmNvbT4KPj4gLS0tCj4+ICBjaGVja3BvaW50L3Byb2Nlc3MuYyB8ICAgIDggKysr
-Ky0tLS0KPj4gIDEgZmlsZXMgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspLCA0IGRlbGV0aW9ucygt
-KQo+Pgo+PiBkaWZmIC0tZ2l0IGEvY2hlY2twb2ludC9wcm9jZXNzLmMgYi9jaGVja3BvaW50L3By
-b2Nlc3MuYwo+PiBpbmRleCA0MTU2NmRiLi5iN2Y0YTQzIDEwMDY0NAo+PiAtLS0gYS9jaGVja3Bv
-aW50L3Byb2Nlc3MuYwo+PiArKysgYi9jaGVja3BvaW50L3Byb2Nlc3MuYwo+PiBAQCAtOTQsOCAr
-OTQsOCBAQCBzdGF0aWMgaW50IGNoZWNrcG9pbnRfdGFza19zdHJ1Y3Qoc3RydWN0IGNrcHRfY3R4
-ICpjdHgsIHN0cnVjdCB0YXNrX3N0cnVjdCAqdCkKPj4gIAkJaC0+ZXhpdF9zaWduYWwgPSB0LT5l
-eGl0X3NpZ25hbDsKPj4gIAkJaC0+cGRlYXRoX3NpZ25hbCA9IHQtPnBkZWF0aF9zaWduYWw7Cj4+
-ICAKPj4gLQkJaC0+c2V0X2NoaWxkX3RpZCA9IHQtPnNldF9jaGlsZF90aWQ7Cj4+IC0JCWgtPmNs
-ZWFyX2NoaWxkX3RpZCA9IHQtPmNsZWFyX2NoaWxkX3RpZDsKPj4gKwkJaC0+c2V0X2NoaWxkX3Rp
-ZCA9ICh1bnNpZ25lZCBsb25nKXQtPnNldF9jaGlsZF90aWQ7Cj4+ICsJCWgtPmNsZWFyX2NoaWxk
-X3RpZCA9ICh1bnNpZ25lZCBsb25nKXQtPmNsZWFyX2NoaWxkX3RpZDsKPiAKPiBCdXQgaXQncyBk
-ZWZpbmVkIGFzIF9fdTY0IGluIGNoZWNrcG9pbnRfaGRyLmguICBTbyBvbiAzMi1iaXQgdGhpcyBj
-YXN0Cj4gd29uJ3QgYmUgcmlnaHQsIHJpZ2h0PwoKU2hvdWxkIGJlIGhhcm1sZXNzLgoKPiAKPiBC
-dXQgYSBtYWpvciBhY2sgdG8gc2h1dHRpbmcgdGhpcyB0aGluZyB1cC4KCkRlZmluaXRlbHkuIElu
-IGZhY3QsIGl0J3MgYWRkcmVzc2VkIGFscmVhZHkgaW4gdGhlIFBHSUQgcGF0Y2ggOikKCk9yZW4u
-CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
-ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
-dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+Thanks Nathan,
+
+I'll apply the general fixes right away.
+
+I'm about to push ckpt-v18-rc1 today. Would you like that to include
+the remaining patches as well ?
+
+Oren.
+
+
+Nathan Lynch wrote:
+> Patches 1-3 fix general issues and can be applied immediately.
+> 
+> Patches 4-8 implement the checkpoint and restart syscalls and
+> architecture callbacks.
+> 
+> Patch 9 implements the clone_with_pids syscall, but I think the shape
+> of that interface is yet to be finalized, so I guess it's FYI for now.
+> 
+> Simple single task checkpoint and restart work, as does
+> clone_with_pids, apparently.  Multiple task restart fails; the
+> coordinator task appears to be receiving a signal during
+> wait_all_tasks_finish() -> wait_for_completion_interruptible() for
+> some reason I am still trying to tracking down.
+> 
+> Nathan Lynch (9):
+>   checkpoint: fix integer-pointer conversion warnings
+>   fix trivial build breaks in compat code
+>   futex.h: fix compat builds
+>   powerpc: reserve checkpoint arch identifiers
+>   powerpc: provide APIs for validating and updating DABR
+>   powerpc: checkpoint/restart implementation
+>   powerpc: wire up checkpoint and restart syscalls
+>   powerpc: enable checkpoint support in Kconfig
+>   powerpc: clone_with_pids implementation
+> 
+>  arch/powerpc/Kconfig                      |    3 +
+>  arch/powerpc/include/asm/Kbuild           |    1 +
+>  arch/powerpc/include/asm/checkpoint_hdr.h |   22 ++
+>  arch/powerpc/include/asm/ptrace.h         |    7 +
+>  arch/powerpc/include/asm/syscalls.h       |    4 +
+>  arch/powerpc/include/asm/systbl.h         |    3 +
+>  arch/powerpc/include/asm/unistd.h         |    5 +-
+>  arch/powerpc/kernel/entry_32.S            |    8 +
+>  arch/powerpc/kernel/entry_64.S            |    5 +
+>  arch/powerpc/kernel/process.c             |   18 +
+>  arch/powerpc/kernel/ptrace.c              |   88 ++++--
+>  arch/powerpc/mm/Makefile                  |    1 +
+>  arch/powerpc/mm/checkpoint.c              |  531 +++++++++++++++++++++++++++++
+>  checkpoint/process.c                      |   14 +-
+>  include/linux/checkpoint_hdr.h            |    2 +
+>  include/linux/futex.h                     |    4 +
+>  16 files changed, 679 insertions(+), 37 deletions(-)
+>  create mode 100644 arch/powerpc/include/asm/checkpoint_hdr.h
+>  create mode 100644 arch/powerpc/mm/checkpoint.c
+> 
