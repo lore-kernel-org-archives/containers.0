@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 3/9] futex.h: fix compat builds
-Date: Wed, 16 Sep 2009 11:36:16 -0400
-Message-ID: <4AB105F0.4040105@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/9] checkpoint: fix integer-pointer conversion warnings
+Date: Wed, 16 Sep 2009 12:03:17 -0500
+Message-ID: <20090916170317.GA7549@us.ibm.com>
 References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
-	<1253091418-14807-4-git-send-email-ntl@pobox.com>
+	<1253091418-14807-2-git-send-email-ntl@pobox.com>
+	<20090916142137.GA13476@us.ibm.com> <4AB0FF6E.6010505@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253091418-14807-4-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AB0FF6E.6010505-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +20,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Nathan Lynch wrote:
-> With any build where CONFIG_COMPAT=y:
-> 
-> checkpoint/process.c: In function 'save_task_robust_futex_list':
-> checkpoint/process.c:37: error: implicit declaration of function 'ptr_to_compat'
-> checkpoint/process.c:38: error: dereferencing pointer to incomplete type
-> checkpoint/process.c: In function 'restore_task_robust_futex_list':
-> checkpoint/process.c:54: error: implicit declaration of function 'compat_ptr'
-> checkpoint/process.c:54: warning: assignment makes pointer from integer without a cast
-> checkpoint/process.c:55: error: implicit declaration of function 'do_compat_set_robust_list'
-> 
-> ptr_to_compat et al need compat.h; however, futex.h is exported while
-> compat.h is not.  So the include is guarded by #ifdef __KERNEL__.
-> 
-> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-
-Including futex.h does not require compat.h. Rather, it's the code
-in checkpoint/process.c that uses ptr_to_compat() et al. Is there a
-reason not to include compat.h from checkpoint/process.c instead ?
-
-Oren.
+UXVvdGluZyBPcmVuIExhYWRhbiAob3JlbmxAbGlicmF0by5jb20pOgo+IAo+IAo+IFNlcmdlIEUu
+IEhhbGx5biB3cm90ZToKPiA+IFF1b3RpbmcgTmF0aGFuIEx5bmNoIChudGxAcG9ib3guY29tKToK
+PiA+PiAgIENDICAgICAgY2hlY2twb2ludC9wcm9jZXNzLm8KPiA+PiBjaGVja3BvaW50L3Byb2Nl
+c3MuYzogSW4gZnVuY3Rpb24g4oCYY2hlY2twb2ludF90YXNrX3N0cnVjdOKAmToKPiA+PiBjaGVj
+a3BvaW50L3Byb2Nlc3MuYzo5Nzogd2FybmluZzogYXNzaWdubWVudCBtYWtlcyBpbnRlZ2VyIGZy
+b20gcG9pbnRlciB3aXRob3V0IGEgY2FzdAo+ID4+IGNoZWNrcG9pbnQvcHJvY2Vzcy5jOjk4OiB3
+YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIGludGVnZXIgZnJvbSBwb2ludGVyIHdpdGhvdXQgYSBj
+YXN0Cj4gPj4gY2hlY2twb2ludC9wcm9jZXNzLmM6IEluIGZ1bmN0aW9uIOKAmHJlc3RvcmVfdGFz
+a19zdHJ1Y3TigJk6Cj4gPj4gY2hlY2twb2ludC9wcm9jZXNzLmM6NDc1OiB3YXJuaW5nOiBhc3Np
+Z25tZW50IG1ha2VzIHBvaW50ZXIgZnJvbSBpbnRlZ2VyIHdpdGhvdXQgYSBjYXN0Cj4gPj4gY2hl
+Y2twb2ludC9wcm9jZXNzLmM6NDc2OiB3YXJuaW5nOiBhc3NpZ25tZW50IG1ha2VzIHBvaW50ZXIg
+ZnJvbSBpbnRlZ2VyIHdpdGhvdXQgYSBjYXN0Cj4gPj4KPiA+PiBTaWduZWQtb2ZmLWJ5OiBOYXRo
+YW4gTHluY2ggPG50bEBwb2JveC5jb20+Cj4gPj4gLS0tCj4gPj4gIGNoZWNrcG9pbnQvcHJvY2Vz
+cy5jIHwgICAgOCArKysrLS0tLQo+ID4+ICAxIGZpbGVzIGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygr
+KSwgNCBkZWxldGlvbnMoLSkKPiA+Pgo+ID4+IGRpZmYgLS1naXQgYS9jaGVja3BvaW50L3Byb2Nl
+c3MuYyBiL2NoZWNrcG9pbnQvcHJvY2Vzcy5jCj4gPj4gaW5kZXggNDE1NjZkYi4uYjdmNGE0MyAx
+MDA2NDQKPiA+PiAtLS0gYS9jaGVja3BvaW50L3Byb2Nlc3MuYwo+ID4+ICsrKyBiL2NoZWNrcG9p
+bnQvcHJvY2Vzcy5jCj4gPj4gQEAgLTk0LDggKzk0LDggQEAgc3RhdGljIGludCBjaGVja3BvaW50
+X3Rhc2tfc3RydWN0KHN0cnVjdCBja3B0X2N0eCAqY3R4LCBzdHJ1Y3QgdGFza19zdHJ1Y3QgKnQp
+Cj4gPj4gIAkJaC0+ZXhpdF9zaWduYWwgPSB0LT5leGl0X3NpZ25hbDsKPiA+PiAgCQloLT5wZGVh
+dGhfc2lnbmFsID0gdC0+cGRlYXRoX3NpZ25hbDsKPiA+PiAgCj4gPj4gLQkJaC0+c2V0X2NoaWxk
+X3RpZCA9IHQtPnNldF9jaGlsZF90aWQ7Cj4gPj4gLQkJaC0+Y2xlYXJfY2hpbGRfdGlkID0gdC0+
+Y2xlYXJfY2hpbGRfdGlkOwo+ID4+ICsJCWgtPnNldF9jaGlsZF90aWQgPSAodW5zaWduZWQgbG9u
+Zyl0LT5zZXRfY2hpbGRfdGlkOwo+ID4+ICsJCWgtPmNsZWFyX2NoaWxkX3RpZCA9ICh1bnNpZ25l
+ZCBsb25nKXQtPmNsZWFyX2NoaWxkX3RpZDsKPiA+IAo+ID4gQnV0IGl0J3MgZGVmaW5lZCBhcyBf
+X3U2NCBpbiBjaGVja3BvaW50X2hkci5oLiAgU28gb24gMzItYml0IHRoaXMgY2FzdAo+ID4gd29u
+J3QgYmUgcmlnaHQsIHJpZ2h0Pwo+IAo+IFNob3VsZCBiZSBoYXJtbGVzcy4KPiAKPiA+IAo+ID4g
+QnV0IGEgbWFqb3IgYWNrIHRvIHNodXR0aW5nIHRoaXMgdGhpbmcgdXAuCj4gCj4gRGVmaW5pdGVs
+eS4gSW4gZmFjdCwgaXQncyBhZGRyZXNzZWQgYWxyZWFkeSBpbiB0aGUgUEdJRCBwYXRjaCA6KQoK
+UmlnaHQsIEkgdGhvdWdodCBpdCBsb29rZWQgZmFtaWxpYXIgOikKX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
+dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZv
+dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
