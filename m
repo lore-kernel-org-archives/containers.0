@@ -1,8 +1,8 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] io-controller: Fix task hanging when there are more	than
 	one groups
-Date: Wed, 16 Sep 2009 08:05:41 +0800
-Message-ID: <4AB02BD5.4050107__23866.7110832923$1253059821$gmane$org@cn.fujitsu.com>
+Date: Wed, 16 Sep 2009 10:58:10 +0800
+Message-ID: <4AB05442.6080004__19653.6358599134$1253070156$gmane$org@cn.fujitsu.com>
 References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
 	<4AA4B905.8010801@cn.fujitsu.com>
 	<20090908191941.GF15974@redhat.com>
@@ -168,9 +168,47 @@ Vivek Goyal wrote:
 >  
 > o Moved some of the code in separate functions to improve readability.
 > 
-> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+...
 
-  I'd like to have a try this patch :)
+>  /* A request got completed from io_queue. Do the accounting. */
+>  void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+>  {
+> @@ -3470,16 +3572,16 @@ void elv_ioq_completed_request(struct re
+>  			elv_set_prio_slice(q->elevator->efqd, ioq);
+>  			elv_clear_ioq_slice_new(ioq);
+>  		}
+> +
+>  		/*
+>  		 * If there is only root group present, don't expire the queue
+>  		 * for single queue ioschedulers (noop, deadline, AS). It is
+>  		 * unnecessary overhead.
+>  		 */
+>  
+> -		if (is_only_root_group() &&
+> -			elv_iosched_single_ioq(q->elevator)) {
+> -			elv_log_ioq(efqd, ioq, "select: only root group,"
+> -					" no expiry");
+> +		if (single_ioq_no_timed_expiry(q)) {
+
+  Hi Vivek,
+
+  So we make use of single_ioq_no_timed_expiry() to decide whether there is only
+  root ioq to be busy, right? But single_ioq_no_timed_expiry() only checks if
+  the root cgroup is the only group and if there is only one busy_ioq there. As
+  I explained in previous mail, these two checks are not sufficient to say the
+  current active ioq comes from root group. Because when the child cgroup is just
+  removed, and the ioq which belongs to child group is still there(maybe some
+  requests are in flight). In this case, only root cgroup and only one active ioq
+  (child ioq) checks are satisfied. So IMHO, in single_ioq_no_timed_expiry() we 
+  still need to check "efqd->root_group->ioq" is already created to ensure the only
+  ioq comes from root group. Am i missing something?
+
+
+> +			elv_mark_ioq_charge_one_slice(ioq);
+> +			elv_log_ioq(efqd, ioq, "single ioq no timed expiry");
+>  			goto done;
+>  		}
+>  
 
 -- 
 Regards
