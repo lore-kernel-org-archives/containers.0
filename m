@@ -1,7 +1,7 @@
 From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr annotated tag, v2.6.31, created. v2.6.31
-Date: Wed, 16 Sep 2009 14:36:53 -0400
-Message-ID: <200909161836.n8GIareK001554@gorgona.ncl.cs.columbia.edu>
+Subject: [cr][git]linux-cr annotated tag, v2.6.28-rc2, created. v2.6.28-rc2
+Date: Wed, 16 Sep 2009 14:36:30 -0400
+Message-ID: <200909161836.n8GIaUXO001001@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,56 +22,66 @@ This is an automated email from the git hooks/post-receive script. It was
 generated because a ref change was pushed to the repository containing
 the project "linux-cr".
 
-The annotated tag, v2.6.31 has been created
-        at  a271b16ba5478acead8773ebe01ee9b6365154d8 (tag)
-   tagging  74fca6a42863ffacaf7ba6f1936a9f228950f657 (commit)
-  replaces  v2.6.31-rc9
+The annotated tag, v2.6.28-rc2 has been created
+        at  5eb14db1f80df4eb0ecb0976e47e8e287e3175fc (tag)
+   tagging  0173a3265b228da319ceb9c1ec6a5682fd1b2d92 (commit)
+  replaces  v2.6.28-rc1
  tagged by  Linus Torvalds
-        on  Wed Sep 9 15:14:07 2009 -0700
+        on  Sun Oct 26 12:13:52 2008 -0700
 
 - Log -----------------------------------------------------------------
-Linux 2.6.31
+Linux 2.6.28-rc2
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEABECAAYFAkqoKLMACgkQF3YsRnbiHLt7ngCgtDzrRqdkYVkmf0hZ6Z6m1uHC
-wmsAnjDZScoBrx2UYekMj/u6R1lZfxt7
-=5sSF
+iEYEABECAAYFAkkEwXQACgkQF3YsRnbiHLuoiwCfcX0FvXg+rB1vevdwUJdUcb6Z
+GsUAoLhiSmjItWKjmTgnLsHLgPJp/L7c
+=Z+zW
 -----END PGP SIGNATURE-----
 
-Chris Wilson (1):
-      drm/i915: Unref old_obj on get_fence_reg() error path
+Al Viro (2):
+      fix allmodconfig breakage
+      arm ide breakage
 
-Dave Airlie (1):
-      drm/radeon/kms: add LTE/GTE discard + rv515 two sided stencil register.
+Alistair John Strachan (2):
+      hwmon: (abituguru3) Cosmetic whitespace fixes
+      hwmon: (abituguru3) enable DMI probing feature on AW9D-MAX
 
-David S. Miller (1):
-      gianfar: Fix build.
+Arjan van de Ven (2):
+      wireless: fix regression caused by regulatory config option
+      select: deal with math overflow from borderline valid userland data
 
-Ed Cashin (1):
-      aoe: allocate unused request_queue for sysfs
+Davide Libenzi (1):
+      epoll: avoid double-inserts in case of EFAULT
 
-Jesse Barnes (1):
-      drm/i915: increase default latency constant (v2 w/comment)
+Francois Romieu (1):
+      r8169: revert "read MAC address from EEPROM on init"
 
-Linus Torvalds (7):
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/anholt/drm-intel
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/ide-2.6
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/jmorris/security-testing-2.6
-      Merge branch 'drm-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/airlied/drm-2.6
-      i915: disable interrupts before tearing down GEM state
-      Linux 2.6.31
+Geert Uytterhoeven (2):
+      hwmon: (w83781d) Fix linking when built-in
+      m68k: Disable Amiga serial console support if modular
 
-Mimi Zohar (1):
-      IMA: update ima_counts_put
+Jean Delvare (4):
+      hwmon-vid: Add support for AMD family 10h CPUs
+      hwmon: (lm90) Fix handling of hysteresis value
+      hwmon: (lm90) Add support for the LM99 16 degree offset
+      hwmon: (adt7473) Fix voltage conversion routines
 
-Wolfram Sang (1):
-      pcmcia: add CNF-CDROM-ID for ide
+Jens Axboe (1):
+      libata: fix bug with non-ncq devices
 
-Zhenyu Wang (2):
-      agp/intel: support for new chip variant of IGDNG mobile
-      drm/i915: fix mask bits setting
+Linus Torvalds (4):
+      Revert "Call init_workqueues before pre smp initcalls."
+      Merge branch 'for_linus' of git://git.kernel.org/pub/scm/linux/kernel/git/tytso/ext4
+      Merge branch 'hwmon-for-linus' of git://jdelvare.pck.nerim.net/jdelvare-2.6
+      Linux 2.6.28-rc2
+
+Stephen Rothwell (1):
+      cgroup: remove unused variable
+
+Theodore Ts'o (2):
+      ext3: Fix duplicate entries returned from getdents() system call
+      ext4: Fix duplicate entries returned from getdents() system call
 
 -----------------------------------------------------------------------
 
