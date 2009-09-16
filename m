@@ -1,13 +1,11 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/4] fix rename fallout
-Date: Wed, 16 Sep 2009 04:27:48 -0500
-Message-ID: <1253093271-16357-2-git-send-email-ntl@pobox.com>
-References: <1253093271-16357-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH 0/4] user-cr: powerpc support etc
+Date: Wed, 16 Sep 2009 04:27:47 -0500
+Message-ID: <1253093271-16357-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253093271-16357-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,25 +19,21 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-mktree was renamed to restart; update Makefile accordingly.
+Patch 1 is an obvious fix, I think.
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- Makefile |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+The rest is an assortment of hacks I've employed to get this building
+and working on powerpc.
 
-diff --git a/Makefile b/Makefile
-index 497648e..8cd0c2d 100644
---- a/Makefile
-+++ b/Makefile
-@@ -44,7 +44,7 @@ all: $(PROGS)
- 
- ckptinfo: ckptinfo_types.o
- 
--mktree:	CFLAGS += -D__REENTRANT -pthread
-+restart: CFLAGS += -D__REENTRANT -pthread
- 
- ckptinfo_types.o: ckptinfo_types.c
- 	@echo $(CC) -c $(CFLAGS) $<
--- 
-1.6.0.6
+Nathan Lynch (4):
+  fix rename fallout
+  restart: (build fix hack) define sa_family_t and struct linger
+  mktree: initial powerpc support hacks
+  makefile hack for powerpc
+
+ Makefile      |    5 +++-
+ clone_ppc32.S |   79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ powerpc_asm.h |   46 +++++++++++++++++++++++++++++++++
+ restart.c     |   31 ++++++++++++++++++++++
+ 4 files changed, 160 insertions(+), 1 deletions(-)
+ create mode 100644 clone_ppc32.S
+ create mode 100644 powerpc_asm.h
