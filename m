@@ -1,9 +1,9 @@
 From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr annotated tag, v2.6.29-rc3, created. v2.6.29-rc3
-Date: Wed, 16 Sep 2009 14:36:41 -0400
-Message-ID: <200909161836.n8GIafjM001238@gorgona.ncl.cs.columbia.edu>
+Subject: [cr][git]linux-cr annotated tag, v2.6.30-rc2, created. v2.6.30-rc2
+Date: Wed, 16 Sep 2009 14:36:48 -0400
+Message-ID: <200909161836.n8GIamBp001401@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4860915860638861329=="
+Content-Type: multipart/mixed; boundary="===============2451863627610355280=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,948 +17,948 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============4860915860638861329==
+--===============2451863627610355280==
 Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n8GJEuhB007689
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n8GJI03f007935
 
 This is an automated email from the git hooks/post-receive script. It was
 generated because a ref change was pushed to the repository containing
 the project "linux-cr".
 
-The annotated tag, v2.6.29-rc3 has been created
-        at  8be00154b8e949bf4b89ac198aef9a247532ac2d (tag)
-   tagging  18e352e4a73465349711a9324767e1b2453383e2 (commit)
-  replaces  v2.6.29-rc2
+The annotated tag, v2.6.30-rc2 has been created
+        at  7c941a7798a5169ee0dd69a9e8d5c40ceb702023 (tag)
+   tagging  0882e8dd3aad33eca41696d463bb896e6c8817eb (commit)
+  replaces  v2.6.30-rc1
  tagged by  Linus Torvalds
-        on  Wed Jan 28 10:49:44 2009 -0800
+        on  Tue Apr 14 13:51:57 2009 -0700
 
 - Log -----------------------------------------------------------------
-Linux 2.6.29-rc3
+Linux 2.6.30-rc2
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEABECAAYFAkmAqM4ACgkQF3YsRnbiHLutVACfclMRtySlATknuEVawQxkbSCJ
-hoQAn2oJ45MU6RIFbeJJrYxtcmOSBJTD
-=3DOmy+
+iEYEABECAAYFAknk93IACgkQF3YsRnbiHLsSswCfQBrEK/y19fyOzKkWfg1iIuAo
+TDcAn3SOvXSDAcWbFSGzzFgRw7wbf+rn
+=3DetoF
 -----END PGP SIGNATURE-----
 
-Abbas, Mohamed (1):
-      iwlwifi: fix rs_get_rate WARN_ON()
-
-Adrian Bunk (3):
-      m68knommu: set NO_DMA
-      m68knommu: remove obsolete and unused eLIA board
-      m68knommu: remove the no longer used PCI support option
-
 Adrian McMenamin (1):
-      dma-coherent: per-device coherent area is in pages, not bytes.
+      Input: add support for the Maple mouse on the SEGA Dreamcast
 
-Ajay Kumar Gupta (1):
-      USB: musb free_irq bugfix
+Alan Cox (5):
+      x86: DMI match for the Dell DXP061 as it needs BIOS reboot
+      tty: MAX3100
+      cdc-acm: Fix long standing abuse of tty->low_latency
+      tty: Fix leak in ti-usb
+      parport: Fix various uses of parport_pc
 
-Alan Cox (1):
-      USB: cdc-acm: Add another conexant modem to the quirks
+Alasdair G Kergon (3):
+      dm: rearrange dm_wq_work
+      dm: split DMF_BLOCK_IO flag into two
+      dm: simplify dm_request loop
 
-Alan Stern (3):
-      USB: fix toggle mismatch in disable_endpoint paths
-      USB: don't enable wakeup by default for PCI host controllers
-      USB: fix char-device disconnect handling
+Alex Nixon (1):
+      Xen: Add virt_to_pfn helper function
 
-Alex Williamson (1):
-      virtio_net: Fix MAX_PACKET_LEN to support 802.1Q VLANs
+Alex Riesen (1):
+      netfilter: fix selection of "LED" target in netfilter
 
-Alex.Cheng-nXwZKfITCkNWk0Htik3J/w@public.gmane.org (1):
-      USB: option: add QUANTA HSDPA Data Card device ids
+Alexander Beregalov (1):
+      befs: fix build on parisc
 
-Alexey Dobriyan (37):
-      fs/Kconfig: move reiserfs out
-      fs/Kconfig: move jfs out
-      fs/Kconfig: move ocfs2 out
-      fs/Kconfig: move btrfs out
-      fs/Kconfig: move autofs, autofs4 out
-      fs/Kconfig: move fuse out
-      fs/Kconfig: move iso9660, udf out
-      fs/Kconfig: move fat out
-      fs/Kconfig: move ntfs out
-      fs/Kconfig: move sysfs out
-      fs/Kconfig: move configfs out
-      fs/Kconfig: move adfs out
-      fs/Kconfig: move affs out
-      fs/Kconfig: move ecryptfs out
-      fs/Kconfig: move hfs, hfsplus out
-      fs/Kconfig: move befs out
-      fs/Kconfig: move bfs out
-      fs/Kconfig: move efs out
-      fs/Kconfig: move cramfs out
-      fs/Kconfig: move squashfs out
-      fs/Kconfig: move vxfs out
-      fs/Kconfig: move minix out
-      fs/Kconfig: move omfs out
-      fs/Kconfig: move hpfs out
-      fs/Kconfig: move qnx4 out
-      fs/Kconfig: move romfs out
-      fs/Kconfig: move sysv out
-      fs/Kconfig: move ufs out
-      fs/Kconfig: move nfs out
-      fs/Kconfig: move nfsd out
-      fs/Kconfig: move sunrpc out
-      fs/Kconfig: move smbfs out
-      fs/Kconfig: move the rest of ncpfs out
-      fs/Kconfig: move coda out
-      fs/Kconfig: move afs out
-      fs/Kconfig: move 9p out
-      Fix longstanding "error: storage size of '__mod_dmi_device_table' i=
-sn't known"
+Alexander Duyck (2):
+      igbvf: add new driver to support 82576 virtual functions
+      igb: remove sysfs entry that was used to set the number of vfs
 
-Anand Gadiyar (1):
-      ARM: OMAP: Fix DMA CCR programming for request line > 63, v3
+Alexey Dobriyan (1):
+      aio: remove INIT_KIOCTX
 
-Andi Kleen (3):
-      x86, generic: mark complex bitops.h inlines as __always_inline
-      kbuild: print usage with no arguments in scripts/config
-      x86: use early clobbers in usercopy*.c
+Andi Kleen (2):
+      asm-generic/siginfo.h: update NSIGTRAP definition
+      kernel/sys.c: clean up sys_shutdown exit path
 
-Andreas Schwab (1):
-      ide: fix IDE PMAC breakage
+Andrea Righi (2):
+      fbdev: fix info->lock deadlock in fbcon_event_notify()
+      res_counter: update documentation
 
-Andrew Lunn (1):
-      USB: CDC-ACM quirk for MTK GPS
+Andrew Morton (2):
+      work_on_cpu(): rewrite it to create a kernel thread on demand
+      cpufreq: use smp_call_function_[single|many]() in acpi-cpufreq.c
 
-Andrew Morton (1):
-      mlx4_core: Fix min() warning
+Andy Grover (2):
+      x86: Document get_user_pages_fast()
+      mm: document get_user_pages_fast()
 
-Andrew Vasquez (8):
-      [SCSI] qla2xxx: Simplify sector-mask calculation in preparation for=
- larger flash parts.
-      [SCSI] qla2xxx: Ensure RISC-interrupt-enabled consistency for IS_NO=
-POLLING_TYPE() ISPs.
-      [SCSI] qla2xxx: Always serialize mailbox command execution.
-      [SCSI] qla2xxx: Modify firmware-load order precedence for ISP81XX p=
-arts.
-      [SCSI] qla2xxx: Correct endianness issue during flash manipulation.
-      [SCSI] qla2xxx: Correct regression in EH abort handling.
-      [SCSI] qla2xxx: Correct regression in DMA-mask setting prior to all=
-ocations.
-      [SCSI] qla2xxx: Update version number to 8.03.00-k2.
+Andy Whitcroft (1):
+      Input: psmouse - add newline to OLPC HGPK touchpad debugging
 
-Andrey Borzenkov (1):
-      orinoco: move kmalloc(..., GFP_KERNEL) outside spinlock in orinoco_=
-ioctl_set_genie
+Atsushi Nemoto (3):
+      tx4939ide: remove wmb()
+      tx493[89]ide: Remove big endian version of tx493[89]ide_tf_{load,re=
+ad}
+      tx4939ide: Fix tx4939ide_{in,out}put_data_swap argument
 
-Andrey Yurovsky (1):
-      libertas: Fix alignment issues in libertas core
+Balaji Rao (2):
+      pcf50633_charger: Enable periodic charging restart
+      pcf50633_charger: Remove unused mbc_set_status function
 
-Anirban Chakraborty (1):
-      [SCSI] qla2xxx: Fix memory leak in error path
+Bartlomiej Zolnierkiewicz (3):
+      ide-cd: convert cdrom_decode_status() to use switch statements
+      ide-cd: unify handling of fs and pc requests in cdrom_decode_status=
+()
+      ide-cd: fix intendation in cdrom_decode_status()
 
-Anton Vorontsov (3):
-      phylib: Fix oops in suspend/resume paths
-      gianfar: Revive VLAN support
-      USB: Driver for Freescale QUICC Engine USB Host Controller
+Bastian Blank (1):
+      bnx2: Don't use reserved names
 
-Artur Skawina (1):
-      p54: set_tim must be atomic.
+Ben Gamari (1):
+      drm/i915: Implement batch and ring buffer dumping
 
-Arun KS (1):
-      ARM: OMAP: Fix OSK ASoC by registering I2C board info for tlvaic23
+Ben Hutchings (1):
+      i2c: Fix sparse warnings for I2C_BOARD_INFO()
 
-Atsushi Nemoto (1):
-      dmatest: Use custom map/unmap for destination buffer
+Bharata B Rao (3):
+      cpuacct: make cpuacct hierarchy walk in cpuacct_charge() safe when =
+rcupreempt is used -v2
+      cpuacct: add per-cgroup utime/stime statistics
+      memcg: fix documentation
 
-Ben Greear (1):
-      vlan: Export symbols as non GPL symbols.
+Bjorn Helgaas (7):
+      ACPI: thermal: use .notify method instead of installing handler dir=
+ectly
+      ACPI: video: use .notify method instead of installing handler direc=
+tly
+      fujitsu-laptop: use .notify method instead of installing handler di=
+rectly
+      fujitsu-laptop: use .notify method instead of installing hotkey han=
+dler directly
+      panasonic-laptop: use .notify method instead of installing handler =
+directly
+      sony-laptop: use .notify method instead of installing handler direc=
+tly
+      ACPI: WMI: use .notify method instead of installing handler directl=
+y
 
-Ben Nizette (1):
-      ASoC: atmel_pcm: Remove non-existant header
+Borislav Petkov (5):
+      ide-cd: move status checking into the IRQ handler
+      ide-cd: carve out an ide_cd_breathe()-helper for fs write requests
+      ide-cd: respect REQ_QUIET for fs requests in cdrom_decode_status()
+      ide-cd: update debugging support
+      ide-cd: reverse NOT_READY sense key logic
 
-Benjamin Herrenschmidt (2):
-      Merge commit 'kumar/kumar-merge' into merge
-      Merge commit 'jwb/jwb-merge' into merge
-
-Brandon Philips (1):
-      USB: usblp.c: add USBLP_QUIRK_BIDIR to Brother HL-1440
-
-Brian Cavagnolo (1):
-      mac80211: decrement ref count to netdev after launching mesh discov=
-ery
-
-Brian King (1):
-      [SCSI] ibmvfc: Fix DMA mapping leak on memory allocation failure
-
-Brice Goglin (1):
-      myri10ge: don't forget pci_disable_device()
-
-Bryan Wu (2):
-      USB: composite: Fix bug: should test set_alt function pointer befor=
-e use it
-      USB: composite: Fix bug: low byte of w_index is the usb interface n=
-umber not the whole 2 bytes of w_index
-
-Casey Schaufler (1):
-      smackfs load append mode fix
-
-Chr (1):
-      p54: add missing break in eeprom parser
-
-Christian Borntraeger (1):
-      [CVE-2009-0029] sparc: Enable syscall wrappers for 64-bit
-
-Christian Eggers (1):
-      usb/mcs7830: Don't use buffers from stack for USB transfers
-
-Christian Lamparter (6):
-      p54: fix oops caused by bad eeproms
-      p54: fix p54_set_key's return code
-      mac80211: fix slot time debug message
-      p54: more cryptographic accelerator fixes
-      p54usb: fix nasty use after free
-      p54usb: fix packet loss with first generation devices
-
-Christoph Hellwig (7):
-      xfs: fix dentry aliasing issues in open_by_handle
-      xfs: use mnt_want_write in compat_attrmulti ioctl
-      xfs: add a separate lock class for the per-mount list of dquots
-      xfs: lockdep annotations for xfs_dqlock2
-      xfs: add a lock class for group/project dquots
-      xfs: fix bad_features2 fixups for the root filesystem
-      xfs: sanity check attr fork size
-
-Clemens Ladisch (3):
-      sound: virtuoso: enable UART on Xonar HDAV1.3
-      sound: virtuoso: add newline
-      sound: virtuoso: document HDAV1.3 driver status
-
-Cliff Wickman (1):
-      x86, UV: cpu_relax in uv_wait_completion
+Chien Tung (3):
+      RDMA/nes: Fix SFP+ PHY initialization
+      RDMA/nes: Add wide_ppm_offset parm for switch compatibility
+      RDMA/nes: Add support for new SFP+ PHY
 
 Dan Carpenter (1):
-      fuse: fix NULL deref in fuse_file_alloc()
+      niu: Fix error handling
 
-Dan Magenheimer (1):
-      xen: actually release memory when shrinking domain
+Daniel Mack (3):
+      Input: generic driver for rotary encoders on GPIOs
+      [ARM] pxa/colibri: provide MAC address from ATAG_SERIAL
+      [ARM] pxa/colibri: get rid of set_irq_type()
 
-Dan Williams (3):
-      fsldma: use a valid 'device' for dma_pool_create
-      dmaengine: kill some dubious WARN_ONCEs
-      dmaengine: dma_issue_pending_all =3D=3D nop when CONFIG_DMA_ENGINE=3D=
-n
+Daniel Mierswa (2):
+      Input: atkbd - consolidate force release quirk setup
+      Input: atkbd - add quirk for Fujitsu Siemens Amilo PA 1510
 
-Daniele Venzano (1):
-      isdn: Fix missing ifdef in isdn_ppp
+Darren Hart (1):
+      futex: comment requeue key reference semantics
 
-Dave Airlie (2):
-      drm: fix leak of device mappings since multi-master changes.
-      i915: fix freeing path for gem phys objects.
+Dave Anderson (1):
+      hfs: fix memory leak when unmounting
 
-Dave Chinner (1):
-      Long btree pointers are still 64 bit on disk
+Dave Chinner (9):
+      xfs: validate log feature fields correctly
+      xfs: fix double free of inode
+      xfs: prevent unwritten extent conversion from blocking I/O completi=
+on
+      xfs: inform the xfsaild of the push target before sleeping
+      xfs: use xfs_sync_inodes() for device flushing
+      xfs: make inode flush at ENOSPC synchronous
+      xfs: block callers of xfs_flush_inodes() correctly
+      xfs: flush delayed allcoation blocks on ENOSPC in create
+      xfs: remove xfs_flush_space
 
-David Brownell (6):
-      drivers/ide/palm_bk3710.c buildfix
-      [ARM] 5368/1: arch/arm/mach-davinci/usb.c buildfix
-      USB: omap1 ohci buildfix (otg related)
-      USB: musb davinci buildfix
-      USB: musb_hdrc: another davinci buildfix (otg related)
-      USB: musb: Kconfig fix
+David Brownell (2):
+      leds: just ignore invalid GPIOs in leds-gpio
+      spi: spi_write_then_read() bugfixes
 
-David Daney (2):
-      Make irq_*_affinity depend on CONFIG_GENERIC_HARDIRQS too.
-      cpumask fallout: Initialize irq_default_affinity earlier
+David Howells (11):
+      keys: Handle there being no fallback destination keyring for reques=
+t_key()
+      FRV: Use <asm-generic/pgtable.h> in NOMMU mode
+      MN10300: Kill MN10300's own profiling Kconfig
+      FRV: Fix indentation errors to keep git-am happy when moving arch h=
+eader files
+      FRV: Move to arch/frv/include/asm/
+      Move arch headers from include/asm-mn10300/ to arch/mn10300/include=
+/asm/.
+      Separate out the proc- and unit-specific header directories from th=
+e general
+      kbuild: make it possible for the linker to discard local symbols fr=
+om vmlinux
+      mm: point the UNEVICTABLE_LRU config option at the documentation
+      mm: reformat the Unevictable-LRU documentation
+      Fix lpfc_parse_bg_err()'s use of do_div()
 
-David S. Miller (6):
-      sparc64: Initialize FHC/CLOCK LED platform_device 'id' field correc=
-tly.
-      sparc64: Annotate sparc64 specific syscalls with SYSCALL_DEFINEx()
-      sparc64: Fix DAX handling via userspace access from kernel.
-      Revert "xfrm: For 32/64 compatability wrt. xfrm_usersa_info"
+David S. Miller (9):
+      sparc64: get_cells() can't be marked __init
+      sparc64: Fix section mismatch warnings in power driver.
+      sparc64: Fix section mismatch warnings in PCI controller drivers.
+      sparc: Fix section mismatch warnings in cs4231 sound driver.
+      serial: sunsu: sunsu_kbd_ms_init needs to be __devinit
+      sparc64: add_node_ranges() must be __init
+      sparc: Hook up sys_preadv and sys_pwritev
       Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/=
-git/linville/wireless-2.6
-      Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/=
-git/linville/wireless-2.6
+git/kaber/nf-2.6
+      niu: Fix unused variable warning.
 
-David Teigland (1):
-      dlm: fix plock notify callback to lockd
+David Woodhouse (8):
+      Revert "fix modules_install via NFS"
+      Partially revert "V4L/DVB (9533): cx88: Add support for TurboSight =
+TBS8910 DVB-S PCI card"
+      firmware/WHENCE: Add missing origin information for Ambassador atms=
+ar11.fw
+      firmware: Remove newly-added slicoss and sxg firmware images
+      Add README.AddingFirmware file. Basically telling people not to.
+      x86, intel-iommu: fix X2APIC && !ACPI build failure
+      qla1280: Fix off-by-some error in firmware loading.
+      intel-iommu: Avoid panic() for DRHD at address zero.
 
-Dhananjay Phadke (2):
-      netxen: fix vlan tso/checksum offload
-      netxen: reduce memory footprint
+Dmitry Eremin-Solenikov (1):
+      [ARM] pxa/csb701: do not register devices on non-csb726 boads
 
-Divy Le Ray (1):
-      cxgb3: Fix LRO misalignment
+Dmitry Torokhov (5):
+      Merge commit 'v2.6.29-rc7' into next
+      Input: fix polling of /proc/bus/input/devices
+      Input: arrange drivers/input/misc/Makefile in alphabetical order
+      Input: i8042 - add HP DV9700 to the noloop list
+      Merge branch 'next' into for-linus
 
-Don Skidmore (2):
-      ixgbe: fix dca issue with relaxed ordering turned on
-      ixgbe: fix tag stripping for VLAN ID 0
+Don Wood (1):
+      RDMA/nes: Fix incorrect casts on 32-bit architectures
 
-Eilon Greenstein (22):
-      bnx2x: Free IRQ
-      bnx2x: Handling probe failures
-      bnx2x: Potential race after iSCSI boot
-      bnx2x: Wrong HDR offset in CAM
-      bnx2x: Read chip ID
-      bnx2x: Block nvram access when the device is inactive
-      bnx2x: Overstepping array bounds
-      bnx2x: 1G-10G toggling race
-      bnx2x: Prevent self test loopback failures
-      bnx2x: Legacy speeds autoneg failures
-      bnx2x: Handling PHY FW load failure
-      bnx2x: Driver description update
-      bnx2x: Barriers for the compiler
-      bnx2x: Version update
-      bnx2x: Reset HW before use
-      bnx2x: Disable napi
-      bnx2x: Handling load failures
-      bnx2x: Carrier off first call
-      bnx2x: Calling napi_del
-      bnx2x: Missing rmb when waiting for FW response
-      bnx2x: loopback test failure
-      bnx2x: Version
+Eric Anholt (2):
+      drm/i915: Correctly set the write flag for get_user_pages in pread.
+      drm/i915: Allow tiling of objects with bit 17 swizzling by the CPU.
 
-Eric Anholt (3):
-      drm: stash AGP include under the do-we-have-AGP ifdef
-      x86: work around PAGE_KERNEL_WC not getting WC in iomap_atomic_prot=
-_pfn.
-      drm: Rip out the racy, unused vblank signal code.
-
-Eric Paris (1):
-      tty_open can return to userspace holding tty_mutex
+Eric Dumazet (1):
+      netfilter: ip6tables regression fix
 
 Eric Sandeen (1):
-      [XFS] Remove the rest of the macro-to-function indirections.
+      include/linux/fiemap.h: include types.h now that it's exported
 
-Gabriel Paubert (1):
-      mv643xx_eth: prevent interrupt storm on ifconfig down
+Faisal Latif (2):
+      RDMA/nes: Fix error handling issues
+      RDMA/nes: Fix nes_nic_cm_xmit() error handling
 
-Gary Hade (1):
-      x86: remove kernel_physical_mapping_init() from init section
+Felix Blyakher (1):
+      Merge branch 'master' into for-linus
 
-Gerhard Pircher (1):
-      powerpc/mm: Fix handling of _PAGE_COHERENT in BAT setup code
+Fenghua Yu (1):
+      Intel-IOMMU Alignment Issue in dma_pte_clear_range()
 
-Grant Erickson (1):
-      powerpc/4xx: DTS: Add Add'l SDRAM0 Compatible and Interrupt Info
+Ferenc Wagner (1):
+      drm/i915: indicate framebuffer restore key in SysRq help message
 
-Greg Kroah-Hartman (1):
-      sysfs: fix problems with binary files
+Florian Fainelli (1):
+      r6040: set MODULE_VERSION
 
-Greg Ungerer (4):
-      m68knommu: fix cache flushing for the 527x ColdFire processors
-      m68knommu: remove the obsolete and long unused comempci chip suppor=
-t
-      m68knommu: fix syscall restarting
-      uclinux: add process name to allocation error message
+Florian Mickler (1):
+      drm/i915: Fix use of uninitialized var in 40a5f0de
 
-Guennadi Liakhovetski (3):
-      dmaengine: add async_tx_clear_ack() macro
-      i.MX31: Image Processing Unit DMA and IRQ drivers
-      i.MX31: framebuffer driver
+Francesco VIRLINZI (1):
+      sh: intc: Added resume from hibernation support to the intc
 
-H. Peter Anvin (2):
-      x86: add MSR_IA32_MISC_ENABLE bits to <asm/msr-index.h>
-      x86: unmask CPUID levels on Intel CPUs
+Frederic Weisbecker (3):
+      tracing/syscalls: use a dedicated file header
+      lockdep: warn about lockdep disabling after kernel taint
+      lockdep: continue lock debugging despite some taints
 
-Harvey Harrison (1):
-      m68k{nommu}: fixups after the header move
+From: Thiemo Nagel (1):
+      ext4: check block device size on mount
 
-Heiko Carstens (4):
-      [S390] personality: fix personality loss on execve
-      [S390] cputime: fix lowcore initialization on cpu hotplug
-      [S390] etr/stp: fix possible deadlock
-      lcs: fix compilation for !CONFIG_IP_MULTICAST
+Gautham R Shenoy (1):
+      sched: Print sched_group::__cpu_power in sched_domain_debug
 
-Henrik Kretzschmar (1):
-      sound: Remove removed OSS kernel parameters from doc
+Geert Uytterhoeven (5):
+      ide: Fix host drivers that need IRQF_SHARED
+      ide: falconide/q40ide - Use __ide_mm_{in,out}sw() for data
+      namespaces: move get_mq() inside #ifdef CONFIG_SYSCTL
+      at24: make input buffers of at24_*write() const
+      at25: make input buffers of at25_*write() const
 
-Herbert Xu (6):
-      crypto: authenc - Fix zero-length IV crash
-      net: Add debug info to track down GSO checksum bug
-      gro: Fix handling of complete checksums in IPv6
-      gro: Fix error handling on extremely short frags
-      gro: Fix merging of paged packets
-      crypto: blkcipher - Fix WARN_ON handling in walk_done
+Grant Grundler (1):
+      ide: remove wmb() from ide-dma-sff.c and scc_pata.c
 
-Hidetoshi Seto (1):
-      PCI/MSI: bugfix/utilize for msi_capability_init()
+Grant Likely (1):
+      xsysace: Fix dereferencing of cf_id after hd_driveid removal
 
-Hin-Tak Leung (1):
-      zd1211rw: adding Sitecom WL-603 (0df6:0036) to the USB id list
+H. Peter Anvin (1):
+      x86, setup: un-resequence mode setting for VGA 80x34 and 80x60 mode=
+s
 
-Huang Weiyi (1):
-      ARM: OMAP: remove duplicated #include's
+Hannes Eder (2):
+      NULL noise: drivers/platform/x86/panasonic-laptop.c
+      NULL noise: arch/x86/xen/smp.c
 
-Hugo Villeneuve (1):
-      USB: musb cppi bugfixes
+Heiko Carstens (1):
+      mutex: have non-spinning mutexes on s390 by default
+
+Helge Deller (1):
+      Input: hilkbd - fix crash when removing hilkbd module
+
+Herbert Xu (1):
+      module: try_then_request_module must wait
+
+Hidetoshi Seto (2):
+      posixtimers, sched: Fix posix clock monotonicity
+      x86: smarten /proc/interrupts output for new counters
+
+Huang Weiyi (5):
+      ACPI: cpufreq: remove dupilcated #include
+      ide: remove unused #include <linux/version.h>
+      hp_accel: remove unused #include <version.h>
+      sysrq: remove duplicated #include
+      microblaze: remove duplicated #include's
+
+Hugh Dickins (2):
+      shmem: respect MAX_LFS_FILESIZE
+      x86 microcode: revert some work_on_cpu
 
 Ian Campbell (2):
-      xen: handle highmem pages correctly when shrinking a domain
-      xen: unitialised return value in xenbus_write_transaction
+      xen: resume interrupts before system devices.
+      xen: honour VCPU availability on boot
 
-Ihar Hrachyshka (1):
-      MIPS: enable serial UART support on PNX833X devices.
+Ingo Molnar (5):
+      Merge commit 'v2.6.30-rc1' into core/urgent
+      Merge commit 'v2.6.30-rc1' into sched/urgent
+      sched: refresh MAINTAINERS entry
+      Merge commit 'v2.6.30-rc1' into x86/urgent
+      lockdep: warn about lockdep disabling after kernel taint, fix
 
-Inaky Perez-Gonzalez (3):
-      wimax/i2400m: error paths that need to free an skb should use kfree=
-_skb()
-      debugfs: introduce stub for debugfs_create_size_t() when DEBUG_FS=3D=
-n
-      USB: add kernel-doc for wusb_dev in struct usb_device
+Jan Beulich (1):
+      kbuild: remove pointless strdup() on arguments passed to new_module=
+() in modpost
 
-Ingo Molnar (6):
-      Merge commit 'v2.6.29-rc1' into timers/urgent
-      x86, cpufreq: remove leftover copymask_copy()
-      fix: crash: IP: __bitmap_intersects+0x48/0x73
-      Revert "x86: signal: change type of paramter for sys_rt_sigreturn()=
-"
-      x86: use standard PIT frequency
-      x86: unmask CPUID levels on Intel CPUs, fix
+Jan Dumon (1):
+      MAINTAINERS: switch maintainer of the hso driver
 
-Ivo van Doorn (1):
-      rt2x00: Fix TX rate short preamble detection
+Jan Kara (3):
+      ext3: Try to avoid starting a transaction in writepage for data=3Dw=
+ritepage
+      jbd: update locking coments
+      ext2: fix data corruption for racing writes
 
-J. Bruce Fields (3):
-      nfs: note that CONFIG_SUNRPC_XPRT_RDMA turns on server side support=
- too
-      nfsd: fix null dereference on error path
-      nfsd: fix cred leak on every rpc
+Jarkko Lavinen (2):
+      mmc: Accept EXT_CSD rev 1.3 since it is backwards compatible with 1=
+.2
+      omap_hsmmc: Do not expect cmd/data to be non-null when CC/TC occurs
 
-James A. Treacy (1):
-      USB: cdc-acm: support some gps data loggers
-
-James Lentini (1):
-      update port number in NFS/RDMA documentation
-
-Jan Beulich (2):
-      x86: avoid early crash in disable_local_APIC()
-      x86: fix assumed to be contiguous leaf page tables for kmap_atomic =
-region (take 2)
-
-Jan Kara (2):
-      quota: Improve locking
-      ocfs2: Remove ocfs2_dquot_initialize() and ocfs2_dquot_drop()
-
-Jarek Poplawski (1):
-      net: Fix data corruption when splicing from sockets.
-
-Jarkko Nikula (1):
-      ARM: OMAP: Fix gpio by switching to generic gpio calls, v2
-
-Jarod Wilson (1):
-      crypto: ccm - Fix handling of null assoc data
+Jaswinder Singh (2):
+      firmware: convert av7110 driver to request_firmware()
+      Remove fdump tool for av7110 firmware
 
 Jaswinder Singh Rajput (1):
-      time-sched.c: tick_nohz_update_jiffies should be static
+      x86: cpu_debug remove execute permission
 
-Jean Delvare (5):
-      i2c: Delete 10 unused driver IDs
-      i2c: Delete many unused adapter IDs
-      i2c: Quilt tree has moved
-      eeprom: More consistent symbol names
-      i2c: Warn on deprecated binding model use
+Jean Delvare (6):
+      ACPI: Adjust Kelvin offset to match local implementation
+      i2c-algo-pca: Fix use of uninitialized variable in debug message
+      i2c-voodoo3: Deprecate in favor of tdfxfb
+      i2c: Let new-style drivers implement attach_adapter
+      MAINTAINERS: bluesmoke-devel list is moderated for non-subscribers
+      edac: use to_delayed_work()
 
-Jean-Baptiste Onofre (1):
-      USB: storage: support of Dane-Elec MediaTouch USB device
+Jeff Garzik (1):
+      [libata] sata_via: kill uninit'd var warning
 
-Jean-Christop PLAGNIOL-VILLARD (1):
-      [ARM] 5370/1: at91: fix rm9200 watchdog
+Jeff Haran (1):
+      edac: fix local pci_write_bits32
 
-Jeff Layton (2):
-      dlm: initialize file_lock struct in GETLK before copying conflictin=
-g lock
-      nfsd: only set file_lock.fl_lmops in nfsd4_lockt if a stateowner is=
- found
+Jeremy Fitzhardinge (13):
+      xen: disable preempt for leave_lazy_mmu
+      xen: separate p2m allocation from setting
+      xen: split construction of p2m mfn tables from registration
+      xen: clean up xen_load_gdt
+      xen: make xen_load_gdt simpler
+      xen: remove xen_load_gdt debug
+      xen: mask XSAVE from cpuid
+      x86-64: remove PGE from must-have feature list
+      xen/mmu: some early pagetable cleanups
+      xen/mmu: weaken flush_tlb_other test
+      xen: set _PAGE_NX in __supported_pte_mask before pagetable construc=
+tion
+      xen: clean up gate trap/interrupt constants
+      xen: add FIX_TEXT_POKE to fixmap
 
-Jeff Mahoney (1):
-      x86: define ARCH_WANT_FRAME_POINTERS
+Joe Perches (20):
+      Add scripts/get_maintainer.pl
+      MAINTAINERS - Add file patterns
+      MAINTAINERS - Standardize style
+      MAINTAINERS - Remove HP Fibre Channel HBA no longer in tree
+      MAINTAINERS - standardize "T:       git urls"
+      MAINTAINERS - Add Linus Torvalds' git
+      MAINTAINERS - i2c_tiny_usb T: should be W:
+      MAINTAINERS - Update FPU Emulator contact address and web page
+      MAINTAINERS - Remove x86/Voyager no longer in tree
+      MAINTAINERS - Remove cyblafb frame buffer no longer in tree
+      MAINTAINERS - Coalesce sections "DVB" and "Video for Linux"
+      MAINTAINERS - Update M68K patterns
+      MAINTAINERS - Update DRIVER CORE patterns
+      MAINTAINERS - Add missing "/" to some pattern directories
+      MAINTAINERS - Add additional patterns
+      MAINTAINERS - Update Freescale sound patterns
+      scripts/get_maintainer.pl - Allow multiple files on command line
+      MAINTAINERS - Update frv arch patterns
+      MAINTAINERS - Update MN10300 patterns
+      include/video/cyblafb.h: remove it, it's unused
 
-Jesper Nilsson (1):
-      klist.c: bit 0 in pointer can't be used as flag
+Johannes Berg (1):
+      Input: stop autorepeat timer on key release
 
-Jesse Barnes (6):
-      drm: create mode_config idr lock
-      drm/i915: remove unnecessary debug output in KMS init
-      drm/i915: hook up LVDS DPMS property
-      drm: don't whine about not reading EDID data
-      drm/i915: Fix cursor physical address choice to match the 2D driver.
-      networking: document "nc" in addition to "netcat" in netconsole.txt
+Jonathan Cameron (1):
+      hwmon: sht15 humidity sensor driver
 
-Jesse Brandeburg (1):
-      e1000e: workaround hw errata
+Justin Waters (2):
+      [ARM] 5445/1: AT91: Remove flexible array from USBH platform data
+      [ARM] 5446/1: ohci-at91: Limit vbus_pin assignment to the size of t=
+he array
 
-Jiri Slaby (3):
-      relay: fix lock imbalance in relay_late_setup_files
-      PCI hotplug: fix lock imbalance in pciehp
-      NET: net_namespace, fix lock imbalance
+KAMEZAWA Hiroyuki (1):
+      memcg: remove warning when CONFIG_DEBUG_VM=3Dn
 
-Joe Carnuccio (1):
-      [SCSI] qla2xxx: Correct descriptions in flash manipulation routines.
+Kevin Hilman (1):
+      omap_hsmmc: Flush posted write to IRQ
 
-John Adamson (1):
-      m68knommu: fix ColdFire 5272 serial baud rates in mcf.c
+Kirill Smelkov (1):
+      kbuild: fix a few typos in top-level Makefile
 
-JosephChan-6hSdJfI2Hxp9nmWX13WWKA@public.gmane.org (1):
-      [libata] pata_via: support VX855, future chips whose IDE controller=
- use 0x0571
+Krzysztof Helt (1):
+      cirrusfb: do not allow unsupported pixel depth
 
-Josh Boyer (4):
-      powerpc/40x: Update PowerPC 40x defconfigs
-      powerpc/44x: Update PowerPC 44x defconfigs
-      powerpc/4xx: Update multi-board PowerPC 4xx defconfigs
-      powerpc: Remove arch/ppc cruft from Kconfig
+Kuninori Morimoto (4):
+      sh: urquell: Add board comment
+      sh: urquell: Fix up address mapping in board comments.
+      sh: ap325: use edge control for ov772x camera
+      sh: sh7786: modify usb setup timeout judgment bug.
 
-Jouni Malinen (2):
-      ath9k: Fix an operator typo in phy rate validation
-      ath9k: Fix an operator typo in REG_DOMAIN_2GHZ_MASK
+Lai Jiangshan (4):
+      tracing: disable seeking for trace_pipe_raw
+      tracing: allocate page when needed
+      tracing: update file->f_pos when splice(2) it
+      tracing: fix splice return too large
 
-Julia Lawall (2):
-      arch/sh/mm: Move a dereference below a NULL test
-      USB: musb uses endpoint functions
+Leandro Dorileo (1):
+      tty: Update some of the USB kernel doc
 
-Kalle Valo (1):
-      USB: musb: tusb6010 buildfix
+Len Brown (3):
+      ACPI: delete acpi_device.g_list
+      ACPICA: delete check for AML access to port 0x81-83
+      Merge branches 'release', 'APERF', 'ARAT', 'misc', 'kelvin', 'devic=
+e-lock' and 'bjorn.notify' into release
 
-Kay Sievers (1):
-      PNP: fix broken pnp lowercasing for acpi module aliases
+Lennert Buytenhek (1):
+      mv643xx_eth: don't reset the rx coal timer on interface up
 
-Krzysztof Ha=C5=82asa (1):
-      net: Fix linux/if_frad.h's suitability for userspace.
+Li Zefan (8):
+      blktrace: pass the right pointer to kfree()
+      tracing: consolidate documents
+      tracing: fix document references
+      tracing/filters: NIL-terminate user input filter
+      tracing/filters: fix NULL pointer dereference
+      tracing/filters: allow user input integer to be oct or hex
+      tracing/filters: return proper error code when writing filter file
+      Documentation/sysctl/net.txt: fix a typo
 
-Kumar Gala (7):
-      powerpc/85xx: Fix typo in mpc8572ds dts
-      powerpc/85xx: Update defconfigs
-      powerpc/83xx: Update defconfigs
-      powerpc/86xx: Update defconfigs
-      powerpc/8xx: Update defconfigs
-      powerpc/embedded6xx: Update defconfigs
-      dmi: Fix build breakage
-
-Kuninori Morimoto (3):
-      sh: mach-migor: Add ov772x support.
-      sh: mach-migor: Delete soc_camera_platform setup.
-      sh: mach-migor: Add tw9910 support.
-
-Lai Jiangshan (2):
-      rcu: add __cpuinit to rcu_init_percpu_data()
-      rcu: remove duplicate CONFIG_RCU_CPU_STALL_DETECTOR
-
-Lalit Chandivade (1):
-      [SCSI] qla2xxx: Correct MSI-X vector allocation for single queue mo=
-de.
-
-Larry Finger (1):
-      rtl8187: Add termination packet to prevent stall
-
-Lennert Buytenhek (2):
-      Revert "mv643xx_eth: use longer DMA bursts".
-      mv643xx_eth: fix multicast filter programming
-
-Leonardo Potenza (1):
-      x86: fix section mismatch warnings in kernel/setup_percpu.c
-
-Li Yang (1):
-      powerpc/mpc8313erdb: fix kernel panic because mdio device is not pr=
-obed
-
-Linus Torvalds (36):
+Linus Torvalds (48):
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/lrg/voltage-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/roland/infiniband
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/tiwai/sound-2.6
-      Merge branch 'for-linus' of git://oss.sgi.com/xfs/xfs
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/bart/ide-2.6
-      Merge branch 'x86-fixes-for-linus' of git://git.kernel.org/pub/scm/=
-linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'timers-fixes-for-linus' of git://git.kernel.org/pub/s=
-cm/linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'core-fixes-for-linus' of git://git.kernel.org/pub/scm=
-/linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/mszeredi/fuse
-      Fix annoying DRM_ERROR() string warning
-      Merge branch 'Kconfig' of git://git.kernel.org/pub/scm/linux/kernel=
-/git/adobriyan/misc
-      Merge branch 'sh/for-2.6.29' of git://git.kernel.org/pub/scm/linux/=
-kernel/git/lethal/sh-2.6
-      Merge branch 'fixes' of git://git.kernel.org/pub/scm/linux/kernel/g=
-it/djbw/async_tx
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jbarnes/pci-2.6
-      Merge branch 'drm-fixes' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/airlied/drm-2.6
-      Merge branch 'for-linus' of git://git390.osdl.marist.edu/pub/scm/li=
-nux-2.6
-      Merge branch 'for-next' of git://git.kernel.org/pub/scm/linux/kerne=
-l/git/gerg/m68knommu
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-c=
-ore-2.6
-      Merge branch 'for_linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jack/linux-quota-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/teigland/dlm
-      Merge git://git.infradead.org/battery-2.6
+el/git/drzeus/mmc
+      Merge master.kernel.org:/home/rmk/linux-2.6-arm
+      Merge branch 'release' of git://git.kernel.org/pub/scm/linux/kernel=
+/git/lenb/linux-acpi-2.6
+      Merge branch 'release' of git://git.kernel.org/pub/scm/linux/kernel=
+/git/aegl/linux-2.6
+      Merge branch 'ext3-latency-fixes' of git://git.kernel.org/pub/scm/l=
+inux/kernel/git/tytso/ext4
       Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/sparc-2.6
       Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/sam/kbuild-fixe=
-s
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/jmorris/security-testing-2.6
+      Merge git://git.infradead.org/battery-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/rusty/linux-2.6=
+-for-linus
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/agk/linux-2.6-d=
+m
+      Merge branches 'core-fixes-for-linus', 'irq-fixes-for-linus' and 't=
+imers-fixes-for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/t=
+ip/linux-2.6-tip
+      Merge branch 'sched-fixes-for-linus' of git://git.kernel.org/pub/sc=
+m/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'tracing-fixes-for-linus' of git://git.kernel.org/pub/=
+scm/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'x86-fixes-for-linus' of git://git.kernel.org/pub/scm/=
+linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'for_linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/tytso/ext4
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/roland/infiniband
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/bart/ide-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-=
+2.6-frv
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-=
+2.6-mn10300
+      Merge git://git.infradead.org/~dwmw2/firmware-2.6
+      Remove stale include/asm-mn10300/.gitignore file
+      async: Fix module loading async-work regression
+      Revert "ACPI battery: fix async boot oops"
+      Merge branch 'for-linus' of git://git.monstr.eu/linux-2.6-microblaz=
+e
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/wim/linux-2.6-w=
+atchdog
+      Merge branch 'for-linus' of git://git.o-hand.com/linux-rpurdie-leds
+      Merge branch 'core-fixes-for-linus' of git://git.kernel.org/pub/scm=
+/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'gm_20090410' of git://repo.or.cz/linux-2.6/trivial-mo=
+ds
       Merge branch 'i2c-for-linus' of git://jdelvare.pck.nerim.net/jdelva=
 re-2.6
-      Merge master.kernel.org:/home/rmk/linux-2.6-arm
-      Fix "multiple definition of `debugfs_create_size_t'"
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/herbert/crypto-=
-2.6
+      Merge branch 'core-fixes-for-linus' of git://git.kernel.org/pub/scm=
+/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'tracing-fixes-for-linus' of git://git.kernel.org/pub/=
+scm/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'x86-fixes-for-linus' of git://git.kernel.org/pub/scm/=
+linux/kernel/git/tip/linux-2.6-tip
+      Merge git://git.infradead.org/iommu-2.6
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/dtor/input
       Merge branch 'upstream-linus' of git://git.kernel.org/pub/scm/linux=
 /kernel/git/jgarzik/libata-dev
-      Merge branch 'hibern_fixes' of git://git.kernel.org/pub/scm/linux/k=
-ernel/git/jgarzik/libata-dev
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/jejb/scsi-rc-fi=
-xes-2.6
-      Merge branch 'for-2.6.29' of git://linux-nfs.org/~bfields/linux
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/sam/kbuild-fixe=
+s
+      Merge branch 'for-linus' of git://oss.sgi.com/xfs/xfs
+      Merge branch 'for-rc1/xen/core' of git://git.kernel.org/pub/scm/lin=
+ux/kernel/git/jeremy/xen
+      Fix quilt merge error in acpi-cpufreq.c
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/gerg/m68knommu
-      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
-it/benh/powerpc
-      Linux 2.6.29-rc3
+el/git/jmorris/security-testing-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6
+      Merge branch 'fixes-for-linus' of git://git.monstr.eu/linux-2.6-mic=
+roblaze
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/ryusuke/nilfs2
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/mszeredi/fuse
+      Merge branch 'core-fixes-for-linus' of git://git.kernel.org/pub/scm=
+/linux/kernel/git/tip/linux-2.6-tip
+      Merge branch 'drm-intel-next' of git://git.kernel.org/pub/scm/linux=
+/kernel/git/anholt/drm-intel
+      Linux 2.6.30-rc2
 
-Luis R. Rodriguez (3):
-      cfg80211: make handle_band() and handle_channel() wiphy specific
-      cfg80211: Fix regression with 11d on bands
-      cfg80211: Fix parsed country IE info for 5 GHz
+Linus Walleij (1):
+      [ARM] 5447/1: Add SZ_32K
 
-Luke Yelavich (1):
-      ALSA: hda - add quirks for some 82801H variants to use ALC883_MITAC
+Ma Ling (1):
+      drm/i915: sync hdmi detection by hdmi identifier with 2D
 
-Madhusudhan Chikkature (1):
-      [ARM] 5369/1: omap mmc: Add new omap hsmmc controller for 2430 and =
-34xx, v3
+Marcin Slusarz (1):
+      x86: fix wrong section of pat_disable & make it static
 
-Magnus Damm (4):
-      sh: ap325rxa MMC support using spi_gpio and mmc_spi
-      sh: Migo-R MMC support using spi_gpio and mmc_spi.
-      sh: export the sh7343 JPU to user space
-      sh: fix sh-sci / early printk build on sh7723
+Marek Vasut (4):
+      [ARM] pxa: Palm Tungsten E2 basic support
+      [ARM] pxa: PalmTE2 support for battery, UDC, IrDA and backlight
+      [ARM] pxa: Add support for suspend on PalmTX, T5 and LD
+      [ARM] pxa/cm-x2xx: fix ucb1400 not being registered
 
-Mandeep Singh Baines (1):
-      softlock: fix false panic which can occur if softlockup_thresh is r=
-educed
+Mark Brown (3):
+      Input: wm97xx - use disable_irq_nosync() for Mainstone
+      Input: add accelerated touchscreen support for Marvell Zylonite
+      [ARM] pxa: register AC97 controller devices
 
-Marcel Sebek (1):
-      USB: 'option' driver - onda device MT503HS has wrong id
+Martin K. Petersen (1):
+      dm: add integrity support
 
-Mark Lord (5):
-      sata_mv: fix 8-port timeouts on 508x/6081 chips
-      sata_mv: don't read hc_irq_cause
-      sata_mv: remove bogus nsect restriction
-      sata_mv: msi masking fix (v2)
-      sata_mv: no longer experimental (v2)
+Masami Hiramatsu (2):
+      x86: fix set_fixmap to use phys_addr_t
+      x86: fix set_fixmap to use phys_addr_t
 
-Matt Carlson (1):
-      tg3: Fix firmware loading
+Matthew Garrett (1):
+      efifb: exit if framebuffer address is invalid
 
-Matt Helsley (1):
-      net: Move config NET_NS to from net/Kconfig to init/Kconfig
+Maxime Bizon (1):
+      kbuild: fix spurious initramfs rebuild
 
-Matt Waddel (3):
-      m68knommu: add ColdFire M532x to the FEC configuration options
-      m68knommu: correct the mii calculations for 532x ColdFire FEC
-      m68knommu: fix 5329 ColdFire periphal addressing
+Michael Ellerman (1):
+      mm: add documentation describing what tsk->active_mm means vs tsk->=
+mm
 
-Matthew Ranostay (4):
-      ALSA: hda: fix invalid power mapping masks
-      ALSA: hda: 83xxx port 0xe DAC selection
-      ALSA: hda: revert change to 92hd83xxx power mapping
-      ALSA: hda: Add STAC92HD83XXX_PWR_REF quirk
+Michael Hennerich (3):
+      Input: bf54x-keys - fix typo in warning
+      Input: add AD7877 touchscreen driver
+      Input: add AD7879 Touchscreen driver
 
-Mhayk Whandson (1):
-      USB: ftdi_sio driver support of bar code scanner from Diebold
+Michal Januszewski (5):
+      fbdev: fix color component field length documentation
+      uvesafb: fix color component length for pseudocolor modes
+      s3fb: fix color component length for pseudocolor modes
+      sa1100fb: fix color component length for pseudocolor modes
+      sisfb: fix color component length for pseudocolor modes
 
-Michael Bramer (1):
-      Add support for '8-port RS-232 MIC-3620 from advantech'
+Michal Simek (66):
+      microblaze_v8: Cpuinfo handling
+      microblaze_v8: Open firmware files
+      microblaze_v8: Platform bus registration
+      microblaze_v8: exception handling
+      microblaze_v8: Signal support
+      microblaze_v8: Selfmodified code
+      microblaze_v8: cache support
+      microblaze_v8: Generic dts file for platforms
+      microblaze_v8: kernel modules support
+      microblaze_v8: lmb include file
+      microblaze_v8: PVR support, cpuinfo support
+      microblaze_v8: defconfig file
+      microblaze_v8: assembler files head.S, entry-nommu.S, syscall_table=
+.S
+      microblaze_v8: vmlinux.lds.S - linker script
+      microblaze_v8: supported function for memory - kernel/lib
+      microblaze_v8: checksum support
+      microblaze_v8: early_printk support
+      microblaze_v8: uaccess files
+      microblaze_v8: heartbeat file
+      microblaze_v8: setup.c, setup.h - system setting
+      microblaze_v8: asm-offsets.c
+      microblaze_v8: process and init task function
+      microblaze_v8: delay.h, timex.h
+      microblaze_v8: ptrace support
+      microblaze_v8: IPC support
+      microblaze_v8: traps support
+      microblaze_v8: memory inicialization, MMU, TLB
+      microblaze_v8: page.h, segment.h, unaligned.h
+      microblaze_v8: includes SHM*, msgbuf
+      microblaze_v8: bug headers files
+      microblaze_v8: definitions of types
+      microblaze_v8: ioctl support
+      microblaze_v8: io.h IO operations
+      microblaze_v8: headers for executables format FLAT, ELF
+      microblaze_v8: dma support
+      microblaze_v8: headers for irq
+      microblaze_v8: atomic.h bitops.h swab.h byteorder.h
+      microblaze_v8: headers pgalloc.h pgtable.h
+      microblaze_v8: system.h processor.h
+      microblaze_v8: clinkage.h linkage.h sections.h kmap_types.h
+      microblaze_v8: stats headers
+      microblaze_v8: termbits.h termios.h
+      microblaze_v8: sigcontext.h siginfo.h
+      microblaze_v8: headers simple files - empty or redirect to asm-gene=
+ric
+      microblaze_v8: gpio.h, serial.h
+      microblaze_v8: namei.h
+      microblaze_v8: headers files entry.h current.h mman.h registers.h s=
+embuf.h
+      microblaze_v8: device.h param.h topology.h
+      microblaze_v8: pool.h socket.h
+      microblaze_v8: fcntl.h sockios.h ucontext.h
+      microblaze_v8: unistd.h
+      microblaze_v8: string.h thread_info.h
+      microblaze_v8: Kbuild file
+      microblaze_v8: pci headers
+      microblaze_v8: syscalls.h
+      microblaze_v8: Interrupt handling and timer support
+      microblaze_v8: Kconfig patches
+      microblaze_v8: Makefiles for Microblaze cpu
+      microblaze_v8: Uartlite for Microblaze
+      microblaze_v8: Add MAINTAINERS fragment
+      microblaze: Fix problem with removing zero length files
+      microblaze: Add missing empty ftrace.h file
+      microblaze: Add TIMESTAMPING constants to socket.h
+      microblaze: Simplify copy_thread()
+      microblaze: struct device - replace bus_id with dev_name()
+      microblaze: Add missing FILE tag to MAINTAINERS
 
-Michael Holzheu (2):
-      [S390] fix compat sigaltstack syscall table entry
-      [S390] Add missing compat system call wrappers.
+Mike Rapoport (3):
+      Input: wm97xx - add BTN_TOUCH event to wm97xx to use it with Androi=
+d
+      Input: ucb1400_ts, mainstone-wm97xx - add BTN_TOUCH events
+      [ARM] pxa/em-x270: add libertas device registration
 
-Michael Schmitz (1):
-      ide: fix Falcon IDE breakage
+Miklos Szeredi (2):
+      fuse: fix argument type in fuse_get_user_pages()
+      fuse: fix "direct_io" private mmap
 
-Mike Christie (2):
-      [SCSI] libiscsi: fix iscsi pool leak
-      [SCSI] qla4xxx: do not reuse session when connecting to different t=
-arget port
+Mikulas Patocka (6):
+      dm: remove limited barrier support
+      dm: rework queueing and suspension
+      dm: remove dm_request loop
+      dm: implement basic barrier support
+      dm kcopyd: prepare for callback race fix
+      dm kcopyd: fix callback race
 
-Mike Frysinger (1):
-      asm-sh/posix_types_{32,64}.h: drop __GLIBC__/__USE_ALL usage
+Nathan Lynch (1):
+      sched: do not count frozen tasks toward load
 
-Mike Travis (3):
-      rcu: move Kconfig menu
-      x86: put trigger in to detect mismatched apic versions
-      cpufreq: use work_on_cpu in acpi-cpufreq.c for drv_read and drv_wri=
-te
+Nikanth Karthikesan (1):
+      init/initramfs: fix warning with CONFIG_BLK_DEV_RAM=3Dn
 
-Miklos Szeredi (4):
-      fuse: fix missing fput on error
-      fuse: fuse_fill_super error handling cleanup
-      fuse: destroy bdi on umount
-      fuse: fix poll notify
+Nobuhiro Iwamatsu (1):
+      nommu: fix typo vma->pg_off to vma->vm_pgoff
 
-Oliver Neukum (2):
-      USB: storage: add unusual devs entry
-      USB: new id for ti_usb_3410_5052 driver
+Oleg Nesterov (4):
+      posix-timers: fix RLIMIT_CPU && fork()
+      posix-timers: fix RLIMIT_CPU && setitimer(CPUCLOCK_PROF)
+      kthread: move sched-realeted initialization from kthreadd context
+      ptrace: fix exit_ptrace() vs ptrace_traceme() race
 
-Patrick McHardy (1):
-      netfilter: ctnetlink: fix scheduling while atomic
+Or Gerlitz (1):
+      IPoIB: Document newish features
+
+Pablo Neira Ayuso (1):
+      netfilter: ctnetlink: fix regression in expectation handling
+
+Paul Menzel (1):
+      drivers/video/aty/radeon_base.c: fix typo in comment
 
 Paul Mundt (8):
-      sh: Drop the BKL from sys_execve() on SH-5.
-      sh: mach-x3proto: needs linux/irq.h.
-      sh: sh7785lcr/highlander/hp6xx need linux/irq.h.
-      sh: Kill off obsolete busses from arch/sh/Kconfig.
-      serial: sh-sci: Fix up SH7720/SH7721 SCI build.
-      sh: update defconfigs.
-      nommu: Stub in vm_map_ram()/vm_unmap_ram()/vm_unmap_aliases().
-      dma-coherent: Restore dma_alloc_from_coherent() large alloc fall ba=
-ck policy.
+      sh: wire up sys_preadv/sys_pwritev() syscalls.
+      sh: Provide cpumask_of_pcibus() to fix NUMA build.
+      sh: Add support for DMA API debugging.
+      sh: Plug in support for ARCH=3Dsh64 using sh SRCARCH.
+      Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/=
+git/torvalds/linux-2.6
+      MAINTAINERS: Update sh architecture file patterns.
+      sh: Pre-allocate a reasonable number of DMA debug entries.
+      sh: Add in PCI bus for DMA API debugging.
 
-Pavel Roskin (2):
-      dell_rbu: use scnprintf() instead of less secure sprintf()
-      orinoco: use KERN_DEBUG for link status messages
+Paulius Zaleckas (3):
+      [WATCHDOG] remove ARM26 sections
+      imxmmc: init-exit rework
+      imxmmc: move RSSR BLR
 
-Pete Zaitcev (1):
-      USB: usbmon: Implement compat_ioctl
+Peter Korsgaard (1):
+      kbuild: use git svn instead of git-svn in setlocalversion
 
-Peter Korsgaard (2):
-      fsldma: check for NO_IRQ in fsl_dma_chan_remove()
-      fsldma: print correct IRQ on mpc83xx
+Peter Zijlstra (1):
+      mm: move the scan_unevictable_pages sysctl to the vm table
 
-Peter P Waskiewicz Jr (1):
-      ixgbe: Fix usage of netif_*_all_queues() with netif_carrier_{off|on=
-}()
+Phil Sutter (1):
+      Input: add driver for S1 button of rb532
 
-Peter Ujfalusi (1):
-      ASoC: Add missing comma to SND_SOC_DAPM_SWITCH_E in soc-dapm.h
+Philipp Zabel (2):
+      pda_power: Add optional OTG transceiver and voltage regulator suppo=
+rt
+      [ARM] pxa/magician: Enable bq24022 regulator for gpio_vbus and pda_=
+power
 
-Peter Zijlstra (4):
-      itimers: remove the per-cpu-ish-ness
-      locking, hpet: annotate false positive warning
-      hrtimers: fix inconsistent lock state on resume in hres_timers_resu=
-me
-      x86, mm: fix pte_free()
+Pierre Ossman (1):
+      New mail address for Pierre Ossman
 
-Phil Dibowitz (3):
-      USB: Remove ZTE modem from unusual_devices
-      USB: unusual_dev: usb-storage needs to ignore a device
-      USB: storage: Add another unusual_dev for off-by-one bug
-
-Phil Sutter (4):
-      korina: fix loop back of receive descriptors
-      korina: adjust headroom for new skb's also
-      korina: drop leftover assignment
-      pata-rb532-cf: remove set_irq_type from finish_io
-
-Philipp Zabel (1):
-      power_supply: pda_power: Don't request shared IRQs w/ IRQF_DISABLED
-
-Rafael J. Wysocki (8):
-      PCI PM: Restore standard config registers of all devices early
-      Hibernation: Introduce system_entering_hibernation
-      DMI: Introduce dmi_first_match to make the interface more flexible
-      SATA: Blacklisting of systems that spin off disks during ACPI power=
- off
-      SATA AHCI: Blacklist system that spins off disks during ACPI power =
-off
-      SATA Sil: Blacklist system that spins off disks during ACPI power o=
-ff
-      SATA PIIX: Blacklist system that spins off disks during ACPI power =
-off
-      USB: Fix suspend-resume of PCI USB controllers
+Rafael J. Wysocki (1):
+      PM/Hibernate: Wait for SCSI devices scan to complete during resume
 
 Rakib Mullick (1):
-      x86: fix section mismatch warning
+      x86: Fix section mismatches in mpparse
 
-Ramax Lo (1):
-      [ARM] 5365/1: s3cmci: Use new include path of dma.h
+Randy Dunlap (5):
+      timers: add missing kernel-doc
+      ethoc: fix library build errors
+      docbook: make cleandocs
+      MAINTAINERS: fix Andreas's email address
+      filemap: fix kernel-doc warnings
 
-Rami Rosen (1):
-      rt2x00: fix a wrong parameter for __test_and_clear_bit() in rt2x00r=
-fkill_free().
+Randy Robertson (1):
+      initramfs: fix initramfs to work with hardlinked init
 
-Randy Dunlap (2):
-      kbuild: fix kbuild.txt typos
-      mac80211: more kernel-doc fixes
+Robin Holt (4):
+      sgi-xpc: update SGI XP/XPC/XPNET maintainer
+      sgi-xpc: prevent false heartbeat failures
+      sgi-xpc: implement opencomplete messaging
+      sgi-xpc: clean up numerous globals
 
-Reinette Chatre (1):
-      iwlwifi: return NETDEV_TX_OK from _tx ops
+Roel Kluin (1):
+      Input: pc110pad - use no_pci_devices()
 
-Richard R=C3=B6jfors (1):
-      macb: avoid lockup when TGO during underrun
+Roland Dreier (4):
+      IB/mlx4: Use pgprot_writecombine() for BlueFlame pages
+      mlx4_core: Don't leak mailbox for SET_PORT on Ethernet ports
+      IPoIB: Avoid free_netdev() BUG when destroying a child interface
+      Merge branches 'cma', 'cxgb3', 'ipoib', 'mlx4' and 'nes' into for-n=
+ext
 
-Robert Jennings (1):
-      powerpc/pseries: Correct VIO bus accounting problem in CMO env.
+Roland McGrath (1):
+      ptrace: some checkpatch fixes
 
-Robert Richter (1):
-      oprofile: fix uninitialized use of struct op_entry
+Russell King (2):
+      [ARM] omap: fix omap1 clock usecount decrement bug
+      Merge branch 'devel' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/ycmiao/pxa-linux-2.6
 
-Robie Basak (1):
-      USB: ftdi_sio: added Alti-2 VID and Neptune 3 PID
+Rusty Russell (1):
+      sched_rt: don't allocate cpumask in fastpath
 
-Roel Kluin (2):
-      net/9p: fid->fid is used uninitialized
-      USB: GADGET: fix !x & y
+Ryusuke Konishi (8):
+      nilfs2: return f_fsid for statfs2
+      nilfs2: fix lockdep recursive locking warning on bmap
+      nilfs2: fix lockdep recursive locking warning on meta data files
+      nilfs2: remove module version
+      nilfs2: simplify handling of active state of segments fix
+      nilfs2: fix wrong accounting and duplicate brelse in nilfs_sufile_s=
+et_error
+      nilfs2: segment usage file cleanups
+      nilfs2: fix possible mismatch of sufile counters on recovery
 
-Roland Dreier (5):
-      IPoIB: Fix hang in napi_disable() if P_Key is never found
-      IPoIB: Fix deadlock between ipoib_open() and child interface create
-      IB/mlx4: Fix memory ordering problem when posting LSO sends
-      Merge branches 'ehca', 'ipoib' and 'mlx4' into for-linus
-      driver core: Convert '/' to '!' in dev_set_name()
+Sam Ravnborg (3):
+      kconfig: fix update-po-config to accect backslash in input
+      kbuild: introduce destination-y for exported headers
+      Documentation: explain the difference between __bitwise and __bitwi=
+se__
 
-Russell King (6):
-      [ARM] omap: ensure OMAP drivers pass a struct device to clk_get()
-      [ARM] fix StrongARM-11x0 page copy implementation
-      [ARM] clkdev: fix clock matching
-      [ARM] omap: watchdog: allow OMAP watchdog driver on OMAP34xx platfo=
-rms
-      [ARM] omap: usb: thou shalt not provide empty release functions
-      [ARM] fix section-based ioremap
+Sascha Hauer (1):
+      FEC driver: add missing #endif
 
-Rusty Russell (2):
-      work_on_cpu: don't try to get_online_cpus() in work_on_cpu.
-      work_on_cpu: Use our own workqueue.
+Serge E. Hallyn (2):
+      cap_prctl: don't set error to 0 at 'no_change'
+      add some long-missing capabilities to fs_mask
 
-SUGIOKA Toshinobu (1):
-      sh: fix unaligned and nonexistent address handling
+Sergei Shtylyov (9):
+      ide-h8300: remove mm_{inw|outw}()
+      at91_ide: remove custom tf_{read|load}() methods
+      ide-h8300: remove custom tf_{read|load}() methods
+      ide: replace IDE_TFLAG_* flags by IDE_VALID_*
+      ide: simplify 'struct ide_taskfile'
+      ide: move common code out of tf_load() method
+      ide: call write_devctl() method from tf_read() method
+      ide: refactor tf_load() method
+      ide: refactor tf_read() method
 
-Sam Ravnborg (4):
-      Revert "kbuild: strip generated symbols from *.ko"
-      m68k,m68knommu: merge header files
-      sparc64: fix readout of cpu/fpu type
-      sparc64: fix modpost failure
+Shaohua Li (3):
+      ACPI: convert acpi_device_lock spinlock to mutex
+      drm/i915: Fix a mismerge of the IGD patch (new .find_pll hooks miss=
+ed)
+      drm/i915: fix scheduling while holding the new active list spinlock
 
-Sean MacLennan (1):
-      powerpc/44x: Warp patches for the new NDFC driver
+Shen Feng (1):
+      doc: use correct debugfs mountpoint
 
-Sebastian Siewior (1):
-      m68knommu: use one exist from execption
+Stanislaw Gruszka (2):
+      at91_ide: remove unused ide_mm_{outb,inb}
+      at91_ide: turn on PIO 6 support
 
-Seokmann Ju (1):
-      [SCSI] qla2xxx: Add checks for a valid fcport in dev-loss-tmo/termi=
-nate_rport_io callbacks.
+Stefan Husemann (1):
+      intelfb: support i854
 
-Stephen Rothwell (4):
-      IB/ehca: Fix printk format warnings from u64 type change
-      IB/ehca: Use consistent types for ehca_plpar_hcall9()
-      powerpc: Printing fix for l64 to ll64 conversion: phyp_dump.c
-      powerpc: More printing warning fixes for the l64 to ll64 conversion
+Steve Glendinning (1):
+      smsc911x: correct debugging message on mii read timeout
 
-Steve Glendinning (5):
-      sh: convert ap325rxa platform to use smsc911x.
-      sh: convert magicpanelr2 platform to use smsc911x.
-      sh: convert rsk7203 to use smsc911x.
-      usbnet: allow type check of devdbg arguments in non-debug build
-      phy: Add suspend/resume support to SMSC PHYs
+Steve Wise (2):
+      RDMA/cxgb3: Handle EEH events
+      RDMA/cxgb3: Release dependent resources only when endpoint memory i=
+s freed.
 
-Steven Noonan (1):
-      kernel/fork.c: unused variable 'ret'
+Stoyan Gaydarov (1):
+      afs: BUG to BUG_ON changes
 
-Suresh Siddha (3):
-      x86, pat: fix reserve_memtype() for legacy 1MB range
-      x86: fix page attribute corruption with cpa()
-      x86: fix PTE corruption issue while mapping RAM using /dev/mem
+Suresh Siddha (1):
+      x86: add linux kernel support for YMM state
 
-Swaminathan S (1):
-      USB: musb cppi dma fix
+Takashi Iwai (1):
+      ALSA: wavefront - Always use request_firmware()
 
-Takashi Iwai (10):
-      ALSA: hda - Fix (yet more) STAC925x issues
-      Merge branch 'topic/asoc' into for-linus
-      Merge branch 'topic/hda' into for-linus
-      Merge branch 'topic/hda' into for-linus
-      Merge branch 'topic/oss-cleanup' into for-linus
-      Merge branch 'topic/virtuoso' into for-linus
-      ALSA: hda - Add model entry for HP dv4
-      Merge branch 'fix/asoc' into for-linus
-      Merge branch 'fix/hda' into for-linus
-      Merge branch 'fix/asoc' into for-linus
+Tejun Heo (2):
+      percpu: unbreak alpha percpu
+      ahci: force CAP_NCQ for earlier NV MCPs
 
-Tejun Heo (4):
-      libata-sff: fix incorrect EH message
-      libata: set NODEV_HINT for 0x7f status
-      sata_nv: rename nv_nf2_hardreset()
-      sata_nv: fix MCP5x reset
+Tetsuo Handa (3):
+      tracing: append a comma to INIT_FTRACE_GRAPH
+      tomoyo: add Documentation/tomoyo.txt
+      tomoyo: version bump to 2.2.0.
 
-Thomas Gleixner (2):
-      debugobjects: add and use INIT_WORK_ON_STACK
-      Merge branch 'core/debugobjects' into core/urgent
+Theodore Ts'o (1):
+      block_write_full_page: switch synchronous writes to use WRITE_SYNC_=
+PLUG
+
+Thiemo Nagel (2):
+      ext4: Fix big-endian problem in __ext4_check_blockref()
+      ext4: Fix off-by-one-error in ext4_valid_extent_idx()
+
+Thomas Gleixner (1):
+      MN10300: Convert obsolete no_irq_type to no_irq_chip
 
 Thomas Reitmayr (1):
-      sata_mv: Properly initialize main irq mask
+      [WATCHDOG] orion5x_wdt: Add shutdown callback, use watchdog ping fu=
+nction
 
-Thomas Renninger (1):
-      x86: mtrr fix debug boot parameter
+Tony Breeds (1):
+      parport_pc: Fix build failure drivers/parport/parport_pc.c for powe=
+rpc
 
-Timo Teras (1):
-      af_key: initialize xfrm encap_oa
+Tony Lindgren (1):
+      mmc: Fix compile for omap_hsmmc.c
 
-Timur Tabi (1):
-      ASoC: fix registration of the SoC card in the Freescale MPC8610 dri=
-vers
+Tony Luck (1):
+      [IA64] wire up preadv/pwritev system calls
 
-Tomasz K (1):
-      USB: cp2101 device
-
-Tony Lindgren (7):
-      ARM: OMAP: Fix compile for various McBSP
-      ARM: OMAP: Fix compile for palmte
-      ARM: OMAP: Fix compile for beagle
-      ARM: OMAP: Fix gpio.c compile on 15xx with CONFIG_DEBUGFS
-      ARM: OMAP: Fix ASoC by enabling writes to XCCR and RCCR McBSP regis=
-ters, v3
-      ARM: OMAP: Remove unused platform devices, v3
-      ARM: OMAP: Fix compile for h3 MMC
-
-Uwe Kleine-K=C3=B6nig (3):
-      move wm8400-regulator's probe function to .devinit.text
-      [NET] am79c961a: fix spin_lock usage
-      Move jsm_remove_one to .devexit.text
+Uwe Kleine-K=C3=B6nig (4):
+      [WATCHDOG] at91rm9200_wdt.c: move probe function to .devinit.text
+      [WATCHDOG] ks8695_wdt.c: move probe function to .devinit.text
+      [WATCHDOG] omap_wdt.c: move probe function to .devinit.text
+      kbuild: fix option processing for -I in headerdep
 
 Vegard Nossum (2):
-      security: introduce missing kfree
-      inotify: clean up inotify_read and fix locking problems
+      ACPI battery: fix async boot oops
+      ata: fix obviously wrong comment
 
-Vlad Yasevich (4):
-      sctp: Fix crc32c calculations on big-endian arhes.
-      sctp: Correctly start rtx timer on new packet transmissions.
-      sctp: Properly timestamp outgoing data chunks for rtx purposes
-      sctp: Fix another socket race during accept/peeloff
+Venkatesh Pallipadi (3):
+      ACPI x86: Cleanup acpi_cpufreq structures related to aperf/mperf
+      ACPI x86: Make aperf/mperf MSR access in acpi_cpufreq read_only
+      x86 ACPI: Add support for Always Running APIC timer
 
-Vladislav Zolotarov (1):
-      bnx2x: tx_has_work should not wait for FW
+Ville Syrjala (3):
+      Input: ati_remote2 - complete suspend support
+      Input: ati_remote2 - add per device attrs
+      Input: ati_remote2 - check module params
 
-Wolfgang Glas (1):
-      USB: cp2101: add fasttrax GPS evaluation kit vendor/product ID
+Vitaliy Gusev (1):
+      kthread: Don't looking for a task in create_kthread() #2
 
-Wolfram Sang (4):
-      i2c: Move at24 to drivers/misc/eeprom
-      i2c: Move old eeprom driver to /drivers/misc/eeprom
-      spi: Move at25 (for SPI eeproms) to /drivers/misc/eeprom
-      eeprom: Move 93cx6 eeprom driver to /drivers/misc/eeprom
+Weidong Han (1):
+      x86, intr-remap: fix eoi for interrupt remapping without x2apic
 
-Yossi Etigin (1):
-      IPoIB: Do not print error messages for multicast join retries
+Wim Van Sebroeck (4):
+      [WATCHDOG] i6300esb.c: Cleanup
+      [WATCHDOG] i6300esb.c: Fix the GETSTATUS and GETBOOTSTATUS ioctls.
+      [WATCHDOG] i6300esb.c: Restructure initialization of the device
+      Merge branch 'master' of /pub/scm/linux/kernel/git/torvalds/linux-2=
+.6
+
+Wolfgang Muees (3):
+      mmc_spi: do not check CID and CSD blocks with CRC16
+      mmc_spi: convert timeout handling to jiffies and avoid busy waiting
+      mmc_spi: support for non-byte-aligned cards
+
+Yang Hongyang (2):
+      drivers/net/eql.c: Fix a dev leakage.
+      Replace all DMA_nBIT_MASK macro with DMA_BIT_MASK(n)
+
+Yinghai Lu (2):
+      irq: fix cpumask memory leak on offstack cpumask kernels
+      x86: make 64 bit to use default_inquire_remote_apic
+
+Yoshihiro Shimoda (1):
+      sh: sh7785lcr: fix PCI address map for 32-bit mode
+
+Yossi Etigin (2):
+      RDMA/cma: Use rate from IPoIB broadcast when joining IPoIB multicas=
+t groups
+      RDMA/cma: Create cm id even when IB port is down
 
 Yuri Tikhonov (1):
-      dmaengine: fix dependency chaining
+      shmem: fix division by zero
 
-Zhu Yi (1):
-      iwlwifi: remove CMD_WANT_SKB flag if send_cmd_sync failure
-
-roel kluin (1):
-      via-velocity: fix hot spin
-
-sware (1):
-      USB: remove vernier labpro from ldusb
+Zhaolei (3):
+      printk: fix wrong format string iter for printk
+      Make __stringify support variable argument macros too
+      ftrace: Output REC->var instead of __entry->var for trace format
 
 -----------------------------------------------------------------------
 
@@ -967,7 +967,7 @@ hooks/post-receive
 --
 linux-cr
 
---===============4860915860638861329==
+--===============2451863627610355280==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Disposition: inline
@@ -977,4 +977,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---===============4860915860638861329==--
+--===============2451863627610355280==--
