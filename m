@@ -1,13 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/4] makefile hack for powerpc
-Date: Wed, 16 Sep 2009 04:27:51 -0500
-Message-ID: <1253093271-16357-5-git-send-email-ntl@pobox.com>
-References: <1253093271-16357-1-git-send-email-ntl@pobox.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/9] checkpoint: fix integer-pointer conversion warnings
+Date: Wed, 16 Sep 2009 09:21:37 -0500
+Message-ID: <20090916142137.GA13476@us.ibm.com>
+References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
+	<1253091418-14807-2-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253093271-16357-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1253091418-14807-2-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,31 +19,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add an explict restart target which links clone_ppc32.o into the
-restart executable.
-
-Ideas on how to handle this in a mergeable form are welcome.
----
- Makefile |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-diff --git a/Makefile b/Makefile
-index 8cd0c2d..10c068c 100644
---- a/Makefile
-+++ b/Makefile
-@@ -45,6 +45,9 @@ all: $(PROGS)
- ckptinfo: ckptinfo_types.o
- 
- restart: CFLAGS += -D__REENTRANT -pthread
-+# powerpc hack
-+restart: restart.c clone_ppc32.o
-+	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
- 
- ckptinfo_types.o: ckptinfo_types.c
- 	@echo $(CC) -c $(CFLAGS) $<
--- 
-1.6.0.6
+UXVvdGluZyBOYXRoYW4gTHluY2ggKG50bEBwb2JveC5jb20pOgo+ICAgQ0MgICAgICBjaGVja3Bv
+aW50L3Byb2Nlc3Mubwo+IGNoZWNrcG9pbnQvcHJvY2Vzcy5jOiBJbiBmdW5jdGlvbiDigJhjaGVj
+a3BvaW50X3Rhc2tfc3RydWN04oCZOgo+IGNoZWNrcG9pbnQvcHJvY2Vzcy5jOjk3OiB3YXJuaW5n
+OiBhc3NpZ25tZW50IG1ha2VzIGludGVnZXIgZnJvbSBwb2ludGVyIHdpdGhvdXQgYSBjYXN0Cj4g
+Y2hlY2twb2ludC9wcm9jZXNzLmM6OTg6IHdhcm5pbmc6IGFzc2lnbm1lbnQgbWFrZXMgaW50ZWdl
+ciBmcm9tIHBvaW50ZXIgd2l0aG91dCBhIGNhc3QKPiBjaGVja3BvaW50L3Byb2Nlc3MuYzogSW4g
+ZnVuY3Rpb24g4oCYcmVzdG9yZV90YXNrX3N0cnVjdOKAmToKPiBjaGVja3BvaW50L3Byb2Nlc3Mu
+Yzo0NzU6IHdhcm5pbmc6IGFzc2lnbm1lbnQgbWFrZXMgcG9pbnRlciBmcm9tIGludGVnZXIgd2l0
+aG91dCBhIGNhc3QKPiBjaGVja3BvaW50L3Byb2Nlc3MuYzo0NzY6IHdhcm5pbmc6IGFzc2lnbm1l
+bnQgbWFrZXMgcG9pbnRlciBmcm9tIGludGVnZXIgd2l0aG91dCBhIGNhc3QKPiAKPiBTaWduZWQt
+b2ZmLWJ5OiBOYXRoYW4gTHluY2ggPG50bEBwb2JveC5jb20+Cj4gLS0tCj4gIGNoZWNrcG9pbnQv
+cHJvY2Vzcy5jIHwgICAgOCArKysrLS0tLQo+ICAxIGZpbGVzIGNoYW5nZWQsIDQgaW5zZXJ0aW9u
+cygrKSwgNCBkZWxldGlvbnMoLSkKPiAKPiBkaWZmIC0tZ2l0IGEvY2hlY2twb2ludC9wcm9jZXNz
+LmMgYi9jaGVja3BvaW50L3Byb2Nlc3MuYwo+IGluZGV4IDQxNTY2ZGIuLmI3ZjRhNDMgMTAwNjQ0
+Cj4gLS0tIGEvY2hlY2twb2ludC9wcm9jZXNzLmMKPiArKysgYi9jaGVja3BvaW50L3Byb2Nlc3Mu
+Ywo+IEBAIC05NCw4ICs5NCw4IEBAIHN0YXRpYyBpbnQgY2hlY2twb2ludF90YXNrX3N0cnVjdChz
+dHJ1Y3QgY2twdF9jdHggKmN0eCwgc3RydWN0IHRhc2tfc3RydWN0ICp0KQo+ICAJCWgtPmV4aXRf
+c2lnbmFsID0gdC0+ZXhpdF9zaWduYWw7Cj4gIAkJaC0+cGRlYXRoX3NpZ25hbCA9IHQtPnBkZWF0
+aF9zaWduYWw7Cj4gIAo+IC0JCWgtPnNldF9jaGlsZF90aWQgPSB0LT5zZXRfY2hpbGRfdGlkOwo+
+IC0JCWgtPmNsZWFyX2NoaWxkX3RpZCA9IHQtPmNsZWFyX2NoaWxkX3RpZDsKPiArCQloLT5zZXRf
+Y2hpbGRfdGlkID0gKHVuc2lnbmVkIGxvbmcpdC0+c2V0X2NoaWxkX3RpZDsKPiArCQloLT5jbGVh
+cl9jaGlsZF90aWQgPSAodW5zaWduZWQgbG9uZyl0LT5jbGVhcl9jaGlsZF90aWQ7CgpCdXQgaXQn
+cyBkZWZpbmVkIGFzIF9fdTY0IGluIGNoZWNrcG9pbnRfaGRyLmguICBTbyBvbiAzMi1iaXQgdGhp
+cyBjYXN0Cndvbid0IGJlIHJpZ2h0LCByaWdodD8KCkJ1dCBhIG1ham9yIGFjayB0byBzaHV0dGlu
+ZyB0aGlzIHRoaW5nIHVwLgoKdGhhbmtzLAotc2VyZ2UKCj4gIAkJc2F2ZV90YXNrX3JvYnVzdF9m
+dXRleF9saXN0KGgsIHQpOwo+ICAJfQo+ICAKPiBAQCAtNDcyLDggKzQ3Miw4IEBAIHN0YXRpYyBp
+bnQgcmVzdG9yZV90YXNrX3N0cnVjdChzdHJ1Y3QgY2twdF9jdHggKmN0eCkKPiAgCQl0LT5leGl0
+X3NpZ25hbCA9IGgtPmV4aXRfc2lnbmFsOwo+ICAJCXQtPnBkZWF0aF9zaWduYWwgPSBoLT5wZGVh
+dGhfc2lnbmFsOwo+ICAKPiAtCQl0LT5zZXRfY2hpbGRfdGlkID0gaC0+c2V0X2NoaWxkX3RpZDsK
+PiAtCQl0LT5jbGVhcl9jaGlsZF90aWQgPSBoLT5jbGVhcl9jaGlsZF90aWQ7Cj4gKwkJdC0+c2V0
+X2NoaWxkX3RpZCA9ICh2b2lkIF9fdXNlciAqKWgtPnNldF9jaGlsZF90aWQ7Cj4gKwkJdC0+Y2xl
+YXJfY2hpbGRfdGlkID0gKHZvaWQgX191c2VyICopaC0+Y2xlYXJfY2hpbGRfdGlkOwo+ICAJCXJl
+c3RvcmVfdGFza19yb2J1c3RfZnV0ZXhfbGlzdChoKTsKPiAgCX0KPiAgCj4gLS0gCj4gMS42LjAu
+Ngo+IAo+IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCj4g
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKPiBDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCj4gaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
