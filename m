@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/9] fix trivial build breaks in compat code
-Date: Wed, 16 Sep 2009 03:56:51 -0500
-Message-ID: <1253091418-14807-3-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/9] powerpc: reserve checkpoint arch identifiers
+Date: Wed, 16 Sep 2009 03:56:53 -0500
+Message-ID: <1253091418-14807-5-git-send-email-ntl@pobox.com>
 References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,40 +21,23 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- checkpoint/process.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ include/linux/checkpoint_hdr.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index b7f4a43..41c1c85 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -308,7 +308,7 @@ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
- #ifdef CONFIG_COMPAT
- 	} else if (fn == compat_nanosleep_restart) {
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 06bc6e2..851cdf2 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -110,6 +110,8 @@ enum {
+ 	/* do not change order (will break ABI) */
+ 	CKPT_ARCH_X86_32 = 1,
+ 	CKPT_ARCH_S390X,
++	CKPT_ARCH_PPC32,
++	CKPT_ARCH_PPC64,
+ };
  
--		h->function_type = CKPT_RESTART_BLOCK_NANOSLEEP;
-+		h->function_type = CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP;
- 		h->arg_0 = restart_block->nanosleep.index;
- 		h->arg_1 = (unsigned long)restart_block->nanosleep.rmtp;
- 		h->arg_2 = (unsigned long)restart_block->nanosleep.compat_rmtp;
-@@ -670,7 +670,7 @@ int restore_restart_block(struct ckpt_ctx *ctx)
- 		restart_block.nanosleep.compat_rmtp =
- 			(struct compat_timespec __user *)
- 				(unsigned long) h->arg_2;
--		resatrt_block.nanosleep.expires = expire;
-+		restart_block.nanosleep.expires = expire;
- 		break;
- 	case CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
- 		clockid = h->arg_0;
-@@ -683,7 +683,7 @@ int restore_restart_block(struct ckpt_ctx *ctx)
- 		restart_block.nanosleep.compat_rmtp =
- 			(struct compat_timespec __user *)
- 				(unsigned long) h->arg_2;
--		resatrt_block.nanosleep.expires = expire;
-+		restart_block.nanosleep.expires = expire;
- 		break;
- #endif
- 	case CKPT_RESTART_BLOCK_FUTEX:
+ /* shared objrects (objref) */
 -- 
 1.6.0.6
