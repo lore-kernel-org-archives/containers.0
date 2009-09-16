@@ -1,9 +1,9 @@
 From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr annotated tag, v2.6.31-rc8, created. v2.6.31-rc8
-Date: Wed, 16 Sep 2009 14:36:59 -0400
-Message-ID: <200909161836.n8GIax9R001715@gorgona.ncl.cs.columbia.edu>
+Subject: [cr][git]linux-cr annotated tag, v2.6.30-rc7, created. v2.6.30-rc7
+Date: Wed, 16 Sep 2009 14:36:52 -0400
+Message-ID: <200909161836.n8GIaqBN001504@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3271047029813285755=="
+Content-Type: multipart/mixed; boundary="===============8965507908793635864=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,379 +17,467 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============3271047029813285755==
+--===============8965507908793635864==
 Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n8GIu1Df005279
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n8GIu4fV005306
 
 This is an automated email from the git hooks/post-receive script. It was
 generated because a ref change was pushed to the repository containing
 the project "linux-cr".
 
-The annotated tag, v2.6.31-rc8 has been created
-        at  da1ee8b71154887fe5298ae683c089050f2c49a5 (tag)
-   tagging  326ba5010a5429a5a528b268b36a5900d4ab0eba (commit)
-  replaces  v2.6.31-rc7
+The annotated tag, v2.6.30-rc7 has been created
+        at  efa3e68c670b745894255af9827b3902bbc9376e (tag)
+   tagging  59a3759d0fe8d969888c741bb33f4946e4d3750d (commit)
+  replaces  v2.6.30-rc6
  tagged by  Linus Torvalds
-        on  Thu Aug 27 17:59:15 2009 -0700
+        on  Sat May 23 14:47:18 2009 -0700
 
 - Log -----------------------------------------------------------------
-Linux 2.6.31-rc8
+Linux 2.6.30-rc7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEABECAAYFAkqXK+YACgkQF3YsRnbiHLsm9gCfZyxaVy44Q72pkjLkBlA9QcQf
-CUcAoIRr6pjXA89Vju0uZn3x7SHI/5nj
-=3Do6jm
+iEYEABECAAYFAkoYbuoACgkQF3YsRnbiHLs0xQCgnYqobF37iHW8trKGEm4d4v+i
+ok4AnAmbSiWw/J1WtqUJ4JSZ3PzIecrP
+=3DxyLu
 -----END PGP SIGNATURE-----
 
-Abhishek Kulkarni (10):
-      9p: Check for error in return value of v9fs_fid_add
-      9p: Fix possible inode leak in v9fs_get_inode.
-      9p: minor comment fixes
-      9p: Fix possible memleak in v9fs_inode_from fid.
-      9p: Fix v9fs show_options
-      9p: Fix possible regressions when ->get_sb fails.
-      9p: Remove redundant inode uid/gid assignment
-      9p: Add missing cast for the error return value in v9fs_get_inode
-      net/9p: insulate the client against an invalid error code sent by a=
- 9p server
-      9p: remove unnecessary v9fses->options which duplicates the mount s=
-tring
+Abhijeet Joglekar (1):
+      [SCSI] fnic: Add new Cisco PCI-Express FCoE HBA
 
-Alek Du (1):
-      PCI: check saved state before restore
+Adam Williamson (1):
+      ALSA: hda - fix audio on HP TX25xx series notebooks
 
-Alexander Beregalov (2):
-      irda/au1k_ir: fix broken netdev_ops conversion
-      irda/sa1100_ir: fix broken netdev_ops conversion
+Ajit Khaparde (1):
+      be2net: add two new pci device ids to pci device table
 
-Alexey Dobriyan (2):
-      smc91x: fix compilation on SMP
-      m68k: Fix redefinition of pgprot_noncached
+Alan Cox (1):
+      piix: The Sony TZ90 needs the cable type hardcoding
 
-Amerigo Wang (2):
-      timers: Drop write permission on /proc/timer_list
-      x86: Fix an incorrect argument of reserve_bootmem()
+Alan Jenkins (2):
+      eeepc-laptop: fix wlan rfkill state change during init
+      eeepc-laptop: Work around rfkill firmware bug
+
+Alessandro Rubini (1):
+      [ARM] 5519/1: amba probe: pass "struct amba_id *" instead of void *
 
 Andreas Mohr (1):
-      net: Fix Micrel KSZ8842 Kconfig description
+      ALSA: Kill truncate warning by shortening Sigmatel-specific AC97 co=
+ntrol name
 
-Andrew Morton (1):
-      arch/m68k/include/asm/motorola_pgalloc.h: fix kunmap arg
+Andrew Randrianasulu (1):
+      MIPS: IP32: Fix hang on shutdown in power button interrupt handler.
 
-Bartlomiej Zolnierkiewicz (1):
-      ALSA: ali5451: fix timeout handling in snd_ali_{codecs,timer}_ready=
-()
+Andrew Vasquez (1):
+      [SCSI] fc-transport: Close state transition-window during rport del=
+etion.
 
-Ben Nizette (1):
-      favr32: improve touchscreen response
+Bartlomiej Zolnierkiewicz (5):
+      ide: fix 40-wire cable detection for TSST SH-S202* ATAPI devices (v=
+2)
+      ide: fix OOPS during ide-cd error recovery
+      ide: fix printk() levels in ide_dump_ata[pi]_error()
+      ide: improve failed opcode reporting
+      ide: report timeouts in ide_busy_sleep()
 
-Benjamin Herrenschmidt (1):
-      lmb: Remove __init from lmb_end_of_DRAM()
+Ben Dooks (5):
+      [ARM] nwfpe: Add decleration for ExtendedCPDO
+      [ARM] nwfpe: fix 'floatx80_is_nan' sparse warning
+      [ARM] S3C24XX: Fix unused code warning in arch/arm/plat-s3c24xx/dma=
+.c
+      [ARM] S3C2410: mach-bast.c registering i2c data too early
+      [ARM] S3C: Do not set clk->owner field if unset
 
-Bruno Pr=C3=A9mont (1):
-      ipv6: Fix commit 63d9950b08184e6531adceb65f64b429909cc101 (ipv6: Ma=
-ke v4-mapped bindings consistent with IPv4)
+Benjamin Herrenschmidt (2):
+      powerpc: Explicit alignment for .data.cacheline_aligned
+      drm: Round size of SHM maps to PAGE_SIZE
 
-Clemens Ladisch (2):
-      sound: vx222: fix input level control range check
-      sound: pcm_lib: fix unsorted list constraint handling
+Bjorn Helgaas (1):
+      PM: check sysdev_suspend(PMSG_FREEZE) return value
 
-Costantino Leandro (1):
-      wmi: fix kernel panic when stack protection enabled.
+Breno Leitao (1):
+      icom: fix rmmod crash
 
-David Howells (1):
-      AFS: Stop readlink() on AFS crashing due to NULL 'file' ptr
+Chris Friesen (1):
+      ipconfig: handle case of delayed DHCP server
 
-David Rientjes (4):
-      flex_array: fix get function for elements in base starting at non-z=
-ero
-      flex_array: fix flex_array_free_parts comment
-      flex_array: declare parts member to have incomplete type
-      flex_array: convert element_nr formals to unsigned
+Christian Hohnstaedt (1):
+      crypto: ixp4xx - check firmware for crypto support
 
-David S. Miller (12):
-      sparc: Fix cleanup crash in bbc_envctrl_cleanup()
-      sparc64: Sign extend length arg to truncate syscalls when compat.
-      sparc: Use page_fault_out_of_memory() for VM_FAULT_OOM.
+Corentin Chary (2):
+      asus-laptop: fix input keycode
+      eeepc-laptop: unregister_rfkill_notifier on failure
+
+Corey Minyard (1):
+      ipmi: fix ipmi_si modprobe hang
+
+Darren Salt (1):
+      eeepc-laptop: report brightness control events via the input layer
+
+David Rientjes (2):
+      slub: enforce MAX_ORDER
+      slub: add Documentation/ABI/testing/sysfs-kernel-slab
+
+David S. Miller (3):
       Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/=
-git/linville/wireless-2.6
-      sparc32: Kill trap table freeing code.
-      sparc32: Update defconfig.
-      sparc64: Update defconfig.
-      Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/=
-git/linville/wireless-2.6
-      pkt_sched: Convert qdisc_watchdog to tasklet_hrtimer
-      pkt_sched: Convert CBQ to tasklet_hrtimer.
-      pkt_sched: Fix bogon in tasklet_hrtimer changes.
-      sparc64: Validate linear D-TLB misses.
+git/holtmann/bluetooth-2.6
+      Merge branch 'master' of /home/davem/src/GIT/linux-2.6/
+      Merge branch 'linux-2.6.30.y' of git://git.kernel.org/pub/scm/linux=
+/kernel/git/inaky/wimax
 
-Dmitry Torokhov (1):
-      Input: wacom - don't use on-stack memory for report buffers
+David Woodhouse (1):
+      Fix oops on close of hot-unplugged FTDI serial converter
 
-Dongdong Deng (3):
-      netpoll: warning for ndo_start_xmit returns with interrupts enabled
-      drivers/net: fixed drivers that support netpoll use ndo_start_xmit(=
-)
-      smc91x: let smc91x work well under netpoll
+Edward Goggin (1):
+      [SCSI] initialize max_target_blocked in scsi_alloc_target
 
-Eric Paris (4):
-      IMA: iint put in ima_counts_get and put
-      inotify: seperate new watch creation updating existing watches
-      inotify: do not BUG on idr entries at inotify destruction
-      inotify: fix locking around inotify watching in the idr
+Eric Dumazet (2):
+      sch_teql: should not dereference skb after ndo_start_xmit()
+      pkt_sched: gen_estimator: use 64 bit intermediate counters for bps
 
-Eric Van Hensbergen (1):
-      9p: update documentation pointers
+Eric Moore (1):
+      [SCSI] mpt2sas: fix driver version inconsistency
 
-Eric W. Biederman (1):
-      inotify: Ensure we alwasy write the terminating NULL.
+Eric Paris (1):
+      TPM: get_event_name stack corruption
 
-Florian Fainelli (1):
-      [WATCHDOG] ar7_wdt: fix path to ar7-specific headers
+Frank Filz (1):
+      nfs: Fix NFS v4 client handling of MAY_EXEC in nfs_permission.
 
-Frans Pop (2):
-      ACPI processor: force throttling state when BIOS returns incorrect =
-value
-      acpi processor: remove superfluous warning message
+Frans Pop (1):
+      ipv4: make default for INET_LRO consistent with help text
 
-Geert Uytterhoeven (2):
-      m68k,m68knommu: Wire up rt_tgsigqueueinfo and perf_counter_open
-      powerpc/ps3: Add missing check for PS3 to rtc-ps3 platform device r=
-egistration
+Gabriel Paubert (1):
+      mv643xx_eth: fix PPC DMA breakage
 
 Geoff Levand (1):
       powerpc/ps3: Update ps3_defconfig
 
-Goldwyn Rodrigues (1):
-      ocfs2/dlm: Wait on lockres instead of erroring cancel requests
+GeunSik Lim (1):
+      tracing: Append prompt in /debug/tracing/README file
 
-Hendrik Brueckner (1):
-      [S390] set preferred console based on conmode
+Greg Ungerer (1):
+      MIPS: 64-bit: Fix system lockup.
 
-Herton Ronaldo Krzesinski (1):
-      rtl8187: always set MSR_LINK_ENEDCA flag with RTL8187B
+Grigori Goronzy (1):
+      eeepc-laptop: support for super hybrid engine (SHE)
+
+Harald Welte (1):
+      via82cxxx: Add VIA VX855 PCI Device ID
+
+Hartley Sweeten (1):
+      [ARM] 5509/1: ep93xx: clkdev enable UARTS
+
+Herbert Xu (2):
+      crypto: api - Fix algorithm module auto-loading
+      crypto: padlock - Revert aes-all alias to aes
 
 Hugh Dickins (1):
-      mm: fix hugetlb bug due to user_shm_unlock call
+      hugh: update email address
 
-Ingo Molnar (2):
-      Merge branch 'bugfix' of git://git.kernel.org/pub/scm/linux/kernel/=
-git/jeremy/xen into x86/urgent
-      tracing: Fix too large stack usage in do_one_initcall()
+Ian Campbell (2):
+      xen/blkfront: allow xenbus state transition to Closing->Closed  whe=
+n not Connected
+      xen/blkfront: fix warning when deleting gendisk on unplug/shutdown
 
-James Bottomley (1):
-      module: workaround duplicate section names
+Ilpo J=C3=A4rvinen (1):
+      tcp: fix MSG_PEEK race check
 
-Jan Beulich (3):
-      i386: Fix section mismatches for init code with !HOTPLUG_CPU
-      x86: add vmlinux.lds to targets in arch/x86/boot/compressed/Makefil=
-e
-      x86: Fix build with older binutils and consolidate linker script
+Inaky Perez-Gonzalez (1):
+      wimax/i2400m: fix device crash: fix optimization in _roq_queue_upda=
+te_ws
 
-Jan Kara (4):
-      ocfs2: Handle quota file corruption more gracefully
-      ocfs2: Don't oops in ocfs2_kill_sb on a failed mount
-      ocfs2: Add missing lock name
-      ext3: Improve error message that changing journaling mode on remoun=
-t is not possible
+Ingo Molnar (1):
+      lockdep: increase MAX_LOCKDEP_ENTRIES and MAX_LOCKDEP_CHAINS
 
-Jeremy Fitzhardinge (3):
-      x86: make sure load_percpu_segment has no stackprotector
-      xen: rearrange things to fix stackprotector
-      xenfb: connect to backend before registering fb
+Jan Beulich (1):
+      x86: fix percpu_{to,from}_op()
 
-Jiri Kosina (1):
-      Input: iforce - support new revision of ACT LABS Force RS
+Jarkko Nikula (2):
+      ARM: OMAP2: Fix tusb6010 init error and compilation warning
+      ARM: OMAP2: Fix SPI driver failure on 2420 when running multi-omap =
+config
 
-Jiri Olsa (1):
-      tracing: handle broken names in ftrace filter
+Jeff Layton (1):
+      cifs: fix pointer initialization and checks in cifs_follow_symlink =
+(try #4)
 
-Jiri Slaby (1):
-      NET: llc, zero sockaddr_llc struct
+Jeff Mahoney (3):
+      reiserfs: clean up ifdefs
+      reiserfs: deal with NULL xattr root w/ xattrs disabled
+      reiserfs: fixup perms when xattrs are disabled
 
-Johannes Berg (1):
-      mac80211: fix todo lock
+Jeremy Fitzhardinge (1):
+      x86: Fix performance regression caused by paravirt_ops on native ke=
+rnels
 
-John Holland (1):
-      [ARM] Kirkwood: enable eSATA on QNAP TS-219P
+Kalle Jokiniemi (1):
+      ARM: OMAP3: Fix HW SAVEANDRESTORE shift define
 
-John W. Linville (1):
-      orinoco: correct key bounds check in orinoco_hw_get_tkip_iv
+Len Brown (9):
+      ACPICA: use acpi.* modparam namespace
+      ACPI: video: DMI workaround another broken Acer BIOS enabling displ=
+ay brightness
+      ACPI: power: update error message
+      ACPI: suspend: don't let device _PS3 failure prevent suspend
+      ACPI: suspend: restore BM_RLD on resume
+      ACPI, i915: build fix
+      ACPI: idle: fix init-time TSC check regression
+      ACPI: Idle C-states disabled by max_cstate should not disable the T=
+SC
+      Merge branches 'release', 'bugzilla-13032', 'bugzilla-13041+', 'bug=
+zilla-13121', 'bugzilla-13165', 'bugzilla-13243', 'bugzilla-13259', 'resu=
+me-sci-en-regression', 'thermal-regression', 'tsc-regression' and 'asus-2=
+.6.30' into release
 
-Joonwoo Park (1):
-      pps: fix incorrect verdict check
+Lin Ming (1):
+      ACPI: resume: re-enable SCI-enable workaround
 
-Julia Lawall (1):
-      [S390] drivers/s390: put NULL test before dereference
-
-Julien TINNES (1):
-      ipv4: make ip_append_data() handle NULL routing table
-
-Kashyap, Desai (9):
-      [SCSI] mpt2sas: Introduced check for enclosure_handle to avoid cras=
-h
-      [SCSI] mpt2sas: Expander fix oops saying "Already part of another p=
-ort"
-      [SCSI] mpt2sas: Raid 10 Value is showing as Raid 1E in /va/log/mess=
-ages
-      [SCSI] mpt2sas: Excessive log info causes sas iounit page time out
-      [SCSI] mpt2sas: fix infinite loop inside config request
-      [SCSI] mpt2sas: fix crash due to Watchdog is active while OS in sta=
-ndby mode
-      [SCSI] mpt2sas: fix oops because drv data points to NULL on resume =
-from hibernate
-      [SCSI] mpt2sas: Bump driver version 01.100.04.00
-      [SCSI] mpt2sas: fix config request and diag reset deadlock
-
-Krzysztof Ha=C5=82asa (1):
-      E100: fix interaction with swiotlb on X86.
-
-Kyle McMartin (1):
-      dma-debug: Fix check_unmap null pointer dereference
-
-Linus Torvalds (27):
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/jejb/scsi-rc-fi=
-xes-2.6
+Linus Torvalds (33):
+      Merge branch 'release' of git://git.kernel.org/pub/scm/linux/kernel=
+/git/lenb/linux-acpi-2.6
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jbarnes/pci-2.6
+el/git/bart/ide-2.6
+      Fix caller information for warn_slowpath_null
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jmorris/security-testing-2.6
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
+el/git/penberg/slab-2.6
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/dtor/input
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/hskinnemoen/avr=
-32-2.6
-      Merge branch 'drm-fixes' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/airlied/drm-2.6
-      Merge branch 'fixes' of git://git.marvell.com/orion
-      Merge branch 'upstream-linus' of git://git.kernel.org/pub/scm/linux=
-/kernel/git/jlbec/ocfs2
-      tty: make sure to flush any pending work when halting the ldisc
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/wim/linux-2.6-w=
-atchdog
-      Merge branch 'fix/misc' of git://git.kernel.org/pub/scm/linux/kerne=
-l/git/tiwai/sound-2.6
-      Merge branch 'for_linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jack/linux-fs-2.6
-      Merge branch 'x86-fixes-for-linus' of git://git.kernel.org/pub/scm/=
-linux/kernel/git/tip/linux-2.6-tip
+el/git/rafael/suspend-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/herbert/crypto-=
+2.6
       Merge branch 'tracing-fixes-for-linus' of git://git.kernel.org/pub/=
 scm/linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'timers-fixes-for-linus' of git://git.kernel.org/pub/s=
-cm/linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'core-fixes-for-linus' of git://git.kernel.org/pub/scm=
-/linux/kernel/git/tip/linux-2.6-tip
-      Merge branch 'perfcounters-fixes-for-linus' of git://git.kernel.org=
-/pub/scm/linux/kernel/git/tip/linux-2.6-tip
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/sparc-2.6
-      Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/geert/linux-m68k
-      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/jmorris/security-testing-2.6
+      Merge branch 'x86-fixes-for-linus' of git://git.kernel.org/pub/scm/=
+linux/kernel/git/tip/linux-2.6-tip
+      Merge branches 'sched-fixes-for-linus-2' and 'core-fixes-for-linus-=
+2' of git://git.kernel.org/pub/scm/linux/kernel/git/tip/linux-2.6-tip
       Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
 it/benh/powerpc
+      Avoid ICE in get_random_int() with gcc-3.4.5
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/lrg/voltage-2.6
+      Merge branch 'fixes-for-linus' of git://git.monstr.eu/linux-2.6-mic=
+roblaze
+      Merge branch 'core/urgent' of git://git.kernel.org/pub/scm/linux/ke=
+rnel/git/tip/linux-2.6-tip
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/jmorris/security-testing-2.6
       Merge git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-2.6
       Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
-el/git/ericvh/v9fs
-      Merge branch 'for-linus' of git://git.infradead.org/users/eparis/no=
-tify
-      Linux 2.6.31-rc8
+el/git/sameo/mfd-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/sfrench/cifs-2.=
+6
+      Merge branch 'for-linus' of git://git.kernel.dk/linux-2.6-block
+      Merge master.kernel.org:/home/rmk/linux-2.6-arm
+      Merge branch 'upstream' of git://ftp.linux-mips.org/pub/scm/upstrea=
+m-linus
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/jbarnes/drm-2.6
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/jbarnes/pci-2.6
+      Merge branch 'sh/for-2.6.30' of git://git.kernel.org/pub/scm/linux/=
+kernel/git/lethal/sh-2.6
+      Merge branch 'merge' of git://git.kernel.org/pub/scm/linux/kernel/g=
+it/benh/powerpc
+      Merge branch 'upstream' of git://ftp.linux-mips.org/pub/scm/upstrea=
+m-linus
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/sfrench/cifs-2.=
+6
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/bart/ide-2.6
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/ryusuke/nilfs2
+      Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kern=
+el/git/tiwai/sound-2.6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/sfrench/cifs-2.=
+6
+      Merge git://git.kernel.org/pub/scm/linux/kernel/git/jejb/scsi-rc-fi=
+xes-2.6
+      Linux 2.6.30-rc7
 
-Marek Vasut (2):
-      Input: ucb1400_ts - enable ADC Filter
-      pxaficp-ir: remove incorrect net_device_ops
+Magnus Damm (2):
+      sh: ap325 camera without i2c driver fix
+      video: stop sh_mobile_lcdcfb only if started
 
-Martin Michlmayr (1):
-      [ARM] Kirkwood: __init requires linux/init.h
+Marek Szyprowski (2):
+      [ARM] S3C64XX: GPIO include cleanup
+      [ARM] S3C64XX: fix GPIO debug
 
-Mathieu Desnoyers (1):
-      sparc: sys32.S incorrect compat-layer splice() system call
+Mark Brown (1):
+      mfd: Keep a cache of WM8350 volatile values
 
-Michael Brunner (1):
-      thermal_sys: check get_temp return value
+Masami Hiramatsu (1):
+      x86, 32-bit: fix kernel_trap_sp()
+
+Mel Gorman (2):
+      powerpc: Do not assert pte_locked for hugepage PTE entries
+      [ARM] Double check memmap is actually valid with a memmap has unexp=
+ected holes V2
+
+Michael Ellerman (2):
+      powerpc/ftrace: Use pr_devel() in ftrace.c
+      powerpc/maple: Add a quirk to disable MSI for IPR on Bimini
+
+Michal Simek (2):
+      microblaze: Update Microblaze defconfig
+      microblaze: Fix kind-of-intr checking against number of interrupts
 
 Michel D=C3=A4nzer (1):
-      drm/radeon/kms: Fix radeon_gem_busy_ioctl harder.
+      drm: Copy back ioctl data to userspace regardless of return code.
 
-Mimi Zohar (2):
-      kernel_read: redefine offset type
-      ima: hashing large files bug fix
+Mike Frysinger (1):
+      regulator: da903x: add missing __devexit_p()
 
-Minchan Kim (1):
-      mm: fix for infinite churning of mlocked pages
+Nelson Castillo (1):
+      mfd: pcf50633: fix unsafe disable_irq()
 
-Oleg Nesterov (1):
-      clone(): fix race between copy_process() and de_thread()
+Nick Piggin (2):
+      mm: SLUB fix reclaim_state
+      mm: SLOB fix reclaim_state
 
-Patrick McHardy (1):
-      netfilter: xt_quota: fix wrong return value (error case)
+Nico Schottelius (1):
+      Fix scripts/setlocalversion with tagged git commit
 
-Pavel Revak (1):
-      Input: ucb1400_ts - enable interrupt unconditionally
+Paul Walmsley (1):
+      ARM: OMAP: GPIO de-bounce clocks don't affect module idle state
 
-Peter Zijlstra (2):
-      perf tools: Check perf.data owner
-      perf_counter: Fix typo in read() output generation
+Pavel Emelyanov (1):
+      netpoll: don't dereference NULL dev from np
 
-Petri Gynther (1):
-      ibm_newemac: emac_close() needs to call netif_carrier_off()
+Pavel Roskin (1):
+      [ARM] mach-l7200: fix spelling of SYS_CLOCK_OFF
+
+Pekka Enberg (1):
+      Merge branches 'topic/documentation', 'topic/slub/fixes' and 'topic=
+/urgent' into for-linus
+
+Peter Korsgaard (1):
+      mtd_dataflash: unbreak erase support
+
+Rabin Vincent (2):
+      [ARM] 5518/1: versatile: don't put clock lookups in __initdata
+      [ARM] 5517/1: integrator: don't put clock lookups in __initdata
+
+Rafael J. Wysocki (1):
+      PCI PM: Fix initialization and kexec breakage for some devices
+
+Ralf Baechle (4):
+      NET: Meth: Fix unsafe mix of irq and non-irq spinlocks.
+      MIPS: IP22: Fix hang in power button interrupt handler
+      MIPS: IP32: Fix build error due to uninitialized variable.
+      MIPS: IP32: Remove unnecessary if not even harmful volatile keyword=
+s.
 
 Randy Dunlap (1):
-      net: fix ks8851 build errors
+      xen: use header for EXPORT_SYMBOL_GPL
 
-Roel Kluin (3):
-      yellowfin: Fix buffer underrun after dev_alloc_skb() failure
-      m68k: count can reach 51, not 50
-      m68k: cnt reaches -1, not 0
+Ricardo Martins (1):
+      [ARM] 5513/1: Eurotech VIPER SBC: fix compilation error
 
-Rusty Russell (2):
-      virtio: net refill on out-of-memory
-      module: fix BUG_ON() for powerpc (and other function descriptor arc=
-hs)
+Roel Kluin (2):
+      asm-generic: fix local_add_unless macro
+      cdrom: beyond ARRAY_SIZE of viocd_diskinfo
 
-Sebastian Andrzej Siewior (2):
-      avr32/lib: fix unaligned memcpy()
-      avr32/lib: fix unaligned memcpy where len < 4
+Ron (1):
+      sched: Fix fallback sched_clock()'s offset when using jiffies
 
-Sebastian Ott (1):
-      [S390] cio: fix double free after failed device initialization
+Russell King (6):
+      Merge branch 'fixes-rc5' of git://aeryn.fluff.org.uk/bjdooks/linux
+      Merge branch 'omap-fixes' of git://git.kernel.org/pub/scm/linux/ker=
+nel/git/tmlind/linux-omap-2.6
+      [ARM] smp: fix cpumask usage in ARM SMP code
+      [ARM] realview: remove useless smp_cross_call_done()
+      [ARM] realview: fix broadcast tick support
+      Merge branch 'smp-fix'
 
-Simon Kagstrom (1):
-      [ARM] Orion NAND: Make asm volatile avoid GCC pushing ldrd out of t=
-he loop
+Ryusuke Konishi (1):
+      nilfs2: fix memory leak in nilfs_ioctl_clean_segments
 
-Stephen Kitt (1):
-      Input: joydev - decouple axis and button map ioctls from input cons=
-tants
+Sam Ravnborg (1):
+      x86: Fix false positive section mismatch warnings in the apic code
 
-Suresh Siddha (2):
-      x86, pat: Allow ISA memory range uncacheable mapping requests
-      clockevent: Prevent dead lock on clockevents_lock
+Sergei Shtylyov (1):
+      icside: register second channel of version 6 PCB
 
-Tao Ma (1):
-      ocfs2: release the buffer head in ocfs2_do_truncate.
+Steffen Klassert (1):
+      crypto: eseqiv - Fix IV generation for sync algorithms
 
-Thadeu Lima de Souza Cascardo (2):
-      leds: fix multiple requests and releases of IRQ for GPIO LED Trigge=
-r
-      leds: after setting inverted attribute, we must update the LED
+Stephen Hemminger (3):
+      bridge: relay bridge multicast pkgs if !STP
+      bridge: fix initial packet flood if !STP
+      bonding: fix link down handling in 802.3ad mode
 
-Theodore Ts'o (1):
-      ext3: Update Kconfig description of EXT3_DEFAULTS_TO_ORDERED
+Steve French (2):
+      [CIFS] fix posix open regression
+      [CIFS] Avoid open on possible directories since Samba now rejects t=
+hem
 
-Trond Myklebust (1):
-      NFSv4: Fix an infinite looping problem with the nfs4_state_manager
+Steven Rostedt (2):
+      x86/function-graph: fix constraint for recording old return value
+      powerpc/ftrace: Fix constraint to be early clobber
 
-Wan ZongShun (1):
-      net: Rename MAC platform driver for w90p910 platform
+Takashi Iwai (3):
+      ALSA: pcsp - fix printk format warning again
+      Merge branch 'fix/hda' into for-linus
+      Merge branch 'fix/misc' into for-linus
 
-Yinghai Lu (1):
-      acpi: don't call acpi_processor_init if acpi is disabled
+Tejun Heo (1):
+      ide-tape: remove back-to-back REQUEST_SENSE detection
 
-Zhaolei (1):
-      ftrace: Unify effect of writing to trace_options and option/*
+Thomas Chenault (1):
+      net: fix skb_seq_read returning wrong offset/length for page frag d=
+ata
+
+Thomas Gleixner (1):
+      futex: setup writeable mapping for futex ops which modify user spac=
+e data
+
+Tomi Valkeinen (1):
+      ARM: OMAP: Fix printing of reserved memory for frambuffer
+
+Tony Lindgren (2):
+      ARM: OMAP2/3: Add name for musb clocks
+      ARM: OMAP2/3: Change omapfb to use clkdev for dispc and rfbi, v2
+
+Toshiyuki Okajima (1):
+      page-writeback: fix the calculation of the oldest_jif in wb_kupdate=
+()
+
+Vikram Pandita (1):
+      ARM: OMAP3: Fix number of GPIO lines for 34xx
+
+Vladimir Zajac (1):
+      thermal: fix off-by-1 error in trip point trigger condition
+
+Wang Tinggong (1):
+      Doc: fixed descriptions on /proc/sys/net/core/* and /proc/sys/net/u=
+nix/*
+
+Wu Zhangjin (1):
+      MIPS: Fix sparse warning in incompatiable argument type of clear_us=
+er.
+
+Yevgeny Petrilin (1):
+      mlx4_en: Fix not deleted napi structures
+
+Yinghai Lu (2):
+      x86: mtrr: Fix high_width computation when phys-addr is >=3D 44bit
+      [SCSI] ses: fix problems caused by empty SES provided name
+
+Zhang Rui (3):
+      ACPI video: dmi check for broken _BQC on Acer Aspire 5720
+      ACPI processor: introduce module parameter processor.ignore_tpc
+      ACPI processor: reset the throttling state once it's invalid
+
+adam radford (2):
+      [SCSI] 3w-9xxx: scsi_dma_unmap fix
+      [SCSI] 3w-xxxx: scsi_dma_unmap fix
+
+peter fuerst (1):
+      MIPS: IP28: Change to build with -mr10k-cache-barrier=3Dstore
+
+roel kluin (1):
+      Neterion: *FIFO1_DMA_ERR set twice, should 2nd be *FIFO2_DMA_ERR?
 
 -----------------------------------------------------------------------
 
@@ -398,7 +486,7 @@ hooks/post-receive
 --
 linux-cr
 
---===============3271047029813285755==
+--===============8965507908793635864==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Disposition: inline
@@ -408,4 +496,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---===============3271047029813285755==--
+--===============8965507908793635864==--
