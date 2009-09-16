@@ -1,14 +1,13 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/9] powerpc checkpoint/restart kernel support
-Date: Wed, 16 Sep 2009 12:49:28 -0500
-Message-ID: <1253123368.32316.5.camel@localhost.localdomain>
-References: <1253091418-14807-1-git-send-email-ntl@pobox.com>
-	<4AB10008.8040401@librato.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 0/4] user-cr: powerpc support etc
+Date: Wed, 16 Sep 2009 14:05:09 -0400
+Message-ID: <4AB128D5.4090701@librato.com>
+References: <1253093271-16357-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AB10008.8040401-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1253093271-16357-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,16 +17,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-09-16 at 11:11 -0400, Oren Laadan wrote:
-> Thanks Nathan,
-> 
-> I'll apply the general fixes right away.
-> 
-> I'm about to push ckpt-v18-rc1 today. Would you like that to include
-> the remaining patches as well ?
 
-Yes, please.  Thank you.
+got them .. thanks.
+
+Nathan Lynch wrote:
+> Patch 1 is an obvious fix, I think.
+> 
+> The rest is an assortment of hacks I've employed to get this building
+> and working on powerpc.
+> 
+> Nathan Lynch (4):
+>   fix rename fallout
+>   restart: (build fix hack) define sa_family_t and struct linger
+>   mktree: initial powerpc support hacks
+>   makefile hack for powerpc
+> 
+>  Makefile      |    5 +++-
+>  clone_ppc32.S |   79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  powerpc_asm.h |   46 +++++++++++++++++++++++++++++++++
+>  restart.c     |   31 ++++++++++++++++++++++
+>  4 files changed, 160 insertions(+), 1 deletions(-)
+>  create mode 100644 clone_ppc32.S
+>  create mode 100644 powerpc_asm.h
+> 
