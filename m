@@ -1,11 +1,17 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Fix ckpt_obj_lookup_add() leak detection logic
-Date: Thu, 17 Sep 2009 10:07:54 -0700
-Message-ID: <1253207274-7563-1-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: restart (mktree) program usage
+Date: Thu, 17 Sep 2009 12:13:27 -0500
+Message-ID: <20090917171327.GB3888@us.ibm.com>
+References: <20090909055636.GA27622@us.ibm.com> <4AA82B7C.8080107@librato.com>
+	<20090917013546.GA30161@us.ibm.com> <4AB1A99D.3020307@librato.com>
+	<20090917131843.GA29297@us.ibm.com>
+	<20090917165311.GB13855@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090917165311.GB13855-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,32 +21,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Since first is a pointer, it's never NULL and thus leak detection will
-always be performed (of CHECKPOINT_SUBTREE is set).  This fatally breaks
-the checkpoint process when that flag is enabled because any object (with
-a ref_users operation) that is added to the hash twice will be reported as
-a reverse leak.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | > > True. But if originally the application was started as:
+> | > > 
+> | > > 	Create container
+> | > > 	Login to contaienr
+> | > 
+> | > Actually, I'm not sure what you mean by "login to container" ?
+> | 
+> | I assume he was thinking of a system container created with liblxc
+> | or libvirt, and literally logging in on its console or over ssh.
+> 
+> Yes, but...
+> | 
+> | ...
+> | 
+> | > > Yes, that would be really useful I think for things like restoring file
+> | > > system to its snapshot. Without that there is somewhat of an assymetry
+> | > > in starting an application in a container and restarting it from a
+> | > > checkpoint.
+> | 
+> | Fine, they are different operations :)
+> 
+> ...more than the assymetry, I guess I am not sure what is the "recommended"
+> way to restart an application, while ensuring filesystem (and network)
+> are correctly restored by user.
+> 
+> 	ns_exec --cpuim -- /usr/bin/restart --wait < checkpoint-image.1
+> 
+> assumes fs/network are setup. Hence the "login" to the container.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/objhash.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Right, this is stuff to discuss at the plumbers talk and BOF.  How
+much of this do we want /usr/bin/restart to handle?  It already does
+pidns, and IMO having it handle everything needed makes sense.  The
+only problem is we can't have it handle filesystem yet because we
+haven't yet decided where/how to checkpont the fs :)  I don't even
+mean mounts, I mean a btrfs snapshot or rsync.  Do we want to create
+a 'container_checkpoint' program which wraps 'checkpoint' and does
+filesystem and network interface snapshotting?
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 8dfb0b0..b85aa77 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -679,7 +679,7 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
- 	ckpt_debug("%s objref %d first %d\n",
- 		   obj->ops->obj_name, obj->objref, *first);
- 
--	if (first && obj_reverse_leak(ctx, obj))
-+	if (*first && obj_reverse_leak(ctx, obj))
- 		return -EBUSY;
- 
- 	obj->flags |= CKPT_OBJ_VISITED;
--- 
-1.6.2.5
+I'm not asking for an answer in this thread, but for it to be discussed
+at the bof :)
+
+-serge
