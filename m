@@ -1,11 +1,16 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Collect sockets for leak detection
-Date: Mon, 21 Sep 2009 13:44:35 -0700
-Message-ID: <1253565877-7303-1-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] Adjust socket reference count during leak
+	detection phase
+Date: Mon, 21 Sep 2009 15:55:49 -0500
+Message-ID: <20090921205549.GB22363@us.ibm.com>
+References: <1253565877-7303-1-git-send-email-danms@us.ibm.com>
+	<1253565877-7303-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1253565877-7303-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,18 +20,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The objhash doesn't currently collect sockets for leak detection.  The
-second patch in this set adds that support for general sockets (collecting
-the socket itself and any DEAD sockets referenced in their read/write
-queues) as well as a proto_ops operation for a per-protocol collection
-routine.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Sockets that have been disconnected from their struct file have
+> a reference count one less than normal sockets (potentially zero if the
+> socket is only in the system because of an outstanding skb).  Since the
+> objhash assumes a minimum reference count of 2, skb's in such a situation
+> will always be counted as a leak.
+> 
+> This (probably contentious) patch adds a fixup function during the leak
 
-I separated out the first patch in this set to make sure it's called out
-for discussion as I expect it will be contentious.  Since sockets can
-have a refcount of zero while remaining valid, the assumption that the
-objhash makes about the refcount (which is correct in other cases) doesn't
-hold true for sockets that are DEAD and only hanging around because of
-an outstanding socket buffer.
+This is IMO the right place for it though.  If we have to play
+games with refcounts to pacify leak detection, then all such
+games should be played together in ckpt_obj_contained.
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+
+> detection phase to adjust SOCK_DEAD sockets' reference counts down by
+> one to match reality.
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/objhash.c |   24 ++++++++++++++++++++++++
+>  1 files changed, 24 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> index b85aa77..ee9dbfd 100644
+> --- a/checkpoint/objhash.c
+> +++ b/checkpoint/objhash.c
+> @@ -816,6 +816,26 @@ static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
+>   */
+> 
+>  /**
+> + * obj_sock_adjust_users - remove implicit reference on DEAD sockets
+> + * @obj: CKPT_OBJ_SOCK object to adjust
+> + *
+> + * Sockets that have been disconnected from their struct file have
+> + * a reference count one less than normal sockets.  The objhash's
+> + * assumption of such a reference is therefore incorrect, so we correct
+> + * it here.
+> + */
+> +static inline void obj_sock_adjust_users(struct ckpt_obj *obj)
+> +{
+> +	struct sock *sk = (struct sock *)obj->ptr;
+> +
+> +	if (sock_flag(sk, SOCK_DEAD)) {
+> +		obj->users--;
+> +		ckpt_debug("Adjusting SOCK %i count to %i\n",
+> +			   obj->objref, obj->users);
+> +	}
+> +}
+> +
+> +/**
+>   * ckpt_obj_contained - test if shared objects are contained in checkpoint
+>   * @ctx: checkpoint context
+>   *
+> @@ -838,6 +858,10 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
+>  	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
+>  		if (!obj->ops->ref_users)
+>  			continue;
+> +
+> +		if (obj->ops->obj_type == CKPT_OBJ_SOCK)
+> +			obj_sock_adjust_users(obj);
+> +
+>  		if (obj->ops->ref_users(obj->ptr) != obj->users) {
+>  			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
+>  			ckpt_write_err(ctx, "OP", "leak: usage (%d != %d (%s)",
+> -- 
+> 1.6.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
