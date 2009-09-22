@@ -1,11 +1,15 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH] c/r: tighten checks on supported vma to checkpoint or restart
-Date: Tue, 22 Sep 2009 16:47:59 -0400
-Message-ID: <1253652479-11565-1-git-send-email-orenl@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: fix race of prepare_descendant() with an ongoing
+	fork()
+Date: Tue, 22 Sep 2009 16:38:58 -0500
+Message-ID: <20090922213858.GA30048@us.ibm.com>
+References: <1253652463-11529-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1253652463-11529-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,89 +19,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> From: Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
+> 
+> If prepare_descendants() is walking a tree and one of the tasks is
+> forking, one of two bads can happen. If the child doesn't inherit the
+> ->ctx, it breaks the assumption that the entire subtree is prepared.
+> If the child inherits the ->ctx, it will have one without having taken
+> a reference.
+> 
+> This patch closed this race by explicitly getting and referencing the
+> ->ctx for a child process should the parent have one, atomically under
+> the tasklist_lock.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ---
+>  kernel/fork.c |   11 ++++++++---
+>  1 files changed, 8 insertions(+), 3 deletions(-)
+> 
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 9f13d7b..57118e4 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -62,6 +62,7 @@
+>  #include <linux/fs_struct.h>
+>  #include <linux/magic.h>
+>  #include <linux/perf_counter.h>
+> +#include <linux/checkpoint.h>
+> 
+>  #include <asm/pgtable.h>
+>  #include <asm/pgalloc.h>
+> @@ -1148,9 +1149,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>  	INIT_LIST_HEAD(&p->pi_state_list);
+>  	p->pi_state_cache = NULL;
+>  #endif
+> -#ifdef CONFIG_CHECKPOINT
+> -	p->checkpoint_ctx = NULL;
+> -#endif
+>  	/*
+>  	 * sigaltstack should be cleared when sharing the same VM
+>  	 */
+> @@ -1188,6 +1186,13 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>  	/* Need tasklist lock for parent etc handling! */
+>  	write_lock_irq(&tasklist_lock);
+> 
+> +#ifdef CONFIG_CHECKPOINT
+> +	/* If parent is restarting, child should be too */
+> +	if (unlikely(current->checkpoint_ctx)) {
+> +		p->checkpoint_ctx = current->checkpoint_ctx;
 
-Move test of vma flags against CKPT_VMA_NOT_SUPPORTED to one place:
-{checkpoint,restore}_vma(). Also tighten sanity tests on restore.
+Won't break anything, but technically p->checkpoint_ctx will
+already be copied from current->checkpoint_ctx, so only the
+ckpt_ctx_get() is necessary, so this could really read
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/memory.c |   24 +++++++++---------------
- 1 files changed, 9 insertions(+), 15 deletions(-)
+	if (p->checkpoint_ctx)
+		ckpt_ctx_get(p->checkpoint_ctx);
 
-diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-index 7754074..0da948f 100644
---- a/checkpoint/memory.c
-+++ b/checkpoint/memory.c
-@@ -554,12 +554,6 @@ int generic_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
- 	ckpt_debug("vma %#lx-%#lx flags %#lx type %d\n",
- 		 vma->vm_start, vma->vm_end, vma->vm_flags, type);
- 
--	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
--		ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
--			       -ENOSYS, vma->vm_flags);
--		return -ENOSYS;
--	}
--
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_VMA);
- 	if (!h)
- 		return -ENOMEM;
-@@ -644,12 +638,7 @@ static int anonymous_checkpoint(struct ckpt_ctx *ctx,
- 				struct vm_area_struct *vma)
- {
- 	/* should be private anonymous ... verify that this is the case */
--	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
--		ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
--			       -ENOSYS, vma->vm_flags);
--		return -ENOSYS;
--	}
--
-+	BUG_ON(vma->vm_flags & VM_MAYSHARE);
- 	BUG_ON(vma->vm_file);
- 
- 	return private_vma_checkpoint(ctx, vma, CKPT_VMA_ANON, 0);
-@@ -707,6 +696,11 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
- 	for (vma = mm->mmap; vma; vma = vma->vm_next) {
- 		ckpt_debug("vma %#lx-%#lx flags %#lx\n",
- 			 vma->vm_start, vma->vm_end, vma->vm_flags);
-+		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
-+			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
-+				       -ENOSYS, vma->vm_flags);
-+			return -ENOSYS;
-+		}
- 		if (!vma->vm_ops)
- 			ret = anonymous_checkpoint(ctx, vma);
- 		else if (vma->vm_ops->checkpoint)
-@@ -1033,8 +1027,6 @@ unsigned long generic_vma_restore(struct mm_struct *mm,
- 		return -EINVAL;
- 	if (h->vma_objref < 0)
- 		return -EINVAL;
--	if (h->vm_flags & CKPT_VMA_NOT_SUPPORTED)
--		return -ENOSYS;
- 
- 	vm_start = h->vm_start;
- 	vm_pgoff = h->vm_pgoff;
-@@ -1064,7 +1056,7 @@ int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- {
- 	unsigned long addr;
- 
--	if (h->vm_flags & VM_SHARED)
-+	if (h->vm_flags & (VM_SHARED | VM_MAYSHARE))
- 		return -EINVAL;
- 
- 	addr = generic_vma_restore(mm, file, h);
-@@ -1195,6 +1187,8 @@ static int restore_vma(struct ckpt_ctx *ctx, struct mm_struct *mm)
- 		goto out;
- 	if (h->vma_type >= CKPT_VMA_MAX)
- 		goto out;
-+	if (h->vm_flags & CKPT_VMA_NOT_SUPPORTED)
-+		return -ENOSYS;
- 
- 	ops = &restore_vma_ops[h->vma_type];
- 
--- 
-1.6.0.4
+Right?
+
+> +		ckpt_ctx_get(p->checkpoint_ctx);
+> +	}
+> +#endif
+>  	/*
+>  	 * The task hasn't been attached yet, so its cpus_allowed mask will
+>  	 * not be changed, nor will its assigned CPU.
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
