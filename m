@@ -1,15 +1,11 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/2] Adjust socket reference count during leak	detection
-	phase
-Date: Tue, 22 Sep 2009 15:31:41 -0400
-Message-ID: <4AB9261D.5040600@librato.com>
-References: <1253565877-7303-1-git-send-email-danms@us.ibm.com>	<1253565877-7303-2-git-send-email-danms@us.ibm.com>
-	<20090921205549.GB22363@us.ibm.com>
+Subject: [PATCH] c/r: fix race of prepare_descendant() with an ongoing fork()
+Date: Tue, 22 Sep 2009 16:47:43 -0400
+Message-ID: <1253652463-11529-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090921205549.GB22363-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,93 +15,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+From: Oren Laadan <orenl-RdfvBDnrOiyVc3sceRu5cw@public.gmane.org>
 
+If prepare_descendants() is walking a tree and one of the tasks is
+forking, one of two bads can happen. If the child doesn't inherit the
+->ctx, it breaks the assumption that the entire subtree is prepared.
+If the child inherits the ->ctx, it will have one without having taken
+a reference.
 
-Serge E. Hallyn wrote:
-> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> Sockets that have been disconnected from their struct file have
->> a reference count one less than normal sockets (potentially zero if the
->> socket is only in the system because of an outstanding skb).  Since the
->> objhash assumes a minimum reference count of 2, skb's in such a situation
->> will always be counted as a leak.
->>
->> This (probably contentious) patch adds a fixup function during the leak
-> 
-> This is IMO the right place for it though.  If we have to play
-> games with refcounts to pacify leak detection, then all such
-> games should be played together in ckpt_obj_contained.
-> 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+This patch closed this race by explicitly getting and referencing the
+->ctx for a child process should the parent have one, atomically under
+the tasklist_lock.
 
-I concur, it's a leak-detection specific code.
-Pulled for v18.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/fork.c |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
 
-Oren.
-
-> 
-> 
->> detection phase to adjust SOCK_DEAD sockets' reference counts down by
->> one to match reality.
->>
->> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->> ---
->>  checkpoint/objhash.c |   24 ++++++++++++++++++++++++
->>  1 files changed, 24 insertions(+), 0 deletions(-)
->>
->> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
->> index b85aa77..ee9dbfd 100644
->> --- a/checkpoint/objhash.c
->> +++ b/checkpoint/objhash.c
->> @@ -816,6 +816,26 @@ static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
->>   */
->>
->>  /**
->> + * obj_sock_adjust_users - remove implicit reference on DEAD sockets
->> + * @obj: CKPT_OBJ_SOCK object to adjust
->> + *
->> + * Sockets that have been disconnected from their struct file have
->> + * a reference count one less than normal sockets.  The objhash's
->> + * assumption of such a reference is therefore incorrect, so we correct
->> + * it here.
->> + */
->> +static inline void obj_sock_adjust_users(struct ckpt_obj *obj)
->> +{
->> +	struct sock *sk = (struct sock *)obj->ptr;
->> +
->> +	if (sock_flag(sk, SOCK_DEAD)) {
->> +		obj->users--;
->> +		ckpt_debug("Adjusting SOCK %i count to %i\n",
->> +			   obj->objref, obj->users);
->> +	}
->> +}
->> +
->> +/**
->>   * ckpt_obj_contained - test if shared objects are contained in checkpoint
->>   * @ctx: checkpoint context
->>   *
->> @@ -838,6 +858,10 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
->>  	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
->>  		if (!obj->ops->ref_users)
->>  			continue;
->> +
->> +		if (obj->ops->obj_type == CKPT_OBJ_SOCK)
->> +			obj_sock_adjust_users(obj);
->> +
->>  		if (obj->ops->ref_users(obj->ptr) != obj->users) {
->>  			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
->>  			ckpt_write_err(ctx, "OP", "leak: usage (%d != %d (%s)",
->> -- 
->> 1.6.2.5
->>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 9f13d7b..57118e4 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -62,6 +62,7 @@
+ #include <linux/fs_struct.h>
+ #include <linux/magic.h>
+ #include <linux/perf_counter.h>
++#include <linux/checkpoint.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/pgalloc.h>
+@@ -1148,9 +1149,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	INIT_LIST_HEAD(&p->pi_state_list);
+ 	p->pi_state_cache = NULL;
+ #endif
+-#ifdef CONFIG_CHECKPOINT
+-	p->checkpoint_ctx = NULL;
+-#endif
+ 	/*
+ 	 * sigaltstack should be cleared when sharing the same VM
+ 	 */
+@@ -1188,6 +1186,13 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	/* Need tasklist lock for parent etc handling! */
+ 	write_lock_irq(&tasklist_lock);
+ 
++#ifdef CONFIG_CHECKPOINT
++	/* If parent is restarting, child should be too */
++	if (unlikely(current->checkpoint_ctx)) {
++		p->checkpoint_ctx = current->checkpoint_ctx;
++		ckpt_ctx_get(p->checkpoint_ctx);
++	}
++#endif
+ 	/*
+ 	 * The task hasn't been attached yet, so its cpus_allowed mask will
+ 	 * not be changed, nor will its assigned CPU.
+-- 
+1.6.0.4
