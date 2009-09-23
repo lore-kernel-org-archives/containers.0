@@ -1,13 +1,11 @@
-From: "Rick" <ehatjeaow12ords-LWAfsSFWpa4@public.gmane.org>
-Subject: =?GB2312?B?UGhvdG8gRWRpdGluZyBTZXJ2aWNlcyAtIFBob3RvIEN1dG91dA==?=
-Date: Wed, 23 Sep 2009 23:02:05 +0800
-Message-ID: <S127mE4DXO2VeDTFeAx00001227@onex.at>
-Reply-To: danidevelope-Mj/0Miq2reM@public.gmane.org
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] user-cr: s390: Detect s390x arch too
+Date: Wed, 23 Sep 2009 15:03:39 -0700
+Message-ID: <1253743418-10091-2-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,32 +15,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Digital Photo Editing Services :
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ ckptinfo.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques. 
-
-Our strength in providing Editing solutions for digital images like photo masking, photo re-touching, back ground cleaning & cloning, sharpening & restoration of color, all this derive from our vast experience. Our dedicated team of highly skilled and experienced professionals serves the photo Editing requirements of our clients. An in house quality checking mechanism assures value addition and delivers perfect job. Our team can deliver your job overnight or in time bounded fashion irrespective of job size. 
-
-Our mainly services are: 
-
-1. Photo Cutout
-2. Photo Enhancement
-3. Photo Retouching
-4. Vector Conversion
-5. Pop Art
-6. Images Masking
-7. Clipping Path
-8. Photo Restoration 
-9. Web Design
-
-Photo Editing Services:
-
-Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
-
-Best regards,
-Rick
-Msutacsy Imaging Professionals
-Contact: ibgraphic-Mj/0Miq2reM@public.gmane.org
+diff --git a/ckptinfo.c b/ckptinfo.c
+index b2101e6..6859742 100644
+--- a/ckptinfo.c
++++ b/ckptinfo.c
+@@ -63,7 +63,7 @@ static int image_parse_error(struct ckpt_hdr *h, int fd, struct args *args);
+ #define __HAVE_image_parse_cpu
+ #define image_parse_cpu   image_parse_cpu_X86
+ static int image_parse_cpu_X86(struct ckpt_hdr *h, int fd, struct args *args);
+-#elif defined(__s390__)
++#elif defined(__s390__) || defined(__s390x__)
+ #define __HAVE_image_parse_cpu
+ #define image_parse_cpu   image_parse_cpu_s390
+ static int image_parse_cpu_s390(struct ckpt_hdr *h, int fd, struct args *args);
+@@ -301,7 +301,7 @@ static int image_parse_cpu_X86(struct ckpt_hdr *h, int fd, struct args *args)
+ }
+ #endif
+ 
+-#ifdef __s390__
++#if defined(__s390__) || defined(__s390x__)
+ static int image_parse_cpu_s390(struct ckpt_hdr *h, int fd, struct args *args)
+ {
+ 	struct ckpt_hdr_cpu *hh = (struct ckpt_hdr_cpu *) h;
+-- 
+1.5.6.3
