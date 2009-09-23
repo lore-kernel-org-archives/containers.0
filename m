@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 27/80] c/r: introduce PF_RESTARTING,
-	and skip notification on exit
-Date: Wed, 23 Sep 2009 19:51:07 -0400
-Message-ID: <1253749920-18673-28-git-send-email-orenl__14230.0020474524$1253752623$gmane$org@librato.com>
+Subject: [PATCH v18 14/80] pids 4/7: Add target_pids parameter to alloc_pid()
+Date: Wed, 23 Sep 2009 19:50:54 -0400
+Message-ID: <1253749920-18673-15-git-send-email-orenl__36376.0458807976$1253752864$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,94 +18,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-To restore zombie's we will create the a task, that, on its turn to
-run, calls do_exit(). Unlike normal tasks that exit, we need to
-prevent notification side effects that send signals to other
-processes, e.g. parent (SIGCHLD) or child tasks (per child's request).
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-There are three main cases for such notifications:
+This parameter is currently NULL, but will be used in a follow-on patch.
 
-1) do_notify_parent(): parent of a process is notified about a change
- in status (e.g. become zombie, reparent, etc). If parent ignores,
- then mark child for immediate release (skip zombie).
-
-2) kill_orphan_pgrp(): a process group that becomes orphaned will
- signal stopped jobs (HUP then CONT).
-
-3) reparent_thread(): children of a process are signaled (per request)
- with p->pdeath_signal
-
-Remember that restoring signal state (for any restarting task) must
-complete _before_ it is allowed to resume execution, and not during
-the resume. Otherwise, a running task may send a signal to another
-task that hasn't restored yet, so the new signal will be lost
-soon-after.
-
-I considered two possible way to address this:
-
-1. Add another sync point to restart: all tasks will first restore
-their state without signals (all signals blocked), and zombies call
-do_exit(). A sync point then will ensure that all zombies are gone and
-their effects done. Then all tasks restore their signal state (and
-mask), and sync (new point) again. Only then they may resume
-execution.
-The main disadvantage is the added complexity and inefficiency,
-for no good reason.
-
-2. Introduce PF_RESTARTING: mark all restarting tasks with a new flag,
-and teach the above three notifications to skip sending the signal if
-theis flag is set.
-The main advantage is simplicity and completeness. Also, such a flag
-may to be useful later on. This the method implemented.
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/exit.c   |    7 ++++++-
- kernel/signal.c |    4 ++++
- 2 files changed, 10 insertions(+), 1 deletions(-)
+ include/linux/pid.h |    2 +-
+ kernel/fork.c       |    3 ++-
+ kernel/pid.c        |   13 ++++++++++---
+ 3 files changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 912b1fa..41ac4cf 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -299,6 +299,10 @@ kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
- 	struct pid *pgrp = task_pgrp(tsk);
- 	struct task_struct *ignored_task = tsk;
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index 49f1c2f..914185d 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
+ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
  
-+	/* restarting zombie doesn't trigger signals */
-+	if (tsk->flags & PF_RESTARTING)
-+		return;
-+
- 	if (!parent)
- 		 /* exit: our father is in a different pgrp than
- 		  * we are and we were the only connection outside.
-@@ -739,7 +743,8 @@ static struct task_struct *find_new_reaper(struct task_struct *father)
- static void reparent_thread(struct task_struct *father, struct task_struct *p,
- 				struct list_head *dead)
+-extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 851ccd1..2811bdb 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -940,6 +940,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
++	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1110,7 +1111,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 		goto bad_fork_cleanup_io;
+ 
+ 	if (pid != &init_struct_pid) {
+-		pid = alloc_pid(p->nsproxy->pid_ns);
++		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
+ 		if (IS_ERR(pid)) {
+ 			retval = PTR_ERR(pid);
+ 			goto bad_fork_cleanup_io;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 29cf119..10a6b3a 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -280,21 +280,28 @@ void free_pid(struct pid *pid)
+ 	call_rcu(&pid->rcu, delayed_put_pid);
+ }
+ 
+-struct pid *alloc_pid(struct pid_namespace *ns)
++struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
  {
--	if (p->pdeath_signal)
-+	/* restarting zombie doesn't trigger signals */
-+	if (p->pdeath_signal && !(p->flags & PF_RESTARTING))
- 		group_send_sig_info(p->pdeath_signal, SEND_SIG_NOINFO, p);
+ 	struct pid *pid;
+ 	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
+ 	struct upid *upid;
++	int tpid;
  
- 	list_move_tail(&p->sibling, &p->real_parent->children);
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 64c5dee..ea217b0 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -1413,6 +1413,10 @@ int do_notify_parent(struct task_struct *tsk, int sig)
- 	BUG_ON(!task_ptrace(tsk) &&
- 	       (tsk->group_leader != tsk || !thread_group_empty(tsk)));
+ 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
+-	if (!pid)
++	if (!pid) {
++		pid = ERR_PTR(-ENOMEM);
+ 		goto out;
++	}
  
-+	/* restarting zombie doesn't notify parent */
-+	if (tsk->flags & PF_RESTARTING)
-+		return ret;
+ 	tmp = ns;
+ 	for (i = ns->level; i >= 0; i--) {
+-		nr = alloc_pidmap(tmp, 0);
++		tpid = 0;
++		if (target_pids)
++			tpid = target_pids[i];
 +
- 	info.si_signo = sig;
- 	info.si_errno = 0;
- 	/*
++		nr = alloc_pidmap(tmp, tpid);
+ 		if (nr < 0)
+ 			goto out_free;
+ 
 -- 
 1.6.0.4
