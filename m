@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] restart: add switch '-i/--input=FILE' to indicate an
-	input file
-Date: Tue, 22 Sep 2009 23:23:41 -0500
-Message-ID: <20090923042341.GB11296@us.ibm.com>
-References: <1253664983-3406-1-git-send-email-orenl@librato.com>
+Subject: Re: [PATCH] restart: add switch '--self' for self-restart
+Date: Tue, 22 Sep 2009 23:28:05 -0500
+Message-ID: <20090923042805.GC11296@us.ibm.com>
+References: <1253664996-3439-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1253664983-3406-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1253664996-3439-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,157 +23,171 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> This is useful when it isn't convenient to redirect/pipe in the
-> checkpoint image.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> There is no reason to keep a separate program for self-restart.
+> Get rid of self_restart.c
 
-Haha, I was surprised how long it took for this to show up :)  I wanted
-to do it a long time ago, but refused to admit that some tests were
-tough to script with stdin :)  Especially when a wrapper program wants
-to close fds...
-
-Code looks good.
+Hmm?  But you also took self_checkpoint.c out of PROGS in Makefile...
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-thanks,
--serge
-
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > ---
->  restart.c |   40 ++++++++++++++++++++++++++++++----------
->  1 files changed, 30 insertions(+), 10 deletions(-)
+>  Makefile       |    7 +++----
+>  restart.c      |   25 +++++++++++++++++++++++--
+>  self_restart.c |   35 -----------------------------------
+>  3 files changed, 26 insertions(+), 41 deletions(-)
+>  delete mode 100644 self_restart.c
 > 
+> diff --git a/Makefile b/Makefile
+> index 830e2c8..7f5cb27 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -35,7 +35,7 @@ CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
+>  # install dir
+>  INSTALL_DIR = /bin
+> 
+> -PROGS =	self_checkpoint self_restart checkpoint restart ckptinfo
+> +PROGS =	checkpoint restart ckptinfo
+> 
+>  # other cleanup
+>  OTHER = ckptinfo_types.c
+> @@ -43,7 +43,6 @@ OTHER = ckptinfo_types.c
+>  LDLIBS = -lm
+> 
+>  all: $(PROGS)
+> -	echo $(SUBARCH)
+>  	@make -C test
+> 
+>  # restart needs to be thread-safe
+> @@ -68,8 +67,8 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
+>  	@cat $(CKPT_HEADERS) | ./ckptinfo.py > ckptinfo_types.c
+> 
+>  install:
+> -	@echo /usr/bin/install -m 755 checkpoint restart self_restart ckptinfo $(INSTALL_DIR)
+> -	@/usr/bin/install -m 755 checkpoint restart self_restart ckptinfo $(INSTALL_DIR)
+> +	@echo /usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
+> +	@/usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
+> 
+>  clean:
+>  	@rm -f $(PROGS) $(OTHER) *~ *.o
 > diff --git a/restart.c b/restart.c
-> index a25aaa9..600a282 100644
+> index 600a282..c0d52a5 100644
 > --- a/restart.c
 > +++ b/restart.c
-> @@ -1,5 +1,5 @@
->  /*
-> - *  restart.c: restart of multiple processes
-> + *  restart.c: restart process(es) from a checkpoint
->   *
->   *  Copyright (C) 2008-2009 Oren Laadan
->   *
-> @@ -63,7 +63,6 @@ static char usage_str[] =
+> @@ -63,6 +63,7 @@ static char usage_str[] =
 >  "  -p,--pidns            create a new pid namspace (default with --pids)\n"
 >  "  -P,--no-pidns         do not create a new pid namespace (default)\n"
 >  "     --pids             restore original pids (default with --pidns)\n"
-> -"  -i,--inspect          inspect image on-the-fly for error records\n"
+> +"     --self             restart a single task, usually from self-checkpoint\n"
 >  "  -r,--root=ROOT        restart under the directory ROOT instead of current\n"
 >  "     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
 >  "                        to container root, SIGINT otherwise)\n"
-> @@ -72,6 +71,8 @@ static char usage_str[] =
->  "     --copy-status      imitate exit status of root task (implies -w)\n"
->  "  -W,--no-wait          do not wait for root task to terminate\n"
->  "  -F,--freezer=CGROUP   freeze tasks in freezer group CGROUP on success\n"
-> +"  -i,--input=FILE      read data from FILE instead of standard input\n"
-> +"     --inspect          inspect image on-the-fly for error records\n"
->  "  -v,--verbose          verbose output\n"
->  "  -d,--debug            debugging output\n"
->  "";
-> @@ -343,6 +344,7 @@ struct args {
->  	int show_status;
->  	int copy_status;
->  	char *freezer;
-> +	char *input;
+> @@ -335,6 +336,7 @@ struct pid_swap {
 >  };
 > 
->  static void usage(char *str)
-> @@ -371,7 +373,8 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  struct args {
+> +	int self;
+>  	int pids;
+>  	int pidns;
+>  	int no_pidns;
+> @@ -372,6 +374,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  		{ "pidns",	no_argument,		NULL, 'p' },
 >  		{ "no-pidns",	no_argument,		NULL, 'P' },
 >  		{ "pids",	no_argument,		NULL, 3 },
+> +		{ "self",	no_argument,		NULL, 6},
 >  		{ "signal",	required_argument,	NULL, 4 },
-> -		{ "inspect",	no_argument,		NULL, 'i' },
-> +		{ "inspect",	no_argument,		NULL, 5 },
-> +		{ "input",	required_argument,		NULL, 'i' },
->  		{ "root",	required_argument,		NULL, 'r' },
->  		{ "wait",	no_argument,		NULL, 'w' },
->  		{ "show-status",	no_argument,	NULL, 1 },
-> @@ -382,7 +385,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		{ "debug",	no_argument,		NULL, 'd' },
->  		{ NULL,		0,			NULL, 0 }
->  	};
-> -	static char optc[] = "hdivpPwWF:r:";
-> +	static char optc[] = "hdvpPwWF:r:i:";
-> 
->  	int sig;
-> 
-> @@ -402,16 +405,19 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		case 'v':
->  			global_verbose = 1;
->  			break;
-> -		case 'i':
-> +		case 5:  /* --inspect */
->  			args->inspect = 1;
->  			break;
-> +		case 'i':
-> +			args->input = optarg;
-> +			break;
->  		case 'p':
->  			args->pidns = 1;
->  			break;
+>  		{ "inspect",	no_argument,		NULL, 5 },
+>  		{ "input",	required_argument,		NULL, 'i' },
+> @@ -417,6 +420,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
 >  		case 'P':
 >  			args->no_pidns = 1;
 >  			break;
-> -		case 4:
-> +		case 4:  /* --signal */
+> +		case 6:  /* --self */
+> +			args->self = 1;
+> +			break;
+>  		case 4:  /* --signal */
 >  			sig = str2sig(optarg);
 >  			if (sig < 0)
->  				sig = str2num(optarg);
-> @@ -421,7 +427,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  			}
->  			global_send_sigint = sig;
->  			break;
-> -		case 3:
-> +		case 3:  /* --pids */
->  			args->pids = 1;
->  			args->pidns = 1;  /* implied */
->  			break;
-> @@ -434,11 +440,11 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		case 'W':
->  			args->wait = 0;
->  			break;
-> -		case 1:
-> +		case 1:  /* --show-status */
->  			args->wait = 1;
->  			args->show_status = 1;
->  			break;
-> -		case 2:
-> +		case 2: /* --copy-status */
->  			args->wait = 1;
->  			args->copy_status = 1;
->  			break;
-> @@ -625,14 +631,28 @@ int main(int argc, char *argv[])
->  	memset(&ctx, 0, sizeof(ctx));
-> 
->  	parse_args(&args, argc, argv);
-> -
->  	ctx.args = &args;
-> 
-> +	/* input file (default: stdin) */
-> +	if (args.input) {
-> +		ret = open(args.input, O_RDONLY, 0);
-> +		if (ret < 0) {
-> +			perror("open input file");
-> +			exit(1);
-> +		}
-> +		if (dup2(ret, STDIN_FILENO) < 0) {
-> +			perror("dup2 input file");
-> +			exit(1);
-> +		}
-> +	}
+> @@ -488,6 +494,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  		exit(1);
+>  	}
+>  #endif
 > +
-> +	/* freezer preparation */
+> +	if (args->self &&
+> +	    (args->pids || args->pidns || args->no_pidns || args->wait ||
+> +	     args->show_status || args->copy_status || args->freezer)) {
+> +		printf("Invalid mix of --self with multiprocess options\n");
+> +		exit(1);
+> +	}
+>  }
+> 
+>  static void report_exit_status(int status, char *str, int debug)
+> @@ -650,14 +663,22 @@ int main(int argc, char *argv[])
 >  	if (args.freezer && freezer_prepare(&ctx) < 0)
 >  		exit(1);
 > 
->  	setpgrp();
-> 
-> +	/* chroot ? */
+> -	setpgrp();
+> -
+>  	/* chroot ? */
 >  	if (args.root && chroot(args.root) < 0) {
 >  		perror("chroot");
 >  		exit(1);
+>  	}
+> 
+> +	/* self-restart ends here: */
+> +	if (args.self) {
+> +		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF);
+> +		/* reach here if restart(2) failed ! */
+> +		perror("restart");
+> +		exit(1);
+> +	}
+> +
+> +	setpgrp();
+> +
+>  	ret = ckpt_read_header(&ctx);
+>  	if (ret < 0) {
+>  		perror("read c/r header");
+> diff --git a/self_restart.c b/self_restart.c
+> deleted file mode 100644
+> index b0fbaab..0000000
+> --- a/self_restart.c
+> +++ /dev/null
+> @@ -1,35 +0,0 @@
+> -/*
+> - *  self_restart.c: restart a single process
+> - *
+> - *  Copyright (C) 2008 Oren Laadan
+> - *
+> - *  This file is subject to the terms and conditions of the GNU General Public
+> - *  License.  See the file COPYING in the main directory of the Linux
+> - *  distribution for more details.
+> - */
+> -
+> -#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
+> -
+> -#include <stdio.h>
+> -#include <stdlib.h>
+> -#include <errno.h>
+> -#include <fcntl.h>
+> -#include <unistd.h>
+> -#include <asm/unistd.h>
+> -#include <sys/syscall.h>
+> -
+> -#include <linux/checkpoint.h>
+> -
+> -int main(int argc, char *argv[])
+> -{
+> -	pid_t pid = getpid();
+> -	int ret;
+> -
+> -	ret = syscall(__NR_restart, pid, STDIN_FILENO, RESTART_TASKSELF);
+> -	if (ret < 0)
+> -		perror("restart");
+> -
+> -	printf("should not reach here !\n");
+> -
+> -	return 0;
+> -}
 > -- 
 > 1.6.0.4
 > 
