@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 68/80] Add common socket helpers to unify the security
-	hooks
-Date: Wed, 23 Sep 2009 19:51:48 -0400
-Message-ID: <1253749920-18673-69-git-send-email-orenl__26605.3306092092$1253754348$gmane$org@librato.com>
+Subject: [PATCH v18 22/80] c/r: external checkpoint of a task other than
+	ourself
+Date: Wed, 23 Sep 2009 19:51:02 -0400
+Message-ID: <1253749920-18673-23-git-send-email-orenl__36594.8573490188$1253754389$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,136 +19,328 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Now we can do "external" checkpoint, i.e. act on another task.
 
-This moves the meat out of the bind(), getsockname(), and getpeername() syscalls
-into helper functions that performs security_socket_bind() and then the
-sock->ops->call().  This allows a unification of this behavior between the
-syscalls and the pending socket restart logic.
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container, unless CHECKPOINT_SUBTREE flag is given.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Set state of freezer cgroup of checkpointed task hierarchy to
+"CHECKPOINTING" during a checkpoint, to ensure that task(s) cannot be
+thawed while at it.
+
+Ensure that all tasks belong to root task's freezer cgroup (the root
+task is also tested, to detect it if changes its freezer cgroups
+before it moves to "CHECKPOINTING").
+
+sys_restart() remains nearly the same, as the restart is always done
+in the context of the restarting task. However, the original task may
+have been frozen from user space, or interrupted from a syscall for
+the checkpoint. This is accounted for by restoring a suitable retval
+for the restarting task, according to how it was checkpointed.
+
+Changelog[v17]:
+  - Move restore_retval() to this patch
+  - Tighten ptrace ceckpoint for checkpoint to PTRACE_MODE_ATTACH
+  - Use CHECKPOINTING state for hierarchy's freezer for checkpoint
+Changelog[v16]:
+  - Use CHECKPOINT_SUBTREE to allow subtree (partial container)
+Changelog[v14]:
+  - Refuse non-self checkpoint if target task isn't frozen
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/net/sock.h |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
- net/socket.c       |   29 ++++++-----------------------
- 2 files changed, 54 insertions(+), 23 deletions(-)
+ checkpoint/Kconfig               |    1 +
+ checkpoint/checkpoint.c          |   98 +++++++++++++++++++++++++++++++++++++-
+ checkpoint/restart.c             |   61 +++++++++++++++++++++++-
+ checkpoint/sys.c                 |   10 ++++
+ include/linux/checkpoint_types.h |    7 ++-
+ 5 files changed, 174 insertions(+), 3 deletions(-)
 
-diff --git a/include/net/sock.h b/include/net/sock.h
-index 950409d..12530bf 100644
---- a/include/net/sock.h
-+++ b/include/net/sock.h
-@@ -1578,6 +1578,54 @@ extern void sock_enable_timestamp(struct sock *sk, int flag);
- extern int sock_get_timestamp(struct sock *, struct timeval __user *);
- extern int sock_get_timestampns(struct sock *, struct timespec __user *);
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index ef7d406..21fc86b 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -5,6 +5,7 @@
+ config CHECKPOINT
+ 	bool "Checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
++	depends on CGROUP_FREEZER
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index e228151..ad89f50 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -12,6 +12,9 @@
+ #define CKPT_DFLAG  CKPT_DSYS
  
-+/* bind() helper shared between any callers needing to perform a bind on
-+ * behalf of userspace (syscall and restart) with the security hooks.
-+ */
-+static inline int sock_bind(struct socket *sock,
-+			    struct sockaddr *addr,
-+			    int addr_len)
+ #include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -352,14 +355,105 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	int err;
++	if (t->state == TASK_DEAD) {
++		__ckpt_write_err(ctx, "TE", "task state EXIT_DEAD\n", -EBUSY);
++		return -EBUSY;
++	}
 +
-+	err = security_socket_bind(sock, addr, addr_len);
-+	if (err)
-+		return err;
-+	else
-+		return sock->ops->bind(sock, addr, addr_len);
++	if (!ptrace_may_access(t, PTRACE_MODE_ATTACH)) {
++		__ckpt_write_err(ctx, "TE", "ptrace attach denied", -EPERM);
++		return -EPERM;
++	}
++
++	/* verify that all tasks belongs to same freezer cgroup */
++	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
++		__ckpt_write_err(ctx, "TE", "unfrozen or wrong cgroup", -EBUSY);
++		return -EBUSY;
++	}
++
++	/* FIX: add support for ptraced tasks */
++	if (task_ptrace(t)) {
++		__ckpt_write_err(ctx, "TE", "task is ptraced", -EBUSY);
++		return -EBUSY;
++	}
++
++	return 0;
 +}
 +
-+/* getname() helper shared between any callers needing to perform a getname on
-+ * behalf of userspace (syscall and restart) with the security hooks.
-+ */
-+static inline int sock_getname(struct socket *sock,
-+			       struct sockaddr *addr,
-+			       int *addr_len)
++/* setup checkpoint-specific parts of ctx */
++static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
 +{
-+	int err;
++	struct task_struct *task;
++	struct nsproxy *nsproxy;
++	int ret;
 +
-+	err = security_socket_getsockname(sock);
-+	if (err)
-+		return err;
++	/*
++	 * No need for explicit cleanup here, because if an error
++	 * occurs then ckpt_ctx_free() is eventually called.
++	 */
++
++	ctx->root_pid = pid;
++
++	/* root task */
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
++	if (!task)
++		return -ESRCH;
 +	else
-+		return sock->ops->getname(sock, addr, addr_len, 0);
++		ctx->root_task = task;
++
++	/* root nsproxy */
++	rcu_read_lock();
++	nsproxy = task_nsproxy(task);
++	if (nsproxy)
++		get_nsproxy(nsproxy);
++	rcu_read_unlock();
++	if (!nsproxy)
++		return -ESRCH;
++	else
++		ctx->root_nsproxy = nsproxy;
++
++	/* root freezer */
++	ctx->root_freezer = task;
++	geT_task_struct(task);
++
++	ret = may_checkpoint_task(ctx, task);
++	if (ret) {
++		ckpt_write_err(ctx, "", NULL);
++		put_task_struct(task);
++		put_task_struct(task);
++		put_nsproxy(nsproxy);
++		ctx->root_nsproxy = NULL;
++		ctx->root_task = NULL;
++		return ret;
++	}
++
++	return 0;
 +}
 +
-+/* getpeer() helper shared between any callers needing to perform a getpeer on
-+ * behalf of userspace (syscall and restart) with the security hooks.
-+ */
-+static inline int sock_getpeer(struct socket *sock,
-+			       struct sockaddr *addr,
-+			       int *addr_len)
-+{
-+	int err;
+ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	long ret;
+ 
++	ret = init_checkpoint_ctx(ctx, pid);
++	if (ret < 0)
++		return ret;
 +
-+	err = security_socket_getpeername(sock);
-+	if (err)
-+		return err;
-+	else
-+		return sock->ops->getname(sock, addr, addr_len, 1);
-+}
++	if (ctx->root_freezer) {
++		ret = cgroup_freezer_begin_checkpoint(ctx->root_freezer);
++		if (ret < 0)
++			return ret;
++	}
 +
- /* 
-  *	Enable debug/info messages 
-  */
-diff --git a/net/socket.c b/net/socket.c
-index 6d47165..63c4498 100644
---- a/net/socket.c
-+++ b/net/socket.c
-@@ -1414,15 +1414,10 @@ SYSCALL_DEFINE3(bind, int, fd, struct sockaddr __user *, umyaddr, int, addrlen)
- 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
- 	if (sock) {
- 		err = move_addr_to_kernel(umyaddr, addrlen, (struct sockaddr *)&address);
--		if (err >= 0) {
--			err = security_socket_bind(sock,
--						   (struct sockaddr *)&address,
--						   addrlen);
--			if (!err)
--				err = sock->ops->bind(sock,
--						      (struct sockaddr *)
--						      &address, addrlen);
--		}
-+		if (err >= 0)
-+			err = sock_bind(sock,
-+					(struct sockaddr *)&address,
-+					addrlen);
- 		fput_light(sock->file, fput_needed);
- 	}
- 	return err;
-@@ -1610,11 +1605,7 @@ SYSCALL_DEFINE3(getsockname, int, fd, struct sockaddr __user *, usockaddr,
- 	if (!sock)
+ 	ret = checkpoint_write_header(ctx);
+ 	if (ret < 0)
  		goto out;
+-	ret = checkpoint_task(ctx, current);
++	ret = checkpoint_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_write_tail(ctx);
+@@ -370,5 +464,7 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	ctx->crid = atomic_inc_return(&ctx_count);
+ 	ret = ctx->crid;
+  out:
++	if (ctx->root_freezer)
++		cgroup_freezer_end_checkpoint(ctx->root_freezer);
+ 	return ret;
+ }
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index afe51c2..cb02ffb 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -411,10 +411,67 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
  
--	err = security_socket_getsockname(sock);
--	if (err)
--		goto out_put;
--
--	err = sock->ops->getname(sock, (struct sockaddr *)&address, &len, 0);
-+	err = sock_getname(sock, (struct sockaddr *)&address, &len);
- 	if (err)
- 		goto out_put;
- 	err = move_addr_to_user((struct sockaddr *)&address, len, usockaddr, usockaddr_len);
-@@ -1639,15 +1630,7 @@ SYSCALL_DEFINE3(getpeername, int, fd, struct sockaddr __user *, usockaddr,
++static long restore_retval(void)
++{
++	struct pt_regs *regs = task_pt_regs(current);
++	long ret;
++
++	/*
++	 * For the restart, we entered the kernel via sys_restart(),
++	 * so our return path is via the syscall exit. In particular,
++	 * the code in entry.S will put the value that we will return
++	 * into a register (e.g. regs->eax in x86), thus passing it to
++	 * the caller task.
++	 *
++	 * What we do now depends on what happened to the checkpointed
++	 * task right before the checkpoint - there are three cases:
++	 *
++	 * 1) It was carrying out a syscall when became frozen, or
++	 * 2) It was running in userspace, or
++	 * 3) It was doing a self-checkpoint
++	 *
++	 * In case #1, if the syscall succeeded, perhaps partially,
++	 * then the retval is non-negative. If it failed, the error
++	 * may be one of -ERESTART..., which is interpreted in the
++	 * signal handling code. If that is the case, we force the
++	 * signal handler to kick in by faking a signal to ourselves
++	 * (a la freeze/thaw) when ret < 0.
++	 *
++	 * In case #2, our return value will overwrite the original
++	 * value in the affected register. Workaround by simply using
++	 * that saved value of that register as our retval.
++	 *
++	 * In case #3, then the state was recorded while the task was
++	 * in checkpoint(2) syscall. The syscall is execpted to return
++	 * 0 when returning from a restart. Fortunately, this already
++	 * has been arranged for at checkpoint time (the register that
++	 * holds the retval, e.g. regs->eax in x86, was set to
++	 * zero).
++	 */
++
++	/* needed for all 3 cases: get old value/error/retval */
++	ret = syscall_get_return_value(current, regs);
++
++	/* if from a syscall and returning error, kick in signal handlig */
++	if (syscall_get_nr(current, regs) >= 0 && ret < 0)
++		set_tsk_thread_flag(current, TIF_SIGPENDING);
++
++	return ret;
++}
++
++/* setup restart-specific parts of ctx */
++static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
++{
++	return 0;
++}
++
+ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	long ret;
  
- 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
- 	if (sock != NULL) {
--		err = security_socket_getpeername(sock);
--		if (err) {
--			fput_light(sock->file, fput_needed);
--			return err;
--		}
--
--		err =
--		    sock->ops->getname(sock, (struct sockaddr *)&address, &len,
--				       1);
-+		err = sock_getpeer(sock, (struct sockaddr *)&address, &len);
- 		if (!err)
- 			err = move_addr_to_user((struct sockaddr *)&address, len, usockaddr,
- 						usockaddr_len);
++	ret = init_restart_ctx(ctx, pid);
++	if (ret < 0)
++		return ret;
+ 	ret = restore_read_header(ctx);
+ 	if (ret < 0)
+ 		return ret;
+@@ -422,7 +479,9 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = restore_read_tail(ctx);
++	if (ret < 0)
++		return ret;
+ 
+ 	/* on success, adjust the return value if needed [TODO] */
+-	return ret;
++	return restore_retval(ctx);
+ }
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 7f6f71e..dda2c21 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -12,7 +12,9 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
++#include <linux/cgroup.h>
+ #include <linux/syscalls.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -168,6 +170,14 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ {
+ 	if (ctx->file)
+ 		fput(ctx->file);
++
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++	if (ctx->root_freezer)
++		put_task_struct(ctx->root_freezer);
++
+ 	kfree(ctx);
+ }
+ 
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 585cb7b..15dbe1b 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -12,12 +12,17 @@
+ 
+ #ifdef __KERNEL__
+ 
++#include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/fs.h>
+ 
+ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+-	pid_t root_pid;		/* container identifier */
++	pid_t root_pid;				/* [container] root pid */
++	struct task_struct *root_task;		/* [container] root task */
++	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
++	struct task_struct *root_freezer;	/* [container] root task */
+ 
+ 	unsigned long kflags;	/* kerenl flags */
+ 	unsigned long uflags;	/* user flags */
 -- 
 1.6.0.4
