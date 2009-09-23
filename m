@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 10/80] c/r: make file_pos_read/write() public
-Date: Wed, 23 Sep 2009 19:50:50 -0400
-Message-ID: <1253749920-18673-11-git-send-email-orenl__23035.4757667103$1253750643$gmane$org@librato.com>
+Subject: [PATCH v18 09/80] Namespaces submenu
+Date: Wed, 23 Sep 2009 19:50:49 -0400
+Message-ID: <1253749920-18673-10-git-send-email-orenl__11136.8618476719$1253750648$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,58 +18,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-These two are used in the next patch when calling vfs_read/write()
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Let's not steal too much space in the 'General Setup' menu.
+Take a cue from the cgroups code and create a submenu.
+
+This can go upstream now.
+
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- fs/read_write.c    |   10 ----------
- include/linux/fs.h |   10 ++++++++++
- 2 files changed, 10 insertions(+), 10 deletions(-)
+ init/Kconfig |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 6c8c55d..d331975 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -359,16 +359,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+diff --git a/init/Kconfig b/init/Kconfig
+index 3f7e609..46ee2c8 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -664,7 +664,7 @@ config RELAY
  
- EXPORT_SYMBOL(vfs_write);
+ 	  If unsure, say N.
  
--static inline loff_t file_pos_read(struct file *file)
--{
--	return file->f_pos;
--}
--
--static inline void file_pos_write(struct file *file, loff_t pos)
--{
--	file->f_pos = pos;
--}
--
- SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
- {
- 	struct file *file;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 73e9b64..a21f175 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1548,6 +1548,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
- 				struct iovec *fast_pointer,
- 				struct iovec **ret_pointer);
- 
-+static inline loff_t file_pos_read(struct file *file)
-+{
-+	return file->f_pos;
-+}
-+
-+static inline void file_pos_write(struct file *file, loff_t pos)
-+{
-+	file->f_pos = pos;
-+}
-+
- extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
- extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+-config NAMESPACES
++menuconfig NAMESPACES
+ 	bool "Namespaces support" if EMBEDDED
+ 	default !EMBEDDED
+ 	help
 -- 
 1.6.0.4
