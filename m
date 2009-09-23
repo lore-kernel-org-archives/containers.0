@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 71/80] c/r: [pty 1/2] allow allocation of desired pty slave
-Date: Wed, 23 Sep 2009 19:51:51 -0400
-Message-ID: <1253749920-18673-72-git-send-email-orenl__1359.45778242803$1253757169$gmane$org@librato.com>
+Subject: [PATCH v18 63/80] c/r: [signal 1/4] blocked and template for shared
+	signals
+Date: Wed, 23 Sep 2009 19:51:43 -0400
+Message-ID: <1253749920-18673-64-git-send-email-orenl__28157.5581444942$1253757310$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,245 +22,361 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During restart, we need to allocate pty slaves with the same
-identifiers as recorded during checkpoint. Modify the allocation code
-to allow an in-kernel caller to request a specific slave identifier.
+This patch adds checkpoint/restart of blocked signals mask
+(t->blocked) and a template for shared signals (t->signal).
 
-For this, add a new field to task_struct - 'required_id'. It will
-hold the desired identifier when restoring a (master) pty.
+Because t->signal sharing is tied to threads, we ensure proper sharing
+of t->signal (struct signal_struct) for threads only.
 
-The code in ptmx_open() will use this value only for tasks that try to
-open /dev/ptmx that are restarting (PF_RESTARTING), and if the value
-isn't CKPT_REQUIRED_NONE (-1).
+Access to t->signal is protected by locking t->sighand->lock.
+Therefore, the usual checkpoint_obj() invoking the callback
+checkpoint_signal(ctx, signal) is insufficient because the task
+pointer is unavailable.
+
+Instead, handling of t->signal sharing is explicit using helpers
+like ckpt_obj_lookup_add(), ckpt_obj_fetch() and ckpt_obj_insert().
+The actual state is saved (if needed) _after_ the task_objs data.
+
+To prevent tasks from handling restored signals during restart,
+set their mask to block all signals and only restore the original
+mask at the very end (before the last sync point).
+
+Introduce per-task pointer 'ckpt_data' to temporary store data
+for restore actions that are deferred to the end (like restoring
+the signal block mask).
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 ---
- drivers/char/pty.c        |   65 +++++++++++++++++++++++++++++++++++++++++---
- drivers/char/tty_io.c     |    4 +-
- fs/devpts/inode.c         |   13 +++++++--
- include/linux/devpts_fs.h |    6 +++-
- include/linux/sched.h     |    1 +
- include/linux/tty.h       |    2 +
- 6 files changed, 80 insertions(+), 11 deletions(-)
+ checkpoint/objhash.c           |    7 +++
+ checkpoint/process.c           |   64 ++++++++++++++++++++++++-
+ checkpoint/signal.c            |  104 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h     |    6 ++
+ include/linux/checkpoint_hdr.h |   14 +++++-
+ 5 files changed, 193 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/char/pty.c b/drivers/char/pty.c
-index b33d668..e2fef99 100644
---- a/drivers/char/pty.c
-+++ b/drivers/char/pty.c
-@@ -612,9 +612,10 @@ static const struct tty_operations pty_unix98_ops = {
- };
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index b4034dc..bf2f761 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -289,6 +289,13 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_sighand,
+ 		.restore = restore_sighand,
+ 	},
++	/* signal object */
++	{
++		.obj_name = "SIGNAL",
++		.obj_type = CKPT_OBJ_SIGNAL,
++		.ref_drop = obj_no_drop,
++		.ref_grab = obj_no_grab,
++	},
+ 	/* ns object */
+ 	{
+ 		.obj_name = "NSPROXY",
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 56f33dd..e596e2a 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -182,7 +182,8 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	int files_objref;
+ 	int mm_objref;
+ 	int sighand_objref;
+-	int ret;
++	int signal_objref;
++	int first, ret;
  
- /**
-- *	ptmx_open		-	open a unix 98 pty master
-+ *	__ptmx_open		-	open a unix 98 pty master
-  *	@inode: inode of device file
-  *	@filp: file pointer to tty
-+ *	@index: desired slave index
-  *
-  *	Allocate a unix98 pty master device from the ptmx driver.
-  *
-@@ -623,16 +624,15 @@ static const struct tty_operations pty_unix98_ops = {
-  *		allocated_ptys_lock handles the list of free pty numbers
-  */
+ 	/*
+ 	 * Shared objects may have dependencies among them: task->mm
+@@ -222,14 +223,36 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return sighand_objref;
+ 	}
  
--static int __ptmx_open(struct inode *inode, struct file *filp)
-+static int __ptmx_open(struct inode *inode, struct file *filp, int index)
- {
- 	struct tty_struct *tty;
- 	int retval;
--	int index;
- 
- 	nonseekable_open(inode, filp);
- 
- 	/* find a device that is not in use. */
--	index = devpts_new_index(inode);
-+	index = devpts_new_index(inode, index);
- 	if (index < 0)
- 		return index;
- 
-@@ -668,12 +668,66 @@ static int ptmx_open(struct inode *inode, struct file *filp)
- {
- 	int ret;
- 
-+#ifdef CONFIG_CHECKPOINT
 +	/*
-+	 * If current task is restarting, we skip the actual open.
-+	 * Instead, leave it up to the caller (restart code) to invoke
-+	 * __ptmx_open() with the desired pty index request.
-+	 *
-+	 * NOTE: this gives a half-baked file that has ptmx f_op but
-+	 * the tty (private_data) is NULL. It is the responsibility of
-+	 * the _caller_ to ensure proper initialization before
-+	 * allowing it to be used (ptmx_release() tolerates NULL tty).
++	 * Handle t->signal differently because the checkpoint method
++	 * for t->signal needs access to owning task_struct to access
++	 * t->sighand (to lock/unlock). First explicitly determine if
++	 * need to save, and only below invoke checkpoint_obj_signal()
++	 * if needed.
 +	 */
-+	if (current->flags & PF_RESTARTING)
-+		return 0;
-+#endif
++	signal_objref = ckpt_obj_lookup_add(ctx, t->signal,
++					    CKPT_OBJ_SIGNAL, &first);
++	ckpt_debug("signal: objref %d\n", signal_objref);
++	if (signal_objref < 0)
++		return signal_objref;
 +
- 	lock_kernel();
--	ret = __ptmx_open(inode, filp);
-+	ret = __ptmx_open(inode, filp, UNSPECIFIED_PTY_INDEX);
- 	unlock_kernel();
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+ 	if (!h)
+ 		return -ENOMEM;
+ 	h->files_objref = files_objref;
+ 	h->mm_objref = mm_objref;
+ 	h->sighand_objref = sighand_objref;
++	h->signal_objref = signal_objref;
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	/* actually save t->signal, if need to */
++	if (first)
++		ret = checkpoint_obj_signal(ctx, t);
++	if (ret < 0)
++		ckpt_write_err(ctx, "TE", "signal_struct", ret);
+ 
+ 	return ret;
+ }
+@@ -375,6 +398,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		goto out;
+ 	ret = checkpoint_cpu(ctx, t);
+ 	ckpt_debug("cpu %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_task_signal(ctx, t);
++	ckpt_debug("task-signal %d\n", ret);
+  out:
+ 	ctx->tsk = NULL;
+ 	return ret;
+@@ -551,6 +578,11 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_obj_sighand(ctx, h->sighand_objref);
+ 	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
++	if (ret < 0)
++		goto out;
++
++	ret = restore_obj_signal(ctx, h->signal_objref);
++	ckpt_debug("signal: ret %d (%p)\n", ret, current->signal);
+  out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+@@ -688,11 +720,37 @@ int restore_restart_block(struct ckpt_ctx *ctx)
  	return ret;
  }
  
-+static int ptmx_release(struct inode *inode, struct file *filp)
++/* pre_restore_task - prepare the task for restore */
++static int pre_restore_task(struct ckpt_ctx *ctx)
 +{
-+#ifdef CONFIG_CHECKPOINT
-+	/*
-+	 * It is possible for a restart to create a half-baked
-+	 * ptmx file - see ptmx_open(). In that case there is no
-+	 * tty (private_data) and nothing to do.
-+	 */
-+	if (!filp->private_data)
-+		return 0;
-+#endif
++	sigset_t sigset;
 +
-+	return tty_release(inode, filp);
++	/*
++	 * Block task's signals to avoid interruptions due to signals,
++	 * say, from restored timers, file descriptors etc. Signals
++	 * will be unblocked when restore completes.
++	 *
++	 * NOTE: tasks with file descriptors set to send a SIGKILL as
++	 * i/o notification may fail the restart if a signal occurs
++	 * before that task completed its restore. FIX ?
++	 */
++	sigfillset(&sigset);
++	sigdelset(&sigset, SIGKILL);
++	sigdelset(&sigset, SIGSTOP);
++	sigprocmask(SIG_SETMASK, &sigset, NULL);
++
++	return 0;
 +}
 +
-+struct file *pty_open_by_index(char *ptmxpath, int index)
+ /* read the entire state of the current task */
+ int restore_task(struct ckpt_ctx *ctx)
+ {
+ 	int ret;
+ 
++	ret = pre_restore_task(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = restore_task_struct(ctx);
+ 	ckpt_debug("task %d\n", ret);
+ 	if (ret < 0)
+@@ -720,6 +778,10 @@ int restore_task(struct ckpt_ctx *ctx)
+ 		goto out;
+ 	ret = restore_creds(ctx);
+ 	ckpt_debug("creds: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	ret = restore_task_signal(ctx);
+  out:
+ 	return ret;
+ }
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index 1aadadd..3fac75c 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -161,3 +161,107 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
+ 
+ 	return 0;
+ }
++
++/***********************************************************************
++ * signal checkpoint/restart
++ */
++
++static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	struct file *ptmxfile;
++	struct ckpt_hdr_signal *h;
 +	int ret;
 +
-+	/*
-+	 * We need to pick a way to specify which devpts mountpoint to
-+	 * use. For now, we'll just use whatever /dev/ptmx points to.
-+	 */
-+	ptmxfile = filp_open(ptmxpath, O_RDWR|O_NOCTTY, 0);
-+	if (IS_ERR(ptmxfile))
-+		return ptmxfile;
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
++	if (!h)
++		return -ENOMEM;
 +
-+	lock_kernel();
-+	ret = __ptmx_open(ptmxfile->f_dentry->d_inode, ptmxfile, index);
-+	unlock_kernel();
-+	if (ret) {
-+		fput(ptmxfile);
-+		return ERR_PTR(ret);
-+	}
++	/* fill in later */
 +
-+	return ptmxfile;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	return ret;
 +}
 +
- static struct file_operations ptmx_fops;
- 
- static void __init unix98_pty_init(void)
-@@ -730,6 +784,7 @@ static void __init unix98_pty_init(void)
- 	/* Now create the /dev/ptmx special device */
- 	tty_default_fops(&ptmx_fops);
- 	ptmx_fops.open = ptmx_open;
-+	ptmx_fops.release = ptmx_release;
- 
- 	cdev_init(&ptmx_cdev, &ptmx_fops);
- 	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, 2), 1) ||
-diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
-index a3afa0c..7853ea2 100644
---- a/drivers/char/tty_io.c
-+++ b/drivers/char/tty_io.c
-@@ -142,7 +142,7 @@ ssize_t redirected_tty_write(struct file *, const char __user *,
- 							size_t, loff_t *);
- static unsigned int tty_poll(struct file *, poll_table *);
- static int tty_open(struct inode *, struct file *);
--static int tty_release(struct inode *, struct file *);
-+int tty_release(struct inode *, struct file *);
- long tty_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
- #ifdef CONFIG_COMPAT
- static long tty_compat_ioctl(struct file *file, unsigned int cmd,
-@@ -1846,7 +1846,7 @@ static int tty_open(struct inode *inode, struct file *filp)
-  *		Takes bkl. See tty_release_dev
-  */
- 
--static int tty_release(struct inode *inode, struct file *filp)
-+int tty_release(struct inode *inode, struct file *filp)
- {
- 	lock_kernel();
- 	tty_release_dev(filp);
-diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 75efb02..82a2160 100644
---- a/fs/devpts/inode.c
-+++ b/fs/devpts/inode.c
-@@ -433,11 +433,11 @@ static struct file_system_type devpts_fs_type = {
-  * to the System V naming convention
-  */
- 
--int devpts_new_index(struct inode *ptmx_inode)
-+int devpts_new_index(struct inode *ptmx_inode, int req_idx)
- {
- 	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
- 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
--	int index;
-+	int index = req_idx;
- 	int ida_ret;
- 
- retry:
-@@ -445,7 +445,9 @@ retry:
- 		return -ENOMEM;
- 
- 	mutex_lock(&allocated_ptys_lock);
--	ida_ret = ida_get_new(&fsi->allocated_ptys, &index);
-+	if (index == UNSPECIFIED_PTY_INDEX)
-+		index = 0;
-+	ida_ret = ida_get_new_above(&fsi->allocated_ptys, index, &index);
- 	if (ida_ret < 0) {
- 		mutex_unlock(&allocated_ptys_lock);
- 		if (ida_ret == -EAGAIN)
-@@ -453,6 +455,11 @@ retry:
- 		return -EIO;
- 	}
- 
-+	if (req_idx != UNSPECIFIED_PTY_INDEX && index != req_idx) {
-+		ida_remove(&fsi->allocated_ptys, index);
-+		mutex_unlock(&allocated_ptys_lock);
-+		return -EBUSY;
++int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	BUG_ON(t->flags & PF_EXITING);
++	return checkpoint_signal(ctx, t);
++}
++
++static int restore_signal(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_signal *h;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	/* fill in later */
++
++	ckpt_hdr_put(ctx, h);
++	return 0;
++}
++
++int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
++{
++	struct signal_struct *signal;
++	int ret = 0;
++
++	signal = ckpt_obj_fetch(ctx, signal_objref, CKPT_OBJ_SIGNAL);
++	if (!IS_ERR(signal)) {
++		/*
++		 * signal_struct is already shared properly as it is
++		 * tied to thread groups. Since thread relationships
++		 * are already restore now, t->signal must match.
++		 */
++		if (signal != current->signal)
++			ret = -EINVAL;
++	} else if (PTR_ERR(signal) == -EINVAL) {
++		/* first timer: add to hash and restore our t->signal */
++		ret = ckpt_obj_insert(ctx, current->signal,
++				      signal_objref, CKPT_OBJ_SIGNAL);
++		if (ret >= 0)
++			ret = restore_signal(ctx);
++	} else {
++		ret = PTR_ERR(signal);
 +	}
- 	if (index >= pty_limit) {
- 		ida_remove(&fsi->allocated_ptys, index);
- 		mutex_unlock(&allocated_ptys_lock);
-diff --git a/include/linux/devpts_fs.h b/include/linux/devpts_fs.h
-index 5ce0e5f..163a70e 100644
---- a/include/linux/devpts_fs.h
-+++ b/include/linux/devpts_fs.h
-@@ -15,9 +15,13 @@
- 
- #include <linux/errno.h>
- 
-+#define UNSPECIFIED_PTY_INDEX -1
 +
- #ifdef CONFIG_UNIX98_PTYS
- 
--int devpts_new_index(struct inode *ptmx_inode);
-+struct file *pty_open_by_index(char *ptmxpath, int index);
++	return ret;
++}
 +
-+int devpts_new_index(struct inode *ptmx_inode, int req_idx);
- void devpts_kill_index(struct inode *ptmx_inode, int idx);
- /* mknod in devpts */
- int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty);
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 91b57db..0ab9553 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1482,6 +1482,7 @@ struct task_struct {
- #endif /* CONFIG_TRACING */
- #ifdef CONFIG_CHECKPOINT
- 	struct ckpt_ctx *checkpoint_ctx;
-+	unsigned long required_id;
- #endif
- };
++int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_signal_task *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
++	if (!h)
++		return -ENOMEM;
++
++	fill_sigset(&h->blocked, &t->blocked);
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++int restore_task_signal(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_signal_task *h;
++	sigset_t blocked;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	load_sigset(&blocked, &h->blocked);
++	/* silently remove SIGKILL, SIGSTOP */
++	sigdelset(&blocked, SIGKILL);
++	sigdelset(&blocked, SIGSTOP);
++
++	sigprocmask(SIG_SETMASK, &blocked, NULL);
++	recalc_sigpending();
++
++	ckpt_hdr_put(ctx, h);
++	return 0;
++}
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index c0e549e..ec98a43 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -253,6 +253,12 @@ extern int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr);
+ extern void *restore_sighand(struct ckpt_ctx *ctx);
  
-diff --git a/include/linux/tty.h b/include/linux/tty.h
-index e8c6c91..fd40561 100644
---- a/include/linux/tty.h
-+++ b/include/linux/tty.h
-@@ -468,6 +468,8 @@ extern void tty_ldisc_begin(void);
- /* This last one is just for the tty layer internals and shouldn't be used elsewhere */
- extern void tty_ldisc_enable(struct tty_struct *tty);
++extern int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref);
++
++extern int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_task_signal(struct ckpt_ctx *ctx);
++
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 3d3a105..ee949b5 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -88,6 +88,8 @@ enum {
+ 	CKPT_HDR_IPC_SEM,
  
-+/* This one is for ptmx_close() */
-+extern int tty_release(struct inode *inode, struct file *filp);
+ 	CKPT_HDR_SIGHAND = 601,
++	CKPT_HDR_SIGNAL,
++	CKPT_HDR_SIGNAL_TASK,
  
- /* n_tty.c */
- extern struct tty_ldisc_ops tty_ldisc_N_TTY;
+ 	CKPT_HDR_TAIL = 9001,
+ 
+@@ -116,6 +118,7 @@ enum obj_type {
+ 	CKPT_OBJ_FILE,
+ 	CKPT_OBJ_MM,
+ 	CKPT_OBJ_SIGHAND,
++	CKPT_OBJ_SIGNAL,
+ 	CKPT_OBJ_NS,
+ 	CKPT_OBJ_UTS_NS,
+ 	CKPT_OBJ_IPC_NS,
+@@ -210,7 +213,6 @@ struct ckpt_hdr_task {
+ 	__u32 compat_robust_futex_list; /* a compat __user ptr */
+ 	__u32 robust_futex_head_len;
+ 	__u64 robust_futex_list; /* a __user ptr */
+-
+ } __attribute__((aligned(8)));
+ 
+ /* Posix capabilities */
+@@ -305,6 +307,7 @@ struct ckpt_hdr_task_objs {
+ 	__s32 files_objref;
+ 	__s32 mm_objref;
+ 	__s32 sighand_objref;
++	__s32 signal_objref;
+ } __attribute__((aligned(8)));
+ 
+ /* restart blocks */
+@@ -437,6 +440,15 @@ struct ckpt_hdr_sighand {
+ 	struct ckpt_sigaction action[0];
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_signal {
++	struct ckpt_hdr h;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_signal_task {
++	struct ckpt_hdr h;
++	struct ckpt_sigset blocked;
++} __attribute__((aligned(8)));
++
+ /* ipc commons */
+ struct ckpt_hdr_ipcns {
+ 	struct ckpt_hdr h;
 -- 
 1.6.0.4
