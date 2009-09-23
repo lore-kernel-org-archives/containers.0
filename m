@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 05/80] cgroup freezer: Fix buggy resume test for tasks
-	frozen with cgroup freezer
-Date: Wed, 23 Sep 2009 19:50:45 -0400
-Message-ID: <1253749920-18673-6-git-send-email-orenl__14604.4680769139$1253750628$gmane$org@librato.com>
+Subject: [PATCH v18 08/80] cgroup freezer: interface to freeze a cgroup from
+	within the kernel
+Date: Wed, 23 Sep 2009 19:50:48 -0400
+Message-ID: <1253749920-18673-9-git-send-email-orenl__34652.5817564272$1253750630$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,113 +19,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Add public interface to freeze a cgroup freezer given a task that
+belongs to that cgroup:  cgroup_freezer_make_frozen(task)
 
-When the cgroup freezer is used to freeze tasks we do not want to thaw
-those tasks during resume. Currently we test the cgroup freezer
-state of the resuming tasks to see if the cgroup is FROZEN.  If so
-then we don't thaw the task. However, the FREEZING state also indicates
-that the task should remain frozen.
+Freezing the root cgroup is not permitted. Freezing the cgroup to
+which current process belong is also not permitted.
 
-This also avoids a problem pointed out by Oren Ladaan: the freezer state
-transition from FREEZING to FROZEN is updated lazily when userspace reads
-or writes the freezer.state file in the cgroup filesystem. This means that
-resume will thaw tasks in cgroups which should be in the FROZEN state if
-there is no read/write of the freezer.state file to trigger this
-transition before suspend.
+This will be used for restart(2) to be able to leave the restarted
+processes in a frozen state, instead of resuming execution.
 
-NOTE: Another "simple" solution would be to always update the cgroup
-freezer state during resume. However it's a bad choice for several reasons:
-Updating the cgroup freezer state is somewhat expensive because it requires
-walking all the tasks in the cgroup and checking if they are each frozen.
-Worse, this could easily make resume run in N^2 time where N is the number
-of tasks in the cgroup. Finally, updating the freezer state from this code
-path requires trickier locking because of the way locks must be ordered.
+This is useful for debugging, if the user would like to attach a
+debugger to the restarted task(s).
 
-Instead of updating the freezer state we rely on the fact that lazy
-updates only manage the transition from FREEZING to FROZEN. We know that
-a cgroup with the FREEZING state may actually be FROZEN so test for that
-state too. This makes sense in the resume path even for partially-frozen
-cgroups -- those that really are FREEZING but not FROZEN.
+It is also useful if the restart procedure would like to perform
+additional setup once the tasks are restored but before they are
+allowed to proceed execution.
 
-Reported-by: Oren Ladaan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+CC: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>
-Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-Seems like a candidate for -stable.
+Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
 ---
- include/linux/freezer.h |    7 +++++--
- kernel/cgroup_freezer.c |    9 ++++++---
- kernel/power/process.c  |    2 +-
- 3 files changed, 12 insertions(+), 6 deletions(-)
+ include/linux/freezer.h |    1 +
+ kernel/cgroup_freezer.c |   27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+), 0 deletions(-)
 
 diff --git a/include/linux/freezer.h b/include/linux/freezer.h
-index 5a361f8..da7e52b 100644
+index 3d32641..0cb22cb 100644
 --- a/include/linux/freezer.h
 +++ b/include/linux/freezer.h
-@@ -64,9 +64,12 @@ extern bool freeze_task(struct task_struct *p, bool sig_only);
- extern void cancel_freezing(struct task_struct *p);
- 
- #ifdef CONFIG_CGROUP_FREEZER
--extern int cgroup_frozen(struct task_struct *task);
-+extern int cgroup_freezing_or_frozen(struct task_struct *task);
+@@ -68,6 +68,7 @@ extern int cgroup_freezing_or_frozen(struct task_struct *task);
+ extern int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q);
+ extern int cgroup_freezer_begin_checkpoint(struct task_struct *task);
+ extern void cgroup_freezer_end_checkpoint(struct task_struct *task);
++extern int cgroup_freezer_make_frozen(struct task_struct *task);
  #else /* !CONFIG_CGROUP_FREEZER */
--static inline int cgroup_frozen(struct task_struct *task) { return 0; }
-+static inline int cgroup_freezing_or_frozen(struct task_struct *task)
-+{
-+	return 0;
-+}
- #endif /* !CONFIG_CGROUP_FREEZER */
- 
- /*
+ static inline int cgroup_freezing_or_frozen(struct task_struct *task)
+ {
 diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index fb249e2..765e2c1 100644
+index 87dfbfb..7925850 100644
 --- a/kernel/cgroup_freezer.c
 +++ b/kernel/cgroup_freezer.c
-@@ -47,17 +47,20 @@ static inline struct freezer *task_freezer(struct task_struct *task)
- 			    struct freezer, css);
+@@ -466,4 +466,31 @@ void cgroup_freezer_end_checkpoint(struct task_struct *task)
+ 	 */
+ 	WARN_ON(freezer_checkpointing(task, CGROUP_FROZEN) != CGROUP_CHECKPOINTING);
  }
- 
--int cgroup_frozen(struct task_struct *task)
-+int cgroup_freezing_or_frozen(struct task_struct *task)
- {
- 	struct freezer *freezer;
- 	enum freezer_state state;
- 
- 	task_lock(task);
- 	freezer = task_freezer(task);
--	state = freezer->state;
-+	if (!freezer->css.cgroup->parent)
-+		state = CGROUP_THAWED; /* root cgroup can't be frozen */
-+	else
-+		state = freezer->state;
- 	task_unlock(task);
- 
--	return state == CGROUP_FROZEN;
-+	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
- }
- 
- /*
-diff --git a/kernel/power/process.c b/kernel/power/process.c
-index da2072d..3728d4c 100644
---- a/kernel/power/process.c
-+++ b/kernel/power/process.c
-@@ -138,7 +138,7 @@ static void thaw_tasks(bool nosig_only)
- 		if (nosig_only && should_send_signal(p))
- 			continue;
- 
--		if (cgroup_frozen(p))
-+		if (cgroup_freezing_or_frozen(p))
- 			continue;
- 
- 		thaw_process(p);
++
++int cgroup_freezer_make_frozen(struct task_struct *task)
++{
++	struct freezer *freezer;
++	struct cgroup_subsys_state *css;
++	int ret = -ENODEV;
++
++	task_lock(task);
++	css = task_subsys_state(task, freezer_subsys_id);
++	css_get(css); /* make sure freezer doesn't go away */
++	freezer = container_of(css, struct freezer, css);
++	task_unlock(task);
++
++	/* Never freeze the root cgroup */
++	if (!test_bit(CSS_ROOT, &css->flags) &&
++	    cgroup_lock_live_group(css->cgroup)) {
++		/* do not freeze outselves, ei ?! */
++		if (css != task_subsys_state(current, freezer_subsys_id))
++			ret = freezer_change_state(css->cgroup, CGROUP_FROZEN);
++		else
++			ret = -EPERM;
++		cgroup_unlock();
++	}
++
++	css_put(css);
++	return ret;
++}
+ #endif /* CONFIG_CHECKPOINT */
 -- 
 1.6.0.4
