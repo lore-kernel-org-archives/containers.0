@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 54/80] c/r: support semaphore sysv-ipc
-Date: Wed, 23 Sep 2009 19:51:34 -0400
-Message-ID: <1253749920-18673-55-git-send-email-orenl__20414.3512099565$1253756331$gmane$org@librato.com>
+Subject: [PATCH v18 29/80] c/r: Save and restore the [compat_]robust_list
+	member of the task struct
+Date: Wed, 23 Sep 2009 19:51:09 -0400
+Message-ID: <1253749920-18673-30-git-send-email-orenl__37041.2498283715$1253756335$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,398 +22,228 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint of sysvipc semaphores is performed by iterating through all
-sem objects and dumping the contents of each one. The semaphore array
-of each sem is dumped with that object.
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-The semaphore array (sem->sem_base) holds an array of 'struct sem',
-which is a {int, int}. Because this translates into the same format
-on 32- and 64-bit architectures, the checkpoint format is simply the
-dump of this array as is.
+These lists record which futexes the task holds. To keep the overhead of
+robust futexes low the list is kept in userspace. When the task exits the
+kernel carefully walks these lists to recover held futexes that
+other tasks may be attempting to acquire with FUTEX_WAIT.
 
-TODO: this patch does not handle semaphore-undo -- this data should be
-saved per-task while iterating through the tasks.
+Because they point to userspace memory that is saved/restored by
+checkpoint/restart saving the list pointers themselves is safe.
 
-Changelog[v18]:
-  - Handle kmalloc failure in restore_sem_array()
-Changelog[v17]:
-  - Restore objects in the right namespace
-  - Forward declare struct msg_msg (instead of include linux/msg.h)
-  - Fix typo in comment
-  - Don't unlock ipc before calling freeary in error path
+While saving the pointers is safe during checkpoint, restart is tricky
+because the robust futex ABI contains provisions for changes based on
+checking the size of the list head. So we need to save the length of
+the list head too in order to make sure that the kernel used during
+restart is capable of handling that ABI. Since there is only one ABI
+supported at the moment taking the list head's size is simple. Should
+the ABI change we will need to use the same size as specified during
+sys_set_robust_list() and hence some new means of determining the length
+of this userspace structure in sys_checkpoint would be required.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Rather than rewrite the logic that checks and handles the ABI we reuse
+sys_set_robust_list() by factoring out the body of the function and
+calling it during restart.
+
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+[orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org: move save/restore code to checkpoint/process.c]
 ---
- include/linux/checkpoint_hdr.h |    8 ++
- ipc/Makefile                   |    2 +-
- ipc/checkpoint.c               |    4 -
- ipc/checkpoint_sem.c           |  221 ++++++++++++++++++++++++++++++++++++++++
- ipc/sem.c                      |   11 +--
- ipc/util.h                     |    8 ++
- 6 files changed, 242 insertions(+), 12 deletions(-)
- create mode 100644 ipc/checkpoint_sem.c
+ checkpoint/process.c           |   49 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint_hdr.h |    5 ++++
+ include/linux/compat.h         |    3 +-
+ include/linux/futex.h          |    1 +
+ kernel/futex.c                 |   19 +++++++++-----
+ kernel/futex_compat.c          |   13 ++++++++--
+ 6 files changed, 79 insertions(+), 11 deletions(-)
 
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 62ae72d..2580b31 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -14,10 +14,57 @@
+ #include <linux/sched.h>
+ #include <linux/posix-timers.h>
+ #include <linux/futex.h>
++#include <linux/compat.h>
+ #include <linux/poll.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
++
++#ifdef CONFIG_FUTEX
++static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
++					struct task_struct *t)
++{
++	/*
++	 * These are __user pointers and thus can be saved without
++	 * the objhash.
++	 */
++	h->robust_futex_list = (unsigned long)t->robust_list;
++	h->robust_futex_head_len = sizeof(*t->robust_list);
++#ifdef CONFIG_COMPAT
++	h->compat_robust_futex_list = ptr_to_compat(t->compat_robust_list);
++	h->compat_robust_futex_head_len = sizeof(*t->compat_robust_list);
++#endif
++}
++
++static void restore_task_robust_futex_list(struct ckpt_hdr_task *h)
++{
++	/* Since we restore the memory map the address remains the same and
++	 * this is safe. This is the same as [compat_]sys_set_robust_list() */
++	if (h->robust_futex_list) {
++		struct robust_list_head __user *rfl;
++		rfl = (void __user *)(unsigned long) h->robust_futex_list;
++		do_set_robust_list(rfl, h->robust_futex_head_len);
++	}
++#ifdef CONFIG_COMPAT
++	if (h->compat_robust_futex_list) {
++		struct compat_robust_list_head __user *crfl;
++		crfl = compat_ptr(h->compat_robust_futex_list);
++		do_compat_set_robust_list(crfl, h->compat_robust_futex_head_len);
++	}
++#endif
++}
++#else /* !CONFIG_FUTEX */
++static inline void save_task_robust_futex_list(struct ckpt_hdr_task *h,
++					       struct task_struct *t)
++{
++}
++
++static inline void restore_task_robust_futex_list(struct ckpt_hdr_task *h)
++{
++}
++#endif /* CONFIG_FUTEX */
++
++
+ /***********************************************************************
+  * Checkpoint
+  */
+@@ -46,6 +93,7 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 		h->set_child_tid = (unsigned long) t->set_child_tid;
+ 		h->clear_child_tid = (unsigned long) t->clear_child_tid;
++		save_task_robust_futex_list(h, t);
+ 	}
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
+@@ -250,6 +298,7 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+ 			(int __user *) (unsigned long) h->set_child_tid;
+ 		t->clear_child_tid =
+ 			(int __user *) (unsigned long) h->clear_child_tid;
++		restore_task_robust_futex_list(h);
+ 	}
+ 
+ 	memset(t->comm, 0, TASK_COMM_LEN);
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 93b6aed..cb7dfc8 100644
+index 8ae3bbe..b56fe71 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -412,6 +412,14 @@ struct ckpt_hdr_ipc_msg_msg {
- 	__u32 m_ts;
+@@ -136,6 +136,11 @@ struct ckpt_hdr_task {
+ 
+ 	__u64 set_child_tid;
+ 	__u64 clear_child_tid;
++
++	__u32 compat_robust_futex_head_len;
++	__u32 compat_robust_futex_list; /* a compat __user ptr */
++	__u32 robust_futex_head_len;
++	__u64 robust_futex_list; /* a __user ptr */
  } __attribute__((aligned(8)));
  
-+struct ckpt_hdr_ipc_sem {
-+	struct ckpt_hdr h;
-+	struct ckpt_hdr_ipc_perms perms;
-+	__u64 sem_otime;
-+	__u64 sem_ctime;
-+	__u32 sem_nsems;
-+} __attribute__((aligned(8)));
-+
+ /* restart blocks */
+diff --git a/include/linux/compat.h b/include/linux/compat.h
+index af931ee..f444cf0 100644
+--- a/include/linux/compat.h
++++ b/include/linux/compat.h
+@@ -165,7 +165,8 @@ struct compat_robust_list_head {
+ };
  
- #define CKPT_TST_OVERFLOW_16(a, b) \
- 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
-diff --git a/ipc/Makefile b/ipc/Makefile
-index 71a257f..3ecba9e 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -10,4 +10,4 @@ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
- obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
- obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o \
--		checkpoint_shm.o checkpoint_msg.o
-+		checkpoint_shm.o checkpoint_msg.o checkpoint_sem.o
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index 588ed37..8e6e9ba 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -119,12 +119,10 @@ static int do_checkpoint_ipc_ns(struct ckpt_ctx *ctx,
- 		return ret;
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
- 				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
--#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		return ret;
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
- 				 CKPT_HDR_IPC_SEM, checkpoint_ipc_sem);
--#endif
- 	return ret;
- }
- 
-@@ -309,7 +307,6 @@ static struct ipc_namespace *do_restore_ipc_ns(struct ckpt_ctx *ctx)
- 
- 	ret = restore_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
- 			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
--#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		goto out;
- 	ret = restore_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
-@@ -318,7 +315,6 @@ static struct ipc_namespace *do_restore_ipc_ns(struct ckpt_ctx *ctx)
- 		goto out;
- 	ret = restore_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
- 			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
--#endif
- 	if (ret < 0)
- 		goto out;
- 
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-new file mode 100644
-index 0000000..76eb2b9
---- /dev/null
-+++ b/ipc/checkpoint_sem.c
-@@ -0,0 +1,221 @@
-+/*
-+ *  Checkpoint/restart - dump state of sysvipc sem
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DIPC
-+
-+#include <linux/mm.h>
-+#include <linux/sem.h>
-+#include <linux/rwsem.h>
-+#include <linux/sched.h>
-+#include <linux/syscalls.h>
-+#include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
-+
-+struct msg_msg;
-+#include "util.h"
-+
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+/************************************************************************
-+ * ipc checkpoint
-+ */
-+
-+static int fill_ipc_sem_hdr(struct ckpt_ctx *ctx,
-+			       struct ckpt_hdr_ipc_sem *h,
-+			       struct sem_array *sem)
-+{
-+	int ret = 0;
-+
-+	ipc_lock_by_ptr(&sem->sem_perm);
-+
-+	ret = checkpoint_fill_ipc_perms(&h->perms, &sem->sem_perm);
-+	if (ret < 0)
-+		goto unlock;
-+
-+	h->sem_otime = sem->sem_otime;
-+	h->sem_ctime = sem->sem_ctime;
-+	h->sem_nsems = sem->sem_nsems;
-+
-+ unlock:
-+	ipc_unlock(&sem->sem_perm);
-+	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-+
-+	return ret;
-+}
-+
-+/**
-+ * ckpt_write_sem_array - dump the state of a semaphore array
-+ * @ctx: checkpoint context
-+ * @sem: semphore array
-+ *
-+ * The state of a sempahore is an array of 'struct sem'. This structure
-+ * is {int, int}, which translates to the same format {32 bits, 32 bits}
-+ * on both 32- and 64-bit architectures. So we simply dump the array.
-+ *
-+ * The sem-undo information is not saved per ipc_ns, but rather per task.
-+ */
-+static int checkpoint_sem_array(struct ckpt_ctx *ctx, struct sem_array *sem)
-+{
-+	/* this is a "best-effort" test, so lock not needed */
-+	if (!list_empty(&sem->sem_pending))
-+		return -EBUSY;
-+
-+	/* our caller holds the mutex, so this is safe */
-+	return ckpt_write_buffer(ctx, sem->sem_base,
-+			       sem->sem_nsems * sizeof(*sem->sem_base));
-+}
-+
-+int checkpoint_ipc_sem(int id, void *p, void *data)
-+{
-+	struct ckpt_hdr_ipc_sem *h;
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
-+	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
-+	struct sem_array *sem;
-+	int ret;
-+
-+	sem = container_of(perm, struct sem_array, sem_perm);
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	ret = fill_ipc_sem_hdr(ctx, h, sem);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (h->sem_nsems)
-+		ret = checkpoint_sem_array(ctx, sem);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+static int load_ipc_sem_hdr(struct ckpt_ctx *ctx,
-+			       struct ckpt_hdr_ipc_sem *h,
-+			       struct sem_array *sem)
-+{
-+	int ret = 0;
-+
-+	ret = restore_load_ipc_perms(&h->perms, &sem->sem_perm);
-+	if (ret < 0)
-+		return ret;
-+
-+	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-+
-+	sem->sem_otime = h->sem_otime;
-+	sem->sem_ctime = h->sem_ctime;
-+	sem->sem_nsems = h->sem_nsems;
-+
-+	return 0;
-+}
-+
-+/**
-+ * ckpt_read_sem_array - read the state of a semaphore array
-+ * @ctx: checkpoint context
-+ * @sem: semphore array
-+ *
-+ * Expect the data in an array of 'struct sem': {32 bit, 32 bit}.
-+ * See comment in ckpt_write_sem_array().
-+ *
-+ * The sem-undo information is not restored per ipc_ns, but rather per task.
-+ */
-+static struct sem *restore_sem_array(struct ckpt_ctx *ctx, int nsems)
-+{
-+	struct sem *sma;
-+	int i, ret;
-+
-+	sma = kmalloc(nsems * sizeof(*sma), GFP_KERNEL);
-+	if (!sma)
-+		return ERR_PTR(-ENOMEM);
-+	ret = _ckpt_read_buffer(ctx, sma, nsems * sizeof(*sma));
-+	if (ret < 0)
-+		goto out;
-+
-+	/* validate sem array contents */
-+	for (i = 0; i < nsems; i++) {
-+		if (sma[i].semval < 0 || sma[i].sempid < 0) {
-+			ret = -EINVAL;
-+			break;
-+		}
-+	}
-+ out:
-+	if (ret < 0) {
-+		kfree(sma);
-+		sma = ERR_PTR(ret);
-+	}
-+	return sma;
-+}
-+
-+int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
-+{
-+	struct ckpt_hdr_ipc_sem *h;
-+	struct kern_ipc_perm *perms;
-+	struct sem_array *sem;
-+	struct sem *sma = NULL;
-+	struct ipc_ids *sem_ids = &ns->ids[IPC_SEM_IDS];
-+	int semflag, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = -EINVAL;
-+	if (h->perms.id < 0)
-+		goto out;
-+	if (h->sem_nsems < 0)
-+		goto out;
-+
-+	/* read sempahore array state */
-+	sma = restore_sem_array(ctx, h->sem_nsems);
-+	if (IS_ERR(sma)) {
-+		ret = PTR_ERR(sma);
-+		goto out;
-+	}
-+
-+	/* restore the message queue now */
-+	semflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
-+	ckpt_debug("sem: do_semget key %d flag %#x id %d\n",
-+		 h->perms.key, semflag, h->perms.id);
-+	ret = do_semget(ns, h->perms.key, h->sem_nsems, semflag, h->perms.id);
-+	ckpt_debug("sem: do_semget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	down_write(&sem_ids->rw_mutex);
-+
-+	/* we are the sole owners/users of this ipc_ns, it can't go away */
-+	perms = ipc_lock(sem_ids, h->perms.id);
-+	BUG_ON(IS_ERR(perms));  /* ipc_ns is private to us */
-+
-+	sem = container_of(perms, struct sem_array, sem_perm);
-+	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
-+
-+	ret = load_ipc_sem_hdr(ctx, h, sem);
-+	if (ret < 0) {
-+		ckpt_debug("sem: need to remove (%d)\n", ret);
-+		freeary(ns, perms);
-+	} else
-+		ipc_unlock(perms);
-+	up_write(&sem_ids->rw_mutex);
-+ out:
-+	kfree(sma);
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-diff --git a/ipc/sem.c b/ipc/sem.c
-index a2b2135..7361041 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -93,7 +93,6 @@
- #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
- 
- static int newary(struct ipc_namespace *, struct ipc_params *, int);
--static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
- #endif
-@@ -310,14 +309,12 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--int do_semget(key_t key, int nsems, int semflg, int req_id)
-+int do_semget(struct ipc_namespace *ns, key_t key, int nsems,
-+	      int semflg, int req_id)
- {
--	struct ipc_namespace *ns;
- 	struct ipc_ops sem_ops;
- 	struct ipc_params sem_params;
- 
--	ns = current->nsproxy->ipc_ns;
+ extern void compat_exit_robust_list(struct task_struct *curr);
 -
- 	if (nsems < 0 || nsems > ns->sc_semmsl)
- 		return -EINVAL;
++extern long do_compat_set_robust_list(struct compat_robust_list_head __user *head,
++				      compat_size_t len);
+ asmlinkage long
+ compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+ 			   compat_size_t len);
+diff --git a/include/linux/futex.h b/include/linux/futex.h
+index 4326f81..2e126a9 100644
+--- a/include/linux/futex.h
++++ b/include/linux/futex.h
+@@ -185,6 +185,7 @@ union futex_key {
+ #define FUTEX_KEY_INIT (union futex_key) { .both = { .ptr = NULL } }
  
-@@ -334,7 +331,7 @@ int do_semget(key_t key, int nsems, int semflg, int req_id)
+ #ifdef CONFIG_FUTEX
++extern long do_set_robust_list(struct robust_list_head __user *head, size_t len);
+ extern void exit_robust_list(struct task_struct *curr);
+ extern void exit_pi_state_list(struct task_struct *curr);
+ extern int futex_cmpxchg_enabled;
+diff --git a/kernel/futex.c b/kernel/futex.c
+index def86c8..1ef7c8e 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -2278,13 +2278,7 @@ out:
+  * the list. There can only be one such pending lock.
+  */
  
- SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+-/**
+- * sys_set_robust_list - set the robust-futex list head of a task
+- * @head: pointer to the list-head
+- * @len: length of the list-head, as userspace expects
+- */
+-SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
+-		size_t, len)
++long do_set_robust_list(struct robust_list_head __user *head, size_t len)
  {
--	return do_semget(key, nsems, semflg, -1);
-+	return do_semget(current->nsproxy->ipc_ns, key, nsems, semflg, -1);
+ 	if (!futex_cmpxchg_enabled)
+ 		return -ENOSYS;
+@@ -2300,6 +2294,17 @@ SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
  }
  
- /*
-@@ -521,7 +518,7 @@ static void free_un(struct rcu_head *head)
-  * as a writer and the spinlock for this semaphore set hold. sem_ids.rw_mutex
-  * remains locked on exit.
-  */
--static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
-+void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ /**
++ * sys_set_robust_list - set the robust-futex list head of a task
++ * @head: pointer to the list-head
++ * @len: length of the list-head, as userspace expects
++ */
++SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
++		size_t, len)
++{
++	return do_set_robust_list(head, len);
++}
++
++/**
+  * sys_get_robust_list - get the robust-futex list head of a task
+  * @pid: pid of the process [zero for current task]
+  * @head_ptr: pointer to a list-head pointer, the kernel fills it in
+diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
+index 2357165..5e1a169 100644
+--- a/kernel/futex_compat.c
++++ b/kernel/futex_compat.c
+@@ -114,9 +114,9 @@ void compat_exit_robust_list(struct task_struct *curr)
+ 	}
+ }
+ 
+-asmlinkage long
+-compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+-			   compat_size_t len)
++long
++do_compat_set_robust_list(struct compat_robust_list_head __user *head,
++			  compat_size_t len)
  {
- 	struct sem_undo *un, *tu;
- 	struct sem_queue *q, *tq;
-diff --git a/ipc/util.h b/ipc/util.h
-index 8a223f0..ba080de 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -193,6 +193,11 @@ void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
- int do_msgget(struct ipc_namespace *ns, key_t key, int msgflg, int req_id);
- void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 	if (!futex_cmpxchg_enabled)
+ 		return -ENOSYS;
+@@ -130,6 +130,13 @@ compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
+ }
  
-+int do_semget(struct ipc_namespace *ns, key_t key, int nsems, int semflg,
-+	      int req_id);
-+void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ asmlinkage long
++compat_sys_set_robust_list(struct compat_robust_list_head __user *head,
++			   compat_size_t len)
++{
++	return do_compat_set_robust_list(head, len);
++}
 +
-+
- #ifdef CONFIG_CHECKPOINT
- extern int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 				     struct kern_ipc_perm *perm);
-@@ -205,6 +210,9 @@ extern int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
- 
- extern int checkpoint_ipc_msg(int id, void *p, void *data);
- extern int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
-+
-+extern int checkpoint_ipc_sem(int id, void *p, void *data);
-+extern int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
- #endif
- 
- #endif
++asmlinkage long
+ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
+ 			   compat_size_t __user *len_ptr)
+ {
 -- 
 1.6.0.4
