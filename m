@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 57/80] c/r: define s390-specific checkpoint-restart code
-Date: Wed, 23 Sep 2009 19:51:37 -0400
-Message-ID: <1253749920-18673-58-git-send-email-orenl__18083.5493411452$1253757615$gmane$org@librato.com>
+Subject: [PATCH v18 46/80] c/r: support for open pipes
+Date: Wed, 23 Sep 2009 19:51:26 -0400
+Message-ID: <1253749920-18673-47-git-send-email-orenl__25812.8372174271$1253757617$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,481 +18,323 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+A pipe is a double-headed inode with a buffer attached to it. We
+checkpoint the pipe buffer only once, as soon as we hit one side of
+the pipe, regardless whether it is read- or write- end.
 
-Implement the s390 arch-specific checkpoint/restart helpers.  This
-is on top of Oren Laadan's c/r code.
+To checkpoint a file descriptor that refers to a pipe (either end), we
+first lookup the inode in the hash table: If not found, it is the
+first encounter of this pipe. Besides the file descriptor, we also (a)
+save the pipe data, and (b) register the pipe inode in the hash. If
+found, it is the second encounter of this pipe, namely, as we hit the
+other end of the same pipe. In both cases we write the pipe-objref of
+the inode.
 
-With these, I am able to checkpoint and restart simple programs as per
-Oren's patch intro.  While on x86 I never had to freeze a single task
-to checkpoint it, on s390 I do need to.  That is a prereq for consistent
-snapshots (esp with multiple processes) anyway so I don't see that as
-a problem.
+To restore, create a new pipe and thus have two file pointers (read-
+and write- ends). We only use one of them, depending on which side was
+checkpointed first. We register the file pointer of the other end in
+the hash table, with the pipe_objref given for this pipe from the
+checkpoint, to be used later when the other arrives. At this point we
+also restore the contents of the pipe buffers.
 
-Changelog:
-    Jun 15:
-            . Fix checkpoint and restart compat wrappers
-    May 28:
-            . Export asm/checkpoint_hdr.h to userspace
-            . Define CKPT_ARCH_ID for S390
-    Apr 11:
-            . Introduce ckpt_arch_vdso()
-    Feb 27:
-            . Add checkpoint_s390.h
-            . Fixed up save and restore of PSW, with the non-address bits
-              properly masked out
-    Feb 25:
-            . Make checkpoint_hdr.h safe for inclusion in userspace
-            . Replace comment about vsdo code
-            . Add comment about restoring access registers
-            . Write and read an empty ckpt_hdr_head_arch record to appease
-              code (mktree) that expects it to be there
-            . Utilize NUM_CKPT_WORDS in checkpoint_hdr.h
-    Feb 24:
-            . Use CKPT_COPY() to unify the un/loading of cpu and mm state
-            . Fix fprs definition in ckpt_hdr_cpu
-            . Remove debug WARN_ON() from checkpoint.c
-    Feb 23:
-            . Macro-ize the un/packing of trace flags
-            . Fix the crash when externally-linked
-            . Break out the restart functions into restart.c
-            . Remove unneeded s390_enable_sie() call
-    Jan 30:
-            . Switched types in ckpt_hdr_cpu to __u64 etc.
-              (Per Oren suggestion)
-            . Replaced direct inclusion of structs in
-              ckpt_hdr_cpu with the struct members.
-              (Per Oren suggestion)
-            . Also ended up adding a bunch of new things
-              into restart (mm_segment, ksp, etc) in vain
-              attempt to get code using fpu to not segfault
-              after restart.
+To save the pipe buffer, given a source pipe, use do_tee() to clone
+its contents into a temporary 'struct pipe_inode_info', and then use
+do_splice_from() to transfer it directly to the checkpoint image file.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To restore the pipe buffer, with a fresh newly allocated target pipe,
+use do_splice_to() to splice the data directly between the checkpoint
+image file and the pipe.
+
+Changelog[v18]:
+  - Adjust format of pipe buffer to include the mandatory pre-header
+Changelog[v17]:
+  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/s390/include/asm/Kbuild           |    1 +
- arch/s390/include/asm/checkpoint_hdr.h |   89 +++++++++++++++
- arch/s390/include/asm/unistd.h         |    4 +-
- arch/s390/kernel/compat_wrapper.S      |   14 +++
- arch/s390/kernel/syscalls.S            |    2 +
- arch/s390/mm/Makefile                  |    1 +
- arch/s390/mm/checkpoint.c              |  194 ++++++++++++++++++++++++++++++++
- arch/s390/mm/checkpoint_s390.h         |   23 ++++
- include/linux/checkpoint_hdr.h         |    2 +
- 9 files changed, 329 insertions(+), 1 deletions(-)
- create mode 100644 arch/s390/include/asm/checkpoint_hdr.h
- create mode 100644 arch/s390/mm/checkpoint.c
- create mode 100644 arch/s390/mm/checkpoint_s390.h
+ checkpoint/files.c             |    7 ++
+ fs/pipe.c                      |  157 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint_hdr.h |    7 ++
+ include/linux/pipe_fs_i.h      |    8 ++
+ 4 files changed, 179 insertions(+), 0 deletions(-)
 
-diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
-index 63a2341..3282a6e 100644
---- a/arch/s390/include/asm/Kbuild
-+++ b/arch/s390/include/asm/Kbuild
-@@ -8,6 +8,7 @@ header-y += ucontext.h
- header-y += vtoc.h
- header-y += zcrypt.h
- header-y += chsc.h
-+header-y += checkpoint_hdr.h
- 
- unifdef-y += cmb.h
- unifdef-y += debug.h
-diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
-new file mode 100644
-index 0000000..ad9449e
---- /dev/null
-+++ b/arch/s390/include/asm/checkpoint_hdr.h
-@@ -0,0 +1,89 @@
-+#ifndef __ASM_S390_CKPT_HDR_H
-+#define __ASM_S390_CKPT_HDR_H
-+/*
-+ *  Checkpoint/restart - architecture specific headers s/390
-+ *
-+ *  Copyright IBM Corp. 2009
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#ifndef _CHECKPOINT_CKPT_HDR_H_
-+#error asm/checkpoint_hdr.h included directly
-+#endif
-+
-+#include <linux/types.h>
-+#include <asm/ptrace.h>
-+
-+#ifdef __KERNEL__
-+#include <asm/processor.h>
-+#else
-+#include <sys/user.h>
-+#endif
-+
-+#ifdef CONFIG_64BIT
-+#define CKPT_ARCH_ID	CKPT_ARCH_S390X
-+/* else - if we ever support 32bit - CKPT_ARCH_S390 */
-+#endif
-+
-+/*
-+ * Notes
-+ * NUM_GPRS defined in <asm/ptrace.h> to be 16
-+ * NUM_FPRS defined in <asm/ptrace.h> to be 16
-+ * NUM_APRS defined in <asm/ptrace.h> to be 16
-+ * NUM_CR_WORDS defined in <asm/ptrace.h> to be 3
-+ */
-+struct ckpt_hdr_cpu {
-+	struct ckpt_hdr h;
-+	__u64 args[1];
-+	__u64 gprs[NUM_GPRS];
-+	__u64 orig_gpr2;
-+	__u16 svcnr;
-+	__u16 ilc;
-+	__u32 acrs[NUM_ACRS];
-+	__u64 ieee_instruction_pointer;
-+
-+	/* psw_t */
-+	__u64 psw_t_mask;
-+	__u64 psw_t_addr;
-+
-+	/* s390_fp_regs_t */
-+	__u32 fpc;
-+	union {
-+		float f;
-+		double d;
-+		__u64 ui;
-+		struct {
-+			__u32 fp_hi;
-+			__u32 fp_lo;
-+		} fp;
-+	} fprs[NUM_FPRS];
-+
-+	/* per_struct */
-+	__u64 per_control_regs[NUM_CR_WORDS];
-+	__u64 starting_addr;
-+	__u64 ending_addr;
-+	__u64 address;
-+	__u16 perc_atmid;
-+	__u8 access_id;
-+	__u8 single_step;
-+	__u8 instruction_fetch;
-+};
-+
-+struct ckpt_hdr_mm_context {
-+	struct ckpt_hdr h;
-+	unsigned long vdso_base;
-+	int noexec;
-+	int has_pgste;
-+	int alloc_pgste;
-+	unsigned long asce_bits;
-+	unsigned long asce_limit;
-+};
-+
-+struct ckpt_hdr_header_arch {
-+	struct ckpt_hdr h;
-+};
-+
-+#endif /* __ASM_S390_CKPT_HDR__H */
-diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
-index c80602d..5d1678a 100644
---- a/arch/s390/include/asm/unistd.h
-+++ b/arch/s390/include/asm/unistd.h
-@@ -269,7 +269,9 @@
- #define	__NR_pwritev		329
- #define __NR_rt_tgsigqueueinfo	330
- #define __NR_perf_counter_open	331
--#define NR_syscalls 332
-+#define __NR_checkpoint		332
-+#define __NR_restart		333
-+#define NR_syscalls 334
- 
- /* 
-  * There are some system calls that are not present on 64 bit, some
-diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
-index 88a8336..e882f99 100644
---- a/arch/s390/kernel/compat_wrapper.S
-+++ b/arch/s390/kernel/compat_wrapper.S
-@@ -1840,3 +1840,17 @@ sys_perf_counter_open_wrapper:
- 	lgfr	%r5,%r5			# int
- 	llgfr	%r6,%r6			# unsigned long
- 	jg	sys_perf_counter_open	# branch to system call
-+
-+	.globl sys_checkpoint_wrapper
-+sys_checkpoint_wrapper:
-+	lgfr	%r2,%r2			# pid_t
-+	lgfr	%r3,%r3			# int
-+	llgfr	%r4,%r4			# unsigned long
-+	jg	compat_sys_checkpoint
-+
-+	.globl sys_restore_wrapper
-+sys_restore_wrapper:
-+	lgfr	%r2,%r2			# int
-+	lgfr	%r3,%r3			# int
-+	llgfr	%r4,%r4			# unsigned long
-+	jg	compat_sys_restore
-diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-index ad1acd2..67518e2 100644
---- a/arch/s390/kernel/syscalls.S
-+++ b/arch/s390/kernel/syscalls.S
-@@ -340,3 +340,5 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
- SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
- SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
- SYSCALL(sys_perf_counter_open,sys_perf_counter_open,sys_perf_counter_open_wrapper)
-+SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper)
-+SYSCALL(sys_restart,sys_restart,sys_restore_wrapper)
-diff --git a/arch/s390/mm/Makefile b/arch/s390/mm/Makefile
-index db05661..e3d356d 100644
---- a/arch/s390/mm/Makefile
-+++ b/arch/s390/mm/Makefile
-@@ -6,3 +6,4 @@ obj-y	 := init.o fault.o extmem.o mmap.o vmem.o pgtable.o maccess.o
- obj-$(CONFIG_CMM) += cmm.o
- obj-$(CONFIG_HUGETLB_PAGE) += hugetlbpage.o
- obj-$(CONFIG_PAGE_STATES) += page-states.o
-+obj-$(CONFIG_CHECKPOINT) += checkpoint.o
-diff --git a/arch/s390/mm/checkpoint.c b/arch/s390/mm/checkpoint.c
-new file mode 100644
-index 0000000..40dd417
---- /dev/null
-+++ b/arch/s390/mm/checkpoint.c
-@@ -0,0 +1,194 @@
-+/*
-+ *  Checkpoint/restart - architecture specific support for s390
-+ *
-+ *  Copyright IBM Corp. 2009
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <asm/system.h>
-+#include <asm/pgtable.h>
-+#include <asm/elf.h>
-+
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+/**************************************************************************
-+ * Checkpoint
-+ */
-+
-+static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
-+			   struct task_struct *t)
-+{
-+	struct pt_regs *regs = task_pt_regs(t);
-+	struct thread_struct *thr = &t->thread;
-+
-+	/* Save the whole PSW to facilitate forensic debugging, but only
-+	 * restore the address portion to avoid letting userspace do
-+	 * bad things by manipulating its value.
-+	 */
-+	if (op == CKPT_CPT) {
-+		CKPT_COPY(op, h->psw_t_addr, regs->psw.addr);
-+	} else {
-+		regs->psw.addr &= ~PSW_ADDR_INSN;
-+		regs->psw.addr |= h->psw_t_addr;
-+	}
-+
-+	CKPT_COPY(op, h->args[0], regs->args[0]);
-+	CKPT_COPY(op, h->orig_gpr2, regs->orig_gpr2);
-+	CKPT_COPY(op, h->svcnr, regs->svcnr);
-+	CKPT_COPY(op, h->ilc, regs->ilc);
-+	CKPT_COPY(op, h->ieee_instruction_pointer,
-+		thr->ieee_instruction_pointer);
-+	CKPT_COPY(op, h->psw_t_mask, regs->psw.mask);
-+	CKPT_COPY(op, h->fpc, thr->fp_regs.fpc);
-+	CKPT_COPY(op, h->starting_addr, thr->per_info.starting_addr);
-+	CKPT_COPY(op, h->ending_addr, thr->per_info.ending_addr);
-+	CKPT_COPY(op, h->address, thr->per_info.lowcore.words.address);
-+	CKPT_COPY(op, h->perc_atmid, thr->per_info.lowcore.words.perc_atmid);
-+	CKPT_COPY(op, h->access_id, thr->per_info.lowcore.words.access_id);
-+	CKPT_COPY(op, h->single_step, thr->per_info.single_step);
-+	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
-+
-+	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
-+	/*
-+	 * for checkpoint in process context (from within a container),
-+	 * the actual syscall is taking place at this very moment; so
-+	 * we (optimistically) subtitute the future return value (0) of
-+	 * this syscall into the orig_eax, so that upon restart it will
-+	 * succeed (or it will endlessly retry checkpoint...)
-+	 */
-+	if (op == CKPT_CPT && t==current) {
-+		BUG_ON(h->gprs[2] < 0);
-+		h->gprs[2] = 0;
-+	}
-+	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
-+	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
-+	CKPT_COPY_ARRAY(op, h->per_control_regs,
-+		      thr->per_info.control_regs.words.cr, NUM_CR_WORDS);
-+}
-+
-+static void s390_mm(int op, struct ckpt_hdr_mm_context *h,
-+		    struct mm_struct *mm)
-+{
-+	CKPT_COPY(op, h->noexec, mm->context.noexec);
-+	CKPT_COPY(op, h->has_pgste, mm->context.has_pgste);
-+	CKPT_COPY(op, h->alloc_pgste, mm->context.alloc_pgste);
-+	CKPT_COPY(op, h->asce_bits, mm->context.asce_bits);
-+	CKPT_COPY(op, h->asce_limit, mm->context.asce_limit);
-+}
-+
-+int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	return 0;
-+}
-+
-+/* dump the cpu state and registers of a given task */
-+int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct ckpt_hdr_cpu *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_CPU);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	s390_copy_regs(CKPT_CPT, h, t);
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+/* Write an empty header since it is assumed to be there */
-+int checkpoint_write_header_arch(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_header_arch *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
-+{
-+	struct ckpt_hdr_mm_context *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	s390_mm(CKPT_CPT, h, mm);
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+/**************************************************************************
-+ * Restart
-+ */
-+
-+int restore_thread(struct ckpt_ctx *ctx)
-+{
-+	return 0;
-+}
-+
-+int restore_cpu(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_cpu *h;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CPU);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	s390_copy_regs(CKPT_RST, h, current);
-+
-+	/* s390 does not restore the access registers after a syscall,
-+	 * but does on a task switch.  Since we're switching tasks (in
-+	 * a way), we need to replicate that behavior here.
-+	 */
-+	restore_access_regs(h->acrs);
-+
-+	ckpt_hdr_put(ctx, h);
-+	return 0;
-+}
-+
-+int restore_read_header_arch(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_header_arch *h;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ckpt_hdr_put(ctx, h);
-+	return 0;
-+}
-+
-+
-+int restore_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
-+{
-+	struct ckpt_hdr_mm_context *h;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	s390_mm(CKPT_RST, h, mm);
-+
-+	ckpt_hdr_put(ctx, h);
-+	return 0;
-+}
-diff --git a/arch/s390/mm/checkpoint_s390.h b/arch/s390/mm/checkpoint_s390.h
-new file mode 100644
-index 0000000..c3bf24d
---- /dev/null
-+++ b/arch/s390/mm/checkpoint_s390.h
-@@ -0,0 +1,23 @@
-+/*
-+ *  Checkpoint/restart - architecture specific support for s390
-+ *
-+ *  Copyright IBM Corp. 2009
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#ifndef _S390_CHECKPOINT_H
-+#define _S390_CHECKPOINT_H
-+
-+#include <linux/checkpoint_hdr.h>
-+#include <linux/sched.h>
-+#include <linux/mm_types.h>
-+
-+extern void checkpoint_s390_regs(int op, struct ckpt_hdr_cpu *h,
-+				 struct task_struct *t);
-+extern void checkpoint_s390_mm(int op, struct ckpt_hdr_mm_context *h,
-+			       struct mm_struct *mm);
-+
-+#endif /* _S390_CHECKPOINT_H */
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index cb7dfc8..ef260a0 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -88,7 +88,9 @@ enum {
- 
- /* architecture */
- enum {
-+	/* do not change order (will break ABI) */
- 	CKPT_ARCH_X86_32 = 1,
-+	CKPT_ARCH_S390X,
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 3cdfdb3..042f620 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -17,6 +17,7 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/syscalls.h>
+ #include <linux/deferqueue.h>
+ #include <linux/checkpoint.h>
+@@ -564,6 +565,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_GENERIC,
+ 		.restore = generic_file_restore,
+ 	},
++	/* pipes */
++	{
++		.file_name = "PIPE",
++		.file_type = CKPT_FILE_PIPE,
++		.restore = pipe_file_restore,
++	},
  };
  
- /* shared objrects (objref) */
+ static struct file *do_restore_file(struct ckpt_ctx *ctx)
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 52c4151..30b34a2 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -13,11 +13,13 @@
+ #include <linux/fs.h>
+ #include <linux/mount.h>
+ #include <linux/pipe_fs_i.h>
++#include <linux/splice.h>
+ #include <linux/uio.h>
+ #include <linux/highmem.h>
+ #include <linux/pagemap.h>
+ #include <linux/audit.h>
+ #include <linux/syscalls.h>
++#include <linux/checkpoint.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/ioctls.h>
+@@ -809,6 +811,158 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
++{
++	struct pipe_inode_info *pipe;
++	int len, ret = -ENOMEM;
++
++	pipe = alloc_pipe_info(NULL);
++	if (!pipe)
++		return ret;
++
++	pipe->readers = 1;	/* bluff link_pipe() below */
++	len = link_pipe(inode->i_pipe, pipe, INT_MAX, SPLICE_F_NONBLOCK);
++	if (len == -EAGAIN)
++		len = 0;
++	if (len < 0) {
++		ret = len;
++		goto out;
++	}
++
++	ret = ckpt_write_obj_type(ctx, NULL, len, CKPT_HDR_PIPE_BUF);
++	if (ret < 0)
++		goto out;
++
++	ret = do_splice_from(pipe, ctx->file, &ctx->file->f_pos, len, 0);
++	if (ret < 0)
++		goto out;
++	if (ret != len)
++		ret = -EPIPE;  /* can occur due to an error in target file */
++ out:
++	__free_pipe_info(pipe);
++	return ret;
++}
++
++static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct ckpt_hdr_file_pipe *h;
++	struct inode *inode = file->f_dentry->d_inode;
++	int objref, first, ret;
++
++	objref = ckpt_obj_lookup_add(ctx, inode, CKPT_OBJ_INODE, &first);
++	if (objref < 0)
++		return objref;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
++		return -ENOMEM;
++
++	h->common.f_type = CKPT_FILE_PIPE;
++	h->pipe_objref = objref;
++
++	ret = checkpoint_file_common(ctx, file, &h->common);
++	if (ret < 0)
++		goto out;
++	ret = ckpt_write_obj(ctx, &h->common.h);
++	if (ret < 0)
++		goto out;
++
++	if (first)
++		ret = checkpoint_pipe(ctx, inode);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct pipe_inode_info *pipe;
++	int len, ret;
++
++	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
++	if (len < 0)
++		return len;
++
++	pipe = file->f_dentry->d_inode->i_pipe;
++	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
++
++	if (ret >= 0 && ret != len)
++		ret = -EPIPE;  /* can occur due to an error in source file */
++
++	return ret;
++}
++
++struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
++{
++	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
++	struct file *file;
++	int fds[2], which, ret;
++
++	if (ptr->h.type != CKPT_HDR_FILE  ||
++	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
++		return ERR_PTR(-EINVAL);
++
++	if (h->pipe_objref <= 0)
++		return ERR_PTR(-EINVAL);
++
++	file = ckpt_obj_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
++	/*
++	 * If ckpt_obj_fetch() returned ERR_PTR(-EINVAL), then this is
++	 * the first time we see this pipe so need to restore the
++	 * contents.  Otherwise, use the file pointer skip forward.
++	 */
++	if (!IS_ERR(file)) {
++		get_file(file);
++	} else if (PTR_ERR(file) == -EINVAL) {
++		/* first encounter of this pipe: create it */
++		ret = do_pipe_flags(fds, 0);
++		if (ret < 0)
++			return file;
++
++		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
++		/*
++		 * Below we return the file corersponding to one side
++		 * of the pipe for our caller to use. Now insert the
++		 * other side of the pipe to the hash, to be picked up
++		 * when that side is restored.
++		 */
++		file = fget(fds[1-which]);	/* the 'other' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
++		if (ret < 0)
++			goto out;
++
++		ret = restore_pipe(ctx, file);
++		fput(file);
++		if (ret < 0)
++			return ERR_PTR(ret);
++
++		file = fget(fds[which]);	/* 'this' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++
++		/* get rid of the file descriptors (caller sets that) */
++		sys_close(fds[which]);
++		sys_close(fds[1-which]);
++	} else {
++		return file;
++	}
++
++	ret = restore_file_common(ctx, file, ptr);
++ out:
++	if (ret < 0) {
++		fput(file);
++		file = ERR_PTR(ret);
++	}
++
++	return file;
++}
++#else
++#define pipe_file_checkpoint  NULL
++#endif /* CONFIG_CHECKPOINT */
++
+ /*
+  * The file_operations structs are not static because they
+  * are also used in linux/fs/fifo.c to do operations on FIFOs.
+@@ -825,6 +979,7 @@ const struct file_operations read_pipefifo_fops = {
+ 	.open		= pipe_read_open,
+ 	.release	= pipe_read_release,
+ 	.fasync		= pipe_read_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations write_pipefifo_fops = {
+@@ -837,6 +992,7 @@ const struct file_operations write_pipefifo_fops = {
+ 	.open		= pipe_write_open,
+ 	.release	= pipe_write_release,
+ 	.fasync		= pipe_write_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations rdwr_pipefifo_fops = {
+@@ -850,6 +1006,7 @@ const struct file_operations rdwr_pipefifo_fops = {
+ 	.open		= pipe_rdwr_open,
+ 	.release	= pipe_rdwr_release,
+ 	.fasync		= pipe_rdwr_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ struct pipe_inode_info * alloc_pipe_info(struct inode *inode)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 23095f2..68f64ae 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -65,6 +65,7 @@ enum {
+ 	CKPT_HDR_FILE_DESC,
+ 	CKPT_HDR_FILE_NAME,
+ 	CKPT_HDR_FILE,
++	CKPT_HDR_PIPE_BUF,
+ 
+ 	CKPT_HDR_MM = 401,
+ 	CKPT_HDR_VMA,
+@@ -220,6 +221,7 @@ struct ckpt_hdr_file_desc {
+ enum file_type {
+ 	CKPT_FILE_IGNORE = 0,
+ 	CKPT_FILE_GENERIC,
++	CKPT_FILE_PIPE,
+ 	CKPT_FILE_MAX
+ };
+ 
+@@ -238,6 +240,11 @@ struct ckpt_hdr_file_generic {
+ 	struct ckpt_hdr_file common;
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_file_pipe {
++	struct ckpt_hdr_file common;
++	__s32 pipe_objref;
++} __attribute__((aligned(8)));
++
+ /* memory layout */
+ struct ckpt_hdr_mm {
+ 	struct ckpt_hdr h;
+diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
+index b43a9e0..e526a12 100644
+--- a/include/linux/pipe_fs_i.h
++++ b/include/linux/pipe_fs_i.h
+@@ -154,4 +154,12 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
+ int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
+ void generic_pipe_buf_release(struct pipe_inode_info *, struct pipe_buffer *);
+ 
++/* checkpoint/restart */
++#ifdef CONFIG_CHECKPOINT
++struct ckpt_ctx;
++struct ckpt_hdr_file;
++extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
++				      struct ckpt_hdr_file *ptr);
++#endif
++
+ #endif
 -- 
 1.6.0.4
