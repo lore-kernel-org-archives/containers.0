@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 65/80] c/r: [signal 3/4] pending signals (private, shared)
-Date: Wed, 23 Sep 2009 19:51:45 -0400
-Message-ID: <1253749920-18673-66-git-send-email-orenl__4906.77985731072$1253752282$gmane$org@librato.com>
+Subject: [PATCH v18 62/80] c/r: checkpoint and restore (shared) task's
+	sighand_struct
+Date: Wed, 23 Sep 2009 19:51:42 -0400
+Message-ID: <1253749920-18673-63-git-send-email-orenl__43030.607168521$1253752374$gmane$org@librato.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,184 +22,276 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds checkpoint and restart of pending signals queues:
-struct sigpending, both per-task t->sigpending and shared (per-
-thread-group) t->signal->shared_sigpending.
+This patch adds the checkpointing and restart of signal handling
+state - 'struct sighand_struct'. Since the contents of this state
+only affect userspace, no input validation is required.
 
-To checkpoint pending signals (private/shared) we first detach the
-signal queue (and copy the mask) to a separate struct sigpending.
-This separate structure can be iterated through without locking.
+Add _NSIG to kernel constants saved/tested with image header.
 
-Once the state is saved, we re-attaches (prepends) the original signal
-queue back to the original struct sigpending.
+Number of signals (_NSIG) is arch-dependent, but is within __KERNEL__
+and not visibile to userspace compile. Therefore, define per arch
+CKPT_ARCH_NSIG in <asm/checkpoint_hdr.h>.
 
-Signals that arrive(d) in the meantime will be suitably queued after
-these (for real-time signals). Repeated non-realtime signals will not
-be queued because they will already be marked in the pending mask,
-that remains as is. This is the expected behavior of non-realtime
-signals.
-
-Changelog [v4]:
+Changelog[v1]:
   - Rename headerless struct ckpt_hdr_* to struct ckpt_*
-Changelog [v3]:
-  - [Dan Smith] Sanity check for number of pending signals in buffer
-Changelog [v2]:
-  - Validate si_errno from checkpoint image
-Changelog [v1]:
-  - Fix compilation warnings
-  - [Louis Rilling] Remove SIGQUEUE_PREALLOC flag from queued signals
-  - [Louis Rilling] Fail if task has posix-timers or SI_TIMER signal
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 ---
- checkpoint/signal.c            |  277 +++++++++++++++++++++++++++++++++++++++-
- include/linux/checkpoint_hdr.h |   23 ++++
- 2 files changed, 298 insertions(+), 2 deletions(-)
+ arch/s390/include/asm/checkpoint_hdr.h |    8 ++
+ arch/x86/include/asm/checkpoint_hdr.h  |    8 ++
+ checkpoint/Makefile                    |    3 +-
+ checkpoint/checkpoint.c                |    2 +
+ checkpoint/objhash.c                   |   26 +++++
+ checkpoint/process.c                   |   19 ++++
+ checkpoint/restart.c                   |    3 +
+ checkpoint/signal.c                    |  163 ++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h             |    9 ++-
+ include/linux/checkpoint_hdr.h         |   22 +++++
+ 10 files changed, 261 insertions(+), 2 deletions(-)
+ create mode 100644 checkpoint/signal.c
 
-diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-index 04013ef..27e0f10 100644
---- a/checkpoint/signal.c
-+++ b/checkpoint/signal.c
-@@ -167,12 +167,156 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
-  * signal checkpoint/restart
-  */
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index ad9449e..1976355 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -82,6 +82,14 @@ struct ckpt_hdr_mm_context {
+ 	unsigned long asce_limit;
+ };
  
-+static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
-+{
-+	si->signo = info->si_signo;
-+	si->_errno = info->si_errno;
-+	si->code = info->si_code;
-+
-+	/* TODO: convert info->si_uid to uid_objref */
-+
-+	switch(info->si_code & __SI_MASK) {
-+	case __SI_TIMER:
-+		si->pid = info->si_tid;
-+		si->uid = info->si_overrun;
-+		si->sigval_int = info->si_int;
-+		si->utime = info->si_sys_private;
-+		break;
-+	case __SI_POLL:
-+		si->pid = info->si_band;
-+		si->sigval_int = info->si_fd;
-+		break;
-+	case __SI_FAULT:
-+		si->sigval_ptr = (unsigned long) info->si_addr;
-+#ifdef __ARCH_SI_TRAPNO
-+		si->sigval_int = info->si_trapno;
++#define CKPT_ARCH_NSIG  64
++#ifdef __KERNEL__
++#include <asm/signal.h>
++#if CKPT_ARCH_NSIG != _SIGCONTEXT_NSIG
++#error CKPT_ARCH_NSIG size is wrong (asm/sigcontext.h and asm/checkpoint_hdr.h)
 +#endif
-+		break;
-+	case __SI_CHLD:
-+		si->pid = info->si_pid;
-+		si->uid = info->si_uid;
-+		si->sigval_int = info->si_status;
-+		si->stime = info->si_stime;
-+		si->utime = info->si_utime;
-+		break;
-+	case __SI_KILL:
-+	case __SI_RT:
-+	case __SI_MESGQ:
-+		si->pid = info->si_pid;
-+		si->uid = info->si_uid;
-+		si->sigval_ptr = (unsigned long) info->si_ptr;
-+		break;
-+	default:
-+		BUG();
-+	}
-+}
-+
-+static int load_siginfo(siginfo_t *info, struct ckpt_siginfo *si)
-+{
-+	if (!valid_signal(si->signo))
-+		return -EINVAL;
-+	if (!ckpt_validate_errno(si->_errno))
-+		return -EINVAL;
-+
-+	info->si_signo = si->signo;
-+	info->si_errno = si->_errno;
-+	info->si_code = si->code;
-+
-+	/* TODO: validate remaining signal fields */
-+
-+	switch(info->si_code & __SI_MASK) {
-+	case __SI_TIMER:
-+		info->si_tid = si->pid;
-+		info->si_overrun = si->uid;
-+		info->si_int = si->sigval_int;
-+		info->si_sys_private = si->utime;
-+		break;
-+	case __SI_POLL:
-+		info->si_band = si->pid;
-+		info->si_fd = si->sigval_int;
-+		break;
-+	case __SI_FAULT:
-+		info->si_addr = (void __user *) (unsigned long) si->sigval_ptr;
-+#ifdef __ARCH_SI_TRAPNO
-+		info->si_trapno = si->sigval_int;
 +#endif
-+		break;
-+	case __SI_CHLD:
-+		info->si_pid = si->pid;
-+		info->si_uid = si->uid;
-+		info->si_status = si->sigval_int;
-+		info->si_stime = si->stime;
-+		info->si_utime = si->utime;
-+		break;
-+	case __SI_KILL:
-+	case __SI_RT:
-+	case __SI_MESGQ:
-+		info->si_pid = si->pid;
-+		info->si_uid = si->uid;
-+		info->si_ptr = (void __user *) (unsigned long) si->sigval_ptr;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
 +
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ };
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+index 0e756b0..1228d1b 100644
+--- a/arch/x86/include/asm/checkpoint_hdr.h
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -48,6 +48,14 @@ enum {
+ 	CKPT_HDR_MM_CONTEXT_LDT,
+ };
+ 
++#define CKPT_ARCH_NSIG  64
++#ifdef __KERNEL__
++#include <asm/signal.h>
++#if CKPT_ARCH_NSIG != _NSIG
++#error CKPT_ARCH_NSIG size is wrong per asm/signal.h and asm/checkpoint_hdr.h
++#endif
++#endif
++
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ 	/* FIXME: add HAVE_HWFP */
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index bb2c0ca..f8a55df 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -10,4 +10,5 @@ obj-$(CONFIG_CHECKPOINT) += \
+ 	process.o \
+ 	namespace.o \
+ 	files.o \
+-	memory.o
++	memory.o \
++	signal.o
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 27eec5c..3460c03 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -288,6 +288,8 @@ static void fill_kernel_const(struct ckpt_const *h)
+ 	h->task_comm_len = sizeof(tsk->comm);
+ 	/* mm */
+ 	h->mm_saved_auxv_len = sizeof(mm->saved_auxv);
++	/* signal */
++	h->signal_nsig = _NSIG;
+ 	/* uts */
+ 	h->uts_sysname_len = sizeof(uts->sysname);
+ 	h->uts_nodename_len = sizeof(uts->nodename);
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index f8a3210..b4034dc 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -125,6 +125,22 @@ static int obj_mm_users(void *ptr)
+ 	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
+ }
+ 
++static int obj_sighand_grab(void *ptr)
++{
++	atomic_inc(&((struct sighand_struct *) ptr)->count);
 +	return 0;
 +}
 +
-+/*
-+ * To checkpoint pending signals (private/shared) the caller moves the
-+ * signal queue (and copies the mask) to a separate struct sigpending,
-+ * therefore we can iterate through it without locking.
-+ * After we return, the caller re-attaches (prepends) the original
-+ * signal queue to the original struct sigpending. Thus, signals that
-+ * arrive(d) in the meantime will be suitably queued after these.
-+ * Finally, repeated non-realtime signals will not be queued because
-+ * they will already be marked in the pending mask, that remains as is.
-+ * This is the expected behavior of non-realtime signals.
-+ */
-+static int checkpoint_sigpending(struct ckpt_ctx *ctx,
-+				 struct sigpending *pending)
++static void obj_sighand_drop(void *ptr, int lastref)
 +{
-+	struct ckpt_hdr_sigpending *h;
-+	struct ckpt_siginfo *si;
-+	struct sigqueue *q;
-+	int nr_pending = 0;
-+	int ret;
++	__cleanup_sighand((struct sighand_struct *) ptr);
++}
 +
-+	list_for_each_entry(q, &pending->list, list) {
-+		/* TODO: remove after adding support for posix-timers */
-+		if ((q->info.si_code & __SI_MASK) == __SI_TIMER) {
-+			ckpt_write_err(ctx, "TE", "signal SI_TIMER", -ENOTSUPP);
-+			return -ENOTSUPP;
-+		}
-+		nr_pending++;
++static int obj_sighand_users(void *ptr)
++{
++	return atomic_read(&((struct sighand_struct *) ptr)->count);
++}
++
+ static int obj_ns_grab(void *ptr)
+ {
+ 	get_nsproxy((struct nsproxy *) ptr);
+@@ -263,6 +279,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_mm,
+ 		.restore = restore_mm,
+ 	},
++	/* sighand object */
++	{
++		.obj_name = "SIGHAND",
++		.obj_type = CKPT_OBJ_SIGHAND,
++		.ref_drop = obj_sighand_drop,
++		.ref_grab = obj_sighand_grab,
++		.ref_users = obj_sighand_users,
++		.checkpoint = checkpoint_sighand,
++		.restore = restore_sighand,
++	},
+ 	/* ns object */
+ 	{
+ 		.obj_name = "NSPROXY",
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 1e79f73..56f33dd 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -181,6 +181,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	struct ckpt_hdr_task_objs *h;
+ 	int files_objref;
+ 	int mm_objref;
++	int sighand_objref;
+ 	int ret;
+ 
+ 	/*
+@@ -214,11 +215,19 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return mm_objref;
+ 	}
+ 
++	sighand_objref = checkpoint_obj_sighand(ctx, t);
++	ckpt_debug("sighand: objref %d\n", sighand_objref);
++	if (sighand_objref < 0) {
++		ckpt_write_err(ctx, "TE", "sighand_struct", sighand_objref);
++		return sighand_objref;
 +	}
 +
-+	h = ckpt_hdr_get_type(ctx, nr_pending * sizeof(*si) + sizeof(*h),
-+			      CKPT_HDR_SIGPENDING);
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+ 	if (!h)
+ 		return -ENOMEM;
+ 	h->files_objref = files_objref;
+ 	h->mm_objref = mm_objref;
++	h->sighand_objref = sighand_objref;
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+ 
+@@ -382,6 +391,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = ckpt_collect_mm(ctx, t);
++	if (ret < 0)
++		return ret;
++	ret = ckpt_collect_sighand(ctx, t);
+ 
+ 	return ret;
+ }
+@@ -529,10 +541,17 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_obj_file_table(ctx, h->files_objref);
+ 	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
++	if (ret < 0)
++		goto out;
+ 
+ 	ret = restore_obj_mm(ctx, h->mm_objref);
+ 	ckpt_debug("mm: ret %d (%p)\n", ret, current->mm);
++	if (ret < 0)
++		goto out;
+ 
++	ret = restore_obj_sighand(ctx, h->sighand_objref);
++	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
++ out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+ }
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 53a759a..73c4e72 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -383,6 +383,9 @@ static int check_kernel_const(struct ckpt_const *h)
+ 	/* mm */
+ 	if (h->mm_saved_auxv_len != sizeof(mm->saved_auxv))
+ 		return -EINVAL;
++	/* signal */
++	if (h->signal_nsig != _NSIG)
++		return -EINVAL;
+ 	/* uts */
+ 	if (h->uts_sysname_len != sizeof(uts->sysname))
+ 		return -EINVAL;
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+new file mode 100644
+index 0000000..1aadadd
+--- /dev/null
++++ b/checkpoint/signal.c
+@@ -0,0 +1,163 @@
++/*
++ *  Checkpoint task signals
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DSYS
++
++#include <linux/sched.h>
++#include <linux/signal.h>
++#include <linux/errno.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++static inline void fill_sigset(struct ckpt_sigset *h, sigset_t *sigset)
++{
++	memcpy(&h->sigset, sigset, sizeof(*sigset));
++}
++
++static inline void load_sigset(sigset_t *sigset, struct ckpt_sigset *h)
++{
++	memcpy(sigset, &h->sigset, sizeof(*sigset));
++}
++
++/***********************************************************************
++ * sighand checkpoint/collect/restart
++ */
++
++static int do_checkpoint_sighand(struct ckpt_ctx *ctx,
++				 struct sighand_struct *sighand)
++{
++	struct ckpt_hdr_sighand *h;
++	struct ckpt_sigaction *hh;
++	struct sigaction *sa;
++	int i, ret;
++
++	h = ckpt_hdr_get_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
++			      CKPT_HDR_SIGHAND);
 +	if (!h)
 +		return -ENOMEM;
 +
-+	h->nr_pending = nr_pending;
-+	fill_sigset(&h->signal, &pending->signal);
-+
-+	si = h->siginfo;
-+	list_for_each_entry(q, &pending->list, list)
-+		fill_siginfo(si++, &q->info);
++	hh = h->action;
++	spin_lock_irq(&sighand->siglock);
++	for (i = 0; i < _NSIG; i++) {
++		sa = &sighand->action[i].sa;
++		hh[i]._sa_handler = (unsigned long) sa->sa_handler;
++		hh[i].sa_flags = sa->sa_flags;
++		hh[i].sa_restorer = (unsigned long) sa->sa_restorer;
++		fill_sigset(&hh[i].sa_mask, &sa->sa_mask);
++	}
++	spin_unlock_irq(&sighand->siglock);
 +
 +	ret = ckpt_write_obj(ctx, &h->h);
 +	ckpt_hdr_put(ctx, h);
@@ -206,238 +299,193 @@ index 04013ef..27e0f10 100644
 +	return ret;
 +}
 +
- static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	struct ckpt_hdr_signal *h;
- 	struct signal_struct *signal;
-+	struct sigpending shared_pending;
- 	struct rlimit *rlim;
--	int ret;
-+	unsigned long flags;
-+	int i, ret;
- 
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
- 	if (!h)
-@@ -181,13 +325,45 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	signal = t->signal;
- 	rlim = signal->rlim;
- 
-+	INIT_LIST_HEAD(&shared_pending.list);
-+
-+	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
-+	if (!lock_task_sighand(t, &flags)) {
-+		pr_warning("c/r: [%d] without sighand\n", task_pid_vnr(t));
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
-+	/* TODO: remove after adding support for posix-timers */
-+	if (!list_empty(&signal->posix_timers)) {
-+		ckpt_write_err(ctx, "TEP", "posix-timers\n", -ENOTSUPP, signal);
-+		unlock_task_sighand(t, &flags);
-+		ret = -ENOTSUPP;
-+		goto out;
-+	}
-+
-+	list_splice_init(&signal->shared_pending.list, &shared_pending.list);
-+	shared_pending.signal = signal->shared_pending.signal;
-+
- 	/* rlimit */
- 	for (i = 0; i < RLIM_NLIMITS; i++) {
- 		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
- 		h->rlim[i].rlim_max = rlim[i].rlim_max;
- 	}
-+	unlock_task_sighand(t, &flags);
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
-+	if (!ret)
-+		ret = checkpoint_sigpending(ctx, &shared_pending);
-+
-+	/* return the borrowed queue */
-+	if (!lock_task_sighand(t, &flags)) {
-+		pr_warning("c/r: [%d] sighand disappeared\n", task_pid_vnr(t));
-+		goto out;
-+	}
-+	list_splice(&shared_pending.list, &signal->shared_pending.list);
-+	unlock_task_sighand(t, &flags);
-+ out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-@@ -198,9 +374,55 @@ int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return checkpoint_signal(ctx, t);
- }
- 
-+static int restore_sigpending(struct ckpt_ctx *ctx, struct sigpending *pending)
++int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr)
 +{
-+	struct ckpt_hdr_sigpending *h;
-+	struct ckpt_siginfo *si;
-+	struct sigqueue *q;
-+	int ret = 0;
++	return do_checkpoint_sighand(ctx, (struct sighand_struct *) ptr);
++}
 +
-+	h = ckpt_read_buf_type(ctx, 0, CKPT_HDR_SIGPENDING);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
++int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct sighand_struct *sighand;
++	int objref;
 +
-+	if (h->h.len != h->nr_pending * sizeof(*si) + sizeof(*h)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
++	read_lock(&tasklist_lock);
++	sighand = rcu_dereference(t->sighand);
++	atomic_inc(&sighand->count);
++	read_unlock(&tasklist_lock);
 +
-+	INIT_LIST_HEAD(&pending->list);
-+	load_sigset(&pending->signal, &h->signal);
++	objref = checkpoint_obj(ctx, sighand, CKPT_OBJ_SIGHAND);
++	__cleanup_sighand(sighand);
 +
-+	si = h->siginfo;
-+	while (h->nr_pending--) {
-+		q = sigqueue_alloc();
-+		if (!q) {
-+			ret = -ENOMEM;
-+			break;
-+		}
++	return objref;
++}
 +
-+		ret = load_siginfo(&q->info, si++);
-+		if (ret < 0) {
-+			sigqueue_free(q);
-+			break;
-+		}
++int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct sighand_struct *sighand;
++	int ret;
 +
-+		q->flags &= ~SIGQUEUE_PREALLOC;
-+		list_add_tail(&pending->list, &q->list);
-+	}
++	read_lock(&tasklist_lock);
++	sighand = rcu_dereference(t->sighand);
++	atomic_inc(&sighand->count);
++	read_unlock(&tasklist_lock);
 +
-+	if (ret < 0)
-+		flush_sigqueue(pending);
-+ out:
-+	ckpt_hdr_put(ctx, h);
++	ret = ckpt_obj_collect(ctx, sighand, CKPT_OBJ_SIGHAND);
++	__cleanup_sighand(sighand);
++
 +	return ret;
 +}
 +
- static int restore_signal(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_signal *h;
-+	struct sigpending new_pending;
-+	struct sigpending *pending;
- 	struct rlimit rlim;
- 	int i, ret;
- 
-@@ -214,8 +436,19 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 		rlim.rlim_max = h->rlim[i].rlim_max;
- 		ret = do_setrlimit(i, &rlim);
- 		if (ret < 0)
--			break;
-+			goto out;
- 	}
++static struct sighand_struct *do_restore_sighand(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_sighand *h;
++	struct ckpt_sigaction *hh;
++	struct sighand_struct *sighand;
++	struct sigaction *sa;
++	int i;
 +
-+	ret = restore_sigpending(ctx, &new_pending);
-+	if (ret < 0)
++	h = ckpt_read_obj_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
++			       CKPT_HDR_SIGHAND);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	sighand = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
++	if (!sighand) {
++		sighand = ERR_PTR(-ENOMEM);
 +		goto out;
-+
-+	spin_lock_irq(&current->sighand->siglock);
-+	pending = &current->signal->shared_pending;
-+	flush_sigqueue(pending);
-+	pending->signal = new_pending.signal;
-+	list_splice_init(&new_pending.list, &pending->list);
-+	spin_unlock_irq(&current->sighand->siglock);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -251,8 +484,34 @@ int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
- int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	struct ckpt_hdr_signal_task *h;
-+	struct sigpending pending;
-+	unsigned long flags;
- 	int ret;
- 
-+	INIT_LIST_HEAD(&pending.list);
-+
-+	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
-+	if (!lock_task_sighand(t, &flags)) {
-+		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
-+		return -EBUSY;
 +	}
-+	list_splice_init(&t->pending.list, &pending.list);
-+	pending.signal = t->pending.signal;
-+	unlock_task_sighand(t, &flags);
++	atomic_set(&sighand->count, 1);
 +
-+	ret = checkpoint_sigpending(ctx, &pending);
-+
-+	/* re-attach the borrowed queue */
-+	if (!lock_task_sighand(t, &flags)) {
-+		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
-+		return -EBUSY;
++	hh = h->action;
++	for (i = 0; i < _NSIG; i++) {
++		sa = &sighand->action[i].sa;
++		sa->sa_handler = (void *) (unsigned long) hh[i]._sa_handler;
++		sa->sa_flags = hh[i].sa_flags;
++		sa->sa_restorer = (void *) (unsigned long) hh[i].sa_restorer;
++		load_sigset(&sa->sa_mask, &hh[i].sa_mask);
 +	}
-+	list_splice(&pending.list, &t->pending.list);
-+	unlock_task_sighand(t, &flags);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return sighand;
++}
 +
-+	if (ret < 0)
-+		return ret;
++void *restore_sighand(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_sighand(ctx);
++}
 +
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
- 	if (!h)
- 		return -ENOMEM;
-@@ -267,7 +526,21 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- int restore_task_signal(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_signal_task *h;
-+	struct sigpending new_pending;
-+	struct sigpending *pending;
- 	sigset_t blocked;
-+	int ret;
++int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
++{
++	struct sighand_struct *sighand;
++	struct sighand_struct *old_sighand;
 +
-+	ret = restore_sigpending(ctx, &new_pending);
-+	if (ret < 0)
-+		return ret;
++	sighand = ckpt_obj_fetch(ctx, sighand_objref, CKPT_OBJ_SIGHAND);
++	if (IS_ERR(sighand))
++		return PTR_ERR(sighand);
 +
-+	spin_lock_irq(&current->sighand->siglock);
-+	pending = &current->pending;
-+	flush_sigqueue(pending);
-+	pending->signal = new_pending.signal;
-+	list_splice_init(&new_pending.list, &pending->list);
-+	spin_unlock_irq(&current->sighand->siglock);
++	if (sighand == current->sighand)
++		return 0;
++
++	atomic_inc(&sighand->count);
++
++	/* manipulate tsk->sighand with tasklist lock write-held */
++	write_lock_irq(&tasklist_lock);
++	old_sighand = rcu_dereference(current->sighand);
++	spin_lock(&old_sighand->siglock);
++	rcu_assign_pointer(current->sighand, sighand);
++	spin_unlock(&old_sighand->siglock);
++	write_unlock_irq(&tasklist_lock);
++	__cleanup_sighand(old_sighand);
++
++	return 0;
++}
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 3dbf188..c0e549e 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -245,6 +245,14 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
+ 	 VM_RESERVED | VM_NORESERVE | VM_HUGETLB | VM_NONLINEAR |	\
+ 	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
  
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
- 	if (IS_ERR(h))
++/* signals */
++extern int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref);
++
++extern int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_sighand(struct ckpt_ctx *ctx);
++
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
+@@ -277,7 +285,6 @@ static inline int ckpt_validate_errno(int errno)
+ 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+ 	} while (0)
+ 
+-
+ /* debugging flags */
+ #define CKPT_DBASE	0x1		/* anything */
+ #define CKPT_DSYS	0x2		/* generic (system) */
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 203b4ee..fd2836e 100644
+index ca24112..3d3a105 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -90,6 +90,7 @@ enum {
- 	CKPT_HDR_SIGHAND = 601,
- 	CKPT_HDR_SIGNAL,
- 	CKPT_HDR_SIGNAL_TASK,
-+	CKPT_HDR_SIGPENDING,
+@@ -87,6 +87,8 @@ enum {
+ 	CKPT_HDR_IPC_MSG_MSG,
+ 	CKPT_HDR_IPC_SEM,
  
++	CKPT_HDR_SIGHAND = 601,
++
  	CKPT_HDR_TAIL = 9001,
  
-@@ -442,6 +443,28 @@ struct ckpt_hdr_sighand {
- 	struct ckpt_sigaction action[0];
+ 	CKPT_HDR_ERROR = 9999,
+@@ -113,6 +115,7 @@ enum obj_type {
+ 	CKPT_OBJ_FILE_TABLE,
+ 	CKPT_OBJ_FILE,
+ 	CKPT_OBJ_MM,
++	CKPT_OBJ_SIGHAND,
+ 	CKPT_OBJ_NS,
+ 	CKPT_OBJ_UTS_NS,
+ 	CKPT_OBJ_IPC_NS,
+@@ -129,6 +132,8 @@ struct ckpt_const {
+ 	__u16 task_comm_len;
+ 	/* mm */
+ 	__u16 mm_saved_auxv_len;
++	/* signal */
++	__u16 signal_nsig;
+ 	/* uts */
+ 	__u16 uts_sysname_len;
+ 	__u16 uts_nodename_len;
+@@ -299,6 +304,7 @@ struct ckpt_hdr_task_objs {
+ 
+ 	__s32 files_objref;
+ 	__s32 mm_objref;
++	__s32 sighand_objref;
  } __attribute__((aligned(8)));
  
-+#ifndef HAVE_ARCH_SIGINFO_T
-+struct ckpt_siginfo {
-+	__u32 signo;
-+	__u32 _errno;
-+	__u32 code;
-+
-+	__u32 pid;
-+	__s32 uid;
-+	__u32 sigval_int;
-+	__u64 sigval_ptr;
-+	__u64 utime;
-+	__u64 stime;
+ /* restart blocks */
+@@ -414,6 +420,22 @@ struct ckpt_hdr_pgarr {
+ 	__u64 nr_pages;		/* number of pages to saved */
+ } __attribute__((aligned(8)));
+ 
++/* signals */
++struct ckpt_sigset {
++	__u8 sigset[CKPT_ARCH_NSIG / 8];
 +} __attribute__((aligned(8)));
-+#endif
 +
-+struct ckpt_hdr_sigpending {
++struct ckpt_sigaction {
++	__u64 _sa_handler;
++	__u64 sa_flags;
++	__u64 sa_restorer;
++	struct ckpt_sigset sa_mask;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_sighand {
 +	struct ckpt_hdr h;
-+	__u32 nr_pending;
-+	struct ckpt_sigset signal;
-+	struct ckpt_siginfo siginfo[0];
++	struct ckpt_sigaction action[0];
 +} __attribute__((aligned(8)));
-+
- struct ckpt_rlimit {
- 	__u64 rlim_cur;
- 	__u64 rlim_max;
+ 
+ /* ipc commons */
+ struct ckpt_hdr_ipcns {
 -- 
 1.6.0.4
