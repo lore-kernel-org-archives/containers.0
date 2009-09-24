@@ -1,13 +1,11 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 13/80] pids 3/7: Add target_pid parameter to alloc_pidmap()
-Date: Wed, 23 Sep 2009 19:50:53 -0400
-Message-ID: <1253749920-18673-14-git-send-email-orenl__1820.56868584386$1253750731$gmane$org@librato.com>
-References: <1253749920-18673-1-git-send-email-orenl@librato.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Update documentation of cgroups tasks and procs files
+Date: Wed, 23 Sep 2009 17:12:49 -0700
+Message-ID: <20090924001249.4783.91619.stgit__5792.98360175944$1253751327$gmane$org@menage.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253749920-18673-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,75 +15,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-With support for setting a specific pid number for a process,
-alloc_pidmap() will need a paramter a 'target_pid' parameter.
+Update documentation of cgroups tasks and procs files
 
-Changelog[v2]:
-	- (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
-	  actually checks for 'pid <= 0' for completeness).
+Document the cgroup.procs file.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Clarify the semantics of the cgroup.procs and tasks files.  Although
+the current cgroup.procs interface returns a sorted and uniqified list
+of pids, potential future performance enhancements could result in
+those properties being removed - explicitly document this aspect of
+the API.
+
+There are no existing users of cgroup.procs, so compatibility isn't an
+issue.  There are users of the "tasks" file, but none that would
+appear to break in the event of the sorted property being broken. The
+standard "libcpuset" explicitly sorts the results of reading from the
+tasks file, and "libcg" and other users don't appear to care about
+ordering.
+
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
 ---
- kernel/pid.c |   28 ++++++++++++++++++++++++++--
- 1 files changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 9c678ce..29cf119 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -147,11 +147,35 @@ static int alloc_pidmap_page(struct pidmap *map)
- 	return 0;
- }
+ Documentation/cgroups/cgroups.txt |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index d5be8ae..20face8 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -227,7 +227,14 @@ as the path relative to the root of the cgroup file system.
+ Each cgroup is represented by a directory in the cgroup file system
+ containing the following files describing that cgroup:
  
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int set_pidmap(struct pid_namespace *pid_ns, int pid)
-+{
-+	int offset;
-+	struct pidmap *map;
-+
-+	if (pid <= 0 || pid >= pid_max)
-+		return -EINVAL;
-+
-+	offset = pid & BITS_PER_PAGE_MASK;
-+	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-+
-+	if (alloc_pidmap_page(map))
-+		return -ENOMEM;
-+
-+	if (test_and_set_bit(offset, map->page))
-+		return -EBUSY;
-+
-+	atomic_dec(&map->nr_free);
-+	return pid;
-+}
-+
-+static int alloc_pidmap(struct pid_namespace *pid_ns, int target_pid)
- {
- 	int i, rc, offset, max_scan, pid, last = pid_ns->last_pid;
- 	struct pidmap *map;
+- - tasks: list of tasks (by pid) attached to that cgroup
++ - tasks: list of tasks (by pid) attached to that cgroup.  This list
++   is not guaranteed to be sorted.  Writing a thread id into this file
++   moves the thread into this cgroup.
++ - cgroup.procs: list of tgids in the cgroup.  This list is not
++   guaranteed to be sorted or free of duplicate tgids, and userspace
++   should sort/uniquify the list if this property is required.
++   Writing a tgid into this file moves all threads with that tgid into
++   this cgroup.
+  - notify_on_release flag: run the release agent on exit?
+  - release_agent: the path to use for release notifications (this file
+    exists in the top cgroup only)
+@@ -374,7 +381,7 @@ Now you want to do something with this cgroup.
  
-+	if (target_pid)
-+		return set_pidmap(pid_ns, target_pid);
-+
- 	pid = last + 1;
- 	if (pid >= pid_max)
- 		pid = RESERVED_PIDS;
-@@ -270,7 +294,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ In this directory you can find several files:
+ # ls
+-notify_on_release tasks
++cgroup.procs notify_on_release tasks
+ (plus whatever files added by the attached subsystems)
  
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
-+		nr = alloc_pidmap(tmp, 0);
- 		if (nr < 0)
- 			goto out_free;
- 
--- 
-1.6.0.4
+ Now attach your shell to this cgroup:
