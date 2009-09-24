@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 13/28] io-controller: Implement wait busy for io queues
-Date: Thu, 24 Sep 2009 15:25:17 -0400
-Message-ID: <1253820332-10246-14-git-send-email-vgoyal__49193.5139558793$1253823866$gmane$org@redhat.com>
+Subject: [PATCH 16/28] io-controller: Wait for requests to complete from last
+	queue before new queue is scheduled
+Date: Thu, 24 Sep 2009 15:25:20 -0400
+Message-ID: <1253820332-10246-17-git-send-email-vgoyal__6174.4888349951$1253823883$gmane$org@redhat.com>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,128 +22,172 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsv
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o CFQ enables idling on very selective queues (sequential readers). That's why
-  we implemented the concept of group idling where irrespective of workload
-  in the group, one can idle on the group and provide fair share before moving
-  on to next queue or group. This provides stronger isolation but also slows
-  does the switching between groups.
+o Currently one can dispatch requests from multiple queues to the disk. This
+  is true for hardware which supports queuing. So if a disk support queue
+  depth of 31 it is possible that 20 requests are dispatched from queue 1
+  and then next queue is scheduled in which dispatches more requests.
 
-  One can disable "group_idle" to make group switching faster but then we
-  loose fairness for sequenatial readers also as once queue has consumed its
-  slice we delete it and move onto next queue.
+o This multiple queue dispatch introduces issues for accurate accounting of
+  disk time consumed by a particular queue. For example, if one async queue
+  is scheduled in, it can dispatch 31 requests to the disk and then it will
+  be expired and a new sync queue might get scheduled in. These 31 requests
+  might take a long time to finish but this time is never accounted to the
+  async queue which dispatched these requests.
 
-o This patch implments the concept of wait busy (simliar to groups) on queues.
-  So once a CFQ queue has consumed its slice, we idle for one extra period
-  for it to get busy again and then expire it and move on to next queue. This
-  makes sure that sequential readers don't loose fairness (no vtime jump), even
-  if group idling is disabled.
+o This patch introduces the functionality where we wait for all the requests
+  to finish from previous queue before next queue is scheduled in. That way
+  a queue is more accurately accounted for disk time it has consumed. Note
+  this still does not take care of errors introduced by disk write caching.
+
+o Because above behavior can result in reduced throughput, this behavior will
+  be enabled only if user sets "fairness" tunable to 1.
+
+o This patch helps in achieving more isolation between reads and buffered
+  writes in different cgroups. buffered writes typically utilize full queue
+  depth and then expire the queue. On the contarary, sequential reads
+  typicaly driver queue depth of 1. So despite the fact that writes are
+  using more disk time it is never accounted to write queue because we don't
+  wait for requests to finish after dispatching these. This patch helps
+  do more accurate accounting of disk time, especially for buffered writes
+  hence providing better fairness hence better isolation between two cgroups
+  running read and write workloads.
 
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |   56 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 55 insertions(+), 1 deletions(-)
+ block/cfq-iosched.c |    1 +
+ block/elevator-fq.c |   30 +++++++++++++++++++++++++-----
+ block/elevator-fq.h |   10 +++++++++-
+ 3 files changed, 35 insertions(+), 6 deletions(-)
 
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 878cf76..37a4832 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -2130,6 +2130,7 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	ELV_ATTR(slice_async),
+ #ifdef CONFIG_GROUP_IOSCHED
+ 	ELV_ATTR(group_idle),
++	ELV_ATTR(fairness),
+ #endif
+ 	__ATTR_NULL
+ };
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 5511256..b8862d3 100644
+index 8ff8a19..bac45fe 100644
 --- a/block/elevator-fq.c
 +++ b/block/elevator-fq.c
-@@ -21,6 +21,7 @@ int elv_slice_async = HZ / 25;
- const int elv_slice_async_rq = 2;
- int elv_group_idle = HZ / 125;
- static struct kmem_cache *elv_ioq_pool;
-+static int elv_ioq_wait_busy = HZ / 125;
+@@ -893,6 +893,8 @@ static void elv_ioq_served(struct io_queue *ioq, unsigned long served)
  
- /*
-  * offset from end of service tree
-@@ -1043,6 +1044,36 @@ static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
- 	entity->my_sd = &iog->sched_data;
- }
+ 	allocated_slice = elv_prio_to_slice(ioq->efqd, ioq);
  
-+/* If group_idling is enabled then group takes care of doing idling and wait
-+ * busy on a queue. But this happens on all queues, even if we are running
-+ * a random reader or random writer. This has its own advantage that group
-+ * gets to run continuously for a period of time and provides strong isolation
-+ * but too strong isolation can also slow down group switching.
-+ *
-+ * Hence provide this alternate mode where we do wait busy on the queues for
-+ * which CFQ has idle_window enabled. This is useful in ensuring the fairness
-+ * of sequential readers in group at the same time we don't do group idling
-+ * on all the queues hence faster switching.
-+ */
-+int elv_ioq_should_wait_busy(struct io_queue *ioq)
-+{
-+	struct io_group *iog = ioq_to_io_group(ioq);
++	queue_charge = group_charge = served;
 +
-+	/* Idle window is disabled for root group */
-+	if (!elv_iog_idle_window(iog))
-+		return 0;
-+
-+	/*
-+	 * if CFQ has got idling enabled on this queue, wait for this queue
-+	 * to get backlogged again.
-+	 */
-+	if (!ioq->nr_queued && elv_ioq_idle_window(ioq)
-+	    && elv_ioq_slice_used(ioq))
-+		return 1;
-+
-+	return 0;
-+}
-+
- /* Check if we plan to idle on the group associated with this queue or not */
- int elv_iog_should_idle(struct io_queue *ioq)
- {
-@@ -1889,6 +1920,7 @@ static void io_free_root_group(struct elevator_queue *e)
- /* No group idling in flat mode */
- int elv_iog_should_idle(struct io_queue *ioq) { return 0; }
- EXPORT_SYMBOL(elv_iog_should_idle);
-+static int elv_ioq_should_wait_busy(struct io_queue *ioq) { return 0; }
+ 	/*
+ 	 * We don't want to charge more than allocated slice otherwise this
+ 	 * queue can miss one dispatch round doubling max latencies. On the
+@@ -900,16 +902,15 @@ static void elv_ioq_served(struct io_queue *ioq, unsigned long served)
+ 	 * we stick to CFQ theme of queue loosing its share if it does not
+ 	 * use the slice and moves to the back of service tree (almost).
+ 	 */
+-	queue_charge = allocated_slice;
++	if (!ioq->efqd->fairness)
++		queue_charge = allocated_slice;
  
- #endif /* CONFIG_GROUP_IOSCHED */
+ 	/*
+ 	 * Group is charged the real time consumed so that it does not loose
+ 	 * fair share.
+ 	 */
+-	if (served > allocated_slice)
++	if (!ioq->efqd->fairness && group_charge > allocated_slice)
+ 		group_charge = allocated_slice;
+-	else
+-		group_charge = served;
  
-@@ -2368,6 +2400,24 @@ static void elv_iog_arm_slice_timer(struct request_queue *q,
- 	elv_log_iog(efqd, iog, "arm_idle group: %lu", sl);
- }
+ 	entity_served(&ioq->entity, served, queue_charge, group_charge,
+ 			ioq->nr_sectors);
+@@ -951,6 +952,8 @@ SHOW_FUNCTION(elv_slice_sync_show, efqd->elv_slice[1], 1);
+ EXPORT_SYMBOL(elv_slice_sync_show);
+ SHOW_FUNCTION(elv_slice_async_show, efqd->elv_slice[0], 1);
+ EXPORT_SYMBOL(elv_slice_async_show);
++SHOW_FUNCTION(elv_fairness_show, efqd->fairness, 0);
++EXPORT_SYMBOL(elv_fairness_show);
+ #undef SHOW_FUNCTION
  
-+static void
-+elv_ioq_arm_wait_busy_timer(struct request_queue *q, struct io_queue *ioq)
-+{
-+	struct io_group *iog = ioq_to_io_group(ioq);
-+	struct elv_fq_data *efqd = q->elevator->efqd;
-+	unsigned long sl = 8;
-+
-+	/*
-+	 * This queue has consumed its time slice. We are waiting only for
-+	 * it to become busy before we select next queue for dispatch.
-+	 */
-+	elv_mark_iog_wait_busy(iog);
-+	sl = elv_ioq_wait_busy;
-+	mod_timer(&efqd->idle_slice_timer, jiffies + sl);
-+	elv_log_ioq(efqd, ioq, "arm wait busy ioq: %lu", sl);
-+	return;
-+}
-+
- /*
-  * If io scheduler has functionality of keeping track of close cooperator, check
-  * with it if it has got a closely co-operating queue.
-@@ -2456,7 +2506,8 @@ void *elv_select_ioq(struct request_queue *q, int force)
- 		 * from queue and is not proportional to group's weight, it
- 		 * harms the fairness of the group.
- 		 */
--		if (elv_iog_should_idle(ioq) && !elv_iog_wait_busy_done(iog)) {
-+		if ((elv_iog_should_idle(ioq) || elv_ioq_should_wait_busy(ioq))
-+		     && !elv_iog_wait_busy_done(iog)) {
- 			ioq = NULL;
- 			goto keep_queue;
- 		} else
-@@ -2640,6 +2691,9 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
- 			if (elv_iog_should_idle(ioq)) {
- 				elv_iog_arm_slice_timer(q, iog, 1);
+ #define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+@@ -975,6 +978,8 @@ STORE_FUNCTION(elv_slice_sync_store, &efqd->elv_slice[1], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_sync_store);
+ STORE_FUNCTION(elv_slice_async_store, &efqd->elv_slice[0], 1, UINT_MAX, 1);
+ EXPORT_SYMBOL(elv_slice_async_store);
++STORE_FUNCTION(elv_fairness_store, &efqd->fairness, 0, 1, 0);
++EXPORT_SYMBOL(elv_fairness_store);
+ #undef STORE_FUNCTION
+ 
+ void elv_schedule_dispatch(struct request_queue *q)
+@@ -2687,6 +2692,17 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	}
+ 
+ expire:
++	if (efqd->fairness && !force && ioq && ioq->dispatched) {
++		/*
++		 * If there are request dispatched from this queue, don't
++		 * dispatch requests from new queue till all the requests from
++		 * this queue have completed.
++		 */
++		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
++				" disp=%lu", ioq->dispatched);
++		ioq = NULL;
++		goto keep_queue;
++	}
+ 	elv_slice_expired(q);
+ new_queue:
+ 	ioq = elv_set_active_ioq(q, new_ioq);
+@@ -2839,6 +2855,10 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
  				goto done;
-+			} else if (elv_ioq_should_wait_busy(ioq)) {
-+				elv_ioq_arm_wait_busy_timer(q, ioq);
-+				goto done;
  			}
  
++			/* Wait for requests to finish from this queue */
++			if (efqd->fairness && elv_ioq_nr_dispatched(ioq))
++				goto done;
++
  			/* Expire the queue */
+ 			elv_slice_expired(q);
+ 			goto done;
+@@ -2849,7 +2869,7 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 		 * If this is the last queue in the group and we did not
+ 		 * decide to idle on queue, idle on group.
+ 		 */
+-		if (elv_iog_should_idle(ioq) && !ioq->dispatched
++		if (elv_iog_should_idle(ioq) && !elv_ioq_nr_dispatched(ioq)
+ 		    && !ioq_is_idling(ioq)) {
+ 			/*
+ 			 * If queue has used up its slice, wait for the
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 27ff5c4..68c6d16 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -192,6 +192,12 @@ struct elv_fq_data {
+ 
+ 	/* Fallback dummy ioq for extreme OOM conditions */
+ 	struct io_queue oom_ioq;
++
++	/*
++	 * If set to 1, waits for all request completions from current
++	 * queue before new queue is scheduled in
++	 */
++	unsigned int fairness;
+ };
+ 
+ /* Logging facilities. */
+@@ -451,7 +457,9 @@ extern ssize_t elv_slice_sync_store(struct elevator_queue *q, const char *name,
+ extern ssize_t elv_slice_async_show(struct elevator_queue *q, char *name);
+ extern ssize_t elv_slice_async_store(struct elevator_queue *q, const char *name,
+ 						size_t count);
+-
++extern ssize_t elv_fairness_show(struct elevator_queue *q, char *name);
++extern ssize_t elv_fairness_store(struct elevator_queue *q, const char *name,
++					size_t count);
+ /* Functions used by elevator.c */
+ extern struct elv_fq_data *elv_alloc_fq_data(struct request_queue *q,
+ 					struct elevator_queue *e);
 -- 
 1.6.0.6
