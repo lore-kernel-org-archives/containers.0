@@ -1,15 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Thu, 24 Sep 2009 19:19:19 -0400
-Message-ID: <4ABBFE77.30402__43731.258417438$1253834548$gmane$org@librato.com>
-References: <20090924165548.GA16586@us.ibm.com>
-	<20090924201517.GA24786@us.ibm.com> <4ABBED72.9080901@librato.com>
-	<200909250021.03535.arnd@arndb.de>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: make ckpt_debug() safe if called by dead tasks
+Date: Thu, 24 Sep 2009 18:23:58 -0500
+Message-ID: <20090924232358.GA9717@us.ibm.com>
+References: <1253826292-23452-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200909250021.03535.arnd-r2nGTMty4D4@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1253826292-23452-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Arnd Bergmann wrote:
-> On Friday 25 September 2009, Oren Laadan wrote:
->> In this form, you place a constraints on where userspace may
->> place the {parent,child}_tid variable, and require that this
->> particular clone_struct remain valid memory in the parent until
->> the child terminates.  This may break existing programs that
->> use this (threads libraries ?)
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > 
-> No existing program uses sys_clone2, and the kernel function
-> may well differ from the user space calling conventions, which
-> are not bound by the six-argument limitation.
+> One may not call task_pid_vnr() on dead tasks because they don't have
+> a valid ->nxproxy pointer. However, the ckpt_ctx cleanup may be called
+> by a dead task from do_exit(), in the case of zombie or "ghost" tasks.
 > 
-> So a clone2 library call could set up the structure with the
-> arguments to the real syscall, call into the kernel and
-> copy the output data back into the pointers it was given by
-> the user.
+> This patch makes ckpt_debug() safe to call from dead tasks context, so
+> that debug printing from code called by ckpt_ctx_free() is cool.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-That may work well for parent_tid, however child_tid is also
-kept on the task_struct and written to when the child exits,
-and there is no explicit user-space wrapper on that.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Also, I may be mistaken, but I thought that the idea of these
-was that the kernel writes them to user space, so other threads
-may see them quickly, _before_ the parent returns to userspace;
-otherwise, the parent (at the library) could himself copy the
-return value.
+thanks,
+-serge
 
-Oren.
+> ---
+>  include/linux/checkpoint.h |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index e00dd70..5294a96 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -334,7 +334,9 @@ extern unsigned long ckpt_debug_level;
+>  	do {								\
+>  		if (ckpt_debug_level & (level))				\
+>  			printk(KERN_DEBUG "[%d:%d:c/r:%s:%d] " fmt,	\
+> -				current->pid, task_pid_vnr(current),	\
+> +				current->pid,				\
+> +				current->nsproxy ?			\
+> +				task_pid_vnr(current) : -1,		\
+>  				__func__, __LINE__, ## args);		\
+>  	} while (0)
+> 
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
