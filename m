@@ -1,8 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 27/28] io-controller: Support per cgroup per device weights
-	and io class
-Date: Thu, 24 Sep 2009 15:25:31 -0400
-Message-ID: <1253820332-10246-28-git-send-email-vgoyal__36105.2073924386$1253821289$gmane$org@redhat.com>
+Subject: [PATCH 02/28] io-controller: Core of the elevator fair queuing
+Date: Thu, 24 Sep 2009 15:25:06 -0400
+Message-ID: <1253820332-10246-3-git-send-email-vgoyal__47576.1952613995$1253821570$gmane$org@redhat.com>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,420 +21,608 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsv
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch enables per-cgroup per-device weight and ioprio_class handling.
-A new cgroup interface "policy" is introduced. You can make use of this
-file to configure weight and ioprio_class for each device in a given cgroup.
-The original "weight" and "ioprio_class" files are still available. If you
-don't do special configuration for a particular device, "weight" and
-"ioprio_class" are used as default values in this device.
+o This is core of the io scheduler implemented at elevator layer. This is a mix
+  of cpu CFS scheduler and CFQ IO scheduler. Some of the bits from CFS have
+  to be derived so that we can support hierarchical scheduling. Without
+  cgroups or with-in group, we should essentially get same behavior as CFQ.
 
-You can use the following format to play with the new interface.
-#echo dev_major:dev_minor weight ioprio_class > /patch/to/cgroup/policy
-weight=0 means removing the policy for device.
+o This patch only shows non-hierarchical bits. Hierarhical code comes in later
+  patches.
 
-Examples:
-Configure weight=300 ioprio_class=2 on /dev/hdb (8:16) in this cgroup
-# echo "8:16 300 2" > io.policy
-# cat io.policy
-dev	weight	class
-8:16	300	2
+o This code is the building base of introducing fair queuing logic in common
+  elevator layer so that it can be used by all the four IO schedulers.
 
-Configure weight=500 ioprio_class=1 on /dev/hda (8:0) in this cgroup
-# echo "8:0 500 1" > io.policy
-# cat io.policy
-dev	weight	class
-8:0	500	1
-8:16	300	2
-
-Remove the policy for /dev/hda in this cgroup
-# echo 8:0 0 1 > io.policy
-# cat io.policy
-dev	weight	class
-8:16	300	2
-
-Changelog (v1 -> v2)
-- Rename some structures
-- Use spin_lock_irqsave() and spin_lock_irqrestore() version to prevent
-  from enabling the interrupts unconditionally.
-- Fix policy setup bug when switching to another io scheduler.
-- If a policy is available for a specific device, don't update weight and
-  io class when writing "weight" and "iprio_class".
-- Fix a bug when parsing policy string.
-
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/elevator-fq.c |  263 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- block/elevator-fq.h |   10 ++
- 2 files changed, 269 insertions(+), 4 deletions(-)
+ block/Makefile      |    2 +-
+ block/elevator-fq.c |  406 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h |  148 +++++++++++++++++++
+ 3 files changed, 555 insertions(+), 1 deletions(-)
+ create mode 100644 block/elevator-fq.c
+ create mode 100644 block/elevator-fq.h
 
+diff --git a/block/Makefile b/block/Makefile
+index 6c54ed0..19ff1e8 100644
+--- a/block/Makefile
++++ b/block/Makefile
+@@ -5,7 +5,7 @@
+ obj-$(CONFIG_BLOCK) := elevator.o blk-core.o blk-tag.o blk-sysfs.o \
+ 			blk-barrier.o blk-settings.o blk-ioc.o blk-map.o \
+ 			blk-exec.o blk-merge.o blk-softirq.o blk-timeout.o \
+-			ioctl.o genhd.o scsi_ioctl.o
++			ioctl.o genhd.o scsi_ioctl.o elevator-fq.o
+ 
+ obj-$(CONFIG_BLK_DEV_BSG)	+= bsg.o
+ obj-$(CONFIG_IOSCHED_NOOP)	+= noop-iosched.o
 diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index fd0a40f..e69de98 100644
---- a/block/elevator-fq.c
+new file mode 100644
+index 0000000..d98fa42
+--- /dev/null
 +++ b/block/elevator-fq.c
-@@ -15,6 +15,7 @@
- #include <linux/blktrace_api.h>
- #include <linux/seq_file.h>
- #include <linux/biotrack.h>
-+#include <linux/genhd.h>
- #include "elevator-fq.h"
- 
- const int elv_slice_sync = HZ / 10;
-@@ -1156,12 +1157,26 @@ EXPORT_SYMBOL(elv_io_group_set_async_queue);
- #ifdef CONFIG_GROUP_IOSCHED
- static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup);
- 
--static void io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog)
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+							dev_t dev);
-+static void
-+io_group_init_entity(struct io_cgroup *iocg, struct io_group *iog, dev_t dev)
- {
- 	struct io_entity *entity = &iog->entity;
-+	struct io_policy_node *pn;
-+	unsigned long flags;
+@@ -0,0 +1,406 @@
++/*
++ * elevator fair queuing Layer.
++ *
++ * Based on ideas and code from CFQ, CFS and BFQ:
++ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
++ *
++ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
++ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
++ *
++ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++ */
 +
-+	spin_lock_irqsave(&iocg->lock, flags);
-+	pn = policy_search_node(iocg, dev);
-+	if (pn) {
-+		entity->weight = pn->weight;
-+		entity->ioprio_class = pn->ioprio_class;
-+	} else {
-+		entity->weight = iocg->weight;
-+		entity->ioprio_class = iocg->ioprio_class;
-+	}
-+	spin_unlock_irqrestore(&iocg->lock, flags);
- 
--	entity->weight = iocg->weight;
--	entity->ioprio_class = iocg->ioprio_class;
- 	entity->ioprio_changed = 1;
- 	entity->my_sd = &iog->sched_data;
- }
-@@ -1431,6 +1446,229 @@ io_cgroup_lookup_group(struct io_cgroup *iocg, void *key)
- 	return NULL;
- }
- 
-+static int io_cgroup_policy_read(struct cgroup *cgrp, struct cftype *cft,
-+				  struct seq_file *m)
++#include <linux/blkdev.h>
++#include "elevator-fq.h"
++
++/*
++ * offset from end of service tree
++ */
++#define ELV_IDLE_DELAY		(HZ / 5)
++#define ELV_SLICE_SCALE		(500)
++#define ELV_SERVICE_SHIFT	20
++
++static inline struct io_queue *ioq_of(struct io_entity *entity)
 +{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *pn;
-+
-+	iocg = cgroup_to_io_cgroup(cgrp);
-+
-+	if (list_empty(&iocg->policy_list))
-+		goto out;
-+
-+	seq_printf(m, "dev\tweight\tclass\n");
-+
-+	spin_lock_irq(&iocg->lock);
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		seq_printf(m, "%u:%u\t%u\t%hu\n", MAJOR(pn->dev),
-+			   MINOR(pn->dev), pn->weight, pn->ioprio_class);
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+out:
-+	return 0;
-+}
-+
-+static inline void policy_insert_node(struct io_cgroup *iocg,
-+					  struct io_policy_node *pn)
-+{
-+	list_add(&pn->node, &iocg->policy_list);
-+}
-+
-+/* Must be called with iocg->lock held */
-+static inline void policy_delete_node(struct io_policy_node *pn)
-+{
-+	list_del(&pn->node);
-+}
-+
-+/* Must be called with iocg->lock held */
-+static struct io_policy_node *policy_search_node(const struct io_cgroup *iocg,
-+						 dev_t dev)
-+{
-+	struct io_policy_node *pn;
-+
-+	if (list_empty(&iocg->policy_list))
-+		return NULL;
-+
-+	list_for_each_entry(pn, &iocg->policy_list, node) {
-+		if (pn->dev == dev)
-+			return pn;
-+	}
-+
++	if (entity->my_sd == NULL)
++		return container_of(entity, struct io_queue, entity);
 +	return NULL;
 +}
 +
-+static int check_dev_num(dev_t dev)
++static inline int io_entity_class_rt(struct io_entity *entity)
 +{
-+	int part = 0;
-+	struct gendisk *disk;
-+
-+	disk = get_gendisk(dev, &part);
-+	if (!disk || part)
-+		return -ENODEV;
-+
-+	return 0;
++	return entity->ioprio_class == IOPRIO_CLASS_RT;
 +}
 +
-+static int policy_parse_and_set(char *buf, struct io_policy_node *newpn)
++static inline int io_entity_class_idle(struct io_entity *entity)
 +{
-+	char *s[4], *p, *major_s = NULL, *minor_s = NULL;
-+	int ret;
-+	unsigned long major, minor, temp;
-+	int i = 0;
-+	dev_t dev;
-+
-+	memset(s, 0, sizeof(s));
-+	while ((p = strsep(&buf, " ")) != NULL) {
-+		if (!*p)
-+			continue;
-+		s[i++] = p;
-+
-+		/* Prevent from inputing too many things */
-+		if (i == 4)
-+			break;
-+	}
-+
-+	if (i != 3)
-+		return -EINVAL;
-+
-+	p = strsep(&s[0], ":");
-+	if (p != NULL)
-+		major_s = p;
-+	else
-+		return -EINVAL;
-+
-+	minor_s = s[0];
-+	if (!minor_s)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(major_s, 10, &major);
-+	if (ret)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(minor_s, 10, &minor);
-+	if (ret)
-+		return -EINVAL;
-+
-+	dev = MKDEV(major, minor);
-+
-+	ret = check_dev_num(dev);
-+	if (ret)
-+		return ret;
-+
-+	newpn->dev = dev;
-+
-+	if (s[1] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[1], 10, &temp);
-+	if (ret || temp > IO_WEIGHT_MAX)
-+		return -EINVAL;
-+
-+	newpn->weight =  temp;
-+
-+	if (s[2] == NULL)
-+		return -EINVAL;
-+
-+	ret = strict_strtoul(s[2], 10, &temp);
-+	if (ret || temp < IOPRIO_CLASS_RT || temp > IOPRIO_CLASS_IDLE)
-+		return -EINVAL;
-+	newpn->ioprio_class = temp;
-+
-+	return 0;
++	return entity->ioprio_class == IOPRIO_CLASS_IDLE;
 +}
 +
-+static void update_iog_weight_prio(struct io_group *iog, struct io_cgroup *iocg,
-+					struct io_policy_node *pn)
++static inline s64
++entity_key(struct io_service_tree *st, struct io_entity *entity)
 +{
-+	if (pn->weight) {
-+		iog->entity.weight = pn->weight;
-+		iog->entity.ioprio_class = pn->ioprio_class;
-+		/*
-+		 * iog weight and ioprio_class updating actually happens if
-+		 * ioprio_changed is set. So ensure ioprio_changed is not set
-+		 * until new weight and new ioprio_class are updated.
-+		 */
-+		smp_wmb();
-+		iog->entity.ioprio_changed = 1;
-+	} else {
-+		iog->entity.weight = iocg->weight;
-+		iog->entity.ioprio_class = iocg->ioprio_class;
-+
-+		/* The same as above */
-+		smp_wmb();
-+		iog->entity.ioprio_changed = 1;
-+	}
++	return entity->vdisktime - st->min_vdisktime;
 +}
 +
-+static int io_cgroup_policy_write(struct cgroup *cgrp, struct cftype *cft,
-+			    const char *buffer)
++static inline u64
++elv_delta(u64 service, unsigned int numerator_wt, unsigned int denominator_wt)
 +{
-+	struct io_cgroup *iocg;
-+	struct io_policy_node *newpn, *pn;
-+	char *buf;
-+	int ret = 0;
-+	int keep_newpn = 0;
-+	struct hlist_node *n;
-+	struct io_group *iog;
-+
-+	buf = kstrdup(buffer, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	newpn = kzalloc(sizeof(*newpn), GFP_KERNEL);
-+	if (!newpn) {
-+		ret = -ENOMEM;
-+		goto free_buf;
++	if (numerator_wt != denominator_wt) {
++		service = service * numerator_wt;
++		do_div(service, denominator_wt);
 +	}
 +
-+	ret = policy_parse_and_set(buf, newpn);
-+	if (ret)
-+		goto free_newpn;
++	return service;
++}
 +
-+	if (!cgroup_lock_live_group(cgrp)) {
-+		ret = -ENODEV;
-+		goto free_newpn;
++static inline u64 elv_delta_fair(unsigned long delta, struct io_entity *entity)
++{
++	u64 d = delta << ELV_SERVICE_SHIFT;
++
++	return elv_delta(d, IO_WEIGHT_DEFAULT, entity->weight);
++}
++
++static inline int
++elv_weight_slice(struct elv_fq_data *efqd, int sync, unsigned int weight)
++{
++	const int base_slice = efqd->elv_slice[sync];
++
++	WARN_ON(weight > IO_WEIGHT_MAX);
++
++	return elv_delta(base_slice, weight, IO_WEIGHT_DEFAULT);
++}
++
++static inline int
++elv_prio_to_slice(struct elv_fq_data *efqd, struct io_queue *ioq)
++{
++	return elv_weight_slice(efqd, elv_ioq_sync(ioq), ioq->entity.weight);
++}
++
++static inline u64 max_vdisktime(u64 min_vdisktime, u64 vdisktime)
++{
++	s64 delta = (s64)(vdisktime - min_vdisktime);
++	if (delta > 0)
++		min_vdisktime = vdisktime;
++
++	return min_vdisktime;
++}
++
++static inline u64 min_vdisktime(u64 min_vdisktime, u64 vdisktime)
++{
++	s64 delta = (s64)(vdisktime - min_vdisktime);
++	if (delta < 0)
++		min_vdisktime = vdisktime;
++
++	return min_vdisktime;
++}
++
++static void update_min_vdisktime(struct io_service_tree *st)
++{
++	u64 vdisktime;
++
++	if (st->active_entity)
++		vdisktime = st->active_entity->vdisktime;
++
++	if (st->rb_leftmost) {
++		struct io_entity *entity = rb_entry(st->rb_leftmost,
++						struct io_entity, rb_node);
++
++		if (!st->active_entity)
++			vdisktime = entity->vdisktime;
++		else
++			vdisktime = min_vdisktime(vdisktime, entity->vdisktime);
 +	}
 +
-+	iocg = cgroup_to_io_cgroup(cgrp);
-+	spin_lock_irq(&iocg->lock);
++	st->min_vdisktime = max_vdisktime(st->min_vdisktime, vdisktime);
++}
 +
-+	pn = policy_search_node(iocg, newpn->dev);
-+	if (!pn) {
-+		if (newpn->weight != 0) {
-+			policy_insert_node(iocg, newpn);
-+			keep_newpn = 1;
++static inline struct io_entity *parent_entity(struct io_entity *entity)
++{
++	return entity->parent;
++}
++
++static inline struct io_group *iog_of(struct io_entity *entity)
++{
++	if (entity->my_sd)
++		return container_of(entity, struct io_group, entity);
++	return NULL;
++}
++
++static inline struct elv_fq_data *efqd_of(struct io_entity *entity)
++{
++	return ioq_of(entity)->efqd;
++}
++
++static inline struct io_sched_data *
++io_entity_sched_data(struct io_entity *entity)
++{
++	struct elv_fq_data *efqd = efqd_of(entity);
++
++	return &efqd->root_group->sched_data;
++}
++
++static inline void
++init_io_entity_service_tree(struct io_entity *entity, struct io_entity *parent)
++{
++	struct io_group *parent_iog = iog_of(parent);
++	unsigned short idx = entity->ioprio_class - 1;
++
++	BUG_ON(idx >= IO_IOPRIO_CLASSES);
++
++	entity->st = &parent_iog->sched_data.service_tree[idx];
++}
++
++static void
++entity_served(struct io_entity *entity, unsigned long served,
++		unsigned long queue_charge, unsigned long nr_sectors)
++{
++	entity->vdisktime += elv_delta_fair(queue_charge, entity);
++	update_min_vdisktime(entity->st);
++}
++
++static void place_entity(struct io_service_tree *st, struct io_entity *entity,
++				int add_front)
++{
++	u64 vdisktime = st->min_vdisktime;
++	struct rb_node *parent;
++	struct io_entity *entry;
++	int nr_active = st->nr_active - 1;
++
++	/*
++	 * Currently put entity at the end of last entity. This probably will
++	 * require adjustments as we move along
++	 */
++	if (io_entity_class_idle(entity)) {
++		vdisktime = elv_delta_fair(ELV_IDLE_DELAY, entity);
++		parent = rb_last(&st->active);
++		if (parent) {
++			entry = rb_entry(parent, struct io_entity, rb_node);
++			vdisktime += entry->vdisktime;
 +		}
-+		goto update_io_group;
-+	}
++	} else if (!add_front && nr_active) {
++		parent = rb_last(&st->active);
++		if (parent) {
++			entry = rb_entry(parent, struct io_entity, rb_node);
++			vdisktime = entry->vdisktime;
++		}
++	} else
++		vdisktime = st->min_vdisktime;
 +
-+	if (newpn->weight == 0) {
-+		/* weight == 0 means deleteing a policy */
-+		policy_delete_node(pn);
-+		goto update_io_group;
-+	}
-+
-+	pn->weight = newpn->weight;
-+	pn->ioprio_class = newpn->ioprio_class;
-+
-+update_io_group:
-+	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {
-+		if (iog->dev == newpn->dev)
-+			update_iog_weight_prio(iog, iocg, newpn);
-+	}
-+	spin_unlock_irq(&iocg->lock);
-+
-+	cgroup_unlock();
-+
-+free_newpn:
-+	if (!keep_newpn)
-+		kfree(newpn);
-+free_buf:
-+	kfree(buf);
-+	return ret;
++	entity->vdisktime = max_vdisktime(st->min_vdisktime, vdisktime);
 +}
 +
- #define SHOW_FUNCTION(__VAR)						\
- static u64 io_cgroup_##__VAR##_read(struct cgroup *cgroup,		\
- 				       struct cftype *cftype)		\
-@@ -1463,6 +1701,7 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	struct io_cgroup *iocg;					\
- 	struct io_group *iog;						\
- 	struct hlist_node *n;						\
-+	struct io_policy_node *pn;					\
- 									\
- 	if (val < (__MIN) || val > (__MAX))				\
- 		return -EINVAL;						\
-@@ -1475,6 +1714,9 @@ static int io_cgroup_##__VAR##_write(struct cgroup *cgroup,		\
- 	spin_lock_irq(&iocg->lock);					\
- 	iocg->__VAR = (unsigned long)val;				\
- 	hlist_for_each_entry(iog, n, &iocg->group_data, group_node) {	\
-+		pn = policy_search_node(iocg, iog->dev);		\
-+		if (pn)							\
-+			continue;					\
- 		iog->entity.__VAR = (unsigned long)val;		\
- 		smp_wmb();						\
- 		iog->entity.ioprio_changed = 1;				\
-@@ -1610,6 +1852,12 @@ static int io_cgroup_disk_dequeue_read(struct cgroup *cgroup,
- 
- struct cftype io_files[] = {
- 	{
-+		.name = "policy",
-+		.read_seq_string = io_cgroup_policy_read,
-+		.write_string = io_cgroup_policy_write,
-+		.max_write_len = 256,
-+	},
-+	{
- 		.name = "weight",
- 		.read_u64 = io_cgroup_weight_read,
- 		.write_u64 = io_cgroup_weight_write,
-@@ -1660,6 +1908,7 @@ static struct cgroup_subsys_state *iocg_create(struct cgroup_subsys *subsys,
- 	INIT_HLIST_HEAD(&iocg->group_data);
- 	iocg->weight = IO_WEIGHT_DEFAULT;
- 	iocg->ioprio_class = IOPRIO_CLASS_BE;
-+	INIT_LIST_HEAD(&iocg->policy_list);
- 
- 	return &iocg->css;
- }
-@@ -1753,7 +2002,7 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
- 		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
- 		iog->dev = MKDEV(major, minor);
- 
--		io_group_init_entity(iocg, iog);
-+		io_group_init_entity(iocg, iog, iog->dev);
- 
- 		atomic_set(&iog->ref, 0);
- 
-@@ -2109,6 +2358,7 @@ static void iocg_destroy(struct cgroup_subsys *subsys, struct cgroup *cgroup)
- 	struct io_group *iog;
- 	struct elv_fq_data *efqd;
- 	unsigned long uninitialized_var(flags);
-+	struct io_policy_node *pn, *pntmp;
- 
- 	/*
- 	 * io groups are linked in two lists. One list is maintained
-@@ -2148,6 +2398,11 @@ remove_entry:
- 	goto remove_entry;
- 
- done:
-+	list_for_each_entry_safe(pn, pntmp, &iocg->policy_list, node) {
-+		policy_delete_node(pn);
-+		kfree(pn);
++static inline void io_entity_update_prio(struct io_entity *entity)
++{
++	if (unlikely(entity->ioprio_changed)) {
++		/*
++		 * Re-initialize the service tree as ioprio class of the
++		 * entity might have changed.
++		 */
++		init_io_entity_service_tree(entity, parent_entity(entity));
++		entity->ioprio_changed = 0;
++	}
++}
++
++static void
++__dequeue_io_entity(struct io_service_tree *st, struct io_entity *entity)
++{
++	/*
++	 * This can happen when during put_prev_io_entity, we detect that ioprio
++	 * of the queue has changed and decide to dequeue_entity() and requeue
++	 * back. In this case entity is on service tree but has already been
++	 * removed from rb tree.
++	 */
++	if (RB_EMPTY_NODE(&entity->rb_node))
++		return;
++
++	if (st->rb_leftmost == &entity->rb_node) {
++		struct rb_node *next_node;
++
++		next_node = rb_next(&entity->rb_node);
++		st->rb_leftmost = next_node;
 +	}
 +
- 	free_css_id(&io_subsys, &iocg->css);
- 	rcu_read_unlock();
- 	BUG_ON(!hlist_empty(&iocg->group_data));
++	rb_erase(&entity->rb_node, &st->active);
++	RB_CLEAR_NODE(&entity->rb_node);
++}
++
++static void dequeue_io_entity(struct io_entity *entity)
++{
++	struct io_service_tree *st = entity->st;
++	struct io_sched_data *sd = io_entity_sched_data(entity);
++
++	__dequeue_io_entity(st, entity);
++	entity->on_st = 0;
++	st->nr_active--;
++	sd->nr_active--;
++}
++
++static void
++__enqueue_io_entity(struct io_service_tree *st, struct io_entity *entity,
++			int add_front)
++{
++	struct rb_node **node = &st->active.rb_node;
++	struct rb_node *parent = NULL;
++	struct io_entity *entry;
++	s64 key = entity_key(st, entity);
++	int leftmost = 1;
++
++	while (*node != NULL) {
++		parent = *node;
++		entry = rb_entry(parent, struct io_entity, rb_node);
++
++		if (key < entity_key(st, entry) ||
++			(add_front && (key == entity_key(st, entry)))) {
++			node = &parent->rb_left;
++		} else {
++			node = &parent->rb_right;
++			leftmost = 0;
++		}
++	}
++
++	/*
++	 * Maintain a cache of leftmost tree entries (it is frequently
++	 * used)
++	 */
++	if (leftmost)
++		st->rb_leftmost = &entity->rb_node;
++
++	rb_link_node(&entity->rb_node, parent, node);
++	rb_insert_color(&entity->rb_node, &st->active);
++}
++
++static void enqueue_io_entity(struct io_entity *entity)
++{
++	struct io_service_tree *st;
++	struct io_sched_data *sd = io_entity_sched_data(entity);
++
++	io_entity_update_prio(entity);
++	st = entity->st;
++	st->nr_active++;
++	sd->nr_active++;
++	entity->on_st = 1;
++	place_entity(st, entity, 0);
++	__enqueue_io_entity(st, entity, 0);
++}
++
++static struct io_entity *__lookup_next_io_entity(struct io_service_tree *st)
++{
++	struct rb_node *left = st->rb_leftmost;
++
++	if (!left)
++		return NULL;
++
++	return rb_entry(left, struct io_entity, rb_node);
++}
++
++static struct io_entity *lookup_next_io_entity(struct io_sched_data *sd)
++{
++	struct io_service_tree *st = sd->service_tree;
++	struct io_entity *entity = NULL;
++	int i;
++
++	BUG_ON(sd->active_entity != NULL);
++
++	if (!sd->nr_active)
++		return NULL;
++
++	for (i = 0; i < IO_IOPRIO_CLASSES; i++, st++) {
++		entity = __lookup_next_io_entity(st);
++		if (entity) {
++			__dequeue_io_entity(st, entity);
++			st->active_entity = entity;
++			sd->active_entity = entity;
++			break;
++		}
++	}
++
++	return entity;
++}
++
++static void requeue_io_entity(struct io_entity *entity, int add_front)
++{
++	struct io_service_tree *st = entity->st;
++	struct io_entity *next_entity;
++
++	if (add_front) {
++		next_entity = __lookup_next_io_entity(st);
++		/*
++		 * This is to emulate cfq like functionality where preemption
++		 * can happen with-in same class, like sync queue preempting
++		 * async queue.
++		 *
++		 * This feature is also used by cfq close cooperator
++		 * functionlity where cfq selects a queue out of order to run
++		 * next based on close cooperator.
++		 */
++		if (next_entity && next_entity == entity)
++			return;
++	}
++
++	__dequeue_io_entity(st, entity);
++	place_entity(st, entity, add_front);
++	__enqueue_io_entity(st, entity, add_front);
++}
++
++/* Requeue and ioq which is already on the tree */
++static void requeue_ioq(struct io_queue *ioq, int add_front)
++{
++	requeue_io_entity(&ioq->entity, add_front);
++}
++
++static void put_prev_io_entity(struct io_entity *entity)
++{
++	struct io_service_tree *st = entity->st;
++	struct io_sched_data *sd = io_entity_sched_data(entity);
++
++	st->active_entity = NULL;
++	sd->active_entity = NULL;
++
++	if (unlikely(entity->ioprio_changed)) {
++		dequeue_io_entity(entity);
++		enqueue_io_entity(entity);
++	} else
++		__enqueue_io_entity(st, entity, 0);
++}
++
++/* Put curr ioq back into rb tree. */
++static void put_prev_ioq(struct io_queue *ioq)
++{
++	struct io_entity *entity = &ioq->entity;
++
++	put_prev_io_entity(entity);
++}
++
++static void dequeue_ioq(struct io_queue *ioq)
++{
++	struct io_entity *entity = &ioq->entity;
++
++	dequeue_io_entity(entity);
++	elv_put_ioq(ioq);
++	return;
++}
++
++/* Put a new queue on to the tree */
++static void enqueue_ioq(struct io_queue *ioq)
++{
++	struct io_entity *entity = &ioq->entity;
++
++	elv_get_ioq(ioq);
++	enqueue_io_entity(entity);
++}
++
++static inline void
++init_io_entity_parent(struct io_entity *entity, struct io_entity *parent)
++{
++	entity->parent = parent;
++	init_io_entity_service_tree(entity, parent);
++}
++
++void elv_put_ioq(struct io_queue *ioq)
++{
++	BUG_ON(atomic_read(&ioq->ref) <= 0);
++	if (!atomic_dec_and_test(&ioq->ref))
++		return;
++}
 diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 203250a..e0d5e54 100644
---- a/block/elevator-fq.h
+new file mode 100644
+index 0000000..868e035
+--- /dev/null
 +++ b/block/elevator-fq.h
-@@ -157,12 +157,22 @@ struct io_group {
- 	struct request_list rl;
- };
- 
-+struct io_policy_node {
-+	struct list_head node;
-+	dev_t dev;
-+	unsigned int weight;
-+	unsigned short ioprio_class;
+@@ -0,0 +1,148 @@
++/*
++ * elevator fair queuing Layer. Data structures and common functions prototypes.
++ *
++ * Based on ideas and code from CFQ, CFS and BFQ:
++ * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
++ *
++ * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
++ *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
++ *
++ * Copyright (C) 2009 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ * 	              Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++ */
++
++#ifdef CONFIG_BLOCK
++#include <linux/blkdev.h>
++
++#ifndef _ELV_SCHED_H
++#define _ELV_SCHED_H
++
++#define IO_WEIGHT_MIN		100
++#define IO_WEIGHT_MAX		1000
++#define IO_WEIGHT_DEFAULT	500
++#define IO_IOPRIO_CLASSES	3
++
++struct io_service_tree {
++	struct rb_root active;
++	struct io_entity *active_entity;
++	u64 min_vdisktime;
++	struct rb_node *rb_leftmost;
++	unsigned int nr_active;
 +};
 +
- struct io_cgroup {
- 	struct cgroup_subsys_state css;
- 
- 	unsigned int weight;
- 	unsigned short ioprio_class;
- 
-+	/* list of io_policy_node */
-+	struct list_head policy_list;
++struct io_sched_data {
++	struct io_entity *active_entity;
++	int nr_active;
++	struct io_service_tree service_tree[IO_IOPRIO_CLASSES];
++};
 +
- 	spinlock_t lock;
- 	struct hlist_head group_data;
- };
++struct io_entity {
++	struct rb_node rb_node;
++	int on_st;
++	u64 vdisktime;
++	unsigned int weight;
++	struct io_entity *parent;
++
++	struct io_sched_data *my_sd;
++	struct io_service_tree *st;
++
++	unsigned short ioprio, ioprio_class;
++	int ioprio_changed;
++};
++
++/*
++ * A common structure representing the io queue where requests are actually
++ * queued.
++ */
++struct io_queue {
++	struct io_entity entity;
++	atomic_t ref;
++	unsigned int flags;
++
++	/* Pointer to generic elevator fair queuing data structure */
++	struct elv_fq_data *efqd;
++};
++
++struct io_group {
++	struct io_entity entity;
++	struct io_sched_data sched_data;
++};
++
++struct elv_fq_data {
++	struct io_group *root_group;
++
++	/* Base slice length for sync and async queues */
++	unsigned int elv_slice[2];
++};
++
++/* Some shared queue flag manipulation functions among elevators */
++
++enum elv_queue_state_flags {
++	ELV_QUEUE_FLAG_sync,              /* synchronous queue */
++};
++
++#define ELV_IO_QUEUE_FLAG_FNS(name)					\
++static inline void elv_mark_ioq_##name(struct io_queue *ioq)		\
++{                                                                       \
++	(ioq)->flags |= (1 << ELV_QUEUE_FLAG_##name);			\
++}                                                                       \
++static inline void elv_clear_ioq_##name(struct io_queue *ioq)		\
++{                                                                       \
++	(ioq)->flags &= ~(1 << ELV_QUEUE_FLAG_##name);			\
++}                                                                       \
++static inline int elv_ioq_##name(struct io_queue *ioq)         		\
++{                                                                       \
++	return ((ioq)->flags & (1 << ELV_QUEUE_FLAG_##name)) != 0;	\
++}
++
++ELV_IO_QUEUE_FLAG_FNS(sync)
++
++static inline void elv_get_ioq(struct io_queue *ioq)
++{
++	atomic_inc(&ioq->ref);
++}
++
++static inline unsigned int elv_ioprio_to_weight(int ioprio)
++{
++	WARN_ON(ioprio < 0 || ioprio >= IOPRIO_BE_NR);
++	/* Map prio 7 - 0 to weights 200 to 900 */
++	return IO_WEIGHT_DEFAULT + (IO_WEIGHT_DEFAULT/5 * (4 - ioprio));
++}
++
++static inline void elv_ioq_set_ioprio(struct io_queue *ioq, int ioprio)
++{
++	ioq->entity.ioprio = ioprio;
++	ioq->entity.weight = elv_ioprio_to_weight(ioprio);
++	ioq->entity.ioprio_changed = 1;
++}
++
++static inline void elv_ioq_set_ioprio_class(struct io_queue *ioq,
++						int ioprio_class)
++{
++	ioq->entity.ioprio_class = ioprio_class;
++	ioq->entity.ioprio_changed = 1;
++}
++
++static inline int elv_ioq_class_idle(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio_class == IOPRIO_CLASS_IDLE;
++}
++
++static inline int elv_ioq_class_rt(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio_class == IOPRIO_CLASS_RT;
++}
++
++static inline int elv_ioq_ioprio_class(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio_class;
++}
++
++static inline int elv_ioq_ioprio(struct io_queue *ioq)
++{
++	return ioq->entity.ioprio;
++}
++
++extern void elv_put_ioq(struct io_queue *ioq);
++#endif /* _ELV_SCHED_H */
++#endif /* CONFIG_BLOCK */
 -- 
 1.6.0.6
