@@ -1,14 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][v7][PATCH 5/9]: Add target_pids parameter to alloc_pid()
-Date: Thu, 24 Sep 2009 10:01:54 -0700
-Message-ID: <20090924170154.GE16989__10558.6449652494$1253812585$gmane$org@us.ibm.com>
-References: <20090924165548.GA16586@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH v18 20/80] c/r: basic infrastructure for checkpoint/restart
+Date: Thu, 24 Sep 2009 13:33:25 -0400
+Message-ID: <4ABBAD65.3080706__46380.7646221996$1253813680$gmane$org@librato.com>
+References: <1253749920-18673-1-git-send-email-orenl@librato.com>	
+	<1253749920-18673-21-git-send-email-orenl@librato.com>
+	<1253808221.20648.196.camel@desktop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090924165548.GA16586-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1253808221.20648.196.camel@desktop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,88 +19,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Daniel Walker <dwalker-zu3NM2574RrQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Subject: [RFC][v7][PATCH 5/9]: Add target_pids parameter to alloc_pid()
+Daniel Walker wrote:
+> On Wed, 2009-09-23 at 19:51 -0400, Oren Laadan wrote:
+>> /
+>> +static char *__ckpt_generate_fmt(struct ckpt_ctx *ctx, char *prefmt, char *fmt)
+>> +{
+>> +	static int warn_notask = 0;
+>> +	static int warn_prefmt = 0;
+> 
+> Shouldn't need the initializer since it's static..
+> 
 
-This parameter is currently NULL, but will be used in a follow-on patch.
+Yup ...
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- include/linux/pid.h |    2 +-
- kernel/fork.c       |    3 ++-
- kernel/pid.c        |    9 +++++++--
- 3 files changed, 10 insertions(+), 4 deletions(-)
+> 
+>> +/* read the checkpoint header */
+>> +static int restore_read_header(struct ckpt_ctx *ctx)
+>> +{
+>> +	struct ckpt_hdr_header *h;
+>> +	struct new_utsname *uts = NULL;
+>> +	int ret;
+>> +
+>> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER);
+>> +	if (IS_ERR(h))
+>> +		return PTR_ERR(h);
+>> +
+>> +	ret = -EINVAL;
+>> +	if (h->magic != CHECKPOINT_MAGIC_HEAD ||
+>> +	    h->rev != CHECKPOINT_VERSION ||
+>> +	    h->major != ((LINUX_VERSION_CODE >> 16) & 0xff) ||
+>> +	    h->minor != ((LINUX_VERSION_CODE >> 8) & 0xff) ||
+>> +	    h->patch != ((LINUX_VERSION_CODE) & 0xff))
+>> +		goto out;
+> 
+> Do you still need this LINUX_VERSION_CODE stuff ? I would think once
+> it's in mainline you wouldn't need to track that..
 
-Index: linux-2.6/include/linux/pid.h
-===================================================================
---- linux-2.6.orig/include/linux/pid.h	2009-09-10 10:19:20.000000000 -0700
-+++ linux-2.6/include/linux/pid.h	2009-09-10 10:29:10.000000000 -0700
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, int last);
- 
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
- extern void free_pid(struct pid *pid);
- 
- /*
-Index: linux-2.6/kernel/fork.c
-===================================================================
---- linux-2.6.orig/kernel/fork.c	2009-09-10 10:19:20.000000000 -0700
-+++ linux-2.6/kernel/fork.c	2009-09-10 10:29:10.000000000 -0700
-@@ -940,6 +940,7 @@ static struct task_struct *copy_process(
- 	int retval;
- 	struct task_struct *p;
- 	int cgroup_callbacks_done = 0;
-+	pid_t *target_pids = NULL;
- 
- 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
- 		return ERR_PTR(-EINVAL);
-@@ -1110,7 +1111,7 @@ static struct task_struct *copy_process(
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
- 		if (IS_ERR(pid)) {
- 			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-Index: linux-2.6/kernel/pid.c
-===================================================================
---- linux-2.6.orig/kernel/pid.c	2009-09-10 10:23:27.000000000 -0700
-+++ linux-2.6/kernel/pid.c	2009-09-10 10:29:10.000000000 -0700
-@@ -272,13 +272,14 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
- }
- 
--struct pid *alloc_pid(struct pid_namespace *ns)
-+struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
- {
- 	struct pid *pid;
- 	enum pid_type type;
- 	int i, nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
-+	int tpid;
- 
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid) {
-@@ -288,7 +289,11 @@ struct pid *alloc_pid(struct pid_namespa
- 
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp, 0);
-+		tpid = 0;
-+		if (target_pids)
-+			tpid = target_pids[i];
-+
-+		nr = alloc_pidmap(tmp, tpid);
- 		if (nr < 0)
- 			goto out_free;
+In short: yes.
+
+This is our poor-man's way to telling the kernel version on which
+a given checkpoint image was generated.
+
+The image format is a blob that may change between kernel releases.
+Conversion between version formats will be done by userspace tools.
+Tagging the image with the version of the kernel serves two goals:
+it indicates the image version to the kernel at restart time, and
+it will be used by userspace conversion tools.
+
+How the kernel and image versions are encoded is WIP and is likely
+to become more comprehensive soon.
+
+> 
+> These both got flagged by checkpatch .. Your series is marked in a
+> couple other places with checkpatch errors .. If you haven't already
+> reviewed those errors, it would be a good idea to review them.
+> 
+
+Sure, will re-review to remove remaining errors that sneaked in.
+
+Thanks,
+
+Oren.
