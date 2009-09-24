@@ -1,13 +1,19 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v18 78/80] powerpc: wire up checkpoint and restart syscalls
-Date: Wed, 23 Sep 2009 19:51:58 -0400
-Message-ID: <1253749920-18673-79-git-send-email-orenl__3247.70155498317$1253757593$gmane$org@librato.com>
-References: <1253749920-18673-1-git-send-email-orenl@librato.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] io-controller: Fix task hanging when there are more	than
+	one groups
+Date: Thu, 24 Sep 2009 09:10:17 +0800
+Message-ID: <4ABAC6F9.9060406__12715.7949995764$1253757602$gmane$org@cn.fujitsu.com>
+References: <1251495072-7780-1-git-send-email-vgoyal@redhat.com>
+	<4AA4B905.8010801@cn.fujitsu.com>
+	<20090908191941.GF15974@redhat.com>
+	<4AA75B71.5060109@cn.fujitsu.com>
+	<20090909150537.GD8256@redhat.com> <4AA9A4BE.30005@cn.fujitsu.com>
+	<20090915033739.GA4054@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253749920-18673-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20090915033739.GA4054-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,45 +23,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Hi Vivek,
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Currently, we just set this flag when anticipating next request.
+So make sure we remove this flag also in this case.
+
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- arch/powerpc/include/asm/systbl.h |    2 ++
- arch/powerpc/include/asm/unistd.h |    4 +++-
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ block/as-iosched.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/systbl.h b/arch/powerpc/include/asm/systbl.h
-index 370600c..3d44cf3 100644
---- a/arch/powerpc/include/asm/systbl.h
-+++ b/arch/powerpc/include/asm/systbl.h
-@@ -326,3 +326,5 @@ SYSCALL_SPU(perf_counter_open)
- COMPAT_SYS_SPU(preadv)
- COMPAT_SYS_SPU(pwritev)
- COMPAT_SYS(rt_tgsigqueueinfo)
-+SYSCALL(checkpoint)
-+SYSCALL(restart)
-diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
-index cef080b..ef41ebb 100644
---- a/arch/powerpc/include/asm/unistd.h
-+++ b/arch/powerpc/include/asm/unistd.h
-@@ -345,10 +345,12 @@
- #define __NR_preadv		320
- #define __NR_pwritev		321
- #define __NR_rt_tgsigqueueinfo	322
-+#define __NR_checkpoint		323
-+#define __NR_restart		324
+diff --git a/block/as-iosched.c b/block/as-iosched.c
+index 5868e72..7a64232 100644
+--- a/block/as-iosched.c
++++ b/block/as-iosched.c
+@@ -728,9 +728,10 @@ static void as_antic_stop(struct as_data *ad)
+ 	as_log(ad, "as_antic_stop antic_status=%d", ad->antic_status);
  
- #ifdef __KERNEL__
- 
--#define __NR_syscalls		323
-+#define __NR_syscalls		325
- 
- #define __NR__exit __NR_exit
- #define NR_syscalls	__NR_syscalls
+ 	if (status == ANTIC_WAIT_REQ || status == ANTIC_WAIT_NEXT) {
+-		if (status == ANTIC_WAIT_NEXT)
++		if (status == ANTIC_WAIT_NEXT) {
+ 			del_timer(&ad->antic_timer);
+-		as_clear_active_asq_wait_request(ad);
++			as_clear_active_asq_wait_request(ad);
++		}
+ 		ad->antic_status = ANTIC_FINISHED;
+ 		/* see as_work_handler */
+ 		kblockd_schedule_work(ad->q, &ad->antic_work);
 -- 
-1.6.0.4
+1.5.4.rc3
