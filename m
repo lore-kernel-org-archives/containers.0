@@ -1,14 +1,13 @@
-From: Daniel Walker <dwalker-zu3NM2574RrQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v18 20/80] c/r: basic infrastructure for checkpoint/restart
-Date: Thu, 24 Sep 2009 09:03:41 -0700
-Message-ID: <1253808221.20648.196.camel__17846.732264343$1253808447$gmane$org@desktop>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
+Date: Thu, 24 Sep 2009 09:27:30 -0700
+Message-ID: <878wg41f65.fsf__1703.88942719928$1253809898$gmane$org@caffeine.danplanet.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
-	<1253749920-18673-21-git-send-email-orenl@librato.com>
+	<4ABB6EB6.2040204@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253749920-18673-21-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,44 +17,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Rishikesh <risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-09-23 at 19:51 -0400, Oren Laadan wrote:
-> /
-> +static char *__ckpt_generate_fmt(struct ckpt_ctx *ctx, char *prefmt, char *fmt)
-> +{
-> +	static int warn_notask = 0;
-> +	static int warn_prefmt = 0;
-
-Shouldn't need the initializer since it's static..
-
-
-> +/* read the checkpoint header */
-> +static int restore_read_header(struct ckpt_ctx *ctx)
-> +{
-> +	struct ckpt_hdr_header *h;
-> +	struct new_utsname *uts = NULL;
-> +	int ret;
-> +
-> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER);
-> +	if (IS_ERR(h))
-> +		return PTR_ERR(h);
-> +
-> +	ret = -EINVAL;
-> +	if (h->magic != CHECKPOINT_MAGIC_HEAD ||
-> +	    h->rev != CHECKPOINT_VERSION ||
-> +	    h->major != ((LINUX_VERSION_CODE >> 16) & 0xff) ||
-> +	    h->minor != ((LINUX_VERSION_CODE >> 8) & 0xff) ||
-> +	    h->patch != ((LINUX_VERSION_CODE) & 0xff))
-> +		goto out;
-
-Do you still need this LINUX_VERSION_CODE stuff ? I would think once
-it's in mainline you wouldn't need to track that..
-
-These both got flagged by checkpatch .. Your series is marked in a
-couple other places with checkpatch errors .. If you haven't already
-reviewed those errors, it would be a good idea to review them.
-
-Daniel
+Uj4gSSBhbSBnZXR0aW5nIGZvbGxvd2luZyBidWlsZCBlcnJvciB3aGlsZSBjb21waWxpbmcgbGlu
+dXgtY3Iga2VybmVsLgoKV2l0aCBDT05GSUdfQ0hFQ0tQT0lOVD1uLCByaWdodD8KClI+IDc2NTY5
+IG5ldC91bml4L2FmX3VuaXguYzo1Mjg6IGVycm9yOiDigJh1bml4X2NvbGxlY3TigJkgdW5kZWNs
+YXJlZCBoZXJlIChub3QgClI+IGluIGEgZnVuY3Rpb24pCgpUcnkgdGhlIHBhdGNoIGJlbG93LgoK
+LS0gCkRhbiBTbWl0aApJQk0gTGludXggVGVjaG5vbG9neSBDZW50ZXIKZW1haWw6IGRhbm1zQHVz
+LmlibS5jb20KCmRpZmYgLS1naXQgYS9pbmNsdWRlL25ldC9hZl91bml4LmggYi9pbmNsdWRlL25l
+dC9hZl91bml4LmgKaW5kZXggZTQyYTcxNC4uZWU0MjNkMSAxMDA2NDQKLS0tIGEvaW5jbHVkZS9u
+ZXQvYWZfdW5peC5oCisrKyBiL2luY2x1ZGUvbmV0L2FmX3VuaXguaApAQCAtODAsNiArODAsNyBA
+QCBleHRlcm4gaW50IHVuaXhfY29sbGVjdChzdHJ1Y3QgY2twdF9jdHggKmN0eCwgc3RydWN0IHNv
+Y2tldCAqc29jayk7CiAjZWxzZQogI2RlZmluZSB1bml4X2NoZWNrcG9pbnQgTlVMTAogI2RlZmlu
+ZSB1bml4X3Jlc3RvcmUgTlVMTAorI2RlZmluZSB1bml4X2NvbGxlY3QgTlVMTAogI2VuZGlmIC8q
+IENPTkZJR19DSEVDS1BPSU5UICovCiAKICNlbmRpZgpfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
