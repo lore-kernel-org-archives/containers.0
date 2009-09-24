@@ -1,15 +1,14 @@
-From: Rishikesh <risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
-Date: Thu, 24 Sep 2009 23:50:58 +0530
-Message-ID: <4ABBB88A.5000200__19156.5381050625$1253816681$gmane$org@linux.vnet.ibm.com>
-References: <1253749920-18673-1-git-send-email-orenl@librato.com>
-	<4ABB6EB6.2040204@linux.vnet.ibm.com>
-	<878wg41f65.fsf@caffeine.danplanet.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
+Date: Thu, 24 Sep 2009 13:35:56 -0500
+Message-ID: <20090924183556.GA31356__48217.0113864869$1253817500$gmane$org@us.ibm.com>
+References: <20090924165548.GA16586@us.ibm.com> <20090924175542.GA27678@x200>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <878wg41f65.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090924175542.GA27678@x200>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,16 +18,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RGFuIFNtaXRoIHdyb3RlOgo+IFI+IEkgYW0gZ2V0dGluZyBmb2xsb3dpbmcgYnVpbGQgZXJyb3Ig
-d2hpbGUgY29tcGlsaW5nIGxpbnV4LWNyIGtlcm5lbC4KPgo+IFdpdGggQ09ORklHX0NIRUNLUE9J
-TlQ9biwgcmlnaHQ/Cj4KPiBSPiA3NjU2OSBuZXQvdW5peC9hZl91bml4LmM6NTI4OiBlcnJvcjog
-4oCYdW5peF9jb2xsZWN04oCZIHVuZGVjbGFyZWQgaGVyZSAobm90IAo+IFI+IGluIGEgZnVuY3Rp
-b24pCj4KPiBUcnkgdGhlIHBhdGNoIGJlbG93Lgo+ICAgCgpZZXMgYXR0YWNoZWQgcGF0Y2ggc29s
-dmVzIHRoZSBwcm9iLiBUaGFua3MgRGFuLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-L21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> I don't like this even more.
+> 
+> Pid namespaces are hierarchical _and_ anonymous, so simply
+> set of numbers doesn't describe the final object.
+> 
+> struct pid isn't special, it's just another invariant if you like
+> as far as C/R is concerned, but system call is made special wrt pids.
+> 
+> What will be in an image? I hope "struct kstate_image_pid" with several
+
+Sure pid namespaces are anonymous, but we will give each an 'objref'
+valid only for a checkpoint image, and store the relationship between
+pid namespaces based on those objrefs.  Basically the same way that user
+structs and hierarchical user namespaces are handled right now.
+
+> numbers and with references to such object from other places, so it
+> seems natural to do alloc_pid() with needed numbers and that attach new
+> shiny pid to where needed. But this clone_pid is only for task_struct's pids.
