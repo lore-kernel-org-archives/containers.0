@@ -1,7 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 24/28] io-controller: map async requests to appropriate cgroup
-Date: Thu, 24 Sep 2009 15:25:28 -0400
-Message-ID: <1253820332-10246-25-git-send-email-vgoyal__3147.07801812819$1253823370$gmane$org@redhat.com>
+Subject: [PATCH 22/28] io-controller: anticipatory changes for hierarchical
+	fair queuing
+Date: Thu, 24 Sep 2009 15:25:26 -0400
+Message-ID: <1253820332-10246-23-git-send-email-vgoyal__26283.812945667$1253823484$gmane$org@redhat.com>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,760 +22,914 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsv
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-o So far we were assuming that a bio/rq belongs to the task who is submitting
-  it. It did not hold good in case of async writes. This patch makes use of
-  blkio_cgroup pataches to attribute the aysnc writes to right group instead
-  of task submitting the bio.
+This patch changes anticipatory scheduler to use queue scheduling code from
+elevator layer.  One can go back to old as by deselecting
+CONFIG_IOSCHED_AS_HIER. Even with CONFIG_IOSCHED_AS_HIER=y, with-out any
+other cgroup created, AS behavior should remain the same as old.
 
-o For sync requests, we continue to assume that io belongs to the task
-  submitting it. Only in case of async requests, we make use of io tracking
-  patches to track the owner cgroup.
+o AS is a single queue ioschduler, that means there is one AS queue per group.
 
-o So far cfq always caches the async queue pointer. With async requests now
-  not necessarily being tied to submitting task io context, caching the
-  pointer will not help for async queues. This patch introduces a new config
-  option CONFIG_TRACK_ASYNC_CONTEXT. If this option is not set, cfq retains
-  old behavior where async queue pointer is cached in task context. If it
-  is set, async queue pointer is not cached and we take help of bio
-  tracking patches to determine group bio belongs to and then map it to
-  async queue of that group.
+o common layer code select the queue to dispatch from based on fairness, and
+  then AS code selects the request with-in group.
+
+o AS runs reads and writes batches with-in group. So common layer runs timed
+  group queues and with-in group time, AS runs timed batches of reads and
+  writes.
+
+o Note: Previously AS write batch length was adjusted synamically whenever
+  a W->R batch data direction took place and when first request from the
+  read batch completed.
+
+  Now write batch updation takes place when last request from the write
+  batch has finished during W->R transition.
+
+o AS runs its own anticipation logic to anticipate on reads. common layer also
+  does the anticipation on the group if think time of the group is with-in
+  slice_idle.
+
+o Introduced few debugging messages in AS.
+
+o There are cases where in case of AS, excessive queue expiration will take
+  place by elevator fair queuing layer because of few reasons.
+        - AS does not anticipate on a queue if there are no competing requests.
+          So if only a single reader is present in a group, anticipation does
+          not get turn on.
+
+        - elevator layer does not know that As is anticipating hence initiates
+          expiry requests in select_ioq() thinking queue is empty.
+
+        - elevaotr layer tries to aggressively expire last empty queue. This
+          can lead to lof of queue expiry
+
+o This patch now starts ANITC_WAIT_NEXT anticipation if last request in the
+  queue completed and associated io context is eligible to anticipate. Also
+  AS lets elevatory layer know that it is anticipating (elv_ioq_wait_request())
+  This solves above mentioned issues.
 
 Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched    |   16 +++++
- block/as-iosched.c       |    2 +-
- block/blk-core.c         |    7 +-
- block/cfq-iosched.c      |  152 ++++++++++++++++++++++++++++++++++++----------
- block/deadline-iosched.c |    2 +-
- block/elevator-fq.c      |   93 +++++++++++++++++++++++-----
- block/elevator-fq.h      |   31 ++++++---
- block/elevator.c         |   15 +++--
- include/linux/elevator.h |   22 ++++++-
- 9 files changed, 267 insertions(+), 73 deletions(-)
+ block/Kconfig.iosched    |   12 ++
+ block/as-iosched.c       |  376 +++++++++++++++++++++++++++++++++++++++++++++-
+ block/elevator-fq.c      |  107 ++++++++++++--
+ include/linux/elevator.h |    2 +
+ 4 files changed, 477 insertions(+), 20 deletions(-)
 
 diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 8ab08da..8b507c4 100644
+index cc87c87..8ab08da 100644
 --- a/block/Kconfig.iosched
 +++ b/block/Kconfig.iosched
-@@ -132,6 +132,22 @@ config DEBUG_GROUP_IOSCHED
- 	  Enable some debugging hooks for hierarchical scheduling support.
- 	  Currently it just outputs more information in blktrace output.
+@@ -45,6 +45,18 @@ config IOSCHED_AS
+ 	  deadline I/O scheduler, it can also be slower in some cases
+ 	  especially some database loads.
  
-+config TRACK_ASYNC_CONTEXT
-+	bool "Determine async request context from bio"
-+	depends on GROUP_IOSCHED
-+	select CGROUP_BLKIO
++config IOSCHED_AS_HIER
++	bool "Anticipatory Hierarchical Scheduling support"
++	depends on IOSCHED_AS && CGROUPS
++	select ELV_FAIR_QUEUING
++	select GROUP_IOSCHED
 +	default n
 +	---help---
-+	  Normally async request is attributed to the task submitting the
-+	  request. With group ioscheduling, for accurate accounting of
-+	  async writes, one needs to map the request to original task/cgroup
-+	  which originated the request and not the submitter of the request.
++	  Enable hierarhical scheduling in anticipatory. In this mode
++	  anticipatory keeps one IO queue per cgroup instead of a global
++	  queue. Elevator fair queuing logic ensures fairness among various
++	  queues.
 +
-+	  Currently there are generic io tracking patches to provide facility
-+	  to map bio to original owner. If this option is set, for async
-+	  request, original owner of the bio is decided by using io tracking
-+	  patches otherwise we continue to attribute the request to the
-+	  submitting thread.
- endmenu
- 
- endif
+ config IOSCHED_DEADLINE
+ 	tristate "Deadline I/O scheduler"
+ 	default y
 diff --git a/block/as-iosched.c b/block/as-iosched.c
-index fed579f..fc2453d 100644
+index 6d2468b..fed579f 100644
 --- a/block/as-iosched.c
 +++ b/block/as-iosched.c
-@@ -1594,7 +1594,7 @@ as_merge(struct request_queue *q, struct request **req, struct bio *bio)
- {
- 	sector_t rb_key = bio->bi_sector + bio_sectors(bio);
- 	struct request *__rq;
--	struct as_queue *asq = elv_get_sched_queue_current(q);
-+	struct as_queue *asq = elv_get_sched_queue_bio(q, bio);
+@@ -16,6 +16,8 @@
+ #include <linux/compiler.h>
+ #include <linux/rbtree.h>
+ #include <linux/interrupt.h>
++#include <linux/blktrace_api.h>
++#include "elevator-fq.h"
  
- 	if (!asq)
- 		return ELEVATOR_NO_MERGE;
-diff --git a/block/blk-core.c b/block/blk-core.c
-index e3299a7..47cce59 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -619,7 +619,8 @@ static inline void blk_free_request(struct request_queue *q, struct request *rq)
- }
- 
- static struct request *
--blk_alloc_request(struct request_queue *q, int flags, int priv, gfp_t gfp_mask)
-+blk_alloc_request(struct request_queue *q, struct bio *bio, int flags, int priv,
-+					gfp_t gfp_mask)
- {
- 	struct request *rq = mempool_alloc(q->rq.rq_pool, gfp_mask);
- 
-@@ -631,7 +632,7 @@ blk_alloc_request(struct request_queue *q, int flags, int priv, gfp_t gfp_mask)
- 	rq->cmd_flags = flags | REQ_ALLOCED;
- 
- 	if (priv) {
--		if (unlikely(elv_set_request(q, rq, gfp_mask))) {
-+		if (unlikely(elv_set_request(q, rq, bio, gfp_mask))) {
- 			mempool_free(rq, q->rq.rq_pool);
- 			return NULL;
- 		}
-@@ -772,7 +773,7 @@ static struct request *get_request(struct request_queue *q, int rw_flags,
- 		rw_flags |= REQ_IO_STAT;
- 	spin_unlock_irq(q->queue_lock);
- 
--	rq = blk_alloc_request(q, rw_flags, priv, gfp_mask);
-+	rq = blk_alloc_request(q, bio, rw_flags, priv, gfp_mask);
- 	if (unlikely(!rq)) {
- 		/*
- 		 * Allocation failed presumably due to memory. Undo anything
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 37a4832..88a7275 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -176,8 +176,8 @@ CFQ_CFQQ_FNS(coop);
- 	blk_add_trace_msg((cfqd)->queue, "cfq " fmt, ##args)
- 
- static void cfq_dispatch_insert(struct request_queue *, struct request *);
--static struct cfq_queue *cfq_get_queue(struct cfq_data *, int,
--				       struct io_context *, gfp_t);
-+static struct cfq_queue *cfq_get_queue(struct cfq_data *, struct bio *bio,
-+					int, struct io_context *, gfp_t);
- static struct cfq_io_context *cfq_cic_lookup(struct cfq_data *,
- 						struct io_context *);
- 
-@@ -187,22 +187,56 @@ static inline struct cfq_queue *cic_to_cfqq(struct cfq_io_context *cic,
- 	return cic->cfqq[!!is_sync];
- }
- 
--static inline void cic_set_cfqq(struct cfq_io_context *cic,
--				struct cfq_queue *cfqq, int is_sync)
--{
--	cic->cfqq[!!is_sync] = cfqq;
--}
--
  /*
-- * We regard a request as SYNC, if it's either a read or has the SYNC bit
-- * set (in which case it could also be direct WRITE).
-+ * Determine the cfq queue bio should go in. This is primarily used by
-+ * front merge and allow merge functions.
-+ *
-+ * Currently this function takes the ioprio and iprio_class from task
-+ * submitting async bio. Later save the task information in the page_cgroup
-+ * and retrieve task's ioprio and class from there.
-  */
--static inline int cfq_bio_sync(struct bio *bio)
-+static struct cfq_queue *cic_bio_to_cfqq(struct cfq_data *cfqd,
-+		struct cfq_io_context *cic, struct bio *bio, int is_sync)
- {
--	if (bio_data_dir(bio) == READ || bio_sync(bio))
--		return 1;
-+	struct cfq_queue *cfqq = NULL;
+  * See Documentation/block/as-iosched.txt
+@@ -77,6 +79,7 @@ enum anticipation_status {
+ };
  
--	return 0;
-+	cfqq = cic_to_cfqq(cic, is_sync);
-+
-+#ifdef CONFIG_TRACK_ASYNC_CONTEXT
-+	if (!cfqq && !is_sync) {
-+		const int ioprio = task_ioprio(cic->ioc);
-+		const int ioprio_class = task_ioprio_class(cic->ioc);
-+		struct io_group *iog;
-+		/*
-+		 * async bio tracking is enabled and we are not caching
-+		 * async queue pointer in cic.
-+		 */
-+		iog = elv_io_get_io_group_bio(cfqd->queue, bio, 0);
-+		if (!iog) {
-+			/*
-+			 * May be this is first rq/bio and io group has not
-+			 * been setup yet.
-+			 */
-+			return NULL;
-+		}
-+		return elv_io_group_async_queue_prio(iog, ioprio_class, ioprio);
-+	}
-+#endif
-+	return cfqq;
-+}
-+
-+static inline void cic_set_cfqq(struct cfq_io_context *cic,
-+				struct cfq_queue *cfqq, int is_sync)
-+{
-+#ifdef CONFIG_TRACK_ASYNC_CONTEXT
-+	/*
-+	 * Don't cache async queue pointer as now one io context might
-+	 * be submitting async io for various different async queues
-+	 */
-+	if (!is_sync)
-+		return;
-+#endif
-+	cic->cfqq[!!is_sync] = cfqq;
- }
- 
- static inline struct io_group *cfqq_to_io_group(struct cfq_queue *cfqq)
-@@ -526,7 +560,7 @@ cfq_find_rq_fmerge(struct cfq_data *cfqd, struct bio *bio)
- 	if (!cic)
- 		return NULL;
- 
--	cfqq = cic_to_cfqq(cic, cfq_bio_sync(bio));
-+	cfqq = cic_bio_to_cfqq(cfqd, cic, bio, elv_bio_sync(bio));
- 	if (cfqq) {
- 		sector_t sector = bio->bi_sector + bio_sectors(bio);
- 
-@@ -609,7 +643,7 @@ static int cfq_allow_merge(struct request_queue *q, struct request *rq,
+ struct as_queue {
++	struct io_queue *ioq;
  	/*
- 	 * Disallow merge of a sync bio into an async request.
+ 	 * requests (as_rq s) are present on both sort_list and fifo_list
  	 */
--	if (cfq_bio_sync(bio) && !rq_is_sync(rq))
-+	if (elv_bio_sync(bio) && !rq_is_sync(rq))
- 		return 0;
+@@ -84,10 +87,24 @@ struct as_queue {
+ 	struct list_head fifo_list[2];
  
- 	/*
-@@ -620,7 +654,7 @@ static int cfq_allow_merge(struct request_queue *q, struct request *rq,
- 	if (!cic)
- 		return 0;
- 
--	cfqq = cic_to_cfqq(cic, cfq_bio_sync(bio));
-+	cfqq = cic_bio_to_cfqq(cfqd, cic, bio, elv_bio_sync(bio));
- 	if (cfqq == RQ_CFQQ(rq))
- 		return 1;
- 
-@@ -1250,14 +1284,28 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
- 	spin_lock_irqsave(cfqd->queue->queue_lock, flags);
- 
- 	cfqq = cic->cfqq[BLK_RW_ASYNC];
-+
- 	if (cfqq) {
- 		struct cfq_queue *new_cfqq;
--		new_cfqq = cfq_get_queue(cfqd, BLK_RW_ASYNC, cic->ioc,
-+
-+		/*
-+		 * Drop the reference to old queue unconditionally. Don't
-+		 * worry whether new async prio queue has been allocated
-+		 * or not.
-+		 */
-+		cic_set_cfqq(cic, NULL, BLK_RW_ASYNC);
-+		cfq_put_queue(cfqq);
-+
-+		/*
-+		 * Why to allocate new queue now? Will it not be automatically
-+		 * allocated whenever another async request from same context
-+		 * comes? Keeping it for the time being because existing cfq
-+		 * code allocates the new queue immediately upon prio change
-+		 */
-+		new_cfqq = cfq_get_queue(cfqd, NULL, BLK_RW_ASYNC, cic->ioc,
- 						GFP_ATOMIC);
--		if (new_cfqq) {
--			cic->cfqq[BLK_RW_ASYNC] = new_cfqq;
--			cfq_put_queue(cfqq);
--		}
-+		if (new_cfqq)
-+			cic_set_cfqq(cic, new_cfqq, BLK_RW_ASYNC);
- 	}
- 
- 	cfqq = cic->cfqq[BLK_RW_SYNC];
-@@ -1308,7 +1356,7 @@ static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
- 
- 	spin_lock_irqsave(q->queue_lock, flags);
- 
--	iog = elv_io_get_io_group(q, 0);
-+	iog = elv_io_get_io_group(q, NULL, 0);
- 
- 	if (async_cfqq != NULL) {
- 		__iog = cfqq_to_io_group(async_cfqq);
-@@ -1347,7 +1395,7 @@ static void cfq_ioc_set_cgroup(struct io_context *ioc)
- #endif  /* CONFIG_IOSCHED_CFQ_HIER */
- 
- static struct cfq_queue *
--cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
-+cfq_find_alloc_queue(struct cfq_data *cfqd, struct bio *bio, int is_sync,
- 		     struct io_context *ioc, gfp_t gfp_mask)
- {
- 	struct cfq_queue *cfqq, *new_cfqq = NULL;
-@@ -1357,12 +1405,28 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 	struct io_group *iog = NULL;
- 
- retry:
--	iog = elv_io_get_io_group(q, 1);
-+	iog = elv_io_get_io_group_bio(q, bio, 1);
- 
- 	cic = cfq_cic_lookup(cfqd, ioc);
- 	/* cic always exists here */
- 	cfqq = cic_to_cfqq(cic, is_sync);
- 
-+#ifdef CONFIG_TRACK_ASYNC_CONTEXT
-+	if (!cfqq && !is_sync) {
-+		const int ioprio = task_ioprio(cic->ioc);
-+		const int ioprio_class = task_ioprio_class(cic->ioc);
-+
-+		/*
-+		 * We have not cached async queue pointer as bio tracking
-+		 * is enabled. Look into group async queue array using ioc
-+		 * class and prio to see if somebody already allocated the
-+		 * queue.
-+		 */
-+
-+		cfqq = elv_io_group_async_queue_prio(iog, ioprio_class, ioprio);
-+	}
-+#endif
-+
- 	/*
- 	 * Always try a new alloc if we fell back to the OOM cfqq
- 	 * originally, since it should just be a temporary situation.
-@@ -1439,14 +1503,14 @@ out:
- }
- 
- static struct cfq_queue *
--cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
--	      gfp_t gfp_mask)
-+cfq_get_queue(struct cfq_data *cfqd, struct bio *bio, int is_sync,
-+		struct io_context *ioc, gfp_t gfp_mask)
- {
- 	const int ioprio = task_ioprio(ioc);
- 	const int ioprio_class = task_ioprio_class(ioc);
- 	struct cfq_queue *async_cfqq = NULL;
- 	struct cfq_queue *cfqq = NULL;
--	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 1);
-+	struct io_group *iog = elv_io_get_io_group_bio(cfqd->queue, bio, 1);
- 
- 	if (!is_sync) {
- 		async_cfqq = elv_io_group_async_queue_prio(iog, ioprio_class,
-@@ -1455,14 +1519,35 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
- 	}
- 
- 	if (!cfqq)
--		cfqq = cfq_find_alloc_queue(cfqd, is_sync, ioc, gfp_mask);
-+		cfqq = cfq_find_alloc_queue(cfqd, bio, is_sync, ioc, gfp_mask);
- 
- 	if (!is_sync && !async_cfqq)
- 		elv_io_group_set_async_queue(iog, ioprio_class, ioprio,
- 							cfqq->ioq);
--
--	/* ioc reference */
-+#ifdef CONFIG_TRACK_ASYNC_CONTEXT
-+	/*
-+	 * ioc reference. If async request queue/group is determined from the
-+	 * original task/cgroup and not from submitter task, io context can
-+	 * not cache the pointer to async queue and everytime a request comes,
-+	 * it will be determined by going through the async queue array.
-+	 *
-+	 * This comes from the fact that we might be getting async requests
-+	 * which belong to a different cgroup altogether than the cgroup
-+	 * iocontext belongs to. And this thread might be submitting bios
-+	 * from various cgroups. So every time async queue will be different
-+	 * based on the cgroup of the bio/rq. Can't cache the async cfqq
-+	 * pointer in cic.
-+	 */
-+	if (is_sync)
-+		elv_get_ioq(cfqq->ioq);
-+#else
-+	/*
-+	 * async requests are being attributed to task submitting
-+	 * it, hence cic can cache async cfqq pointer. Take the
-+	 * queue reference even for async queue.
-+	 */
- 	elv_get_ioq(cfqq->ioq);
-+#endif
- 	return cfqq;
- }
- 
-@@ -1915,7 +2000,8 @@ static void cfq_put_request(struct request *rq)
-  * Allocate cfq data structures associated with this request.
-  */
- static int
--cfq_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
-+cfq_set_request(struct request_queue *q, struct request *rq, struct bio *bio,
-+				gfp_t gfp_mask)
- {
- 	struct cfq_data *cfqd = q->elevator->elevator_data;
- 	struct cfq_io_context *cic;
-@@ -1935,7 +2021,7 @@ cfq_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- 
- 	cfqq = cic_to_cfqq(cic, is_sync);
- 	if (!cfqq || cfqq == &cfqd->oom_cfqq) {
--		cfqq = cfq_get_queue(cfqd, is_sync, cic->ioc, gfp_mask);
-+		cfqq = cfq_get_queue(cfqd, bio, is_sync, cic->ioc, gfp_mask);
- 		cic_set_cfqq(cic, cfqq, is_sync);
- 	}
- 
-diff --git a/block/deadline-iosched.c b/block/deadline-iosched.c
-index e5bc823..cc9c8c3 100644
---- a/block/deadline-iosched.c
-+++ b/block/deadline-iosched.c
-@@ -134,7 +134,7 @@ deadline_merge(struct request_queue *q, struct request **req, struct bio *bio)
- 	int ret;
- 	struct deadline_queue *dq;
- 
--	dq = elv_get_sched_queue_current(q);
-+	dq = elv_get_sched_queue_bio(q, bio);
- 	if (!dq)
- 		return ELEVATOR_NO_MERGE;
- 
-diff --git a/block/elevator-fq.c b/block/elevator-fq.c
-index 149a147..3089175 100644
---- a/block/elevator-fq.c
-+++ b/block/elevator-fq.c
-@@ -14,6 +14,7 @@
- #include <linux/blkdev.h>
- #include <linux/blktrace_api.h>
- #include <linux/seq_file.h>
-+#include <linux/biotrack.h>
- #include "elevator-fq.h"
- 
- const int elv_slice_sync = HZ / 10;
-@@ -1237,6 +1238,9 @@ struct io_cgroup io_root_cgroup = {
- 
- static struct io_cgroup *cgroup_to_io_cgroup(struct cgroup *cgroup)
- {
-+	if (!cgroup)
-+		return &io_root_cgroup;
-+
- 	return container_of(cgroup_subsys_state(cgroup, io_subsys_id),
- 			    struct io_cgroup, css);
- }
-@@ -1696,9 +1700,45 @@ end:
- 	return iog;
- }
- 
-+struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
-+						struct bio *bio, int create)
-+{
-+	struct page *page = NULL;
+ 	struct request *next_rq[2];	/* next in sort order */
 +
 +	/*
-+	 * Determine the group from task context. Even calls from
-+	 * blk_get_request() which don't have any bio info will be mapped
-+	 * to the task's group
++	 * If an as_queue is switched while a batch is running, then we
++	 * store the time left before current batch will expire
 +	 */
-+	if (!bio)
-+		goto sync;
++	long current_batch_time_left;
 +
-+	if (bio_barrier(bio)) {
-+		/*
-+		 * Map barrier requests to root group. May be more special
-+		 * bio cases should come here
-+		 */
-+		return q->elevator->efqd->root_group;
-+	}
++	/*
++	 * batch data dir when queue was scheduled out. This will be used
++	 * to setup ad->batch_data_dir when queue is scheduled in.
++	 */
++	int saved_batch_data_dir;
 +
-+#ifdef CONFIG_TRACK_ASYNC_CONTEXT
-+	/* Map the sync bio to the right group using task context */
-+	if (elv_bio_sync(bio))
-+		goto sync;
+ 	unsigned long last_check_fifo[2];
+ 	int write_batch_count;		/* max # of reqs in a write batch */
+ 	int current_write_count;	/* how many requests left this batch */
+ 	int write_batch_idled;		/* has the write batch gone idle? */
++	int nr_queued[2];
+ };
+ 
+ struct as_data {
+@@ -123,6 +140,9 @@ struct as_data {
+ 	unsigned long fifo_expire[2];
+ 	unsigned long batch_expire[2];
+ 	unsigned long antic_expire;
 +
-+	/* Determine the group from info stored in page */
-+	page = bio_iovec_idx(bio, 0)->bv_page;
-+	return elv_io_get_io_group(q, page, create);
-+#endif
-+
-+sync:
-+	return elv_io_get_io_group(q, page, create);
-+}
-+EXPORT_SYMBOL(elv_io_get_io_group_bio);
-+
++	/* elevator requested a queue switch. */
++	int switch_queue;
+ };
+ 
  /*
-- * Search for the io group current task belongs to. If create=1, then also
-- * create the io group if it is not already there.
-+ * Find the io group page belongs to.
-+ * If "create" is set, io group is created if it is not already present.
-  *
-  * Note: This function should be called with queue lock held. It returns
-  * a pointer to io group without taking any reference. That group will
-@@ -1706,28 +1746,45 @@ end:
-  * needs to get hold of queue lock). So if somebody needs to use group
-  * pointer even after dropping queue lock, take a reference to the group
-  * before dropping queue lock.
-+ *
-+ * One can call it without queue lock with rcu read lock held for browsing
-+ * through the groups.
-  */
--struct io_group *elv_io_get_io_group(struct request_queue *q, int create)
-+struct io_group *
-+elv_io_get_io_group(struct request_queue *q, struct page *page, int create)
- {
- 	struct cgroup *cgroup;
- 	struct io_group *iog;
- 	struct elv_fq_data *efqd = q->elevator->efqd;
+@@ -144,12 +164,259 @@ enum arq_state {
+ #define RQ_STATE(rq)	((enum arq_state)(rq)->elevator_private2)
+ #define RQ_SET_STATE(rq, state)	((rq)->elevator_private2 = (void *) state)
  
--	assert_spin_locked(q->queue_lock);
-+	if (create)
-+		assert_spin_locked(q->queue_lock);
++#ifdef CONFIG_DEBUG_GROUP_IOSCHED
++#define as_log_asq(ad, asq, fmt, args...)				\
++{									\
++	blk_add_trace_msg((ad)->q, "as %s " fmt,			\
++			ioq_to_io_group((asq)->ioq)->path, ##args);	\
++}
++#else
++#define as_log_asq(ad, asq, fmt, args...) \
++	blk_add_trace_msg((ad)->q, "as " fmt, ##args)
++#endif
++
++#define as_log(ad, fmt, args...)        \
++	blk_add_trace_msg((ad)->q, "as " fmt, ##args)
++
+ static DEFINE_PER_CPU(unsigned long, ioc_count);
+ static struct completion *ioc_gone;
+ static DEFINE_SPINLOCK(ioc_gone_lock);
  
- 	rcu_read_lock();
--	cgroup = task_cgroup(current, io_subsys_id);
+ static void as_move_to_dispatch(struct as_data *ad, struct request *rq);
+ static void as_antic_stop(struct as_data *ad);
++static inline int as_batch_expired(struct as_data *ad, struct as_queue *asq);
 +
-+	if (!page)
-+		cgroup = task_cgroup(current, io_subsys_id);
-+	else
-+		cgroup = get_cgroup_from_page(page);
++#ifdef CONFIG_IOSCHED_AS_HIER
++static int as_can_anticipate(struct as_data *ad, struct request *rq);
++static void as_antic_waitnext(struct as_data *ad);
 +
-+	if (!cgroup) {
-+		iog = efqd->root_group;
++static inline void as_mark_active_asq_wait_request(struct as_data *ad)
++{
++	struct as_queue *asq = elv_active_sched_queue(ad->q->elevator);
++
++	elv_mark_ioq_wait_request(asq->ioq);
++}
++
++static inline void as_clear_active_asq_wait_request(struct as_data *ad)
++{
++	struct as_queue *asq = elv_active_sched_queue(ad->q->elevator);
++
++	if (asq)
++		elv_clear_ioq_wait_request(asq->ioq);
++}
++
++static void as_save_batch_context(struct as_data *ad, struct as_queue *asq)
++{
++	/* Save batch data dir */
++	asq->saved_batch_data_dir = ad->batch_data_dir;
++
++	if (ad->changed_batch) {
++		/*
++		 * In case of force expire, we come here. Batch changeover
++		 * has been signalled but we are waiting for all the
++		 * request to finish from previous batch and then start
++		 * the new batch. Can't wait now. Mark that full batch time
++		 * needs to be allocated when this queue is scheduled again.
++		 */
++		asq->current_batch_time_left =
++				ad->batch_expire[ad->batch_data_dir];
++		ad->changed_batch = 0;
 +		goto out;
 +	}
 +
- 	iog = io_find_alloc_group(q, cgroup, efqd, create);
- 	if (!iog) {
- 		if (create)
- 			iog = efqd->root_group;
--		else
-+		else {
- 			/*
- 			 * bio merge functions doing lookup don't want to
- 			 * map bio to root group by default
- 			 */
- 			iog = NULL;
-+		}
- 	}
++	if (ad->new_batch) {
++		/*
++		 * We should come here only when new_batch has been set
++		 * but no read request has been issued or if it is a forced
++		 * expiry.
++		 *
++		 * In both the cases, new batch has not started yet so
++		 * allocate full batch length for next scheduling opportunity.
++		 * We don't do write batch size adjustment in hierarchical
++		 * AS so that should not be an issue.
++		 */
++		asq->current_batch_time_left =
++				ad->batch_expire[ad->batch_data_dir];
++		ad->new_batch = 0;
++		goto out;
++	}
++
++	/* Save how much time is left before current batch expires */
++	if (as_batch_expired(ad, asq))
++		asq->current_batch_time_left = 0;
++	else {
++		asq->current_batch_time_left = ad->current_batch_expires
++							- jiffies;
++		BUG_ON((asq->current_batch_time_left) < 0);
++	}
++
++	if (ad->io_context) {
++		put_io_context(ad->io_context);
++		ad->io_context = NULL;
++	}
++
 +out:
- 	rcu_read_unlock();
- 	return iog;
- }
-@@ -1985,7 +2042,7 @@ int elv_io_group_allow_merge(struct request *rq, struct bio *bio)
- 		return 1;
++	as_log_asq(ad, asq, "save batch: dir=%c time_left=%d changed_batch=%d"
++			" new_batch=%d, antic_status=%d",
++			ad->batch_data_dir ? 'R' : 'W',
++			asq->current_batch_time_left,
++			ad->changed_batch, ad->new_batch, ad->antic_status);
++	return;
++}
++
++/*
++ * FIXME: In original AS, read batch's time account started only after when
++ * first request had completed (if last batch was a write batch). But here
++ * we might be rescheduling a read batch right away irrespective of the fact
++ * of disk cache state.
++ */
++static void as_restore_batch_context(struct as_data *ad, struct as_queue *asq)
++{
++	/* Adjust the batch expire time */
++	if (asq->current_batch_time_left)
++		ad->current_batch_expires = jiffies +
++						asq->current_batch_time_left;
++	/* restore asq batch_data_dir info */
++	ad->batch_data_dir = asq->saved_batch_data_dir;
++	as_log_asq(ad, asq, "restore batch: dir=%c time=%d reads_q=%d"
++			" writes_q=%d ad->antic_status=%d",
++			ad->batch_data_dir ? 'R' : 'W',
++			asq->current_batch_time_left,
++			asq->nr_queued[1], asq->nr_queued[0],
++			ad->antic_status);
++}
++
++/* ioq has been set. */
++static void as_active_ioq_set(struct request_queue *q, void *sched_queue,
++				int coop)
++{
++	struct as_queue *asq = sched_queue;
++	struct as_data *ad = q->elevator->elevator_data;
++
++	as_restore_batch_context(ad, asq);
++}
++
++/*
++ * AS does not anticipate on a context if there is no other request pending.
++ * So if only a single sequential reader was running, AS will not turn on
++ * anticipation. This function turns on anticipation if an io context has
++ * think time with-in limits and there are no other requests to dispatch.
++ *
++ * With group scheduling, a queue is expired if is empty, does not have a
++ * request dispatched and we are not idling. In case of this single reader
++ * we will see a queue expiration after every request completion. Hence turn
++ * on the anticipation if an io context should ancipate and there are no
++ * other requests queued in the queue.
++ */
++static inline void
++as_hier_check_start_waitnext(struct request_queue *q, struct as_queue *asq)
++{
++	struct as_data *ad = q->elevator->elevator_data;
++
++	if (!ad->nr_dispatched && !asq->nr_queued[1] && !asq->nr_queued[0] &&
++	    as_can_anticipate(ad, NULL)) {
++		as_antic_waitnext(ad);
++	}
++}
++
++/*
++ * This is a notification from common layer that it wishes to expire this
++ * io queue. AS decides whether queue can be expired, if yes, it also
++ * saves the batch context.
++ */
++static int as_expire_ioq(struct request_queue *q, void *sched_queue,
++				int slice_expired, int force)
++{
++	struct as_data *ad = q->elevator->elevator_data;
++	int status = ad->antic_status;
++	struct as_queue *asq = sched_queue;
++
++	as_log_asq(ad, asq, "as_expire_ioq slice_expired=%d, force=%d",
++			slice_expired, force);
++
++	/* Forced expiry. We don't have a choice */
++	if (force) {
++		as_antic_stop(ad);
++		/*
++		 * antic_stop() sets antic_status to FINISHED which signifies
++		 * that either we timed out or we found a close request but
++		 * that's not the case here. Start from scratch.
++		 */
++		ad->antic_status = ANTIC_OFF;
++		as_save_batch_context(ad, asq);
++		ad->switch_queue = 0;
++		return 1;
++	}
++
++	/*
++	 * We are waiting for requests to finish from last
++	 * batch. Don't expire the queue now
++	 */
++	if (ad->changed_batch)
++		goto keep_queue;
++
++	/*
++	 * Wait for all requests from existing batch to finish before we
++	 * switch the queue. New queue might change the batch direction
++	 * and this is to be consistent with AS philosophy of not dispatching
++	 * new requests to underlying drive till requests from requests
++	 * from previous batch are completed.
++	 */
++	if (ad->nr_dispatched)
++		goto keep_queue;
++
++	/*
++	 * If AS anticipation is ON, wait for it to finish if queue slice
++	 * has not expired.
++	 */
++	BUG_ON(status == ANTIC_WAIT_REQ);
++
++	if (status == ANTIC_WAIT_NEXT) {
++		if (!slice_expired)
++			goto keep_queue;
++		/* Slice expired. Stop anticipating. */
++		as_antic_stop(ad);
++		ad->antic_status = ANTIC_OFF;
++	}
++
++	/* We are good to expire the queue. Save batch context */
++	as_save_batch_context(ad, asq);
++	ad->switch_queue = 0;
++	return 1;
++
++keep_queue:
++	/* Mark that elevator requested for queue switch whenever possible */
++	ad->switch_queue = 1;
++	return 0;
++}
++
++static inline void as_check_expire_active_as_queue(struct request_queue *q)
++{
++	struct as_data *ad = q->elevator->elevator_data;
++	struct as_queue *asq = elv_active_sched_queue(q->elevator);
++
++	/*
++	 * We anticpated on the queue and timer fired. If queue is empty,
++	 * expire the queue. This will make sure an idle queue does not
++	 * remain active for a very long time as later all the idle time
++	 * can be added to the queue disk usage.
++	 */
++	if (asq) {
++		if (!ad->nr_dispatched && !asq->nr_queued[1] &&
++		    !asq->nr_queued[0]) {
++			ad->switch_queue = 0;
++			elv_ioq_slice_expired(q, asq->ioq);
++		}
++	}
++}
++
++#else /* CONFIG_IOSCHED_AS_HIER */
++static inline void as_mark_active_asq_wait_request(struct as_data *ad) {}
++static inline void as_clear_active_asq_wait_request(struct as_data *ad) {}
++static inline void
++as_hier_check_start_waitnext(struct request_queue *q, struct as_queue *asq) {}
++static inline void as_check_expire_active_as_queue(struct request_queue *q) {}
++#endif
  
- 	/* Determine the io group of the bio submitting task */
--	iog = elv_io_get_io_group(q, 0);
-+	iog = elv_io_get_io_group_bio(q, bio, 0);
- 	if (!iog) {
- 		/* May be task belongs to a differet cgroup for which io
- 		 * group has not been setup yet. */
-@@ -2018,7 +2075,7 @@ elv_io_group_set_ioq(struct io_group *iog, struct io_queue *ioq)
-  * function is not invoked.
-  */
- int elv_set_request_ioq(struct request_queue *q, struct request *rq,
--					gfp_t gfp_mask)
-+				struct bio *bio, gfp_t gfp_mask)
- {
- 	struct elevator_queue *e = q->elevator;
- 	unsigned long flags;
-@@ -2034,7 +2091,7 @@ int elv_set_request_ioq(struct request_queue *q, struct request *rq,
+ /*
+  * IO Context helper functions
+@@ -429,6 +696,8 @@ static void as_antic_waitnext(struct as_data *ad)
+ 	mod_timer(&ad->antic_timer, timeout);
  
- retry:
- 	/* Determine the io group request belongs to */
--	iog = elv_io_get_io_group(q, 1);
-+	iog = elv_io_get_io_group_bio(q, bio, 1);
- 	BUG_ON(!iog);
- 
- 	/* Get the iosched queue */
-@@ -2136,18 +2193,20 @@ queue_fail:
+ 	ad->antic_status = ANTIC_WAIT_NEXT;
++	as_mark_active_asq_wait_request(ad);
++	as_log(ad, "antic_waitnext set");
  }
  
  /*
-- * Find out the io queue of current task. Optimization for single ioq
-+ * Find out the io queue of bio belongs to. Optimization for single ioq
-  * per io group io schedulers.
-  */
--struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
-+struct io_queue *elv_lookup_ioq_bio(struct request_queue *q, struct bio *bio)
- {
- 	struct io_group *iog;
- 
- 	/* Determine the io group and io queue of the bio submitting task */
--	iog = elv_io_get_io_group(q, 0);
-+	iog = elv_io_get_io_group_bio(q, bio, 0);
- 	if (!iog) {
--		/* May be task belongs to a cgroup for which io group has
--		 * not been setup yet. */
-+		/*
-+		 * May be bio belongs to a cgroup for which io group has
-+		 * not been setup yet.
-+		 */
- 		return NULL;
+@@ -442,8 +711,10 @@ static void as_antic_waitreq(struct as_data *ad)
+ 	if (ad->antic_status == ANTIC_OFF) {
+ 		if (!ad->io_context || ad->ioc_finished)
+ 			as_antic_waitnext(ad);
+-		else
++		else {
+ 			ad->antic_status = ANTIC_WAIT_REQ;
++			as_log(ad, "antic_waitreq set");
++		}
  	}
- 	return iog->ioq;
-@@ -3028,8 +3087,12 @@ expire:
+ }
+ 
+@@ -455,9 +726,12 @@ static void as_antic_stop(struct as_data *ad)
+ {
+ 	int status = ad->antic_status;
+ 
++	as_log(ad, "as_antic_stop antic_status=%d", ad->antic_status);
++
+ 	if (status == ANTIC_WAIT_REQ || status == ANTIC_WAIT_NEXT) {
+ 		if (status == ANTIC_WAIT_NEXT)
+ 			del_timer(&ad->antic_timer);
++		as_clear_active_asq_wait_request(ad);
+ 		ad->antic_status = ANTIC_FINISHED;
+ 		/* see as_work_handler */
+ 		kblockd_schedule_work(ad->q, &ad->antic_work);
+@@ -474,6 +748,7 @@ static void as_antic_timeout(unsigned long data)
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(q->queue_lock, flags);
++	as_log(ad, "as_antic_timeout. antic_status=%d", ad->antic_status);
+ 	if (ad->antic_status == ANTIC_WAIT_REQ
+ 			|| ad->antic_status == ANTIC_WAIT_NEXT) {
+ 		struct as_io_context *aic;
+@@ -481,6 +756,8 @@ static void as_antic_timeout(unsigned long data)
+ 		aic = ad->io_context->aic;
+ 
+ 		ad->antic_status = ANTIC_FINISHED;
++		as_clear_active_asq_wait_request(ad);
++		as_check_expire_active_as_queue(q);
+ 		kblockd_schedule_work(q, &ad->antic_work);
+ 
+ 		if (aic->ttime_samples == 0) {
+@@ -652,6 +929,21 @@ static int as_can_break_anticipation(struct as_data *ad, struct request *rq)
+ 	struct io_context *ioc;
+ 	struct as_io_context *aic;
+ 
++#ifdef CONFIG_IOSCHED_AS_HIER
++	/*
++	 * If the active asq and rq's asq are not same, then one can not
++	 * break the anticipation. This primarily becomes useful when a
++	 * request is added to a queue which is not being served currently.
++	 */
++	if (rq) {
++		struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
++		struct as_queue *curr_asq =
++				elv_active_sched_queue(ad->q->elevator);
++
++		if (asq != curr_asq)
++			return 0;
++	}
++#endif
+ 	ioc = ad->io_context;
+ 	BUG_ON(!ioc);
+ 	spin_lock(&ioc->lock);
+@@ -810,16 +1102,21 @@ static void as_update_rq(struct as_data *ad, struct request *rq)
+ /*
+  * Gathers timings and resizes the write batch automatically
+  */
+-static void update_write_batch(struct as_data *ad)
++static void update_write_batch(struct as_data *ad, struct request *rq)
+ {
+ 	unsigned long batch = ad->batch_expire[BLK_RW_ASYNC];
+ 	long write_time;
+-	struct as_queue *asq = elv_get_sched_queue(ad->q, NULL);
++	struct as_queue *asq = elv_get_sched_queue(ad->q, rq);
+ 
+ 	write_time = (jiffies - ad->current_batch_expires) + batch;
+ 	if (write_time < 0)
+ 		write_time = 0;
+ 
++	as_log_asq(ad, asq, "upd write: write_time=%d batch=%d"
++			" write_batch_idled=%d current_write_count=%d",
++			write_time, batch, asq->write_batch_idled,
++			asq->current_write_count);
++
+ 	if (write_time > batch && !asq->write_batch_idled) {
+ 		if (write_time > batch * 3)
+ 			asq->write_batch_count /= 2;
+@@ -834,6 +1131,8 @@ static void update_write_batch(struct as_data *ad)
+ 
+ 	if (asq->write_batch_count < 1)
+ 		asq->write_batch_count = 1;
++
++	as_log_asq(ad, asq, "upd write count=%d", asq->write_batch_count);
+ }
+ 
+ /*
+@@ -843,6 +1142,7 @@ static void update_write_batch(struct as_data *ad)
+ static void as_completed_request(struct request_queue *q, struct request *rq)
+ {
+ 	struct as_data *ad = q->elevator->elevator_data;
++	struct as_queue *asq = elv_get_sched_queue(q, rq);
+ 
+ 	WARN_ON(!list_empty(&rq->queuelist));
+ 
+@@ -851,7 +1151,24 @@ static void as_completed_request(struct request_queue *q, struct request *rq)
+ 		goto out;
+ 	}
+ 
++	as_log_asq(ad, asq, "complete: reads_q=%d writes_q=%d changed_batch=%d"
++		" new_batch=%d switch_queue=%d, dir=%c",
++		asq->nr_queued[1], asq->nr_queued[0], ad->changed_batch,
++		ad->new_batch, ad->switch_queue,
++		ad->batch_data_dir ? 'R' : 'W');
++
+ 	if (ad->changed_batch && ad->nr_dispatched == 1) {
++		/*
++		 * If this was write batch finishing, adjust the write batch
++		 * length.
++		 *
++		 * Note, write batch length is being calculated upon completion
++		 * of last write request finished and not completion of first
++		 * read request finished in the next batch.
++		 */
++		if (ad->batch_data_dir == BLK_RW_SYNC)
++			update_write_batch(ad, rq);
++
+ 		ad->current_batch_expires = jiffies +
+ 					ad->batch_expire[ad->batch_data_dir];
+ 		kblockd_schedule_work(q, &ad->antic_work);
+@@ -869,7 +1186,6 @@ static void as_completed_request(struct request_queue *q, struct request *rq)
+ 	 * and writeback caches
+ 	 */
+ 	if (ad->new_batch && ad->batch_data_dir == rq_is_sync(rq)) {
+-		update_write_batch(ad);
+ 		ad->current_batch_expires = jiffies +
+ 				ad->batch_expire[BLK_RW_SYNC];
+ 		ad->new_batch = 0;
+@@ -884,10 +1200,18 @@ static void as_completed_request(struct request_queue *q, struct request *rq)
+ 			 * the next one
+ 			 */
+ 			as_antic_waitnext(ad);
+-		}
++		} else
++			as_hier_check_start_waitnext(q, asq);
+ 	}
+ 
+ 	as_put_io_context(rq);
++
++	/*
++	 * If elevator requested a queue switch, kick the queue in the
++	 * hope that this is right time for switch.
++	 */
++	if (ad->switch_queue)
++		kblockd_schedule_work(q, &ad->antic_work);
+ out:
+ 	RQ_SET_STATE(rq, AS_RQ_POSTSCHED);
+ }
+@@ -908,6 +1232,9 @@ static void as_remove_queued_request(struct request_queue *q,
+ 
+ 	WARN_ON(RQ_STATE(rq) != AS_RQ_QUEUED);
+ 
++	BUG_ON(asq->nr_queued[data_dir] <= 0);
++	asq->nr_queued[data_dir]--;
++
+ 	ioc = RQ_IOC(rq);
+ 	if (ioc && ioc->aic) {
+ 		BUG_ON(!atomic_read(&ioc->aic->nr_queued));
+@@ -1019,6 +1346,8 @@ static void as_move_to_dispatch(struct as_data *ad, struct request *rq)
+ 	if (RQ_IOC(rq) && RQ_IOC(rq)->aic)
+ 		atomic_inc(&RQ_IOC(rq)->aic->nr_dispatched);
+ 	ad->nr_dispatched++;
++	as_log_asq(ad, asq, "dispatch req dir=%c nr_dispatched = %d",
++			data_dir ? 'R' : 'W', ad->nr_dispatched);
+ }
+ 
+ /*
+@@ -1066,6 +1395,7 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 		}
+ 		asq->last_check_fifo[BLK_RW_ASYNC] = jiffies;
+ 
++		as_log_asq(ad, asq, "forced dispatch");
+ 		return dispatched;
+ 	}
+ 
+@@ -1078,8 +1408,14 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 	if (!(reads || writes)
+ 		|| ad->antic_status == ANTIC_WAIT_REQ
+ 		|| ad->antic_status == ANTIC_WAIT_NEXT
+-		|| ad->changed_batch)
++		|| ad->changed_batch) {
++		as_log_asq(ad, asq, "no dispatch. read_q=%d, writes_q=%d"
++			" ad->antic_status=%d, changed_batch=%d,"
++			" switch_queue=%d new_batch=%d", asq->nr_queued[1],
++			asq->nr_queued[0], ad->antic_status, ad->changed_batch,
++			ad->switch_queue, ad->new_batch);
+ 		return 0;
++	}
+ 
+ 	if (!(reads && writes && as_batch_expired(ad, asq))) {
+ 		/*
+@@ -1092,6 +1428,7 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 				goto fifo_expired;
+ 
+ 			if (as_can_anticipate(ad, rq)) {
++				as_log_asq(ad, asq, "can_anticipate = 1");
+ 				as_antic_waitreq(ad);
+ 				return 0;
+ 			}
+@@ -1111,6 +1448,8 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 	 * data direction (read / write)
+ 	 */
+ 
++	as_log_asq(ad, asq, "select a fresh batch and request");
++
+ 	if (reads) {
+ 		BUG_ON(RB_EMPTY_ROOT(&asq->sort_list[BLK_RW_SYNC]));
+ 
+@@ -1125,6 +1464,7 @@ static int as_dispatch_request(struct request_queue *q, int force)
+ 			ad->changed_batch = 1;
+ 		}
+ 		ad->batch_data_dir = BLK_RW_SYNC;
++		as_log_asq(ad, asq, "new batch dir is sync");
+ 		rq = rq_entry_fifo(asq->fifo_list[BLK_RW_SYNC].next);
+ 		asq->last_check_fifo[ad->batch_data_dir] = jiffies;
+ 		goto dispatch_request;
+@@ -1149,6 +1489,7 @@ dispatch_writes:
+ 			ad->new_batch = 0;
+ 		}
+ 		ad->batch_data_dir = BLK_RW_ASYNC;
++		as_log_asq(ad, asq, "new batch dir is async");
+ 		asq->current_write_count = asq->write_batch_count;
+ 		asq->write_batch_idled = 0;
+ 		rq = rq_entry_fifo(asq->fifo_list[BLK_RW_ASYNC].next);
+@@ -1184,6 +1525,9 @@ fifo_expired:
+ 		ad->changed_batch = 0;
+ 	}
+ 
++	if (ad->switch_queue)
++		return 0;
++
+ 	/*
+ 	 * rq is the selected appropriate request.
+ 	 */
+@@ -1207,6 +1551,11 @@ static void as_add_request(struct request_queue *q, struct request *rq)
+ 
+ 	rq->elevator_private = as_get_io_context(q->node);
+ 
++	asq->nr_queued[data_dir]++;
++	as_log_asq(ad, asq, "add a %c request read_q=%d write_q=%d",
++			data_dir ? 'R' : 'W', asq->nr_queued[1],
++			asq->nr_queued[0]);
++
+ 	if (RQ_IOC(rq)) {
+ 		as_update_iohist(ad, RQ_IOC(rq)->aic, rq);
+ 		atomic_inc(&RQ_IOC(rq)->aic->nr_queued);
+@@ -1358,6 +1707,7 @@ static void *as_alloc_as_queue(struct request_queue *q,
+ 
+ 	if (asq->write_batch_count < 2)
+ 		asq->write_batch_count = 2;
++	asq->ioq = ioq;
+ out:
+ 	return asq;
+ }
+@@ -1408,6 +1758,7 @@ static void *as_init_queue(struct request_queue *q, struct elevator_queue *eq)
+ 	ad->batch_expire[BLK_RW_ASYNC] = default_write_batch_expire;
+ 
+ 	ad->current_batch_expires = jiffies + ad->batch_expire[BLK_RW_SYNC];
++	ad->switch_queue = 0;
+ 
+ 	return ad;
+ }
+@@ -1493,6 +1844,11 @@ static struct elv_fs_entry as_attrs[] = {
+ 	AS_ATTR(antic_expire),
+ 	AS_ATTR(read_batch_expire),
+ 	AS_ATTR(write_batch_expire),
++#ifdef CONFIG_IOSCHED_AS_HIER
++	ELV_ATTR(fairness),
++	ELV_ATTR(slice_sync),
++	ELV_ATTR(group_idle),
++#endif
+ 	__ATTR_NULL
+ };
+ 
+@@ -1514,8 +1870,14 @@ static struct elevator_type iosched_as = {
+ 		.trim =				as_trim,
+ 		.elevator_alloc_sched_queue_fn = as_alloc_as_queue,
+ 		.elevator_free_sched_queue_fn = as_free_as_queue,
++#ifdef CONFIG_IOSCHED_AS_HIER
++		.elevator_expire_ioq_fn =       as_expire_ioq,
++		.elevator_active_ioq_set_fn =   as_active_ioq_set,
+ 	},
+-
++	.elevator_features = ELV_IOSCHED_NEED_FQ | ELV_IOSCHED_SINGLE_IOQ,
++#else
++	},
++#endif
+ 	.elevator_attrs = as_attrs,
+ 	.elevator_name = "anticipatory",
+ 	.elevator_owner = THIS_MODULE,
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index 04419cf..149a147 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -2096,6 +2096,21 @@ alloc_sched_q:
+ 		elv_init_ioq_io_group(ioq, iog);
+ 		elv_init_ioq_sched_queue(e, ioq, sched_q);
+ 
++		/*
++		 * For AS, also mark the group queue idle_window. This will
++		 * make sure that select_ioq() will not try to expire an
++		 * AS queue if there are dispatched request from the queue but
++		 * queue is empty. This gives a chance to asq to anticipate
++		 * after request completion, otherwise select_ioq() will
++		 * mark it must_expire and soon asq will be expired.
++		 *
++		 * Not doing it for noop and deadline yet as they don't have
++		 * any anticpation logic and this will slow down queue
++		 * switching in a NCQ supporting hardware.
++		 */
++		if (!strcmp(e->elevator_type->elevator_name, "anticipatory"))
++			elv_mark_ioq_idle_window(ioq);
++
+ 		elv_io_group_set_ioq(iog, ioq);
+ 		elv_mark_ioq_sync(ioq);
+ 		elv_get_iog(iog);
+@@ -2387,6 +2402,46 @@ static void elv_del_ioq_busy(struct elevator_queue *e, struct io_queue *ioq)
+ }
+ 
+ /*
++ * Call iosched to let that elevator wants to expire the queue. This gives
++ * iosched like AS to say no (if it is in the middle of batch changeover or
++ * it is anticipating). it also allows iosched to do some house keeping
++ *
++ * if force = 1, it is force dispatch and iosched must clean up its state.
++ * This is useful when elevator wants to drain iosched and wants to expire
++ * currnent active queue.
++ * if slice_expired = 1, ioq slice expired hence elevator fair queuing logic
++ * wants to switch the queue. iosched should allow that until and unless
++ * necessary. Currently AS can deny the switch if in the middle of batch switch.
++ *
++ * if slice_expired = 0, time slice is still remaining. It is up to the iosched
++ * whether it wants to wait on this queue or just want to expire it and move
++ * on to next queue.
++ */
++static int
++elv_iosched_expire_ioq(struct request_queue *q, int slice_expired, int force)
++{
++	struct elevator_queue *e = q->elevator;
++	struct io_queue *ioq = elv_active_ioq(q->elevator);
++	int ret = 1;
++
++	if (e->ops->elevator_expire_ioq_fn) {
++		ret = e->ops->elevator_expire_ioq_fn(q, ioq->sched_queue,
++							slice_expired, force);
++		/*
++		 * AS denied expiration of queue right now. Mark that elevator
++		 * layer has requested ioscheduler (as) to expire this queue.
++		 * Now as will try to expire this queue as soon as it can.
++		 * Now don't try to dispatch from this queue even if we get
++		 * a new request and if time slice is left. Do expire it once.
++		 */
++		if (!ret)
++			elv_mark_ioq_must_expire(ioq);
++	}
++
++	return ret;
++}
++
++/*
+  * Do the accounting. Determine how much service (in terms of time slices)
+  * current queue used and adjust the start, finish time of queue and vtime
+  * of the tree accordingly.
+@@ -2587,16 +2642,18 @@ static int elv_should_preempt(struct request_queue *q, struct io_queue *new_ioq,
+ 
+ static void elv_preempt_queue(struct request_queue *q, struct io_queue *ioq)
+ {
+-	elv_log_ioq(q->elevator->efqd, ioq, "preempt");
+-	elv_slice_expired(q);
++	if (elv_iosched_expire_ioq(q, 0, 1)) {
++		elv_log_ioq(q->elevator->efqd, ioq, "preempt");
++		elv_slice_expired(q);
+ 
+-	/*
+-	 * Put the new queue at the front of the of the current list,
+-	 * so we know that it will be selected next.
+-	 */
++		/*
++		 * Put the new queue at the front of the of the current list,
++		 * so we know that it will be selected next.
++		 */
+ 
+-	requeue_ioq(ioq, 1);
+-	elv_mark_ioq_slice_new(ioq);
++		requeue_ioq(ioq, 1);
++		elv_mark_ioq_slice_new(ioq);
++	}
+ }
+ 
+ void elv_ioq_request_add(struct request_queue *q, struct request *rq)
+@@ -2729,6 +2786,8 @@ static void elv_idle_slice_timer(unsigned long data)
+ 			goto out_kick;
+ 	}
+ expire:
++	/* Force expire the queue for AS */
++	elv_iosched_expire_ioq(q, 0, 1);
+ 	elv_slice_expired(q);
+ out_kick:
+ 	elv_schedule_dispatch(q);
+@@ -2819,6 +2878,8 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	struct io_queue *new_ioq = NULL, *ioq = elv_active_ioq(q->elevator);
+ 	struct io_group *iog;
+ 	struct elv_fq_data *efqd = q->elevator->efqd;
++	struct elevator_type *e = q->elevator->elevator_type;
++	int slice_expired = 0;
+ 
+ 	if (!elv_nr_busy_ioq(q->elevator))
+ 		return NULL;
+@@ -2894,6 +2955,7 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 		 * from queue and is not proportional to group's weight, it
+ 		 * harms the fairness of the group.
+ 		 */
++		slice_expired = 1;
+ 		if ((elv_iog_should_idle(ioq) || elv_ioq_should_wait_busy(ioq))
+ 		     && !elv_iog_wait_busy_done(iog)) {
+ 			ioq = NULL;
+@@ -2939,11 +3001,15 @@ void *elv_select_ioq(struct request_queue *q, int force)
+ 	}
+ 
+ expire:
+-	if (efqd->fairness && !force && ioq && ioq->dispatched) {
++	if (efqd->fairness && !force && ioq && ioq->dispatched
++	    && strcmp(e->elevator_name, "anticipatory")) {
+ 		/*
+ 		 * If there are request dispatched from this queue, don't
+ 		 * dispatch requests from new queue till all the requests from
+ 		 * this queue have completed.
++		 *
++		 * Anticipatory does not allow queue switch until requests
++		 * from previous queue have finished.
+ 		 */
+ 		elv_log_ioq(efqd, ioq, "select: wait for requests to finish"
+ 				" disp=%lu", ioq->dispatched);
+@@ -2951,7 +3017,14 @@ expire:
+ 		goto keep_queue;
+ 	}
+ 
+-	elv_slice_expired(q);
++	if (elv_iosched_expire_ioq(q, slice_expired, force))
++		elv_slice_expired(q);
++	else
++		/*
++		 * Not making ioq = NULL, as AS can deny queue expiration and
++		 * continue to dispatch from same queue
++		 */
++		goto keep_queue;
  new_queue:
  	ioq = elv_set_active_ioq(q, new_ioq);
  keep_queue:
--	if (ioq)
-+	if (ioq) {
-+		elv_log_ioq(efqd, ioq, "select busy=%d qued=%d disp=%d",
-+				elv_nr_busy_ioq(q->elevator), ioq->nr_queued,
-+				elv_ioq_nr_dispatched(ioq));
- 		check_late_preemption(q->elevator, ioq);
+@@ -3044,8 +3117,15 @@ check_expire_last_empty_queue(struct request_queue *q, struct io_queue *ioq)
+ 	if (ioq_is_idling(ioq))
+ 		return;
+ 
+-	elv_log_ioq(efqd, ioq, "expire last empty queue");
+-	elv_slice_expired(q);
++	/*
++	 * If IO scheduler denies expiration here, it is up to io scheduler
++	 * to expire the queue when possible. Otherwise all the idle time
++	 * will be charged to the queue when queue finally expires.
++	 */
++	if (elv_iosched_expire_ioq(q, 0, 0)) {
++		elv_log_ioq(efqd, ioq, "expire last empty queue");
++		elv_slice_expired(q);
 +	}
- 	return ioq;
  }
  
-diff --git a/block/elevator-fq.h b/block/elevator-fq.h
-index 4114543..be66d28 100644
---- a/block/elevator-fq.h
-+++ b/block/elevator-fq.h
-@@ -429,7 +429,9 @@ static inline struct io_queue *elv_get_oom_ioq(struct elevator_queue *eq)
- extern int elv_io_group_allow_merge(struct request *rq, struct bio *bio);
- extern void elv_put_iog(struct io_group *iog);
- extern struct io_group *elv_io_get_io_group(struct request_queue *q,
--						int create);
-+					struct page *page, int create);
-+extern struct io_group *elv_io_get_io_group_bio(struct request_queue *q,
-+					struct bio *bio, int create);
- extern ssize_t elv_group_idle_show(struct elevator_queue *q, char *name);
- extern ssize_t elv_group_idle_store(struct elevator_queue *q, const char *name,
- 					size_t count);
-@@ -439,9 +441,10 @@ static inline void elv_get_iog(struct io_group *iog)
- }
+ /* A request got completed from io_queue. Do the accounting. */
+@@ -3119,7 +3199,8 @@ void elv_ioq_completed_request(struct request_queue *q, struct request *rq)
+ 				goto done;
  
- extern int elv_set_request_ioq(struct request_queue *q, struct request *rq,
--					gfp_t gfp_mask);
-+					struct bio *bio, gfp_t gfp_mask);
- extern void elv_reset_request_ioq(struct request_queue *q, struct request *rq);
--extern struct io_queue *elv_lookup_ioq_current(struct request_queue *q);
-+extern struct io_queue *elv_lookup_ioq_bio(struct request_queue *q,
-+						struct bio *bio);
- 
- #else /* !GROUP_IOSCHED */
- 
-@@ -454,14 +457,20 @@ static inline void elv_get_iog(struct io_group *iog) {}
- static inline void elv_put_iog(struct io_group *iog) {}
- 
- static inline struct io_group *
--elv_io_get_io_group(struct request_queue *q, int create)
-+elv_io_get_io_group(struct request_queue *q, struct page *page, int create)
- {
- 	/* In flat mode, there is only root group */
- 	return q->elevator->efqd->root_group;
- }
- 
--static inline int
--elv_set_request_ioq(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
-+static inline struct io_group *
-+elv_io_get_io_group_bio(struct request_queue *q, struct bio *bio, int create)
-+{
-+	return q->elevator->efqd->root_group;
-+}
-+
-+static inline int elv_set_request_ioq(struct request_queue *q,
-+			struct request *rq, struct bio *bio, gfp_t gfp_mask)
- {
- 	return 0;
- }
-@@ -469,7 +478,8 @@ elv_set_request_ioq(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- static inline void
- elv_reset_request_ioq(struct request_queue *q, struct request *rq) { }
- 
--static inline struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
-+static inline struct io_queue *
-+elv_lookup_ioq_bio(struct request_queue *q, struct bio *bio)
- {
- 	return NULL;
- }
-@@ -569,8 +579,8 @@ static inline int elv_io_group_allow_merge(struct request *rq, struct bio *bio)
- {
- 	return 1;
- }
--static inline int
--elv_set_request_ioq(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
-+static inline int elv_set_request_ioq(struct request_queue *q,
-+			struct request *rq, struct bio *bio, gfp_t gfp_mask)
- {
- 	return 0;
- }
-@@ -578,7 +588,8 @@ elv_set_request_ioq(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- static inline void
- elv_reset_request_ioq(struct request_queue *q, struct request *rq) { }
- 
--static inline struct io_queue *elv_lookup_ioq_current(struct request_queue *q)
-+static inline struct io_queue *elv_lookup_ioq_bio(struct request_queue *q,
-+						struct bio *bio)
- {
- 	return NULL;
- }
-diff --git a/block/elevator.c b/block/elevator.c
-index bc43edd..4ed37b6 100644
---- a/block/elevator.c
-+++ b/block/elevator.c
-@@ -865,7 +865,8 @@ struct request *elv_former_request(struct request_queue *q, struct request *rq)
- 	return NULL;
- }
- 
--int elv_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
-+int elv_set_request(struct request_queue *q, struct request *rq,
-+			struct bio *bio, gfp_t gfp_mask)
- {
- 	struct elevator_queue *e = q->elevator;
- 
-@@ -874,10 +875,10 @@ int elv_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
- 	 * ioq per io group
- 	 */
- 	if (elv_iosched_single_ioq(e))
--		return elv_set_request_ioq(q, rq, gfp_mask);
-+		return elv_set_request_ioq(q, rq, bio, gfp_mask);
- 
- 	if (e->ops->elevator_set_req_fn)
--		return e->ops->elevator_set_req_fn(q, rq, gfp_mask);
-+		return e->ops->elevator_set_req_fn(q, rq, bio, gfp_mask);
- 
- 	rq->elevator_private = NULL;
- 	return 0;
-@@ -1279,19 +1280,19 @@ void *elv_select_sched_queue(struct request_queue *q, int force)
- EXPORT_SYMBOL(elv_select_sched_queue);
- 
- /*
-- * Get the io scheduler queue pointer for current task.
-+ * Get the io scheduler queue pointer for the group bio belongs to.
-  *
-  * If fair queuing is enabled, determine the io group of task and retrieve
-  * the ioq pointer from that. This is used by only single queue ioschedulers
-  * for retrieving the queue associated with the group to decide whether the
-  * new bio can do a front merge or not.
-  */
--void *elv_get_sched_queue_current(struct request_queue *q)
-+void *elv_get_sched_queue_bio(struct request_queue *q, struct bio *bio)
- {
- 	/* Fair queuing is not enabled. There is only one queue. */
- 	if (!elv_iosched_fair_queuing_enabled(q->elevator))
- 		return q->elevator->sched_queue;
- 
--	return elv_ioq_sched_queue(elv_lookup_ioq_current(q));
-+	return elv_ioq_sched_queue(elv_lookup_ioq_bio(q, bio));
- }
--EXPORT_SYMBOL(elv_get_sched_queue_current);
-+EXPORT_SYMBOL(elv_get_sched_queue_bio);
+ 			/* Expire the queue */
+-			elv_slice_expired(q);
++			if (elv_iosched_expire_ioq(q, 1, 0))
++				elv_slice_expired(q);
+ 			goto done;
+ 		} else if (!ioq->nr_queued && !elv_close_cooperator(q, ioq)
+ 			   && sync && !rq_noidle(rq))
 diff --git a/include/linux/elevator.h b/include/linux/elevator.h
-index 3d4e31c..0ace96e 100644
+index 77c1fa5..3d4e31c 100644
 --- a/include/linux/elevator.h
 +++ b/include/linux/elevator.h
-@@ -22,7 +22,8 @@ typedef struct request *(elevator_request_list_fn) (struct request_queue *, stru
- typedef void (elevator_completed_req_fn) (struct request_queue *, struct request *);
- typedef int (elevator_may_queue_fn) (struct request_queue *, int);
- 
--typedef int (elevator_set_req_fn) (struct request_queue *, struct request *, gfp_t);
-+typedef int (elevator_set_req_fn) (struct request_queue *, struct request *,
-+					struct bio *bio, gfp_t);
- typedef void (elevator_put_req_fn) (struct request *);
- typedef void (elevator_activate_req_fn) (struct request_queue *, struct request *);
- typedef void (elevator_deactivate_req_fn) (struct request_queue *, struct request *);
-@@ -146,7 +147,8 @@ extern void elv_unregister_queue(struct request_queue *q);
- extern int elv_may_queue(struct request_queue *, int);
- extern void elv_abort_queue(struct request_queue *);
- extern void elv_completed_request(struct request_queue *, struct request *);
--extern int elv_set_request(struct request_queue *, struct request *, gfp_t);
-+extern int elv_set_request(struct request_queue *, struct request *,
-+					struct bio *bio, gfp_t);
- extern void elv_put_request(struct request_queue *, struct request *);
- extern void elv_drain_elevator(struct request_queue *);
- 
-@@ -275,6 +277,20 @@ static inline int elv_iosched_single_ioq(struct elevator_queue *e)
- #endif /* ELV_IOSCHED_FAIR_QUEUING */
- extern void *elv_get_sched_queue(struct request_queue *q, struct request *rq);
- extern void *elv_select_sched_queue(struct request_queue *q, int force);
--extern void *elv_get_sched_queue_current(struct request_queue *q);
-+extern void *elv_get_sched_queue_bio(struct request_queue *q, struct bio *bio);
-+
-+/*
-+ * This is equivalent of rq_is_sync()/cfq_bio_sync() function where we
-+ * determine whether an rq/bio is sync or not. There are cases like during
-+ * merging and during * request allocation, where we don't have rq but bio
-+ * and needs to find out * if this bio will be considered as sync or async by
-+ * elevator/iosched. This function is useful in such cases.
-+ */
-+static inline int elv_bio_sync(struct bio *bio)
-+{
-+	if ((bio_data_dir(bio) == READ) || bio_sync(bio))
-+		return 1;
-+	return 0;
-+}
- #endif /* CONFIG_BLOCK */
+@@ -41,6 +41,7 @@ typedef int (elevator_should_preempt_fn) (struct request_queue*, void*,
+ 						struct request*);
+ typedef struct io_queue* (elevator_close_cooperator_fn) (struct request_queue*,
+ 						void*);
++typedef int (elevator_expire_ioq_fn) (struct request_queue*, void *, int, int);
  #endif
+ 
+ struct elevator_ops
+@@ -79,6 +80,7 @@ struct elevator_ops
+ 	elevator_arm_slice_timer_fn *elevator_arm_slice_timer_fn;
+ 	elevator_should_preempt_fn *elevator_should_preempt_fn;
+ 	elevator_close_cooperator_fn *elevator_close_cooperator_fn;
++	elevator_expire_ioq_fn  *elevator_expire_ioq_fn;
+ #endif
+ };
+ 
 -- 
 1.6.0.6
