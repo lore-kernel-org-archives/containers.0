@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 09/28] io-controller: cfq changes to use hierarchical fair
-	queuing code in elevaotor layer
-Date: Thu, 24 Sep 2009 15:25:13 -0400
-Message-ID: <1253820332-10246-10-git-send-email-vgoyal__11836.9155251004$1253822015$gmane$org@redhat.com>
+Subject: [PATCH 10/28] io-controller: Export disk time used and nr sectors
+	dipatched through cgroups
+Date: Thu, 24 Sep 2009 15:25:14 -0400
+Message-ID: <1253820332-10246-11-git-send-email-vgoyal__24965.4948166155$1253822211$gmane$org@redhat.com>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,147 +22,167 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsv
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make cfq hierarhical.
+o This patch exports some statistics through cgroup interface. Two of the
+  statistics currently exported are actual disk time assigned to the cgroup
+  and actual number of sectors dispatched to disk on behalf of this cgroup.
 
-Signed-off-by: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Signed-off-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Acked-by: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |    8 ++++++
- block/cfq-iosched.c   |   64 ++++++++++++++++++++++++++++++++++++++++++++++--
- init/Kconfig          |    2 +-
- 3 files changed, 70 insertions(+), 4 deletions(-)
+ block/elevator-fq.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/elevator-fq.h |   10 +++++++
+ 2 files changed, 86 insertions(+), 0 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index dd5224d..a91a807 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -54,6 +54,14 @@ config IOSCHED_CFQ
- 	  working environment, suitable for desktop systems.
- 	  This is the default I/O scheduler.
+diff --git a/block/elevator-fq.c b/block/elevator-fq.c
+index d59ac50..a57ca9d 100644
+--- a/block/elevator-fq.c
++++ b/block/elevator-fq.c
+@@ -13,6 +13,7 @@
  
-+config IOSCHED_CFQ_HIER
-+	bool "CFQ Hierarchical Scheduling support"
-+	depends on IOSCHED_CFQ && CGROUPS
-+	select GROUP_IOSCHED
-+	default n
-+	---help---
-+	  Enable hierarhical scheduling in cfq.
-+
- choice
- 	prompt "Default I/O scheduler"
- 	default DEFAULT_CFQ
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 79ac161..0e665a9 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -1286,6 +1286,61 @@ static void cfq_init_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
- 	cfqq->pid = pid;
- }
+ #include <linux/blkdev.h>
+ #include <linux/blktrace_api.h>
++#include <linux/seq_file.h>
+ #include "elevator-fq.h"
  
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+static void changed_cgroup(struct io_context *ioc, struct cfq_io_context *cic)
+ const int elv_slice_sync = HZ / 10;
+@@ -267,6 +268,8 @@ static void entity_served(struct io_entity *entity, unsigned long served,
+ 	for_each_entity(entity) {
+ 		entity->vdisktime += elv_delta_fair(charge, entity);
+ 		update_min_vdisktime(entity->st);
++		entity->total_time += served;
++		entity->total_sectors += nr_sectors;
+ 		/* Group charge can be different from queue charge */
+ 		charge = group_charge;
+ 	}
+@@ -1035,6 +1038,66 @@ STORE_FUNCTION(weight, IO_WEIGHT_MIN, IO_WEIGHT_MAX);
+ STORE_FUNCTION(ioprio_class, IOPRIO_CLASS_RT, IOPRIO_CLASS_IDLE);
+ #undef STORE_FUNCTION
+ 
++static int io_cgroup_disk_time_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
 +{
-+	struct cfq_queue *async_cfqq = cic_to_cfqq(cic, 0);
-+	struct cfq_queue *sync_cfqq = cic_to_cfqq(cic, 1);
-+	struct cfq_data *cfqd = cic->key;
-+	struct io_group *iog, *__iog;
-+	unsigned long flags;
-+	struct request_queue *q;
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
 +
-+	if (unlikely(!cfqd))
-+		return;
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
 +
-+	q = cfqd->queue;
++	iocg = cgroup_to_io_cgroup(cgroup);
 +
-+	spin_lock_irqsave(q->queue_lock, flags);
-+
-+	iog = elv_io_get_io_group(q, 0);
-+
-+	if (async_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(async_cfqq);
-+		if (iog != __iog) {
-+			/* cgroup changed, drop the reference to async queue */
-+			cic_set_cfqq(cic, NULL, 0);
-+			cfq_put_queue(async_cfqq);
-+		}
-+	}
-+
-+	if (sync_cfqq != NULL) {
-+		__iog = cfqq_to_io_group(sync_cfqq);
-+
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
 +		/*
-+		 * Drop reference to sync queue. A new sync queue will
-+		 * be assigned in new group upon arrival of a fresh request.
-+		 * If old queue has got requests, those reuests will be
-+		 * dispatched over a period of time and queue will be freed
-+		 * automatically.
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
 +		 */
-+		if (iog != __iog) {
-+			cic_set_cfqq(cic, NULL, 1);
-+			elv_exit_ioq(sync_cfqq->ioq);
-+			cfq_put_queue(sync_cfqq);
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_time);
 +		}
 +	}
++	rcu_read_unlock();
++	cgroup_unlock();
 +
-+	spin_unlock_irqrestore(q->queue_lock, flags);
++	return 0;
 +}
 +
-+static void cfq_ioc_set_cgroup(struct io_context *ioc)
++static int io_cgroup_disk_sectors_read(struct cgroup *cgroup,
++				struct cftype *cftype, struct seq_file *m)
 +{
-+	call_for_each_cic(ioc, changed_cgroup);
-+	ioc->cgroup_changed = 0;
-+}
-+#endif  /* CONFIG_IOSCHED_CFQ_HIER */
++	struct io_cgroup *iocg;
++	struct io_group *iog;
++	struct hlist_node *n;
 +
- static struct cfq_queue *
- cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 		     struct io_context *ioc, gfp_t gfp_mask)
-@@ -1297,7 +1352,7 @@ cfq_find_alloc_queue(struct cfq_data *cfqd, int is_sync,
- 	struct io_group *iog = NULL;
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	iocg = cgroup_to_io_cgroup(cgroup);
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(iog, n, &iocg->group_data, group_node) {
++		/*
++		 * There might be groups which are not functional and
++		 * waiting to be reclaimed upon cgoup deletion.
++		 */
++		if (iog->key) {
++			seq_printf(m, "%u:%u %lu\n", MAJOR(iog->dev),
++					MINOR(iog->dev),
++					iog->entity.total_sectors);
++		}
++	}
++	rcu_read_unlock();
++	cgroup_unlock();
++
++	return 0;
++}
++
+ struct cftype io_files[] = {
+ 	{
+ 		.name = "weight",
+@@ -1046,6 +1109,14 @@ struct cftype io_files[] = {
+ 		.read_u64 = io_cgroup_ioprio_class_read,
+ 		.write_u64 = io_cgroup_ioprio_class_write,
+ 	},
++	{
++		.name = "disk_time",
++		.read_seq_string = io_cgroup_disk_time_read,
++	},
++	{
++		.name = "disk_sectors",
++		.read_seq_string = io_cgroup_disk_sectors_read,
++	},
+ };
  
- retry:
--	iog = elv_io_get_io_group(q, 0);
-+	iog = elv_io_get_io_group(q, 1);
+ static int iocg_populate(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+@@ -1137,6 +1208,8 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
+ 	struct io_cgroup *iocg;
+ 	struct io_group *iog, *leaf = NULL, *prev = NULL;
+ 	gfp_t flags = GFP_ATOMIC |  __GFP_ZERO;
++	unsigned int major, minor;
++	struct backing_dev_info *bdi = &q->backing_dev_info;
  
- 	cic = cfq_cic_lookup(cfqd, ioc);
- 	/* cic always exists here */
-@@ -1386,7 +1441,7 @@ cfq_get_queue(struct cfq_data *cfqd, int is_sync, struct io_context *ioc,
- 	const int ioprio_class = task_ioprio_class(ioc);
- 	struct cfq_queue *async_cfqq = NULL;
- 	struct cfq_queue *cfqq = NULL;
--	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 0);
-+	struct io_group *iog = elv_io_get_io_group(cfqd->queue, 1);
+ 	for (; cgroup != NULL; cgroup = cgroup->parent) {
+ 		iocg = cgroup_to_io_cgroup(cgroup);
+@@ -1157,6 +1230,9 @@ io_group_chain_alloc(struct request_queue *q, void *key, struct cgroup *cgroup)
  
- 	if (!is_sync) {
- 		async_cfqq = elv_io_group_async_queue_prio(iog, ioprio_class,
-@@ -1541,7 +1596,10 @@ out:
- 	smp_read_barrier_depends();
- 	if (unlikely(ioc->ioprio_changed))
- 		cfq_ioc_set_ioprio(ioc);
--
-+#ifdef CONFIG_IOSCHED_CFQ_HIER
-+	if (unlikely(ioc->cgroup_changed))
-+		cfq_ioc_set_cgroup(ioc);
-+#endif
- 	return cic;
- err_free:
- 	cfq_cic_free(cic);
-diff --git a/init/Kconfig b/init/Kconfig
-index 29f701d..afcaa86 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -613,7 +613,7 @@ config CGROUP_MEM_RES_CTLR_SWAP
- 	  size is 4096bytes, 512k per 1Gbytes of swap.
+ 		iog->iocg_id = css_id(&iocg->css);
  
- config GROUP_IOSCHED
--	bool "Group IO Scheduler"
-+	bool
- 	depends on CGROUPS && ELV_FAIR_QUEUING
- 	default n
- 	---help---
++		sscanf(dev_name(bdi->dev), "%u:%u", &major, &minor);
++		iog->dev = MKDEV(major, minor);
++
+ 		io_group_init_entity(iocg, iog);
+ 
+ 		atomic_set(&iog->ref, 0);
+diff --git a/block/elevator-fq.h b/block/elevator-fq.h
+index 769798b..256f71a 100644
+--- a/block/elevator-fq.h
++++ b/block/elevator-fq.h
+@@ -60,6 +60,13 @@ struct io_entity {
+ 
+ 	unsigned short ioprio, ioprio_class;
+ 	int ioprio_changed;
++
++	/*
++	 * Keep track of total service received by this entity. Keep the
++	 * stats both for time slices and number of sectors dispatched
++	 */
++	unsigned long total_time;
++	unsigned long total_sectors;
+ };
+ 
+ /*
+@@ -111,6 +118,9 @@ struct io_group {
+ 	struct io_queue *async_idle_queue;
+ 	void *key;
+ 	struct rcu_head rcu_head;
++
++	/* The device MKDEV(major, minor), this group has been created for */
++	dev_t	dev;
+ };
+ 
+ struct io_cgroup {
 -- 
 1.6.0.6
