@@ -1,14 +1,13 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Fri, 25 Sep 2009 00:21:03 +0200
-Message-ID: <200909250021.03535.arnd__17507.5404382826$1253831307$gmane$org@arndb.de>
-References: <20090924165548.GA16586@us.ibm.com>
-	<20090924201517.GA24786@us.ibm.com> <4ABBED72.9080901@librato.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
+Date: Thu, 24 Sep 2009 15:41:39 -0700
+Message-ID: <20090924154139.2a7dd5ec.akpm__43083.1724698239$1253832168$gmane$org@linux-foundation.org>
+References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4ABBED72.9080901-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1253749920-18673-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,23 +18,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Friday 25 September 2009, Oren Laadan wrote:
-> In this form, you place a constraints on where userspace may
-> place the {parent,child}_tid variable, and require that this
-> particular clone_struct remain valid memory in the parent until
-> the child terminates.  This may break existing programs that
-> use this (threads libraries ?)
+On Wed, 23 Sep 2009 19:50:40 -0400
+Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org> wrote:
 
-No existing program uses sys_clone2, and the kernel function
-may well differ from the user space calling conventions, which
-are not bound by the six-argument limitation.
+> Q: How useful is this code as it stands in real-world usage?
+> A: The application can be single- or multi-processes and threads. It
+>    handles open files (regular files/directories on most file systems,
+>    pipes, fifos, af_unix sockets, /dev/{null,zero,random,urandom} and
+>    pseudo-terminals. It supports shared memory. sysv IPC (except undo
+>    of sempahores). It's suitable for many types of batch jobs as well
+>    as some interactive jobs. (Note: it is assumed that the fs view is
+>    available at restart).
 
-So a clone2 library call could set up the structure with the
-arguments to the real syscall, call into the kernel and
-copy the output data back into the pointers it was given by
-the user.
+That's encouraging.
 
-	Arnd <><
+> Q: What can it checkpoint and restart ?
+> A: A (single threaded) process can checkpoint itself, aka "self"
+>    checkpoint, if it calls the new system calls. Otherise, for an
+>    "external" checkpoint, the caller must first freeze the target
+>    processes. One can either checkpoint an entire container (and
+>    we make best effort to ensure that the result is self-contained),
+>    or merely a subtree of a process hierarchy.
+
+What is "best effort"?  Will the operation appear to have succeeded,
+only it didn't?
+
+IOW, how reliable and robust is code at detecting that it was unable to
+successfully generate a restartable image?
+
+> Q: What about namespaces ?
+> A: Currrently, UTS and IPC namespaces are restored. They demonstrate
+>    how namespaces are handled. More to come.
+
+Will this new code muck up the kernel?
+
+> Q: What additional work needs to be done to it?
+> A: Fill in the gory details following the examples so far. Current WIP
+>    includes inet sockets, event-poll, and early work on inotify, mount
+>    namespace and mount-points, pseudo file systems
+
+Will this new code muck up the kernel, or will it be clean?
+
+> and x86_64 support.
+
+eh?  You mean the code doesn't work on x86_64 at present?
+
+
+What is the story on migration?  Moving the process(es) to a different
+machine?
