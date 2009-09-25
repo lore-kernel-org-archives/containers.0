@@ -1,15 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 25 Sep 2009 18:07:24 +0900 (JST)
-Message-ID: <20090925.180724.104041942.ryov__17239.1594191597$1253869801$gmane$org@valinux.co.jp>
-References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
-	<20090924143315.781cd0ac.akpm@linux-foundation.org>
-	<20090925050429.GB12555@redhat.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
+Date: Fri, 25 Sep 2009 12:56:32 +0200
+Message-ID: <20090925105632.GG12824__27829.8723431819$1253876303$gmane$org@hawkmoon.kerlabs.com>
+References: <20090924165548.GA16586@us.ibm.com>
+	<20090924170308.GH16989@us.ibm.com>
+	<200909242343.59903.arnd@arndb.de>
+	<20090925082346.GB4436@localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4088388785607986899=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090925050429.GB12555-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090925082346.GB4436@localdomain>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,81 +17,117 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Vivek,
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Higher level solutions are not keeping track of time slices. Time slices will
-> be allocated by CFQ which does not have any idea about grouping. Higher
-> level controller just keeps track of size of IO done at group level and
-> then run either a leaky bucket or token bucket algorithm.
-> 
-> IO throttling is a max BW controller, so it will not even care about what is
-> happening in other group. It will just be concerned with rate of IO in one
-> particular group and if we exceed specified limit, throttle it. So until and
-> unless sequential reader group hits it max bw limit, it will keep sending
-> reads down to CFQ, and CFQ will happily assign 100ms slices to readers.
-> 
-> dm-ioband will not try to choke the high throughput sequential reader group
-> for the slow random reader group because that would just kill the throughput
-> of rotational media. Every sequential reader will run for few ms and then 
-> be throttled and this goes on. Disk will soon be seek bound.
+--===============4088388785607986899==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-7906-1253876148-0001-2"
+Content-Disposition: inline
 
-Because dm-ioband provides faireness in terms of how many IO requests
-are issued or how many bytes are transferred, so this behaviour is to
-be expected. Do you think fairness in terms of IO requests and size is
-not fair?
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> > >   Buffering at higher layer can delay read requests for more than slice idle
-> > >   period of CFQ (default 8 ms). That means, it is possible that we are waiting
-> > >   for a request from the queue but it is buffered at higher layer and then idle
-> > >   timer will fire. It means that queue will losse its share at the same time
-> > >   overall throughput will be impacted as we lost those 8 ms.
-> > 
-> > That sounds like a bug.
-> > 
-> 
-> Actually this probably is a limitation of higher level controller. It most
-> likely is sitting so high in IO stack that it has no idea what underlying
-> IO scheduler is and what are IO scheduler's policies. So it can't keep up
-> with IO scheduler's policies. Secondly, it might be a low weight group and
-> tokens might not be available fast enough to release the request.
->
-> > >   Read Vs Write
-> > >   -------------
-> > >   Writes can overwhelm readers hence second level controller FIFO release
-> > >   will run into issue here. If there is a single queue maintained then reads
-> > >   will suffer large latencies. If there separate queues for reads and writes
-> > >   then it will be hard to decide in what ratio to dispatch reads and writes as
-> > >   it is IO scheduler's decision to decide when and how much read/write to
-> > >   dispatch. This is another place where higher level controller will not be in
-> > >   sync with lower level io scheduler and can change the effective policies of
-> > >   underlying io scheduler.
-> > 
-> > The IO schedulers already take care of read-vs-write and already take
-> > care of preventing large writes-starve-reads latencies (or at least,
-> > they're supposed to).
-> 
-> True. Actually this is a limitation of higher level controller. A higher
-> level controller will most likely implement some of kind of queuing/buffering
-> mechanism where it will buffer requeuests when it decides to throttle the
-> group. Now once a fair number read and requests are buffered, and if
-> controller is ready to dispatch some requests from the group, which
-> requests/bio should it dispatch? reads first or writes first or reads and
-> writes in certain ratio?
+--=_bohort-7906-1253876148-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-The write-starve-reads on dm-ioband, that you pointed out before, was
-not caused by FIFO release, it was caused by IO flow control in
-dm-ioband. When I turned off the flow control, then the read
-throughput was quite improved.
+On 25/09/09 10:23 +0200, Louis Rilling wrote:
+> On Thu, Sep 24, 2009 at 11:43:59PM +0200, Arnd Bergmann wrote:
+> > On Thursday 24 September 2009, Sukadev Bhattiprolu wrote:
+> > > +asmlinkage long
+> > > +sys_clone2(struct clone_struct __user *ucs, pid_t __user *pids)
+> > > +{
+> > > +       int rc;
+> > > +       struct clone_struct kcs;
+> > > +       unsigned long clone_flags;
+> > > +       int __user *parent_tid_ptr;
+> > > +       int __user *child_tid_ptr;
+> > > +       unsigned long __user child_stack_base;
+> > > +       struct pt_regs *regs;
+> > > +
+> > > +       rc =3D copy_from_user(&ucs, &kcs, sizeof(kcs));
+> > > +       if (rc)
+> > > +               return -EFAULT;
+> > > +
+> > > +       /*
+> > > +        * TODO: Convert clone_flags to 64-bit
+> > > +        */
+> > > +       clone_flags =3D (unsigned long)kcs.flags;
+> > > +       child_stack_base =3D (unsigned long)kcs.child_stack;
+> > > +       parent_tid_ptr =3D &ucs.parent_tid;
+> > > +       child_tid_ptr =3D  &ucs.child_tid;
+> > > +       regs =3D task_pt_regs(current);
+> > > +
+> > > +       if (!child_stack_base)
+> > > +               child_stack_base =3D user_stack_pointer(regs);
+> > > +
+> > > +       return do_fork_with_pids(clone_flags, child_stack_base, regs,=
+ 0,
+> > > +                       parent_tid_ptr, child_tid_ptr, kcs.nr_pids, p=
+ids);
+> > > +}
+> > > +
+> >=20
+> > The function looks ok, but you have put it into arch/x86/kernel/process=
+_32.c,
+> > which is specific to x86-32. Since the code in this form is generic, why
+> > not just put it into kernel/fork.c? You should probably enclose it with=
+in
+> > #ifdef CONFIG_HAVE_ARCH_TRACEHOOK to make sure that user_stack_pointer()
+> > is implemented, but then it would be immediately usable by the nine arc=
+hitectures
+> > implementing that. The other architectures can then decide between addi=
+ng
+> > their private version of sys_clone2 with an open-coded user_stack_point=
+er
+> > implementation or alternatively implement the tracehooks.
+>=20
+> It will very likely break ia64, which defines CONFIG_HAVE_ARCH_TRACEHOOK =
+and
+> already has sys_clone2().
 
-Now I'm considering separating dm-ioband's internal queue into sync
-and async and giving a certain priority of dispatch to async IOs.
+-> sys_clone_ext() ?
 
-Thanks,
-Ryo Tsuruta
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-7906-1253876148-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkq8oeAACgkQVKcRuvQ9Q1Q6SwCgimdrl0B5UnPR3otnzftg5DrZ
+21sAmwSFxuqZP6a9bqaNXiu3J2IBhLrz
+=4eRk
+-----END PGP SIGNATURE-----
+
+--=_bohort-7906-1253876148-0001-2--
+
+--===============4088388785607986899==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============4088388785607986899==--
