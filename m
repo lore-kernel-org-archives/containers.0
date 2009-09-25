@@ -1,15 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 25 Sep 2009 16:09:11 +0900 (JST)
-Message-ID: <20090925.160911.71102299.ryov__3513.33757066659$1253862738$gmane$org@valinux.co.jp>
-References: <20090925100952.55c2dd7a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090925101821.1de8091a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20090925052911.GK4590@balbir.in.ibm.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
+Date: Fri, 25 Sep 2009 10:23:47 +0200
+Message-ID: <20090925082346.GB4436__5839.28098571977$1253867079$gmane$org@localdomain>
+References: <20090924165548.GA16586@us.ibm.com>
+	<20090924170308.GH16989@us.ibm.com>
+	<200909242343.59903.arnd@arndb.de>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1376523147654434449=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090925052911.GK4590-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <200909242343.59903.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,42 +17,109 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > > I think I must support dirty-ratio in memcg layer. But not yet.
-> > 
-> 
-> We need to add this to the TODO list.
-> 
-> > OR...I'll add a bufferred-write-cgroup to track bufferred writebacks.
-> > And add a control knob as
-> >   bufferred_write.nr_dirty_thresh
-> > to limit the number of dirty pages generetad via a cgroup.
-> > 
-> > Because memcg just records a owner of pages but not records who makes them
-> > dirty, this may be better. Maybe I can reuse page_cgroup and Ryo's blockio
-> > cgroup code.
-> 
-> Very good point, this is crucial for shared pages.
-> 
-> > 
-> > But I'm not sure how I should treat I/Os generated out by kswapd.
-> >
-> 
-> Account them to process 0 :)
+--===============1376523147654434449==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-5618-1253866984-0001-2"
+Content-Disposition: inline
 
-How about accounting them to processes who make pages dirty? I think
-that a process which consumes more memory should get penalty. However,
-this allows a page request process to use other's bandwidth, but If
-a user doesn't want to swap-out the memory, the user should allocate
-enough memory for the process by using memcg in advance.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Thanks,
-Ryo Tsuruta
+--=_bohort-5618-1253866984-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Thu, Sep 24, 2009 at 11:43:59PM +0200, Arnd Bergmann wrote:
+> On Thursday 24 September 2009, Sukadev Bhattiprolu wrote:
+> > +asmlinkage long
+> > +sys_clone2(struct clone_struct __user *ucs, pid_t __user *pids)
+> > +{
+> > +       int rc;
+> > +       struct clone_struct kcs;
+> > +       unsigned long clone_flags;
+> > +       int __user *parent_tid_ptr;
+> > +       int __user *child_tid_ptr;
+> > +       unsigned long __user child_stack_base;
+> > +       struct pt_regs *regs;
+> > +
+> > +       rc =3D copy_from_user(&ucs, &kcs, sizeof(kcs));
+> > +       if (rc)
+> > +               return -EFAULT;
+> > +
+> > +       /*
+> > +        * TODO: Convert clone_flags to 64-bit
+> > +        */
+> > +       clone_flags =3D (unsigned long)kcs.flags;
+> > +       child_stack_base =3D (unsigned long)kcs.child_stack;
+> > +       parent_tid_ptr =3D &ucs.parent_tid;
+> > +       child_tid_ptr =3D  &ucs.child_tid;
+> > +       regs =3D task_pt_regs(current);
+> > +
+> > +       if (!child_stack_base)
+> > +               child_stack_base =3D user_stack_pointer(regs);
+> > +
+> > +       return do_fork_with_pids(clone_flags, child_stack_base, regs, 0,
+> > +                       parent_tid_ptr, child_tid_ptr, kcs.nr_pids, pid=
+s);
+> > +}
+> > +
+>=20
+> The function looks ok, but you have put it into arch/x86/kernel/process_3=
+2.c,
+> which is specific to x86-32. Since the code in this form is generic, why
+> not just put it into kernel/fork.c? You should probably enclose it within
+> #ifdef CONFIG_HAVE_ARCH_TRACEHOOK to make sure that user_stack_pointer()
+> is implemented, but then it would be immediately usable by the nine archi=
+tectures
+> implementing that. The other architectures can then decide between adding
+> their private version of sys_clone2 with an open-coded user_stack_pointer
+> implementation or alternatively implement the tracehooks.
+
+It will very likely break ia64, which defines CONFIG_HAVE_ARCH_TRACEHOOK and
+already has sys_clone2().
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-5618-1253866984-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkq8fhIACgkQVKcRuvQ9Q1TwGgCePF1WjiSY+0qsgFrIQ9X6nvdp
+NhgAoM3jCsDyooi1N2ShV8wqcmVclXet
+=kWwC
+-----END PGP SIGNATURE-----
+
+--=_bohort-5618-1253866984-0001-2--
+
+--===============1376523147654434449==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============1376523147654434449==--
