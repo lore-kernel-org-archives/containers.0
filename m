@@ -1,13 +1,14 @@
-From: Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 25 Sep 2009 04:20:14 +0200
-Message-ID: <4ABC28DE.7050809__18314.8748394617$1253845309$gmane$org@datenparkplatz.de>
-References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
+From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 9/9]: Document clone2() syscall
+Date: Fri, 25 Sep 2009 11:31:54 +0900 (JST)
+Message-ID: <20090925113034.C145.A69D9226__22856.8596452989$1253846074$gmane$org@jp.fujitsu.com>
+References: <20090924165548.GA16586@us.ibm.com>
+	<20090924170331.GI16989@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1253820332-10246-1-git-send-email-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090924170331.GI16989-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,33 +18,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> Notes:
-> - With vanilla CFQ, random writers can overwhelm a random reader.
->   Bring down its throughput and bump up latencies significantly.
+> 
+> 
+> Subject: [RFC][v7][PATCH 9/9]: Document clone2() syscall
+> 
+> This gives a brief overview of the clone2() system call.  We should
+> eventually describe more details in existing clone(2) man page or in
+> a new man page.
+> 
+> Changelog[v7]:
+> 	- Rename clone_with_pids() to clone2()
+> 	- Changes to reflect new prototype of clone2() (using clone_struct).
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-8jLBTbqmX/OZamtmwQBW5tBPR1lH4CV8@public.gmane.org>
 
-
-IIRC, with vanilla CFQ, sequential writing can overwhelm random readers,
-too.
-
-I'm basing this assumption on the observations I made on both OpenSuse
-11.1 and Ubuntu 9.10 alpha6 which I described in my posting on LKML
-titled: "Poor desktop responsiveness with background I/O-operations" of
-2009-09-20.
-(Message ID: 4AB59CBB.8090907-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org)
-
-
-Thus, I'm posting this to show that your work is greatly appreciated,
-given the rather disappointig status quo of Linux's fairness when it
-comes to disk IO time.
-
-I hope that your efforts lead to a change in performance of current
-userland applications, the sooner, the better.
-
-
-Thanks
-Ulrich
+AFAIK, ia64 already have clone2() systemcall and it is imcompatible this.
