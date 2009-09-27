@@ -1,18 +1,15 @@
-From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: IO scheduler based IO controller V10
-Date: Sun, 27 Sep 2009 18:42:36 +0200
-Message-ID: <20090927164235.GA23126__36693.3297286325$1254069901$gmane$org@kernel.dk>
+Date: Sun, 27 Sep 2009 19:00:08 +0200
+Message-ID: <4e5e476b0909271000u69d79346s27cccad219e49902__14092.6382308409$1254071001$gmane$org@mail.gmail.com>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
 	<4ABC28DE.7050809@datenparkplatz.de>
 	<20090925202636.GC15007@redhat.com>
-	<1253976676.7005.40.camel@marge.simson.net>
-	<1254034500.7933.6.camel@marge.simson.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1254034500.7933.6.camel-YqMYhexLQo1vAv1Ojkdn7Q@public.gmane.org>
+In-Reply-To: <20090925202636.GC15007-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,62 +19,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Sep 27 2009, Mike Galbraith wrote:
-> My dd vs load non-cached binary woes seem to be coming from backmerge.
-> 
-> #if 0 /*MIKEDIDIT sand in gearbox?*/
->         /*
->          * See if our hash lookup can find a potential backmerge.
->          */
->         __rq = elv_rqhash_find(q, bio->bi_sector);
->         if (__rq && elv_rq_merge_ok(__rq, bio)) {
->                 *req = __rq;
->                 return ELEVATOR_BACK_MERGE;
->         }
-> #endif
-
-It's a given that not merging will provide better latency. We can't
-disable that or performance will suffer A LOT on some systems. There are
-ways to make it better, though. One would be to make the max request
-size smaller, but that would also hurt for streamed workloads. Can you
-try whether the below patch makes a difference? It will basically
-disallow merges to a request that isn't the last one.
-
-We should probably make the merging logic a bit more clever, since the
-below wont work well for two (or more) streamed cases. I'll think a bit
-about that.
-
-Note this is totally untested!
-
-diff --git a/block/elevator.c b/block/elevator.c
-index 1975b61..d00a72b 100644
---- a/block/elevator.c
-+++ b/block/elevator.c
-@@ -497,9 +497,17 @@ int elv_merge(struct request_queue *q, struct request **req, struct bio *bio)
- 	 * See if our hash lookup can find a potential backmerge.
- 	 */
- 	__rq = elv_rqhash_find(q, bio->bi_sector);
--	if (__rq && elv_rq_merge_ok(__rq, bio)) {
--		*req = __rq;
--		return ELEVATOR_BACK_MERGE;
-+	if (__rq) {
-+		/*
-+		 * If requests are queued behind this one, disallow merge. This
-+		 * prevents streaming IO from continually passing new IO.
-+		 */
-+		if (elv_latter_request(q, __rq))
-+			return ELEVATOR_NO_MERGE;
-+		if (elv_rq_merge_ok(__rq, bio)) {
-+			*req = __rq;
-+			return ELEVATOR_BACK_MERGE;
-+		}
- 	}
- 
- 	if (e->ops->elevator_merge_fn)
-
--- 
-Jens Axboe
+SGkgVml2ZWssCk9uIEZyaSwgU2VwIDI1LCAyMDA5IGF0IDEwOjI2IFBNLCBWaXZlayBHb3lhbCA8
+dmdveWFsQHJlZGhhdC5jb20+IHdyb3RlOgo+IE9uIEZyaSwgU2VwIDI1LCAyMDA5IGF0IDA0OjIw
+OjE0QU0gKzAyMDAsIFVscmljaCBMdWthcyB3cm90ZToKPj4gVml2ZWsgR295YWwgd3JvdGU6Cj4+
+ID4gTm90ZXM6Cj4+ID4gLSBXaXRoIHZhbmlsbGEgQ0ZRLCByYW5kb20gd3JpdGVycyBjYW4gb3Zl
+cndoZWxtIGEgcmFuZG9tIHJlYWRlci4KPj4gPiDCoCBCcmluZyBkb3duIGl0cyB0aHJvdWdocHV0
+IGFuZCBidW1wIHVwIGxhdGVuY2llcyBzaWduaWZpY2FudGx5Lgo+Pgo+Pgo+PiBJSVJDLCB3aXRo
+IHZhbmlsbGEgQ0ZRLCBzZXF1ZW50aWFsIHdyaXRpbmcgY2FuIG92ZXJ3aGVsbSByYW5kb20gcmVh
+ZGVycywKPj4gdG9vLgo+Pgo+PiBJJ20gYmFzaW5nIHRoaXMgYXNzdW1wdGlvbiBvbiB0aGUgb2Jz
+ZXJ2YXRpb25zIEkgbWFkZSBvbiBib3RoIE9wZW5TdXNlCj4+IDExLjEgYW5kIFVidW50dSA5LjEw
+IGFscGhhNiB3aGljaCBJIGRlc2NyaWJlZCBpbiBteSBwb3N0aW5nIG9uIExLTUwKPj4gdGl0bGVk
+OiAiUG9vciBkZXNrdG9wIHJlc3BvbnNpdmVuZXNzIHdpdGggYmFja2dyb3VuZCBJL08tb3BlcmF0
+aW9ucyIgb2YKPj4gMjAwOS0wOS0yMC4KPj4gKE1lc3NhZ2UgSUQ6IDRBQjU5Q0JCLjgwOTA5MDdA
+ZGF0ZW5wYXJrcGxhdHouZGUpCj4+Cj4+Cj4+IFRodXMsIEknbSBwb3N0aW5nIHRoaXMgdG8gc2hv
+dyB0aGF0IHlvdXIgd29yayBpcyBncmVhdGx5IGFwcHJlY2lhdGVkLAo+PiBnaXZlbiB0aGUgcmF0
+aGVyIGRpc2FwcG9pbnRpZyBzdGF0dXMgcXVvIG9mIExpbnV4J3MgZmFpcm5lc3Mgd2hlbiBpdAo+
+PiBjb21lcyB0byBkaXNrIElPIHRpbWUuCj4+Cj4+IEkgaG9wZSB0aGF0IHlvdXIgZWZmb3J0cyBs
+ZWFkIHRvIGEgY2hhbmdlIGluIHBlcmZvcm1hbmNlIG9mIGN1cnJlbnQKPj4gdXNlcmxhbmQgYXBw
+bGljYXRpb25zLCB0aGUgc29vbmVyLCB0aGUgYmV0dGVyLgo+Pgo+IFtQbGVhc2UgZG9uJ3QgcmVt
+b3ZlIHBlb3BsZSBmcm9tIG9yaWdpbmFsIENDIGxpc3QuIEkgYW0gcHV0dGluZyB0aGVtIGJhY2su
+XQo+Cj4gSGkgVWxyaWNoLAo+Cj4gSSBxdWlja3kgd2VudCB0aHJvdWdoIHRoYXQgbWFpbCB0aHJl
+YWQgYW5kIEkgdHJpZWQgZm9sbG93aW5nIG9uIG15Cj4gZGVza3RvcC4KPgo+ICMjIyMjIyMjIyMj
+IyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwo+IGRkIGlmPS9ob21lL3Znb3lhbC80Ry1m
+aWxlIG9mPS9kZXYvbnVsbCAmCj4gc2xlZXAgNQo+IHRpbWUgZmlyZWZveAo+ICMgY2xvc2UgZmly
+ZWZveCBvbmNlIGd1aSBwb3BzIHVwLgo+ICMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj
+IyMjIyMjIyMjIwo+Cj4gSXQgd2FzIHRha2luZyBjbG9zZSB0byAxIG1pbnV0ZSAzMCBzZWNvbmRz
+IHRvIGxhdW5jaCBmaXJlZm94IGFuZCBkZCBnb3QKPiBmb2xsb3dpbmcuCj4KPiA0Mjk0OTY3Mjk2
+IGJ5dGVzICg0LjMgR0IpIGNvcGllZCwgMTAwLjYwMiBzLCA0Mi43IE1CL3MKPgo+IChSZXN1bHRz
+IGRvIHZhcnkgYWNyb3NzIHJ1bnMsIGVzcGVjaWFsbHkgaWYgc3lzdGVtIGlzIGJvb3RlZCBmcmVz
+aC4gRG9uJ3QKPiDCoGtub3cgd2h5Li4uKS4KPgo+Cj4gVGhlbiBJIHRyaWVkIHB1dHRpbmcgYm90
+aCB0aGUgYXBwbGljYXRpb25zIGluIHNlcGFyYXRlIGdyb3VwcyBhbmQgYXNzaWduCj4gdGhlbSB3
+ZWlnaHRzIDIwMCBlYWNoLgo+Cj4gIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj
+IyMjIyMjCj4gZGQgaWY9L2hvbWUvdmdveWFsLzRHLWZpbGUgb2Y9L2Rldi9udWxsICYKPiBlY2hv
+ICQhID4gL2Nncm91cC9pby90ZXN0MS90YXNrcwo+IHNsZWVwIDUKPiBlY2hvICQkID4gL2Nncm91
+cC9pby90ZXN0Mi90YXNrcwo+IHRpbWUgZmlyZWZveAo+ICMgY2xvc2UgZmlyZWZveCBvbmNlIGd1
+aSBwb3BzIHVwLgo+ICMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwo+
+Cj4gTm93IEkgZmlyZWZveCBwb3BzIHVwIGluIDI3IHNlY29uZHMuIFNvIGl0IGN1dCBkb3duIHRo
+ZSB0aW1lIGJ5IDIvMy4KPgo+IDQyOTQ5NjcyOTYgYnl0ZXMgKDQuMyBHQikgY29waWVkLCA4NC42
+MTM4IHMsIDUwLjggTUIvcwo+Cj4gTm90aWNlIHRoYXQgdGhyb3VnaHB1dCBvZiBkZCBhbHNvIGlt
+cHJvdmVkLgo+Cj4gSSByYW4gdGhlIGJsb2NrIHRyYWNlIGFuZCBub3RpY2VkIGluIG1hbnkgYSBj
+YXNlcyBmaXJlZm94IHRocmVhZHMKPiBpbW1lZGlhdGVseSBwcmVlbXB0ZWQgdGhlICJkZCIuIFBy
+b2JhYmx5IGJlY2F1c2UgaXQgd2FzIGEgZmlsZSBzeXN0ZW0KPiByZXF1ZXN0LiBTbyBpbiB0aGlz
+IGNhc2UgbGF0ZW5jeSB3aWxsIGFyaXNlIGZyb20gc2VlayB0aW1lLgo+Cj4gSW4gc29tZSBvdGhl
+ciBjYXNlcywgdGhyZWFkcyBoYWQgdG8gd2FpdCBmb3IgdXAgdG8gMTAwbXMgYmVjYXVzZSBkZCB3
+YXMKPiBub3QgcHJlZW1wdGVkLiBJbiB0aGlzIGNhc2UgbGF0ZW5jeSB3aWxsIGFyaXNlIGJvdGgg
+ZnJvbSB3YWl0aW5nIG9uIHF1ZXVlCj4gYXMgd2VsbCBhcyBzZWVrIHRpbWUuCgpJIHRoaW5rIGNm
+cSBzaG91bGQgYWxyZWFkeSBiZSBkb2luZyBzb21ldGhpbmcgc2ltaWxhciwgaS5lLiBnaXZpbmcK
+MTAwbXMgc2xpY2VzIHRvIGZpcmVmb3gsIHRoYXQgYWx0ZXJuYXRlIHdpdGggZGQsIHVubGVzczoK
+KiBmaXJlZm94IGlzIHRvbyBzZWVreSAoaW4gdGhpcyBjYXNlLCB0aGUgaWRsZSB3aW5kb3cgd2ls
+bCBiZSB0b28gc21hbGwpCiogZmlyZWZveCBoYXMgdG9vIG11Y2ggdGhpbmsgdGltZS4KClRvIHJ1
+bGUgb3V0IHRoZSBmaXJzdCBjYXNlLCB3aGF0IGhhcHBlbnMgaWYgeW91IHJ1biB0aGUgdGVzdCB3
+aXRoIHlvdXIKImZhaXJuZXNzIGZvciBzZWVreSBwcm9jZXNzZXMiIHBhdGNoPwpUbyBydWxlIG91
+dCB0aGUgc2Vjb25kIGNhc2UsIHdoYXQgaGFwcGVucyBpZiB5b3UgaW5jcmVhc2UgdGhlIHNsaWNl
+X2lkbGU/CgpUaGFua3MsCkNvcnJhZG8KCj4KPiBXaXRoIGNncm91cCB0aGluZywgV2Ugd2lsbCBy
+dW4gMTAwbXMgc2xpY2UgZm9yIHRoZSBncm91cCBpbiB3aGljaCBmaXJlZm94Cj4gaXMgYmVpbmcg
+bGF1bmNoZWQgYW5kIHRoZW4gZ2l2ZSAxMDBtcyB1bmludGVycnVwdGVkIHRpbWUgc2xpY2UgdG8g
+ZGQuIFNvCj4gaXQgc2hvdWxkIGN1dCBkb3duIG9uIG51bWJlciBvZiBzZWVrcyBoYXBwZW5pbmcg
+YW5kIHRoYXQncyB3aHkgd2UgcHJvYmFibHkKPiBzZWUgdGhpcyBpbXByb3ZlbWVudC4KPgo+IFNv
+IGdyb3VwaW5nIGNhbiBoZWxwIGluIHN1Y2ggY2FzZXMuIE1heSBiZSB5b3UgY2FuIG1vdmUgeW91
+ciBYIHNlc3Npb24gaW4KPiBvbmUgZ3JvdXAgYW5kIGxhdW5jaCB0aGUgYmlnIElPIGluIG90aGVy
+IGdyb3VwLiBNb3N0IGxpa2VseSB5b3Ugc2hvdWxkCj4gaGF2ZSBiZXR0ZXIgZGVza3RvcCBleHBl
+cmllbmNlIHdpdGhvdXQgY29tcHJvbWlzaW5nIG9uIGRkIHRocmVhZCBvdXRwdXQuCgo+IFRoYW5r
+cwo+IFZpdmVrCj4gLS0KPiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUg
+bGluZSAidW5zdWJzY3JpYmUgbGludXgta2VybmVsIiBpbgo+IHRoZSBib2R5IG9mIGEgbWVzc2Fn
+ZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnCj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCDC
+oGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+IFBsZWFzZSByZWFk
+IHRoZSBGQVEgYXQgwqBodHRwOi8vd3d3LnR1eC5vcmcvbGttbC8KPgoKCgotLSAKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KCmRvdHQuIENvcnJhZG8gWm9jY29sbyAgICAgICAgICAgICAgICAgICAgICAgICAg
+bWFpbHRvOmN6b2Njb2xvQGdtYWlsLmNvbQpQaEQgLSBEZXBhcnRtZW50IG9mIENvbXB1dGVyIFNj
+aWVuY2UgLSBVbml2ZXJzaXR5IG9mIFBpc2EsIEl0YWx5Ci0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
