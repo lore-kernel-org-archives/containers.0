@@ -1,17 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [patch 1/4][resend] fuse-procfs: proxy proc files
-Date: Mon, 28 Sep 2009 17:47:51 +0200
-Message-ID: <4AC0DAA7.9090907@free.fr>
-References: <20090904162556.407556958@mai-009101017029.toulouse-stg.fr.ibm.com>	
-	<20090904165149.491603361@mai-009101017029.toulouse-stg.fr.ibm.com>	
-	<ac1c4bf20909141338p3e13c1d6sc71899b7859bd963@mail.gmail.com>	
-	<4AAEB1FA.3070102@free.fr>
-	<ac1c4bf20909280233r5cd94343m30ac00c6ef9e1d10@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
+Date: Mon, 28 Sep 2009 11:37:04 -0500
+Message-ID: <20090928163704.GA3327__8932.51414313472$1254155919$gmane$org@us.ibm.com>
+References: <1253749920-18673-1-git-send-email-orenl@librato.com>
+	<20090924154139.2a7dd5ec.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ac1c4bf20909280233r5cd94343m30ac00c6ef9e1d10-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090924154139.2a7dd5ec.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,54 +19,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Krzysztof Taraszka wrote:
-> Thank you Daniel.
-> I have a little problem with fuse and containers. Do I have to add the fuse
-> device to the container?
-> When I tried to mount procfs I received:
->
-> container2:/# ./procfs -odirect_io /proc/meminfo
-> fuse: device not found, try 'modprobe fuse' first
->
-> The fuse module was loaded on host. What I did wrong? I am asking because I
-> am working around user space scripts for managing lxc (written in bash,
-> init.d script, few lxc-create-* scripts based on distro, etc) and I would
-> like to add this development future to this scripts.
-> Right now I have few nice and good looking userspace scripts.
-> Would be great If I may do the deb and rpm package with lxc user scripts and
-> lxc-tools or add my scripts to lxc-tools tree.
->   
-Let's see :)
+Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+> On Wed, 23 Sep 2009 19:50:40 -0400
+> Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org> wrote:
+> > Q: What about namespaces ?
+> > A: Currrently, UTS and IPC namespaces are restored. They demonstrate
+> >    how namespaces are handled. More to come.
+> 
+> Will this new code muck up the kernel?
 
-> More about that in this week in the different thread. Hope you will give me
-> the direction guys.
->   
+Actually user namespaces are handled as well.  Pid namespaces will
+be named and recorded by kernel at checkpoint, and re-created in
+userspace using clone(CLONE_NEWPID).  This shouldn't muck up the
+kernel at all.  The handling of network and mounts namespaces is
+at this point undecided.  Well, mounts namespaces themselves are
+pretty simple, but not so much for mountpoints.  There it's mainly
+a question of how to predict what a user wants to have automatically
+recreated.  All mounts which differ between the root checkpoint task
+and its parent?  Do we do no mounts for the restarted init task at
+all, and only recreate mounts in private child namespaces (i.e. if a
+task did a unshare(CLONE_NEWNS); mount --make-private /var; 
+mount --bind /container2/var/run /var/run)?
 
-I think the command line is not right. Fuse uses at the /proc directory 
-when initializating, so that have to be done in two steps:
+I hear a decision was made at plumber's about how to begin
+handling them, so I'll let someone (Oren? Dave?) give that info.
 
-Can you try:
+For network namespaces i think it's clearer that a wrapper
+program should set up the network for the restarted init task,
+while the usrspace code should recreate any private network
+namespaces and veth's which were created by the application.
+But it still needs discussion.
 
-lxc-execute -n foo /bin/bash
+> > Q: What additional work needs to be done to it?
+> > A: Fill in the gory details following the examples so far. Current WIP
+> >    includes inet sockets, event-poll, and early work on inotify, mount
+> >    namespace and mount-points, pseudo file systems
+> 
+> Will this new code muck up the kernel, or will it be clean?
+> 
+> > and x86_64 support.
+> 
+> eh?  You mean the code doesn't work on x86_64 at present?
 
-(from the shell in the container):
-procfs -o direct_io /tmp/<tmpdir>
-mount --bind /tmp/<tmpdir> /proc
-echo 268435456 > /cgroup/foo/memory.memsw.limit_in_bytes
-echo 268435456 > /cgroup/foo/memory.limit_in_bytes
+There have been patches for it, but I think the main problem is noone
+involved has hw to test.
 
-* before exiting the container:
-umount /proc
-fusermount -u /tmp/<tmpfile>
+> What is the story on migration?  Moving the process(es) to a different
+> machine?
 
-If you do 'ls /proc', you should see everything expect the /proc/sys 
-directory.
-If you do 'cat /proc/meminfo', you should see:
-MemTotal: 262144 kB
-MemFree: 250684 kB
-SwapTotal: 262144 kB
-SwapFree: 0 kB
+Since that's basically checkpoint; recreate container on remote
+machine; restart on remote machine; that will mainly be done by
+userspace code exploiting the c/r kernel patches.
+
+The main thing we may want to add is a way to initiate pre-dump
+of large amounts of VM while the container is still running.
+I suspect Oren and Dave can say a lot more about that than I can
+right now.
+
+thanks,
+-serge
