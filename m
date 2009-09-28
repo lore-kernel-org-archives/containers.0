@@ -1,15 +1,17 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Mon, 28 Sep 2009 16:38:11 +0900 (JST)
-Message-ID: <20090928.163811.104053649.ryov__44776.2969685302$1254123533$gmane$org@valinux.co.jp>
-References: <20090925050429.GB12555@redhat.com>
-	<20090925.180724.104041942.ryov@valinux.co.jp>
-	<4ABCDBFF.1020203@redhat.com>
+From: Krzysztof Taraszka <krzysztof.taraszka-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org>
+Subject: Re: [patch 1/4][resend] fuse-procfs: proxy proc files
+Date: Mon, 28 Sep 2009 11:33:43 +0200
+Message-ID: <ac1c4bf20909280233r5cd94343m30ac00c6ef9e1d10@mail.gmail.com>
+References: <20090904162556.407556958@mai-009101017029.toulouse-stg.fr.ibm.com>
+	<20090904165149.491603361@mai-009101017029.toulouse-stg.fr.ibm.com>
+	<ac1c4bf20909141338p3e13c1d6sc71899b7859bd963@mail.gmail.com>
+	<4AAEB1FA.3070102@free.fr>
+Reply-To: kt-S89nZTSLPHGGdvJs77BJ7Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4ABCDBFF.1020203-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4AAEB1FA.3070102-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +21,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Rik,
+Thank you Daniel.
+I have a little problem with fuse and containers. Do I have to add the fuse
+device to the container?
+When I tried to mount procfs I received:
 
-Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Ryo Tsuruta wrote:
-> 
-> > Because dm-ioband provides faireness in terms of how many IO requests
-> > are issued or how many bytes are transferred, so this behaviour is to
-> > be expected. Do you think fairness in terms of IO requests and size is
-> > not fair?
-> 
-> When there are two workloads competing for the same
-> resources, I would expect each of the workloads to
-> run at about 50% of the speed at which it would run
-> on an uncontended system.
-> 
-> Having one of the workloads run at 95% of the
-> uncontended speed and the other workload at 5%
-> is "not fair" (to put it diplomatically).
+container2:/# ./procfs -odirect_io /proc/meminfo
+fuse: device not found, try 'modprobe fuse' first
 
-As I wrote in the mail to Vivek, I think that providing multiple
-policies, on a per disk time basis, on a per iosize basis, maximum
-rate limiting or etc would be good for users.
+The fuse module was loaded on host. What I did wrong? I am asking because I
+am working around user space scripts for managing lxc (written in bash,
+init.d script, few lxc-create-* scripts based on distro, etc) and I would
+like to add this development future to this scripts.
+Right now I have few nice and good looking userspace scripts.
+Would be great If I may do the deb and rpm package with lxc user scripts and
+lxc-tools or add my scripts to lxc-tools tree.
 
-Thanks,
-Ryo Tsuruta
+More about that in this week in the different thread. Hope you will give me
+the direction guys.
+
+
+2009/9/14 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+
+> Krzysztof Taraszka wrote:
+>
+>> Hi Daniel,
+>>
+>> right now I do not have any new tasks so I can take a look your patches
+>> and... they won't to apply (patches from 2 to 4).
+>> Can you send me your current procfs.c single file with patches added?
+>>
+>> Thanks
+>>
+>>
+> Sure, in attachment the procfs.tar.gz which is a directory containing the
+> patches.
+> Just untar and quilt push -a.
+>
+>  -- Daniel
+>
+>
+>
