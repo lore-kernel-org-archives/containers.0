@@ -1,21 +1,11 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Mon, 28 Sep 2009 20:24:57 +0200
-Message-ID: <1254162297.9820.54.camel__14138.3374612362$1254162519$gmane$org@marge.simson.net>
-References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
-	<4ABC28DE.7050809@datenparkplatz.de>
-	<20090925202636.GC15007@redhat.com>
-	<1253976676.7005.40.camel@marge.simson.net>
-	<1254034500.7933.6.camel@marge.simson.net>
-	<20090927164235.GA23126@kernel.dk>
-	<1254075359.7354.66.camel@marge.simson.net>
-	<1254110648.7683.3.camel@marge.simson.net>
-	<20090928174809.GB3643@redhat.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] user-cr: fix powerpc build
+Date: Mon, 28 Sep 2009 13:43:54 -0500
+Message-ID: <1254163434-14196-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090928174809.GB3643-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,27 +15,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-09-28 at 13:48 -0400, Vivek Goyal wrote:
-
-> Hmm.., so close to 25% reduction on average in completion time of konsole.
-> But this is in presece of writer. Does this help even in presence of 1 or
-> more sequential readers going?
-
-Dunno, I've only tested sequential writer.
-
-> So here latency seems to be coming from three sources.
-> 
-> - Wait in CFQ before request is dispatched (only in case of competing seq readers).
-> - seek latencies
-> - latencies because of bigger requests are already dispatched to disk.
-> 
-> So limiting the size of request will help with third factor but not with first  
-> two factors and here seek latencies seem to be the biggest contributor.
-
-Yeah, seek latency seems to dominate.
-
-	-Mike
+U2V2ZXJhbCB3YXJuaW5ncyBhbmQgYSBsaW5rIGVycm9yIGluIGN1cnJlbnQgYnVpbGQgb24gcG93
+ZXJwYzoKCm1ha2UgU1VCQVJDSD1wcGMgQ1BQRkxBR1M9LUkkUFdELy4uL2xpbnV4LTIuNi5naXQv
+dXNyL2luY2x1ZGUKY2MgLWcgLVdhbGwgLVdzdHJpY3QtcHJvdG90eXBlcyAtV25vLXRyaWdyYXBo
+cyAtSS4uL2xpbnV4L2luY2x1ZGUgLUkuLi9saW51eC9hcmNoLy9pbmNsdWRlIC1EQ0hFQ0tQT0lO
+VF9ERUJVRyAtRF9fUkVFTlRSQU5UIC1wdGhyZWFkIC1EQVJDSF9IQVNfQ0xPTkVfV0lUSF9QSUQg
+LUkvaG9tZS9uYXRoYW5sL2RldmVsL3VzZXItY3IuZ2l0Ly4uL2xpbnV4LTIuNi5naXQvdXNyL2lu
+Y2x1ZGUgIC1jIC1vIGNsb25lX3BwYy5vIGNsb25lX3BwYy5jCmNsb25lX3BwYy5jOjI4OiB3YXJu
+aW5nOiDigJhzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXTigJkgZGVjbGFyZWQgaW5zaWRlIHBhcmFtZXRl
+ciBsaXN0CmNsb25lX3BwYy5jOjI4OiB3YXJuaW5nOiBpdHMgc2NvcGUgaXMgb25seSB0aGlzIGRl
+ZmluaXRpb24gb3IgZGVjbGFyYXRpb24sIHdoaWNoIGlzIHByb2JhYmx5IG5vdCB3aGF0IHlvdSB3
+YW50CmNsb25lX3BwYy5jOiBJbiBmdW5jdGlvbiDigJhjbG9uZV93aXRoX3BpZHPigJk6CmNsb25l
+X3BwYy5jOjM1OiB3YXJuaW5nOiBpbXBsaWNpdCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiDigJhf
+X2Nsb25lX3dpdGhfcGlkc+KAmQpjbG9uZV9wcGMuYzogQXQgdG9wIGxldmVsOgpjbG9uZV9wcGMu
+YzoyOTogd2FybmluZzog4oCYY2xvbmVfd2l0aF9waWRz4oCZIGRlZmluZWQgYnV0IG5vdCB1c2Vk
+CmNjIC1nIC1XYWxsIC1Xc3RyaWN0LXByb3RvdHlwZXMgLVduby10cmlncmFwaHMgLUkuLi9saW51
+eC9pbmNsdWRlIC1JLi4vbGludXgvYXJjaC8vaW5jbHVkZSAtRENIRUNLUE9JTlRfREVCVUcgLURf
+X1JFRU5UUkFOVCAtcHRocmVhZCAtREFSQ0hfSEFTX0NMT05FX1dJVEhfUElEIC1JL2hvbWUvbmF0
+aGFubC9kZXZlbC91c2VyLWNyLmdpdC8uLi9saW51eC0yLjYuZ2l0L3Vzci9pbmNsdWRlICAgcmVz
+dGFydC5jIGNsb25lX3BwYy5vIGNsb25lX3BwY18ubyAgLWxtIC1vIHJlc3RhcnQKL3RtcC9jY1VM
+MFBIMC5vOiBJbiBmdW5jdGlvbiBgY2twdF9mb3JrX2NoaWxkJzoKL2hvbWUvbmF0aGFubC9kZXZl
+bC91c2VyLWNyLmdpdC9yZXN0YXJ0LmM6MTY1OTogdW5kZWZpbmVkIHJlZmVyZW5jZSB0byBgY2xv
+bmVfd2l0aF9waWRzJwoKRGVjbGFyZSBzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQgYW5kIF9fY2xvbmVf
+d2l0aF9waWRzOyBtYWtlCmNsb25lX3dpdGhfcGlkcyBleHRlcm4uCgpTaWduZWQtb2ZmLWJ5OiBO
+YXRoYW4gTHluY2ggPG50bEBwb2JveC5jb20+Ci0tLQogY2xvbmVfcHBjLmMgfCAgIDEzICsrKysr
+KysrKysrKy0KIDEgZmlsZXMgY2hhbmdlZCwgMTIgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMo
+LSkKCmRpZmYgLS1naXQgYS9jbG9uZV9wcGMuYyBiL2Nsb25lX3BwYy5jCmluZGV4IDIwOWYwMGIu
+LjA5YjUxYjUgMTAwNjQ0Ci0tLSBhL2Nsb25lX3BwYy5jCisrKyBiL2Nsb25lX3BwYy5jCkBAIC0x
+Niw2ICsxNiwxNyBAQAogI2luY2x1ZGUgPHN5cy9zeXNjYWxsLmg+CiAjaW5jbHVkZSA8YXNtL3Vu
+aXN0ZC5oPgogCitzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQ7CisKK2V4dGVybiBpbnQgX19jbG9uZV93
+aXRoX3BpZHMoaW50ICgqZm4pKHZvaWQgKmFyZyksCisJCQkgICAgIHZvaWQgKmNoaWxkX3N0YWNr
+ICwKKwkJCSAgICAgaW50IGZsYWdzLAorCQkJICAgICB2b2lkICphcmcsCisJCQkgICAgIHZvaWQg
+KnBhcmVudF90aWQsCisJCQkgICAgIHZvaWQgKnRscywKKwkJCSAgICAgdm9pZCAqY2hpbGRfdGlk
+LAorCQkJICAgICBzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQgKnNldHApOworCiAvKgogICogbGliYyBk
+b2Vzbid0IHN1cHBvcnQgY2xvbmVfd2l0aF9waWQoKSB5ZXQuLi4KICAqIGJlbG93IGlzIGFyY2gt
+ZGVwZW5kZW50IGNvZGUgdG8gdXNlIHRoZSBzeXNjYWxsCkBAIC0yNCw3ICszNSw3IEBACiAKIC8q
+IChzZWU6IGh0dHA6Ly9sa21sLmluZGlhbmEuZWR1L2h5cGVybWFpbC9saW51eC9rZXJuZWwvOTYw
+NC4zLzAyMDQuaHRtbCkgKi8KIAotc3RhdGljIGludCBjbG9uZV93aXRoX3BpZHMoaW50ICgqZm4p
+KHZvaWQgKiksIHZvaWQgKmNoaWxkX3N0YWNrLCBpbnQgZmxhZ3MsCitpbnQgY2xvbmVfd2l0aF9w
+aWRzKGludCAoKmZuKSh2b2lkICopLCB2b2lkICpjaGlsZF9zdGFjaywgaW50IGZsYWdzLAogCQkJ
+ICAgc3RydWN0IHRhcmdldF9waWRfc2V0ICp0YXJnZXRfcGlkcywgdm9pZCAqYXJnKQogewogCXZv
+aWQgKnBhcmVudF90aWQgPSBOVUxMOwotLSAKMS42LjAuNgoKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
