@@ -1,20 +1,11 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Mon, 28 Sep 2009 20:53:54 +0200
-Message-ID: <1254164034.9820.81.camel__46332.7687154107$1254164165$gmane$org@marge.simson.net>
-References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
-	<4ABC28DE.7050809@datenparkplatz.de>
-	<20090925202636.GC15007@redhat.com>
-	<4e5e476b0909271000u69d79346s27cccad219e49902@mail.gmail.com>
-	<20090928145655.GB8192@redhat.com>
-	<4e5e476b0909280835w3410d58aod93a29d1dcda8909@mail.gmail.com>
-	<1254160274.9820.25.camel@marge.simson.net>
-	<20090928181846.GC3643@redhat.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] [RFC] Add c/r support for listening INET sockets
+Date: Mon, 28 Sep 2009 11:58:50 -0700
+Message-ID: <1254164330-23072-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090928181846.GC3643-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,81 +15,353 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Tobias Oetiker <tobi-7K0TWYW2a3pyDzI6CaY1VQ@public.gmane.org>, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-09-28 at 14:18 -0400, Vivek Goyal wrote:
-> On Mon, Sep 28, 2009 at 07:51:14PM +0200, Mike Galbraith wrote:
+This is an incremental step towards supporting checkpoint/restart on
+AF_INET sockets.  In this scenario, any sockets that were in TCP_LISTEN
+state are restored as they were.  Any that were connected are forced to
+TCP_CLOSE.  This should cover a range of use cases that involve
+applications that are tolerant of such an interruption.
 
-> I guess changing class to IDLE should have helped a bit as now this is
-> equivalent to setting the quantum to 1 and after dispatching one request
-> to disk, CFQ will always expire the writer once. So it might happen that
-> by the the reader preempted writer, we have less number of requests in
-> disk and lesser latency for this reader.
+Cc: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint_hdr.h |   11 ++
+ include/net/inet_common.h      |    9 ++
+ net/checkpoint.c               |    9 ++
+ net/ipv4/Makefile              |    1 +
+ net/ipv4/af_inet.c             |    6 +
+ net/ipv4/checkpoint.c          |  204 ++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 240 insertions(+), 0 deletions(-)
+ create mode 100644 net/ipv4/checkpoint.c
 
-I expected SCHED_IDLE to be better than setting quantum to 1, because
-max is quantum*4 if you aren't IDLE.  But that's not what happened.  I
-just retested with all knobs set back to stock, fairness off, and
-quantum set to 1 with everything running nice 0.  2.8 seconds avg :-/
-
-> > I saw
-> > the reference to Vivek's patch, and gave it a shot.  Makes a large
-> > difference.
-> >                                                            Avg
-> > perf stat     12.82     7.19     8.49     5.76     9.32    8.7     anticipatory
-> >               16.24   175.82   154.38   228.97   147.16  144.5     noop
-> >               43.23    57.39    96.13   148.25   180.09  105.0     deadline
-> >                9.15    14.51     9.39    15.06     9.90   11.6     cfq fairness=0 dd=nice 0
-> >               12.22     9.85    12.55     9.88    15.06   11.9     cfq fairness=0 dd=nice 19
-> >                9.77    13.19    11.78    17.40     9.51   11.9     cfq fairness=0 dd=SCHED_IDLE
-> >                4.59     2.74     4.70     3.45     4.69    4.0     cfq fairness=1 dd=nice 0
-> >                3.79     4.66     2.66     5.15     3.03    3.8     cfq fairness=1 dd=nice 19
-> >                2.79     4.73     2.79     4.02     2.50    3.3     cfq fairness=1 dd=SCHED_IDLE
-> > 
-> 
-> Hmm.., looks like average latency went down only in  case of fairness=1
-> and not in case of fairness=0. (Looking at previous mail, average vanilla
-> cfq latencies were around 12 seconds).
-
-Yup.
-
-> Are you running all this in root group or have you put writers and readers
-> into separate cgroups?
-
-No cgroups here.
-
-> If everything is running in root group, then I am curious why latency went
-> down in case of fairness=1. The only thing fairness=1 parameter does is
-> that it lets complete all the requests from previous queue before start
-> dispatching from next queue. On top of this is valid only if no preemption
-> took place. In your test case, konsole should preempt the writer so
-> practically fairness=1 might not make much difference.
-
-fairness=1 very definitely makes a very large difference.  All of those
-cfq numbers were logged in back to back runs.
-
-> In fact now Jens has committed a patch which achieves the similar effect as
-> fairness=1 for async queues.
-
-Yeah, I was there yesterday.  I speculated that that would hurt my
-reader, but rearranging things didn't help one bit.  Playing with merge,
-I managed to give dd ~7% more throughput, and injured poor reader even
-more.  (problem analysis via hammer/axe not always most effective;)
-
-> commit 5ad531db6e0f3c3c985666e83d3c1c4d53acccf9
-> Author: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-> Date:   Fri Jul 3 12:57:48 2009 +0200
-> 
->     cfq-iosched: drain device queue before switching to a sync queue
->     
->     To lessen the impact of async IO on sync IO, let the device drain of
->     any async IO in progress when switching to a sync cfqq that has idling
->     enabled.
-> 
-> 
-> If everything is in separate cgroups, then we should have seen latency 
-> improvements in case of fairness=0 case also. I am little perplexed here..
-> 
-> Thanks
-> Vivek
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 2ed523f..b5ce115 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -15,9 +15,11 @@
+ #ifdef __KERNEL__
+ #include <linux/socket.h>
+ #include <linux/un.h>
++#include <linux/in.h>
+ #else
+ #include <sys/socket.h>
+ #include <sys/un.h>
++#include <sys/in.h>
+ #endif
+ 
+ /*
+@@ -106,6 +108,7 @@ enum {
+ 	CKPT_HDR_SOCKET_QUEUE,
+ 	CKPT_HDR_SOCKET_BUFFER,
+ 	CKPT_HDR_SOCKET_UNIX,
++	CKPT_HDR_SOCKET_INET,
+ 
+ 	CKPT_HDR_TAIL = 9001,
+ 
+@@ -470,6 +473,14 @@ struct ckpt_hdr_socket_unix {
+ 	struct sockaddr_un raddr;
+ } __attribute__ ((aligned(8)));
+ 
++struct ckpt_hdr_socket_inet {
++	struct ckpt_hdr h;
++	__u32 laddr_len;
++	__u32 raddr_len;
++	struct sockaddr_in laddr;
++	struct sockaddr_in raddr;
++} __attribute__((aligned(8)));
++
+ struct ckpt_hdr_file_socket {
+ 	struct ckpt_hdr_file common;
+ 	__s32 sock_objref;
+diff --git a/include/net/inet_common.h b/include/net/inet_common.h
+index 18c7732..7ade732 100644
+--- a/include/net/inet_common.h
++++ b/include/net/inet_common.h
+@@ -45,6 +45,15 @@ extern int			inet_ctl_sock_create(struct sock **sk,
+ 						     unsigned char protocol,
+ 						     struct net *net);
+ 
++#ifdef CONFIG_CHECKPOINT
++struct ckpt_ctx;
++struct ckpt_hdr_socket;
++extern int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock);
++extern int inet_collect(struct ckpt_ctx *ctx, struct socket *sock);
++extern int inet_restore(struct ckpt_ctx *cftx, struct socket *sock,
++			struct ckpt_hdr_socket *h);
++#endif /* CONFIG_CHECKPOINT */
++
+ static inline void inet_ctl_sock_destroy(struct sock *sk)
+ {
+ 	sk_release_kernel(sk);
+diff --git a/net/checkpoint.c b/net/checkpoint.c
+index a11ec7a..6960389 100644
+--- a/net/checkpoint.c
++++ b/net/checkpoint.c
+@@ -711,6 +711,15 @@ struct sock *do_sock_restore(struct ckpt_ctx *ctx)
+ 	if (ret < 0)
+ 		goto err;
+ 
++	if ((h->sock_common.family == AF_INET) &&
++	    (h->sock.state != TCP_LISTEN)) {
++		/* Temporary hack to enable restore of TCP_LISTEN sockets
++		 * while forcing anything else to a closed state
++		 */
++		sock->sk->sk_state = TCP_CLOSE;
++		sock->state = SS_UNCONNECTED;
++	}
++
+ 	ckpt_hdr_put(ctx, h);
+ 	return sock->sk;
+  err:
+diff --git a/net/ipv4/Makefile b/net/ipv4/Makefile
+index 80ff87c..c00d8ce 100644
+--- a/net/ipv4/Makefile
++++ b/net/ipv4/Makefile
+@@ -49,6 +49,7 @@ obj-$(CONFIG_TCP_CONG_LP) += tcp_lp.o
+ obj-$(CONFIG_TCP_CONG_YEAH) += tcp_yeah.o
+ obj-$(CONFIG_TCP_CONG_ILLINOIS) += tcp_illinois.o
+ obj-$(CONFIG_NETLABEL) += cipso_ipv4.o
++obj-$(CONFIG_CHECKPOINT) += checkpoint.o
+ 
+ obj-$(CONFIG_XFRM) += xfrm4_policy.o xfrm4_state.o xfrm4_input.o \
+ 		      xfrm4_output.o
+diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
+index 566ea6c..7828885 100644
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -857,6 +857,9 @@ const struct proto_ops inet_stream_ops = {
+ 	.mmap		   = sock_no_mmap,
+ 	.sendpage	   = tcp_sendpage,
+ 	.splice_read	   = tcp_splice_read,
++	.checkpoint        = inet_checkpoint,
++	.restore           = inet_restore,
++	.collect           = inet_collect,
+ #ifdef CONFIG_COMPAT
+ 	.compat_setsockopt = compat_sock_common_setsockopt,
+ 	.compat_getsockopt = compat_sock_common_getsockopt,
+@@ -882,6 +885,9 @@ const struct proto_ops inet_dgram_ops = {
+ 	.recvmsg	   = sock_common_recvmsg,
+ 	.mmap		   = sock_no_mmap,
+ 	.sendpage	   = inet_sendpage,
++	.checkpoint        = inet_checkpoint,
++	.restore           = inet_restore,
++	.collect           = inet_collect,
+ #ifdef CONFIG_COMPAT
+ 	.compat_setsockopt = compat_sock_common_setsockopt,
+ 	.compat_getsockopt = compat_sock_common_getsockopt,
+diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
+new file mode 100644
+index 0000000..881e723
+--- /dev/null
++++ b/net/ipv4/checkpoint.c
+@@ -0,0 +1,204 @@
++/*
++ *  Copyright 2009 IBM Corporation
++ *
++ *  Author(s): Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++ *
++ *  This program is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU General Public License as
++ *  published by the Free Software Foundation, version 2 of the
++ *  License.
++ */
++
++#include <linux/namei.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++#include <linux/tcp.h>
++#include <linux/in.h>
++#include <linux/deferqueue.h>
++#include <net/tcp_states.h>
++#include <net/tcp.h>
++
++struct dq_sock {
++	struct ckpt_ctx *ctx;
++	struct sock *sk;
++};
++
++struct dq_buffers {
++	struct ckpt_ctx *ctx;
++	struct sock *sk;
++};
++
++int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
++{
++	struct ckpt_hdr_socket_inet *in;
++	int ret = -EINVAL;
++
++       in = ckpt_hdr_get_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
++       if (!in)
++               goto out;
++
++       ret = ckpt_sock_getnames(ctx, sock,
++				(struct sockaddr *)&in->laddr, &in->laddr_len,
++				(struct sockaddr *)&in->raddr, &in->raddr_len);
++       if (ret)
++	       goto out;
++
++       ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) in);
++ out:
++       ckpt_hdr_put(ctx, in);
++
++       return ret;
++}
++
++int inet_collect(struct ckpt_ctx *ctx, struct socket *sock)
++{
++       return ckpt_obj_collect(ctx, sock->sk, CKPT_OBJ_SOCK);
++}
++
++static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
++{
++	struct ckpt_hdr_socket_buffer *h;
++	int len;
++	int ret;
++	struct sk_buff *skb;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
++	if (len < 0) {
++		ret = len;
++		goto out;
++	} else if (len > SKB_MAX_ALLOC) {
++		ckpt_debug("Socket buffer too big (%i > %lu)",
++			   len, SKB_MAX_ALLOC);
++		ret = -ENOSPC;
++		goto out;
++	}
++
++	skb = alloc_skb(len, GFP_KERNEL);
++	if (!skb) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ret = ckpt_kread(ctx, skb_put(skb, len), len);
++	if (ret < 0)
++		goto out;
++
++	spin_lock(&queue->lock);
++	skb_queue_tail(queue, skb);
++	spin_unlock(&queue->lock);
++ out:
++	ckpt_hdr_put(ctx, h);
++
++	if (ret < 0)
++		kfree_skb(skb);
++
++	return ret;
++}
++
++static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
++{
++	struct ckpt_hdr_socket_queue *h;
++	int ret = 0;
++	int i;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	for (i = 0; i < h->skb_count; i++) {
++		ret = inet_read_buffer(ctx, queue);
++		ckpt_debug("read inet buffer %i: %i", i, ret);
++		if (ret < 0)
++			goto out;
++
++		if (ret > h->total_bytes) {
++			ckpt_debug("Buffers exceeded claim");
++			ret = -EINVAL;
++			goto out;
++		}
++
++		h->total_bytes -= ret;
++		ret = 0;
++	}
++
++	ret = h->skb_count;
++ out:
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
++static int inet_deferred_restore_buffers(void *data)
++{
++	struct dq_buffers *dq = (struct dq_buffers *)data;
++	struct ckpt_ctx *ctx = dq->ctx;
++	struct sock *sk = dq->sk;
++	int ret;
++
++	ret = inet_read_buffers(ctx, &sk->sk_receive_queue);
++	ckpt_debug("(R) inet_read_buffers: %i\n", ret);
++	if (ret < 0)
++		return ret;
++
++	ret = inet_read_buffers(ctx, &sk->sk_write_queue);
++	ckpt_debug("(W) inet_read_buffers: %i\n", ret);
++
++	return ret;
++}
++
++static int inet_defer_restore_buffers(struct ckpt_ctx *ctx, struct sock *sk)
++{
++	struct dq_buffers dq;
++
++	dq.ctx = ctx;
++	dq.sk = sk;
++
++	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
++			      inet_deferred_restore_buffers, NULL);
++}
++
++int inet_restore(struct ckpt_ctx *ctx,
++		 struct socket *sock,
++		 struct ckpt_hdr_socket *h)
++{
++	struct ckpt_hdr_socket_inet *in;
++	int ret = 0;
++
++	in = ckpt_read_obj_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
++	if (IS_ERR(in))
++		return PTR_ERR(in);
++
++	/* Listening sockets and those that are closed but have a local
++	 * address need to call bind()
++	 */
++	if ((h->sock.state == TCP_LISTEN) ||
++	    ((h->sock.state == TCP_CLOSE) && (in->laddr_len > 0))) {
++		sock->sk->sk_reuse = 2;
++		inet_sk(sock->sk)->freebind = 1;
++		ret = sock->ops->bind(sock,
++				      (struct sockaddr *)&in->laddr,
++				      in->laddr_len);
++		ckpt_debug("inet bind: %i\n", ret);
++		if (ret < 0)
++			goto out;
++
++		if (h->sock.state == TCP_LISTEN) {
++			ret = sock->ops->listen(sock, h->sock.backlog);
++			ckpt_debug("inet listen: %i\n", ret);
++			if (ret < 0)
++				goto out;
++		}
++	} else {
++		if (!sock_flag(sock->sk, SOCK_DEAD))
++			ret = inet_defer_restore_buffers(ctx, sock->sk);
++	}
++ out:
++	ckpt_hdr_put(ctx, in);
++
++	return ret;
++ }
++
+-- 
+1.6.2.5
