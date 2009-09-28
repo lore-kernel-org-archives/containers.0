@@ -1,11 +1,20 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] user-cr: fix powerpc build
-Date: Mon, 28 Sep 2009 13:43:54 -0500
-Message-ID: <1254163434-14196-1-git-send-email-ntl@pobox.com>
+From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Mon, 28 Sep 2009 20:53:54 +0200
+Message-ID: <1254164034.9820.81.camel__46332.7687154107$1254164165$gmane$org@marge.simson.net>
+References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
+	<4ABC28DE.7050809@datenparkplatz.de>
+	<20090925202636.GC15007@redhat.com>
+	<4e5e476b0909271000u69d79346s27cccad219e49902@mail.gmail.com>
+	<20090928145655.GB8192@redhat.com>
+	<4e5e476b0909280835w3410d58aod93a29d1dcda8909@mail.gmail.com>
+	<1254160274.9820.25.camel@marge.simson.net>
+	<20090928181846.GC3643@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20090928181846.GC3643-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,51 +24,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Tobias Oetiker <tobi-7K0TWYW2a3pyDzI6CaY1VQ@public.gmane.org>, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-U2V2ZXJhbCB3YXJuaW5ncyBhbmQgYSBsaW5rIGVycm9yIGluIGN1cnJlbnQgYnVpbGQgb24gcG93
-ZXJwYzoKCm1ha2UgU1VCQVJDSD1wcGMgQ1BQRkxBR1M9LUkkUFdELy4uL2xpbnV4LTIuNi5naXQv
-dXNyL2luY2x1ZGUKY2MgLWcgLVdhbGwgLVdzdHJpY3QtcHJvdG90eXBlcyAtV25vLXRyaWdyYXBo
-cyAtSS4uL2xpbnV4L2luY2x1ZGUgLUkuLi9saW51eC9hcmNoLy9pbmNsdWRlIC1EQ0hFQ0tQT0lO
-VF9ERUJVRyAtRF9fUkVFTlRSQU5UIC1wdGhyZWFkIC1EQVJDSF9IQVNfQ0xPTkVfV0lUSF9QSUQg
-LUkvaG9tZS9uYXRoYW5sL2RldmVsL3VzZXItY3IuZ2l0Ly4uL2xpbnV4LTIuNi5naXQvdXNyL2lu
-Y2x1ZGUgIC1jIC1vIGNsb25lX3BwYy5vIGNsb25lX3BwYy5jCmNsb25lX3BwYy5jOjI4OiB3YXJu
-aW5nOiDigJhzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXTigJkgZGVjbGFyZWQgaW5zaWRlIHBhcmFtZXRl
-ciBsaXN0CmNsb25lX3BwYy5jOjI4OiB3YXJuaW5nOiBpdHMgc2NvcGUgaXMgb25seSB0aGlzIGRl
-ZmluaXRpb24gb3IgZGVjbGFyYXRpb24sIHdoaWNoIGlzIHByb2JhYmx5IG5vdCB3aGF0IHlvdSB3
-YW50CmNsb25lX3BwYy5jOiBJbiBmdW5jdGlvbiDigJhjbG9uZV93aXRoX3BpZHPigJk6CmNsb25l
-X3BwYy5jOjM1OiB3YXJuaW5nOiBpbXBsaWNpdCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiDigJhf
-X2Nsb25lX3dpdGhfcGlkc+KAmQpjbG9uZV9wcGMuYzogQXQgdG9wIGxldmVsOgpjbG9uZV9wcGMu
-YzoyOTogd2FybmluZzog4oCYY2xvbmVfd2l0aF9waWRz4oCZIGRlZmluZWQgYnV0IG5vdCB1c2Vk
-CmNjIC1nIC1XYWxsIC1Xc3RyaWN0LXByb3RvdHlwZXMgLVduby10cmlncmFwaHMgLUkuLi9saW51
-eC9pbmNsdWRlIC1JLi4vbGludXgvYXJjaC8vaW5jbHVkZSAtRENIRUNLUE9JTlRfREVCVUcgLURf
-X1JFRU5UUkFOVCAtcHRocmVhZCAtREFSQ0hfSEFTX0NMT05FX1dJVEhfUElEIC1JL2hvbWUvbmF0
-aGFubC9kZXZlbC91c2VyLWNyLmdpdC8uLi9saW51eC0yLjYuZ2l0L3Vzci9pbmNsdWRlICAgcmVz
-dGFydC5jIGNsb25lX3BwYy5vIGNsb25lX3BwY18ubyAgLWxtIC1vIHJlc3RhcnQKL3RtcC9jY1VM
-MFBIMC5vOiBJbiBmdW5jdGlvbiBgY2twdF9mb3JrX2NoaWxkJzoKL2hvbWUvbmF0aGFubC9kZXZl
-bC91c2VyLWNyLmdpdC9yZXN0YXJ0LmM6MTY1OTogdW5kZWZpbmVkIHJlZmVyZW5jZSB0byBgY2xv
-bmVfd2l0aF9waWRzJwoKRGVjbGFyZSBzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQgYW5kIF9fY2xvbmVf
-d2l0aF9waWRzOyBtYWtlCmNsb25lX3dpdGhfcGlkcyBleHRlcm4uCgpTaWduZWQtb2ZmLWJ5OiBO
-YXRoYW4gTHluY2ggPG50bEBwb2JveC5jb20+Ci0tLQogY2xvbmVfcHBjLmMgfCAgIDEzICsrKysr
-KysrKysrKy0KIDEgZmlsZXMgY2hhbmdlZCwgMTIgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMo
-LSkKCmRpZmYgLS1naXQgYS9jbG9uZV9wcGMuYyBiL2Nsb25lX3BwYy5jCmluZGV4IDIwOWYwMGIu
-LjA5YjUxYjUgMTAwNjQ0Ci0tLSBhL2Nsb25lX3BwYy5jCisrKyBiL2Nsb25lX3BwYy5jCkBAIC0x
-Niw2ICsxNiwxNyBAQAogI2luY2x1ZGUgPHN5cy9zeXNjYWxsLmg+CiAjaW5jbHVkZSA8YXNtL3Vu
-aXN0ZC5oPgogCitzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQ7CisKK2V4dGVybiBpbnQgX19jbG9uZV93
-aXRoX3BpZHMoaW50ICgqZm4pKHZvaWQgKmFyZyksCisJCQkgICAgIHZvaWQgKmNoaWxkX3N0YWNr
-ICwKKwkJCSAgICAgaW50IGZsYWdzLAorCQkJICAgICB2b2lkICphcmcsCisJCQkgICAgIHZvaWQg
-KnBhcmVudF90aWQsCisJCQkgICAgIHZvaWQgKnRscywKKwkJCSAgICAgdm9pZCAqY2hpbGRfdGlk
-LAorCQkJICAgICBzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQgKnNldHApOworCiAvKgogICogbGliYyBk
-b2Vzbid0IHN1cHBvcnQgY2xvbmVfd2l0aF9waWQoKSB5ZXQuLi4KICAqIGJlbG93IGlzIGFyY2gt
-ZGVwZW5kZW50IGNvZGUgdG8gdXNlIHRoZSBzeXNjYWxsCkBAIC0yNCw3ICszNSw3IEBACiAKIC8q
-IChzZWU6IGh0dHA6Ly9sa21sLmluZGlhbmEuZWR1L2h5cGVybWFpbC9saW51eC9rZXJuZWwvOTYw
-NC4zLzAyMDQuaHRtbCkgKi8KIAotc3RhdGljIGludCBjbG9uZV93aXRoX3BpZHMoaW50ICgqZm4p
-KHZvaWQgKiksIHZvaWQgKmNoaWxkX3N0YWNrLCBpbnQgZmxhZ3MsCitpbnQgY2xvbmVfd2l0aF9w
-aWRzKGludCAoKmZuKSh2b2lkICopLCB2b2lkICpjaGlsZF9zdGFjaywgaW50IGZsYWdzLAogCQkJ
-ICAgc3RydWN0IHRhcmdldF9waWRfc2V0ICp0YXJnZXRfcGlkcywgdm9pZCAqYXJnKQogewogCXZv
-aWQgKnBhcmVudF90aWQgPSBOVUxMOwotLSAKMS42LjAuNgoKX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
-bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Mon, 2009-09-28 at 14:18 -0400, Vivek Goyal wrote:
+> On Mon, Sep 28, 2009 at 07:51:14PM +0200, Mike Galbraith wrote:
+
+> I guess changing class to IDLE should have helped a bit as now this is
+> equivalent to setting the quantum to 1 and after dispatching one request
+> to disk, CFQ will always expire the writer once. So it might happen that
+> by the the reader preempted writer, we have less number of requests in
+> disk and lesser latency for this reader.
+
+I expected SCHED_IDLE to be better than setting quantum to 1, because
+max is quantum*4 if you aren't IDLE.  But that's not what happened.  I
+just retested with all knobs set back to stock, fairness off, and
+quantum set to 1 with everything running nice 0.  2.8 seconds avg :-/
+
+> > I saw
+> > the reference to Vivek's patch, and gave it a shot.  Makes a large
+> > difference.
+> >                                                            Avg
+> > perf stat     12.82     7.19     8.49     5.76     9.32    8.7     anticipatory
+> >               16.24   175.82   154.38   228.97   147.16  144.5     noop
+> >               43.23    57.39    96.13   148.25   180.09  105.0     deadline
+> >                9.15    14.51     9.39    15.06     9.90   11.6     cfq fairness=0 dd=nice 0
+> >               12.22     9.85    12.55     9.88    15.06   11.9     cfq fairness=0 dd=nice 19
+> >                9.77    13.19    11.78    17.40     9.51   11.9     cfq fairness=0 dd=SCHED_IDLE
+> >                4.59     2.74     4.70     3.45     4.69    4.0     cfq fairness=1 dd=nice 0
+> >                3.79     4.66     2.66     5.15     3.03    3.8     cfq fairness=1 dd=nice 19
+> >                2.79     4.73     2.79     4.02     2.50    3.3     cfq fairness=1 dd=SCHED_IDLE
+> > 
+> 
+> Hmm.., looks like average latency went down only in  case of fairness=1
+> and not in case of fairness=0. (Looking at previous mail, average vanilla
+> cfq latencies were around 12 seconds).
+
+Yup.
+
+> Are you running all this in root group or have you put writers and readers
+> into separate cgroups?
+
+No cgroups here.
+
+> If everything is running in root group, then I am curious why latency went
+> down in case of fairness=1. The only thing fairness=1 parameter does is
+> that it lets complete all the requests from previous queue before start
+> dispatching from next queue. On top of this is valid only if no preemption
+> took place. In your test case, konsole should preempt the writer so
+> practically fairness=1 might not make much difference.
+
+fairness=1 very definitely makes a very large difference.  All of those
+cfq numbers were logged in back to back runs.
+
+> In fact now Jens has committed a patch which achieves the similar effect as
+> fairness=1 for async queues.
+
+Yeah, I was there yesterday.  I speculated that that would hurt my
+reader, but rearranging things didn't help one bit.  Playing with merge,
+I managed to give dd ~7% more throughput, and injured poor reader even
+more.  (problem analysis via hammer/axe not always most effective;)
+
+> commit 5ad531db6e0f3c3c985666e83d3c1c4d53acccf9
+> Author: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+> Date:   Fri Jul 3 12:57:48 2009 +0200
+> 
+>     cfq-iosched: drain device queue before switching to a sync queue
+>     
+>     To lessen the impact of async IO on sync IO, let the device drain of
+>     any async IO in progress when switching to a sync cfqq that has idling
+>     enabled.
+> 
+> 
+> If everything is in separate cgroups, then we should have seen latency 
+> improvements in case of fairness=0 case also. I am little perplexed here..
+> 
+> Thanks
+> Vivek
