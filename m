@@ -1,15 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] Add c/r support for listening INET sockets
-Date: Tue, 29 Sep 2009 12:56:56 -0700
-Message-ID: <87r5tpo77b.fsf@caffeine.danplanet.com>
-References: <1254164330-23072-1-git-send-email-danms@us.ibm.com>
-	<20090929195025.GA14956@us.ibm.com>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
+Date: Tue, 29 Sep 2009 13:00:36 -0700
+Message-ID: <4AC26764.10803__49906.7412493334$1254255196$gmane$org@zytor.com>
+References: <20090924165548.GA16586@us.ibm.com>	<20090924170308.GH16989@us.ibm.com>	<200909242343.59903.arnd@arndb.de>	<20090925082346.GB4436@localdomain>	<20090925105632.GG12824@hawkmoon.kerlabs.com>	<20090929180537.GD4625@us.ibm.com>	<20090929184023.532DF34@magilla.sf.frob.com>	<4AC255A4.4030002@zytor.com>
+	<20090929210207.247b94df@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090929195025.GA14956-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Tue\, 29 Sep 2009 14\:50\:25 -0500")
+In-Reply-To: <20090929210207.247b94df-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,47 +18,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
->> +	if ((h->sock_common.family == AF_INET) &&
->> +	    (h->sock.state != TCP_LISTEN)) {
->> +		/* Temporary hack to enable restore of TCP_LISTEN sockets
->> +		 * while forcing anything else to a closed state
->> +		 */
->> +		sock->sk->sk_state = TCP_CLOSE;
+On 09/29/2009 12:02 PM, Arjan van de Ven wrote:
+> On Tue, 29 Sep 2009 11:44:52 -0700
+> "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org> wrote:
+> 
+>> On 09/29/2009 11:40 AM, Roland McGrath wrote:
+>>> Why add a new syscall at all instead of just using a new CLONE_*
+>>> flag to indicate that the argument layout is different?
+>>
+>> What an absolutely atrociously bad idea.
+>>
+>> We already have a syscall layer which is painful to thunk in places,
+>> and this would make it much worse.
+>>
+> syscalls are cheap as well.
+> cheaper than decades of dealing with such multiplexer mess ;/
+> 
 
-SH> I'll admit by this point I'm a bit confused about the order in
-SH> which these things are restored.  Does do_sock_restore() run
-SH> before inet_restore() below (curious whether its check for
-SH> TCP_CLOSE will catch these particular sockets).
+It really comes down to wanting all the dispatch to happen in one
+central place.
 
-It runs after inet_restore(), which was called above via
-sock->ops->restore().  Thus, inet_restore() can largely ignore the
-connected sockets and then they're forced closed here (since
-inet_restore() runs before the common restore routine, otherwise it
-could set them closed itself).
-
->> +int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
->> +{
->> +	struct ckpt_hdr_socket_inet *in;
->> +	int ret = -EINVAL;
->> +
->> +       in = ckpt_hdr_get_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
->> +       if (!in)
->> +               goto out;
-
-SH> Better to just return...  I don't think this'll cause a crash (it
-SH> only makes ckpt_hdr_put() pass ((struct ckpt_hdr *)NULL)->len to
-SH> _ckpt_hdr_put which then ignores it and does a safe kfree(NULL)),
-SH> but it won't be safe if the implementation of the ckpt_hdr_*()
-SH> calls end up changing.
-
-Sure.  Also note my broken whitespace that came as a result of me
-cutting patches into pieces.  I'll fix that too.
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+	-hpa
