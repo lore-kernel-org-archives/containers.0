@@ -1,21 +1,15 @@
-From: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Subject: Re: IO scheduler based IO controller V10
-Date: Tue, 29 Sep 2009 09:14:48 +0200
-Message-ID: <4e5e476b0909290014u1374e65an859528441373510f__22311.6640620448$1254208532$gmane$org@mail.gmail.com>
+Date: Tue, 29 Sep 2009 18:56:53 +0900 (JST)
+Message-ID: <20090929.185653.183056711.ryov__5759.83345411277$1254218356$gmane$org@valinux.co.jp>
 References: <1253820332-10246-1-git-send-email-vgoyal@redhat.com>
-	<4ABC28DE.7050809@datenparkplatz.de>
-	<20090925202636.GC15007@redhat.com>
-	<4e5e476b0909271000u69d79346s27cccad219e49902@mail.gmail.com>
-	<20090928145655.GB8192@redhat.com>
-	<4e5e476b0909280835w3410d58aod93a29d1dcda8909@mail.gmail.com>
-	<1254160274.9820.25.camel@marge.simson.net>
-	<20090928181846.GC3643@redhat.com>
-	<1254164034.9820.81.camel@marge.simson.net>
+	<e98e18940909281737q142c788dpd20b8bdc05dd0eff@mail.gmail.com>
+	<20090929032255.GA10664@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1254164034.9820.81.camel-YqMYhexLQo1vAv1Ojkdn7Q@public.gmane.org>
+In-Reply-To: <20090929032255.GA10664-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,94 +19,246 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Cc: Tobias Oetiker <tobi-7K0TWYW2a3pyDzI6CaY1VQ@public.gmane.org>, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgTWlrZSwKT24gTW9uLCBTZXAgMjgsIDIwMDkgYXQgODo1MyBQTSwgTWlrZSBHYWxicmFpdGgg
-PGVmYXVsdEBnbXguZGU+IHdyb3RlOgo+IE9uIE1vbiwgMjAwOS0wOS0yOCBhdCAxNDoxOCAtMDQw
-MCwgVml2ZWsgR295YWwgd3JvdGU6Cj4+IE9uIE1vbiwgU2VwIDI4LCAyMDA5IGF0IDA3OjUxOjE0
-UE0gKzAyMDAsIE1pa2UgR2FsYnJhaXRoIHdyb3RlOgo+Cj4+IEkgZ3Vlc3MgY2hhbmdpbmcgY2xh
-c3MgdG8gSURMRSBzaG91bGQgaGF2ZSBoZWxwZWQgYSBiaXQgYXMgbm93IHRoaXMgaXMKPj4gZXF1
-aXZhbGVudCB0byBzZXR0aW5nIHRoZSBxdWFudHVtIHRvIDEgYW5kIGFmdGVyIGRpc3BhdGNoaW5n
-IG9uZSByZXF1ZXN0Cj4+IHRvIGRpc2ssIENGUSB3aWxsIGFsd2F5cyBleHBpcmUgdGhlIHdyaXRl
-ciBvbmNlLiBTbyBpdCBtaWdodCBoYXBwZW4gdGhhdAo+PiBieSB0aGUgdGhlIHJlYWRlciBwcmVl
-bXB0ZWQgd3JpdGVyLCB3ZSBoYXZlIGxlc3MgbnVtYmVyIG9mIHJlcXVlc3RzIGluCj4+IGRpc2sg
-YW5kIGxlc3NlciBsYXRlbmN5IGZvciB0aGlzIHJlYWRlci4KPgo+IEkgZXhwZWN0ZWQgU0NIRURf
-SURMRSB0byBiZSBiZXR0ZXIgdGhhbiBzZXR0aW5nIHF1YW50dW0gdG8gMSwgYmVjYXVzZQo+IG1h
-eCBpcyBxdWFudHVtKjQgaWYgeW91IGFyZW4ndCBJRExFLiDCoEJ1dCB0aGF0J3Mgbm90IHdoYXQg
-aGFwcGVuZWQuIMKgSQo+IGp1c3QgcmV0ZXN0ZWQgd2l0aCBhbGwga25vYnMgc2V0IGJhY2sgdG8g
-c3RvY2ssIGZhaXJuZXNzIG9mZiwgYW5kCj4gcXVhbnR1bSBzZXQgdG8gMSB3aXRoIGV2ZXJ5dGhp
-bmcgcnVubmluZyBuaWNlIDAuIMKgMi44IHNlY29uZHMgYXZnIDotLwoKSWRsZSBkb2Vzbid0IHdv
-cmsgdmVyeSB3ZWxsIGZvciBhc3luYyB3cml0ZXMsIHNpbmNlIHRoZSB3cml0ZXIgcHJvY2Vzcwp3
-aWxsIGp1c3Qgc2VuZCBpdHMgd3JpdGVzIHRvIHRoZSBwYWdlIGNhY2hlLgpUaGUgcmVhbCB3cml0
-ZWJhY2sgd2lsbCBoYXBwZW4gaW4gdGhlIGNvbnRleHQgb2YgYSBrZXJuZWwgdGhyZWFkLCB3aXRo
-CmJlc3QgZWZmb3J0IHNjaGVkdWxpbmcgY2xhc3MuCgo+Cj4+ID4gSSBzYXcKPj4gPiB0aGUgcmVm
-ZXJlbmNlIHRvIFZpdmVrJ3MgcGF0Y2gsIGFuZCBnYXZlIGl0IGEgc2hvdC4gwqBNYWtlcyBhIGxh
-cmdlCj4+ID4gZGlmZmVyZW5jZS4KPj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oEF2Zwo+PiA+IHBlcmYgc3RhdCDCoCDCoCAxMi44MiDCoCDCoCA3LjE5IMKgIMKgIDguNDkgwqAg
-wqAgNS43NiDCoCDCoCA5LjMyIMKgIMKgOC43IMKgIMKgIGFudGljaXBhdG9yeQo+PiA+IMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIDE2LjI0IMKgIDE3NS44MiDCoCAxNTQuMzggwqAgMjI4Ljk3IMKgIDE0
-Ny4xNiDCoDE0NC41IMKgIMKgIG5vb3AKPj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCA0My4yMyDC
-oCDCoDU3LjM5IMKgIMKgOTYuMTMgwqAgMTQ4LjI1IMKgIDE4MC4wOSDCoDEwNS4wIMKgIMKgIGRl
-YWRsaW5lCj4+ID4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqA5LjE1IMKgIMKgMTQuNTEgwqAgwqAg
-OS4zOSDCoCDCoDE1LjA2IMKgIMKgIDkuOTAgwqAgMTEuNiDCoCDCoCBjZnEgZmFpcm5lc3M9MCBk
-ZD1uaWNlIDAKPj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCAxMi4yMiDCoCDCoCA5Ljg1IMKgIMKg
-MTIuNTUgwqAgwqAgOS44OCDCoCDCoDE1LjA2IMKgIDExLjkgwqAgwqAgY2ZxIGZhaXJuZXNzPTAg
-ZGQ9bmljZSAxOQo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgOS43NyDCoCDCoDEzLjE5IMKg
-IMKgMTEuNzggwqAgwqAxNy40MCDCoCDCoCA5LjUxIMKgIDExLjkgwqAgwqAgY2ZxIGZhaXJuZXNz
-PTAgZGQ9U0NIRURfSURMRQo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgNC41OSDCoCDCoCAy
-Ljc0IMKgIMKgIDQuNzAgwqAgwqAgMy40NSDCoCDCoCA0LjY5IMKgIMKgNC4wIMKgIMKgIGNmcSBm
-YWlybmVzcz0xIGRkPW5pY2UgMAo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgMy43OSDCoCDC
-oCA0LjY2IMKgIMKgIDIuNjYgwqAgwqAgNS4xNSDCoCDCoCAzLjAzIMKgIMKgMy44IMKgIMKgIGNm
-cSBmYWlybmVzcz0xIGRkPW5pY2UgMTkKPj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoDIuNzkg
-wqAgwqAgNC43MyDCoCDCoCAyLjc5IMKgIMKgIDQuMDIgwqAgwqAgMi41MCDCoCDCoDMuMyDCoCDC
-oCBjZnEgZmFpcm5lc3M9MSBkZD1TQ0hFRF9JRExFCj4+ID4KPj4KPj4gSG1tLi4sIGxvb2tzIGxp
-a2UgYXZlcmFnZSBsYXRlbmN5IHdlbnQgZG93biBvbmx5IGluIMKgY2FzZSBvZiBmYWlybmVzcz0x
-Cj4+IGFuZCBub3QgaW4gY2FzZSBvZiBmYWlybmVzcz0wLiAoTG9va2luZyBhdCBwcmV2aW91cyBt
-YWlsLCBhdmVyYWdlIHZhbmlsbGEKPj4gY2ZxIGxhdGVuY2llcyB3ZXJlIGFyb3VuZCAxMiBzZWNv
-bmRzKS4KPgo+IFl1cC4KPgo+PiBBcmUgeW91IHJ1bm5pbmcgYWxsIHRoaXMgaW4gcm9vdCBncm91
-cCBvciBoYXZlIHlvdSBwdXQgd3JpdGVycyBhbmQgcmVhZGVycwo+PiBpbnRvIHNlcGFyYXRlIGNn
-cm91cHM/Cj4KPiBObyBjZ3JvdXBzIGhlcmUuCj4KPj4gSWYgZXZlcnl0aGluZyBpcyBydW5uaW5n
-IGluIHJvb3QgZ3JvdXAsIHRoZW4gSSBhbSBjdXJpb3VzIHdoeSBsYXRlbmN5IHdlbnQKPj4gZG93
-biBpbiBjYXNlIG9mIGZhaXJuZXNzPTEuIFRoZSBvbmx5IHRoaW5nIGZhaXJuZXNzPTEgcGFyYW1l
-dGVyIGRvZXMgaXMKPj4gdGhhdCBpdCBsZXRzIGNvbXBsZXRlIGFsbCB0aGUgcmVxdWVzdHMgZnJv
-bSBwcmV2aW91cyBxdWV1ZSBiZWZvcmUgc3RhcnQKPj4gZGlzcGF0Y2hpbmcgZnJvbSBuZXh0IHF1
-ZXVlLiBPbiB0b3Agb2YgdGhpcyBpcyB2YWxpZCBvbmx5IGlmIG5vIHByZWVtcHRpb24KPj4gdG9v
-ayBwbGFjZS4gSW4geW91ciB0ZXN0IGNhc2UsIGtvbnNvbGUgc2hvdWxkIHByZWVtcHQgdGhlIHdy
-aXRlciBzbwo+PiBwcmFjdGljYWxseSBmYWlybmVzcz0xIG1pZ2h0IG5vdCBtYWtlIG11Y2ggZGlm
-ZmVyZW5jZS4KPgo+IGZhaXJuZXNzPTEgdmVyeSBkZWZpbml0ZWx5IG1ha2VzIGEgdmVyeSBsYXJn
-ZSBkaWZmZXJlbmNlLiDCoEFsbCBvZiB0aG9zZQo+IGNmcSBudW1iZXJzIHdlcmUgbG9nZ2VkIGlu
-IGJhY2sgdG8gYmFjayBydW5zLgo+Cj4+IEluIGZhY3Qgbm93IEplbnMgaGFzIGNvbW1pdHRlZCBh
-IHBhdGNoIHdoaWNoIGFjaGlldmVzIHRoZSBzaW1pbGFyIGVmZmVjdCBhcwo+PiBmYWlybmVzcz0x
-IGZvciBhc3luYyBxdWV1ZXMuCj4KPiBZZWFoLCBJIHdhcyB0aGVyZSB5ZXN0ZXJkYXkuIMKgSSBz
-cGVjdWxhdGVkIHRoYXQgdGhhdCB3b3VsZCBodXJ0IG15Cj4gcmVhZGVyLCBidXQgcmVhcnJhbmdp
-bmcgdGhpbmdzIGRpZG4ndCBoZWxwIG9uZSBiaXQuIMKgUGxheWluZyB3aXRoIG1lcmdlLAo+IEkg
-bWFuYWdlZCB0byBnaXZlIGRkIH43JSBtb3JlIHRocm91Z2hwdXQsIGFuZCBpbmp1cmVkIHBvb3Ig
-cmVhZGVyIGV2ZW4KPiBtb3JlLiDCoChwcm9ibGVtIGFuYWx5c2lzIHZpYSBoYW1tZXIvYXhlIG5v
-dCBhbHdheXMgbW9zdCBlZmZlY3RpdmU7KQo+Cj4+IGNvbW1pdCA1YWQ1MzFkYjZlMGYzYzNjOTg1
-NjY2ZTgzZDNjMWM0ZDUzYWNjY2Y5Cj4+IEF1dGhvcjogSmVucyBBeGJvZSA8amVucy5heGJvZUBv
-cmFjbGUuY29tPgo+PiBEYXRlOiDCoCBGcmkgSnVsIDMgMTI6NTc6NDggMjAwOSArMDIwMAo+Pgo+
-PiDCoCDCoCBjZnEtaW9zY2hlZDogZHJhaW4gZGV2aWNlIHF1ZXVlIGJlZm9yZSBzd2l0Y2hpbmcg
-dG8gYSBzeW5jIHF1ZXVlCj4+Cj4+IMKgIMKgIFRvIGxlc3NlbiB0aGUgaW1wYWN0IG9mIGFzeW5j
-IElPIG9uIHN5bmMgSU8sIGxldCB0aGUgZGV2aWNlIGRyYWluIG9mCj4+IMKgIMKgIGFueSBhc3lu
-YyBJTyBpbiBwcm9ncmVzcyB3aGVuIHN3aXRjaGluZyB0byBhIHN5bmMgY2ZxcSB0aGF0IGhhcyBp
-ZGxpbmcKPj4gwqAgwqAgZW5hYmxlZC4KPj4KPj4KPj4gSWYgZXZlcnl0aGluZyBpcyBpbiBzZXBh
-cmF0ZSBjZ3JvdXBzLCB0aGVuIHdlIHNob3VsZCBoYXZlIHNlZW4gbGF0ZW5jeQo+PiBpbXByb3Zl
-bWVudHMgaW4gY2FzZSBvZiBmYWlybmVzcz0wIGNhc2UgYWxzby4gSSBhbSBsaXR0bGUgcGVycGxl
-eGVkIGhlcmUuLgo+Pgo+PiBUaGFua3MKPj4gVml2ZWsKPgo+CgpUaGFua3MsCkNvcnJhZG8KCgot
-LSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX18KCmRvdHQuIENvcnJhZG8gWm9jY29sbyAgICAgICAgICAgICAg
-ICAgICAgICAgICAgbWFpbHRvOmN6b2Njb2xvQGdtYWlsLmNvbQpQaEQgLSBEZXBhcnRtZW50IG9m
-IENvbXB1dGVyIFNjaWVuY2UgLSBVbml2ZXJzaXR5IG9mIFBpc2EsIEl0YWx5Ci0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tClRoZSBzZWxmLWNvbmZpZGVuY2Ugb2YgYSB3YXJyaW9yIGlzIG5vdCB0aGUgc2VsZi1j
-b25maWRlbmNlIG9mIHRoZSBhdmVyYWdlCm1hbi4gVGhlIGF2ZXJhZ2UgbWFuIHNlZWtzIGNlcnRh
-aW50eSBpbiB0aGUgZXllcyBvZiB0aGUgb25sb29rZXIgYW5kIGNhbGxzCnRoYXQgc2VsZi1jb25m
-aWRlbmNlLiBUaGUgd2FycmlvciBzZWVrcyBpbXBlY2NhYmlsaXR5IGluIGhpcyBvd24gZXllcyBh
-bmQKY2FsbHMgdGhhdCBodW1ibGVuZXNzLgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-VGFsZXMgb2YgUG93ZXIgLSBDLiBDYXN0YW5lZGEKX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0Bs
-aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hi Vivek and all,
+
+Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Sep 28, 2009 at 05:37:28PM -0700, Nauman Rafique wrote:
+
+> > We are starting from a point where there is no cgroup based IO
+> > scheduling in the kernel. And it is probably not reasonable to satisfy
+> > all IO scheduling related requirements in one patch set. We can start
+> > with something simple, and build on top of that. So a very simple
+> > patch set that enables cgroup based proportional scheduling for CFQ
+> > seems like the way to go at this point.
+> 
+> Sure, we can start with CFQ only. But a bigger question we need to answer
+> is that is CFQ the right place to solve the issue? Jens, do you think 
+> that CFQ is the right place to solve the problem?
+> 
+> Andrew seems to favor a high level approach so that IO schedulers are less
+> complex and we can provide fairness at high level logical devices also. 
+
+I'm not in favor of expansion of CFQ, because some enterprise storages
+are better performed with NOOP rather than CFQ, and I think bandwidth
+control is needed much more for such storage system. Is it easy to
+support other IO schedulers even if a new IO scheduler is introduced?
+I would like to know a bit more specific about Namuman's scheduler design.
+
+> I will again try to summarize my understanding so far about the pros/cons
+> of each approach and then we can take the discussion forward.
+
+Good summary. Thanks for your work.
+
+> Fairness in terms of size of IO or disk time used
+> =================================================
+> On a seeky media, fairness in terms of disk time can get us better results
+> instead fairness interms of size of IO or number of IO.
+> 
+> If we implement some kind of time based solution at higher layer, then 
+> that higher layer should know who used how much of time each group used. We
+> can probably do some kind of timestamping in bio to get a sense when did it
+> get into disk and when did it finish. But on a multi queue hardware there
+> can be multiple requests in the disk either from same queue or from differnet
+> queues and with pure timestamping based apparoch, so far I could not think
+> how at high level we will get an idea who used how much of time.
+
+IIUC, could the overlap time be calculated from time-stamp on a multi
+queue hardware?
+ 
+> So this is the first point of contention that how do we want to provide
+> fairness. In terms of disk time used or in terms of size of IO/number of
+> IO.
+>
+> Max bandwidth Controller or Proportional bandwidth controller
+> =============================================================
+> What is our primary requirement here? A weight based proportional
+> bandwidth controller where we can use the resources optimally and any
+> kind of throttling kicks in only if there is contention for the disk.
+> 
+> Or we want max bandwidth control where a group is not allowed to use the
+> disk even if disk is free. 
+> 
+> Or we need both? I would think that at some point of time we will need
+> both but we can start with proportional bandwidth control first.
+
+How about making throttling policy be user selectable like the IO
+scheduler and putting it in the higher layer? So we could support
+all of policies (time-based, size-based and rate limiting). There
+seems not to only one solution which satisfies all users. But I agree
+with starting with proportional bandwidth control first. 
+
+BTW, I will start to reimplement dm-ioband into block layer.
+
+> Fairness for higher level logical devices
+> =========================================
+> Do we want good fairness numbers for higher level logical devices also
+> or it is sufficient to provide fairness at leaf nodes. Providing fairness
+> at leaf nodes can help us use the resources optimally and in the process
+> we can get fairness at higher level also in many of the cases.
+
+We should also take care of block devices which provide their own
+make_request_fn() and not use a IO scheduler. We can't use the leaf
+nodes approach to such devices.
+
+> But do we want strict fairness numbers on higher level logical devices
+> even if it means sub-optimal usage of unerlying phsical devices?
+> 
+> I think that for proportinal bandwidth control, it should be ok to provide
+> fairness at higher level logical device but for max bandwidth control it
+> might make more sense to provide fairness at higher level. Consider a
+> case where from a striped device a customer wants to limit a group to
+> 30MB/s and in case of leaf node control, if every leaf node provides
+> 30MB/s, it might accumulate to much more than specified rate at logical
+> device.
+>
+> Latency Control and strong isolation between groups
+> ===================================================
+> Do we want a good isolation between groups and better latencies and
+> stronger isolation between groups?
+> 
+> I think if problem is solved at IO scheduler level, we can achieve better
+> latency control and hence stronger isolation between groups.
+> 
+> Higher level solutions should find it hard to provide same kind of latency
+> control and isolation between groups as IO scheduler based solution.
+
+Why do you think that the higher level solution is hard to provide it? 
+I think that it is a matter of how to implement throttling policy.
+
+> Fairness for buffered writes
+> ============================
+> Doing io control at any place below page cache has disadvantage that page
+> cache might not dispatch more writes from higher weight group hence higher
+> weight group might not see more IO done. Andrew says that we don't have
+> a solution to this problem in kernel and he would like to see it handled
+> properly.
+> 
+> Only way to solve this seems to be to slow down the writers before they
+> write into page cache. IO throttling patch handled it by slowing down 
+> writer if it crossed max specified rate. Other suggestions have come in
+> the form of dirty_ratio per memory cgroup or a separate cgroup controller
+> al-together where some kind of per group write limit can be specified.
+> 
+> So if solution is implemented at IO scheduler layer or at device mapper
+> layer, both shall have to rely on another controller to be co-mounted
+> to handle buffered writes properly.
+>
+> Fairness with-in group
+> ======================
+> One of the issues with higher level controller is that how to do fair
+> throttling so that fairness with-in group is not impacted. Especially
+> the case of making sure that we don't break the notion of ioprio of the
+> processes with-in group.
+
+I ran your test script to confirm that the notion of ioprio was not
+broken by dm-ioband. Here is the results of the test.
+https://lists.linux-foundation.org/pipermail/containers/2009-May/017834.html
+
+I think that the time period during which dm-ioband holds IO requests
+for throttling would be too short to break the notion of ioprio.
+
+> Especially io throttling patch was very bad in terms of prio with-in 
+> group where throttling treated everyone equally and difference between
+> process prio disappeared.
+>
+> Reads Vs Writes
+> ===============
+> A higher level control most likely will change the ratio in which reads
+> and writes are dispatched to disk with-in group. It used to be decided
+> by IO scheduler so far but with higher level groups doing throttling and
+> possibly buffering the bios and releasing them later, they will have to
+> come up with their own policy on in what proportion reads and writes
+> should be dispatched. In case of IO scheduler based control, all the
+> queuing takes place at IO scheduler and it still retains control of
+> in what ration reads and writes should be dispatched.
+
+I don't think it is a concern. The current implementation of dm-ioband
+is that sync/async IO requests are handled separately and the
+backlogged IOs are released according to the order of arrival if both
+sync and async requests are backlogged.
+
+> Summary
+> =======
+> 
+> - An io scheduler based io controller can provide better latencies,
+>   stronger isolation between groups, time based fairness and will not
+>   interfere with io schedulers policies like class, ioprio and
+>   reader vs writer issues.
+> 
+>   But it can gunrantee fairness at higher logical level devices.
+>   Especially in case of max bw control, leaf node control does not sound
+>   to be the most appropriate thing.
+> 
+> - IO throttling provides max bw control in terms of absolute rate. It has
+>   the advantage that it can provide control at higher level logical device
+>   and also control buffered writes without need of additional controller
+>   co-mounted.
+> 
+>   But it does only max bw control and not proportion control so one might
+>   not be using resources optimally. It looses sense of task prio and class
+>   with-in group as any of the task can be throttled with-in group. Because
+>   throttling does not kick in till you hit the max bw limit, it should find
+>   it hard to provide same latencies as io scheduler based control.
+> 
+> - dm-ioband also has the advantage that it can provide fairness at higher
+>   level logical devices.
+> 
+>   But, fairness is provided only in terms of size of IO or number of IO.
+>   No time based fairness. It is very throughput oriented and does not 
+>   throttle high speed group if other group is running slow random reader.
+>   This results in bad latnecies for random reader group and weaker
+>   isolation between groups.
+
+A new policy can be added to dm-ioband. Actually, range-bw policy,
+which provides min and max bandwidth control, does time-based
+throttling. Moreover there is room for improvement for existing
+policies. The write-starve-read issue you pointed out will be solved
+soon.
+
+>   Also it does not provide fairness if a group is not continuously
+>   backlogged. So if one is running 1-2 dd/sequential readers in the group,
+>   one does not get fairness until workload is increased to a point where
+>   group becomes continuously backlogged. This also results in poor
+>   latencies and limited fairness.
+
+This is intended to efficiently use bandwidth of underlying devices
+when IO load is low.
+ 
+> At this point of time it does not look like a single IO controller all
+> the scenarios/requirements. This means few things to me.
+> 
+> - Drop some of the requirements and go with one implementation which meets
+>   those reduced set of requirements.
+>
+> - Have more than one IO controller implementation in kenrel. One for lower
+>   level control for better latencies, stronger isolation and optimal resource
+>   usage and other one for fairness at higher level logical devices and max
+>   bandwidth control. 
+> 
+>   And let user decide which one to use based on his/her needs. 
+> 
+> - Come up with more intelligent way of doing IO control where single
+>   controller covers all the cases.
+> 
+> At this point of time, I am more inclined towards option 2 of having more
+> than one implementation in kernel. :-) (Until and unless we can brainstrom
+> and come up with ideas to make option 3 happen).
+>
+> > It would be great if we discuss our plans on the mailing list, so we
+> > can get early feedback from everyone.
+>  
+> This is what comes to my mind so far. Please add to the list if I have missed
+> some points. Also correct me if I am wrong about the pros/cons of the
+> approaches.
+>
+> Thoughts/ideas/opinions are welcome...
+> 
+> Thanks
+> Vivek
+
+Thanks,
+Ryo Tsuruta
