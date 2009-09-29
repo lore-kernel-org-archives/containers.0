@@ -1,22 +1,14 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
-Date: Tue, 29 Sep 2009 13:02:15 -0700
-Message-ID: <4AC267C7.4070300__2137.62948192215$1254255320$gmane$org@zytor.com>
-References: <20090924165548.GA16586@us.ibm.com>
-	<20090924170308.GH16989@us.ibm.com>
-	<200909242343.59903.arnd@arndb.de>
-	<20090925082346.GB4436@localdomain>
-	<20090925105632.GG12824@hawkmoon.kerlabs.com>
-	<20090929180537.GD4625@us.ibm.com>
-	<20090929184023.532DF34@magilla.sf.frob.com>
-	<4AC255A4.4030002@zytor.com>
-	<20090929210207.247b94df@infradead.org>
-	<alpine.LFD.2.01.0909291207410.6996@localhost.localdomain>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] Add checkpoint/restart support for epoll files.
+Date: Tue, 29 Sep 2009 15:33:15 -0500
+Message-ID: <20090929203314.GC14956@us.ibm.com>
+References: <1254164482-2193-2-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.LFD.2.01.0909291207410.6996-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1254164482-2193-2-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,36 +18,107 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 09/29/2009 12:10 PM, Linus Torvalds wrote:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Save/restore epoll items during checkpoint/restart respectively.
+> kmalloc failures should be dealt with more kindly than just error-out
+> because epoll is made to poll many thousands of file descriptors.
+> Subsequent patches will change epoll c/r to "chunk" its output/input
+> respectively.
 > 
-> On Tue, 29 Sep 2009, Arjan van de Ven wrote:
->>>
->>> We already have a syscall layer which is painful to thunk in places,
->>> and this would make it much worse.
->>
->> syscalls are cheap as well.
->> cheaper than decades of dealing with such multiplexer mess ;/
-> 
-> Well, I'd agree, except the clone flags really _are_ about multiplexer 
-> issues, and the new flag woudln't really change anything. 
-> 
-> If the new system call actually had appreciably separate code-paths, I'd 
-> buy the "multiplexer" argument. But it doesn't really. It's going to call 
-> down to the same basic clone functionality, and the core clone code ends 
-> up de-multiplexing the cases anyway.
-> 
-> So this would not at all be like the socket calls (to pick the traditional 
-> Linux system call multiplexing example) in that sense.
-> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-That's not the main issue here, though.  The main issue is that the
-prototype of the function now depends on one of its arguments, which is
-absolute hell for anything that needs to thunk arguments in a systematic
-way, which we have to do on several architectures, and which would be
-useful to be able to do for others, too.
+Haven't looked much at epoll, but it looks good...
 
-	-hpa
+> +struct file* ep_file_restore(struct ckpt_ctx *ctx,
+> +			     struct ckpt_hdr_file *h)
+> +{
+> +	struct file *epfile;
+> +	int epfd, ret;
+> +
+> +	if (h->h.type != CKPT_HDR_FILE ||
+> +	    h->h.len  != sizeof(*h) ||
+> +	    h->f_type != CKPT_FILE_EPOLL)
+> +		return ERR_PTR(-EINVAL);
+> +
+> +	epfd = sys_epoll_create1(h->f_flags & EPOLL_CLOEXEC);
+> +	if (epfd < 0)
+> +		return ERR_PTR(epfd);
+> +	epfile = fget(epfd);
+> +	BUG_ON(!epfile);
+> +
+> +	/*
+> +	 * Needed before we can properly restore the watches and enforce the
+> +	 * limit on watch numbers.
+> +	 */
+> +	ret = restore_file_common(ctx, epfile, h);
+> +	if (ret < 0)
+> +		goto fput_out;
+> +
+> +	/*
+> +	 * Defer restoring the epoll items until the file table is
+> +	 * fully restored. Ensures that valid file objrefs will resolve.
+> +	 */
+> +	ret = deferqueue_add_ptr(ctx->files_deferq, ctx, ep_items_restore, NULL);
+> +	if (ret < 0) {
+> +fput_out:
+
+I've heard complaints before about labels in the middle of an
+if block.  Since we know ret < 0 at the goto, the label could
+just as well go up one line...
+
+> +		fput(epfile);
+> +		epfile = ERR_PTR(ret);
+> +	}
+> +	sys_close(epfd); /* harmless even if an error occured */
+> +	return epfile;
+> +}
+> +
+> +#endif /* CONFIG_CHECKPOINT */
+> +
+>  static int __init eventpoll_init(void)
+>  {
+>  	struct sysinfo si;
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index e00dd70..a8594cc 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -72,6 +72,7 @@ extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
+>  			       void *ptr, int len, int type);
+>  extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, int len);
+>  extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, int len);
+> +extern void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max);
+>  extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type);
+>  extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, int len, int type);
+>  extern int ckpt_read_payload(struct ckpt_ctx *ctx,
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index 2ed523f..48736bd 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -85,6 +85,7 @@ enum {
+>  	CKPT_HDR_PIPE_BUF,
+>  	CKPT_HDR_TTY,
+>  	CKPT_HDR_TTY_LDISC,
+> +	CKPT_HDR_EPOLL_ITEMS = 391, /* Follows file-table */
+
+Hmm, why are you specifying the number here?  That's just
+begging for conflicts with other people's patches...
+
+> 
+>  	CKPT_HDR_MM = 401,
+>  	CKPT_HDR_VMA,
+> @@ -380,6 +381,7 @@ enum file_type {
+>  	CKPT_FILE_FIFO,
+>  	CKPT_FILE_SOCKET,
+>  	CKPT_FILE_TTY,
+> +	CKPT_FILE_EPOLL,
+>  	CKPT_FILE_MAX
+>  };
+> 
+> @@ -475,6 +477,18 @@ struct ckpt_hdr_file_socket {
+>  	__s32 sock_objref;
+>  } __attribute__((aligned(8)));
+> 
