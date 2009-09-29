@@ -1,23 +1,13 @@
-From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
-Date: Tue, 29 Sep 2009 15:11:03 -0700 (PDT)
-Message-ID: <alpine.LFD.2.01.0909291501530.6996@localhost.localdomain>
-References: <20090924165548.GA16586@us.ibm.com>
-	<20090924170308.GH16989@us.ibm.com>
-	<200909242343.59903.arnd@arndb.de>
-	<20090925082346.GB4436@localdomain>
-	<20090925105632.GG12824@hawkmoon.kerlabs.com>
-	<20090929180537.GD4625@us.ibm.com>
-	<20090929184023.532DF34@magilla.sf.frob.com>
-	<4AC255A4.4030002@zytor.com>
-	<20090929210207.247b94df@infradead.org>
-	<alpine.LFD.2.01.0909291207410.6996@localhost.localdomain>
-	<4AC267C7.4070300@zytor.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH] [RFC] Add c/r support for listening INET sockets
+Date: Tue, 29 Sep 2009 18:16:18 -0400
+Message-ID: <4AC28732.8040809@librato.com>
+References: <1254164330-23072-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AC267C7.4070300-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1254164330-23072-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,53 +17,189 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-On Tue, 29 Sep 2009, H. Peter Anvin wrote:
+Dan Smith wrote:
+> This is an incremental step towards supporting checkpoint/restart on
+> AF_INET sockets.  In this scenario, any sockets that were in TCP_LISTEN
+> state are restored as they were.  Any that were connected are forced to
+> TCP_CLOSE.  This should cover a range of use cases that involve
+> applications that are tolerant of such an interruption.
 > 
-> That's not the main issue here, though.  The main issue is that the
-> prototype of the function now depends on one of its arguments
+> Cc: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
 
-Ok, I agree with that. The kernel side is easy (we have magic calling 
-conventions there and need to turn registers into arguments anyway before 
-you get to the shared code), but your point about the user side prototype 
-is valid.
+Good stuff... a few comments below.
 
-However, that could easily be handled by just having a extended_clone() 
-prototype that then sets the CLONE_EXTINFO (or whatever) bit in the flags. 
-I think most of the time the clone() stuff needs special user-level 
-wrappers anyway to handle the stack setup etc, no?
+[...]
 
-In other words, what I'd suggest we could do is
+> +
+> +static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+> +{
+> +	struct ckpt_hdr_socket_buffer *h;
+> +	int len;
+> +	int ret;
+> +	struct sk_buff *skb;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
+> +	if (IS_ERR(h))
+> +		return PTR_ERR(h);
+> +
+> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
+> +	if (len < 0) {
+> +		ret = len;
 
- - the kernel "do_fork()" interface would be made to have the "extended" 
-   format by default - so the _kernel_ never has two formats in its 
-   generic logic.
+Note: skb wasn't initialized yet, ret will be negative (more below)...
 
- - the "sys_clone()" system call, that already needs to munge the user 
-   mode registers into the "do_fork()" format, would be the one that 
-   recognizes the new flag and copies the extended data from user mode 
-   memory to the extended info mode.
+> +		goto out;
+> +	} else if (len > SKB_MAX_ALLOC) {
+> +		ckpt_debug("Socket buffer too big (%i > %lu)",
+> +			   len, SKB_MAX_ALLOC);
+> +		ret = -ENOSPC;
+> +		goto out;
+> +	}
+> +
+> +	skb = alloc_skb(len, GFP_KERNEL);
+> +	if (!skb) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	ret = ckpt_kread(ctx, skb_put(skb, len), len);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	spin_lock(&queue->lock);
+> +	skb_queue_tail(queue, skb);
+> +	spin_unlock(&queue->lock);
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	if (ret < 0)
+> +		kfree_skb(skb);
 
-Then each architecture would need to update it's "sys_clone()" function to 
-take advantage of the new extended format, but that's something that the 
-new system call would have had to do anyway, so that's not an added burden 
-in any way.
+skb may be uninitialized at this point (do I sound like gcc ?)
 
-Hmm?
 
-I don't feel horribly strongly about this, and as far as I'm concerned 
-it's fine to also do it as a new system call too (we already have 'fork()' 
-and 'vfork()' as special case interfaces to do_fork() - the new 'extended 
-clone' would be no different).
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+> +{
+> +	struct ckpt_hdr_socket_queue *h;
+> +	int ret = 0;
+> +	int i;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
+> +	if (IS_ERR(h))
+> +		return PTR_ERR(h);
+> +
+> +	for (i = 0; i < h->skb_count; i++) {
+> +		ret = inet_read_buffer(ctx, queue);
+> +		ckpt_debug("read inet buffer %i: %i", i, ret);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		if (ret > h->total_bytes) {
+> +			ckpt_debug("Buffers exceeded claim");
+> +			ret = -EINVAL;
+> +			goto out;
+> +		}
+> +
+> +		h->total_bytes -= ret;
+> +		ret = 0;
+		^^^^^^^^
+Unnecessary ?
 
-I just think that Roland is correct that if the new extended fork handles 
-the "no new info" case itself _anyway_, then there is no upside to making 
-it a new system call, since the complexity is the same as just extending 
-the old one.
+> +	}
+> +
+> +	ret = h->skb_count;
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_deferred_restore_buffers(void *data)
+> +{
+> +	struct dq_buffers *dq = (struct dq_buffers *)data;
+> +	struct ckpt_ctx *ctx = dq->ctx;
+> +	struct sock *sk = dq->sk;
+> +	int ret;
+> +
+> +	ret = inet_read_buffers(ctx, &sk->sk_receive_queue);
+> +	ckpt_debug("(R) inet_read_buffers: %i\n", ret);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ret = inet_read_buffers(ctx, &sk->sk_write_queue);
+> +	ckpt_debug("(W) inet_read_buffers: %i\n", ret);
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_defer_restore_buffers(struct ckpt_ctx *ctx, struct sock *sk)
+> +{
+> +	struct dq_buffers dq;
+> +
+> +	dq.ctx = ctx;
+> +	dq.sk = sk;
+> +
+> +	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
+> +			      inet_deferred_restore_buffers, NULL);
+> +}
+> +
+> +int inet_restore(struct ckpt_ctx *ctx,
+> +		 struct socket *sock,
+> +		 struct ckpt_hdr_socket *h)
+> +{
+> +	struct ckpt_hdr_socket_inet *in;
+> +	int ret = 0;
+> +
+> +	in = ckpt_read_obj_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
+> +	if (IS_ERR(in))
+> +		return PTR_ERR(in);
 
-			Linus
+I think you need to at least sanitize the in->laddr_len field - the
+ops->bind() below assumes its valid.
+
+> +
+> +	/* Listening sockets and those that are closed but have a local
+> +	 * address need to call bind()
+> +	 */
+> +	if ((h->sock.state == TCP_LISTEN) ||
+> +	    ((h->sock.state == TCP_CLOSE) && (in->laddr_len > 0))) {
+> +		sock->sk->sk_reuse = 2;
+> +		inet_sk(sock->sk)->freebind = 1;
+> +		ret = sock->ops->bind(sock,
+> +				      (struct sockaddr *)&in->laddr,
+> +				      in->laddr_len);
+> +		ckpt_debug("inet bind: %i\n", ret);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		if (h->sock.state == TCP_LISTEN) {
+> +			ret = sock->ops->listen(sock, h->sock.backlog);
+> +			ckpt_debug("inet listen: %i\n", ret);
+> +			if (ret < 0)
+> +				goto out;
+> +		}
+> +	} else {
+> +		if (!sock_flag(sock->sk, SOCK_DEAD))
+> +			ret = inet_defer_restore_buffers(ctx, sock->sk);
+> +	}
+> + out:
+> +	ckpt_hdr_put(ctx, in);
+> +
+> +	return ret;
+> + }
+> +
+
+Oren.
