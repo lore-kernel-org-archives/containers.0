@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] user-cr: fix powerpc build
-Date: Tue, 29 Sep 2009 19:33:30 -0400
-Message-ID: <4AC2994A.6000804@librato.com>
-References: <1254163434-14196-1-git-send-email-ntl@pobox.com>
+Subject: Re: [PATCH 1/2] Check for valid destructor pointer before calling it.
+Date: Tue, 29 Sep 2009 19:34:04 -0400
+Message-ID: <4AC2996C.1050802@librato.com>
+References: <1254164482-2193-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1254163434-14196-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1254164482-2193-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,54 +17,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CkFwcGxpZWQgb24gY2twdC12MTgtZGV2LCB0aGFua3MuCgpOYXRoYW4gTHluY2ggd3JvdGU6Cj4g
-U2V2ZXJhbCB3YXJuaW5ncyBhbmQgYSBsaW5rIGVycm9yIGluIGN1cnJlbnQgYnVpbGQgb24gcG93
-ZXJwYzoKPiAKPiBtYWtlIFNVQkFSQ0g9cHBjIENQUEZMQUdTPS1JJFBXRC8uLi9saW51eC0yLjYu
-Z2l0L3Vzci9pbmNsdWRlCj4gY2MgLWcgLVdhbGwgLVdzdHJpY3QtcHJvdG90eXBlcyAtV25vLXRy
-aWdyYXBocyAtSS4uL2xpbnV4L2luY2x1ZGUgLUkuLi9saW51eC9hcmNoLy9pbmNsdWRlIC1EQ0hF
-Q0tQT0lOVF9ERUJVRyAtRF9fUkVFTlRSQU5UIC1wdGhyZWFkIC1EQVJDSF9IQVNfQ0xPTkVfV0lU
-SF9QSUQgLUkvaG9tZS9uYXRoYW5sL2RldmVsL3VzZXItY3IuZ2l0Ly4uL2xpbnV4LTIuNi5naXQv
-dXNyL2luY2x1ZGUgIC1jIC1vIGNsb25lX3BwYy5vIGNsb25lX3BwYy5jCj4gY2xvbmVfcHBjLmM6
-Mjg6IHdhcm5pbmc6IOKAmHN0cnVjdCB0YXJnZXRfcGlkX3NldOKAmSBkZWNsYXJlZCBpbnNpZGUg
-cGFyYW1ldGVyIGxpc3QKPiBjbG9uZV9wcGMuYzoyODogd2FybmluZzogaXRzIHNjb3BlIGlzIG9u
-bHkgdGhpcyBkZWZpbml0aW9uIG9yIGRlY2xhcmF0aW9uLCB3aGljaCBpcyBwcm9iYWJseSBub3Qg
-d2hhdCB5b3Ugd2FudAo+IGNsb25lX3BwYy5jOiBJbiBmdW5jdGlvbiDigJhjbG9uZV93aXRoX3Bp
-ZHPigJk6Cj4gY2xvbmVfcHBjLmM6MzU6IHdhcm5pbmc6IGltcGxpY2l0IGRlY2xhcmF0aW9uIG9m
-IGZ1bmN0aW9uIOKAmF9fY2xvbmVfd2l0aF9waWRz4oCZCj4gY2xvbmVfcHBjLmM6IEF0IHRvcCBs
-ZXZlbDoKPiBjbG9uZV9wcGMuYzoyOTogd2FybmluZzog4oCYY2xvbmVfd2l0aF9waWRz4oCZIGRl
-ZmluZWQgYnV0IG5vdCB1c2VkCj4gY2MgLWcgLVdhbGwgLVdzdHJpY3QtcHJvdG90eXBlcyAtV25v
-LXRyaWdyYXBocyAtSS4uL2xpbnV4L2luY2x1ZGUgLUkuLi9saW51eC9hcmNoLy9pbmNsdWRlIC1E
-Q0hFQ0tQT0lOVF9ERUJVRyAtRF9fUkVFTlRSQU5UIC1wdGhyZWFkIC1EQVJDSF9IQVNfQ0xPTkVf
-V0lUSF9QSUQgLUkvaG9tZS9uYXRoYW5sL2RldmVsL3VzZXItY3IuZ2l0Ly4uL2xpbnV4LTIuNi5n
-aXQvdXNyL2luY2x1ZGUgICByZXN0YXJ0LmMgY2xvbmVfcHBjLm8gY2xvbmVfcHBjXy5vICAtbG0g
-LW8gcmVzdGFydAo+IC90bXAvY2NVTDBQSDAubzogSW4gZnVuY3Rpb24gYGNrcHRfZm9ya19jaGls
-ZCc6Cj4gL2hvbWUvbmF0aGFubC9kZXZlbC91c2VyLWNyLmdpdC9yZXN0YXJ0LmM6MTY1OTogdW5k
-ZWZpbmVkIHJlZmVyZW5jZSB0byBgY2xvbmVfd2l0aF9waWRzJwo+IAo+IERlY2xhcmUgc3RydWN0
-IHRhcmdldF9waWRfc2V0IGFuZCBfX2Nsb25lX3dpdGhfcGlkczsgbWFrZQo+IGNsb25lX3dpdGhf
-cGlkcyBleHRlcm4uCj4gCj4gU2lnbmVkLW9mZi1ieTogTmF0aGFuIEx5bmNoIDxudGxAcG9ib3gu
-Y29tPgo+IC0tLQo+ICBjbG9uZV9wcGMuYyB8ICAgMTMgKysrKysrKysrKysrLQo+ICAxIGZpbGVz
-IGNoYW5nZWQsIDEyIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4gCj4gZGlmZiAtLWdp
-dCBhL2Nsb25lX3BwYy5jIGIvY2xvbmVfcHBjLmMKPiBpbmRleCAyMDlmMDBiLi4wOWI1MWI1IDEw
-MDY0NAo+IC0tLSBhL2Nsb25lX3BwYy5jCj4gKysrIGIvY2xvbmVfcHBjLmMKPiBAQCAtMTYsNiAr
-MTYsMTcgQEAKPiAgI2luY2x1ZGUgPHN5cy9zeXNjYWxsLmg+Cj4gICNpbmNsdWRlIDxhc20vdW5p
-c3RkLmg+Cj4gIAo+ICtzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQ7Cj4gKwo+ICtleHRlcm4gaW50IF9f
-Y2xvbmVfd2l0aF9waWRzKGludCAoKmZuKSh2b2lkICphcmcpLAo+ICsJCQkgICAgIHZvaWQgKmNo
-aWxkX3N0YWNrICwKPiArCQkJICAgICBpbnQgZmxhZ3MsCj4gKwkJCSAgICAgdm9pZCAqYXJnLAo+
-ICsJCQkgICAgIHZvaWQgKnBhcmVudF90aWQsCj4gKwkJCSAgICAgdm9pZCAqdGxzLAo+ICsJCQkg
-ICAgIHZvaWQgKmNoaWxkX3RpZCwKPiArCQkJICAgICBzdHJ1Y3QgdGFyZ2V0X3BpZF9zZXQgKnNl
-dHApOwo+ICsKPiAgLyoKPiAgICogbGliYyBkb2Vzbid0IHN1cHBvcnQgY2xvbmVfd2l0aF9waWQo
-KSB5ZXQuLi4KPiAgICogYmVsb3cgaXMgYXJjaC1kZXBlbmRlbnQgY29kZSB0byB1c2UgdGhlIHN5
-c2NhbGwKPiBAQCAtMjQsNyArMzUsNyBAQAo+ICAKPiAgLyogKHNlZTogaHR0cDovL2xrbWwuaW5k
-aWFuYS5lZHUvaHlwZXJtYWlsL2xpbnV4L2tlcm5lbC85NjA0LjMvMDIwNC5odG1sKSAqLwo+ICAK
-PiAtc3RhdGljIGludCBjbG9uZV93aXRoX3BpZHMoaW50ICgqZm4pKHZvaWQgKiksIHZvaWQgKmNo
-aWxkX3N0YWNrLCBpbnQgZmxhZ3MsCj4gK2ludCBjbG9uZV93aXRoX3BpZHMoaW50ICgqZm4pKHZv
-aWQgKiksIHZvaWQgKmNoaWxkX3N0YWNrLCBpbnQgZmxhZ3MsCj4gIAkJCSAgIHN0cnVjdCB0YXJn
-ZXRfcGlkX3NldCAqdGFyZ2V0X3BpZHMsIHZvaWQgKmFyZykKPiAgewo+ICAJdm9pZCAqcGFyZW50
-X3RpZCA9IE5VTEw7Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
-dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+
+Queued for ckpt-v18-dev.
+
+Matt Helsley wrote:
+> Not every use of deferqueue will have a destructor function so
+> we need to check it before calling it.
+> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  kernel/deferqueue.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
+> 
+> diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+> index 3fb388b..1204c8b 100644
+> --- a/kernel/deferqueue.c
+> +++ b/kernel/deferqueue.c
+> @@ -53,7 +53,8 @@ void deferqueue_destroy(struct deferqueue_head *h)
+>  
+>  		pr_debug("%s: freeing non-empty queue\n", __func__);
+>  		list_for_each_entry_safe(dq, n, &h->list, list) {
+> -			dq->destructor(dq->data);
+> +			if (dq->destructor)
+> +				dq->destructor(dq->data);
+>  			list_del(&dq->list);
+>  			kfree(dq);
+>  		}
