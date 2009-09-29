@@ -1,21 +1,14 @@
-From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
-Date: Tue, 29 Sep 2009 12:10:50 -0700 (PDT)
-Message-ID: <alpine.LFD.2.01.0909291207410.6996__49518.2264167399$1254251581$gmane$org@localhost.localdomain>
-References: <20090924165548.GA16586@us.ibm.com>
-	<20090924170308.GH16989@us.ibm.com>
-	<200909242343.59903.arnd@arndb.de>
-	<20090925082346.GB4436@localdomain>
-	<20090925105632.GG12824@hawkmoon.kerlabs.com>
-	<20090929180537.GD4625@us.ibm.com>
-	<20090929184023.532DF34@magilla.sf.frob.com>
-	<4AC255A4.4030002@zytor.com>
-	<20090929210207.247b94df@infradead.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] [RFC] Add c/r support for listening INET sockets
+Date: Tue, 29 Sep 2009 14:50:25 -0500
+Message-ID: <20090929195025.GA14956@us.ibm.com>
+References: <1254164330-23072-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090929210207.247b94df-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1254164330-23072-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,29 +18,372 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-On Tue, 29 Sep 2009, Arjan van de Ven wrote:
-> > 
-> > We already have a syscall layer which is painful to thunk in places,
-> > and this would make it much worse.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> This is an incremental step towards supporting checkpoint/restart on
+> AF_INET sockets.  In this scenario, any sockets that were in TCP_LISTEN
+> state are restored as they were.  Any that were connected are forced to
+> TCP_CLOSE.  This should cover a range of use cases that involve
+> applications that are tolerant of such an interruption.
 > 
-> syscalls are cheap as well.
-> cheaper than decades of dealing with such multiplexer mess ;/
+> Cc: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/checkpoint_hdr.h |   11 ++
+>  include/net/inet_common.h      |    9 ++
+>  net/checkpoint.c               |    9 ++
+>  net/ipv4/Makefile              |    1 +
+>  net/ipv4/af_inet.c             |    6 +
+>  net/ipv4/checkpoint.c          |  204 ++++++++++++++++++++++++++++++++++++++++
+>  6 files changed, 240 insertions(+), 0 deletions(-)
+>  create mode 100644 net/ipv4/checkpoint.c
+> 
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index 2ed523f..b5ce115 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -15,9 +15,11 @@
+>  #ifdef __KERNEL__
+>  #include <linux/socket.h>
+>  #include <linux/un.h>
+> +#include <linux/in.h>
+>  #else
+>  #include <sys/socket.h>
+>  #include <sys/un.h>
+> +#include <sys/in.h>
+>  #endif
+> 
+>  /*
+> @@ -106,6 +108,7 @@ enum {
+>  	CKPT_HDR_SOCKET_QUEUE,
+>  	CKPT_HDR_SOCKET_BUFFER,
+>  	CKPT_HDR_SOCKET_UNIX,
+> +	CKPT_HDR_SOCKET_INET,
+> 
+>  	CKPT_HDR_TAIL = 9001,
+> 
+> @@ -470,6 +473,14 @@ struct ckpt_hdr_socket_unix {
+>  	struct sockaddr_un raddr;
+>  } __attribute__ ((aligned(8)));
+> 
+> +struct ckpt_hdr_socket_inet {
+> +	struct ckpt_hdr h;
+> +	__u32 laddr_len;
+> +	__u32 raddr_len;
+> +	struct sockaddr_in laddr;
+> +	struct sockaddr_in raddr;
+> +} __attribute__((aligned(8)));
+> +
+>  struct ckpt_hdr_file_socket {
+>  	struct ckpt_hdr_file common;
+>  	__s32 sock_objref;
+> diff --git a/include/net/inet_common.h b/include/net/inet_common.h
+> index 18c7732..7ade732 100644
+> --- a/include/net/inet_common.h
+> +++ b/include/net/inet_common.h
+> @@ -45,6 +45,15 @@ extern int			inet_ctl_sock_create(struct sock **sk,
+>  						     unsigned char protocol,
+>  						     struct net *net);
+> 
+> +#ifdef CONFIG_CHECKPOINT
+> +struct ckpt_ctx;
+> +struct ckpt_hdr_socket;
+> +extern int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock);
+> +extern int inet_collect(struct ckpt_ctx *ctx, struct socket *sock);
+> +extern int inet_restore(struct ckpt_ctx *cftx, struct socket *sock,
+> +			struct ckpt_hdr_socket *h);
+> +#endif /* CONFIG_CHECKPOINT */
+> +
+>  static inline void inet_ctl_sock_destroy(struct sock *sk)
+>  {
+>  	sk_release_kernel(sk);
+> diff --git a/net/checkpoint.c b/net/checkpoint.c
+> index a11ec7a..6960389 100644
+> --- a/net/checkpoint.c
+> +++ b/net/checkpoint.c
+> @@ -711,6 +711,15 @@ struct sock *do_sock_restore(struct ckpt_ctx *ctx)
+>  	if (ret < 0)
+>  		goto err;
+> 
+> +	if ((h->sock_common.family == AF_INET) &&
+> +	    (h->sock.state != TCP_LISTEN)) {
+> +		/* Temporary hack to enable restore of TCP_LISTEN sockets
+> +		 * while forcing anything else to a closed state
+> +		 */
+> +		sock->sk->sk_state = TCP_CLOSE;
 
-Well, I'd agree, except the clone flags really _are_ about multiplexer 
-issues, and the new flag woudln't really change anything. 
+I'll admit by this point I'm a bit confused about the order in which
+these things are restored.  Does do_sock_restore() run before
+inet_restore() below (curious whether its check for TCP_CLOSE will
+catch these particular sockets).
 
-If the new system call actually had appreciably separate code-paths, I'd 
-buy the "multiplexer" argument. But it doesn't really. It's going to call 
-down to the same basic clone functionality, and the core clone code ends 
-up de-multiplexing the cases anyway.
+> +		sock->state = SS_UNCONNECTED;
+> +	}
+> +
+>  	ckpt_hdr_put(ctx, h);
+>  	return sock->sk;
+>   err:
+> diff --git a/net/ipv4/Makefile b/net/ipv4/Makefile
+> index 80ff87c..c00d8ce 100644
+> --- a/net/ipv4/Makefile
+> +++ b/net/ipv4/Makefile
+> @@ -49,6 +49,7 @@ obj-$(CONFIG_TCP_CONG_LP) += tcp_lp.o
+>  obj-$(CONFIG_TCP_CONG_YEAH) += tcp_yeah.o
+>  obj-$(CONFIG_TCP_CONG_ILLINOIS) += tcp_illinois.o
+>  obj-$(CONFIG_NETLABEL) += cipso_ipv4.o
+> +obj-$(CONFIG_CHECKPOINT) += checkpoint.o
+> 
+>  obj-$(CONFIG_XFRM) += xfrm4_policy.o xfrm4_state.o xfrm4_input.o \
+>  		      xfrm4_output.o
+> diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
+> index 566ea6c..7828885 100644
+> --- a/net/ipv4/af_inet.c
+> +++ b/net/ipv4/af_inet.c
+> @@ -857,6 +857,9 @@ const struct proto_ops inet_stream_ops = {
+>  	.mmap		   = sock_no_mmap,
+>  	.sendpage	   = tcp_sendpage,
+>  	.splice_read	   = tcp_splice_read,
+> +	.checkpoint        = inet_checkpoint,
+> +	.restore           = inet_restore,
+> +	.collect           = inet_collect,
+>  #ifdef CONFIG_COMPAT
+>  	.compat_setsockopt = compat_sock_common_setsockopt,
+>  	.compat_getsockopt = compat_sock_common_getsockopt,
+> @@ -882,6 +885,9 @@ const struct proto_ops inet_dgram_ops = {
+>  	.recvmsg	   = sock_common_recvmsg,
+>  	.mmap		   = sock_no_mmap,
+>  	.sendpage	   = inet_sendpage,
+> +	.checkpoint        = inet_checkpoint,
+> +	.restore           = inet_restore,
+> +	.collect           = inet_collect,
+>  #ifdef CONFIG_COMPAT
+>  	.compat_setsockopt = compat_sock_common_setsockopt,
+>  	.compat_getsockopt = compat_sock_common_getsockopt,
+> diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
+> new file mode 100644
+> index 0000000..881e723
+> --- /dev/null
+> +++ b/net/ipv4/checkpoint.c
+> @@ -0,0 +1,204 @@
+> +/*
+> + *  Copyright 2009 IBM Corporation
+> + *
+> + *  Author(s): Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> + *
+> + *  This program is free software; you can redistribute it and/or
+> + *  modify it under the terms of the GNU General Public License as
+> + *  published by the Free Software Foundation, version 2 of the
+> + *  License.
+> + */
+> +
+> +#include <linux/namei.h>
+> +#include <linux/checkpoint.h>
+> +#include <linux/checkpoint_hdr.h>
+> +#include <linux/tcp.h>
+> +#include <linux/in.h>
+> +#include <linux/deferqueue.h>
+> +#include <net/tcp_states.h>
+> +#include <net/tcp.h>
+> +
+> +struct dq_sock {
+> +	struct ckpt_ctx *ctx;
+> +	struct sock *sk;
+> +};
+> +
+> +struct dq_buffers {
+> +	struct ckpt_ctx *ctx;
+> +	struct sock *sk;
+> +};
+> +
+> +int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
+> +{
+> +	struct ckpt_hdr_socket_inet *in;
+> +	int ret = -EINVAL;
+> +
+> +       in = ckpt_hdr_get_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
+> +       if (!in)
+> +               goto out;
 
-So this would not at all be like the socket calls (to pick the traditional 
-Linux system call multiplexing example) in that sense.
+Better to just return...  I don't think this'll cause a crash (it only
+makes ckpt_hdr_put() pass ((struct ckpt_hdr *)NULL)->len to
+_ckpt_hdr_put which then ignores it and does a safe kfree(NULL)), but
+it won't be safe if the implementation of the ckpt_hdr_*() calls end up
+changing.
 
-			Linus
+> +
+> +       ret = ckpt_sock_getnames(ctx, sock,
+> +				(struct sockaddr *)&in->laddr, &in->laddr_len,
+> +				(struct sockaddr *)&in->raddr, &in->raddr_len);
+> +       if (ret)
+> +	       goto out;
+> +
+> +       ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) in);
+> + out:
+> +       ckpt_hdr_put(ctx, in);
+> +
+> +       return ret;
+> +}
+> +
+> +int inet_collect(struct ckpt_ctx *ctx, struct socket *sock)
+> +{
+> +       return ckpt_obj_collect(ctx, sock->sk, CKPT_OBJ_SOCK);
+> +}
+> +
+> +static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+> +{
+> +	struct ckpt_hdr_socket_buffer *h;
+> +	int len;
+> +	int ret;
+> +	struct sk_buff *skb;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
+> +	if (IS_ERR(h))
+> +		return PTR_ERR(h);
+> +
+> +	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
+> +	if (len < 0) {
+> +		ret = len;
+> +		goto out;
+> +	} else if (len > SKB_MAX_ALLOC) {
+> +		ckpt_debug("Socket buffer too big (%i > %lu)",
+> +			   len, SKB_MAX_ALLOC);
+> +		ret = -ENOSPC;
+> +		goto out;
+> +	}
+> +
+> +	skb = alloc_skb(len, GFP_KERNEL);
+> +	if (!skb) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	ret = ckpt_kread(ctx, skb_put(skb, len), len);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	spin_lock(&queue->lock);
+> +	skb_queue_tail(queue, skb);
+> +	spin_unlock(&queue->lock);
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	if (ret < 0)
+> +		kfree_skb(skb);
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
+> +{
+> +	struct ckpt_hdr_socket_queue *h;
+> +	int ret = 0;
+> +	int i;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
+> +	if (IS_ERR(h))
+> +		return PTR_ERR(h);
+> +
+> +	for (i = 0; i < h->skb_count; i++) {
+> +		ret = inet_read_buffer(ctx, queue);
+> +		ckpt_debug("read inet buffer %i: %i", i, ret);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		if (ret > h->total_bytes) {
+> +			ckpt_debug("Buffers exceeded claim");
+> +			ret = -EINVAL;
+> +			goto out;
+> +		}
+> +
+> +		h->total_bytes -= ret;
+> +		ret = 0;
+> +	}
+> +
+> +	ret = h->skb_count;
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_deferred_restore_buffers(void *data)
+> +{
+> +	struct dq_buffers *dq = (struct dq_buffers *)data;
+> +	struct ckpt_ctx *ctx = dq->ctx;
+> +	struct sock *sk = dq->sk;
+> +	int ret;
+> +
+> +	ret = inet_read_buffers(ctx, &sk->sk_receive_queue);
+> +	ckpt_debug("(R) inet_read_buffers: %i\n", ret);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ret = inet_read_buffers(ctx, &sk->sk_write_queue);
+> +	ckpt_debug("(W) inet_read_buffers: %i\n", ret);
+> +
+> +	return ret;
+> +}
+> +
+> +static int inet_defer_restore_buffers(struct ckpt_ctx *ctx, struct sock *sk)
+> +{
+> +	struct dq_buffers dq;
+> +
+> +	dq.ctx = ctx;
+> +	dq.sk = sk;
+> +
+> +	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
+> +			      inet_deferred_restore_buffers, NULL);
+> +}
+> +
+> +int inet_restore(struct ckpt_ctx *ctx,
+> +		 struct socket *sock,
+> +		 struct ckpt_hdr_socket *h)
+> +{
+> +	struct ckpt_hdr_socket_inet *in;
+> +	int ret = 0;
+> +
+> +	in = ckpt_read_obj_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
+> +	if (IS_ERR(in))
+> +		return PTR_ERR(in);
+> +
+> +	/* Listening sockets and those that are closed but have a local
+> +	 * address need to call bind()
+> +	 */
+> +	if ((h->sock.state == TCP_LISTEN) ||
+> +	    ((h->sock.state == TCP_CLOSE) && (in->laddr_len > 0))) {
+> +		sock->sk->sk_reuse = 2;
+> +		inet_sk(sock->sk)->freebind = 1;
+> +		ret = sock->ops->bind(sock,
+> +				      (struct sockaddr *)&in->laddr,
+> +				      in->laddr_len);
+> +		ckpt_debug("inet bind: %i\n", ret);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		if (h->sock.state == TCP_LISTEN) {
+> +			ret = sock->ops->listen(sock, h->sock.backlog);
+> +			ckpt_debug("inet listen: %i\n", ret);
+> +			if (ret < 0)
+> +				goto out;
+> +		}
+> +	} else {
+> +		if (!sock_flag(sock->sk, SOCK_DEAD))
+> +			ret = inet_defer_restore_buffers(ctx, sock->sk);
+> +	}
+> + out:
+> +	ckpt_hdr_put(ctx, in);
+> +
+> +	return ret;
+> + }
+> +
+> -- 
+> 1.6.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
