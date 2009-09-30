@@ -1,15 +1,26 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Wed, 30 Sep 2009 09:34:43 +0400
-Message-ID: <20090930053443.GA1010__21056.3566921794$1254288944$gmane$org@x200>
-References: <20090924165548.GA16586@us.ibm.com> <20090924175542.GA27678@x200>
-	<20090924183556.GA31356@us.ibm.com>
+From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
+Date: Tue, 29 Sep 2009 23:48:39 -0700 (PDT)
+Message-ID: <20090930064839.AB188A3__4587.13398916206$1254293420$gmane$org@magilla.sf.frob.com>
+References: <20090924165548.GA16586@us.ibm.com>
+	<20090924170308.GH16989@us.ibm.com>
+	<200909242343.59903.arnd@arndb.de>
+	<20090925082346.GB4436@localdomain>
+	<20090925105632.GG12824@hawkmoon.kerlabs.com>
+	<20090929180537.GD4625@us.ibm.com>
+	<20090929184023.532DF34@magilla.sf.frob.com>
+	<4AC255A4.4030002@zytor.com>
+	<20090929210207.247b94df@infradead.org>
+	<alpine.LFD.2.01.0909291207410.6996@localhost.localdomain>
+	<4AC267C7.4070300@zytor.com>
+	<alpine.LFD.2.01.0909291501530.6996@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090924183556.GA31356-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: Linus Torvalds's message of  Tuesday,
+	29 September 2009 15:11:03 -0700
+	<alpine.LFD.2.01.0909291501530.6996-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +30,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 24, 2009 at 01:35:56PM -0500, Serge E. Hallyn wrote:
-> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> > I don't like this even more.
-> > 
-> > Pid namespaces are hierarchical _and_ anonymous, so simply
-> > set of numbers doesn't describe the final object.
-> > 
-> > struct pid isn't special, it's just another invariant if you like
-> > as far as C/R is concerned, but system call is made special wrt pids.
-> > 
-> > What will be in an image? I hope "struct kstate_image_pid" with several
-> 
-> Sure pid namespaces are anonymous, but we will give each an 'objref'
-> valid only for a checkpoint image, and store the relationship between
-> pid namespaces based on those objrefs.  Basically the same way that user
-> structs and hierarchical user namespaces are handled right now.
+The glibc prototype for clone uses ... and is not a direct map to the
+syscall args anyway.  So that would not change for adding more optional
+args enabled by certain flags, as it did not change to add the tid pointer
+arguments before.  But indeed the library function would have to change to
+pass on additional or different args to the existing syscall.
 
-OK, that's certainly doable.
 
-You're commiting yourself to creation of tasks in userspace if this goes in. :-\
-Which can let you into putting wrong kind of relations into image.
-IIRC, clone_flags were in image (still?), but tomorrow kernel will get
-new way to acquire, say, uts_ns, which, in theory, can't be described by
-a set of consecutive clones, so, you'll have to fixup something in kernel.
-
-> > numbers and with references to such object from other places, so it
-> > seems natural to do alloc_pid() with needed numbers and that attach new
-> > shiny pid to where needed. But this clone_pid is only for task_struct's pids.
+Thanks,
+Roland
