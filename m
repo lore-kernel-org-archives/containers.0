@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
-Date: Wed, 30 Sep 2009 17:24:36 -0500
-Message-ID: <20090930222436.GA22027@us.ibm.com>
+Date: Wed, 30 Sep 2009 17:42:49 -0500
+Message-ID: <20090930224249.GA22977@us.ibm.com>
 References: <1253749920-18673-1-git-send-email-orenl@librato.com>
 	<20090924154139.2a7dd5ec.akpm@linux-foundation.org>
 	<20090928163704.GA3327@us.ibm.com> <4AC20BB8.4070509@free.fr>
@@ -29,22 +29,17 @@ List-Id: containers.vger.kernel.org
 
 Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
 > Dan Smith wrote:
->> DL> Argh ! I was hoping there was something else than the source code
->>
 >> The header file makes it pretty clear what is going on, 
 > Certainly for you.
-> We are a little far away of the sys_checkpoint / sys_restart simple  
-> syscalls we talked about at the cr-minisummit in 2008.
 
-Yes.  We did those, and were asked to provide a fuller
-implementation.  Here is what we have so far...  We're
-open, in fact eager, to see other people's implementations
-based on different designs, but here is what *we*'ve got.
-
-Oh, and it was NEVER said at the cr-minisummit that we would have
-simple syscalls doing a full, complicated c/r.  Only that
-we would start with simple syscalls to do a single task with
-no open resources.  And you can still do that with v18, with
-one simple syscall.
+If you're worried about hooking lxc-restart up and that
+being a mess, i have said that as soon as something hits -mm,
+I will hook up lxc-restart.  I do agree, the userspace code
+would be much simpler if we didn't need to do all of the
+process tree creation in userspace :)  I *would* prefer if
+we didn't have to parse the image in userspace.  But the
+moment it was decided that portability across kernel versions
+woudl be done by having userspace process the image, we lost
+that fight.
 
 -serge
