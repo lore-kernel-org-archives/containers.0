@@ -1,14 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
-Date: Wed, 30 Sep 2009 18:16:55 +0200
-Message-ID: <4AC38477.4070007__30170.1154713102$1254327470$gmane$org@free.fr>
-References: <1253749920-18673-1-git-send-email-orenl@librato.com>	<20090924154139.2a7dd5ec.akpm@linux-foundation.org>	<20090928163704.GA3327@us.ibm.com>
-	<4AC20BB8.4070509@free.fr> <87iqf0o5sf.fsf@caffeine.danplanet.com>
+From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 8/9]: Define clone2() syscall
+Date: Wed, 30 Sep 2009 18:15:44 +0200
+Message-ID: <200909301815.45211.arnd__33756.4764115543$1254327525$gmane$org@arndb.de>
+References: <20090924165548.GA16586@us.ibm.com>
+	<alpine.LFD.2.01.0909291501530.6996@localhost.localdomain>
+	<4AC287F2.8060603@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87iqf0o5sf.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <4AC287F2.8060603-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,33 +19,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dan Smith wrote:
-> DL> Ok for the restart, but for the checkpoint, how do you access the
-> DL> network setup from a process which belongs to another namespace
-> DL> context ?
->
-> So far the discussion has led to the kernel dumping all of that
-> information on checkpoint, and then splitting it up into what can be
-> done by userspace on restart and what still needs to be in the kernel.
->   
-Ah, this was a discussion in the containers@ mailing list ?
-Sorry I missed it, I will look at the containers@ archives.
+On Wednesday 30 September 2009, H. Peter Anvin wrote:
+> Let's just make it another system call.  It doesn't have any downside
+> that I can see, might prevent problems, and avoids setting a bad
+> precedent that someone can misinterpret.
 
-If the checkpoint is done from the kernel, why the restart wouldn't be 
-in the kernel too ?
-Do you have a list of what is restartable from userspace or from the 
-kernel ?
+One more argument for this is that the new code is architecture independent
+using user_stack_pointer(), while the original sys_clone is highly
+architecture specific, which is a source for bugs when trying to
+extend it.
 
-Is there any documentation about the statefile format I can use if I 
-want to implement myself an userspace CR solution based on this kernel 
-patchset ?
-> Similarly, the task structure is currently exported by the kernel on
-> checkpoint, but recreated in userspace on restart.
->   
-(I guess you meant tasks hierarchy/tree) Well I understand why this is 
-done from userspace but I don't like the idea of digging in the 
-statefile, but there's no accounting for taste :)
+	Arnd <><
