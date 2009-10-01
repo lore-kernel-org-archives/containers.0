@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 1/5] c/r: simplify logic of tracking restarting tasks
-Date: Wed, 30 Sep 2009 21:47:10 -0400
-Message-ID: <1254361634-30076-2-git-send-email-orenl@librato.com>
+Subject: [PATCH 3/5] c/r: introduce walk_task_subtree() to iterate through
+	descendants
+Date: Wed, 30 Sep 2009 21:47:12 -0400
+Message-ID: <1254361634-30076-4-git-send-email-orenl@librato.com>
 References: <1254361634-30076-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,431 +21,369 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Instead of playing tricks with xchg() of task->checkpoint_ctx, use the
-task_{lock,unlock} to protect changes to that pointer. This simplifies
-the logic since we no longer need to check for races (and old_ctx).
+Introduce a helper to iterate over the descendants of a given
+task. The prototype is:
 
-The remaining changes include cleanup, and unification of common code
-to handle errors during restart, and some debug statements.
+int walk_task_subtree(struct task_struct *root,
+		      int (*func)(struct task_struct *, void *),
+      		      void *data)
+
+The function will start with @root, and iterate through all the
+descendants, including threads, in a DFS manner. Children of a task
+are traversed before proceeding to the next thread of that task.
+
+For each task, the callback @func will be called providing the task
+pointer and the @data. The callback is invoked while holding the
+tasklist_lock for reading. If the callback fails it should return a
+negative error, and the traversal ends. If the callback succeeds, it
+returns a non-negative number, and these values are summed.
+
+On success, walk_task_subtree() returns the total summed. On failure,
+it returns a negative value.
+
+The code in checkpoint/checkpoint.c and checkpoint/restart.c has
+been converted to use this helper.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/restart.c       |  170 ++++++++++++++++++++++----------------------
- checkpoint/sys.c           |    6 +-
- include/linux/checkpoint.h |    2 +-
- kernel/fork.c              |    6 +-
- 4 files changed, 92 insertions(+), 92 deletions(-)
+ checkpoint/checkpoint.c    |   97 ++++++++++++++--------------------------
+ checkpoint/restart.c       |  105 +++++++++++++++++++-------------------------
+ checkpoint/sys.c           |   55 +++++++++++++++++++++++
+ include/linux/checkpoint.h |    3 +
+ 4 files changed, 137 insertions(+), 123 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 543b380..5d936cf 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -529,17 +529,54 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
- 
- static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
- {
--	ckpt_set_ctx_error(ctx, errno);
--	complete(&ctx->complete);
-+	/* first to fail: notify everyone (racy but harmless) */
-+	if (!ckpt_test_ctx_error(ctx)) {
-+		ckpt_debug("setting restart error %d\n", errno); \
-+		ckpt_set_ctx_error(ctx, errno);
-+		complete(&ctx->complete);
-+		wake_up_all(&ctx->waitq);
-+		wake_up_all(&ctx->ghostq);
-+	}
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index dbe9e10..1eeb557 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -520,80 +520,51 @@ static int collect_objects(struct ckpt_ctx *ctx)
+ 	return ret;
  }
  
- /* Need to call ckpt_debug such that it will get the correct source location */
- #define restore_notify_error(ctx, errno) \
- do { \
--	ckpt_debug("ctx root pid %d err %d", ctx->root_pid, errno); \
-+	ckpt_debug("restart error %d, root pid %d\n", errno, ctx->root_pid); \
- 	_restore_notify_error(ctx, errno); \
- } while(0)
- 
-+static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
-+{
++struct ckpt_cnt_tasks {
 +	struct ckpt_ctx *ctx;
++	int nr;
++};
 +
-+	task_lock(task);
-+	ctx = ckpt_ctx_get(task->checkpoint_ctx);
-+	task_unlock(task);
-+	return ctx;
-+}
+ /* count number of tasks in tree (and optionally fill pid's in array) */
+-static int tree_count_tasks(struct ckpt_ctx *ctx)
++static int __tree_count_tasks(struct task_struct *task, void *data)
+ {
+-	struct task_struct *root;
+-	struct task_struct *task;
+-	struct task_struct *parent;
+-	struct task_struct **tasks_arr = ctx->tasks_arr;
+-	int nr_tasks = ctx->nr_tasks;
+-	int nr = 0;
++	struct ckpt_cnt_tasks *d = (struct ckpt_cnt_tasks *) data;
++	struct ckpt_ctx *ctx = d->ctx;
+ 	int ret;
+ 
+-	read_lock(&tasklist_lock);
+-
+-	/* we hold the lock, so root_task->real_parent can't change */
+-	task = ctx->root_task;
+-	if (ctx->root_init) {
+-		/* container-init: start from container parent */
+-		parent = task->real_parent;
+-		root = parent;
+-	} else {
+-		/* non-container-init: start from root task and down */
+-		parent = NULL;
+-		root = task;
+-	}
+-
+-	/* count tasks via DFS scan of the tree */
+-	while (1) {
+-		ctx->tsk = task;  /* (for ckpt_write_err) */
++	ctx->tsk = task;  /* (for ckpt_write_err) */
+ 
+-		/* is this task cool ? */
+-		ret = may_checkpoint_task(ctx, task);
+-		if (ret < 0) {
+-			nr = ret;
+-			break;
+-		}
+-		if (tasks_arr) {
+-			/* unlikely... but if so then try again later */
+-			if (nr == nr_tasks) {
+-				nr = -EBUSY; /* cleanup in ckpt_ctx_free() */
+-				break;
+-			}
+-			tasks_arr[nr] = task;
+-			get_task_struct(task);
+-		}
+-		nr++;
+-		/* if has children - proceed with child */
+-		if (!list_empty(&task->children)) {
+-			parent = task;
+-			task = list_entry(task->children.next,
+-					  struct task_struct, sibling);
+-			continue;
+-		}
+-		while (task != root) {
+-			/* if has sibling - proceed with sibling */
+-			if (!list_is_last(&task->sibling, &parent->children)) {
+-				task = list_entry(task->sibling.next,
+-						  struct task_struct, sibling);
+-				break;
+-			}
++	/* is this task cool ? */
++	ret = may_checkpoint_task(ctx, task);
++	if (ret < 0)
++		goto out;
+ 
+-			/* else, trace back to parent and proceed */
+-			task = parent;
+-			parent = parent->real_parent;
++	if (ctx->tasks_arr) {
++		if (d->nr == ctx->nr_tasks) {  /* unlikely... try again later */
++			__ckpt_write_err(ctx, "TE", "bad task count\n", -EBUSY);
++			ret = -EBUSY;
++			goto out;
+ 		}
+-		if (task == root)
+-			break;
++		ctx->tasks_arr[d->nr++] = task;
++		get_task_struct(task);
+ 	}
 +
-+/* returns 1 on success, 0 otherwise */
-+static int set_task_ctx(struct task_struct *task, struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_ctx *old;
-+	int ret = 1;
-+
-+	task_lock(task);
-+	if (!ctx || !task->checkpoint_ctx) {
-+		old = task->checkpoint_ctx;
-+		task->checkpoint_ctx = ckpt_ctx_get(ctx);
-+	} else {
-+		ckpt_debug("task %d has prior checkpoint_ctx\n",
-+			   task_pid_vnr(task));
-+		old = NULL;
-+		ret = 0;
-+	}
-+	task_unlock(task);
-+	ckpt_ctx_put(old);
++	ret = 1;
++ out:
++	if (ret < 0)
++		ckpt_write_err(ctx, "", NULL);
+ 	ctx->tsk = NULL;
 +	return ret;
 +}
+ 
+-	read_unlock(&tasklist_lock);
++static int tree_count_tasks(struct ckpt_ctx *ctx)
++{
++	struct ckpt_cnt_tasks data;
+ 
+-	if (nr < 0)
+-		ckpt_write_err(ctx, "", NULL);
+-	return nr;
++	data.ctx = ctx;
++	data.nr = 0;
 +
- static void restore_task_done(struct ckpt_ctx *ctx)
- {
- 	if (atomic_dec_and_test(&ctx->nr_total))
-@@ -570,6 +607,7 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
- 		rcu_read_unlock();
- 
- 		if (!task) {
-+			ckpt_debug("could not find task %d\n", pid);
- 			restore_notify_error(ctx, -ESRCH);
- 			return -ESRCH;
- 		}
-@@ -590,12 +628,10 @@ static int wait_task_active(struct ckpt_ctx *ctx)
- 	ret = wait_event_interruptible(ctx->waitq,
- 				       is_task_active(ctx, pid) ||
- 				       ckpt_test_ctx_error(ctx));
--	ckpt_debug("active %d < %d (ret %d)\n",
--		   ctx->active_pid, ctx->nr_pids, ret);
--	if (!ret && ckpt_test_ctx_error(ctx)) {
--		force_sig(SIGKILL, current);
-+	ckpt_debug("active %d < %d (ret %d, errno %d)\n",
-+		   ctx->active_pid, ctx->nr_pids, ret, ctx->errno);
-+	if (!ret && ckpt_test_ctx_error(ctx))
- 		ret = -EBUSY;
--	}
- 	return ret;
++	return walk_task_subtree(ctx->root_task, __tree_count_tasks, &data);
  }
  
-@@ -603,17 +639,17 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
+ /*
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 37454c5..c021eaf 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -804,77 +804,56 @@ static int do_restore_task(void)
+  * Called by the coodinator to set the ->checkpoint_ctx pointer of the
+  * root task and all its descendants.
+  */
+-static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
++static int __prepare_descendants(struct task_struct *task, void *data)
  {
- 	ckpt_debug("pid %d syncing\n", task_pid_vnr(current));
- 	wait_event_interruptible(ctx->waitq, ckpt_test_ctx_complete(ctx));
--	if (ckpt_test_ctx_error(ctx)) {
--		force_sig(SIGKILL, current);
-+	ckpt_debug("task sync done (errno %d)\n", ctx->errno);
-+	if (ckpt_test_ctx_error(ctx))
- 		return -EBUSY;
--	}
- 	return 0;
- }
+-	struct task_struct *leader = root;
+-	struct task_struct *parent = NULL;
+-	struct task_struct *task = root;
+-	int nr_pids = 0;
+-	int ret = -EBUSY;
++	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
  
-+/* grabs a reference to the @ctx on success; caller should free */
- static struct ckpt_ctx *wait_checkpoint_ctx(void)
- {
- 	DECLARE_WAIT_QUEUE_HEAD(waitq);
--	struct ckpt_ctx *ctx, *old_ctx;
-+	struct ckpt_ctx *ctx;
- 	int ret;
- 
- 	/*
-@@ -621,32 +657,15 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
- 	 * reference to its restart context.
- 	 */
- 	ret = wait_event_interruptible(waitq, current->checkpoint_ctx);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_debug("wait_checkpoint_ctx: failed (%d)\n", ret);
- 		return ERR_PTR(ret);
-+	}
- 
--	ctx = xchg(&current->checkpoint_ctx, NULL);
--	if (!ctx)
-+	ctx = get_task_ctx(current);
-+	if (!ctx) {
-+		ckpt_debug("wait_checkpoint_ctx: checkpoint_ctx missing\n");
- 		return ERR_PTR(-EAGAIN);
--	ckpt_ctx_get(ctx);
--
--	/*
--	 * Put the @ctx back on our task_struct. If an ancestor tried
--	 * to prepare_descendants() on us (although extremly unlikely)
--	 * we will encounter the ctx that he xchg()ed there and bail.
--	 */
--	old_ctx = xchg(&current->checkpoint_ctx, ctx);
--	if (old_ctx) {
--		ckpt_debug("self-set of checkpoint_ctx failed\n");
--
--		/* alert coordinator of unexpected ctx */
--		restore_notify_error(old_ctx, -EAGAIN);
--		ckpt_ctx_put(old_ctx);
--
--		/* alert our coordinator that we bail */
--		restore_notify_error(ctx, -EAGAIN);
--		ckpt_ctx_put(ctx);
--
--		ctx = ERR_PTR(-EAGAIN);
- 	}
- 
- 	return ctx;
-@@ -655,6 +674,7 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
- static int do_ghost_task(void)
- {
- 	struct ckpt_ctx *ctx;
-+	int ret;
- 
- 	ctx = wait_checkpoint_ctx();
- 	if (IS_ERR(ctx))
-@@ -662,9 +682,11 @@ static int do_ghost_task(void)
- 
- 	current->flags |= PF_RESTARTING;
- 
--	wait_event_interruptible(ctx->ghostq,
--				 all_tasks_activated(ctx) ||
--				 ckpt_test_ctx_error(ctx));
-+	ret = wait_event_interruptible(ctx->ghostq,
-+				       all_tasks_activated(ctx) ||
-+				       ckpt_test_ctx_error(ctx));
-+	if (ret < 0)
-+		restore_notify_error(ctx, ret);
- 
- 	current->exit_signal = -1;
- 	ckpt_ctx_put(ctx);
-@@ -675,7 +697,7 @@ static int do_ghost_task(void)
- 
- static int do_restore_task(void)
- {
--	struct ckpt_ctx *ctx, *old_ctx;
-+	struct ckpt_ctx *ctx;
- 	int zombie, ret;
- 
- 	ctx = wait_checkpoint_ctx();
-@@ -713,18 +735,11 @@ static int do_restore_task(void)
- 	restore_task_done(ctx);
- 	ret = wait_task_sync(ctx);
-  out:
--	old_ctx = xchg(&current->checkpoint_ctx, NULL);
--	if (old_ctx)
--		ckpt_ctx_put(old_ctx);
--
--	/* if we're first to fail - notify others */
--	if (ret < 0 && !ckpt_test_ctx_error(ctx)) {
-+	if (ret < 0)
- 		restore_notify_error(ctx, ret);
--		wake_up_all(&ctx->waitq);
--		wake_up_all(&ctx->ghostq);
--	}
- 
- 	current->flags &= ~PF_RESTARTING;
-+	set_task_ctx(current, NULL);
- 	ckpt_ctx_put(ctx);
- 	return ret;
- }
-@@ -742,17 +757,14 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 	struct task_struct *leader = root;
- 	struct task_struct *parent = NULL;
- 	struct task_struct *task = root;
--	struct ckpt_ctx *old_ctx;
- 	int nr_pids = 0;
--	int ret = 0;
-+	int ret = -EBUSY;
- 
- 	read_lock(&tasklist_lock);
- 	while (1) {
- 		ckpt_debug("consider task %d\n", task_pid_vnr(task));
--		if (task_ptrace(task) & PT_PTRACED) {
--			ret = -EBUSY;
-+		if (task_ptrace(task) & PT_PTRACED)
- 			break;
+-	read_lock(&tasklist_lock);
+-	while (1) {
+-		ckpt_debug("consider task %d\n", task_pid_vnr(task));
+-		if (task_ptrace(task) & PT_PTRACED)
+-			break;
+-		/*
+-		 * Set task->checkpoint_ctx of all non-zombie descendants.
+-		 * If a descendant already has a ->checkpoint_ctx, it
+-		 * must be a coordinator (for a different restart ?) so
+-		 * we fail.
+-		 *
+-		 * Note that own ancestors cannot interfere since they
+-		 * won't descend past us, as own ->checkpoint_ctx must
+-		 * already be set.
+-		 */
+-		if (!task->exit_state) {
+-			if (!set_task_ctx(task, ctx))
+-				break;
+-			ckpt_debug("prepare task %d\n", task_pid_vnr(task));
+-			wake_up_process(task);
+-			nr_pids++;
 -		}
- 		/*
- 		 * Set task->checkpoint_ctx of all non-zombie descendants.
- 		 * If a descendant already has a ->checkpoint_ctx, it
-@@ -764,14 +776,8 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 		 * already be set.
- 		 */
- 		if (!task->exit_state) {
--			ckpt_ctx_get(ctx);
--			old_ctx = xchg(&task->checkpoint_ctx, ctx);
--			if (old_ctx) {
--				ckpt_debug("bad task %d\n",task_pid_vnr(task));
--				ckpt_ctx_put(old_ctx);
--				ret = -EAGAIN;
-+			if (!set_task_ctx(task, ctx))
- 				break;
++	ckpt_debug("consider task %d\n", task_pid_vnr(task));
+ 
+-		/* if has children - proceed with child */
+-		if (!list_empty(&task->children)) {
+-			parent = task;
+-			task = list_entry(task->children.next,
+-					  struct task_struct, sibling);
+-			continue;
+-		}
+-		while (task != root) {
+-			/* if has sibling - proceed with sibling */
+-			if (!list_is_last(&task->sibling, &parent->children)) {
+-				task = list_entry(task->sibling.next,
+-						  struct task_struct, sibling);
+-				break;
 -			}
- 			ckpt_debug("prepare task %d\n", task_pid_vnr(task));
- 			wake_up_process(task);
- 			nr_pids++;
-@@ -799,8 +805,10 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 		if (task == root) {
- 			/* in case root task is multi-threaded */
- 			root = task = next_thread(task);
--			if (root == leader)
-+			if (root == leader) {
-+				ret = 0;
- 				break;
-+			}
- 		}
- 	}
- 	read_unlock(&tasklist_lock);
-@@ -829,8 +837,7 @@ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
- 		return ret;
- 
- 	ret = wait_for_completion_interruptible(&ctx->complete);
 -
--	ckpt_debug("final sync kflags %#lx\n", ctx->kflags);
-+	ckpt_debug("final sync kflags %#lx (ret %d)\n", ctx->kflags, ret);
- 	/*
- 	 * Usually when restart fails, the restarting task will first
- 	 * set @ctx->errno before waking us up. In the rare event that
-@@ -899,13 +906,14 @@ static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 
- static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- {
--	struct ckpt_ctx *old_ctx;
- 	int ret;
- 
- 	ret = restore_read_header(ctx);
-+	ckpt_debug("restore header: %d\n", ret);
- 	if (ret < 0)
- 		return ret;
- 	ret = restore_read_tree(ctx);
-+	ckpt_debug("restore tree: %d\n", ret);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -920,45 +928,42 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
- 	 * prepare_descendants() on us, it will fail. Furthermore,
- 	 * that ancestor won't proceed deeper to interfere with our
--	 * descendants that are restarting (e.g. by xchg()ing their
--	 * ->checkpoint_ctx pointer temporarily).
-+	 * descendants that are restarting.
- 	 */
--	ckpt_ctx_get(ctx);
--	old_ctx = xchg(&current->checkpoint_ctx, ctx);
--	if (old_ctx) {
-+	if (!set_task_ctx(current, ctx)) {
- 		/*
- 		 * We are a bad-behaving descendant: an ancestor must
--		 * have done prepare_descendants() on us as part of a
--		 * restart. Oh, well ... alert ancestor (coordinator)
--		 * with an error on @old_ctx.
-+		 * have prepare_descendants() us as part of a restart.
- 		 */
--		ckpt_debug("bad behaving checkpoint_ctx\n");
--		restore_notify_error(old_ctx, -EBUSY);
--		ckpt_ctx_put(old_ctx);
--		ret = -EBUSY;
--		goto out;
-+		ckpt_debug("coord already has checkpoint_ctx\n");
+-			/* else, trace back to parent and proceed */
+-			task = parent;
+-			parent = parent->real_parent;
+-		}
+-		if (task == root) {
+-			/* in case root task is multi-threaded */
+-			root = task = next_thread(task);
+-			if (root == leader) {
+-				ret = 0;
+-				break;
+-			}
+-		}
++	if (task_ptrace(task) & PT_PTRACED) {
++		ckpt_debug("ptraced task %d\n", task_pid_vnr(task));
 +		return -EBUSY;
  	}
+-	read_unlock(&tasklist_lock);
+-	ckpt_debug("nr %d/%d  ret %d\n", ctx->nr_pids, nr_pids, ret);
++
++	/*
++	 * Set task->checkpoint_ctx of all non-zombie descendants.
++	 * If a descendant already has a ->checkpoint_ctx, it
++	 * must be a coordinator (for a different restart ?) so
++	 * we fail.
++	 *
++	 * Note that own ancestors cannot interfere since they
++	 * won't descend past us, as own ->checkpoint_ctx must
++	 * already be set.
++	 */
++	if (!task->exit_state) {
++		if (!set_task_ctx(task, ctx))
++			return -EBUSY;
++		ckpt_debug("prepare task %d\n", task_pid_vnr(task));
++		wake_up_process(task);
++		return 1;
++	}
++
++	return 0;
++}
++
++static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
++{
++	int nr_pids;
++
++	nr_pids = walk_task_subtree(root, __prepare_descendants, ctx);
++	ckpt_debug("nr %d/%d\n", ctx->nr_pids, nr_pids);
++	if (nr_pids < 0)
++		return nr_pids;
  
+ 	/*
+ 	 * Actual tasks count may exceed ctx->nr_pids due of 'dead'
+ 	 * tasks used as place-holders for PGIDs, but not fall short.
+ 	 */
+-	if (!ret && (nr_pids < ctx->nr_pids))
+-		ret = -ESRCH;
++	if (nr_pids < ctx->nr_pids)
++		return -ESRCH;
+ 
+ 	atomic_set(&ctx->nr_total, nr_pids);
+-	return ret;
++	return nr_pids;
+ }
+ 
+ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
+@@ -991,6 +970,12 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 		return -EBUSY;
+ 	}
+ 
++	/*
++	 * From now on we are committed to the restart. If anything
++	 * fails, we'll wipe out the entire subtree below us, to
++	 * ensure proper cleanup.
++	 */
++
  	if (ctx->uflags & RESTART_TASKSELF) {
  		ret = restore_task(ctx);
-+		ckpt_debug("restore task: %d\n", ret);
- 		if (ret < 0)
- 			goto out;
- 	} else {
- 		/* prepare descendants' t->checkpoint_ctx point to coord */
- 		ret = prepare_descendants(ctx, ctx->root_task);
-+		ckpt_debug("restore prepare: %d\n", ret);
- 		if (ret < 0)
- 			goto out;
- 		/* wait for all other tasks to complete do_restore_task() */
- 		ret = wait_all_tasks_finish(ctx);
-+		ckpt_debug("restore finish: %d\n", ret);
- 		if (ret < 0)
- 			goto out;
- 	}
- 
- 	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
-+	ckpt_debug("restore deferqueue: %d\n", ret);
- 	if (ret < 0)
- 		goto out;
- 
- 	ret = restore_read_tail(ctx);
-+	ckpt_debug("restore tail: %d\n", ret);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -974,14 +979,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 
- 	if (!(ctx->uflags & RESTART_TASKSELF))
- 		wake_up_all(&ctx->waitq);
--	/*
--	 * If an ancestor attempts to prepare_descendants() on us, it
--	 * xchg()s our ->checkpoint_ctx, and free it. Our @ctx will,
--	 * instead, point to the ctx that said ancestor placed.
--	 */
--	ctx = xchg(&current->checkpoint_ctx, NULL);
--	ckpt_ctx_put(ctx);
- 
-+	set_task_ctx(current, NULL);
- 	return ret;
- }
- 
-@@ -1070,6 +1069,7 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
- 		}
- 	}
- 
-+	ckpt_debug("sys_restart returns %ld\n", ret);
- 	return ret;
- }
- 
-@@ -1082,7 +1082,7 @@ void exit_checkpoint(struct task_struct *tsk)
- 	struct ckpt_ctx *ctx;
- 
- 	/* no one else will touch this, because @tsk is dead already */
--	ctx = xchg(&tsk->checkpoint_ctx, NULL);
-+	ctx = tsk->checkpoint_ctx;
- 
- 	/* restarting zombies will activate next task in restart */
- 	if (tsk->flags & PF_RESTARTING) {
+ 		ckpt_debug("restore task: %d\n", ret);
 diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 76a3fa9..77613d7 100644
+index 77613d7..7604089 100644
 --- a/checkpoint/sys.c
 +++ b/checkpoint/sys.c
-@@ -263,9 +263,11 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	return ERR_PTR(err);
+@@ -276,6 +276,61 @@ void ckpt_ctx_put(struct ckpt_ctx *ctx)
+ 		ckpt_ctx_free(ctx);
  }
  
--void ckpt_ctx_get(struct ckpt_ctx *ctx)
-+struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx)
- {
--	atomic_inc(&ctx->refcount);
-+	if (ctx)
-+		atomic_inc(&ctx->refcount);
-+	return ctx;
- }
- 
- void ckpt_ctx_put(struct ckpt_ctx *ctx)
++int walk_task_subtree(struct task_struct *root,
++		      int (*func)(struct task_struct *, void *),
++		      void *data)
++{
++
++	struct task_struct *leader = root;
++	struct task_struct *parent = NULL;
++	struct task_struct *task = root;
++	int total = 0;
++	int ret;
++
++	read_lock(&tasklist_lock);
++	while (1) {
++		/* invoke callback on this task */
++		ret = func(task, data);
++		if (ret < 0)
++			break;
++
++		total += ret;
++
++		/* if has children - proceed with child */
++		if (!list_empty(&task->children)) {
++			parent = task;
++			task = list_entry(task->children.next,
++					  struct task_struct, sibling);
++			continue;
++		}
++
++		while (task != root) {
++			/* if has sibling - proceed with sibling */
++			if (!list_is_last(&task->sibling, &parent->children)) {
++				task = list_entry(task->sibling.next,
++						  struct task_struct, sibling);
++				break;
++			}
++
++			/* else, trace back to parent and proceed */
++			task = parent;
++			parent = parent->real_parent;
++		}
++
++		if (task == root) {
++			/* in case root task is multi-threaded */
++			root = task = next_thread(task);
++			if (root == leader)
++				break;
++		}
++	}
++	read_unlock(&tasklist_lock);
++
++	ckpt_debug("total %d ret %d\n", total, ret);
++	return (ret < 0 ? ret : total);
++}
++
++
+ /**
+  * sys_checkpoint - checkpoint a container
+  * @pid: pid of the container init(1) process
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 5294a96..b7f1796 100644
+index b7f1796..12210e4 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -134,7 +134,7 @@ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
- 			   enum obj_type type);
- extern int ckpt_obj_reserve(struct ckpt_ctx *ctx);
+@@ -50,6 +50,9 @@
+ 	 RESTART_FROZEN | \
+ 	 RESTART_GHOST)
  
--extern void ckpt_ctx_get(struct ckpt_ctx *ctx);
-+extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
- extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
++extern int walk_task_subtree(struct task_struct *task,
++			     int (*func)(struct task_struct *, void *),
++			     void *data);
+ extern void exit_checkpoint(struct task_struct *tsk);
  
- extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 57118e4..0e226f5 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1188,10 +1188,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 
- #ifdef CONFIG_CHECKPOINT
- 	/* If parent is restarting, child should be too */
--	if (unlikely(current->checkpoint_ctx)) {
--		p->checkpoint_ctx = current->checkpoint_ctx;
--		ckpt_ctx_get(p->checkpoint_ctx);
--	}
-+	if (unlikely(current->checkpoint_ctx))
-+		p->checkpoint_ctx = ckpt_ctx_get(current->checkpoint_ctx);
- #endif
- 	/*
- 	 * The task hasn't been attached yet, so its cpus_allowed mask will
+ extern int ckpt_kwrite(struct ckpt_ctx *ctx, void *buf, int count);
 -- 
 1.6.0.4
