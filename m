@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/3] restart debug: add final process tree status
-Date: Wed, 30 Sep 2009 21:57:52 -0400
-Message-ID: <4AC40CA0.8020305@librato.com>
-References: <20090929165342.GA10076@us.ibm.com>
-	<20090929165402.GA10114@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
+Date: Wed, 30 Sep 2009 19:36:18 -0700
+Message-ID: <20091001023618.GA31344__17022.5758142353$1254364643$gmane$org@us.ibm.com>
+References: <20090924165548.GA16586@us.ibm.com> <4ABBAFE5.2000704@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090929165402.GA10114-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4ABBAFE5.2000704-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,48 +18,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
+| 
+| 
+| Sukadev Bhattiprolu wrote:
+| > === NEW CLONE() SYSTEM CALL:
+| > 
+| > To support application checkpoint/restart, a task must have the same pid it
+| > had when it was checkpointed.  When containers are nested, the tasks within
+| > the containers exist in multiple pid namespaces and hence have multiple pids
+| > to specify during restart.
+| > 
+| > This patchset implements a new system call, clone2() that lets a process
+| > specify the pids of the child process.
+| > 
+| > Patches 1 through 6 are helper patches, needed for choosing a pid for the
+| > child process.
+| > 
+| > Patch 8 defines a prototype of the new system call. Patch 9 adds some
+| > documentation on the new system call, some/all of which will eventually
+| > go into a man page.
+| > 
+| 
+| [...]
+| 
+| > 
+| > Based on these requirements and constraints, we explored a couple of system
+| > call interfaces (in earlier versions of this patchset) and currently define
+| > the system call as:
+| > 
+| > 	struct clone_struct {
+| > 		u64 flags;
+| > 		u64 child_stack;
+| > 		u32 nr_pids;
+| > 		u32 parent_tid;
+| > 		u32 child_tid;
+| 
+| So @parent_tid and @child_tid are pointers to userspace memory and
+| require 'u64' (and it won't hurt to make @reserved1 a 'u64' as well).
 
+Well, if we make parent_tid and child_tid u64, we could move reserved1
+after ->nr_pids and leave it as a 32-bit value.
 
-Serge E. Hallyn wrote:
-> Have tasks in sys_restart keep some status in a list off
-> of checkpoint_ctx, and print this info when the checkpoint_ctx
-> is freed.
-> 
-> This is mostly an RFC - in particular the error tracking is
-> pretty half-hearted so far.  But the info it does spit out
-> helped me to figured out the coordinator syncing problem
-> fixed by the previous patch.
-> 
-> Sample dmesg output:
-> [4568:4568:c/r:free_per_task_status:200] 4 tasks registered, nr_tasks was 0 nr_total 0
-> [4568:4568:c/r:free_per_task_status:202] active pid was 1, ctx->errno 0
-> [4568:4568:c/r:free_per_task_status:204] kflags 6 uflags 0 oflags 1
-> [4568:4568:c/r:free_per_task_status:206] task 0 to run was 4568
-> [4568:4568:c/r:free_per_task_status:209] pid 4566
-> [4568:4568:c/r:free_per_task_status:211] it was coordinator
-> [4568:4568:c/r:free_per_task_status:219] it was running
-> [4568:4568:c/r:free_per_task_status:209] pid 4570
-> [4568:4568:c/r:free_per_task_status:213] it was a ghost
-> [4568:4568:c/r:free_per_task_status:209] pid 4569
-> [4568:4568:c/r:free_per_task_status:213] it was a ghost
-> [4568:4568:c/r:free_per_task_status:209] pid 4568
-> [4568:4568:c/r:free_per_task_status:215] it was the root task
-> [4568:4568:c/r:free_per_task_status:221] it was a normal task
-> 
-> So, when one task died before hitting sys_restart, the first line would
-> show '3 tasks registered'.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| 
+| > 		u32 reserved1;
+| > 		u64 reserved2;
+| > 	};
+| > 
+| 
+| Also, for forward/backward compatibility, explicitly state in the
+| documentation, and enforce in the kernel, that flags which are not
+| defined must not be set, and that reserved{1,2} must remain 0.
 
-[...]
+Agree with checking for reserved1 and reserved2.
 
-This looks pretty useful. Any chance you can you make it work on top
-of the 5-patch series I posted ... ?
+We currently don't check for invalid clone_flags - we just ignore them.
+Adding checks like
 
-Thanks,
+	if (fls(kcs.flags) > fls(CLONE_LAST_FLAG))
 
-Oren.
+would assume we always use bits in order (while it seems to make sense, to
+use them in order, we don't seem to have done so in the past).
+
+Alternatively we could define a CLONE_FLAG_MASK of valid flags and update
+the mask when each new clone flag is added. 
+
+But do we really need to check for invalid flags ?
+
+Sukadev
