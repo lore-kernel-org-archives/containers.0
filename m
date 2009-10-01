@@ -1,14 +1,14 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Wed, 30 Sep 2009 19:36:18 -0700
-Message-ID: <20091001023618.GA31344__17022.5758142353$1254364643$gmane$org@us.ibm.com>
-References: <20090924165548.GA16586@us.ibm.com> <4ABBAFE5.2000704@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH-user-cr] restart: handle dead/dummy tasks like ghosts
+Date: Wed, 30 Sep 2009 22:26:50 -0500
+Message-ID: <20091001032650.GA9491@us.ibm.com>
+References: <1254360988-29553-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4ABBAFE5.2000704-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1254360988-29553-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,74 +19,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
-| 
-| 
-| Sukadev Bhattiprolu wrote:
-| > === NEW CLONE() SYSTEM CALL:
-| > 
-| > To support application checkpoint/restart, a task must have the same pid it
-| > had when it was checkpointed.  When containers are nested, the tasks within
-| > the containers exist in multiple pid namespaces and hence have multiple pids
-| > to specify during restart.
-| > 
-| > This patchset implements a new system call, clone2() that lets a process
-| > specify the pids of the child process.
-| > 
-| > Patches 1 through 6 are helper patches, needed for choosing a pid for the
-| > child process.
-| > 
-| > Patch 8 defines a prototype of the new system call. Patch 9 adds some
-| > documentation on the new system call, some/all of which will eventually
-| > go into a man page.
-| > 
-| 
-| [...]
-| 
-| > 
-| > Based on these requirements and constraints, we explored a couple of system
-| > call interfaces (in earlier versions of this patchset) and currently define
-| > the system call as:
-| > 
-| > 	struct clone_struct {
-| > 		u64 flags;
-| > 		u64 child_stack;
-| > 		u32 nr_pids;
-| > 		u32 parent_tid;
-| > 		u32 child_tid;
-| 
-| So @parent_tid and @child_tid are pointers to userspace memory and
-| require 'u64' (and it won't hurt to make @reserved1 a 'u64' as well).
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> In "subtree" restart (restarting not inside a container), 'restart'
+> uses prctl(PR_DEATH_SIGNAL,...) to ensure proper cleanup should the
+> restart fail prematurely. The death_signal is sent, recursively, to
+> all the descendants of root to force-kill them.
+> 
+> However, dead (dummy) tasks, marked with TASK_DEAD, used to exit
+> during the creation of the task tree. Since the task is not within
+> sys_restart it does not have the PF_RESTARTING, and therefore will
+> send the death_signal its children as it exits.
+> 
+> To fix it, we observe that dead tasks are much like ghost tasks:
+> they are expected to terminate from within sys_restart, and before
+> the other tasks may resume execution. So we now treat dead (dummy)
+> tasks similarly to ghost tasks.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Well, if we make parent_tid and child_tid u64, we could move reserved1
-after ->nr_pids and leave it as a 32-bit value.
+Hmm?  But at line 1540 you are still doing do_exit if it's
+TASK_DEAD  :)
 
-| 
-| > 		u32 reserved1;
-| > 		u64 reserved2;
-| > 	};
-| > 
-| 
-| Also, for forward/backward compatibility, explicitly state in the
-| documentation, and enforce in the kernel, that flags which are not
-| defined must not be set, and that reserved{1,2} must remain 0.
-
-Agree with checking for reserved1 and reserved2.
-
-We currently don't check for invalid clone_flags - we just ignore them.
-Adding checks like
-
-	if (fls(kcs.flags) > fls(CLONE_LAST_FLAG))
-
-would assume we always use bits in order (while it seems to make sense, to
-use them in order, we don't seem to have done so in the past).
-
-Alternatively we could define a CLONE_FLAG_MASK of valid flags and update
-the mask when each new clone flag is added. 
-
-But do we really need to check for invalid flags ?
-
-Sukadev
+> ---
+>  restart.c |   27 ++++++++-------------------
+>  1 files changed, 8 insertions(+), 19 deletions(-)
+> 
+> diff --git a/restart.c b/restart.c
+> index 07ffdc3..b810ca9 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -1485,10 +1485,12 @@ static int ckpt_propagate_session(struct ckpt_ctx *ctx, struct task *task)
+>   * needed. In the second pass the task forks the remainder of the
+>   * children. In both passes, a child that is marked TASK_THREAD is
+>   * created as a thread and a child that is marked TASK_SIBLING is
+> - * created with parent inheritance. In the third pass, terminated
+> - * tasks and temporary placeholders are cleaned up. Finally, the task
+> - * either terminates if it is marked TASK_DEAD or calls sys_restart()
+> - * which does not return.
+> + * created with parent inheritance. Finally, the task will invoke
+> + * sys_restart() which does not return (if successful).
+> + *
+> + * Tasks marked TASK_DEAD or TASK_GHOST are both destined to terminate
+> + * anyway; both use flag RESTART_GHOST for sys_restart(), which will
+> + * result in a call to do_exit().
+>   */
+>  static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+>  {
+> @@ -1534,17 +1536,6 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+>  		}
+>  	}
+>  	
+> -	/* 3rd pass: bring out your deads ... */
+> -	for (child = task->children; child; child = child->next_sib) {
+> -		if (child->flags & TASK_DEAD) {
+> -			ret = waitpid(child->rpid, NULL, 0);
+> -			if (ret < 0) {
+> -				perror("waitpid");
+> -				return -1;
+> -			}
+> -		}
+> -	}
+> -
+>  	/* are we supposed to exit now ? */
+>  	if (task->flags & TASK_DEAD) {
+>  		ckpt_dbg("pid %d: task dead ... exiting\n", task->pid);
+> @@ -1587,7 +1578,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+>  	 * then exit (more precisely, killed). The RESTART_GHOST flag
+>  	 * tells the kernel that they are not to be restored.
+>  	 */
+> -	if (task->flags & TASK_GHOST)
+> +	if (task->flags & (TASK_GHOST | TASK_DEAD))
+>  		flags |= RESTART_GHOST;
+> 
+>  	/* on success this doesn't return */
+> @@ -1907,9 +1898,7 @@ static int ckpt_adjust_pids(struct ckpt_ctx *ctx)
+> 
+>  	/* read in 'pid_swap' data and adjust ctx->pids_arr */
+>  	for (n = 0; n < ctx->tasks_nr; n++) {
+> -		/* don't expect data from dead tasks */
+> -		if (ctx->tasks_arr[n].flags & TASK_DEAD)
+> -			continue;
+> +		/* get pid info from next task */
+>  		ret = read(ctx->pipe_in, &swap, sizeof(swap));
+>  		if (ret < 0)
+>  			ckpt_abort(ctx, "read pipe");
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
