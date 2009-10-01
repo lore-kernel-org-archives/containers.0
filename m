@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/5] c/r: simplify logic of tracking restarting tasks
-Date: Thu, 01 Oct 2009 12:21:54 -0400
-Message-ID: <4AC4D722.8010807@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/5] c/r: let entire thread group in sys_restart before
+	restoring a thread
+Date: Thu, 1 Oct 2009 11:20:26 -0500
+Message-ID: <20091001162026.GC20565@us.ibm.com>
 References: <1254361634-30076-1-git-send-email-orenl@librato.com>
-	<1254361634-30076-2-git-send-email-orenl@librato.com>
-	<20091001155823.GB20565@us.ibm.com>
+	<1254361634-30076-3-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091001155823.GB20565-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1254361634-30076-3-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,90 +20,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->> Instead of playing tricks with xchg() of task->checkpoint_ctx, use the
->> task_{lock,unlock} to protect changes to that pointer. This simplifies
->> the logic since we no longer need to check for races (and old_ctx).
->>
->> The remaining changes include cleanup, and unification of common code
->> to handle errors during restart, and some debug statements.
->>
->> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
->> ---
->>  checkpoint/restart.c       |  170 ++++++++++++++++++++++----------------------
->>  checkpoint/sys.c           |    6 +-
->>  include/linux/checkpoint.h |    2 +-
->>  kernel/fork.c              |    6 +-
->>  4 files changed, 92 insertions(+), 92 deletions(-)
->>
->> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
->> index 543b380..5d936cf 100644
->> --- a/checkpoint/restart.c
->> +++ b/checkpoint/restart.c
->> @@ -529,17 +529,54 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
->>
->>  static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
->>  {
->> -	ckpt_set_ctx_error(ctx, errno);
->> -	complete(&ctx->complete);
->> +	/* first to fail: notify everyone (racy but harmless) */
->> +	if (!ckpt_test_ctx_error(ctx)) {
->> +		ckpt_debug("setting restart error %d\n", errno); \
->> +		ckpt_set_ctx_error(ctx, errno);
->> +		complete(&ctx->complete);
->> +		wake_up_all(&ctx->waitq);
->> +		wake_up_all(&ctx->ghostq);
->> +	}
->>  }
->>
->>  /* Need to call ckpt_debug such that it will get the correct source location */
->>  #define restore_notify_error(ctx, errno) \
->>  do { \
->> -	ckpt_debug("ctx root pid %d err %d", ctx->root_pid, errno); \
->> +	ckpt_debug("restart error %d, root pid %d\n", errno, ctx->root_pid); \
->>  	_restore_notify_error(ctx, errno); \
->>  } while(0)
->>
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Ensure that all members of a thread group are in sys_restart before
+> restoring any of them. Otherwise, restore may modify shared state and
+> crash or fault a thread still in userspace,
 > 
-> Maybe make a note that these can't be called under
-> write_lock_irq(&tasklist_lock)?  Also, update the comment above
-> task_lock() to add checkpoint_ctx to the list of things protected
-> by it.
-
-Right.
-
+> For thread groups, each thread scans the entire group and tests for
+> PF_RESTARTING on every member. If not all are set, then we wait, and
+> when woken up try again (unless signaled). If all are set, then we're
+> done and wakeup all threads.
 > 
->> +static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
->> +{
->> +	struct ckpt_ctx *ctx;
->> +
->> +	task_lock(task);
->> +	ctx = ckpt_ctx_get(task->checkpoint_ctx);
->> +	task_unlock(task);
->> +	return ctx;
->> +}
->> +
->> +/* returns 1 on success, 0 otherwise */
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ---
+>  checkpoint/restart.c |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 52 insertions(+), 0 deletions(-)
 > 
-> This works, but it's more confusing than it needs to be.  I think using
-> two helpers, 'set_task_ctx(tsk, ctx)' and 'clear_task-ctx(tsk)', where
-> set_task_ctx always bails if task->checkpoint_ctx is set, would be much
-> easier to read.
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 5d936cf..37454c5 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -695,6 +695,54 @@ static int do_ghost_task(void)
+>  	/* NOT REACHED */
+>  }
 > 
+> +/*
+> + * Ensure that all members of a thread group are in sys_restart before
+> + * restoring any of them. Otherwise, restore may modify shared state
+> + * and crash or fault a thread still in userspace,
+> + */
+> +static int wait_sync_threads(void)
+> +{
+> +	struct task_struct *p, *leader;
+> +
+> +	if (thread_group_empty(current))
+> +		return 0;
+> +
+> +	p = leader = current->group_leader;
+> +
+> +	/*
+> +	 * Our PF_RESTARTING is already set. Each thread loops through
+> +	 * the group testing everyone's PF_RESTARTING. If not set on
+> +	 * all members, it sleeps to retry later. Otherwise it wakes
+> +	 * up all sleepers and returns.
+> +	 */
+> + retry:
+> +	__set_current_state(TASK_INTERRUPTIBLE);
+> +
+> +	read_lock(&tasklist_lock);
+> +	do {
+> +		if (!(p->flags & PF_RESTARTING))
+> +			break;
+> +		p = next_thread(p);
+> +	} while (p != leader);
+> +
+> +	if (p != leader) {
+> +		read_unlock(&tasklist_lock);
+> +		if (signal_pending(current))
 
-Sure.
+Not sure...  but do you need to get back to TASK_RUNNING
+in this case?  (the schedule() below does it automatically,
+but not this failure case)
 
-> But
+> +			return -EINTR;
+> +		schedule();
+> +		goto retry;
+> +	}
+> +
+> +	do {
+> +		wake_up_process(p);
+> +		p = next_thread(p);
+> +	} while (p != leader);
+> +	read_unlock(&tasklist_lock);
+> +
+> +	__set_current_state(TASK_RUNNING);
+> +	return 0;
+> +}
+> +
+>  static int do_restore_task(void)
+>  {
+>  	struct ckpt_ctx *ctx;
+> @@ -706,6 +754,10 @@ static int do_restore_task(void)
 > 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Thanks,
-
-Oren.
+>  	current->flags |= PF_RESTARTING;
+> 
+> +	ret = wait_sync_threads();
+> +	if (ret < 0)
+> +		return ret;
+> +
+>  	/* wait for our turn, do the restore, and tell next task in line */
+>  	ret = wait_task_active(ctx);
+>  	if (ret < 0)
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
