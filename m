@@ -1,11 +1,13 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: niveau de =?ISO-8859-1?Q?s=E9v=E9rit=E9_bugzilla?=
-Date: Thu, 01 Oct 2009 15:03:29 +0200
-Message-ID: <4AC4A8A1.6010407@fr.ibm.com>
+From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+Subject: Re: niveau de =?ISO-8859-1?Q?s=E9v=E9rit=E9_bugzilla?=
+Date: Thu, 01 Oct 2009 15:06:53 +0200
+Message-ID: <4AC4A96D.7010803@free.fr>
+References: <4AC4A8A1.6010407@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4AC4A8A1.6010407-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,18 +20,26 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-depuis un certain temps, je suis les regles suivantes pour r=E9gler
-la s=E9v=E9rit=E9 d'un bug :
+On 10/01/2009 03:03 PM, Cedric Le Goater wrote:
+> depuis un certain temps, je suis les regles suivantes pour r=E9gler
+> la s=E9v=E9rit=E9 d'un bug :
+> =
 
-  blo	crash machine systematique. ca bloque le dev, les snapshots, etc =
+>   blo	crash machine systematique. ca bloque le dev, les snapshots, etc =
 
-  cri	oups en tout genre.
-  maj	blocage du user space qui ne plante pas la machine
-  nor	par defaut
-  min	(pas bien defini)
-  tri 	(pas utilise)
-  enh	evolution
+>   cri	oups en tout genre.
+>   maj	blocage du user space qui ne plante pas la machine
+>   nor	par defaut
+>   min	(pas bien defini)
+>   tri 	(pas utilise)
+>   enh	evolution
+> =
 
-les priorites sont fonction de gant :)
+> les priorites sont fonction de gant :)
 
-C. =
+sorry guys, wrong list :)
+
+Cheers, =
+
+
+C.
