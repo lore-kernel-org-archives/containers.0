@@ -1,18 +1,16 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 00/80] Kernel based checkpoint/restart [v18]
-Date: Thu, 01 Oct 2009 15:02:42 -0400
-Message-ID: <4AC4FCD2.4000004@librato.com>
-References: <20090928163704.GA3327@us.ibm.com>
-	<4AC20BB8.4070509@free.fr>	<87iqf0o5sf.fsf@caffeine.danplanet.com>
-	<4AC38477.4070007@free.fr>	<87eipoo0po.fsf@caffeine.danplanet.com>
-	<4AC39CE5.9080908@free.fr>	<877hvgnv6z.fsf@caffeine.danplanet.com>	<4AC3D6DC.9010500@free.fr>
-	<20090930224249.GA22977@us.ibm.com>	<4AC4634F.6070901@free.fr>
-	<20091001145512.GA17916@us.ibm.com>
+Subject: Re: [PATCH 2/5] c/r: let entire thread group in sys_restart before
+	restoring a thread
+Date: Thu, 01 Oct 2009 15:03:39 -0400
+Message-ID: <4AC4FD0B.7010608@librato.com>
+References: <1254361634-30076-1-git-send-email-orenl@librato.com>
+	<1254361634-30076-3-git-send-email-orenl@librato.com>
+	<20091001162026.GC20565@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091001145512.GA17916-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091001162026.GC20565-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,129 +21,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
 Serge E. Hallyn wrote:
-> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
->> Serge E. Hallyn wrote:
->>> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
->>>   
->>>> Dan Smith wrote:
->>>>     
->>>>> The header file makes it pretty clear what is going on,       
->>>> Certainly for you.
->>>>     
->>> If you're worried about hooking lxc-restart up and that
->>> being a mess, 
->> Yep, I am worried about that too :)
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>> Ensure that all members of a thread group are in sys_restart before
+>> restoring any of them. Otherwise, restore may modify shared state and
+>> crash or fault a thread still in userspace,
 >>
->>> i have said that as soon as something hits -mm,
->>> I will hook up lxc-restart.  I do agree, the userspace code
->>> would be much simpler if we didn't need to do all of the
->>> process tree creation in userspace :)
->> Yes and I know there were discussions about this point several times for  
->> the proctree, I won't argue with kernel vs user proctree creation.
->> But what I understood is you will continue to parse the statefile to  
->> recreate some other resources like a subset of the network and here I am  
->> lost.
+>> For thread groups, each thread scans the entire group and tests for
+>> PF_RESTARTING on every member. If not all are set, then we wait, and
+>> when woken up try again (unless signaled). If all are set, then we're
+>> done and wakeup all threads.
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  checkpoint/restart.c |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 files changed, 52 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+>> index 5d936cf..37454c5 100644
+>> --- a/checkpoint/restart.c
+>> +++ b/checkpoint/restart.c
+>> @@ -695,6 +695,54 @@ static int do_ghost_task(void)
+>>  	/* NOT REACHED */
+>>  }
+>>
+>> +/*
+>> + * Ensure that all members of a thread group are in sys_restart before
+>> + * restoring any of them. Otherwise, restore may modify shared state
+>> + * and crash or fault a thread still in userspace,
+>> + */
+>> +static int wait_sync_threads(void)
+>> +{
+>> +	struct task_struct *p, *leader;
+>> +
+>> +	if (thread_group_empty(current))
+>> +		return 0;
+>> +
+>> +	p = leader = current->group_leader;
+>> +
+>> +	/*
+>> +	 * Our PF_RESTARTING is already set. Each thread loops through
+>> +	 * the group testing everyone's PF_RESTARTING. If not set on
+>> +	 * all members, it sleeps to retry later. Otherwise it wakes
+>> +	 * up all sleepers and returns.
+>> +	 */
+>> + retry:
+>> +	__set_current_state(TASK_INTERRUPTIBLE);
+>> +
+>> +	read_lock(&tasklist_lock);
+>> +	do {
+>> +		if (!(p->flags & PF_RESTARTING))
+>> +			break;
+>> +		p = next_thread(p);
+>> +	} while (p != leader);
+>> +
+>> +	if (p != leader) {
+>> +		read_unlock(&tasklist_lock);
+>> +		if (signal_pending(current))
 > 
-> If network devices end up being recreated in userspace - either the
-> ones for the root restarted container, or all the devices including
-> for any child network namespaces - then I believe they will be
-> considered container objects.  All the container information is at the
-> top of the checkpoint file, so the program coordinating the restart
-> will see all of the information before the task hierarchy.  Actually, I
-> thought linux-2.6/Documentation/checkpoint/readme.txt used to
-> explicitly show a 'container information' section between the
-> image header and task hierarchy.  Oren?
+> Not sure...  but do you need to get back to TASK_RUNNING
+> in this case?  (the schedule() below does it automatically,
+> but not this failure case)
 
-It used to. I'll put it back there, now that somebody cares :)
-
-But yes, the idea is that the part in which userspace is involved
-is at the beginning of the image file, to avoid kernel-userspace
-bouncing.
-
-> 
->> Who in the linux community will understand what is checkpointed and what  
->> is restored from the kernel or from the userspace ?
-
-Interested developers, and they can look at the code and read the
-documentation. Assuming suitable tools are available for the users,
-who else would care ?
-
-> 
-> It should all be documented linux-2.6/Documentation/checkpoint/.  But
-> right now it's not even settled whether process creation in userspace
-> is going to be the final acceptable way, so documenting speculation
-> about how we're going to do network devices just seems too certain to
-> not end up matching reality.
-
-Here is my view on the subject (I'll add it to the documentation).
-
-* By design, we do everything in the kernel, unless there is a
-strong reasoning to move something to userspace.
-
-* Keep a clear distinction for what we move to userspace. Avoid
-doing something partly in kernel and partly in userspace.
-
-* Streamline logic, so the execution flow doesn't bounce in and
-out of the kernel. What's done in userspace appears _first_ in
-the image file.
-
-* My rules of thumb to take something to userspace are:
-
-1. If it can be done _easily_ and _uniformly_ in userspace, _and_
-
-2. If doing it in userspace gives us _substantial_ flexibility,
- or coverage, or  portability that is difficult in the kernel.
-
-Let me demonstrate this thinking with 3 examples: open files (in
-kernel), tasks tree (userspace), and network namespaces (userspace).
-
-Why not restore open files in userspace ?  because some file types
-are hard to do in userspace, and we want uniform handling. Also, it
-becomes very tricky to do in userspace in the presence of mount
-points, chroots, and mount namespaces.
-
-Why restore the tasks tree in userspace ?  because it's easy and
-portable (using the new clone); because it is unrelated to where/how
-we do other resource; because it gives the flexibility for the
-restarting tasks to do useful things after they are created but
-before they call sys_restart (flexibility).
-
-Why restore network namespace (their setup) in userspace ? because
-it's easy and portable, and network setup tools are well developed
-and understood; because we will want some policy to it (e.g. restart
-doesn't care which actual device is used, we don't want such decision
-to be in the kernel); because we don't want to replicate the rich
-high level tools from userspace inside the kernel; because you may
-want to change the configuration compare to checkpoint (e.g. add
-firewall).
-
-(That said, this is not written in stone, and if you have strong
-arguments to convince otherwise, this is a good time).
-
-> 
->> Does this imply someone has to use a specific tool like "restart.c"  
->> within its own tools, assuming this tool is installed in the system or  
->> shall he copy-paste the code of the GPL licensed restart.c to its LGPL  
->> licensed tools ?
-> 
-> Hmm, I think a tiny little lgpl library, maybe even shipping under the
-> kernel tree, implementing a generic, whole-container and sub-tree
-> checkpoint and restart, makes very good sense.
-> 
-> It certainly does NOT make sense to require multiple projects to track
-> all changes to the checkpoint image format as the kernel changes...
-> 
-
-The idea is to add a plugin architecture to restart to allow users
-to execute any useful work before and after the tasks tree is created,
-but prior to calling sys_restart().
-
-And yes, eventually making this a library, too.
+Correct. But as you suggested over IRC, I'll change the logic
+to avoid unnecessary loops there.
 
 Oren.
