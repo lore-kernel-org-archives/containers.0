@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 4/5] c/r: fix restart failure due to a race with ghost/dead
-	tasks
-Date: Wed, 30 Sep 2009 21:47:13 -0400
-Message-ID: <1254361634-30076-5-git-send-email-orenl@librato.com>
+Subject: [PATCH 5/5] c/r: defer restore of blocked signals mask during restart
+Date: Wed, 30 Sep 2009 21:47:14 -0400
+Message-ID: <1254361634-30076-6-git-send-email-orenl@librato.com>
 References: <1254361634-30076-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,112 +20,183 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ghost (and dead) tasks exit as soon as they find their checkpoint_ctx.
-That may occur before other tasks even enter sys_restart(). If a ghost
-child dies before its child enters the syscall, the child will receive
-the death_signal which is set by userspace (in non-container restart).
+When a task finished restoring its state, it calls wait_task_sync()
+to wait for all others tasks, in an interruptible wait.
 
-This signal was supposedly skipped in reparent_thread() for restarting
-task, but the PF_RESTARTING flag was tested on the child instead of
-the parent; And the child was not in sys_restart, so .. bad luck.
+If the task also restored some pending signal from its saves state,
+then the signal may become visible when the blocked mask is restored.
+In this case the sleep will fail, as will the entire restart.
 
-This patch fixes reparent_threads() to test the parent's flag instead.
+(Note that it doesn't affect other threads, because the blocked mask
+is per-thread.
 
-Also, if restart fails after some tasks have restore their state, then
-the death_signal of such tasks is likely to have been reset. To ensure
-proper cleanup in case of a failure, the coordinator tasks will force-
-kill all those descendants whose checkpoint_ctx matches that of the
-coordinator.
-
-(To avoid a potential security issue here, prepare_descendants() was
-modified to only allow setting the checkpoint_task of a descendant if
-the coordinator has PTRACE_MODE_ATTACH permissions over it).
+To avoid this, we block all signals for restarting processes until the
+_entire_ restart succeeds, and defer the setting of blocked mask to
+that point.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/restart.c |   32 ++++++++++++++++++++++++++------
- kernel/exit.c        |    2 +-
- 2 files changed, 27 insertions(+), 7 deletions(-)
+ checkpoint/process.c             |   22 +++++++++++++++++++++-
+ checkpoint/restart.c             |   12 ++++++++++++
+ checkpoint/signal.c              |    8 ++++++--
+ include/linux/checkpoint.h       |    2 ++
+ include/linux/checkpoint_types.h |    4 ++++
+ include/linux/sched.h            |    2 +-
+ 6 files changed, 46 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index c021eaf..258e9eb 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -810,6 +810,11 @@ static int __prepare_descendants(struct task_struct *task, void *data)
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 3c02f8e..5ba64f0 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -815,10 +815,15 @@ static int restore_task_pgid(struct ckpt_ctx *ctx)
+ }
  
- 	ckpt_debug("consider task %d\n", task_pid_vnr(task));
+ /* pre_restore_task - prepare the task for restore */
+-static int pre_restore_task(struct ckpt_ctx *ctx)
++int pre_restore_task(struct ckpt_ctx *ctx)
+ {
+ 	sigset_t sigset;
  
-+	if (!ptrace_may_access(task, PTRACE_MODE_ATTACH)) {
-+		ckpt_debug("stranger task %d\n", task_pid_vnr(task));
-+		return -EPERM;
-+	}
++	/* task-specific restart data: freed from post_restore_task() */
++	current->checkpoint_data = kzalloc(sizeof(struct ckpt_data), GFP_KERNEL);
++	if (!current->checkpoint_data)
++		return -ENOMEM;
 +
- 	if (task_ptrace(task) & PT_PTRACED) {
- 		ckpt_debug("ptraced task %d\n", task_pid_vnr(task));
- 		return -EBUSY;
-@@ -935,6 +940,21 @@ static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
+ 	/*
+ 	 * Block task's signals to avoid interruptions due to signals,
+ 	 * say, from restored timers, file descriptors etc. Signals
+@@ -828,6 +833,9 @@ static int pre_restore_task(struct ckpt_ctx *ctx)
+ 	 * i/o notification may fail the restart if a signal occurs
+ 	 * before that task completed its restore. FIX ?
+ 	 */
++
++	current->checkpoint_data->blocked = current->blocked;
++
+ 	sigfillset(&sigset);
+ 	sigdelset(&sigset, SIGKILL);
+ 	sigdelset(&sigset, SIGSTOP);
+@@ -836,6 +844,18 @@ static int pre_restore_task(struct ckpt_ctx *ctx)
  	return 0;
  }
  
-+static int __destroy_descendants(struct task_struct *task, void *data)
++/* pre_restore_task - prepare the task for restore */
++void post_restore_task(struct ckpt_ctx *ctx)
 +{
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
++	/* only now is it safe to unblock the restored task's signals */
++	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
++	recalc_sigpending();
 +
-+	if (task->checkpoint_ctx == ctx)
-+		force_sig(SIGKILL, task);
-+
-+	return 0;
++	/* task-specific restart data: allocated in pre_restore_task() */
++	kfree(current->checkpoint_data);
++	current->checkpoint_data = NULL;
 +}
 +
-+static void destroy_descendants(struct ckpt_ctx *ctx)
-+{
-+	walk_task_subtree(ctx->root_task, __destroy_descendants, ctx);
-+}
-+
- static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ /* read the entire state of the current task */
+ int restore_task(struct ckpt_ctx *ctx)
  {
- 	int ret;
-@@ -972,8 +992,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 258e9eb..b12c8bd 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -763,6 +763,10 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		goto out;
  
- 	/*
- 	 * From now on we are committed to the restart. If anything
--	 * fails, we'll wipe out the entire subtree below us, to
--	 * ensure proper cleanup.
-+	 * fails, we'll cleanup (that is, kill) those tasks in our
-+	 * subtree that we marked for restart - see below.
++	ret = pre_restore_task(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	zombie = restore_task(ctx);
+ 	if (zombie < 0) {
+ 		ret = zombie;
+@@ -790,6 +794,7 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		restore_notify_error(ctx, ret);
+ 
++	post_restore_task(ctx);
+ 	current->flags &= ~PF_RESTARTING;
+ 	set_task_ctx(current, NULL);
+ 	ckpt_ctx_put(ctx);
+@@ -997,6 +1002,10 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
  	 */
  
  	if (ctx->uflags & RESTART_TASKSELF) {
-@@ -1009,13 +1029,13 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
++		ret = pre_restore_task(ctx);
++		ckpt_debug("pre restore task: %d\n", ret);
++		if (ret < 0)
++			goto out;
+ 		ret = restore_task(ctx);
+ 		ckpt_debug("restore task: %d\n", ret);
+ 		if (ret < 0)
+@@ -1029,6 +1038,9 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
  		ckpt_debug("freezing restart tasks ... %d\n", ret);
  	}
   out:
--	if (ret < 0)
-+	if (ret < 0) {
++	if (ctx->uflags & RESTART_TASKSELF)
++		post_restore_task(ctx);
++
+ 	if (ret < 0) {
  		ckpt_set_ctx_error(ctx, ret);
--	else
-+		destroy_descendants(ctx);
-+	} else {
- 		ckpt_set_ctx_success(ctx);
--
--	if (!(ctx->uflags & RESTART_TASKSELF))
- 		wake_up_all(&ctx->waitq);
-+	}
+ 		destroy_descendants(ctx);
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index cd3956d..cdfb142 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -712,8 +712,12 @@ int restore_task_signal(struct ckpt_ctx *ctx)
+ 	sigdelset(&blocked, SIGKILL);
+ 	sigdelset(&blocked, SIGSTOP);
  
- 	set_task_ctx(current, NULL);
- 	return ret;
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 41ac4cf..cfb0f34 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -744,7 +744,7 @@ static void reparent_thread(struct task_struct *father, struct task_struct *p,
- 				struct list_head *dead)
- {
- 	/* restarting zombie doesn't trigger signals */
--	if (p->pdeath_signal && !(p->flags & PF_RESTARTING))
-+	if (p->pdeath_signal && !(father->flags & PF_RESTARTING))
- 		group_send_sig_info(p->pdeath_signal, SEND_SIG_NOINFO, p);
+-	sigprocmask(SIG_SETMASK, &blocked, NULL);
+-	recalc_sigpending();
++	/*
++	 * Unblocking signals now may affect us in wait_task_sync().
++	 * Instead, save blocked mask in current->checkpoint_data for
++	 * post_restore_task().
++	 */
++	current->checkpoint_data->blocked = blocked;
  
- 	list_move_tail(&p->sibling, &p->real_parent->children);
+ 	ckpt_hdr_put(ctx, h);
+ 	return 0;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 12210e4..e403dd7 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -148,6 +148,8 @@ extern int ckpt_activate_next(struct ckpt_ctx *ctx);
+ extern int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_task(struct ckpt_ctx *ctx);
++extern int pre_restore_task(struct ckpt_ctx *ctx);
++extern void post_restore_task(struct ckpt_ctx *ctx);
+ 
+ /* arch hooks */
+ extern int checkpoint_write_header_arch(struct ckpt_ctx *ctx);
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 9b7b4dd..b9393f4 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -28,6 +28,10 @@ struct ckpt_stats {
+ 	int user_ns;
+ };
+ 
++struct ckpt_data {
++	sigset_t blocked;
++};
++
+ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 0ab9553..3448873 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1482,7 +1482,7 @@ struct task_struct {
+ #endif /* CONFIG_TRACING */
+ #ifdef CONFIG_CHECKPOINT
+ 	struct ckpt_ctx *checkpoint_ctx;
+-	unsigned long required_id;
++	struct ckpt_data *checkpoint_data;
+ #endif
+ };
+ 
 -- 
 1.6.0.4
