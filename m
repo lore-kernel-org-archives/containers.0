@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/3] restart debug: add final process tree status
-Date: Thu, 1 Oct 2009 10:33:56 -0500
-Message-ID: <20091001153356.GA20565@us.ibm.com>
-References: <20090929165342.GA10076@us.ibm.com>
-	<20090929165402.GA10114@us.ibm.com> <4AC40CA0.8020305@librato.com>
+Subject: Re: [PATCH 1/5] c/r: simplify logic of tracking restarting tasks
+Date: Thu, 1 Oct 2009 10:58:23 -0500
+Message-ID: <20091001155823.GB20565@us.ibm.com>
+References: <1254361634-30076-1-git-send-email-orenl@librato.com>
+	<1254361634-30076-2-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AC40CA0.8020305-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1254361634-30076-2-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,353 +20,456 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Instead of playing tricks with xchg() of task->checkpoint_ctx, use the
+> task_{lock,unlock} to protect changes to that pointer. This simplifies
+> the logic since we no longer need to check for races (and old_ctx).
 > 
+> The remaining changes include cleanup, and unification of common code
+> to handle errors during restart, and some debug statements.
 > 
-> Serge E. Hallyn wrote:
-> > Have tasks in sys_restart keep some status in a list off
-> > of checkpoint_ctx, and print this info when the checkpoint_ctx
-> > is freed.
-> > 
-> > This is mostly an RFC - in particular the error tracking is
-> > pretty half-hearted so far.  But the info it does spit out
-> > helped me to figured out the coordinator syncing problem
-> > fixed by the previous patch.
-> > 
-> > Sample dmesg output:
-> > [4568:4568:c/r:free_per_task_status:200] 4 tasks registered, nr_tasks was 0 nr_total 0
-> > [4568:4568:c/r:free_per_task_status:202] active pid was 1, ctx->errno 0
-> > [4568:4568:c/r:free_per_task_status:204] kflags 6 uflags 0 oflags 1
-> > [4568:4568:c/r:free_per_task_status:206] task 0 to run was 4568
-> > [4568:4568:c/r:free_per_task_status:209] pid 4566
-> > [4568:4568:c/r:free_per_task_status:211] it was coordinator
-> > [4568:4568:c/r:free_per_task_status:219] it was running
-> > [4568:4568:c/r:free_per_task_status:209] pid 4570
-> > [4568:4568:c/r:free_per_task_status:213] it was a ghost
-> > [4568:4568:c/r:free_per_task_status:209] pid 4569
-> > [4568:4568:c/r:free_per_task_status:213] it was a ghost
-> > [4568:4568:c/r:free_per_task_status:209] pid 4568
-> > [4568:4568:c/r:free_per_task_status:215] it was the root task
-> > [4568:4568:c/r:free_per_task_status:221] it was a normal task
-> > 
-> > So, when one task died before hitting sys_restart, the first line would
-> > show '3 tasks registered'.
-> > 
-> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ---
+>  checkpoint/restart.c       |  170 ++++++++++++++++++++++----------------------
+>  checkpoint/sys.c           |    6 +-
+>  include/linux/checkpoint.h |    2 +-
+>  kernel/fork.c              |    6 +-
+>  4 files changed, 92 insertions(+), 92 deletions(-)
 > 
-> [...]
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 543b380..5d936cf 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -529,17 +529,54 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
 > 
-> This looks pretty useful. Any chance you can you make it work on top
-> of the 5-patch series I posted ... ?
+>  static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
+>  {
+> -	ckpt_set_ctx_error(ctx, errno);
+> -	complete(&ctx->complete);
+> +	/* first to fail: notify everyone (racy but harmless) */
+> +	if (!ckpt_test_ctx_error(ctx)) {
+> +		ckpt_debug("setting restart error %d\n", errno); \
+> +		ckpt_set_ctx_error(ctx, errno);
+> +		complete(&ctx->complete);
+> +		wake_up_all(&ctx->waitq);
+> +		wake_up_all(&ctx->ghostq);
+> +	}
+>  }
+> 
+>  /* Need to call ckpt_debug such that it will get the correct source location */
+>  #define restore_notify_error(ctx, errno) \
+>  do { \
+> -	ckpt_debug("ctx root pid %d err %d", ctx->root_pid, errno); \
+> +	ckpt_debug("restart error %d, root pid %d\n", errno, ctx->root_pid); \
+>  	_restore_notify_error(ctx, errno); \
+>  } while(0)
+> 
 
-Here:
+Maybe make a note that these can't be called under
+write_lock_irq(&tasklist_lock)?  Also, update the comment above
+task_lock() to add checkpoint_ctx to the list of things protected
+by it.
 
-From 8cf006a1bf26a4b280841401302c99689d629e0a Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Thu, 1 Oct 2009 11:09:40 -0400
-Subject: [PATCH 1/1] restart debug: add final process tree status (v2)
+> +static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
+> +{
+> +	struct ckpt_ctx *ctx;
+> +
+> +	task_lock(task);
+> +	ctx = ckpt_ctx_get(task->checkpoint_ctx);
+> +	task_unlock(task);
+> +	return ctx;
+> +}
+> +
+> +/* returns 1 on success, 0 otherwise */
 
-Have tasks in sys_restart keep some status in a list off
-of checkpoint_ctx, and print this info when the checkpoint_ctx
-is freed.
+This works, but it's more confusing than it needs to be.  I think using
+two helpers, 'set_task_ctx(tsk, ctx)' and 'clear_task-ctx(tsk)', where
+set_task_ctx always bails if task->checkpoint_ctx is set, would be much
+easier to read.
 
-This version is mainly just ported against ckpt-v18-hallyn.
+But
 
-Sample output:
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-[3519:2:c/r:free_per_task_status:207] 3 tasks registered, nr_tasks was 0 nr_total 0
-[3519:2:c/r:free_per_task_status:210] active pid was 1, ctx->errno 0
-[3519:2:c/r:free_per_task_status:212] kflags 6 uflags 0 oflags 1
-[3519:2:c/r:free_per_task_status:214] task 0 to run was 2
-[3519:2:c/r:free_per_task_status:217] pid 3517
-[3519:2:c/r:free_per_task_status:219] it was coordinator
-[3519:2:c/r:free_per_task_status:227] it was running
-[3519:2:c/r:free_per_task_status:217] pid 3519
-[3519:2:c/r:free_per_task_status:223] it was the root task
-[3519:2:c/r:free_per_task_status:229] it was a normal task
-[3519:2:c/r:free_per_task_status:217] pid 3520
-[3519:2:c/r:free_per_task_status:221] it was a ghost
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/restart.c             |  106 ++++++++++++++++++++++++++++++++++++++
- checkpoint/sys.c                 |   57 ++++++++++++++++++++
- include/linux/checkpoint_types.h |   20 +++++++
- 3 files changed, 183 insertions(+), 0 deletions(-)
-
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index b12c8bd..1f356c0 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -26,6 +26,98 @@
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- 
-+#ifdef CONFIG_CHECKPOINT_DEBUG
-+static struct ckpt_task_status *ckpt_debug_checkin(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s;
-+	s = kmalloc(sizeof(*s), GFP_KERNEL);
-+	if (!s)
-+		return NULL;
-+	s->pid = current->pid;
-+	s->error = 0;
-+	s->flags = RESTART_DBG_WAITING;
-+	if (current == ctx->root_task)
-+		s->flags |= RESTART_DBG_ROOT;
-+	list_add_tail(&s->list, &ctx->per_task_status);
-+	return s;
-+}
-+
-+static struct ckpt_task_status *getme(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s = NULL;
-+	list_for_each_entry(s, &ctx->per_task_status, list) {
-+		if (s->pid == current->pid)
-+			break;
-+	}
-+	if (!s || s->pid != current->pid)
-+		return NULL;
-+	return s;
-+}
-+
-+static void ckpt_debug_coord(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s;
-+
-+	s = ckpt_debug_checkin(ctx);
-+	if (s)
-+		s->flags |= RESTART_DBG_COORD;
-+}
-+
-+static void ckpt_debug_ghost(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s;
-+
-+	s = ckpt_debug_checkin(ctx);
-+	if (s)
-+		s->flags |= RESTART_DBG_GHOST;
-+}
-+
-+static void ckpt_debug_normal(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s;
-+
-+	s = ckpt_debug_checkin(ctx);
-+	if (s)
-+		s->flags |= RESTART_DBG_NORMAL;
-+}
-+
-+static void ckpt_debug_log_error(struct ckpt_ctx *ctx, int err)
-+{
-+	struct ckpt_task_status *s = getme(ctx);
-+	if (!s)
-+		return;
-+	s->error = err;
-+	s->flags &= ~RESTART_DBG_WAITING;
-+	s->flags &= ~RESTART_DBG_RUNNING;
-+	if (err)
-+		s->flags |= RESTART_DBG_FAILED;
-+	else
-+		s->flags |= RESTART_DBG_SUCCESS;
-+}
-+
-+static void ckpt_debug_log_running(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s = getme(ctx);
-+	if (!s)
-+		return;
-+	s->flags &= ~RESTART_DBG_WAITING;
-+	s->flags |= RESTART_DBG_RUNNING;
-+}
-+#else
-+static inline void ckpt_debug_checkin(struct ckpt_ctx *ctx)
-+{}
-+static inline void ckpt_debug_coord(struct ckpt_ctx *ctx)
-+{}
-+static inline void ckpt_debug_ghost(struct ckpt_ctx *ctx)
-+{}
-+static inline void ckpt_debug_normal(struct ckpt_ctx *ctx)
-+{}
-+static inline void ckpt_debug_log_error(struct ckpt_ctx *ctx, int err)
-+{}
-+static inline void ckpt_debug_log_running(struct ckpt_ctx *ctx)
-+{}
-+#endif
-+
- static int _ckpt_read_err(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
- {
- 	char *ptr;
-@@ -680,11 +772,17 @@ static int do_ghost_task(void)
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
- 
-+	ckpt_debug_ghost(ctx);
-+
-+	ckpt_debug_log_running(ctx);
-+
- 	current->flags |= PF_RESTARTING;
- 
- 	ret = wait_event_interruptible(ctx->ghostq,
- 				       all_tasks_activated(ctx) ||
- 				       ckpt_test_ctx_error(ctx));
-+
-+	ckpt_debug_log_error(ctx, 0);
- 	if (ret < 0)
- 		restore_notify_error(ctx, ret);
- 
-@@ -752,6 +850,8 @@ static int do_restore_task(void)
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
- 
-+	ckpt_debug_normal(ctx);
-+
- 	current->flags |= PF_RESTARTING;
- 
- 	ret = wait_sync_threads();
-@@ -767,6 +867,8 @@ static int do_restore_task(void)
- 	if (ret < 0)
- 		goto out;
- 
-+	ckpt_debug_log_running(ctx);
-+
- 	zombie = restore_task(ctx);
- 	if (zombie < 0) {
- 		ret = zombie;
-@@ -791,6 +893,7 @@ static int do_restore_task(void)
- 	restore_task_done(ctx);
- 	ret = wait_task_sync(ctx);
-  out:
-+	ckpt_debug_log_error(ctx, ret);
- 	if (ret < 0)
- 		restore_notify_error(ctx, ret);
- 
-@@ -964,6 +1067,9 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- {
- 	int ret;
- 
-+	ckpt_debug_coord(ctx);
-+	ckpt_debug_log_running(ctx);
-+
- 	ret = restore_read_header(ctx);
- 	ckpt_debug("restore header: %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 7604089..b98812b 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -188,10 +188,64 @@ static void task_arr_free(struct ckpt_ctx *ctx)
- 	kfree(ctx->tasks_arr);
- }
- 
-+#ifdef CONFIG_CHECKPOINT_DEBUG
-+static void free_per_task_status(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_task_status *s, *p;
-+	int i, count = 0;
-+
-+	/* The per-task debug info is for restart only */
-+	if (!(ctx->kflags & CKPT_CTX_RESTART))
-+		return;
-+
-+	/* See how many tasks registered.  Tasks which didn't reach
-+	 * sys_restart() won't have registered.  So if this count is
-+	 * not the same as ctx->nr_total, that's a warning bell */
-+	list_for_each_entry(s, &ctx->per_task_status, list)
-+		count++;
-+	ckpt_debug("%d tasks registered, nr_tasks was %d nr_total %d\n",
-+		count, ctx->nr_tasks, atomic_read(&ctx->nr_total));
-+
-+	ckpt_debug("active pid was %d, ctx->errno %d\n", ctx->active_pid,
-+		ctx->errno);
-+	ckpt_debug("kflags %lu uflags %lu oflags %lu", ctx->kflags,
-+		ctx->uflags, ctx->oflags);
-+	for (i = 0; i < ctx->active_pid; i++)
-+		ckpt_debug("task %d to run was %d\n", i, ctx->pids_arr[i].vpid);
-+
-+	list_for_each_entry_safe(s, p, &ctx->per_task_status, list) {
-+		ckpt_debug("pid %d\n", s->pid);
-+		if (s->flags & RESTART_DBG_COORD)
-+			ckpt_debug("it was coordinator\n");
-+		if (s->flags & RESTART_DBG_GHOST)
-+			ckpt_debug("it was a ghost\n");
-+		if (s->flags & RESTART_DBG_ROOT)
-+			ckpt_debug("it was the root task\n");
-+		if (s->flags & RESTART_DBG_WAITING)
-+			ckpt_debug("it was still waiting to run restart\n");
-+		if (s->flags & RESTART_DBG_RUNNING)
-+			ckpt_debug("it was running\n");
-+		if (s->flags & RESTART_DBG_NORMAL)
-+			ckpt_debug("it was a normal task\n");
-+		if (s->flags & RESTART_DBG_FAILED)
-+			ckpt_debug("it finished with error %d\n", s->error);
-+		if (s->flags & RESTART_DBG_FAILED)
-+			ckpt_debug("it finished successfully");
-+		list_del(&s->list);
-+		kfree(s);
-+	}
-+}
-+#else
-+static inline void free_per_task_status(struct ckpt_ctx *ctx)
-+{ }
-+#endif
-+
- static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- {
- 	BUG_ON(atomic_read(&ctx->refcount));
- 
-+	free_per_task_status(ctx);
-+
- 	if (ctx->deferqueue)
- 		deferqueue_destroy(ctx->deferqueue);
- 
-@@ -235,6 +289,9 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	ctx->ktime_begin = ktime_get();
- 
- 	atomic_set(&ctx->refcount, 0);
-+#ifdef CONFIG_CHECKPOINT_DEBUG
-+	INIT_LIST_HEAD(&ctx->per_task_status);
-+#endif
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
- 	init_waitqueue_head(&ctx->waitq);
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index b9393f4..198d4e9 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -78,10 +78,30 @@ struct ckpt_ctx {
- 	wait_queue_head_t waitq;	/* waitqueue for restarting tasks */
- 	wait_queue_head_t ghostq;	/* waitqueue for ghost tasks */
- 	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
-+#ifdef CONFIG_CHECKPOINT_DEBUG
-+	struct list_head per_task_status; /* list of status for each task */
-+#endif
- 
- 	struct ckpt_stats stats;	/* statistics */
- };
- 
-+#ifdef CONFIG_CHECKPOINT_DEBUG
-+struct ckpt_task_status {
-+	pid_t pid;
-+#define RESTART_DBG_ROOT	(1 << 0)
-+#define RESTART_DBG_GHOST	(1 << 1)
-+#define RESTART_DBG_COORD	(1 << 2)
-+#define RESTART_DBG_NORMAL	(1 << 3)
-+#define RESTART_DBG_WAITING	(1 << 4)
-+#define RESTART_DBG_RUNNING	(1 << 5)
-+#define RESTART_DBG_FAILED	(1 << 6)
-+#define RESTART_DBG_SUCCESS	(1 << 7)
-+	int flags;
-+	int error;
-+	struct list_head list;
-+};
-+#endif
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_CHECKPOINT_TYPES_H_ */
--- 
-1.6.1
+> +static int set_task_ctx(struct task_struct *task, struct ckpt_ctx *ctx)
+> +{
+> +	struct ckpt_ctx *old;
+> +	int ret = 1;
+> +
+> +	task_lock(task);
+> +	if (!ctx || !task->checkpoint_ctx) {
+> +		old = task->checkpoint_ctx;
+> +		task->checkpoint_ctx = ckpt_ctx_get(ctx);
+> +	} else {
+> +		ckpt_debug("task %d has prior checkpoint_ctx\n",
+> +			   task_pid_vnr(task));
+> +		old = NULL;
+> +		ret = 0;
+> +	}
+> +	task_unlock(task);
+> +	ckpt_ctx_put(old);
+> +	return ret;
+> +}
+> +
+>  static void restore_task_done(struct ckpt_ctx *ctx)
+>  {
+>  	if (atomic_dec_and_test(&ctx->nr_total))
+> @@ -570,6 +607,7 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
+>  		rcu_read_unlock();
+> 
+>  		if (!task) {
+> +			ckpt_debug("could not find task %d\n", pid);
+>  			restore_notify_error(ctx, -ESRCH);
+>  			return -ESRCH;
+>  		}
+> @@ -590,12 +628,10 @@ static int wait_task_active(struct ckpt_ctx *ctx)
+>  	ret = wait_event_interruptible(ctx->waitq,
+>  				       is_task_active(ctx, pid) ||
+>  				       ckpt_test_ctx_error(ctx));
+> -	ckpt_debug("active %d < %d (ret %d)\n",
+> -		   ctx->active_pid, ctx->nr_pids, ret);
+> -	if (!ret && ckpt_test_ctx_error(ctx)) {
+> -		force_sig(SIGKILL, current);
+> +	ckpt_debug("active %d < %d (ret %d, errno %d)\n",
+> +		   ctx->active_pid, ctx->nr_pids, ret, ctx->errno);
+> +	if (!ret && ckpt_test_ctx_error(ctx))
+>  		ret = -EBUSY;
+> -	}
+>  	return ret;
+>  }
+> 
+> @@ -603,17 +639,17 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
+>  {
+>  	ckpt_debug("pid %d syncing\n", task_pid_vnr(current));
+>  	wait_event_interruptible(ctx->waitq, ckpt_test_ctx_complete(ctx));
+> -	if (ckpt_test_ctx_error(ctx)) {
+> -		force_sig(SIGKILL, current);
+> +	ckpt_debug("task sync done (errno %d)\n", ctx->errno);
+> +	if (ckpt_test_ctx_error(ctx))
+>  		return -EBUSY;
+> -	}
+>  	return 0;
+>  }
+> 
+> +/* grabs a reference to the @ctx on success; caller should free */
+>  static struct ckpt_ctx *wait_checkpoint_ctx(void)
+>  {
+>  	DECLARE_WAIT_QUEUE_HEAD(waitq);
+> -	struct ckpt_ctx *ctx, *old_ctx;
+> +	struct ckpt_ctx *ctx;
+>  	int ret;
+> 
+>  	/*
+> @@ -621,32 +657,15 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
+>  	 * reference to its restart context.
+>  	 */
+>  	ret = wait_event_interruptible(waitq, current->checkpoint_ctx);
+> -	if (ret < 0)
+> +	if (ret < 0) {
+> +		ckpt_debug("wait_checkpoint_ctx: failed (%d)\n", ret);
+>  		return ERR_PTR(ret);
+> +	}
+> 
+> -	ctx = xchg(&current->checkpoint_ctx, NULL);
+> -	if (!ctx)
+> +	ctx = get_task_ctx(current);
+> +	if (!ctx) {
+> +		ckpt_debug("wait_checkpoint_ctx: checkpoint_ctx missing\n");
+>  		return ERR_PTR(-EAGAIN);
+> -	ckpt_ctx_get(ctx);
+> -
+> -	/*
+> -	 * Put the @ctx back on our task_struct. If an ancestor tried
+> -	 * to prepare_descendants() on us (although extremly unlikely)
+> -	 * we will encounter the ctx that he xchg()ed there and bail.
+> -	 */
+> -	old_ctx = xchg(&current->checkpoint_ctx, ctx);
+> -	if (old_ctx) {
+> -		ckpt_debug("self-set of checkpoint_ctx failed\n");
+> -
+> -		/* alert coordinator of unexpected ctx */
+> -		restore_notify_error(old_ctx, -EAGAIN);
+> -		ckpt_ctx_put(old_ctx);
+> -
+> -		/* alert our coordinator that we bail */
+> -		restore_notify_error(ctx, -EAGAIN);
+> -		ckpt_ctx_put(ctx);
+> -
+> -		ctx = ERR_PTR(-EAGAIN);
+>  	}
+> 
+>  	return ctx;
+> @@ -655,6 +674,7 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
+>  static int do_ghost_task(void)
+>  {
+>  	struct ckpt_ctx *ctx;
+> +	int ret;
+> 
+>  	ctx = wait_checkpoint_ctx();
+>  	if (IS_ERR(ctx))
+> @@ -662,9 +682,11 @@ static int do_ghost_task(void)
+> 
+>  	current->flags |= PF_RESTARTING;
+> 
+> -	wait_event_interruptible(ctx->ghostq,
+> -				 all_tasks_activated(ctx) ||
+> -				 ckpt_test_ctx_error(ctx));
+> +	ret = wait_event_interruptible(ctx->ghostq,
+> +				       all_tasks_activated(ctx) ||
+> +				       ckpt_test_ctx_error(ctx));
+> +	if (ret < 0)
+> +		restore_notify_error(ctx, ret);
+> 
+>  	current->exit_signal = -1;
+>  	ckpt_ctx_put(ctx);
+> @@ -675,7 +697,7 @@ static int do_ghost_task(void)
+> 
+>  static int do_restore_task(void)
+>  {
+> -	struct ckpt_ctx *ctx, *old_ctx;
+> +	struct ckpt_ctx *ctx;
+>  	int zombie, ret;
+> 
+>  	ctx = wait_checkpoint_ctx();
+> @@ -713,18 +735,11 @@ static int do_restore_task(void)
+>  	restore_task_done(ctx);
+>  	ret = wait_task_sync(ctx);
+>   out:
+> -	old_ctx = xchg(&current->checkpoint_ctx, NULL);
+> -	if (old_ctx)
+> -		ckpt_ctx_put(old_ctx);
+> -
+> -	/* if we're first to fail - notify others */
+> -	if (ret < 0 && !ckpt_test_ctx_error(ctx)) {
+> +	if (ret < 0)
+>  		restore_notify_error(ctx, ret);
+> -		wake_up_all(&ctx->waitq);
+> -		wake_up_all(&ctx->ghostq);
+> -	}
+> 
+>  	current->flags &= ~PF_RESTARTING;
+> +	set_task_ctx(current, NULL);
+>  	ckpt_ctx_put(ctx);
+>  	return ret;
+>  }
+> @@ -742,17 +757,14 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
+>  	struct task_struct *leader = root;
+>  	struct task_struct *parent = NULL;
+>  	struct task_struct *task = root;
+> -	struct ckpt_ctx *old_ctx;
+>  	int nr_pids = 0;
+> -	int ret = 0;
+> +	int ret = -EBUSY;
+> 
+>  	read_lock(&tasklist_lock);
+>  	while (1) {
+>  		ckpt_debug("consider task %d\n", task_pid_vnr(task));
+> -		if (task_ptrace(task) & PT_PTRACED) {
+> -			ret = -EBUSY;
+> +		if (task_ptrace(task) & PT_PTRACED)
+>  			break;
+> -		}
+>  		/*
+>  		 * Set task->checkpoint_ctx of all non-zombie descendants.
+>  		 * If a descendant already has a ->checkpoint_ctx, it
+> @@ -764,14 +776,8 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
+>  		 * already be set.
+>  		 */
+>  		if (!task->exit_state) {
+> -			ckpt_ctx_get(ctx);
+> -			old_ctx = xchg(&task->checkpoint_ctx, ctx);
+> -			if (old_ctx) {
+> -				ckpt_debug("bad task %d\n",task_pid_vnr(task));
+> -				ckpt_ctx_put(old_ctx);
+> -				ret = -EAGAIN;
+> +			if (!set_task_ctx(task, ctx))
+>  				break;
+> -			}
+>  			ckpt_debug("prepare task %d\n", task_pid_vnr(task));
+>  			wake_up_process(task);
+>  			nr_pids++;
+> @@ -799,8 +805,10 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
+>  		if (task == root) {
+>  			/* in case root task is multi-threaded */
+>  			root = task = next_thread(task);
+> -			if (root == leader)
+> +			if (root == leader) {
+> +				ret = 0;
+>  				break;
+> +			}
+>  		}
+>  	}
+>  	read_unlock(&tasklist_lock);
+> @@ -829,8 +837,7 @@ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
+>  		return ret;
+> 
+>  	ret = wait_for_completion_interruptible(&ctx->complete);
+> -
+> -	ckpt_debug("final sync kflags %#lx\n", ctx->kflags);
+> +	ckpt_debug("final sync kflags %#lx (ret %d)\n", ctx->kflags, ret);
+>  	/*
+>  	 * Usually when restart fails, the restarting task will first
+>  	 * set @ctx->errno before waking us up. In the rare event that
+> @@ -899,13 +906,14 @@ static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
+> 
+>  static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+>  {
+> -	struct ckpt_ctx *old_ctx;
+>  	int ret;
+> 
+>  	ret = restore_read_header(ctx);
+> +	ckpt_debug("restore header: %d\n", ret);
+>  	if (ret < 0)
+>  		return ret;
+>  	ret = restore_read_tree(ctx);
+> +	ckpt_debug("restore tree: %d\n", ret);
+>  	if (ret < 0)
+>  		return ret;
+> 
+> @@ -920,45 +928,42 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+>  	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
+>  	 * prepare_descendants() on us, it will fail. Furthermore,
+>  	 * that ancestor won't proceed deeper to interfere with our
+> -	 * descendants that are restarting (e.g. by xchg()ing their
+> -	 * ->checkpoint_ctx pointer temporarily).
+> +	 * descendants that are restarting.
+>  	 */
+> -	ckpt_ctx_get(ctx);
+> -	old_ctx = xchg(&current->checkpoint_ctx, ctx);
+> -	if (old_ctx) {
+> +	if (!set_task_ctx(current, ctx)) {
+>  		/*
+>  		 * We are a bad-behaving descendant: an ancestor must
+> -		 * have done prepare_descendants() on us as part of a
+> -		 * restart. Oh, well ... alert ancestor (coordinator)
+> -		 * with an error on @old_ctx.
+> +		 * have prepare_descendants() us as part of a restart.
+>  		 */
+> -		ckpt_debug("bad behaving checkpoint_ctx\n");
+> -		restore_notify_error(old_ctx, -EBUSY);
+> -		ckpt_ctx_put(old_ctx);
+> -		ret = -EBUSY;
+> -		goto out;
+> +		ckpt_debug("coord already has checkpoint_ctx\n");
+> +		return -EBUSY;
+>  	}
+> 
+>  	if (ctx->uflags & RESTART_TASKSELF) {
+>  		ret = restore_task(ctx);
+> +		ckpt_debug("restore task: %d\n", ret);
+>  		if (ret < 0)
+>  			goto out;
+>  	} else {
+>  		/* prepare descendants' t->checkpoint_ctx point to coord */
+>  		ret = prepare_descendants(ctx, ctx->root_task);
+> +		ckpt_debug("restore prepare: %d\n", ret);
+>  		if (ret < 0)
+>  			goto out;
+>  		/* wait for all other tasks to complete do_restore_task() */
+>  		ret = wait_all_tasks_finish(ctx);
+> +		ckpt_debug("restore finish: %d\n", ret);
+>  		if (ret < 0)
+>  			goto out;
+>  	}
+> 
+>  	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
+> +	ckpt_debug("restore deferqueue: %d\n", ret);
+>  	if (ret < 0)
+>  		goto out;
+> 
+>  	ret = restore_read_tail(ctx);
+> +	ckpt_debug("restore tail: %d\n", ret);
+>  	if (ret < 0)
+>  		goto out;
+> 
+> @@ -974,14 +979,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+> 
+>  	if (!(ctx->uflags & RESTART_TASKSELF))
+>  		wake_up_all(&ctx->waitq);
+> -	/*
+> -	 * If an ancestor attempts to prepare_descendants() on us, it
+> -	 * xchg()s our ->checkpoint_ctx, and free it. Our @ctx will,
+> -	 * instead, point to the ctx that said ancestor placed.
+> -	 */
+> -	ctx = xchg(&current->checkpoint_ctx, NULL);
+> -	ckpt_ctx_put(ctx);
+> 
+> +	set_task_ctx(current, NULL);
+>  	return ret;
+>  }
+> 
+> @@ -1070,6 +1069,7 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
+>  		}
+>  	}
+> 
+> +	ckpt_debug("sys_restart returns %ld\n", ret);
+>  	return ret;
+>  }
+> 
+> @@ -1082,7 +1082,7 @@ void exit_checkpoint(struct task_struct *tsk)
+>  	struct ckpt_ctx *ctx;
+> 
+>  	/* no one else will touch this, because @tsk is dead already */
+> -	ctx = xchg(&tsk->checkpoint_ctx, NULL);
+> +	ctx = tsk->checkpoint_ctx;
+> 
+>  	/* restarting zombies will activate next task in restart */
+>  	if (tsk->flags & PF_RESTARTING) {
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index 76a3fa9..77613d7 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -263,9 +263,11 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+>  	return ERR_PTR(err);
+>  }
+> 
+> -void ckpt_ctx_get(struct ckpt_ctx *ctx)
+> +struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx)
+>  {
+> -	atomic_inc(&ctx->refcount);
+> +	if (ctx)
+> +		atomic_inc(&ctx->refcount);
+> +	return ctx;
+>  }
+> 
+>  void ckpt_ctx_put(struct ckpt_ctx *ctx)
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 5294a96..b7f1796 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -134,7 +134,7 @@ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
+>  			   enum obj_type type);
+>  extern int ckpt_obj_reserve(struct ckpt_ctx *ctx);
+> 
+> -extern void ckpt_ctx_get(struct ckpt_ctx *ctx);
+> +extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
+>  extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
+> 
+>  extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 57118e4..0e226f5 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1188,10 +1188,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+> 
+>  #ifdef CONFIG_CHECKPOINT
+>  	/* If parent is restarting, child should be too */
+> -	if (unlikely(current->checkpoint_ctx)) {
+> -		p->checkpoint_ctx = current->checkpoint_ctx;
+> -		ckpt_ctx_get(p->checkpoint_ctx);
+> -	}
+> +	if (unlikely(current->checkpoint_ctx))
+> +		p->checkpoint_ctx = ckpt_ctx_get(current->checkpoint_ctx);
+>  #endif
+>  	/*
+>  	 * The task hasn't been attached yet, so its cpus_allowed mask will
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
