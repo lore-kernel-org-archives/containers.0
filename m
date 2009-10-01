@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH-user-cr] restart: handle root task with sid != pid
-Date: Wed, 30 Sep 2009 21:36:16 -0400
-Message-ID: <1254360976-29521-1-git-send-email-orenl@librato.com>
+Subject: [PATCH-user-cr] restart: handle dead/dummy tasks like ghosts
+Date: Wed, 30 Sep 2009 21:36:28 -0400
+Message-ID: <1254360988-29553-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,89 +18,84 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The case where root_sid != root_pid is handles explicitly. It can only
-happen when the checkpoint was of a subtree (in container, root_sid is
-either root_pid or 0).  This means that root_sid was inherited from an
-ancestor of that subtree. So we make root_task here also inherit its
-sid from its ancestor (whatever the 'restart' process had).
+In "subtree" restart (restarting not inside a container), 'restart'
+uses prctl(PR_DEATH_SIGNAL,...) to ensure proper cleanup should the
+restart fail prematurely. The death_signal is sent, recursively, to
+all the descendants of root to force-kill them.
 
-We do it by forcing it to be 0. We also need to force all references
-to it from other processes, via sid and pgid, to 0. For that, we keep
-the root_sid to compare against (see one-line comment below).
+However, dead (dummy) tasks, marked with TASK_DEAD, used to exit
+during the creation of the task tree. Since the task is not within
+sys_restart it does not have the PF_RESTARTING, and therefore will
+send the death_signal its children as it exits.
+
+To fix it, we observe that dead tasks are much like ghost tasks:
+they are expected to terminate from within sys_restart, and before
+the other tasks may resume execution. So we now treat dead (dummy)
+tasks similarly to ghost tasks.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   33 ++++++++++++++++++++++++++++++---
- 1 files changed, 30 insertions(+), 3 deletions(-)
+ restart.c |   27 ++++++++-------------------
+ 1 files changed, 8 insertions(+), 19 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index deca6f7..07ffdc3 100644
+index 07ffdc3..b810ca9 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -1046,7 +1046,6 @@ static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid, pid_t ppid)
+@@ -1485,10 +1485,12 @@ static int ckpt_propagate_session(struct ckpt_ctx *ctx, struct task *task)
+  * needed. In the second pass the task forks the remainder of the
+  * children. In both passes, a child that is marked TASK_THREAD is
+  * created as a thread and a child that is marked TASK_SIBLING is
+- * created with parent inheritance. In the third pass, terminated
+- * tasks and temporary placeholders are cleaned up. Finally, the task
+- * either terminates if it is marked TASK_DEAD or calls sys_restart()
+- * which does not return.
++ * created with parent inheritance. Finally, the task will invoke
++ * sys_restart() which does not return (if successful).
++ *
++ * Tasks marked TASK_DEAD or TASK_GHOST are both destined to terminate
++ * anyway; both use flag RESTART_GHOST for sys_restart(), which will
++ * result in a call to do_exit().
+  */
+ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ {
+@@ -1534,17 +1536,6 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 		}
+ 	}
+ 	
+-	/* 3rd pass: bring out your deads ... */
+-	for (child = task->children; child; child = child->next_sib) {
+-		if (child->flags & TASK_DEAD) {
+-			ret = waitpid(child->rpid, NULL, 0);
+-			if (ret < 0) {
+-				perror("waitpid");
+-				return -1;
+-			}
+-		}
+-	}
+-
+ 	/* are we supposed to exit now ? */
+ 	if (task->flags & TASK_DEAD) {
+ 		ckpt_dbg("pid %d: task dead ... exiting\n", task->pid);
+@@ -1587,7 +1578,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 	 * then exit (more precisely, killed). The RESTART_GHOST flag
+ 	 * tells the kernel that they are not to be restored.
+ 	 */
+-	if (task->flags & TASK_GHOST)
++	if (task->flags & (TASK_GHOST | TASK_DEAD))
+ 		flags |= RESTART_GHOST;
  
- 	task->flags = TASK_GHOST;
+ 	/* on success this doesn't return */
+@@ -1907,9 +1898,7 @@ static int ckpt_adjust_pids(struct ckpt_ctx *ctx)
  
--	/* */
- 	task->pid = pid;
- 	task->ppid = ppid;
- 	task->tgid = pid;
-@@ -1078,12 +1077,26 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
- 	struct task *task;
- 	pid_t root_sid;
- 	pid_t root_pid;
--	pid_t root_pgid;
- 	int i;
- 
- 	root_pid = pids_arr[0].vpid;
- 	root_sid = pids_arr[0].vsid;
--	root_pgid = pids_arr[0].vpgid;
-+
-+	/*
-+	 * The case where root_sid != root_pid is special. It must be
-+	 * from a subtree checkpoint (in container, root_sid is either
-+	 * root_pid or 0).
-+	 * This means that root_sid was inherited from an ancestor of
-+	 * that subtree. So we make root_task here also inherit its
-+	 * sid from its ancestor (whatever the 'restart' process had).
-+	 *
-+	 * We do it by forcing it to be 0. We also need to force all
-+	 * references to it from other processes, via sid and pgid, to
-+	 * 0. For that, we keep the root_sid to compare against (see
-+	 * one-line comment below).
-+	 */
-+	if (root_sid == root_pid)
-+		root_sid = 0;
- 
- 	/* populate with known tasks */
- 	for (i = 0; i < pids_nr; i++) {
-@@ -1091,6 +1104,12 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
- 
- 		task->flags = 0;
- 
-+		/* zero references to root_sid (root_sid != root_pid) */
-+		if (pids_arr[i].vsid == root_sid)
-+			pids_arr[i].vsid = 0;
-+		if (pids_arr[i].vpgid == root_sid)
-+			pids_arr[i].vpgid = 0;
-+
- 		task->pid = pids_arr[i].vpid;
- 		task->ppid = pids_arr[i].vppid;
- 		task->tgid = pids_arr[i].vtgid;
-@@ -1134,6 +1153,14 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
- 			return -1;
- 
- 		/*
-+		 * An sid == 0 means that the session was inherited an
-+		 * ancestor of root_task, and more specifically, via
-+		 * root_task itself: make root_task our parent.
-+		 */
-+		if (sid == 0)
-+			sid = root_pid;
-+
-+		/*
- 		 * If a pid belongs to a dead thread group leader, we
- 		 * need to add it with the same sid as current (and
- 		 * other) threads.
+ 	/* read in 'pid_swap' data and adjust ctx->pids_arr */
+ 	for (n = 0; n < ctx->tasks_nr; n++) {
+-		/* don't expect data from dead tasks */
+-		if (ctx->tasks_arr[n].flags & TASK_DEAD)
+-			continue;
++		/* get pid info from next task */
+ 		ret = read(ctx->pipe_in, &swap, sizeof(swap));
+ 		if (ret < 0)
+ 			ckpt_abort(ctx, "read pipe");
 -- 
 1.6.0.4
