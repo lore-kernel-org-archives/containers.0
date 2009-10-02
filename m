@@ -1,14 +1,11 @@
-From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 2 Oct 2009 13:04:26 +0200
-Message-ID: <20091002110426.GB28233__49098.9943188199$1254481512$gmane$org@kernel.dk>
-References: <200910021255.27689.czoccolo@gmail.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: [PATCH 1/9] I/O bandwidth controller and BIO tracking
+Date: Fri, 02 Oct 2009 20:56:07 +0900 (JST)
+Message-ID: <20091002.205607.193712402.ryov__28984.9297296771$1254484621$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <200910021255.27689.czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,69 +15,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 02 2009, Corrado Zoccolo wrote:
-> Hi Jens,
-> On Fri, Oct 2, 2009 at 11:28 AM, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Fri, Oct 02 2009, Ingo Molnar wrote:
-> >>
-> >> * Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
-> >>
-> >
-> > It's really not that simple, if we go and do easy latency bits, then
-> > throughput drops 30% or more. You can't say it's black and white latency
-> > vs throughput issue, that's just not how the real world works. The
-> > server folks would be most unpleased.
-> Could we be more selective when the latency optimization is introduced?
-> 
-> The code that is currently touched by Vivek's patch is:
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
->             (cfqd->hw_tag && CIC_SEEKY(cic)))
->                 enable_idle = 0;
-> basically, when fairness=1, it becomes just:
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle)
->                 enable_idle = 0;
-> 
-> Note that, even if we enable idling here, the cfq_arm_slice_timer will use
-> a different idle window for seeky (2ms) than for normal I/O.
-> 
-> I think that the 2ms idle window is good for a single rotational SATA
-> disk scenario, even if it supports NCQ. Realistic access times for
-> those disks are still around 8ms (but it is proportional to seek
-> lenght), and waiting 2ms to see if we get a nearby request may pay
-> off, not only in latency and fairness, but also in throughput.
+Hi all,
 
-I agree, that change looks good.
+These are new releases of dm-ioband and blkio-cgroup. The major change
+of these releases is that dm-ioband handles sync/async IO requests
+separately and it solves write-startve-read issue pointed out by Vivek.
+Thank you Vivek for your pointing out the issue.
 
-> What we don't want to do is to enable idling for NCQ enabled SSDs
-> (and this is already taken care in cfq_arm_slice_timer) or for hardware RAIDs.
+  Subject: ioband: Writer starves reader even without competitors
+  http://lkml.org/lkml/2009/9/15/478
 
-Right, it was part of the bigger SSD optimization stuff I did a few
-revisions back.
+Here is the test result. I did the same test as Vivek did, it reads
+32MB files four times during a bufferd writer is running.
 
-> If we agree that hardware RAIDs should be marked as non-rotational, then that
-> code could become:
-> 
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
->             (blk_queue_nonrot(cfqd->queue) && cfqd->hw_tag && CIC_SEEKY(cic)))
->                 enable_idle = 0;
->         else if (sample_valid(cic->ttime_samples)) {
-> 		unsigned idle_time = CIC_SEEKY(cic) ? CFQ_MIN_TT : cfqd->cfq_slice_idle;
-> 		if (cic->ttime_mean > idle_time)
->                         enable_idle = 0;
->                 else
->                         enable_idle = 1;
->         }
+dm-ioband v1.14.0
+file #   1, plain reading it took: 0.73 seconds
+file #   2, plain reading it took: 0.78 seconds
+file #   3, plain reading it took: 0.78 seconds
+file #   4, plain reading it took: 0.94 seconds
 
-Yes agree on that too. We probably should make a different flag for
-hardware raids, telling the io scheduler that this device is really
-composed if several others. If it's composited only by SSD's (or has a
-frontend similar to that), then non-rotational applies.
+dm-ioband v1.13.0
+file #   1, plain reading it took: 14.27 seconds
+file #   2, plain reading it took: 22.17 seconds
+file #   3, plain reading it took: 12.31 seconds
+file #   4, plain reading it took: 17.69 seconds
 
-But yes, we should pass that information down.
+The summary of the changes are below:
+dm-ioband v1.14.0
+  - Handle sync/async IO requests separetely, it solves write-starve-read
+    issue.
+  - Allow it to compile against 2.6.32-rc1.
+blkio-cgroup v13
+  - Fix style issues caught by checkpatch.pl.
+  - Allow it to compile against 2.6.32-rc1.
 
--- 
-Jens Axboe
+The list of the patches:
+  [PATCH 1/9] I/O bandwidth controller and BIO tracking
+  [PATCH 2/9] dm-ioband-1.14.0: All-in-one patch
+  [PATCH 3/9] blkio-cgroup-v13: The new page_cgroup framework
+  [PATCH 4/9] blkio-cgroup-v13: Refactoring io-context initialization
+  [PATCH 5/9] blkio-cgroup-v13: The body of blkio-cgroup
+  [PATCH 6/9] blkio-cgroup-v13: Page tracking hooks
+  [PATCH 7/9] blkio-cgroup-v13: The document of blkio-cgroup
+  [PATCH 8/9] blkio-cgroup-v13: Add a cgroup support to dm-ioband
+  [PATCH 9/9] blkio-cgroup-v13: The document of a cgroup support for dm-ioband
+
+About dm-ioband
+  dm-ioband is an I/O bandwidth controller implemented as a
+  device-mapper driver and can control bandwidth on per partition, per
+  user, per process, per virtual machine (such as KVM or Xen) basis.
+
+About blkio-cgruop
+  blkio-cgroup is a block I/O tracking mechanism implemented on the
+  cgroup memory subsystem. Using this feature the owners of any type
+  of I/O can be determined. This allows dm-ioband to control block I/O
+  bandwidth even when it is accepting delayed write requests.
+  dm-ioband can find the cgroup of each request. It is also for
+  possible that others working on I/O bandwidth throttling to use this
+  functionality to control asynchronous I/O with a little enhancement.
+
+Please visit our website, the patches and more information are available.
+  Linux Block I/O Bandwidth Control Project
+  http://sourceforge.net/apps/trac/ioband/
+
+I'd like to get some feedbacks from the list. Any comments are
+appreciated.
+
+Thanks,
+Ryo Tsuruta
