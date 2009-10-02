@@ -1,16 +1,19 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Fix compile issue with CONFIG_CHECKPOINT=n for inet
-	sockets
-Date: Fri, 2 Oct 2009 12:47:47 -0700
-Message-ID: <20091002194747.GB4189@count0.beaverton.ibm.com>
-References: <1254476123-4939-1-git-send-email-matthltc@us.ibm.com>
-	<87iqexhqc4.fsf@caffeine.danplanet.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Fri, 2 Oct 2009 15:58:15 -0400
+Message-ID: <20091002195815.GE4494__18323.0834235021$1254513692$gmane$org@redhat.com>
+References: <200910021255.27689.czoccolo@gmail.com>
+	<20091002124921.GA4494@redhat.com>
+	<4e5e476b0910020827s23e827b1n847c64e355999d4a@mail.gmail.com>
+	<1254497520.10392.11.camel@marge.simson.net>
+	<20091002154020.GC4494@redhat.com>
+	<12774.1254502217@turing-police.cc.vt.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87iqexhqc4.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <12774.1254502217-+bZmOdGhbsPr6rcHtW+onFJE71vCis6O@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,17 +23,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 02, 2009 at 06:34:35AM -0700, Dan Smith wrote:
-> MH> Similar to problem with unix sockets. The solution is the same as well.
+On Fri, Oct 02, 2009 at 12:50:17PM -0400, Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org wrote:
+> On Fri, 02 Oct 2009 11:40:20 EDT, Vivek Goyal said:
 > 
-> Indeed, sorry about that.
+> > In that case, Corrado's suggestion of refining it further and disabling idling
+> > for seeky process only on non-rotational media (SSD and hardware RAID), makes
+> > sense to me.
+> 
+> Umm... I got petabytes of hardware RAID across the hall that very definitely
+> *is* rotating.  Did you mean "SSD and disk systems with big honking caches
+> that cover up the rotation"?  Because "RAID" and "big honking caches" are
+> not *quite* the same thing, and I can just see that corner case coming out
+> to bite somebody on the ass...
+>
 
-No problem. I noticed Serge testing this config earlier and thought I should
-test my own patches with it again..
+I guess both. The systems which have big caches and cover up for rotation,
+we probably need not idle for seeky process. An in case of big hardware
+RAID, having multiple rotating disks, instead of idling and keeping rest
+of the disks free, we probably are better off dispatching requests from
+next queue (hoping it is going to a different disk altogether).
 
-Cheers,
-	-Matt Helsley
+Thanks
+Vivek
