@@ -1,15 +1,16 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/1] restart: accept the lsm_name field in header and
-	add	-k flag
-Date: Fri, 02 Oct 2009 17:02:54 -0400
-Message-ID: <4AC66A7E.60609@librato.com>
-References: <20091002034916.GA16871@us.ibm.com>
-	<20091002035157.GA16920@us.ibm.com>
+Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
+Date: Fri, 02 Oct 2009 17:06:38 -0400
+Message-ID: <4AC66B5E.9060200__38467.8387818441$1254517827$gmane$org@librato.com>
+References: <20090924165548.GA16586@us.ibm.com> <20090924175542.GA27678@x200>
+	<20090924183556.GA31356@us.ibm.com>
+	<20090930053443.GA1010@x200> <4AC39859.3090703@librato.com>
+	<20091002202759.GA4826@x200>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002035157.GA16920-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091002202759.GA4826@x200>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,143 +20,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Serge E. Hallyn wrote:
-> The checkpoint file header now has an 11-character string
-> containing the name of the active LSM, following the uts
-> info, and a variable length buffer type conaining LSM-specific
-> version information (for instance a sha1sum of policy).
-> Handle these.
+Alexey Dobriyan wrote:
+> On Wed, Sep 30, 2009 at 01:41:45PM -0400, Oren Laadan wrote:
+>> Alexey Dobriyan wrote:
+>>> On Thu, Sep 24, 2009 at 01:35:56PM -0500, Serge E. Hallyn wrote:
+>>>> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+>>>>> I don't like this even more.
+>>>>>
+>>>>> Pid namespaces are hierarchical _and_ anonymous, so simply
+>>>>> set of numbers doesn't describe the final object.
+>>>>>
+>>>>> struct pid isn't special, it's just another invariant if you like
+>>>>> as far as C/R is concerned, but system call is made special wrt pids.
+>>>>>
+>>>>> What will be in an image? I hope "struct kstate_image_pid" with several
+>>>> Sure pid namespaces are anonymous, but we will give each an 'objref'
+>>>> valid only for a checkpoint image, and store the relationship between
+>>>> pid namespaces based on those objrefs.  Basically the same way that user
+>>>> structs and hierarchical user namespaces are handled right now.
+>>> OK, that's certainly doable.
+>>>
+>>> You're commiting yourself to creation of tasks in userspace if this goes in. :-\
+>>> Which can let you into putting wrong kind of relations into image.
+>> A malicious user can put "wrong" king of relations into the image,
+>> regardless of whether the tasks are created in the kernel or in
+>> userspace. As long as the creation follows the "instructions" in
+>> the image, the result would be the same.
 > 
-> Also add a -k (--keeplsm) flag to tell restart to set the
-> RESTART_KEEP_LSM flag to sys_restart().
+> Wrong as in "fundamentally wrong", not malicious.
+> In case of uts_ns, the correct data to put into image is "task uses this uts_ns",
+> not "at this point do clone(CLONE_NEWUTS)".
+
+So we are in total agreement: that's how it is done now.
+
+Only task creation per-se, including pid-ns (future work) is done
+in userspace. Network namespaces will probably be created in userspace
+but attached to tasks in the kernel. Remaining namespaces are covered
+in the kernel the way you described.
+
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> BTW, now I'm convinced that nsproxy should not even be mentioned be in an image,
+> it's irrelevant technical detail, not future-proof at all.
 
-A couple of comments below. Otherwise:
+It's helpful (as is more efficient) to keep it now. We can always
+decide to ignore it in the future.
 
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Thanks,
 
-
-> ---
->  restart.c |   32 +++++++++++++++++++++++++++++++-
->  1 files changed, 31 insertions(+), 1 deletions(-)
-> 
-> diff --git a/restart.c b/restart.c
-> index b810ca9..44ae252 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -68,6 +68,7 @@ static char usage_str[] =
->  "     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
->  "                        to container root, SIGINT otherwise)\n"
->  "  -w,--wait             wait for root task to termiate (default)\n"
-> +"  -k,--keeplsm          Try to recreate original LSM labels on all objects\n"
->  "     --show-status      show exit status of root task (implies -w)\n"
->  "     --copy-status      imitate exit status of root task (implies -w)\n"
->  "  -W,--no-wait          do not wait for root task to terminate\n"
-> @@ -349,6 +350,8 @@ struct args {
->  	char *input;
->  };
->  
-> +int keep_lsm;
-
-Can you please use 'struct args' for this ?
-	
-> +
->  static void usage(char *str)
->  {
->  	fprintf(stderr, "%s", str);
-> @@ -377,6 +380,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		{ "self",	no_argument,		NULL, 6},
->  		{ "signal",	required_argument,	NULL, 4 },
->  		{ "inspect",	no_argument,		NULL, 5 },
-> +		{ "keeplsm",	no_argument,		NULL, 'k' },
->  		{ "input",	required_argument,	NULL, 'i' },
->  		{ "root",	required_argument,	NULL, 'r' },
->  		{ "wait",	no_argument,		NULL, 'w' },
-> @@ -388,7 +392,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		{ "debug",	no_argument,		NULL, 'd' },
->  		{ NULL,		0,			NULL, 0 }
->  	};
-> -	static char optc[] = "hdvpPwWF:r:i:";
-> +	static char optc[] = "hdvpkPwWF:r:i:";
->  
->  	int sig;
->  
-> @@ -443,6 +447,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		case 'w':
->  			args->wait = 1;
->  			break;
-> +		case 'k':
-> +			keep_lsm = RESTART_KEEP_LSM;
-> +			break;
->  		case 'W':
->  			args->wait = 0;
->  			break;
-> @@ -927,6 +934,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
->  	if (ctx->args->freezer)
->  		flags |= RESTART_FROZEN;
->  
-> +	flags |= keep_lsm;
->  	ret = restart(root_pid, STDIN_FILENO, flags);
->  
->  	if (ret < 0) {
-> @@ -1581,6 +1589,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
->  	if (task->flags & (TASK_GHOST | TASK_DEAD))
->  		flags |= RESTART_GHOST;
->  
-> +	flags |= keep_lsm;
->  	/* on success this doesn't return */
->  	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
->  	ret = restart(0, STDIN_FILENO, flags);
-> @@ -2057,6 +2066,7 @@ static int ckpt_read_obj_buffer(struct ckpt_ctx *ctx, void *buf, int n)
->   * read/write the checkpoint image: similar to in-kernel code
->   */
->  
-> +#define SECURITY_NAME_MAX 20
-
-Why is this ?  if it's kernel ABI then define in checkpoint_hdr.h,
-or include suitable header.
-
->  static int ckpt_read_header(struct ckpt_ctx *ctx)
->  {
->  	struct ckpt_hdr_header *h;
-> @@ -2090,6 +2100,16 @@ static int ckpt_read_header(struct ckpt_ctx *ctx)
->  	if (ret < 0)
->  		return ret;
->  
-> +	ptr += ((struct ckpt_hdr *) ptr)->len;
-> +	ret = ckpt_read_obj_buffer(ctx, ptr, SECURITY_NAME_MAX + 1);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ptr += ((struct ckpt_hdr *) ptr)->len;
-> +	ret = ckpt_read_obj_type(ctx, ptr, 200, CKPT_HDR_LSM_INFO);
-> +	if (ret < 0)
-> +		return ret;
-> +
->  	/* FIXME: skip version validation for now */
->  
->  	return 0;
-> @@ -2169,6 +2189,16 @@ static int ckpt_write_header(struct ckpt_ctx *ctx)
->  	ptr += ((struct ckpt_hdr *) ptr)->len;
->  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
->  
-> +	if (ret < 0)
-> +		return ret;
-> +	ptr += ((struct ckpt_hdr *) ptr)->len;
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ptr += ((struct ckpt_hdr *) ptr)->len;
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
-> +
->  	return ret;
->  }
->  
+Oren.
