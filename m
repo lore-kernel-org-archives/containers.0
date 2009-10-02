@@ -1,136 +1,190 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 2 Oct 2009 08:49:21 -0400
-Message-ID: <20091002124921.GA4494__25958.3657877103$1254487863$gmane$org@redhat.com>
-References: <200910021255.27689.czoccolo@gmail.com>
+From: Stephen Smalley <sds@epoch.ncsc.mil>
+Subject: Re: [PATCH 3/3] cr: add selinux support (v4)
+Date: Fri, 02 Oct 2009 08:59:41 -0400
+Message-ID: <1254488381.30591.316.camel@moss-pluto.epoch.ncsc.mil>
+References: <20091002034916.GA16871@us.ibm.com>
+	 <20091002035250.GC16920@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <200910021255.27689.czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20091002035250.GC16920@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 02, 2009 at 12:55:25PM +0200, Corrado Zoccolo wrote:
-> Hi Jens,
-> On Fri, Oct 2, 2009 at 11:28 AM, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Fri, Oct 02 2009, Ingo Molnar wrote:
-> >>
-> >> * Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
-> >>
-> >
-> > It's really not that simple, if we go and do easy latency bits, then
-> > throughput drops 30% or more. You can't say it's black and white latency
-> > vs throughput issue, that's just not how the real world works. The
-> > server folks would be most unpleased.
-> Could we be more selective when the latency optimization is introduced?
+On Thu, 2009-10-01 at 22:52 -0500, Serge E. Hallyn wrote:
+> Documentation/checkpoint/readme.txt begins:
+> """
+> Application checkpoint/restart is the ability to save the state
+> of a running application so that it can later resume its execution
+> from the time at which it was checkpointed.
+> """
 > 
-> The code that is currently touched by Vivek's patch is:
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
->             (cfqd->hw_tag && CIC_SEEKY(cic)))
->                 enable_idle = 0;
-> basically, when fairness=1, it becomes just:
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle)
->                 enable_idle = 0;
-> 
+> This patch adds the ability to checkpoint and restore selinux
+> contexts for tasks, open files, and sysvipc objects.  Contexts
+> are checkpointed as strings.  For tasks and files, where a security
+> struct actually points to several contexts, all contexts are
+> written out in one string, separated by ':::'.
 
-Actually I am not touching this code. Looking at the V10, I have not
-changed anything here in idling code.
+> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+> index 8d8b69c..4fb8b5d 100644
+> --- a/security/selinux/hooks.c
+> +++ b/security/selinux/hooks.c
+> @@ -2961,6 +2962,108 @@ static int selinux_file_permission(struct file *file, int mask)
+>  	return selinux_revalidate_file_permission(file, mask);
+>  }
+>  
+> +/*
+> + * for file context, we print both the fsec->sid and fsec->fown_sid
+> + * as string representations, separated by ':::'
+> + * We don't touch isid - if you wanted that set you shoulda set up the
+> + * fs correctly.
+> + */
+> +static inline char *selinux_file_checkpoint(void *security)
 
-I think we are seeing latency improvements with fairness=1 because, CFQ
-does pure roundrobin and once a seeky reader expires, it is put at the
-end of the queue.
+Why are these functions declared inline?  In any event, just let the
+compiler figure out when to make them inline if appropriate.
 
-I retained the same behavior if fairness=0 but if fairness=1, then I don't
-put the seeky reader at the end of queue, instead it gets vdisktime based
-on the disk it has used. So it should get placed ahead of sync readers.
+> +static inline int selinux_file_restore(struct file *file, char *ctx)
+> +{
+> +	char *s1, *s2;
+> +	__u32 sid1 = 0, sid2 = 0;
+> +	int ret = -EINVAL;
+> +	struct file_security_struct *fsec = file->f_security;
+> +
+> +	/*
+> +	 * Objhash made sure the string is null-terminated.
+> +	 * We make a copy so we can mangle it.
+> +	 */
+> +	s1 = kstrdup(ctx, GFP_KERNEL);
+> +	if (!s1)
+> +		return -ENOMEM;
+> +	s2 = strstr(s1, ":::");
+> +	if (!s2)
+> +		goto out;
+> +
+> +	*s2 = '\0';
+> +	s2 += 3;
+> +	if (*s2 == '\0')
+> +		goto out;
+> +
+> +	/* SECSID_NULL is not valid for file sids */
+> +	if (strlen(s1) == 0 || strlen(s2) == 0)
+> +		goto out;
+> +
+> +	ret = security_context_to_sid(s1, strlen(s1), &sid1);
+> +	if (ret)
+> +		goto out;
+> +	ret = security_context_to_sid(s2, strlen(s2), &sid2);
+> +	if (ret)
+> +		goto out;
+> +
+> +	if (sid1 && fsec->sid != sid1) {
+> +		ret = avc_has_perm(current_sid(), sid1, SECCLASS_FILE,
+> +					FILE__RESTORE, NULL);
+> +		if (ret)
+> +			goto out;
+> +		fsec->sid = sid1;
+> +	}
+> +
+> +#if 0
+> +	/* The following must wait - bc we don't yet support
+> +	 * c/r of fowners. */
+> +	if (sid2 && fsec->fown_sid != sid2) {
+> +		ret = avc_has_perm(current_sid(), sid2, SECCLASS_FILE,
+> +				FILE__FOWN_RESTORE, NULL);
+> +		if (ret)
+> +			goto out;
+> +	       fsec->fown_sid = sid2;
+> +	}
+> +#endif
 
-I think following is the code snippet in "elevator-fq.c" which is making a
-difference.
+I'm not sure why you can't enable this code yet.  From your comment, it
+sounds like c/r doesn't yet handle the uid/euid in the fown_struct, but
+that doesn't mean you can't manage the fown_sid that we store in the
+file.  We just leveraged the fact that a fown_struct is never outside
+the context of a containing struct file (at least from a send_sigio
+context) to avoid introducing a separate security field with its own
+lifecycle there.
 
-        /*
-         * We don't want to charge more than allocated slice otherwise
-         * this
-         * queue can miss one dispatch round doubling max latencies. On
-         * the
-         * other hand we don't want to charge less than allocated slice as
-         * we stick to CFQ theme of queue loosing its share if it does not
-         * use the slice and moves to the back of service tree (almost).
-         */
-        if (!ioq->efqd->fairness)
-                queue_charge = allocated_slice;
- 
-So if a sync readers consumes 100ms and an seeky reader dispatches only
-one request, then in CFQ, seeky reader gets to dispatch next request after
-another 100ms.
+> @@ -3219,6 +3322,187 @@ static int selinux_task_create(unsigned long clone_flags)
+>  	return current_has_perm(current, PROCESS__FORK);
+>  }
+>  
+> +#define NUMTASKSIDS 6
+> +/*
+> + * for cred context, we print:
+> + *   osid, sid, exec_sid, create_sid, keycreate_sid, sockcreate_sid;
+> + * as string representations, separated by ':::'
+> + */
+> +static inline char *selinux_cred_checkpoint(void *security)
+> +{
+> +	struct task_security_struct *tsec = security;
+> +	char *stmp, *sfull = NULL;
+> +	__u32 slen, runlen;
+> +	int i, ret;
+> +	__u32 sids[NUMTASKSIDS] = { tsec->osid, tsec->sid, tsec->exec_sid,
+> +		tsec->create_sid, tsec->keycreate_sid, tsec->sockcreate_sid };
 
-With fairness=1, it should get a lower vdisktime when it comes with a new
-request because its last slice usage was less (like CFS sleepers as mike
-said). But this will make a difference only if there are more than one
-processes in the system otherwise a vtime jump will take place by the time
-seeky readers gets backlogged.
+Why are you using __u32 rather than just u32?  I think the former is
+only necessary in certain headers that might be shared with userspace?
 
-Anyway, once I started timestamping the queues and started keeping a cache
-of expired queues, then any queue which got new request almost
-immediately, should get a lower vdisktime assigned if it did not use the
-full time slice in the previous dispatch round. Hence  with fairness=1,
-seeky readers kind of get more share of disk (fair share), because these
-are now placed ahead of streaming readers and hence get better latencies.
+> +static inline int selinux_cred_restore(struct file *file, struct cred *cred,
+> +					char *ctx)
+> +{
+> +	char *s, *s1, *s2 = NULL;
+> +	int ret = -EINVAL;
+> +	struct task_security_struct *tsec = cred->security;
+> +	int i;
+> +	__u32 sids[NUMTASKSIDS];
+> +	struct inode *ctx_inode = file->f_dentry->d_inode;
+> +	struct avc_audit_data ad;
 
-In short, most likely, better latencies are being experienced because
-seeky reader is getting lower time stamp (vdisktime), because it did not
-use its full time slice in previous dispatch round, and not because we kept
-the idling enabled on seeky reader.
+audit code was refactored in mainline to share common data structures
+and code among security modules, so e.g. this became common_audit_data.
+Not sure what your baseline is, but this happened in July.
 
-Thanks
-Vivek
+> +	/*
+> +	 * Check that these transitions are allowed, and effect them.
+> +	 * XXX: Do these checks suffice?
+> +	 */
+> +	if (tsec->osid != sids[0]) {
+> +		/*
+> +		 * Are any security decisions made based on osid?
+> +		 * Is it worth adding a PROCESS_RESTORE_OSID permission
+> +		 * for this?
+> +		 */
+> +		 tsec->osid = sids[0];
 
-> Note that, even if we enable idling here, the cfq_arm_slice_timer will use
-> a different idle window for seeky (2ms) than for normal I/O.
-> 
-> I think that the 2ms idle window is good for a single rotational SATA disk scenario,
-> even if it supports NCQ. Realistic access times for those disks are still around 8ms
-> (but it is proportional to seek lenght), and waiting 2ms to see if we get a nearby
-> request may pay off, not only in latency and fairness, but also in throughput.
-> 
-> What we don't want to do is to enable idling for NCQ enabled SSDs
-> (and this is already taken care in cfq_arm_slice_timer) or for hardware RAIDs.
-> If we agree that hardware RAIDs should be marked as non-rotational, then that
-> code could become:
-> 
->         if (!atomic_read(&cic->ioc->nr_tasks) || !cfqd->cfq_slice_idle ||
->             (blk_queue_nonrot(cfqd->queue) && cfqd->hw_tag && CIC_SEEKY(cic)))
->                 enable_idle = 0;
->         else if (sample_valid(cic->ttime_samples)) {
-> 		unsigned idle_time = CIC_SEEKY(cic) ? CFQ_MIN_TT : cfqd->cfq_slice_idle;
-> 		if (cic->ttime_mean > idle_time)
->                         enable_idle = 0;
->                 else
->                         enable_idle = 1;
->         }
-> 
-> Thanks,
-> Corrado
-> 
-> >
-> > --
-> > Jens Axboe
-> >
-> 
-> -- 
-> __________________________________________________________________________
-> 
-> dott. Corrado Zoccolo                          mailto:czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-> PhD - Department of Computer Science - University of Pisa, Italy
-> --------------------------------------------------------------------------
+osid is only used in kernel permission checks upon a SID transition, and
+then it has been updated to ->sid prior to the transition.  Userspace
+however may use it in a permission check (obtained via getprevcon) on
+the caller when the program runs in its own domain, e.g. passwd(1).  I
+suppose there should be a check for it, although possibly it could be
+the same as for the ->sid (i.e. PROCESS__RESTORE).
+
+> diff --git a/security/selinux/include/av_perm_to_string.h b/security/selinux/include/av_perm_to_string.h
+> index 31df1d7..78945e7 100644
+> --- a/security/selinux/include/av_perm_to_string.h
+> +++ b/security/selinux/include/av_perm_to_string.h
+<snip>
+
+Just FYI, this file goes away with the dynamic class/perm discovery
+patch that I've been posting to selinux list.
+
+> diff --git a/security/selinux/include/av_permissions.h b/security/selinux/include/av_permissions.h
+> index d645192..8e066ac 100644
+> --- a/security/selinux/include/av_permissions.h
+> +++ b/security/selinux/include/av_permissions.h
+<snip>
+
+Likewise, this file goes away and is replaced by an automatically
+generated one from the new classmap.h file, which is the only kernel
+file you'll need to modify to add new permissions.
+
+-- 
+Stephen Smalley
+National Security Agency
+
