@@ -1,16 +1,18 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Sat, 3 Oct 2009 00:27:59 +0400
-Message-ID: <20091002202759.GA4826__44329.9801474952$1254515332$gmane$org@x200>
-References: <20090924165548.GA16586@us.ibm.com> <20090924175542.GA27678@x200>
-	<20090924183556.GA31356@us.ibm.com> <20090930053443.GA1010@x200>
-	<4AC39859.3090703@librato.com>
+From: Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Fri, 02 Oct 2009 16:27:43 -0400
+Message-ID: <4AC6623F.70600__21705.8184593499$1254515422$gmane$org@ds.jp.nec.com>
+References: <20090929141049.GA12141@redhat.com>
+	<20090930.174319.183036386.ryov@valinux.co.jp>
+	<20090930110500.GA26631@redhat.com>
+	<20091001.154125.104044685.ryov@valinux.co.jp>
+	<20091001133109.GA4058@redhat.com>
+	<20091002025731.GA2738@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4AC39859.3090703-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091002025731.GA2738-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,41 +22,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 30, 2009 at 01:41:45PM -0400, Oren Laadan wrote:
-> Alexey Dobriyan wrote:
-> > On Thu, Sep 24, 2009 at 01:35:56PM -0500, Serge E. Hallyn wrote:
-> >> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> >>> I don't like this even more.
-> >>>
-> >>> Pid namespaces are hierarchical _and_ anonymous, so simply
-> >>> set of numbers doesn't describe the final object.
-> >>>
-> >>> struct pid isn't special, it's just another invariant if you like
-> >>> as far as C/R is concerned, but system call is made special wrt pids.
-> >>>
-> >>> What will be in an image? I hope "struct kstate_image_pid" with several
-> >> Sure pid namespaces are anonymous, but we will give each an 'objref'
-> >> valid only for a checkpoint image, and store the relationship between
-> >> pid namespaces based on those objrefs.  Basically the same way that user
-> >> structs and hierarchical user namespaces are handled right now.
-> > 
-> > OK, that's certainly doable.
-> > 
-> > You're commiting yourself to creation of tasks in userspace if this goes in. :-\
-> > Which can let you into putting wrong kind of relations into image.
-> 
-> A malicious user can put "wrong" king of relations into the image,
-> regardless of whether the tasks are created in the kernel or in
-> userspace. As long as the creation follows the "instructions" in
-> the image, the result would be the same.
+Vivek Goyal wrote, on 10/01/2009 10:57 PM:
+> Before finishing this mail, will throw a whacky idea in the ring. I was
+> going through the request based dm-multipath paper. Will it make sense
+> to implement request based dm-ioband? So basically we implement all the
+> group scheduling in CFQ and let dm-ioband implement a request function
+> to take the request and break it back into bios. This way we can keep
+> all the group control at one place and also meet most of the requirements.
+>
+> So request based dm-ioband will have a request in hand once that request
+> has passed group control and prio control. Because dm-ioband is a device
+> mapper target, one can put it on higher level devices (practically taking
+> CFQ at higher level device), and provide fairness there. One can also
+> put it on those SSDs which don't use IO scheduler (this is kind of forcing
+> them to use the IO scheduler.)
+>
+> I am sure that will be many issues but one big issue I could think of that
+> CFQ thinks that there is one device beneath it and dipsatches requests
+> from one queue (in case of idling) and that would kill parallelism at
+> higher layer and throughput will suffer on many of the dm/md configurations.
+>
+> Thanks
+> Vivek
 
-Wrong as in "fundamentally wrong", not malicious.
-In case of uts_ns, the correct data to put into image is "task uses this uts_ns",
-not "at this point do clone(CLONE_NEWUTS)".
+As long as using CFQ, your idea is reasonable for me.  But how about for
+other IO schedulers?  In my understanding, one of the keys to guarantee
+group isolation in your patch is to have per-group IO scheduler internal
+queue even with as, deadline, and noop scheduler.  I think this is
+great idea, and to implement generic code for all IO schedulers was
+concluded when we had so many IO scheduler specific proposals.
+If we will still need per-group IO scheduler internal queues with
+request-based dm-ioband, we have to modify elevator layer.  It seems
+out of scope of dm.
+I might miss something...
 
-BTW, now I'm convinced that nsproxy should not even be mentioned be in an image,
-it's irrelevant technical detail, not future-proof at all.
+
+
+-- 
+IKEDA, Munehiro
+   NEC Corporation of America
+     m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
