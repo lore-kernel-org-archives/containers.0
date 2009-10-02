@@ -1,22 +1,13 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Fri, 02 Oct 2009 22:47:27 +0200
-Message-ID: <1254516447.11265.5.camel__35675.3277745613$1254516594$gmane$org@marge.simson.net>
-References: <20091002092839.GA26962@kernel.dk>
-	<alpine.LFD.2.01.0910020715160.6996@localhost.localdomain>
-	<20091002145610.GD31616@kernel.dk>
-	<alpine.LFD.2.01.0910020811490.6996@localhost.localdomain>
-	<20091002171129.GG31616@kernel.dk> <20091002172046.GA2376@elte.hu>
-	<20091002172554.GJ31616@kernel.dk> <20091002172842.GA4884@elte.hu>
-	<20091002173732.GK31616@kernel.dk>
-	<1254507215.8667.7.camel@marge.simson.net>
-	<20091002181903.GN31616@kernel.dk>
-	<1254509838.8667.30.camel@marge.simson.net>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 1/3] cr: add generic LSM c/r support (v4)
+Date: Fri, 02 Oct 2009 16:57:51 -0400
+Message-ID: <4AC6694F.3050509@librato.com>
+References: <20091002034916.GA16871@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1254509838.8667.30.camel-YqMYhexLQo1vAv1Ojkdn7Q@public.gmane.org>
+In-Reply-To: <20091002034916.GA16871-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,48 +17,353 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-10-02 at 20:57 +0200, Mike Galbraith wrote:
-> On Fri, 2009-10-02 at 20:19 +0200, Jens Axboe wrote:
+
+
+Serge E. Hallyn wrote:
+> (wasn't versioning the patchsets before, so randomly pick 4 as
+> the version for this patchset...)
 > 
-> > I'm not too worried about the "single IO producer" scenarios, and it
-> > looks like (from a quick look) that most of your numbers are within some
-> > expected noise levels. It's the more complex mixes that are likely to
-> > cause a bit of a stink, but lets worry about that later. One quick thing
-> > would be to read eg 2 or more files sequentially from disk and see how
-> > that performs.
+> Documentation/checkpoint/readme.txt begins:
+> """
+> Application checkpoint/restart is the ability to save the state
+> of a running application so that it can later resume its execution
+> from the time at which it was checkpointed.
+> """
 > 
-> Hm.  git(s) should be good for a nice repeatable load.  Suggestions?
-> 
-> > If you could do a cleaned up version of your overload patch based on
-> > this:
-> > 
-> > http://git.kernel.dk/?p=linux-2.6-block.git;a=commit;h=1d2235152dc745c6d94bedb550fea84cffdbf768
-> > 
-> > then lets take it from there.
-> 
-> I'll try to find a good repeatable git beater first.  At this point, I
-> only know it helps with one load.
 
-Seems to help mixed concurrent read/write a bit too.
+[...]
 
-perf stat testo.sh                               Avg
-108.12   106.33    106.34    97.00    106.52   104.8  1.000 fairness=0 overload_delay=0
- 93.98   102.44     94.47    97.70     98.90    97.4   .929 fairness=0 overload_delay=1
- 90.87    95.40     95.79    93.09     94.25    93.8   .895 fairness=1 overload_delay=0
- 89.93    90.57     89.13    93.43     93.72    91.3   .871 fairness=1 overload_delay=1
+>  Kernel interfaces
+>  =================
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index 1eeb557..6722035 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -25,6 +25,7 @@
+>  #include <linux/magic.h>
+>  #include <linux/hrtimer.h>
+>  #include <linux/deferqueue.h>
+> +#include <linux/security.h>
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+>  
+> @@ -351,6 +352,16 @@ static int checkpoint_write_header(struct ckpt_ctx *ctx)
+>  	if (ret < 0)
+>  		return ret;
+>  
+> +	memset(ctx->lsm_name, 0, SECURITY_NAME_MAX + 1);
+> +	strlcpy(ctx->lsm_name, security_get_lsm_name(), SECURITY_NAME_MAX + 1);
+> +	ret = ckpt_write_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ret = security_checkpoint_header(ctx);
+> +	if (ret < 0)
+> +		return ret;
+> +
 
-#!/bin/sh
+This is actually a case for a 'container-global' section that would
+appear after the header and before the rest of the image. (Would be
+useful also for network namespaces).
 
-LOGFILE=testo.log
-rm -f $LOGFILE
+>  	return checkpoint_write_header_arch(ctx);
+>  }
+>  
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> index 27e29a0..570facb 100644
+> --- a/checkpoint/files.c
+> +++ b/checkpoint/files.c
+> @@ -145,6 +145,19 @@ static int scan_fds(struct files_struct *files, int **fdtable)
+>  	return n;
+>  }
+>  
+> +#ifdef CONFIG_SECURITY
+> +int checkpoint_file_security(struct ckpt_ctx *ctx, struct file *file)
+> +{
+> +	return security_checkpoint_obj(ctx, file->f_security,
+> +					CKPT_SECURITY_FILE);
+> +}
+> +#else
+> +int checkpoint_file_security(struct ckpt_ctx *ctx, struct file *file)
+> +{
+> +	return -EOPNOTSUPP;
+> +}
+> +#endif
+> +
+>  int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  			   struct ckpt_hdr_file *h)
+>  {
+> @@ -159,6 +172,16 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  	if (h->f_credref < 0)
+>  		return h->f_credref;
+>  
+> +	h->f_secref = checkpoint_file_security(ctx, file);
+> +	if (h->f_secref == -EOPNOTSUPP)
+> +		h->f_secref = -1;
 
-echo 3 > /proc/sys/vm/drop_caches
-sh -c "(cd linux-2.6.23; perf stat -- git checkout -f; git archive --format=tar HEAD > ../linux-2.6.23.tar)" 2>&1|tee -a $LOGFILE &
-sh -c "(cd linux-2.6.24; perf stat -- git archive --format=tar HEAD > ../linux-2.6.24.tar; git checkout -f)" 2>&1|tee -a $LOGFILE &
-sh -c "(cd linux-2.6.25; perf stat -- git checkout -f; git archive --format=tar HEAD > ../linux-2.6.25.tar)" 2>&1|tee -a $LOGFILE &
-sh -c "(cd linux-2.6.26; perf stat -- git archive --format=tar HEAD > ../linux-2.6.26.tar; git checkout -f)" 2>&1|tee -a $LOGFILE &
-wait
+#define CKPT_SECURITY_NONE  -1     ??
+
+> +	else if (h->f_secref < 0)
+> +		return h->f_secref;
+
+[...]
+
+> +
+> +static int do_checkpoint_security(struct ckpt_ctx *ctx,
+> +				const struct ckpt_stored_lsm *l)
+> +{
+> +	int ret, len;
+> +	struct ckpt_hdr_lsm *h;
+> +
+> +	len = strlen(l->string);
+> +	if (len > PAGE_SIZE - sizeof(*h))
+> +		return -E2BIG;
+
+A call to ckpt_write_err() here may be useful.
+
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h)+len+1, CKPT_HDR_SEC);
+> +	if (!h)
+> +		return -ENOMEM;
+> +	h->len = len;
+> +	h->sectype = l->sectype;
+> +	strncpy(h->string, l->string, len);
+> +	h->string[len] = '\0';
+> +	ret = ckpt_write_obj(ctx, &h->h);
+> +	ckpt_hdr_put(ctx, h);
+> +	return ret;
+> +}
+> +
+> +static int checkpoint_security(struct ckpt_ctx *ctx, void *ptr)
+> +{
+> +	return do_checkpoint_security(ctx, (struct ckpt_stored_lsm *) ptr);
+> +}
+> +
+> +static struct ckpt_stored_lsm *do_restore_security(struct ckpt_ctx *ctx)
+> +{
+> +	struct ckpt_hdr_lsm *h;
+> +	struct ckpt_stored_lsm *l;
+> +
+> +	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_SEC);
+> +	if (IS_ERR(h))
+> +		return (struct ckpt_stored_lsm *)h;
+> +	if (h->len > h->h.len - sizeof(struct ckpt_hdr) ||
+> +				h->len > PAGE_SIZE) {
+
+The second test (for h->len > PAGE_SIZE) is unnecessary - already
+done in ckpt_read_buf_type()
+
+> +		ckpt_hdr_put(ctx, h);
+> +		return ERR_PTR(-EINVAL);
+> +	}
+> +	l = kzalloc(sizeof(*l), GFP_KERNEL);
+> +	if (!l) {
+> +		ckpt_hdr_put(ctx, h);
+> +		return ERR_PTR(-ENOMEM);
+
+Nit: this part is common... set ret = -ENOMEM and use goto ?
+
+[...]
+
+> @@ -608,14 +613,21 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+>  	 * referenced. See comment in checkpoint_task_objs.
+>  	 */
+>  	ret = restore_task_creds(ctx);
+> -	if (!ret)
+> -		ret = restore_task_ns(ctx);
+> -	if (ret < 0)
+> +	if (ret) {
+
+Nit: (ret < 0) helps (me) read it.
+
+> +		ckpt_debug("restore_task_creds returned %d", ret);
+> +		return ret;
+> +	}
+> +	ret = restore_task_ns(ctx);
+> +	if (ret) {
+> +		ckpt_debug("restore_task_ns returned %d", ret);
+>  		return ret;
+> +	}
+>  
+>  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+> -	if (IS_ERR(h))
+> +	if (IS_ERR(h)) {
+> +		ckpt_debug("Error fetching task obj");
+>  		return PTR_ERR(h);
+> +	}
+>  
+>  	ret = restore_obj_file_table(ctx, h->files_objref);
+>  	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index b12c8bd..bba2b45 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -457,6 +457,31 @@ static int restore_read_header(struct ckpt_ctx *ctx)
+>  	if (ret < 0)
+>  		goto out;
+>  
+> +	ret = _ckpt_read_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
+> +	if (ret < 0)
+> +		goto out;
+> +	if (ctx->uflags & RESTART_KEEP_LSM) {
+> +		char *cur = security_get_lsm_name();
+> +		if (strncmp(cur, ctx->lsm_name, SECURITY_NAME_MAX + 1) != 0) {
+> +			pr_warning("c/r: checkpointed LSM %s, current is %s.\n",
+> +				ctx->lsm_name, cur);
+> +			ret = -EINVAL;
+
+EPERM ?
+
+[...]
+
+> @@ -277,6 +283,16 @@ struct ckpt_hdr_groupinfo {
+>  	__u32 groups[0];
+>  } __attribute__((aligned(8)));
+>  
+> +struct ckpt_hdr_lsm {
+> +	struct ckpt_hdr h;
+> +	__u8 sectype;
+> +	__u16 len;
+
+Alignment ...
+
+> +	/*
+> +	 * This is followed by a string of size len+1,
+> +	 * null-terminated
+> +	 */
+> +	__u8 string[0];
+> +} __attribute__((aligned(8)));
+>  /*
+>   * todo - keyrings and LSM
+>   * These may be better done with userspace help though
+> @@ -392,6 +408,8 @@ struct ckpt_hdr_file {
+>  	__s32 f_credref;
+>  	__u64 f_pos;
+>  	__u64 f_version;
+> +	__s32 f_secref;
+> +	__u32 f_padding;
+
+No need for padding here.
+
+>  } __attribute__((aligned(8)));
+>  
+>  struct ckpt_hdr_file_generic {
+> @@ -634,6 +652,8 @@ struct ckpt_hdr_ipc_perms {
+>  	__u32 mode;
+>  	__u32 _padding;
+>  	__u64 seq;
+> +	__s32 sec_ref;
+> +	__u32 padding;
+
+Ditto.
+
+[...]
+
+> @@ -224,6 +234,16 @@ static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
+>  	msg->next = NULL;
+>  	pseg = &msg->next;
+>  
+> +	if ((ctx->uflags & RESTART_KEEP_LSM) && (h->sec_ref != -1)) {
+> +		struct ckpt_stored_lsm *l = ckpt_obj_fetch(ctx, h->sec_ref,
+> +					CKPT_OBJ_SEC);
+> +		if (IS_ERR(l))
+> +			return (struct msg_msg *)l;
+
+That's a leak. Need to 'goto out' instead.
+
+> +		ret = security_msg_msg_restore(msg, l->string);
+> +		if (ret)
+> +			return ERR_PTR(ret);
+
+Here too.
+
+[...]
+
+> @@ -806,6 +815,15 @@ static struct cred *do_restore_cred(struct ckpt_ctx *ctx)
+>  	ret = cred_setfsgid(cred, h->fsgid, &oldgid);
+>  	if (oldgid != h->fsgid && ret < 0)
+>  		goto err_putcred;
+> +	if ((ctx->uflags & RESTART_KEEP_LSM) && (h->sec_ref != -1)) {
+> +		struct ckpt_stored_lsm *l = ckpt_obj_fetch(ctx, h->sec_ref,
+> +					CKPT_OBJ_SEC);
+> +		if (IS_ERR(l))
+> +			return (struct cred *)l;
+
+And here too ?
+
+> +/**
+> + * security_checkpoint_obj - if first checkpoint of this void* security,
+> + * then 1. ask the LSM for a string representing the context, 2. checkpoint
+> + * that string
+> + * @ctx: the checkpoint context
+> + * @security: the void* security being checkpointed
+> + * @sectype: indicates the type of object, because LSMs can (and do) store
+> + * different types of data for different types of objects.
+> + *
+> + * Returns the objref of the checkpointed ckpt_stored_lsm representing the
+> + * context, or -error on error.
+> + *
+> + * This is only used at checkpoint of course.
+> + */
+> +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
+> +				unsigned sectype)
+> +{
+> +	int strref;
+> +	struct ckpt_stored_lsm *l;
+> +	char *str;
+> +	int len;
+> +
+> +	/*
+> +	 * to simplify the LSM code, short-cut a null security
+> +	 * here.
+> +	 */
+> +	if (!security)
+> +		return -EOPNOTSUPP;
+> +
+> +	switch (sectype) {
+> +	case CKPT_SECURITY_MSG_MSG:
+> +		str = security_msg_msg_checkpoint(security);
+> +		break;
+> +	case CKPT_SECURITY_IPC:
+> +		str = security_ipc_checkpoint(security);
+> +		break;
+> +	case CKPT_SECURITY_FILE:
+> +		str = security_file_checkpoint(security);
+> +		break;
+> +	case CKPT_SECURITY_CRED:
+> +		str = security_cred_checkpoint(security);
+> +		break;
+> +	default:
+> +		str = ERR_PTR(-EINVAL);
+> +		break;
+> +	}
+> +	/* str will be alloc'ed for us by the LSM.  We will free it when
+> +	 * we clear out our hashtable */
+> +	if (IS_ERR(str))
+> +		return PTR_ERR(str);
+> +
+> +	len = strlen(str);
+> +	l = kzalloc(sizeof(*l) + len + 1, GFP_KERNEL);
+
+Probably a dumb question: why do you allocate with the size of
+the string when it merely points to the string ?
+
+> +	if (!l) {
+> +		kfree(str);
+> +		return -ENOMEM;
+> +	}
+> +	kref_init(&l->kref);
+> +	l->sectype = sectype;
+> +	l->string = str;
+> +
+> +	strref = checkpoint_obj(ctx, l, CKPT_OBJ_SEC);
+> +	/* do we need to free l if strref was err? */
+> +	return strref;
+> +}
+> +
+> +#endif
+
+Oren.
