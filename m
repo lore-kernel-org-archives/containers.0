@@ -1,76 +1,138 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][v7][PATCH 0/9] Implement clone2() system call
-Date: Fri, 02 Oct 2009 17:06:38 -0400
-Message-ID: <4AC66B5E.9060200__38467.8387818441$1254517827$gmane$org@librato.com>
-References: <20090924165548.GA16586@us.ibm.com> <20090924175542.GA27678@x200>
-	<20090924183556.GA31356@us.ibm.com>
-	<20090930053443.GA1010@x200> <4AC39859.3090703@librato.com>
-	<20091002202759.GA4826@x200>
+From: Oren Laadan <orenl@librato.com>
+Subject: Re: [PATCH 3/3] cr: add selinux support (v4)
+Date: Fri, 02 Oct 2009 17:14:47 -0400
+Message-ID: <4AC66D47.5050305@librato.com>
+References: <20091002034916.GA16871@us.ibm.com> <20091002035250.GC16920@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002202759.GA4826@x200>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20091002035250.GC16920@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, Stephen Smalley <sds@epoch.ncsc.mil>, SELinux <selinux@tycho.nsa.gov>
 List-Id: containers.vger.kernel.org
 
 
-
-Alexey Dobriyan wrote:
-> On Wed, Sep 30, 2009 at 01:41:45PM -0400, Oren Laadan wrote:
->> Alexey Dobriyan wrote:
->>> On Thu, Sep 24, 2009 at 01:35:56PM -0500, Serge E. Hallyn wrote:
->>>> Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->>>>> I don't like this even more.
->>>>>
->>>>> Pid namespaces are hierarchical _and_ anonymous, so simply
->>>>> set of numbers doesn't describe the final object.
->>>>>
->>>>> struct pid isn't special, it's just another invariant if you like
->>>>> as far as C/R is concerned, but system call is made special wrt pids.
->>>>>
->>>>> What will be in an image? I hope "struct kstate_image_pid" with several
->>>> Sure pid namespaces are anonymous, but we will give each an 'objref'
->>>> valid only for a checkpoint image, and store the relationship between
->>>> pid namespaces based on those objrefs.  Basically the same way that user
->>>> structs and hierarchical user namespaces are handled right now.
->>> OK, that's certainly doable.
->>>
->>> You're commiting yourself to creation of tasks in userspace if this goes in. :-\
->>> Which can let you into putting wrong kind of relations into image.
->> A malicious user can put "wrong" king of relations into the image,
->> regardless of whether the tasks are created in the kernel or in
->> userspace. As long as the creation follows the "instructions" in
->> the image, the result would be the same.
+Serge E. Hallyn wrote:
+> Documentation/checkpoint/readme.txt begins:
+> """
+> Application checkpoint/restart is the ability to save the state
+> of a running application so that it can later resume its execution
+> from the time at which it was checkpointed.
+> """
 > 
-> Wrong as in "fundamentally wrong", not malicious.
-> In case of uts_ns, the correct data to put into image is "task uses this uts_ns",
-> not "at this point do clone(CLONE_NEWUTS)".
-
-So we are in total agreement: that's how it is done now.
-
-Only task creation per-se, including pid-ns (future work) is done
-in userspace. Network namespaces will probably be created in userspace
-but attached to tasks in the kernel. Remaining namespaces are covered
-in the kernel the way you described.
-
+> This patch adds the ability to checkpoint and restore selinux
+> contexts for tasks, open files, and sysvipc objects.  Contexts
+> are checkpointed as strings.  For tasks and files, where a security
+> struct actually points to several contexts, all contexts are
+> written out in one string, separated by ':::'.
 > 
-> BTW, now I'm convinced that nsproxy should not even be mentioned be in an image,
-> it's irrelevant technical detail, not future-proof at all.
+> The default behaviors are to checkpoint contexts, but not to
+> restore them.  To attempt to restore them, sys_restart() must
+> be given the RESTART_KEEP_LSM flag.  If this is given then
+> the caller of sys_restart() must have the new 'restore' permission
+> to the target objclass, or for instance PROCESS__SETFSCREATE to
+> itself to specify a create_sid.
+> 
+> There are some tests under cr_tests/selinux at
+> git://git.sr71.net/~hallyn/cr_tests.git.
+> 
+> A corresponding simple refpolicy (and /usr/share/selinux/devel/include)
+> patch is needed.
+> 
+> The programs to checkpoint and restart (called 'checkpoint' and
+> 'restart') come from git://git.ncl.cs.columbia.edu/pub/git/user-cr.git.
+> This patch applies against the checkpoint/restart-enabled kernel
+> tree at git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git/.
+> 
+> Changelog:
+> 	oct 01: Remove some debugging that is redundant with
+> 		avc log data.
+> 	sep 10: (Most addressing suggestions by Stephen Smalley)
+> 		1. change xyz_get_ctx() to xyz_checkpoint().
+> 		2. check entrypoint permission on cred_restore
+> 		3. always dec context length by 1
+> 		4. don't allow SECSID_NULL when that's not valid
+> 		5. when SECSID_NULL is valid, restore it
+> 		6. c/r task->osid
+> 		7. Just print nothing instead of 'null' for SECSID_NULL
+> 		8. sids are __u32, as are lenghts passed to sid_to_context.
+> 
+> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+> Cc: Stephen Smalley <sds@epoch.ncsc.mil>
 
-It's helpful (as is more efficient) to keep it now. We can always
-decide to ignore it in the future.
+I don't know much about SElinux, so this is only for
+the strict c/r code...
 
-Thanks,
+> ---
+>  checkpoint/restart.c                         |    1 +
+>  kernel/cred.c                                |    2 +
+>  security/selinux/hooks.c                     |  371 ++++++++++++++++++++++++++
+>  security/selinux/include/av_perm_to_string.h |    4 +
+>  security/selinux/include/av_permissions.h    |    4 +
+>  5 files changed, 382 insertions(+), 0 deletions(-)
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 55bd2b5..008a116 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -471,6 +471,7 @@ static int restore_read_header(struct ckpt_ctx *ctx)
+>  		/* to be implemented later, per-lsm */
+>  		if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
+>  				strcmp(ctx->lsm_name, "smack") != 0 &&
+> +				strcmp(ctx->lsm_name, "selinux") != 0 &&
+>  				strcmp(ctx->lsm_name, "default") != 0) {
+
+If we expect this to grow, it may make sense to look it up in an
+array.
+
+>  			pr_warning("c/r: RESTART_KEEP_LSM unsupported for %s\n",
+>  					ctx->lsm_name);
+> diff --git a/kernel/cred.c b/kernel/cred.c
+> index 06bc676..5eb09b8 100644
+> --- a/kernel/cred.c
+> +++ b/kernel/cred.c
+> @@ -732,6 +732,8 @@ static int do_checkpoint_cred(struct ckpt_ctx *ctx, struct cred *cred)
+>  	if (!h)
+>  		return -ENOMEM;
+>  
+> +	ckpt_debug("cred uid %d fsuid %d gid %d secref %d\n", cred->uid,
+> +		cred->fsuid, cred->gid, sec_ref);
+
+Please place this (and a few others also in other patches) debug-only
+changes in a separate patch - it will make my life tremendously easier
+when merging v18-dev to a nice and clean v19.
+
+[...]
+
+> +static inline char *selinux_file_checkpoint(void *security)
+> +{
+> +	struct file_security_struct *fsec = security;
+> +	char *s1 = NULL, *s2 = NULL, *sfull;
+> +	__u32 len1, len2, lenfull;
+> +	int ret;
+> +
+> +	if (fsec->sid == 0 || fsec->fown_sid == 0)
+> +		return ERR_PTR(-EINVAL);
+> +
+> +	ret = security_sid_to_context(fsec->sid, &s1, &len1);
+> +	if (ret)
+> +		return ERR_PTR(ret);
+> +	len1--;
+> +	ret = security_sid_to_context(fsec->fown_sid, &s2, &len2);
+> +	if (ret) {
+> +		kfree(s1);
+> +		return ERR_PTR(ret);
+> +	}
+> +	len2--;
+> +	lenfull = len1+len2+3;
+
+Would checkpatch.pl complain about no spaces here ?
+
+[...]
+
+Hmm... the rest doesn't make sense to me anyway :o
 
 Oren.
+
