@@ -1,68 +1,63 @@
-From: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Sat, 3 Oct 2009 00:14:28 +0200
-Message-ID: <4e5e476b0910021514i1b461229t667bed94fd67f140__7073.543922934$1254521912$gmane$org@mail.gmail.com>
-References: <200910021255.27689.czoccolo@gmail.com>
-	<20091002124921.GA4494@redhat.com>
-	<4e5e476b0910020827s23e827b1n847c64e355999d4a@mail.gmail.com>
-	<1254497520.10392.11.camel@marge.simson.net>
-	<20091002154020.GC4494@redhat.com>
-	<12774.1254502217@turing-police.cc.vt.edu>
-	<20091002195815.GE4494@redhat.com>
+From: Oren Laadan <orenl@librato.com>
+Subject: Re: [PATCH 1/3] cr: add generic LSM c/r support (v4)
+Date: Fri, 02 Oct 2009 18:23:27 -0400
+Message-ID: <4AC67D5F.2030908@librato.com>
+References: <20091002034916.GA16871@us.ibm.com> <4AC6694F.3050509@librato.com> <20091002221349.GC7446@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002195815.GE4494-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20091002221349.GC7446@us.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, Casey Schaufler <casey@schaufler-ca.com>, linux-security-module@vger.kernel.org, Stephen Smalley <sds@epoch.ncsc.mil>, SELinux <selinux@tycho.nsa.gov>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBPY3QgMiwgMjAwOSBhdCA5OjU4IFBNLCBWaXZlayBHb3lhbCA8dmdveWFsQHJlZGhh
-dC5jb20+IHdyb3RlOgo+IE9uIEZyaSwgT2N0IDAyLCAyMDA5IGF0IDEyOjUwOjE3UE0gLTA0MDAs
-IFZhbGRpcy5LbGV0bmlla3NAdnQuZWR1IHdyb3RlOgo+PiBPbiBGcmksIDAyIE9jdCAyMDA5IDEx
-OjQwOjIwIEVEVCwgVml2ZWsgR295YWwgc2FpZDoKPj4KPj4gVW1tLi4uIEkgZ290IHBldGFieXRl
-cyBvZiBoYXJkd2FyZSBSQUlEIGFjcm9zcyB0aGUgaGFsbCB0aGF0IHZlcnkgZGVmaW5pdGVseQo+
-PiAqaXMqIHJvdGF0aW5nLiDCoERpZCB5b3UgbWVhbiAiU1NEIGFuZCBkaXNrIHN5c3RlbXMgd2l0
-aCBiaWcgaG9ua2luZyBjYWNoZXMKPj4gdGhhdCBjb3ZlciB1cCB0aGUgcm90YXRpb24iPyDCoEJl
-Y2F1c2UgIlJBSUQiIGFuZCAiYmlnIGhvbmtpbmcgY2FjaGVzIiBhcmUKPj4gbm90ICpxdWl0ZSog
-dGhlIHNhbWUgdGhpbmcsIGFuZCBJIGNhbiBqdXN0IHNlZSB0aGF0IGNvcm5lciBjYXNlIGNvbWlu
-ZyBvdXQKPj4gdG8gYml0ZSBzb21lYm9keSBvbiB0aGUgYXNzLi4uCj4+Cj4KPiBJIGd1ZXNzIGJv
-dGguIFRoZSBzeXN0ZW1zIHdoaWNoIGhhdmUgYmlnIGNhY2hlcyBhbmQgY292ZXIgdXAgZm9yIHJv
-dGF0aW9uLAo+IHdlIHByb2JhYmx5IG5lZWQgbm90IGlkbGUgZm9yIHNlZWt5IHByb2Nlc3MuIEFu
-IGluIGNhc2Ugb2YgYmlnIGhhcmR3YXJlCj4gUkFJRCwgaGF2aW5nIG11bHRpcGxlIHJvdGF0aW5n
-IGRpc2tzLCBpbnN0ZWFkIG9mIGlkbGluZyBhbmQga2VlcGluZyByZXN0Cj4gb2YgdGhlIGRpc2tz
-IGZyZWUsIHdlIHByb2JhYmx5IGFyZSBiZXR0ZXIgb2ZmIGRpc3BhdGNoaW5nIHJlcXVlc3RzIGZy
-b20KPiBuZXh0IHF1ZXVlIChob3BpbmcgaXQgaXMgZ29pbmcgdG8gYSBkaWZmZXJlbnQgZGlzayBh
-bHRvZ2V0aGVyKS4KCkluIGZhY3QgSSB0aGluayB0aGF0IHRoZSAncm90YXRpbmcnIGZsYWcgbmFt
-ZSBpcyBtaXNsZWFkaW5nLgpBbGwgdGhlIGNoZWNrcyB3ZSBhcmUgZG9pbmcgYXJlIGFjdHVhbGx5
-IGNoZWNraW5nIGlmIHRoZSBkZXZpY2UgdHJ1bHkKc3VwcG9ydHMgbXVsdGlwbGUgcGFyYWxsZWwg
-b3BlcmF0aW9ucywgYW5kIHRoaXMgZmVhdHVyZSBpcyBzaGFyZWQgYnkKaGFyZHdhcmUgcmFpZHMg
-YW5kIE5DUSBlbmFibGVkIFNTRHMsIGJ1dCBub3QgYnkgY2hlYXAgU1NEcyBvciBzaW5nbGUKTkNR
-LWVuYWJsZWQgU0FUQSBkaXNrLgoKSWYgd2UgcmVhbGx5IHdhbnRlZCBhICJzZWVrIGlzIGNoZWFw
-IiBmbGFnLCB3ZSBjb3VsZCBtZWFzdXJlIHNlZWsgdGltZQppbiB0aGUgaW8tc2NoZWR1bGVyIGl0
-c2VsZiwgYnV0IGluIHRoZSBjdXJyZW50IGNvZGUgYmFzZSB3ZSBkb24ndCBoYXZlCml0IHVzZWQg
-aW4gdGhpcyBtZWFuaW5nIGFueXdoZXJlLgoKVGhhbmtzLApDb3JyYWRvCgo+Cj4gVGhhbmtzCj4g
-Vml2ZWsKPgoKCgotLSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KCmRvdHQuIENvcnJhZG8gWm9jY29sbyAg
-ICAgICAgICAgICAgICAgICAgICAgICAgbWFpbHRvOmN6b2Njb2xvQGdtYWlsLmNvbQpQaEQgLSBE
-ZXBhcnRtZW50IG9mIENvbXB1dGVyIFNjaWVuY2UgLSBVbml2ZXJzaXR5IG9mIFBpc2EsIEl0YWx5
-Ci0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tClRoZSBzZWxmLWNvbmZpZGVuY2Ugb2YgYSB3YXJyaW9yIGlzIG5v
-dCB0aGUgc2VsZi1jb25maWRlbmNlIG9mIHRoZSBhdmVyYWdlCm1hbi4gVGhlIGF2ZXJhZ2UgbWFu
-IHNlZWtzIGNlcnRhaW50eSBpbiB0aGUgZXllcyBvZiB0aGUgb25sb29rZXIgYW5kIGNhbGxzCnRo
-YXQgc2VsZi1jb25maWRlbmNlLiBUaGUgd2FycmlvciBzZWVrcyBpbXBlY2NhYmlsaXR5IGluIGhp
-cyBvd24gZXllcyBhbmQKY2FsbHMgdGhhdCBodW1ibGVuZXNzLgogICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgVGFsZXMgb2YgUG93ZXIgLSBDLiBDYXN0YW5lZGEKX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
-Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+
+
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl@librato.com):
+>>
+>> Serge E. Hallyn wrote:
+>>> (wasn't versioning the patchsets before, so randomly pick 4 as
+>>> the version for this patchset...)
+>>>
+>>> Documentation/checkpoint/readme.txt begins:
+>>> """
+>>> Application checkpoint/restart is the ability to save the state
+>>> of a running application so that it can later resume its execution
+>>> from the time at which it was checkpointed.
+>>> """
+>>>
+
+[...]
+
+>>> +	memset(ctx->lsm_name, 0, SECURITY_NAME_MAX + 1);
+>>> +	strlcpy(ctx->lsm_name, security_get_lsm_name(), SECURITY_NAME_MAX + 1);
+>>> +	ret = ckpt_write_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
+>>> +	if (ret < 0)
+>>> +		return ret;
+>>> +
+>>> +	ret = security_checkpoint_header(ctx);
+>>> +	if (ret < 0)
+>>> +		return ret;
+>>> +
+>> This is actually a case for a 'container-global' section that would
+>> appear after the header and before the rest of the image. (Would be
+>> useful also for network namespaces).
+> 
+> But LSM's are specifically not containerized, so this is a host
+> property, not a container one.
+
+Hmmm... does that mean you can't apply one policy to one container
+and another policy to another ?
+
+Anyway, it belongs to a 'global' section, that may have 2 parts:
+host and container. (Putting it between header and arch-header
+seems weird...)
+
+The header doesn't hold state, it is a declarative section about
+the properties of the original host (kernel and HW).
+
+Oren.
+
