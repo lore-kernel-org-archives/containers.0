@@ -1,13 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] cr: add generic LSM c/r support (v4)
-Date: Fri, 02 Oct 2009 16:57:51 -0400
-Message-ID: <4AC6694F.3050509@librato.com>
+Subject: Re: [PATCH 1/1] restart: accept the lsm_name field in header and
+	add	-k flag
+Date: Fri, 02 Oct 2009 17:02:54 -0400
+Message-ID: <4AC66A7E.60609@librato.com>
 References: <20091002034916.GA16871@us.ibm.com>
+	<20091002035157.GA16920@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002034916.GA16871-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091002035157.GA16920-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,352 +20,142 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
 Serge E. Hallyn wrote:
-> (wasn't versioning the patchsets before, so randomly pick 4 as
-> the version for this patchset...)
+> The checkpoint file header now has an 11-character string
+> containing the name of the active LSM, following the uts
+> info, and a variable length buffer type conaining LSM-specific
+> version information (for instance a sha1sum of policy).
+> Handle these.
 > 
-> Documentation/checkpoint/readme.txt begins:
-> """
-> Application checkpoint/restart is the ability to save the state
-> of a running application so that it can later resume its execution
-> from the time at which it was checkpointed.
-> """
+> Also add a -k (--keeplsm) flag to tell restart to set the
+> RESTART_KEEP_LSM flag to sys_restart().
 > 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-[...]
+A couple of comments below. Otherwise:
 
->  Kernel interfaces
->  =================
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index 1eeb557..6722035 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -25,6 +25,7 @@
->  #include <linux/magic.h>
->  #include <linux/hrtimer.h>
->  #include <linux/deferqueue.h>
-> +#include <linux/security.h>
->  #include <linux/checkpoint.h>
->  #include <linux/checkpoint_hdr.h>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+
+
+> ---
+>  restart.c |   32 +++++++++++++++++++++++++++++++-
+>  1 files changed, 31 insertions(+), 1 deletions(-)
+> 
+> diff --git a/restart.c b/restart.c
+> index b810ca9..44ae252 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -68,6 +68,7 @@ static char usage_str[] =
+>  "     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
+>  "                        to container root, SIGINT otherwise)\n"
+>  "  -w,--wait             wait for root task to termiate (default)\n"
+> +"  -k,--keeplsm          Try to recreate original LSM labels on all objects\n"
+>  "     --show-status      show exit status of root task (implies -w)\n"
+>  "     --copy-status      imitate exit status of root task (implies -w)\n"
+>  "  -W,--no-wait          do not wait for root task to terminate\n"
+> @@ -349,6 +350,8 @@ struct args {
+>  	char *input;
+>  };
 >  
-> @@ -351,6 +352,16 @@ static int checkpoint_write_header(struct ckpt_ctx *ctx)
->  	if (ret < 0)
->  		return ret;
->  
-> +	memset(ctx->lsm_name, 0, SECURITY_NAME_MAX + 1);
-> +	strlcpy(ctx->lsm_name, security_get_lsm_name(), SECURITY_NAME_MAX + 1);
-> +	ret = ckpt_write_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
-> +	if (ret < 0)
-> +		return ret;
+> +int keep_lsm;
+
+Can you please use 'struct args' for this ?
+	
 > +
-> +	ret = security_checkpoint_header(ctx);
-> +	if (ret < 0)
-> +		return ret;
-> +
-
-This is actually a case for a 'container-global' section that would
-appear after the header and before the rest of the image. (Would be
-useful also for network namespaces).
-
->  	return checkpoint_write_header_arch(ctx);
->  }
->  
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index 27e29a0..570facb 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -145,6 +145,19 @@ static int scan_fds(struct files_struct *files, int **fdtable)
->  	return n;
->  }
->  
-> +#ifdef CONFIG_SECURITY
-> +int checkpoint_file_security(struct ckpt_ctx *ctx, struct file *file)
-> +{
-> +	return security_checkpoint_obj(ctx, file->f_security,
-> +					CKPT_SECURITY_FILE);
-> +}
-> +#else
-> +int checkpoint_file_security(struct ckpt_ctx *ctx, struct file *file)
-> +{
-> +	return -EOPNOTSUPP;
-> +}
-> +#endif
-> +
->  int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
->  			   struct ckpt_hdr_file *h)
+>  static void usage(char *str)
 >  {
-> @@ -159,6 +172,16 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
->  	if (h->f_credref < 0)
->  		return h->f_credref;
+>  	fprintf(stderr, "%s", str);
+> @@ -377,6 +380,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  		{ "self",	no_argument,		NULL, 6},
+>  		{ "signal",	required_argument,	NULL, 4 },
+>  		{ "inspect",	no_argument,		NULL, 5 },
+> +		{ "keeplsm",	no_argument,		NULL, 'k' },
+>  		{ "input",	required_argument,	NULL, 'i' },
+>  		{ "root",	required_argument,	NULL, 'r' },
+>  		{ "wait",	no_argument,		NULL, 'w' },
+> @@ -388,7 +392,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  		{ "debug",	no_argument,		NULL, 'd' },
+>  		{ NULL,		0,			NULL, 0 }
+>  	};
+> -	static char optc[] = "hdvpPwWF:r:i:";
+> +	static char optc[] = "hdvpkPwWF:r:i:";
 >  
-> +	h->f_secref = checkpoint_file_security(ctx, file);
-> +	if (h->f_secref == -EOPNOTSUPP)
-> +		h->f_secref = -1;
-
-#define CKPT_SECURITY_NONE  -1     ??
-
-> +	else if (h->f_secref < 0)
-> +		return h->f_secref;
-
-[...]
-
-> +
-> +static int do_checkpoint_security(struct ckpt_ctx *ctx,
-> +				const struct ckpt_stored_lsm *l)
-> +{
-> +	int ret, len;
-> +	struct ckpt_hdr_lsm *h;
-> +
-> +	len = strlen(l->string);
-> +	if (len > PAGE_SIZE - sizeof(*h))
-> +		return -E2BIG;
-
-A call to ckpt_write_err() here may be useful.
-
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h)+len+1, CKPT_HDR_SEC);
-> +	if (!h)
-> +		return -ENOMEM;
-> +	h->len = len;
-> +	h->sectype = l->sectype;
-> +	strncpy(h->string, l->string, len);
-> +	h->string[len] = '\0';
-> +	ret = ckpt_write_obj(ctx, &h->h);
-> +	ckpt_hdr_put(ctx, h);
-> +	return ret;
-> +}
-> +
-> +static int checkpoint_security(struct ckpt_ctx *ctx, void *ptr)
-> +{
-> +	return do_checkpoint_security(ctx, (struct ckpt_stored_lsm *) ptr);
-> +}
-> +
-> +static struct ckpt_stored_lsm *do_restore_security(struct ckpt_ctx *ctx)
-> +{
-> +	struct ckpt_hdr_lsm *h;
-> +	struct ckpt_stored_lsm *l;
-> +
-> +	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_SEC);
-> +	if (IS_ERR(h))
-> +		return (struct ckpt_stored_lsm *)h;
-> +	if (h->len > h->h.len - sizeof(struct ckpt_hdr) ||
-> +				h->len > PAGE_SIZE) {
-
-The second test (for h->len > PAGE_SIZE) is unnecessary - already
-done in ckpt_read_buf_type()
-
-> +		ckpt_hdr_put(ctx, h);
-> +		return ERR_PTR(-EINVAL);
-> +	}
-> +	l = kzalloc(sizeof(*l), GFP_KERNEL);
-> +	if (!l) {
-> +		ckpt_hdr_put(ctx, h);
-> +		return ERR_PTR(-ENOMEM);
-
-Nit: this part is common... set ret = -ENOMEM and use goto ?
-
-[...]
-
-> @@ -608,14 +613,21 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
->  	 * referenced. See comment in checkpoint_task_objs.
->  	 */
->  	ret = restore_task_creds(ctx);
-> -	if (!ret)
-> -		ret = restore_task_ns(ctx);
-> -	if (ret < 0)
-> +	if (ret) {
-
-Nit: (ret < 0) helps (me) read it.
-
-> +		ckpt_debug("restore_task_creds returned %d", ret);
-> +		return ret;
-> +	}
-> +	ret = restore_task_ns(ctx);
-> +	if (ret) {
-> +		ckpt_debug("restore_task_ns returned %d", ret);
->  		return ret;
-> +	}
+>  	int sig;
 >  
->  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
-> -	if (IS_ERR(h))
-> +	if (IS_ERR(h)) {
-> +		ckpt_debug("Error fetching task obj");
->  		return PTR_ERR(h);
-> +	}
+> @@ -443,6 +447,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
+>  		case 'w':
+>  			args->wait = 1;
+>  			break;
+> +		case 'k':
+> +			keep_lsm = RESTART_KEEP_LSM;
+> +			break;
+>  		case 'W':
+>  			args->wait = 0;
+>  			break;
+> @@ -927,6 +934,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+>  	if (ctx->args->freezer)
+>  		flags |= RESTART_FROZEN;
 >  
->  	ret = restore_obj_file_table(ctx, h->files_objref);
->  	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index b12c8bd..bba2b45 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -457,6 +457,31 @@ static int restore_read_header(struct ckpt_ctx *ctx)
+> +	flags |= keep_lsm;
+>  	ret = restart(root_pid, STDIN_FILENO, flags);
+>  
+>  	if (ret < 0) {
+> @@ -1581,6 +1589,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+>  	if (task->flags & (TASK_GHOST | TASK_DEAD))
+>  		flags |= RESTART_GHOST;
+>  
+> +	flags |= keep_lsm;
+>  	/* on success this doesn't return */
+>  	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
+>  	ret = restart(0, STDIN_FILENO, flags);
+> @@ -2057,6 +2066,7 @@ static int ckpt_read_obj_buffer(struct ckpt_ctx *ctx, void *buf, int n)
+>   * read/write the checkpoint image: similar to in-kernel code
+>   */
+>  
+> +#define SECURITY_NAME_MAX 20
+
+Why is this ?  if it's kernel ABI then define in checkpoint_hdr.h,
+or include suitable header.
+
+>  static int ckpt_read_header(struct ckpt_ctx *ctx)
+>  {
+>  	struct ckpt_hdr_header *h;
+> @@ -2090,6 +2100,16 @@ static int ckpt_read_header(struct ckpt_ctx *ctx)
 >  	if (ret < 0)
->  		goto out;
+>  		return ret;
 >  
-> +	ret = _ckpt_read_buffer(ctx, ctx->lsm_name, SECURITY_NAME_MAX + 1);
+> +	ptr += ((struct ckpt_hdr *) ptr)->len;
+> +	ret = ckpt_read_obj_buffer(ctx, ptr, SECURITY_NAME_MAX + 1);
 > +	if (ret < 0)
-> +		goto out;
-> +	if (ctx->uflags & RESTART_KEEP_LSM) {
-> +		char *cur = security_get_lsm_name();
-> +		if (strncmp(cur, ctx->lsm_name, SECURITY_NAME_MAX + 1) != 0) {
-> +			pr_warning("c/r: checkpointed LSM %s, current is %s.\n",
-> +				ctx->lsm_name, cur);
-> +			ret = -EINVAL;
-
-EPERM ?
-
-[...]
-
-> @@ -277,6 +283,16 @@ struct ckpt_hdr_groupinfo {
->  	__u32 groups[0];
->  } __attribute__((aligned(8)));
+> +		return ret;
+> +
+> +	ptr += ((struct ckpt_hdr *) ptr)->len;
+> +	ret = ckpt_read_obj_type(ctx, ptr, 200, CKPT_HDR_LSM_INFO);
+> +	if (ret < 0)
+> +		return ret;
+> +
+>  	/* FIXME: skip version validation for now */
 >  
-> +struct ckpt_hdr_lsm {
-> +	struct ckpt_hdr h;
-> +	__u8 sectype;
-> +	__u16 len;
-
-Alignment ...
-
-> +	/*
-> +	 * This is followed by a string of size len+1,
-> +	 * null-terminated
-> +	 */
-> +	__u8 string[0];
-> +} __attribute__((aligned(8)));
->  /*
->   * todo - keyrings and LSM
->   * These may be better done with userspace help though
-> @@ -392,6 +408,8 @@ struct ckpt_hdr_file {
->  	__s32 f_credref;
->  	__u64 f_pos;
->  	__u64 f_version;
-> +	__s32 f_secref;
-> +	__u32 f_padding;
-
-No need for padding here.
-
->  } __attribute__((aligned(8)));
+>  	return 0;
+> @@ -2169,6 +2189,16 @@ static int ckpt_write_header(struct ckpt_ctx *ctx)
+>  	ptr += ((struct ckpt_hdr *) ptr)->len;
+>  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
 >  
->  struct ckpt_hdr_file_generic {
-> @@ -634,6 +652,8 @@ struct ckpt_hdr_ipc_perms {
->  	__u32 mode;
->  	__u32 _padding;
->  	__u64 seq;
-> +	__s32 sec_ref;
-> +	__u32 padding;
-
-Ditto.
-
-[...]
-
-> @@ -224,6 +234,16 @@ static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
->  	msg->next = NULL;
->  	pseg = &msg->next;
+> +	if (ret < 0)
+> +		return ret;
+> +	ptr += ((struct ckpt_hdr *) ptr)->len;
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ptr += ((struct ckpt_hdr *) ptr)->len;
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
+> +
+>  	return ret;
+>  }
 >  
-> +	if ((ctx->uflags & RESTART_KEEP_LSM) && (h->sec_ref != -1)) {
-> +		struct ckpt_stored_lsm *l = ckpt_obj_fetch(ctx, h->sec_ref,
-> +					CKPT_OBJ_SEC);
-> +		if (IS_ERR(l))
-> +			return (struct msg_msg *)l;
-
-That's a leak. Need to 'goto out' instead.
-
-> +		ret = security_msg_msg_restore(msg, l->string);
-> +		if (ret)
-> +			return ERR_PTR(ret);
-
-Here too.
-
-[...]
-
-> @@ -806,6 +815,15 @@ static struct cred *do_restore_cred(struct ckpt_ctx *ctx)
->  	ret = cred_setfsgid(cred, h->fsgid, &oldgid);
->  	if (oldgid != h->fsgid && ret < 0)
->  		goto err_putcred;
-> +	if ((ctx->uflags & RESTART_KEEP_LSM) && (h->sec_ref != -1)) {
-> +		struct ckpt_stored_lsm *l = ckpt_obj_fetch(ctx, h->sec_ref,
-> +					CKPT_OBJ_SEC);
-> +		if (IS_ERR(l))
-> +			return (struct cred *)l;
-
-And here too ?
-
-> +/**
-> + * security_checkpoint_obj - if first checkpoint of this void* security,
-> + * then 1. ask the LSM for a string representing the context, 2. checkpoint
-> + * that string
-> + * @ctx: the checkpoint context
-> + * @security: the void* security being checkpointed
-> + * @sectype: indicates the type of object, because LSMs can (and do) store
-> + * different types of data for different types of objects.
-> + *
-> + * Returns the objref of the checkpointed ckpt_stored_lsm representing the
-> + * context, or -error on error.
-> + *
-> + * This is only used at checkpoint of course.
-> + */
-> +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
-> +				unsigned sectype)
-> +{
-> +	int strref;
-> +	struct ckpt_stored_lsm *l;
-> +	char *str;
-> +	int len;
-> +
-> +	/*
-> +	 * to simplify the LSM code, short-cut a null security
-> +	 * here.
-> +	 */
-> +	if (!security)
-> +		return -EOPNOTSUPP;
-> +
-> +	switch (sectype) {
-> +	case CKPT_SECURITY_MSG_MSG:
-> +		str = security_msg_msg_checkpoint(security);
-> +		break;
-> +	case CKPT_SECURITY_IPC:
-> +		str = security_ipc_checkpoint(security);
-> +		break;
-> +	case CKPT_SECURITY_FILE:
-> +		str = security_file_checkpoint(security);
-> +		break;
-> +	case CKPT_SECURITY_CRED:
-> +		str = security_cred_checkpoint(security);
-> +		break;
-> +	default:
-> +		str = ERR_PTR(-EINVAL);
-> +		break;
-> +	}
-> +	/* str will be alloc'ed for us by the LSM.  We will free it when
-> +	 * we clear out our hashtable */
-> +	if (IS_ERR(str))
-> +		return PTR_ERR(str);
-> +
-> +	len = strlen(str);
-> +	l = kzalloc(sizeof(*l) + len + 1, GFP_KERNEL);
-
-Probably a dumb question: why do you allocate with the size of
-the string when it merely points to the string ?
-
-> +	if (!l) {
-> +		kfree(str);
-> +		return -ENOMEM;
-> +	}
-> +	kref_init(&l->kref);
-> +	l->sectype = sectype;
-> +	l->string = str;
-> +
-> +	strref = checkpoint_obj(ctx, l, CKPT_OBJ_SEC);
-> +	/* do we need to free l if strref was err? */
-> +	return strref;
-> +}
-> +
-> +#endif
-
-Oren.
