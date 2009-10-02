@@ -1,14 +1,20 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] Fix compile issue with CONFIG_CHECKPOINT=n for inet
-	sockets
-Date: Fri, 02 Oct 2009 14:31:07 -0400
-Message-ID: <4AC646EB.3050802@librato.com>
-References: <1254476123-4939-1-git-send-email-matthltc@us.ibm.com>
+From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Fri, 02 Oct 2009 20:33:17 +0200
+Message-ID: <1254508397.8667.24.camel__38725.049471441$1254508722$gmane$org@marge.simson.net>
+References: <20091002145610.GD31616@kernel.dk>
+	<alpine.LFD.2.01.0910020811490.6996@localhost.localdomain>
+	<20091002171129.GG31616@kernel.dk> <20091002172046.GA2376@elte.hu>
+	<20091002172554.GJ31616@kernel.dk> <20091002172842.GA4884@elte.hu>
+	<20091002173732.GK31616@kernel.dk> <20091002175629.GA14860@elte.hu>
+	<20091002180437.GL31616@kernel.dk>
+	<1254507754.8667.15.camel@marge.simson.net>
+	<20091002182608.GO31616@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1254476123-4939-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091002182608.GO31616-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,33 +24,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ClF1ZXVlZCB0byBja3B0LXYxOC1kZXYuCgoKTWF0dCBIZWxzbGV5IHdyb3RlOgo+IFdoZW4gSSBk
-aXNhYmxlIENIRUNLUE9JTlQgSSBnZXQ6Cj4gCj4gCW5ldC9pcHY0L2FmX2luZXQuYzo4NjA6IGVy
-cm9yOiDigJhpbmV0X2NoZWNrcG9pbnTigJkgdW5kZWNsYXJlZCBoZXJlIChub3QgaW4gYSBmdW5j
-dGlvbikKPiAJbmV0L2lwdjQvYWZfaW5ldC5jOjg2MTogZXJyb3I6IOKAmGluZXRfcmVzdG9yZeKA
-mSB1bmRlY2xhcmVkIGhlcmUgKG5vdCBpbiBhIGZ1bmN0aW9uKQo+IAluZXQvaXB2NC9hZl9pbmV0
-LmM6ODYyOiBlcnJvcjog4oCYaW5ldF9jb2xsZWN04oCZIHVuZGVjbGFyZWQgaGVyZSAobm90IGlu
-IGEgZnVuY3Rpb24pCj4gCj4gU2ltaWxhciB0byBwcm9ibGVtIHdpdGggdW5peCBzb2NrZXRzLiBU
-aGUgc29sdXRpb24gaXMgdGhlIHNhbWUgYXMgd2VsbC4KPiAKPiBTaWduZWQtb2ZmLWJ5OiBNYXR0
-IEhlbHNsZXkgPG1hdHRobHRjQHVzLmlibS5jb20+Cj4gQ2M6IERhbiBTbWl0aCA8ZGFubXNAdXMu
-aWJtLmNvbT4KPiAtLS0KPiAgaW5jbHVkZS9uZXQvaW5ldF9jb21tb24uaCB8ICAgIDQgKysrKwo+
-ICAxIGZpbGVzIGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKSwgMCBkZWxldGlvbnMoLSkKPiAKPiBk
-aWZmIC0tZ2l0IGEvaW5jbHVkZS9uZXQvaW5ldF9jb21tb24uaCBiL2luY2x1ZGUvbmV0L2luZXRf
-Y29tbW9uLmgKPiBpbmRleCA3YWRlNzMyLi5iZjA0ZTZlIDEwMDY0NAo+IC0tLSBhL2luY2x1ZGUv
-bmV0L2luZXRfY29tbW9uLmgKPiArKysgYi9pbmNsdWRlL25ldC9pbmV0X2NvbW1vbi5oCj4gQEAg
-LTUyLDYgKzUyLDEwIEBAIGV4dGVybiBpbnQgaW5ldF9jaGVja3BvaW50KHN0cnVjdCBja3B0X2N0
-eCAqY3R4LCBzdHJ1Y3Qgc29ja2V0ICpzb2NrKTsKPiAgZXh0ZXJuIGludCBpbmV0X2NvbGxlY3Qo
-c3RydWN0IGNrcHRfY3R4ICpjdHgsIHN0cnVjdCBzb2NrZXQgKnNvY2spOwo+ICBleHRlcm4gaW50
-IGluZXRfcmVzdG9yZShzdHJ1Y3QgY2twdF9jdHggKmNmdHgsIHN0cnVjdCBzb2NrZXQgKnNvY2ss
-Cj4gIAkJCXN0cnVjdCBja3B0X2hkcl9zb2NrZXQgKmgpOwo+ICsjZWxzZQo+ICsjZGVmaW5lIGlu
-ZXRfY2hlY2twb2ludCBOVUxMCj4gKyNkZWZpbmUgaW5ldF9jb2xsZWN0IE5VTEwKPiArI2RlZmlu
-ZSBpbmV0X3Jlc3RvcmUgTlVMTAo+ICAjZW5kaWYgLyogQ09ORklHX0NIRUNLUE9JTlQgKi8KPiAg
-Cj4gIHN0YXRpYyBpbmxpbmUgdm9pZCBpbmV0X2N0bF9zb2NrX2Rlc3Ryb3koc3RydWN0IHNvY2sg
-KnNrKQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
-YWluZXJz
+On Fri, 2009-10-02 at 20:26 +0200, Jens Axboe wrote:
+> On Fri, Oct 02 2009, Mike Galbraith wrote:
+> > On Fri, 2009-10-02 at 20:04 +0200, Jens Axboe wrote:
+> > 
+> > > I'm not too crazy about it either. How about just using 'desktop' since
+> > > this is obviously what we are really targetting? 'latency' isn't fully
+> > > descriptive either, since it may not necessarily provide the best single
+> > > IO latency (noop would).
+> > 
+> > Grin. "Perfect is the enemy of good" :)
+> >                                                   Avg
+> >      16.24   175.82   154.38   228.97   147.16  144.5     noop
+> >      43.23    57.39    96.13   148.25   180.09  105.0     deadline
+> 
+> Yep, that's where it falls down. Noop basically fails here because it
+> treats all IO as equal, which obviously isn't true for most people. But
+> even for pure read workloads (is the above the mixed read/write, or just
+> read?), latency would be excellent with noop but the desktop experience
+> would not.
+
+Yeah, it's the dd vs konsole -e exit.
+
+	-Mike
