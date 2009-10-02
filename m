@@ -1,17 +1,17 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Subject: Re: [PATCH 2/2] Add checkpoint/restart support for epoll files.
-Date: Fri, 02 Oct 2009 17:18:30 -0400
-Message-ID: <4AC66E26.4020309@librato.com>
+Date: Fri, 02 Oct 2009 17:22:16 -0400
+Message-ID: <4AC66F08.6050405@librato.com>
 References: <1254164482-2193-2-git-send-email-matthltc@us.ibm.com>
 	<4AC29086.8080407@librato.com>
 	<20091002093050.GA4189@count0.beaverton.ibm.com>
-	<4AC644C8.2070905@librato.com> <4AC656A8.8070103@librato.com>
-	<20091002203609.GD4189@count0.beaverton.ibm.com>
+	<4AC644C8.2070905@librato.com>
+	<20091002202726.GC4189@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002203609.GD4189-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20091002202726.GC4189-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,36 +28,40 @@ List-Id: containers.vger.kernel.org
 
 
 Matt Helsley wrote:
-> On Fri, Oct 02, 2009 at 03:38:16PM -0400, Oren Laadan wrote:
->>>>> I should probably change the code elsewhere too, but this test
->>>>> is unnecessary because ckpt_obj_fetch() will complain anyway.
->>>> I don't think it will complain since I don't see anything in the read or hash
->>>> code that checks for negative objrefs. However moving this into
->>> What is "this" that you want to move ?
->>>
->>>> ckpt_obj_fetch() would get rid of alot of code much like passing NULL into
->>>> kfree() does, so I'll remove this test.
->>> ckpt_obj_fetch() won't complain about a negative value a-priori, but
->>> the search is certain to fail. Nevertheless, I'll tighten the restart
->>> related calls in objhash to ensure that.
->> I take it back:  ckpt_obj_fetch() returns -EINVAL when an objref isn't
->> found, not that the original value was invalid.
+
+[...]
+
+>>>> s/ckpt_obj_collect/ckpt_collect_file/
+>>> OK. Seems like we might recurse here though if the file is an epoll
+>>> file and there's a cycle in the epoll sets (e.g. epoll set A includes the fd
+>>> for epoll set B, epoll set B includes the fd for epoll set A).
+>>> So I think I'll do:
+>> I doubt if an epoll file can epoll an epoll file ...
+>> (eg. see line 1265 in fs/eventpoll.c)
 > 
-> Right, so then the question is whether it's possible to insert a negative
-> objref by modifying the checkpoint image before restart. As far as I can tell
-> that will work. Are you saying we don't need to care about that?
+> I am certain it can. The testcase I have proves it and the man page mentions
+> it too. Since it has a poll op I believe it can be epoll'd (line 691 of
+> fs/eventpoll.c).
+> 
+> I haven't double checked, but I believe the line you cited just prevents the
+> epoll set from including its own fd.
 
-You are correct, and I said I'll fix that ("Nevertheless..."). Fix
-is queued already for ckpt-v18-dev.
+Duh ... you are totally correct. Sorry for the noise.
 
-I took back the incorrect suggestion that it's ok to _always_ let
-ckpt_obj_fetch() do the work, as it depends on the context:
+[...]
 
-- if you use it to fetch an object you expect to already have been
-inserted, then it's good enough.
+>>> Otherwise I wonder if it would be better to join the prefmt and fmt
+>>> strings by just defining our own, new, conversion specifiers.
+>>>
+>> Thought about it, but that would limit us in the conversion specifiers
+>> that we can use, because many are used by printf already. Perhaps one
+>> way to do it is use
+>> 	"%Zxyz"
+>> where "%Z" tells the following letters indicate a ckpt_write_err()
+>> format, and then "xyz" are the letters from the current @prefmt.
+> 
+> Would %( work better? The ( suggests that there's more to it.
 
-- if you use it to fetch an object to decide if it's the first
-encounter of that object, then you need to explicitly test for
-invalid @objref before calling ckpt_obj_fetch().
+Sounds cool. Care to work out the details with a patch ?
 
 Oren.
