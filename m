@@ -1,13 +1,12 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] user-cr: Extract headers from kernel source tree.
-Date: Sat, 03 Oct 2009 16:40:41 -0500
-Message-ID: <1254606041.2928.3.camel@localhost.localdomain>
-References: <1254554424-2979-2-git-send-email-matthltc@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH] c/r: threads sync on restart (fix regression from commit
+	afbe522c...)
+Date: Sat,  3 Oct 2009 18:53:42 -0400
+Message-ID: <1254610422-11441-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1254554424-2979-2-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,24 +16,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 2009-10-03 at 00:20 -0700, Matt Helsley wrote:
-> Sanitize kernel headers for userspace by extracting non-__KERNEL__
-> portions of the various checkpoint headers and placing them in a
-> similar organization of userspace headers.
-> 
-> The script is run from the top level of the user-cr source tree like:
-> 
-> 	./scripts/extract-headers.sh -s <path-to-kern-source> -o ./include
-> 
-> The patch includes a copy of the auto-generated headers and adjusts
-> the user-cr programs to use them.
+Initialize the new member signal->restart_count in copy_signal().
 
-I appreciate the effort put into this, but why isn't the
-"headers_install" target of the kernel Makefile sufficient to produce
-headers that are usable by userspace?  So far as I know, other projects
-with complex kernel/user interfaces (e.g. kvm) haven't had to resort to
-special-purpose programs like this.
+The lack of which in commit afbe522ccf6b1deb5edfc01a00becfe6ee325d0c,
+c/r: let entire thread group in sys_restart before restoring a thread,
+can cause run-pthreads1.sh test failure.
+
+In this patch are two other small cleanups:
+
+1) In post_restore_task() test if current->checkpoint_data is valid,
+and return immediately if not (meaning restart failed early).
+
+2) Replace two instances of DECLARE_WAIT_QUEUE_HEAD(waitq) with
+DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq), to please the lockdep checked.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ checkpoint/process.c |    4 ++++
+ checkpoint/restart.c |    4 ++--
+ kernel/fork.c        |    4 ++++
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index c2832fe..424f688 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -847,6 +847,10 @@ int pre_restore_task(struct ckpt_ctx *ctx)
+ /* pre_restore_task - prepare the task for restore */
+ void post_restore_task(struct ckpt_ctx *ctx)
+ {
++	/* can happen if restart failed early */
++	if (!current->checkpoint_data)
++		return;
++
+ 	/* only now is it safe to unblock the restored task's signals */
+ 	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
+ 
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index b2dc139..3a58a76 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -821,7 +821,7 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
+ /* grabs a reference to the @ctx on success; caller should free */
+ static struct ckpt_ctx *wait_checkpoint_ctx(void)
+ {
+-	DECLARE_WAIT_QUEUE_HEAD(waitq);
++	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
+ 	struct ckpt_ctx *ctx;
+ 	int ret;
+ 
+@@ -912,7 +912,7 @@ static int wait_sync_threads(void)
+ 			wake_up_process(p);
+ 		read_unlock(&tasklist_lock);
+ 	} else {
+-		DECLARE_WAIT_QUEUE_HEAD(waitq);
++		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
+ 		ret = wait_event_interruptible(waitq, !atomic_read(count));
+ 	}
+ 
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 0e226f5..04dffe9 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -865,6 +865,10 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+ 
+ 	tty_audit_fork(sig);
+ 
++#ifdef CONFIG_CHECKPOINT
++	atomic_set(&sig->restart_count, 0);
++#endif
++
+ 	return 0;
+ }
+ 
+-- 
+1.6.0.4
