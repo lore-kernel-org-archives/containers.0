@@ -1,14 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Review: Can we move init_restart_ctx() up ?
-Date: Fri, 2 Oct 2009 18:48:58 -0700
-Message-ID: <20091003014858.GA20762@us.ibm.com>
-References: <20091002051456.GA6684@us.ibm.com> <4AC645D2.7030409@librato.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: pidns : PR_SET_PDEATHSIG + SIGKILL regression
+Date: Sat, 3 Oct 2009 04:52:30 +0200
+Message-ID: <20091003025200.GA18478@redhat.com>
+References: <4AC608BE.9020805@fr.ibm.com> <20091002154702.GB26864@us.ibm.com>
+	<20091003003929.GA20034@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AC645D2.7030409-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091003003929.GA20034-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
-| 
-| 
-| Sukadev Bhattiprolu wrote:
-| > 
-| > Would it be easier/cleaner if we initialized the restart ctx soon after
-| > allocating it ? Looks like we already have the information we need at that
-| > point.
-| > 
-| > That way, do_restart() won't need the 'pid' parameter and we anyway use
-| > the 'if(ctx)' check to test for the coordinator.
-| 
-| I put the {checkpoint,restart}-related work in {checkpoint,restart}.c,
-| and leave sys.c "neutral".
-| 
-| I also like the symmetry between do_checkpoint() and do_restart() :p
-| 
-| > BTW, can we move the '->active_pid = -1' in init_restart_ctx() to
-| > ckpt_ctx_alloc() itself ?
-| 
-| @active_pid is specific to restart, that's why I initialize it there.
+On 10/02, Sukadev Bhattiprolu wrote:
+>
+> --- linux-2.6.orig/kernel/exit.c	2009-10-02 16:36:47.000000000 -0700
+> +++ linux-2.6/kernel/exit.c	2009-10-02 17:19:06.000000000 -0700
+> @@ -738,8 +738,19 @@ static struct task_struct *find_new_reap
+>  static void reparent_thread(struct task_struct *father, struct task_struct *p,
+>  				struct list_head *dead)
+>  {
+> -	if (p->pdeath_signal)
+> -		group_send_sig_info(p->pdeath_signal, SEND_SIG_NOINFO, p);
+> +	struct siginfo info;
+> +
+> +	if (p->pdeath_signal) {
+> +		info.si_signo = p->pdeath_signal;
+> +		info.si_errno = 0;
+> +
+> +		rcu_read_lock();
+> +		info.si_pid = task_pid_nr_ns(father, task_active_pid_ns(p));
+> +		info.si_uid = __task_cred(father)->uid;
+> +		rcu_read_unlock();
+> +
+> +		group_send_sig_info(p->pdeath_signal, &info, p);
+> +	}
 
-Ok. Spreading out the initialization code over different functions is a bit
-confusing.  Maybe we could call init_checkpoint_ctx() or init_restart_ctx()
-from ckpt_ctx_alloc() (depending on the kflags parameter) - and keep the
-symmetry/nuetrality, But not a big deal.
+This patch forgets to set "info.si_code = SI_USER", this means SI_FROMXXX()
+will return the random value.
 
-Thanks,
+Imho it would be more clean to move the declaration of "info" under
+"if (pdeath_signal)".
 
-Sukadev
+Actually, perhaps we should consider SEND_SIG_NOINFO as SI_FROMUSER().
+I'll try to check tomorrow.
+
+Oleg.
