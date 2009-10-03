@@ -1,12 +1,14 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH] c/r: threads sync on restart (fix regression from commit
-	afbe522c...)
-Date: Sat,  3 Oct 2009 18:53:42 -0400
-Message-ID: <1254610422-11441-1-git-send-email-orenl@librato.com>
+Subject: Re: [PATCH] user-cr: Update readme.txt to reflect changed program
+	names
+Date: Sat, 03 Oct 2009 19:18:05 -0400
+Message-ID: <4AC7DBAD.4070806@librato.com>
+References: <1254554424-2979-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1254554424-2979-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,81 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Initialize the new member signal->restart_count in copy_signal().
 
-The lack of which in commit afbe522ccf6b1deb5edfc01a00becfe6ee325d0c,
-c/r: let entire thread group in sys_restart before restoring a thread,
-can cause run-pthreads1.sh test failure.
 
-In this patch are two other small cleanups:
+Matt Helsley wrote:
+> ckpt got renamed to checkpoint, rstr got renamed to self_restart,
+> and mktree got renamed to restart. The readme should reflect this
+> change in the code.
+> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-1) In post_restore_task() test if current->checkpoint_data is valid,
-and return immediately if not (meaning restart failed early).
+Got it. (Modified a bit to mention what's in contrib/ and test/)
 
-2) Replace two instances of DECLARE_WAIT_QUEUE_HEAD(waitq) with
-DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq), to please the lockdep checked.
+Oren.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/process.c |    4 ++++
- checkpoint/restart.c |    4 ++--
- kernel/fork.c        |    4 ++++
- 3 files changed, 10 insertions(+), 2 deletions(-)
-
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index c2832fe..424f688 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -847,6 +847,10 @@ int pre_restore_task(struct ckpt_ctx *ctx)
- /* pre_restore_task - prepare the task for restore */
- void post_restore_task(struct ckpt_ctx *ctx)
- {
-+	/* can happen if restart failed early */
-+	if (!current->checkpoint_data)
-+		return;
-+
- 	/* only now is it safe to unblock the restored task's signals */
- 	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
- 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index b2dc139..3a58a76 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -821,7 +821,7 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
- /* grabs a reference to the @ctx on success; caller should free */
- static struct ckpt_ctx *wait_checkpoint_ctx(void)
- {
--	DECLARE_WAIT_QUEUE_HEAD(waitq);
-+	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
- 	struct ckpt_ctx *ctx;
- 	int ret;
- 
-@@ -912,7 +912,7 @@ static int wait_sync_threads(void)
- 			wake_up_process(p);
- 		read_unlock(&tasklist_lock);
- 	} else {
--		DECLARE_WAIT_QUEUE_HEAD(waitq);
-+		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
- 		ret = wait_event_interruptible(waitq, !atomic_read(count));
- 	}
- 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 0e226f5..04dffe9 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -865,6 +865,10 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
- 
- 	tty_audit_fork(sig);
- 
-+#ifdef CONFIG_CHECKPOINT
-+	atomic_set(&sig->restart_count, 0);
-+#endif
-+
- 	return 0;
- }
- 
--- 
-1.6.0.4
+> ---
+>  readme.txt |   12 ++++++------
+>  1 files changed, 6 insertions(+), 6 deletions(-)
+> 
+> diff --git a/readme.txt b/readme.txt
+> index ee5e865..10ccc97 100644
+> --- a/readme.txt
+> +++ b/readme.txt
+> @@ -10,23 +10,23 @@ self.c: a simple program doing self-checkpoint
+>    running it:
+>  	$ ./self > out.self
+>  
+> -ckpt.c: a program to do external checkpoint of other process(es)
+> +checkpoint.c: a program to do external checkpoint of other process(es)
+>    Run with a single argument which is the pid of the target
+>    process (container init), in the current pid namespace. The
+>    checkpoint image is written to standard output.
+> -	$ ./ckpt PID > out.ckpt
+> +	$ ./checkpoint PID > out.ckpt
+>  
+> -rstr.c: a program to restart from a checkpoint of a single process
+> +self_restart.c: a program to restart from a checkpoint of a single process
+>    It restarts the process, but does not restore the original pid of
+>    the process. Redirect standard input from the checkpoint image.
+> -	$ ./rstr < out.ckpt
+> +	$ ./self_restart < out.ckpt
+>  
+> -mktree.c: a program to restart from a checkpoint of multiple processes
+> +restart.c: a program to restart from a checkpoint of multiple processes
+>    It first creates the process tree and then restarts the process. By
+>    default it does not restore the original pids of the processes (will
+>    be added in the future). Redirect standard input from the checkpoint
+>    image.
+> -	$ ./mktree --no-pids < out.ckpt
+> +	$ ./restart --no-pids < out.ckpt
+>  	
+>  
+>  TEST PROGRAMS:
