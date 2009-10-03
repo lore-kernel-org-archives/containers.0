@@ -1,8 +1,8 @@
 From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
 Subject: Re: Do not overload dispatch queue (Was: Re: IO scheduler based IO
 	controller V10)
-Date: Sat, 03 Oct 2009 16:33:16 +0200
-Message-ID: <1254580396.8293.3.camel__5443.56740215353$1254580539$gmane$org@marge.simson.net>
+Date: Sat, 03 Oct 2009 16:51:36 +0200
+Message-ID: <1254581496.8293.8.camel__29081.8271613263$1254581636$gmane$org@marge.simson.net>
 References: <20091002173732.GK31616@kernel.dk>
 	<1254507215.8667.7.camel@marge.simson.net>
 	<20091002181903.GN31616@kernel.dk>
@@ -48,6 +48,8 @@ On Sat, 2009-10-03 at 16:28 +0200, Jens Axboe wrote:
 > Can you test the current line up of patches in for-linus? It has the
 > ramp up I talked about included as well.
 
-Sure.  I'll go find it.
+Well, it hasn't hit git.kernel.org yet, it's at...
+
+* block-for-linus        1d22351 cfq-iosched: add a knob for desktop interactiveness
 
 	-Mike
