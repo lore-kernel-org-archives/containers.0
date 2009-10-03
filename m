@@ -1,21 +1,19 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+From: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: IO scheduler based IO controller V10
-Date: Sat, 03 Oct 2009 11:00:34 +0200
-Message-ID: <1254560434.17052.14.camel__12302.9512972154$1254560572$gmane$org@marge.simson.net>
+Date: Sat, 3 Oct 2009 11:01:35 +0200
+Message-ID: <4e5e476b0910030201k23760da4ke7d6d08662382cf1__35433.4890064367$1254560660$gmane$org@mail.gmail.com>
 References: <alpine.LFD.2.01.0910020811490.6996@localhost.localdomain>
-	<20091002171129.GG31616@kernel.dk> <20091002172046.GA2376@elte.hu>
-	<20091002172554.GJ31616@kernel.dk> <20091002172842.GA4884@elte.hu>
-	<20091002173732.GK31616@kernel.dk>
+	<20091002172046.GA2376@elte.hu> <20091002172554.GJ31616@kernel.dk>
+	<20091002172842.GA4884@elte.hu> <20091002173732.GK31616@kernel.dk>
 	<1254507215.8667.7.camel@marge.simson.net>
 	<20091002181903.GN31616@kernel.dk>
 	<1254548931.8299.18.camel@marge.simson.net>
-	<1254549378.8299.21.camel@marge.simson.net>
-	<20091003072401.GV31616@kernel.dk>
+	<20091003072021.GB21407@elte.hu> <20091003072540.GW31616@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091003072401.GV31616-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+In-Reply-To: <20091003072540.GW31616-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,26 +24,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 2009-10-03 at 09:24 +0200, Jens Axboe wrote:
-
-> After shutting down the computer yesterday, I was thinking a bit about
-> this issue and how to solve it without incurring too much delay. If we
-> add a stricter control of the depth, that may help. So instead of
-> allowing up to max_quantum (or larger) depths, only allow gradual build
-> up of that the farther we get away from a dispatch from the sync IO
-> queues. For example, when switching to an async or seeky sync queue,
-> initially allow just 1 in flight. For the next round, if there still
-> hasn't been sync activity, allow 2, then 4, etc. If we see sync IO queue
-> again, immediately drop to 1.
-> 
-> It could tie in with (or partly replace) the overload feature. The key
-> to good latency and decent throughput is knowing when to allow queue
-> build up and when not to.
-
-Hm.  Starting at 1 sounds a bit thin (like IDLE), multiple iterations to
-build/unleash any sizable IO, but that's just my gut talking.
-
-	-Mike
+SGkgSmVucywKT24gU2F0LCBPY3QgMywgMjAwOSBhdCA5OjI1IEFNLCBKZW5zIEF4Ym9lIDxqZW5z
+LmF4Ym9lQG9yYWNsZS5jb20+IHdyb3RlOgo+IE9uIFNhdCwgT2N0IDAzIDIwMDksIEluZ28gTW9s
+bmFyIHdyb3RlOgo+Pgo+PiAqIE1pa2UgR2FsYnJhaXRoIDxlZmF1bHRAZ214LmRlPiB3cm90ZToK
+Pj4KPj4gPiDCoCDCoCB1bnNpZ25lZCBpbnQgY2ZxX2Rlc2t0b3A7Cj4+ID4gKyDCoCB1bnNpZ25l
+ZCBpbnQgY2ZxX2Rlc2t0b3BfZGlzcGF0Y2g7Cj4+Cj4+ID4gLSDCoCBpZiAoY2ZxX2NmcXFfaWRs
+ZV93aW5kb3coY2ZxcSkgJiYgY2ZxZC0+cnFfaW5fZHJpdmVyW0JMS19SV19BU1lOQ10pCj4+ID4g
+KyDCoCBpZiAoY2ZxX2NmcXFfaWRsZV93aW5kb3coY2ZxcSkgJiYgY2ZxZC0+cnFfaW5fZHJpdmVy
+W0JMS19SV19BU1lOQ10pIHsKPj4gPiArIMKgIMKgIMKgIMKgIMKgIGNmcWQtPmRlc2t0b3BfZGlz
+cGF0Y2hfdHMgPSBqaWZmaWVzOwo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIHJldHVybiAwOwo+PiA+
+ICsgwqAgfQo+Pgo+PiBidHcuLCBpIGhvcGUgYWxsIHRob3NlIGRlc2t0b3BfIHRoaW5ncyB3aWxs
+IGJlIG5hbWVkIGxhdGVuY3lfIHByZXR0eQo+PiBzb29uIGFzIHRoZSBjb25zZW5zdXMgc2VlbXMg
+dG8gYmUgLSB0aGUgd29yZCAnZGVza3RvcCcgZmVlbHMgc28gd3JvbmcgaW4KPj4gdGhpcyBjb250
+ZXh0Lgo+Pgo+PiAnZGVza3RvcCcgaXMgYSBmb3JtIG9mIHVzZSBvZiBjb21wdXRlcnMgYW5kIHRo
+ZSBpbXBsaWNhdGlvbiBvZiBnb29kCj4+IGxhdGVuY2llcyBnb2VzIGZhciBiZXlvbmQgdGhhdCBj
+YXRlZ29yeSBvZiBzeXN0ZW1zLgo+Cj4gSSB3aWxsIHJlbmFtZSBpdCwgZm9yIG5vdyBpdCBkb2Vz
+bid0IG1hdHRlciAobGV0cyBub3QgZ2V0IGJvZ2dlZCBkb3duIGluCj4gYmlrZSBzaGVkIGNvbG9y
+cywgcGxlYXNlKS4KPgo+IE9oIGFuZCBNaWtlLCBJIGZvcmdvdCB0byBtZW50aW9uIHRoaXMgaW4g
+dGhlIHByZXZpb3VzIGVtYWlsIC0gbm8gbW9yZQo+IHR1bmFibGVzLCBwbGVhc2UuIFdlJ2xsIGtl
+ZXAgdGhpcyB1bmRlciBhIHNpbmdsZSBrbm9iLgoKRGlkIHlvdSBoYXZlIGEgbG9vayBhdCBteSBo
+dHRwOi8vcGF0Y2h3b3JrLmtlcm5lbC5vcmcvcGF0Y2gvNDc3NTAvID8KSXQgYWxyZWFkeSBpbnRy
+b2R1Y2VzIGEgJ3RhcmdldF9sYXRlbmN5JyB0dW5hYmxlLCBleHByZXNzZWQgaW4gbXMuCgpJZiB3
+ZSBjYW4gcXVhbnRpZnkgdGhlIGJlbmVmaXRzIG9mIGVhY2ggdGVjaG5pcXVlLCB3ZSBjb3VsZCBl
+bmFibGUKdGhlbSBiYXNlZCBvbiB0aGUgdGFyZ2V0IGxhdGVuY3kgcmVxdWVzdGVkIGJ5IHRoYXQg
+c2luZ2xlIHR1bmFibGUuCgpDb3JyYWRvCgo+Cj4gLS0KPiBKZW5zIEF4Ym9lCj4KPiAtLQo+IFRv
+IHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBs
+aW51eC1rZXJuZWwiIGluCj4gdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2Vy
+Lmtlcm5lbC5vcmcKPiBNb3JlIG1ham9yZG9tbyBpbmZvIGF0IMKgaHR0cDovL3ZnZXIua2VybmVs
+Lm9yZy9tYWpvcmRvbW8taW5mby5odG1sCj4gUGxlYXNlIHJlYWQgdGhlIEZBUSBhdCDCoGh0dHA6
+Ly93d3cudHV4Lm9yZy9sa21sLwo+CgoKCi0tIApfX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwoKZG90dC4gQ29y
+cmFkbyBab2Njb2xvICAgICAgICAgICAgICAgICAgICAgICAgICBtYWlsdG86Y3pvY2NvbG9AZ21h
+aWwuY29tClBoRCAtIERlcGFydG1lbnQgb2YgQ29tcHV0ZXIgU2NpZW5jZSAtIFVuaXZlcnNpdHkg
+b2YgUGlzYSwgSXRhbHkKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
