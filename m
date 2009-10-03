@@ -1,7 +1,7 @@
 From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
 Subject: Re: IO scheduler based IO controller V10
-Date: Sat, 03 Oct 2009 07:48:51 +0200
-Message-ID: <1254548931.8299.18.camel__34133.696408435$1254549091$gmane$org@marge.simson.net>
+Date: Sat, 03 Oct 2009 07:56:18 +0200
+Message-ID: <1254549378.8299.21.camel__35850.2825176858$1254549428$gmane$org@marge.simson.net>
 References: <20091002092839.GA26962@kernel.dk>
 	<alpine.LFD.2.01.0910020715160.6996@localhost.localdomain>
 	<20091002145610.GD31616@kernel.dk>
@@ -11,11 +11,12 @@ References: <20091002092839.GA26962@kernel.dk>
 	<20091002173732.GK31616@kernel.dk>
 	<1254507215.8667.7.camel@marge.simson.net>
 	<20091002181903.GN31616@kernel.dk>
+	<1254548931.8299.18.camel@marge.simson.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091002181903.GN31616-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+In-Reply-To: <1254548931.8299.18.camel-YqMYhexLQo1vAv1Ojkdn7Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,25 +30,25 @@ To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2009-10-02 at 20:19 +0200, Jens Axboe wrote:
-
-> If you could do a cleaned up version of your overload patch based on
-> this:
+On Sat, 2009-10-03 at 07:49 +0200, Mike Galbraith wrote:
+> On Fri, 2009-10-02 at 20:19 +0200, Jens Axboe wrote:
 > 
-> http://git.kernel.dk/?p=linux-2.6-block.git;a=commit;h=1d2235152dc745c6d94bedb550fea84cffdbf768
-> 
-> then lets take it from there.
+> > If you could do a cleaned up version of your overload patch based on
+> > this:
+> > 
+> > http://git.kernel.dk/?p=linux-2.6-block.git;a=commit;h=1d2235152dc745c6d94bedb550fea84cffdbf768
+> > 
+> > then lets take it from there.
 
-If take it from there ends up meaning apply, and see who squeaks, feel
-free to delete the "Not", and my somewhat defective sense of humor.
+Note to self: build the darn thing after last minute changes.
 
 Block:  Delay overloading of CFQ queues to improve read latency.
 
 Introduce a delay maximum dispatch timestamp, and stamp it when:
-	1. we encounter a known seeky or possibly new sync IO queue.
-	2. the current queue may go idle and we're draining async IO.
-	3. we have sync IO in flight and are servicing an async queue.
-	4  we are not the sole user of disk.
+        1. we encounter a known seeky or possibly new sync IO queue.
+        2. the current queue may go idle and we're draining async IO.
+        3. we have sync IO in flight and are servicing an async queue.
+        4  we are not the sole user of disk.
 Disallow exceeding quantum if any of these events have occurred recently.
 
 Protect this behavioral change with a "desktop_dispatch" knob and default
@@ -59,8 +60,6 @@ Cc: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Cc: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ... others who let somewhat hacky tweak slip by
-
-LKML-Reference: <new-submission>
 
 ---
  block/cfq-iosched.c |   45 +++++++++++++++++++++++++++++++++++++++++----
