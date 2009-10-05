@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: threads sync on restart (fix regression from
-	commit afbe522c...)
-Date: Sun, 4 Oct 2009 22:28:11 -0500
-Message-ID: <20091005032811.GA32201@us.ibm.com>
-References: <1254610422-11441-1-git-send-email-orenl@librato.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Mon, 05 Oct 2009 19:38:08 +0900 (JST)
+Message-ID: <20091005.193808.104033719.ryov__43436.4459630617$1254739244$gmane$org@valinux.co.jp>
+References: <20091001133109.GA4058@redhat.com>
+	<20091002025731.GA2738@redhat.com> <4AC6623F.70600@ds.jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1254610422-11441-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4AC6623F.70600-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,89 +18,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> Initialize the new member signal->restart_count in copy_signal().
-> 
-> The lack of which in commit afbe522ccf6b1deb5edfc01a00becfe6ee325d0c,
-> c/r: let entire thread group in sys_restart before restoring a thread,
-> can cause run-pthreads1.sh test failure.
-> 
-> In this patch are two other small cleanups:
-> 
-> 1) In post_restore_task() test if current->checkpoint_data is valid,
-> and return immediately if not (meaning restart failed early).
-> 
-> 2) Replace two instances of DECLARE_WAIT_QUEUE_HEAD(waitq) with
-> DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq), to please the lockdep checked.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Hi,
 
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org> wrote:
+> Vivek Goyal wrote, on 10/01/2009 10:57 PM:
+> > Before finishing this mail, will throw a whacky idea in the ring. I was
+> > going through the request based dm-multipath paper. Will it make sense
+> > to implement request based dm-ioband? So basically we implement all the
+> > group scheduling in CFQ and let dm-ioband implement a request function
+> > to take the request and break it back into bios. This way we can keep
+> > all the group control at one place and also meet most of the requirements.
+> >
+> > So request based dm-ioband will have a request in hand once that request
+> > has passed group control and prio control. Because dm-ioband is a device
+> > mapper target, one can put it on higher level devices (practically taking
+> > CFQ at higher level device), and provide fairness there. One can also
+> > put it on those SSDs which don't use IO scheduler (this is kind of forcing
+> > them to use the IO scheduler.)
+> >
+> > I am sure that will be many issues but one big issue I could think of that
+> > CFQ thinks that there is one device beneath it and dipsatches requests
+> > from one queue (in case of idling) and that would kill parallelism at
+> > higher layer and throughput will suffer on many of the dm/md configurations.
+> >
+> > Thanks
+> > Vivek
+> 
+> As long as using CFQ, your idea is reasonable for me.  But how about for
+> other IO schedulers?  In my understanding, one of the keys to guarantee
+> group isolation in your patch is to have per-group IO scheduler internal
+> queue even with as, deadline, and noop scheduler.  I think this is
+> great idea, and to implement generic code for all IO schedulers was
+> concluded when we had so many IO scheduler specific proposals.
+> If we will still need per-group IO scheduler internal queues with
+> request-based dm-ioband, we have to modify elevator layer.  It seems
+> out of scope of dm.
+> I might miss something...
 
-thanks,
--serge
+IIUC, the request based device-mapper could not break back a request
+into bio, so it could not work with block devices which don't use the
+IO scheduler.
 
-> ---
->  checkpoint/process.c |    4 ++++
->  checkpoint/restart.c |    4 ++--
->  kernel/fork.c        |    4 ++++
->  3 files changed, 10 insertions(+), 2 deletions(-)
-> 
-> diff --git a/checkpoint/process.c b/checkpoint/process.c
-> index c2832fe..424f688 100644
-> --- a/checkpoint/process.c
-> +++ b/checkpoint/process.c
-> @@ -847,6 +847,10 @@ int pre_restore_task(struct ckpt_ctx *ctx)
->  /* pre_restore_task - prepare the task for restore */
->  void post_restore_task(struct ckpt_ctx *ctx)
->  {
-> +	/* can happen if restart failed early */
-> +	if (!current->checkpoint_data)
-> +		return;
-> +
->  	/* only now is it safe to unblock the restored task's signals */
->  	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
-> 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index b2dc139..3a58a76 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -821,7 +821,7 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
->  /* grabs a reference to the @ctx on success; caller should free */
->  static struct ckpt_ctx *wait_checkpoint_ctx(void)
->  {
-> -	DECLARE_WAIT_QUEUE_HEAD(waitq);
-> +	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
->  	struct ckpt_ctx *ctx;
->  	int ret;
-> 
-> @@ -912,7 +912,7 @@ static int wait_sync_threads(void)
->  			wake_up_process(p);
->  		read_unlock(&tasklist_lock);
->  	} else {
-> -		DECLARE_WAIT_QUEUE_HEAD(waitq);
-> +		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
->  		ret = wait_event_interruptible(waitq, !atomic_read(count));
->  	}
-> 
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 0e226f5..04dffe9 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -865,6 +865,10 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
-> 
->  	tty_audit_fork(sig);
-> 
-> +#ifdef CONFIG_CHECKPOINT
-> +	atomic_set(&sig->restart_count, 0);
-> +#endif
-> +
->  	return 0;
->  }
-> 
-> -- 
-> 1.6.0.4
+How about adding a callback function to the higher level controller?
+CFQ calls it when the active queue runs out of time, then the higer
+level controller use it as a trigger or a hint to move IO group, so
+I think a time-based controller could be implemented at higher level.
+
+My requirements for IO controller are:
+- Implement s a higher level controller, which is located at block
+  layer and bio is grabbed in generic_make_request().
+- Can work with any type of IO scheduler.
+- Can work with any type of block devices.
+- Support multiple policies, proportional wegiht, max rate, time
+  based, ans so on.
+
+The IO controller mini-summit will be held in next week, and I'm
+looking forard to meet you all and discuss about IO controller.
+https://sourceforge.net/apps/trac/ioband/wiki/iosummit
+
+Thanks,
+Ryo Tsuruta
