@@ -1,7 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/4] cr: add selinux support (v5.1)
-Date: Mon, 5 Oct 2009 16:56:58 -0500
-Message-ID: <20091005215658.GC26081@us.ibm.com>
+Subject: [PATCH 1/1] restart: accept the lsm_name field in header and add
+	-k flag (v2)
+Date: Mon, 5 Oct 2009 16:58:52 -0500
+Message-ID: <20091005215852.GD26081@us.ibm.com>
 References: <20091005215114.GA26052@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,579 +20,207 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Documentation/checkpoint/readme.txt begins:
-"""
-Application checkpoint/restart is the ability to save the state
-of a running application so that it can later resume its execution
-from the time at which it was checkpointed.
-"""
+[ Oren: I added your ack since you sent it to the previous
+patch, but this patch changed quite a bit - maybe I shouldn't
+have put the ack in after all, but please take another look ]
 
-This patch adds the ability to checkpoint and restore selinux
-contexts for tasks, open files, and sysvipc objects.  Contexts
-are checkpointed as strings.  For tasks and files, where a security
-struct actually points to several contexts, all contexts are
-written out in one string, separated by ':::'.
+The checkpoint file header now has an 11-character string
+containing the name of the active LSM, following the uts
+info, and a variable length buffer type conaining LSM-specific
+version information (for instance a sha1sum of policy).
+Handle these.
 
-The default behaviors are to checkpoint contexts, but not to
-restore them.  To attempt to restore them, sys_restart() must
-be given the RESTART_KEEP_LSM flag.  If this is given then
-the caller of sys_restart() must have the new 'restore' permission
-to the target objclass, or for instance PROCESS__SETFSCREATE to
-itself to specify a create_sid.
-
-There are some tests under cr_tests/selinux at
-git://git.sr71.net/~hallyn/cr_tests.git.
-
-A corresponding simple refpolicy (and /usr/share/selinux/devel/include)
-patch is needed.
-
-The programs to checkpoint and restart (called 'checkpoint' and
-'restart') come from git://git.ncl.cs.columbia.edu/pub/git/user-cr.git.
-This patch applies against the checkpoint/restart-enabled kernel
-tree at git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git/.
+Also add a -k (--keeplsm) flag to tell restart to set the
+RESTART_KEEP_LSM flag to sys_restart().
 
 Changelog:
-	oct 05: whitespace fix (per Oren suggestion) and pulled out
-		generic ckpt_debug updates.
-	oct 02: (Stephen Smalley suggestions):
-		1. s/__u32/u32/
-		2. enable the fown sid restoration
-		3. use process_restore to authorize resetting osid
-		4. don't make new hooks inline.
-	oct 01: Remove some debugging that is redundant with
-		avc log data.
-	sep 10: (Most addressing suggestions by Stephen Smalley)
-		1. change xyz_get_ctx() to xyz_checkpoint().
-		2. check entrypoint permission on cred_restore
-		3. always dec context length by 1
-		4. don't allow SECSID_NULL when that's not valid
-		5. when SECSID_NULL is valid, restore it
-		6. c/r task->osid
-		7. Just print nothing instead of 'null' for SECSID_NULL
-		8. sids are __u32, as are lenghts passed to sid_to_context.
+	oct 05: 1. move keep_lsm into arg struct
+		2. read a separate container config section
+		3. use CHECKPOINT_LSM_NAME_MAX
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/restart.c                         |    1 +
- security/selinux/hooks.c                     |  368 ++++++++++++++++++++++++++
- security/selinux/include/av_perm_to_string.h |    5 +
- security/selinux/include/av_permissions.h    |    5 +
- 4 files changed, 379 insertions(+), 0 deletions(-)
+ restart.c |   66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 64 insertions(+), 2 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 3524ce6..577b1fb 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -648,6 +648,7 @@ static int restore_lsm(struct ckpt_ctx *ctx)
+diff --git a/restart.c b/restart.c
+index c3f4349..d8409c4 100644
+--- a/restart.c
++++ b/restart.c
+@@ -34,7 +34,6 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- 	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
- 			strcmp(ctx->lsm_name, "smack") != 0 &&
-+			strcmp(ctx->lsm_name, "selinux") != 0 &&
- 			strcmp(ctx->lsm_name, "default") != 0) {
- 		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
- 				ctx->lsm_name);
-diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 8d8b69c..7ecbc71 100644
---- a/security/selinux/hooks.c
-+++ b/security/selinux/hooks.c
-@@ -76,6 +76,7 @@
- #include <linux/selinux.h>
- #include <linux/mutex.h>
- #include <linux/posix-timers.h>
-+#include <linux/checkpoint.h>
+-
+ /* this really belongs to some kernel header ! */
+ struct pid_set {
+ 	int num_pids;
+@@ -68,6 +67,7 @@ static char usage_str[] =
+ "     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
+ "                        to container root, SIGINT otherwise)\n"
+ "  -w,--wait             wait for root task to termiate (default)\n"
++"  -k,--keeplsm          Try to recreate original LSM labels on all objects\n"
+ "     --show-status      show exit status of root task (implies -w)\n"
+ "     --copy-status      imitate exit status of root task (implies -w)\n"
+ "  -W,--no-wait          do not wait for root task to terminate\n"
+@@ -264,6 +264,7 @@ struct ckpt_ctx {
+ 	
+ 	char header[BUFSIZE];
+ 	char header_arch[BUFSIZE];
++	char container[BUFSIZE];
+ 	char tree[BUFSIZE];
+ 	char buf[BUFSIZE];
+ 	struct args *args;
+@@ -303,6 +304,7 @@ static int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h);
  
- #include "avc.h"
- #include "objsec.h"
-@@ -2961,6 +2962,104 @@ static int selinux_file_permission(struct file *file, int mask)
- 	return selinux_revalidate_file_permission(file, mask);
+ static int ckpt_write_header(struct ckpt_ctx *ctx);
+ static int ckpt_write_header_arch(struct ckpt_ctx *ctx);
++static int ckpt_write_container(struct ckpt_ctx *ctx);
+ static int ckpt_write_tree(struct ckpt_ctx *ctx);
+ 
+ static int _ckpt_read(int fd, void *buf, int count);
+@@ -313,6 +315,7 @@ static int ckpt_read_obj_type(struct ckpt_ctx *ctx, void *b, int n, int type);
+ 
+ static int ckpt_read_header(struct ckpt_ctx *ctx);
+ static int ckpt_read_header_arch(struct ckpt_ctx *ctx);
++static int ckpt_read_container(struct ckpt_ctx *ctx);
+ static int ckpt_read_tree(struct ckpt_ctx *ctx);
+ 
+ static int hash_init(struct ckpt_ctx *ctx);
+@@ -347,6 +350,7 @@ struct args {
+ 	int copy_status;
+ 	char *freezer;
+ 	char *input;
++	int keep_lsm;
+ };
+ 
+ static void usage(char *str)
+@@ -377,6 +381,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ "self",	no_argument,		NULL, 6},
+ 		{ "signal",	required_argument,	NULL, 4 },
+ 		{ "inspect",	no_argument,		NULL, 5 },
++		{ "keeplsm",	no_argument,		NULL, 'k' },
+ 		{ "input",	required_argument,	NULL, 'i' },
+ 		{ "root",	required_argument,	NULL, 'r' },
+ 		{ "wait",	no_argument,		NULL, 'w' },
+@@ -388,7 +393,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ "debug",	no_argument,		NULL, 'd' },
+ 		{ NULL,		0,			NULL, 0 }
+ 	};
+-	static char optc[] = "hdvpPwWF:r:i:";
++	static char optc[] = "hdvpkPwWF:r:i:";
+ 
+ 	int sig;
+ 
+@@ -443,6 +448,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'w':
+ 			args->wait = 1;
+ 			break;
++		case 'k':
++			args->keep_lsm = RESTART_KEEP_LSM;
++			break;
+ 		case 'W':
+ 			args->wait = 0;
+ 			break;
+@@ -693,6 +701,12 @@ int main(int argc, char *argv[])
+ 		exit(1);
+ 	}
+ 
++	ret = ckpt_read_container(&ctx);
++	if (ret < 0) {
++		perror("read c/r container section");
++		exit(1);
++	}
++
+ 	ret = ckpt_read_tree(&ctx);
+ 	if (ret < 0) {
+ 		perror("read c/r tree");
+@@ -927,6 +941,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 	if (ctx->args->freezer)
+ 		flags |= RESTART_FROZEN;
+ 
++	flags |= ctx->args->keep_lsm;
+ 	ret = restart(root_pid, STDIN_FILENO, flags);
+ 
+ 	if (ret < 0) {
+@@ -1575,6 +1590,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 	if (task->flags & (TASK_GHOST | TASK_DEAD))
+ 		flags |= RESTART_GHOST;
+ 
++	flags |= ctx->args->keep_lsm;
+ 	/* on success this doesn't return */
+ 	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
+ 	ret = restart(0, STDIN_FILENO, flags);
+@@ -1850,6 +1866,9 @@ static int ckpt_do_feeder(void *data)
+ 	if (ckpt_write_header_arch(ctx) < 0)
+ 		ckpt_abort(ctx, "write c/r header arch");
+ 
++	if (ckpt_write_container(ctx) < 0)
++		ckpt_abort(ctx, "write container section");
++
+ 	if (ckpt_write_tree(ctx) < 0)
+ 		ckpt_abort(ctx, "write c/r tree");
+ 
+@@ -2102,6 +2121,27 @@ static int ckpt_read_header_arch(struct ckpt_ctx *ctx)
+ 	return 0;
  }
  
-+/*
-+ * for file context, we print both the fsec->sid and fsec->fown_sid
-+ * as string representations, separated by ':::'
-+ * We don't touch isid - if you wanted that set you shoulda set up the
-+ * fs correctly.
-+ */
-+static char *selinux_file_checkpoint(void *security)
++static int ckpt_read_container(struct ckpt_ctx *ctx)
 +{
-+	struct file_security_struct *fsec = security;
-+	char *s1 = NULL, *s2 = NULL, *sfull;
-+	u32 len1, len2, lenfull;
 +	int ret;
++	struct ckpt_hdr_container *h;
++	char *ptr;
 +
-+	if (fsec->sid == 0 || fsec->fown_sid == 0)
-+		return ERR_PTR(-EINVAL);
++	h = (struct ckpt_hdr_container *) ctx->container;
++	ret = ckpt_read_obj_type(ctx, h, sizeof(*h), CKPT_HDR_CONTAINER);
++	if (ret < 0)
++		return ret;
 +
-+	ret = security_sid_to_context(fsec->sid, &s1, &len1);
-+	if (ret)
-+		return ERR_PTR(ret);
-+	len1--;
-+	ret = security_sid_to_context(fsec->fown_sid, &s2, &len2);
-+	if (ret) {
-+		kfree(s1);
-+		return ERR_PTR(ret);
-+	}
-+	len2--;
-+	lenfull = len1 + len2 + 3;
-+	sfull = kmalloc(lenfull + 1, GFP_KERNEL);
-+	if (!sfull) {
-+		sfull = ERR_PTR(-ENOMEM);
-+		goto out;
-+	}
-+	sfull[lenfull] = '\0';
-+	sprintf(sfull, "%s:::%s", s1, s2);
++	ptr = (char *) h;
++	ptr += ((struct ckpt_hdr *) ptr)->len;
++	ret = ckpt_read_obj_buffer(ctx, ptr, CHECKPOINT_LSM_NAME_MAX + 1);
++	if (ret < 0)
++		return ret;
 +
-+out:
-+	kfree(s1);
-+	kfree(s2);
-+	return sfull;
++	ptr += ((struct ckpt_hdr *) ptr)->len;
++	return ckpt_read_obj_type(ctx, ptr, 200, CKPT_HDR_LSM_INFO);
 +}
 +
-+static int selinux_file_restore(struct file *file, char *ctx)
-+{
-+	char *s1, *s2;
-+	u32 sid1 = 0, sid2 = 0;
-+	int ret = -EINVAL;
-+	struct file_security_struct *fsec = file->f_security;
-+
-+	/*
-+	 * Objhash made sure the string is null-terminated.
-+	 * We make a copy so we can mangle it.
-+	 */
-+	s1 = kstrdup(ctx, GFP_KERNEL);
-+	if (!s1)
-+		return -ENOMEM;
-+	s2 = strstr(s1, ":::");
-+	if (!s2)
-+		goto out;
-+
-+	*s2 = '\0';
-+	s2 += 3;
-+	if (*s2 == '\0')
-+		goto out;
-+
-+	/* SECSID_NULL is not valid for file sids */
-+	if (strlen(s1) == 0 || strlen(s2) == 0)
-+		goto out;
-+
-+	ret = security_context_to_sid(s1, strlen(s1), &sid1);
-+	if (ret)
-+		goto out;
-+	ret = security_context_to_sid(s2, strlen(s2), &sid2);
-+	if (ret)
-+		goto out;
-+
-+	if (sid1 && fsec->sid != sid1) {
-+		ret = avc_has_perm(current_sid(), sid1, SECCLASS_FILE,
-+					FILE__RESTORE, NULL);
-+		if (ret)
-+			goto out;
-+		fsec->sid = sid1;
-+	}
-+
-+	if (sid2 && fsec->fown_sid != sid2) {
-+		ret = avc_has_perm(current_sid(), sid2, SECCLASS_FILE,
-+				FILE__FOWN_RESTORE, NULL);
-+		if (ret)
-+			goto out;
-+	       fsec->fown_sid = sid2;
-+	}
-+
-+	ret = 0;
-+
-+out:
-+	kfree(s1);
-+	return ret;
-+}
-+
- static int selinux_file_alloc_security(struct file *file)
+ static int ckpt_read_tree(struct ckpt_ctx *ctx)
  {
- 	return file_alloc_security(file);
-@@ -3219,6 +3318,188 @@ static int selinux_task_create(unsigned long clone_flags)
- 	return current_has_perm(current, PROCESS__FORK);
+ 	struct ckpt_hdr_tree *h;
+@@ -2174,6 +2214,28 @@ static int ckpt_write_header_arch(struct ckpt_ctx *ctx)
+ 	return ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
  }
  
-+#define NUMTASKSIDS 6
-+/*
-+ * for cred context, we print:
-+ *   osid, sid, exec_sid, create_sid, keycreate_sid, sockcreate_sid;
-+ * as string representations, separated by ':::'
-+ */
-+static char *selinux_cred_checkpoint(void *security)
++static int ckpt_write_container(struct ckpt_ctx *ctx)
 +{
-+	struct task_security_struct *tsec = security;
-+	char *stmp, *sfull = NULL;
-+	u32 slen, runlen;
-+	int i, ret;
-+	u32 sids[NUMTASKSIDS] = { tsec->osid, tsec->sid, tsec->exec_sid,
-+		tsec->create_sid, tsec->keycreate_sid, tsec->sockcreate_sid };
-+
-+	if (sids[0] == 0 || sids[1] == 0)
-+		/* SECSID_NULL is not valid for osid or sid */
-+		return ERR_PTR(-EINVAL);
-+
-+	ret = security_sid_to_context(sids[0], &sfull, &runlen);
-+	if (ret)
-+		return ERR_PTR(ret);
-+	runlen--;
-+
-+	for (i = 1; i < NUMTASKSIDS; i++) {
-+		if (sids[i] == 0) {
-+			stmp = NULL;
-+			slen = 0;
-+		} else {
-+			ret = security_sid_to_context(sids[i], &stmp, &slen);
-+			if (ret) {
-+				kfree(sfull);
-+				return ERR_PTR(ret);
-+			}
-+			slen--;
-+		}
-+		/* slen + runlen + ':::' + \0 */
-+		if (slen) {
-+			sfull = krealloc(sfull, slen + runlen + 3 + 1,
-+					 GFP_KERNEL);
-+			if (!sfull) {
-+				kfree(stmp);
-+				return ERR_PTR(-ENOMEM);
-+			}
-+		}
-+		sprintf(sfull+runlen, ":::%s", stmp ? stmp : "");
-+		runlen += slen + 3;
-+		kfree(stmp);
-+	}
-+
-+	return sfull;
-+}
-+
-+static inline int credrestore_nullvalid(int which)
-+{
-+	int valid_array[NUMTASKSIDS] = {
-+		0, /* task osid */
-+		0, /* task sid */
-+		1, /* exec sid */
-+		1, /* create sid */
-+		1, /* keycreate_sid */
-+		1, /* sockcreate_sid */
-+	};
-+
-+	return valid_array[which];
-+}
-+
-+static int selinux_cred_restore(struct file *file, struct cred *cred,
-+					char *ctx)
-+{
-+	char *s, *s1, *s2 = NULL;
-+	int ret = -EINVAL;
-+	struct task_security_struct *tsec = cred->security;
-+	int i;
-+	u32 sids[NUMTASKSIDS];
-+	struct inode *ctx_inode = file->f_dentry->d_inode;
-+	struct avc_audit_data ad;
-+
-+	/*
-+	 * objhash made sure the string is null-terminated
-+	 * now we want our own copy so we can chop it up with \0's
-+	 */
-+	s = kstrdup(ctx, GFP_KERNEL);
-+	if (!s)
-+		return -ENOMEM;
-+
-+	s1 = s;
-+	for (i = 0; i < NUMTASKSIDS; i++) {
-+		if (i < NUMTASKSIDS-1) {
-+			ret = -EINVAL;
-+			s2 = strstr(s1, ":::");
-+			if (!s2)
-+				goto out;
-+			*s2 = '\0';
-+			s2 += 3;
-+		}
-+		if (strlen(s1) == 0) {
-+			ret = -EINVAL;
-+			if (credrestore_nullvalid(i))
-+				sids[i] = 0;
-+			else
-+				goto out;
-+		} else {
-+			ret = security_context_to_sid(s1, strlen(s1), &sids[i]);
-+			if (ret)
-+				goto out;
-+		}
-+		s1 = s2;
-+	}
-+
-+	/*
-+	 * Check that these transitions are allowed, and effect them.
-+	 * XXX: Do these checks suffice?
-+	 */
-+	if (tsec->osid != sids[0]) {
-+		ret = avc_has_perm(current_sid(), sids[0], SECCLASS_PROCESS,
-+					PROCESS__RESTORE, NULL);
-+		if (ret)
-+			goto out;
-+		 tsec->osid = sids[0];
-+	}
-+
-+	if (tsec->sid != sids[1]) {
-+		struct inode_security_struct *isec;
-+		ret = avc_has_perm(current_sid(), sids[1], SECCLASS_PROCESS,
-+					PROCESS__RESTORE, NULL);
-+		if (ret)
-+			goto out;
-+
-+		/* check whether checkpoint file type is a valid entry
-+		 * point to the new domain:  we may want a specific
-+		 * 'restore_entrypoint' permission for this, but let's
-+		 * see if just entrypoint is deemed sufficient
-+		 */
-+
-+		AVC_AUDIT_DATA_INIT(&ad, FS);
-+		ad.u.fs.path = file->f_path;
-+
-+		isec = ctx_inode->i_security;
-+		ret = avc_has_perm(sids[1], isec->sid, SECCLASS_FILE,
-+				FILE__ENTRYPOINT, &ad);
-+		if (ret)
-+			goto out;
-+		/* TODO: do we need to check for shared state? */
-+		tsec->sid = sids[1];
-+	}
-+
-+	ret = -EPERM;
-+	if (sids[2] != tsec->exec_sid) {
-+		if (!current_has_perm(current, PROCESS__SETEXEC))
-+			goto out;
-+		tsec->exec_sid = sids[2];
-+	}
-+
-+	if (sids[3] != tsec->create_sid) {
-+		if (!current_has_perm(current, PROCESS__SETFSCREATE))
-+			goto out;
-+		tsec->create_sid = sids[3];
-+	}
-+
-+	if (tsec->keycreate_sid != sids[4]) {
-+		if (!current_has_perm(current, PROCESS__SETKEYCREATE))
-+			goto out;
-+		if (!may_create_key(sids[4], current))
-+			goto out;
-+		tsec->keycreate_sid = sids[4];
-+	}
-+
-+	if (tsec->sockcreate_sid != sids[5]) {
-+		if (!current_has_perm(current, PROCESS__SETSOCKCREATE))
-+			goto out;
-+		tsec->sockcreate_sid = sids[5];
-+	}
-+
-+	ret = 0;
-+
-+out:
-+	kfree(s);
-+	return ret;
-+}
-+
-+
- /*
-  * detach and free the LSM part of a set of credentials
-  */
-@@ -4658,6 +4939,44 @@ static void ipc_free_security(struct kern_ipc_perm *perm)
- 	kfree(isec);
- }
- 
-+static char *selinux_msg_msg_checkpoint(void *security)
-+{
-+	struct msg_security_struct *msec = security;
-+	char *s;
-+	u32 len;
++	char *ptr;
 +	int ret;
 +
-+	if (msec->sid == 0)
-+		return ERR_PTR(-EINVAL);
-+
-+	ret = security_sid_to_context(msec->sid, &s, &len);
-+	if (ret)
-+		return ERR_PTR(ret);
-+	return s;
-+}
-+
-+static int selinux_msg_msg_restore(struct msg_msg *msg, char *ctx)
-+{
-+	struct msg_security_struct *msec = msg->security;
-+	int ret;
-+	u32 sid = 0;
-+
-+	ret = security_context_to_sid(ctx, strlen(ctx), &sid);
-+	if (ret)
++	ptr = (char *) ctx->container;
++	/* write the container info section */
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
++	if (ret < 0)
 +		return ret;
 +
-+	if (msec->sid == sid)
-+		return 0;
-+
-+	ret = avc_has_perm(current_sid(), sid, SECCLASS_MSG,
-+				MSG__RESTORE, NULL);
-+	if (ret)
++	/* write the lsm name buffer */
++	ptr += ((struct ckpt_hdr *) ptr)->len;
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
++	if (ret < 0)
 +		return ret;
 +
-+	msec->sid = sid;
-+	return 0;
++	/* write the lsm policy section */
++	ptr += ((struct ckpt_hdr *) ptr)->len;
++	return ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
 +}
 +
- static int msg_msg_alloc_security(struct msg_msg *msg)
+ static int ckpt_write_tree(struct ckpt_ctx *ctx)
  {
- 	struct msg_security_struct *msec;
-@@ -5061,6 +5380,47 @@ static void selinux_ipc_getsecid(struct kern_ipc_perm *ipcp, u32 *secid)
- 	*secid = isec->sid;
- }
- 
-+static char *selinux_ipc_checkpoint(void *security)
-+{
-+	struct ipc_security_struct *isec = security;
-+	char *s;
-+	u32 len;
-+	int ret;
-+
-+	if (isec->sid == 0)
-+		return ERR_PTR(-EINVAL);
-+
-+	ret = security_sid_to_context(isec->sid, &s, &len);
-+	if (ret)
-+		return ERR_PTR(ret);
-+	return s;
-+}
-+
-+static int selinux_ipc_restore(struct kern_ipc_perm *ipcp, char *ctx)
-+{
-+	struct ipc_security_struct *isec = ipcp->security;
-+	int ret;
-+	u32 sid = 0;
-+	struct avc_audit_data ad;
-+
-+	ret = security_context_to_sid(ctx, strlen(ctx), &sid);
-+	if (ret)
-+		return ret;
-+
-+	if (isec->sid == sid)
-+		return 0;
-+
-+	AVC_AUDIT_DATA_INIT(&ad, IPC);
-+	ad.u.ipc_id = ipcp->key;
-+	ret = avc_has_perm(current_sid(), sid, SECCLASS_IPC,
-+				IPC__RESTORE, &ad);
-+	if (ret)
-+		return ret;
-+
-+	isec->sid = sid;
-+	return 0;
-+}
-+
- static void selinux_d_instantiate(struct dentry *dentry, struct inode *inode)
- {
- 	if (inode)
-@@ -5382,6 +5742,8 @@ static struct security_operations selinux_ops = {
- 	.inode_getsecid =		selinux_inode_getsecid,
- 
- 	.file_permission =		selinux_file_permission,
-+	.file_checkpoint =		selinux_file_checkpoint,
-+	.file_restore =			selinux_file_restore,
- 	.file_alloc_security =		selinux_file_alloc_security,
- 	.file_free_security =		selinux_file_free_security,
- 	.file_ioctl =			selinux_file_ioctl,
-@@ -5396,6 +5758,8 @@ static struct security_operations selinux_ops = {
- 	.dentry_open =			selinux_dentry_open,
- 
- 	.task_create =			selinux_task_create,
-+	.cred_checkpoint =		selinux_cred_checkpoint,
-+	.cred_restore =			selinux_cred_restore,
- 	.cred_free =			selinux_cred_free,
- 	.cred_prepare =			selinux_cred_prepare,
- 	.kernel_act_as =		selinux_kernel_act_as,
-@@ -5417,8 +5781,12 @@ static struct security_operations selinux_ops = {
- 
- 	.ipc_permission =		selinux_ipc_permission,
- 	.ipc_getsecid =			selinux_ipc_getsecid,
-+	.ipc_checkpoint =		selinux_ipc_checkpoint,
-+	.ipc_restore =			selinux_ipc_restore,
- 
- 	.msg_msg_alloc_security =	selinux_msg_msg_alloc_security,
-+	.msg_msg_checkpoint =		selinux_msg_msg_checkpoint,
-+	.msg_msg_restore =		selinux_msg_msg_restore,
- 	.msg_msg_free_security =	selinux_msg_msg_free_security,
- 
- 	.msg_queue_alloc_security =	selinux_msg_queue_alloc_security,
-diff --git a/security/selinux/include/av_perm_to_string.h b/security/selinux/include/av_perm_to_string.h
-index 31df1d7..a2c35d7 100644
---- a/security/selinux/include/av_perm_to_string.h
-+++ b/security/selinux/include/av_perm_to_string.h
-@@ -19,6 +19,8 @@
-    S_(SECCLASS_FILE, FILE__ENTRYPOINT, "entrypoint")
-    S_(SECCLASS_FILE, FILE__EXECMOD, "execmod")
-    S_(SECCLASS_FILE, FILE__OPEN, "open")
-+   S_(SECCLASS_FILE, FILE__RESTORE, "restore")
-+   S_(SECCLASS_FILE, FILE__FOWN_RESTORE, "fown_restore")
-    S_(SECCLASS_CHR_FILE, CHR_FILE__EXECUTE_NO_TRANS, "execute_no_trans")
-    S_(SECCLASS_CHR_FILE, CHR_FILE__ENTRYPOINT, "entrypoint")
-    S_(SECCLASS_CHR_FILE, CHR_FILE__EXECMOD, "execmod")
-@@ -88,9 +90,11 @@
-    S_(SECCLASS_PROCESS, PROCESS__EXECHEAP, "execheap")
-    S_(SECCLASS_PROCESS, PROCESS__SETKEYCREATE, "setkeycreate")
-    S_(SECCLASS_PROCESS, PROCESS__SETSOCKCREATE, "setsockcreate")
-+   S_(SECCLASS_PROCESS, PROCESS__RESTORE, "restore")
-    S_(SECCLASS_MSGQ, MSGQ__ENQUEUE, "enqueue")
-    S_(SECCLASS_MSG, MSG__SEND, "send")
-    S_(SECCLASS_MSG, MSG__RECEIVE, "receive")
-+   S_(SECCLASS_MSG, MSG__RESTORE, "restore")
-    S_(SECCLASS_SHM, SHM__LOCK, "lock")
-    S_(SECCLASS_SECURITY, SECURITY__COMPUTE_AV, "compute_av")
-    S_(SECCLASS_SECURITY, SECURITY__COMPUTE_CREATE, "compute_create")
-@@ -107,6 +111,7 @@
-    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_READ, "syslog_read")
-    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_MOD, "syslog_mod")
-    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_CONSOLE, "syslog_console")
-+   S_(SECCLASS_IPC, IPC__RESTORE, "restore")
-    S_(SECCLASS_CAPABILITY, CAPABILITY__CHOWN, "chown")
-    S_(SECCLASS_CAPABILITY, CAPABILITY__DAC_OVERRIDE, "dac_override")
-    S_(SECCLASS_CAPABILITY, CAPABILITY__DAC_READ_SEARCH, "dac_read_search")
-diff --git a/security/selinux/include/av_permissions.h b/security/selinux/include/av_permissions.h
-index d645192..58ad588 100644
---- a/security/selinux/include/av_permissions.h
-+++ b/security/selinux/include/av_permissions.h
-@@ -101,6 +101,8 @@
- #define FILE__ENTRYPOINT                          0x00040000UL
- #define FILE__EXECMOD                             0x00080000UL
- #define FILE__OPEN                                0x00100000UL
-+#define FILE__RESTORE                             0x00200000UL
-+#define FILE__FOWN_RESTORE                        0x00400000UL
- #define LNK_FILE__IOCTL                           0x00000001UL
- #define LNK_FILE__READ                            0x00000002UL
- #define LNK_FILE__WRITE                           0x00000004UL
-@@ -453,6 +455,7 @@
- #define PROCESS__EXECHEAP                         0x08000000UL
- #define PROCESS__SETKEYCREATE                     0x10000000UL
- #define PROCESS__SETSOCKCREATE                    0x20000000UL
-+#define PROCESS__RESTORE	                  0x40000000UL
- #define IPC__CREATE                               0x00000001UL
- #define IPC__DESTROY                              0x00000002UL
- #define IPC__GETATTR                              0x00000004UL
-@@ -462,6 +465,7 @@
- #define IPC__ASSOCIATE                            0x00000040UL
- #define IPC__UNIX_READ                            0x00000080UL
- #define IPC__UNIX_WRITE                           0x00000100UL
-+#define IPC__RESTORE                              0x00000200UL
- #define SEM__CREATE                               0x00000001UL
- #define SEM__DESTROY                              0x00000002UL
- #define SEM__GETATTR                              0x00000004UL
-@@ -483,6 +487,7 @@
- #define MSGQ__ENQUEUE                             0x00000200UL
- #define MSG__SEND                                 0x00000001UL
- #define MSG__RECEIVE                              0x00000002UL
-+#define MSG__RESTORE                              0x00000004UL
- #define SHM__CREATE                               0x00000001UL
- #define SHM__DESTROY                              0x00000002UL
- #define SHM__GETATTR                              0x00000004UL
+ 	struct ckpt_hdr_tree *h;
 -- 
-1.6.1
+1.6.1.1
