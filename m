@@ -1,11 +1,17 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-97-g62cb614
-Date: Mon, 5 Oct 2009 11:49:00 -0400
-Message-ID: <200910051549.n95Fn0rW015558@gorgona.ncl.cs.columbia.edu>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: IO scheduler based IO controller V10
+Date: Mon, 5 Oct 2009 13:10:23 -0400
+Message-ID: <20091005171023.GG22143__32705.9646639556$1254762795$gmane$org@redhat.com>
+References: <4AC6623F.70600@ds.jp.nec.com>
+	<20091005.193808.104033719.ryov@valinux.co.jp>
+	<20091005123148.GB22143@redhat.com>
+	<20091005.235535.193690928.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091005.235535.193690928.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,69 +21,165 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+On Mon, Oct 05, 2009 at 11:55:35PM +0900, Ryo Tsuruta wrote:
+> Hi Vivek,
+> 
+> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > On Mon, Oct 05, 2009 at 07:38:08PM +0900, Ryo Tsuruta wrote:
+> > > Hi,
+> > > 
+> > > Munehiro Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org> wrote:
+> > > > Vivek Goyal wrote, on 10/01/2009 10:57 PM:
+> > > > > Before finishing this mail, will throw a whacky idea in the ring. I was
+> > > > > going through the request based dm-multipath paper. Will it make sense
+> > > > > to implement request based dm-ioband? So basically we implement all the
+> > > > > group scheduling in CFQ and let dm-ioband implement a request function
+> > > > > to take the request and break it back into bios. This way we can keep
+> > > > > all the group control at one place and also meet most of the requirements.
+> > > > >
+> > > > > So request based dm-ioband will have a request in hand once that request
+> > > > > has passed group control and prio control. Because dm-ioband is a device
+> > > > > mapper target, one can put it on higher level devices (practically taking
+> > > > > CFQ at higher level device), and provide fairness there. One can also
+> > > > > put it on those SSDs which don't use IO scheduler (this is kind of forcing
+> > > > > them to use the IO scheduler.)
+> > > > >
+> > > > > I am sure that will be many issues but one big issue I could think of that
+> > > > > CFQ thinks that there is one device beneath it and dipsatches requests
+> > > > > from one queue (in case of idling) and that would kill parallelism at
+> > > > > higher layer and throughput will suffer on many of the dm/md configurations.
+> > > > >
+> > > > > Thanks
+> > > > > Vivek
+> > > > 
+> > > > As long as using CFQ, your idea is reasonable for me.  But how about for
+> > > > other IO schedulers?  In my understanding, one of the keys to guarantee
+> > > > group isolation in your patch is to have per-group IO scheduler internal
+> > > > queue even with as, deadline, and noop scheduler.  I think this is
+> > > > great idea, and to implement generic code for all IO schedulers was
+> > > > concluded when we had so many IO scheduler specific proposals.
+> > > > If we will still need per-group IO scheduler internal queues with
+> > > > request-based dm-ioband, we have to modify elevator layer.  It seems
+> > > > out of scope of dm.
+> > > > I might miss something...
+> > > 
+> > > IIUC, the request based device-mapper could not break back a request
+> > > into bio, so it could not work with block devices which don't use the
+> > > IO scheduler.
+> > > 
+> > 
+> > I think current request based multipath drvier does not do it but can't it
+> > be implemented that requests are broken back into bio?
+> 
+> I guess it would be hard to implement it, and we need to hold requests
+> and throttle them at there and it would break the ordering by CFQ.
+> 
+> > Anyway, I don't feel too strongly about this approach as it might
+> > introduce more serialization at higher layer.
+> 
+> Yes, I know it.
+> 
+> > > How about adding a callback function to the higher level controller?
+> > > CFQ calls it when the active queue runs out of time, then the higer
+> > > level controller use it as a trigger or a hint to move IO group, so
+> > > I think a time-based controller could be implemented at higher level.
+> > > 
+> > 
+> > Adding a call back should not be a big issue. But that means you are
+> > planning to run only one group at higher layer at one time and I think
+> > that's the problem because than we are introducing serialization at higher
+> > layer. So any higher level device mapper target which has multiple
+> > physical disks under it, we might be underutilizing these even more and
+> > take a big hit on overall throughput.
+> > 
+> > The whole design of doing proportional weight at lower layer is optimial 
+> > usage of system.
+> 
+> But I think that the higher level approch makes easy to configure
+> against striped software raid devices.
 
-The branch, ckpt-v18-dev has been updated
-       via  62cb61406362bdae647789f41156b9a8ad856fbb (commit)
-       via  bb091acbf0a47bd61323322a4e0a784d1ee0c24f (commit)
-      from  26656f4d3810a24fa51b57fc66906d241b583001 (commit)
+How does it make easier to configure in case of higher level controller?
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+In case of lower level design, one just have to create cgroups and assign
+weights to cgroups. This mininum step will be required in higher level
+controller also. (Even if you get rid of dm-ioband device setup step).
 
-- Log -----------------------------------------------------------------
-commit 62cb61406362bdae647789f41156b9a8ad856fbb
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Mon Oct 5 11:46:11 2009 -0400
+> If one would like to
+> combine some physical disks into one logical device like a dm-linear,
+> I think one should map the IO controller on each physical device and
+> combine them into one logical device.
+> 
 
-    Fix in.h include in checkpoint_hdr.h
-    
-    sys/in.h doesn't exist, at least not in the glibc headers of my Fedora or
-    Ubuntu systems. Use netinet/in.h which does.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In fact this sounds like a more complicated step where one has to setup
+one dm-ioband device on top of each physical device. But I am assuming 
+that this will go away once you move to per reuqest queue like implementation.
 
-commit bb091acbf0a47bd61323322a4e0a784d1ee0c24f
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Sat Oct 3 18:52:29 2009 -0400
+I think it should be same in principal as my initial implementation of IO
+controller on request queue and I stopped development on it because of FIFO
+dispatch. 
 
-    c/r: threads sync on restart (fix regression from commit afbe522c...)
-    
-    Initialize the new member signal->restart_count in copy_signal().
-    
-    The lack of which in commit afbe522ccf6b1deb5edfc01a00becfe6ee325d0c,
-    c/r: let entire thread group in sys_restart before restoring a thread,
-    can cause run-pthreads1.sh test failure.
-    
-    In this patch are two other small cleanups:
-    
-    1) In post_restore_task() test if current->checkpoint_data is valid,
-    and return immediately if not (meaning restart failed early).
-    
-    2) Replace two instances of DECLARE_WAIT_QUEUE_HEAD(waitq) with
-    DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq), to please the lockdep checked.
-    
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+So you seem to be suggesting that you will move dm-ioband to request queue
+so that setting up additional device setup is gone. You will also enable
+it to do time based groups policy, so that we don't run into issues on
+seeky media. Will also enable dispatch from one group only at a time so
+that we don't run into isolation issues and can do time accounting
+accruately.
 
------------------------------------------------------------------------
+If yes, then that has the potential to solve the issue. At higher layer one
+can think of enabling size of IO/number of IO policy both for proportional
+BW and max BW type of control. At lower level one can enable pure time
+based control on seeky media.
 
-Summary of changes:
- checkpoint/process.c           |    4 ++++
- checkpoint/restart.c           |    4 ++--
- include/linux/checkpoint_hdr.h |    2 +-
- kernel/fork.c                  |    4 ++++
- 4 files changed, 11 insertions(+), 3 deletions(-)
+I think this will still left with the issue of prio with-in group as group
+control is separate and you will not be maintatinig separate queues for
+each process. Similarly you will also have isseus with read vs write
+ratios as IO schedulers underneath change.
 
+So I will be curious to see that implementation. 
 
-hooks/post-receive
---
-linux-cr
+> > > My requirements for IO controller are:
+> > > - Implement s a higher level controller, which is located at block
+> > >   layer and bio is grabbed in generic_make_request().
+> > 
+> > How are you planning to handle the issue of buffered writes Andrew raised?
+> 
+> I think that it would be better to use the higher-level controller
+> along with the memory controller and have limits memory usage for each
+> cgroup. And as Kamezawa-san said, having limits of dirty pages would
+> be better, too.
+> 
+
+Ok. So if we plan to co-mount memory controller with per memory group
+dirty_ratio implemented, that can work with both higher level as well as
+low level controller. Not sure if we also require some kind of a per
+memory group flusher thread infrastructure also to make sure higher weight
+group gets more job done.
+
+> > > - Can work with any type of IO scheduler.
+> > > - Can work with any type of block devices.
+> > > - Support multiple policies, proportional wegiht, max rate, time
+> > >   based, ans so on.
+> > > 
+> > > The IO controller mini-summit will be held in next week, and I'm
+> > > looking forard to meet you all and discuss about IO controller.
+> > > https://sourceforge.net/apps/trac/ioband/wiki/iosummit
+> > 
+> > Is there a new version of dm-ioband now where you have solved the issue of
+> > sync/async dispatch with-in group? Before meeting at mini-summit, I am
+> > trying to run some tests and come up with numbers so that we have more
+> > clear picture of pros/cons.
+> 
+> Yes, I've released new versions of dm-ioband and blkio-cgroup. The new
+> dm-ioband handles sync/async IO requests separately and
+> the write-starve-read issue you pointed out is fixed. I would
+> appreciate it if you would try them.
+> http://sourceforge.net/projects/ioband/files/ 
+
+Cool. Will get to testing it.
+
+Thanks
+Vivek
