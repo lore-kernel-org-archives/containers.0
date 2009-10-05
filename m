@@ -1,24 +1,15 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Subject: Re: Do not overload dispatch queue (Was: Re: IO scheduler based IO
-	controller V10)
-Date: Mon, 05 Oct 2009 00:15:27 +0200
-Message-ID: <1254694527.7175.14.camel__10716.9331786737$1254694811$gmane$org@marge.simson.net>
-References: <1254585420.7539.2.camel@marge.simson.net>
-	<20091003173532.GG31616@kernel.dk>
-	<1254596864.7153.9.camel@marge.simson.net>
-	<20091003192321.GA26573@kernel.dk>
-	<1254599386.7153.46.camel@marge.simson.net>
-	<1254653434.7237.18.camel@marge.simson.net>
-	<20091004173901.GD26573@kernel.dk>
-	<1254680622.27889.2.camel@marge.simson.net>
-	<20091004183822.GF26573@kernel.dk>
-	<1254685638.7637.6.camel@marge.simson.net>
-	<20091004201708.GJ26573@kernel.dk>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: threads sync on restart (fix regression from
+	commit afbe522c...)
+Date: Sun, 4 Oct 2009 22:28:11 -0500
+Message-ID: <20091005032811.GA32201@us.ibm.com>
+References: <1254610422-11441-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091004201708.GJ26573-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1254610422-11441-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,30 +19,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, 2009-10-04 at 22:17 +0200, Jens Axboe wrote:
-> On Sun, Oct 04 2009, Mike Galbraith wrote:
-> > On Sun, 2009-10-04 at 20:38 +0200, Jens Axboe wrote:
-> > > On Sun, Oct 04 2009, Mike Galbraith wrote:
-> > > > On Sun, 2009-10-04 at 19:39 +0200, Jens Axboe wrote:
-> > > > 
-> > > > > So I'll commit a change that doesn't do the delay at all, basically it
-> > > > > just offset the current code by one slice.
-> > > > 
-> > > > Ok, when it hits block-for-linus, I'll take it out for a spin.
-> > > 
-> > > It's committed:
-> > > 
-> > > http://git.kernel.dk/?p=linux-2.6-block.git;a=commit;h=e00c54c36ac2024c3a8a37432e2e2698ff849594
-> > 
-> > Looks like a keeper to me :)
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Initialize the new member signal->restart_count in copy_signal().
 > 
-> Wonderful, so I take it this passes your 'gut feel' test too? :-)
+> The lack of which in commit afbe522ccf6b1deb5edfc01a00becfe6ee325d0c,
+> c/r: let entire thread group in sys_restart before restoring a thread,
+> can cause run-pthreads1.sh test failure.
+> 
+> In this patch are two other small cleanups:
+> 
+> 1) In post_restore_task() test if current->checkpoint_data is valid,
+> and return immediately if not (meaning restart failed early).
+> 
+> 2) Replace two instances of DECLARE_WAIT_QUEUE_HEAD(waitq) with
+> DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq), to please the lockdep checked.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Heh, yeah.  Box feels good, disk sounds happy.. none of those little
-indescribables that make you suddenly go alert.
+Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-	-Mike
+thanks,
+-serge
+
+> ---
+>  checkpoint/process.c |    4 ++++
+>  checkpoint/restart.c |    4 ++--
+>  kernel/fork.c        |    4 ++++
+>  3 files changed, 10 insertions(+), 2 deletions(-)
+> 
+> diff --git a/checkpoint/process.c b/checkpoint/process.c
+> index c2832fe..424f688 100644
+> --- a/checkpoint/process.c
+> +++ b/checkpoint/process.c
+> @@ -847,6 +847,10 @@ int pre_restore_task(struct ckpt_ctx *ctx)
+>  /* pre_restore_task - prepare the task for restore */
+>  void post_restore_task(struct ckpt_ctx *ctx)
+>  {
+> +	/* can happen if restart failed early */
+> +	if (!current->checkpoint_data)
+> +		return;
+> +
+>  	/* only now is it safe to unblock the restored task's signals */
+>  	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index b2dc139..3a58a76 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -821,7 +821,7 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
+>  /* grabs a reference to the @ctx on success; caller should free */
+>  static struct ckpt_ctx *wait_checkpoint_ctx(void)
+>  {
+> -	DECLARE_WAIT_QUEUE_HEAD(waitq);
+> +	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
+>  	struct ckpt_ctx *ctx;
+>  	int ret;
+> 
+> @@ -912,7 +912,7 @@ static int wait_sync_threads(void)
+>  			wake_up_process(p);
+>  		read_unlock(&tasklist_lock);
+>  	} else {
+> -		DECLARE_WAIT_QUEUE_HEAD(waitq);
+> +		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(waitq);
+>  		ret = wait_event_interruptible(waitq, !atomic_read(count));
+>  	}
+> 
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 0e226f5..04dffe9 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -865,6 +865,10 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+> 
+>  	tty_audit_fork(sig);
+> 
+> +#ifdef CONFIG_CHECKPOINT
+> +	atomic_set(&sig->restart_count, 0);
+> +#endif
+> +
+>  	return 0;
+>  }
+> 
+> -- 
+> 1.6.0.4
