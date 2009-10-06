@@ -1,17 +1,17 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 1/4] signals: SEND_SIG_NOINFO should be considered as
-	SI_FROMUSER()
-Date: Mon, 5 Oct 2009 17:09:11 -0700
-Message-ID: <20091006000911.GB4390@us.ibm.com>
+Subject: Re: [PATCH 2/4] signals: send_signal: use si_fromuser() to detect
+	from_ancestor_ns
+Date: Mon, 5 Oct 2009 17:16:31 -0700
+Message-ID: <20091006001631.GC4390@us.ibm.com>
 References: <4AC608BE.9020805@fr.ibm.com> <20091003171029.GA30442@us.ibm.com>
 	<20091004021844.GA21006@redhat.com>
-	<20091004021918.GB21006@redhat.com>
+	<20091004021954.GC21006@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091004021918.GB21006-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091004021954.GC21006-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,23 +26,27 @@ Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <cont
 List-Id: containers.vger.kernel.org
 
 Oleg Nesterov [oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
-| No changes in compiled code. The patch adds the new helper, si_fromuser()
-| and changes check_kill_permission() to use this helper.
+| Change send_signal() to use si_fromuser(). From now SEND_SIG_NOINFO
+| triggers the "from_ancestor_ns" check.
 | 
-| The real effect of this patch is that from now we "officially" consider
-| SEND_SIG_NOINFO signal as "from user-space" signals. This is already true
-| if we look at the code which uses SEND_SIG_NOINFO, except __send_signal()
-| has another opinion - see the next patch.
+| This fixes reparent_thread()->group_send_sig_info(pdeath_signal)
+| behaviour, before this patch send_signal() does not detect the
+| cross-namespace case when the child of the dying parent belongs
+| to the sub-namespace.
 | 
-| The naming of these special SEND_SIG_XXX siginfo's is really bad imho.
-| >From __send_signal()'s pov they mean
+| This patch can affect the behaviour of send_sig(), kill_pgrp() and
+| kill_pid() when the caller sends the signal to the sub-namespace
+| with "priv == 0" but surprisingly all callers seem to use them
+| correctly, including disassociate_ctty(on_exit).
 | 
-| 	SEND_SIG_NOINFO		from user
-| 	SEND_SIG_PRIV		from kernel
-| 	SEND_SIG_FORCED		no info
+| Except: drivers/staging/comedi/drivers/addi-data/*.c incorrectly
+| use send_sig(priv => 0). But his is minor and should be fixed
+| anyway.
 | 
+| Reported-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 | Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Renaming the special siginfo cases be done independently.
+Since, addressing the problem of container-init sending SIGKILL to itself
+would have to be a separate patch:
 
 Reviewed-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
