@@ -1,17 +1,13 @@
-From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] signals: SEND_SIG_NOINFO should be considered as
-	SI_FROMUSER()
-Date: Tue,  6 Oct 2009 00:31:00 -0700 (PDT)
-Message-ID: <20091006073100.4184128@magilla.sf.frob.com>
-References: <4AC608BE.9020805@fr.ibm.com> <20091003171029.GA30442@us.ibm.com>
-	<20091004021844.GA21006@redhat.com>
-	<20091004021918.GB21006@redhat.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: pidns memory leak
+Date: Tue, 06 Oct 2009 10:18:50 +0200
+Message-ID: <4ACAFD6A.3060008@fr.ibm.com>
+References: <4AC5F198.2070407@fr.ibm.com> <20091006040526.GA22923@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Oleg Nesterov's message of  Sunday,
-	4 October 2009 04:19:18 +0200 <20091004021918.GB21006-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091006040526.GA22923-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,19 +17,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This whole series looks fine to me.  I think in commenting and cleaning up
-any of this, it bears explicit mention that (almost) every signal is
-potentially reduced to SI_USER.  That is, in siqueue exhaustion you don't
-get any info and only non-special non-SI_USER >=SIGRTMIN signals ever fail
-to get posted, so you get the all-zeros defaults from collect_signal() at
-delivery time.  That's the principle you're encoding in your si_fromuser()
-logic, but your logs and comments are not explicit about the relationship
-between that logic and what's implicit in the queue-exhaustion behavior.
+Sukadev Bhattiprolu wrote:
+> Daniel Lezcano [dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
+>> Hi,
+>>
+>> I am facing a problem with the pid namespace when I launch the following  
+>> lxc commands:
+>>
+>> lxc-execute -n foo sleep 3600 &
+>> ls -al /proc/$(pidof lxc-init)/exe && lxc-stop -n foo
+>>
+>> All the processes related to the container are killed, but there is  
+>> still a refcount on the pid_namespace which is never released.
+> 
+> Thanks for the bug report.
+> 
+> Did you notice any leak in 'struct pids' also or just the pid_namespace ?
+> If the pids are not leaking, this may be slightly different from the problem
+> Catalin Marinas ran into:
+> 
+> 	http://lkml.org/lkml/2009/7/29/406
+
+I am not sure what you mean by 'struct pids' but what I observed is:
+
+pid_2 and pid_namespace (as they are named in /proc/slabinfo) are never 
+decremented.
+
+> And the pid_namespace does not seem to reproduce for me, with out the
+> 'ls -al /proc/...' above, or with the simpler 'ns_exec' approach to
+> creating pid namespace.
+
+I tried to write a simpler program but I failed to reproduce it.
+
+> I am going through the code for lxc-execute, but does it remount /proc 
+> in the container ?
+
+Right, the parent does a clone(NEWMNT|NEWPID|NEWIPC|NEWUTS), wait for 
+the child while this one (pid 1) 'execs' the lxc-init process. This 
+program mounts /proc and fork-exec the command passed as parameter (here 
+'sleep 3600').
+
+Without this intermediate process, the leak *seems* not happening.
+
+If you don't access /proc/<pid>/<file>, the leak is not happening.
+
+So to summarize:
+
+Leak when:
+----------
+
+lxc-execute -n foo sleep 3600 &
+ls -al /proc/$(pidof sleep)/exe && lxc-stop -n foo
+
+The stop can be done, immediately after looking at the proc file or 
+later, the leak happens in all the cases.
+
+No leak when:
+-------------
+lxc-execute -n foo sleep 3600 &
+lxc-stop -n foo
 
 
-Thanks,
-Roland
+I tried to create a simpler program doing the same but that did not 
+triggered the problem.
+
+   -- Daniel
