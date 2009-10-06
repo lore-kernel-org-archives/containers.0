@@ -1,21 +1,17 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 2/4] signals: send_signal: use si_fromuser() to detect
-	from_ancestor_ns
-Date: Mon, 5 Oct 2009 17:06:31 -0700
-Message-ID: <20091006000631.GA4390@us.ibm.com>
+Subject: Re: [PATCH 1/4] signals: SEND_SIG_NOINFO should be considered as
+	SI_FROMUSER()
+Date: Mon, 5 Oct 2009 17:09:11 -0700
+Message-ID: <20091006000911.GB4390@us.ibm.com>
 References: <4AC608BE.9020805@fr.ibm.com> <20091003171029.GA30442@us.ibm.com>
 	<20091004021844.GA21006@redhat.com>
-	<20091004021954.GC21006@redhat.com>
-	<20091005181255.GE30442@us.ibm.com>
-	<20091005182536.GA943@redhat.com>
-	<20091005193738.GF30442@us.ibm.com>
-	<20091005194415.GA4560@redhat.com>
+	<20091004021918.GB21006@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091005194415.GA4560-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091004021918.GB21006-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,16 +26,23 @@ Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <cont
 List-Id: containers.vger.kernel.org
 
 Oleg Nesterov [oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
-| Sorry for confusion.
+| No changes in compiled code. The patch adds the new helper, si_fromuser()
+| and changes check_kill_permission() to use this helper.
 | 
-| > But sure, we could use force_sig_info() in caller.
+| The real effect of this patch is that from now we "officially" consider
+| SEND_SIG_NOINFO signal as "from user-space" signals. This is already true
+| if we look at the code which uses SEND_SIG_NOINFO, except __send_signal()
+| has another opinion - see the next patch.
 | 
-| Yes, because this makes the code more explicit imho. And we can avoid
-| the further complicatiions in send_signal() path.
+| The naming of these special SEND_SIG_XXX siginfo's is really bad imho.
+| >From __send_signal()'s pov they mean
+| 
+| 	SEND_SIG_NOINFO		from user
+| 	SEND_SIG_PRIV		from kernel
+| 	SEND_SIG_FORCED		no info
+| 
+| Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Although, one small drawback would be the different behavior for the
-SIGKILL in load_aout_binary() to the container-init itself calling:
+Renaming the special siginfo cases be done independently.
 
-	kill(getpid(), SIGKILL);
-
-(which of course is not very useful).
+Reviewed-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
