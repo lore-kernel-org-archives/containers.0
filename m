@@ -1,10 +1,9 @@
-From: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Do we support ioprio on SSDs with NCQ (Was: Re: IO scheduler
 	based IO controller V10)
-Date: Tue, 6 Oct 2009 10:41:20 +0200
-Message-ID: <20091006084120.GJ5216__29473.8099597909$1254818763$gmane$org@kernel.dk>
+Date: Tue, 6 Oct 2009 11:00:48 +0200
+Message-ID: <4e5e476b0910060200i7c028b3fr4c235bf5f18c3aa1__29583.2059615806$1254819722$gmane$org@mail.gmail.com>
 References: <20091002195815.GE4494@redhat.com>
-	<4e5e476b0910021514i1b461229t667bed94fd67f140@mail.gmail.com>
 	<20091002222756.GG4494@redhat.com>
 	<4e5e476b0910030543o776fb505ka0ce38da9d83b33c@mail.gmail.com>
 	<20091003133810.GC12925@redhat.com>
@@ -13,12 +12,12 @@ References: <20091002195815.GE4494@redhat.com>
 	<4e5e476b0910040546h5f77cd1fo3172fe5c229eb579@mail.gmail.com>
 	<x49my457uef.fsf@segfault.boston.devel.redhat.com>
 	<4e5e476b0910051409x33f8365flf32e8e7548d72e79@mail.gmail.com>
+	<20091006084120.GJ5216@kernel.dk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4e5e476b0910051409x33f8365flf32e8e7548d72e79-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20091006084120.GJ5216-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,27 +27,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Ulrich Lukas <stellplatz-nr.13a-7vBoImwI/YtIVYojq0lqJrNAH6kLmebB@public.gmane.org>, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Oct 05 2009, Corrado Zoccolo wrote:
-> On Mon, Oct 5, 2009 at 5:06 PM, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > Corrado Zoccolo <czoccolo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-> >
-> >> Moreover, I suggest removing also the slice_resid part, since its
-> >> semantics doesn't seem consistent.
-> >> When computed, it is not the residency, but the remaining time slice.
-> >
-> > It stands for residual, not residency. =A0Make more sense?
-> It makes sense when computed, but not when used in rb_key computation.
-> Why should we postpone queues that where preempted, instead of giving
-> them a boost?
-
-We should not, if it is/was working correctly, it should allow both for
-increase/descrease of tree position (hence it's a long and can go
-negative) to account for both over and under time.
-
--- =
-
-Jens Axboe
+T24gVHVlLCBPY3QgNiwgMjAwOSBhdCAxMDo0MSBBTSwgSmVucyBBeGJvZSA8amVucy5heGJvZUBv
+cmFjbGUuY29tPiB3cm90ZToKPiBPbiBNb24sIE9jdCAwNSAyMDA5LCBDb3JyYWRvIFpvY2NvbG8g
+d3JvdGU6Cj4+IE9uIE1vbiwgT2N0IDUsIDIwMDkgYXQgNTowNiBQTSwgSmVmZiBNb3llciA8am1v
+eWVyQHJlZGhhdC5jb20+IHdyb3RlOgo+PiA+IEl0IHN0YW5kcyBmb3IgcmVzaWR1YWwsIG5vdCBy
+ZXNpZGVuY3kuIMKgTWFrZSBtb3JlIHNlbnNlPwo+PiBJdCBtYWtlcyBzZW5zZSB3aGVuIGNvbXB1
+dGVkLCBidXQgbm90IHdoZW4gdXNlZCBpbiByYl9rZXkgY29tcHV0YXRpb24uCj4+IFdoeSBzaG91
+bGQgd2UgcG9zdHBvbmUgcXVldWVzIHRoYXQgd2hlcmUgcHJlZW1wdGVkLCBpbnN0ZWFkIG9mIGdp
+dmluZwo+PiB0aGVtIGEgYm9vc3Q/Cj4KPiBXZSBzaG91bGQgbm90LCBpZiBpdCBpcy93YXMgd29y
+a2luZyBjb3JyZWN0bHksIGl0IHNob3VsZCBhbGxvdyBib3RoIGZvcgo+IGluY3JlYXNlL2Rlc2Ny
+ZWFzZSBvZiB0cmVlIHBvc2l0aW9uIChoZW5jZSBpdCdzIGEgbG9uZyBhbmQgY2FuIGdvCj4gbmVn
+YXRpdmUpIHRvIGFjY291bnQgZm9yIGJvdGggb3ZlciBhbmQgdW5kZXIgdGltZS4KCkknbSBkb2lu
+ZyBzb21lIHRlc3RzIHdpdGggYW5kIHdpdGhvdXQgaXQuCkhvdyBpdCBpcyB3b3JraW5nIG5vdyBp
+czoKZGVmaW5pdGlvbjoKICAgICAgICBpZiAodGltZWRfb3V0ICYmICFjZnFfY2ZxcV9zbGljZV9u
+ZXcoY2ZxcSkpIHsKICAgICAgICAgICAgICAgIGNmcXEtPnNsaWNlX3Jlc2lkID0gY2ZxcS0+c2xp
+Y2VfZW5kIC0gamlmZmllczsKICAgICAgICAgICAgICAgIGNmcV9sb2dfY2ZxcShjZnFkLCBjZnFx
+LCAicmVzaWQ9JWxkIiwKY2ZxcS0+c2xpY2VfcmVzaWQpOwogICAgICAgIH0KKiBoZXJlIHJlc2lk
+IGlzID4gMCBpZiB0aGVyZSB3YXMgcmVzaWR1YWwgdGltZSwgYW5kIDwgMCBpZiB0aGUgcXVldWUK
+b3ZlcnJ1biBpdHMgc2xpY2UuCnVzZToKICAgICAgICAgICAgICAgIHJiX2tleSA9IGNmcV9zbGlj
+ZV9vZmZzZXQoY2ZxZCwgY2ZxcSkgKyBqaWZmaWVzOwogICAgICAgICAgICAgICAgcmJfa2V5ICs9
+IGNmcXEtPnNsaWNlX3Jlc2lkOwogICAgICAgICAgICAgICAgY2ZxcS0+c2xpY2VfcmVzaWQgPSAw
+OwoqIGhlcmUgaWYgcmVzaWR1YWwgaXMgPiAwLCB3ZSBwb3N0cG9uZSwgaS5lLiBwZW5hbGl6ZS4g
+IElmIHJlc2lkdWFsIGlzCjwgMCAoaS5lLiB0aGUgcXVldWUgb3ZlcnJ1biksIHdlIGFudGljaXBh
+dGUgaXQsIGkuZS4gd2UgYm9vc3QgaXQuCgpTbyB0aGlzIGlzIGxpa2VseSBub3Qgd2hhdCB3ZSB3
+YW50LgpJIGRpZCBzb21lIHRlc3RzIHdpdGggYW5kIHdpdGhvdXQgaXQsIG9yIGNoYW5naW5nIHRo
+ZSBzaWduLCBhbmQgaXQKZG9lc24ndCBtYXR0ZXIgYXQgYWxsIGZvciBwdXJlIHN5bmMgd29ya2xv
+YWRzLgoKVGhlIG9ubHkgY2FzZSBpbiB3aGljaCBpdCBtYXR0ZXJzIGEgbGl0dGxlLCBmcm9tIG15
+IGV4cGVyaW1lbnRzLCBpcwpmb3Igc3luYyB2cyBhc3luYyB3b3JrbG9hZC4gSGVyZSwgc2luY2Ug
+YXN5bmMgcXVldWVzIGFyZSBwcmVlbXB0ZWQsCnRoZSBjdXJyZW50IGZvcm0gb2YgdGhlIGNvZGUg
+cGVuYWxpemVzIHRoZW0sIHNvIHRoZXkgZ2V0IGxhcmdlcgpkZWxheXMsIGFuZCB3ZSBnZXQgbW9y
+ZSBiYW5kd2lkdGggZm9yIHN5bmMuClRoaXMgaXMsIGJ0dywgdGhlIG9ubHkgcG9zaXRpdmUgb3V0
+Y29tZSAoSSBjYW4gdGhpbmsgb2YpIGZyb20gdGhlCmN1cnJlbnQgZm9ybSBvZiB0aGUgY29kZSwg
+YW5kIEkgdGhpbmsgd2UgY291bGQgb2J0YWluIGl0IG1vcmUgZWFzaWx5CmJ5IHVuY29uZGl0aW9u
+YWxseSBhZGRpbmcgYSBkZWxheSBmb3IgYXN5bmMgcXVldWVzOgogICAgICAgICAgICAgICAgcmJf
+a2V5ID0gY2ZxX3NsaWNlX29mZnNldChjZnFkLCBjZnFxKSArIGppZmZpZXM7CgkJaWYgKCFjZnFf
+Y2ZxcV9zeW5jKGNmcXEpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHJiX2tleSArPSBDRlFf
+QVNZTkNfREVMQVk7CgkgICAgICAgIH0KCnJlbW92aW5nIGNvbXBsZXRlbHkgdGhlIHJlc2lkIHN0
+dWZmIChvciBhdCBsZWFzdCBsZWF2aW5nIHVzIHdpdGggdGhlCmFiaWxpdHkgb2YgdXNpbmcgaXQg
+d2l0aCB0aGUgcHJvcGVyIHNpZ24pLgoKQ29ycmFkbwo+Cj4gLS0KPiBKZW5zIEF4Ym9lCj4KPgpf
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
+IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
+Oi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
