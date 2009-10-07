@@ -1,14 +1,15 @@
-From: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Wed, 07 Oct 2009 12:41:27 -0400
-Message-ID: <4ACCC4B7.4050805__4911.06228805638$1254934528$gmane$org@redhat.com>
-References: <e98e18940910051111r110dc776l5105bf931761b842@mail.gmail.com>	<20091006.161744.189719641.ryov@valinux.co.jp>	<20091006112201.GA27866@redhat.com>
-	<20091007.233805.183040347.ryov@valinux.co.jp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
+Date: Wed, 7 Oct 2009 12:19:07 -0500
+Message-ID: <20091007171907.GA20572@us.ibm.com>
+References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>
+	<1254932945-12578-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091007.233805.183040347.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1254932945-12578-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +19,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, John Dykstra <jdykstra72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ryo Tsuruta wrote:
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> This patch adds basic support for C/R of open INET sockets.  I think that
+> all the important bits of the TCP and ICSK socket structures is saved,
+> but I think there is still some additional IPv6 stuff that needs to be
+> handled.
+> 
+> With this patch applied, the following script can be used to demonstrate
+> the functionality:
+> 
+>   https://lists.linux-foundation.org/pipermail/containers/2009-October/021239.html
+> 
+> It shows that this enables migration of a sendmail process with open
+> connections from one machine to another without dropping.
 
-> If once dm-ioband is integrated into the LVM tools and bandwidth can
-> be assigned per device by lvcreate, the use of dm-tools is no longer
-> required for users.
+neato
 
-A lot of large data center users have a SAN, with volume management
-handled SAN-side and dedicated LUNs for different applications or
-groups of applications.
+> Now that listening socket support is in the c/r tree, I think it is
+> a good time to start fielding comments and suggestions on the
+> connected part, as I think lots of folks have input on how to make it
+> better, safer, etc.
 
-Because of alignment issues, they typically use filesystems directly
-on top of the LUNs, without partitions or LVM layers.  We cannot rely
-on LVM for these systems, because people prefer not to use that.
+One thing:
 
-Besides ... isn't the goal of the cgroups io bandwidth controller
-to control the IO used by PROCESSES?
+> +static int sock_inet_cptrst(struct ckpt_ctx *ctx,
+> +			    struct sock *sock,
+> +			    struct ckpt_hdr_socket_inet *hh,
+> +			    int op)
+> +{
+> +	struct inet_sock *sk = inet_sk(sock);
+> +	struct inet_connection_sock *icsk = inet_csk(sock);
+> +	int ret;
+> +
+> +	CKPT_COPY(op, hh->daddr, sk->daddr);
+> +	CKPT_COPY(op, hh->rcv_saddr, sk->rcv_saddr);
+> +	CKPT_COPY(op, hh->dport, sk->dport);
+> +	CKPT_COPY(op, hh->num, sk->num);
+> +	CKPT_COPY(op, hh->saddr, sk->saddr);
+> +	CKPT_COPY(op, hh->sport, sk->sport);
 
-If we want to control processes, why would we want the configuration
-to be applied to any other kind of object in the system?
+This becomes an easy way around CAP_NET_BIND_SERVICE right?  Or
+will that be caught by something already done in your listen
+patch after this step?
 
--- 
-All rights reversed.
+thanks,
+-serge
