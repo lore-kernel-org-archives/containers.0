@@ -1,13 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: time virtualization
-Date: Thu, 08 Oct 2009 10:51:31 -0700
-Message-ID: <1255024291.9915.1543.camel@nimitz>
-References: <1255004165.13367.153.camel@diese.inria.fr>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] don't call pre_restore_task twice
+Date: Thu, 08 Oct 2009 11:03:32 -0700
+Message-ID: <871vldg3uz.fsf@caffeine.danplanet.com>
+References: <20091007234750.GA6881@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1255004165.13367.153.camel-Vk9tpbkOzM4ZX7ca1aelMg@public.gmane.org>
+In-Reply-To: <20091007234750.GA6881-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Wed\, 7 Oct 2009 18\:47\:50 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,23 +18,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mathieu Lacage <mathieu.lacage-0GlwE4rufLnvuXihggDW+w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2009-10-08 at 14:16 +0200, Mathieu Lacage wrote:
-> A not-too-old paper outlines a nice approach to emulation of networks:
-> http://ds.informatik.rwth-aachen.de/members/weingaertner/publications/pdfs/hotmetrics08_shortened.pdf
-> They modify XEN to allow different VMs to have a different view on time:
-> each VM synchronizes with an external time source which can dynamically
-> and arbitrarily slow down, speed up, or simply keep pace with the
-> physical host clock, depending on what the user wants to achieve.
+SH> This fixes a memory leak spotted by Dan Smith, and the
+SH> actual bug was deduced by Matt Helsley.
 
-Honestly, it would take an absolute ton of work to break out all of the
-kernel subsystems to look at time differently.  We'd even need
-per-container jiffies and other scarier stuff like the NTP code.
+SH> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+SH> Reported-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This sounds to me like a perfect use case for hardware virtualization.
-Long live Xen! :)
+Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
--- Dave
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
