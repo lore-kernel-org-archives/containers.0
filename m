@@ -1,15 +1,11 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO scheduler based IO controller V10
-Date: Thu, 08 Oct 2009 19:22:42 +0900 (JST)
-Message-ID: <20091008.192242.39182274.ryov__7095.62146007574$1254997720$gmane$org@valinux.co.jp>
-References: <20091006112201.GA27866@redhat.com>
-	<20091007.233805.183040347.ryov@valinux.co.jp>
-	<4ACCC4B7.4050805@redhat.com>
+From: Mathieu Lacage <mathieu.lacage-0GlwE4rufLnvuXihggDW+w@public.gmane.org>
+Subject: time virtualization
+Date: Thu, 08 Oct 2009 14:16:05 +0200
+Message-ID: <1255004165.13367.153.camel@diese.inria.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4ACCC4B7.4050805-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +15,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, jmarchan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Rik,
+hi,
 
-Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Ryo Tsuruta wrote:
-> 
-> > If once dm-ioband is integrated into the LVM tools and bandwidth can
-> > be assigned per device by lvcreate, the use of dm-tools is no longer
-> > required for users.
-> 
-> A lot of large data center users have a SAN, with volume management
-> handled SAN-side and dedicated LUNs for different applications or
-> groups of applications.
-> 
-> Because of alignment issues, they typically use filesystems directly
-> on top of the LUNs, without partitions or LVM layers.  We cannot rely
-> on LVM for these systems, because people prefer not to use that.
+I recently went through my email backlog for the containers ML and
+noticed this email from Serge:
+https://lists.linux-foundation.org/pipermail/containers/2009-October/021226.html
 
-Thank you for your explanation. So I have a plan to reimplement
-dm-ioband into the block layer to make dm-tools no longer required.
-My opinion I wrote above assumes if dm-ioband is used for a logical
-volume which consists of multiple physical devices. If dm-ioband is
-integrated into the LVM tools, then the use of the dm-tools is not
-required and the underlying physical devices can be automatically
-deteced and configured to use dm-ioband.
+which mentions "time virtualization". I suspect that this refers to
+semantics similar to the semantics present in:
+http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1223.html
+https://lists.linux-foundation.org/pipermail/containers/2009-July/019602.html
 
-Thanks,
-Ryo Tsuruta
+Although I have no resources to offer for implementation for now, I
+thought that it might be interesting to discuss other possible uses for
+"time virtualization" which require different semantics. So, here is a
+small dump of what I would be interested in doing:
 
-> Besides ... isn't the goal of the cgroups io bandwidth controller
-> to control the IO used by PROCESSES?
->
-> If we want to control processes, why would we want the configuration
-> to be applied to any other kind of object in the system?
+A not-too-old paper outlines a nice approach to emulation of networks:
+http://ds.informatik.rwth-aachen.de/members/weingaertner/publications/pdfs/hotmetrics08_shortened.pdf
+They modify XEN to allow different VMs to have a different view on time:
+each VM synchronizes with an external time source which can dynamically
+and arbitrarily slow down, speed up, or simply keep pace with the
+physical host clock, depending on what the user wants to achieve.
+
+I have been using network namespaces for a while to build some simple
+network emulation testbeds and I would be really interested in extending
+this to include virtualization of time on a container basis in a way
+similar to the one outlined above to be able to synchronize a number of
+netns containers running on the same host but also potentially on
+separate physical hosts, and, potentially, with a network simulator.
+This would allow me to control more precisely how 'accurate' the
+emulation is.
+
+The above requires at least the applications but also the kernel network
+stack to use the same time counters so, it's not clear to me how this
+could play with the patch posted in 2006 which merely changes the
+semantics of gettimeofday. i.e., a number of potential issues come to
+mind:
+  - what happens if an application specifies a timeout to a syscall ? It
+should still work if the difference between the host clock and the
+virtualized clock is a simple offset but, if the rate of the guest clock
+changes, it will break.
+  - what happens if a guest network stack starts a timer and the rate of
+the guest clock changes ? 
+
+In both of these cases, the above-mentioned paper deals with this by
+changing the clock as seen by the OS (by changing the hardware clock
+exported by the XEN hypervisor to a guest), as opposed to the clock as
+seen by the application within the container (which is done in the
+patches posted). I suspect that similar results could be obtained by
+using a special clocksource which is namespace-aware and changes its
+behavior based on the current active namespace. I guess that the concept
+of an "active namespace" is not very clear though. i.e., while it's easy
+to associate a namespace to each application, I don't see how kernel
+code executing outside process context could know this.
+
+Clearly, I don't really know much about this: it could well be that this
+is not implementable at the namespace layer and that the real solution
+is to use a full VM (or UML, or whatever) but, it sure would be really
+cool to be able to specify arbitrary clock sources on a per-container
+basis.
+
+Please, shoot me down into flames :)
+
+Mathieu
