@@ -1,87 +1,60 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] don't call pre_restore_task twice
-Date: Thu, 8 Oct 2009 09:12:58 -0500
-Message-ID: <20091008141258.GA21486@us.ibm.com>
-References: <20091007234750.GA6881@us.ibm.com>
-	<20091008030919.GH18101@count0.beaverton.ibm.com>
+From: John Dykstra <john.dykstra1@gmail.com>
+Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
+Date: Thu, 08 Oct 2009 14:47:13 +0000
+Message-ID: <1255013233.8033.14.camel@Maple>
+References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>
+	 <1254932945-12578-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091008030919.GH18101-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1254932945-12578-3-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Wed, Oct 07, 2009 at 06:47:50PM -0500, Serge E. Hallyn wrote:
-> > Pre_restore_task is being called both before and inside
-> > restore_task, causing a memory leak at
-> > current->checkpoint_data.
-> > 
-> > Only call it once, outside restore_task.
-> > 
-> > This fixes a memory leak spotted by Dan Smith, and the
-> > actual bug was deduced by Matt Helsley.
-> > 
-> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Reported-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > 
-> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> However, I think I spotted another problem:
-> 
-> int pre_restore_task()
-> {
->         sigset_t sigset;
-> 
->         /* task-specific restart data: freed from post_restore_task() */
->         current->checkpoint_data = kzalloc(sizeof(struct ckpt_data),
-> GFP_KERNEL);
->         if (!current->checkpoint_data)
->                 return -ENOMEM;
-> ...
-> }
-> 
-> void post_restore_task()
-> {
-> 	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
-> ...
-> }
-> 
-> then in do_restore_coord():
-> 
-> if (ctx->uflags & RESTART_TASKSELF) {
->                 ret = pre_restore_task();
->                 ckpt_debug("pre restore task: %d\n", ret);
->                 if (ret < 0)
->                         goto out;
-> ...
->  out:
->         if (ctx->uflags & RESTART_TASKSELF)
->                 post_restore_task();
-> 
-> But if we got -ENOMEM from pre_restore_task() then I think there will be a
-> NULL dereference.
+On Wed, 2009-10-07 at 09:29 -0700, Dan Smith wrote:
+> This patch adds basic support for C/R of open INET sockets.  I think
+> that
+> all the important bits of the TCP and ICSK socket structures is saved,
+> but I think there is still some additional IPv6 stuff that needs to be
+> handled.
 
-But the very first thing post_restore_task() does is
+I think this patch breaks code that was already in do_sock_restore():
 
-	/* can happen if restart failed early */
-	if (!current->checkpoint_data)
-		return;
+        struct sock *do_sock_restore(struct ckpt_ctx *ctx)
+        {
+        	struct ckpt_hdr_socket *h;
+        	struct socket *sock;
+        	int ret;
+        
+        	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET);
+        	if (IS_ERR(h))
+        		return ERR_PTR(PTR_ERR(h));
+        
+        	/* silently clear flags, e.g. SOCK_NONBLOCK or SOCK_CLOEXEC */
+        	h->sock.type &= SOCK_TYPE_MASK;
+        
+        	ret = sock_create(h->sock_common.family, h->sock.type, 0, &sock);
+        	if (ret < 0)
+        		goto err;
+        
 
--serge
+You're passing 0 as the protocol value to sock_create().  This
+ultimately gets passed to the address family's create() function.  
+
+inet_create() (and its IPv6 companion) use that protocol value as the
+key when they search for the proper inet_protosw, which in turn gets
+mapped to the struct proto and passed to sk_prot_alloc().
+
+In address families INET and AF_INET6, the struct sock is different
+sizes for different protocols.  This is implemented by the struct proto
+specifying which cache the struct sock comes from.
+
+So by passing in 0 all the time to sock_create(), you're getting a
+struct sock that may not be the right size.  Memory corruption and
+madness follow.
+
+  --  John
+
