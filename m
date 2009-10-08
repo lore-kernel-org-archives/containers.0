@@ -1,18 +1,13 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
-Date: Thu, 08 Oct 2009 10:34:11 -0700
-Message-ID: <8763apg57w.fsf@caffeine.danplanet.com>
-References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>
-	<1254932945-12578-3-git-send-email-danms@us.ibm.com>
-	<1255013233.8033.14.camel@Maple>
-	<87ab01gag7.fsf@caffeine.danplanet.com>
-	<1255023087.8033.17.camel@Maple>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: time virtualization
+Date: Thu, 08 Oct 2009 10:51:31 -0700
+Message-ID: <1255024291.9915.1543.camel@nimitz>
+References: <1255004165.13367.153.camel@diese.inria.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1255023087.8033.17.camel@Maple> (John Dykstra's message of "Thu\,
-	08 Oct 2009 12\:31\:27 -0500")
+In-Reply-To: <1255004165.13367.153.camel-Vk9tpbkOzM4ZX7ca1aelMg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,32 +17,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: John Dykstra <john.dykstra1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Mathieu Lacage <mathieu.lacage-0GlwE4rufLnvuXihggDW+w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-JD> Yep.  It sort of messes up your separation between layers, though.
+On Thu, 2009-10-08 at 14:16 +0200, Mathieu Lacage wrote:
+> A not-too-old paper outlines a nice approach to emulation of networks:
+> http://ds.informatik.rwth-aachen.de/members/weingaertner/publications/pdfs/hotmetrics08_shortened.pdf
+> They modify XEN to allow different VMs to have a different view on time:
+> each VM synchronizes with an external time source which can dynamically
+> and arbitrarily slow down, speed up, or simply keep pace with the
+> physical host clock, depending on what the user wants to achieve.
 
-In what way?  It's just this:
+Honestly, it would take an absolute ton of work to break out all of the
+kernel subsystems to look at time differently.  We'd even need
+per-container jiffies and other scarier stuff like the NTP code.
 
-diff --git a/net/checkpoint.c b/net/checkpoint.c
-index 3d6da68..f74ebe4 100644
---- a/net/checkpoint.c
-+++ b/net/checkpoint.c
-@@ -687,7 +687,8 @@ struct sock *do_sock_restore(struct ckpt_ctx *ctx)
-        /* silently clear flags, e.g. SOCK_NONBLOCK or SOCK_CLOEXEC */
-        h->sock.type &= SOCK_TYPE_MASK;
- 
--       ret = sock_create(h->sock_common.family, h->sock.type, 0, &sock);
-+       ret = sock_create(h->sock_common.family, h->sock.type,
-+                         h->sock.protocol, &sock);
-        if (ret < 0)
-                goto err;
+This sounds to me like a perfect use case for hardware virtualization.
+Long live Xen! :)
 
-Which seems like a why-didn't-I-do-that-in-the-first-place sort of
-thing...   Am I missing something?
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+-- Dave
