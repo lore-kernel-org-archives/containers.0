@@ -1,15 +1,14 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: pidns memory leak
-Date: Wed, 7 Oct 2009 20:08:28 -0700
-Message-ID: <20091008030828.GA18973@us.ibm.com>
-References: <4AC5F198.2070407@fr.ibm.com> <20091006040526.GA22923@us.ibm.com>
-	<4ACAFD6A.3060008@fr.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] don't call pre_restore_task twice
+Date: Wed, 7 Oct 2009 20:09:19 -0700
+Message-ID: <20091008030919.GH18101@count0.beaverton.ibm.com>
+References: <20091007234750.GA6881@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4ACAFD6A.3060008-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091007234750.GA6881-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,43 +18,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Still digging through some traces, but below I have some questions that 
-I am still trying to answer.
+On Wed, Oct 07, 2009 at 06:47:50PM -0500, Serge E. Hallyn wrote:
+> Pre_restore_task is being called both before and inside
+> restore_task, causing a memory leak at
+> current->checkpoint_data.
+> 
+> Only call it once, outside restore_task.
+> 
+> This fixes a memory leak spotted by Dan Smith, and the
+> actual bug was deduced by Matt Helsley.
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Reported-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
->
-> I am not sure what you mean by 'struct pids' but what I observed is:
+Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Ok, I see that too. If pids leak, then pid-namespace will leak too.
-Do you see any leaks in proc_inode_cache ?
+However, I think I spotted another problem:
 
->
-> pid_2 and pid_namespace (as they are named in /proc/slabinfo) are never  
-> decremented.
->
->> And the pid_namespace does not seem to reproduce for me, with out the
->> 'ls -al /proc/...' above, or with the simpler 'ns_exec' approach to
->> creating pid namespace.
->
-> I tried to write a simpler program but I failed to reproduce it.
->
->> I am going through the code for lxc-execute, but does it remount /proc  
->> in the container ?
->
-> Right, the parent does a clone(NEWMNT|NEWPID|NEWIPC|NEWUTS), wait for  
-> the child while this one (pid 1) 'execs' the lxc-init process. This  
-> program mounts /proc and fork-exec the command passed as parameter (here  
-> 'sleep 3600').
->
-> Without this intermediate process, the leak *seems* not happening.
->
-> If you don't access /proc/<pid>/<file>, the leak is not happening.
+int pre_restore_task()
+{
+        sigset_t sigset;
 
-I could not see the code for that.  Does lxc-stop unmount /proc too ?
-Or is the umount expected to happen automatically after all processes
-in the container are killed ?
+        /* task-specific restart data: freed from post_restore_task() */
+        current->checkpoint_data = kzalloc(sizeof(struct ckpt_data),
+GFP_KERNEL);
+        if (!current->checkpoint_data)
+                return -ENOMEM;
+...
+}
 
-Sukadev
+void post_restore_task()
+{
+	sigprocmask(SIG_SETMASK, &current->checkpoint_data->blocked, NULL);
+...
+}
+
+then in do_restore_coord():
+
+if (ctx->uflags & RESTART_TASKSELF) {
+                ret = pre_restore_task();
+                ckpt_debug("pre restore task: %d\n", ret);
+                if (ret < 0)
+                        goto out;
+...
+ out:
+        if (ctx->uflags & RESTART_TASKSELF)
+                post_restore_task();
+
+But if we got -ENOMEM from pre_restore_task() then I think there will be a
+NULL dereference.
+
+
+Cheers,
+	-Matt Helsley
+
+> ---
+>  checkpoint/process.c |    4 ----
+>  checkpoint/restart.c |    1 +
+>  2 files changed, 1 insertions(+), 4 deletions(-)
+> 
+> diff --git a/checkpoint/process.c b/checkpoint/process.c
+> index 424f688..c51e036 100644
+> --- a/checkpoint/process.c
+> +++ b/checkpoint/process.c
+> @@ -864,10 +864,6 @@ int restore_task(struct ckpt_ctx *ctx)
+>  {
+>  	int ret;
+> 
+> -	ret = pre_restore_task(ctx);
+> -	if (ret < 0)
+> -		goto out;
+> -
+>  	ret = restore_task_struct(ctx);
+>  	ckpt_debug("task %d\n", ret);
+>  	if (ret < 0)
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 3a58a76..fc94374 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -967,6 +967,7 @@ static int do_restore_task(void)
+>  	 */
+>  	if (zombie) {
+>  		restore_debug_exit(ctx);
+> +		post_restore_task(ctx);
+>  		ckpt_ctx_put(ctx);
+>  		do_exit(current->exit_code);
+>  	}
+
+
+> -- 
+> 1.5.4.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
