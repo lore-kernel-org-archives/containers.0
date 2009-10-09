@@ -1,17 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: pidns memory leak
-Date: Fri, 09 Oct 2009 13:50:12 -0700
-Message-ID: <m18wfkl2bf.fsf@fess.ebiederm.org>
-References: <4AC5F198.2070407@fr.ibm.com> <20091006040526.GA22923@us.ibm.com>
-	<4ACAFD6A.3060008@fr.ibm.com> <20091008030828.GA18973@us.ibm.com>
-	<4ACD9ECC.90508@fr.ibm.com> <20091009032928.GA2031@us.ibm.com>
-	<4ACF381F.9050808@fr.ibm.com> <20091009203809.GA12230@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/4] debug: add a few ckpt_debugs
+Date: Fri, 9 Oct 2009 15:55:52 -0500
+Message-ID: <20091009205552.GA5778@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091009203809.GA12230-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
-	message of "Fri\, 9 Oct 2009 13\:38\:09 -0700")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,44 +16,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, andrea-l3A5Bk7waGM@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+[
+this set is available at
+http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/oct9.lsm5
+]
 
-> Andrea,
->
-> We have been running a leak in child pid namespaces and some early debugging
-> points to the following commit:
->
->>> 	commit 7766755a2f249e7e0dabc5255a0a3d151ff79821
->>> 	Author: Andrea Arcangeli <andrea-l3A5Bk7waGM@public.gmane.org>
->>> 	Date:   Mon Feb 4 22:29:21 2008 -0800
->>>
->
-> Reverting the commit seems to fix the leak but we need to do some more
-> analysis (like the lstat() question Daniel has).
+These were pulled out of the lsm-related patches into which they
+had been embedded.
 
-Yes.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/files.c   |    3 +++
+ checkpoint/process.c |   20 ++++++++++++++++----
+ kernel/cred.c        |    2 ++
+ 3 files changed, 21 insertions(+), 4 deletions(-)
 
-That entire path is an optimization.  It should not be needed for correct
-operation.  Although it may be responsible for some false positives.
-
-> However I have a basic question regarding the commit - the log mentions:
->
-> 	> do_exit->release_task->mark_inode_dirty_sync->schedule() (will never
-> 	> come back to run journal_stop)
->
-> But release_task() calls shrink_dcache_parent() for a _procfs_ dentry. Does
-> journal_stop() apply to procfs also ?
-
-The problem when the that PF_EXITING check was introduced is that
-shrink_dcache_parent could shrink dcache entries for other
-filesystems.  Last I looked that is no longer the case and we can
-remove that code.  As I recall proc_flush_task_mnt has a few other minor
-bugs as well that could cause problems.
-
-Ultimately what problems are you seeing?
-
-Eric
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 27e29a0..f6de07e 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -159,6 +159,9 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 	if (h->f_credref < 0)
+ 		return h->f_credref;
+ 
++	ckpt_debug("file %s credref %d", file->f_dentry->d_name.name,
++		h->f_credref);
++
+ 	/* FIX: need also file->f_owner, etc */
+ 
+ 	return 0;
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index c51e036..7463158 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -581,11 +581,15 @@ static int restore_task_creds(struct ckpt_ctx *ctx)
+ 
+ 	realcred = ckpt_obj_fetch(ctx, h->cred_ref, CKPT_OBJ_CRED);
+ 	if (IS_ERR(realcred)) {
++		ckpt_debug("Error %ld fetching realcred (ref %d)\n",
++			PTR_ERR(realcred), h->cred_ref);
+ 		ret = PTR_ERR(realcred);
+ 		goto out;
+ 	}
+ 	ecred = ckpt_obj_fetch(ctx, h->ecred_ref, CKPT_OBJ_CRED);
+ 	if (IS_ERR(ecred)) {
++		ckpt_debug("Error %ld fetching ecred (ref %d)\n",
++			PTR_ERR(ecred), h->ecred_ref);
+ 		ret = PTR_ERR(ecred);
+ 		goto out;
+ 	}
+@@ -593,6 +597,7 @@ static int restore_task_creds(struct ckpt_ctx *ctx)
+ 	ctx->ecred = ecred;
+ 
+ out:
++	ckpt_debug("Returning %d\n", ret);
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+ }
+@@ -608,14 +613,21 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 	 * referenced. See comment in checkpoint_task_objs.
+ 	 */
+ 	ret = restore_task_creds(ctx);
+-	if (!ret)
+-		ret = restore_task_ns(ctx);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_debug("restore_task_creds returned %d\n", ret);
++		return ret;
++	}
++	ret = restore_task_ns(ctx);
++	if (ret < 0) {
++		ckpt_debug("restore_task_ns returned %d\n", ret);
+ 		return ret;
++	}
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+-	if (IS_ERR(h))
++	if (IS_ERR(h)) {
++		ckpt_debug("Error fetching task obj\n");
+ 		return PTR_ERR(h);
++	}
+ 
+ 	ret = restore_obj_file_table(ctx, h->files_objref);
+ 	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 9710cae..62d28a4 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -724,6 +724,8 @@ static int do_checkpoint_cred(struct ckpt_ctx *ctx, struct cred *cred)
+ 	if (!h)
+ 		return -ENOMEM;
+ 
++	ckpt_debug("cred uid %d fsuid %d gid %d\n", cred->uid, cred->fsuid,
++			cred->gid);
+ 	h->uid = cred->uid;
+ 	h->suid = cred->suid;
+ 	h->euid = cred->euid;
+-- 
+1.6.1
