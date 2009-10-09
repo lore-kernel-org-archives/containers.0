@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/4] cr: add smack support to lsm c/r (v4)
-Date: Fri, 9 Oct 2009 15:56:43 -0500
-Message-ID: <20091009205643.GB5823@us.ibm.com>
+Subject: [PATCH 4/4] cr: add selinux support (v6)
+Date: Fri, 9 Oct 2009 15:57:31 -0500
+Message-ID: <20091009205731.GC5823@us.ibm.com>
 References: <20091009205552.GA5778@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,7 +19,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Documentation/checkpoint/readme.txt begins:
@@ -29,424 +29,566 @@ of a running application so that it can later resume its execution
 from the time at which it was checkpointed.
 """
 
-This patch implements checkpoint and restore of Smack security
-labels.  The rules are the same as in previous versions:
+This patch adds the ability to checkpoint and restore selinux
+contexts for tasks, open files, and sysvipc objects.  Contexts
+are checkpointed as strings.  For tasks and files, where a security
+struct actually points to several contexts, all contexts are
+written out in one string, separated by ':::'.
 
-	1. when objects are created during restore() they are
-	   automatically labeled with current_security().
-	2. if there was a label checkpointed with the object,
-	   and that label != current_security() (which is the
-	   same as obj->security), then the object is relabeled
-	   if the sys_restart() caller has CAP_MAC_ADMIN.
-	   Otherwise we return -EPERM.
+The default behaviors are to checkpoint contexts, but not to
+restore them.  To attempt to restore them, sys_restart() must
+be given the RESTART_KEEP_LSM flag.  If this is given then
+the caller of sys_restart() must have the new 'restore' permission
+to the target objclass, or for instance PROCESS__SETFSCREATE to
+itself to specify a create_sid.
 
-This has been tested by checkpointing tasks under labels
-_, vs1, and vs2, and restarting from tasks under _, vs1,
-and vs2, with and without CAP_MAC_ADMIN in the bounding
-set, and with and without the '-k' (keep_lsm) flag to mktree.
-Expected results:
+There are some tests under cr_tests/selinux at
+git://git.sr71.net/~hallyn/cr_tests.git.
 
-	#shell 1:
-	echo vs1 > /proc/self/attr/current
-	ckpt > out
-	echo vs2 > /proc/self/attr/current
-	mktree -F /cgroup/2 < out
-		(frozen)
-	# shell 2:
-	cat /proc/`pidof ckpt`/attr/current
-		vs2
-	echo THAWED > /cgroup/2/freezer.state
-	# shell 1:
-	mktree -k -F /cgroup/2 < out
-		(frozen)
-	# shell 2:
-	cat /proc/`pidof ckpt`/attr/current
-		vs1
-	echo THAWED > /cgroup/2/freezer.state
-	# shell 1:
-	capsh --drop=cap_mac_admin --
-	mktree -k -F /cgroup/2 < out
-		(permission denied)
+A corresponding simple refpolicy (and /usr/share/selinux/devel/include)
+patch is needed.
 
-There are testcases in git://git.sr71.net/~hallyn/cr_tests.git
-under cr_tests/smack, which automate the above (and pass).
+The programs to checkpoint and restart (called 'checkpoint' and
+'restart') come from git://git.ncl.cs.columbia.edu/pub/git/user-cr.git.
+This patch applies against the checkpoint/restart-enabled kernel
+tree at git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git/.
 
 Changelog:
-	sep 3: add a version to smack lsm, accessible through
-		/smack/version  (Casey and Serge)
-	sep 10: rename xyz_get_ctx() to xyz_checkpoint()
+	oct 09: fix memory overrun in selinux_cred_checkpoint.
+	oct 02: (Stephen Smalley suggestions):
+		1. s/__u32/u32/
+		2. enable the fown sid restoration
+		3. use process_restore to authorize resetting osid
+		4. don't make new hooks inline.
+	oct 01: Remove some debugging that is redundant with
+		avc log data.
+	sep 10: (Most addressing suggestions by Stephen Smalley)
+		1. change xyz_get_ctx() to xyz_checkpoint().
+		2. check entrypoint permission on cred_restore
+		3. always dec context length by 1
+		4. don't allow SECSID_NULL when that's not valid
+		5. when SECSID_NULL is valid, restore it
+		6. c/r task->osid
+		7. Just print nothing instead of 'null' for SECSID_NULL
+		8. sids are __u32, as are lenghts passed to sid_to_context.
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
 ---
- checkpoint/restart.c       |    1 +
- security/smack/smack.h     |    1 +
- security/smack/smack_lsm.c |  141 ++++++++++++++++++++++++++++++++++++++++++++
- security/smack/smackfs.c   |   83 ++++++++++++++++++++++++++
- 4 files changed, 226 insertions(+), 0 deletions(-)
+ checkpoint/restart.c                         |    1 +
+ security/selinux/hooks.c                     |  366 ++++++++++++++++++++++++++
+ security/selinux/include/av_perm_to_string.h |    5 +
+ security/selinux/include/av_permissions.h    |    5 +
+ 4 files changed, 377 insertions(+), 0 deletions(-)
 
 diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 41d306b..a5351ab 100644
+index a5351ab..dbe8b2d 100644
 --- a/checkpoint/restart.c
 +++ b/checkpoint/restart.c
-@@ -647,6 +647,7 @@ static int restore_lsm(struct ckpt_ctx *ctx)
- 	}
+@@ -648,6 +648,7 @@ static int restore_lsm(struct ckpt_ctx *ctx)
  
  	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
-+			strcmp(ctx->lsm_name, "smack") != 0 &&
+ 			strcmp(ctx->lsm_name, "smack") != 0 &&
++			strcmp(ctx->lsm_name, "selinux") != 0 &&
  			strcmp(ctx->lsm_name, "default") != 0) {
  		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
  				ctx->lsm_name);
-diff --git a/security/smack/smack.h b/security/smack/smack.h
-index 243bec1..b5c1ce6 100644
---- a/security/smack/smack.h
-+++ b/security/smack/smack.h
-@@ -216,6 +216,7 @@ u32 smack_to_secid(const char *);
- extern int smack_cipso_direct;
- extern char *smack_net_ambient;
- extern char *smack_onlycap;
-+extern char *smack_version;
- extern const char *smack_cipso_option;
- 
- extern struct smack_known smack_known_floor;
-diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
-index 0023182..1058de4 100644
---- a/security/smack/smack_lsm.c
-+++ b/security/smack/smack_lsm.c
-@@ -27,6 +27,7 @@
- #include <linux/udp.h>
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 8d8b69c..e6994eb 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -76,6 +76,7 @@
+ #include <linux/selinux.h>
  #include <linux/mutex.h>
- #include <linux/pipe_fs_i.h>
+ #include <linux/posix-timers.h>
 +#include <linux/checkpoint.h>
- #include <net/netlabel.h>
- #include <net/cipso_ipv4.h>
- #include <linux/audit.h>
-@@ -892,6 +893,28 @@ static int smack_file_permission(struct file *file, int mask)
- 	return 0;
+ 
+ #include "avc.h"
+ #include "objsec.h"
+@@ -2961,6 +2962,104 @@ static int selinux_file_permission(struct file *file, int mask)
+ 	return selinux_revalidate_file_permission(file, mask);
  }
  
-+static inline char *smack_file_checkpoint(void *security)
++/*
++ * for file context, we print both the fsec->sid and fsec->fown_sid
++ * as string representations, separated by ':::'
++ * We don't touch isid - if you wanted that set you shoulda set up the
++ * fs correctly.
++ */
++static char *selinux_file_checkpoint(void *security)
 +{
-+	return kstrdup((char *)security, GFP_KERNEL);
-+}
++	struct file_security_struct *fsec = security;
++	char *s1 = NULL, *s2 = NULL, *sfull;
++	u32 len1, len2, lenfull;
++	int ret;
 +
-+static inline int smack_file_restore(struct file *file, char *ctx)
-+{
-+	char *newsmack = smk_import(ctx, 0);
++	if (fsec->sid == 0 || fsec->fown_sid == 0)
++		return ERR_PTR(-EINVAL);
 +
-+	if (newsmack == NULL)
-+		return -EINVAL;
-+	/* I think by definition, file->f_security == current_security
-+	 * right now, but let's assume somehow it might not be */
-+	if (newsmack == file->f_security)
-+		return 0;
-+	if (!capable(CAP_MAC_ADMIN))
-+		return -EPERM;
-+	file->f_security = newsmack;
-+
-+	return 0;
-+}
-+
- /**
-  * smack_file_alloc_security - assign a file security blob
-  * @file: the object
-@@ -1079,6 +1102,27 @@ static int smack_file_receive(struct file *file)
-  * Task hooks
-  */
- 
-+static inline char *smack_cred_checkpoint(void *security)
-+{
-+	return kstrdup((char *)security, GFP_KERNEL);
-+}
-+
-+static inline int smack_cred_restore(struct file *file, struct cred *cred,
-+					char *ctx)
-+{
-+	char *newsmack = smk_import(ctx, 0);
-+
-+	if (newsmack == NULL)
-+		return -EINVAL;
-+	if (newsmack == cred->security)
-+		return 0;
-+	if (!capable(CAP_MAC_ADMIN))
-+		return -EPERM;
-+	cred->security = newsmack;
-+
-+	return 0;
-+}
-+
- /**
-  * smack_cred_free - "free" task-level security credentials
-  * @cred: the credentials in question
-@@ -1742,6 +1786,26 @@ static int smack_msg_msg_alloc_security(struct msg_msg *msg)
- 	return 0;
- }
- 
-+static inline char *smack_msg_msg_checkpoint(void *security)
-+{
-+	return kstrdup((char *)security, GFP_KERNEL);
-+}
-+
-+static inline int smack_msg_msg_restore(struct msg_msg *msg, char *ctx)
-+{
-+	char *newsmack = smk_import(ctx, 0);
-+
-+	if (newsmack == NULL)
-+		return -EINVAL;
-+	if (newsmack == msg->security)
-+		return 0;
-+	if (!capable(CAP_MAC_ADMIN))
-+		return -EPERM;
-+	msg->security = newsmack;
-+
-+	return 0;
-+}
-+
- /**
-  * smack_msg_msg_free_security - Clear the security blob for msg_msg
-  * @msg: the object
-@@ -2175,6 +2239,26 @@ static void smack_ipc_getsecid(struct kern_ipc_perm *ipp, u32 *secid)
- 	*secid = smack_to_secid(smack);
- }
- 
-+static inline char *smack_ipc_checkpoint(void *security)
-+{
-+	return kstrdup((char *)security, GFP_KERNEL);
-+}
-+
-+static inline int smack_ipc_restore(struct kern_ipc_perm *ipcp, char *ctx)
-+{
-+	char *newsmack = smk_import(ctx, 0);
-+
-+	if (newsmack == NULL)
-+		return -EINVAL;
-+	if (newsmack == ipcp->security)
-+		return 0;
-+	if (!capable(CAP_MAC_ADMIN))
-+		return -EPERM;
-+	ipcp->security = newsmack;
-+
-+	return 0;
-+}
-+
- /**
-  * smack_d_instantiate - Make sure the blob is correct on an inode
-  * @opt_dentry: unused
-@@ -3029,6 +3113,51 @@ static void smack_release_secctx(char *secdata, u32 seclen)
- {
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+
-+static int smack_may_restart(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr *chp;
-+	char *saved_version;
-+	int ret = 0;
-+
-+	chp = ckpt_read_buf_type(ctx, CKPT_LSM_INFO_LEN, CKPT_HDR_LSM_INFO);
-+	if (IS_ERR(chp))
-+		return PTR_ERR(chp);
-+
-+	/*
-+	 * After the checkpoint header comes the null terminated
-+	 * Smack "policy" version. This will usually be the
-+	 * floor label "_".
-+	 */
-+	saved_version = (char *)(chp + 1);
-+
-+	/*
-+	 * Of course, it is possible that a "policy" version mismatch
-+	 * is not considered threatening.
-+	 */
-+	if (!(ctx->uflags & RESTART_KEEP_LSM))
-+		goto skip;
-+
-+	if (strcmp(saved_version, smack_version) != 0) {
-+		ckpt_debug("Smack version at checkpoint was"
-+			   "\"%s\", now is \"%s\".\n",
-+				saved_version, smack_version);
-+		ret = -EINVAL;
++	ret = security_sid_to_context(fsec->sid, &s1, &len1);
++	if (ret)
++		return ERR_PTR(ret);
++	len1--;
++	ret = security_sid_to_context(fsec->fown_sid, &s2, &len2);
++	if (ret) {
++		kfree(s1);
++		return ERR_PTR(ret);
 +	}
-+skip:
-+	ckpt_hdr_put(ctx, chp);
++	len2--;
++	lenfull = len1 + len2 + 3;
++	sfull = kmalloc(lenfull + 1, GFP_KERNEL);
++	if (!sfull) {
++		sfull = ERR_PTR(-ENOMEM);
++		goto out;
++	}
++	sfull[lenfull] = '\0';
++	sprintf(sfull, "%s:::%s", s1, s2);
++
++out:
++	kfree(s1);
++	kfree(s2);
++	return sfull;
++}
++
++static int selinux_file_restore(struct file *file, char *ctx)
++{
++	char *s1, *s2;
++	u32 sid1 = 0, sid2 = 0;
++	int ret = -EINVAL;
++	struct file_security_struct *fsec = file->f_security;
++
++	/*
++	 * Objhash made sure the string is null-terminated.
++	 * We make a copy so we can mangle it.
++	 */
++	s1 = kstrdup(ctx, GFP_KERNEL);
++	if (!s1)
++		return -ENOMEM;
++	s2 = strstr(s1, ":::");
++	if (!s2)
++		goto out;
++
++	*s2 = '\0';
++	s2 += 3;
++	if (*s2 == '\0')
++		goto out;
++
++	/* SECSID_NULL is not valid for file sids */
++	if (strlen(s1) == 0 || strlen(s2) == 0)
++		goto out;
++
++	ret = security_context_to_sid(s1, strlen(s1), &sid1);
++	if (ret)
++		goto out;
++	ret = security_context_to_sid(s2, strlen(s2), &sid2);
++	if (ret)
++		goto out;
++
++	if (sid1 && fsec->sid != sid1) {
++		ret = avc_has_perm(current_sid(), sid1, SECCLASS_FILE,
++					FILE__RESTORE, NULL);
++		if (ret)
++			goto out;
++		fsec->sid = sid1;
++	}
++
++	if (sid2 && fsec->fown_sid != sid2) {
++		ret = avc_has_perm(current_sid(), sid2, SECCLASS_FILE,
++				FILE__FOWN_RESTORE, NULL);
++		if (ret)
++			goto out;
++	       fsec->fown_sid = sid2;
++	}
++
++	ret = 0;
++
++out:
++	kfree(s1);
 +	return ret;
 +}
 +
-+static int smack_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_obj_type(ctx, smack_version,
-+					strlen(smack_version) + 1,
-+					CKPT_HDR_LSM_INFO);
-+}
-+#endif
-+
- struct security_operations smack_ops = {
- 	.name =				"smack",
+ static int selinux_file_alloc_security(struct file *file)
+ {
+ 	return file_alloc_security(file);
+@@ -3219,6 +3318,186 @@ static int selinux_task_create(unsigned long clone_flags)
+ 	return current_has_perm(current, PROCESS__FORK);
+ }
  
-@@ -3064,6 +3193,8 @@ struct security_operations smack_ops = {
- 	.inode_getsecid =		smack_inode_getsecid,
- 
- 	.file_permission = 		smack_file_permission,
-+	.file_checkpoint = 		smack_file_checkpoint,
-+	.file_restore = 		smack_file_restore,
- 	.file_alloc_security = 		smack_file_alloc_security,
- 	.file_free_security = 		smack_file_free_security,
- 	.file_ioctl = 			smack_file_ioctl,
-@@ -3073,6 +3204,8 @@ struct security_operations smack_ops = {
- 	.file_send_sigiotask = 		smack_file_send_sigiotask,
- 	.file_receive = 		smack_file_receive,
- 
-+	.cred_checkpoint =		smack_cred_checkpoint,
-+	.cred_restore =			smack_cred_restore,
- 	.cred_free =			smack_cred_free,
- 	.cred_prepare =			smack_cred_prepare,
- 	.cred_commit =			smack_cred_commit,
-@@ -3094,8 +3227,12 @@ struct security_operations smack_ops = {
- 
- 	.ipc_permission = 		smack_ipc_permission,
- 	.ipc_getsecid =			smack_ipc_getsecid,
-+	.ipc_checkpoint =		smack_ipc_checkpoint,
-+	.ipc_restore =			smack_ipc_restore,
- 
- 	.msg_msg_alloc_security = 	smack_msg_msg_alloc_security,
-+	.msg_msg_checkpoint =		smack_msg_msg_checkpoint,
-+	.msg_msg_restore =		smack_msg_msg_restore,
- 	.msg_msg_free_security = 	smack_msg_msg_free_security,
- 
- 	.msg_queue_alloc_security = 	smack_msg_queue_alloc_security,
-@@ -3155,6 +3292,10 @@ struct security_operations smack_ops = {
- 	.secid_to_secctx = 		smack_secid_to_secctx,
- 	.secctx_to_secid = 		smack_secctx_to_secid,
- 	.release_secctx = 		smack_release_secctx,
-+#ifdef CONFIG_CHECKPOINT
-+	.may_restart =			smack_may_restart,
-+	.checkpoint_header =		smack_checkpoint_header,
-+#endif
- };
- 
- 
-diff --git a/security/smack/smackfs.c b/security/smack/smackfs.c
-index f83a809..0f0d5aa 100644
---- a/security/smack/smackfs.c
-+++ b/security/smack/smackfs.c
-@@ -42,6 +42,7 @@ enum smk_inos {
- 	SMK_NETLBLADDR	= 8,	/* single label hosts */
- 	SMK_ONLYCAP	= 9,	/* the only "capable" label */
- 	SMK_LOGGING	= 10,	/* logging */
-+	SMK_VERSION	= 11,	/* logging */
- };
- 
- /*
-@@ -51,6 +52,7 @@ static DEFINE_MUTEX(smack_list_lock);
- static DEFINE_MUTEX(smack_cipso_lock);
- static DEFINE_MUTEX(smack_ambient_lock);
- static DEFINE_MUTEX(smk_netlbladdr_lock);
-+static DEFINE_MUTEX(smack_version_lock);
- 
- /*
-  * This is the "ambient" label for network traffic.
-@@ -60,6 +62,16 @@ static DEFINE_MUTEX(smk_netlbladdr_lock);
- char *smack_net_ambient = smack_known_floor.smk_known;
- 
- /*
-+ * This is the policy version. In the interest of simplicity the
-+ * policy version is a string that meets all of the requirements
-+ * of a Smack label. This is enforced by the expedient of
-+ * importing it like a label. The policy version is thus always
-+ * also a valid label on the system. This may prove useful under
-+ * some as yet undiscovered circumstance.
-+ */
-+char *smack_version = smack_known_floor.smk_known;
-+
++#define NUMTASKSIDS 6
 +/*
-  * This is the level in a CIPSO header that indicates a
-  * smack label is contained directly in the category set.
-  * It can be reset via smackfs/direct
-@@ -1255,6 +1267,75 @@ static const struct file_operations smk_logging_ops = {
- 	.read		= smk_read_logging,
- 	.write		= smk_write_logging,
- };
-+
-+#define SMK_VERSIONLEN 12
-+/**
-+ * smk_read_version - read() for /smack/version
-+ * @filp: file pointer, not actually used
-+ * @buf: where to put the result
-+ * @cn: maximum to send along
-+ * @ppos: where to start
-+ *
-+ * Returns number of bytes read or error code, as appropriate
++ * for cred context, we print:
++ *   osid, sid, exec_sid, create_sid, keycreate_sid, sockcreate_sid;
++ * as string representations, separated by ':::'
 + */
-+static ssize_t smk_read_version(struct file *filp, char __user *buf,
-+				size_t count, loff_t *ppos)
++static char *selinux_cred_checkpoint(void *security)
 +{
-+	int rc;
++	struct task_security_struct *tsec = security;
++	char *stmp, *sfull = NULL;
++	u32 slen, runlen;
++	int i, ret;
++	u32 sids[NUMTASKSIDS] = { tsec->osid, tsec->sid, tsec->exec_sid,
++		tsec->create_sid, tsec->keycreate_sid, tsec->sockcreate_sid };
 +
-+	if (*ppos != 0)
++	if (sids[0] == 0 || sids[1] == 0)
++		/* SECSID_NULL is not valid for osid or sid */
++		return ERR_PTR(-EINVAL);
++
++	ret = security_sid_to_context(sids[0], &sfull, &runlen);
++	if (ret)
++		return ERR_PTR(ret);
++	runlen--;
++
++	for (i = 1; i < NUMTASKSIDS; i++) {
++		if (sids[i] == 0) {
++			stmp = NULL;
++			slen = 0;
++		} else {
++			ret = security_sid_to_context(sids[i], &stmp, &slen);
++			if (ret) {
++				kfree(sfull);
++				return ERR_PTR(ret);
++			}
++			slen--;
++		}
++		/* slen + runlen + ':::' + \0 */
++		sfull = krealloc(sfull, slen + runlen + 3 + 1,
++				 GFP_KERNEL);
++		if (!sfull) {
++			kfree(stmp);
++			return ERR_PTR(-ENOMEM);
++		}
++		sprintf(sfull+runlen, ":::%s", stmp ? stmp : "");
++		runlen += slen + 3;
++		kfree(stmp);
++	}
++
++	return sfull;
++}
++
++static inline int credrestore_nullvalid(int which)
++{
++	int valid_array[NUMTASKSIDS] = {
++		0, /* task osid */
++		0, /* task sid */
++		1, /* exec sid */
++		1, /* create sid */
++		1, /* keycreate_sid */
++		1, /* sockcreate_sid */
++	};
++
++	return valid_array[which];
++}
++
++static int selinux_cred_restore(struct file *file, struct cred *cred,
++					char *ctx)
++{
++	char *s, *s1, *s2 = NULL;
++	int ret = -EINVAL;
++	struct task_security_struct *tsec = cred->security;
++	int i;
++	u32 sids[NUMTASKSIDS];
++	struct inode *ctx_inode = file->f_dentry->d_inode;
++	struct avc_audit_data ad;
++
++	/*
++	 * objhash made sure the string is null-terminated
++	 * now we want our own copy so we can chop it up with \0's
++	 */
++	s = kstrdup(ctx, GFP_KERNEL);
++	if (!s)
++		return -ENOMEM;
++
++	s1 = s;
++	for (i = 0; i < NUMTASKSIDS; i++) {
++		if (i < NUMTASKSIDS-1) {
++			ret = -EINVAL;
++			s2 = strstr(s1, ":::");
++			if (!s2)
++				goto out;
++			*s2 = '\0';
++			s2 += 3;
++		}
++		if (strlen(s1) == 0) {
++			ret = -EINVAL;
++			if (credrestore_nullvalid(i))
++				sids[i] = 0;
++			else
++				goto out;
++		} else {
++			ret = security_context_to_sid(s1, strlen(s1), &sids[i]);
++			if (ret)
++				goto out;
++		}
++		s1 = s2;
++	}
++
++	/*
++	 * Check that these transitions are allowed, and effect them.
++	 * XXX: Do these checks suffice?
++	 */
++	if (tsec->osid != sids[0]) {
++		ret = avc_has_perm(current_sid(), sids[0], SECCLASS_PROCESS,
++					PROCESS__RESTORE, NULL);
++		if (ret)
++			goto out;
++		 tsec->osid = sids[0];
++	}
++
++	if (tsec->sid != sids[1]) {
++		struct inode_security_struct *isec;
++		ret = avc_has_perm(current_sid(), sids[1], SECCLASS_PROCESS,
++					PROCESS__RESTORE, NULL);
++		if (ret)
++			goto out;
++
++		/* check whether checkpoint file type is a valid entry
++		 * point to the new domain:  we may want a specific
++		 * 'restore_entrypoint' permission for this, but let's
++		 * see if just entrypoint is deemed sufficient
++		 */
++
++		AVC_AUDIT_DATA_INIT(&ad, FS);
++		ad.u.fs.path = file->f_path;
++
++		isec = ctx_inode->i_security;
++		ret = avc_has_perm(sids[1], isec->sid, SECCLASS_FILE,
++				FILE__ENTRYPOINT, &ad);
++		if (ret)
++			goto out;
++		/* TODO: do we need to check for shared state? */
++		tsec->sid = sids[1];
++	}
++
++	ret = -EPERM;
++	if (sids[2] != tsec->exec_sid) {
++		if (!current_has_perm(current, PROCESS__SETEXEC))
++			goto out;
++		tsec->exec_sid = sids[2];
++	}
++
++	if (sids[3] != tsec->create_sid) {
++		if (!current_has_perm(current, PROCESS__SETFSCREATE))
++			goto out;
++		tsec->create_sid = sids[3];
++	}
++
++	if (tsec->keycreate_sid != sids[4]) {
++		if (!current_has_perm(current, PROCESS__SETKEYCREATE))
++			goto out;
++		if (!may_create_key(sids[4], current))
++			goto out;
++		tsec->keycreate_sid = sids[4];
++	}
++
++	if (tsec->sockcreate_sid != sids[5]) {
++		if (!current_has_perm(current, PROCESS__SETSOCKCREATE))
++			goto out;
++		tsec->sockcreate_sid = sids[5];
++	}
++
++	ret = 0;
++
++out:
++	kfree(s);
++	return ret;
++}
++
++
+ /*
+  * detach and free the LSM part of a set of credentials
+  */
+@@ -4658,6 +4937,44 @@ static void ipc_free_security(struct kern_ipc_perm *perm)
+ 	kfree(isec);
+ }
+ 
++static char *selinux_msg_msg_checkpoint(void *security)
++{
++	struct msg_security_struct *msec = security;
++	char *s;
++	u32 len;
++	int ret;
++
++	if (msec->sid == 0)
++		return ERR_PTR(-EINVAL);
++
++	ret = security_sid_to_context(msec->sid, &s, &len);
++	if (ret)
++		return ERR_PTR(ret);
++	return s;
++}
++
++static int selinux_msg_msg_restore(struct msg_msg *msg, char *ctx)
++{
++	struct msg_security_struct *msec = msg->security;
++	int ret;
++	u32 sid = 0;
++
++	ret = security_context_to_sid(ctx, strlen(ctx), &sid);
++	if (ret)
++		return ret;
++
++	if (msec->sid == sid)
 +		return 0;
 +
-+	mutex_lock(&smack_version_lock);
++	ret = avc_has_perm(current_sid(), sid, SECCLASS_MSG,
++				MSG__RESTORE, NULL);
++	if (ret)
++		return ret;
 +
-+	rc = simple_read_from_buffer(buf, count, ppos, smack_version,
-+					strlen(smack_version) + 1);
-+
-+	mutex_unlock(&smack_version_lock);
-+
-+	return rc;
++	msec->sid = sid;
++	return 0;
 +}
 +
-+/**
-+ * smk_write_version - write() for /smack/version
-+ * @file: file pointer, not actually used
-+ * @buf: where to get the data from
-+ * @count: bytes sent
-+ * @ppos: where to start
-+ *
-+ * Returns number of bytes written or error code, as appropriate
-+ */
-+static ssize_t smk_write_version(struct file *file, const char __user *buf,
-+				 size_t count, loff_t *ppos)
-+{
-+	char *smack;
-+	char in[SMK_LABELLEN];
-+
-+	if (!capable(CAP_MAC_ADMIN))
-+		return -EPERM;
-+
-+	if (count >= SMK_LABELLEN)
-+		return -EINVAL;
-+
-+	if (copy_from_user(in, buf, count) != 0)
-+		return -EFAULT;
-+
-+	smack = smk_import(in, count);
-+	if (smack == NULL)
-+		return -EINVAL;
-+
-+	mutex_lock(&smack_version_lock);
-+	smack_version = smack;
-+	mutex_unlock(&smack_version_lock);
-+
-+	return count;
-+}
-+
-+static const struct file_operations smk_version_ops = {
-+	.read		= smk_read_version,
-+	.write		= smk_write_version,
-+};
-+
- /**
-  * smk_fill_super - fill the /smackfs superblock
-  * @sb: the empty superblock
-@@ -1287,6 +1368,8 @@ static int smk_fill_super(struct super_block *sb, void *data, int silent)
- 			{"onlycap", &smk_onlycap_ops, S_IRUGO|S_IWUSR},
- 		[SMK_LOGGING]	=
- 			{"logging", &smk_logging_ops, S_IRUGO|S_IWUSR},
-+		[SMK_VERSION]	=
-+			{"version", &smk_version_ops, S_IRUGO|S_IWUSR},
- 		/* last one */ {""}
- 	};
+ static int msg_msg_alloc_security(struct msg_msg *msg)
+ {
+ 	struct msg_security_struct *msec;
+@@ -5061,6 +5378,47 @@ static void selinux_ipc_getsecid(struct kern_ipc_perm *ipcp, u32 *secid)
+ 	*secid = isec->sid;
+ }
  
++static char *selinux_ipc_checkpoint(void *security)
++{
++	struct ipc_security_struct *isec = security;
++	char *s;
++	u32 len;
++	int ret;
++
++	if (isec->sid == 0)
++		return ERR_PTR(-EINVAL);
++
++	ret = security_sid_to_context(isec->sid, &s, &len);
++	if (ret)
++		return ERR_PTR(ret);
++	return s;
++}
++
++static int selinux_ipc_restore(struct kern_ipc_perm *ipcp, char *ctx)
++{
++	struct ipc_security_struct *isec = ipcp->security;
++	int ret;
++	u32 sid = 0;
++	struct avc_audit_data ad;
++
++	ret = security_context_to_sid(ctx, strlen(ctx), &sid);
++	if (ret)
++		return ret;
++
++	if (isec->sid == sid)
++		return 0;
++
++	AVC_AUDIT_DATA_INIT(&ad, IPC);
++	ad.u.ipc_id = ipcp->key;
++	ret = avc_has_perm(current_sid(), sid, SECCLASS_IPC,
++				IPC__RESTORE, &ad);
++	if (ret)
++		return ret;
++
++	isec->sid = sid;
++	return 0;
++}
++
+ static void selinux_d_instantiate(struct dentry *dentry, struct inode *inode)
+ {
+ 	if (inode)
+@@ -5382,6 +5740,8 @@ static struct security_operations selinux_ops = {
+ 	.inode_getsecid =		selinux_inode_getsecid,
+ 
+ 	.file_permission =		selinux_file_permission,
++	.file_checkpoint =		selinux_file_checkpoint,
++	.file_restore =			selinux_file_restore,
+ 	.file_alloc_security =		selinux_file_alloc_security,
+ 	.file_free_security =		selinux_file_free_security,
+ 	.file_ioctl =			selinux_file_ioctl,
+@@ -5396,6 +5756,8 @@ static struct security_operations selinux_ops = {
+ 	.dentry_open =			selinux_dentry_open,
+ 
+ 	.task_create =			selinux_task_create,
++	.cred_checkpoint =		selinux_cred_checkpoint,
++	.cred_restore =			selinux_cred_restore,
+ 	.cred_free =			selinux_cred_free,
+ 	.cred_prepare =			selinux_cred_prepare,
+ 	.kernel_act_as =		selinux_kernel_act_as,
+@@ -5417,8 +5779,12 @@ static struct security_operations selinux_ops = {
+ 
+ 	.ipc_permission =		selinux_ipc_permission,
+ 	.ipc_getsecid =			selinux_ipc_getsecid,
++	.ipc_checkpoint =		selinux_ipc_checkpoint,
++	.ipc_restore =			selinux_ipc_restore,
+ 
+ 	.msg_msg_alloc_security =	selinux_msg_msg_alloc_security,
++	.msg_msg_checkpoint =		selinux_msg_msg_checkpoint,
++	.msg_msg_restore =		selinux_msg_msg_restore,
+ 	.msg_msg_free_security =	selinux_msg_msg_free_security,
+ 
+ 	.msg_queue_alloc_security =	selinux_msg_queue_alloc_security,
+diff --git a/security/selinux/include/av_perm_to_string.h b/security/selinux/include/av_perm_to_string.h
+index 31df1d7..a2c35d7 100644
+--- a/security/selinux/include/av_perm_to_string.h
++++ b/security/selinux/include/av_perm_to_string.h
+@@ -19,6 +19,8 @@
+    S_(SECCLASS_FILE, FILE__ENTRYPOINT, "entrypoint")
+    S_(SECCLASS_FILE, FILE__EXECMOD, "execmod")
+    S_(SECCLASS_FILE, FILE__OPEN, "open")
++   S_(SECCLASS_FILE, FILE__RESTORE, "restore")
++   S_(SECCLASS_FILE, FILE__FOWN_RESTORE, "fown_restore")
+    S_(SECCLASS_CHR_FILE, CHR_FILE__EXECUTE_NO_TRANS, "execute_no_trans")
+    S_(SECCLASS_CHR_FILE, CHR_FILE__ENTRYPOINT, "entrypoint")
+    S_(SECCLASS_CHR_FILE, CHR_FILE__EXECMOD, "execmod")
+@@ -88,9 +90,11 @@
+    S_(SECCLASS_PROCESS, PROCESS__EXECHEAP, "execheap")
+    S_(SECCLASS_PROCESS, PROCESS__SETKEYCREATE, "setkeycreate")
+    S_(SECCLASS_PROCESS, PROCESS__SETSOCKCREATE, "setsockcreate")
++   S_(SECCLASS_PROCESS, PROCESS__RESTORE, "restore")
+    S_(SECCLASS_MSGQ, MSGQ__ENQUEUE, "enqueue")
+    S_(SECCLASS_MSG, MSG__SEND, "send")
+    S_(SECCLASS_MSG, MSG__RECEIVE, "receive")
++   S_(SECCLASS_MSG, MSG__RESTORE, "restore")
+    S_(SECCLASS_SHM, SHM__LOCK, "lock")
+    S_(SECCLASS_SECURITY, SECURITY__COMPUTE_AV, "compute_av")
+    S_(SECCLASS_SECURITY, SECURITY__COMPUTE_CREATE, "compute_create")
+@@ -107,6 +111,7 @@
+    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_READ, "syslog_read")
+    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_MOD, "syslog_mod")
+    S_(SECCLASS_SYSTEM, SYSTEM__SYSLOG_CONSOLE, "syslog_console")
++   S_(SECCLASS_IPC, IPC__RESTORE, "restore")
+    S_(SECCLASS_CAPABILITY, CAPABILITY__CHOWN, "chown")
+    S_(SECCLASS_CAPABILITY, CAPABILITY__DAC_OVERRIDE, "dac_override")
+    S_(SECCLASS_CAPABILITY, CAPABILITY__DAC_READ_SEARCH, "dac_read_search")
+diff --git a/security/selinux/include/av_permissions.h b/security/selinux/include/av_permissions.h
+index d645192..58ad588 100644
+--- a/security/selinux/include/av_permissions.h
++++ b/security/selinux/include/av_permissions.h
+@@ -101,6 +101,8 @@
+ #define FILE__ENTRYPOINT                          0x00040000UL
+ #define FILE__EXECMOD                             0x00080000UL
+ #define FILE__OPEN                                0x00100000UL
++#define FILE__RESTORE                             0x00200000UL
++#define FILE__FOWN_RESTORE                        0x00400000UL
+ #define LNK_FILE__IOCTL                           0x00000001UL
+ #define LNK_FILE__READ                            0x00000002UL
+ #define LNK_FILE__WRITE                           0x00000004UL
+@@ -453,6 +455,7 @@
+ #define PROCESS__EXECHEAP                         0x08000000UL
+ #define PROCESS__SETKEYCREATE                     0x10000000UL
+ #define PROCESS__SETSOCKCREATE                    0x20000000UL
++#define PROCESS__RESTORE	                  0x40000000UL
+ #define IPC__CREATE                               0x00000001UL
+ #define IPC__DESTROY                              0x00000002UL
+ #define IPC__GETATTR                              0x00000004UL
+@@ -462,6 +465,7 @@
+ #define IPC__ASSOCIATE                            0x00000040UL
+ #define IPC__UNIX_READ                            0x00000080UL
+ #define IPC__UNIX_WRITE                           0x00000100UL
++#define IPC__RESTORE                              0x00000200UL
+ #define SEM__CREATE                               0x00000001UL
+ #define SEM__DESTROY                              0x00000002UL
+ #define SEM__GETATTR                              0x00000004UL
+@@ -483,6 +487,7 @@
+ #define MSGQ__ENQUEUE                             0x00000200UL
+ #define MSG__SEND                                 0x00000001UL
+ #define MSG__RECEIVE                              0x00000002UL
++#define MSG__RESTORE                              0x00000004UL
+ #define SHM__CREATE                               0x00000001UL
+ #define SHM__DESTROY                              0x00000002UL
+ #define SHM__GETATTR                              0x00000004UL
 -- 
 1.6.1
