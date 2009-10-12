@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 7/7] cr_tests: epoll: Add test passing epoll fd via SCM_RIGHTS
-Date: Mon, 12 Oct 2009 12:38:28 -0700
-Message-ID: <1255376302-11022-7-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 4/7] cr_tests: epoll: Factor out common parts
+Date: Mon, 12 Oct 2009 12:38:25 -0700
+Message-ID: <1255376302-11022-4-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,93 +19,81 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This test passes an epoll fd and all the fds in its set over a UNIX
-socket via SCM_RIGHTS. Then it does virtually the same things as
-the pipe test. A special optional argument allows the second process
-to be in a different cgroup so that we can test leak detection of epoll
-fd sets in addition to SCM_RIGHTS.
+Factor out the common label, log, and print functions so that the
+meat of the testcases is more apparent. Make the run.sh script use
+this common structure to print INFO and try checkpointing at more
+interesting points in the test programs.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- epoll/Makefile |    2 +-
- epoll/run.sh   |    2 +
- epoll/scm.c    |  345 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 348 insertions(+), 1 deletions(-)
- create mode 100644 epoll/scm.c
+ epoll/Makefile    |    7 ++-
+ epoll/empty.c     |  120 +++++++++++++++++++++++++++++++++++++-----------
+ epoll/libeptest.c |   65 ++++++++++++++++++++++++++
+ epoll/libeptest.h |   83 +++++++++++++++++++++++++++++++++
+ epoll/pipe.c      |  131 ++++-------------------------------------------------
+ epoll/run.sh      |   56 +++++++++--------------
+ 6 files changed, 277 insertions(+), 185 deletions(-)
+ create mode 100644 epoll/libeptest.c
+ create mode 100644 epoll/libeptest.h
 
 diff --git a/epoll/Makefile b/epoll/Makefile
-index 84aec49..b3e3ca2 100644
+index f6cae7e..f701352 100644
 --- a/epoll/Makefile
 +++ b/epoll/Makefile
-@@ -3,7 +3,7 @@
- LIBS := ../libcrtest/libcrtest.a ./libeptest.a
+@@ -1,6 +1,6 @@
+ .PHONY: clean all
+ 
+-LIBS := ../libcrtest/libcrtest.a
++LIBS := ../libcrtest/libcrtest.a ./libeptest.a
  CFLAGS := -Wall $(ARCHOPTS) -I../ -I../libcrtest
  
--PROGS=empty pipe sk10k cycle
-+PROGS=empty pipe sk10k cycle scm
+ PROGS=empty pipe
+@@ -12,10 +12,13 @@ all: $(PROGS)
+ ../libcrtest/libcrtest.a: ../libcrtest/libcrtest.h ../libcrtest/common.c
+ 	$(MAKE) -C ../libcrtest libcrtest.a
  
- .PHONY: all clean
- 
-diff --git a/epoll/run.sh b/epoll/run.sh
-index 16ed76c..7e30e4f 100755
---- a/epoll/run.sh
-+++ b/epoll/run.sh
-@@ -111,6 +111,8 @@ while [ $CURTEST -lt $NUMTESTS ]; do
- done
- trap '' ERR EXIT
- 
-+# TODO add scm testcase to run.sh
++libeptest.a: libeptest.o libeptest.h
++	ar cr libeptest.a libeptest.o
 +
- rm -f ./checkpoint-{ready,done}
+ $(PROGS): %: %.c $(LIBS)
+ 	gcc -Wall $(CFLAGS) -o $@ $< $(LIBS)
  
- 
-diff --git a/epoll/scm.c b/epoll/scm.c
-new file mode 100644
-index 0000000..7485916
---- /dev/null
-+++ b/epoll/scm.c
-@@ -0,0 +1,345 @@
-+/*
-+ * Open a pipe and an epoll set. Pass them across a unix socket to an
-+ * "unrelated" task and test whether epoll retrieves events related to IO
-+ * on the pipe.
-+ *
-+ * By varying the container or subtree checkpointed we can attempt to
-+ * introduce and detect checkpoint leaks.
-+ */
-+
-+/* pretty standard stuff really */
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include <string.h>
+ clean:
+-	rm -f $(PROGS)
++	rm -f $(PROGS) libeptest.[ao]
+ 	rm -rf log.* checkpoint-*
+ 	$(MAKE) -C ../libcrtest clean
+diff --git a/epoll/empty.c b/epoll/empty.c
+index c8c2109..1e7f7ce 100644
+--- a/epoll/empty.c
++++ b/epoll/empty.c
+@@ -11,6 +11,8 @@
+ #include <errno.h>
+ #include <unistd.h>
+ #include <string.h>
 +#include <limits.h>
 +#include <getopt.h>
-+
-+/* open() */
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+
-+/* waitpid() and W* status macros */
-+#include <sys/wait.h>
-+
-+/* Stuff needed to use SCM_RIGHTS via a UNIX socket */
-+#include <sys/socket.h>
-+
-+#include <sys/prctl.h>
-+
+ 
+ /* open() */
+ #include <sys/types.h>
+@@ -20,59 +22,119 @@
+ /* waitpid() and W* status macros */
+ #include <sys/wait.h>
+ 
+-/* epoll syscalls */
+-#include <sys/epoll.h>
+-
+-#include "libcrtest/libcrtest.h"
 +#include "libeptest.h"
-+
-+#define LOG_FILE	"log.scm"
+ 
+ #define LOG_FILE	"log.empty"
+-FILE *logfp = NULL;
 +
 +void usage(FILE *pout)
 +{
-+	fprintf(pout, "\nscm [-L] [-N] [-h|--help] [-l LABEL] [-n NUM]\n"
-+"Open a pipe and an epoll set. Pass them across a unix socket to an\n"
-+"'unrelated' task and test whether epoll retrieves events related to IO\n"
-+"on the pipe.\n"
++	fprintf(pout, "\nempty [-L] [-N] [-h|--help] [-l LABEL] [-n NUM]\n"
++"Create an empty epoll set.\n"
++"\n"
 +"\t-L\tPrint the valid LABELs in order and exit.\n"
 +"\t-l\tWait for checkpoint at LABEL.\n"
 +"\t-N\tPrint the maximum label number and exit.\n"
@@ -123,11 +111,8 @@ index 0000000..7485916
 +	{ "help",		0, 0, 'h'},
 +	{ "label",		1, 0, 'l'},
 +	{ "num",		1, 0, 'n'},
-+	{ "cgroup2",		2, 0, 'c'},
 +	{0, 0, 0, 0},
 +};
-+
-+char *cgroup2 = NULL;
 +
 +void parse_args(int argc, char **argv)
 +{
@@ -135,7 +120,7 @@ index 0000000..7485916
 +	ckpt_op_num = num_labels;
 +	while (1) {
 +		char c;
-+		c = getopt_long(argc, argv, "LNhl:n:c::", long_options, NULL);
++		c = getopt_long(argc, argv, "LNhl:n:", long_options, NULL);
 +		if (c == -1)
 +			break;
 +		switch(c) {
@@ -163,49 +148,52 @@ index 0000000..7485916
 +					exit(EXIT_FAILURE);
 +				}
 +				break;
-+			case 'c':
-+				if (optarg && (strlen(optarg) > 0))
-+					cgroup2 = strdup(optarg);
-+				else
-+					cgroup2 = "2";
-+				break;
-+			case '?':
-+				/* unkown option in optopt */
 +			default: /* unknown option */
 +				break;
 +		}
 +	}
 +}
-+
-+/*
+ 
+ /*
+- * Log output with a tag (INFO, WARN, FAIL, PASS) and a format.
+- * Adds information about the thread originating the message.
+- *
+- * Flush the log after every write to make sure we get consistent, and
+- * complete logs.
 + * A LABEL is a point in the program we can goto where it's interesting to
 + * checkpoint. These enable us to have a set of labels that can be specified
 + * on the commandline.
-+ */
+  */
+-#define log(tag, fmt, ...) \
+-do { \
+-	pid_t __tid = getpid(); \
+-	fprintf(logfp, ("%s: thread %d: " fmt), (tag), __tid, ##__VA_ARGS__ ); \
+-	fflush(logfp); \
+-	fsync(fileno(logfp)); \
+-} while(0)
+-
+-/* like perror() except to the log */
+-#define log_error(s) log("FAIL", "%s: %s\n", (s), strerror(errno))
 +const char __attribute__((__section__(".LABELs"))) *first_label = "<start>";
-+int main(int argc, char **argv)
-+{
-+	struct epoll_event ev[2] = {
-+		{ .events = EPOLLIN,  },
-+		{ .events = EPOLLOUT, },
-+	};
-+	pid_t kid;
+ 
+ int main (int argc, char **argv)
+ {
+-	int efd;
++	int efd, ret = 0;
 +	int op_num = 0;
-+	int tube[2];
-+	int efd, sk[2];
-+	int ec = EXIT_FAILURE;
-+	int ret;
-+	char rbuf[128];
 +
 +	parse_args(argc, argv);
-+
-+	/* FIXME eventually stdio streams should be harmless */
-+	close(0);
+ 
+ 	/* FIXME eventually stdio streams should be harmless */
+ 	close(0);
+-	logfp = fopen(LOG_FILE, "w");
 +	logfp = fopen(LOG_FILE, "w+");
-+	if (!logfp) {
-+		perror("could not open logfile");
-+		exit(1);
-+	}
+ 	if (!logfp) {
+ 		perror("could not open logfile");
+ 		exit(1);
+ 	}
+-	dup2(fileno(logfp), 1); /* redirect stdout and stderr to the log file */
+-	dup2(fileno(logfp), 2);
 +	/* redirect stdout and stderr to the log file */
 +	if (dup2(fileno(logfp), 1) < 0) {
 +		log_error("dup2(logfp, 1)");
@@ -215,200 +203,458 @@ index 0000000..7485916
 +		log_error("dup2(logfp, 2)");
 +		goto out;
 +	}
-+	if (!move_to_cgroup("freezer", "1", getpid())) {
-+		log_error("move_to_cgroup");
-+		exit(2);
-+	}
-+
+ 	if (!move_to_cgroup("freezer", "1", getpid())) {
+ 		log_error("move_to_cgroup");
+ 		exit(2);
+ 	}
+ 
+-	efd = epoll_create(1);
 +label(create,
 +	efd, epoll_create(1));
-+
-+	ret = pipe(tube);
-+	if (ret < 0)
-+		goto out;
-+
-+	/*
-+	 * Now we have efd and the pipe set up. Time to pass file descriptors
-+	 * between two processes.
-+	 */
-+	socketpair(PF_UNIX, SOCK_DGRAM, 0, sk);
-+	kid = fork();
-+	if (kid) {
-+		char *msg_bytes = "efd,tube[0],tube[1]";
-+		int status;
-+		int *fdp;
-+		struct msghdr msg = {0};
-+		struct cmsghdr *cmsg;
-+		struct iovec iobase;
-+		char cbuf[CMSG_SPACE(sizeof(int)*3)];
-+
-+		iobase.iov_base = msg_bytes;
-+		iobase.iov_len = strlen(msg_bytes) + 1;
-+		msg.msg_iov = &iobase;
-+		msg.msg_iovlen = 1;
-+		msg.msg_flags = 0;
-+		msg.msg_control = cbuf;
-+		msg.msg_controllen = sizeof(cbuf);
-+		cmsg = CMSG_FIRSTHDR(&msg);
-+		cmsg->cmsg_level = SOL_SOCKET;
-+		cmsg->cmsg_type = SCM_RIGHTS;
-+		cmsg->cmsg_len = CMSG_LEN(sizeof(int)*3);
-+		fdp = (int*)CMSG_DATA(cmsg);
-+		fdp[0] = efd;
-+		fdp[1] = tube[0];
-+		fdp[2] = tube[1];
-+		msg.msg_controllen = cmsg->cmsg_len;
-+		close(sk[1]);
-+		sendmsg(sk[0], &msg, 0);
-+		close(sk[0]);
-+
-+		/* 
-+		 * Now the child and the parent share the open file description
-+		 * (aka handle) of efd, tube[0], and tube[1]. For more info
-+		 * see fork(2) and epoll(7).
-+		 */
-+
-+		waitpid(kid, &status, 0);
-+		exit(status);
-+	} else {
-+		char msg_bytes[1024];
-+		struct msghdr msg = {0};
-+		struct cmsghdr *cmsg;
-+		struct iovec iobase;
-+		int *fdp;
-+
-+		close(sk[0]);
-+		close(efd);
-+		close(tube[0]);
-+		close(tube[1]);
-+		efd = tube[0] = tube[1] = -1;
-+
-+		/* Ensure that if the parent dies the child does too. */
-+		prctl(PR_SET_PDEATHSIG, SIGINT);
-+
-+		/* Otherwise, distance ourself from parent */
-+		setsid();
-+		if (cgroup2 && !move_to_cgroup("freezer", cgroup2, getpid())) {
-+			log_error("move_to_cgroup [kid]");
-+			exit(2);
-+		}
-+
-+		iobase.iov_base = msg_bytes;
-+		iobase.iov_len = 1024;
-+
-+		msg.msg_iov = &iobase;
-+		msg.msg_iovlen = 1;
-+		msg.msg_flags = 0;
-+
-+		recvmsg(sk[1], &msg, MSG_CMSG_CLOEXEC|MSG_WAITALL);
-+		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
-+		     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-+			if ((cmsg->cmsg_level != SOL_SOCKET) ||
-+			    (cmsg->cmsg_type != SCM_RIGHTS) ||
-+			    (cmsg->cmsg_len != CMSG_LEN(sizeof(int)*3)))
-+				continue;
-+			fdp = (int*)CMSG_DATA(cmsg);
-+			efd = fdp[0];
-+			tube[0] = fdp[1];
-+			tube[1] = fdp[2];
-+		}
-+		close(sk[1]);
-+	}
-+
-+	if (efd == -1 ||
-+	    tube[0] == -1 ||
-+	    tube[1] == -1) {
-+		/* Failed to recv fds via SCM_RIGHTS */
-+		log_error("failed to pass fds with SCM_RIGHTS");
-+		exit(2);
-+	}
-+
-+	ev[0].data.fd = tube[0];
-+	ev[1].data.fd = tube[1];
-+
-+label(ctl_add_wfd,
-+	ret, epoll_ctl(efd, EPOLL_CTL_ADD, tube[1], &ev[1]));
-+
-+label(wait_write,
-+	ret, epoll_wait(efd, &ev[1], 1, 1000));
-+	if (ret != 1) {
-+		log_error("Expected epoll_wait() to return one event.\n");
-+		goto out;
-+	}
-+	if (!(ev[1].events & EPOLLOUT)) {
-+		log("FAIL", "Expected EPOLLOUT (0x%X) flag, got %s (0x%X)\n", 
-+			  EPOLLOUT, eflags(ev[1].events), ev[1].events);
-+		goto out;
-+	}
-+	if (tube[1] != ev[1].data.fd) {
-+		log("FAIL", "Expected fd %d, got %d\n", tube[1], ev[1].data.fd);
-+		goto out;
-+	}
-+
-+label(do_write,
-+	ret, write(tube[1], HELLO, strlen(HELLO) + 1));
-+	if (ret < (strlen(HELLO) + 1)) {
-+		log("FAIL", "Unable to write all %d bytes of \"%s\"\n",
-+			 strlen(HELLO) + 1, HELLO);
-+		goto out;
-+	}
-+
-+label(ctl_add_rfd,
-+	ret, epoll_ctl(efd, EPOLL_CTL_ADD, tube[0], &ev[0]));
-+
-+label(ctl_rm_wfd,
-+	ret, epoll_ctl(efd, EPOLL_CTL_DEL, tube[1], &ev[1]));
-+
-+label(wait_read,
-+	ret, epoll_wait(efd, &ev[0], 1, 5000));
-+	if (ret != 1) {
-+		log_error("Expected epoll_wait() to return one event.\n");
-+		goto out;
-+	}
-+	if (!(ev[0].events & EPOLLIN)) {
-+		log("FAIL", "Expected EPOLLIN (0x%X) flag, got %s (0x%X)\n", 
-+			  EPOLLIN, eflags(ev[0].events), ev[0].events);
-+		goto out;
-+	}
-+	if (tube[0] != ev[0].data.fd) {
-+		log("FAIL", "Expected fd %d, got %d\n", tube[0], ev[0].data.fd);
-+		goto out;
-+	}
-+
-+label(do_read,
-+	ret, read(tube[0], rbuf, strlen(HELLO) + 1));
-+	if (ret < (strlen(HELLO) + 1)) {
-+		log("FAIL", "Unable to read all %d bytes of \"%s\"\n",
-+			 strlen(HELLO) + 1, HELLO);
-+		goto out;
-+	}
-+	log("INFO", "read len ok\n");
-+	if (strcmp(HELLO, rbuf)) {
-+		log("FAIL", "Pipe buffer was corrupted. Expected: \"%s\" Got: \"%s\"\n",
-+			 HELLO, rbuf);
-+		goto out;
-+	}
-+	log("INFO", "read buffer contents ok\n");
-+	ec = EXIT_SUCCESS;
-+	op_num = INT_MAX;
-+
+ 	if (efd < 0) {
+ 		perror("epoll_create(1)");
+ 		fclose(logfp);
+ 		exit(EXIT_FAILURE);
+ 	}
+-	set_checkpoint_ready();
+-	while (!test_checkpoint_done())
+-		usleep(10000);
++label(do_nothing, ret, ret + 0);
 +out:
-+	if ((efd >= 0) && close(efd) < 0) {
-+		log_error("close()");
-+		efd = -1;
-+		goto out;
-+	}
-+	if (op_num != INT_MAX) {
-+		log("FAIL", "error at label %s (op num: %d)\n",
-+			  labels(op_num), op_num);
-+	}
-+	close(tube[0]);
-+	close(tube[1]);
-+	fflush(logfp);
-+	fclose(logfp);
-+	exit(ec);
-+}
+ 	if (close(efd) < 0) {
+ 		perror("close()");
+ 		fclose(logfp);
+@@ -81,3 +143,5 @@ int main (int argc, char **argv)
+ 	fclose(logfp);
+ 	exit(EXIT_SUCCESS);
+ }
 +
 +const char __attribute__((__section__(".LABELs"))) *last_label  = "<end>";
+diff --git a/epoll/libeptest.c b/epoll/libeptest.c
+new file mode 100644
+index 0000000..2700ca9
+--- /dev/null
++++ b/epoll/libeptest.c
+@@ -0,0 +1,65 @@
++#include "libeptest.h"
++
++FILE *logfp = NULL;
++
++/* Print EPOLL flag */
++#define peflag(flag) \
++do { \
++	if (!(events & flag))  \
++		break; \
++	len = snprintf(p, sz, "%s%s", sep, stringify(flag)); \
++	if (len > 0) { \
++		sz -= len; \
++		p += len; \
++		sep = "|"; \
++	} else \
++		abort(); \
++} while (0)
++
++/* WARNING: Non-reentrant!! 
++ *
++ * Print out the epoll events
++ */
++const char * eflags(unsigned int events)
++{
++	static char buffer[256];
++	char *sep = "";
++	char *p = buffer;
++	size_t sz = 256;
++	int len;
++
++	peflag(EPOLLIN);
++	peflag(EPOLLPRI);
++	peflag(EPOLLOUT);
++	peflag(EPOLLERR);
++	peflag(EPOLLHUP);
++	peflag(EPOLLRDHUP);
++	peflag(EPOLLET);
++	peflag(EPOLLONESHOT);
++
++	return buffer;
++}
++#undef peflag
++
++void print_labels(FILE *pout)
++{
++	int i;
++
++	if (num_labels > 0)
++		fprintf(pout, "\tNUM\tLABEL\n");
++	for (i = 0; i < num_labels; i++)
++		fprintf(pout, "\t%d\t%s\n", i, labels(i));
++}
++
++/* Signal ready for and await the checkpoint */
++void do_ckpt(void)
++{
++	set_checkpoint_ready();
++	while (!test_checkpoint_done())
++		usleep(10000);
++
++}
++
++/* The spot (LABEL or label number) where we should test checkpoint/restart */
++char const *ckpt_label;
++int ckpt_op_num = 0;
+diff --git a/epoll/libeptest.h b/epoll/libeptest.h
+new file mode 100644
+index 0000000..4854062
+--- /dev/null
++++ b/epoll/libeptest.h
+@@ -0,0 +1,83 @@
++/* epoll syscalls */
++#include <stdlib.h>
++#include <stdio.h>
++#include <unistd.h>
++
++#include <sys/epoll.h>
++
++#include "libcrtest/libcrtest.h"
++
++extern FILE *logfp;
++
++/*
++ * Log output with a tag (INFO, WARN, FAIL, PASS) and a format.
++ * Adds information about the thread originating the message.
++ *
++ * Flush the log after every write to make sure we get consistent, and
++ * complete logs.
++ */
++#define log(tag, fmt, ...) \
++do { \
++	pid_t __tid = getpid(); \
++	fprintf(logfp, ("%s: thread %d: " fmt), (tag), __tid, ##__VA_ARGS__ ); \
++	fflush(logfp); \
++	fsync(fileno(logfp)); \
++} while(0)
++
++/* like perror() except to the log */
++#define log_error(s) log("FAIL", "%s: %s\n", (s), strerror(errno))
++
++/* Non-reentrant!! */
++const char * eflags(unsigned int events);
++
++/*
++ * A LABEL is a point in the program we can goto where it's interesting to
++ * checkpoint. These enable us to have a set of labels that can be specified
++ * on the commandline.
++ */
++extern const char __attribute__((__section__(".LABELs"))) *first_label;
++extern const char __attribute__((__section__(".LABELs"))) *last_label;
++
++#define num_labels ((&last_label - &first_label) - 1)
++
++static inline const char * labels(int i)
++{
++	return (&first_label)[num_labels - i];
++}
++
++/* Print the labels that this program has to pout */
++void print_labels(FILE *pout);
++
++/* Signal ready for and await the checkpoint */
++void do_ckpt(void);
++
++/* The spot (LABEL or label number) where we should test checkpoint/restart */
++extern char const *ckpt_label;
++extern int ckpt_op_num;
++
++#define stringify(expr) #expr
++
++/* Label a spot in the code... */
++#define label(lbl, ret, action) \
++do { \
++	static char __attribute__((__section__(".LABELs"))) *___ ##lbl## _l = stringify(lbl); \
++	goto lbl ; \
++lbl: \
++\
++        log("INFO", "label: %s: \"%s\"\n", \
++		    labels(op_num), stringify(action)); \
++\
++	ret = action ; \
++\
++	if ((ckpt_op_num == op_num) || \
++	    (strcmp(ckpt_label, ___ ##lbl## _l) == 0)) \
++		do_ckpt(); \
++	if (ret < 0) { \
++		log("FAIL", "%d\t%s: %s\n", \
++		    op_num, ___ ##lbl## _l, stringify(action) ); \
++		goto out; \
++	} \
++	op_num++; \
++} while(0)
++
++#define HELLO "Hello world!\n"
+diff --git a/epoll/pipe.c b/epoll/pipe.c
+index 5d6def8..835caab 100644
+--- a/epoll/pipe.c
++++ b/epoll/pipe.c
+@@ -29,95 +29,15 @@
+ /* waitpid() and W* status macros */
+ #include <sys/wait.h>
+ 
+-/* epoll syscalls */
+-#include <sys/epoll.h>
+-
+-#include "libcrtest/libcrtest.h"
++#include "libeptest.h"
+ 
+ #define LOG_FILE	"log.pipe"
+-FILE *logfp = NULL;
+-
+-/*
+- * Log output with a tag (INFO, WARN, FAIL, PASS) and a format.
+- * Adds information about the thread originating the message.
+- *
+- * Flush the log after every write to make sure we get consistent, and
+- * complete logs.
+- */
+-#define log(tag, fmt, ...) \
+-do { \
+-	pid_t __tid = getpid(); \
+-	fprintf(logfp, ("%s: thread %d: " fmt), (tag), __tid, ##__VA_ARGS__ ); \
+-	fflush(logfp); \
+-	fsync(fileno(logfp)); \
+-} while(0)
+-
+-/* like perror() except to the log */
+-#define log_error(s) log("FAIL", "%s: %s\n", (s), strerror(errno))
+-
+-#define stringify(expr) #expr
+-
+-/* Print EPOLL flag */
+-#define peflag(flag) \
+-do { \
+-	if (!events & flag)  \
+-		break; \
+-	len = snprintf(p, sz, stringify(flag)); \
+-	if (len > 0) { \
+-		sz -= len; \
+-		p += len; \
+-	} else \
+-		abort(); \
+-} while (0)
+-
+-const char * eflags(unsigned int events)
+-{
+-	static char buffer[256];
+-	char *p = buffer;
+-	size_t sz = 256;
+-	int len;
+-
+-	peflag(EPOLLIN);
+-	peflag(EPOLLPRI);
+-	peflag(EPOLLOUT);
+-	peflag(EPOLLERR);
+-	peflag(EPOLLHUP);
+-	peflag(EPOLLRDHUP);
+-	peflag(EPOLLET);
+-	peflag(EPOLLONESHOT);
+-
+-	return buffer;
+-}
+-#undef peflag
+-
+-/*
+- * A LABEL is a point in the program we can goto where it's interesting to
+- * checkpoint. These enable us to have a set of labels that can be specified
+- * on the commandline.
+- */
+-const char __attribute__((__section__(".LABELs"))) *first_label = "<start>";
+-const char __attribute__((__section__(".LABELs"))) *last_label;
+-
+-#define num_labels ((&last_label - &first_label) - 1)
+-
+-static inline const char * labels(int i)
+-{
+-	return (&first_label)[num_labels - i];
+-}
+-
+-void print_labels(FILE *pout)
+-{
+-	int i;
+-
+-	if (num_labels > 0)
+-		fprintf(pout, "\tNUM\tLABEL\n");
+-	for (i = 0; i < num_labels; i++)
+-		fprintf(pout, "\t%d\t%s\n", i, labels(i));
+-}
+ 
+ void usage(FILE *pout)
+ {
+-	fprintf(pout, "\nepoll_pipe [-L] [-N] [-h|--help] [-l LABEL] [-n NUM]\n"
++	fprintf(pout, "\npipe [-L] [-N] [-h|--help] [-l LABEL] [-n NUM]\n"
++"Create an epoll set and use it to wait for IO on a pipe.\n"
++"\n"
+ "\t-L\tPrint the valid LABELs in order and exit.\n"
+ "\t-l\tWait for checkpoint at LABEL.\n"
+ "\t-N\tPrint the maximum label number and exit.\n"
+@@ -138,10 +58,6 @@ const struct option long_options[] = {
+ 	{0, 0, 0, 0},
+ };
+ 
+-/* The spot (LABEL or label number) where we should test checkpoint/restart */
+-char const *ckpt_label;
+-int ckpt_op_num = 0;
+-
+ void parse_args(int argc, char **argv)
+ {
+ 	ckpt_label = last_label;
+@@ -182,39 +98,12 @@ void parse_args(int argc, char **argv)
+ 	}
+ }
+ 
+-/* Signal ready for and await the checkpoint */
+-void do_ckpt(void)
+-{
+-	set_checkpoint_ready();
+-	while (!test_checkpoint_done())
+-		usleep(10000);
+-
+-}
+-
+-/* Label a spot in the code... */
+-#define label(lbl, ret, action) \
+-do { \
+-	static char __attribute__((__section__(".LABELs"))) *___ ##lbl## _l = stringify(lbl); \
+-	goto lbl ; \
+-lbl: \
+-\
+-        log("INFO", "label: %s: \"%s\"\n", \
+-		    labels(op_num), stringify(action)); \
+-\
+-	ret = action ; \
+-\
+-	if ((ckpt_op_num == op_num) || \
+-	    (strcmp(ckpt_label, ___ ##lbl## _l) == 0)) \
+-		do_ckpt(); \
+-	if (ret < 0) { \
+-		log("FAIL", "%d\t%s: %s\n", \
+-		    op_num, ___ ##lbl## _l, stringify(action) ); \
+-		goto out; \
+-	} \
+-	op_num++; \
+-} while(0)
+-
+-#define HELLO "Hello world!\n"
++/*
++ * A LABEL is a point in the program we can goto where it's interesting to
++ * checkpoint. These enable us to have a set of labels that can be specified
++ * on the commandline.
++ */
++const char __attribute__((__section__(".LABELs"))) *first_label = "<start>";
+ int main(int argc, char **argv)
+ {
+ 	struct epoll_event ev[2] = {
+diff --git a/epoll/run.sh b/epoll/run.sh
+index 6ee475d..405692a 100755
+--- a/epoll/run.sh
++++ b/epoll/run.sh
+@@ -47,41 +47,35 @@ CURTEST=0
+ 
+ while [ $CURTEST -lt $NUMTESTS ]; do
+ 	T=${TESTS[$CURTEST]}
+-	set -x
+-	if [ "${T}" == "pipe" ]; then
+-		if (( IMAX < 0 )); then
+-			((IMAX = $(./${T} -N)))
+-			((I = 0))
+-		fi
+-		TARGS=( "-n" "${I}" )
+-	else
+-		TARGS=()
+-		I=""
++	if (( IMAX < 0 )); then
++		((IMAX = $(./${T} -N)))
++		((I = 0))
++		echo "INFO: Test ${T} does:"
++		./${T} -h | sed -e 's/^/INFO:/'
+ 	fi
+-	set +x
++	TLABEL=$(./${T} -L | head -n +$((I + 2)) | tail -n 1 | cut -f 3)
++	TARGS=( "-l" "${TLABEL}" )
+ 	trap 'do_err; break' ERR EXIT
+ 	rm -f ./checkpoint-{ready,done} TBROK
+-	echo "Running test: ${T}"
+-	set -x
++	echo "Running test: ${T} -l ${TLABEL}"
+ 	./${T} ${TARGS[@]} &
+ 	TEST_PID=$!
+-	set +x
+ 	while [ '!' -r "./checkpoint-ready" ]; do
+ 		sleep 1
+ 	done
+ 	freeze
+ 	trap 'thaw; do_err; break' ERR EXIT
+ 	sync
+-	cp log.${T} log.${T}${I}.pre-ckpt
++	cp log.${T} log.${T}${LABEL}.pre-ckpt
+ 	err_msg="FAIL"
+-	${CHECKPOINT} ${TEST_PID} > checkpoint-${T}${I}
++	${CHECKPOINT} ${TEST_PID} > checkpoint-${T}${LABEL}
+ 	err_msg="BROK"
+ 	thaw
+ 	trap 'do_err; break' ERR EXIT
+ 	touch "./checkpoint-done"
+ 	wait ${TEST_PID}
+ 	retval=$?
+-	echo "Test ${T}${I} done, returned ${retval}"
++	echo "Test ${T}${LABEL} done, returned ${retval}"
+ 	if [ -f "TBROK" ]; then
+ 		echo "BROK: epoll snafu, re-running this test"
+ 		continue
+@@ -89,36 +83,30 @@ while [ $CURTEST -lt $NUMTESTS ]; do
+ 	err_msg="FAIL"
+ 	[ $retval -eq 0 ]
+ 	err_msg="BROK"
+-	echo PASS
++	echo "PASS ${T} ${TLABEL} original"
+ 
+ 	# now try restarting
+-	mv log.${T} log.${T}${I}.post-ckpt
+-	cp log.${T}${I}.pre-ckpt log.${T}
++	mv log.${T} log.${T}${LABEL}.post-ckpt
++	cp log.${T}${LABEL}.pre-ckpt log.${T}
+ 	err_msg="FAIL"
+ 	# --copy-status ensures that we trap on error.
+-	${RESTART} --copy-status < checkpoint-${T}${I}
++	${RESTART} --copy-status < checkpoint-${T}${LABEL}
+ 	retval=$?
+ 	err_msg="FAIL"
+ 	[ ${retval} -eq 0 ];
+-	echo PASS
++	echo "PASS ${T} ${TLABEL} restart"
+ 	err_msg="BROK"
+-	if [ ! -f log.${T}${I} ]; then
+-		mv log.${T} log.${T}${I}
++	if [ ! -f log.${T}${LABEL} ]; then
++		mv log.${T} log.${T}${LABEL}
+ 	fi
+ 	trap '' ERR EXIT
+ 
+-	set -x
+-	if [ "${T}" == "pipe" ]; then
+-		((I = I + 1))
+-		if (( I > IMAX )); then
+-			((CURTEST = CURTEST + 1))
+-			((IMAX = -1))
+-			((I = 0))
+-		fi
+-	else
++	((I = I + 1))
++	if (( I > IMAX )); then
+ 		((CURTEST = CURTEST + 1))
++		((IMAX = -1))
++		((I = 0))
+ 	fi
+-	set +x
+ 	wait
+ done
+ trap '' ERR EXIT
 -- 
 1.5.6.3
