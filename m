@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [LPC] Notes from Checkpoint/Restart BOF
-Date: Mon, 12 Oct 2009 14:52:38 -0400
-Message-ID: <4AD37AF6.8010903@librato.com>
-References: <20090929001754.GA19933@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: 2009 kernel summit preparation for 'containers end-game'
+	discussion
+Date: Mon, 12 Oct 2009 14:04:17 -0500
+Message-ID: <20091012190416.GA15143@us.ibm.com>
+References: <20091006155637.GA14761@us.ibm.com> <4AD37A3C.8020408@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090929001754.GA19933-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AD37A3C.8020408-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,201 +19,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: sqazi-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, cgroup-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Hi,
+> 
+> Serge E. Hallyn wrote:
+> > Hi,
+> > 
+> > the kernel summit is rapidly approaching. One of the agenda
+> > items is 'the containers end-game and how do we get there.'
+> > As of now I don't yet know who will be there to represent the
+> > containers community in that discussion.  I hope there is
+> > someone planning on that?  In the hopes that there is, here is
+> > a summary of the info I gathered in June, in case that is
+> > helpful.  If it doesn't look like anyone will be attending
+> > ksummit representing containers, then I'll send the final
+> > version of this info to the ksummit mailing list so that someone
+> > can stand in.
+> > 
+> > 1. There will be an IO controller minisummit before KS.  I
+> > trust someone (Balbir?) will be sending meeting notes to
+> > the cgroup list, so that highlights can be mentioned at KS?
+> > 
+> > 2. There was a checkpoint/restart BOF plus talk at plumber's.
+> > Notes on the BOF are here:
+> > https://lists.linux-foundation.org/pipermail/containers/2009-September/020915.html
+> 
+> Based on Suka's post, I updated the linux-cr wiki page with the
+> notes from the BOF here:
+> 
+> 	http://ckpt.wiki.kernel.org/index.php/LPC2009
 
-Thanks for posting the notes. I place a (modified) summary of the BOF
-on the linux-c/r wiki:
+Thanks.
 
-	http://ckpt.wiki.kernel.org/index.php/LPC2009
+> > 3. There was an OOM notification talk or BOF at plumber's.
+> > Dave or Balbir, are there any notes about that meeting?
+> > 
+> > 4. The actual title of the KS discussion is 'containers end-game'.
+> > The containers-specific info I gathered in June was mainly about
+> > additional resources which we might containerize.  I expect that
+> > will be useful in helping the KS community decide how far down
+> > the containerization path they are willing to go - i.e. whether
+> > we want to call what we have good enough and say you must use kvm
+> > for anything more, whether we want to be able to provide all the
+> > features of a full VM with containers, or something in between,
+> > say targetting specific uses (perhaps only expand on cooperative
+> > resource management containers).  With that in mind, here are
+> > some items that were mentioned in June as candidates for
+> > more containerization work
+> > 
+> > 	1. Cpu hard limits, memory soft limits (Balbir)
+> > 	2. Large pages, mlock, shared page accounting (Balbir)
+> > 	3. Oom notification (Balbir - was anything decided on this
+> > 		at plumber's?)
+> > 	4. There is agreement on getting rid of the ns cgroup,
+> > 		provided that:
+> > 		a. user namespaces can provide container confinement
+> > 		guarantees
+> > 		b. a compatibility flag is created to clone parent
+> > 		cgroup when creating a new cgroup (Paul and Daniel)
+> > 	5. Poweroff/reboot handling in containers (Daniel)
+> > 	6. Full user namespaces to segragate uids in different
+> > 		containers and confine root users in containers, i.e.
+> > 		with respect to file systems like cgroupfs.
+> > 	7. Checkpoint/restart (c/r) will want time virtualization (Daniel)
+> > 	8. C/r will want inode virtualization (Daniel)
+> 
+> What is the status on device namespace/virtualization ?  the first few
+> I have in mind are per-container: /dev/rtc, /dev/ttyX, and even
+> dev/urandom (isolated entropy pools?).
 
-Oren.
+They sound like good ideas.  I think the status is unstarted :)
 
-Sukadev Bhattiprolu wrote:
-> 
-> Notes from Checkpoint/Restart BOF at Linux Plumbers Conference, Sep 24, 2009.
-> 
-> (I am missing some details and couple of names. They said they were on
-> Containers mailing list though. If you have any other topics that we
-> discussed or have any details, please add to this mail).
-> 
-> ---
-> 
-> Attendees:
-> 	Oren Laadan, Joeseph Ruscio, <One more person> (Librato)
-> 	Pavel Emelyanov, <One more person ?> (OpenVZ)
-> 	Ying Han, Salman Qazi (Google)
-> 	Dan Smith, Matt Helsley, Sukadev Bhattiprolu (IBM)
-> 
-> 1. Pavel: A few months ago there were discussions about making a "dry-run"
->    to see if checkpoint of an application will succeed. What is the
->    current status of that ?
-> 
-> 	The answer was there is no dry-run - user should just try the
-> 	actual C/R. If application is using an uncheckpointable resource
-> 	the C/R will fail cleanly without side-effects. 
-> 	The dry-run may not mean anything unless we freeze the application
-> 	during the check and leave it frozen until the checkpoint is done.
-> 	IOW, the dry-run does not guarantee that application is checkpointable
-> 	unless the application is frozen.
-> 
-> 2. Pavel: Alexey Dobriyan had earlier submitted some code for leak-detection. Do
->    we still have that ?
-> 
->    	The answer was that most of the code was used and we also added reverse
-> 	detection.
-> 
-> 3. Do we have a config-option to make a process checkpointable.
-> 
-> 	<Missed the context of this question> We have CONFIG_CHECKPOINT.
-> 
-> 4 Checkpointing network connections:
-> 
-> 	We quickly reviewed the status (AF_UNIX done, AF_INET done in a
-> 	prototype and needs to be forward ported). Checkpoint of one-end
-> 	of a network connection can cause the connection to be reset.
-> 
-> 5. Briefly discussed distinction between Live migration and static migration
-> 
-> 6. Do we need a pre-check during restart to ensure that the application can
->    be restarted ? Eg: if the application used a specific math co-processor
->    or futex at checkpoint and that resource is not available at restart,
->    the restart may encounter some undefined behavior. Should we encode the
->    hardware/OS capabilities in the checkpoint image and check these
->    capabilities during restart (before actual restart). Reason for this
->    check being the restart may not fail cleanly if the resource is missing.
-> 
->    	Conclusion was that there could be too many such capabilities that
-> 	we would have to track and even so there may be some unexpected
-> 	difference between checkpoint machine and restart machine.
-> 
-> 	For now, let the restart fail and/or deal with in user-space.
-> 
-> 7. Discussed briefly about clone2() aka clone_with_pids().
-> 
-> 	Everyone seemed to agree that restoring process-tree even in user-space
-> 	will work and can be used.
-> 
-> 8. Oren: Error reporting during restart
-> 
-> 	We currently fail the system call with an error code and if we ant
-> 	more information on the failure, we have to add debug messages to
-> 	the code. We discussed couple of options for error reporting on restart:
-> 		- log detailed message(s) to console (risk wrapping dmesg buf)
-> 		- pass an extra-buffer to the system call and have kernel
-> 		  fill-in more detailed error message (would need two new
-> 		  parameters, one pointer to the buf, one size of the buf).
-> 
-> 		- Pass-in an extra 'log_fd' parameter to system call and have
-> 		kernel write detailed messags to that log_fd (unless log_fd
-> 		is -1). This seemed more flexible than the other two.
-> 
-> 		We agreed that the format of the log messages can be free-format
-> 		and that there is no guarantee that the format of the log
-> 		messages will not change.
-> 
-> 		But it was not clear (at least to me) if the log file should
-> 		contain all log messages relating to the C/R or just the
-> 		last (few) error messages.
-> 
-> 9. Any application to summarize the checkpoint ?
-> 
-> 	We have a 'ckptinfo' that could summarize the contents of a checkpoint.
-> 
-> 10. Ying Han: Is there a performance difference between the original instance
->     of the application and the restarted instance ? (Eg: on NUMA if application
->     was on one node at checkpoint and after restart, ended up on another node).
-> 
->     	Not sure if there was a conclusion to this point.
-> 
-> 11. Discussed that devices like tty, /dev/rtc etc must be virtualized before
->     we can checkpoint them.
-> 
-> 12. Oren: Checkpointing/Restoring mount namespaces
-> 
-> 	Bind mounts are restored in container.
-> 
-> 	NFS: at least on OpenVZ, since network is frozen, reopening files over
-> 	NFS is not possible until restart is complete. OpenVZ creates fake
-> 	dentries to allow the open to proceed.
-> 
-> 	Loopback devices - cannot open them in a container since they can
-> 		lockup system with huge memory footprint ??
-> 
-> 	We should disable shared-mount propogation at least for now.
-> 
-> 13. Oren: cradvise()
-> 
-> 	Use a single system call to optimize the checkpoint/restart ?
-> 	Eg: If an fd refers to /dev/tty1 in the checkpoint-image and that tty
-> 	is not available on restart, user-space could open another tty and
-> 	teach the kernel to use a different tty, /dev/tty2, during
-> 	restart. Another example is if an application has several megs of
-> 	"scratch" memory  that does not need to checkpointed, they could
-> 	use 'cradvise') system call to optimize the checkpoint or restart.
-> 
-> 	The conclusion was it would be hard to get acceptance from community,
-> 	for a new variant of ioctl/fcntl call. So, we should instead try to
-> 	add the necessary features to existing system calls like fcntl(),
-> 	shmctl() or madvise().
-> 
-> 14. Oren: Unlinked files/directories
-> 
-> 	May need to copy the contents of the deleted file to the
-> 	checkpoint image (only on ext4?). Create a fake hard link to the
-> 	file so the file still exists in the filesystem snapshot and remove
-> 	the link during restart.
-> 
-> 	There is a good paper discussing snapshot/restore of unlinked files
-> 	on Xen. The same concept could be used in C/R too ?
-> 
-> 	(If you have links to the paper, please add)
-> 
-> 15. Network namespaces
-> 
-> 	Restore namespaces in user-space, restore sockets in-kernel.
-> 
-> 	Cannot create devices in user-space unless we know the index for
-> 	the network device ?
-> 
-> 	(Missed details on this discussion)
-> 
-> 16. Time
-> 
-> 	Will need some policies on restart like:
-> 		- use absolute time or relative time
-> 		- do new children inherit the policy ?
-> 		- do we gradually adjust from relative to absolute time ?
-> 
-> 	If not cradvise(), maybe timectl() :-p
-> 
-> 17. VDSO
-> 
-> 	(Missed details on this discussion)
-> 
-> 18. Async I/O
-> 
-> 	Getting a lockdep report during checkpoint ?
-> 	OpenVZ flushes I/O, waits for pending I/O and then retries checkpoint
-> 	We may need to the do the same for mmap I/O ?
-> 
-> 19. Checkpoint data structures:
-> 
-> 	- Try to keep extensions to existing data structures minimal
-> 	- If necessary, add to end of data structures
-> 	- But do not get locked down to an ABI at this point. i.e.  even after
-> 	  entering mainline, format of checkpoint image may change for a while
-> 	  before stabilizing.
-> 
-> 20. Test suite:
-> 
-> 	OpenVZ has some test cases that has various applications go to specific
-> 	states and wait for a checkpoint. After that and after restart they
-> 	check that nothing has changed unexpectedly.
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> The first two are important for containers that hold user sessions
+> (e.g. linux terminal server) - is anyone pushing this use-case in the
+> context of containers-end-game ?
+
+/me hopes someone chimes in and says "I am".
+
+BTW, containers end-game is off the ksummit agenda now.
+
+-serge
