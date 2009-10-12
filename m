@@ -1,14 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: LXC PIDs, UIDs, and halt
-Date: Mon, 12 Oct 2009 10:03:56 -0500
-Message-ID: <20091012150355.GA5783@us.ibm.com>
-References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: 2009 kernel summit preparation for 'containers end-game'
+	discussion
+Date: Mon, 12 Oct 2009 14:49:32 -0400
+Message-ID: <4AD37A3C.8020408@librato.com>
+References: <20091006155637.GA14761@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <68e6eac60910110930q74358967o19e3d0e88e111bd5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20091006155637.GA14761-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,61 +18,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, cgroup-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi all,
+Hi,
+
+Serge E. Hallyn wrote:
+> Hi,
 > 
-> I'm new to LXC but have been playing around with it some.
+> the kernel summit is rapidly approaching. One of the agenda
+> items is 'the containers end-game and how do we get there.'
+> As of now I don't yet know who will be there to represent the
+> containers community in that discussion.  I hope there is
+> someone planning on that?  In the hopes that there is, here is
+> a summary of the info I gathered in June, in case that is
+> helpful.  If it doesn't look like anyone will be attending
+> ksummit representing containers, then I'll send the final
+> version of this info to the ksummit mailing list so that someone
+> can stand in.
 > 
-> I ran into a few issues:
-> 1) PIDs for container processes show up on the controlling host (ps, top,
-> etc). In OpenVZ there is a way to hide them.
-
-Hmm, yes, it's basically by design, and 'fixing' it will sully the
-clean hierarchical pidns design.
-
-The easiest way to emulate that would be to have the host, during
-boot, have init split off two child pid namespaces - one for most of the
-host applications like the xserver, host's sshd, etc, and the other for
-spawning off containers.  Then management of pid namespaces by the
-host has to be done either from the init pid-ns, or from the pid-ns
-which spawns off containers.
-
-> 2) All controlling host mounts show up in containers.
-
-Same.
-
-> 3) A "kill -9 -1" run from a user in the controlling host kills all
-> processes in all containers where the owner of the process has the same UID
-> as the UID of the outside user. (At least the reverse is not the case).
-
-You can prevent this from happening using selinux or smack.
-
-Properly fixing this requires more work on the user namespace.  I am (as
-always) hoping to get time to work on that soon.
-
-> 4) In a opensuse container when I execute "halt" it is not just the
-> container that halts, but the controlling host as well that shuts down.
-
-Make sure that the container is launched with CAP_SYS_BOOT removed from
-the capability bounding set.
-
-> It does not make any difference where I mount /proc on the outside into the
-> container, or from inside the container, the behavior above stays the same.
+> 1. There will be an IO controller minisummit before KS.  I
+> trust someone (Balbir?) will be sending meeting notes to
+> the cgroup list, so that highlights can be mentioned at KS?
 > 
-> I'm binding mounting the outside /dev to the container /dev mountpoints.
-> 
-> I'm running Linux 2.6.30.6 and lxc 0.6.3
-> 
-> In opensuse I was able to successfuly start the container only after
-> commenting out si::bootwait:/etc/init.d/boot in /etc/inittab.
-> Same for archlinux, I disabled rc::sysinit:/etc/rc.sysinit in /etc/inittab.
-> I'm not concerned about having to do that.
-> 
-> 
-> I'm looking for any insight or needed configuration changes for these issue.
+> 2. There was a checkpoint/restart BOF plus talk at plumber's.
+> Notes on the BOF are here:
+> https://lists.linux-foundation.org/pipermail/containers/2009-September/020915.html
 
--serge
+Based on Suka's post, I updated the linux-cr wiki page with the
+notes from the BOF here:
+
+	http://ckpt.wiki.kernel.org/index.php/LPC2009
+
+> 
+> 3. There was an OOM notification talk or BOF at plumber's.
+> Dave or Balbir, are there any notes about that meeting?
+> 
+> 4. The actual title of the KS discussion is 'containers end-game'.
+> The containers-specific info I gathered in June was mainly about
+> additional resources which we might containerize.  I expect that
+> will be useful in helping the KS community decide how far down
+> the containerization path they are willing to go - i.e. whether
+> we want to call what we have good enough and say you must use kvm
+> for anything more, whether we want to be able to provide all the
+> features of a full VM with containers, or something in between,
+> say targetting specific uses (perhaps only expand on cooperative
+> resource management containers).  With that in mind, here are
+> some items that were mentioned in June as candidates for
+> more containerization work
+> 
+> 	1. Cpu hard limits, memory soft limits (Balbir)
+> 	2. Large pages, mlock, shared page accounting (Balbir)
+> 	3. Oom notification (Balbir - was anything decided on this
+> 		at plumber's?)
+> 	4. There is agreement on getting rid of the ns cgroup,
+> 		provided that:
+> 		a. user namespaces can provide container confinement
+> 		guarantees
+> 		b. a compatibility flag is created to clone parent
+> 		cgroup when creating a new cgroup (Paul and Daniel)
+> 	5. Poweroff/reboot handling in containers (Daniel)
+> 	6. Full user namespaces to segragate uids in different
+> 		containers and confine root users in containers, i.e.
+> 		with respect to file systems like cgroupfs.
+> 	7. Checkpoint/restart (c/r) will want time virtualization (Daniel)
+> 	8. C/r will want inode virtualization (Daniel)
+
+What is the status on device namespace/virtualization ?  the first few
+I have in mind are per-container: /dev/rtc, /dev/ttyX, and even
+dev/urandom (isolated entropy pools?).
+
+The first two are important for containers that hold user sessions
+(e.g. linux terminal server) - is anyone pushing this use-case in the
+context of containers-end-game ?
+
+Oren.
+
+> 	9. Sunrpc containerization (required to allow multiple
+> 		containers separate NFS client access to the same server)
+> 	10. Sysfs tagging, support for physical netifs to migrate
+> 		network namespaces, and /sys/class/net virtualization
+> 
+> Again the point of this list isn't to ask for discussion about
+> whether or how to implement each at this KS, but rather to give
+> an idea of how much work is left to do.  Though let the discussion
+> lead where it may of course.
+> 
+> I don't have it here, but maybe it would also be useful to
+> have a list ready of things we can do today with containerization?
+> Both with upstream, and with under-development patchsets.
+> 
+> I also hope that someone will take notes on the ksummit
+> discussion to send to the containers and cgroup lists.
+> I expect there will be a good LWN writeup, but a more
+> containers-focused set of notes will probably be useful
+> too.
+> 
+> thanks,
+> -serge
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
