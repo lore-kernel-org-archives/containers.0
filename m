@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
-Date: Tue, 13 Oct 2009 14:46:52 -0400
-Message-ID: <4AD4CB1C.7040207@librato.com>
-References: <20091013044925.GA28181@us.ibm.com>
-	<20091013045439.GI28435@us.ibm.com>
+Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
+Date: Tue, 13 Oct 2009 15:00:49 -0400
+Message-ID: <4AD4CE61.30503@librato.com>
+References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>	<1254932945-12578-3-git-send-email-danms@us.ibm.com>	<4AD3A52B.6050101@librato.com>
+	<87ws2zcjhe.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091013045439.GI28435-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87ws2zcjhe.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,175 +18,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, John Dykstra <jdykstra72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+Dan Smith wrote:
+> OL> * Did you test this with UDP too ?
+> 
+> Not sendmail of course, but I have a little test program that
+> maintains a DGRAM connection to the echo service on a remote node,
+> yeah.
+> 
+> OL> * What happens if the the clock on the target machine differs from
+> OL> the clock on the origin machine ?  (TCP timestamps)
+> 
+> I guess maybe we should canonicalize the timeout values to something
+> like "milliseconds after checkpoint start"?  This would allow the
+> remote system to reset the timers to something reasonable.  It would
+> also cause non-migration restarts to restore the timers appropriately
+> for a coordinated restart of multiple machines.
 
-Sukadev Bhattiprolu wrote:
-> 
-> Subject: [RFC][v8][PATCH 9/10]: Define clone3() syscall
-> 
-> Container restart requires that a task have the same pid it had when it was
-> checkpointed. When containers are nested the tasks within the containers
-> exist in multiple pid namespaces and hence have multiple pids to specify
-> during restart.
-> 
-> clone3(), intended for use during restart, is the same as clone(), except
-> that it takes a 'pids' paramter. This parameter lets caller choose
-> specific pid numbers for the child process, in the process's active and
-> ancestor pid namespaces. (Descendant pid namespaces in general don't matter
-> since processes don't have pids in them anyway, but see comments in
-> copy_target_pids() regarding CLONE_NEWPID).
-> 
-> Clone2() system call also attempts to address a second limitation of the
-> clone() system call. clone() is restricted to 32 clone flags and most (all ?)
-> of these are in use. If a new clone flag is needed, we will be forced to
-> define a new variant of the clone() system call.
-> 
-> To prevent unprivileged processes from misusing this interface, clone3()
-> currently needs CAP_SYS_ADMIN, when the 'pids' parameter is non-NULL.
-> 
-> See Documentation/clone3 in next patch for more details of clone3() and an
-> example of its usage.
-> 
-> NOTE:
-> 	System calls are restricted to 6 parameters and the number and sizes
-> 	of parameters needed for sys_clone3() exceed 6 integers. The new
-> 	prototype works around this restriction while providing some
-> 	flexibility if clone3() needs to be further extended in the future.
-> TODO:
-> 	- May need additional sanity checks in do_fork_with_pids().
-> 
-> Changelog[v8]
-> 	- [Oren Laadan] parent_tid and child_tid fields in 'struct clone_arg'
-> 	  must be 64-bit.
-> 	- clone2() is in use in IA64. Rename system call to clone3().
-> 
-> Changelog[v7]:
-> 	- [Peter Zijlstra, Arnd Bergmann] Rename system call to clone2()
-> 	  and group parameters into a new 'struct clone_struct' object.
-> 
-> Changelog[v6]:
-> 	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
-> 	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
-> 	  is constant across architectures.
-> 	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
-> 	  'unum_pids < 0' check.
-> 
-> Changelog[v4]:
-> 	- (Oren Laadan) rename 'struct target_pid_set' to 'struct pid_set'
-> 
-> Changelog[v3]:
-> 	- (Oren Laadan) Allow CLONE_NEWPID flag (by allocating an extra pid
-> 	  in the target_pids[] list and setting it 0. See copy_target_pids()).
-> 	- (Oren Laadan) Specified target pids should apply only to youngest
-> 	  pid-namespaces (see copy_target_pids())
-> 	- (Matt Helsley) Update patch description.
-> 
-> Changelog[v2]:
-> 	- Remove unnecessary printk and add a note to callers of
-> 	  copy_target_pids() to free target_pids.
-> 	- (Serge Hallyn) Mention CAP_SYS_ADMIN restriction in patch description.
-> 	- (Oren Laadan) Add checks for 'num_pids < 0' (return -EINVAL) and
-> 	  'num_pids == 0' (fall back to normal clone()).
-> 	- Move arch-independent code (sanity checks and copy-in of target-pids)
-> 	  into kernel/fork.c and simplify sys_clone_with_pids()
-> 
-> Changelog[v1]:
-> 	- Fixed some compile errors (had fixed these errors earlier in my
-> 	  git tree but had not refreshed patches before emailing them)
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  arch/x86/include/asm/syscalls.h    |    1 
->  arch/x86/include/asm/unistd_32.h   |    1 
->  arch/x86/kernel/process_32.c       |   34 +++++++++++++
->  arch/x86/kernel/syscall_table_32.S |    1 
->  include/linux/types.h              |   10 +++
->  kernel/fork.c                      |   96 ++++++++++++++++++++++++++++++++++++-
->  6 files changed, 142 insertions(+), 1 deletion(-)
-> 
-> Index: linux-2.6/include/linux/types.h
-> ===================================================================
-> --- linux-2.6.orig/include/linux/types.h	2009-10-12 19:13:24.000000000 -0700
-> +++ linux-2.6/include/linux/types.h	2009-10-12 19:15:08.000000000 -0700
-> @@ -204,6 +204,16 @@ struct ustat {
->  	char			f_fpack[6];
->  };
->  
-> +struct clone_struct {
-> +	u64 flags;
-> +	u64 child_stack;
-> +	u32 nr_pids;
-> +	u32 reserved1;
-> +	u64 parent_tid;
-> +	u64 child_tid;
-> +	u64 reserved2;
-> +};
-> +
->  #endif	/* __KERNEL__ */
->  #endif /*  __ASSEMBLY__ */
->  #endif /* _LINUX_TYPES_H */
-> Index: linux-2.6/arch/x86/include/asm/syscalls.h
-> ===================================================================
-> --- linux-2.6.orig/arch/x86/include/asm/syscalls.h	2009-10-12 19:13:24.000000000 -0700
-> +++ linux-2.6/arch/x86/include/asm/syscalls.h	2009-10-12 19:15:08.000000000 -0700
-> @@ -55,6 +55,7 @@ struct sel_arg_struct;
->  struct oldold_utsname;
->  struct old_utsname;
->  
-> +asmlinkage long sys_clone3(struct clone_struct __user *cs, pid_t *pids);
->  asmlinkage long sys_mmap2(unsigned long, unsigned long, unsigned long,
->  			  unsigned long, unsigned long, unsigned long);
->  asmlinkage int old_mmap(struct mmap_arg_struct __user *);
-> Index: linux-2.6/arch/x86/include/asm/unistd_32.h
-> ===================================================================
-> --- linux-2.6.orig/arch/x86/include/asm/unistd_32.h	2009-10-12 19:13:24.000000000 -0700
-> +++ linux-2.6/arch/x86/include/asm/unistd_32.h	2009-10-12 19:15:08.000000000 -0700
-> @@ -342,6 +342,7 @@
->  #define __NR_pwritev		334
->  #define __NR_rt_tgsigqueueinfo	335
->  #define __NR_perf_counter_open	336
-> +#define __NR_clone3		337
->  
->  #ifdef __KERNEL__
->  
-> Index: linux-2.6/arch/x86/kernel/process_32.c
-> ===================================================================
-> --- linux-2.6.orig/arch/x86/kernel/process_32.c	2009-10-12 19:13:24.000000000 -0700
-> +++ linux-2.6/arch/x86/kernel/process_32.c	2009-10-12 19:54:34.000000000 -0700
-> @@ -443,6 +443,40 @@ int sys_clone(struct pt_regs *regs)
->  	return do_fork(clone_flags, newsp, regs, 0, parent_tidptr, child_tidptr);
->  }
->  
-> +asmlinkage long
-> +sys_clone3(struct clone_struct __user *ucs, pid_t __user *pids)
-> +{
-> +	int rc;
-> +	struct clone_struct kcs;
-> +	unsigned long clone_flags;
-> +	int __user *parent_tid_ptr;
-> +	int __user *child_tid_ptr;
-> +	unsigned long __user child_stack_base;
-> +	struct pt_regs *regs;
-> +
-> +	rc = copy_from_user(&kcs, ucs, sizeof(kcs));
-> +	if (rc)
-> +		return -EFAULT;
-> +
-> +	if (kcs.reserved1 || kcs.reserved2)
-> +		return -EINVAL;
-> +
-> +	/*
-> +	 * TODO: Convert clone_flags to 64-bit
-> +	 */
-> +	clone_flags = (unsigned long)kcs.flags;
+IIRC, the TCP stack takes the timestamp for each packet directly from
+jiffies. So you need to teach TCP to add a per-container (or you can
+make it per-socket) delta to that timestamp.
 
-On 32-bit arch this would dismiss upper half of the flags :(
-Is there a reason not to use 64-bit ('u64' or 'long long') now ?
+> 
+> OL> * How confident are we that "bad" input in one or more fields,
+> OL> that you don't currently sanitize, cannot create "bad" behavior ?
+> OL> (bad can be kernel crash, unauthorized behavior, DoS etc)
+> 
+> I'm going to say 0.052.
 
-[...]
+Ah ... sure ...
+To avoid confusion, can you state the units :p
+
+> 
+> I haven't evaluated much of it, no :)
+
+I guess my point is that we want to ask the networking people this
+question in an explicit way.
+
+> 
+> OL> * How much does TCP rely on the validity of the info in the
+> OL> protocol control block, and what sorts of bads can happen if it
+> OL> isn't ?  Would TCP be still happy if the URG point is bogus, would
+> OL> it allow the user to sent packets otherwise disallowed (to that
+> OL> user?), or maybe it could crash the kernel ?
+> 
+> Good question, I'll have to look.
+
+Ditto.
+
+So I'm thinking, for both, do (1) put a big fat comment in the code
+saying that sanity-tests are needed, and what for, and (2) send a
+separate mail to the networking people with these two scenarios and
+request comments ?
+
+> 
+> OL> * Can you please document (brief description) how the restart
+> OL> logic works (listening parent socket etc) ?
+> 
+> Sure.
+> 
+> OL> * Do you intend to checkpoint (and collect) lingering sockets,
+> OL> that is they are closed by the application so not references by
+> OL> any task, but still sending data from their buffers ?
+> 
+> Yeah, I expect that will be important :)
+
+Cool. How about a TODO comment somewhere to convince everyone ( = me)
+that you have it in your plans :)
+
+> 
+> OL> * I'd like to also preserve the "older" behavior - so the user can
+> OL> choose to restart and reset all previous connections, keep
+> OL> listening sockets (e.g. RESTART_DISCONNET).
+> 
+> Sure, sounds good to me.
+> 
+>>> +	printk("Doing post-restart hash\n");
+> 
+> (oops, looks like I left some debug messages in place)
+> 
+> OL> I wonder if a user can use this to convince TCP to send some nasty
+> OL> packets to some arbitrary destination, with specific seq-number or
+> OL> what not ?
+> 
+> I'm not sure what you mean.  The sk->num value comes from the sport
+> which should have been refused during the bind() if it's in use or not
+> permitted, no?
+
+I think Serge already pointed in his review that this should not permit
+a user to bind inconsistent or restricted ports.
+
+I actually meant the contrary: suppose a malicious user on your machine
+wants to attack a target machine/connection. can that user provide such
+destination-address data and protocol parameters to build a connection
+that locally seems valid, but is malicious ?
+
+For example, now, if a user wants to send a TCP packet with arbitrary
+protocol parameters, he needs to use raw IP sockets, which require
+privilege. Would restarting a connection with the desired parameters
+become a way to bypass that restriction ?  (e.g. assume the user
+restarts while using the host's network namespace).
 
 Oren.
