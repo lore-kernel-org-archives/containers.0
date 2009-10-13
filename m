@@ -1,14 +1,15 @@
-From: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: LXC PIDs, UIDs, and halt
-Date: Tue, 13 Oct 2009 00:06:10 -0500
-Message-ID: <68e6eac60910122206i7c39fca0u52ab037748217336@mail.gmail.com>
-References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
-	<20091012150355.GA5783@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 3/10]: Make pid_max a pid_ns property
+Date: Tue, 13 Oct 2009 09:19:53 +0400
+Message-ID: <20091013051953.GA19895@x200>
+References: <20091013044925.GA28181@us.ibm.com>
+	<20091013045041.GC28435@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091012150355.GA5783-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091013045041.GC28435-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,45 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+On Mon, Oct 12, 2009 at 09:50:41PM -0700, Sukadev Bhattiprolu wrote:
+> From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Subject: [RFC][v8][PATCH 3/10]: Make pid_max a pid_ns property
+> 
+> Remove the pid_max global, and make it a property of the
+> pid_namespace.  When a pid_ns is created, it inherits
+> the parent's pid_ns.
+> 
+> Fixing up sysctl (trivial akin to ipc version, but
+> potentially tedious to get right for all CONFIG*
+> combinations) is left for later.
 
-> Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> > 4) In a opensuse container when I execute "halt" it is not just the
-> > container that halts, but the controlling host as well that shuts down.
->
-> Make sure that the container is launched with CAP_SYS_BOOT removed from
-> the capability bounding set.
->
-
-Ok, well it turns out any container can halt the whole system.
-
-If I do:
-  capsh --drop="cap_sys_boot" -- -c "lxc-start -n arch-test0"
-Then do a halt within the container, the halt still works.
-A "reboot" within a container does not reboot the controlling host, the
-container runs the shutdown scripts and then idles.
-
-However, if on the controlling host I do:
-  capsh --drop="cap_kill" -c "bash --login -i"
-Then the subsequent shell can't use kill which I have verified.
-
-Well, these performed on the controlling host:
-  capsh --drop="cap_sys_boot" -- -c "halt"
-  capsh --drop="cap_sys_boot" -- -c "reboot"
-
-Still halt and reboot my system.
-
-So I know that capabilities are working, I just have not figured out yet how
-to prevent containers from being able to halt the controlling host (short of
-simply not executing "halt" within a container or renaming/removing "halt"
-and "shutdown" but then "init 0" would still work).
-
-CAP_SYS_BOOT seems to control reboot, which has not been an issue, I've not
-gotten a container to reboot the controlling host.
-
-
-Dwight
+pid_max is not pid_ns property, it's just sysctl to limit cpu time
+during bitmap search. Just like vm.max_map_count limits kernel memory
+used by VMAs.
