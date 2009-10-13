@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: LXC PIDs, UIDs, and halt
-Date: Tue, 13 Oct 2009 14:59:21 -0500
-Message-ID: <20091013195921.GA20345@us.ibm.com>
-References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
-	<20091012150355.GA5783@us.ibm.com>
-	<68e6eac60910122206i7c39fca0u52ab037748217336@mail.gmail.com>
+From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Tue, 13 Oct 2009 13:50:15 -0700 (PDT)
+Message-ID: <20091013205015.1ED524F7@magilla.sf.frob.com>
+References: <20091013044925.GA28181@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <68e6eac60910122206i7c39fca0u52ab037748217336-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: Sukadev Bhattiprolu's message of  Monday,
+	12 October 2009 21:49:25 -0700 <20091013044925.GA28181-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,61 +18,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> > > 4) In a opensuse container when I execute "halt" it is not just the
-> > > container that halts, but the controlling host as well that shuts down.
-> >
-> > Make sure that the container is launched with CAP_SYS_BOOT removed from
-> > the capability bounding set.
-> >
-> 
-> Ok, well it turns out any container can halt the whole system.
-> 
-> If I do:
->   capsh --drop="cap_sys_boot" -- -c "lxc-start -n arch-test0"
-> Then do a halt within the container, the halt still works.
-> A "reboot" within a container does not reboot the controlling host, the
-> container runs the shutdown scripts and then idles.
-> 
-> However, if on the controlling host I do:
->   capsh --drop="cap_kill" -c "bash --login -i"
-> Then the subsequent shell can't use kill which I have verified.
-> 
-> Well, these performed on the controlling host:
->   capsh --drop="cap_sys_boot" -- -c "halt"
->   capsh --drop="cap_sys_boot" -- -c "reboot"
-> 
-> Still halt and reboot my system.
-> 
-> So I know that capabilities are working, I just have not figured out yet how
-> to prevent containers from being able to halt the controlling host (short of
-> simply not executing "halt" within a container or renaming/removing "halt"
-> and "shutdown" but then "init 0" would still work).
-> 
-> CAP_SYS_BOOT seems to control reboot, which has not been an issue, I've not
-> gotten a container to reboot the controlling host.
+Some userland debugging things and so forth like to look at the clone_flags
+argument, so that is kept simpler for them if it stays in a register
+(i.e. its own argument) rather than a user pointer fetch for that argument.
+Any problem with:
 
-HAH!  It's upstart, the latest incarnation of init (at least on Fedora).  It
-takes commands over an abstract unix domain socket, "
-/com/ubuntu/upstart/<pid>".  If you start your container in a new network
-namespace, then halt fails.
+	sys_clone3(unsigned long clone_flags,
+		   struct clone_struct __user *cs, pid_t __user *pids)
 
-I haven't gone through the code enough to see exactly how, then,
-upstart (in userspace) authorizes the halt request.  Since 'pid'
-is encoded in the socket name, i assume it looks at /proc/pid/status.
-So it easily could check for CAP_SYS_BOOT \notin pE, or even
-check whether it's supposed to be in a container (using some config
-files in userspace if somesuch could be agreed upon by everyone, not
-really likely).
+?
 
-Oh, yeah, upstart-0.3.11/init/main.c checks whether geteuid()==0.
-Wonderful.
+That also has the side benefit that instead of non-ia64 users forever
+asking, "Why is it clone3 when there is no clone2?" you can instead pretend
+that it follows the "clone3 because it takes three arguments" convention. ;-)
 
--serge
+Btw, IMHO "struct foo_struct" is one of the lamest naming conventions ever.
+How about "struct clone_args"?
+
+Also, if you were to replace:
+
+		u64 child_stack;
+
+with:
+
+		u64 child_stack_base;
+		u64 child_stack_size;
+
+and use in sys_clone3 (for most arch's):
+
+	child_stack_ptr = kcs.child_stack_base + kcs.child_stack_size;
+
+then the same clone3 interface would cover ia64 as well.
+
+
+Thanks,
+Roland
