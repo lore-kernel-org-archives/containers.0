@@ -1,92 +1,80 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
-Date: Tue, 13 Oct 2009 15:35:07 -0400
-Message-ID: <4AD4D66B.6090903@librato.com>
-References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>	<1254932945-12578-3-git-send-email-danms@us.ibm.com>	<4AD3A52B.6050101@librato.com> <87ws2zcjhe.fsf@caffeine.danplanet.com>	<4AD4CE61.30503@librato.com> <87pr8rcdl0.fsf@caffeine.danplanet.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: LXC PIDs, UIDs, and halt
+Date: Tue, 13 Oct 2009 14:59:21 -0500
+Message-ID: <20091013195921.GA20345@us.ibm.com>
+References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
+	<20091012150355.GA5783@us.ibm.com>
+	<68e6eac60910122206i7c39fca0u52ab037748217336@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <87pr8rcdl0.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, John Dykstra <jdykstra72@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <68e6eac60910122206i7c39fca0u52ab037748217336-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Dan Smith wrote:
-> OL> IIRC, the TCP stack takes the timestamp for each packet directly
-> OL> from jiffies. So you need to teach TCP to add a per-container (or
-> OL> you can make it per-socket) delta to that timestamp.
+Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 > 
-> After wondering what the heck you were talking about, I realized I
-> assumed you were talking about TCP timeouts and not timestamps :)
+> > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > 4) In a opensuse container when I execute "halt" it is not just the
+> > > container that halts, but the controlling host as well that shuts down.
+> >
+> > Make sure that the container is launched with CAP_SYS_BOOT removed from
+> > the capability bounding set.
+> >
 > 
-> I assume you mean the following:
+> Ok, well it turns out any container can halt the whole system.
 > 
->   1. Put a absolute time stamp in the checkpoint stream
->   2. Calculate the delta between that and the current time on the
->      restoring host
->   3. Use that value to offset timestamps from that point on.
+> If I do:
+>   capsh --drop="cap_sys_boot" -- -c "lxc-start -n arch-test0"
+> Then do a halt within the container, the halt still works.
+> A "reboot" within a container does not reboot the controlling host, the
+> container runs the shutdown scripts and then idles.
 > 
-> Correct?
-
-Sort of. Right now we already record the absolute time-of-checkpoint:
-ctx->ktime_begin.  The restart-blocks are saved relative to it. I'd
-suggest the same for all time related data from the network - save it
-in the checkpoint image as delta's compared to checkpoint time.
-
-At restart, the restart-blocks are restored relative to restart-time,
-using the saved delta. That would work for the TCP timestamps too.
-
+> However, if on the controlling host I do:
+>   capsh --drop="cap_kill" -c "bash --login -i"
+> Then the subsequent shell can't use kill which I have verified.
 > 
-> Since I brought it up, do you agree that the retransmit timers should
-> be canonicalized to time-after checkpoint values?  It occurs to me
-> that right now I restore a jiffies value on the receiving host which
-> is guaranteed to be incorrect :)
-
-As for TCP timeouts - I don't think they matter that much in the case
-of live migration, whether the timeout after restart happens in the
-saved delta relative to original checkpoint-time, or new restart-time.
-The difference is likely to be subsecond to a few seconds at most,
-not important for most use-cases, I'd think.
-
-(If we are concerned about a TCP hickup due to a migration, there are
-tricks to work around it that; timeouts and retransmits are not the
-best way to go, because once you get there you already slowed down
-TCP significantly).
-
-Here, too, once we have time virtualization this can be revisited, to
-allow the user to choose a policy how to use the deltas.
-
+> Well, these performed on the controlling host:
+>   capsh --drop="cap_sys_boot" -- -c "halt"
+>   capsh --drop="cap_sys_boot" -- -c "reboot"
 > 
-> OL> So I'm thinking, for both, do (1) put a big fat comment in the
-> OL> code saying that sanity-tests are needed, and what for, and (2)
-> OL> send a separate mail to the networking people with these two
-> OL> scenarios and request comments ?
+> Still halt and reboot my system.
 > 
-> Yeah, although I would hope that they're seeing this conversation and
-> would chime in (hence the cc:netdev).  Hopefully I don't have to
-> disguise a separate email as non-C/R related to get past their
-> filters! :)
+> So I know that capabilities are working, I just have not figured out yet how
+> to prevent containers from being able to halt the controlling host (short of
+> simply not executing "halt" within a container or renaming/removing "halt"
+> and "shutdown" but then "init 0" would still work).
 > 
-> OL> For example, now, if a user wants to send a TCP packet with
-> OL> arbitrary protocol parameters, he needs to use raw IP sockets,
-> OL> which require privilege. Would restarting a connection with the
-> OL> desired parameters become a way to bypass that restriction ?
-> OL> (e.g. assume the user restarts while using the host's network
-> OL> namespace).
-> 
-> Um, yeah?  I don't see much way around that if we're going to trust
-> any of what is in the checkpoint stream.  Perhaps we say CAP_NET_ADMIN
-> is required to restart a live TCP connection?
-> 
+> CAP_SYS_BOOT seems to control reboot, which has not been an issue, I've not
+> gotten a container to reboot the controlling host.
 
-I don't see much way around that either. My point is to bring the issue
-to everyone's attention, and see what others say about it.
+HAH!  It's upstart, the latest incarnation of init (at least on Fedora).  It
+takes commands over an abstract unix domain socket, "
+/com/ubuntu/upstart/<pid>".  If you start your container in a new network
+namespace, then halt fails.
 
-CAP_NET_ADMIN is one option. CAP_NET_RAW is another option ?
+I haven't gone through the code enough to see exactly how, then,
+upstart (in userspace) authorizes the halt request.  Since 'pid'
+is encoded in the socket name, i assume it looks at /proc/pid/status.
+So it easily could check for CAP_SYS_BOOT \notin pE, or even
+check whether it's supposed to be in a container (using some config
+files in userspace if somesuch could be agreed upon by everyone, not
+really likely).
 
-Oren.
+Oh, yeah, upstart-0.3.11/init/main.c checks whether geteuid()==0.
+Wonderful.
 
+-serge
