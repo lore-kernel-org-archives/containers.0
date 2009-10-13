@@ -1,81 +1,91 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH 2/2] [RFC] Add c/r support for connected INET sockets
-Date: Tue, 13 Oct 2009 10:05:33 -0700
-Message-ID: <87ws2zcjhe.fsf@caffeine.danplanet.com>
-References: <1254932945-12578-1-git-send-email-danms@us.ibm.com>
-	<1254932945-12578-3-git-send-email-danms@us.ibm.com>
-	<4AD3A52B.6050101@librato.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 7/10]: Check invalid clone flags
+Date: Tue, 13 Oct 2009 14:35:57 -0400
+Message-ID: <4AD4C88D.7040008@librato.com>
+References: <20091013044925.GA28181@us.ibm.com>
+	<20091013045234.GG28435@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: Oren Laadan <orenl@librato.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, John Dykstra <jdykstra72@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091013045234.GG28435-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-OL> * Did you test this with UDP too ?
 
-Not sendmail of course, but I have a little test program that
-maintains a DGRAM connection to the echo service on a remote node,
-yeah.
 
-OL> * What happens if the the clock on the target machine differs from
-OL> the clock on the origin machine ?  (TCP timestamps)
+Sukadev Bhattiprolu wrote:
+> 
+> Subject: [RFC][v8][PATCH 7/10]: Check invalid clone flags
+> 
+> As pointed out by Oren Laadan, we want to ensure that unused bits in the
+> clone-flags remain unused and available for future. To ensure this, define
+> a mask of clone-flags and check the flags in the clone() system calls.
+> 
+> Changelog[v8]:
+> 	- New patch in set
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 
+> ---
+>  include/linux/sched.h |   10 ++++++++++
+>  kernel/fork.c         |    3 +++
+>  2 files changed, 13 insertions(+)
+> 
+> Index: linux-2.6/include/linux/sched.h
+> ===================================================================
+> --- linux-2.6.orig/include/linux/sched.h	2009-10-02 18:53:55.000000000 -0700
+> +++ linux-2.6/include/linux/sched.h	2009-10-02 19:58:21.000000000 -0700
+> @@ -29,6 +29,16 @@
+>  #define CLONE_NEWNET		0x40000000	/* New network namespace */
+>  #define CLONE_IO		0x80000000	/* Clone io context */
+>  
+> +#define VALID_CLONE_FLAGS	(CSIGNAL | CLONE_VM | CLONE_FS | CLONE_FILES |\
+> +				 CLONE_SIGHAND | CLONE_PTRACE | CLONE_VFORK  |\
+> +				 CLONE_PARENT | CLONE_THREAD | CLONE_NEWNS   |\
+> +				 CLONE_SYSVSEM | CLONE_SETTLS                |\
+> +				 CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID  |\
+> +				 CLONE_DETACHED | CLONE_UNTRACED             |\
+> +				 CLONE_CHILD_SETTID | CLONE_STOPPED          |\
+> +				 CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER |\
+> +				 CLONE_NEWPID | CLONE_NEWNET| CLONE_IO)
+> +
+>  /*
+>   * Scheduling policies
+>   */
+> Index: linux-2.6/kernel/fork.c
+> ===================================================================
+> --- linux-2.6.orig/kernel/fork.c	2009-10-02 19:00:08.000000000 -0700
+> +++ linux-2.6/kernel/fork.c	2009-10-02 19:57:36.000000000 -0700
+> @@ -942,6 +942,9 @@ static struct task_struct *copy_process(
+>  	struct task_struct *p;
+>  	int cgroup_callbacks_done = 0;
+>  
 
-I guess maybe we should canonicalize the timeout values to something
-like "milliseconds after checkpoint start"?  This would allow the
-remote system to reset the timers to something reasonable.  It would
-also cause non-migration restarts to restore the timers appropriately
-for a coordinated restart of multiple machines.
+We can safely apply these tests to clone3(), because it is a new syscall.
 
-OL> * How confident are we that "bad" input in one or more fields,
-OL> that you don't currently sanitize, cannot create "bad" behavior ?
-OL> (bad can be kernel crash, unauthorized behavior, DoS etc)
+However, I don't know if applying it to clone() can break existing
+application that may already be (incorrectly) using invalid flags ?
 
-I'm going to say 0.052.
+Oren.
 
-I haven't evaluated much of it, no :)
-
-OL> * How much does TCP rely on the validity of the info in the
-OL> protocol control block, and what sorts of bads can happen if it
-OL> isn't ?  Would TCP be still happy if the URG point is bogus, would
-OL> it allow the user to sent packets otherwise disallowed (to that
-OL> user?), or maybe it could crash the kernel ?
-
-Good question, I'll have to look.
-
-OL> * Can you please document (brief description) how the restart
-OL> logic works (listening parent socket etc) ?
-
-Sure.
-
-OL> * Do you intend to checkpoint (and collect) lingering sockets,
-OL> that is they are closed by the application so not references by
-OL> any task, but still sending data from their buffers ?
-
-Yeah, I expect that will be important :)
-
-OL> * I'd like to also preserve the "older" behavior - so the user can
-OL> choose to restart and reset all previous connections, keep
-OL> listening sockets (e.g. RESTART_DISCONNET).
-
-Sure, sounds good to me.
-
->> +	printk("Doing post-restart hash\n");
-
-(oops, looks like I left some debug messages in place)
-
-OL> I wonder if a user can use this to convince TCP to send some nasty
-OL> packets to some arbitrary destination, with specific seq-number or
-OL> what not ?
-
-I'm not sure what you mean.  The sk->num value comes from the sport
-which should have been refused during the bind() if it's in use or not
-permitted, no?
-
-Thanks!
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+> +	if (clone_flags & ~VALID_CLONE_FLAGS)
+> +		return ERR_PTR(-EINVAL);
+> +
+>  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+>  		return ERR_PTR(-EINVAL);
+>  
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
