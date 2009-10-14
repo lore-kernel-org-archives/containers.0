@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/1] don't call pre_restore_task twice
-Date: Wed, 14 Oct 2009 18:24:53 -0400
-Message-ID: <4AD64FB5.3040503@librato.com>
-References: <20091007234750.GA6881@us.ibm.com>
+Subject: Re: [PATCH 1/4] Fix ckpt_write_err() check for empty string
+Date: Wed, 14 Oct 2009 18:32:16 -0400
+Message-ID: <4AD65170.30404@librato.com>
+References: <1255481585-32625-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091007234750.GA6881-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1255481585-32625-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,58 +17,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Pulled.
+(This is the same one you posted some time ago ...)
 
-Serge E. Hallyn wrote:
-> Pre_restore_task is being called both before and inside
-> restore_task, causing a memory leak at
-> current->checkpoint_data.
+Pulled, thanks.
+
+Matt Helsley wrote:
+> The test for empty error strings does not work because we always add 2
+> to len before testing if it's 0. Fix by checking before adding 2.
 > 
-> Only call it once, outside restore_task.
-> 
-> This fixes a memory leak spotted by Dan Smith, and the
-> actual bug was deduced by Matt Helsley.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Reported-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  checkpoint/process.c |    4 ----
->  checkpoint/restart.c |    1 +
->  2 files changed, 1 insertions(+), 4 deletions(-)
+>  checkpoint/checkpoint.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
 > 
-> diff --git a/checkpoint/process.c b/checkpoint/process.c
-> index 424f688..c51e036 100644
-> --- a/checkpoint/process.c
-> +++ b/checkpoint/process.c
-> @@ -864,10 +864,6 @@ int restore_task(struct ckpt_ctx *ctx)
->  {
->  	int ret;
->  
-> -	ret = pre_restore_task(ctx);
-> -	if (ret < 0)
-> -		goto out;
-> -
->  	ret = restore_task_struct(ctx);
->  	ckpt_debug("task %d\n", ret);
->  	if (ret < 0)
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 3a58a76..fc94374 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -967,6 +967,7 @@ static int do_restore_task(void)
->  	 */
->  	if (zombie) {
->  		restore_debug_exit(ctx);
-> +		post_restore_task(ctx);
->  		ckpt_ctx_put(ctx);
->  		do_exit(current->exit_code);
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index eaa9105..5a76d2b 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -258,11 +258,11 @@ int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt0, char *fmt, ...)
 >  	}
+>  
+>  	str = ctx->err_string;
+> -	len = strlen(str + 1) + 2;	/* leading and trailing '\0' */
+> -
+> +	len = strlen(str + 1);
+>  	if (len == 0)	/* empty error string */
+>  		return 0;
+>  
+> +	len += 2; 	/* leading and trailing '\0' */
+>  	ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
+>  	if (!ret)
+>  		ret = ckpt_write_string(ctx, str, len);
