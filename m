@@ -1,18 +1,11 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: pidns memory leak
-Date: Tue, 13 Oct 2009 23:15:33 -0700
-Message-ID: <20091014061533.GA23569@us.ibm.com>
-References: <4AC5F198.2070407@fr.ibm.com> <20091006040526.GA22923@us.ibm.com>
-	<4ACAFD6A.3060008@fr.ibm.com>
-	<20091008030828.GA18973@us.ibm.com> <4ACD9ECC.90508@fr.ibm.com>
-	<20091009032928.GA2031@us.ibm.com> <4ACF381F.9050808@fr.ibm.com>
-	<20091010013235.GA11904@us.ibm.com> <4AD2EBC7.2020109@fr.ibm.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: IO controller Mini-Summit 2009
+Date: Wed, 14 Oct 2009 21:24:44 +0900 (JST)
+Message-ID: <20091014.212444.179938286.ryov__11282.3235373527$1255523233$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4AD2EBC7.2020109-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,46 +15,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, andrea-Vyt77T80VFVWk0Htik3J/w@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano [dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
-> Sukadev Bhattiprolu wrote:
->> Ccing  Andrea's new email id:
->>
->> Daniel Lezcano [dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
->>   
->>> Following your explanation I was able to reproduce a simple program   
->>> added in attachment. But there is something I do not understand is 
->>> why  the leak does not appear if I do the 'lstat' (cf. test program) 
->>> in the  pid 2 context.
->>>     
->>
->> Hmm, are you sure there is no leak with this test program ? If I put back
->> the commit (7766755a2f249e7), I do see a leak in all three data structures
->> (pid_2, proc_inode, pid_namespace).
->>   
->
-> Let me clarify :)
->
-> The program leaks with the commit 7766755a2f249e7 and does not leak  
-> without this commit.
-> This is the expected behaviour and this simple program spots the problem.
->
-> I tried to modify the program and I moved the lstat to the process 2 in  
-> the child namespace. Conforming your analysis, I was expecting to see a  
-> leak too, but this one didn't occur. I was wondering why, maybe there is  
-> something I didn't understood in the analysis.
+Hello,
 
-Hmm, There are two separate dentries associated with the processes.
-One in each mount of /proc. The proc dentries in the child container
-are freed when the child container unmounts its /proc so you don't see
-the leak when the lstat() is inside the container.
+I have summarized the topics for the IO controller mini-summit and
+written the ideas seen in the mailing list.
 
-When the lstat() is in the root container, it is accessing proc-dentries
-from the _root container_ - They are supposed to  be flushed when the task
-exits (but the above commit prevents that flush). They should be freed
-when the /proc in root container is unmounted - and leak until then ?
+- The place where IO controller should be implemented
+  - Block layer in conjunction with the IO scheduler
+  - Common layer right above the IO scheduler
+  - CFQ enhancement.
+  - Both block and common layer, users can select whichever controller
+    they want.
+  - VFS layer
 
-Sukadev
+- What kind of bandwidth control policies are needed?
+  - Proportional weight
+  - Enforcing upper limit
+  - Minimum bandwidth guarantee
+
+- How to handle buffered writes?
+  - Add dirt-ratio in the memory controller
+  - Add bufferred-write-cgroup to track buffered writebacks
+  - A per group per bdi pdflush threads
+
+- Who should be charged for swap activity?
+  - who requests a page.
+  - who has a page.
+  - All swap activities are charged to the root group.
+
+And I would also like to discuss about the followings.
+
+- Extensions of struct bio
+  - Make a bio point to the io_context of a process which creates the
+    I/O request. This allows to pass the IO scheduling class and
+    priority information to IO controller even if the IO is submitted
+    by another process which does not create the request, such as a
+    worker thread.
+  - Add a new flag to struct bio to identify the bio as urgent. This
+    gives IO controller a chance to handle the bio as high
+    priority. This flag should be set if the bio is created for the
+    page-out operation. 
+
+- Common test methods to verify the functionality of IO controller.
+
+Please give me comments and suggestions. I may be missing or
+misunderstanding something.
+
+Thanks,
+Ryo Tsuruta
