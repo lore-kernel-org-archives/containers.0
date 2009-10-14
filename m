@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/4] Cleanup pre_restore_task comments
-Date: Tue, 13 Oct 2009 17:53:06 -0700
-Message-ID: <1255481585-32625-2-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 1/4] Fix ckpt_write_err() check for empty string
+Date: Tue, 13 Oct 2009 17:53:05 -0700
+Message-ID: <1255481585-32625-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,35 +19,31 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-We don't need to include the name of the function in the comment unless
-it's a kerneldoc comment -- it's redundant. Also the comment before
-post_restore_task() was copy-pasted without modification.
+The test for empty error strings does not work because we always add 2
+to len before testing if it's 0. Fix by checking before adding 2.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/process.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ checkpoint/checkpoint.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index c51e036..17c08e8 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -814,7 +814,7 @@ static int restore_task_pgid(struct ckpt_ctx *ctx)
- 	return ret;
- }
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index eaa9105..5a76d2b 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -258,11 +258,11 @@ int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt0, char *fmt, ...)
+ 	}
  
--/* pre_restore_task - prepare the task for restore */
-+/* prepare the task for restore */
- int pre_restore_task(struct ckpt_ctx *ctx)
- {
- 	sigset_t sigset;
-@@ -844,7 +844,6 @@ int pre_restore_task(struct ckpt_ctx *ctx)
- 	return 0;
- }
+ 	str = ctx->err_string;
+-	len = strlen(str + 1) + 2;	/* leading and trailing '\0' */
+-
++	len = strlen(str + 1);
+ 	if (len == 0)	/* empty error string */
+ 		return 0;
  
--/* pre_restore_task - prepare the task for restore */
- void post_restore_task(struct ckpt_ctx *ctx)
- {
- 	/* can happen if restart failed early */
++	len += 2; 	/* leading and trailing '\0' */
+ 	ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
+ 	if (!ret)
+ 		ret = ckpt_write_string(ctx, str, len);
 -- 
 1.5.6.3
