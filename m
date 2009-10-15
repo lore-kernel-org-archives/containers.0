@@ -1,11 +1,19 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-104-g17c7c62
-Date: Wed, 14 Oct 2009 19:36:22 -0400
-Message-ID: <200910142336.n9ENaM07024762@gorgona.ncl.cs.columbia.edu>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Wed, 14 Oct 2009 17:17:39 -0700
+Message-ID: <20091015001739.GC3515@us.ibm.com>
+References: <20091013044925.GA28181@us.ibm.com>
+	<20091013205015.1ED524F7@magilla.sf.frob.com>
+	<20091013232736.GA24392@us.ibm.com>
+	<20091013235320.E90022746@magilla.sf.frob.com>
+	<4AD525B3.2070906@zytor.com> <20091014223634.GB3515@us.ibm.com>
+	<4AD6557D.3090501@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AD6557D.3090501-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,138 +23,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+| On 10/14/2009 03:36 PM, Sukadev Bhattiprolu wrote:
+| > H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+| > | 
+| > | Overall it seems sane to:
+| > | 
+| > | a) make it an actual 3-argument call;
+| > | b) make the existing flags a u32 forever, and make it a separate
+| > |    argument;
+| > | c) any new expansion can be via the struct, which may want to have
+| > |    an "c3_flags" field first in the structure.
+| > 
+| > Ok, So will this work ?
+| > 
+| > 	struct clone_args {
+| > 		u32 flags_high;		/* new clone flags (higher bits) */ 
+| > 		u32 reserved1;
+| > 		u32 nr_pids;
+| > 		u32 reserved2;
+| > 		u64 child_stack_base;
+| > 		u64 child_stack_size;
+| > 		u64 parent_tid_ptr;
+| > 		u64 child_tid_ptr;
+| > 		u64 reserved3;
+| > 	};
+| > 
+| > 	sys_clone3(u32 flags_low, struct clone_args *args, pid_t *pid_list)
+| > 
+| > Even on 64bit architectures the applications have to use sys_clone3() for
+| > the extended features.
+| 
+| Yes, although I'd just make flags_high a u64.
 
-The branch, ckpt-v18-dev has been updated
-       via  17c7c62ee3ac563a530b840328a31add6100dd87 (commit)
-       via  d8b01d43edaad4dbbf023056ca54d506ba577174 (commit)
-       via  ac4a14b9967298f7b9a91724d2af3c879355ffc2 (commit)
-       via  cb695af7a922964a2f631ee7c92972e2a4215189 (commit)
-       via  3af0ccdb8bdaa939c016b4163f1adcfbeddd133b (commit)
-       via  bcec67a2c1c1d45d34ef13ad02c4cd136b49d440 (commit)
-       via  b069c69890cfef7aba1cdea036229a859f592ebe (commit)
-      from  62cb61406362bdae647789f41156b9a8ad856fbb (commit)
+so we allow 96 bits for flags ?
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+| The other thing that might be worthwhile is to have a length field on
+| the structure; that way we could add new fields at the end if ever
+| necessary in the future.
 
-- Log -----------------------------------------------------------------
-commit 17c7c62ee3ac563a530b840328a31add6100dd87
-Author: \\\"Serge E. Hallyn\\\ <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:46:40 2009 -0400
+So:
+	struct clone_args {
+		u64 flags_high;		/* new clone flags (higher bits) */ 
+		u64 reserved1;
 
-    debug: add a few ckpt_debugs
-    
-    These were pulled out of the lsm-related patches into which they
-    had been embedded.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+		u32 nr_pids;
+		u32 clone_args_size;
 
-commit d8b01d43edaad4dbbf023056ca54d506ba577174
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:46:35 2009 -0400
+		u64 child_stack_base;
+		u64 child_stack_size;
 
-    Add cpp definitions for enums
-    
-    This allows us to test for the enums in cpp expressions.
-    
-    (Here's a convenient vim expression to help process enum blocks. Move
-    your cursor into the enum block and enter the following ex command:
-    
-    .,/^};/s/CKPT_\([^[:space:]=]*\)\(.*,.*\)[[:space:]]*$/CKPT_\1\2\r#define CKPT_\1 CKPT_\1/gc
-    
-    It looks for CKPT_* enums and prompty to ask if you wish to add #define
-    lines for each one.)
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+		u64 parent_tid_ptr;
+		u64 child_tid_ptr;
+	};
 
-commit ac4a14b9967298f7b9a91724d2af3c879355ffc2
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:36:39 2009 -0400
+	sys_clone3(u32 flags_low, struct clone_args *args, pid_t *pid_list)
 
-    pre/post_restore_task: Do not pass checkpoint context when unused
-    
-    The checkpoint context is not used in these functions -- they only rely
-    on current -- so it's safe to remove.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+BTW, on 64-bit architectures, the flags_low would be 64-bits, but the high-
+bits there would be ignored right ?
 
-commit cb695af7a922964a2f631ee7c92972e2a4215189
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:36:35 2009 -0400
+Not sure if we need a second reserved field now that we add ->clone_args_size.
 
-    Cleanup pre_restore_task comments
-    
-    We don't need to include the name of the function in the comment unless
-    it's a kerneldoc comment -- it's redundant. Also the comment before
-    post_restore_task() was copy-pasted without modification.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Thanks,
 
-commit 3af0ccdb8bdaa939c016b4163f1adcfbeddd133b
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:36:31 2009 -0400
-
-    Fix ckpt_write_err() check for empty string
-    
-    The test for empty error strings does not work because we always add 2
-    to len before testing if it's 0. Fix by checking before adding 2.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit bcec67a2c1c1d45d34ef13ad02c4cd136b49d440
-Author: \\\\\\\"Serge E. Hallyn\\\\\\\ <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:25:40 2009 -0400
-
-    don't call pre_restore_task twice
-    
-    Pre_restore_task is being called both before and inside
-    restore_task, causing a memory leak at
-    current->checkpoint_data.
-    
-    Only call it once, outside restore_task.
-    
-    This fixes a memory leak spotted by Dan Smith, and the
-    actual bug was deduced by Matt Helsley.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Reported-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit b069c69890cfef7aba1cdea036229a859f592ebe
-Author: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Oct 14 18:21:53 2009 -0400
-
-    Fix up headers so we can munge them for use by userspace.
-    
-    Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- arch/s390/include/asm/checkpoint_hdr.h |    7 ++-
- arch/x86/include/asm/checkpoint_hdr.h  |    4 +-
- checkpoint/checkpoint.c                |    4 +-
- checkpoint/files.c                     |    3 +
- checkpoint/process.c                   |   31 ++++++----
- checkpoint/restart.c                   |    9 ++-
- include/linux/checkpoint.h             |    4 +-
- include/linux/checkpoint_hdr.h         |  101 +++++++++++++++++++++++++++++++-
- kernel/cred.c                          |    2 +
- 9 files changed, 139 insertions(+), 26 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
+Sukadev
