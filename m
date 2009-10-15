@@ -1,14 +1,20 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO controller Mini-Summit 2009
-Date: Thu, 15 Oct 2009 11:35:36 +0900 (JST)
-Message-ID: <20091015.113536.232748879.ryov__27069.0420679331$1255574198$gmane$org@valinux.co.jp>
-References: <20091014175521.GG3528@redhat.com> <4AD66F28.9030607@oss.ntt.co.jp>
-	<4AD67DFB.60402@oss.ntt.co.jp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: LXC PIDs, UIDs, and halt
+Date: Wed, 14 Oct 2009 22:13:33 -0500
+Message-ID: <20091015031333.GA6268@us.ibm.com>
+References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
+	<20091012150355.GA5783@us.ibm.com>
+	<68e6eac60910122206i7c39fca0u52ab037748217336@mail.gmail.com>
+	<20091013195921.GA20345@us.ibm.com>
+	<68e6eac60910131318w56d9394bs9191f989b16e34f3@mail.gmail.com>
+	<20091014040222.GA4710@us.ibm.com>
+	<68e6eac60910141742h557f558cke749cd76d5706f83@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AD67DFB.60402-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <68e6eac60910141742h557f558cke749cd76d5706f83-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,162 +24,133 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, yamahata-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, takebe_akio-+CUm20s59erQFUHtdCDX3A@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Yoshikawa-san and all,
+Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> On Tue, Oct 13, 2009 at 11:02 PM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > On Tue, Oct 13, 2009 at 2:59 PM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > wrote:
+> > >
+> > > > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > > > On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > > > wrote:
+> > > > >
+> > > > > > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > > > > > > 4) In a opensuse container when I execute "halt" it is not just
+> > the
+> > > > > > > container that halts, but the controlling host as well that shuts
+> > > > down.
+> > > > > >
+> > > > > > Make sure that the container is launched with CAP_SYS_BOOT removed
+> > from
+> > > > > > the capability bounding set.
+> > > > > >
+> > > > >
+> > > > > Ok, well it turns out any container can halt the whole system.
+> > > > >
+> > > > > If I do:
+> > > > >   capsh --drop="cap_sys_boot" -- -c "lxc-start -n arch-test0"
+> > > > > Then do a halt within the container, the halt still works.
+> > > > > A "reboot" within a container does not reboot the controlling host,
+> > the
+> > > > > container runs the shutdown scripts and then idles.
+> > > > >
+> > > > > However, if on the controlling host I do:
+> > > > >   capsh --drop="cap_kill" -c "bash --login -i"
+> > > > > Then the subsequent shell can't use kill which I have verified.
+> > > > >
+> > > > > Well, these performed on the controlling host:
+> > > > >   capsh --drop="cap_sys_boot" -- -c "halt"
+> > > > >   capsh --drop="cap_sys_boot" -- -c "reboot"
+> > > > >
+> > > > > Still halt and reboot my system.
+> > > > >
+> > > > > So I know that capabilities are working, I just have not figured out
+> > yet
+> > > > how
+> > > > > to prevent containers from being able to halt the controlling host
+> > (short
+> > > > of
+> > > > > simply not executing "halt" within a container or renaming/removing
+> > > > "halt"
+> > > > > and "shutdown" but then "init 0" would still work).
+> > > > >
+> > > > > CAP_SYS_BOOT seems to control reboot, which has not been an issue,
+> > I've
+> > > > not
+> > > > > gotten a container to reboot the controlling host.
+> > > >
+> > > > HAH!  It's upstart, the latest incarnation of init (at least on
+> > Fedora).
+> > > >  It
+> > > > takes commands over an abstract unix domain socket, "
+> > > > /com/ubuntu/upstart/<pid>".  If you start your container in a new
+> > network
+> > > > namespace, then halt fails.
+> > > >
+> > > > I haven't gone through the code enough to see exactly how, then,
+> > > > upstart (in userspace) authorizes the halt request.  Since 'pid'
+> > > > is encoded in the socket name, i assume it looks at /proc/pid/status.
+> > > > So it easily could check for CAP_SYS_BOOT \notin pE, or even
+> > > > check whether it's supposed to be in a container (using some config
+> > > > files in userspace if somesuch could be agreed upon by everyone, not
+> > > > really likely).
+> > > >
+> > > > Oh, yeah, upstart-0.3.11/init/main.c checks whether geteuid()==0.
+> > > > Wonderful.
+> > > >
+> > > > -serge
+> > > >
+> > >
+> > > I'm on archlinux. I don't beleive it is upstart: /sbin/init is owned by
+> > > sysvinit 2.86-5
+> > >
+> > > The following looks like the likely suspect:
+> > > init         1    root   10u     FIFO               0,14         0t0
+> > > 1723 /dev/initctl
+> > >
+> > > I might be able to fix that with SMACK? I'll look into that tonight.
+> >
+> > Ah, you don't have to do that - initctl is a fifo, so as long as you
+> > make sure not to bind-mount it from the host container it should be
+> > fine.  If the guest creates it's own, it'll be a different fifo and
+> > not talk to init.
+> >
+> > -serge
+> >
+> 
+> Yeah, I had been bind mounting all of /dev..... I'm now just mounting the
+> following:
+> 
+> none   CN_ROOT/dev/pts    devpts    defaults 0 0
+> none   CN_ROOT/proc    proc    defaults 0 0
+> none   CN_ROOT/sys    sysfs    defaults 0 0
+> none   CN_ROOT/dev/shm    tmpfs    defaults 0 0
+> 
+> And I made a minimal CN_ROOT/dev:
+> crw------- 1 root root 5, 1 2009-10-14 18:36 console
+> crw-rw-rw- 1 root root 1, 7 2009-10-14 18:35 full
+> prw------- 1 root root    0 2009-10-14 18:56 initctl
+> srw-rw-rw- 1 root root    0 2009-10-14 19:09 log
+> crw-rw-rw- 1 root root 1, 3 2009-10-14 18:35 null
+> crw-rw-rw- 1 root root 5, 2 2009-10-14 19:11 ptmx
+> drwxr-xr-x 2 root root    1 2009-10-14 18:35 pts
+> crw-rw-rw- 1 root root 1, 8 2009-10-14 18:35 random
+> drwxrwxrwt 2 root root    1 2009-10-14 18:35 shm
+> crw-rw-rw- 1 root root 5, 0 2009-10-14 18:37 tty
+> crw-rw-rw- 1 root root 4, 0 2009-10-14 18:35 tty0
+> crw-rw-rw- 1 root root 1, 9 2009-10-14 18:35 urandom
+> prw-r----- 1 root adm     0 2009-10-14 19:17 xconsole
+> crw-rw-rw- 1 root root 1, 5 2009-10-14 18:35 zero
+> 
+> Thanks for the help Serge!
 
-Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org> wrote:
-> Hi all,
-> =
+Cool - np at all - and it gave me the heads-up on upstart, use of which
+will mean that any container without it's own netns will be able to
+poweroff the system.  Urf.
 
-> As Fernando said below, I will be glad if I can help you by taking
-> notes of the mini summit. I would also be glad if someone helps me
-> take notes.
-
-It is very helpful, thank you very much.
-
-> Tsuruta-san, thank you for summarizing the topics. It looks good!
-> The only thing I am worrying about is whether we can summarize our
-> discussions for 5-6 minutes of presentation.
-
-I would like to do what little I can to help it.
-And if you permit, I would like to publish the meeting miniutes and
-the presentation slides on the mini-summit web site.
- =
-
-> I would be happy if we all have it in mind that we can send our
-> message to maintainers, including Ted Tso, by sending our summary.
-> So before starting the discussion, how about taking some time to
-> talk about which topic we want to include in the summary.
-
-I think it is a good idea to talk about it at the start.
-
-> IMHO,
->  >>> - The place where IO controller should be implemented
-> is the most important, basic, topic, and other things should be
-> summarized so as to explain why we think the place, e.g. block layer,
-> VFS layer, common layer, is better for implementing io controllers.
-> =
-
-> It would also be better if we can answer to the comments we have
-> already received from maintainers, e.g. Andrew, Jens.
-
-I would like to do so, too.
-
-Thanks,
-Ryo Tsuruta
-
-> Thanks,
-> Takuya Yoshikawa
-> =
-
-> =
-
-> =
-
-> =
-
-> Fernando Luis V=E1zquez Cao wrote:
-> > Hi Vivek,
-> > Thank you for CCing me.
-> > I just wanted to let you know that Ted Tso was kind enough to let
-> > us give a readout for the mini-summit at the kernel summit.
-> > There will be other mini-summits sharing 50 minutes so we need to
-> > keep each mini-summit readout to 5-6 minutes of presentation and
-> > 4-5 minutes of questions/discussions.
-> > Yoshikawa-san and myself were planning to take notes of the
-> > mini-summit, but it would be great if you could share yours.  The
-> > idea is to use those to prepare a brief mini-summit report (4-5
-> > slides) that we can show at the kernel summit.
-> > Later in the day, after the mini-summit, we would be sending a
-> > draft version of the slides to the relevant mailing lists for you
-> > to review. Since the mini-summit readouts will take place on
-> > Monday I would appreciate it if you could comment on them before
-> > Sunday night the latest.
-> > Thanks,
-> > Fernando
-> > Vivek Goyal wrote:
-> >> On Wed, Oct 14, 2009 at 09:24:44PM +0900, Ryo Tsuruta wrote:
-> >>> Hello,
-> >>>
-> >>
-> >> Hi Ryo,
-> >>
-> >> CCing people who are planning to attend the mini summit either in pers=
-on
-> >> or phone. (As per your list on io mini summit wiki page). Not sure if
-> >> everybody is scanning mailing list for update on mini summit.
-> >>
-> >> I am checking out wiki page for more information like Venue. It says t=
-he
-> >> venue is linux foundation office Japan. Hopefully there is no change in
-> >> that information.
-> >>
-> >> What are the conference call details for the people who might want to =
-join
-> >> in over phone? Could not find those. Are you yet to post these?
-> >>
-> >> Thanks
-> >> Vivek
-> >>
-> >>> I have summarized the topics for the IO controller mini-summit and
-> >>> written the ideas seen in the mailing list.
-> >>>
-> >>> - The place where IO controller should be implemented
-> >>>   - Block layer in conjunction with the IO scheduler
-> >>>   - Common layer right above the IO scheduler
-> >>>   - CFQ enhancement.
-> >>>   - Both block and common layer, users can select whichever controller
-> >>>     they want.
-> >>>   - VFS layer
-> >>>
-> >>> - What kind of bandwidth control policies are needed?
-> >>>   - Proportional weight
-> >>>   - Enforcing upper limit
-> >>>   - Minimum bandwidth guarantee
-> >>>
-> >>> - How to handle buffered writes?
-> >>>   - Add dirt-ratio in the memory controller
-> >>>   - Add bufferred-write-cgroup to track buffered writebacks
-> >>>   - A per group per bdi pdflush threads
-> >>>
-> >>> - Who should be charged for swap activity?
-> >>>   - who requests a page.
-> >>>   - who has a page.
-> >>>   - All swap activities are charged to the root group.
-> >>>
-> >>> And I would also like to discuss about the followings.
-> >>>
-> >>> - Extensions of struct bio
-> >>>   - Make a bio point to the io_context of a process which creates the
-> >>>     I/O request. This allows to pass the IO scheduling class and
-> >>>     priority information to IO controller even if the IO is submitted
-> >>>     by another process which does not create the request, such as a
-> >>>     worker thread.
-> >>>   - Add a new flag to struct bio to identify the bio as urgent. This
-> >>>     gives IO controller a chance to handle the bio as high
-> >>>     priority. This flag should be set if the bio is created for the
-> >>>     page-out operation.
-> >>> - Common test methods to verify the functionality of IO controller.
-> >>>
-> >>> Please give me comments and suggestions. I may be missing or
-> >>> misunderstanding something.
-> >>>
-> >>> Thanks,
-> >>> Ryo Tsuruta
-> >>> -- To unsubscribe from this list: send the line "unsubscribe linux-ke=
-rnel" in
-> >>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> >>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>> Please read the FAQ at  http://www.tux.org/lkml/
-> > =
-
-> =
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+-serge
