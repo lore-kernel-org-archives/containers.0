@@ -1,15 +1,13 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: IO controller Mini-Summit 2009
-Date: Thu, 15 Oct 2009 20:20:50 +0900 (JST)
-Message-ID: <20091015.202050.193693749.ryov__41585.0246711217$1255605716$gmane$org@valinux.co.jp>
-References: <20091014.212444.179938286.ryov@valinux.co.jp>
-	<20091014175521.GG3528@redhat.com>
-	<20091015.105902.70196131.ryov@valinux.co.jp>
+From: "Rick" <znemezhem98guaui-LWAfsSFWpa4@public.gmane.org>
+Subject: =?GB2312?B?UGhvdG8gRWRpdGluZyBTZXJ2aWNlcyAtIFBob3RvIEN1dG91dA==?=
+Date: Thu, 15 Oct 2009 20:41:05 +0800
+Message-ID: <DEVLA01QzigIGSvsk4E0000787b@devla01.megameeting.com>
+Reply-To: danidevelope-Mj/0Miq2reM@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091015.105902.70196131.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,103 +17,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, yamahata-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, takebe_akio-+CUm20s59erQFUHtdCDX3A@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: containers <containers-8MiXsm1LNw7vu62uXDUzXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi all,
+Digital Photo Editing Services :
 
-I'm planning to use the skype group chat for the IO mini-summit.
-Although I haven't used it ever, but If it works well, I think it
-would be helpful for the discussion. I'll post my skype account on
-the IO mini-summit web soon.
-https://sourceforge.net/apps/trac/ioband/wiki/iosummit
+We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques. 
 
-Thanks,
-Ryo Tsuruta
+Our strength in providing Editing solutions for digital images like photo masking, photo re-touching, back ground cleaning & cloning, sharpening & restoration of color, all this derive from our vast experience. Our dedicated team of highly skilled and experienced professionals serves the photo Editing requirements of our clients. An in house quality checking mechanism assures value addition and delivers perfect job. Our team can deliver your job overnight or in time bounded fashion irrespective of job size. 
 
-Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> Hi Vivek,
-> 
-> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > CCing people who are planning to attend the mini summit either in person
-> > or phone. (As per your list on io mini summit wiki page). Not sure if
-> > everybody is scanning mailing list for update on mini summit.
-> 
-> Thank you for CCing people. I'll add all prospective attendees to Cc
-> list when I post the information on mini summit.
-> 
-> > I am checking out wiki page for more information like Venue. It says the
-> > venue is linux foundation office Japan. Hopefully there is no change in
-> > that information.
-> 
-> There is no change in the venue.
->  
-> > What are the conference call details for the people who might want to join
-> > in over phone? Could not find those. Are you yet to post these?
-> 
-> Here is the phone number of the conference call.
-> number +1-218-936-7999
-> passcode 374489#
-> 
-> I've also added the phone number on the web site.
-> http://sourceforge.net/apps/trac/ioband/wiki/iosummit
-> 
-> Thank you for your help.
-> Ryo Tsuruta
-> 
-> > 
-> > Thanks
-> > Vivek
-> > 
-> > > I have summarized the topics for the IO controller mini-summit and
-> > > written the ideas seen in the mailing list.
-> > > 
-> > > - The place where IO controller should be implemented
-> > >   - Block layer in conjunction with the IO scheduler
-> > >   - Common layer right above the IO scheduler
-> > >   - CFQ enhancement.
-> > >   - Both block and common layer, users can select whichever controller
-> > >     they want.
-> > >   - VFS layer
-> > > 
-> > > - What kind of bandwidth control policies are needed?
-> > >   - Proportional weight
-> > >   - Enforcing upper limit
-> > >   - Minimum bandwidth guarantee
-> > > 
-> > > - How to handle buffered writes?
-> > >   - Add dirt-ratio in the memory controller
-> > >   - Add bufferred-write-cgroup to track buffered writebacks
-> > >   - A per group per bdi pdflush threads
-> > > 
-> > > - Who should be charged for swap activity?
-> > >   - who requests a page.
-> > >   - who has a page.
-> > >   - All swap activities are charged to the root group.
-> > > 
-> > > And I would also like to discuss about the followings.
-> > > 
-> > > - Extensions of struct bio
-> > >   - Make a bio point to the io_context of a process which creates the
-> > >     I/O request. This allows to pass the IO scheduling class and
-> > >     priority information to IO controller even if the IO is submitted
-> > >     by another process which does not create the request, such as a
-> > >     worker thread.
-> > >   - Add a new flag to struct bio to identify the bio as urgent. This
-> > >     gives IO controller a chance to handle the bio as high
-> > >     priority. This flag should be set if the bio is created for the
-> > >     page-out operation. 
-> > > 
-> > > - Common test methods to verify the functionality of IO controller.
-> > > 
-> > > Please give me comments and suggestions. I may be missing or
-> > > misunderstanding something.
-> > > 
-> > > Thanks,
-> > > Ryo Tsuruta
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> > > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > > Please read the FAQ at  http://www.tux.org/lkml/
+Our mainly services are: 
+
+1. Photo Cutout
+2. Photo Enhancement
+3. Photo Retouching
+4. Vector Conversion
+5. Pop Art
+6. Images Masking
+7. Clipping Path
+8. Photo Restoration 
+9. Web Design
+
+Photo Editing Services:
+
+Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
+
+Best regards,
+Rick
+Rasutacsy Imaging Professionals
+Contact: richardgrahpic-Mj/0Miq2reM@public.gmane.org
+
+
+
+
+
+
+
+
+
+
+Send address to senremoveingar-BoNl9JPmOHUAvxtiuMwx3w@public.gmane.org for remove
