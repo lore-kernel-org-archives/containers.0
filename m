@@ -1,7 +1,7 @@
-From: "Rick" <znemezhem98guaui-LWAfsSFWpa4@public.gmane.org>
+From: "Wallace" <znemezhe22mguaui-LWAfsSFWpa4@public.gmane.org>
 Subject: =?GB2312?B?UGhvdG8gRWRpdGluZyBTZXJ2aWNlcyAtIFBob3RvIEN1dG91dA==?=
-Date: Thu, 15 Oct 2009 20:41:05 +0800
-Message-ID: <DEVLA01QzigIGSvsk4E0000787b@devla01.megameeting.com>
+Date: Thu, 15 Oct 2009 22:08:42 +0800
+Message-ID: <SMMNETWORK1EetVoMDr000006e5@smtp.sendmemore.net>
 Reply-To: danidevelope-Mj/0Miq2reM@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -43,8 +43,8 @@ Photo Editing Services:
 Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
 
 Best regards,
-Rick
-Rasutacsy Imaging Professionals
+Wallace
+Wemoosy Imaging Professionals
 Contact: richardgrahpic-Mj/0Miq2reM@public.gmane.org
 
 
@@ -55,5 +55,4 @@ Contact: richardgrahpic-Mj/0Miq2reM@public.gmane.org
 
 
 
-
-Send address to senremoveingar-BoNl9JPmOHUAvxtiuMwx3w@public.gmane.org for remove
+Send address to ibrecemove-uAjRD0nVeow@public.gmane.org to remove
