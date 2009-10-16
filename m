@@ -1,53 +1,61 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 2/4] cr: add generic LSM c/r support (v5)
-Date: Fri, 16 Oct 2009 12:41:55 -0500
-Message-ID: <20091016174155.GB10197@us.ibm.com>
-References: <20091009205552.GA5778@us.ibm.com> <20091009205626.GA5823@us.ibm.com> <4AD7385A.8010902@librato.com> <20091015170630.GA25069@us.ibm.com> <4AD8A76A.8030201@librato.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
+Date: Fri, 16 Oct 2009 11:06:31 -0700
+Message-ID: <20091016180631.GA31036__31767.9190812216$1255716446$gmane$org@us.ibm.com>
+References: <20091013044925.GA28181@us.ibm.com>
+	<20091013045439.GI28435@us.ibm.com>
+	<20091016042041.GA7220@us.ibm.com>
+	<cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AD8A76A.8030201@librato.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Oren Laadan <orenl@librato.com>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org
+In-Reply-To: <cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl@librato.com):
-> > 4. Add a new field to the struct ckpt_obj which lets us store
-> > the objref for the string pointer in the ckpt_obj for the void*.
-> 
-> Can you elaborate on what this entails ?
-> 
-> E.g., do you want to be able to store an arbitrary data field for
-> an object, and add interface to set and get it ?  (If so, what is
-> the proposed api ?)
+Michael Kerrisk [mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org] wrote:
+| Hi Sukadev
+| =
 
-Well we could do it either way - just make it a typeless field
-that anyone coudl use as a sideband, or make it a signed int
-only meant to be a link to another objref.
+| On Fri, Oct 16, 2009 at 6:20 AM, Sukadev Bhattiprolu
+| <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+| > Here is an updated patch with the following interface:
+| >
+| > =A0 =A0 =A0 =A0long sys_clone3(unsigned int flags_low, struct clone_arg=
+s __user *cs,
+| > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0pid_t *pids);
+| >
+| > There are just two other (minor) changes pending to this patchset:
+| >
+| > =A0 =A0 =A0 =A0- PATCH 7: add a CLONE_UNUSED bit to VALID_CLONE_FLAGS().
+| > =A0 =A0 =A0 =A0- PATCH 10: update documentation to reflect new interfac=
+e.
+| >
+| > If this looks ok, we repost entire patchset next week.
+| =
 
-Don't much care about the API, but one way it could be used in
-checkpoint_security() would be:
+| I know I'm late to this discussion, but why the name clone3()? It's
+| not consistent with any other convention used fo syscall naming,
+| AFAICS. I think a name like clone_ext() or clonex() (for extended)
+| might make more sense.
 
-	objref = ckpt_obj_lookup_add(ctx, security, CKPT_OBJ_VOIDSEC, &new);
-	if (!new)
-		return ckpt_obj_getlink(ctx, objref);
+Sure, we talked about calling it clone_extended() and I can go back
+to that.
 
-	/* ... get the string context from the lsm and construct
-	 * the struct ckpt_lsm_string */
-	construct_lsm_string(ctx, &l, security, CKPT_SECTYPE_FILE);
-	linkref = checkpoint_obj(ctx, l, CKPT_OBJ_SEC);
-	ckpt_obj_setlink(ctx, objref, linkref);
-	return linkref;
+Only minor concern with that name was if this new call ever needs to
+be extended, what would we call it :-). With clone3() we could add a
+real/fake parameter and call it clone4() :-p
 
-But really, the only point of doing this is so that we can use
-checkpoint_obj() instead of doing
-
-	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SEC);
-	ckpt_write_obj(ctx, &h->h);
-	ckpt_hdr_put(ctx, h);
-	ckpt_write_string(ctx, context_string, strlen(context_string)+1);
-
--serge
-
+Sukadev
