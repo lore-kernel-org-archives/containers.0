@@ -1,14 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
-Date: Fri, 16 Oct 2009 12:44:51 -0700
-Message-ID: <20091016194451.GA28706__3935.67235810242$1255722241$gmane$org@us.ibm.com>
-References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH user-cr] handle the container configuration section in
+	ckpt	header
+Date: Fri, 16 Oct 2009 20:04:00 -0400
+Message-ID: <4AD909F0.80104@librato.com>
+References: <20091015184827.GA30444@us.ibm.com>
+	<20091015184859.GA30490@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4AD8C7E4.9000903-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20091015184859.GA30490-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,72 +19,98 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano [daniel.lezcano-GANU6spQydw@public.gmane.org] wrote:
-> Sukadev Bhattiprolu wrote:
->> Subject: [RFC][v8][PATCH 0/10] Implement clone3() system call
->>
->> To support application checkpoint/restart, a task must have the same pid it
->> had when it was checkpointed.  When containers are nested, the tasks within
->> the containers exist in multiple pid namespaces and hence have multiple pids
->> to specify during restart.
->>
->> This patchset implements a new system call, clone3() that lets a process
->> specify the pids of the child process.
->>
->> Patches 1 through 7 are helper patches, needed for choosing a pid for the
->> child process.
->>
->> PATCH 9 defines a prototype of the new system call. PATCH 10 adds some
->> documentation on the new system call, some/all of which will eventually
->> go into a man page.
->>   
->
-> Sorry for jumping so late in the discussion and for having maybe my
-> remarks pointless...
->
-> If this syscall is only for checkpoint / restart, why this shouldn't be
-> used with a future generic sys_restart syscall ?
 
-As I tried to explain in PATCH 0/9, the ability to choose a pid is only
-for C/R but we are also trying to clone-flags so we won't need yet
-another variant of clone() fairly soon.
+Applied.
 
-> Otherwise, shouldn't be more convenient to have something usable for
-> everyone, let's say:
->
-> cloneat(pid_t pid, pid_t desiredpid, ...);
->
-> Where 'desiredpid' is a hint of for the kernel for the pid to be
-> allocated (zero means the kernel will choose one for us) and the newly
-> allocated task is the son of 'pid'.
-
-Hmm, so P1 would call cloneat() to create a child P3 _on behalf_ of process
-P2 ?  I did not know we had a requirement for that. Can you explain the
-use-case more ? IOW, why can't P2 create the child P3 by itself ?
-
-Note also that 'desiredpid' must be a list of pids (one for each pid
-namespaces that the child will belong to) and hence we need 'nr_pids'
-to specify the list. Given that we are limited to 6 parameters to the
-syscall, such parameters must be stuffed into 'struct clone_args'.
-
-So we should do something like:
-
-	sys_clone3(u32 flags_low, pid_t pid, struct clone_args *carg,
-		pid_t *desired_pids)
-
-or (to match the name and parameters, move 'pid' parameter into clone_args)
-
-> That looks more consistent with the "<syscall>at" family, 'openat',
-> 'faccessat', 'readlinkat', etc ... and usable for something else than
-> the checkpoint / restart.
-
-The subtle difference though is that openat() does not open a file on
-behalf of another process and so the 'at' suffix would not apply ?
-
->
-> Thanks
->  -- Daniel
+Serge E. Hallyn wrote:
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  restart.c |   29 +++++++++++++++++++++++++++++
+>  1 files changed, 29 insertions(+), 0 deletions(-)
+> 
+> diff --git a/restart.c b/restart.c
+> index e6e72ac..cb81293 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -264,6 +264,7 @@ struct ckpt_ctx {
+>  	
+>  	char header[BUFSIZE];
+>  	char header_arch[BUFSIZE];
+> +	char container[BUFSIZE];
+>  	char tree[BUFSIZE];
+>  	char buf[BUFSIZE];
+>  	struct args *args;
+> @@ -303,6 +304,7 @@ static int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h);
+>  
+>  static int ckpt_write_header(struct ckpt_ctx *ctx);
+>  static int ckpt_write_header_arch(struct ckpt_ctx *ctx);
+> +static int ckpt_write_container(struct ckpt_ctx *ctx);
+>  static int ckpt_write_tree(struct ckpt_ctx *ctx);
+>  
+>  static int _ckpt_read(int fd, void *buf, int count);
+> @@ -313,6 +315,7 @@ static int ckpt_read_obj_type(struct ckpt_ctx *ctx, void *b, int n, int type);
+>  
+>  static int ckpt_read_header(struct ckpt_ctx *ctx);
+>  static int ckpt_read_header_arch(struct ckpt_ctx *ctx);
+> +static int ckpt_read_container(struct ckpt_ctx *ctx);
+>  static int ckpt_read_tree(struct ckpt_ctx *ctx);
+>  
+>  static int hash_init(struct ckpt_ctx *ctx);
+> @@ -693,6 +696,12 @@ int main(int argc, char *argv[])
+>  		exit(1);
+>  	}
+>  
+> +	ret = ckpt_read_container(&ctx);
+> +	if (ret < 0) {
+> +		perror("read c/r container section");
+> +		exit(1);
+> +	}
+> +
+>  	ret = ckpt_read_tree(&ctx);
+>  	if (ret < 0) {
+>  		perror("read c/r tree");
+> @@ -1850,6 +1859,9 @@ static int ckpt_do_feeder(void *data)
+>  	if (ckpt_write_header_arch(ctx) < 0)
+>  		ckpt_abort(ctx, "write c/r header arch");
+>  
+> +	if (ckpt_write_container(ctx) < 0)
+> +		ckpt_abort(ctx, "write container section");
+> +
+>  	if (ckpt_write_tree(ctx) < 0)
+>  		ckpt_abort(ctx, "write c/r tree");
+>  
+> @@ -2102,6 +2114,14 @@ static int ckpt_read_header_arch(struct ckpt_ctx *ctx)
+>  	return 0;
+>  }
+>  
+> +static int ckpt_read_container(struct ckpt_ctx *ctx)
+> +{
+> +	struct ckpt_hdr_container *h;
+> +
+> +	h = (struct ckpt_hdr_container *) ctx->container;
+> +	return ckpt_read_obj_type(ctx, h, sizeof(*h), CKPT_HDR_CONTAINER);
+> +}
+> +
+>  static int ckpt_read_tree(struct ckpt_ctx *ctx)
+>  {
+>  	struct ckpt_hdr_tree *h;
+> @@ -2174,6 +2194,15 @@ static int ckpt_write_header_arch(struct ckpt_ctx *ctx)
+>  	return ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+>  }
+>  
+> +static int ckpt_write_container(struct ckpt_ctx *ctx)
+> +{
+> +	char *ptr;
+> +
+> +	ptr = (char *) ctx->container;
+> +	/* write the container info section */
+> +	return ckpt_write_obj(ctx, (struct ckpt_hdr *) ptr);
+> +}
+> +
+>  static int ckpt_write_tree(struct ckpt_ctx *ctx)
+>  {
+>  	struct ckpt_hdr_tree *h;
