@@ -1,14 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH user-cr] return, don't exist, at coord error
-Date: Mon, 19 Oct 2009 00:41:55 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0910190038550.30339@takamine.ncl.cs.columbia.edu>
-References: <20091019022942.GA21306@us.ibm.com> <4ADBD593.9070006@librato.com>
-	<20091019035033.GA23390@us.ibm.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: IO controller Mini-Summit 2009
+Date: Mon, 19 Oct 2009 16:58:05 +0900 (JST)
+Message-ID: <20091019.165805.226786007.ryov__33899.8755011291$1255939265$gmane$org@valinux.co.jp>
+References: <20091014.212444.179938286.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091019035033.GA23390-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091014.212444.179938286.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,123 +17,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org, m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org, taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, lizf-BthXqXjhjHW1NAuuztSHSw@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, @valinux.co.jp
 List-Id: containers.vger.kernel.org
 
-On Sun, 18 Oct 2009, Serge E. Hallyn wrote:
+Hi all,
 
-> Hmm, well...  I dont' know what's going on with my userspace,
-> Now it's not working for me even with this patch.
-> 
-> As root I do:
-> 
-> 	setcap cap_sys_admin+pe /bin/restart
-> 	ckpt > /tmp/out
-> 
-> then as a non-rootuid I do
-> 	cat /tmp/out | /bin/retart -vd
-> 	echo $?
-> 
-> giving me:
-> [hallyn@linuz11 ~]$ /bin/restart -vd  < /tmp/out
-> <4028>number of tasks: 1
-> <4028>total tasks (including ghosts): 2
-> <4028>pid 4177: propagate session 4285
-> <4028>pid 4177: creator set to 4285
-> <4028>pid 4177: set session
-> <4028>pid 4177: moving up to 4285
-> <4028>[0] pid 4285 ppid 4177 sid 0 creator 0       
-> <4028>[1] pid 4177 ppid 4285 sid 4285 creator 4285   S G 
-> <4028>found pgid/sid 0, need pidns
-> <4028>new pidns without init
-> <4028>forking coordinator in new pidns
-> <1>forking child vpid 4285 flags 0x1
-> <1>forked child vpid 2 (asked 4285)
+I've uploaded the conslusions of IO controller Mini-summit 2009 on the
+web page. Thanks Fernando for creating the slides.
+http://sourceforge.net/apps/trac/ioband/wiki/iosummit
 
-Note that 'restart' decided to start a new pidns even though
-you didn't ask for one.  This may be related to the problem,
-because it creates another intermediate process at restart -
-the container init.
+Thank you to all attendees and thank you to the Linux Foundation Japan
+for providing us with a conference venue and facilities. 
 
-My recent user-space patch should fix this, and 'restart'
-should not start a new pidns in this case. This may also 
-solve your current problem.
-
-However, we still need to figure out why it does not report
-the error correctly in the --pidns case.
-
-Oren.
-
-> <2>root task pid 2
-> <2>pid 4285: pid 2 sid 0 parent 1
-> <2>pid 4285: fork child 4177 with session
-> <2>forking child vpid 4177 flags 0x12
-> <3>pid 4177: pid 3 sid 0 parent 2
-> <4029>c/r swap old 4177 new 3
-> <3>about to call sys_restart(), flags 0x4
-> <2>forked child vpid 3 (asked 4177)
-> <4029>c/r swap old 4285 new 2
-> <4029>c/r read input 16384
-> <4029>c/r read input 16384
-> <4029>c/r read input 16384
-> restart failed: Operation not permitted
-> Failed
-> <1>restart failed ?
-> <4029>c/r read input 16384
-> <4029>c/r read input 14862
-> <2>about to call sys_restart(), flags 0
-> <4028>SIGCHLD: already collected
-> <4028>task exited with status 255
-> [hallyn@linuz11 ~]$ echo $?
-> 0
-> 
-> And when I previously added a debug statement at
-> the end of main() printin gout the return value, it would
-> say 'returning 0' even though 'restart failed ?' in the
-> restart -vd output inicates that ret < 0.
-> 
-> Note that if you don't set cap_sys_admin+pe on
-> /bin/restart, then restart does return 255 (-1).
-> 
-> I'm done for the day - will have to look at it more
-> tomorrow.
-> 
-> -serge
-> 
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> > 
-> > What was the command line you used for the restart ?
-> > 
-> > Oren.
-> > 
-> > Serge E. Hallyn wrote:
-> > > All right I can't explain it at the moment, but exit(1) at
-> > > ckpt_coordinator() (on error) causes restart.c to exit with 0,
-> > > whereas return(ret) causes it to correctly exit with -1.
-> > > 
-> > > Without this, a restart whose kernel portion ends with say
-> > > -1 ends up returning from user-cr/restart.c with 0, so userspace
-> > > can't tell whether sys_restart succeeded or failed.  With the
-> > > patch, it fails correctly.
-> > > 
-> > > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > ---
-> > >  restart.c |    2 +-
-> > >  1 files changed, 1 insertions(+), 1 deletions(-)
-> > > 
-> > > diff --git a/restart.c b/restart.c
-> > > index e6e72ac..87899ba 100644
-> > > --- a/restart.c
-> > > +++ b/restart.c
-> > > @@ -933,7 +933,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
-> > >  		perror("restart failed");
-> > >  		ckpt_verbose("Failed\n");
-> > >  		ckpt_dbg("restart failed ?\n");
-> > > -		exit(1);
-> > > +		return ret;
-> > >  	}
-> > >  
-> > >  	ckpt_verbose("Success\n");
-> 
-> 
+Thanks,
+Ryo Tsuruta
