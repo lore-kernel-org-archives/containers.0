@@ -1,18 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
-Date: Mon, 19 Oct 2009 10:44:05 -0700
-Message-ID: <20091019174405.GE27627__45360.250309068$1255974448$gmane$org@count0.beaverton.ibm.com>
-References: <20091013044925.GA28181@us.ibm.com>
-	<20091013045439.GI28435@us.ibm.com>
-	<20091016042041.GA7220@us.ibm.com>
-	<cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0@mail.gmail.com>
-	<20091016180631.GA31036@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 2/4] cr: add generic LSM c/r support (v6)
+Date: Mon, 19 Oct 2009 14:13:47 -0400
+Message-ID: <4ADCAC5B.9080205@librato.com>
+References: <20091019144315.GA30535@us.ibm.com>
+	<20091019144341.GA30566@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091016180631.GA31036-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091019144341.GA30566-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,48 +18,194 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 16, 2009 at 11:06:31AM -0700, Sukadev Bhattiprolu wrote:
-> Michael Kerrisk [mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org] wrote:
-> | Hi Sukadev
-> | =
 
-> | On Fri, Oct 16, 2009 at 6:20 AM, Sukadev Bhattiprolu
-> | <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> | > Here is an updated patch with the following interface:
-> | >
-> | > =A0 =A0 =A0 =A0long sys_clone3(unsigned int flags_low, struct clone_a=
-rgs __user *cs,
-> | > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0pid_t *pids);
-> | >
-> | > There are just two other (minor) changes pending to this patchset:
-> | >
-> | > =A0 =A0 =A0 =A0- PATCH 7: add a CLONE_UNUSED bit to VALID_CLONE_FLAGS=
-().
-> | > =A0 =A0 =A0 =A0- PATCH 10: update documentation to reflect new interf=
-ace.
-> | >
-> | > If this looks ok, we repost entire patchset next week.
-> | =
 
-> | I know I'm late to this discussion, but why the name clone3()? It's
-> | not consistent with any other convention used fo syscall naming,
-> | AFAICS. I think a name like clone_ext() or clonex() (for extended)
-> | might make more sense.
-> =
+Serge E. Hallyn wrote:
+> Documentation/checkpoint/readme.txt begins:
+> """
+> Application checkpoint/restart is the ability to save the state
+> of a running application so that it can later resume its execution
+> from the time at which it was checkpointed.
+> """
+> 
+> This patch adds generic support for c/r of LSM credentials.  Support
+> for Smack and SELinux (and TOMOYO if appropriate) will be added later.
+> Capabilities is already supported through generic creds code.
+> 
+> This patch supports ipc_perm, msg_msg, cred (task) and file ->security
+> fields.  Inodes, superblocks, netif, and xfrm currently are restored
+> not through sys_restart() but through container creation, and so the
+> security fields should be done then as well.  Network should be added
+> when network c/r is added.
+> 
+> Briefly, all security fields must be exported by the LSM as a simple
+> null-terminated string.  They are checkpointed through the
+> security_checkpoint_obj() helper, because we must pass it an extra
+> sectype field.  Splitting SECURITY_OBJ_SEC into one type per object
+> type would not work because, in Smack, one void* security is used for
+> all object types.  But we must pass the sectype field because in
+> SELinux a different type of structure is stashed in each object type.
+> 
+> The RESTART_KEEP_LSM flag indicates that the LSM should
+> attempt to reuse checkpointed security labels.  It is always
+> invalid when the LSM at restart differs from that at checkpoint.
+> It is currently only usable for capabilities.
+> 
+> (For capabilities, restart without RESTART_KEEP_LSM is technically
+> not implemented.  There actually might be a use case for that,
+> but the safety of it is dubious so for now we always re-create
+> checkpointed capability sets whether RESTART_KEEP_LSM is
+> specified or not)
 
-> Sure, we talked about calling it clone_extended() and I can go back
-> to that.
-> =
+[...]
 
-> Only minor concern with that name was if this new call ever needs to
-> be extended, what would we call it :-). With clone3() we could add a
-> real/fake parameter and call it clone4() :-p
+> 	oct 19: At checkpoint, we insert the void* security into the
+> 		objhash.  The first time that we do so, we next write out
+> 		the string representation of the context to the checkpoint
+> 		image, along with the value of the objref for the void*
+> 		security, and insert that into the objhash.  Then at
+> 		restart, when we read a LSM context, we read the objref
+> 		which the void* security had at checkpoint, and we then
+> 		insert the string context with that objref as well.
 
-Perhaps clone64 (somewhat like stat64 for example)?
+I hoped to see similar comment inlined in the code.
 
-Cheers,
-	-Matt Helsley
+[...]
+
+> @@ -159,8 +175,12 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  	if (h->f_credref < 0)
+>  		return h->f_credref;
+>  
+> -	ckpt_debug("file %s credref %d", file->f_dentry->d_name.name,
+> -		h->f_credref);
+> +	ret = checkpoint_file_security(ctx, file, &h->f_secref);
+> +	if (ret < 0)
+> +		return ret;
+
+How about a ckpt_write_err() here, or in checkpoint_file_security(),
+or in security_checkpoint_obj(), or all of the above.
+
+> +
+> +	ckpt_debug("file %s credref %d secref %d\n",
+> +		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
+
+[...]
+
+> @@ -433,6 +464,22 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+>  		.checkpoint = checkpoint_tty,
+>  		.restore = restore_tty,
+>  	},
+> +	/* LSM void *security on objhash - at checkpoint */
+> +	{
+> +		.obj_name = "SECURITY PTR",
+> +		.obj_type = CKPT_OBJ_SECURITY_PTR,
+> +		.ref_drop = obj_no_drop,
+> +		.ref_grab = obj_no_grab,
+> +	},
+
+I really wish there was a comment explaining why it's ok to not
+drop/grab the reference (because the security is always referenced
+by an object that is itself grabbed, e.g. file, ipc etc ?).
+
+> +	/* LSM security strings - at restart */
+> +	{
+> +		.obj_name = "SECURITY STRING",
+> +		.obj_type = CKPT_OBJ_SECURITY,
+> +		.ref_grab = lsm_string_grab,
+> +		.ref_drop = lsm_string_drop,
+> +		.checkpoint = checkpoint_lsm_string,
+> +		.restore = restore_lsm_string_wrap,
+> +	},
+>  };
+
+[...]
+
+> @@ -376,6 +383,16 @@ struct ckpt_hdr_groupinfo {
+>  	__u32 groups[0];
+>  } __attribute__((aligned(8)));
+>  
+> +struct ckpt_hdr_lsm {
+> +	struct ckpt_hdr h;
+> +	__s32 ptrref;
+> +	__u8 sectype;
+> +	__u8 padding;
+
+I don't think padding is necessary here...
+
+> +	/*
+> +	 * This is followed by a string of size len+1,
+> +	 * null-terminated
+> +	 */
+> +} __attribute__((aligned(8)));
+
+[...]
+
+> +/**
+> + * security_checkpoint_obj - if first checkpoint of this void* security,
+> + * then 1. ask the LSM for a string representing the context, 2. checkpoint
+> + * that string
+> + * @ctx: the checkpoint context
+> + * @security: the void* security being checkpointed
+> + * @sectype: indicates the type of object, because LSMs can (and do) store
+> + * @secref: We return the objref here
+> + * different types of data for different types of objects.
+> + *
+> + * Returns the objref of the checkpointed ckpt_lsm_string representing the
+> + * context, or -error on error.
+> + *
+> + * This is only used at checkpoint of course.
+> + */
+> +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
+> +				int sectype, int *secref)
+
+This function returns 0 for success or a negative error. It should
+return the @secref instead of passing it by reference (see your
+description of the return value above !)
+
+[...]
+
+> +	/* Ask the LSM to apply a void*security to the object
+> +	 * based on the checkpointed context string */
+> +	switch (sectype) {
+> +	case CKPT_SECURITY_IPC:
+> +		ret = security_ipc_restore(v, l->string);
+
+Nit: I know it's not strictly necessary, but adding an explicit
+type conversion here and in the other three seems cleaner
+
+> +		break;
+> +	case CKPT_SECURITY_MSG_MSG:
+> +		ret = security_msg_msg_restore(v, l->string);
+> +		break;
+> +	case CKPT_SECURITY_FILE:
+> +		ret = security_file_restore(v, l->string);
+> +		break;
+> +	case CKPT_SECURITY_CRED:
+> +		ret = security_cred_restore(ctx->file, v, l->string);
+> +		break;
+> +	default:
+> +		ret = -EINVAL;
+> +	}
+> +	if (ret)
+> +		ckpt_debug("sectype %d objref %d lsm's hook returned %d\n",
+> +			   sectype, secref, ret);
+> +	if (ret == -EOPNOTSUPP)
+> +		ret = 0;
+
+If you silently ignore EOPNOTSUPP, how can a user tell if a restarted
+succeeded fully or by silently skipping the security part ?
+
+Should the user approve this behavior (e.g. RESTART_SECURITY_LAX...) ?
+
+Also, I suggest the s/EOPNOTSUPP/ENOSYS/ all over the patch.
+
+> +
+> +	return ret;
+> +}
+> +#endif
+
+Oren.
