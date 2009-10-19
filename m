@@ -1,11 +1,14 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-106-gc61e759
-Date: Sun, 18 Oct 2009 23:04:34 -0400
-Message-ID: <200910190304.n9J34YKL021299@gorgona.ncl.cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH user-cr] return, don't exist, at coord error
+Date: Sun, 18 Oct 2009 22:50:33 -0500
+Message-ID: <20091019035033.GA23390@us.ibm.com>
+References: <20091019022942.GA21306@us.ibm.com> <4ADBD593.9070006@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4ADBD593.9070006-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,64 +18,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+Hmm, well...  I dont' know what's going on with my userspace,
+Now it's not working for me even with this patch.
 
-The branch, ckpt-v18-dev has been updated
-       via  c61e759d910952d9457ccb109bf4e91514af087f (commit)
-       via  2654de0b63ea6250a155bc6abe4999bd6a60ae38 (commit)
-      from  17c7c62ee3ac563a530b840328a31add6100dd87 (commit)
+As root I do:
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+	setcap cap_sys_admin+pe /bin/restart
+	ckpt > /tmp/out
 
-- Log -----------------------------------------------------------------
-commit c61e759d910952d9457ccb109bf4e91514af087f
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Sun Oct 18 22:56:54 2009 -0400
+then as a non-rootuid I do
+	cat /tmp/out | /bin/retart -vd
+	echo $?
 
-    test_and_set_bit returns oldval
-    
-    ckpt_set_ctx_error() was not setting ctx->errno when it should - it
-    apparently thought that test_and_set_bit(x,y) would return 1 if the
-    set_bit succeeded?
-    
-    Fix ckpt_set_ctx_error() to set ctx->errno the first (and only the
-    first) time that CKPT_CTX_ERROR gets set in ctx->kflags.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+giving me:
+[hallyn@linuz11 ~]$ /bin/restart -vd  < /tmp/out
+<4028>number of tasks: 1
+<4028>total tasks (including ghosts): 2
+<4028>pid 4177: propagate session 4285
+<4028>pid 4177: creator set to 4285
+<4028>pid 4177: set session
+<4028>pid 4177: moving up to 4285
+<4028>[0] pid 4285 ppid 4177 sid 0 creator 0       
+<4028>[1] pid 4177 ppid 4285 sid 4285 creator 4285   S G 
+<4028>found pgid/sid 0, need pidns
+<4028>new pidns without init
+<4028>forking coordinator in new pidns
+<1>forking child vpid 4285 flags 0x1
+<1>forked child vpid 2 (asked 4285)
+<2>root task pid 2
+<2>pid 4285: pid 2 sid 0 parent 1
+<2>pid 4285: fork child 4177 with session
+<2>forking child vpid 4177 flags 0x12
+<3>pid 4177: pid 3 sid 0 parent 2
+<4029>c/r swap old 4177 new 3
+<3>about to call sys_restart(), flags 0x4
+<2>forked child vpid 3 (asked 4177)
+<4029>c/r swap old 4285 new 2
+<4029>c/r read input 16384
+<4029>c/r read input 16384
+<4029>c/r read input 16384
+restart failed: Operation not permitted
+Failed
+<1>restart failed ?
+<4029>c/r read input 16384
+<4029>c/r read input 14862
+<2>about to call sys_restart(), flags 0
+<4028>SIGCHLD: already collected
+<4028>task exited with status 255
+[hallyn@linuz11 ~]$ echo $?
+0
 
-commit 2654de0b63ea6250a155bc6abe4999bd6a60ae38
-Author: \"Serge E. Hallyn\ <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Fri Oct 16 19:56:56 2009 -0400
+And when I previously added a debug statement at
+the end of main() printin gout the return value, it would
+say 'returning 0' even though 'restart failed ?' in the
+restart -vd output inicates that ret < 0.
 
-    cr: add container configuration header
-    
-    Add a container configuration section to the checkpoint header.
-    This will contain information such as the LSM name and policy
-    identifier, potentially network interface and container-wide
-    mounts.
-    
-    [ pulled out of the LSM c/r patchset ]
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Note that if you don't set cap_sys_admin+pe on
+/bin/restart, then restart does return 255 (-1).
 
------------------------------------------------------------------------
+I'm done for the day - will have to look at it more
+tomorrow.
 
-Summary of changes:
- Documentation/checkpoint/readme.txt |   15 +++++++++++----
- checkpoint/checkpoint.c             |   18 ++++++++++++++++++
- checkpoint/restart.c                |   18 ++++++++++++++++++
- include/linux/checkpoint.h          |    4 ++--
- include/linux/checkpoint_hdr.h      |    7 +++++++
- 5 files changed, 56 insertions(+), 6 deletions(-)
+-serge
 
-
-hooks/post-receive
---
-linux-cr
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> 
+> What was the command line you used for the restart ?
+> 
+> Oren.
+> 
+> Serge E. Hallyn wrote:
+> > All right I can't explain it at the moment, but exit(1) at
+> > ckpt_coordinator() (on error) causes restart.c to exit with 0,
+> > whereas return(ret) causes it to correctly exit with -1.
+> > 
+> > Without this, a restart whose kernel portion ends with say
+> > -1 ends up returning from user-cr/restart.c with 0, so userspace
+> > can't tell whether sys_restart succeeded or failed.  With the
+> > patch, it fails correctly.
+> > 
+> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  restart.c |    2 +-
+> >  1 files changed, 1 insertions(+), 1 deletions(-)
+> > 
+> > diff --git a/restart.c b/restart.c
+> > index e6e72ac..87899ba 100644
+> > --- a/restart.c
+> > +++ b/restart.c
+> > @@ -933,7 +933,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+> >  		perror("restart failed");
+> >  		ckpt_verbose("Failed\n");
+> >  		ckpt_dbg("restart failed ?\n");
+> > -		exit(1);
+> > +		return ret;
+> >  	}
+> >  
+> >  	ckpt_verbose("Success\n");
