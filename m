@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] test_and_set_bit returns oldval
-Date: Sun, 18 Oct 2009 16:19:11 -0500
-Message-ID: <20091018211911.GA17271@us.ibm.com>
+Subject: [PATCH user-cr] return, don't exist, at coord error
+Date: Sun, 18 Oct 2009 21:29:42 -0500
+Message-ID: <20091019022942.GA21306@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,30 +20,32 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ckpt_set_ctx_error() was not setting ctx->errno when it should - it
-apparently thought that test_and_set_bit(x,y) would return 1 if the
-set_bit succeeded?
+All right I can't explain it at the moment, but exit(1) at
+ckpt_coordinator() (on error) causes restart.c to exit with 0,
+whereas return(ret) causes it to correctly exit with -1.
 
-Fix ckpt_set_ctx_error() to set ctx->errno the first (and only the
-first) time that CKPT_CTX_ERROR gets set in ctx->kflags.
+Without this, a restart whose kernel portion ends with say
+-1 ends up returning from user-cr/restart.c with 0, so userspace
+can't tell whether sys_restart succeeded or failed.  With the
+patch, it fails correctly.
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h |    2 +-
+ restart.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 4b61378..c550039 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -111,7 +111,7 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
+diff --git a/restart.c b/restart.c
+index e6e72ac..87899ba 100644
+--- a/restart.c
++++ b/restart.c
+@@ -933,7 +933,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 		perror("restart failed");
+ 		ckpt_verbose("Failed\n");
+ 		ckpt_dbg("restart failed ?\n");
+-		exit(1);
++		return ret;
+ 	}
  
- static inline void ckpt_set_ctx_error(struct ckpt_ctx *ctx, int errno)
- {
--	if (ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR))
-+	if (!ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR))
- 		ctx->errno = errno;
- }
- 
+ 	ckpt_verbose("Success\n");
 -- 
-1.6.1
+1.6.1.1
