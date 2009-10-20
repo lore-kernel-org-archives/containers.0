@@ -1,13 +1,18 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/4] Add some content to the readme.txt for socket c/r
-Date: Tue, 20 Oct 2009 14:06:43 -0700
-Message-ID: <1256072803-3518-5-git-send-email-danms@us.ibm.com>
-References: <1256072803-3518-1-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Tue, 20 Oct 2009 09:09:17 -0500
+Message-ID: <20091020140917.GA2145__32589.9476687939$1256085650$gmane$org@us.ibm.com>
+References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
+	<20091016194451.GA28706@us.ibm.com> <4ADCCD68.9030003@free.fr>
+	<4ADCDE7F.4090501@librato.com>
+	<20091020005125.GG27627@count0.beaverton.ibm.com>
+	<m1vdiad9jd.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1256072803-3518-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1vdiad9jd.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,45 +22,92 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Documentation/checkpoint/readme.txt |   21 +++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > On Mon, Oct 19, 2009 at 05:47:43PM -0400, Oren Laadan wrote:
+> >> 
+> >> 
+> >> Daniel Lezcano wrote:
+> >> > Sukadev Bhattiprolu wrote:
+> >> >> Daniel Lezcano [daniel.lezcano-GANU6spQydw@public.gmane.org] wrote:
+> >> >>   
+> >> >>> Sukadev Bhattiprolu wrote:
+> >> >>>     
+> >> >>>> Subject: [RFC][v8][PATCH 0/10] Implement clone3() system call
+> >> >>>>
+> >
+> > <snip>
+> >
+> >> > Another point. It's another way to extend the exhausted clone  flags as 
+> >> > the cloneat can be called as a compatibility way, with cloneat(getpid(), 
+> >> > 0, ... )
+> >> 
+> >> Which is what the proposed new clone_....() does.
+> >
+> > Just to be clear -- Suka's proposing to extend the clone flags. However I
+> > don't believe reusing the "pid" parameters as Daniel seemed to suggest
+> > was ever part of Suka's proposed changes.
+> >
+> > <snip>
+> >
+> >> > I don't really see a difference between sys_restart(pid_t pid , int fd, 
+> >> > long flags) where pid_t is the topmost in the hierarchy, fd is a file 
+> >> > descriptor to a structure "pid_t * + struct clone_args *" and flags is 
+> >> > "PROCTREE".
+> >
+> > I think the difference has to do with keeping the code maintainable.
+> >
+> > Clone creates the process so it's already involved in allocating and
+> > assigning pids to the new task. Switching pids at sys_restart() would 
+> > add another point in the code where pids are allocated and assigned.
+> > This suggests we may have to worry about introducing new obscure races
+> > for anyone who's working on the pid allocator to be careful of. At
+> > least when all the code is "localized" to the clone paths we can be
+> > reasonably certain of proper maintenance.
+> >
+> > <snip>
+> >
+> >> I really really really hope we can settle down on *a* name,
+> >> *any* name, and move forward. Amen.
+> >
+> > clone3() seemed to be the leading contender from what I've read so far.
+> > Does anyone still object to clone3() after reading the whole thread?
+> 
+> I object to what clone3() is.  The name is not particularly interesting.
+> 
+> The sanity checks for assigning pids are missing and there is a todo
+> about it.  I am not comfortable with assigning pids to a new process
+> in a pid namespace with other processes user space processes executing
+> in it.
+> 
+> How we handle a clone extension depends critically on if we want to
+> create a processes for restart in user space or kernel space.
+> 
+> Could some one give me or point me at a strong case for creating the
+> processes for restart in user space?
+> 
+> The pid assignment code is currently ugly.  I asked that we just pass
+> in the min max pid pids that already exist into the core pid
+> assignment function and a constrained min/max that only admits a
+> single pid when we are allocating a struct pid for restart.  That was
+> not done and now we have a weird abortion with unnecessary special cases.
 
-diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-index 571c469..e6c173d 100644
---- a/Documentation/checkpoint/readme.txt
-+++ b/Documentation/checkpoint/readme.txt
-@@ -334,6 +334,27 @@ we will be forced to more carefully review each of those features.
- However, this can be controlled with a sysctl-variable.
- 
- 
-+Sockets
-+=======
-+
-+For AF_UNIX sockets, both endpoints must be within the checkpointed
-+task set to maintain a connected state after restart.  UNIX sockets
-+that are in the process of passing a descriptor will cause the
-+checkpoint to fail with -EBUSY indicating a transient state that
-+cannot be checkpointed.  Listening sockets with an unaccepted peer
-+will also cause an -EBUSY result.
-+
-+AF_INET sockets with endpoints outside the checkpointed task set may
-+remain open if care is taken to avoid TCP timeouts and resets.
-+Careful use of a virtual IP address can help avoid emission of an RST
-+to the non-checkpointed endpoint.  If desired, the
-+RESTART_SOCK_LISTENONLY flag may be passed to the restart syscall
-+which will cause all connected AF_INET sockets to be closed during the
-+restore process.  Listening sockets will still be restored to their
-+original state, which makes this mode a candidate for something like
-+an HTTP server.
-+
-+
- Kernel interfaces
- =================
- 
--- 
-1.6.2.5
+I asked you (I believe twice) to clarify how on earth you meant for
+that to be done for hierarchical pid namespaces (a task being restored
+which needs two of it's 4 pids specified), and you did not reply.
+
+Did you mean for it to be done through procfiles?  If so, does the
+task have to keep multiple /proc mounts around, one for each
+pidns hierarchy in which it needs to specify a pid?  Or did you have
+another idea in mind?  A single procfile into which multiple pids can
+be specified in a list?  A completely different interface?
+
+Or do you mean for this to be done only from the kernel?
+
+thanks,
+-serge
