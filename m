@@ -1,18 +1,12 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
-Date: Mon, 19 Oct 2009 21:03:15 -0700
-Message-ID: <20091020040315.GA26632__38669.7121117779$1256011420$gmane$org@us.ibm.com>
-References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
-	<20091016194451.GA28706@us.ibm.com> <4ADCCD68.9030003@free.fr>
-	<4ADCDE7F.4090501@librato.com>
-	<20091020005125.GG27627@count0.beaverton.ibm.com>
-	<m1vdiad9jd.fsf@fess.ebiederm.org>
+Subject: [PATCH] pidns: Fix a leak in /proc inodes and dentries
+Date: Mon, 19 Oct 2009 21:13:37 -0700
+Message-ID: <20091020041337.GA31623__22198.7779754729$1256012002$gmane$org@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1vdiad9jd.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,49 +16,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
+Cc: jack-+ZI9xUNit7I@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, andrea-Vyt77T80VFVWk0Htik3J/w@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-| > clone3() seemed to be the leading contender from what I've read so far.
-| > Does anyone still object to clone3() after reading the whole thread?
-| 
-| I object to what clone3() is.  The name is not particularly interesting.
-| 
-| The sanity checks for assigning pids are missing and there is a todo
-| about it.  I am not comfortable with assigning pids to a new process
-| in a pid namespace with other processes user space processes executing
-| in it.
 
-Could you clarify ? How is the call to alloc_pidmap() from clone3() different
-from the call from clone() itself ?
+Fix a leak in /proc dentries and inodes with pid namespaces.
 
-| 
-| How we handle a clone extension depends critically on if we want to
-| create a processes for restart in user space or kernel space.
-| 
-| Could some one give me or point me at a strong case for creating the
-| processes for restart in user space?
+This fix reverts the commit 7766755a2f249e7e0. The leak was reported by
+Daniel Lezcano - see  http://lkml.org/lkml/2009/10/2/159.
 
-There has been a lot of discussion on this with reference to the
-Checkpoint/Restart patchset. See http://lkml.org/lkml/2009/4/13/401
-for instance.
+To summarize the thread, when container-init is terminated, it sets the
+PF_EXITING flag and then zaps all the other processes in the container.
+When those processes exit, they are expected to be reaped by the container-
+init and as a part of reaping, the container-init should flush any /proc
+dentries associated with the processes. But because the container-init is
+itself exiting and the following PF_EXITING check, the dentires are not
+flushed, resulting in leak in /proc inodes and dentries.
 
-| 
-| The pid assignment code is currently ugly.  I asked that we just pass
-| in the min max pid pids that already exist into the core pid
-| assignment function and a constrained min/max that only admits a
-| single pid when we are allocating a struct pid for restart.  That was
-| not done and now we have a weird abortion with unnecessary special cases.
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reported-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Jan Kara <jack-+ZI9xUNit7I@public.gmane.org>
+Cc: Andrea Arcangeli <andrea-Vyt77T80VFVWk0Htik3J/w@public.gmane.org>
 
-I did post a version of the patch attemptint to implement that. As
-pointed out in:
+---
+ fs/proc/base.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-	http://lkml.org/lkml/2009/8/17/445
-
-we would need more checks in alloc_pidmap() to cover cases like min or max
-being invalid or min being greater than max or max being greater than pid_max
-etc. Those checks also made the code ugly (imo).
-
-Sukadev
+Index: linux-2.6/fs/proc/base.c
+===================================================================
+--- linux-2.6.orig/fs/proc/base.c	2009-10-19 20:28:51.000000000 -0700
++++ linux-2.6/fs/proc/base.c	2009-10-19 20:29:03.000000000 -0700
+@@ -2580,8 +2580,7 @@ static void proc_flush_task_mnt(struct v
+ 	name.len = snprintf(buf, sizeof(buf), "%d", pid);
+ 	dentry = d_hash_and_lookup(mnt->mnt_root, &name);
+ 	if (dentry) {
+-		if (!(current->flags & PF_EXITING))
+-			shrink_dcache_parent(dentry);
++		shrink_dcache_parent(dentry);
+ 		d_drop(dentry);
+ 		dput(dentry);
+ 	}
