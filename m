@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/4] cr: add generic LSM c/r support (v6)
-Date: Mon, 19 Oct 2009 14:02:27 -0500
-Message-ID: <20091019190227.GA7201@us.ibm.com>
-References: <20091019144315.GA30535@us.ibm.com>
-	<20091019144341.GA30566@us.ibm.com> <4ADCAC5B.9080205@librato.com>
+Subject: [PATCH user-cr] Allow for logfile for kernel debug messages
+Date: Tue, 20 Oct 2009 18:01:08 -0500
+Message-ID: <20091020230108.GA20836@us.ibm.com>
+References: <20091020225938.GA20803@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4ADCAC5B.9080205-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091020225938.GA20803-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,173 +18,209 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> > 	oct 19: At checkpoint, we insert the void* security into the
-> > 		objhash.  The first time that we do so, we next write out
-> > 		the string representation of the context to the checkpoint
-> > 		image, along with the value of the objref for the void*
-> > 		security, and insert that into the objhash.  Then at
-> > 		restart, when we read a LSM context, we read the objref
-> > 		which the void* security had at checkpoint, and we then
-> > 		insert the string context with that objref as well.
-> 
-> I hoped to see similar comment inlined in the code.
+This is the user-cr patch corresponding to the logfile kernel
+patch.
 
-If we're happy with this approach, then I will add good comments above
-security_checkpoint_obj and security_restore_obj, and above the objhash
-entries.
+Logfile is specified using -l LOGFILE or --logfile=LOGFILE, i.e.
 
-> [...]
-> 
-> > @@ -159,8 +175,12 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
-> >  	if (h->f_credref < 0)
-> >  		return h->f_credref;
-> >  
-> > -	ckpt_debug("file %s credref %d", file->f_dentry->d_name.name,
-> > -		h->f_credref);
-> > +	ret = checkpoint_file_security(ctx, file, &h->f_secref);
-> > +	if (ret < 0)
-> > +		return ret;
-> 
-> How about a ckpt_write_err() here, or in checkpoint_file_security(),
-> or in security_checkpoint_obj(), or all of the above.
+	checkpoint $pid -o ckpt.out -l ckpt.debug
+	restart -l rstr.debug -i ckpt.out
 
-Yeah, definately, at each of the checkpoint failures I add.
+If the logfile is unspecified, -1 will be sent for logfd to the kernel,
+and there will be no debug log.   If specified, then checkpoint and
+restart debug msgs will be sent to the logfile.
 
-> > +
-> > +	ckpt_debug("file %s credref %d secref %d\n",
-> > +		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
-> 
-> [...]
-> 
-> > @@ -433,6 +464,22 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
-> >  		.checkpoint = checkpoint_tty,
-> >  		.restore = restore_tty,
-> >  	},
-> > +	/* LSM void *security on objhash - at checkpoint */
-> > +	{
-> > +		.obj_name = "SECURITY PTR",
-> > +		.obj_type = CKPT_OBJ_SECURITY_PTR,
-> > +		.ref_drop = obj_no_drop,
-> > +		.ref_grab = obj_no_grab,
-> > +	},
-> 
-> I really wish there was a comment explaining why it's ok to not
-> drop/grab the reference (because the security is always referenced
-> by an object that is itself grabbed, e.g. file, ipc etc ?).
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint.c |   22 ++++++++++++++++++----
+ restart.c    |   29 +++++++++++++++++++++++------
+ 2 files changed, 41 insertions(+), 10 deletions(-)
 
-Yes.
-
-> > +	/* LSM security strings - at restart */
-> > +	{
-> > +		.obj_name = "SECURITY STRING",
-> > +		.obj_type = CKPT_OBJ_SECURITY,
-> > +		.ref_grab = lsm_string_grab,
-> > +		.ref_drop = lsm_string_drop,
-> > +		.checkpoint = checkpoint_lsm_string,
-> > +		.restore = restore_lsm_string_wrap,
-> > +	},
-> >  };
-> 
-> [...]
-> 
-> > @@ -376,6 +383,16 @@ struct ckpt_hdr_groupinfo {
-> >  	__u32 groups[0];
-> >  } __attribute__((aligned(8)));
-> >  
-> > +struct ckpt_hdr_lsm {
-> > +	struct ckpt_hdr h;
-> > +	__s32 ptrref;
-> > +	__u8 sectype;
-> > +	__u8 padding;
-> 
-> I don't think padding is necessary here...
-
-Ok, I'll take it out.
-
-> > +	/*
-> > +	 * This is followed by a string of size len+1,
-> > +	 * null-terminated
-> > +	 */
-> > +} __attribute__((aligned(8)));
-> 
-> [...]
-> 
-> > +/**
-> > + * security_checkpoint_obj - if first checkpoint of this void* security,
-> > + * then 1. ask the LSM for a string representing the context, 2. checkpoint
-> > + * that string
-> > + * @ctx: the checkpoint context
-> > + * @security: the void* security being checkpointed
-> > + * @sectype: indicates the type of object, because LSMs can (and do) store
-> > + * @secref: We return the objref here
-> > + * different types of data for different types of objects.
-> > + *
-> > + * Returns the objref of the checkpointed ckpt_lsm_string representing the
-> > + * context, or -error on error.
-> > + *
-> > + * This is only used at checkpoint of course.
-> > + */
-> > +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
-> > +				int sectype, int *secref)
-> 
-> This function returns 0 for success or a negative error. It should
-> return the @secref instead of passing it by reference (see your
-> description of the return value above !)
-> 
-> [...]
-
-Yes the comment is out of date but the API is imo an improvement.
-Note that SECURITY_CTX_NONE, -1, is a meaningful secref, and at
-the sametime -EPERM, -1, is conceivably a valid error code (though
-at the moment no lsm will return it).
-
-So I think overloading the secref with error codes is wrong here.
-
-> > +	/* Ask the LSM to apply a void*security to the object
-> > +	 * based on the checkpointed context string */
-> > +	switch (sectype) {
-> > +	case CKPT_SECURITY_IPC:
-> > +		ret = security_ipc_restore(v, l->string);
-> 
-> Nit: I know it's not strictly necessary, but adding an explicit
-> type conversion here and in the other three seems cleaner
-
-Hmm, it'll make some lines wrap making it harder to read, so it
-was a tossup.  But ok I'll change it.
-
-> > +		break;
-> > +	case CKPT_SECURITY_MSG_MSG:
-> > +		ret = security_msg_msg_restore(v, l->string);
-> > +		break;
-> > +	case CKPT_SECURITY_FILE:
-> > +		ret = security_file_restore(v, l->string);
-> > +		break;
-> > +	case CKPT_SECURITY_CRED:
-> > +		ret = security_cred_restore(ctx->file, v, l->string);
-> > +		break;
-> > +	default:
-> > +		ret = -EINVAL;
-> > +	}
-> > +	if (ret)
-> > +		ckpt_debug("sectype %d objref %d lsm's hook returned %d\n",
-> > +			   sectype, secref, ret);
-> > +	if (ret == -EOPNOTSUPP)
-> > +		ret = 0;
-> 
-> If you silently ignore EOPNOTSUPP, how can a user tell if a restarted
-> succeeded fully or by silently skipping the security part ?
-
-Actually I agree, EOPNOTSUPP (or ENOSYS) with RESTART_KEEP_LSM should
-just return failure.
-
-> Should the user approve this behavior (e.g. RESTART_SECURITY_LAX...) ?
-> 
-> Also, I suggest the s/EOPNOTSUPP/ENOSYS/ all over the patch.
-
-thanks,
--serge
+diff --git a/checkpoint.c b/checkpoint.c
+index c116daf..989e5c4 100644
+--- a/checkpoint.c
++++ b/checkpoint.c
+@@ -32,6 +32,7 @@ static char usage_str[] =
+ "\tOptions:\n"
+ "  -h,--help             print this help message\n"
+ "  -o,--output=FILE      write data to FILE instead of standard output\n"
++"  -l,--logfile=FILE     write kernel debug data to FILE (default=nowhere)\n"
+ "  -c,--container        require the PID is a container-init\n"
+ "  -v,--verbose          verbose output\n"
+ "";
+@@ -40,11 +41,12 @@ struct args {
+ 	char *output;
+ 	int container;
+ 	int verbose;
++	char *logfile;
+ };
+ 
+-inline static int checkpoint(pid_t pid, int fd, unsigned long flags)
++inline static int checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
+ {
+-	return syscall(__NR_checkpoint, pid, fd, flags);
++	return syscall(__NR_checkpoint, pid, fd, flags, logfd);
+ }
+ 
+ static void usage(char *str)
+@@ -59,10 +61,11 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ "help",	no_argument,		NULL, 'h' },
+ 		{ "output",	required_argument,	NULL, 'o' },
+ 		{ "container",	no_argument,		NULL, 'c' },
++		{ "logfile",	required_argument,	NULL, 'l' },
+ 		{ "verbose",	no_argument,		NULL, 'v' },
+ 		{ NULL,		0,			NULL, 0 }
+ 	};
+-	static char optc[] = "hvco:";
++	static char optc[] = "hvco:l:";
+ 
+ 	while (1) {
+ 		int c = getopt_long(argc, argv, optc, opts, NULL);
+@@ -79,6 +82,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'c':
+ 			args->container = 1;
+ 			break;
++		case 'l':
++			args->logfile = optarg;
++			break;
+ 		case 'v':
+ 			args->verbose = 1;
+ 			break;
+@@ -94,6 +100,7 @@ int main(int argc, char *argv[])
+ 	unsigned long flags = 0;
+ 	pid_t pid;
+ 	int ret;
++	int logfd;
+ 
+ 	memset(&args, 0, sizeof(args));
+ 	parse_args(&args, argc, argv);
+@@ -125,8 +132,15 @@ int main(int argc, char *argv[])
+ 		if (ret != STDOUT_FILENO)
+ 			close(ret);
+ 	}
++	if (args.logfile) {
++		logfd = open(args.logfile, O_RDWR | O_CREAT, 0600);
++		if (logfd < 0) {
++			perror("open logfile");
++			exit(1);
++		}
++	}
+ 
+-	ret = checkpoint(pid, STDOUT_FILENO, flags);
++	ret = checkpoint(pid, STDOUT_FILENO, flags, logfd);
+ 
+ 	if (ret < 0) {
+ 		perror("checkpoint");
+diff --git a/restart.c b/restart.c
+index fbaab88..561b941 100644
+--- a/restart.c
++++ b/restart.c
+@@ -75,6 +75,7 @@ static char usage_str[] =
+ "  -i,--input=FILE      read data from FILE instead of standard input\n"
+ "     --inspect          inspect image on-the-fly for error records\n"
+ "  -v,--verbose          verbose output\n"
++"  -l,--log=FILE         logfile for kernel debug info\n"
+ "  -d,--debug            debugging output\n"
+ "";
+ 
+@@ -194,9 +195,9 @@ static int str2sig(char *str)
+ 	return -1;
+ }
+ 
+-inline static int restart(pid_t pid, int fd, unsigned long flags)
++inline static int restart(pid_t pid, int fd, unsigned long flags, int logfd)
+ {
+-	return syscall(__NR_restart, pid, fd, flags);
++	return syscall(__NR_restart, pid, fd, flags, logfd);
+ }
+ 
+ #define BUFSIZE  (4 * 4096)
+@@ -252,6 +253,8 @@ struct ckpt_ctx {
+ 	int pipe_out;
+ 	int pids_nr;
+ 
++	int logfd;
++
+ 	int pipe_child[2];	/* for children to report status */
+ 	int pipe_feed[2];	/* for feeder to provide input */
+ 
+@@ -352,6 +355,7 @@ struct args {
+ 	int copy_status;
+ 	char *freezer;
+ 	char *input;
++	char *logfile;
+ };
+ 
+ static void usage(char *str)
+@@ -390,10 +394,11 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ "no-wait",	no_argument,		NULL, 'W' },
+ 		{ "freezer",	required_argument,	NULL, 'F' },
+ 		{ "verbose",	no_argument,		NULL, 'v' },
++		{ "log",	required_argument,	NULL, 'l' },
+ 		{ "debug",	no_argument,		NULL, 'd' },
+ 		{ NULL,		0,			NULL, 0 }
+ 	};
+-	static char optc[] = "hdvpPwWF:r:i:";
++	static char optc[] = "hdvpPwWF:r:i:l:";
+ 
+ 	int sig;
+ 
+@@ -416,6 +421,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 5:  /* --inspect */
+ 			args->inspect = 1;
+ 			break;
++		case 'l':
++			args->logfile = optarg;
++			break;
+ 		case 'i':
+ 			args->input = optarg;
+ 			break;
+@@ -666,6 +674,15 @@ int main(int argc, char *argv[])
+ 			close(ret);
+ 	}
+ 
++	ctx.logfd = -1;
++	if (args.logfile) {
++		ctx.logfd = open(args.logfile, O_RDWR | O_CREAT, 0600);
++		if (ctx.logfd < 0) {
++			perror("open log file");
++			exit(1);
++		}
++	}
++
+ 	/* freezer preparation */
+ 	if (args.freezer && freezer_prepare(&ctx) < 0)
+ 		exit(1);
+@@ -678,7 +695,7 @@ int main(int argc, char *argv[])
+ 
+ 	/* self-restart ends here: */
+ 	if (args.self) {
+-		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF);
++		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, ctx.logfd);
+ 		/* reach here if restart(2) failed ! */
+ 		perror("restart");
+ 		exit(1);
+@@ -929,7 +946,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 	if (ctx->args->freezer)
+ 		flags |= RESTART_FROZEN;
+ 
+-	ret = restart(root_pid, STDIN_FILENO, flags);
++	ret = restart(root_pid, STDIN_FILENO, flags, ctx->logfd);
+ 
+ 	if (ret < 0) {
+ 		perror("restart failed");
+@@ -1590,7 +1607,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+ 
+ 	/* on success this doesn't return */
+ 	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
+-	ret = restart(0, STDIN_FILENO, flags);
++	ret = restart(0, STDIN_FILENO, flags, ctx->logfd);
+ 	if (ret < 0)
+ 		perror("task restore failed");
+ 	return ret;
+-- 
+1.6.1.1
