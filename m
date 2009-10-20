@@ -1,18 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
-Date: Tue, 20 Oct 2009 03:46:06 -0700
-Message-ID: <m1iqeauyvl.fsf__34060.0354284563$1256035871$gmane$org@fess.ebiederm.org>
-References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
-	<20091016194451.GA28706@us.ibm.com> <4ADCCD68.9030003@free.fr>
-	<4ADCDE7F.4090501@librato.com>
-	<20091020005125.GG27627@count0.beaverton.ibm.com>
-	<m1vdiad9jd.fsf@fess.ebiederm.org> <20091020040315.GA26632@us.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] pidns: Fix a leak in /proc inodes and dentries
+Date: Tue, 20 Oct 2009 13:58:34 +0200
+Message-ID: <4ADDA5EA.2060200@fr.ibm.com>
+References: <20091020041337.GA31623@us.ibm.com>
+	<m1r5sywebv.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091020040315.GA26632-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
-	message of "Mon\, 19 Oct 2009 21\:03\:15 -0700")
+In-Reply-To: <m1r5sywebv.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,68 +18,133 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: jack-+ZI9xUNit7I@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, andrea-Vyt77T80VFVWk0Htik3J/w@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+On 10/20/2009 12:27 PM, Eric W. Biederman wrote:
+> Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+> 
+>> Fix a leak in /proc dentries and inodes with pid namespaces.
+>>
+>> This fix reverts the commit 7766755a2f249e7e0. The leak was reported by
+>> Daniel Lezcano - see  http://lkml.org/lkml/2009/10/2/159.
+>>
+>> To summarize the thread, when container-init is terminated, it sets the
+>> PF_EXITING flag and then zaps all the other processes in the container.
+>> When those processes exit, they are expected to be reaped by the container-
+>> init and as a part of reaping, the container-init should flush any /proc
+>> dentries associated with the processes. But because the container-init is
+>> itself exiting and the following PF_EXITING check, the dentires are not
+>> flushed, resulting in leak in /proc inodes and dentries.
+> 
+> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-> Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-> | > clone3() seemed to be the leading contender from what I've read so far.
-> | > Does anyone still object to clone3() after reading the whole thread?
-> | 
-> | I object to what clone3() is.  The name is not particularly interesting.
-> | 
-> | The sanity checks for assigning pids are missing and there is a todo
-> | about it.  I am not comfortable with assigning pids to a new process
-> | in a pid namespace with other processes user space processes executing
-> | in it.
->
-> Could you clarify ? How is the call to alloc_pidmap() from clone3() different
-> from the call from clone() itself ?
+there's indeed a lot of progress. A run of our C/R testsuite (spawning and
+killing a few thousands pidns) used to leak ~700MB of slab, it's now gone. 
+thanks suka for spending time on this. 
 
-I think it is totally inappropriate to assign pids in a pid namespace
-where there are user space processes already running.
+but we still have some minor leaks. below are contents of /proc/slabinfo 
+before and after the run, you will notice that in some cases, dangling refs 
+of nsproxy and pid_namespace are still alive. I wonder if there are some 
+cases when this can happen, else I'll try to reproduce it.
 
-> | How we handle a clone extension depends critically on if we want to
-> | create a processes for restart in user space or kernel space.
-> | 
-> | Could some one give me or point me at a strong case for creating the
-> | processes for restart in user space?
->
-> There has been a lot of discussion on this with reference to the
-> Checkpoint/Restart patchset. See http://lkml.org/lkml/2009/4/13/401
-> for instance.
+Cheers,
 
-Just read it.  Thank you.  Now I am certain clone_with_pids() is
-not useful functionality to be exporting to userspace.
+C. 
 
-The only real argument in favor of doing this in user space is greater
-flexibility.  I can see checkpointing/restoring a single thread process
-without a pid namespace.  Anything more and you are just asking for
-trouble.
+* slabinfo.qemu (i686)
 
-A design that weakens security.  Increases maintenance costs.  All for
-an unreliable result seems like a bad one to me.
+pid_namespace          0      0     64   59    1 
+nsproxy                0      0     48   78    1 
+proc_inode_cache     193    193   4096    1    1 
+dentry              6734   6734   4096    1    1 
 
-> | The pid assignment code is currently ugly.  I asked that we just pass
-> | in the min max pid pids that already exist into the core pid
-> | assignment function and a constrained min/max that only admits a
-> | single pid when we are allocating a struct pid for restart.  That was
-> | not done and now we have a weird abortion with unnecessary special cases.
->
-> I did post a version of the patch attemptint to implement that. As
-> pointed out in:
->
-> 	http://lkml.org/lkml/2009/8/17/445
->
-> we would need more checks in alloc_pidmap() to cover cases like min or max
-> being invalid or min being greater than max or max being greater than pid_max
-> etc. Those checks also made the code ugly (imo).
+pid_2                  0      0     88   44    1 
+pid_namespace          0      0     64   59    1 
+nsproxy                0      0     48   78    1 
+proc_inode_cache       4      4   4096    1    1 
+dentry             36112  36112   4096    1    1 
 
-If you need more checks you are doing it wrong.  The code already has min
-and max values, and even a start value.  I was just strongly suggesting
-we generalize where we get the values from, and then we have not special
-cases. 
+* slabinfo.a13.test.meiosys.com (ppc64)
 
-Eric
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     506    513   4096    1    1 
+dentry              6269   6272    280   14    1 
+
+pid_2                  1     28    136   28    1 
+pid_namespace          1      1   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     486    498   4096    1    1 
+dentry             49051  49448    280   14    1 
+
+
+* slabinfo.f13.test.meiosys.com (ppc64)
+
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     248    263   4096    1    1 
+dentry              7359   7364    280   14    1 
+
+pid_2                  0      0    136   28    1 
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     240    240   4096    1    1 
+dentry             50253  50666    280   14    1 
+
+
+* slabinfo.r3-23.test.meiosys.com (x86_64)
+
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     479    495   4096    1    1 
+dentry              5614   5614    280   14    1 
+
+pid_2                  1     28    136   28    1 
+pid_namespace          1      1   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     576    576   4096    1    1 
+dentry             52202  52444    280   14    1 
+
+
+* slabinfo.r3-24.test.meiosys.com (x86_64)
+
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     464    486   4096    1    1 
+dentry              5698   5698    280   14    1 
+
+pid_2                  0      0    136   28    1 
+pid_namespace          0      0   4096    1    1 
+nsproxy                0      0     72   53    1 
+proc_inode_cache     448    448   4096    1    1 
+dentry             51845  52164    280   14    1 
+
+
+* slabinfo.r3-26.test.meiosys.com (i686)
+
+pid_namespace          0      0     64   59    1 
+nsproxy                0      0     48   78    1 
+proc_inode_cache     449    466   4096    1    1 
+dentry              5633   5633   4096    1    1 
+
+pid_2                  0      0     88   44    1 
+pid_namespace          0      0     64   59    1 
+nsproxy                0      0     48   78    1 
+proc_inode_cache     448    448   4096    1    1 
+dentry             52039  52039   4096    1    1 
+
+
+* slabinfo.linuz12 (s390x)
+
+pid_namespace          0      0   2112    3    2 
+nsproxy                0      0     48   77    1 
+proc_inode_cache     725    798    640    6    1 
+dentry              4340   4340    192   20    1 
+
+pid_2                  1     30    128   30    1 
+pid_namespace          1      3   2112    3    2 
+nsproxy                1     77     48   77    1 
+proc_inode_cache      74    180    640    6    1 
+dentry             34511  36820    192   20    1 
