@@ -1,14 +1,20 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] pidns: Fix a leak in /proc inodes and dentries
-Date: Tue, 20 Oct 2009 16:09:26 +0400
-Message-ID: <20091020120926.GA28909__39466.3147199482$1256041128$gmane$org@x200>
-References: <20091020041337.GA31623@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Tue, 20 Oct 2009 11:33:29 -0700
+Message-ID: <20091020183329.GB22646__45539.8072292612$1256063608$gmane$org@us.ibm.com>
+References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
+	<20091016194451.GA28706@us.ibm.com> <4ADCCD68.9030003@free.fr>
+	<4ADCDE7F.4090501@librato.com>
+	<20091020005125.GG27627@count0.beaverton.ibm.com>
+	<m1vdiad9jd.fsf@fess.ebiederm.org>
+	<20091020040315.GA26632@us.ibm.com>
+	<m1iqeauyvl.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091020041337.GA31623-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m1iqeauyvl.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,19 +24,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: jack-+ZI9xUNit7I@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, andrea-Vyt77T80VFVWk0Htik3J/w@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Oct 19, 2009 at 09:13:37PM -0700, Sukadev Bhattiprolu wrote:
-> --- linux-2.6.orig/fs/proc/base.c
-> +++ linux-2.6/fs/proc/base.c
-> @@ -2580,8 +2580,7 @@ static void proc_flush_task_mnt(struct v
->  	name.len = snprintf(buf, sizeof(buf), "%d", pid);
->  	dentry = d_hash_and_lookup(mnt->mnt_root, &name);
->  	if (dentry) {
-> -		if (!(current->flags & PF_EXITING))
-> -			shrink_dcache_parent(dentry);
-> +		shrink_dcache_parent(dentry);
+Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+| > Could you clarify ? How is the call to alloc_pidmap() from clone3() different
+| > from the call from clone() itself ?
+| 
+| I think it is totally inappropriate to assign pids in a pid namespace
+| where there are user space processes already running.
 
-What to do with original deadlock?
+Honestly, I don't understand why it is inappropriate or how this differs
+from normal clone() - which also assigns pids in own and ancestor pid
+namespaces.
+
+| 
+| > | How we handle a clone extension depends critically on if we want to
+| > | create a processes for restart in user space or kernel space.
+| > | 
+| > | Could some one give me or point me at a strong case for creating the
+| > | processes for restart in user space?
+| >
+| > There has been a lot of discussion on this with reference to the
+| > Checkpoint/Restart patchset. See http://lkml.org/lkml/2009/4/13/401
+| > for instance.
+| 
+| Just read it.  Thank you.
+
+Sorry. I should have mentioned the reason here. (Like you mention below),
+flexibility is the main reason.
+
+| Now I am certain clone_with_pids() is not useful functionality to be
+| exporting to userspace.
+| 
+| The only real argument in favor of doing this in user space is greater
+| flexibility.  I can see checkpointing/restoring a single thread process
+| without a pid namespace.  Anything more and you are just asking for
+| trouble.
+| 
+| A design that weakens security.  Increases maintenance costs.  All for
+| an unreliable result seems like a bad one to me.
+| 
+| > | The pid assignment code is currently ugly.  I asked that we just pass
+| > | in the min max pid pids that already exist into the core pid
+| > | assignment function and a constrained min/max that only admits a
+| > | single pid when we are allocating a struct pid for restart.  That was
+| > | not done and now we have a weird abortion with unnecessary special cases.
+| >
+| > I did post a version of the patch attemptint to implement that. As
+| > pointed out in:
+| >
+| > 	http://lkml.org/lkml/2009/8/17/445
+| >
+| > we would need more checks in alloc_pidmap() to cover cases like min or max
+| > being invalid or min being greater than max or max being greater than pid_max
+| > etc. Those checks also made the code ugly (imo).
+| 
+| If you need more checks you are doing it wrong.  The code already has min
+| and max values, and even a start value.  I was just strongly suggesting
+| we generalize where we get the values from, and then we have not special
+| cases. 
+
+Well, if alloc_pidmap(pid_ns, min, max) does not have to check the
+parameters passed in (ie assumes that callers pass it in correctly)
+it might be simple. But when user specifies the pid, the 
+
+	min == max == user's target pid
+
+so we will need to check the values either here or in callers.
+
+Yes the code already has values and a start value. But these are
+controlled by alloc_pidmap() and not passed in from the user space.
+
+alloc_pidmap() needs to assign the next available pid or a specific
+target pid.  Generalizing it to alloc a pid in a range seemed be a
+bit of an over kill for currently known usages.
+
+I will post a version of the patch outside this patchset with min
+and max parameters and we can see if it can be optimized/beautified.
+
+Sukadev
