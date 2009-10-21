@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] epoll: Add support for restoring many epoll items
-Date: Wed, 21 Oct 2009 10:09:02 -0500
-Message-ID: <20091021150902.GB13327@us.ibm.com>
-References: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc@us.ibm.com>
-	<8e4344b801150b95cd54f2d09b660525601de256.1255971848.git.matthltc@us.ibm.com>
+Subject: Re: [PATCH 1/4] Record and restore skb header marks
+Date: Wed, 21 Oct 2009 10:52:02 -0500
+Message-ID: <20091021155201.GA15402@us.ibm.com>
+References: <1256072803-3518-1-git-send-email-danms@us.ibm.com>
+	<1256072803-3518-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <8e4344b801150b95cd54f2d09b660525601de256.1255971848.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1256072803-3518-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,111 +19,115 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This completes the work necessary to make checkpoint/restart of
-> thousands of epoll items more reliable when higher order kmallocs
-> would fail. We grab a piece of memory suitable to store a "chunk"
-> of items for input. Read the input one chunk at a time and add
-> epoll items for each item in the chunk.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Save this information when we checkpoint an skb and provide a mechanism
+> to restore that information on restart.  This will be used in the
+> subsequent INET patch.
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  fs/eventpoll.c |   58 +++++++++++++++++++++++++++++++++++--------------------
->  1 files changed, 37 insertions(+), 21 deletions(-)
+>  include/linux/checkpoint.h     |    2 ++
+>  include/linux/checkpoint_hdr.h |    7 +++++++
+>  net/checkpoint.c               |   33 +++++++++++++++++++++++++++++++++
+>  3 files changed, 42 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-> index 2506b40..c261263 100644
-> --- a/fs/eventpoll.c
-> +++ b/fs/eventpoll.c
-> @@ -1594,7 +1594,7 @@ static int ep_items_restore(void *data)
->  	struct ckpt_eventpoll_item *items = NULL;
->  	struct eventpoll *ep;
->  	struct file *epfile = NULL;
-> -	int ret, num_items, i = 0;
-> +	int ret, num_items, nchunk;
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index 4b61378..1da0b04 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -100,6 +100,8 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
+>  			      struct socket *socket,
+>  			      struct sockaddr *loc, unsigned *loc_len,
+>  			      struct sockaddr *rem, unsigned *rem_len);
+> +void sock_restore_header_info(struct sk_buff *skb,
+> +			      struct ckpt_hdr_socket_buffer *h);
 > 
->  	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_EPOLL_ITEMS);
->  	if (IS_ERR(h))
-> @@ -1611,34 +1611,50 @@ static int ep_items_restore(void *data)
->  	if (!num_items)
->  		return 0;
+>  /* ckpt kflags */
+>  #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index ca2500d..3e6cab1 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -542,8 +542,15 @@ struct ckpt_hdr_socket_queue {
 > 
-> -	ret = ckpt_read_payload(ctx, (void**)&items, num_items*sizeof(*items),
-> -				CKPT_HDR_BUFFER);
-> +	ret = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
-> +	if (ret < 0)
-> +		return ret;
-> +	/* Make sure the items match the size we expect */
-> +	if (num_items != (ret / sizeof(*items)))
-> +		return -EINVAL;
+>  struct ckpt_hdr_socket_buffer {
+>  	struct ckpt_hdr h;
+> +	__u64 mac_len;
+> +	__u64 hdr_len;
+> +	__u64 transport_header;
+> +	__u64 network_header;
+> +	__u64 mac_header;
+>  	__s32 sk_objref;
+>  	__s32 pr_objref;
+> +	__u16 protocol;
+> +	__u8 cb[48];
+>  };
+> 
+>  #define CKPT_UNIX_LINKED 1
+> diff --git a/net/checkpoint.c b/net/checkpoint.c
+> index dd23efd..5ed2724 100644
+> --- a/net/checkpoint.c
+> +++ b/net/checkpoint.c
+> @@ -88,6 +88,38 @@ static int sock_copy_buffers(struct sk_buff_head *from,
+>  	return -EAGAIN;
+>  }
+> 
+> +static void sock_record_header_info(struct sk_buff *skb,
+> +				    struct ckpt_hdr_socket_buffer *h)
+> +{
 > +
-> +	nchunk = num_items;
-> +	do {
-> +		items = kzalloc(sizeof(*items)*nchunk, GFP_KERNEL);
-> +		if (items)
-> +			break;
-> +		nchunk = nchunk/2;
-> +	} while (nchunk > 0);
->  	if (!items)
->  		return -ENOMEM;
-> 
-> -	/* Make sure the items match the size we expect */
-> -	if (num_items != (ret / sizeof(*items))) {
-> -		ret = -EINVAL;
-> -		goto out;
-> -	}
-> -
->  	ep = epfile->private_data;
-> 
-> -	/* Restore the epoll items/watches */
-> -	for (ret = 0, i = 0; !ret && i < num_items; i++) {
-> -		struct epoll_event epev;
-> -		struct file *tfile;
-> +	while (num_items > 0) {
-> +		int n = min(num_items, nchunk);
-> +		int j;
-> 
-> -		tfile = ckpt_obj_fetch(ctx, items[i].file_objref,
-> -				       CKPT_OBJ_FILE);
-> -		if (IS_ERR(tfile)) {
-> -			ret = PTR_ERR(tfile);
-> +		ret = ckpt_kread(ctx, items, n*sizeof(*items));
-> +		if (ret < 0)
->  			break;
+> +	h->mac_len = skb->mac_len;
+> +	h->hdr_len = skb->hdr_len;
 > +
-> +		/* Restore the epoll items/watches */
-> +		for (j = 0; !ret && j < n; j++) {
-> +			struct epoll_event epev;
-> +			struct file *tfile;
+> +#ifdef NET_SKBUFF_DATA_USES_OFFSET
+> +	h->transport_header = skb->transport_hdr;
+> +	h->network_header = skb->network_header;
+> +	h->mac_header = skb->mac_header;
+> +#else
+> +	h->transport_header = skb->transport_header - skb->head;
+> +	h->network_header = skb->network_header - skb->head;
+> +	h->mac_header = skb->mac_header - skb->head;
+> +#endif
 > +
-> +			tfile = ckpt_obj_fetch(ctx, items[j].file_objref,
-> +					       CKPT_OBJ_FILE);
-> +			if (IS_ERR(tfile)) {
-> +				ret = PTR_ERR(tfile);
-> +				goto out;
-> +			}
-> +			epev.events = items[j].events;
-> +			epev.data = items[j].data;
-> +			ret = do_epoll_ctl(EPOLL_CTL_ADD, items[j].fd,
-> +					   epfile, tfile, &epev);
->  		}
-> -		epev.events = items[i].events;
-> -		epev.data = items[i].data;
-> -		ret = do_epoll_ctl(EPOLL_CTL_ADD, items[i].fd,
-> -				   epfile, tfile, &epev);
-> +		num_items -= n;
->  	}
->  out:
->  	kfree(items);
+> +	memcpy(h->cb, skb->cb, sizeof(skb->cb));
+> +}
+> +
+> +void sock_restore_header_info(struct sk_buff *skb,
+> +			      struct ckpt_hdr_socket_buffer *h)
+> +{
+> +	skb->mac_len = h->mac_len;
+> +	skb->hdr_len = h->hdr_len;
+> +	skb_set_transport_header(skb, h->transport_header);
+> +	skb_set_network_header(skb, h->network_header);
+> +	skb_set_mac_header(skb, h->mac_header);
+
+Should you verify that each of these new headers is located
+inside the skb?
+
+> +
+> +	memcpy(skb->cb, h->cb, sizeof(skb->cb));
+
+verify that (h->h.len - (h->cb - h->h)) > sizeof(skb->cb))  ?
+
+> +}
+> +
+>  static int __sock_write_buffers(struct ckpt_ctx *ctx,
+>  				struct sk_buff_head *queue,
+>  				int dst_objref)
+> @@ -123,6 +155,7 @@ static int __sock_write_buffers(struct ckpt_ctx *ctx,
+>  			goto end;
+>  		h->sk_objref = ret;
+>  		h->pr_objref = dst_objref;
+> +		sock_record_header_info(skb, h);
+> 
+>  		ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+>  		if (ret < 0)
 > -- 
-> 1.5.6.3
+> 1.6.2.5
 > 
 > _______________________________________________
 > Containers mailing list
