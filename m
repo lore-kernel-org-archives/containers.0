@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: LXC PIDs, UIDs, and halt
-Date: Mon, 19 Oct 2009 17:24:45 -0500
-Message-ID: <20091019222445.GA16774@us.ibm.com>
-References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
-	<20091012150355.GA5783@us.ibm.com>
-	<68e6eac60910191217s5d295e54ta6b0c528dce9ce55@mail.gmail.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 2/4] cr: add generic LSM c/r support (v6)
+Date: Tue, 20 Oct 2009 21:03:38 -0400
+Message-ID: <4ADE5DEA.2000606@librato.com>
+References: <20091019144315.GA30535@us.ibm.com>
+	<20091019144341.GA30566@us.ibm.com> <4ADCAC5B.9080205@librato.com>
+	<20091019190227.GA7201@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <68e6eac60910191217s5d295e54ta6b0c528dce9ce55-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20091019190227.GA7201-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,70 +19,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrot=
-e:
-> > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> >> Hi all,
-> >>
-> >> I'm new to LXC but have been playing around with it some.
-> >>
-> >> I ran into a few issues:
-> >> 1) PIDs for container processes show up on the controlling host (ps, t=
-op,
-> >> etc). In OpenVZ there is a way to hide them.
-> >
-> > Hmm, yes, it's basically by design, and 'fixing' it will sully the
-> > clean hierarchical pidns design.
-> >
-> > The easiest way to emulate that would be to have the host, during
-> > boot, have init split off two child pid namespaces - one for most of the
-> > host applications like the xserver, host's sshd, etc, and the other for
-> > spawning off containers. =A0Then management of pid namespaces by the
-> > host has to be done either from the init pid-ns, or from the pid-ns
-> > which spawns off containers.
-> <snip>
-> >> 3) A "kill -9 -1" run from a user in the controlling host kills all
-> >> processes in all containers where the owner of the process has the sam=
-e UID
-> >> as the UID of the outside user. (At least the reverse is not the case).
-> >
-> > You can prevent this from happening using selinux or smack.
-> >
-> > Properly fixing this requires more work on the user namespace. =A0I am =
-(as
-> > always) hoping to get time to work on that soon.
-> >
-> <snip>
-> =
 
-> Well, I more or less solved #1 and #3 for myself by launching my
-> gnome-session with lxc-execute.
-> =
 
-> Is there anyway to readily know the id of the PID namespace one is in?
-> keychain has some issues that I could correct if I could get at the
-> PID namespace id.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>>> 	oct 19: At checkpoint, we insert the void* security into the
+>>> 		objhash.  The first time that we do so, we next write out
+>>> 		the string representation of the context to the checkpoint
+>>> 		image, along with the value of the objref for the void*
+>>> 		security, and insert that into the objhash.  Then at
+>>> 		restart, when we read a LSM context, we read the objref
+>>> 		which the void* security had at checkpoint, and we then
+>>> 		insert the string context with that objref as well.
+>> I hoped to see similar comment inlined in the code.
+> 
+> If we're happy with this approach, then I will add good comments above
+> security_checkpoint_obj and security_restore_obj, and above the objhash
+> entries.
 
-No, because pid namespaces don't actually have an id.
+[...]
 
-What exactly are the keychain issues?  So far the keychain/namespacing
-handling is very basic (new user-namespace =3D new set of keyrings), bc
-there really weren't any user requirements to draw on yet.
+>>> +/**
+>>> + * security_checkpoint_obj - if first checkpoint of this void* security,
+>>> + * then 1. ask the LSM for a string representing the context, 2. checkpoint
+>>> + * that string
+>>> + * @ctx: the checkpoint context
+>>> + * @security: the void* security being checkpointed
+>>> + * @sectype: indicates the type of object, because LSMs can (and do) store
+>>> + * @secref: We return the objref here
+>>> + * different types of data for different types of objects.
+>>> + *
+>>> + * Returns the objref of the checkpointed ckpt_lsm_string representing the
+>>> + * context, or -error on error.
+>>> + *
+>>> + * This is only used at checkpoint of course.
+>>> + */
+>>> +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
+>>> +				int sectype, int *secref)
+>> This function returns 0 for success or a negative error. It should
+>> return the @secref instead of passing it by reference (see your
+>> description of the return value above !)
+>>
+>> [...]
+> 
+> Yes the comment is out of date but the API is imo an improvement.
+> Note that SECURITY_CTX_NONE, -1, is a meaningful secref, and at
+> the sametime -EPERM, -1, is conceivably a valid error code (though
+> at the moment no lsm will return it).
+> 
+> So I think overloading the secref with error codes is wrong here.
 
-> I guess expecting apps like keychain to be namespace aware would be
-> like expecting them to be "multiverse" aware.
-> =
+How about #define SECURITY_CTX_NONE 0 ?
+it isn't a valid objref anyway.
 
-> I know I can pass it in through lxc-execute via an environment
-> variable, but I wondered if there was a more standard way.
+[...]
 
-Well if there is a clean and safe way to do it (whatever 'it' is) through
-environment variable all the better, then we can avoid kernel changes.
-But if you need kernel help pls let us know.
-
--serge
+Oren.
