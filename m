@@ -1,18 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
-Date: Tue, 20 Oct 2009 09:09:17 -0500
-Message-ID: <20091020140917.GA2145__32589.9476687939$1256085650$gmane$org@us.ibm.com>
-References: <20091013044925.GA28181@us.ibm.com> <4AD8C7E4.9000903@free.fr>
-	<20091016194451.GA28706@us.ibm.com> <4ADCCD68.9030003@free.fr>
-	<4ADCDE7F.4090501@librato.com>
-	<20091020005125.GG27627@count0.beaverton.ibm.com>
-	<m1vdiad9jd.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH 1/3] Checkpoint/restart epoll sets
+Date: Tue, 20 Oct 2009 19:31:28 -0500
+Message-ID: <20091021003128.GA23721@us.ibm.com>
+References: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1vdiad9jd.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,92 +18,185 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> @@ -1226,35 +1242,18 @@ SYSCALL_DEFINE1(epoll_create, int, size)
+>   * the eventpoll file that enables the insertion/removal/change of
+>   * file descriptors inside the interest set.
+>   */
+> -SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+> -		struct epoll_event __user *, event)
+> +int do_epoll_ctl(int op, int fd,
+> +		 struct file *file, struct file *tfile,
+> +		 struct epoll_event *epds)
+>  {
+>  	int error;
+> -	struct file *file, *tfile;
+>  	struct eventpoll *ep;
+>  	struct epitem *epi;
+> -	struct epoll_event epds;
+> -
+> -	error = -EFAULT;
+> -	if (ep_op_has_event(op) &&
+> -	    copy_from_user(&epds, event, sizeof(struct epoll_event)))
+> -		goto error_return;
+> -
+> -	/* Get the "struct file *" for the eventpoll file */
+> -	error = -EBADF;
+> -	file = fget(epfd);
+> -	if (!file)
+> -		goto error_return;
+> -
+> -	/* Get the "struct file *" for the target file */
+> -	tfile = fget(fd);
+> -	if (!tfile)
+> -		goto error_fput;
 > 
-> > On Mon, Oct 19, 2009 at 05:47:43PM -0400, Oren Laadan wrote:
-> >> 
-> >> 
-> >> Daniel Lezcano wrote:
-> >> > Sukadev Bhattiprolu wrote:
-> >> >> Daniel Lezcano [daniel.lezcano-GANU6spQydw@public.gmane.org] wrote:
-> >> >>   
-> >> >>> Sukadev Bhattiprolu wrote:
-> >> >>>     
-> >> >>>> Subject: [RFC][v8][PATCH 0/10] Implement clone3() system call
-> >> >>>>
-> >
-> > <snip>
-> >
-> >> > Another point. It's another way to extend the exhausted clone  flags as 
-> >> > the cloneat can be called as a compatibility way, with cloneat(getpid(), 
-> >> > 0, ... )
-> >> 
-> >> Which is what the proposed new clone_....() does.
-> >
-> > Just to be clear -- Suka's proposing to extend the clone flags. However I
-> > don't believe reusing the "pid" parameters as Daniel seemed to suggest
-> > was ever part of Suka's proposed changes.
-> >
-> > <snip>
-> >
-> >> > I don't really see a difference between sys_restart(pid_t pid , int fd, 
-> >> > long flags) where pid_t is the topmost in the hierarchy, fd is a file 
-> >> > descriptor to a structure "pid_t * + struct clone_args *" and flags is 
-> >> > "PROCTREE".
-> >
-> > I think the difference has to do with keeping the code maintainable.
-> >
-> > Clone creates the process so it's already involved in allocating and
-> > assigning pids to the new task. Switching pids at sys_restart() would 
-> > add another point in the code where pids are allocated and assigned.
-> > This suggests we may have to worry about introducing new obscure races
-> > for anyone who's working on the pid allocator to be careful of. At
-> > least when all the code is "localized" to the clone paths we can be
-> > reasonably certain of proper maintenance.
-> >
-> > <snip>
-> >
-> >> I really really really hope we can settle down on *a* name,
-> >> *any* name, and move forward. Amen.
-> >
-> > clone3() seemed to be the leading contender from what I've read so far.
-> > Does anyone still object to clone3() after reading the whole thread?
+>  	/* The target file descriptor must support poll */
+>  	error = -EPERM;
+>  	if (!tfile->f_op || !tfile->f_op->poll)
+> -		goto error_tgt_fput;
+> +		return error;
 > 
-> I object to what clone3() is.  The name is not particularly interesting.
+>  	/*
+>  	 * We have to check that the file structure underneath the file descriptor
+> @@ -1263,7 +1262,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+>  	 */
+>  	error = -EINVAL;
+>  	if (file == tfile || !is_file_epoll(file))
+> -		goto error_tgt_fput;
+> +		return error;
 > 
-> The sanity checks for assigning pids are missing and there is a todo
-> about it.  I am not comfortable with assigning pids to a new process
-> in a pid namespace with other processes user space processes executing
-> in it.
+>  	/*
+>  	 * At this point it is safe to assume that the "private_data" contains
+> @@ -1284,8 +1283,8 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+>  	switch (op) {
+>  	case EPOLL_CTL_ADD:
+>  		if (!epi) {
+> -			epds.events |= POLLERR | POLLHUP;
+> -			error = ep_insert(ep, &epds, tfile, fd);
+> +			epds->events |= POLLERR | POLLHUP;
+> +			error = ep_insert(ep, epds, tfile, fd);
+>  		} else
+>  			error = -EEXIST;
+>  		break;
+> @@ -1297,15 +1296,46 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+>  		break;
+>  	case EPOLL_CTL_MOD:
+>  		if (epi) {
+> -			epds.events |= POLLERR | POLLHUP;
+> -			error = ep_modify(ep, epi, &epds);
+> +			epds->events |= POLLERR | POLLHUP;
+> +			error = ep_modify(ep, epi, epds);
+>  		} else
+>  			error = -ENOENT;
+>  		break;
+>  	}
+>  	mutex_unlock(&ep->mtx);
 > 
-> How we handle a clone extension depends critically on if we want to
-> create a processes for restart in user space or kernel space.
-> 
-> Could some one give me or point me at a strong case for creating the
-> processes for restart in user space?
-> 
-> The pid assignment code is currently ugly.  I asked that we just pass
-> in the min max pid pids that already exist into the core pid
-> assignment function and a constrained min/max that only admits a
-> single pid when we are allocating a struct pid for restart.  That was
-> not done and now we have a weird abortion with unnecessary special cases.
+> -error_tgt_fput:
+> +	return error;
+> +}
+> +
+> +/*
+> + * The following function implements the controller interface for
+> + * the eventpoll file that enables the insertion/removal/change of
+> + * file descriptors inside the interest set.
+> + */
+> +SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+> +		struct epoll_event __user *, event)
+> +{
+> +	int error;
+> +	struct file *file, *tfile;
+> +	struct epoll_event epds;
+> +
+> +	error = -EFAULT;
+> +	if (ep_op_has_event(op) &&
+> +	    copy_from_user(&epds, event, sizeof(struct epoll_event)))
+> +		goto error_return;
+> +
+> +	/* Get the "struct file *" for the eventpoll file */
+> +	error = -EBADF;
+> +	file = fget(epfd);
+> +	if (!file)
+> +		goto error_return;
+> +
+> +	/* Get the "struct file *" for the target file */
+> +	tfile = fget(fd);
+> +	if (!tfile)
+> +		goto error_fput;
+> +
+> +	error = do_epoll_ctl(op, fd, file, tfile, &epds);
+>  	fput(tfile);
+>  error_fput:
+>  	fput(file);
 
-I asked you (I believe twice) to clarify how on earth you meant for
-that to be done for hierarchical pid namespaces (a task being restored
-which needs two of it's 4 pids specified), and you did not reply.
+(Just figured I'd do a sanity check of this code)  looks ok to me
 
-Did you mean for it to be done through procfiles?  If so, does the
-task have to keep multiple /proc mounts around, one for each
-pidns hierarchy in which it needs to specify a pid?  Or did you have
-another idea in mind?  A single procfile into which multiple pids can
-be specified in a list?  A completely different interface?
+...
 
-Or do you mean for this to be done only from the kernel?
+> +struct file* ep_file_restore(struct ckpt_ctx *ctx,
+> +			     struct ckpt_hdr_file *h)
+> +{
+> +	struct file *epfile;
+> +	int epfd, ret;
+> +
+> +	if (h->h.type != CKPT_HDR_FILE ||
+> +	    h->h.len  != sizeof(*h) ||
+> +	    h->f_type != CKPT_FILE_EPOLL)
+> +		return ERR_PTR(-EINVAL);
+> +
+> +	epfd = sys_epoll_create1(h->f_flags & EPOLL_CLOEXEC);
+> +	if (epfd < 0)
+> +		return ERR_PTR(epfd);
+> +	epfile = fget(epfd);
+> +	sys_close(epfd); /* harmless even if an error occured */
+> +	BUG_ON(!epfile);
 
-thanks,
+Would perhaps return ERR_PTR(-ENOENT) be nicer?  (And maybe safer - I'm
+not quite clear on under which arches BUG_ON does nothing).
+
+> +
+> +	/*
+> +	 * Needed before we can properly restore the watches and enforce the
+> +	 * limit on watch numbers.
+> +	 */
+> +	ret = restore_file_common(ctx, epfile, h);
+> +	if (ret < 0)
+> +		goto fput_out;
+> +
+> +	/*
+> +	 * Defer restoring the epoll items until the file table is
+> +	 * fully restored. Ensures that valid file objrefs will resolve.
+> +	 */
+> +	ret = deferqueue_add_ptr(ctx->files_deferq, ctx, ep_items_restore, NULL);
+> +	if (ret < 0) {
+> +fput_out:
+> +		fput(epfile);
+> +		epfile = ERR_PTR(ret);
+> +	}
+> +	return epfile;
+> +}
+> +
+> +#endif /* CONFIG_CHECKPOINT */
+> +
+>  static int __init eventpoll_init(void)
+>  {
+>  	struct sysinfo si;
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index ca2500d..1a3edab 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -119,6 +119,8 @@ enum {
+>  #define CKPT_HDR_TTY CKPT_HDR_TTY
+>  	CKPT_HDR_TTY_LDISC,
+>  #define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
+> +	CKPT_HDR_EPOLL_ITEMS = 391, /* Follows file-table */
+
+What is the comment supposed to mean (other than that such
+comments inevitably become stale :)?
+
 -serge
