@@ -1,15 +1,14 @@
-From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+From: Arnd Bergmann <arndbergmann-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Subject: Re: [RFC][v8][PATCH 10/10]: Document clone3() syscall
-Date: Mon, 19 Oct 2009 23:36:36 +0200
-Message-ID: <20091019213636.GB1482__2598.47898637435$1256111871$gmane$org@ucw.cz>
+Date: Wed, 21 Oct 2009 10:37:38 +0200
+Message-ID: <200910211037.38413.arnd__39967.8071881228$1256114346$gmane$org@arndb.de>
 References: <20091013044925.GA28181@us.ibm.com>
-	<20091013045556.GJ28435@us.ibm.com>
+	<20091013045556.GJ28435@us.ibm.com> <20091019213636.GB1482@ucw.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091013045556.GJ28435-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091019213636.GB1482-+ZI9xUNit7I@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,87 +18,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi!
+> 
+> > +struct clone_struct {
+> > +	u64 flags;
+> > +	u64 child_stack;
+> 
+> u64 seems wrong  on 32 bit platforms. ulong?
 
-> This gives a brief overview of the clone3() system call.  We should
+That would make it incompatible between 64 bit kernels and
+32 bit user space, requiring a wrapper. Better leave it at u64.
 
-Thanks!
+> > +	If a pid in the @pids list is 0, the kernel will assign the next
+> > +	available pid in the pid namespace, for the process.
+> > +
+> > +	If a pid in the @pids list is non-zero, the kernel tries to assign
+> > +	the specified pid in that namespace.  If that pid is already in use
+> > +	by another process, the system call fails with -EBUSY.
+> ...
+> > +	On failure, clone3() returns -1 and sets 'errno' to one of following
+> > +	values (the child process is not created).
+> 
+> Inconsistent with above. Syscalls really return -ERRCODE, errno is
+> glibc magic.
 
-> eventually describe more details in existing clone(2) man page or in
-> a new man page.
+Quite the opposite is true.
 
-M. Kerrisk (see MAINTAINERS) maintains man pages...
+The man page describes what the user space sees, which is errno. Returning
+-ERRCODE to libc from the kernel is part of the architecture specific
+kernel ABI and should not be documented in this place but in the architecture
+documentation.
 
-> Changelog[v8]:
-> 	- clone2() is already in use in IA64. Rename syscall to clone3()
-...
-> Index: linux-2.6/Documentation/clone2
-> ===================================================================
-> --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-> +++ linux-2.6/Documentation/clone2	2009-10-12 19:54:38.000000000 -0700
+> > +	pid_t pids[] = { 77, 99 };
+> > +	struct clone_struct cs;
+> > +
+> > +	cs.flags = (u64) SIGCHLD;
+> > +	cs.child_stack = (u64) setup_child_stack();
+> > +	cs.nr_pids = 2;
+> > +	cs.parent_tid = 0LL;
+> > +	cs.child_tid = 0LL;
+> > +
+> > +	rc = syscall(__NR_clone3, &cs, pids);
+> 
+> Hmm, is there reason why pids are not at the end of struct
+> clone_struct? Passing most parameters in special structure, then pids
+> separately is strange...
 
-clone3?
+I suggested doing that, it's a lot easier to handle fixed length data
+structures than an array at the end.
 
-> +struct clone_struct {
-> +	u64 flags;
-> +	u64 child_stack;
-
-u64 seems wrong  on 32 bit platforms. ulong?
-
-> +	u32 nr_pids;
-
-So nr_pids is either 1 or 2?
-
-> +	u32 reserved1;
-> +	u64 parent_tid;
-> +	u64 child_tid;
-> +	u64 reserved2;
-> +};
-> +
-
-
-> +	See CLONE_NEWPID section of clone(2) man page for details about pid
-> +	namespaces.
-> +
-> +	The order pids in @pids corresponds to the nesting order of pid-
-> +	namespaces, with @pids[0] corresponding to the init_pid_ns.
-
-Ok, so I'm confused.
-
-> +	If a pid in the @pids list is 0, the kernel will assign the next
-> +	available pid in the pid namespace, for the process.
-> +
-> +	If a pid in the @pids list is non-zero, the kernel tries to assign
-> +	the specified pid in that namespace.  If that pid is already in use
-> +	by another process, the system call fails with -EBUSY.
-...
-> +	On failure, clone3() returns -1 and sets 'errno' to one of following
-> +	values (the child process is not created).
-
-Inconsistent with above. Syscalls really return -ERRCODE, errno is
-glibc magic.
-
-> +Example:
-> +
-> +	pid_t pids[] = { 77, 99 };
-> +	struct clone_struct cs;
-> +
-> +	cs.flags = (u64) SIGCHLD;
-> +	cs.child_stack = (u64) setup_child_stack();
-> +	cs.nr_pids = 2;
-> +	cs.parent_tid = 0LL;
-> +	cs.child_tid = 0LL;
-> +
-> +	rc = syscall(__NR_clone3, &cs, pids);
-
-Hmm, is there reason why pids are not at the end of struct
-clone_struct? Passing most parameters in special structure, then pids
-separately is strange...
-
--- 
-(english) http://www.livejournal.com/~pavelmachek
-(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
+	Arnd <><
