@@ -1,22 +1,15 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
-Date: Thu, 22 Oct 2009 07:03:28 +0900
-Message-ID: <4ADF8530.7070703__42347.4611751319$1256164070$gmane$org@zytor.com>
-References: <20091013044925.GA28181@us.ibm.com>
-	<20091013045439.GI28435@us.ibm.com>
-	<20091016042041.GA7220@us.ibm.com>
-	<cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0@mail.gmail.com>
-	<20091016180631.GA31036@us.ibm.com>
-	<20091019174405.GE27627@count0.beaverton.ibm.com>
-	<4ADCDAA8.5080408@zytor.com>
-	<20091019235012.GF27627@count0.beaverton.ibm.com>
-	<cfd18e0f0910202126w1ebfa2e2u2ecbaa23b198d100@mail.gmail.com>
-	<4ADF06B7.50508@zytor.com> <20091021194440.GA1283@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH user-cr] Allow for logfile for kernel debug messages	(v2)
+Date: Wed, 21 Oct 2009 18:18:37 -0400
+Message-ID: <4ADF88BD.20400@librato.com>
+References: <20091021210507.GA2098@us.ibm.com>
+	<20091021210533.GA2165@us.ibm.com> <4ADF8140.3010102@librato.com>
+	<20091021220245.GA8994@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091021194440.GA1283-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091021220245.GA8994-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,34 +19,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 10/22/2009 04:44 AM, Sukadev Bhattiprolu wrote:
->>
->> "3" is number of arguments.
->
-> To me, it is a version number.
->
-> mmap() and mmap2() both have 6 parameters.
->
 
-You keep bringing this up.  mmap2() is (a) a non-user-visible call; (b) 
-an exception (a mistake, if you want.)
 
-> Besides if wait4() were born before wait3(), would it still be wait4() :-)
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>> Serge E. Hallyn wrote:
+>>> If unspecified, -1 will be sent for logfd to the kernel, and there
+>>> will be no debug log.   If specified, then checkpoint and restart
+>>> debug msgs will be sent to the logfile.
+>> The new interface will cover error reporting, so when run without '-l'
+> 
+> Not sure what you mean by 'the new interface will cover error reporting'.
 
-Yes.  wait3() came before wait4(), but there never was a wait2().
+I mean that using an logging fd rids the need to write an error record
+to the checkpoint image. So I think we may retire ckpt_write_err() in
+favor of the new interface.
 
-> But I see that it is hard to get one-convention-that-fits-all.
->
->> It's better than "extended" or something
->> like that simply because "extended" just means "more than", and a number
->> at least tells you *how much more than*.
->
-> And extended assumes we wont extend again.
+The downside (if any) is that the error message is cannot be recovered
+from the partial image file (so what ?).
 
-Exactly.
+And, unlike now, it's a way to report the reason for a restart failure
+back to the caller.
 
-	-hpa
+I'd like both 'checkpoint' and 'restart' to report the reason for a
+failure to the caller (either by default, or with a new switch).
+
+> 
+>> both 'checkpoint' and 'restart' (unless asked to run extra silently)
+>> need to provide a pipe to the syscall, and if an error occurs, display
+>> pull the error reason from the pipe and print it.
+> 
+> Sounds like a useful feature, but to be clear note that what is now
+> ckpt_err() output from the kernel was debug output before, so compared
+> to without this patchset, the user is not losing any information.
+
+True for checkpoint. But the motivation for the new interface (besides
+debugging), is to have the same error reporting for restart, too.
+
+> 
+> In fact what you're saying sounds like even more justification for
+> changing some of the
+> 
+> 	ret = abc();
+> 	ckpt_debug("...", ret);
+> 	if (!ret)
+> 		ret = cdef();
+> 	ckpt_debug("...", ret);
+> 
+> type of flow into one where ckpt_err() is used and only in the case of
+> a definite error.  Yes?
+
+Hmm... I'm not sure.
+
+I think (...) I'm suggesting two classes of output:
+- ckpt_error() to report an error to the user
+- ckpt_debug() to report debugging info for developers
+
+The value of a @ret is interesting for error reporting only when
+it is negative; but for debugging it may be interesting even if
+an error did not occur.
+
+Also, I expect more places where we want to see @ret for debugging.
+So @ret may be negative, but ckpt_error() will be called later (e.g.
+by our caller).
+
+Oren.
