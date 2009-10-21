@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/4] cr: add generic LSM c/r support (v6)
-Date: Tue, 20 Oct 2009 21:03:38 -0400
-Message-ID: <4ADE5DEA.2000606@librato.com>
-References: <20091019144315.GA30535@us.ibm.com>
-	<20091019144341.GA30566@us.ibm.com> <4ADCAC5B.9080205@librato.com>
-	<20091019190227.GA7201@us.ibm.com>
+From: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: LXC PIDs, UIDs, and halt
+Date: Tue, 20 Oct 2009 20:04:13 -0500
+Message-ID: <68e6eac60910201804h3f243cdel5a437701bf9c00ac@mail.gmail.com>
+References: <68e6eac60910110930q74358967o19e3d0e88e111bd5@mail.gmail.com>
+	<20091012150355.GA5783@us.ibm.com>
+	<68e6eac60910191217s5d295e54ta6b0c528dce9ce55@mail.gmail.com>
+	<20091019222445.GA16774@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091019190227.GA7201-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091019222445.GA16774-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,62 +21,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>> 	oct 19: At checkpoint, we insert the void* security into the
->>> 		objhash.  The first time that we do so, we next write out
->>> 		the string representation of the context to the checkpoint
->>> 		image, along with the value of the objref for the void*
->>> 		security, and insert that into the objhash.  Then at
->>> 		restart, when we read a LSM context, we read the objref
->>> 		which the void* security had at checkpoint, and we then
->>> 		insert the string context with that objref as well.
->> I hoped to see similar comment inlined in the code.
-> 
-> If we're happy with this approach, then I will add good comments above
-> security_checkpoint_obj and security_restore_obj, and above the objhash
-> entries.
-
-[...]
-
->>> +/**
->>> + * security_checkpoint_obj - if first checkpoint of this void* security,
->>> + * then 1. ask the LSM for a string representing the context, 2. checkpoint
->>> + * that string
->>> + * @ctx: the checkpoint context
->>> + * @security: the void* security being checkpointed
->>> + * @sectype: indicates the type of object, because LSMs can (and do) store
->>> + * @secref: We return the objref here
->>> + * different types of data for different types of objects.
->>> + *
->>> + * Returns the objref of the checkpointed ckpt_lsm_string representing the
->>> + * context, or -error on error.
->>> + *
->>> + * This is only used at checkpoint of course.
->>> + */
->>> +int security_checkpoint_obj(struct ckpt_ctx *ctx, void *security,
->>> +				int sectype, int *secref)
->> This function returns 0 for success or a negative error. It should
->> return the @secref instead of passing it by reference (see your
->> description of the return value above !)
+On Mon, Oct 19, 2009 at 5:24 PM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+>> On Mon, Oct 12, 2009 at 10:03 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+>> > Quoting Dwight Schauer (dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+---< snip >---
+>> Is there anyway to readily know the id of the PID namespace one is in?
+>> keychain has some issues that I could correct if I could get at the
+>> PID namespace id.
+>
+> No, because pid namespaces don't actually have an id.
+>
+> What exactly are the keychain issues?  So far the keychain/namespacing
+> handling is very basic (new user-namespace = new set of keyrings), bc
+> there really weren't any user requirements to draw on yet.
+>
+>> I guess expecting apps like keychain to be namespace aware would be
+>> like expecting them to be "multiverse" aware.
 >>
->> [...]
-> 
-> Yes the comment is out of date but the API is imo an improvement.
-> Note that SECURITY_CTX_NONE, -1, is a meaningful secref, and at
-> the sametime -EPERM, -1, is conceivably a valid error code (though
-> at the moment no lsm will return it).
-> 
-> So I think overloading the secref with error codes is wrong here.
+>> I know I can pass it in through lxc-execute via an environment
+>> variable, but I wondered if there was a more standard way.
+>
+> Well if there is a clean and safe way to do it (whatever 'it' is) through
+> environment variable all the better, then we can avoid kernel changes.
+> But if you need kernel help pls let us know.
+>
+> -serge
+>
 
-How about #define SECURITY_CTX_NONE 0 ?
-it isn't a valid objref anyway.
+Ok, the issue is that what is stored in the file that keychain
+produces is based on PID
+When logging into a different PID namespace that file is considered
+stale, because there is not an agent at that pid, so the file is
+overwritten by keychain.
 
-[...]
+I'd to modify the filename to have the current namespace name (passed
+in via environment variable) be part of it, so that the proper one is
+checked by keychain and sourced by my shell
 
-Oren.
+It would require a keychain change either way, whether I'd use an
+environment variable or something was done to the kernel to allow it
+to be retrieved.
+
+A lot of applications that base things off a PID stored in a file will
+have issues when multiple PID namespaces are in play, and where those
+files are in the same locations in each container.
+
+I'm not asking for any kernel help, an environment variable will suffice.
+
+I'll patch keychain, and once I've determined it works correctly, I'll
+see if the maintainers (The Funtoo folk) will accept the patch.
+
+-- Dwight
