@@ -1,17 +1,22 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/3] epoll: Add support for checkpointing large numbers
-	of epoll items
-Date: Wed, 21 Oct 2009 23:40:07 -0700
-Message-ID: <20091022064007.GG7757@count0.beaverton.ibm.com>
-References: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc@us.ibm.com>
-	<d0fd1f3eb4eaa326488f59955e5b4790080f3073.1255971848.git.matthltc@us.ibm.com>
-	<20091021145950.GA13327@us.ibm.com>
+From: Michael Kerrisk <mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
+Date: Thu, 22 Oct 2009 12:26:48 +0200
+Message-ID: <cfd18e0f0910220326w1a71b899s5ff0fce9e0a2b8ed__36348.9286079586$1256207296$gmane$org@mail.gmail.com>
+References: <20091013044925.GA28181@us.ibm.com>
+	<20091013045439.GI28435@us.ibm.com> <20091016042041.GA7220@us.ibm.com>
+	<cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0@mail.gmail.com>
+	<20091016180631.GA31036@us.ibm.com>
+	<20091019174405.GE27627@count0.beaverton.ibm.com>
+	<4ADCDAA8.5080408@zytor.com>
+	<20091019235012.GF27627@count0.beaverton.ibm.com>
+	<cfd18e0f0910202126w1ebfa2e2u2ecbaa23b198d100@mail.gmail.com>
+	<4ADF06B7.50508@zytor.com>
+Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091021145950.GA13327-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4ADF06B7.50508-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,51 +26,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 21, 2009 at 09:59:50AM -0500, Serge E. Hallyn wrote:
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > Currently we allocate memory to output all of the epoll items in one
-> > big chunk. At 20 bytes per item, and since epoll was designed to
-> > support on the order of 10,000 items, we may find ourselves kmalloc'ing
-> > 200,000 bytes. That's an order 7 allocation whereas the heuristic for
-> > difficult allocations, PAGE_ALLOC_COST_ORDER, is 3.
-> > 
-> > Instead, output the epoll header and items separately. Chunk the output
-> > much like the pid array gets chunked. This ensures that even sub-order 0
-> > allocations will enable checkpoint of large epoll sets. A subsequent
-> > patch will do something similar for the restore path.
-> > 
-> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Feels a bit auto-tune-magic-happy :) but looks good
+Peter,
 
-Well it's not magic compared to guessing what a good number would be.
-There can be lots of these items and I figured that writing them in
-the biggest chunks possible could be useful.
+On Wed, Oct 21, 2009 at 3:03 PM, H. Peter Anvin <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org> wrote:
+> On 10/21/2009 01:26 PM, Michael Kerrisk wrote:
+>>
+>> My question here is: what does "3" actually mean? In general, system
+>> calls have not followed any convention of numbering to indicate
+>> successive versions -- clone2() being the one possible exception that
+>> I know of.
+>>
+>
+> "3" is number of arguments.
 
-> 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+sys_clone3(struct clone_struct __user *ucs, pid_t __user *pids)
 
-<snip>
+It appears to me that the number of arguments is 2.
 
-For anyone who's curious, it's only 7 additional lines (++ below).
+> It's better than "extended" or something like
+> that simply because "extended" just means "more than", and a number at least
+> tells you *how much more than*.
 
-> > ++  int nchunk;
-...
-> > ++	nchunk = num_items;
-> > ++	do {
-> > +		items = kzalloc(sizeof(*items)*nchunk, GFP_KERNEL);
-> > ++		if (items)
-> > ++			break;
-> > ++		nchunk = nchunk >> 1;
-> > ++	} while (nchunk > 0);
-> >  	if (!items)
-> >  		return -ENOMEM;
+I'm not sure why you think including a number in the name tells us
+"how much more than". Unless you are considering the numbering to be
+version numbers, which apparently is not what you mean.
 
-<snip>
+Thanks,
 
-Cheers,
-	-Matt Helsley
+Michael
+
+-- 
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Author of "The Linux Programming Interface" http://blog.man7.org/
