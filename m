@@ -1,15 +1,17 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] Checkpoint/restart epoll sets
-Date: Wed, 21 Oct 2009 23:29:09 -0700
-Message-ID: <20091022062909.GF7757@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 2/3] epoll: Add support for checkpointing large numbers
+	of epoll items
+Date: Wed, 21 Oct 2009 23:40:07 -0700
+Message-ID: <20091022064007.GG7757@count0.beaverton.ibm.com>
 References: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc@us.ibm.com>
-	<20091021003128.GA23721@us.ibm.com>
+	<d0fd1f3eb4eaa326488f59955e5b4790080f3073.1255971848.git.matthltc@us.ibm.com>
+	<20091021145950.GA13327@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091021003128.GA23721-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091021145950.GA13327-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,80 +25,47 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 20, 2009 at 07:31:28PM -0500, Serge E. Hallyn wrote:
+On Wed, Oct 21, 2009 at 09:59:50AM -0500, Serge E. Hallyn wrote:
 > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > Currently we allocate memory to output all of the epoll items in one
+> > big chunk. At 20 bytes per item, and since epoll was designed to
+> > support on the order of 10,000 items, we may find ourselves kmalloc'ing
+> > 200,000 bytes. That's an order 7 allocation whereas the heuristic for
+> > difficult allocations, PAGE_ALLOC_COST_ORDER, is 3.
+> > 
+> > Instead, output the epoll header and items separately. Chunk the output
+> > much like the pid array gets chunked. This ensures that even sub-order 0
+> > allocations will enable checkpoint of large epoll sets. A subsequent
+> > patch will do something similar for the restore path.
+> > 
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Feels a bit auto-tune-magic-happy :) but looks good
+
+Well it's not magic compared to guessing what a good number would be.
+There can be lots of these items and I figured that writing them in
+the biggest chunks possible could be useful.
+
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 <snip>
 
-> > +struct file* ep_file_restore(struct ckpt_ctx *ctx,
-> > +			     struct ckpt_hdr_file *h)
-> > +{
-> > +	struct file *epfile;
-> > +	int epfd, ret;
-> > +
-> > +	if (h->h.type != CKPT_HDR_FILE ||
-> > +	    h->h.len  != sizeof(*h) ||
-> > +	    h->f_type != CKPT_FILE_EPOLL)
-> > +		return ERR_PTR(-EINVAL);
-> > +
-> > +	epfd = sys_epoll_create1(h->f_flags & EPOLL_CLOEXEC);
-> > +	if (epfd < 0)
-> > +		return ERR_PTR(epfd);
-> > +	epfile = fget(epfd);
-> > +	sys_close(epfd); /* harmless even if an error occured */
-> > +	BUG_ON(!epfile);
-> 
-> Would perhaps return ERR_PTR(-ENOENT) be nicer?  (And maybe safer - I'm
-> not quite clear on under which arches BUG_ON does nothing).
+For anyone who's curious, it's only 7 additional lines (++ below).
 
-OK, good idea. Mind if I post it as a separate patch to be merged with
-this series?
+> > ++  int nchunk;
+...
+> > ++	nchunk = num_items;
+> > ++	do {
+> > +		items = kzalloc(sizeof(*items)*nchunk, GFP_KERNEL);
+> > ++		if (items)
+> > ++			break;
+> > ++		nchunk = nchunk >> 1;
+> > ++	} while (nchunk > 0);
+> >  	if (!items)
+> >  		return -ENOMEM;
 
-> 
-> > +
-> > +	/*
-> > +	 * Needed before we can properly restore the watches and enforce the
-> > +	 * limit on watch numbers.
-> > +	 */
-> > +	ret = restore_file_common(ctx, epfile, h);
-> > +	if (ret < 0)
-> > +		goto fput_out;
-> > +
-> > +	/*
-> > +	 * Defer restoring the epoll items until the file table is
-> > +	 * fully restored. Ensures that valid file objrefs will resolve.
-> > +	 */
-> > +	ret = deferqueue_add_ptr(ctx->files_deferq, ctx, ep_items_restore, NULL);
-> > +	if (ret < 0) {
-> > +fput_out:
-> > +		fput(epfile);
-> > +		epfile = ERR_PTR(ret);
-> > +	}
-> > +	return epfile;
-> > +}
-> > +
-> > +#endif /* CONFIG_CHECKPOINT */
-> > +
-> >  static int __init eventpoll_init(void)
-> >  {
-> >  	struct sysinfo si;
-> > diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> > index ca2500d..1a3edab 100644
-> > --- a/include/linux/checkpoint_hdr.h
-> > +++ b/include/linux/checkpoint_hdr.h
-> > @@ -119,6 +119,8 @@ enum {
-> >  #define CKPT_HDR_TTY CKPT_HDR_TTY
-> >  	CKPT_HDR_TTY_LDISC,
-> >  #define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
-> > +	CKPT_HDR_EPOLL_ITEMS = 391, /* Follows file-table */
-> 
-> What is the comment supposed to mean (other than that such
-> comments inevitably become stale :)?
-
-It means that these items must be present some point after the
-file-table in order for the checkpoint image to restart. That's
-why I chose a number near 400  -- it looked like [300-400) were set 
-aside for file objects.
+<snip>
 
 Cheers,
 	-Matt Helsley
