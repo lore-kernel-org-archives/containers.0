@@ -1,22 +1,16 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][v8][PATCH 9/10]: Define clone3() syscall
-Date: Thu, 22 Oct 2009 11:10:47 -0700
-Message-ID: <20091022181047.GA21628__10549.5634525598$1256235071$gmane$org@us.ibm.com>
-References: <20091016042041.GA7220@us.ibm.com>
-	<cfd18e0f0910152325m4a9125c2q18f36f5bd7d4a0@mail.gmail.com>
-	<20091016180631.GA31036@us.ibm.com>
-	<20091019174405.GE27627@count0.beaverton.ibm.com>
-	<4ADCDAA8.5080408@zytor.com>
-	<20091019235012.GF27627@count0.beaverton.ibm.com>
-	<cfd18e0f0910202126w1ebfa2e2u2ecbaa23b198d100@mail.gmail.com>
-	<4ADF06B7.50508@zytor.com> <20091021194440.GA1283@us.ibm.com>
-	<cfd18e0f0910220340n7c655daap78e395136c56f882@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC] Send checkpoint and restart debug info to a log
+	file (v2)
+Date: Thu, 22 Oct 2009 13:25:35 -0500
+Message-ID: <20091022182535.GA6053@us.ibm.com>
+References: <20091021210507.GA2098@us.ibm.com> <4ADF853F.6080807@librato.com>
+	<20091021224922.GA5827@us.ibm.com> <4ADF95D0.8060806@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <cfd18e0f0910220340n7c655daap78e395136c56f882-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4ADF95D0.8060806-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,87 +20,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Michael Kerrisk [mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org] wrote:
-| Sukadev,
-| =
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+...
+> > More practically, requiring userspace to pass over a flag
+> > consisting of CKPT_DBG_MEM|CKPT_DBG|FILE|CKPT_DBG|TASK, and
+> > handle corresponding usage flags, is not nice.
+> 
+> I agree with you on about this. Maybe we want a better
+> interface ?
 
-| On Wed, Oct 21, 2009 at 9:44 PM, Sukadev Bhattiprolu
-| <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-| > H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
-| >> On 10/21/2009 01:26 PM, Michael Kerrisk wrote:
-| >>>
-| >>> My question here is: what does "3" actually mean? In general, system
-| >>> calls have not followed any convention of numbering to indicate
-| >>> successive versions -- clone2() being the one possible exception that
-| >>> I know of.
-| >>>
-| >>
-| >> "3" is number of arguments.
-| >
-| > To me, it is a version number.
-| =
+I'm looking at tracehooks right now.  So the way it would work is:
 
-| See my precending mail. Isn't the number of arguments "2".
+1. Error messages using ckpt_error() are always compiled in, are
+sent to ctx->logfile if that exists, and are sent to syslog if
+CONFIG_CHECKPOINT_DEBUG (or some sysctl is set).
 
-Well it was 2 at one point, but I have posted a new version of
-just that one patch - please see http://lkml.org/lkml/2009/10/16/3
-for comments.
+2. Debug messages could be tracehooks which can be enabled per
+subsystem as above - for mem, file, task, etc - using code we add
+under linux-cr/samples/.  It would basically do:
 
-I am working on some updates and will post a new patchset - it
-will have 3 parameters to clone3() as shown in the above mail.
+	  ret = register_trace_ckpt_mem(ckpt_trace_mem, ckpt_logprobe);
+	  ret = register_trace_ckpt_task(ckpt_trace_mem, ckpt_logprobe);
 
-| =
+where ckpt_logprobe does the printing of info to ctx->logfile and
+syslog.
 
-| > mmap() and mmap2() both have 6 parameters.
-| >
-| > Besides if wait4() were born before wait3(), would it still be wait4() =
-:-)
-| > But I see that it is hard to get one-convention-that-fits-all.
-| =
+Or,
 
-| Yes -- that's exactly right.
-| =
+at first of course we can just let CONFIG_CHECKPOINT_DEBUG determine
+the printing of ckpt_debugs() as we do now.
 
-| >> It's better than "extended" or something
-| >> like that simply because "extended" just means "more than", and a numb=
-er
-| >> at least tells you *how much more than*.
-| >
-| > And extended assumes we wont extend again.
-| =
+I'm going to start slowly, first defining the ckpt_error() helpers
+and introducing/converting some callers.
 
-| Well, if we do things right in this design, we may not need to ever
-| extend (by creating a new syscall) again. That's why I mentioned the
-| "flags" argument idea. Did you give this some thought?
-
-Yes, we have done the best we can to avoid extending clone() again
-anytime soon (some reserved bytes and clone_args_size field). Would
-we still need the flags parameter ? Again its in the new patch
-that I pointed to above.
-
-| =
-
-| > An informal poll of reviewers has clone3() with a slight advantage :-)
-| >
-| > =A0 =A0 =A0 =A0clone_extended() camp: Serge Hallyn, Kerrisk, Louis Rill=
-ing,
-| > =A0 =A0 =A0 =A0clone3(): Sukadev, H. Peter Anvin, Oren, Matt Helsley.
-| >
-| > I like clone3() but am not insisting on it. I just want a name...
-| =
-
-| And I'm not really insisting on a change. As you rightly point out,
-| there is much inconsistency in the naming conventions that have been
-| used over the years.
-| =
-
-| But, because there has been no consistency in the use of numbers, and
-| because the number of arguments that are presented in a glibc
-| interface may differ from the number of arguments in an underlying
-| syscall (several precedents: signalfd4(), pselect(), ppoll()), I'm
-| inclined to think that clonex() or clone_ext() is slighly better than
-| clone3(). But, certainly, my arguments are not compelling.
+-serge
