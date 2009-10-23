@@ -1,19 +1,23 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC] Send checkpoint and restart debug info to a log
-	file (v2)
-Date: Fri, 23 Oct 2009 15:06:38 -0500
-Message-ID: <20091023200638.GA1585@us.ibm.com>
-References: <20091021210507.GA2098@us.ibm.com> <4ADF853F.6080807@librato.com>
-	<20091021224922.GA5827@us.ibm.com> <4ADF95D0.8060806@librato.com>
-	<20091022005157.GA11608@us.ibm.com>
-	<20091022060400.GE7757@count0.beaverton.ibm.com>
-	<4AE1FA7A.5030702@librato.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Fri, 23 Oct 2009 13:48:12 -0700
+Message-ID: <20091023204812.GA26524__43618.5342180126$1256330902$gmane$org@us.ibm.com>
+References: <m1iqeauyvl.fsf@fess.ebiederm.org>
+	<20091020183329.GB22646@us.ibm.com>
+	<m1r5sxsw7w.fsf@fess.ebiederm.org>
+	<20091021062021.GA2667@us.ibm.com>
+	<m1eioxrtsb.fsf@fess.ebiederm.org>
+	<20091023004253.GA7915@us.ibm.com>
+	<m1bpjyrkep.fsf@fess.ebiederm.org>
+	<20091023053001.GA24972@us.ibm.com>
+	<m1ws2mpsuk.fsf@fess.ebiederm.org>
+	<20091023192124.GA11088@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AE1FA7A.5030702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091023192124.GA11088-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,60 +27,148 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Matt Helsley wrote:
-> > On Wed, Oct 21, 2009 at 07:51:57PM -0500, Serge E. Hallyn wrote:
-> >> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> > 
-> > <snip>
-> > 
-> >>>> More practically, requiring userspace to pass over a flag
-> >>>> consisting of CKPT_DBG_MEM|CKPT_DBG|FILE|CKPT_DBG|TASK, and
-> >>>> handle corresponding usage flags, is not nice.
-> >>> I agree with you on about this. Maybe we want a better
-> >>> interface ?
-> >>>
-> >>> Which brings me to this random thought: maybe we want to
-> >>> make the fourth argument of sys_{checkpoint,restart} a
-> >>> structure, to make it easier to extend it in the future
-> >>> without having to go throw a clone3-like hell...
-> > 
-> > Adding new kernel interfaces is supposed to be somewhat hellish.
-> > 
-> >>> Specifically, this structure could now be:
-> >>>
-> >>> struct ckpt_args {
-> >>> 	int version;
-> >>> 	int logfd;
-> >>> 	int logmask;
-> >>> };
-> >>>
-> >>> (or use union checkpoint {} and union restart {} to tell
-> >>> between checkpoint- and restart-related args.
-> >> Well I don't like passing structs to the kernel actually (and
-> > 
-> > Let's not do this. I agree that passing structs, when unnecessary,
-> > is gross. Especially if it gets used to extend the arguments
-> > passed via the syscall interface (new flag values I don't mind).
-> 
-> Ok, we already allow future extension by being strict about
-> which flags are taken or not.
-> 
-> Then what do we do with logmask ?   I prefer it to be a per-syscall
-> value as opposed to a system-wise setting.
+Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+| | > Anyway, is RESERVED_PIDS meant for initial kernel-threads/daemons - if so
+| | > would it be ok enforce it only in init_pid_ns ?
+| | 
+| | It is mean for initial user space daemons, things that start on boot.
+| | 
+| | I don't know how much the protection matters at this date, but we have it.
+| 
+| Well, since it is not security or other critical restriction, can we allow
+| set_pidmap() a free hand - even in init-pid-ns ? It could prevent a simple
+| subtree C/R of one of the early daemons for debug for instance.
 
-Getting ugly but...
+So here is how I have it at present. I would like to remove the RESERVED_PIDS
+check in set_pidmap() if its ok to do so.
 
-if we were to use tracepoints, then we could (or the admin could) have the
-function which is loaded determine based on a task's cgroup what to
-print out.
+alloc_pid() does this:
 
-I did say it was ugly...
+	if (target_pids)
+		set_pidmap(tmp, target_pids[i])
+	else
+		alloc_pidmap(tmp);
 
--serge
+Sukadev
+---
+
+From bc6093fc4fc2f01070647df6f1e85e45edc89d27 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <suka@suka.(none)>
+Date: Thu, 22 Oct 2009 16:57:28 -0700
+Subject: [PATCH] Define set_pidmap() function
+
+Define a set_pidmap() interface which is like alloc_pidmap() only that
+caller specifies the pid number to be assigned.
+
+Changelog[v9]:
+	- Complete rewrite this patch based on Eric Biederman's code.
+Changelog[v7]:
+        - [Eric Biederman] Generalize alloc_pidmap() to take a range of pids.
+Changelog[v6]:
+        - Separate target_pid > 0 case to minimize the number of checks needed.
+Changelog[v3]:
+        - (Eric Biederman): Avoid set_pidmap() function. Added couple of
+          checks for target_pid in alloc_pidmap() itself.
+Changelog[v2]:
+        - (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
+          actually checks for 'pid <= 0' for completeness).
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/pid.c |   40 ++++++++++++++++++++++++++++++++--------
+ 1 files changed, 32 insertions(+), 8 deletions(-)
+
+diff --git a/kernel/pid.c b/kernel/pid.c
+index c4d9914..9346755 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -147,18 +147,19 @@ static int alloc_pidmap_page(struct pidmap *map)
+ 	return 0;
+ }
+ 
+-static int alloc_pidmap(struct pid_namespace *pid_ns)
++static int do_alloc_pidmap(struct pid_namespace *pid_ns, int last, int min,
++		int max)
+ {
+-	int i, offset, max_scan, pid, last = pid_ns->last_pid;
++	int i, offset, max_scan, pid;
+ 	int rc = -EAGAIN;
+ 	struct pidmap *map;
+ 
+ 	pid = last + 1;
+ 	if (pid >= pid_max)
+-		pid = RESERVED_PIDS;
++		pid = min;
+ 	offset = pid & BITS_PER_PAGE_MASK;
+ 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+-	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
++	max_scan = (max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+ 	for (i = 0; i <= max_scan; ++i) {
+ 		rc = alloc_pidmap_page(map);
+ 		if (rc)
+@@ -168,7 +169,6 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 			do {
+ 				if (!test_and_set_bit(offset, map->page)) {
+ 					atomic_dec(&map->nr_free);
+-					pid_ns->last_pid = pid;
+ 					return pid;
+ 				}
+ 				offset = find_next_offset(map, offset);
+@@ -179,16 +179,16 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 			 * bitmap block and the final block was the same
+ 			 * as the starting point, pid is before last_pid.
+ 			 */
+-			} while (offset < BITS_PER_PAGE && pid < pid_max &&
++			} while (offset < BITS_PER_PAGE && pid < max &&
+ 					(i != max_scan || pid < last ||
+ 					    !((last+1) & BITS_PER_PAGE_MASK)));
+ 		}
+-		if (map < &pid_ns->pidmap[(pid_max-1)/BITS_PER_PAGE]) {
++		if (map < &pid_ns->pidmap[(max-1)/BITS_PER_PAGE]) {
+ 			++map;
+ 			offset = 0;
+ 		} else {
+ 			map = &pid_ns->pidmap[0];
+-			offset = RESERVED_PIDS;
++			offset = min;
+ 			if (unlikely(last == offset)) {
+ 				rc = -EAGAIN;
+ 				break;
+@@ -199,6 +199,30 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 	return rc;
+ }
+ 
++static int alloc_pidmap(struct pid_namespace *pid_ns)
++{
++	int nr;
++
++	nr = do_alloc_pidmap(pid_ns, pid_ns->last, RESERVED_PIDS, pid_max);
++	if (nr >= 0)
++		pid_ns->last_pid = nr;
++	return nr;
++}
++
++static int set_pidmap(struct pid_namespace *pid_ns, int target)
++{
++	if (!target)
++		return alloc_pidmap(pid_ns);
++
++	if (target >= pid_max)
++		return -EINVAL;
++
++	if ((target < 0) || (target < RESERVED_PIDS && pid_ns == &init_pid_ns))
++		return -EINVAL;
++
++	return do_alloc_pidmap(pid_ns, target - 1, target, target + 1);
++}
++
+ int next_pidmap(struct pid_namespace *pid_ns, int last)
+ {
+ 	int offset;
+-- 
+1.6.0.4
