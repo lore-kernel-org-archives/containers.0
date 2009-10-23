@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 4/4] Add some content to the readme.txt for socket c/r
-Date: Fri, 23 Oct 2009 15:41:23 -0400
-Message-ID: <4AE206E3.7010904@librato.com>
-References: <1256072803-3518-1-git-send-email-danms@us.ibm.com>
-	<1256072803-3518-5-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] fix compile with CONFIG_CHECKPOINT_DEBUG=n
+Date: Fri, 23 Oct 2009 14:46:41 -0500
+Message-ID: <20091023194641.GA29761@us.ibm.com>
+References: <20091022143238.GA31778@us.ibm.com> <4AE1FB87.4050305@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1256072803-3518-5-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AE1FB87.4050305-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,50 +18,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Dan Smith wrote:
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Nicely put !
-
-> ---
->  Documentation/checkpoint/readme.txt |   21 +++++++++++++++++++++
->  1 files changed, 21 insertions(+), 0 deletions(-)
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > 
-> diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-> index 571c469..e6c173d 100644
-> --- a/Documentation/checkpoint/readme.txt
-> +++ b/Documentation/checkpoint/readme.txt
-> @@ -334,6 +334,27 @@ we will be forced to more carefully review each of those features.
->  However, this can be controlled with a sysctl-variable.
->  
->  
-> +Sockets
-> +=======
-> +
-> +For AF_UNIX sockets, both endpoints must be within the checkpointed
-> +task set to maintain a connected state after restart.  UNIX sockets
-> +that are in the process of passing a descriptor will cause the
-> +checkpoint to fail with -EBUSY indicating a transient state that
-> +cannot be checkpointed.  Listening sockets with an unaccepted peer
-> +will also cause an -EBUSY result.
-> +
-> +AF_INET sockets with endpoints outside the checkpointed task set may
-> +remain open if care is taken to avoid TCP timeouts and resets.
-> +Careful use of a virtual IP address can help avoid emission of an RST
-> +to the non-checkpointed endpoint.  If desired, the
-> +RESTART_SOCK_LISTENONLY flag may be passed to the restart syscall
-> +which will cause all connected AF_INET sockets to be closed during the
-> +restore process.  Listening sockets will still be restored to their
-> +original state, which makes this mode a candidate for something like
-> +an HTTP server.
-> +
-> +
->  Kernel interfaces
->  =================
->  
+> 
+> Serge E. Hallyn wrote:
+> > On the one hand, compiling without checkpoing debug saves a
+> > lot of kernel size:
+> > 
+> > with debug:
+> > -rwxrwxr-x  1 hallyn hallyn  62391508 Oct 21 22:08 vmlinux
+> > without debug:
+> > -rwxrwxr-x  1 hallyn hallyn  62298077 Oct 21 22:33 vmlinux
+> > 
+> > OTOH the need for this patch just proves my point that we don't
+> > want any more config options than we need (especially no
+> > CONFIG_CHECKPOINT_LOGGING in addition to _DEBUG).
+> > 
+> > So that begs the question - is there something we can do to
+> > avoid having to recompile the kernel to turn on debugging,
+> > but not take up 100k of space in vmlinux?  Maybe get rid of
+> > the ckpt_debugs altogether and instead provide pre-written
+> > kprobe sets to turn on debugging at specific places?
+> 
+> What is the reason for the increase - the strings ? the extra
+> inlined code ?  the passing of variables to printed ?
+
+Half and half :)
+
+Pulling out the 'current->pid' and task_pid_nr arguments in
+_ckpt_debug to printk, but keeping the __func__ and __LINE__,
+halves the overhead of CONFIG_CHECKPOINT_DEBUG from
+78190 to 39809 bytes.
+
+-serge
