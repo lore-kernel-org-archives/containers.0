@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] define function to print error messages to user log
-Date: Thu, 22 Oct 2009 23:13:49 -0500
-Message-ID: <20091023041349.GA2915@us.ibm.com>
+Subject: [PATCH 3/3] use ckpt_error in checkpoint/restart.c
+Date: Thu, 22 Oct 2009 23:14:29 -0500
+Message-ID: <20091023041429.GB2915@us.ibm.com>
 References: <20091023041325.GA2863@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,192 +22,251 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Error messages are both sent to an optional user-provided logfile,
-and, if CONFIG_CHECKPOINT_DEBUG=y, sent to syslog.
+In cases where f(x) always returns 0 or <0, I felt free to
+remove unconditional ckpt_debugs in favor of ckpt_error()
+only on error.
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c             |    2 +
- checkpoint/sys.c                 |   61 ++++++++++++++++++++++++++++++++++---
- include/linux/checkpoint.h       |    2 +-
- include/linux/checkpoint_types.h |    1 +
- include/linux/syscalls.h         |    5 ++-
- 5 files changed, 63 insertions(+), 8 deletions(-)
+ checkpoint/restart.c |   90 ++++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 59 insertions(+), 31 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 730dd82..c441ce6 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -858,6 +858,8 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 105dd0a..e5eb6a6 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -64,7 +64,7 @@ static int restore_debug_task(struct ckpt_ctx *ctx, int flags)
  
- 	/* account for ctx->file reference (if in the table already) */
- 	ckpt_obj_users_inc(ctx, ctx->file, 1);
-+	if (ctx->logfile)
-+		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
- 	/* account for ctx->root_nsproxy reference (if in the table already) */
- 	ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
+ 	s = kmalloc(sizeof(*s), GFP_KERNEL);
+ 	if (!s) {
+-		ckpt_debug("no memory to register ?!\n");
++		ckpt_error(ctx, "no memory to register ?!\n");
+ 		return -ENOMEM;
+ 	}
+ 	s->pid = current->pid;
+@@ -197,13 +197,13 @@ static int _ckpt_read_err(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
+ 	len = h->len - sizeof(*h);
+ 	ptr = kzalloc(len + 1, GFP_KERNEL);
+ 	if (!ptr) {
+-		ckpt_debug("insufficient memory to report image error\n");
++		ckpt_error(ctx, "insufficient memory to report image error\n");
+ 		return -ENOMEM;
+ 	}
  
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 260a1ee..1840f90 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -204,6 +204,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	ret = ckpt_kread(ctx, ptr, len);
+ 	if (ret >= 0) {
+-		ckpt_debug("%s\n", &ptr[1]);
++		ckpt_error(ctx, "%s\n", &ptr[1]);
+ 		ret = -EIO;
+ 	}
  
- 	if (ctx->file)
- 		fput(ctx->file);
-+	if (ctx->logfile)
-+		fput(ctx->logfile);
- 
- 	ckpt_obj_hash_free(ctx);
- 	path_put(&ctx->fs_mnt);
-@@ -225,7 +227,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- }
- 
- static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
--				       unsigned long kflags)
-+				       unsigned long kflags, int logfd)
+@@ -709,7 +709,7 @@ static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
  {
- 	struct ckpt_ctx *ctx;
- 	int err;
-@@ -238,6 +240,9 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	ctx->kflags = kflags;
- 	ctx->ktime_begin = ktime_get();
+ 	/* first to fail: notify everyone (racy but harmless) */
+ 	if (!ckpt_test_ctx_error(ctx)) {
+-		ckpt_debug("setting restart error %d\n", errno); \
++		ckpt_error(ctx, "setting restart error %d\n", errno);
+ 		ckpt_set_ctx_error(ctx, errno);
+ 		complete(&ctx->complete);
+ 		wake_up_all(&ctx->waitq);
+@@ -723,7 +723,8 @@ static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
+ */
+ #define restore_notify_error(ctx, errno) \
+ do { \
+-	ckpt_debug("restart error %d, root pid %d\n", errno, ctx->root_pid); \
++	ckpt_error(ctx, "restart error %d, root pid %d\n", errno, \
++		   ctx->root_pid); \
+ 	_restore_notify_error(ctx, errno); \
+ } while(0)
  
-+	/* If logfd's a bad fd that's fine, no log output required... */
-+	ctx->logfile = fget(logfd);
-+
- 	atomic_set(&ctx->refcount, 0);
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
-@@ -339,6 +344,51 @@ int walk_task_subtree(struct task_struct *root,
- 	return (ret < 0 ? ret : total);
- }
+@@ -747,7 +748,8 @@ static int set_task_ctx(struct task_struct *task, struct ckpt_ctx *ctx)
+ 		task->checkpoint_ctx = ckpt_ctx_get(ctx);
+ 		ret = 0;
+ 	} else {
+-		ckpt_debug("task %d has checkpoint_ctx\n", task_pid_vnr(task));
++		ckpt_error(ctx, "task %d has checkpoint_ctx\n",
++			   task_pid_vnr(task));
+ 		ret = 1;
+ 	}
+ 	task_unlock(task);
+@@ -797,7 +799,7 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
+ 		rcu_read_unlock();
  
-+/*
-+ * currentpid:targetpid fmt%args
-+ */
-+void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
-+{
-+	mm_segment_t fs;
-+	struct file *file;
-+	int count;
-+	char buf[200], *bufp = buf;
-+	int mypid = current->pid;
-+	int tpid = current->nsproxy ? task_pid_vnr(current) : -1;
-+	va_list args;
-+
-+	if (!ctx || !ctx->logfile)
-+		return;
-+	file = ctx->logfile;
-+
-+	count = snprintf(buf, 200, "%d:%d ", mypid, tpid);
-+	if (count > 200)
-+		return; /* not possible */
-+	fs = get_fs();
-+	set_fs(KERNEL_DS);
-+	_ckpt_kwrite(file, bufp, count);
-+	set_fs(fs);
-+
-+	va_start(args, fmt);
-+	count = vsnprintf(bufp, 200, fmt, args);
-+	va_end(args);
-+	if (count > 200) {
-+		bufp = kmalloc(count, GFP_KERNEL);
-+		if (!bufp)
-+		       return;
-+		va_start(args, fmt);
-+		vsnprintf(bufp, count, fmt, args);
-+		va_end(args);
+ 		if (!task) {
+-			ckpt_debug("could not find task %d\n", pid);
++			ckpt_error(ctx, "could not find task %d\n", pid);
+ 			restore_notify_error(ctx, -ESRCH);
+ 			return -ESRCH;
+ 		}
+@@ -952,29 +954,38 @@ static int do_restore_task(void)
+ 	current->flags |= PF_RESTARTING;
+ 
+ 	ret = wait_sync_threads();
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "wait_sync_threads ret %d\n", ret);
+ 		goto out;
 +	}
-+
-+	fs = get_fs();
-+	set_fs(KERNEL_DS);
-+	_ckpt_kwrite(file, bufp, count);
-+	set_fs(fs);
-+
-+	if (bufp != buf)
-+		kfree(bufp);
-+}
  
- /**
-  * sys_checkpoint - checkpoint a container
-@@ -349,7 +399,8 @@ int walk_task_subtree(struct task_struct *root,
-  * Returns positive identifier on success, 0 when returning from restart
-  * or negative value on error
-  */
--SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
-+SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
-+		int, logfd)
- {
- 	struct ckpt_ctx *ctx;
- 	long ret;
-@@ -362,7 +413,7 @@ SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
+ 	/* wait for our turn, do the restore, and tell next task in line */
+ 	ret = wait_task_active(ctx);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "wait_task_active ret %d\n", ret);
+ 		goto out;
++	}
  
- 	if (pid == 0)
- 		pid = task_pid_vnr(current);
--	ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_CHECKPOINT);
-+	ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_CHECKPOINT, logfd);
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
+ 	restore_debug_running(ctx);
  
-@@ -384,7 +435,7 @@ SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
-  * Returns negative value on error, or otherwise returns in the realm
-  * of the original checkpoint
-  */
--SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
-+SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags, int, logfd)
- {
- 	struct ckpt_ctx *ctx = NULL;
- 	long ret;
-@@ -397,7 +448,7 @@ SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
+ 	ret = pre_restore_task();
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "pre_restore_task ret %d\n", ret);
+ 		goto out;
++	}
+ 
+ 	zombie = restore_task(ctx);
+ 	if (zombie < 0) {
++		ckpt_error(ctx, "restore_task ret %d\n", ret);
+ 		ret = zombie;
+ 		goto out;
+ 	}
+ 
+ 	ret = restore_activate_next(ctx);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore_activate_next ret %d\n", ret);
+ 		goto out;
++	}
+ 
+ 	/*
+ 	 * zombie: we're done here; do_exit() will notice the @ctx on
+@@ -1015,12 +1026,12 @@ static int __prepare_descendants(struct task_struct *task, void *data)
+ 	ckpt_debug("consider task %d\n", task_pid_vnr(task));
+ 
+ 	if (!ptrace_may_access(task, PTRACE_MODE_ATTACH)) {
+-		ckpt_debug("stranger task %d\n", task_pid_vnr(task));
++		ckpt_error(ctx, "stranger task %d\n", task_pid_vnr(task));
  		return -EPERM;
+ 	}
  
- 	if (pid)
--		ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART);
-+		ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART, logfd);
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
+ 	if (task_ptrace(task) & PT_PTRACED) {
+-		ckpt_debug("ptraced task %d\n", task_pid_vnr(task));
++		ckpt_error(ctx, "ptraced task %d\n", task_pid_vnr(task));
+ 		return -EBUSY;
+ 	}
  
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 351f9ac..daba68c 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -371,7 +371,7 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+@@ -1176,24 +1187,31 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 	restore_debug_running(ctx);
  
- #endif /* CONFIG_CHECKPOINT_DEBUG */
+ 	ret = restore_read_header(ctx);
+-	ckpt_debug("restore header: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore header: %d\n", ret);
+ 		return ret;
++	}
+ 	ret = restore_container(ctx);
+-	ckpt_debug("restore container: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore container: %d\n", ret);
+ 		return ret;
++	}
+ 	ret = restore_read_tree(ctx);
+-	ckpt_debug("restore tree: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore tree: %d\n", ret);
+ 		return ret;
++	}
  
--#define ckpt_log_error(ctx, fmt, args...)	do { } while (0)
-+extern void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...);
+-	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1)
++	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1) {
++		ckpt_error(ctx, "self-restart but nr_pids=%d\n", ctx->nr_pids);
+ 		return -EINVAL;
++	}
  
- #define ckpt_error(ctx, fmt, args...)					\
- 	do {								\
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index fa57cdc..264afbd 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -48,6 +48,7 @@ struct ckpt_ctx {
- 	unsigned long oflags;	/* restart: uflags from checkpoint */
+ 	ret = init_restart_ctx(ctx, pid);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "init_restart_ctx returned %d\n", ret);
+ 		return ret;
++	}
  
- 	struct file *file;	/* input/output file */
-+	struct file *logfile;	/* debug log file */
- 	int total;		/* total read/written */
+ 	/*
+ 	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
+@@ -1206,7 +1224,7 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 		 * We are a bad-behaving descendant: an ancestor must
+ 		 * have prepare_descendants() us as part of a restart.
+ 		 */
+-		ckpt_debug("coord already has checkpoint_ctx\n");
++		ckpt_error(ctx, "coord already has checkpoint_ctx\n");
+ 		return -EBUSY;
+ 	}
  
- 	atomic_t refcount;
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index 33bce6e..4fce331 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -754,8 +754,9 @@ asmlinkage long sys_pselect6(int, fd_set __user *, fd_set __user *,
- asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
- 			  struct timespec __user *, const sigset_t __user *,
- 			  size_t);
--asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
--asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags,
-+			       int logfd);
-+asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
+@@ -1218,35 +1236,45 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
  
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+ 	if (ctx->uflags & RESTART_TASKSELF) {
+ 		ret = pre_restore_task();
+-		ckpt_debug("pre restore task: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_error(ctx, "pre restore task: %d\n", ret);
+ 			goto out;
++		}
+ 		ret = restore_task(ctx);
+ 		ckpt_debug("restore task: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_error(ctx, "restore task: %d\n", ret);
+ 			goto out;
++		}
+ 	} else {
+ 		/* prepare descendants' t->checkpoint_ctx point to coord */
+ 		ret = prepare_descendants(ctx, ctx->root_task);
+ 		ckpt_debug("restore prepare: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_error(ctx, "restore prepare: %d\n", ret);
+ 			goto out;
++		}
+ 		/* wait for all other tasks to complete do_restore_task() */
+ 		ret = wait_all_tasks_finish(ctx);
+ 		ckpt_debug("restore finish: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_error(ctx, "wait_all_tasks_finish: %d\n", ret);
+ 			goto out;
++		}
+ 	}
  
+ 	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
+ 	ckpt_debug("restore deferqueue: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore deferqueue: %d\n", ret);
+ 		goto out;
++	}
+ 
+ 	ret = restore_read_tail(ctx);
+-	ckpt_debug("restore tail: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_error(ctx, "restore tail: %d\n", ret);
+ 		goto out;
++	}
+ 
+ 	if (ctx->uflags & RESTART_FROZEN) {
+ 		ret = cgroup_freezer_make_frozen(ctx->root_task);
+@@ -1347,7 +1375,7 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
+ 	if (!ctx || (ctx->uflags & RESTART_TASKSELF)) {
+ 		if (ret < 0) {
+ 			/* partial restore is undefined: terminate */
+-			ckpt_debug("restart err %ld, exiting\n", ret);
++			ckpt_error(ctx, "restart err %ld, exiting\n", ret);
+ 			force_sig(SIGKILL, current);
+ 		} else {
+ 			ret = restore_retval();
 -- 
 1.6.1
