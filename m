@@ -1,17 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH RFC] Send checkpoint and restart debug info to a log	file
-	(v2)
-Date: Fri, 23 Oct 2009 14:48:26 -0400
-Message-ID: <4AE1FA7A.5030702@librato.com>
-References: <20091021210507.GA2098@us.ibm.com> <4ADF853F.6080807@librato.com>
-	<20091021224922.GA5827@us.ibm.com> <4ADF95D0.8060806@librato.com>
-	<20091022005157.GA11608@us.ibm.com>
-	<20091022060400.GE7757@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 1/1] fix compile with CONFIG_CHECKPOINT_DEBUG=n
+Date: Fri, 23 Oct 2009 14:52:55 -0400
+Message-ID: <4AE1FB87.4050305@librato.com>
+References: <20091022143238.GA31778@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091022060400.GE7757-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20091022143238.GA31778-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,51 +17,96 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Matt Helsley wrote:
-> On Wed, Oct 21, 2009 at 07:51:57PM -0500, Serge E. Hallyn wrote:
->> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+Serge E. Hallyn wrote:
+> On the one hand, compiling without checkpoing debug saves a
+> lot of kernel size:
 > 
-> <snip>
+> with debug:
+> -rwxrwxr-x  1 hallyn hallyn  62391508 Oct 21 22:08 vmlinux
+> without debug:
+> -rwxrwxr-x  1 hallyn hallyn  62298077 Oct 21 22:33 vmlinux
 > 
->>>> More practically, requiring userspace to pass over a flag
->>>> consisting of CKPT_DBG_MEM|CKPT_DBG|FILE|CKPT_DBG|TASK, and
->>>> handle corresponding usage flags, is not nice.
->>> I agree with you on about this. Maybe we want a better
->>> interface ?
->>>
->>> Which brings me to this random thought: maybe we want to
->>> make the fourth argument of sys_{checkpoint,restart} a
->>> structure, to make it easier to extend it in the future
->>> without having to go throw a clone3-like hell...
+> OTOH the need for this patch just proves my point that we don't
+> want any more config options than we need (especially no
+> CONFIG_CHECKPOINT_LOGGING in addition to _DEBUG).
 > 
-> Adding new kernel interfaces is supposed to be somewhat hellish.
-> 
->>> Specifically, this structure could now be:
->>>
->>> struct ckpt_args {
->>> 	int version;
->>> 	int logfd;
->>> 	int logmask;
->>> };
->>>
->>> (or use union checkpoint {} and union restart {} to tell
->>> between checkpoint- and restart-related args.
->> Well I don't like passing structs to the kernel actually (and
-> 
-> Let's not do this. I agree that passing structs, when unnecessary,
-> is gross. Especially if it gets used to extend the arguments
-> passed via the syscall interface (new flag values I don't mind).
+> So that begs the question - is there something we can do to
+> avoid having to recompile the kernel to turn on debugging,
+> but not take up 100k of space in vmlinux?  Maybe get rid of
+> the ckpt_debugs altogether and instead provide pre-written
+> kprobe sets to turn on debugging at specific places?
 
-Ok, we already allow future extension by being strict about
-which flags are taken or not.
+What is the reason for the increase - the strings ? the extra
+inlined code ?  the passing of variables to printed ?
 
-Then what do we do with logmask ?   I prefer it to be a per-syscall
-value as opposed to a system-wise setting.
+Turning on/off code at specific place requires that the code
+still be there ...
 
-Oren.
+do you intend to add a crdebug.ko module  hat will hold all
+that code ?   (if so, you still need to pass the variables).
+
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Meanwhile - pulled, thanks.
+
+Oren
+
+> ---
+>  checkpoint/restart.c |   23 +++++++++++++----------
+>  1 files changed, 13 insertions(+), 10 deletions(-)
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 32a9fc5..105dd0a 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -26,6 +26,15 @@
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+>  
+> +#define RESTART_DBG_ROOT	(1 << 0)
+> +#define RESTART_DBG_GHOST	(1 << 1)
+> +#define RESTART_DBG_COORD	(1 << 2)
+> +#define RESTART_DBG_TASK	(1 << 3)
+> +#define RESTART_DBG_WAITING	(1 << 4)
+> +#define RESTART_DBG_RUNNING	(1 << 5)
+> +#define RESTART_DBG_EXITED	(1 << 6)
+> +#define RESTART_DBG_FAILED	(1 << 7)
+> +#define RESTART_DBG_SUCCESS	(1 << 8)
+>  
+>  #ifdef CONFIG_CHECKPOINT_DEBUG
+>  
+> @@ -44,15 +53,6 @@
+>  
+>  struct ckpt_task_status {
+>  	pid_t pid;
+> -#define RESTART_DBG_ROOT	(1 << 0)
+> -#define RESTART_DBG_GHOST	(1 << 1)
+> -#define RESTART_DBG_COORD	(1 << 2)
+> -#define RESTART_DBG_TASK	(1 << 3)
+> -#define RESTART_DBG_WAITING	(1 << 4)
+> -#define RESTART_DBG_RUNNING	(1 << 5)
+> -#define RESTART_DBG_EXITED	(1 << 6)
+> -#define RESTART_DBG_FAILED	(1 << 7)
+> -#define RESTART_DBG_SUCCESS	(1 << 8)
+>  	int flags;
+>  	int error;
+>  	struct list_head list;
+> @@ -178,7 +178,10 @@ void restore_debug_free(struct ckpt_ctx *ctx)
+>  
+>  #else
+>  
+> -static inline void restore_debug_task(struct ckpt_ctx *ctx, int flags) {}
+> +static inline int restore_debug_task(struct ckpt_ctx *ctx, int flags)
+> +{
+> +	return 0;
+> +}
+>  static inline void restore_debug_error(struct ckpt_ctx *ctx, int err) {}
+>  static inline void restore_debug_running(struct ckpt_ctx *ctx) {}
+>  static inline void restore_debug_exit(struct ckpt_ctx *ctx) {}
