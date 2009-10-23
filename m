@@ -1,13 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] Checkpoint/restart epoll sets
-Date: Fri, 23 Oct 2009 19:41:48 -0400
-Message-ID: <4AE23F3C.9010306@librato.com>
+Subject: Re: [PATCH 2/3] epoll: Add support for checkpointing large numbers
+	of epoll items
+Date: Fri, 23 Oct 2009 19:51:59 -0400
+Message-ID: <4AE2419F.7040506@librato.com>
 References: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc@us.ibm.com>
+	<d0fd1f3eb4eaa326488f59955e5b4790080f3073.1255971848.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ce2e15faf44e254b80578c6c62e71d8685516896.1255971848.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <d0fd1f3eb4eaa326488f59955e5b4790080f3073.1255971848.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,147 +26,74 @@ List-Id: containers.vger.kernel.org
 
 
 Matt Helsley wrote:
-> Save/restore epoll items during checkpoint/restart respectively.
-> kmalloc failures should be dealt with more kindly than just error-out
-> because epoll is made to poll many thousands of file descriptors.
-> Subsequent patches will change epoll c/r to "chunk" its output/input
-> respectively.
+> Currently we allocate memory to output all of the epoll items in one
+> big chunk. At 20 bytes per item, and since epoll was designed to
+> support on the order of 10,000 items, we may find ourselves kmalloc'ing
+> 200,000 bytes. That's an order 7 allocation whereas the heuristic for
+> difficult allocations, PAGE_ALLOC_COST_ORDER, is 3.
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
-See one comment below (fixed).
-Also fixed is the BUG_ON pointed out by Serge.
-
-Oren.
-
+> Instead, output the epoll header and items separately. Chunk the output
+> much like the pid array gets chunked. This ensures that even sub-order 0
+> allocations will enable checkpoint of large epoll sets. A subsequent
+> patch will do something similar for the restore path.
 > 
-> Changelog:
-> 
-> v5:
-> 	Fix potential recursion during collect.
-> 	Replace call to ckpt_obj_collect() with ckpt_collect_file().
-> 		[Oren]
-> 	Fix checkpoint leak detection when there are more items than
-> 		expected.
-> 	Cleanup/simplify error write paths. (will complicate in a later
-> 		patch) [Oren]
-> 	Remove files_deferq bits. [Oren]
-> 	Remove extra newline. [Oren]
-> 	Remove aggregate check on number of watches added. [Oren]
-> 		This is OK since these will be done individually anyway.
-> 	Remove check for negative objrefs during restart. [Oren]
-> 	Fixup comment regarding race that indicates checkpoint leaks.
-> 		[Oren]
-> 	s/ckpt_read_obj/ckpt_read_buf_type/ [Oren]
-> 		Patch for lots of epoll items follows.
-> 	Moved sys_close(epfd) right under fget(). [Oren]
-> 	Use CKPT_HDR_BUFFER rather than custome ckpt_read/write_*
-> 		This makes it more similar to the pid array code. [Oren]
-> 		It also simplifies the error recovery paths.
-> 	Tested polling a pipe and 50,000 UNIX sockets.
-> 
-> v4:	ckpt-v18
-> 	Use files_deferq as submitted by Dan Smith
-> 		Cleanup to only report >= 1 items when debugging.
-> 
-> v3: [unposted]
-> 	Removed most of the TODOs -- the remainder will be removed by
-> 		subsequent patches.
-> 	Fixed missing ep_file_collect() [Serge]
-> 	Rather than include checkpoint_hdr.h declare (but do not define)
-> 		the two structs needed in eventpoll.h [Oren]
-> 	Complain with ckpt_write_err() when we detect checkpoint obj
-> 		leaks. [Oren]
-> 	Remove redundant is_epoll_file() check in collect. [Oren]
-> 	Move epfile_objref lookup to simplify error handling. [Oren]
-> 	Simplify error handling with early return in
-> 		ep_eventpoll_checkpoint(). [Oren]
-> 	Cleaned up a comment. [Oren]
-> 	Shorten CKPT_HDR_FILE_EPOLL_ITEMS (-FILE) [Oren]
-> 		Renumbered to indicate that it follows the file table.
-> 	Renamed the epoll struct in checkpoint_hdr.h [Oren]
-> 		Also renamed substruct.
-> 	Fixup return of empty ep_file_restore(). [Oren]
-> 	Changed some error returns. [Oren]
-> 	Changed some tests to BUG_ON(). [Oren]
-> 	Factored out watch insert with epoll_ctl() into do_epoll_ctl().
-> 		[Cedric, Oren]
 > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  checkpoint/files.c             |    8 +
->  fs/eventpoll.c                 |  308 ++++++++++++++++++++++++++++++++++++----
->  include/linux/checkpoint_hdr.h |   18 +++
->  include/linux/eventpoll.h      |   17 ++-
->  4 files changed, 322 insertions(+), 29 deletions(-)
+>  fs/eventpoll.c |   71 ++++++++++++++++++++++++++++++++++++-------------------
+>  1 files changed, 46 insertions(+), 25 deletions(-)
 > 
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index f6de07e..6ea2389 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -22,6 +22,7 @@
->  #include <linux/deferqueue.h>
->  #include <linux/checkpoint.h>
->  #include <linux/checkpoint_hdr.h>
-> +#include <linux/eventpoll.h>
->  #include <net/sock.h>
+> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+> index 4706ec5..2506b40 100644
+> --- a/fs/eventpoll.c
+> +++ b/fs/eventpoll.c
+> @@ -1480,7 +1480,7 @@ static int ep_items_checkpoint(void *data)
+>  	struct rb_node *rbp;
+>  	struct eventpoll *ep;
+>  	__s32 epfile_objref;
+> -	int i, num_items, ret;
+> +	int num_items = 0, nchunk, ret;
 >  
+>  	ctx = dq_entry->ctx;
 >  
-> @@ -607,6 +608,13 @@ static struct restore_file_ops restore_file_ops[] = {
->  		.file_type = CKPT_FILE_TTY,
->  		.restore = tty_file_restore,
->  	},
-> +#ifdef CONFIG_EPOLL
-> +	{
-> +		.file_name = "EPOLL",
-> +		.file_type = CKPT_FILE_EPOLL,
-> +		.restore = ep_file_restore,
-> +	},
-> +#endif
+> @@ -1489,9 +1489,8 @@ static int ep_items_checkpoint(void *data)
+>  
+>  	ep = dq_entry->epfile->private_data;
+>  	mutex_lock(&ep->mtx);
+> -	for (i = 0, rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp), i++) {}
+> +	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp), num_items++) {}
+>  	mutex_unlock(&ep->mtx);
+> -	num_items = i;
+>  
+>  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_EPOLL_ITEMS);
+>  	if (!h)
+> @@ -1503,36 +1502,58 @@ static int ep_items_checkpoint(void *data)
+>  	if (ret || !num_items)
+>  		return ret;
+>  
+> -	items = kzalloc(sizeof(*items)*num_items, GFP_KERNEL);
+> +	ret = ckpt_write_obj_type(ctx, NULL, sizeof(*items)*num_items,
+> +				  CKPT_HDR_BUFFER);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	nchunk = num_items;
+> +	do {
+> +		items = kzalloc(sizeof(*items)*nchunk, GFP_KERNEL);
+> +		if (items)
+> +			break;
+> +		nchunk = nchunk >> 1;
+> +	} while (nchunk > 0);
 
-There must be an entry here even if CONFIG_EPOLL isn't selected. And
-indeed you define ep_file_restore() for this case to return -ENOSYS
-(toward the end of this patch). So I dropped the #ifdef/#endif pair.
+An allocation may or may not succeed for num_items; however, it if
+does succeed, it may unnecessarily fragment the memory.
+
+So I wonder if it's simpler to set the chunk size to 1-2 pages, like
+in the pids code ?
+
+The other advantage is that if we eventually optimize by allocating
+a generic buffer for the c/r (e.g. ctx->buffer), we could easily
+reuse it here.
 
 [...]
 
-> diff --git a/include/linux/eventpoll.h b/include/linux/eventpoll.h
-> index f6856a5..34538be 100644
-> --- a/include/linux/eventpoll.h
-> +++ b/include/linux/eventpoll.h
-> @@ -56,6 +56,9 @@ struct file;
->  
->  
->  #ifdef CONFIG_EPOLL
-> +struct ckpt_ctx;
-> +struct ckpt_hdr_file;
-> +
->  
->  /* Used to initialize the epoll bits inside the "struct file" */
->  static inline void eventpoll_init_file(struct file *file)
-> @@ -95,11 +98,23 @@ static inline void eventpoll_release(struct file *file)
->  	eventpoll_release_file(file);
->  }
->  
-> -#else
->  
-> +#ifdef CONFIG_CHECKPOINT
-> +extern struct file* ep_file_restore(struct ckpt_ctx *ctx,
-> +				    struct ckpt_hdr_file *h);
-> +#endif
-> +#else
-> +/* !defined(CONFIG_EPOLL) */
->  static inline void eventpoll_init_file(struct file *file) {}
->  static inline void eventpoll_release(struct file *file) {}
->  
-> +#ifdef CONFIG_CHECKPOINT
-> +static inline struct file* ep_file_restore(struct ckpt_ctx *ctx,
-> +					   struct ckpt_hdr_file *ptr)
-> +{
-> +	return ERR_PTR(-ENOSYS);
-> +}
-> +#endif
->  #endif
->  
->  #endif /* #ifdef __KERNEL__ */
+Oren.
