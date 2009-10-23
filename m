@@ -1,14 +1,13 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] print the number of bytes processed in ckpt_error()
-Date: Fri, 23 Oct 2009 10:42:08 -0700
-Message-ID: <20091023174208.GC15092@count0.beaverton.ibm.com>
-References: <20091023170529.GA23079@us.ibm.com>
+Subject: [PATCH 2/2] File name length limit off by sizeof(struct ckpt_hdr)
+Date: Fri, 23 Oct 2009 10:58:28 -0700
+Message-ID: <633d58fa4318bd9ae8d9955cfa70d246184c38a5.1256320668.git.matthltc@us.ibm.com>
+References: <bb799d3c1e3e27d60dac114992c3e310fe14a9e6.1256320668.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091023170529.GA23079-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <bb799d3c1e3e27d60dac114992c3e310fe14a9e6.1256320668.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +17,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 23, 2009 at 12:05:29PM -0500, Serge E. Hallyn wrote:
-> This should be useful at restart to indicate how much we have
-> processed before running into an error.
-> 
-> This only adds it to the user log for now, bc the syslog
-> printing macro is expected to totally change anyway.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Unlike the length passed into ckpt_write_obj_type, the maximum length passed
+to ckpt_read_buf_type must include the length of the struct ckpt_hdr.
 
-Should be quite useful for users trying to pinpoint the source of
-restart problems in their checkpoint images.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/files.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-> ---
->  checkpoint/sys.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> index 1840f90..a7fe1f8 100644
-> --- a/checkpoint/sys.c
-> +++ b/checkpoint/sys.c
-> @@ -361,7 +361,7 @@ void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
->  		return;
->  	file = ctx->logfile;
-> 
-> -	count = snprintf(buf, 200, "%d:%d ", mypid, tpid);
-> +	count = snprintf(buf, 200, "%d:%d@%d ", mypid, tpid, ctx->total);
->  	if (count > 200)
->  		return; /* not possible */
->  	fs = get_fs();
-> -- 
-> 1.6.1
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 0564666..562c338 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -449,7 +449,7 @@ struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags)
+ 	if (flags & (O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC))
+ 		return ERR_PTR(-EINVAL);
+ 
+-	h = ckpt_read_buf_type(ctx, PATH_MAX, CKPT_HDR_FILE_NAME);
++	h = ckpt_read_buf_type(ctx, PATH_MAX + sizeof(*h), CKPT_HDR_FILE_NAME);
+ 	if (IS_ERR(h))
+ 		return (struct file *) h;
+ 	len = h->len - sizeof(*h);
+-- 
+1.5.6.3
