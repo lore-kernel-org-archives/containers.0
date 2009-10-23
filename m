@@ -1,15 +1,23 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH user-cr] Allow for logfile for kernel debug messages	(v2)
-Date: Fri, 23 Oct 2009 14:59:48 -0400
-Message-ID: <4AE1FD24.5030600@librato.com>
-References: <20091021210507.GA2098@us.ibm.com>
-	<20091021210533.GA2165@us.ibm.com> <4ADF8140.3010102@librato.com>
-	<20091022054853.GC7757@count0.beaverton.ibm.com>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Fri, 23 Oct 2009 15:16:52 -0400
+Message-ID: <4AE20124.4010108__36237.5472825535$1256325457$gmane$org@librato.com>
+References: <20091020005125.GG27627@count0.beaverton.ibm.com>
+	<m1vdiad9jd.fsf@fess.ebiederm.org>
+	<20091020040315.GA26632@us.ibm.com>
+	<m1iqeauyvl.fsf@fess.ebiederm.org>
+	<20091020183329.GB22646@us.ibm.com>
+	<m1r5sxsw7w.fsf@fess.ebiederm.org>
+	<20091021062021.GA2667@us.ibm.com>
+	<m1eioxrtsb.fsf@fess.ebiederm.org>
+	<20091023004253.GA7915@us.ibm.com>
+	<m1bpjyrkep.fsf@fess.ebiederm.org>
+	<20091023053001.GA24972@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091022054853.GC7757-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20091023053001.GA24972-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +27,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Matt Helsley wrote:
-> On Wed, Oct 21, 2009 at 05:46:40PM -0400, Oren Laadan wrote:
->> Serge E. Hallyn wrote:
->>> If unspecified, -1 will be sent for logfd to the kernel, and there
->>> will be no debug log.   If specified, then checkpoint and restart
->>> debug msgs will be sent to the logfile.
->> The new interface will cover error reporting, so when run without '-l'
->> both 'checkpoint' and 'restart' (unless asked to run extra silently)
->> need to provide a pipe to the syscall, and if an error occurs, display
->> pull the error reason from the pipe and print it.
+Sukadev Bhattiprolu wrote:
+> Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+> | > | +	if (target < RESERVED_PIDS)
+> | >
+> | > Should we replace RESERVED_PIDS with 0 ? We currently allow new
+> | > containers to have pids 1..32K in the first pass and in subsequent
+> | > passes assign starting at RESERVED_PIDS.
+> | 
+> | If it is a preexisting namespace pid namespace removing the RESERVED_PIDS
+> | check removes most if not all of the point of RESERVED_PIDS.
+> | 
+> | In a new fresh pid namespace I have no problem with not performing
+> | the RESERVED_PIDS check.
 > 
-> Of course if more than a pipe buf's worth of error data needs to be 
-> transferred then that scheme won't work very cleanly --
-> checkpoint/restart would always be a multi-task operation. (I just ran
-> into this issue with self-checkpoint.)
+> In that case can we do this
+> 
+> 	if (target_pid < RESERVED_PIDS && !pid_ns->level)
+> 		return -EINVAL;
+> 
+> instead ?
+> | 
+> | So I guess that makes the check.
+> | 
+> | if ((target < RESERVED_PIDS) && pid_ns->last_pid >= RESERVED_PIDS)
+> |    return -EINVAL;
+> 
+> I am just wondering if there is a small corner case where C/R would randomly
+> fail because of this sequence:
+> 
+> 	- C/R code calls clone() or clone3() say about RESERVED_PIDS-1
+> 	  times and ->last_pid == RESERVED_PIDS-1.
+> 
+> 	- C/R code calls normal fork()/alloc_pidmap() for a short-lived
+> 	  child - its pid == ->last_pid == RESERVED_PIDS
+> 
+> 	- C/R code then calls clone3()/set_pidmap() to set the pid of
+> 	  a new child to RESERVED_PID but fails (i.e it fails to restore
+> 	  a pid even when the pid is not in use).
 
-Of course. IIRC I commented at linux plumbers that error messages
-should (as in must) fit there, as opposed to log/debug messages.
+Not only for short-lived children. The problem is restart will succeed
+or fail depending on the order in which tasks were checkpointed. If
+task with pid 290 is restarted after pid 305, restart will fail.
+
+And because chekcpoint scans the task tree in a DFS manner, this is
+more likely to happen than not.
+
+I wonder why you'd like to restrict a pid-specific clone like that ?
+It is already a privileged syscall, so it could be exempt. I suggest
+that only regular clones will be constrained.
 
 Oren.
