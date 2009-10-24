@@ -1,15 +1,23 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] epoll: Check for fdtable races
-Date: Fri, 23 Oct 2009 22:19:50 -0500
-Message-ID: <20091024031950.GB17294@us.ibm.com>
-References: <1256321658-15646-1-git-send-email-matthltc@us.ibm.com>
-	<4AE25253.4040100@librato.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][v8][PATCH 0/10] Implement clone3() system call
+Date: Fri, 23 Oct 2009 20:38:39 -0700
+Message-ID: <20091024033839.GA16430__315.723071298812$1256355572$gmane$org@us.ibm.com>
+References: <m1r5sxsw7w.fsf@fess.ebiederm.org>
+	<20091021062021.GA2667@us.ibm.com>
+	<m1eioxrtsb.fsf@fess.ebiederm.org>
+	<20091023004253.GA7915@us.ibm.com>
+	<m1bpjyrkep.fsf@fess.ebiederm.org>
+	<20091023053001.GA24972@us.ibm.com>
+	<m1ws2mpsuk.fsf@fess.ebiederm.org>
+	<20091023192124.GA11088@us.ibm.com>
+	<20091023204812.GA26524@us.ibm.com>
+	<m1y6n1lmk7.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AE25253.4040100-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <m1y6n1lmk7.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +27,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Matt Helsley wrote:
-> > In case it's possible to race with other tasks sharing the fdtable,
-> > check for NULL file * and exit with an error.
-> > 
-> > Please consider merging this with the first patch in the series
-> > of epoll patches posted recently.
-> > 
-> > Reported-by: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Already did that when I pulled your patch.
-> 
-> BTW, I chose -EBUSY instead to tell the user to try again
-> later... when he/she isn't malicious anymore :)
+Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+| > +static int set_pidmap(struct pid_namespace *pid_ns, int target)
+| > +{
+| > +	if (!target)
+| > +		return alloc_pidmap(pid_ns);
 
-"Go stand in the corner and don't come out until you'll
-be NICE to your brother!"
+BTW,  we need this now that the RESERVED_PIDS check is is conditional on
+->last_pid. But this makes set_pidmap() completely general so should we
+have alloc_pid() call set_pidmap() always ? Or we could move this check
+into alloc_pid(), but it may be better to have all values of 'target'
+checked in one place.
 
--serge
+| > +
+| > +	if (target >= pid_max)
+| > +		return -EINVAL;
+| > +
+| > +	if ((target < 0) || (target < RESERVED_PIDS && pid_ns == &init_pid_ns))
+| > +		return -EINVAL;
+| 
+| if ((target < 0) || ((target < RESERVED_PIDS) && (pid_ns->last_pid >= RESERVED_PIDS)))
+| 
+| Please.
+
+Ok.
