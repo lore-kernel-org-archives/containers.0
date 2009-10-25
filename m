@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH] user-cr: fix race in ckpt_coordinator_pidns and --no-wait
-Date: Sun, 25 Oct 2009 18:12:47 -0400
-Message-ID: <1256508767-2356-1-git-send-email-orenl@librato.com>
+Subject: [PATCH] user-cr: add --input-fd to take input from a specific fd
+Date: Sun, 25 Oct 2009 18:13:11 -0400
+Message-ID: <1256508791-2394-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,126 +18,108 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-In a restart with --pidns, if the root-task has pid != 1, then we fork
-a new process as the init of the new pid-ns, and that process becomes
-the coordinator (instead of 'restart').
-
-The original 'restart' process will then wait for the new coordinator
-to exit (when all restarted tasks and their descendants terminate).
-With --no-wait, 'restart' doesn't wait for them to exit, but should
-simply return as soon as the restart completes.
-
-However, it has no way to know when (and if) the restart completes,
-because the coordiantor calls sys_restart(). As a result, it may exit
-early, exiting the feeder (which is a thread) too, and fail the
-restart.
-
-This patch adds a pipe through which the new coordinator reports the
-status of the restart back to its parent, so that the parent only
-exits once it knows that the operation has completed.
+This is useful if the user would like redirect the input from
+e.g, a socket or any other already open file descriptor when
+invoking 'restart'.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++----
- 1 files changed, 46 insertions(+), 4 deletions(-)
+ restart.c |   34 +++++++++++++++++++++++++++-------
+ 1 files changed, 27 insertions(+), 7 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index fbaab88..14d8aec 100644
+index 14d8aec..ca8e062 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -254,6 +254,7 @@ struct ckpt_ctx {
+@@ -72,7 +72,8 @@ static char usage_str[] =
+ "     --copy-status      imitate exit status of root task (implies -w)\n"
+ "  -W,--no-wait          do not wait for root task to terminate\n"
+ "  -F,--freezer=CGROUP   freeze tasks in freezer group CGROUP on success\n"
+-"  -i,--input=FILE      read data from FILE instead of standard input\n"
++"  -i,--input=FILE       read data from FILE instead of standard input\n"
++"     --input-fd=FD      read data from file descriptor FD (instead of stdin)\n"
+ "     --inspect          inspect image on-the-fly for error records\n"
+ "  -v,--verbose          verbose output\n"
+ "  -d,--debug            debugging output\n"
+@@ -353,6 +354,7 @@ struct args {
+ 	int copy_status;
+ 	char *freezer;
+ 	char *input;
++	int inputfd;
+ };
  
- 	int pipe_child[2];	/* for children to report status */
- 	int pipe_feed[2];	/* for feeder to provide input */
-+	int pipe_coord[2];	/* for coord to report status (if needed) */
+ static void usage(char *str)
+@@ -384,6 +386,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ "signal",	required_argument,	NULL, 4 },
+ 		{ "inspect",	no_argument,		NULL, 5 },
+ 		{ "input",	required_argument,	NULL, 'i' },
++		{ "input-fd",	required_argument,	NULL, 7 },
+ 		{ "root",	required_argument,	NULL, 'r' },
+ 		{ "wait",	no_argument,		NULL, 'w' },
+ 		{ "show-status",	no_argument,	NULL, 1 },
+@@ -401,6 +404,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 	/* defaults */
+ 	memset(args, 0, sizeof(*args));
+ 	args->wait = 1;
++	args->inputfd = -1;
  
- 	struct ckpt_pids *pids_arr;
- 	struct ckpt_pids *copy_arr;
-@@ -848,7 +849,32 @@ static int ckpt_probe_child(pid_t pid, char *str)
- #ifdef CLONE_NEWPID
- static int __ckpt_coordinator(void *arg)
- {
--	return ckpt_coordinator((struct ckpt_ctx *) arg);
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) arg;
-+
-+	if (!ctx->args->wait)
-+		close(ctx->pipe_coord[0]);
-+
-+	return ckpt_coordinator(ctx);
-+}
-+
-+static int ckpt_coordinator_status(struct ckpt_ctx *ctx)
-+{
-+	int status = -1;
-+	int ret;
-+
-+	close(ctx->pipe_coord[1]);
-+
-+	ret = read(ctx->pipe_coord[0], &status, sizeof(status));
-+	if (ret < 0)
-+		perror("read coordinator status");
-+	else if (ret == 0) {
-+		/* coordinator failed to report */
-+		ckpt_dbg("Coordinator failed to report status.");
-+	} else
-+		status = 0;
-+
-+	close(ctx->pipe_coord[0]);
-+	return status;
- }
- 
- static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-@@ -859,6 +885,15 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
- 
- 	ckpt_dbg("forking coordinator in new pidns\n");
- 
-+	/*
-+	 * We won't wait for (collect) the coordinator, so we use a
-+	 * pipe instead for the coordinator to report success/failure.
-+	 */
-+	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
-+		perror("pipe");
-+		return -1;
-+	}
-+
- 	stk = malloc(PTHREAD_STACK_MIN);
- 	if (!stk) {
- 		perror("coordinator stack malloc");
-@@ -893,7 +928,7 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
- 	if (ctx->args->wait)
- 		return ckpt_collect_child(ctx);
- 	else
--		return 0;
-+		return ckpt_coordinator_status(ctx);
- }
- #else
- static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-@@ -941,17 +976,24 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
- 	ckpt_verbose("Success\n");
- 	ckpt_dbg("restart succeeded\n");
- 
-+	ret = 0;
-+
- 	if (ctx->args->pidns && ctx->tasks_arr[0].pid != 1) {
- 		/*
- 		 * If root task isn't container init, we must stay
- 		 * around and be reaper until all tasks are gone.
- 		 * Otherwise, container will die as soon as we exit.
- 		 */
-+		if (!ctx->args->wait) {
-+			/* report status because parent won't wait for us */
-+			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-+				perror("failed to report status");
+ 	while (1) {
+ 		int c = getopt_long(argc, argv, optc, opts, NULL);
+@@ -420,6 +424,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'i':
+ 			args->input = optarg;
+ 			break;
++		case 7:
++			args->inputfd = str2num(optarg);
++			if (args->inputfd < 0) {
++				printf("restart: invalid file descriptor\n");
 +				exit(1);
 +			}
-+		}
- 		ret = ckpt_pretend_reaper(ctx);
- 	} else if (ctx->args->wait) {
- 		ret = ckpt_collect_child(ctx);
--	} else {
--		ret = 0;
++			break;
+ 		case 'p':
+ 			args->pidns = 1;
+ 			break;
+@@ -507,6 +518,11 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		printf("Invalid mix of --self with multiprocess options\n");
+ 		exit(1);
+ 	}
++
++	if (args->input && args->inputfd >= 0) {
++		printf("Invalid used of both -i/--input and --input-fd\n");
++		exit(1);
++	}
+ }
+ 
+ static void report_exit_status(int status, char *str, int debug)
+@@ -652,19 +668,23 @@ int main(int argc, char *argv[])
+ 	parse_args(&args, argc, argv);
+ 	ctx.args = &args;
+ 
+-	/* input file (default: stdin) */
++	/* input file ? */
+ 	if (args.input) {
+-		ret = open(args.input, O_RDONLY, 0);
+-		if (ret < 0) {
++		args.inputfd = open(args.input, O_RDONLY, 0);
++		if (args.inputfd < 0) {
+ 			perror("open input file");
+ 			exit(1);
+ 		}
+-		if (dup2(ret, STDIN_FILENO) < 0) {
++	}
++
++	/* input file descriptor (default: stdin) */
++	if (args.inputfd >= 0) {
++		if (dup2(args.inputfd, STDIN_FILENO) < 0) {
+ 			perror("dup2 input file");
+ 			exit(1);
+ 		}
+-		if (ret != STDIN_FILENO)
+-			close(ret);
++		if (args.inputfd != STDIN_FILENO)
++			close(args.inputfd);
  	}
  
- 	if (ret < 0)
+ 	/* freezer preparation */
 -- 
 1.6.0.4
