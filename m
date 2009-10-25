@@ -1,11 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] [RFC] Checkpoint/restart eventfd
-Date: Sat, 24 Oct 2009 22:13:10 -0700
-Message-ID: <1256447590-31138-1-git-send-email-matthltc@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [v9][PATCH 6/9] Check invalid clone flags
+Date: Sun, 25 Oct 2009 13:08:16 -0400
+Message-ID: <4AE48600.8030800__13179.1161526509$1256490546$gmane$org@librato.com>
+References: <20091025033508.GA20327@us.ibm.com>
+	<20091025033937.GG20327@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091025033937.GG20327-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,181 +18,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, pavel-+ZI9xUNit7I@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Save/restore eventfd files. These are anon_inodes just like epoll
-but instead of a set of files to poll they are a 64-bit counter
-and a flag value. Used for AIO.
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-NOTE: Marked [RFC] because it strangely does not pass my adapted LTP
-	test cases unless it's running from a checkpointed image.
-	Seems to be a mistake in the test case adaptation.
----
- checkpoint/files.c             |    7 +++++
- fs/eventfd.c                   |   51 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint_hdr.h |    8 ++++++
- include/linux/eventfd.h        |   10 ++++++++
- 4 files changed, 76 insertions(+), 0 deletions(-)
+Sukadev Bhattiprolu wrote:
+> Subject: [v9][PATCH 6/9] Check invalid clone flags
+> 
+> As pointed out by Oren Laadan, we want to ensure that unused bits in the
+> clone-flags remain unused and available for future. To ensure this, define
+> a mask of clone-flags and check the flags in the clone() system calls.
+> 
+> Changelog[v9]:
+> 	- Include the unused clone-flag (CLONE_UNUSED) to VALID_CLONE_FLAGS
+> 	  to avoid breaking any applications that may have set it. IOW, this
+> 	  patch/check only applies to clone-flags bits 33 and higher.
+> 
+> Changelog[v8]:
+> 	- New patch in set
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index f6de07e..43b95cc 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -23,6 +23,7 @@
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
- #include <net/sock.h>
-+#include <linux/eventfd.h>
- 
- 
- /**************************************************************************
-@@ -607,6 +608,12 @@ static struct restore_file_ops restore_file_ops[] = {
- 		.file_type = CKPT_FILE_TTY,
- 		.restore = tty_file_restore,
- 	},
-+	/* eventfd */
-+	{
-+		.file_name = "EVENTFD",
-+		.file_type = CKPT_FILE_EVENTFD,
-+		.restore = eventfd_restore,
-+	},
- };
- 
- static struct file *do_restore_file(struct ckpt_ctx *ctx)
-diff --git a/fs/eventfd.c b/fs/eventfd.c
-index 31d12de..5d30cd5 100644
---- a/fs/eventfd.c
-+++ b/fs/eventfd.c
-@@ -18,6 +18,8 @@
- #include <linux/module.h>
- #include <linux/kref.h>
- #include <linux/eventfd.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
- 
- struct eventfd_ctx {
- 	struct kref kref;
-@@ -223,11 +225,34 @@ static ssize_t eventfd_write(struct file *file, const char __user *buf, size_t c
- 	return res;
- }
- 
-+static int eventfd_checkpoint(struct ckpt_ctx *ckpt_ctx, struct file *file)
-+{
-+	struct eventfd_ctx *ctx;
-+	struct ckpt_hdr_file_eventfd *h;
-+	int ret = -ENOMEM;
-+
-+	h = ckpt_hdr_get_type(ckpt_ctx, sizeof(*h), CKPT_HDR_FILE);
-+	if (!h)
-+		return -ENOMEM;
-+	h->common.f_type = CKPT_FILE_EVENTFD;
-+	ret = checkpoint_file_common(ckpt_ctx, file, &h->common);
-+	if (ret < 0)
-+		goto out;
-+	ctx = file->private_data;
-+	h->count = ctx->count;
-+	h->flags = ctx->flags;
-+	ret = ckpt_write_obj(ckpt_ctx, &h->common.h);
-+out:
-+	ckpt_hdr_put(ckpt_ctx, h);
-+	return ret;
-+}
-+
- static const struct file_operations eventfd_fops = {
- 	.release	= eventfd_release,
- 	.poll		= eventfd_poll,
- 	.read		= eventfd_read,
- 	.write		= eventfd_write,
-+	.checkpoint     = eventfd_checkpoint,
- };
- 
- /**
-@@ -335,3 +360,29 @@ SYSCALL_DEFINE1(eventfd, unsigned int, count)
- 	return sys_eventfd2(count, 0);
- }
- 
-+struct file *eventfd_restore(struct ckpt_ctx *ckpt_ctx,
-+			     struct ckpt_hdr_file *ptr)
-+{
-+	struct ckpt_hdr_file_eventfd *h = (struct ckpt_hdr_file_eventfd *)ptr;
-+	struct file *evfile;
-+	int evfd, ret;
-+
-+	/* Already know type == CKPT_HDR_FILE and f_type == CKPT_FILE_EVENTFD */
-+	if (h->common.h.len != sizeof(*h))
-+		return ERR_PTR(-EINVAL);
-+
-+	evfd = sys_eventfd2(h->count, h->flags);
-+	if (evfd < 0)
-+		return ERR_PTR(evfd);
-+	evfile = fget(evfd);
-+	sys_close(evfd);
-+	if (!evfile)
-+		return ERR_PTR(-EBUSY);
-+
-+	ret = restore_file_common(ckpt_ctx, evfile, &h->common);
-+	if (ret < 0) {
-+		fput(evfile);
-+		return ERR_PTR(ret);
-+	}
-+	return evfile;
-+}
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index ff2e4aa..dc22244 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -476,6 +476,8 @@ enum file_type {
- #define CKPT_FILE_SOCKET CKPT_FILE_SOCKET
- 	CKPT_FILE_TTY,
- #define CKPT_FILE_TTY CKPT_FILE_TTY
-+	CKPT_FILE_EVENTFD,
-+#define CKPT_FILE_EVENTFD CKPT_FILE_EVENTFD
- 	CKPT_FILE_MAX
- #define CKPT_FILE_MAX CKPT_FILE_MAX
- };
-@@ -500,6 +502,12 @@ struct ckpt_hdr_file_pipe {
- 	__s32 pipe_objref;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_file_eventfd {
-+	struct ckpt_hdr_file common;
-+	__u64 count;
-+	__u32 flags;
-+} __attribute__((aligned(8)));
-+
- /* socket */
- struct ckpt_hdr_socket {
- 	struct ckpt_hdr h;
-diff --git a/include/linux/eventfd.h b/include/linux/eventfd.h
-index 3b85ba6..a904633 100644
---- a/include/linux/eventfd.h
-+++ b/include/linux/eventfd.h
-@@ -34,6 +34,15 @@ struct eventfd_ctx *eventfd_ctx_fdget(int fd);
- struct eventfd_ctx *eventfd_ctx_fileget(struct file *file);
- int eventfd_signal(struct eventfd_ctx *ctx, int n);
- 
-+#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
-+struct ckpt_hdr_file;
-+
-+struct file *eventfd_restore(struct ckpt_ctx *ckpt_ctx,
-+			     struct ckpt_hdr_file *ptr);
-+#else
-+#define eventfd_restore NULL
-+#endif
- #else /* CONFIG_EVENTFD */
- 
- /*
-@@ -55,6 +64,7 @@ static inline void eventfd_ctx_put(struct eventfd_ctx *ctx)
- 
- }
- 
-+#define eventfd_restore NULL
- #endif
- 
- #endif /* _LINUX_EVENTFD_H */
--- 
-1.5.6.3
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+
+> ---
+>  include/linux/sched.h |   12 ++++++++++++
+>  kernel/fork.c         |    3 +++
+>  2 files changed, 15 insertions(+), 0 deletions(-)
+> 
+> diff --git a/include/linux/sched.h b/include/linux/sched.h
+> index 75e6e60..6b319a0 100644
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -29,6 +29,18 @@
+>  #define CLONE_NEWNET		0x40000000	/* New network namespace */
+>  #define CLONE_IO		0x80000000	/* Clone io context */
+>  
+> +#define CLONE_UNUSED        	0x00001000	/* Can be reused ? */
+> +
+> +#define VALID_CLONE_FLAGS	(CSIGNAL | CLONE_VM | CLONE_FS | CLONE_FILES |\
+> +				 CLONE_SIGHAND | CLONE_UNUSED | CLONE_PTRACE |\
+> +				 CLONE_VFORK  | CLONE_PARENT | CLONE_THREAD  |\
+> +				 CLONE_NEWNS  | CLONE_SYSVSEM | CLONE_SETTLS |\
+> +				 CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID  |\
+> +				 CLONE_DETACHED | CLONE_UNTRACED             |\
+> +				 CLONE_CHILD_SETTID | CLONE_STOPPED          |\
+> +				 CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER |\
+> +				 CLONE_NEWPID | CLONE_NEWNET| CLONE_IO)
+> +
+>  /*
+>   * Scheduling policies
+>   */
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index c8a06de..11f77ed 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -982,6 +982,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>  	struct task_struct *p;
+>  	int cgroup_callbacks_done = 0;
+>  
+> +	if (clone_flags & ~VALID_CLONE_FLAGS)
+> +		return ERR_PTR(-EINVAL);
+> +
+>  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+>  		return ERR_PTR(-EINVAL);
+>  
