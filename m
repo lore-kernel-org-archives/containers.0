@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH] user-cr: add --input-fd to take input from a specific fd
-Date: Sun, 25 Oct 2009 18:13:11 -0400
-Message-ID: <1256508791-2394-1-git-send-email-orenl@librato.com>
+Subject: [PATCH] user-cr: add --output-fd to write output to a specific fd
+Date: Sun, 25 Oct 2009 18:13:21 -0400
+Message-ID: <1256508801-2426-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,108 +18,126 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is useful if the user would like redirect the input from
+This is useful if the user would like redirect the output to
 e.g, a socket or any other already open file descriptor when
-invoking 'restart'.
+invoking 'checkpoint'.
+
+Also useful if the user would like to append an existing file.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   34 +++++++++++++++++++++++++++-------
- 1 files changed, 27 insertions(+), 7 deletions(-)
+ checkpoint.c |   47 +++++++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 41 insertions(+), 6 deletions(-)
 
-diff --git a/restart.c b/restart.c
-index 14d8aec..ca8e062 100644
---- a/restart.c
-+++ b/restart.c
-@@ -72,7 +72,8 @@ static char usage_str[] =
- "     --copy-status      imitate exit status of root task (implies -w)\n"
- "  -W,--no-wait          do not wait for root task to terminate\n"
- "  -F,--freezer=CGROUP   freeze tasks in freezer group CGROUP on success\n"
--"  -i,--input=FILE      read data from FILE instead of standard input\n"
-+"  -i,--input=FILE       read data from FILE instead of standard input\n"
-+"     --input-fd=FD      read data from file descriptor FD (instead of stdin)\n"
- "     --inspect          inspect image on-the-fly for error records\n"
+diff --git a/checkpoint.c b/checkpoint.c
+index c116daf..aef954b 100644
+--- a/checkpoint.c
++++ b/checkpoint.c
+@@ -32,12 +32,14 @@ static char usage_str[] =
+ "\tOptions:\n"
+ "  -h,--help             print this help message\n"
+ "  -o,--output=FILE      write data to FILE instead of standard output\n"
++"     --output-fd=FD     write data to file descriptor FD instead of stdout\n"
+ "  -c,--container        require the PID is a container-init\n"
  "  -v,--verbose          verbose output\n"
- "  -d,--debug            debugging output\n"
-@@ -353,6 +354,7 @@ struct args {
- 	int copy_status;
- 	char *freezer;
- 	char *input;
-+	int inputfd;
+ "";
+ 
+ struct args {
+ 	char *output;
++	int outputfd;
+ 	int container;
+ 	int verbose;
  };
+@@ -53,17 +55,33 @@ static void usage(char *str)
+ 	exit(1);
+ }
  
- static void usage(char *str)
-@@ -384,6 +386,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		{ "signal",	required_argument,	NULL, 4 },
- 		{ "inspect",	no_argument,		NULL, 5 },
- 		{ "input",	required_argument,	NULL, 'i' },
-+		{ "input-fd",	required_argument,	NULL, 7 },
- 		{ "root",	required_argument,	NULL, 'r' },
- 		{ "wait",	no_argument,		NULL, 'w' },
- 		{ "show-status",	no_argument,	NULL, 1 },
-@@ -401,6 +404,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 	/* defaults */
- 	memset(args, 0, sizeof(*args));
- 	args->wait = 1;
-+	args->inputfd = -1;
++/* negative retval means error */
++static int str2num(char *str)
++{
++	char *nptr;
++	int num;
++
++	num = strtol(str, &nptr, 10);
++	if (nptr - str != strlen(str))
++		num = -1;
++	return num;
++}
++
+ static void parse_args(struct args *args, int argc, char *argv[])
+ {
+ 	static struct option opts[] = {
+ 		{ "help",	no_argument,		NULL, 'h' },
+ 		{ "output",	required_argument,	NULL, 'o' },
++		{ "output-fd",	required_argument,	NULL, 1 },
+ 		{ "container",	no_argument,		NULL, 'c' },
+ 		{ "verbose",	no_argument,		NULL, 'v' },
+ 		{ NULL,		0,			NULL, 0 }
+ 	};
+ 	static char optc[] = "hvco:";
  
++	/* defaults */
++	args->outputfd = -1;
++
  	while (1) {
  		int c = getopt_long(argc, argv, optc, opts, NULL);
-@@ -420,6 +424,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		case 'i':
- 			args->input = optarg;
+ 		if (c == -1)
+@@ -76,6 +94,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'o':
+ 			args->output = optarg;
  			break;
-+		case 7:
-+			args->inputfd = str2num(optarg);
-+			if (args->inputfd < 0) {
-+				printf("restart: invalid file descriptor\n");
++		case 1:
++			args->outputfd = str2num(optarg);
++			if (args->outputfd < 0) {
++				printf("checkpoint: invalid file descriptor\n");
 +				exit(1);
 +			}
 +			break;
- 		case 'p':
- 			args->pidns = 1;
+ 		case 'c':
+ 			args->container = 1;
  			break;
-@@ -507,6 +518,11 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		printf("Invalid mix of --self with multiprocess options\n");
- 		exit(1);
+@@ -86,6 +111,12 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 			usage(usage_str);
+ 		}
  	}
 +
-+	if (args->input && args->inputfd >= 0) {
-+		printf("Invalid used of both -i/--input and --input-fd\n");
++	if (args->output && args->outputfd >= 0) {
++		printf("Invalid used of both -o/--output and --output-fd\n");
 +		exit(1);
 +	}
++	
  }
  
- static void report_exit_status(int status, char *str, int debug)
-@@ -652,19 +668,23 @@ int main(int argc, char *argv[])
- 	parse_args(&args, argc, argv);
- 	ctx.args = &args;
- 
--	/* input file (default: stdin) */
-+	/* input file ? */
- 	if (args.input) {
--		ret = open(args.input, O_RDONLY, 0);
--		if (ret < 0) {
-+		args.inputfd = open(args.input, O_RDONLY, 0);
-+		if (args.inputfd < 0) {
- 			perror("open input file");
- 			exit(1);
- 		}
--		if (dup2(ret, STDIN_FILENO) < 0) {
-+	}
-+
-+	/* input file descriptor (default: stdin) */
-+	if (args.inputfd >= 0) {
-+		if (dup2(args.inputfd, STDIN_FILENO) < 0) {
- 			perror("dup2 input file");
- 			exit(1);
- 		}
--		if (ret != STDIN_FILENO)
--			close(ret);
-+		if (args.inputfd != STDIN_FILENO)
-+			close(args.inputfd);
+ int main(int argc, char *argv[])
+@@ -111,19 +142,23 @@ int main(int argc, char *argv[])
+ 		exit(1);
  	}
  
- 	/* freezer preparation */
+-	/* output file (default: stdout) */
++	/* output file */
+ 	if (args.output) {
+-		ret = open(args.output, O_RDWR | O_CREAT, 0);
+-		if (ret < 0) {
++		args.outputfd = open(args.output, O_RDWR | O_CREAT, 0);
++		if (args.outputfd < 0) {
+ 			perror("open output file");
+ 			exit(1);
+ 		}
+-		if (dup2(ret, STDOUT_FILENO) < 0) {
++	}
++
++	/* output file descriptor (default: stdout) */
++	if (args.outputfd >= 0) {
++		if (dup2(args.outputfd, STDOUT_FILENO) < 0) {
+ 			perror("dup2 output file");
+ 			exit(1);
+ 		}
+-		if (ret != STDOUT_FILENO)
+-			close(ret);
++		if (args.outputfd != STDOUT_FILENO)
++			close(args.outputfd);
+ 	}
+ 
+ 	ret = checkpoint(pid, STDOUT_FILENO, flags);
 -- 
 1.6.0.4
