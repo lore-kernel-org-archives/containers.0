@@ -1,14 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: tolerate X86_EFLAGS_RF on restart
-Date: Mon, 26 Oct 2009 09:57:47 -0500
-Message-ID: <20091026145746.GA23564@us.ibm.com>
-References: <1256323024-20268-1-git-send-email-orenl@librato.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] [RFC] Enable non-blocking writes to the cgroup
+	freezer.state file
+Date: Mon, 26 Oct 2009 08:15:30 -0700
+Message-ID: <1256570129-13107-2-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1256323024-20268-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,112 +16,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBPcmVuIExhYWRhbiAob3JlbmxAbGlicmF0by5jb20pOgo+IE9uIHJlc3RhcnQsIHRo
-ZSBjL3IgY29kZSB0aGF0IHNhbml0aXplcyBhIHRhc2sncyBFRkxBR1MgZmFpbGVkIHdpdGggYW4K
-PiBlcnJvciBpZiB0aGUgWDg2X0VGTEFHU19SRiB3YXMgc2V0LiBIb3dldmVyLCB0aGVyZSBhcmUg
-Y2FzZXMgaW4gd2hpY2gKPiBhIHRhc2sgbGVnaXRpbWF0ZWx5IGhhcyB0aGlzIGZsYWcgcmVjb3Jk
-ZWQgYXQgY2hlY2twb2ludCwgc3VjaCBhczoKPiAKPiAxKSBXZSBhcmUgcnVubmluZyBpbnNpZGUg
-YSBLVk0gZ3Vlc3QsIGFuZCB0aGUgZ3Vlc3QgaXMgYmVpbmcgZGVidWdnZWQKPiAoc2VlIGFyY2gv
-eDg2L2t2bS97c3ZtLHZteH0uYywgdmlhIGNhbGxiYWNrcyBmcm9tIHFlbXUuCj4gCj4gMikgVGhl
-IGtlcm5lbCBpdHNlbGYgaXMgYmVpbmcgZGVidWdnZWQgdXNpbmcga2diZC4KPiAKPiAzKSBFeGNl
-cHRpb25zIHRoYXQgb2NjdXIgdW5kZXIgY2VydGFpbiBjb25kaXRpb24gd2lsbCBzZXQgdGhpcyBm
-bGFnCj4gb24gdGhlIGN1cnJlbnRseSBydW5uaW5nIHRhc2suIEZvciBkZXRhaWxzIHNlZSBwYWdl
-IDY3OSBpbiBJbnRlbCdzCj4gbWFudWFsIChodHRwOi8vd3d3LmludGVsLmNvbS9Bc3NldHMvUERG
-L21hbnVhbC8yNTM2NjgucGRmKSwgbGlrZToKPiAKPiAgIFdoZW4gY2FsbGluZyBhbiBldmVudCBo
-YW5kbGVyLCBJbnRlbCA2NCBhbmQgSUEtMzIgcHJvY2Vzc29ycwo+ICAgZXN0YWJsaXNoIHRoZSB2
-YWx1ZSBvZiB0aGUgUkYgZmxhZyBpbiB0aGUgRUZMQUdTIGltYWdlIHB1c2hlZCBvbiB0aGUKPiAg
-IHN0YWNrOgo+ICAgICDigKIgRm9yIGFueSBmYXVsdC1jbGFzcyBleGNlcHRpb24gZXhjZXB0IGEg
-ZGVidWcgZXhjZXB0aW9uCj4gICAgICAgZ2VuZXJhdGVkIGluIHJlc3BvbnNlIHRvIGFuIGluc3Ry
-dWN0aW9uIGJyZWFrcG9pbnQsIHRoZSB2YWx1ZQo+ICAgICAgIHB1c2hlZCBmb3IgUkYgaXMgMS4K
-PiAgICAg4oCiIEZvciBhbnkgaW50ZXJydXB0IGFycml2aW5nIGFmdGVyIGFueSBpdGVyYXRpb24g
-b2YgYSByZXBlYXRlZAo+ICAgICAgIHN0cmluZyBpbnN0cnVjdGlvbiBidXQgdGhlIGxhc3QgaXRl
-cmF0aW9uLCB0aGUgdmFsdWUgcHVzaGVkIGZvcgo+ICAgICAgIFJGIGlzIDEuCj4gICAgIOKAoiBG
-b3IgYW55IHRyYXAtY2xhc3MgZXhjZXB0aW9uIGdlbmVyYXRlZCBieSBhbnkgaXRlcmF0aW9uIG9m
-IGEKPiAgICAgICByZXBlYXRlZCBzdHJpbmcgaW5zdHJ1Y3Rpb24gYnV0IHRoZSBsYXN0IGl0ZXJh
-dGlvbiwgdGhlIHZhbHVlCj4gICAgICAgcHVzaGVkIGZvciBSRiBpcyAxLgoKSSB3YXNuJ3QgcXVp
-dGUgc3VyZSB3aGF0IGEgJ3RyYXAtY2xhc3MgZXhjZXB0aW9uJyBpcywKaHR0cDovL3d3dy55YXNo
-a3MuY29tL2V4Y2VwdGlvbi1iYXNpY3MuaHRtbCBzYXlzOgoKRXhhbXBsZTogSU5UIDMob3IgQ0Mg
-b3IgQ0QgMjEpIGlzIGEgdHJhcCBpbnN0cnVjdGlvbi4gSWYgYSBwcm9ncmFtIGhhcyB0aGlzCmlu
-c3RydWN0aW9uIGFuZCBpZiB0aGUgZGVidWdnZXIgaXMgcnVubmluZywgaXQgd2lsbCByZXR1cm4g
-dGhlIG5leHQgaW5zdHJ1Y3Rpb24KYWRkcmVzcyB0byB0aGlzIGRlYnVnZ2VyLiBXaGVyZSBkZWJ1
-Z2dlciBjYW4gY29udGludWUgaXQgZGVidWdnaW5nLgoKRG9lcyB0aGF0IG5vdCBtZWFuIHRoYXQg
-aWYgd2UgY2hlY2twb2ludCB0MSBhbmQgdDIgd2hlcmUgdDEgaXMgcHRyYWNpbmcgdDIsIHQyCm1p
-Z2h0IGhhdmUgUkYgc2V0IHRvIDE/ICBTbyB0aGlzIGlzbid0IGdlbmVyYWxseSBzYWZlLCByaWdo
-dD8KCklJVUMgaXQgYWxzbyBjb3VsZCBiZSBzZXQgZm9yIHRoaW5ncyBsaWtlIGEgIkdlbmVyYWwg
-UHJvdGVjdGlvbiBFeGNlcHRpb24oVHlwZToKRmF1bHQpIiBhdCBjaGVja3BvaW50IGluIHdoaWNo
-IGNhc2Ugd2UgY291bGQgcmVhbGx5IG1lc3MgdXAgdGhlIHN3IGF0CnJlc3RhcnQuCgpPciBtYXli
-ZSBJJ20gdG90YWxseSBtaXN1bmRlcnN0YW5kaW5nLi4uPwoKPiAgICAg4oCiIEZvciBvdGhlciBj
-YXNlcywgdGhlIHZhbHVlIHB1c2hlZCBmb3IgUkYgaXMgdGhlIHZhbHVlIHRoYXQgd2FzCj4gICAg
-ICAgaW4gRUZMQUcuUkYgYXQgdGhlIHRpbWUgdGhlIGV2ZW50IGhhbmRsZXIgd2FzIGNhbGxlZC4K
-PiAgIFsuLi5dCj4gCj4gQ2FzZSAjMyBpcyBjb25zaXN0ZW50IHdpdGggdGhlIGZhY3QgdGhhdCBp
-biBhbGwgY2FzZXMgd2hlcmUgd2UKPiBvYnNlcnZlZCB0aGUgaXNzdWUgdGhlcmUgd2FzIGEgc2Vu
-ZG1haWwgcHJvY2VzcyBkb2luZyBJTy4KPiAKPiBDbGVhcmx5LCB0aGUgWDg2X0VGTEFHU19SRiBp
-cyB2YWxpZCB0byBiZSBzZXQuCj4gCj4gVGhpcyBwYXRjaGVzIGZpeGVzIHRoZSByZXN0YXJ0IHRv
-Ogo+IAo+IDEpIFNpbGVudGx5IGlnbm9yZSB0aGUgWDg2X0VGTEFHU19SRiBpZiB3YXMgc2V0IGF0
-IGNoZWNrcG9pbnQ6IHRoaXMKPiBhbGxvd3MgcmVzdGFydCB0byB0b2xlcmF0ZSB0aGUgZmxhZyBh
-bmQgc2FmZWx5IGNvbXBsZXRlIHRoZSByZXN0YXJ0Lgo+IAo+IDIpIFByZXNlcnZlIHRoZSBleGlz
-dGluZyBYODZfRUZMQUdTX1JGIG9mIGEgcmVzdGFydGluZyB0YXNrIChpbnN0ZWFkCj4gb2Ygb3Zl
-cndyaXRpbmcgaXQpOiB0aGlzIGVuc3VyZXMgdGhhdCByZXN0YXJ0aW5nIGRvZXMgbm90IGludGVy
-ZmVyZQo+IHdpdGgga3ZtLCBrZ2RiLCBldGMuCj4gCj4gU2lnbmVkLW9mZi1ieTogT3JlbiBMYWFk
-YW4gPG9yZW5sQGNzLmNvbHVtYmlhLmVkdT4KPiBDYzogQWxleGV5IERvYnJpeWFuIDxhZG9icml5
-YW5AZ21haWwuY29tPgo+IENjOiBNYXR0IEhlbHNsZXkgPG1hdHRobHRjQHVzLmlibS5jb20+Cj4g
-Q2M6IEF2aSBLaXZpdHkgPGF2aUByZWRoYXQuY29tPgo+IC0tLQo+ICBhcmNoL3g4Ni9tbS9jaGVj
-a3BvaW50LmMgfCAgIDQwICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrLS0K
-PiAgMSBmaWxlcyBjaGFuZ2VkLCAzOCBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQo+IAo+
-IGRpZmYgLS1naXQgYS9hcmNoL3g4Ni9tbS9jaGVja3BvaW50LmMgYi9hcmNoL3g4Ni9tbS9jaGVj
-a3BvaW50LmMKPiBpbmRleCA5ZGQ4ZTEyLi5hOTNiYjZmIDEwMDY0NAo+IC0tLSBhL2FyY2gveDg2
-L21tL2NoZWNrcG9pbnQuYwo+ICsrKyBiL2FyY2gveDg2L21tL2NoZWNrcG9pbnQuYwo+IEBAIC0y
-NywxMyArMjcsNDkgQEAgc3RhdGljIGludCBjaGVja19lZmxhZ3MoX191MzIgZWZsYWdzKQo+ICAj
-ZGVmaW5lIFg4Nl9FRkxBR1NfQ0tQVF9NQVNLICBcCj4gIAkoWDg2X0VGTEFHU19DRiB8IFg4Nl9F
-RkxBR1NfUEYgfCBYODZfRUZMQUdTX0FGIHwgWDg2X0VGTEFHU19aRiB8IFwKPiAgCSBYODZfRUZM
-QUdTX1NGIHwgWDg2X0VGTEFHU19URiB8IFg4Nl9FRkxBR1NfREYgfCBYODZfRUZMQUdTX09GIHwg
-XAo+IC0JIFg4Nl9FRkxBR1NfTlQgfCBYODZfRUZMQUdTX0FDIHwgWDg2X0VGTEFHU19JRCkKPiAr
-CSBYODZfRUZMQUdTX05UIHwgWDg2X0VGTEFHU19BQyB8IFg4Nl9FRkxBR1NfSUQgfCBYODZfRUZM
-QUdTX1JGKQo+ICAKPiAgCWlmICgoZWZsYWdzICYgflg4Nl9FRkxBR1NfQ0tQVF9NQVNLKSAhPSAo
-WDg2X0VGTEFHU19JRiB8IDB4MikpCj4gIAkJcmV0dXJuIDA7Cj4gIAlyZXR1cm4gMTsKPiAgfQo+
-ICAKPiArc3RhdGljIHZvaWQgcmVzdG9yZV9lZmxhZ3Moc3RydWN0IHB0X3JlZ3MgKnJlZ3MsIF9f
-dTMyIGVmbGFncykKPiArewo+ICsJLyoKPiArCSAqIEEgdGFzayBtYXkgaGF2ZSBoYWQgWDg2X0VG
-TEFHU19SRiBzZXQgYXQgY2hlY2twb2ludCwgLmUuZzoKPiArCSAqIDEpIEl0IHJhbiBpbiBhIEtW
-TSBndWVzdCwgYW5kIHRoZSBndWVzdCB3YXMgYmVpbmcgZGVidWdnZWQsCj4gKwkgKiAyKSBUaGUg
-a2VybmVsIHdhcyBkZWJ1Z2dlZCB1c2luZyBrZ2JkLAo+ICsJICogMykgRnJvbSBJbnRlbCdzIG1h
-bnVhbDogIldoZW4gY2FsbGluZyBhbiBldmVudCBoYW5kbGVyLCAKPiArCSAqICAgIEludGVsIDY0
-IGFuZCBJQS0zMiBwcm9jZXNzb3JzIGVzdGFibGlzaCB0aGUgdmFsdWUgb2YgdGhlCj4gKwkgKiAg
-ICBSRiBmbGFnIGluIHRoZSBFRkxBR1MgaW1hZ2UgcHVzaGVkIG9uIHRoZSBzdGFjazoKPiArCSAq
-ICAtIEZvciBhbnkgZmF1bHQtY2xhc3MgZXhjZXB0aW9uIGV4Y2VwdCBhIGRlYnVnIGV4Y2VwdGlv
-bgo+ICsJICogICAgZ2VuZXJhdGVkIGluIHJlc3BvbnNlIHRvIGFuIGluc3RydWN0aW9uIGJyZWFr
-cG9pbnQsIHRoZQo+ICsJICogICAgdmFsdWUgcHVzaGVkIGZvciBSRiBpcyAxLgo+ICsJICogIC0g
-Rm9yIGFueSBpbnRlcnJ1cHQgYXJyaXZpbmcgYWZ0ZXIgYW55IGl0ZXJhdGlvbiBvZiBhCj4gKwkg
-KiAgICByZXBlYXRlZCBzdHJpbmcgaW5zdHJ1Y3Rpb24gYnV0IHRoZSBsYXN0IGl0ZXJhdGlvbiwg
-dGhlCj4gKwkgKiAgICB2YWx1ZSBwdXNoZWQgZm9yIFJGIGlzIDEuCj4gKwkgKiAgLSBGb3IgYW55
-IHRyYXAtY2xhc3MgZXhjZXB0aW9uIGdlbmVyYXRlZCBieSBhbnkgaXRlcmF0aW9uCj4gKwkgKiAg
-ICBvZiBhIHJlcGVhdGVkIHN0cmluZyBpbnN0cnVjdGlvbiBidXQgdGhlIGxhc3QgaXRlcmF0aW9u
-LAo+ICsJICogICAgdGhlIHZhbHVlIHB1c2hlZCBmb3IgUkYgaXMgMS4KPiArCSAqICAtIEZvciBv
-dGhlciBjYXNlcywgdGhlIHZhbHVlIHB1c2hlZCBmb3IgUkYgaXMgdGhlIHZhbHVlCj4gKwkgKiAg
-ICB0aGF0IHdhcyBpbiBFRkxBRy5SRiBhdCB0aGUgdGltZSB0aGUgZXZlbnQgaGFuZGxlciB3YXMK
-PiArCSAqICAgIGNhbGxlZC4KPiArCSAqICBbZnJvbTogaHR0cDovL3d3dy5pbnRlbC5jb20vQXNz
-ZXRzL1BERi9tYW51YWwvMjUzNjY4LnBkZl0KPiArCSAqCj4gKwkgKiBTbzogKDEpIHNpbGVudGx5
-IGlnbm9yZSBYODZfRUZMQUdTX1JGIGZyb20gY2hlY2twb2ludCB0aW1lLAo+ICsJICogYXMgaXQn
-cyBpcnJlbGV2YW50IGZvciB0aGUgY3VycmVudCBwcm9jZXNzLCAoMikgcHJlc2VydmUKPiArCSAq
-IHRoZSBleGlzdGluZyBYODZfRUZMQUdTX1JGIG9mIHRoaXMgcHJvY2VzcyBhcyBpdCBpdCBtYXkg
-YmUKPiArCSAqIHVzZWQgYnkga3ZtL2tnZGIuIERpc2FibGUgcHJlZW1wdGlvbiB0byBwcm90ZWN0
-IHRlc3QgYW5kCj4gKwkgKiBjaGFuZ2Ugb2Ygb3VyIGVmbGFncy4KPiArCSAqLwo+ICsJcHJlZW1w
-dF9kaXNhYmxlKCk7Cj4gKwllZmxhZ3MgJj0gflg4Nl9FRkxBR1NfUkY7Cj4gKwllZmxhZ3MgfD0g
-KHJlZ3MtPmZsYWdzICYgWDg2X0VGTEFHU19SRik7Cj4gKwlyZWdzLT5mbGFncyA9IGVmbGFnczsK
-PiArCXByZWVtcHRfZW5hYmxlKCk7Cj4gK30KPiArCj4gIHN0YXRpYyBpbnQgY2hlY2tfdGxzKHN0
-cnVjdCBkZXNjX3N0cnVjdCAqZGVzYykKPiAgewo+ICAJaWYgKCFkZXNjLT5hICYmICFkZXNjLT5i
-KQo+IEBAIC00MzMsNyArNDY5LDcgQEAgc3RhdGljIGludCBsb2FkX2NwdV9yZWdzKHN0cnVjdCBj
-a3B0X2hkcl9jcHUgKmgsIHN0cnVjdCB0YXNrX3N0cnVjdCAqdCkKPiAgCXJlZ3MtPm9yaWdfYXgg
-PSBoLT5vcmlnX2F4Owo+ICAJcmVncy0+aXAgPSBoLT5pcDsKPiAgCj4gLQlyZWdzLT5mbGFncyA9
-IGgtPmZsYWdzOwo+ICsJcmVzdG9yZV9lZmxhZ3MocmVncywgaC0+ZmxhZ3MpOwo+ICAJcmVncy0+
-c3AgPSBoLT5zcDsKPiAgCj4gIAlyZWdzLT5kcyA9IGRlY29kZV9zZWdtZW50KGgtPmRzKTsKPiAt
-LSAKPiAxLjYuMC40Cj4gCj4gX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KPiBDb250YWluZXJzIG1haWxpbmcgbGlzdAo+IENvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKPiBodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
-aWxtYW4vbGlzdGluZm8vY29udGFpbmVycwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Currently the cgroup freezer never blocks in the kernel.
+
+This patch uses the f_flags parameter of the cgroups write_string
+op to determine if blocking in the kernel is requested. Without
+O_NONBLOCK the write blocks until freezing fails for other reasons
+(though only -EAGAIN is possible now), the writer receives a signal,
+or the cgroup is completely frozen. When O_NONBLOCK is set
+writes to the freezer state return when some of the tasks in the
+cgroup could not be frozen.
+
+The change to the num_cant_freeze_now count enables blocking
+while the test of dont_block outside of all the locks re-enables
+non-blocking operations when O_NONBLOCK is set.
+
+The change to EAGAIN from EBUSY for the write path should bring us
+in line with standard non-blocking errno values (See Bugs/Weirdness).
+
+Passes existing LTP tests and a vfork testcase from Nathan Lynch.
+
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+NOTE: This patch has one small hunk (passing !!O_NONBLOCK to
+	freezer_change_state()) for the checkpoint/restart tree. The
+	rest applies to mainline too.
+
+Bugs/Weirdness to look into:
+	A task freezing itself now gets EINTR
+		freeze_self_thaw.sh 9/11: TINFO  3910 freezing itself
+		/bin/echo: write error: Interrupted system call
+
+		I think this happens after it gets woken up, not after
+		it becomes frozen:
+
+	stop_freeze_sleep_thaw_cont consistently WARNS during test
+		cleanup.
+
+	When using O_NONBLOCK I am getting E2BIG instead of EAGAIN
+		for some reason.
+---
+ kernel/cgroup_freezer.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index c97680f..9fe9e65 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -288,12 +288,11 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
+ 			continue;
+ 		if (is_task_frozen_enough(task))
+ 			continue;
+-		if (!freezing(task) && !freezer_should_skip(task))
+-			num_cant_freeze_now++;
++		num_cant_freeze_now++;
+ 	}
+ 	cgroup_iter_end(cgroup, &it);
+ 
+-	return num_cant_freeze_now ? -EBUSY : 0;
++	return num_cant_freeze_now ? -EAGAIN : 0;
+ }
+ 
+ static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
+@@ -320,7 +319,7 @@ static int freezer_change_state(struct cgroup *cgroup,
+ 
+ 	spin_lock_irq(&freezer->lock);
+ 	if (freezer->state == CGROUP_CHECKPOINTING) {
+-		retval = -EBUSY;
++		retval = -EAGAIN;
+ 		goto out;
+ 	}
+ 	update_freezer_state(cgroup, freezer);
+@@ -339,7 +338,6 @@ static int freezer_change_state(struct cgroup *cgroup,
+ 	}
+ out:
+ 	spin_unlock_irq(&freezer->lock);
+-
+ 	return retval;
+ }
+ 
+@@ -356,10 +354,22 @@ static int freezer_write(struct cgroup *cgroup, struct cftype *cft,
+ 	else
+ 		return -EINVAL;
+ 
++retry:
+ 	if (!cgroup_lock_live_group(cgroup))
+ 		return -ENODEV;
+ 	retval = freezer_change_state(cgroup, goal_state);
+ 	cgroup_unlock();
++
++	if ((f_flags & O_NONBLOCK) || (retval != -EAGAIN))
++		return retval;
++
++	/* block while we haven't changed the state to the goal state */
++	set_current_state(TASK_INTERRUPTIBLE);
++	schedule();
++	__set_current_state(TASK_RUNNING);
++	if (!signal_pending(current))
++		goto retry;
++	retval = -EINTR;
+ 	return retval;
+ }
+ 
+-- 
+1.5.6.3
