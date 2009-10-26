@@ -1,14 +1,19 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: do not hold mmap_sem while checkpointing vma's
-Date: Mon, 26 Oct 2009 13:52:36 -0700
-Message-ID: <20091026205236.GK31446@count0.beaverton.ibm.com>
-References: <1256509409-3866-1-git-send-email-orenl@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC] Send checkpoint and restart debug info to a log
+	file (v2)
+Date: Mon, 26 Oct 2009 16:52:38 -0500
+Message-ID: <20091026215238.GA10900@us.ibm.com>
+References: <20091021210507.GA2098@us.ibm.com> <4ADF853F.6080807@librato.com>
+	<20091021224922.GA5827@us.ibm.com> <4ADF95D0.8060806@librato.com>
+	<20091022005157.GA11608@us.ibm.com>
+	<20091022060400.GE7757@count0.beaverton.ibm.com>
+	<4AE1FA7A.5030702@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1256509409-3866-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4AE1FA7A.5030702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,218 +24,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Oct 25, 2009 at 06:23:29PM -0400, Oren Laadan wrote:
-> This patch modifies the memory checkpoint code to _not_ hold the
-> mmap_sem while dumping out the vma's.
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > 
-> The problem with holding the mmap_sem is that it first takes the
-> mmap_sem and then takes the file's inode semaphore. This violates the
-> normal locking order, e,g, when taking a page fault during a copyout,
-> which is inode sem and then the mmap_sem.
 > 
-> Normally this reverse locking order won't cause a lockup because a the
-> output file for the checkpoint image isn't used by the checkpointee.
-> However, there a couple of cases where it may be a problem, e.g. when
-> some async-IO happens to complete and triggers a page fault at the
-> wrong time.
+> Matt Helsley wrote:
+> > On Wed, Oct 21, 2009 at 07:51:57PM -0500, Serge E. Hallyn wrote:
+> >> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> > 
+> > <snip>
+> > 
+> >>>> More practically, requiring userspace to pass over a flag
+> >>>> consisting of CKPT_DBG_MEM|CKPT_DBG|FILE|CKPT_DBG|TASK, and
+> >>>> handle corresponding usage flags, is not nice.
+> >>> I agree with you on about this. Maybe we want a better
+> >>> interface ?
+> >>>
+> >>> Which brings me to this random thought: maybe we want to
+> >>> make the fourth argument of sys_{checkpoint,restart} a
+> >>> structure, to make it easier to extend it in the future
+> >>> without having to go throw a clone3-like hell...
+> > 
+> > Adding new kernel interfaces is supposed to be somewhat hellish.
+> > 
+> >>> Specifically, this structure could now be:
+> >>>
+> >>> struct ckpt_args {
+> >>> 	int version;
+> >>> 	int logfd;
+> >>> 	int logmask;
+> >>> };
+> >>>
+> >>> (or use union checkpoint {} and union restart {} to tell
+> >>> between checkpoint- and restart-related args.
+> >> Well I don't like passing structs to the kernel actually (and
+> > 
+> > Let's not do this. I agree that passing structs, when unnecessary,
+> > is gross. Especially if it gets used to extend the arguments
+> > passed via the syscall interface (new flag values I don't mind).
 > 
-> This fixes complaints from the lockdep about this reverse ordering.
+> Ok, we already allow future extension by being strict about
+> which flags are taken or not.
 > 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->  checkpoint/memory.c |  133 ++++++++++++++++++++++++++++++++++++---------------
->  1 files changed, 94 insertions(+), 39 deletions(-)
-> 
-> diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-> index 0da948f..656614c 100644
-> --- a/checkpoint/memory.c
-> +++ b/checkpoint/memory.c
-> @@ -644,11 +644,80 @@ static int anonymous_checkpoint(struct ckpt_ctx *ctx,
->  	return private_vma_checkpoint(ctx, vma, CKPT_VMA_ANON, 0);
->  }
-> 
-> +static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
-> +{
-> +	struct vm_area_struct *vma, *next;
-> +	int map_count = 0;
-> +	int ret = 0;
-> +
-> +	vma = kzalloc(sizeof(*vma), GFP_KERNEL);
-> +	if (!vma)
-> +		return -ENOMEM;
-> +
-> +	/*
-> +	 * Must not hold mm->mmap_sem when writing to image file, so
-> +	 * can't simply traverse the vma list. Instead, use find_vma()
-> +	 * to get the @next and make a local "copy" of it.
-> +	 */
-> +	while (1) {
-> +		down_read(&mm->mmap_sem);
-> +		next = find_vma(mm, vma->vm_end);
-> +		if (!next) {
-> +			up_read(&mm->mmap_sem);
-> +			break;
-> +		}
-> +		if (vma->vm_file)
-> +			fput(vma->vm_file);
-> +		*vma = *next;
-> +		if (vma->vm_file)
-> +			get_file(vma->vm_file);
-> +		up_read(&mm->mmap_sem);
-> +
-> +		map_count++;
-> +
-> +		ckpt_debug("vma %#lx-%#lx flags %#lx\n",
-> +			 vma->vm_start, vma->vm_end, vma->vm_flags);
-> +
-> +		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
-> +			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
-> +				       -ENOSYS, vma->vm_flags);
-> +			ret = -ENOSYS;
-> +			break;
-> +		}
-> +
-> +		if (!vma->vm_ops)
-> +			ret = anonymous_checkpoint(ctx, vma);
-> +		else if (vma->vm_ops->checkpoint)
-> +			ret = (*vma->vm_ops->checkpoint)(ctx, vma);
-> +		else
-> +			ret = -ENOSYS;
-> +		if (ret < 0) {
-> +			ckpt_write_err(ctx, "TE", "vma: failed", ret);
-> +			break;
-> +		}
-> +		/*
-> +		 * The file was collected, but not always checkpointed;
-> +		 * be safe and mark as visited to appease leak detection
-> +		 */
-> +		if (vma->vm_file && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
-> +			ret = ckpt_obj_visit(ctx, vma->vm_file, CKPT_OBJ_FILE);
-> +			if (ret < 0)
-> +				break;
-> +		}
-> +	}
-> +
-> +	if (vma->vm_file)
-> +		fput(vma->vm_file);
-> +
-> +	kfree(vma);
-> +
-> +	return ret < 0 ? ret : map_count;
-> +}
-> +
->  static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
->  {
->  	struct ckpt_hdr_mm *h;
-> -	struct vm_area_struct *vma;
-> -	int exe_objref = 0;
-> +	struct file *exe_file = NULL;
->  	int ret;
-> 
->  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM);
-> @@ -674,14 +743,23 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
-> 
->  	h->map_count = mm->map_count;
-> 
-> -	/* checkpoint the ->exe_file */
-> -	if (mm->exe_file) {
-> -		exe_objref = checkpoint_obj(ctx, mm->exe_file, CKPT_OBJ_FILE);
-> -		if (exe_objref < 0) {
-> -			ret = exe_objref;
-> +	if (mm->exe_file) {  /* checkpoint the ->exe_file */
-> +		exe_file = mm->exe_file;
-> +		get_file(exe_file);
-> +	}
-> +
-> +	/*
-> +	 * Drop mm->mmap_sem before writing data to checkpoint image
-> +	 * to avoid reverse locking order (inode must come before mm).
-> +	 */
-> +	up_read(&mm->mmap_sem);
-> +
-> +	if (exe_file) {
-> +		h->exe_objref = checkpoint_obj(ctx, exe_file, CKPT_OBJ_FILE);
-> +		if (h->exe_objref < 0) {
-> +			ret = h->exe_objref;
->  			goto out;
->  		}
-> -		h->exe_objref = exe_objref;
->  	}
-> 
->  	ret = ckpt_write_obj(ctx, &h->h);
-> @@ -692,40 +770,17 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
->  	if (ret < 0)
->  		return ret;
-> 
-> -	/* write the vma's */
-> -	for (vma = mm->mmap; vma; vma = vma->vm_next) {
-> -		ckpt_debug("vma %#lx-%#lx flags %#lx\n",
-> -			 vma->vm_start, vma->vm_end, vma->vm_flags);
-> -		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
-> -			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
-> -				       -ENOSYS, vma->vm_flags);
-> -			return -ENOSYS;
-> -		}
-> -		if (!vma->vm_ops)
-> -			ret = anonymous_checkpoint(ctx, vma);
-> -		else if (vma->vm_ops->checkpoint)
-> -			ret = (*vma->vm_ops->checkpoint)(ctx, vma);
-> -		else
-> -			ret = -ENOSYS;
-> -		if (ret < 0) {
-> -			ckpt_write_err(ctx, "TE", "vma: failed", ret);
-> -			goto out;
-> -		}
-> -		/*
-> -		 * The file was collected, but not always checkpointed;
-> -		 * be safe and mark as visited to appease leak detection
-> -		 */
-> -		if (vma->vm_file && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
-> -			ret = ckpt_obj_visit(ctx, vma->vm_file, CKPT_OBJ_FILE);
-> -			if (ret < 0)
-> -				goto out;
-> -		}
-> -	}
-> +	ret = checkpoint_vmas(ctx, mm);
-> +	if (ret != h->map_count && ret >= 0)
-> +		ret = -EBUSY; /* checkpoint mm leak */
-> +	if (ret < 0)
-> +		goto out;
-> 
->  	ret = checkpoint_mm_context(ctx, mm);
->   out:
-> +	if (exe_file)
-> +		fput(exe_file);
->  	ckpt_hdr_put(ctx, h);
-> -	up_read(&mm->mmap_sem);
->  	return ret;
->  }
-> 
-> @@ -1288,9 +1343,9 @@ static struct mm_struct *do_restore_mm(struct ckpt_ctx *ctx)
->  		}
->  		set_mm_exe_file(mm, file);
->  	}
-> +	up_write(&mm->mmap_sem);
-> 
->  	ret = _ckpt_read_buffer(ctx, mm->saved_auxv, sizeof(mm->saved_auxv));
-> -	up_write(&mm->mmap_sem);
->  	if (ret < 0)
->  		goto out;
-> 
-> -- 
+> Then what do we do with logmask ?   I prefer it to be a per-syscall
+> value as opposed to a system-wise setting.
 
-At least in the restart path it's interesting to see how Alexey did it
-without mmap_sem, at least for part of it:
+Ok well let's be honest with ourselves - we'd like to give end-users
+reasonable debug info to figure out common problems.  But we will
+always have cases where we have to hand-instrument the kernel for
+our own advanced debugging.  Cases where you must print out only a
+specific info to catch a race condition probably will fit into
+such a case.  So I'd prefer to aim for giving the end-user just one
+or a few options - nothing, errors only, or all debugging info that
+we care to insert in everyday kernels (which hopefully isn't too
+much, but let's a user figure out approximately where the problem
+happened, i.e. recreating a socket, opening a file, etc).  Otherwise
+too much debugging will (a) deter from the readability of the code
+(b) bulk up the kernel and (c) make the api cumberson (too many
+flags to checkpoint/restart userspace programs, and passing structs
+to syscall).
 
-http://patchwork.kernel.org/patch/25337/
+In fact I'm wondering whether for the shipped c/r kernel we want
+to have only ckpt_error()s and make sure we record the location in
+the restart file where we errored out.  The ckpt_write_err() info
+is already very helpful in tracking down checkpoint errors.  Of course
+this becomes a pain whenever we introduce a subte bug and have to
+hand-instrument everything.  And then I have to curse all the printks
+I have to add.  But it's not reasonabe to have every other line of
+c/r code be a debug statement either.
 
-(search for kstate_restore_mm_struct())
-
-Is that a feasible and more-suitable approach for the initial portions
-of mm restore?
-
-Cheers,
-	-Matt Helsley
+-serge
