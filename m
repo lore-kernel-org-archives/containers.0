@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/3] define function to print error messages to user log
-Date: Mon, 26 Oct 2009 13:33:59 -0500
-Message-ID: <20091026183359.GI23564@us.ibm.com>
-References: <20091023041325.GA2863@us.ibm.com>
-	<20091023041349.GA2915@us.ibm.com> <4AE491CB.60109@librato.com>
+Subject: Re: [PATCH] c/r: coordinator to report correct error on restart
+	failure
+Date: Mon, 26 Oct 2009 13:35:31 -0500
+Message-ID: <20091026183531.GJ23564@us.ibm.com>
+References: <1256509416-3897-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AE491CB.60109-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1256509416-3897-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,93 +20,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> If restart fails it is usually due to an error for a restoring task,
+> which is place in ctx->errno. Then the coordinator wakes up and sees
+> an -EINTR.
 > 
+> This patch changes the coordinator's behavior to report the error
+> value placed in ctx->errno (if an error occurred) rather than report
+> a confusing -EINTR.
 > 
-> Serge E. Hallyn wrote:
-> > Error messages are both sent to an optional user-provided logfile,
-> > and, if CONFIG_CHECKPOINT_DEBUG=y, sent to syslog.
-> > 
-> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  checkpoint/objhash.c             |    2 +
-> >  checkpoint/sys.c                 |   61 ++++++++++++++++++++++++++++++++++---
-> >  include/linux/checkpoint.h       |    2 +-
-> >  include/linux/checkpoint_types.h |    1 +
-> >  include/linux/syscalls.h         |    5 ++-
-> >  5 files changed, 63 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-> > index 730dd82..c441ce6 100644
-> > --- a/checkpoint/objhash.c
-> > +++ b/checkpoint/objhash.c
-> > @@ -858,6 +858,8 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
-> >  
-> >  	/* account for ctx->file reference (if in the table already) */
-> >  	ckpt_obj_users_inc(ctx, ctx->file, 1);
-> > +	if (ctx->logfile)
-> > +		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
-> >  	/* account for ctx->root_nsproxy reference (if in the table already) */
-> >  	ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
-> >  
-> > diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> > index 260a1ee..1840f90 100644
-> > --- a/checkpoint/sys.c
-> > +++ b/checkpoint/sys.c
-> > @@ -204,6 +204,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
-> >  
-> >  	if (ctx->file)
-> >  		fput(ctx->file);
-> > +	if (ctx->logfile)
-> > +		fput(ctx->logfile);
-> >  
-> >  	ckpt_obj_hash_free(ctx);
-> >  	path_put(&ctx->fs_mnt);
-> > @@ -225,7 +227,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
-> >  }
-> >  
-> >  static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
-> > -				       unsigned long kflags)
-> > +				       unsigned long kflags, int logfd)
-> >  {
-> >  	struct ckpt_ctx *ctx;
-> >  	int err;
-> > @@ -238,6 +240,9 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
-> >  	ctx->kflags = kflags;
-> >  	ctx->ktime_begin = ktime_get();
-> >  
-> > +	/* If logfd's a bad fd that's fine, no log output required... */
-> > +	ctx->logfile = fget(logfd);
-> 
-> Can we make it more user-friendly, e.g. f logfd==-1 then no logfile,
-> otherwise if fget(logfd) fails then return -EBADF ?
-> 
-> > +
-> >  	atomic_set(&ctx->refcount, 0);
-> >  	INIT_LIST_HEAD(&ctx->pgarr_list);
-> >  	INIT_LIST_HEAD(&ctx->pgarr_pool);
-> > @@ -339,6 +344,51 @@ int walk_task_subtree(struct task_struct *root,
-> >  	return (ret < 0 ? ret : total);
-> >  }
-> >  
-> > +/*
-> > + * currentpid:targetpid fmt%args
-> > + */
-> > +void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
-> > +{
-> 
-> As I commented before, I really wish not to go through this again.
-> Can we come up with a mechanism for error messages, that will set
-> a "standard" format (like I tried to do in ckpt_write_err) ?
-> 
-> (I like Matt's suggestion to use one format string instead of two,
-> and allow "%(T)" constructs for our format directives).
-> 
-> Also, I assume some of that code can be reused here below.
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Perhaps we should be using the audit system.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
--serge
+> ---
+>  checkpoint/restart.c |   15 +++++++++++++--
+>  1 files changed, 13 insertions(+), 2 deletions(-)
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 5daadc4..9b75de8 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -711,7 +711,7 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
+>  }
+> 
+>  /* should not be called under write_lock_irq(&tasklist_lock) */
+> -static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
+> +static void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
+>  {
+>  	/* first to fail: notify everyone (racy but harmless) */
+>  	if (!ckpt_test_ctx_error(ctx)) {
+> @@ -1263,9 +1263,20 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+>  		post_restore_task();
+> 
+>  	restore_debug_error(ctx, ret);
+> -	if (ret < 0) {
+> +
+> +	if (ret < 0)
+>  		ckpt_set_ctx_error(ctx, ret);
+> +
+> +	if (ckpt_test_ctx_error(ctx)) {
+>  		destroy_descendants(ctx);
+> +		/*
+> +		 * If a restaring task (or we) reported an error, that set
+> +		 * out return value to that error. (Need the unlikely loop
+> +		 * because the error is recorded after the flag is set).
+> +		 */
+> +		while (!ctx->errno)
+> +			yield();
+> +		ret = ctx->errno;
+>  	} else {
+>  		ckpt_set_ctx_success(ctx);
+>  		wake_up_all(&ctx->waitq);
+> -- 
+> 1.6.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
