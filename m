@@ -1,19 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC] Send checkpoint and restart debug info to a log
-	file (v2)
-Date: Mon, 26 Oct 2009 16:52:38 -0500
-Message-ID: <20091026215238.GA10900@us.ibm.com>
-References: <20091021210507.GA2098@us.ibm.com> <4ADF853F.6080807@librato.com>
-	<20091021224922.GA5827@us.ibm.com> <4ADF95D0.8060806@librato.com>
-	<20091022005157.GA11608@us.ibm.com>
-	<20091022060400.GE7757@count0.beaverton.ibm.com>
-	<4AE1FA7A.5030702@librato.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] [RFC] cr_tests: Add eventfd01 test based on LTP test
+Date: Mon, 26 Oct 2009 15:29:31 -0700
+Message-ID: <1256596171-11117-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4AE1FA7A.5030702-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,76 +15,1229 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Matt Helsley wrote:
-> > On Wed, Oct 21, 2009 at 07:51:57PM -0500, Serge E. Hallyn wrote:
-> >> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> > 
-> > <snip>
-> > 
-> >>>> More practically, requiring userspace to pass over a flag
-> >>>> consisting of CKPT_DBG_MEM|CKPT_DBG|FILE|CKPT_DBG|TASK, and
-> >>>> handle corresponding usage flags, is not nice.
-> >>> I agree with you on about this. Maybe we want a better
-> >>> interface ?
-> >>>
-> >>> Which brings me to this random thought: maybe we want to
-> >>> make the fourth argument of sys_{checkpoint,restart} a
-> >>> structure, to make it easier to extend it in the future
-> >>> without having to go throw a clone3-like hell...
-> > 
-> > Adding new kernel interfaces is supposed to be somewhat hellish.
-> > 
-> >>> Specifically, this structure could now be:
-> >>>
-> >>> struct ckpt_args {
-> >>> 	int version;
-> >>> 	int logfd;
-> >>> 	int logmask;
-> >>> };
-> >>>
-> >>> (or use union checkpoint {} and union restart {} to tell
-> >>> between checkpoint- and restart-related args.
-> >> Well I don't like passing structs to the kernel actually (and
-> > 
-> > Let's not do this. I agree that passing structs, when unnecessary,
-> > is gross. Especially if it gets used to extend the arguments
-> > passed via the syscall interface (new flag values I don't mind).
-> 
-> Ok, we already allow future extension by being strict about
-> which flags are taken or not.
-> 
-> Then what do we do with logmask ?   I prefer it to be a per-syscall
-> value as opposed to a system-wise setting.
+Add checkpoint spots to the LTP test. Notably different from the
+epoll test library, these labels to not incorporate error handling
+code. Rather the test and branch are explicit and rely on LTP tst_*
+functions. As such it requires libltp.a to link. Do this with:
 
-Ok well let's be honest with ourselves - we'd like to give end-users
-reasonable debug info to figure out common problems.  But we will
-always have cases where we have to hand-instrument the kernel for
-our own advanced debugging.  Cases where you must print out only a
-specific info to catch a race condition probably will fit into
-such a case.  So I'd prefer to aim for giving the end-user just one
-or a few options - nothing, errors only, or all debugging info that
-we care to insert in everyday kernels (which hopefully isn't too
-much, but let's a user figure out approximately where the problem
-happened, i.e. recreating a socket, opening a file, etc).  Otherwise
-too much debugging will (a) deter from the readability of the code
-(b) bulk up the kernel and (c) make the api cumberson (too many
-flags to checkpoint/restart userspace programs, and passing structs
-to syscall).
+make LTPROOT=/path/to/ltp/install
 
-In fact I'm wondering whether for the shipped c/r kernel we want
-to have only ckpt_error()s and make sure we record the location in
-the restart file where we errored out.  The ckpt_write_err() info
-is already very helpful in tracking down checkpoint errors.  Of course
-this becomes a pain whenever we introduce a subte bug and have to
-hand-instrument everything.  And then I have to curse all the printks
-I have to add.  But it's not reasonabe to have every other line of
-c/r code be a debug statement either.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
--serge
+[RFC] Due to weirdness/bugs in test results after adapting testcase
+	to c/r.
+---
+ eventfd/Makefile    |   22 ++
+ eventfd/eventfd01.c |  892 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ eventfd/libeptest.c |   39 +++
+ eventfd/libeptest.h |   73 +++++
+ eventfd/run.sh      |  140 ++++++++
+ 5 files changed, 1166 insertions(+), 0 deletions(-)
+ create mode 100644 eventfd/Makefile
+ create mode 100644 eventfd/eventfd01.c
+ create mode 100644 eventfd/libeptest.c
+ create mode 100644 eventfd/libeptest.h
+ create mode 100755 eventfd/run.sh
+
+diff --git a/eventfd/Makefile b/eventfd/Makefile
+new file mode 100644
+index 0000000..c37909a
+--- /dev/null
++++ b/eventfd/Makefile
+@@ -0,0 +1,22 @@
++LTPROOT ?= ../ltp
++
++LIBS := ../libcrtest/libcrtest.a ./libeptest.a $(LTPROOT)/lib/libltp.a
++CFLAGS := -Wall $(ARCHOPTS) -I../ -I../libcrtest -I$(LTPROOT)/include
++
++PROGS=eventfd01
++
++.PHONY: all clean
++
++all: $(PROGS)
++
++../libcrtest/libcrtest.a: ../libcrtest/libcrtest.h ../libcrtest/common.c
++	$(MAKE) -C ../libcrtest libcrtest.a
++
++libeptest.a: libeptest.o libeptest.h
++	ar cr libeptest.a libeptest.o
++
++$(PROGS): %: %.c $(LIBS)
++	gcc -Wall $(CFLAGS) -o $@ $< $(LIBS)
++
++clean:
++	rm -f *.o libeptest.a log.* checkpoint-* $(PROGS)
+diff --git a/eventfd/eventfd01.c b/eventfd/eventfd01.c
+new file mode 100644
+index 0000000..77bb382
+--- /dev/null
++++ b/eventfd/eventfd01.c
+@@ -0,0 +1,892 @@
++/*
++ *   Adapted for use as a checkpoint/restart testcase by
++ *   				Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++ *
++ *   Based on testcases/kernel/syscalls/eventfd01/eventfd01.c by:
++ *   Copyright (c) 2008 Vijay Kumar B. <vijaykumar-NDm7FNP0skFg9hUCZPvPmw@public.gmane.org>
++ *
++ *   Based on testcases/kernel/syscalls/waitpid/waitpid01.c
++ *   Original copyright message:
++ *
++ *   Copyright (c) International Business Machines  Corp., 2001
++ *
++ *   This program is free software;  you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ *   the GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program;  if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++/*
++ * NAME
++ *	eventfd01.c
++ *
++ * DESCRIPTION
++ *      Test cases for eventfd syscall.
++ *
++ * USAGE:  <for command-line>
++ *      eventfd01 [-c n] [-i n] [-I x] [-P x] [-t]
++ *      where,  -c n : Run n copies concurrently.
++ *              -i n : Execute test n times.
++ *              -I x : Execute test for x seconds.
++ *              -P x : Pause for x seconds between iterations.
++ *              -t   : Turn on syscall timing.
++ *
++ * History
++ *	07/2008 Vijay Kumar
++ *		Initial Version.
++ *
++ * Restrictions
++ *	None
++ */
++
++#include "config.h"
++
++#include <sys/select.h>
++#include <sys/signal.h>
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <string.h>
++#include <stdint.h>
++#include <inttypes.h>
++#include <poll.h>
++
++#include <test.h>
++#include <usctest.h>
++#include <linux_syscall_numbers.h>
++
++#ifdef HAVE_LIBAIO_H
++#include <libaio.h>
++#endif
++
++#define LOG_FILE "log.eventfd01"
++#include "libeptest.h"
++
++static void setup(void);
++static void cleanup(void);
++
++TCID_DEFINE(eventfd01);
++int TST_TOTAL = 15;
++extern int Tst_count;
++
++/*
++ * A LABEL is a point in the program we can goto where it's interesting to
++ * checkpoint. These enable us to have a set of labels that can be specified
++ * on the commandline.
++ */
++const char __attribute__((__section__(".LABELs"))) *first_label = "<start>";
++int op_num = 0;
++
++static int myeventfd(unsigned int initval, int flags)
++{
++	/* eventfd2 uses FLAGS but eventfd doesn't take FLAGS. */
++#if defined (__NR_eventfd)
++	return syscall(__NR_eventfd, initval);
++#else
++	errno = ENOSYS;
++	return -1;
++#endif
++}
++
++/*
++ * clear_counter() - clears the counter by performing a dummy read
++ * @fd: the eventfd
++ *
++ * RETURNS:
++ * 0 on success, and -1 on failure
++ */
++static int clear_counter(int fd)
++{
++	uint64_t dummy;
++	int ret;
++
++	ret = read(fd, &dummy, sizeof(dummy));
++	if (ret == -1) {
++		if (errno != EAGAIN) {
++			tst_resm(TINFO|TERRNO, "error clearing counter");
++			return -1;
++		}
++	}
++
++	return 0;
++}
++
++/*
++ * set_counter() - sets the count to specified value
++ * @fd: the eventfd
++ * @val: the value to be set
++ *
++ * Clears the counter and sets the counter to @val.
++ *
++ * RETURNS:
++ * 0 on success, -1 on failure
++ */
++static int set_counter(int fd, uint64_t val)
++{
++	int ret;
++
++	ret = clear_counter(fd);
++	if (ret == -1) {
++		return -1;
++	}
++
++	ret = write(fd, &val, sizeof(val));
++	if (ret == -1) {
++		tst_resm(TINFO|TERRNO, "error setting counter value");
++		return -1;
++	}
++
++	return 0;
++}
++
++/*
++ * Test whether the current value of the counter matches @required.
++ */
++static void read_test(int fd, uint64_t required)
++{
++	int ret;
++	uint64_t val;
++
++
++label(read_test, ret, read(fd, &val, sizeof(val)));
++	if (ret == -1) {
++		tst_resm(TBROK|TERRNO, "error reading eventfd");
++		return;
++	}
++
++	if (val == required)
++		tst_resm(TPASS, "counter value matches required");
++	else
++		tst_resm(TFAIL, "counter value mismatch: "
++			 "required: %"PRIu64", got: %"PRIu64, required, val);
++}
++
++/*
++ * Test whether read returns with error EAGAIN when counter is at 0.
++ */
++static void read_eagain_test(int fd)
++{
++	int ret;
++	uint64_t val;
++
++label(read_eagain_test_clear, ret, clear_counter(fd));
++	if (ret == -1) {
++		tst_resm(TBROK, "error clearing counter");
++		return;
++	}
++
++label(read_eagain_test_read, ret, read(fd, &val, sizeof(val)));
++	if (ret == -1) {
++		if (errno == EAGAIN)
++			tst_resm(TPASS, "read failed with EAGAIN as expected");
++		else
++			tst_resm(TFAIL|TERRNO, "read failed (wanted EAGAIN)");
++	} else {
++		tst_resm(TFAIL, "read returned with %d", ret);
++	}
++}
++
++/*
++ * Test whether writing to counter works.
++ */
++static void write_test(int fd)
++{
++	int ret;
++	uint64_t val;
++
++	val = 12;
++
++label(write_test, ret, set_counter(fd, val));
++	if (ret == -1) {
++		tst_resm(TBROK, "error setting counter value to %"PRIu64, val);
++		return;
++	}
++
++	read_test(fd, val);
++}
++
++/*
++ * Test whether write returns with error EAGAIN when counter is at
++ * (UINT64_MAX - 1).
++ */
++static void write_eagain_test(int fd)
++{
++	int ret;
++	uint64_t val;
++
++label(write_eagain_test_set, ret, set_counter(fd, UINT64_MAX - 1));
++	if (ret == -1) {
++		tst_resm(TBROK, "error setting counter value to UINT64_MAX-1");
++		return;
++	}
++
++	val = 1;
++label(write_eagain_write, ret, write(fd, &val, sizeof(val)));
++	if (ret == -1) {
++		if (errno == EAGAIN)
++			tst_resm(TPASS, "write failed with EAGAIN as expected");
++		else
++			tst_resm(TFAIL, "write failed (wanted EAGAIN)");
++	} else {
++		tst_resm(TFAIL, "write returned with %d", ret);
++	}
++}
++
++/*
++ * Test whether read returns with error EINVAL, if buffer size is less
++ * than 8 bytes.
++ */
++static void read_einval_test(int fd)
++{
++	uint32_t invalid;
++	int ret;
++
++label(read_einval_test_read,
++	ret, read(fd, &invalid, sizeof(invalid)));
++	if (ret == -1) {
++		if (errno == EINVAL) {
++			tst_resm(TPASS, "read failed with EINVAL as expected");
++		} else {
++			tst_resm(TFAIL|TERRNO, "read failed (wanted EINVAL)");
++		}
++	} else {
++		tst_resm(TFAIL, "read returned with %d", ret);
++	}
++}
++
++/*
++ * Test whether write returns with error EINVAL, if buffer size is
++ * less than 8 bytes.
++ */
++static void write_einval_test(int fd)
++{
++	uint32_t invalid;
++	int ret;
++
++label(write_einval_test_write,
++	ret, write(fd, &invalid, sizeof(invalid)));
++	if (ret == -1) {
++		if (errno == EINVAL) {
++			tst_resm(TPASS, "write failed with EINVAL as expected");
++		} else {
++			tst_resm(TFAIL|TERRNO, "write failed (wanted EINVAL)");
++		}
++	} else {
++		tst_resm(TFAIL, "write returned with %d", ret);
++	}
++}
++
++/*
++ * Test wheter write returns with error EINVAL, when the written value
++ * is 0xFFFFFFFFFFFFFFFF.
++ */
++static void write_einval2_test(int fd)
++{
++	int ret;
++	uint64_t val;
++
++label(write_einval2_test_clear,
++	ret, clear_counter(fd));
++	if (ret == -1) {
++		tst_resm(TBROK, "error clearing counter");
++		return;
++	}
++
++	val = 0xffffffffffffffffLL;
++label(write_einval2_test_write,
++	ret, write(fd, &val, sizeof(val)));
++	if (ret == -1) {
++		if (errno == EINVAL)
++			tst_resm(TPASS, "write failed with EINVAL as expected");
++		else
++			tst_resm(TFAIL|TERRNO, "write failed (wanted EINVAL)");
++	} else {
++		tst_resm(TFAIL, "write returned with %d", ret);
++	}
++}
++
++/*
++ * Test whether readfd is set by select when counter value is
++ * non-zero.
++ */
++static void readfd_set_test(int fd)
++{
++	int ret;
++	fd_set readfds;
++	struct timeval timeout = { 0, 0 };
++	uint64_t non_zero = 10;
++
++	FD_ZERO(&readfds);
++	FD_SET(fd, &readfds);
++
++label(readfd_set_test_set,
++      ret, set_counter(fd, non_zero));
++	if (ret == -1) {
++		tst_resm(TBROK, "error setting counter value to %"PRIu64,
++			 non_zero);
++		return;
++	}
++
++label(read_fd_set_test_select,
++      ret, select(fd + 1, &readfds, NULL, NULL, &timeout));
++	if (ret == -1) {
++		/* EINTR cannot occur, since we don't block. */
++		tst_resm(TBROK|TERRNO, "select() failed");
++		return;
++	}
++
++	if (FD_ISSET(fd, &readfds))
++		tst_resm(TPASS, "fd is set in readfds");
++	else
++		tst_resm(TFAIL, "fd is not set in readfds");
++}
++
++/*
++ * Test whether readfd is not set by select when counter value is
++ * zero.
++ */
++static void readfd_not_set_test(int fd)
++{
++	int ret;
++	fd_set readfds;
++	struct timeval timeout = { 0, 0 };
++
++	FD_ZERO(&readfds);
++	FD_SET(fd, &readfds);
++
++label(readfd_not_set_test_clear,
++	ret, clear_counter(fd));
++	if (ret == -1) {
++		tst_resm(TBROK, "error clearing counter");
++		return;
++	}
++
++label(readfd_not_set_test_select,
++      ret, select(fd + 1, &readfds, NULL, NULL, &timeout));
++	if (ret == -1) {
++		/* EINTR cannot occur, since we don't block. */
++		tst_resm(TBROK|TERRNO, "select() failed");
++		return;
++	}
++
++	if (!FD_ISSET(fd, &readfds))
++		tst_resm(TPASS, "fd is not set in readfds");
++	else
++		tst_resm(TFAIL, "fd is set in readfds");
++}
++
++/*
++ * Test whether writefd is set by select when counter value is not the
++ * maximum counter value.
++ */
++static void writefd_set_test(int fd)
++{
++	int ret;
++	fd_set writefds;
++	struct timeval timeout = { 0, 0 };
++	uint64_t non_max = 10;
++
++	FD_ZERO(&writefds);
++	FD_SET(fd, &writefds);
++
++label(writefd_set_test_set,
++	ret, set_counter(fd, non_max));
++	if (ret == -1) {
++		tst_resm(TBROK, "error setting counter value to %"PRIu64, non_max);
++		return;
++	}
++
++label(writefd_set_test_select,
++	ret, select(fd + 1, NULL, &writefds, NULL, &timeout));
++	if (ret == -1) {
++		/* EINTR cannot occur, since we don't block. */
++		tst_resm(TBROK|TERRNO, "select: error getting fd status");
++		return;
++	}
++
++	if (FD_ISSET(fd, &writefds))
++		tst_resm(TPASS, "fd is set in writefds");
++	else
++		tst_resm(TFAIL, "fd is not set in writefds");
++}
++
++/*
++ * Test whether writefd is not set by select when counter value is at
++ * (UINT64_MAX - 1).
++ */
++static void writefd_not_set_test(int fd)
++{
++	int ret;
++	fd_set writefds;
++	struct timeval timeout = { 0, 0 };
++
++	FD_ZERO(&writefds);
++	FD_SET(fd, &writefds);
++
++label(writefd_not_set_test_set,
++	ret, set_counter(fd, UINT64_MAX - 1));
++	if (ret == -1) {
++		tst_resm(TBROK, "error setting counter value to UINT64_MAX-1");
++		return;
++	}
++
++label(writefd_not_set_test_select,
++	ret, select(fd + 1, NULL, &writefds, NULL, &timeout));
++	if (ret == -1) {
++		/* EINTR cannot occur, since we don't block. */
++		tst_resm(TBROK|TERRNO, "select: error getting fd status");
++		return;
++	}
++
++	if (!FD_ISSET(fd, &writefds))
++		tst_resm(TPASS, "fd is not set in writefds");
++	else
++		tst_resm(TFAIL, "fd is set in writefds");
++}
++
++/*
++ * Test whether counter update in child is reflected in the parent.
++ */
++static void child_inherit_test(int fd)
++{
++	uint64_t val;
++	pid_t cpid;
++	int ret;
++	int status;
++	uint64_t to_parent = 0xdeadbeef;
++	uint64_t dummy;
++
++	cpid = fork();
++	if (cpid == -1)
++		tst_resm(TBROK|TERRNO, "fork() failed");
++	if (cpid != 0) {
++		/* Parent */
++		ret = wait(&status);
++		if (ret == -1) {
++			tst_resm(TBROK, "error getting child exit status");
++			return;
++		}
++
++		if (WEXITSTATUS(status) == 1) {
++			tst_resm(TBROK, "counter value write not "
++				 "succesful in child");
++			return;
++		}
++
++		ret = read(fd, &val, sizeof(val));
++		if (ret == -1) {
++			tst_resm(TBROK|TERRNO, "error reading eventfd");
++			return;
++		}
++
++		if (val == to_parent)
++			tst_resm(TPASS, "counter value write from "
++				 "child successful");
++		else
++			tst_resm(TFAIL, "counter value write in child "
++				 "failed");
++	} else {
++		/* Child */
++		ret = read(fd, &dummy, sizeof(dummy));
++		if (ret == -1 && errno != EAGAIN) {
++			tst_resm(TWARN|TERRNO, "error clearing counter");
++			exit(1);
++		}
++
++		ret = write(fd, &to_parent, sizeof(to_parent));
++		if (ret == -1) {
++			tst_resm(TWARN|TERRNO, "error writing eventfd");
++			exit(1);
++		}
++
++		exit(0);
++	}
++}
++
++#ifdef HAVE_IO_SET_EVENTFD
++/*
++ * Test whether counter overflow is detected and handled correctly.
++ *
++ * It is not possible to directly overflow the counter using the
++ * write() syscall. Overflows occur when the counter is incremented
++ * from kernel space, in an irq context, when it is not possible to
++ * block the calling thread of execution.
++ *
++ * The AIO subsystem internally uses eventfd mechanism for
++ * notification of completion of read or write requests. In this test
++ * we trigger a counter overflow, by setting the counter value to the
++ * max possible value initially. When the AIO subsystem notifies
++ * through the eventfd counter, the counter overflows.
++ *
++ * NOTE: If the the counter starts from an initial value of 0, it will
++ * take decades for an overflow to occur. But since we set the initial
++ * value to the max possible counter value, we are able to cause it to
++ * overflow with a single increment.
++ *
++ * When the counter overflows, the following are tested
++ *   1. Check whether POLLERR event occurs in poll() for the eventfd.
++ *   2. Check whether readfd_set/writefd_set is set in select() for the
++        eventfd.
++ *   3. The counter value is UINT64_MAX.
++ */
++static int trigger_eventfd_overflow(int evfd, int *fd, io_context_t * ctx)
++{
++	int ret;
++	struct iocb iocb;
++	struct iocb *iocbap[1];
++	static char buf[4 * 1024];
++
++	*ctx = 0;
++	ret = io_setup(16, ctx);
++	if (ret < 0) {
++		errno = -ret;
++		tst_resm(TINFO|TERRNO, "io_setup error");
++		return -1;
++	}
++
++	*fd = open("testfile", O_RDWR | O_CREAT, 0644);
++	if (*fd == -1) {
++		tst_resm(TINFO|TERRNO, "open(testfile) failed");
++		goto err_io_destroy;
++	}
++
++	ret = set_counter(evfd, UINT64_MAX - 1);
++	if (ret == -1) {
++		tst_resm(TINFO, "error setting counter to UINT64_MAX-1");
++		goto err_close_file;
++	}
++
++	io_prep_pwrite(&iocb, *fd, buf, sizeof(buf), 0);
++	io_set_eventfd(&iocb, evfd);
++
++	iocbap[0] = &iocb;
++	ret = io_submit(*ctx, 1, iocbap);
++	if (ret < 0) {
++		errno = -ret;
++		tst_resm(TINFO|TERRNO, "error submitting iocb");
++		goto err_close_file;
++	}
++
++	return 0;
++
++      err_close_file:
++	close(*fd);
++
++      err_io_destroy:
++	io_destroy(*ctx);
++
++	return -1;
++}
++
++static void cleanup_overflow(int fd, io_context_t ctx)
++{
++	close(fd);
++	io_destroy(ctx);
++}
++
++static void overflow_select_test(int evfd)
++{
++	struct timeval timeout = { 10, 0 };
++	fd_set readfds;
++	int fd;
++	io_context_t ctx;
++	int ret;
++
++	ret = trigger_eventfd_overflow(evfd, &fd, &ctx);
++	if (ret == -1) {
++		tst_resm(TBROK, "error triggering eventfd overflow");
++		return;
++	}
++
++	FD_ZERO(&readfds);
++	FD_SET(evfd, &readfds);
++	ret = select(evfd + 1, &readfds, NULL, NULL, &timeout);
++	if (ret == -1) {
++		tst_resm(TBROK|TERRNO, "error getting evfd status with select");
++		goto err_cleanup;
++	}
++
++	if (FD_ISSET(evfd, &readfds))
++		tst_resm(TPASS, "read fd set as expected");
++	else
++		tst_resm(TFAIL, "read fd not set");
++
++      err_cleanup:
++	cleanup_overflow(fd, ctx);
++}
++
++static void overflow_poll_test(int evfd)
++{
++	struct pollfd pollfd;
++	int fd;
++	io_context_t ctx;
++	int ret;
++
++	ret = trigger_eventfd_overflow(evfd, &fd, &ctx);
++	if (fd == -1) {
++		tst_resm(TBROK, "error triggering eventfd overflow");
++		return;
++	}
++
++	pollfd.fd = evfd;
++	pollfd.events = POLLIN;
++	pollfd.revents = 0;
++	ret = poll(&pollfd, 1, 10000);
++	if (ret == -1) {
++		tst_resm(TBROK|TERRNO, "error getting evfd status with poll");
++		goto err_cleanup;
++	}
++	if (pollfd.revents & POLLERR)
++		tst_resm(TPASS, "POLLERR occurred as expected");
++	else
++		tst_resm(TFAIL, "POLLERR did not occur");
++
++      err_cleanup:
++	cleanup_overflow(fd, ctx);
++}
++
++static void overflow_read_test(int evfd)
++{
++	uint64_t count;
++	io_context_t ctx;
++	int fd;
++	int ret;
++
++	ret = trigger_eventfd_overflow(evfd, &fd, &ctx);
++	if (ret == -1) {
++		tst_resm(TBROK, "error triggering eventfd overflow");
++		return;
++	}
++
++	ret = read(evfd, &count, sizeof(count));
++	if (ret == -1) {
++		tst_resm(TBROK|TERRNO, "error reading eventfd");
++		goto err_cleanup;
++	}
++
++	if (count == UINT64_MAX)
++		tst_resm(TPASS, "overflow occurred as expected");
++	else
++		tst_resm(TFAIL, "overflow did not occur");
++
++      err_cleanup:
++	cleanup_overflow(fd, ctx);
++}
++#else
++static void overflow_select_test(int evfd)
++{
++	tst_resm(TCONF, "eventfd support is not available in AIO subsystem");
++}
++
++static void overflow_poll_test(int evfd)
++{
++	tst_resm(TCONF, "eventfd support is not available in AIO subsystem");
++}
++
++static void overflow_read_test(int evfd)
++{
++	tst_resm(TCONF, "eventfd support is not available in AIO subsystem");
++}
++#endif
++
++int opt_do_print_labels = 0;
++int opt_do_print_max_op_num = 0;
++int opt_do_print_descr = 0;
++char *op_num_arg = NULL;
++
++const char *descr = "";
++
++void usage(FILE *pout)
++{
++	fprintf(pout, "\neventfd01 [-L] [-N] [-l LABEL] [-n NUM] [-e] [-t]\n"
++"%s\n"
++"\n"
++"\t-L\tPrint the valid LABELs in order and exit.\n"
++"\t-l\tWait for checkpoint at LABEL.\n"
++"\t-i\tPrint one-line test description.\n"
++"\t-N\tPrint the maximum label number and exit.\n"
++"\t-n\tWait for checkpoint at NUM.\n"
++"\n"
++"You may only specify one LABEL or NUM and you may not specify both.\n"
++"Label numbers are integers in the range 0-%d\n"
++"Valid label numbers and their corresponding LABELs are:\n", descr,
++		num_labels - 1);
++	print_labels(pout);
++}
++
++void help(void)
++{
++	usage(stdout);
++}
++
++option_t ckpt_opts[] = {
++	{
++		.option = "L",
++		.flag   = &opt_do_print_labels,
++		.arg    = NULL,
++	},
++	{
++		.option = "N",
++		.flag   = &opt_do_print_max_op_num,
++		.arg    = NULL,
++	},
++	{
++		.option = "l:",
++		.flag   = NULL,
++		.arg    = (char**)&ckpt_label,
++	},
++	{
++		.option = "n:",
++		.flag   = NULL,
++		.arg    = &op_num_arg,
++	},
++	{
++		.option = "D",
++		.flag   = &opt_do_print_descr,
++		.arg    = NULL,
++	},
++	{ NULL, NULL, NULL }
++};
++
++int main(int argc, char **argv)
++{
++	char *msg;		/* message returned from parse_opts */
++	int fd, ret;
++	uint64_t einit = 10;
++
++	/* parse standard options */
++	msg = parse_opts(argc, argv, ckpt_opts, help);
++	if (msg != NULL) {
++		tst_brkm(TBROK, NULL, "OPTION PARSING ERROR - %s", msg);
++		tst_exit();
++		/* NOTREACHED */
++	}
++
++	if (opt_do_print_labels) {
++		print_labels(stdout);
++		exit(EXIT_SUCCESS);
++	} else if (opt_do_print_max_op_num) {
++		printf("%d\n", num_labels - 1);
++		exit(EXIT_SUCCESS);
++	} else if (opt_do_print_descr) {
++		printf("%s\n", descr);
++		exit(EXIT_SUCCESS);
++	}
++
++	if (op_num_arg) {
++		if ((sscanf(op_num_arg, "%d", &ckpt_op_num) < 1) ||
++		    (ckpt_op_num < 0) ||
++		    (ckpt_op_num >= num_labels)) {
++			fprintf(stderr, "Option -n requires an argument in the range 0-%d. Got %d\n", num_labels - 1, ckpt_op_num);
++			usage(stderr);
++			exit(EXIT_FAILURE);
++		}
++	}
++
++	setup();
++	/* FIXME eventually stdio streams should be harmless */
++	close(0);
++	logfp = fopen(LOG_FILE, "w+");
++	if (!logfp) {
++		perror("could not open logfile");
++		exit(1);
++	}
++	/* redirect stdout and stderr to the log file */
++	if (dup2(fileno(logfp), 1) < 0) {
++		log_error("dup2(logfp, 1)");
++		goto out;
++	}
++	if (dup2(fileno(logfp), 2) < 0) {
++		log_error("dup2(logfp, 2)");
++		goto out;
++	}
++	if (!move_to_cgroup("freezer", "1", getpid())) {
++		log_error("move_to_cgroup");
++		goto out;
++	}
++
++
++	Tst_count = 0;
++
++	fd = myeventfd(einit, 0);
++	if (fd == -1)
++		tst_brkm(TBROK|TERRNO, cleanup, "error creating eventfd");
++label(fcntl_non_blocking,
++	ret, fcntl(fd, F_SETFL, O_NONBLOCK));
++	if (ret == -1)
++		tst_brkm(TBROK|TERRNO, cleanup, "error setting non-block mode");
++
++	read_test(fd, einit);
++	read_eagain_test(fd);
++	write_test(fd);
++	write_eagain_test(fd);
++	read_einval_test(fd);
++	write_einval_test(fd);
++	write_einval2_test(fd);
++	readfd_set_test(fd);
++	readfd_not_set_test(fd);
++	writefd_set_test(fd);
++	writefd_not_set_test(fd);
++	child_inherit_test(fd);
++	overflow_select_test(fd);
++	overflow_poll_test(fd);
++	overflow_read_test(fd);
++
++	close(fd);
++out:
++	cleanup();
++	/* NOT REACHED */
++
++	return 0;
++}
++
++/*
++ * setup() - performs all ONE TIME setup for this test
++ */
++static void setup(void)
++{
++	/* capture signals */
++	tst_sig(FORK, DEF_HANDLER, cleanup);
++
++	if (tst_kvercmp(2, 6, 22) < 0)
++		tst_brkm(TCONF, cleanup, "2.6.22 or greater kernel required");
++
++	/* Create a temporary directory & chdir there */
++	/*tst_tmpdir();*/
++	/* Pause if that option was specified
++	 * TEST_PAUSE contains the code to fork the test with the -c option.
++	TEST_PAUSE;
++	 */
++	ckpt_label = last_label;
++	ckpt_op_num = -1; /* or num_labels? */
++}
++
++/*
++ * cleanup() - performs all ONE TIME cleanup for this test
++ */
++static void cleanup(void)
++{
++	/*
++	 * print timing stats if that option was specified.
++	 * print errno log if that option was specified.
++	 */
++	TEST_CLEANUP;
++
++	/* tst_rmdir();*/
++	fclose(logfp);
++	/* exit with return code appropriate for results */
++	tst_exit();
++ /*NOTREACHED*/}
++
++const char __attribute__((__section__(".LABELs"))) *last_label  = "<end>";
+diff --git a/eventfd/libeptest.c b/eventfd/libeptest.c
+new file mode 100644
+index 0000000..88e5a9c
+--- /dev/null
++++ b/eventfd/libeptest.c
+@@ -0,0 +1,39 @@
++#include <errno.h>
++
++#include "libeptest.h"
++
++FILE *logfp = NULL;
++
++void print_labels(FILE *pout)
++{
++	int i;
++
++	if (num_labels > 0)
++		fprintf(pout, "\tNUM\tLABEL\n");
++	for (i = 0; i < num_labels; i++)
++		fprintf(pout, "\t%d\t%s\n", i, labels(i));
++}
++
++/* Signal ready for and await the checkpoint */
++void do_ckpt(void)
++{
++	int rc;
++
++	set_checkpoint_ready();
++
++	rc = access("./checkpoint-skip", F_OK);
++	if (rc == 0)
++		return;
++	else if (errno != ENOENT)
++		exit(EXIT_FAILURE);
++
++	while (!test_checkpoint_done())
++		usleep(10000);
++	if (unlink("./checkpoint-done") == -1) {
++		/* perror("unlink(\"./checkpoint-done\")"); */
++	}
++}
++
++/* The spot (LABEL or label number) where we should test checkpoint/restart */
++char const *ckpt_label;
++int ckpt_op_num = 0;
+diff --git a/eventfd/libeptest.h b/eventfd/libeptest.h
+new file mode 100644
+index 0000000..b6629e8
+--- /dev/null
++++ b/eventfd/libeptest.h
+@@ -0,0 +1,73 @@
++/* epoll syscalls */
++#include <stdlib.h>
++#include <stdio.h>
++#include <unistd.h>
++
++#include <sys/epoll.h>
++
++#include "libcrtest/libcrtest.h"
++
++extern FILE *logfp;
++
++/*
++ * Log output with a tag (INFO, WARN, FAIL, PASS) and a format.
++ * Adds information about the thread originating the message.
++ *
++ * Flush the log after every write to make sure we get consistent, and
++ * complete logs.
++ */
++#define log(tag, fmt, ...) \
++do { \
++	pid_t __tid = getpid(); \
++	fprintf(logfp, ("%s: thread %d: " fmt), (tag), __tid, ##__VA_ARGS__ ); \
++	fflush(logfp); \
++	fsync(fileno(logfp)); \
++} while(0)
++
++/* like perror() except to the log */
++#define log_error(s) log("FAIL", "%s: %s\n", (s), strerror(errno))
++
++/*
++ * A LABEL is a point in the program we can goto where it's interesting to
++ * checkpoint. These enable us to have a set of labels that can be specified
++ * on the commandline.
++ */
++extern const char __attribute__((__section__(".LABELs"))) *first_label;
++extern const char __attribute__((__section__(".LABELs"))) *last_label;
++
++#define num_labels ((&last_label - &first_label) - 1)
++
++static inline const char * labels(int i)
++{
++	return (&first_label)[num_labels - i];
++}
++
++/* Print the labels that this program has to pout */
++void print_labels(FILE *pout);
++
++/* Signal ready for and await the checkpoint */
++void do_ckpt(void);
++
++/* The spot (LABEL or label number) where we should test checkpoint/restart */
++extern char const *ckpt_label;
++extern int ckpt_op_num;
++
++#define stringify(expr) #expr
++
++/* Label a spot in the code... */
++#define label(lbl, ret, action) \
++do { \
++	static char __attribute__((__section__(".LABELs"))) *___ ##lbl## _l = stringify(lbl); \
++	goto lbl ; \
++lbl: \
++\
++        log("INFO", "label: %s: \"%s\"\n", \
++		    labels(op_num), stringify(action)); \
++\
++	ret = action ; \
++\
++	if ((ckpt_op_num == op_num) || (ckpt_op_num == -1) || \
++	    (strcmp(ckpt_label, ___ ##lbl## _l) == 0)) \
++		do_ckpt(); \
++	op_num++; \
++} while(0)
+diff --git a/eventfd/run.sh b/eventfd/run.sh
+new file mode 100755
+index 0000000..7ddf413
+--- /dev/null
++++ b/eventfd/run.sh
+@@ -0,0 +1,140 @@
++#!/bin/bash
++
++
++source ../common.sh
++
++#
++# Check if the running kernel supports eventfd
++#
++( if [ -r /proc/config.gz ]; then
++	zcat /proc/config.gz
++elif [ -r /proc/config ]; then
++	cat /proc/config
++# elif TODO look for CONFIG_EVENTFD=y in /boot/config-$(uname -r)
++else
++# There is no way to test CONFIG_EVENTFD -- assume it is set =y
++	echo 'CONFIG_EVENTFD=y'
++fi ) | grep -E '^[[:space:]]*CONFIG_EVENTFD=y' > /dev/null 2>&1
++[ $? ] || {
++	echo "WARNING: Kernel does not support eventfd. Skipping tests."
++	exit 1
++}
++
++TESTS=( eventfd01 )
++
++#make ${TESTS[@]}
++
++# mount -t cgroup foo /cg
++# mkdir /cg/1
++# chown -R $(id --name -u).$(id --name -g) /cg/1
++err_msg="BROK"
++function do_err()
++{
++       if [ -n "${TEST_PID}" ]; then
++               local PIDLIST=( $(ps --ppid ${TEST_PID} -o pid=) ${TEST_PID} )
++               kill ${PIDLIST[@]} || kill -9 ${PIDLIST[@]}
++       fi
++       echo "${err_msg}"
++       ((failed++))
++       wait
++}
++
++failed=0
++
++NUMTESTS=${#TESTS[@]}
++for (( CURTEST = 0; CURTEST < NUMTESTS; CURTEST = CURTEST + 1 )); do
++	T=${TESTS[$CURTEST]}
++	((IMAX = $(./${T} -N)))
++	echo "INFO: Test ${T} does:"
++	./${T} -D | sed -e 's/^/INFO:/'
++	./${T} -L | sed -e 's/^/INFO:/'
++
++	TEST_LABELS=( $(./${T} -L | tail -n '+2' | cut -f 3) )
++
++	# First we run the test taking checkpoints at all the labelled points
++	rm -f "./checkpoint-"{ready,done,skip}
++	echo "Running test: \"${T}\""
++	./${T} &
++	TEST_PID=$!
++
++	trap 'do_err; break 2' ERR EXIT
++	for ((I = 0; I <= IMAX; I = I + 1)); do
++		TLABEL="${TEST_LABELS[$I]}"
++		while [ '!' -r "./checkpoint-ready" ]; do
++			sleep 0.1 # slow
++		done
++		echo "Taking checkpoint ${I}: ${TLABEL}."
++		freeze
++		trap 'thaw; do_err; break 2' ERR EXIT
++		sync # slow
++		cp log.${T} log.${T}.${I}.${TLABEL}
++		err_msg="FAIL"
++		${CHECKPOINT} ${TEST_PID} > "checkpoint-${T}.${I}.${TLABEL}"
++		err_msg="BROK"
++
++		# Reset for the next iteration
++		touch "./checkpoint-done"
++		thaw
++		trap 'do_err; break 2' ERR EXIT
++	done
++
++	sleep 0.1
++	while [ '!' -r "./checkpoint-done" ]; do
++		touch "./checkpoint-done"
++		sleep 0.1
++	done
++
++	echo "Done taking checkpoints. Waiting for ${TEST_PID} to finish."
++
++	# FAIL if the status of the test program's original run isn't 0.
++	err_msg="FAIL"
++	wait ${TEST_PID} || /bin/true # FIXME why can't we wait for TEST_PID ?
++	err_msg="BROK"
++
++	echo "Original completed running."
++
++	# Save the original run's log for later comparison.
++	mv log.${T} log.${T}.orig
++
++	# Now that the original, non-restart run is complete let's restart
++	# each checkpoint and make sure they produce the same results.
++	touch "./checkpoint-ready" "./checkpoint-done" "./checkpoint-skip"
++	trap 'do_err; break 2' ERR EXIT
++	echo "Restarting checkpoints"
++	for ((I=0; I <= IMAX; I = I + 1)); do
++		TLABEL="${TEST_LABELS[$I]}"
++
++		# now try restarting. restore log first
++		cp log.${T}.${I}.${TLABEL} log.${T}
++		echo "Restart ${I} ${TLABEL}"
++		err_msg="FAIL"
++		# --copy-status ensures that we trap on error.
++		${RESTART} --copy-status -w < "checkpoint-${T}.${I}.${TLABEL}"
++		err_msg="BROK"
++
++		# Now compare the logs. We can strip the thread id differences
++		# since all of these tests are single-threaded.
++		SEDEXPR='s/^INFO: thread [[:digit:]]\+: //'
++		sed -i -e "${SEDEXPR}" "log.${T}.orig"
++		sed -i -e "${SEDEXPR}" "log.${T}"
++
++		err_msg="FAIL"
++		diff -s -pu "log.${T}.orig" "log.${T}" > "log.${T}.${I}.${TLABEL}.diff"
++		err_msg="BROK"
++		echo "PASS \"${T}\""
++		rm -f "log.${T}.${I}.${TLABEL}"* "log.${T}" "checkpoint-${T}.${I}.${TLABEL}"
++	done
++	rm -f "log.${T}.orig"
++
++	trap '' ERR EXIT
++	wait
++done
++trap '' ERR EXIT
++
++rm -f "./checkpoint-"{ready,done,skip}
++
++
++# rmdir /cg/1
++# umount /cg
++
++exit ${failed}
+-- 
+1.5.6.3
