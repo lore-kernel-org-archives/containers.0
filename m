@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: fix race in ckpt_coordinator_pidns and --no-wait
-Date: Mon, 26 Oct 2009 11:19:54 -0500
-Message-ID: <20091026161954.GC23564@us.ibm.com>
-References: <1256508767-2356-1-git-send-email-orenl@librato.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] [RFC] Checkpoint/restart eventfd
+Date: Mon, 26 Oct 2009 09:24:37 -0700
+Message-ID: <20091026162437.GF31446@count0.beaverton.ibm.com>
+References: <1256447590-31138-1-git-send-email-matthltc@us.ibm.com>
+	<20091026152151.GB23564@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1256508767-2356-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091026152151.GB23564-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,145 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> In a restart with --pidns, if the root-task has pid != 1, then we fork
-> a new process as the init of the new pid-ns, and that process becomes
-> the coordinator (instead of 'restart').
-> 
-> The original 'restart' process will then wait for the new coordinator
-> to exit (when all restarted tasks and their descendants terminate).
-> With --no-wait, 'restart' doesn't wait for them to exit, but should
-> simply return as soon as the restart completes.
-> 
-> However, it has no way to know when (and if) the restart completes,
-> because the coordiantor calls sys_restart(). As a result, it may exit
-> early, exiting the feeder (which is a thread) too, and fail the
-> restart.
-> 
-> This patch adds a pipe through which the new coordinator reports the
-> status of the restart back to its parent, so that the parent only
-> exits once it knows that the operation has completed.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+On Mon, Oct 26, 2009 at 10:21:51AM -0500, Serge E. Hallyn wrote:
+> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > Save/restore eventfd files. These are anon_inodes just like epoll
 
-Well, it looks good.  It does make me worry that there are too many
-toggles and switches to keep it all working under all error conditions
-long-term, but what the heck.
+<snip>
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > diff --git a/fs/eventfd.c b/fs/eventfd.c
+> > index 31d12de..5d30cd5 100644
+> > --- a/fs/eventfd.c
+> > +++ b/fs/eventfd.c
+> > @@ -18,6 +18,8 @@
+> >  #include <linux/module.h>
+> >  #include <linux/kref.h>
+> >  #include <linux/eventfd.h>
+> > +#include <linux/checkpoint.h>
+> > +#include <linux/checkpoint_hdr.h>
+> > 
+> >  struct eventfd_ctx {
+> >  	struct kref kref;
+> > @@ -223,11 +225,34 @@ static ssize_t eventfd_write(struct file *file, const char __user *buf, size_t c
+> >  	return res;
+> >  }
+> > 
+> > +static int eventfd_checkpoint(struct ckpt_ctx *ckpt_ctx, struct file *file)
+> > +{
+> > +	struct eventfd_ctx *ctx;
+> > +	struct ckpt_hdr_file_eventfd *h;
+> > +	int ret = -ENOMEM;
+> > +
+> > +	h = ckpt_hdr_get_type(ckpt_ctx, sizeof(*h), CKPT_HDR_FILE);
+> > +	if (!h)
+> > +		return -ENOMEM;
+> > +	h->common.f_type = CKPT_FILE_EVENTFD;
+> > +	ret = checkpoint_file_common(ckpt_ctx, file, &h->common);
+> > +	if (ret < 0)
+> > +		goto out;
+> > +	ctx = file->private_data;
+> > +	h->count = ctx->count;
+> 
+> I only took a very cursory glance at the eventfd code, but eventfd_poll()
+> suggests that ULLONG_MAX is a valid value for ctx->count (suggesting error).
+> Should you be checking for that?  (Or is that a special case that will
+> never be checkpointed somehow?)
 
--serge
+The code doesn't prevent nor do anything special for ULLONG_MAX. It
+didn't seem that it should -- the existing code which restarts
+read/write/poll syscalls should take care of the rest.
 
-> ---
->  restart.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++----
->  1 files changed, 46 insertions(+), 4 deletions(-)
-> 
-> diff --git a/restart.c b/restart.c
-> index fbaab88..14d8aec 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -254,6 +254,7 @@ struct ckpt_ctx {
-> 
->  	int pipe_child[2];	/* for children to report status */
->  	int pipe_feed[2];	/* for feeder to provide input */
-> +	int pipe_coord[2];	/* for coord to report status (if needed) */
-> 
->  	struct ckpt_pids *pids_arr;
->  	struct ckpt_pids *copy_arr;
-> @@ -848,7 +849,32 @@ static int ckpt_probe_child(pid_t pid, char *str)
->  #ifdef CLONE_NEWPID
->  static int __ckpt_coordinator(void *arg)
->  {
-> -	return ckpt_coordinator((struct ckpt_ctx *) arg);
-> +	struct ckpt_ctx *ctx = (struct ckpt_ctx *) arg;
-> +
-> +	if (!ctx->args->wait)
-> +		close(ctx->pipe_coord[0]);
-> +
-> +	return ckpt_coordinator(ctx);
-> +}
-> +
-> +static int ckpt_coordinator_status(struct ckpt_ctx *ctx)
-> +{
-> +	int status = -1;
-> +	int ret;
-> +
-> +	close(ctx->pipe_coord[1]);
-> +
-> +	ret = read(ctx->pipe_coord[0], &status, sizeof(status));
-> +	if (ret < 0)
-> +		perror("read coordinator status");
-> +	else if (ret == 0) {
-> +		/* coordinator failed to report */
-> +		ckpt_dbg("Coordinator failed to report status.");
-> +	} else
-> +		status = 0;
-> +
-> +	close(ctx->pipe_coord[0]);
-> +	return status;
->  }
-> 
->  static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-> @@ -859,6 +885,15 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-> 
->  	ckpt_dbg("forking coordinator in new pidns\n");
-> 
-> +	/*
-> +	 * We won't wait for (collect) the coordinator, so we use a
-> +	 * pipe instead for the coordinator to report success/failure.
-> +	 */
-> +	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
-> +		perror("pipe");
-> +		return -1;
-> +	}
-> +
->  	stk = malloc(PTHREAD_STACK_MIN);
->  	if (!stk) {
->  		perror("coordinator stack malloc");
-> @@ -893,7 +928,7 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
->  	if (ctx->args->wait)
->  		return ckpt_collect_child(ctx);
->  	else
-> -		return 0;
-> +		return ckpt_coordinator_status(ctx);
->  }
->  #else
->  static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-> @@ -941,17 +976,24 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
->  	ckpt_verbose("Success\n");
->  	ckpt_dbg("restart succeeded\n");
-> 
-> +	ret = 0;
-> +
->  	if (ctx->args->pidns && ctx->tasks_arr[0].pid != 1) {
->  		/*
->  		 * If root task isn't container init, we must stay
->  		 * around and be reaper until all tasks are gone.
->  		 * Otherwise, container will die as soon as we exit.
->  		 */
-> +		if (!ctx->args->wait) {
-> +			/* report status because parent won't wait for us */
-> +			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-> +				perror("failed to report status");
-> +				exit(1);
-> +			}
-> +		}
->  		ret = ckpt_pretend_reaper(ctx);
->  	} else if (ctx->args->wait) {
->  		ret = ckpt_collect_child(ctx);
-> -	} else {
-> -		ret = 0;
->  	}
-> 
->  	if (ret < 0)
-> -- 
-> 1.6.0.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+Cheers,
+	-Matt Helsley
