@@ -1,11 +1,15 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH] c/r: coordinator to report correct error on restart failure
-Date: Sun, 25 Oct 2009 18:23:36 -0400
-Message-ID: <1256509416-3897-1-git-send-email-orenl@librato.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] [RFC] Checkpoint/restart eventfd
+Date: Sun, 25 Oct 2009 20:20:50 -0700
+Message-ID: <20091026032050.GA31446@count0.beaverton.ibm.com>
+References: <1256447590-31138-1-git-send-email-matthltc@us.ibm.com>
+	<4AE493C4.3070905@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AE493C4.3070905-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,56 +19,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-If restart fails it is usually due to an error for a restoring task,
-which is place in ctx->errno. Then the coordinator wakes up and sees
-an -EINTR.
+On Sun, Oct 25, 2009 at 02:07:00PM -0400, Oren Laadan wrote:
+> 
+> 
+> Matt Helsley wrote:
+> > Save/restore eventfd files. These are anon_inodes just like epoll
+> > but instead of a set of files to poll they are a 64-bit counter
+> > and a flag value. Used for AIO.
+> > 
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Looks fine to me, except a nit below. Unless there are negative
+> comments I'll pull it in a couple of days (and fix the nits).
+> 
+> Oren.
+> 
+> > 
+> > NOTE: Marked [RFC] because it strangely does not pass my adapted LTP
+> > 	test cases unless it's running from a checkpointed image.
+> > 	Seems to be a mistake in the test case adaptation.
+> > ---
+> >  checkpoint/files.c             |    7 +++++
+> >  fs/eventfd.c                   |   51 ++++++++++++++++++++++++++++++++++++++++
+> >  include/linux/checkpoint_hdr.h |    8 ++++++
+> >  include/linux/eventfd.h        |   10 ++++++++
+> >  4 files changed, 76 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/checkpoint/files.c b/checkpoint/files.c
+> > index f6de07e..43b95cc 100644
+> > --- a/checkpoint/files.c
+> > +++ b/checkpoint/files.c
+> > @@ -23,6 +23,7 @@
+> >  #include <linux/checkpoint.h>
+> >  #include <linux/checkpoint_hdr.h>
+> >  #include <net/sock.h>
+> > +#include <linux/eventfd.h>
+> >  
+> >  
+> >  /**************************************************************************
+> > @@ -607,6 +608,12 @@ static struct restore_file_ops restore_file_ops[] = {
+> >  		.file_type = CKPT_FILE_TTY,
+> >  		.restore = tty_file_restore,
+> >  	},
+> > +	/* eventfd */
+> > +	{
+> > +		.file_name = "EVENTFD",
+> > +		.file_type = CKPT_FILE_EVENTFD,
+> > +		.restore = eventfd_restore,
+> > +	},
+> >  };
+> >  
+> >  static struct file *do_restore_file(struct ckpt_ctx *ctx)
+> > diff --git a/fs/eventfd.c b/fs/eventfd.c
+> > index 31d12de..5d30cd5 100644
+> > --- a/fs/eventfd.c
+> > +++ b/fs/eventfd.c
+> > @@ -18,6 +18,8 @@
+> >  #include <linux/module.h>
+> >  #include <linux/kref.h>
+> >  #include <linux/eventfd.h>
+> > +#include <linux/checkpoint.h>
+> > +#include <linux/checkpoint_hdr.h>
+> >  
+> >  struct eventfd_ctx {
+> >  	struct kref kref;
+> > @@ -223,11 +225,34 @@ static ssize_t eventfd_write(struct file *file, const char __user *buf, size_t c
+> >  	return res;
+> >  }
+> >  
+> > +static int eventfd_checkpoint(struct ckpt_ctx *ckpt_ctx, struct file *file)
+> > +{
+> > +	struct eventfd_ctx *ctx;
+> 
+> Nit: everywhere else we use @ctx for ckpt_ctx, so to avoid
+> confusion, I suggest:
+> 	struct eventfd_ctx *efd_ctx;
 
-This patch changes the coordinator's behavior to report the error
-value placed in ctx->errno (if an error occurred) rather than report
-a confusing -EINTR.
+No. The code in that file usually refers to "ctx" as an eventfd context. It
+seems wrong to adopt a contradictory naming convention just for the
+checkpoint portions of that code. I'd be happy to rename ckpt_ctx but
+not to ctx.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/restart.c |   15 +++++++++++++--
- 1 files changed, 13 insertions(+), 2 deletions(-)
-
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 5daadc4..9b75de8 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -711,7 +711,7 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
- }
- 
- /* should not be called under write_lock_irq(&tasklist_lock) */
--static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
-+static void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
- {
- 	/* first to fail: notify everyone (racy but harmless) */
- 	if (!ckpt_test_ctx_error(ctx)) {
-@@ -1263,9 +1263,20 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 		post_restore_task();
- 
- 	restore_debug_error(ctx, ret);
--	if (ret < 0) {
-+
-+	if (ret < 0)
- 		ckpt_set_ctx_error(ctx, ret);
-+
-+	if (ckpt_test_ctx_error(ctx)) {
- 		destroy_descendants(ctx);
-+		/*
-+		 * If a restaring task (or we) reported an error, that set
-+		 * out return value to that error. (Need the unlikely loop
-+		 * because the error is recorded after the flag is set).
-+		 */
-+		while (!ctx->errno)
-+			yield();
-+		ret = ctx->errno;
- 	} else {
- 		ckpt_set_ctx_success(ctx);
- 		wake_up_all(&ctx->waitq);
--- 
-1.6.0.4
+Cheers,
+	-Matt Helsley
