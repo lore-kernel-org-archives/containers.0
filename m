@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: coordinator to report correct error on restart
-	failure
-Date: Mon, 26 Oct 2009 13:35:31 -0500
-Message-ID: <20091026183531.GJ23564@us.ibm.com>
-References: <1256509416-3897-1-git-send-email-orenl@librato.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH] user-cr: add --output-fd to write output to a specific fd
+Date: Mon, 26 Oct 2009 15:39:19 -0400
+Message-ID: <4AE5FAE7.5090003@librato.com>
+References: <1256508801-2426-1-git-send-email-orenl@librato.com>
+	<20091026174305.GI31446@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1256509416-3897-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091026174305.GI31446-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,66 +18,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> If restart fails it is usually due to an error for a restoring task,
-> which is place in ctx->errno. Then the coordinator wakes up and sees
-> an -EINTR.
-> 
-> This patch changes the coordinator's behavior to report the error
-> value placed in ctx->errno (if an error occurred) rather than report
-> a confusing -EINTR.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+yeah .. I was lazy .. will add another patch.
 
-> ---
->  checkpoint/restart.c |   15 +++++++++++++--
->  1 files changed, 13 insertions(+), 2 deletions(-)
+Oren.
+
+Matt Helsley wrote:
+> On Sun, Oct 25, 2009 at 06:13:21PM -0400, Oren Laadan wrote:
+>> This is useful if the user would like redirect the output to
+>> e.g, a socket or any other already open file descriptor when
+>> invoking 'checkpoint'.
+>>
+>> Also useful if the user would like to append an existing file.
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  checkpoint.c |   47 +++++++++++++++++++++++++++++++++++++++++------
+>>  1 files changed, 41 insertions(+), 6 deletions(-)
+>>
+>> diff --git a/checkpoint.c b/checkpoint.c
+>> index c116daf..aef954b 100644
+>> --- a/checkpoint.c
+>> +++ b/checkpoint.c
+>> @@ -32,12 +32,14 @@ static char usage_str[] =
+>>  "\tOptions:\n"
+>>  "  -h,--help             print this help message\n"
+>>  "  -o,--output=FILE      write data to FILE instead of standard output\n"
+>> +"     --output-fd=FD     write data to file descriptor FD instead of stdout\n"
+>>  "  -c,--container        require the PID is a container-init\n"
+>>  "  -v,--verbose          verbose output\n"
+>>  "";
+>>
+>>  struct args {
+>>  	char *output;
+>> +	int outputfd;
+>>  	int container;
+>>  	int verbose;
+>>  };
+>> @@ -53,17 +55,33 @@ static void usage(char *str)
+>>  	exit(1);
+>>  }
+>>
+>> +/* negative retval means error */
+>> +static int str2num(char *str)
+>> +{
+>> +	char *nptr;
+>> +	int num;
+>> +
+>> +	num = strtol(str, &nptr, 10);
+>> +	if (nptr - str != strlen(str))
+>> +		num = -1;
+>> +	return num;
+>> +}
 > 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 5daadc4..9b75de8 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -711,7 +711,7 @@ static inline int is_task_active(struct ckpt_ctx *ctx, pid_t pid)
->  }
+> It'd be nice to see common functions in a shared .o  between
+> checkpoint and restart. 
 > 
->  /* should not be called under write_lock_irq(&tasklist_lock) */
-> -static inline void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
-> +static void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
->  {
->  	/* first to fail: notify everyone (racy but harmless) */
->  	if (!ckpt_test_ctx_error(ctx)) {
-> @@ -1263,9 +1263,20 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
->  		post_restore_task();
+> Cheers,
+> 	-Matt Helsley
 > 
->  	restore_debug_error(ctx, ret);
-> -	if (ret < 0) {
-> +
-> +	if (ret < 0)
->  		ckpt_set_ctx_error(ctx, ret);
-> +
-> +	if (ckpt_test_ctx_error(ctx)) {
->  		destroy_descendants(ctx);
-> +		/*
-> +		 * If a restaring task (or we) reported an error, that set
-> +		 * out return value to that error. (Need the unlikely loop
-> +		 * because the error is recorded after the flag is set).
-> +		 */
-> +		while (!ctx->errno)
-> +			yield();
-> +		ret = ctx->errno;
->  	} else {
->  		ckpt_set_ctx_success(ctx);
->  		wake_up_all(&ctx->waitq);
-> -- 
-> 1.6.0.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
