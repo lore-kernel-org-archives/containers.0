@@ -1,14 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: add --output-fd to write output to a specific fd
-Date: Mon, 26 Oct 2009 10:43:05 -0700
-Message-ID: <20091026174305.GI31446@count0.beaverton.ibm.com>
-References: <1256508801-2426-1-git-send-email-orenl@librato.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] define function to print error messages to user log
+Date: Mon, 26 Oct 2009 13:33:59 -0500
+Message-ID: <20091026183359.GI23564@us.ibm.com>
+References: <20091023041325.GA2863@us.ibm.com>
+	<20091023041349.GA2915@us.ibm.com> <4AE491CB.60109@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1256508801-2426-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4AE491CB.60109-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,58 +20,93 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Oct 25, 2009 at 06:13:21PM -0400, Oren Laadan wrote:
-> This is useful if the user would like redirect the output to
-> e.g, a socket or any other already open file descriptor when
-> invoking 'checkpoint'.
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > 
-> Also useful if the user would like to append an existing file.
 > 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->  checkpoint.c |   47 +++++++++++++++++++++++++++++++++++++++++------
->  1 files changed, 41 insertions(+), 6 deletions(-)
+> Serge E. Hallyn wrote:
+> > Error messages are both sent to an optional user-provided logfile,
+> > and, if CONFIG_CHECKPOINT_DEBUG=y, sent to syslog.
+> > 
+> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  checkpoint/objhash.c             |    2 +
+> >  checkpoint/sys.c                 |   61 ++++++++++++++++++++++++++++++++++---
+> >  include/linux/checkpoint.h       |    2 +-
+> >  include/linux/checkpoint_types.h |    1 +
+> >  include/linux/syscalls.h         |    5 ++-
+> >  5 files changed, 63 insertions(+), 8 deletions(-)
+> > 
+> > diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> > index 730dd82..c441ce6 100644
+> > --- a/checkpoint/objhash.c
+> > +++ b/checkpoint/objhash.c
+> > @@ -858,6 +858,8 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
+> >  
+> >  	/* account for ctx->file reference (if in the table already) */
+> >  	ckpt_obj_users_inc(ctx, ctx->file, 1);
+> > +	if (ctx->logfile)
+> > +		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
+> >  	/* account for ctx->root_nsproxy reference (if in the table already) */
+> >  	ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
+> >  
+> > diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> > index 260a1ee..1840f90 100644
+> > --- a/checkpoint/sys.c
+> > +++ b/checkpoint/sys.c
+> > @@ -204,6 +204,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+> >  
+> >  	if (ctx->file)
+> >  		fput(ctx->file);
+> > +	if (ctx->logfile)
+> > +		fput(ctx->logfile);
+> >  
+> >  	ckpt_obj_hash_free(ctx);
+> >  	path_put(&ctx->fs_mnt);
+> > @@ -225,7 +227,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+> >  }
+> >  
+> >  static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+> > -				       unsigned long kflags)
+> > +				       unsigned long kflags, int logfd)
+> >  {
+> >  	struct ckpt_ctx *ctx;
+> >  	int err;
+> > @@ -238,6 +240,9 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+> >  	ctx->kflags = kflags;
+> >  	ctx->ktime_begin = ktime_get();
+> >  
+> > +	/* If logfd's a bad fd that's fine, no log output required... */
+> > +	ctx->logfile = fget(logfd);
 > 
-> diff --git a/checkpoint.c b/checkpoint.c
-> index c116daf..aef954b 100644
-> --- a/checkpoint.c
-> +++ b/checkpoint.c
-> @@ -32,12 +32,14 @@ static char usage_str[] =
->  "\tOptions:\n"
->  "  -h,--help             print this help message\n"
->  "  -o,--output=FILE      write data to FILE instead of standard output\n"
-> +"     --output-fd=FD     write data to file descriptor FD instead of stdout\n"
->  "  -c,--container        require the PID is a container-init\n"
->  "  -v,--verbose          verbose output\n"
->  "";
+> Can we make it more user-friendly, e.g. f logfd==-1 then no logfile,
+> otherwise if fget(logfd) fails then return -EBADF ?
 > 
->  struct args {
->  	char *output;
-> +	int outputfd;
->  	int container;
->  	int verbose;
->  };
-> @@ -53,17 +55,33 @@ static void usage(char *str)
->  	exit(1);
->  }
+> > +
+> >  	atomic_set(&ctx->refcount, 0);
+> >  	INIT_LIST_HEAD(&ctx->pgarr_list);
+> >  	INIT_LIST_HEAD(&ctx->pgarr_pool);
+> > @@ -339,6 +344,51 @@ int walk_task_subtree(struct task_struct *root,
+> >  	return (ret < 0 ? ret : total);
+> >  }
+> >  
+> > +/*
+> > + * currentpid:targetpid fmt%args
+> > + */
+> > +void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
+> > +{
 > 
-> +/* negative retval means error */
-> +static int str2num(char *str)
-> +{
-> +	char *nptr;
-> +	int num;
-> +
-> +	num = strtol(str, &nptr, 10);
-> +	if (nptr - str != strlen(str))
-> +		num = -1;
-> +	return num;
-> +}
+> As I commented before, I really wish not to go through this again.
+> Can we come up with a mechanism for error messages, that will set
+> a "standard" format (like I tried to do in ckpt_write_err) ?
+> 
+> (I like Matt's suggestion to use one format string instead of two,
+> and allow "%(T)" constructs for our format directives).
+> 
+> Also, I assume some of that code can be reused here below.
 
-It'd be nice to see common functions in a shared .o  between
-checkpoint and restart. 
+Perhaps we should be using the audit system.
 
-Cheers,
-	-Matt Helsley
+-serge
