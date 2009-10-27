@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 13/17] ckpt_error in checkpoint/files.c
-Date: Tue, 27 Oct 2009 17:46:23 -0500
-Message-ID: <1256683587-23961-14-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 06/17] ckpt_write_err update checkpoint/memory.c
+Date: Tue, 27 Oct 2009 17:46:16 -0500
+Message-ID: <1256683587-23961-7-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,35 +23,50 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Convert two ckpt_debugs to ckpt_errors - however, given that they
-are merely doubling information available in ckpt_write_err(), should
-they simply be removed?
-
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ checkpoint/memory.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 1f2ab07..e67a13f 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -206,12 +206,14 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
- 	if (!file->f_op || !file->f_op->checkpoint) {
- 		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
- 			       -EBADF, file, file->f_op);
--		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
-+		ckpt_error(ctx, "%(T)f_op lacks checkpoint handler: %pS\n",
-+			   file->f_op);
- 		return -EBADF;
- 	}
- 	if (d_unlinked(file->f_dentry)) {
- 		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
--		ckpt_debug("unlinked files are unsupported\n");
-+		ckpt_error(ctx, "%(T)%(P)unlinked files are unsupported\n",
-+			   file);
- 		return -EBADF;
- 	}
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 656614c..c94a85e 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -679,7 +679,7 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			 vma->vm_start, vma->vm_end, vma->vm_flags);
  
+ 		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
+-			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
++			ckpt_write_err(ctx, "%(T)%(E)vma: bad flags (%#lx)\n",
+ 				       -ENOSYS, vma->vm_flags);
+ 			ret = -ENOSYS;
+ 			break;
+@@ -692,7 +692,7 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 		else
+ 			ret = -ENOSYS;
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "vma: failed", ret);
++			ckpt_write_err(ctx, "%(T)%(E)vma: failed", ret);
+ 			break;
+ 		}
+ 		/*
+@@ -821,7 +821,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	if (mm->exe_file) {
+ 		ret = ckpt_collect_file(ctx, mm->exe_file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect exe_file", ret);
++			ckpt_write_err(ctx, "%(T)%(E)mm: collect exe_file", ret);
+ 			goto out;
+ 		}
+ 	}
+@@ -831,7 +831,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			continue;
+ 		ret = ckpt_collect_file(ctx, file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect vm_file", ret);
++			ckpt_write_err(ctx, "%(T)%(E)mm: collect vm_file", ret);
+ 			break;
+ 		}
+ 	}
 -- 
 1.6.1
