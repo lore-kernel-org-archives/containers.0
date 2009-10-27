@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 05/17] ckpt_write_err update checkpoint/files.c
-Date: Tue, 27 Oct 2009 17:46:15 -0500
-Message-ID: <1256683587-23961-6-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 15/17] ckpt_error in ipc/checkpoint_msg.c
+Date: Tue, 27 Oct 2009 17:46:25 -0500
+Message-ID: <1256683587-23961-16-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,82 +25,21 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c |   17 +++++++++--------
- 1 files changed, 9 insertions(+), 8 deletions(-)
+ ipc/checkpoint_msg.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 440b7a9..1f2ab07 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -88,7 +88,7 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
- 					  CKPT_HDR_FILE_NAME);
- 	} else {
- 		ret = PTR_ERR(fname);
--		ckpt_write_err(ctx, "TEP", "obtain filename (file)", ret);
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)obtain filename (file)", ret);
- 	}
+diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+index b933c19..806fe74 100644
+--- a/ipc/checkpoint_msg.c
++++ b/ipc/checkpoint_msg.c
+@@ -352,7 +352,7 @@ int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+ 	ret = load_ipc_msg_hdr(ctx, h, msq);
  
- 	kfree(buf);
-@@ -204,20 +204,21 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
- 	int ret;
- 
- 	if (!file->f_op || !file->f_op->checkpoint) {
--		ckpt_write_err(ctx, "TEPS", "f_op lacks checkpoint",
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
- 			       -EBADF, file, file->f_op);
- 		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
- 		return -EBADF;
- 	}
- 	if (d_unlinked(file->f_dentry)) {
--		ckpt_write_err(ctx, "TEP", "unlinked file", -EBADF, file);
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
- 		ckpt_debug("unlinked files are unsupported\n");
- 		return -EBADF;
- 	}
- 
- 	ret = file->f_op->checkpoint(ctx, file);
- 	if (ret < 0)
--		ckpt_write_err(ctx, "TEP", "file checkpoint failed", ret, file);
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)file checkpoint failed", ret,
-+			       file);
- 	return ret;
- }
- 
-@@ -257,7 +258,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
- 	ret = -EBADF;
- 	if (!file) {
- 		pr_warning("c/r: file descriptor gone?");
--		ckpt_write_err(ctx, "TEP", "file gone? (%d)", ret, file, fd);
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)file gone? (%d)", ret, file, fd);
- 		goto out;
- 	}
- 
-@@ -360,7 +361,7 @@ int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file)
- 	if (file->f_op->collect)
- 		ret = file->f_op->collect(ctx, file);
- 	if (ret < 0)
--		ckpt_write_err(ctx, "TEP", "file collect", ret, file);
-+		ckpt_write_err(ctx, "%(T)%(E)%(P)file collect", ret, file);
- 	return ret;
- }
- 
-@@ -379,7 +380,7 @@ static int collect_file_desc(struct ckpt_ctx *ctx,
- 	rcu_read_unlock();
- 
- 	if (!file) {
--		ckpt_write_err(ctx, "TE", "file removed", -EBUSY, file);
-+		ckpt_write_err(ctx, "%(T)%(E)file removed", -EBUSY, file);
- 		return -EBUSY;
- 	}
- 
-@@ -422,7 +423,7 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	files = get_files_struct(t);
- 	if (!files) {
--		ckpt_write_err(ctx, "TE", "files_struct missing", -EBUSY);
-+		ckpt_write_err(ctx, "%(T)%(E)files_struct missing", -EBUSY);
- 		return -EBUSY;
- 	}
- 	ret = collect_file_table(ctx, files);
+ 	if (ret < 0) {
+-		ckpt_debug("msq: need to remove (%d)\n", ret);
++		ckpt_error(ctx, "%(T)msq: need to remove (%d)\n", ret);
+ 		freeque(ns, perms);
+ 	} else
+ 		ipc_unlock(perms);
 -- 
 1.6.1
