@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 04/17] ckpt_write_err update checkpoint/checkpoint.c
-Date: Tue, 27 Oct 2009 17:46:14 -0500
-Message-ID: <1256683587-23961-5-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 11/17] define function to print error messages to user log
+Date: Tue, 27 Oct 2009 17:46:21 -0500
+Message-ID: <1256683587-23961-12-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,126 +23,213 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+Error messages are both sent to an optional user-provided logfile,
+and, if CONFIG_CHECKPOINT_DEBUG=y, sent to syslog.
+
+Changelog:
+	Oct 27: add %(C) for ctx->total.
+	Oct 26: Per Oren suggestion, return -EBADF for bad
+		logfile in ckpt_ctx_alloc().
+
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint.c |   28 ++++++++++++++--------------
- 1 files changed, 14 insertions(+), 14 deletions(-)
+ checkpoint/objhash.c             |    2 +
+ checkpoint/sys.c                 |   67 +++++++++++++++++++++++++++++++++++---
+ include/linux/checkpoint.h       |    5 +++
+ include/linux/checkpoint_types.h |    1 +
+ include/linux/syscalls.h         |    5 ++-
+ 5 files changed, 73 insertions(+), 7 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index c6be4f9..35fce15 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -319,12 +319,12 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index a152e69..25b9c10 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -858,6 +858,8 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
  
- 	if (t->exit_state == EXIT_DEAD) {
--		__ckpt_write_err(ctx, "TE", "task state EXIT_DEAD\n", -EBUSY);
-+		__ckpt_write_err(ctx, "%(T)%(E)task state EXIT_DEAD\n", -EBUSY);
- 		return -EBUSY;
- 	}
+ 	/* account for ctx->file reference (if in the table already) */
+ 	ckpt_obj_users_inc(ctx, ctx->file, 1);
++	if (ctx->logfile)
++		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
+ 	/* account for ctx->root_nsproxy reference (if in the table already) */
+ 	ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
  
- 	if (!ptrace_may_access(t, PTRACE_MODE_ATTACH)) {
--		__ckpt_write_err(ctx, "TE", "ptrace attach denied", -EPERM);
-+		__ckpt_write_err(ctx, "%(T)%(E)ptrace attach denied", -EPERM);
- 		return -EPERM;
- 	}
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 38e65e4..ab0f294 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -204,6 +204,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
  
-@@ -334,13 +334,13 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (ctx->file)
+ 		fput(ctx->file);
++	if (ctx->logfile)
++		fput(ctx->logfile);
  
- 	/* verify that all tasks belongs to same freezer cgroup */
- 	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
--		__ckpt_write_err(ctx, "TE", "unfrozen or wrong cgroup", -EBUSY);
-+		__ckpt_write_err(ctx, "%(T)%(E)unfrozen or wrong cgroup", -EBUSY);
- 		return -EBUSY;
- 	}
- 
- 	/* FIX: add support for ptraced tasks */
- 	if (task_ptrace(t)) {
--		__ckpt_write_err(ctx, "TE", "task is ptraced", -EBUSY);
-+		__ckpt_write_err(ctx, "%(T)%(E)task is ptraced", -EBUSY);
- 		return -EBUSY;
- 	}
- 
-@@ -350,22 +350,22 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	 */
- 	if (ctx->root_init && t != root &&
- 	    t->real_parent == root->real_parent && t->tgid != root->tgid) {
--		__ckpt_write_err(ctx, "TE", "task is sibling of root", -EINVAL);
-+		__ckpt_write_err(ctx, "%(T)%(E)task is sibling of root", -EINVAL);
- 		return -EINVAL;
- 	}
- 
- 	rcu_read_lock();
- 	nsproxy = task_nsproxy(t);
- 	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns) {
--		__ckpt_write_err(ctx, "TE", "bad mnt_ns", -EPERM);
-+		__ckpt_write_err(ctx, "%(T)%(E)bad mnt_ns", -EPERM);
- 		ret = -EPERM;
- 	}
- 	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns) {
--		__ckpt_write_err(ctx, "TE", "bad pid_ns", -EPERM);
-+		__ckpt_write_err(ctx, "%(T)%(E)bad pid_ns", -EPERM);
- 		ret = -EPERM;
- 	}
- 	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
--		__ckpt_write_err(ctx, "TE", "bad net_ns", -EPERM);
-+		__ckpt_write_err(ctx, "%(T)%(E)bad net_ns", -EPERM);
- 		ret = -EPERM;
- 	}
- 	rcu_read_unlock();
-@@ -435,7 +435,7 @@ static int collect_objects(struct ckpt_ctx *ctx)
- 		ret = ckpt_collect_task(ctx, ctx->tasks_arr[n]);
- 		if (ret < 0) {
- 			ctx->tsk = ctx->tasks_arr[n];
--			ckpt_write_err(ctx, "TE", "collect failed", ret);
-+			ckpt_write_err(ctx, "%(T)%(E)collect failed", ret);
- 			ctx->tsk = NULL;
- 			break;
- 		}
-@@ -465,7 +465,7 @@ static int __tree_count_tasks(struct task_struct *task, void *data)
- 
- 	if (ctx->tasks_arr) {
- 		if (d->nr == ctx->nr_tasks) {  /* unlikely... try again later */
--			__ckpt_write_err(ctx, "TE", "bad task count\n", -EBUSY);
-+			__ckpt_write_err(ctx, "%(T)%(E)bad task count\n", -EBUSY);
- 			ret = -EBUSY;
- 			goto out;
- 		}
-@@ -476,7 +476,7 @@ static int __tree_count_tasks(struct task_struct *task, void *data)
- 	ret = 1;
-  out:
- 	if (ret < 0)
--		ckpt_write_err(ctx, "", NULL);
-+		ckpt_write_err(ctx, NULL);
- 	ctx->tsk = NULL;
- 	return ret;
+ 	ckpt_obj_hash_free(ctx);
+ 	path_put(&ctx->fs_mnt);
+@@ -225,7 +227,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
  }
-@@ -635,7 +635,7 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 	ctx->root_init = is_container_init(task);
  
- 	if (!(ctx->uflags & CHECKPOINT_SUBTREE) && !ctx->root_init) {
--		ckpt_write_err(ctx, "E", "not container init", -EINVAL);
-+		ckpt_write_err(ctx, "%(E)not container init", -EINVAL);
- 		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
- 	}
+ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+-				       unsigned long kflags)
++				       unsigned long kflags, int logfd)
+ {
+ 	struct ckpt_ctx *ctx;
+ 	int err;
+@@ -254,6 +256,12 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 	if (!ctx->file)
+ 		goto err;
  
-@@ -662,7 +662,7 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 	if (ctx->root_freezer) {
- 		ret = cgroup_freezer_begin_checkpoint(ctx->root_freezer);
- 		if (ret < 0) {
--			ckpt_write_err(ctx, "E", "freezer cgroup failed", ret);
-+			ckpt_write_err(ctx, "%(E)freezer cgroup failed", ret);
- 			return ret;
- 		}
- 	}
-@@ -705,7 +705,7 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
++	if (logfd != -1) {
++		ctx->logfile = fget(logfd);
++		if (!ctx->logfile)
++			goto err;
++	}
++
+ 	err = -ENOMEM;
+ 	if (ckpt_obj_hash_alloc(ctx) < 0)
+ 		goto err;
+@@ -401,6 +409,9 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+ 		case 'E':
+ 			len += sprintf(format+len, "[%s]", "err %d");
+ 			break;
++		case 'C': /* count of bytes read/written to checkpoint image */
++			len += sprintf(format+len, "[%s]", "pos %d");
++			break;
+ 		case 'O':
+ 			len += sprintf(format+len, "[%s]", "obj %d");
+ 			break;
+@@ -435,6 +446,51 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+ 	return format;
+ }
  
- 	/* verify that all objects were indeed visited */
- 	if (!ckpt_obj_visited(ctx)) {
--		ckpt_write_err(ctx, "E", "leak: unvisited", -EBUSY);
-+		ckpt_write_err(ctx, "%(E)leak: unvisited", -EBUSY);
- 		ret = -EBUSY;
- 		goto out;
- 	}
++void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
++{
++	mm_segment_t fs;
++	struct file *file;
++	int count;
++	va_list ap, aq, az;
++	char *format;
++	char buf[200], *bufp = buf;
++
++	if (!ctx || !ctx->logfile)
++		return;
++	file = ctx->logfile;
++
++	va_start(ap, fmt);
++	format = ckpt_generate_fmt(ctx, fmt);
++	va_copy(aq, ap);
++	va_copy(az, ap);
++	/* I'm not clear here - can I re-use aq, or do i need
++	 * a third copy? */
++	count = vsnprintf(bufp, 200, format ? : fmt, aq);
++	if (count > 200) {
++		bufp = kmalloc(count, GFP_KERNEL);
++		if (!bufp)
++		       goto out_free;
++		vsnprintf(bufp, count, format ? : fmt, az);
++	}
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	_ckpt_kwrite(file, bufp, count);
++	set_fs(fs);
++
++#ifdef CONFIG_CHECKPOINT_DEBUG
++	vprintk(format, aq);
++#endif
++
++out_free:
++	kfree(format);
++	va_end(aq);
++	va_end(ap);
++	va_end(az);
++	if (bufp != buf)
++		kfree(bufp);
++}
++
+ /**
+  * sys_checkpoint - checkpoint a container
+  * @pid: pid of the container init(1) process
+@@ -444,7 +500,8 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+  * Returns positive identifier on success, 0 when returning from restart
+  * or negative value on error
+  */
+-SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
++SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
++		int, logfd)
+ {
+ 	struct ckpt_ctx *ctx;
+ 	long ret;
+@@ -457,7 +514,7 @@ SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
+ 
+ 	if (pid == 0)
+ 		pid = task_pid_vnr(current);
+-	ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_CHECKPOINT);
++	ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_CHECKPOINT, logfd);
+ 	if (IS_ERR(ctx))
+ 		return PTR_ERR(ctx);
+ 
+@@ -479,7 +536,7 @@ SYSCALL_DEFINE3(checkpoint, pid_t, pid, int, fd, unsigned long, flags)
+  * Returns negative value on error, or otherwise returns in the realm
+  * of the original checkpoint
+  */
+-SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
++SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags, int, logfd)
+ {
+ 	struct ckpt_ctx *ctx = NULL;
+ 	long ret;
+@@ -492,7 +549,7 @@ SYSCALL_DEFINE3(restart, pid_t, pid, int, fd, unsigned long, flags)
+ 		return -EPERM;
+ 
+ 	if (pid)
+-		ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART);
++		ctx = ckpt_ctx_alloc(fd, flags, CKPT_CTX_RESTART, logfd);
+ 	if (IS_ERR(ctx))
+ 		return PTR_ERR(ctx);
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 8a1eaa7..91e0066 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -372,6 +372,11 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+ #endif /* CONFIG_CHECKPOINT_DEBUG */
+ 
+ extern char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
++extern void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...);
++
++#define ckpt_error(ctx, fmt, args...)					\
++	ckpt_log_error(ctx, "%s:%d %(C)" fmt, __func__, __LINE__,	\
++		       ctx ? ctx->total : -1, ## args);
+ 
+ #endif /* CONFIG_CHECKPOINT */
+ #endif /* __KERNEL__ */
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 5cc11d9..c6dcd4f 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -48,6 +48,7 @@ struct ckpt_ctx {
+ 	unsigned long oflags;	/* restart: uflags from checkpoint */
+ 
+ 	struct file *file;	/* input/output file */
++	struct file *logfile;	/* debug log file */
+ 	loff_t total;		/* total read/written */
+ 
+ 	atomic_t refcount;
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 33bce6e..4fce331 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -754,8 +754,9 @@ asmlinkage long sys_pselect6(int, fd_set __user *, fd_set __user *,
+ asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
+ 			  struct timespec __user *, const sigset_t __user *,
+ 			  size_t);
+-asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
+-asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags);
++asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags,
++			       int logfd);
++asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
+ 
+ int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+ 
 -- 
 1.6.1
