@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 16/17] ckpt_error in ipc/checkpoint_sem.c
-Date: Tue, 27 Oct 2009 17:46:26 -0500
-Message-ID: <1256683587-23961-17-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 09/17] ckpt_write_err update checkpoint/signal.c
+Date: Tue, 27 Oct 2009 17:46:19 -0500
+Message-ID: <1256683587-23961-10-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,21 +25,49 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/checkpoint_sem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ checkpoint/signal.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-index 76eb2b9..0b610ee 100644
---- a/ipc/checkpoint_sem.c
-+++ b/ipc/checkpoint_sem.c
-@@ -209,7 +209,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index cdfb142..3eed685 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -287,7 +287,7 @@ static int checkpoint_sigpending(struct ckpt_ctx *ctx,
+ 	list_for_each_entry(q, &pending->list, list) {
+ 		/* TODO: remove after adding support for posix-timers */
+ 		if ((q->info.si_code & __SI_MASK) == __SI_TIMER) {
+-			ckpt_write_err(ctx, "TE", "signal SI_TIMER", -ENOTSUPP);
++			ckpt_write_err(ctx, "%(T)%(E)signal SI_TIMER", -ENOTSUPP);
+ 			return -ENOTSUPP;
+ 		}
+ 		nr_pending++;
+@@ -341,7 +341,8 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
  
- 	ret = load_ipc_sem_hdr(ctx, h, sem);
- 	if (ret < 0) {
--		ckpt_debug("sem: need to remove (%d)\n", ret);
-+		ckpt_error(ctx, "%(T)sem: need to remove (%d)\n", ret);
- 		freeary(ns, perms);
- 	} else
- 		ipc_unlock(perms);
+ 	/* TODO: remove after adding support for posix-timers */
+ 	if (!list_empty(&signal->posix_timers)) {
+-		ckpt_write_err(ctx, "TEP", "posix-timers\n", -ENOTSUPP, signal);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)posix-timers\n", -ENOTSUPP,
++				signal);
+ 		unlock_task_sighand(t, &flags);
+ 		ret = -ENOTSUPP;
+ 		goto out;
+@@ -653,7 +654,7 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
+ 	if (!lock_task_sighand(t, &flags)) {
+-		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)signand missing", -EBUSY);
+ 		return -EBUSY;
+ 	}
+ 	list_splice_init(&t->pending.list, &pending.list);
+@@ -664,7 +665,7 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	/* re-attach the borrowed queue */
+ 	if (!lock_task_sighand(t, &flags)) {
+-		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)sighand missing", -EBUSY);
+ 		return -EBUSY;
+ 	}
+ 	list_splice(&pending.list, &t->pending.list);
 -- 
 1.6.1
