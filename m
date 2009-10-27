@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 17/17] ckpt_error in ipc/checkpoint_shm.c
-Date: Tue, 27 Oct 2009 17:46:27 -0500
-Message-ID: <1256683587-23961-18-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 16/17] ckpt_error in ipc/checkpoint_sem.c
+Date: Tue, 27 Oct 2009 17:46:26 -0500
+Message-ID: <1256683587-23961-17-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,20 +25,20 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/checkpoint_shm.c |    2 +-
+ ipc/checkpoint_sem.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-index 826e430..eb9dc50 100644
---- a/ipc/checkpoint_shm.c
-+++ b/ipc/checkpoint_shm.c
-@@ -266,7 +266,7 @@ int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
-  mutex:
- 	fput(file);
+diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+index 76eb2b9..0b610ee 100644
+--- a/ipc/checkpoint_sem.c
++++ b/ipc/checkpoint_sem.c
+@@ -209,7 +209,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+ 
+ 	ret = load_ipc_sem_hdr(ctx, h, sem);
  	if (ret < 0) {
--		ckpt_debug("shm: need to remove (%d)\n", ret);
-+		ckpt_error(ctx, "%(T)shm: need to remove (%d)\n", ret);
- 		do_shm_rmid(ns, perms);
+-		ckpt_debug("sem: need to remove (%d)\n", ret);
++		ckpt_error(ctx, "%(T)sem: need to remove (%d)\n", ret);
+ 		freeary(ns, perms);
  	} else
  		ipc_unlock(perms);
 -- 
