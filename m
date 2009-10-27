@@ -1,14 +1,13 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [c/r]A problem met when using linux c/r
-Date: Tue, 27 Oct 2009 09:47:52 -0400
-Message-ID: <4AE6FA08.9080905@librato.com>
-References: <b741c2440910260416r5d045024wdb5a68b2311561db@mail.gmail.com>	<4AE642D7.1070801@cs.columbia.edu>
-	<b741c2440910261921q77e0b5bbqbc0ee1f74974ee5e@mail.gmail.com>
+Subject: Re: [PATCH] Fix two more typos
+Date: Tue, 27 Oct 2009 09:53:58 -0400
+Message-ID: <4AE6FB76.3020500@librato.com>
+References: <b741c2440910261923o75190755g24c351faa64d2484@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <b741c2440910261921q77e0b5bbqbc0ee1f74974ee5e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <b741c2440910261923o75190755g24c351faa64d2484-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,70 +21,42 @@ To: Liu Aleaxander <aleaxander-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Liu,
 
+Thanks, queued for next update.
+
+Oren.
 
 Liu Aleaxander wrote:
-> I checked it again(BTW, I found some new typos, too; I'll patch it later),
-> but it didn't work either. while, at least, it succeed in checkpointing, but
-> failed in restarting. A error statement followed just by the restart
-> command:
-> $ ./self_restart < self.image
-> Killed
+> The two typos make self_checkpoint.c and self_restart.c can't be compiled.
 > 
-> And here is a small dump of dmesg:
-> [4959:4959:c/r:ckpt_read_obj:367] type 1 len 72(72,72)
-> [4959:4959:c/r:_ckpt_read_obj:259] type 4 len 73(73,73)
-> [4959:4959:c/r:_ckpt_read_obj:259] type 4 len 73(73,73)
-> [4959:4959:c/r:_ckpt_read_obj:259] type 4 len 73(73,73)
-> [4959:4959:c/r:ckpt_read_obj:367] type 2 len 16(16,16)
-> [4959:4959:c/r:do_restore_coord:1176] restore header: 0
-> [4959:4959:c/r:ckpt_read_obj:367] type 3 len 8(8,8)
-> [4959:4959:c/r:do_restore_coord:1180] restore container: 0
-> [4959:4959:c/r:ckpt_read_obj:367] type 101 len 16(16,16)
-> [4959:4959:c/r:_ckpt_read_obj:259] type 4 len 32(32,32)
-> [4959:4959:c/r:do_restore_coord:1184] restore tree: 24
-> [4959:4959:c/r:do_restore_coord:1218] pre restore task: 0
-> [4959:4959:c/r:ckpt_read_obj:367] type 102 len 64(64,64)
-> [4959:4959:c/r:_ckpt_read_obj:259] type 5 len 24(24,24)
-> [4959:4959:c/r:restore_task:879] task 0
-> [4959:4959:c/r:do_restore_coord:1222] restore task: -22
-> [4959:4959:c/r:walk_task_subtree:338] total 0 ret 0
-> [4959:4959:c/r:clear_task_ctx:763] task 4959 clear checkpoint_ctx
-> [4959:4959:c/r:do_restart:1347] restart err -22, exiting
-> [4959:4959:c/r:do_restart:1354] sys_restart returns -22
-> [4959:4959:c/r:restore_debug_free:141] 1 tasks registered, nr_tasks was 0
-> nr_total 0
-> [4959:4959:c/r:restore_debug_free:144] active pid was -1, ctx->errno -22
-> [4959:4959:c/r:restore_debug_free:146] kflags 10 uflags 1 oflags 1
-> [4959:4959:c/r:restore_debug_free:173] pid 4959 type Coord state Failed
+> Signed-off-by: Liu Aleaxander <Aleaxander-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>  Documentation/checkpoint/self_checkpoint.c |    2 +-
+>  Documentation/checkpoint/self_restart.c    |    2 +-
+>  2 files changed, 2 insertions(+), 2 deletions(-)
 > 
-
-Please try this patch:
-
-commit 7a7048d9ec8d9f74e7521eb9756d24f24767a024
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Tue Oct 27 09:42:28 2009 -0400
-
-    c/r: self-restart to tolerate missing pgid
-
-    In self-restart we don't generate ghost tasks. Instead we permit
-    undefined pgid - tolerate inability to restore the pgid of the
-    restarting process.
-
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 6b2ef4c..8e4a823 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -823,6 +823,10 @@ static int restore_task_pgid(struct ckpt_ctx *ctx)
- 	}
- 	write_unlock_irq(&tasklist_lock);
-
-+	/* self-restart: be tolerant if old pgid isn't found */
-+	if (ctx->uflags & RESTART_TASKSELF)
-+		ret = 0;
-+
- 	return ret;
- }
+> diff --git a/Documentation/checkpoint/self_checkpoint.c
+> b/Documentation/checkpoint/self_checkpoint.c
+> index e164381..11b17ea 100644
+> --- a/Documentation/checkpoint/self_checkpoint.c
+> +++ b/Documentation/checkpoint/self_checkpoint.c
+> @@ -1,4 +1,4 @@
+> ->/*
+> +/*
+>   *  self_checkpoint.c: demonstrate self-checkpoint
+>   *
+>   *  Copyright (C) 2008 Oren Laadan
+> diff --git a/Documentation/checkpoint/self_restart.c
+> b/Documentation/checkpoint/self_restart.c
+> index 361f81b..aea2d0b 100644
+> --- a/Documentation/checkpoint/self_restart.c
+> +++ b/Documentation/checkpoint/self_restart.c
+> @@ -22,7 +22,7 @@
+> 
+>  inline static int restart(pid_t pid, int fd, unsigned long flags)
+>  {
+> -    return syscall(__NR_restat, pid, fd, flags);
+> +    return syscall(__NR_restart, pid, fd, flags);
+>  }
+> 
+>  int main(int argc, char *argv[])
