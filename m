@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 07/17] ckpt_write_err update checkpoint/objhash.c
-Date: Tue, 27 Oct 2009 17:46:17 -0500
-Message-ID: <1256683587-23961-8-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 05/17] ckpt_write_err update checkpoint/files.c
+Date: Tue, 27 Oct 2009 17:46:15 -0500
+Message-ID: <1256683587-23961-6-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,48 +25,82 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ checkpoint/files.c |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 730dd82..a152e69 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -657,7 +657,7 @@ static inline int obj_reverse_leak(struct ckpt_ctx *ctx, struct ckpt_obj *obj)
- 	 * object while we were collecting, which we didn't catch.
- 	 */
- 	if (obj->ops->ref_users && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
--		ckpt_write_err(ctx, "OP", "leak: reverse added late (%s)",
-+		ckpt_write_err(ctx, "%(O)%(P)leak: reverse added late (%s)",
- 			       obj->objref, obj->ptr, obj->ops->obj_name);
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 440b7a9..1f2ab07 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -88,7 +88,7 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
+ 					  CKPT_HDR_FILE_NAME);
+ 	} else {
+ 		ret = PTR_ERR(fname);
+-		ckpt_write_err(ctx, "TEP", "obtain filename (file)", ret);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)obtain filename (file)", ret);
+ 	}
+ 
+ 	kfree(buf);
+@@ -204,20 +204,21 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 	int ret;
+ 
+ 	if (!file->f_op || !file->f_op->checkpoint) {
+-		ckpt_write_err(ctx, "TEPS", "f_op lacks checkpoint",
++		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
+ 			       -EBADF, file, file->f_op);
+ 		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
+ 		return -EBADF;
+ 	}
+ 	if (d_unlinked(file->f_dentry)) {
+-		ckpt_write_err(ctx, "TEP", "unlinked file", -EBADF, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
+ 		ckpt_debug("unlinked files are unsupported\n");
+ 		return -EBADF;
+ 	}
+ 
+ 	ret = file->f_op->checkpoint(ctx, file);
+ 	if (ret < 0)
+-		ckpt_write_err(ctx, "TEP", "file checkpoint failed", ret, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file checkpoint failed", ret,
++			       file);
+ 	return ret;
+ }
+ 
+@@ -257,7 +258,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	ret = -EBADF;
+ 	if (!file) {
+ 		pr_warning("c/r: file descriptor gone?");
+-		ckpt_write_err(ctx, "TEP", "file gone? (%d)", ret, file, fd);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file gone? (%d)", ret, file, fd);
+ 		goto out;
+ 	}
+ 
+@@ -360,7 +361,7 @@ int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file)
+ 	if (file->f_op->collect)
+ 		ret = file->f_op->collect(ctx, file);
+ 	if (ret < 0)
+-		ckpt_write_err(ctx, "TEP", "file collect", ret, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file collect", ret, file);
+ 	return ret;
+ }
+ 
+@@ -379,7 +380,7 @@ static int collect_file_desc(struct ckpt_ctx *ctx,
+ 	rcu_read_unlock();
+ 
+ 	if (!file) {
+-		ckpt_write_err(ctx, "TE", "file removed", -EBUSY, file);
++		ckpt_write_err(ctx, "%(T)%(E)file removed", -EBUSY, file);
  		return -EBUSY;
  	}
-@@ -774,7 +774,7 @@ int ckpt_obj_visit(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
- 	if (!obj) {
- 		if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
- 			/* if not found report reverse leak (full container) */
--			ckpt_write_err(ctx, "OP", "leak: reverse unknown (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: reverse unknown (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->obj_name);
- 			return -EBUSY;
-@@ -870,7 +870,7 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
  
- 		if (obj->ops->ref_users(obj->ptr) != obj->users) {
- 			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
--			ckpt_write_err(ctx, "OP", "leak: usage (%d != %d (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: usage (%d != %d (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->ref_users(obj->ptr),
- 				       obj->users, obj->ops->obj_name);
-@@ -896,7 +896,7 @@ int ckpt_obj_visited(struct ckpt_ctx *ctx)
- 		if (!(obj->flags & CKPT_OBJ_VISITED)) {
- 			ckpt_debug("reverse leak: %s (%d)\n",
- 				   obj->ops->obj_name, obj->objref);
--			ckpt_write_err(ctx, "OP", "leak: not visited (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: not visited (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->obj_name);
- 			return 0;
+@@ -422,7 +423,7 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	files = get_files_struct(t);
+ 	if (!files) {
+-		ckpt_write_err(ctx, "TE", "files_struct missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)files_struct missing", -EBUSY);
+ 		return -EBUSY;
+ 	}
+ 	ret = collect_file_table(ctx, files);
 -- 
 1.6.1
