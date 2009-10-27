@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 03/17] ckpt_write_err update arch/x86/mm/checkpoint.c
-Date: Tue, 27 Oct 2009 17:46:13 -0500
-Message-ID: <1256683587-23961-4-git-send-email-serge@us.ibm.com>
+Subject: [RFC PATCH 13/17] ckpt_error in checkpoint/files.c
+Date: Tue, 27 Oct 2009 17:46:23 -0500
+Message-ID: <1256683587-23961-14-git-send-email-serge@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,28 +23,35 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+Convert two ckpt_debugs to ckpt_errors - however, given that they
+are merely doubling information available in ckpt_write_err(), should
+they simply be removed?
+
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/mm/checkpoint.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ checkpoint/files.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-index 9dd8e12..3b0f514 100644
---- a/arch/x86/mm/checkpoint.c
-+++ b/arch/x86/mm/checkpoint.c
-@@ -116,11 +116,11 @@ static unsigned short decode_segment(__u16 seg)
- static int may_checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	if (t->thread.vm86_info) {
--		ckpt_write_err(ctx, "TE", "task in VM86 mode", -EBUSY);
-+		ckpt_write_err(ctx, "%(T)%(E)task in VM86 mode", -EBUSY);
- 		return -EBUSY;
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 1f2ab07..e67a13f 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -206,12 +206,14 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 	if (!file->f_op || !file->f_op->checkpoint) {
+ 		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
+ 			       -EBADF, file, file->f_op);
+-		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
++		ckpt_error(ctx, "%(T)f_op lacks checkpoint handler: %pS\n",
++			   file->f_op);
+ 		return -EBADF;
  	}
- 	if (task_thread_info(t)->flags & CKPT_X86_TIF_UNSUPPORTED) {
--		ckpt_write_err(ctx, "TE", "bad thread info flags %#lx", -EBUSY);
-+		ckpt_write_err(ctx, "%(T)%(E)bad thread info flags %#lx", -EBUSY);
- 		return -EBUSY;
+ 	if (d_unlinked(file->f_dentry)) {
+ 		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
+-		ckpt_debug("unlinked files are unsupported\n");
++		ckpt_error(ctx, "%(T)%(P)unlinked files are unsupported\n",
++			   file);
+ 		return -EBADF;
  	}
- 	return 0;
+ 
 -- 
 1.6.1
