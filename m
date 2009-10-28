@@ -1,13 +1,14 @@
-From: "Will Huang" <will.huang-lvxLlxTUKJQIhP1ydL5T/A@public.gmane.org>
-Subject: kernel based checkpoint/restart: about X windows application
-	checkpoint and restart support.
-Date: Wed, 28 Oct 2009 10:51:32 +0800
-Message-ID: <21911.4446467303$1256698353@news.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] [RFC] Add file f_flags to cgroup write_string ops
+Date: Tue, 27 Oct 2009 23:04:42 -0700
+Message-ID: <6599ad830910272304j495c99a2t4265d501765937b5@mail.gmail.com>
+References: <1256570129-13107-1-git-send-email-matthltc@us.ibm.com>
+	<4AE7988A.6080601@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: zh-cn
+In-Reply-To: <4AE7988A.6080601-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,18 +18,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dear All,
+On Tue, Oct 27, 2009 at 6:04 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+> I think maybe it's better to store struct file *file to struct cftype,
+> so we don't need to change write_string(), write(), write_u64()
+> and write_s64().
 
-         Did the Kernel based checkpoint/restart patch support X windows
-application such as firefox?
+We can't do that - multiple open files could be using the same cftype
+at the same time. I'd be inclined if necessary to just pass the struct
+file* in, rather than risk needing to change it to pass more
+parameters later.
 
- 
-
-Yours sincerely,
-
-Will Huang,
-
-DeviceVM, Inc. 
+Paul
