@@ -1,13 +1,18 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: kernel based checkpoint/restart: about X windows application
-	checkpoint and restart support.
-Date: Wed, 28 Oct 2009 01:47:17 -0700
-Message-ID: <20091028084717.GO31446@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 1/2] [RFC] Add file f_flags to cgroup write_string ops
+Date: Wed, 28 Oct 2009 03:09:12 -0700
+Message-ID: <20091028100912.GP31446@count0.beaverton.ibm.com>
+References: <1256570129-13107-1-git-send-email-matthltc@us.ibm.com>
+	<4AE7988A.6080601@cn.fujitsu.com>
+	<6599ad830910272304j495c99a2t4265d501765937b5@mail.gmail.com>
+	<6599ad830910272306t66994e12iec6d293f74fc4dc7@mail.gmail.com>
+	<20091028072014.GM16378@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20091028072014.GM16378-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,44 +22,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Will Huang <will.huang-lvxLlxTUKJQIhP1ydL5T/A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 28, 2009 at 10:51:32AM +0800, Will Huang wrote:
-> Dear All,
+On Wed, Oct 28, 2009 at 12:50:14PM +0530, Balbir Singh wrote:
+> * menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2009-10-27 23:06:19]:
 > 
->          Did the Kernel based checkpoint/restart patch support X windows
-> application such as firefox?
+> > On Tue, Oct 27, 2009 at 11:04 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> > > On Tue, Oct 27, 2009 at 6:04 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> > >>
+> > >> I think maybe it's better to store struct file *file to struct cftype,
+> > >> so we don't need to change write_string(), write(), write_u64()
+> > >> and write_s64().
+> > >
+> > > We can't do that - multiple open files could be using the same cftype
+> > > at the same time. I'd be inclined if necessary to just pass the struct
+> > > file* in, rather than risk needing to change it to pass more
+> > > parameters later.
+> > 
+> > And I imagine that the number of handlers that actually make use of
+> > the cftype* is rather small. If we pass the file* to the handler
+> > instead of passing the cftype*, and provide an inline function to get
+> > from the file* to the cftype*, then we can avoid adding an extra
+> > parameter to the handlers.
+> >
+> 
+> This sounds like a reasonable approach except for the cost of
+> indirection (which I assume is acceptable). 
 
-No, and I think it may be a long time before that happens.
+Suprisingly few places require the struct cftype *. So they don't pay
+any additional cost. Note that the code in kernel/cgroup.c always
+fetches the op pointer by fetching and dereferencing the struct cftype *.
+So fetching it with an inline shouldn't add much to the data cache
+footprint.
 
-(Disclaimer: I haven't even tried to see what part of checkpointing
-X breaks first. I suspect it'd be the open device files...)
-
-The display and input device hardware presents a serious challenge for 
-one thing. They may not be available during restart if it occurs
-on a different machine -- or they may be entirely different hardware. 
-
-Perhaps checkpoint/restart of programs with these devices open should
-"simulate" hot-[un]plug. Checkpoint could save enough information to make
-the kernel generate the necessary uevents. At restart the file
-descriptors for those devices are never opened and syscalls on them will
-return errno==EBADF. Next we'd need to send uevents for the
-"new-but-not-new" devices. There's a "new-but-not-new" uevent pathway in
-the kernel used during boot -- perhaps there's some way to reuse that.
-Lastly, we send the unplug uevents to get X to drop its use of the old
-devices -- send those last so X always thinks there's hardware.
-
-That's one way it _could_ be done. Others might rely on device
-"virtualization" -- writing pseudo-device code (CUSE?).
-
-X also has its own session support. As far as I know how that could
-work with kernel-based checkpoint/restart hasn't been discussed yet.
-
-Of course this is all off the top of my head. Others are welcome to
-make considerate use of cluebats to inform me of any misconceptions I
-may have.
+The minisclue savings come in two places where struct file * was already
+passed.
 
 Cheers,
 	-Matt Helsley
