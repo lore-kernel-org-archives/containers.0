@@ -1,18 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 11/17] define function to print error messages to
-	user log
-Date: Wed, 28 Oct 2009 17:12:08 -0500
-Message-ID: <20091028221208.GA30227@us.ibm.com>
+Subject: Re: [RFC PATCH 02/17] make ckpt_format_fmt non-static in
+	checkpoint/sys.c
+Date: Wed, 28 Oct 2009 17:21:20 -0500
+Message-ID: <20091028222120.GA30901@us.ibm.com>
 References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
-	<1256683587-23961-12-git-send-email-serge@us.ibm.com>
-	<20091028181415.GB14023@count0.beaverton.ibm.com>
-	<20091028205424.GA27394@us.ibm.com> <4AE8BCB5.4030406@librato.com>
+	<1256683587-23961-3-git-send-email-serge@us.ibm.com>
+	<20091028165317.GS31446@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4AE8BCB5.4030406-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <20091028165317.GS31446-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,84 +21,299 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> >>> @@ -401,6 +409,9 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
-> >>>  		case 'E':
-> >>>  			len += sprintf(format+len, "[%s]", "err %d");
-> >>>  			break;
-> >>> +		case 'C': /* count of bytes read/written to checkpoint image */
-> >>> +			len += sprintf(format+len, "[%s]", "pos %d");
-> >>> +			break;
-> >> Instead we could always output ckpt->total and then we wouldn't need %(C). I
-> >> suspect it's such a useful piece of information that it'll be repeated
-> >> in many/all format strings eventually.
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> On Tue, Oct 27, 2009 at 05:46:12PM -0500, Serge Hallyn wrote:
+> > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > > 
-> > Yes, likewise %(T).  If that's what we want to do.
+> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> I agree. For the cases when there is not task, can put "none"
+> nit: Would be nice to see a brief description along the lines
+> "Heads up: here's why I'm moving this and making it non-static"
 > 
-> > 
-> > Should we discuss here what we want an entry to look like?  For both
-> > ckpt_write_err (to the checkpoint image) and ckpt_error()?
-> > 
-> 
-> Yes please !
+> (No Ack because I haven't gotten through the series yet)
 
-Actually %T isn't the current task, right, so it shouldn't always be prepended?
-It actually is only meaningful during checkpoint_task(), collect_objs(), and
-__tree_count_tasks?
+Here is a slightly updated version with an actual (still terse)
+description.  and with comment above ckpt_generate_fmt() fixed.
 
-Ok, so how about:
+From 4f4200f7c12129049b1aafdbea3816e9ff53c1d4 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 27 Oct 2009 10:39:49 -0400
+Subject: [PATCH 02/17] make ckpt_generate_fmt non-static in checkpoint/sys.c
 
-	1. ckpt_write_err() always also calls ckpt_error() (which in turn calls
-		ckpt_debug).  Avoid duplication which exists in several places
-		right now.
-	2. We always prepend:
+We will use ckpt_generate_fmt in ckpt_error(), which is also
+used in restart, so checkpoint/checkpoint.h is not the right
+place for it.
 
-		[current->pid]:[ctx->root_pid]:[ctx->active_pid]:[ctx->errno][ctx->total]
+Changelog:
+	Oct 28: also fix comment above ckpt_generate_fmt()
 
-	The %(X) expansions if specified come whereever they are in the fmt
-	string (which is what's happening now with my patchset).
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/checkpoint.c    |  103 +-------------------------------------------
+ checkpoint/sys.c           |   98 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h |    2 +
+ 3 files changed, 102 insertions(+), 101 deletions(-)
 
-Kind of long, but again this is for ckpt_error and ckpt_write_err, not for all
-ckpt_debugs().
-
-> >>>  		case 'O':
-> >>>  			len += sprintf(format+len, "[%s]", "obj %d");
-> >>>  			break;
-> >>> @@ -435,6 +446,51 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
-> >>>  	return format;
-> >>>  }
-> >>>
-> >>> +void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
-> >>> +{
-> >>> +	mm_segment_t fs;
-> >>> +	struct file *file;
-> >>> +	int count;
-> >>> +	va_list ap, aq, az;
-> >>> +	char *format;
-> >>> +	char buf[200], *bufp = buf;
-> >> I believe this buffer is too big for a kernel stack -- especially
-> >> for ckpt_log_error() which might be invoked "deep" in
-> >> the kernel stack.
-> > 
-> > 200 bytes?  Well, I guess I can try with 50 which still may often be
-> > enough.
-> 
-> How about using a dedicated buffer on @ctx for that ?
-
-I was going to do that originally, but then thought back to your
-comments about parallel checkpoint, and didn't feel like also adding
-a spinlock.
-
-Thoughts?
-
--serge
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 404bf08..c6be4f9 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -96,104 +96,7 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
+ 	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
+ }
+ 
+-/*
+- * __ckpt_generate_fmt - generate standard checkpoint error message
+- * @ctx: checkpoint context
+- * @fmt0: c/r-format string
+- * @fmt: message format
+- *
+- * This generates a unified format of checkpoint error messages, to
+- * ease (after the failure) inspection by userspace tools. It converts
+- * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
+- *
+- * PREFMT is constructed from @fmt0 by subtituting format snippets
+- * according to the contents of @fmt0.  The format characters in
+- * @fmt0 can be E (error), O (objref), P (pointer), S (string) and
+- * V (variable/symbol). For example, E will generate a "err %d" in
+- * PREFMT (see prefmt_array below).
+- *
+- * If @fmt0 begins with T, PREFMT will begin with "pid %d tsk %s"
+- * with the pid and the tsk->comm of the currently checkpointed task.
+- * The latter is taken from ctx->tsk, and is it the responsbilility of
+- * the caller to have a valid pointer there (in particular, functions
+- * that iterate on the processes: collect_objects, checkpoint_task,
+- * and tree_count_tasks).
+- *
+- * The caller of ckpt_write_err() and _ckpt_write_err() must provide
+- * the additional variabes, in order, to match the @fmt0 (except for
+- * the T key), e.g.:
+- *
+- *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
+- *
+- * Here, T is simply passed, E expects an integer (err), O expects an
+- * integer (objref), and the last argument matches the format string.
+- */
+-static char *__ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+-{
+-	static int warn_prefmt = 0;
+-	char *format;
+-	int alloclen, len = 0;
+-	int first = 1;
+-
+-	/*
+-	 * 17 for "pid %d" (plus space)
+-	 * 21 for "tsk %s" (tsk->comm)
+-	 * up to 8 per varfmt entry
+-	 */
+-	alloclen = 37 + 8 * strlen(fmt);
+-	format = kzalloc(alloclen, GFP_KERNEL);
+-	if (!format)
+-		return NULL;
+-
+-	for (; *fmt; fmt++) {
+-		BUG_ON(len > alloclen);
+-		if (*fmt != '%' || fmt[1] != '(' || fmt[3] != ')') {
+-			format[len++] = *fmt;
+-			continue;
+-		}
+-		if (!first)
+-			format[len++] = ' ';
+-		else
+-			first = 0;
+-		switch(fmt[2]) {
+-		case 'E':
+-			len += sprintf(format+len, "[%s]", "err %d");
+-			break;
+-		case 'O':
+-			len += sprintf(format+len, "[%s]", "obj %d");
+-			break;
+-		case 'P':
+-			len += sprintf(format+len, "[%s]", "ptr %p");
+-			break;
+-		case 'V':
+-			len += sprintf(format+len, "[%s]", "sym %pS");
+-			break;
+-		case 'S':
+-			len += sprintf(format+len, "[%s]", "str %s");
+-			break;
+-		case 'T':
+-			if (ctx->tsk)
+-				len += sprintf(format+len, "[pid %d tsk %s]",
+-				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
+-			else 
+-				len += sprintf(format+len, "[pid -1 tsk NULL]");
+-			break;
+-		default:
+-			if (warn_prefmt++ < 5)
+-				printk(KERN_ERR
+-					"c/r: bad format specifier %c\n",
+-					fmt[2]);
+-			BUG();
+-		}
+-
+-		fmt += 3;
+-	}
+-	format[len] = '\0';
+-
+-	return format;
+-}
+-
+-/* see _ckpt_generate_fmt for information on @fmt0 */
++/* see ckpt_generate_fmt for information on @fmt extensions */
+ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt, va_list ap)
+ {
+ 	va_list aq;
+@@ -201,7 +104,7 @@ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt, va_list ap)
+ 	char *str;
+ 	int len;
+ 
+-	format = __ckpt_generate_fmt(ctx, fmt);
++	format = ckpt_generate_fmt(ctx, fmt);
+ 	va_copy(aq, ap);
+ 
+ 	/*
+@@ -231,7 +134,6 @@ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt, va_list ap)
+  * @fmt: message format
+  * @...: arguments
+  *
+- * See _ckpt_generate_fmt for information on @fmt0.
+  * Use this during checkpoint to report while holding a spinlock
+  */
+ void __ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
+@@ -250,7 +152,6 @@ void __ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
+  * @fmt: error string format
+  * @...: error string arguments
+  *
+- * See _ckpt_generate_fmt for information on @fmt0.
+  * If @fmt is null, the string in the ctx->err_string will be used (and freed)
+  */
+ int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 260a1ee..a1c26e3 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -339,6 +339,104 @@ int walk_task_subtree(struct task_struct *root,
+ 	return (ret < 0 ? ret : total);
+ }
+ 
++/*
++ * ckpt_generate_fmt - generate standard checkpoint error message
++ * @ctx: checkpoint context
++ * @fmt: message format
++ *
++ * This generates a unified format of checkpoint error messages, to
++ * ease (after the failure) inspection by userspace tools. It converts
++ * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
++ *
++ * PREFMT is constructed from @fmt by subtituting format snippets
++ * according to the contents of @fmt.  The format characters in
++ * @fmt can be %(E) (error), %(O) (objref), %(P) (pointer), %(S) (string),
++ * %(C) (bytes read/written out of checkpoint image so far), * and %(V)
++ * (variable/symbol). For example, %(E) will generate a "err %d"
++ * in PREFMT.
++ *
++ * If @fmt begins with %(T), PREFMT will begin with "pid %d tsk %s"
++ * with the pid and the tsk->comm of the currently checkpointed task.
++ * The latter is taken from ctx->tsk, and is it the responsbilility of
++ * the caller to have a valid pointer there (in particular, functions
++ * that iterate on the processes: collect_objects, checkpoint_task,
++ * and tree_count_tasks).
++ *
++ * The caller of ckpt_write_err() and _ckpt_write_err() must provide
++ * the additional variabes, in order, to match the @fmt0 (except for
++ * the T key), e.g.:
++ *
++ *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
++ *
++ * Here, T is simply passed, E expects an integer (err), O expects an
++ * integer (objref), and the last argument matches the format string.
++ *
++ * XXX Do we want 'T' and 'C' to simply always be prepended?
++ */
++char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
++{
++	static int warn_prefmt = 0;
++	char *format;
++	int alloclen, len = 0;
++	int first = 1;
++
++	/*
++	 * 17 for "pid %d" (plus space)
++	 * 21 for "tsk %s" (tsk->comm)
++	 * up to 8 per varfmt entry
++	 */
++	alloclen = 37 + 8 * strlen(fmt);
++	format = kzalloc(alloclen, GFP_KERNEL);
++	if (!format)
++		return NULL;
++
++	for (; *fmt; fmt++) {
++		BUG_ON(len > alloclen);
++		if (*fmt != '%' || fmt[1] != '(' || fmt[3] != ')') {
++			format[len++] = *fmt;
++			continue;
++		}
++		if (!first)
++			format[len++] = ' ';
++		else
++			first = 0;
++		switch(fmt[2]) {
++		case 'E':
++			len += sprintf(format+len, "[%s]", "err %d");
++			break;
++		case 'O':
++			len += sprintf(format+len, "[%s]", "obj %d");
++			break;
++		case 'P':
++			len += sprintf(format+len, "[%s]", "ptr %p");
++			break;
++		case 'V':
++			len += sprintf(format+len, "[%s]", "sym %pS");
++			break;
++		case 'S':
++			len += sprintf(format+len, "[%s]", "str %s");
++			break;
++		case 'T':
++			if (ctx->tsk)
++				len += sprintf(format+len, "[pid %d tsk %s]",
++				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
++			else 
++				len += sprintf(format+len, "[pid -1 tsk NULL]");
++			break;
++		default:
++			if (warn_prefmt++ < 5)
++				printk(KERN_ERR
++					"c/r: bad format specifier %c\n",
++					fmt[2]);
++			BUG();
++		}
++
++		fmt += 3;
++	}
++	format[len] = '\0';
++
++	return format;
++}
+ 
+ /**
+  * sys_checkpoint - checkpoint a container
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 224b494..8a1eaa7 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -371,6 +371,8 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+ 
+ #endif /* CONFIG_CHECKPOINT_DEBUG */
+ 
++extern char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
++
+ #endif /* CONFIG_CHECKPOINT */
+ #endif /* __KERNEL__ */
+ 
+-- 
+1.6.1
