@@ -1,18 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 02/17] make ckpt_format_fmt non-static in
-	checkpoint/sys.c
-Date: Wed, 28 Oct 2009 13:31:20 -0500
-Message-ID: <20091028183120.GA22902@us.ibm.com>
-References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
-	<1256683587-23961-3-git-send-email-serge@us.ibm.com>
-	<20091028165317.GS31446@count0.beaverton.ibm.com>
-	<20091028180418.GB19554@us.ibm.com>
+Subject: Re: [PATCH] [RFC] Factor out shared portion of [_]ckpt_read_obj
+Date: Wed, 28 Oct 2009 15:35:04 -0500
+Message-ID: <20091028203504.GA26291@us.ibm.com>
+References: <1256710435-3266-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091028180418.GB19554-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1256710435-3266-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,21 +22,110 @@ To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > On Tue, Oct 27, 2009 at 05:46:12PM -0500, Serge Hallyn wrote:
-> > > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > 
-> > > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > 
-> > nit: Would be nice to see a brief description along the lines
-> > "Heads up: here's why I'm moving this and making it non-static"
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> It looked like a portion of one of these functions was missing
+> the block "dispatching" errors so I factored this section out
+> and called it from both functions. Was there a good reason it
+> was missing?
 > 
-> Crap - i wrote one, but it must have gotten lost in one of
-> my several rebases.
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Can't find it.  For now, the reason is:
+Good catch, but wouldn't it be better to instead factor the code
+from label again: up to
 
-	We will use ckpt_format_fmt in ckpt_error() which is used
-	(and far more useful) in restart as well.  So move it out
-	of checkpoint.c and into sys.c.
+	/* if len specified, enforce, else if maximum specified, enforce */
+	if ((len && h->len != len) || (!len && max && h->len > max))
+		return -EINVAL;
+
+out of both into one function?  This feels more artificial, and I don't
+see any other meaningful differences.
+
+-serge
+
+> ---
+>  checkpoint/restart.c |   49 ++++++++++++++++++++++++++++++++++---------------
+>  1 files changed, 34 insertions(+), 15 deletions(-)
+> 
+> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> index 9b75de8..439206b 100644
+> --- a/checkpoint/restart.c
+> +++ b/checkpoint/restart.c
+> @@ -238,6 +238,31 @@ static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
+>  	return ret;
+>  }
+> 
+> +/**
+> + * _ckpt_read_early_dispatch - Dispatch ERRORs and OBJREFs; don't return them.
+> + * @ctx: checkpoint context
+> + * @h:   desired ckpt_hdr
+> + *
+> + * Returns -EFOO, 0 if it succeeded, 1 if h has not been dispatched yet
+> + * (so it should be returned rather than ignored)
+> + */
+> +static int _ckpt_read_early_dispatch(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
+> +{
+> +	int ret;
+> +
+> +	if (h->type == CKPT_HDR_ERROR) {
+> +		ret = _ckpt_read_err(ctx, h);
+> +		if (ret < 0)
+> +			return ret;
+> +		return 0;
+> +	} else if (h->type == CKPT_HDR_OBJREF) {
+> +		ret = _ckpt_read_objref(ctx, h);
+> +		if (ret < 0)
+> +			return ret;
+> +		return 0;
+> +	}
+> +	return 1;
+> +}
+> 
+>  /**
+>   * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
+> @@ -263,17 +288,11 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
+>  	if (h->len < sizeof(*h))
+>  		return -EINVAL;
+> 
+> -	if (h->type == CKPT_HDR_ERROR) {
+> -		ret = _ckpt_read_err(ctx, h);
+> -		if (ret < 0)
+> -			return ret;
+> +	ret = _ckpt_read_early_dispatch(ctx, h);
+> +	if (!ret)
+>  		goto again;
+> -	} else if (h->type == CKPT_HDR_OBJREF) {
+> -		ret = _ckpt_read_objref(ctx, h);
+> -		if (ret < 0)
+> -			return ret;
+> -		goto again;
+> -	}
+> +	else if (ret < 0)
+> +		return ret;
+> 
+>  	/* if len specified, enforce, else if maximum specified, enforce */
+>  	if ((len && h->len != len) || (!len && max && h->len > max))
+> @@ -371,12 +390,12 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
+>  	if (hh.len < sizeof(*h))
+>  		return ERR_PTR(-EINVAL);
+> 
+> -	if (hh.type == CKPT_HDR_OBJREF) {
+> -		ret = _ckpt_read_objref(ctx, &hh);
+> -		if (ret < 0)
+> -			return ERR_PTR(ret);
+> +
+> +	ret = _ckpt_read_early_dispatch(ctx, &hh);
+> +	if (!ret)
+>  		goto again;
+> -	}
+> +	else if (ret < 0)
+> +		return ERR_PTR(ret);
+> 
+>  	/* if len specified, enforce, else if maximum specified, enforce */
+>  	if ((len && hh.len != len) || (!len && max && hh.len > max))
+> -- 
+> 1.5.6.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
