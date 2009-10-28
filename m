@@ -1,14 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] Factor out shared portion of [_]ckpt_read_obj
-Date: Wed, 28 Oct 2009 15:35:04 -0500
-Message-ID: <20091028203504.GA26291@us.ibm.com>
-References: <1256710435-3266-1-git-send-email-matthltc@us.ibm.com>
+Subject: Re: [RFC PATCH 11/17] define function to print error messages to
+	user log
+Date: Wed, 28 Oct 2009 15:54:24 -0500
+Message-ID: <20091028205424.GA27394@us.ibm.com>
+References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
+	<1256683587-23961-12-git-send-email-serge@us.ibm.com>
+	<20091028181415.GB14023@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1256710435-3266-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091028181415.GB14023-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,109 +26,91 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> It looked like a portion of one of these functions was missing
-> the block "dispatching" errors so I factored this section out
-> and called it from both functions. Was there a good reason it
-> was missing?
+> > @@ -401,6 +409,9 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+> >  		case 'E':
+> >  			len += sprintf(format+len, "[%s]", "err %d");
+> >  			break;
+> > +		case 'C': /* count of bytes read/written to checkpoint image */
+> > +			len += sprintf(format+len, "[%s]", "pos %d");
+> > +			break;
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Instead we could always output ckpt->total and then we wouldn't need %(C). I
+> suspect it's such a useful piece of information that it'll be repeated
+> in many/all format strings eventually.
 
-Good catch, but wouldn't it be better to instead factor the code
-from label again: up to
+Yes, likewise %(T).  If that's what we want to do.
 
-	/* if len specified, enforce, else if maximum specified, enforce */
-	if ((len && h->len != len) || (!len && max && h->len > max))
-		return -EINVAL;
+Should we discuss here what we want an entry to look like?  For both
+ckpt_write_err (to the checkpoint image) and ckpt_error()?
 
-out of both into one function?  This feels more artificial, and I don't
-see any other meaningful differences.
+> >  		case 'O':
+> >  			len += sprintf(format+len, "[%s]", "obj %d");
+> >  			break;
+> > @@ -435,6 +446,51 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+> >  	return format;
+> >  }
+> > 
+> > +void ckpt_log_error(struct ckpt_ctx *ctx, char *fmt, ...)
+> > +{
+> > +	mm_segment_t fs;
+> > +	struct file *file;
+> > +	int count;
+> > +	va_list ap, aq, az;
+> > +	char *format;
+> > +	char buf[200], *bufp = buf;
+> 
+> I believe this buffer is too big for a kernel stack -- especially
+> for ckpt_log_error() which might be invoked "deep" in
+> the kernel stack.
+
+200 bytes?  Well, I guess I can try with 50 which still may often be
+enough.
+
+> > +	if (!ctx || !ctx->logfile)
+> > +		return;
+> > +	file = ctx->logfile;
+> > +
+> > +	va_start(ap, fmt);
+> > +	format = ckpt_generate_fmt(ctx, fmt);
+> > +	va_copy(aq, ap);
+> > +	va_copy(az, ap);
+> > +	/* I'm not clear here - can I re-use aq, or do i need
+> > +	 * a third copy? */
+> 
+> I'm no varargs expert but I have re-read the man page and
+> seen a purported snippet of the standard. :)
+> 
+> I think you need a third copy operation but you may only need
+> two va_lists so long as you do a va_end before the next va_copy:
+> 
+> 	va_copy(aq, ap);
+> 	... <use aq> ...
+> 	va_end(aq);
+> 	va_copy(aq, ap);
+> 	... <use aq> ...
+> 	va_end(aq);
+> 	...
+> 	va_end(ap); 
+> 
+> Based on my reading it sounded like some arch/ABIs require space
+> proportional to the number of arguments for each un-va_end-ed copy.
+
+Ok, I'll do that, thanks.
+
+> > +	count = vsnprintf(bufp, 200, format ? : fmt, aq);
+> 
+> BTW -- I think you can use snprintf() without the buffer and length
+> arguments if you just need the length calculated. Perhaps the same
+> is possible with vsnprintf():
+> 
+> 	count = vsnprintf(NULL, 0, format ? : fmt, aq);
+> 
+> If that works with vsnprintf() too then you could get rid of the
+> stack buf and always kmalloc the space..
+
+Hmm, yeah...  though i don't know that I *want* to always kmalloc
+the space :)  It does look like it should work (though no comment
+to that effect), but there is no speed advantage, save a bit of
+memcpy (vs. always having a kmalloc).
 
 -serge
-
-> ---
->  checkpoint/restart.c |   49 ++++++++++++++++++++++++++++++++++---------------
->  1 files changed, 34 insertions(+), 15 deletions(-)
-> 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 9b75de8..439206b 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -238,6 +238,31 @@ static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
->  	return ret;
->  }
-> 
-> +/**
-> + * _ckpt_read_early_dispatch - Dispatch ERRORs and OBJREFs; don't return them.
-> + * @ctx: checkpoint context
-> + * @h:   desired ckpt_hdr
-> + *
-> + * Returns -EFOO, 0 if it succeeded, 1 if h has not been dispatched yet
-> + * (so it should be returned rather than ignored)
-> + */
-> +static int _ckpt_read_early_dispatch(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
-> +{
-> +	int ret;
-> +
-> +	if (h->type == CKPT_HDR_ERROR) {
-> +		ret = _ckpt_read_err(ctx, h);
-> +		if (ret < 0)
-> +			return ret;
-> +		return 0;
-> +	} else if (h->type == CKPT_HDR_OBJREF) {
-> +		ret = _ckpt_read_objref(ctx, h);
-> +		if (ret < 0)
-> +			return ret;
-> +		return 0;
-> +	}
-> +	return 1;
-> +}
-> 
->  /**
->   * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
-> @@ -263,17 +288,11 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
->  	if (h->len < sizeof(*h))
->  		return -EINVAL;
-> 
-> -	if (h->type == CKPT_HDR_ERROR) {
-> -		ret = _ckpt_read_err(ctx, h);
-> -		if (ret < 0)
-> -			return ret;
-> +	ret = _ckpt_read_early_dispatch(ctx, h);
-> +	if (!ret)
->  		goto again;
-> -	} else if (h->type == CKPT_HDR_OBJREF) {
-> -		ret = _ckpt_read_objref(ctx, h);
-> -		if (ret < 0)
-> -			return ret;
-> -		goto again;
-> -	}
-> +	else if (ret < 0)
-> +		return ret;
-> 
->  	/* if len specified, enforce, else if maximum specified, enforce */
->  	if ((len && h->len != len) || (!len && max && h->len > max))
-> @@ -371,12 +390,12 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
->  	if (hh.len < sizeof(*h))
->  		return ERR_PTR(-EINVAL);
-> 
-> -	if (hh.type == CKPT_HDR_OBJREF) {
-> -		ret = _ckpt_read_objref(ctx, &hh);
-> -		if (ret < 0)
-> -			return ERR_PTR(ret);
-> +
-> +	ret = _ckpt_read_early_dispatch(ctx, &hh);
-> +	if (!ret)
->  		goto again;
-> -	}
-> +	else if (ret < 0)
-> +		return ERR_PTR(ret);
-> 
->  	/* if len specified, enforce, else if maximum specified, enforce */
->  	if ((len && hh.len != len) || (!len && max && hh.len > max))
-> -- 
-> 1.5.6.3
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
