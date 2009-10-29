@@ -1,13 +1,16 @@
-From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 12/17] use ckpt_error in checkpoint/restart.c
-Date: Thu, 29 Oct 2009 15:54:37 -0500
-Message-ID: <1256849682-858-13-git-send-email-serue@us.ibm.com>
-References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: factor out objref handling from {_,}ckpt_read_obj()
+Date: Thu, 29 Oct 2009 14:21:30 -0700
+Message-ID: <20091029212130.GC14023@count0.beaverton.ibm.com>
+References: <1256710435-3266-1-git-send-email-matthltc@us.ibm.com>
+	<1256838612-17372-1-git-send-email-orenl@librato.com>
+	<20091029195213.GA29874@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1256849682-858-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091029195213.GA29874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,256 +20,152 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+On Thu, Oct 29, 2009 at 02:52:13PM -0500, Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> > As noted by Matt Helsley, a portion of one of these functions was
+> > missing the block "dispatching" errors. Otherwise the handling of
+> > shard objects is pretty much the same, so this patch factors out the
+> > common code.
+> > 
+> > Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Although you could go one step further and pass in len and max
+> and check those in ckpt_read_obj_dispatch() as well.
 
-In cases where f(x) always returns 0 or <0, I felt free to
-remove ckpt_debugs in favor of ckpt_error() only on error.
+Actually I think it should only "do the dispatch" and nothing else. Otherwise
+it becomes "ckpt_alloc_and_read_and_dispatch_and_check_obj()" (ok, I'm
+exaagerating a bit..).
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/restart.c |   90 ++++++++++++++++++++++++++++++++-----------------
- 1 files changed, 59 insertions(+), 31 deletions(-)
+There's alot of variation in these ckpt_read* functions based on issues
+like:
+	1. When to alloc the header (and how much to alloc)
+	2. When/what to compare the header len to
+	3. If/When to alloc the payload
+	4. If/When to read the payload
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 3f23397..6eb5a70 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -64,7 +64,7 @@ static int restore_debug_task(struct ckpt_ctx *ctx, int flags)
- 
- 	s = kmalloc(sizeof(*s), GFP_KERNEL);
- 	if (!s) {
--		ckpt_debug("no memory to register ?!\n");
-+		ckpt_error(ctx, "no memory to register ?!\n");
- 		return -ENOMEM;
- 	}
- 	s->pid = current->pid;
-@@ -199,13 +199,13 @@ static int _ckpt_read_err(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
- 	len = h->len - sizeof(*h);
- 	ptr = kzalloc(len + 1, GFP_KERNEL);
- 	if (!ptr) {
--		ckpt_debug("insufficient memory to report image error\n");
-+		ckpt_error(ctx, "insufficient memory to report image error\n");
- 		return -ENOMEM;
- 	}
- 
- 	ret = ckpt_kread(ctx, ptr, len);
- 	if (ret >= 0) {
--		ckpt_debug("%s\n", &ptr[1]);
-+		ckpt_error(ctx, "%s\n", &ptr[1]);
- 		ret = -EIO;
- 	}
- 
-@@ -717,7 +717,7 @@ static void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
- {
- 	/* first to fail: notify everyone (racy but harmless) */
- 	if (!ckpt_test_ctx_error(ctx)) {
--		ckpt_debug("setting restart error %d\n", errno); \
-+		ckpt_error(ctx, "setting restart error %d\n", errno);
- 		ckpt_set_ctx_error(ctx, errno);
- 		complete(&ctx->complete);
- 		wake_up_all(&ctx->waitq);
-@@ -731,7 +731,8 @@ static void _restore_notify_error(struct ckpt_ctx *ctx, int errno)
- */
- #define restore_notify_error(ctx, errno) \
- do { \
--	ckpt_debug("restart error %d, root pid %d\n", errno, ctx->root_pid); \
-+	ckpt_error(ctx, "restart error %d, root pid %d\n", errno, \
-+		   ctx->root_pid); \
- 	_restore_notify_error(ctx, errno); \
- } while(0)
- 
-@@ -755,7 +756,8 @@ static int set_task_ctx(struct task_struct *task, struct ckpt_ctx *ctx)
- 		task->checkpoint_ctx = ckpt_ctx_get(ctx);
- 		ret = 0;
- 	} else {
--		ckpt_debug("task %d has checkpoint_ctx\n", task_pid_vnr(task));
-+		ckpt_error(ctx, "task %d has checkpoint_ctx\n",
-+			   task_pid_vnr(task));
- 		ret = 1;
- 	}
- 	task_unlock(task);
-@@ -805,7 +807,7 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
- 		rcu_read_unlock();
- 
- 		if (!task) {
--			ckpt_debug("could not find task %d\n", pid);
-+			ckpt_error(ctx, "could not find task %d\n", pid);
- 			restore_notify_error(ctx, -ESRCH);
- 			return -ESRCH;
- 		}
-@@ -960,29 +962,38 @@ static int do_restore_task(void)
- 	current->flags |= PF_RESTARTING;
- 
- 	ret = wait_sync_threads();
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "wait_sync_threads ret %d\n", ret);
- 		goto out;
-+	}
- 
- 	/* wait for our turn, do the restore, and tell next task in line */
- 	ret = wait_task_active(ctx);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "wait_task_active ret %d\n", ret);
- 		goto out;
-+	}
- 
- 	restore_debug_running(ctx);
- 
- 	ret = pre_restore_task();
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "pre_restore_task ret %d\n", ret);
- 		goto out;
-+	}
- 
- 	zombie = restore_task(ctx);
- 	if (zombie < 0) {
-+		ckpt_error(ctx, "restore_task ret %d\n", ret);
- 		ret = zombie;
- 		goto out;
- 	}
- 
- 	ret = restore_activate_next(ctx);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore_activate_next ret %d\n", ret);
- 		goto out;
-+	}
- 
- 	/*
- 	 * zombie: we're done here; do_exit() will notice the @ctx on
-@@ -1023,12 +1034,12 @@ static int __prepare_descendants(struct task_struct *task, void *data)
- 	ckpt_debug("consider task %d\n", task_pid_vnr(task));
- 
- 	if (!ptrace_may_access(task, PTRACE_MODE_ATTACH)) {
--		ckpt_debug("stranger task %d\n", task_pid_vnr(task));
-+		ckpt_error(ctx, "stranger task %d\n", task_pid_vnr(task));
- 		return -EPERM;
- 	}
- 
- 	if (task_ptrace(task) & PT_PTRACED) {
--		ckpt_debug("ptraced task %d\n", task_pid_vnr(task));
-+		ckpt_error(ctx, "ptraced task %d\n", task_pid_vnr(task));
- 		return -EBUSY;
- 	}
- 
-@@ -1184,24 +1195,31 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 	restore_debug_running(ctx);
- 
- 	ret = restore_read_header(ctx);
--	ckpt_debug("restore header: %d\n", ret);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore header: %d\n", ret);
- 		return ret;
-+	}
- 	ret = restore_container(ctx);
--	ckpt_debug("restore container: %d\n", ret);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore container: %d\n", ret);
- 		return ret;
-+	}
- 	ret = restore_read_tree(ctx);
--	ckpt_debug("restore tree: %d\n", ret);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore tree: %d\n", ret);
- 		return ret;
-+	}
- 
--	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1)
-+	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1) {
-+		ckpt_error(ctx, "self-restart but nr_pids=%d\n", ctx->nr_pids);
- 		return -EINVAL;
-+	}
- 
- 	ret = init_restart_ctx(ctx, pid);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "init_restart_ctx returned %d\n", ret);
- 		return ret;
-+	}
- 
- 	/*
- 	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
-@@ -1214,7 +1232,7 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 		 * We are a bad-behaving descendant: an ancestor must
- 		 * have prepare_descendants() us as part of a restart.
- 		 */
--		ckpt_debug("coord already has checkpoint_ctx\n");
-+		ckpt_error(ctx, "coord already has checkpoint_ctx\n");
- 		return -EBUSY;
- 	}
- 
-@@ -1226,35 +1244,45 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 
- 	if (ctx->uflags & RESTART_TASKSELF) {
- 		ret = pre_restore_task();
--		ckpt_debug("pre restore task: %d\n", ret);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_error(ctx, "pre restore task: %d\n", ret);
- 			goto out;
-+		}
- 		ret = restore_task(ctx);
- 		ckpt_debug("restore task: %d\n", ret);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_error(ctx, "restore task: %d\n", ret);
- 			goto out;
-+		}
- 	} else {
- 		/* prepare descendants' t->checkpoint_ctx point to coord */
- 		ret = prepare_descendants(ctx, ctx->root_task);
- 		ckpt_debug("restore prepare: %d\n", ret);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_error(ctx, "restore prepare: %d\n", ret);
- 			goto out;
-+		}
- 		/* wait for all other tasks to complete do_restore_task() */
- 		ret = wait_all_tasks_finish(ctx);
- 		ckpt_debug("restore finish: %d\n", ret);
--		if (ret < 0)
-+		if (ret < 0) {
-+			ckpt_error(ctx, "wait_all_tasks_finish: %d\n", ret);
- 			goto out;
-+		}
- 	}
- 
- 	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
- 	ckpt_debug("restore deferqueue: %d\n", ret);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore deferqueue: %d\n", ret);
- 		goto out;
-+	}
- 
- 	ret = restore_read_tail(ctx);
--	ckpt_debug("restore tail: %d\n", ret);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_error(ctx, "restore tail: %d\n", ret);
- 		goto out;
-+	}
- 
- 	if (ctx->uflags & RESTART_FROZEN) {
- 		ret = cgroup_freezer_make_frozen(ctx->root_task);
-@@ -1366,7 +1394,7 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
- 	if (!ctx || (ctx->uflags & RESTART_TASKSELF)) {
- 		if (ret < 0) {
- 			/* partial restore is undefined: terminate */
--			ckpt_debug("restart err %ld, exiting\n", ret);
-+			ckpt_error(ctx, "restart err %ld, exiting\n", ret);
- 			force_sig(SIGKILL, current);
- 		} else {
- 			ret = restore_retval();
--- 
-1.6.1
+So merging the length/max parameter check with
+ckpt_read_obj_dispatch() may limit its usefulness or cause its parameter
+list to explode.
+
+That said, the looping, reading, and minimal length checking
+performed here looks pretty nice.
+
+Cheers,
+	-Matt Helsley
+
+> 
+> -serge
+> 
+> > ---
+> >  checkpoint/restart.c |   58 ++++++++++++++++++++++++++-----------------------
+> >  1 files changed, 31 insertions(+), 27 deletions(-)
+> > 
+> > diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+> > index 9b75de8..130b4b2 100644
+> > --- a/checkpoint/restart.c
+> > +++ b/checkpoint/restart.c
+> > @@ -238,6 +238,35 @@ static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
+> >  	return ret;
+> >  }
+> > 
+> > +/**
+> > + * ckpt_read_obj_dispatch - dispatch ERRORs and OBJREFs; don't return them
+> > + * @ctx: checkpoint context
+> > + * @h: desired ckpt_hdr
+> > + */
+> > +static int ckpt_read_obj_dispatch(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
+> > +{
+> > +	int ret;
+> > +
+> > +	while (1) {
+> > +		ret = ckpt_kread(ctx, h, sizeof(*h));
+> > +		if (ret < 0)
+> > +			return ret;
+> > +		_ckpt_debug(CKPT_DRW, "type %d len %d\n", h->type, h->len);
+> > +		if (h->len < sizeof(*h))
+> > +			return -EINVAL;
+> > +
+> > +		if (h->type == CKPT_HDR_ERROR) {
+> > +			ret = _ckpt_read_err(ctx, h);
+> > +			if (ret < 0)
+> > +				return ret;
+> > +		} else if (h->type == CKPT_HDR_OBJREF) {
+> > +			ret = _ckpt_read_objref(ctx, h);
+> > +			if (ret < 0)
+> > +				return ret;
+> > +		} else
+> > +			return 0;
+> > +	}
+> > +}
+> > 
+> >  /**
+> >   * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
+> > @@ -254,26 +283,11 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
+> >  {
+> >  	int ret;
+> > 
+> > - again:
+> > -	ret = ckpt_kread(ctx, h, sizeof(*h));
+> > +	ret = ckpt_read_obj_dispatch(ctx, h);
+> >  	if (ret < 0)
+> >  		return ret;
+> >  	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
+> >  		    h->type, h->len, len, max);
+> > -	if (h->len < sizeof(*h))
+> > -		return -EINVAL;
+> > -
+> > -	if (h->type == CKPT_HDR_ERROR) {
+> > -		ret = _ckpt_read_err(ctx, h);
+> > -		if (ret < 0)
+> > -			return ret;
+> > -		goto again;
+> > -	} else if (h->type == CKPT_HDR_OBJREF) {
+> > -		ret = _ckpt_read_objref(ctx, h);
+> > -		if (ret < 0)
+> > -			return ret;
+> > -		goto again;
+> > -	}
+> > 
+> >  	/* if len specified, enforce, else if maximum specified, enforce */
+> >  	if ((len && h->len != len) || (!len && max && h->len > max))
+> > @@ -362,21 +376,11 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
+> >  	struct ckpt_hdr *h;
+> >  	int ret;
+> > 
+> > - again:
+> > -	ret = ckpt_kread(ctx, &hh, sizeof(hh));
+> > +	ret = ckpt_read_obj_dispatch(ctx, &hh);
+> >  	if (ret < 0)
+> >  		return ERR_PTR(ret);
+> >  	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
+> >  		    hh.type, hh.len, len, max);
+> > -	if (hh.len < sizeof(*h))
+> > -		return ERR_PTR(-EINVAL);
+> > -
+> > -	if (hh.type == CKPT_HDR_OBJREF) {
+> > -		ret = _ckpt_read_objref(ctx, &hh);
+> > -		if (ret < 0)
+> > -			return ERR_PTR(ret);
+> > -		goto again;
+> > -	}
+> > 
+> >  	/* if len specified, enforce, else if maximum specified, enforce */
+> >  	if ((len && hh.len != len) || (!len && max && hh.len > max))
+> > -- 
+> > 1.6.0.4
+> > 
+> > _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linux-foundation.org/mailman/listinfo/containers
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
