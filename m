@@ -1,12 +1,15 @@
-From: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Fwd: Porting checkpoint system to arm: write_file error
-Date: Thu, 29 Oct 2009 14:13:44 +0900
-Message-ID: <44a110670910282213g79d29cf0h6b1012e7a5f090eb@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Fwd: Porting checkpoint system to arm: write_file error
+Date: Thu, 29 Oct 2009 09:07:15 -0500
+Message-ID: <20091029140715.GD15713@us.ibm.com>
 References: <44a110670910271824h50ff7e9dp3e87becac6380293@mail.gmail.com>
+	<44a110670910282213g79d29cf0h6b1012e7a5f090eb@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=000e0cd72db6b3552204770bf916
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <44a110670910271824h50ff7e9dp3e87becac6380293-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <44a110670910282213g79d29cf0h6b1012e7a5f090eb-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,119 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---000e0cd72db6b3552204770bf916
-Content-Type: text/plain; charset=ISO-8859-1
+The current version is ckpt-v18-dev for both linux-cr and user-cr.
 
-I am using ckpt-v13 (quite old one). if you know what is wrong, please point
-it out for me,
-Thank you very much.
+-serge
 
----------- Forwarded message ----------
-From: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Wed, Oct 28, 2009 at 10:24 AM
-Subject: Porting checkpoint system to arm: write_file error
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Quoting Jerf gefera (jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> I am using ckpt-v13 (quite old one). if you know what is wrong, please point
+> it out for me,
+> Thank you very much.
+> 
+> ---------- Forwarded message ----------
+> From: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Date: Wed, Oct 28, 2009 at 10:24 AM
+> Subject: Porting checkpoint system to arm: write_file error
+> To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+> 
+> 
+> hi all,
+> The attachment is the img file and dmesg message.
+> If I comment the code of cr_write_files in both checkpoint.c & restart.c,
+> then i can checkpoint and restart the process(of cause, there are no file
+> operations in the checkpointed process). it is strange.
+> i hope you can point it out for me.
+> Thank you very much!
+> best wishes,
+> gefera
 
 
-hi all,
-The attachment is the img file and dmesg message.
-If I comment the code of cr_write_files in both checkpoint.c & restart.c,
-then i can checkpoint and restart the process(of cause, there are no file
-operations in the checkpointed process). it is strange.
-i hope you can point it out for me.
-Thank you very much!
-best wishes,
-gefera
 
---000e0cd72db6b3552204770bf916
-Content-Type: application/octet-stream; name=dmesg
-Content-Disposition: attachment; filename=dmesg
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_g1belg2k0
-
-Wzg0MzpjL3I6Y3JfbWF5X2NoZWNrcG9pbnRfdGFza10gY2hlY2sgODQxCls4NDM6Yy9yOmNyX3dy
-aXRlX3BpZHNdIHRhc2tbMF06IHZwaWQgODQxIHZ0Z2lkIDg0MSBwYXJlbnQgODM0Cls4NDM6Yy9y
-OmNyX3dyaXRlX2FsbF90YXNrc10gZHVtcGluZyB0YXNrICMwCls4NDM6Yy9yOmNyX3dyaXRlX3Rh
-c2tdIHRhc2tfc3RydWN0OiByZXQgMApbODQzOmMvcjpjcl93cml0ZV90YXNrXSBtZW1vcnk6IHJl
-dCAwCi0tLS0tLS0tLS0tLVsgY3V0IGhlcmUgXS0tLS0tLS0tLS0tLQpLZXJuZWwgQlVHIGF0IDhj
-MGZiZDM2IFt2ZXJib3NlIGRlYnVnIGluZm8gdW5hdmFpbGFibGVdCktlcm5lbCBCVUc6IDAwM2Ug
-WyMxXQpNb2R1bGVzIGxpbmtlZCBpbjoKClBpZCA6IDg0MywgQ29tbTogICAgICAgICAgICAgICAg
-ICAgY3IKQ1BVIDogMCAgICBOb3QgdGFpbnRlZCAgKDIuNi4yOC0wMDAxOC1nM2M4YjNiMS1kaXJ0
-eSAjMTYpClBDIGlzIGF0IGNyX3dyaXRlX2ZpbGVzKzB4MmI2LzB4NTIwClBSIGlzIGF0IGNyX3dy
-aXRlX2ZpbGVzKzB4MmE4LzB4NTIwClBDICA6IDhjMGZiZDM2IFNQICA6IDhmOTYzZWUwIFNSICA6
-IDQwMDA4MTAxIFRFQSA6IDI5NjUyOTQwClIwICA6IDhjMGY4YjYwIFIxICA6IDAwMDAwMDAzIFIy
-ICA6IDhmODhjM2MwIFIzICA6IDAwMDAwMDIwClI0ICA6IDhmODhjM2MwIFI1ICA6IDAwMDAwMDIw
-IFI2ICA6IGZmZmZmZmY2IFI3ICA6IDAwMDAwMDAwClI4ICA6IDAwMDAwMDAwIFI5ICA6IGZmZmZm
-ZmY3IFIxMCA6IDAwMDAwMDAxIFIxMSA6IDhmOWE4ZmYwClIxMiA6IDAwMDAwMDAwIFIxMyA6IDhm
-ODJhY2EwIFIxNCA6IDhmODhjM2MwCk1BQ0g6IDAwMDExZTNjIE1BQ0w6IGMyYTA0Y2EwIEdCUiA6
-IDI5NmQwNDUwIFBSICA6IDhjMGZiZDI4CgpDYWxsIHRyYWNlOiAKWzw4YzBmYjE1Yz5dIGNyX3dy
-aXRlX21tKzB4MzdjLzB4NWUwCls8OGMwZjk4YTg+XSBkb19jaGVja3BvaW50KzB4NGM4LzB4N2Ew
-Cls8OGMwMjcyODA+XSBwcmludGsrMHgwLzB4NDAKWzw4YzAzOTA4MD5dIHBpZF92bnIrMHgwLzB4
-MjAKWzw4YzBmOTE5Nj5dIHN5c19jaGVja3BvaW50KzB4MzYvMHg2MApbPDhjMDE3MWYwPl0gc3lz
-Y2FsbF9jYWxsKzB4Yy8weDEwCls8OGMwZjkxNjA+XSBzeXNfY2hlY2twb2ludCsweDAvMHg2MAoK
-UHJvY2VzczogY3IgKHBpZDogODQzLCBzdGFjayBsaW1pdCA9IDhmOTYyMDAxKQpTdGFjazogKDB4
-OGY5NjNlZTAgdG8gMHg4Zjk2NDAwMCkKM2VlMDogOGMwZmIxNWMgOGY4MTRlYzAgMDAwMDAwMDMg
-MDAwMDAwMDAgOGY5NTgzNjAgOGY5NDYyMTQgN2JhNTIwMDAgOGY4OGMzYzAgCjNmMDA6IDhmOTQ2
-MWUwIDAwMjAwMTJmIDAwMDAwMDAxIDAwMTAwMTJlIDAwMDAwMDAwIDAwMDgwMTJkIDAwMDAwMzQ5
-IDAwMDAwMDAwIAozZjIwOiAwMDAwMDAwMSA4Zjk0ZTAwMCA4YzBmOThhOCA4Zjg4YzQwMCA4Zjg4
-YzNjMCA4YzAyNzI4MCA4YzAzOTA4MCAwMDAwMDAwMCAKM2Y0MDogMDAwMDAwZmMgOGY4ODQ0NDAg
-MDAwMDAwMDAgMDAwMDAwMDEgMDAwMDAwMDEgOGY5M2Q5ZTAgOGY5YTgwMDAgMDAwMDAwMDEgCjNm
-NjA6IDAwMDAwMDAwIDAwMTgwMDY2IDAwMDAwMDAwIDAwZTAwMDAxIDAwMDAwMDAwIDhjMGY5MTk2
-IDdiOTFmZGU4IDAwMDAwMDAwIAozZjgwOiAyOTZjYzdiOCAwMDAwMDAwMCAwMDAwMDA3MSA4Zjg4
-YzNjMCAwMDAwMDM0OSA4YzAxNzFmMCA4Zjk2M2ZmOCA4YzBmOTE2MCAKM2ZhMDogMDAwMDAwMDIg
-MDAwMDAzNDkgN2I5MWZlMDAgMDAwMDAxNGQgMDAwMDAzNDkgMDAwMDAwMDEgMDAwMDAwMDAgN2I5
-MWZlODQgCjNmYzA6IDAwMDAwMDAwIDAwMDAwMDAwIDAwNDAwNjE0IDAwMDAwMDAwIDI5NmNjN2I4
-IDAwMDAwMDAwIDdiOTFmZGU4IDdiOTFmZGU4IAozZmUwOiAyOTY1Mjk1MiAwMDQwMDU5YyAwMDAw
-ODAwMCAyOTZkMDQ1MCA0YTg1NjhhZCAwMDAwMDM0OCAwMDAwMDA1YyAwMDAwMDE2MCAKLS0tWyBl
-bmQgdHJhY2UgM2ZkZDlmMGJkYWNhN2U2MCBdLS0tCgo=
---000e0cd72db6b3552204770bf916
-Content-Type: application/octet-stream; name=img
-Content-Disposition: attachment; filename=img
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_g1beloyh1
-
-XkAuXkBeQF5AXkBeQF5ALi4uXkwuLl5AXkJeQF5GXkBeXF5AXkNeQC5EbTheQF5AXkBeQF5BXkBe
-QF5AXkBeQF5AXkAyLjYuMjgtMDAwCi4uYV5SYigiXkcuXkRxXktCXlIoLmFeUmIoIi4uXkRxXkEu
-XlApJk8uaV5LXkAuaF5AXkdBXkAuXkZBXkAgICBeQCAgICAgIF5AXkUuQmFeCl5AXkBeQF5AXkBe
-QC4uLi5eQF5AXkBeQC4uLi5eQF5AXkBeQF5AXkBeQF5AXkFeQF5AXkBeQV5AXkBeQF5MXkBeQF5A
-Ll5CQF5AXk1eQF5ACl5AXkBeQFBeQF5AXkBeS15AXkBeQF5QXkBeQF5AXlVeQF5AXkB0NlgpXkNe
-QF5AXkAuXkZBXkBeQl5AXkBeQDxeQF5AXkBeVF5AXkBeQF5HCl5AXkBeQFZeQF5AXkBeS15AXkBe
-QF5QXkBeQF5AXkdeQF5AXkBeWF5FXkBeQF5IXkBeQF5AXkBeQF5AXkAgICBeQF5AXkBeTF5AXkBe
-QF5WCl5AXkBeQF5CXkBeQF5AXkBeQF5AXkBeQl5AXkBeQF5CXkBeQF5ALl5AXkBeQC4uLm9eQl5A
-XkBeQC5eQV5AXkAuXkFeQF5AOF5AXkBeQF5DCl5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBe
-QF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5ACl5AXl5e
-QF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5ALjZYKV5QU1cpXlReQF5AXkAuXkNeQF5A
-Ll5BXkBeQF5OXkBeQF5ALkFYCmZpbGU9JXMgWyVsdV07ICBkZXN0cm95aW5nIGxpbmsgbWFwCl5A
-XkBeQFRMUyBnZW5lcmF0aW9uIGNvdW50ZXIgd3JhcHBlZCEgIFBsZWFzZSByZXBvcnQgYXMgZGVz
-Y3JpYmVkIGluIDxodHRwOi8vd3d3Cl5AXkBeQG1hcC0+bF9pbml0X2NhbGxlZF5AXkBzaGFyZWQg
-b2JqZWN0IG5vdCBvcGVuXkBeQF9kbF9jbG9zZV5AXkBeQF9kbF9jbG9zZV93Cl5AXkBeQF5AX2Rs
-X2ltcG9ydGFudF9od2NhcHNeQF5AXkBeQEluY29uc2lzdGVuY3kgZGV0ZWN0ZWQgYnkgbGQuc286
-ICVzOiAldTogJXMlCl5AXkBeQF5AZGVsaW1bMF0gIT0gJ1wwJ15AXkBeQF5AZGwtbWluaW1hbC5j
-XkBeQF5AXkAhIHVwcGVyX2Nhc2VeQF5AXkBeQGJhc2UgPT0KXkBwYWdlICE9ICgodm9pZCAqKSAt
-MSleQF5AXkBwdHIgPT0gYWxsb2NfbGFzdF9ibG9ja15AX19zdHJzZXBeQF5AXkBeQF9pdG9hXkBe
-QF4KLl5AXkAKLl5HXkBeQF5BLi4uLl5AXkBeQF5ALjtYKV5EXkBeQF5AXkheQF5AXkBeQDxYKV5A
-XkBeQF5AXkBeQF5AXkAuXl4uey5eXi57Xk5eQF5AXkAKXkBeQF5ALl5BXkBeQF5LXkBeQF5AXlBe
-QF5AXkBeQ15AXkBeQF5EMFgpXkJeQF5AXkA8XkBeQF5AXlReQF5AXkBeR15AXkBeQF5XXkBeQF4K
-XkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBe
-QF5AXkBeQF5AXkBeQF5AXkBeQF5AXkAKXkBeQF5ALlJeQF5AXkteQF5AXkBeUF5AXkBeQF5DXkBe
-QF5ALi5sKV5CXkBeQF5ALl5AXkBeQF5UXkBeQF5AXkdeQF5AXkBeV15AXkBeQCQKLl5QLmwpLi5s
-KV5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5A
-XkBeQF5AXkBeQF5AXkAKXlJeT15XXlZeQF5AXkAucmQpLl5WLnteQF5AXkBeQC4ubCleQ15AXkBe
-QDgubCk4LmwpLl5WLnteQF5VXkBeQF5FXkBeQF5ALl5EXkBeQDsKXlJeT15XXlZeQF5AXkBeQF5A
-XkBeQF5AXkBeQF5AbiVeKS5eVi57Li5sKV5DXkBeQF5AOC5sKTgubCleQF5EXkBeQF5BXkheQF5A
-XkBeQF4KXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBe
-QF5AXkBeQF5AXkBeQF5AXkBeQF5AXkBeQF5AXkAK
---000e0cd72db6b3552204770bf916
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---000e0cd72db6b3552204770bf916--
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
