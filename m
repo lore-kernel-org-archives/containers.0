@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 16/17] ckpt_error in ipc/checkpoint_sem.c
-Date: Thu, 29 Oct 2009 15:54:41 -0500
-Message-ID: <1256849682-858-17-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 11/17] have restore_debug_free use ckpt_error
+Date: Thu, 29 Oct 2009 15:54:36 -0500
+Message-ID: <1256849682-858-12-git-send-email-serue@us.ibm.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,21 +25,43 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/checkpoint_sem.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ checkpoint/restart.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-index 76eb2b9..0b610ee 100644
---- a/ipc/checkpoint_sem.c
-+++ b/ipc/checkpoint_sem.c
-@@ -209,7 +209,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 9b75de8..3f23397 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -137,15 +137,16 @@ void restore_debug_free(struct ckpt_ctx *ctx)
+ 	 */
+ 	list_for_each_entry(s, &ctx->task_status, list)
+ 		count++;
+-	ckpt_debug("%d tasks registered, nr_tasks was %d nr_total %d\n",
++	ckpt_error(ctx, "%d tasks registered, nr_tasks was %d nr_total %d\n",
+ 		   count, ctx->nr_tasks, atomic_read(&ctx->nr_total));
  
- 	ret = load_ipc_sem_hdr(ctx, h, sem);
- 	if (ret < 0) {
--		ckpt_debug("sem: need to remove (%d)\n", ret);
-+		ckpt_error(ctx, "%(T)sem: need to remove (%d)\n", ret);
- 		freeary(ns, perms);
- 	} else
- 		ipc_unlock(perms);
+-	ckpt_debug("active pid was %d, ctx->errno %d\n", ctx->active_pid,
++	ckpt_error(ctx, "active pid was %d, ctx->errno %d\n", ctx->active_pid,
+ 		   ctx->errno);
+-	ckpt_debug("kflags %lu uflags %lu oflags %lu", ctx->kflags,
++	ckpt_error(ctx, "kflags %lu uflags %lu oflags %lu", ctx->kflags,
+ 		   ctx->uflags, ctx->oflags);
+ 	for (i = 0; i < ctx->active_pid; i++)
+-		ckpt_debug("task[%d] to run %d\n", i, ctx->pids_arr[i].vpid);
++		ckpt_error(ctx, "task[%d] to run %d\n", i,
++			   ctx->pids_arr[i].vpid);
+ 
+ 	list_for_each_entry_safe(s, p, &ctx->task_status, list) {
+ 		if (s->flags & RESTART_DBG_COORD)
+@@ -170,7 +171,8 @@ void restore_debug_free(struct ckpt_ctx *ctx)
+ 			state = "Exited";
+ 		else
+ 			state = "??????";
+-		ckpt_debug("pid %d type %s state %s\n", s->pid, which, state);
++		ckpt_error(ctx, "pid %d type %s state %s\n", s->pid, which,
++			   state);
+ 		list_del(&s->list);
+ 		kfree(s);
+ 	}
 -- 
 1.6.1
