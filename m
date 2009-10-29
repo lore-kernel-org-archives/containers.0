@@ -1,101 +1,80 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] Record and restore skb header marks (v2)
-Date: Thu, 29 Oct 2009 16:10:34 -0400
-Message-ID: <4AE9F6BA.8050601@librato.com>
-References: <1256666008-8231-1-git-send-email-danms@us.ibm.com>
-	<1256666008-8231-2-git-send-email-danms@us.ibm.com>
+From: Oren Laadan <orenl@librato.com>
+Subject: Re: [PATCH 2/3] [RFC] Add c/r support for connected INET sockets
+ (v3)
+Date: Thu, 29 Oct 2009 16:15:45 -0400
+Message-ID: <4AE9F7F1.8000803@librato.com>
+References: <1256666008-8231-1-git-send-email-danms@us.ibm.com> <1256666008-8231-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1256666008-8231-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1256666008-8231-3-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, John Dykstra <jdykstra72@gmail.com>
 List-Id: containers.vger.kernel.org
 
 
-
 Dan Smith wrote:
-> Save this information when we checkpoint an skb and provide a mechanism
-> to restore that information on restart.  This will be used in the
-> subsequent INET patch.
+> This patch adds basic support for C/R of open INET sockets.  I think that
+> all the important bits of the TCP and ICSK socket structures is saved,
+> but I think there is still some additional IPv6 stuff that needs to be
+> handled.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> With this patch applied, the following script can be used to demonstrate
+> the functionality:
+> 
+>   https://lists.linux-foundation.org/pipermail/containers/2009-October/021239.html
+> 
+> It shows that this enables migration of a sendmail process with open
+> connections from one machine to another without dropping.
+> 
+> We probably need comments from the netdev people about the quality of
+> sanity checking we do on the values in the ckpt_hdr_socket_inet
+> structure on restart.
+> 
+> Note that this still doesn't address lingering sockets yet.
+> 
+> Changes in v3:
+>  - Prevent restart from allowing a bind on a <1024 port unless the
+>    user is granted that capability
+>  - Add some sanity checking in the inet_precheck() function to make sure
+>    the values read from the checkpoint image are within acceptable ranges
+>  - Check the result of sock_restore_header_info() and fail if needed
 > 
 > Changes in v2:
->  - Add range checks to ensure that the header marks we restore
->    are within the data length of the skb
+>  - Restore saddr, rcv_saddr, daddr, sport, and dport from the sockaddr
+>    structure instead of saving them separately
+>  - Fix 'sock' naming in sock_cptrst()
+>  - Don't take the queue lock before skb_queue_tail() since it is
+>    done for us
+>  - Allow "listen only" restore behavior if RESTART_SOCK_LISTENONLY
+>    flag is specified on sys_restart()
+>  - Pull the implementation of the list of listening sockets back into
+>    this patch
+>  - Fix dangling printk
+>  - Add some comments around the parent/child restore logic
+> 
+> Cc: netdev@vger.kernel.org
+> Cc: Oren Laadan <orenl@librato.com>
+> Cc: John Dykstra <jdykstra72@gmail.com>
+> Signed-off-by: Dan Smith <danms@us.ibm.com>
+> ---
 
-[...]
+This looks good:
+Acked-by: Oren Laadan <orenl@cs.columbia.edu>
 
-> +int sock_restore_header_info(struct sk_buff *skb,
-> +			     struct ckpt_hdr_socket_buffer *h)
-> +{
-> +	if ((h->transport_header >= skb->len) ||
-> +	    (h->network_header >= skb->len) ||
-> +	    (h->mac_header >= skb->len) ||
-> +	    (h->mac_len >= skb->len) ||
-> +	    (h->hdr_len >= skb->len)) {
+I still want to move this to right under the restart-specific fields:
+	struct list_head listen_sockets;/* listening parent sockets */
 
-I wonder if the sanity test for mac_len and hdr_len are sufficient,
-or whether a more constrained test is required.
-
-For example, a quick grep shows that there are several places where:
-	skb->mac_len = skb->network_header - skb->mac_header;
-
-I think there is some code that relies on it without validating
-that the value makes sense.
-
-> +		ckpt_debug("skb header positions not within data length\n");
-> +		return -EINVAL;
-> +	}
-> +
-> +	skb->mac_len = h->mac_len;
-> +	skb->hdr_len = h->hdr_len;
-> +
-> +	skb_set_transport_header(skb, h->transport_header);
-> +	skb_set_network_header(skb, h->network_header);
-> +	skb_set_mac_header(skb, h->mac_header);
-> +
-> +	memcpy(skb->cb, h->cb, sizeof(skb->cb));
-
-The skb->cb holds can be used by any layer to put private variables.
-
-Can the user mangle the data in there to create a disaster of some
-sort ?
-
-If the answer is "it's possible", and because this is per protocol
-data, I suggest to add a per-protocol callback to sanitize the data
-in this control buffer.
-
-To not block this patchset infinitely, I guess you can put the
-details of the sanity check in a separate patch(set). But I prefer
-that the current set will at least mention and provision for such
-a mechanism.
-
-> +
-> +	return 0;
-> +}
-> +
->  static int __sock_write_buffers(struct ckpt_ctx *ctx,
->  				struct sk_buff_head *queue,
->  				int dst_objref)
-> @@ -123,6 +167,7 @@ static int __sock_write_buffers(struct ckpt_ctx *ctx,
->  			goto end;
->  		h->sk_objref = ret;
->  		h->pr_objref = dst_objref;
-> +		sock_record_header_info(skb, h);
->  
->  		ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
->  		if (ret < 0)
+Also, I'm looking for a better name for RESTART_SOCK_LISTENONLY
+(it isn't listen only, udp sockets are preserved...), something
+that will convey the idea that we drop old connections,
+perhaps:
+	RESTART_NET_RESET
+	RESTART_CONN_RESET
+	RESTART_DROPCONN
+?
 
 Oren.
+
