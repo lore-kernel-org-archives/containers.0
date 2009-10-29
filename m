@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 13/17] ckpt_error in checkpoint/files.c
-Date: Thu, 29 Oct 2009 15:54:38 -0500
-Message-ID: <1256849682-858-14-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 06/17] ckpt_write_err update checkpoint/objhash.c
+Date: Thu, 29 Oct 2009 15:54:31 -0500
+Message-ID: <1256849682-858-7-git-send-email-serue@us.ibm.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,35 +23,50 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Convert two ckpt_debugs to ckpt_errors - however, given that they
-are merely doubling information available in ckpt_write_err(), should
-they simply be removed?
-
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ checkpoint/objhash.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 1f2ab07..e67a13f 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -206,12 +206,14 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
- 	if (!file->f_op || !file->f_op->checkpoint) {
- 		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
- 			       -EBADF, file, file->f_op);
--		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
-+		ckpt_error(ctx, "%(T)f_op lacks checkpoint handler: %pS\n",
-+			   file->f_op);
- 		return -EBADF;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 730dd82..a152e69 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -657,7 +657,7 @@ static inline int obj_reverse_leak(struct ckpt_ctx *ctx, struct ckpt_obj *obj)
+ 	 * object while we were collecting, which we didn't catch.
+ 	 */
+ 	if (obj->ops->ref_users && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
+-		ckpt_write_err(ctx, "OP", "leak: reverse added late (%s)",
++		ckpt_write_err(ctx, "%(O)%(P)leak: reverse added late (%s)",
+ 			       obj->objref, obj->ptr, obj->ops->obj_name);
+ 		return -EBUSY;
  	}
- 	if (d_unlinked(file->f_dentry)) {
- 		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
--		ckpt_debug("unlinked files are unsupported\n");
-+		ckpt_error(ctx, "%(T)%(P)unlinked files are unsupported\n",
-+			   file);
- 		return -EBADF;
- 	}
+@@ -774,7 +774,7 @@ int ckpt_obj_visit(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ 	if (!obj) {
+ 		if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
+ 			/* if not found report reverse leak (full container) */
+-			ckpt_write_err(ctx, "OP", "leak: reverse unknown (%s)",
++			ckpt_write_err(ctx, "%(O)%(P)leak: reverse unknown (%s)",
+ 				       obj->objref, obj->ptr,
+ 				       obj->ops->obj_name);
+ 			return -EBUSY;
+@@ -870,7 +870,7 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
  
+ 		if (obj->ops->ref_users(obj->ptr) != obj->users) {
+ 			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
+-			ckpt_write_err(ctx, "OP", "leak: usage (%d != %d (%s)",
++			ckpt_write_err(ctx, "%(O)%(P)leak: usage (%d != %d (%s)",
+ 				       obj->objref, obj->ptr,
+ 				       obj->ops->ref_users(obj->ptr),
+ 				       obj->users, obj->ops->obj_name);
+@@ -896,7 +896,7 @@ int ckpt_obj_visited(struct ckpt_ctx *ctx)
+ 		if (!(obj->flags & CKPT_OBJ_VISITED)) {
+ 			ckpt_debug("reverse leak: %s (%d)\n",
+ 				   obj->ops->obj_name, obj->objref);
+-			ckpt_write_err(ctx, "OP", "leak: not visited (%s)",
++			ckpt_write_err(ctx, "%(O)%(P)leak: not visited (%s)",
+ 				       obj->objref, obj->ptr,
+ 				       obj->ops->obj_name);
+ 			return 0;
 -- 
 1.6.1
