@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 06/17] ckpt_write_err update checkpoint/objhash.c
-Date: Thu, 29 Oct 2009 15:54:31 -0500
-Message-ID: <1256849682-858-7-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 16/17] ckpt_error in ipc/checkpoint_sem.c
+Date: Thu, 29 Oct 2009 15:54:41 -0500
+Message-ID: <1256849682-858-17-git-send-email-serue@us.ibm.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,48 +25,21 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ ipc/checkpoint_sem.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 730dd82..a152e69 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -657,7 +657,7 @@ static inline int obj_reverse_leak(struct ckpt_ctx *ctx, struct ckpt_obj *obj)
- 	 * object while we were collecting, which we didn't catch.
- 	 */
- 	if (obj->ops->ref_users && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
--		ckpt_write_err(ctx, "OP", "leak: reverse added late (%s)",
-+		ckpt_write_err(ctx, "%(O)%(P)leak: reverse added late (%s)",
- 			       obj->objref, obj->ptr, obj->ops->obj_name);
- 		return -EBUSY;
- 	}
-@@ -774,7 +774,7 @@ int ckpt_obj_visit(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
- 	if (!obj) {
- 		if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
- 			/* if not found report reverse leak (full container) */
--			ckpt_write_err(ctx, "OP", "leak: reverse unknown (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: reverse unknown (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->obj_name);
- 			return -EBUSY;
-@@ -870,7 +870,7 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
+diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+index 76eb2b9..0b610ee 100644
+--- a/ipc/checkpoint_sem.c
++++ b/ipc/checkpoint_sem.c
+@@ -209,7 +209,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
  
- 		if (obj->ops->ref_users(obj->ptr) != obj->users) {
- 			ckpt_debug("usage leak: %s\n", obj->ops->obj_name);
--			ckpt_write_err(ctx, "OP", "leak: usage (%d != %d (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: usage (%d != %d (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->ref_users(obj->ptr),
- 				       obj->users, obj->ops->obj_name);
-@@ -896,7 +896,7 @@ int ckpt_obj_visited(struct ckpt_ctx *ctx)
- 		if (!(obj->flags & CKPT_OBJ_VISITED)) {
- 			ckpt_debug("reverse leak: %s (%d)\n",
- 				   obj->ops->obj_name, obj->objref);
--			ckpt_write_err(ctx, "OP", "leak: not visited (%s)",
-+			ckpt_write_err(ctx, "%(O)%(P)leak: not visited (%s)",
- 				       obj->objref, obj->ptr,
- 				       obj->ops->obj_name);
- 			return 0;
+ 	ret = load_ipc_sem_hdr(ctx, h, sem);
+ 	if (ret < 0) {
+-		ckpt_debug("sem: need to remove (%d)\n", ret);
++		ckpt_error(ctx, "%(T)sem: need to remove (%d)\n", ret);
+ 		freeary(ns, perms);
+ 	} else
+ 		ipc_unlock(perms);
 -- 
 1.6.1
