@@ -1,80 +1,106 @@
-From: Oren Laadan <orenl@librato.com>
-Subject: Re: [PATCH 2/3] [RFC] Add c/r support for connected INET sockets
- (v3)
-Date: Thu, 29 Oct 2009 16:15:45 -0400
-Message-ID: <4AE9F7F1.8000803@librato.com>
-References: <1256666008-8231-1-git-send-email-danms@us.ibm.com> <1256666008-8231-3-git-send-email-danms@us.ibm.com>
+From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 04/17] ckpt_write_err update checkpoint/files.c
+Date: Thu, 29 Oct 2009 15:54:29 -0500
+Message-ID: <1256849682-858-5-git-send-email-serue@us.ibm.com>
+References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1256666008-8231-3-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, John Dykstra <jdykstra72@gmail.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1256849682-858-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Dan Smith wrote:
-> This patch adds basic support for C/R of open INET sockets.  I think that
-> all the important bits of the TCP and ICSK socket structures is saved,
-> but I think there is still some additional IPv6 stuff that needs to be
-> handled.
-> 
-> With this patch applied, the following script can be used to demonstrate
-> the functionality:
-> 
->   https://lists.linux-foundation.org/pipermail/containers/2009-October/021239.html
-> 
-> It shows that this enables migration of a sendmail process with open
-> connections from one machine to another without dropping.
-> 
-> We probably need comments from the netdev people about the quality of
-> sanity checking we do on the values in the ckpt_hdr_socket_inet
-> structure on restart.
-> 
-> Note that this still doesn't address lingering sockets yet.
-> 
-> Changes in v3:
->  - Prevent restart from allowing a bind on a <1024 port unless the
->    user is granted that capability
->  - Add some sanity checking in the inet_precheck() function to make sure
->    the values read from the checkpoint image are within acceptable ranges
->  - Check the result of sock_restore_header_info() and fail if needed
-> 
-> Changes in v2:
->  - Restore saddr, rcv_saddr, daddr, sport, and dport from the sockaddr
->    structure instead of saving them separately
->  - Fix 'sock' naming in sock_cptrst()
->  - Don't take the queue lock before skb_queue_tail() since it is
->    done for us
->  - Allow "listen only" restore behavior if RESTART_SOCK_LISTENONLY
->    flag is specified on sys_restart()
->  - Pull the implementation of the list of listening sockets back into
->    this patch
->  - Fix dangling printk
->  - Add some comments around the parent/child restore logic
-> 
-> Cc: netdev@vger.kernel.org
-> Cc: Oren Laadan <orenl@librato.com>
-> Cc: John Dykstra <jdykstra72@gmail.com>
-> Signed-off-by: Dan Smith <danms@us.ibm.com>
-> ---
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/files.c |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
 
-This looks good:
-Acked-by: Oren Laadan <orenl@cs.columbia.edu>
-
-I still want to move this to right under the restart-specific fields:
-	struct list_head listen_sockets;/* listening parent sockets */
-
-Also, I'm looking for a better name for RESTART_SOCK_LISTENONLY
-(it isn't listen only, udp sockets are preserved...), something
-that will convey the idea that we drop old connections,
-perhaps:
-	RESTART_NET_RESET
-	RESTART_CONN_RESET
-	RESTART_DROPCONN
-?
-
-Oren.
-
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index 440b7a9..1f2ab07 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -88,7 +88,7 @@ int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
+ 					  CKPT_HDR_FILE_NAME);
+ 	} else {
+ 		ret = PTR_ERR(fname);
+-		ckpt_write_err(ctx, "TEP", "obtain filename (file)", ret);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)obtain filename (file)", ret);
+ 	}
+ 
+ 	kfree(buf);
+@@ -204,20 +204,21 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 	int ret;
+ 
+ 	if (!file->f_op || !file->f_op->checkpoint) {
+-		ckpt_write_err(ctx, "TEPS", "f_op lacks checkpoint",
++		ckpt_write_err(ctx, "%(T)%(E)%(P)%(S)f_op lacks checkpoint",
+ 			       -EBADF, file, file->f_op);
+ 		ckpt_debug("f_op lacks checkpoint handler: %pS\n", file->f_op);
+ 		return -EBADF;
+ 	}
+ 	if (d_unlinked(file->f_dentry)) {
+-		ckpt_write_err(ctx, "TEP", "unlinked file", -EBADF, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)unlinked file", -EBADF, file);
+ 		ckpt_debug("unlinked files are unsupported\n");
+ 		return -EBADF;
+ 	}
+ 
+ 	ret = file->f_op->checkpoint(ctx, file);
+ 	if (ret < 0)
+-		ckpt_write_err(ctx, "TEP", "file checkpoint failed", ret, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file checkpoint failed", ret,
++			       file);
+ 	return ret;
+ }
+ 
+@@ -257,7 +258,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	ret = -EBADF;
+ 	if (!file) {
+ 		pr_warning("c/r: file descriptor gone?");
+-		ckpt_write_err(ctx, "TEP", "file gone? (%d)", ret, file, fd);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file gone? (%d)", ret, file, fd);
+ 		goto out;
+ 	}
+ 
+@@ -360,7 +361,7 @@ int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file)
+ 	if (file->f_op->collect)
+ 		ret = file->f_op->collect(ctx, file);
+ 	if (ret < 0)
+-		ckpt_write_err(ctx, "TEP", "file collect", ret, file);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)file collect", ret, file);
+ 	return ret;
+ }
+ 
+@@ -379,7 +380,7 @@ static int collect_file_desc(struct ckpt_ctx *ctx,
+ 	rcu_read_unlock();
+ 
+ 	if (!file) {
+-		ckpt_write_err(ctx, "TE", "file removed", -EBUSY, file);
++		ckpt_write_err(ctx, "%(T)%(E)file removed", -EBUSY, file);
+ 		return -EBUSY;
+ 	}
+ 
+@@ -422,7 +423,7 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	files = get_files_struct(t);
+ 	if (!files) {
+-		ckpt_write_err(ctx, "TE", "files_struct missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)files_struct missing", -EBUSY);
+ 		return -EBUSY;
+ 	}
+ 	ret = collect_file_table(ctx, files);
+-- 
+1.6.1
