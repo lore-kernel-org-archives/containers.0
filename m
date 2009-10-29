@@ -1,18 +1,20 @@
-From: "Will Huang" <will.huang-lvxLlxTUKJQIhP1ydL5T/A@public.gmane.org>
-Subject: RE: kernel based checkpoint/restart: about X windows application
-	checkpoint and restart support.
-Date: Thu, 29 Oct 2009 09:30:44 +0800
-Message-ID: <48778.9423008964$1256779963@news.gmane.org>
-References: <20091028084717.GO31446@count0.beaverton.ibm.com>
-	<4AE85D13.9030108@librato.com>
-	<20091028161219.GQ31446@count0.beaverton.ibm.com>
-	<4AE86EC9.7040605@librato.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 11/17] define function to print error messages to
+	user log
+Date: Wed, 28 Oct 2009 23:23:04 -0500
+Message-ID: <20091029042304.GA9005@hallyn.com>
+References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
+	<1256683587-23961-12-git-send-email-serge@us.ibm.com>
+	<20091028181415.GB14023@count0.beaverton.ibm.com>
+	<20091028205424.GA27394@us.ibm.com> <4AE8BCB5.4030406@librato.com>
+	<20091028221208.GA30227@us.ibm.com> <4AE8C639.6090105@librato.com>
+	<20091029001223.GA1463@us.ibm.com> <4AE8E578.4030300@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AE86EC9.7040605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Content-Language: zh-cn
+Content-Disposition: inline
+In-Reply-To: <4AE8E578.4030300-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,81 +24,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Oren Laadan' <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>, 'Matt Helsley' <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-> -----Original Message-----
-> From: Oren Laadan [mailto:orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org]
-> Sent: Thursday, October 29, 2009 12:18 AM
-> To: Matt Helsley
-> Cc: Will Huang; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> Subject: Re: kernel based checkpoint/restart: about X windows application
-> checkpoint and restart support.
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > 
 > 
-> 
-> Matt Helsley wrote:
-> > On Wed, Oct 28, 2009 at 11:02:43AM -0400, Oren Laadan wrote:
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
 > >>
-> >> Matt Helsley wrote:
-> >>> On Wed, Oct 28, 2009 at 10:51:32AM +0800, Will Huang wrote:
-> >>>> Dear All,
+> >> Serge E. Hallyn wrote:
+> >>> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> >>>> Serge E. Hallyn wrote:
+> >>>>> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> >>>>>>> @@ -401,6 +409,9 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+> >>>>>>>  		case 'E':
+> >>>>>>>  			len += sprintf(format+len, "[%s]", "err %d");
+> >>>>>>>  			break;
+> >>>>>>> +		case 'C': /* count of bytes read/written to checkpoint image */
+> >>>>>>> +			len += sprintf(format+len, "[%s]", "pos %d");
+> >>>>>>> +			break;
+> >>>>>> Instead we could always output ckpt->total and then we wouldn't need %(C). I
+> >>>>>> suspect it's such a useful piece of information that it'll be repeated
+> >>>>>> in many/all format strings eventually.
+> >>>>> Yes, likewise %(T).  If that's what we want to do.
+> >>>> I agree. For the cases when there is not task, can put "none"
 > >>>>
-> >>>>          Did the Kernel based checkpoint/restart patch support X
-> windows
-> >>>> application such as firefox?
-> >>> No, and I think it may be a long time before that happens.
-> >> In short: not yet, but we're getting closer.
+> >>>>> Should we discuss here what we want an entry to look like?  For both
+> >>>>> ckpt_write_err (to the checkpoint image) and ckpt_error()?
+> >>>>>
+> >>>> Yes please !
+> >>> Actually %T isn't the current task, right, so it shouldn't always be prepended?
+> >>> It actually is only meaningful during checkpoint_task(), collect_objs(), and
+> >>> __tree_count_tasks?
+> >>>
+> >>> Ok, so how about:
+> >>>
+> >>> 	1. ckpt_write_err() always also calls ckpt_error() (which in turn calls
+> >>> 		ckpt_debug).  Avoid duplication which exists in several places
+> >>> 		right now.
+> >>> 	2. We always prepend:
+> >>>
+> >>> 		[current->pid]:[ctx->root_pid]:[ctx->active_pid]:[ctx->errno][ctx->total]
+> >>>
+> >>> 	The %(X) expansions if specified come whereever they are in the fmt
+> >>> 	string (which is what's happening now with my patchset).
+> >> So somewhere should set ctx->errno during a checkpoint.
 > >>
-> >
-> > <snip> (lots of good background)
-> >
-> >> Now back to your question: X applications cannot be checkpointed
-> >> standalone (unless, of course, X windows is modified for that).
-> >> Instead, one must checkpoint the entire user session, including
-> >> the X server itself.
-> >>
-> >> The main problem is that the X server is "talking" to the bare
-> >> hardware, and the task of recording the specific hardware state
-> >> and restoring it later is daunting, and becomes impossible if the
-> >> session is to be restarted on different hardware.
-> >>
-> >> The solution is to not run the regular X server. Instead, start
-> >> a virtual X server, such as VNC, and run the user session in it.
-> >> The main difference is that VNC server does not directly use any
-> >> hardware resources, so it is not tied to specific hardware state.
-> >> From the user's point of view - this setup is transparent with
-> >> suitable use of a VNC client.
-> >
-> > VNC is all well and good but it's hardly the norm for local
-> > desktops to run under an X server with a VNC display. That said,
-> > VNC support is much closer than any of my hare-brained ideas so..
+> >> I suppose active_pid is for restart, but it's redundant isn't it ?
+> >> (it's always active_pid) - is it the different between top-level pid-ns
+> >> and "current" pid-ns ?
+> > 
+> > No, I figured it would be meaningful for instance in places like
+> > wait_task_active().
 > 
-> There is a lot of work on server/client split of the X server
-> (of which VNC is one), and also work on embedding one display
-> manager within another (e.g. nested X, and also similar ideas
-> done with embedding a VM window in the desktop as a regular
-> window etc).
-> 
-> So eventually, I believe, embedding a (virtualized) X server in
-> an outside X server and running the entire desktop in a container
-> will eventually be possible in a manner transparent to the user.
-> 
-> And this is much more likely than checkpoint the standard X
-> server including all it's hardware related state...
-> 
-> Changing the norm starts now :)
-> 
-> Oren.
+> Perhaps then leave it out of the default printing, and have the
+> specific debug messages there write it explicitly.
 
+Ok, so then current suggested format looks like:
 
-Yes, the difference between hardware will make the task crazy. I think the X
-server should be modified to support the X based application c/r. This will
-make the problem a little easy.
+[current->pid]:[ctx->errno]:[ctx->total]
 
-Yours sincerely,
-Will Huang,
-DeviceVM, Inc.
+Though is ctx->errno helpful even in restart?  Or should we assume we'll
+figure that out through the msg in restore_notify_error()?
+
+Maybe do:
+[current->pid]=[task_pid_vnr(current)]:[ctx->total]
+
+> >> Instead of writing root_pid repeatedly, why not write sometime at the
+> >> beginning some "global" info about the checkpoint/restart ?  (e.g.
+> >> the root_pid ...)
+> > 
+> > Well it is written out (for restart) at the end, so I suppose I should
+> > switch restore_debug_free() to using ckpt_error() instead of ckpt_debug().
+> 
+> Yes, that will be helpful to reduce the noise :)
+
+-serge
