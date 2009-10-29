@@ -1,14 +1,18 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] c/r: tolerate X86_EFLAGS_RF on restart
-Date: Wed, 28 Oct 2009 21:20:04 -0400
-Message-ID: <4AE8EDC4.5010202@librato.com>
-References: <1256323024-20268-1-git-send-email-orenl@librato.com>
-	<20091026145746.GA23564@us.ibm.com>
+From: "Will Huang" <will.huang-lvxLlxTUKJQIhP1ydL5T/A@public.gmane.org>
+Subject: RE: kernel based checkpoint/restart: about X windows application
+	checkpoint and restart support.
+Date: Thu, 29 Oct 2009 09:30:44 +0800
+Message-ID: <48778.9423008964$1256779963@news.gmane.org>
+References: <20091028084717.GO31446@count0.beaverton.ibm.com>
+	<4AE85D13.9030108@librato.com>
+	<20091028161219.GQ31446@count0.beaverton.ibm.com>
+	<4AE86EC9.7040605@librato.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091026145746.GA23564-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4AE86EC9.7040605-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Content-Language: zh-cn
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,125 +22,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: 'Oren Laadan' <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>, 'Matt Helsley' <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CkFmdGVyIHJlYWRpbmcgdGhlIGNvZGUgYSBiaXQgbW9yZSwgYW5kIHNlZWluZyB0aGF0OgoKMSkg
-cHRyYWNlIHVzZXMgdGhlIGRlYnVncmVnIG9mIGEgcHJvY2VzcyBzbyBtYXkgYmUgaW50ZXJlc3Rl
-ZCBpbgp0aGF0IHBhcnRpY3VsYXIgZmxhZywgYW5kCgoyKSBldmVuIHdpdGhvdXQgcHRyYWNlIHVz
-ZXJzcGFjZSBjYW4gc2V0IHRoYXQgZmxhZyAoYnkgc3VpdGFibHkKc2V0dGluZyB0aGUgcmVzdG9y
-ZSBjb250ZXh0IGZyb20gYSBzaWduYWwgaGFuZGxlcikKCkkgbm93IHRoaW5rIHRoYXQgd2Ugc2hv
-dWxkIGluc3RlYWQ6CgoxKSBLZWVwIHRoZSBYODZfRUZMQUdTX1JGIGZyb20gdGhlIHRpbWUgb2Yg
-Y2hlY2twb2ludCAqYXMgaXMqCgoyKSBJZiB0aGUgcmVzdGFydGluZyB0YXNrIGFscmVhZHkgaGFz
-IHRoaXMgZmxhZyBzZXQgcHJpb3IgdG8KcmVzdG9yaW5nIGVmbGFncyBmcm9tIHRoZSBzYXZlZCB2
-YWx1ZSwgdGhlbiBwcmVzZXJ2ZSB0aGUgZXhpc3RpbmcKZmxhZyBldmVuIGlmIGF0IHRoZSB0aW1l
-IG9mIGNoZWNrcG9pbnQgaXQgd2Fzbid0IHNldC4KClVubGVzcyBzb21lb25lcyB5ZWxscywgSSds
-bCBjb21taXQgdGhpcyBzb29uLgoKT3JlbgoKU2VyZ2UgRS4gSGFsbHluIHdyb3RlOgo+IFF1b3Rp
-bmcgT3JlbiBMYWFkYW4gKG9yZW5sQGxpYnJhdG8uY29tKToKPj4gT24gcmVzdGFydCwgdGhlIGMv
-ciBjb2RlIHRoYXQgc2FuaXRpemVzIGEgdGFzaydzIEVGTEFHUyBmYWlsZWQgd2l0aCBhbgo+PiBl
-cnJvciBpZiB0aGUgWDg2X0VGTEFHU19SRiB3YXMgc2V0LiBIb3dldmVyLCB0aGVyZSBhcmUgY2Fz
-ZXMgaW4gd2hpY2gKPj4gYSB0YXNrIGxlZ2l0aW1hdGVseSBoYXMgdGhpcyBmbGFnIHJlY29yZGVk
-IGF0IGNoZWNrcG9pbnQsIHN1Y2ggYXM6Cj4+Cj4+IDEpIFdlIGFyZSBydW5uaW5nIGluc2lkZSBh
-IEtWTSBndWVzdCwgYW5kIHRoZSBndWVzdCBpcyBiZWluZyBkZWJ1Z2dlZAo+PiAoc2VlIGFyY2gv
-eDg2L2t2bS97c3ZtLHZteH0uYywgdmlhIGNhbGxiYWNrcyBmcm9tIHFlbXUuCj4+Cj4+IDIpIFRo
-ZSBrZXJuZWwgaXRzZWxmIGlzIGJlaW5nIGRlYnVnZ2VkIHVzaW5nIGtnYmQuCj4+Cj4+IDMpIEV4
-Y2VwdGlvbnMgdGhhdCBvY2N1ciB1bmRlciBjZXJ0YWluIGNvbmRpdGlvbiB3aWxsIHNldCB0aGlz
-IGZsYWcKPj4gb24gdGhlIGN1cnJlbnRseSBydW5uaW5nIHRhc2suIEZvciBkZXRhaWxzIHNlZSBw
-YWdlIDY3OSBpbiBJbnRlbCdzCj4+IG1hbnVhbCAoaHR0cDovL3d3dy5pbnRlbC5jb20vQXNzZXRz
-L1BERi9tYW51YWwvMjUzNjY4LnBkZiksIGxpa2U6Cj4+Cj4+ICAgV2hlbiBjYWxsaW5nIGFuIGV2
-ZW50IGhhbmRsZXIsIEludGVsIDY0IGFuZCBJQS0zMiBwcm9jZXNzb3JzCj4+ICAgZXN0YWJsaXNo
-IHRoZSB2YWx1ZSBvZiB0aGUgUkYgZmxhZyBpbiB0aGUgRUZMQUdTIGltYWdlIHB1c2hlZCBvbiB0
-aGUKPj4gICBzdGFjazoKPj4gICAgIOKAoiBGb3IgYW55IGZhdWx0LWNsYXNzIGV4Y2VwdGlvbiBl
-eGNlcHQgYSBkZWJ1ZyBleGNlcHRpb24KPj4gICAgICAgZ2VuZXJhdGVkIGluIHJlc3BvbnNlIHRv
-IGFuIGluc3RydWN0aW9uIGJyZWFrcG9pbnQsIHRoZSB2YWx1ZQo+PiAgICAgICBwdXNoZWQgZm9y
-IFJGIGlzIDEuCj4+ICAgICDigKIgRm9yIGFueSBpbnRlcnJ1cHQgYXJyaXZpbmcgYWZ0ZXIgYW55
-IGl0ZXJhdGlvbiBvZiBhIHJlcGVhdGVkCj4+ICAgICAgIHN0cmluZyBpbnN0cnVjdGlvbiBidXQg
-dGhlIGxhc3QgaXRlcmF0aW9uLCB0aGUgdmFsdWUgcHVzaGVkIGZvcgo+PiAgICAgICBSRiBpcyAx
-Lgo+PiAgICAg4oCiIEZvciBhbnkgdHJhcC1jbGFzcyBleGNlcHRpb24gZ2VuZXJhdGVkIGJ5IGFu
-eSBpdGVyYXRpb24gb2YgYQo+PiAgICAgICByZXBlYXRlZCBzdHJpbmcgaW5zdHJ1Y3Rpb24gYnV0
-IHRoZSBsYXN0IGl0ZXJhdGlvbiwgdGhlIHZhbHVlCj4+ICAgICAgIHB1c2hlZCBmb3IgUkYgaXMg
-MS4KPiAKPiBJIHdhc24ndCBxdWl0ZSBzdXJlIHdoYXQgYSAndHJhcC1jbGFzcyBleGNlcHRpb24n
-IGlzLAo+IGh0dHA6Ly93d3cueWFzaGtzLmNvbS9leGNlcHRpb24tYmFzaWNzLmh0bWwgc2F5czoK
-PiAKPiBFeGFtcGxlOiBJTlQgMyhvciBDQyBvciBDRCAyMSkgaXMgYSB0cmFwIGluc3RydWN0aW9u
-LiBJZiBhIHByb2dyYW0gaGFzIHRoaXMKPiBpbnN0cnVjdGlvbiBhbmQgaWYgdGhlIGRlYnVnZ2Vy
-IGlzIHJ1bm5pbmcsIGl0IHdpbGwgcmV0dXJuIHRoZSBuZXh0IGluc3RydWN0aW9uCj4gYWRkcmVz
-cyB0byB0aGlzIGRlYnVnZ2VyLiBXaGVyZSBkZWJ1Z2dlciBjYW4gY29udGludWUgaXQgZGVidWdn
-aW5nLgo+IAo+IERvZXMgdGhhdCBub3QgbWVhbiB0aGF0IGlmIHdlIGNoZWNrcG9pbnQgdDEgYW5k
-IHQyIHdoZXJlIHQxIGlzIHB0cmFjaW5nIHQyLCB0Mgo+IG1pZ2h0IGhhdmUgUkYgc2V0IHRvIDE/
-ICBTbyB0aGlzIGlzbid0IGdlbmVyYWxseSBzYWZlLCByaWdodD8KPiAKPiBJSVVDIGl0IGFsc28g
-Y291bGQgYmUgc2V0IGZvciB0aGluZ3MgbGlrZSBhICJHZW5lcmFsIFByb3RlY3Rpb24gRXhjZXB0
-aW9uKFR5cGU6Cj4gRmF1bHQpIiBhdCBjaGVja3BvaW50IGluIHdoaWNoIGNhc2Ugd2UgY291bGQg
-cmVhbGx5IG1lc3MgdXAgdGhlIHN3IGF0Cj4gcmVzdGFydC4KPiAKPiBPciBtYXliZSBJJ20gdG90
-YWxseSBtaXN1bmRlcnN0YW5kaW5nLi4uPwo+IAo+PiAgICAg4oCiIEZvciBvdGhlciBjYXNlcywg
-dGhlIHZhbHVlIHB1c2hlZCBmb3IgUkYgaXMgdGhlIHZhbHVlIHRoYXQgd2FzCj4+ICAgICAgIGlu
-IEVGTEFHLlJGIGF0IHRoZSB0aW1lIHRoZSBldmVudCBoYW5kbGVyIHdhcyBjYWxsZWQuCj4+ICAg
-Wy4uLl0KPj4KPj4gQ2FzZSAjMyBpcyBjb25zaXN0ZW50IHdpdGggdGhlIGZhY3QgdGhhdCBpbiBh
-bGwgY2FzZXMgd2hlcmUgd2UKPj4gb2JzZXJ2ZWQgdGhlIGlzc3VlIHRoZXJlIHdhcyBhIHNlbmRt
-YWlsIHByb2Nlc3MgZG9pbmcgSU8uCj4+Cj4+IENsZWFybHksIHRoZSBYODZfRUZMQUdTX1JGIGlz
-IHZhbGlkIHRvIGJlIHNldC4KPj4KPj4gVGhpcyBwYXRjaGVzIGZpeGVzIHRoZSByZXN0YXJ0IHRv
-Ogo+Pgo+PiAxKSBTaWxlbnRseSBpZ25vcmUgdGhlIFg4Nl9FRkxBR1NfUkYgaWYgd2FzIHNldCBh
-dCBjaGVja3BvaW50OiB0aGlzCj4+IGFsbG93cyByZXN0YXJ0IHRvIHRvbGVyYXRlIHRoZSBmbGFn
-IGFuZCBzYWZlbHkgY29tcGxldGUgdGhlIHJlc3RhcnQuCj4+Cj4+IDIpIFByZXNlcnZlIHRoZSBl
-eGlzdGluZyBYODZfRUZMQUdTX1JGIG9mIGEgcmVzdGFydGluZyB0YXNrIChpbnN0ZWFkCj4+IG9m
-IG92ZXJ3cml0aW5nIGl0KTogdGhpcyBlbnN1cmVzIHRoYXQgcmVzdGFydGluZyBkb2VzIG5vdCBp
-bnRlcmZlcmUKPj4gd2l0aCBrdm0sIGtnZGIsIGV0Yy4KPj4KPj4gU2lnbmVkLW9mZi1ieTogT3Jl
-biBMYWFkYW4gPG9yZW5sQGNzLmNvbHVtYmlhLmVkdT4KPj4gQ2M6IEFsZXhleSBEb2JyaXlhbiA8
-YWRvYnJpeWFuQGdtYWlsLmNvbT4KPj4gQ2M6IE1hdHQgSGVsc2xleSA8bWF0dGhsdGNAdXMuaWJt
-LmNvbT4KPj4gQ2M6IEF2aSBLaXZpdHkgPGF2aUByZWRoYXQuY29tPgo+PiAtLS0KPj4gIGFyY2gv
-eDg2L21tL2NoZWNrcG9pbnQuYyB8ICAgNDAgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysr
-KysrKysrKystLQo+PiAgMSBmaWxlcyBjaGFuZ2VkLCAzOCBpbnNlcnRpb25zKCspLCAyIGRlbGV0
-aW9ucygtKQo+Pgo+PiBkaWZmIC0tZ2l0IGEvYXJjaC94ODYvbW0vY2hlY2twb2ludC5jIGIvYXJj
-aC94ODYvbW0vY2hlY2twb2ludC5jCj4+IGluZGV4IDlkZDhlMTIuLmE5M2JiNmYgMTAwNjQ0Cj4+
-IC0tLSBhL2FyY2gveDg2L21tL2NoZWNrcG9pbnQuYwo+PiArKysgYi9hcmNoL3g4Ni9tbS9jaGVj
-a3BvaW50LmMKPj4gQEAgLTI3LDEzICsyNyw0OSBAQCBzdGF0aWMgaW50IGNoZWNrX2VmbGFncyhf
-X3UzMiBlZmxhZ3MpCj4+ICAjZGVmaW5lIFg4Nl9FRkxBR1NfQ0tQVF9NQVNLICBcCj4+ICAJKFg4
-Nl9FRkxBR1NfQ0YgfCBYODZfRUZMQUdTX1BGIHwgWDg2X0VGTEFHU19BRiB8IFg4Nl9FRkxBR1Nf
-WkYgfCBcCj4+ICAJIFg4Nl9FRkxBR1NfU0YgfCBYODZfRUZMQUdTX1RGIHwgWDg2X0VGTEFHU19E
-RiB8IFg4Nl9FRkxBR1NfT0YgfCBcCj4+IC0JIFg4Nl9FRkxBR1NfTlQgfCBYODZfRUZMQUdTX0FD
-IHwgWDg2X0VGTEFHU19JRCkKPj4gKwkgWDg2X0VGTEFHU19OVCB8IFg4Nl9FRkxBR1NfQUMgfCBY
-ODZfRUZMQUdTX0lEIHwgWDg2X0VGTEFHU19SRikKPj4gIAo+PiAgCWlmICgoZWZsYWdzICYgflg4
-Nl9FRkxBR1NfQ0tQVF9NQVNLKSAhPSAoWDg2X0VGTEFHU19JRiB8IDB4MikpCj4+ICAJCXJldHVy
-biAwOwo+PiAgCXJldHVybiAxOwo+PiAgfQo+PiAgCj4+ICtzdGF0aWMgdm9pZCByZXN0b3JlX2Vm
-bGFncyhzdHJ1Y3QgcHRfcmVncyAqcmVncywgX191MzIgZWZsYWdzKQo+PiArewo+PiArCS8qCj4+
-ICsJICogQSB0YXNrIG1heSBoYXZlIGhhZCBYODZfRUZMQUdTX1JGIHNldCBhdCBjaGVja3BvaW50
-LCAuZS5nOgo+PiArCSAqIDEpIEl0IHJhbiBpbiBhIEtWTSBndWVzdCwgYW5kIHRoZSBndWVzdCB3
-YXMgYmVpbmcgZGVidWdnZWQsCj4+ICsJICogMikgVGhlIGtlcm5lbCB3YXMgZGVidWdnZWQgdXNp
-bmcga2diZCwKPj4gKwkgKiAzKSBGcm9tIEludGVsJ3MgbWFudWFsOiAiV2hlbiBjYWxsaW5nIGFu
-IGV2ZW50IGhhbmRsZXIsIAo+PiArCSAqICAgIEludGVsIDY0IGFuZCBJQS0zMiBwcm9jZXNzb3Jz
-IGVzdGFibGlzaCB0aGUgdmFsdWUgb2YgdGhlCj4+ICsJICogICAgUkYgZmxhZyBpbiB0aGUgRUZM
-QUdTIGltYWdlIHB1c2hlZCBvbiB0aGUgc3RhY2s6Cj4+ICsJICogIC0gRm9yIGFueSBmYXVsdC1j
-bGFzcyBleGNlcHRpb24gZXhjZXB0IGEgZGVidWcgZXhjZXB0aW9uCj4+ICsJICogICAgZ2VuZXJh
-dGVkIGluIHJlc3BvbnNlIHRvIGFuIGluc3RydWN0aW9uIGJyZWFrcG9pbnQsIHRoZQo+PiArCSAq
-ICAgIHZhbHVlIHB1c2hlZCBmb3IgUkYgaXMgMS4KPj4gKwkgKiAgLSBGb3IgYW55IGludGVycnVw
-dCBhcnJpdmluZyBhZnRlciBhbnkgaXRlcmF0aW9uIG9mIGEKPj4gKwkgKiAgICByZXBlYXRlZCBz
-dHJpbmcgaW5zdHJ1Y3Rpb24gYnV0IHRoZSBsYXN0IGl0ZXJhdGlvbiwgdGhlCj4+ICsJICogICAg
-dmFsdWUgcHVzaGVkIGZvciBSRiBpcyAxLgo+PiArCSAqICAtIEZvciBhbnkgdHJhcC1jbGFzcyBl
-eGNlcHRpb24gZ2VuZXJhdGVkIGJ5IGFueSBpdGVyYXRpb24KPj4gKwkgKiAgICBvZiBhIHJlcGVh
-dGVkIHN0cmluZyBpbnN0cnVjdGlvbiBidXQgdGhlIGxhc3QgaXRlcmF0aW9uLAo+PiArCSAqICAg
-IHRoZSB2YWx1ZSBwdXNoZWQgZm9yIFJGIGlzIDEuCj4+ICsJICogIC0gRm9yIG90aGVyIGNhc2Vz
-LCB0aGUgdmFsdWUgcHVzaGVkIGZvciBSRiBpcyB0aGUgdmFsdWUKPj4gKwkgKiAgICB0aGF0IHdh
-cyBpbiBFRkxBRy5SRiBhdCB0aGUgdGltZSB0aGUgZXZlbnQgaGFuZGxlciB3YXMKPj4gKwkgKiAg
-ICBjYWxsZWQuCj4+ICsJICogIFtmcm9tOiBodHRwOi8vd3d3LmludGVsLmNvbS9Bc3NldHMvUERG
-L21hbnVhbC8yNTM2NjgucGRmXQo+PiArCSAqCj4+ICsJICogU286ICgxKSBzaWxlbnRseSBpZ25v
-cmUgWDg2X0VGTEFHU19SRiBmcm9tIGNoZWNrcG9pbnQgdGltZSwKPj4gKwkgKiBhcyBpdCdzIGly
-cmVsZXZhbnQgZm9yIHRoZSBjdXJyZW50IHByb2Nlc3MsICgyKSBwcmVzZXJ2ZQo+PiArCSAqIHRo
-ZSBleGlzdGluZyBYODZfRUZMQUdTX1JGIG9mIHRoaXMgcHJvY2VzcyBhcyBpdCBpdCBtYXkgYmUK
-Pj4gKwkgKiB1c2VkIGJ5IGt2bS9rZ2RiLiBEaXNhYmxlIHByZWVtcHRpb24gdG8gcHJvdGVjdCB0
-ZXN0IGFuZAo+PiArCSAqIGNoYW5nZSBvZiBvdXIgZWZsYWdzLgo+PiArCSAqLwo+PiArCXByZWVt
-cHRfZGlzYWJsZSgpOwo+PiArCWVmbGFncyAmPSB+WDg2X0VGTEFHU19SRjsKPj4gKwllZmxhZ3Mg
-fD0gKHJlZ3MtPmZsYWdzICYgWDg2X0VGTEFHU19SRik7Cj4+ICsJcmVncy0+ZmxhZ3MgPSBlZmxh
-Z3M7Cj4+ICsJcHJlZW1wdF9lbmFibGUoKTsKPj4gK30KPj4gKwo+PiAgc3RhdGljIGludCBjaGVj
-a190bHMoc3RydWN0IGRlc2Nfc3RydWN0ICpkZXNjKQo+PiAgewo+PiAgCWlmICghZGVzYy0+YSAm
-JiAhZGVzYy0+YikKPj4gQEAgLTQzMyw3ICs0NjksNyBAQCBzdGF0aWMgaW50IGxvYWRfY3B1X3Jl
-Z3Moc3RydWN0IGNrcHRfaGRyX2NwdSAqaCwgc3RydWN0IHRhc2tfc3RydWN0ICp0KQo+PiAgCXJl
-Z3MtPm9yaWdfYXggPSBoLT5vcmlnX2F4Owo+PiAgCXJlZ3MtPmlwID0gaC0+aXA7Cj4+ICAKPj4g
-LQlyZWdzLT5mbGFncyA9IGgtPmZsYWdzOwo+PiArCXJlc3RvcmVfZWZsYWdzKHJlZ3MsIGgtPmZs
-YWdzKTsKPj4gIAlyZWdzLT5zcCA9IGgtPnNwOwo+PiAgCj4+ICAJcmVncy0+ZHMgPSBkZWNvZGVf
-c2VnbWVudChoLT5kcyk7Cj4+IC0tIAo+PiAxLjYuMC40Cj4+Cj4+IF9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCj4+IENvbnRhaW5lcnMgbWFpbGluZyBsaXN0
-Cj4+IENvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKPj4gaHR0cHM6Ly9saXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnMKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+
+
+> -----Original Message-----
+> From: Oren Laadan [mailto:orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org]
+> Sent: Thursday, October 29, 2009 12:18 AM
+> To: Matt Helsley
+> Cc: Will Huang; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> Subject: Re: kernel based checkpoint/restart: about X windows application
+> checkpoint and restart support.
+> 
+> 
+> 
+> Matt Helsley wrote:
+> > On Wed, Oct 28, 2009 at 11:02:43AM -0400, Oren Laadan wrote:
+> >>
+> >> Matt Helsley wrote:
+> >>> On Wed, Oct 28, 2009 at 10:51:32AM +0800, Will Huang wrote:
+> >>>> Dear All,
+> >>>>
+> >>>>          Did the Kernel based checkpoint/restart patch support X
+> windows
+> >>>> application such as firefox?
+> >>> No, and I think it may be a long time before that happens.
+> >> In short: not yet, but we're getting closer.
+> >>
+> >
+> > <snip> (lots of good background)
+> >
+> >> Now back to your question: X applications cannot be checkpointed
+> >> standalone (unless, of course, X windows is modified for that).
+> >> Instead, one must checkpoint the entire user session, including
+> >> the X server itself.
+> >>
+> >> The main problem is that the X server is "talking" to the bare
+> >> hardware, and the task of recording the specific hardware state
+> >> and restoring it later is daunting, and becomes impossible if the
+> >> session is to be restarted on different hardware.
+> >>
+> >> The solution is to not run the regular X server. Instead, start
+> >> a virtual X server, such as VNC, and run the user session in it.
+> >> The main difference is that VNC server does not directly use any
+> >> hardware resources, so it is not tied to specific hardware state.
+> >> From the user's point of view - this setup is transparent with
+> >> suitable use of a VNC client.
+> >
+> > VNC is all well and good but it's hardly the norm for local
+> > desktops to run under an X server with a VNC display. That said,
+> > VNC support is much closer than any of my hare-brained ideas so..
+> 
+> There is a lot of work on server/client split of the X server
+> (of which VNC is one), and also work on embedding one display
+> manager within another (e.g. nested X, and also similar ideas
+> done with embedding a VM window in the desktop as a regular
+> window etc).
+> 
+> So eventually, I believe, embedding a (virtualized) X server in
+> an outside X server and running the entire desktop in a container
+> will eventually be possible in a manner transparent to the user.
+> 
+> And this is much more likely than checkpoint the standard X
+> server including all it's hardware related state...
+> 
+> Changing the norm starts now :)
+> 
+> Oren.
+
+
+Yes, the difference between hardware will make the task crazy. I think the X
+server should be modified to support the X based application c/r. This will
+make the problem a little easy.
+
+Yours sincerely,
+Will Huang,
+DeviceVM, Inc.
