@@ -1,15 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: factor out objref handling from {_,}ckpt_read_obj()
-Date: Thu, 29 Oct 2009 14:30:18 -0700
-Message-ID: <20091029213018.GD14023@count0.beaverton.ibm.com>
-References: <1256710435-3266-1-git-send-email-matthltc@us.ibm.com>
-	<1256838612-17372-1-git-send-email-orenl@librato.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 01/17] ckpt_write_err: use single format with %(T) style
+	tokens
+Date: Thu, 29 Oct 2009 18:20:23 -0400
+Message-ID: <4AEA1527.7090907@librato.com>
+References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
+	<1256849682-858-2-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1256838612-17372-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1256849682-858-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,118 +19,141 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Oct 29, 2009 at 01:50:12PM -0400, Oren Laadan wrote:
-> As noted by Matt Helsley, a portion of one of these functions was
-> missing the block "dispatching" errors. Otherwise the handling of
-> shard objects is pretty much the same, so this patch factors out the
-> common code.
+
+
+serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-
-Looks good.
-
-Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
+> Matt Helsley originally suggested this to avoid having two
+> format strings.  This is not bisect-safe and therefore not
+> even compile-tested.  Every call to ckpt_write_err must be
+> updated to use a single format.
+> 
+> Changelog:
+> 	Oct 29: merge with the next patch, moving ckpt_generate_fmt()
+> 		into checkpoing/sys.c and making it non-static so that
+> 		we can use it in ckpt_error().
+> 	Oct 28: also fix comment above ckpt_generate_fmt()
+> 	Oct 27: ensure %(T) has a closing paren
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  checkpoint/restart.c |   58 ++++++++++++++++++++++++++-----------------------
->  1 files changed, 31 insertions(+), 27 deletions(-)
+>  checkpoint/checkpoint.c    |  105 +++-----------------------------------------
+>  checkpoint/sys.c           |   95 +++++++++++++++++++++++++++++++++++++++
+>  include/linux/checkpoint.h |   13 +++--
+>  3 files changed, 110 insertions(+), 103 deletions(-)
 > 
-> diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-> index 9b75de8..130b4b2 100644
-> --- a/checkpoint/restart.c
-> +++ b/checkpoint/restart.c
-> @@ -238,6 +238,35 @@ static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
->  	return ret;
+> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+> index 6eb8f3b..c6be4f9 100644
+> --- a/checkpoint/checkpoint.c
+> +++ b/checkpoint/checkpoint.c
+> @@ -96,104 +96,15 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
+>  	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
 >  }
-> 
-> +/**
-> + * ckpt_read_obj_dispatch - dispatch ERRORs and OBJREFs; don't return them
+>  
+
+[...]
+
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index 260a1ee..9b2de18 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -339,6 +339,101 @@ int walk_task_subtree(struct task_struct *root,
+>  	return (ret < 0 ? ret : total);
+>  }
+>  
+
+Some pieces of the comment below are obsolete...
+
+> +/*
+> + * ckpt_generate_fmt - generate standard checkpoint error message
 > + * @ctx: checkpoint context
-> + * @h: desired ckpt_hdr
+> + * @fmt: message format
+> + *
+> + * This generates a unified format of checkpoint error messages, to
+> + * ease (after the failure) inspection by userspace tools. It converts
+> + * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
+> + *
+> + * PREFMT is constructed from @fmt by subtituting format snippets
+> + * according to the contents of @fmt.  The format characters in
+> + * @fmt can be %(E) (error), %(O) (objref), %(P) (pointer), %(S) (string),
+> + * %(C) (bytes read/written out of checkpoint image so far), * and %(V)
+							      ^^^^^
+> + * (variable/symbol). For example, %(E) will generate a "err %d"
+> + * in PREFMT.
+      ^^^^^^^^^
+> + *
+> + * If @fmt begins with %(T), PREFMT will begin with "pid %d tsk %s"
+	    ^^^^^^^^^
+> + * with the pid and the tsk->comm of the currently checkpointed task.
+> + * The latter is taken from ctx->tsk, and is it the responsbilility of
+						typo  ^^^^^^^^^^^^^^^^^
+> + * the caller to have a valid pointer there (in particular, functions
+> + * that iterate on the processes: collect_objects, checkpoint_task,
+> + * and tree_count_tasks).
+> + *
+> + * The caller of ckpt_write_err() and _ckpt_write_err() must provide
+		    ^^^^^^^^^^^^^^^^	 ^^^^^^^^^^^^^^^^^
+> + * the additional variabes, in order, to match the @fmt0 (except for
+		typo ^^^^^^^^			     ^^^^^^^
+> + * the T key), e.g.:
+      ^^^^^^^^^^  (obsolete)
+> + *
+> + *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags)
+			  ^^^^^^^^
+> + *
+> + * Here, T is simply passed, E expects an integer (err), O expects an
+> + * integer (objref), and the last argument matches the format string.
+
+Rewrite example...
+
+> + *
+> + * XXX Do we want 'T' and 'C' to simply always be prepended?
 > + */
-> +static int ckpt_read_obj_dispatch(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
+> +char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
 > +{
-> +	int ret;
+> +	char *format;
+> +	int alloclen, len = 0;
+> +	int first = 1;
 > +
-> +	while (1) {
-> +		ret = ckpt_kread(ctx, h, sizeof(*h));
-> +		if (ret < 0)
-> +			return ret;
-> +		_ckpt_debug(CKPT_DRW, "type %d len %d\n", h->type, h->len);
-> +		if (h->len < sizeof(*h))
-> +			return -EINVAL;
+> +	/*
+> +	 * 17 for "pid %d" (plus space)
+> +	 * 21 for "tsk %s" (tsk->comm)
+> +	 * up to 8 per varfmt entry
+		      ^^^^^^^^
+
+> +	 */
+> +	alloclen = 37 + 8 * strlen(fmt);
+
+This calculation assumed that @fmt had only format string...
+At the very minimum you could take strlen(fmt)/3 (+1 to round up)
+
+I thought you were going to use a @ctx->buffer or something ?
+
+> +	format = kzalloc(alloclen, GFP_KERNEL);
+> +	if (!format)
+> +		return NULL;
 > +
-> +		if (h->type == CKPT_HDR_ERROR) {
-> +			ret = _ckpt_read_err(ctx, h);
-> +			if (ret < 0)
-> +				return ret;
-> +		} else if (h->type == CKPT_HDR_OBJREF) {
-> +			ret = _ckpt_read_objref(ctx, h);
-> +			if (ret < 0)
-> +				return ret;
-> +		} else
-> +			return 0;
-> +	}
-> +}
-> 
->  /**
->   * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
-> @@ -254,26 +283,11 @@ static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
->  {
->  	int ret;
-> 
-> - again:
-> -	ret = ckpt_kread(ctx, h, sizeof(*h));
-> +	ret = ckpt_read_obj_dispatch(ctx, h);
->  	if (ret < 0)
->  		return ret;
->  	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
->  		    h->type, h->len, len, max);
-> -	if (h->len < sizeof(*h))
-> -		return -EINVAL;
-> -
-> -	if (h->type == CKPT_HDR_ERROR) {
-> -		ret = _ckpt_read_err(ctx, h);
-> -		if (ret < 0)
-> -			return ret;
-> -		goto again;
-> -	} else if (h->type == CKPT_HDR_OBJREF) {
-> -		ret = _ckpt_read_objref(ctx, h);
-> -		if (ret < 0)
-> -			return ret;
-> -		goto again;
-> -	}
-> 
->  	/* if len specified, enforce, else if maximum specified, enforce */
->  	if ((len && h->len != len) || (!len && max && h->len > max))
-> @@ -362,21 +376,11 @@ static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
->  	struct ckpt_hdr *h;
->  	int ret;
-> 
-> - again:
-> -	ret = ckpt_kread(ctx, &hh, sizeof(hh));
-> +	ret = ckpt_read_obj_dispatch(ctx, &hh);
->  	if (ret < 0)
->  		return ERR_PTR(ret);
->  	_ckpt_debug(CKPT_DRW, "type %d len %d(%d,%d)\n",
->  		    hh.type, hh.len, len, max);
-> -	if (hh.len < sizeof(*h))
-> -		return ERR_PTR(-EINVAL);
-> -
-> -	if (hh.type == CKPT_HDR_OBJREF) {
-> -		ret = _ckpt_read_objref(ctx, &hh);
-> -		if (ret < 0)
-> -			return ERR_PTR(ret);
-> -		goto again;
-> -	}
-> 
->  	/* if len specified, enforce, else if maximum specified, enforce */
->  	if ((len && hh.len != len) || (!len && max && hh.len > max))
-> -- 
-> 1.6.0.4
-> 
+> +	for (; *fmt; fmt++) {
+> +		BUG_ON(len > alloclen);
+> +		if (*fmt != '%' || fmt[1] != '(' || fmt[3] != ')') {
+
+This is still a bit risky .. how about adding
+	|| fmt[2] == '\0'
+between the 2nd and 3rd test ?
+
+> +			format[len++] = *fmt;
+> +			continue;
+> +		}
+> +		if (!first)
+> +			format[len++] = ' ';
+> +		else
+> +			first = 0;
+
+[...]
+
+Oren.
