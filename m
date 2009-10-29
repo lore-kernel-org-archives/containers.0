@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 14/17] ckpt_error in checkpoint/process.c
-Date: Thu, 29 Oct 2009 15:54:39 -0500
-Message-ID: <1256849682-858-15-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 05/17] ckpt_write_err update checkpoint/memory.c
+Date: Thu, 29 Oct 2009 15:54:30 -0500
+Message-ID: <1256849682-858-6-git-send-email-serue@us.ibm.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,51 +25,48 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/process.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+ checkpoint/memory.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index e84683f..9f46769 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -581,14 +581,14 @@ static int restore_task_creds(struct ckpt_ctx *ctx)
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 656614c..c94a85e 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -679,7 +679,7 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			 vma->vm_start, vma->vm_end, vma->vm_flags);
  
- 	realcred = ckpt_obj_fetch(ctx, h->cred_ref, CKPT_OBJ_CRED);
- 	if (IS_ERR(realcred)) {
--		ckpt_debug("Error %ld fetching realcred (ref %d)\n",
-+		ckpt_error(ctx, "%(T)Error %ld fetching realcred (ref %(O))\n",
- 			PTR_ERR(realcred), h->cred_ref);
- 		ret = PTR_ERR(realcred);
- 		goto out;
+ 		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
+-			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
++			ckpt_write_err(ctx, "%(T)%(E)vma: bad flags (%#lx)\n",
+ 				       -ENOSYS, vma->vm_flags);
+ 			ret = -ENOSYS;
+ 			break;
+@@ -692,7 +692,7 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 		else
+ 			ret = -ENOSYS;
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "vma: failed", ret);
++			ckpt_write_err(ctx, "%(T)%(E)vma: failed", ret);
+ 			break;
+ 		}
+ 		/*
+@@ -821,7 +821,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	if (mm->exe_file) {
+ 		ret = ckpt_collect_file(ctx, mm->exe_file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect exe_file", ret);
++			ckpt_write_err(ctx, "%(T)%(E)mm: collect exe_file", ret);
+ 			goto out;
+ 		}
  	}
- 	ecred = ckpt_obj_fetch(ctx, h->ecred_ref, CKPT_OBJ_CRED);
- 	if (IS_ERR(ecred)) {
--		ckpt_debug("Error %ld fetching ecred (ref %d)\n",
-+		ckpt_error(ctx, "%(T)Error %ld fetching ecred (ref %(O))\n",
- 			PTR_ERR(ecred), h->ecred_ref);
- 		ret = PTR_ERR(ecred);
- 		goto out;
-@@ -614,18 +614,18 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
- 	 */
- 	ret = restore_task_creds(ctx);
- 	if (ret < 0) {
--		ckpt_debug("restore_task_creds returned %d\n", ret);
-+		ckpt_error(ctx, "%(T)restore_task_creds returned %d\n", ret);
- 		return ret;
+@@ -831,7 +831,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			continue;
+ 		ret = ckpt_collect_file(ctx, file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect vm_file", ret);
++			ckpt_write_err(ctx, "%(T)%(E)mm: collect vm_file", ret);
+ 			break;
+ 		}
  	}
- 	ret = restore_task_ns(ctx);
- 	if (ret < 0) {
--		ckpt_debug("restore_task_ns returned %d\n", ret);
-+		ckpt_error(ctx, "%(T)restore_task_ns returned %d\n", ret);
- 		return ret;
- 	}
- 
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
- 	if (IS_ERR(h)) {
--		ckpt_debug("Error fetching task obj\n");
-+		ckpt_error(ctx, "%(T)Error %d fetching task obj\n", PTR_ERR(h));
- 		return PTR_ERR(h);
- 	}
- 
 -- 
 1.6.1
