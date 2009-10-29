@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 02/17] ckpt_write_err update arch/x86/mm/checkpoint.c
-Date: Thu, 29 Oct 2009 15:54:27 -0500
-Message-ID: <1256849682-858-3-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 08/17] ckpt_write_err update checkpoint/signal.c
+Date: Thu, 29 Oct 2009 15:54:33 -0500
+Message-ID: <1256849682-858-9-git-send-email-serue@us.ibm.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,26 +25,49 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/mm/checkpoint.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ checkpoint/signal.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-index 9dd8e12..3b0f514 100644
---- a/arch/x86/mm/checkpoint.c
-+++ b/arch/x86/mm/checkpoint.c
-@@ -116,11 +116,11 @@ static unsigned short decode_segment(__u16 seg)
- static int may_checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	if (t->thread.vm86_info) {
--		ckpt_write_err(ctx, "TE", "task in VM86 mode", -EBUSY);
-+		ckpt_write_err(ctx, "%(T)%(E)task in VM86 mode", -EBUSY);
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index cdfb142..3eed685 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -287,7 +287,7 @@ static int checkpoint_sigpending(struct ckpt_ctx *ctx,
+ 	list_for_each_entry(q, &pending->list, list) {
+ 		/* TODO: remove after adding support for posix-timers */
+ 		if ((q->info.si_code & __SI_MASK) == __SI_TIMER) {
+-			ckpt_write_err(ctx, "TE", "signal SI_TIMER", -ENOTSUPP);
++			ckpt_write_err(ctx, "%(T)%(E)signal SI_TIMER", -ENOTSUPP);
+ 			return -ENOTSUPP;
+ 		}
+ 		nr_pending++;
+@@ -341,7 +341,8 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	/* TODO: remove after adding support for posix-timers */
+ 	if (!list_empty(&signal->posix_timers)) {
+-		ckpt_write_err(ctx, "TEP", "posix-timers\n", -ENOTSUPP, signal);
++		ckpt_write_err(ctx, "%(T)%(E)%(P)posix-timers\n", -ENOTSUPP,
++				signal);
+ 		unlock_task_sighand(t, &flags);
+ 		ret = -ENOTSUPP;
+ 		goto out;
+@@ -653,7 +654,7 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
+ 	if (!lock_task_sighand(t, &flags)) {
+-		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)signand missing", -EBUSY);
  		return -EBUSY;
  	}
- 	if (task_thread_info(t)->flags & CKPT_X86_TIF_UNSUPPORTED) {
--		ckpt_write_err(ctx, "TE", "bad thread info flags %#lx", -EBUSY);
-+		ckpt_write_err(ctx, "%(T)%(E)bad thread info flags %#lx", -EBUSY);
+ 	list_splice_init(&t->pending.list, &pending.list);
+@@ -664,7 +665,7 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	/* re-attach the borrowed queue */
+ 	if (!lock_task_sighand(t, &flags)) {
+-		ckpt_write_err(ctx, "TE", "signand missing", -EBUSY);
++		ckpt_write_err(ctx, "%(T)%(E)sighand missing", -EBUSY);
  		return -EBUSY;
  	}
- 	return 0;
+ 	list_splice(&pending.list, &t->pending.list);
 -- 
 1.6.1
