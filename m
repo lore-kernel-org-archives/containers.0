@@ -1,19 +1,14 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC PATCH 11/17] define function to print error messages to
-	user log
-Date: Wed, 28 Oct 2009 20:44:40 -0400
-Message-ID: <4AE8E578.4030300@librato.com>
-References: <1256683587-23961-1-git-send-email-serge@us.ibm.com>
-	<1256683587-23961-12-git-send-email-serge@us.ibm.com>
-	<20091028181415.GB14023@count0.beaverton.ibm.com>
-	<20091028205424.GA27394@us.ibm.com> <4AE8BCB5.4030406@librato.com>
-	<20091028221208.GA30227@us.ibm.com> <4AE8C639.6090105@librato.com>
-	<20091029001223.GA1463@us.ibm.com>
+Subject: Re: [PATCH] [RFC] Factor out shared portion of [_]ckpt_read_obj
+Date: Wed, 28 Oct 2009 21:03:21 -0400
+Message-ID: <4AE8E9D9.5010304@librato.com>
+References: <1256710435-3266-1-git-send-email-matthltc@us.ibm.com>
+	<20091028203504.GA26291@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091029001223.GA1463-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091028203504.GA26291-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,64 +25,26 @@ List-Id: containers.vger.kernel.org
 
 
 Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>> It looked like a portion of one of these functions was missing
+>> the block "dispatching" errors so I factored this section out
+>> and called it from both functions. Was there a good reason it
+>> was missing?
 >>
->> Serge E. Hallyn wrote:
->>> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
->>>> Serge E. Hallyn wrote:
->>>>> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->>>>>>> @@ -401,6 +409,9 @@ char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
->>>>>>>  		case 'E':
->>>>>>>  			len += sprintf(format+len, "[%s]", "err %d");
->>>>>>>  			break;
->>>>>>> +		case 'C': /* count of bytes read/written to checkpoint image */
->>>>>>> +			len += sprintf(format+len, "[%s]", "pos %d");
->>>>>>> +			break;
->>>>>> Instead we could always output ckpt->total and then we wouldn't need %(C). I
->>>>>> suspect it's such a useful piece of information that it'll be repeated
->>>>>> in many/all format strings eventually.
->>>>> Yes, likewise %(T).  If that's what we want to do.
->>>> I agree. For the cases when there is not task, can put "none"
->>>>
->>>>> Should we discuss here what we want an entry to look like?  For both
->>>>> ckpt_write_err (to the checkpoint image) and ckpt_error()?
->>>>>
->>>> Yes please !
->>> Actually %T isn't the current task, right, so it shouldn't always be prepended?
->>> It actually is only meaningful during checkpoint_task(), collect_objs(), and
->>> __tree_count_tasks?
->>>
->>> Ok, so how about:
->>>
->>> 	1. ckpt_write_err() always also calls ckpt_error() (which in turn calls
->>> 		ckpt_debug).  Avoid duplication which exists in several places
->>> 		right now.
->>> 	2. We always prepend:
->>>
->>> 		[current->pid]:[ctx->root_pid]:[ctx->active_pid]:[ctx->errno][ctx->total]
->>>
->>> 	The %(X) expansions if specified come whereever they are in the fmt
->>> 	string (which is what's happening now with my patchset).
->> So somewhere should set ctx->errno during a checkpoint.
->>
->> I suppose active_pid is for restart, but it's redundant isn't it ?
->> (it's always active_pid) - is it the different between top-level pid-ns
->> and "current" pid-ns ?
+>> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> No, I figured it would be meaningful for instance in places like
-> wait_task_active().
-
-Perhaps then leave it out of the default printing, and have the
-specific debug messages there write it explicitly.
-
+> Good catch, but wouldn't it be better to instead factor the code
+> from label again: up to
 > 
->> Instead of writing root_pid repeatedly, why not write sometime at the
->> beginning some "global" info about the checkpoint/restart ?  (e.g.
->> the root_pid ...)
+> 	/* if len specified, enforce, else if maximum specified, enforce */
+> 	if ((len && h->len != len) || (!len && max && h->len > max))
+> 		return -EINVAL;
 > 
-> Well it is written out (for restart) at the end, so I suppose I should
-> switch restore_debug_free() to using ckpt_error() instead of ckpt_debug().
+> out of both into one function?  This feels more artificial, and I don't
+> see any other meaningful differences.
+> 
 
-Yes, that will be helpful to reduce the noise :)
+Yes, I'll do just that.
+(Thanks for the fix, Matt).
 
 Oren.
