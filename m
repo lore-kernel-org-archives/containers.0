@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 15/22] explain locking for write_err_msg
-Date: Fri, 30 Oct 2009 18:00:29 -0500
-Message-ID: <1256943629-4531-8-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 14/22] define ckpt_error and implement ckpt_do_write_msg
+Date: Fri, 30 Oct 2009 18:00:28 -0500
+Message-ID: <1256943629-4531-7-git-send-email-serue@us.ibm.com>
 References: <1256943629-4531-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,47 +25,101 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint.c |   21 +++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
+ checkpoint/sys.c           |   64 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h |    6 +++-
+ 2 files changed, 69 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 71340de..f057c7a 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -96,6 +96,13 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
- 	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index b959b27..94cbe57 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -433,6 +433,70 @@ void ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+ 	s[len] = '\0';
  }
  
 +/*
-+ * ckpt_fill_err_string() can be called under spinlock and therefore
-+ * must not sleep.  So we protect ctx->err_string and ->err_string_len
-+ * with ctx->err_string_lock which is a spinlock.
-+ * We must also take the ctx->fmt_buf_lock (also a spin_lock) for the
-+ * whole time that we are writing to and reading from ctx->fmt_buf.
++ * Write ctx->msg_buf to user-provided log and to syslog
++ * Called under ctx->msg_buf_mutex.
 + */
- static void ckpt_fill_err_string(struct ckpt_ctx *ctx, char *fmt, va_list ap)
- {
- 	va_list aq;
-@@ -166,6 +173,20 @@ void __ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
-  * @fmt: error string format
-  * @...: error string arguments
-  *
-+ * Here is the locking rationale:
-+ * __ckpt_write_err() (which can be called from spinlock context)
-+ * writes to ctx->err_string under ctx->err_string_lock.
-+ *
-+ * ckpt_write_err() in turn copies ctx->err_string to ctx->msg_buf
-+ * under both ctx->msg_buf_mutex and ctx->err_string_lock, and clears
-+ * out ctx->err_sring (so theoretically it can be written to again).
-+ * It then drops ctx->err_string_lock (which is a spinlock) and keeps
-+ * the ctx->msg_buf_mutex.
-+ *
-+ * It then can leisurely write out msg_buf under mutex ( by calling
-+ * ckpt_do_write_msg() ), while another task could be writing new
-+ * messages to ctx->err_string.
-+ *
-  * If @fmt is null, the string in the ctx->err_string will be used (and freed)
-  */
- int ckpt_write_err(struct ckpt_ctx *ctx, char *fmt, ...)
++void ckpt_do_write_msg(struct ckpt_ctx *ctx)
++{
++	struct file *file = ctx->logfile;
++	mm_segment_t fs;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	_ckpt_kwrite(file, ctx->msg_buf, ctx->msg_buf_len);
++	set_fs(fs);
++
++	ckpt_debug("%s", ctx->msg_buf);
++}
++
++static void ckpt_log_msg_v(struct ckpt_ctx *ctx, char *fmt, va_list ap)
++{
++	char *msgbuf;
++	va_list aq;
++	int count, len;
++
++	mutex_lock(&ctx->msg_buf_mutex);
++	/* expand the format into ctx->fmt_buf */
++	spin_lock(&ctx->fmt_buf_lock);
++	ckpt_generate_fmt(ctx, fmt);
++	msgbuf = ctx->msg_buf;
++
++	/* write the prefix */
++	len = snprintf(msgbuf, CKPT_MSG_BUFSZ, "[%d]=[%d]:[%lld]:[%d] ",
++			 current->pid, task_pid_vnr(current), ctx->total,
++			 ctx->errno);
++	/* fill in the message */
++	va_copy(aq, ap);
++	count = vsnprintf(msgbuf+len, CKPT_MSG_BUFSZ-len, ctx->fmt_buf, aq);
++	va_end(aq);
++
++	spin_unlock(&ctx->fmt_buf_lock);
++
++	count += len;
++	if (count > CKPT_MSG_BUFSZ) {
++		printk(KERN_WARNING "%s:%s:%d error string too long (%d)\n",
++		       __FILE__, __func__, __LINE__, count);
++		msgbuf[CKPT_MSG_BUFSZ-1] = '\0';
++	}
++
++	ctx->msg_buf_len = count;
++	ckpt_do_write_msg(ctx);
++	mutex_unlock(&ctx->msg_buf_mutex);
++}
++
++void ckpt_log_msg(struct ckpt_ctx *ctx, char *fmt, ...)
++{
++	va_list ap;
++
++	if (!ctx || !ctx->logfile)
++		return;
++
++	va_start(ap, fmt);
++	ckpt_log_msg_v(ctx, fmt, ap);
++	va_end(ap);
++}
++
+ /**
+  * sys_checkpoint - checkpoint a container
+  * @pid: pid of the container init(1) process
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 6464851..0c2bb56 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -371,7 +371,11 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+ #endif /* CONFIG_CHECKPOINT_DEBUG */
+ 
+ extern void ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
+-static inline void ckpt_do_write_msg(struct ckpt_ctx *ctx) { }
++extern void ckpt_do_write_msg(struct ckpt_ctx *ctx);
++extern void ckpt_log_msg(struct ckpt_ctx *ctx, char *fmt, ...);
++
++#define ckpt_error(ctx, fmt, args...)					\
++	ckpt_log_msg(ctx, "%s:%d " fmt, __func__, __LINE__, ## args);
+ 
+ #endif /* CONFIG_CHECKPOINT */
+ #endif /* __KERNEL__ */
 -- 
 1.6.1
