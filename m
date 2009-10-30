@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 14/22] define ckpt_error and implement ckpt_do_write_msg
-Date: Fri, 30 Oct 2009 18:00:28 -0500
-Message-ID: <1256943629-4531-7-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 01/22] Make __ckpt_generate_fmt public
+Date: Fri, 30 Oct 2009 18:00:23 -0500
+Message-ID: <1256943629-4531-2-git-send-email-serue@us.ibm.com>
 References: <1256943629-4531-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,103 +23,235 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+Move it to checkpoint/sys.c, call it ckpt_generate_fmt, make it
+non-static.  It will be used later by ckpt_error, which is used
+during restart as well as checkpoint.
+
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/sys.c           |   64 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    6 +++-
- 2 files changed, 69 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c    |   90 +-------------------------------------------
+ checkpoint/sys.c           |   87 ++++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h |    2 +
+ 3 files changed, 90 insertions(+), 89 deletions(-)
 
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 6eb8f3b..d0ffd0d 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -96,94 +96,6 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
+ 	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
+ }
+ 
+-/*
+- * __ckpt_generate_fmt - generate standard checkpoint error message
+- * @ctx: checkpoint context
+- * @fmt0: c/r-format string
+- * @fmt: message format
+- *
+- * This generates a unified format of checkpoint error messages, to
+- * ease (after the failure) inspection by userspace tools. It converts
+- * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
+- *
+- * PREFMT is constructed from @fmt0 by subtituting format snippets
+- * according to the contents of @fmt0.  The format characters in
+- * @fmt0 can be E (error), O (objref), P (pointer), S (string) and
+- * V (variable/symbol). For example, E will generate a "err %d" in
+- * PREFMT (see prefmt_array below).
+- *
+- * If @fmt0 begins with T, PREFMT will begin with "pid %d tsk %s"
+- * with the pid and the tsk->comm of the currently checkpointed task.
+- * The latter is taken from ctx->tsk, and is it the responsbilility of
+- * the caller to have a valid pointer there (in particular, functions
+- * that iterate on the processes: collect_objects, checkpoint_task,
+- * and tree_count_tasks).
+- *
+- * The caller of ckpt_write_err() and _ckpt_write_err() must provide
+- * the additional variabes, in order, to match the @fmt0 (except for
+- * the T key), e.g.:
+- *
+- *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
+- *
+- * Here, T is simply passed, E expects an integer (err), O expects an
+- * integer (objref), and the last argument matches the format string.
+- */
+-static char *__ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt)
+-{
+-	static int warn_notask = 0;
+-	static int warn_prefmt = 0;
+-	char *format;
+-	int i, j, len = 0;
+-
+-	static struct {
+-		char key;
+-		char *fmt;
+-	} prefmt_array[] = {
+-		{ 'E', "err %d" },
+-		{ 'O', "obj %d" },
+-		{ 'P', "ptr %p" },
+-		{ 'V', "sym %pS" },
+-		{ 'S', "str %s" },
+-		{ 0, "??? %pS" },
+-	};
+-
+-	/*
+-	 * 17 for "pid %d" (plus space)
+-	 * 21 for "tsk %s" (tsk->comm)
+-	 * up to 8 per varfmt entry
+-	 */
+-	format = kzalloc(37 + 8 * strlen(fmt0) + strlen(fmt), GFP_KERNEL);
+-	if (!format)
+-		return NULL;
+-
+-	format[len++] = '[';
+-
+-	if (fmt0[0] == 'T') {
+-		if (ctx->tsk)
+-			len = sprintf(format, "pid %d tsk %s ",
+-				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
+-		else if (warn_notask++ < 5)
+-			printk(KERN_ERR "c/r: no target task set\n");
+-		fmt0++;
+-	}
+-
+-	for (i = 0; i < strlen(fmt0); i++) {
+-		for (j = 0; prefmt_array[j].key; j++)
+-			if (prefmt_array[j].key == fmt0[i])
+-				break;
+-		if (!prefmt_array[j].key && warn_prefmt++ < 5)
+-			printk(KERN_ERR "c/r: unknown prefmt %c\n", fmt0[i]);
+-		len += sprintf(&format[len], "%s ", prefmt_array[j].fmt);
+-	}
+-
+-	if (len > 1)
+-		sprintf(&format[len-1], "]: %s", fmt);  /* erase last space */
+-	else
+-		sprintf(format, "%s", fmt);
+-
+-	return format;
+-}
+-
+ /* see _ckpt_generate_fmt for information on @fmt0 */
+ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt0,
+ 				char *fmt, va_list ap)
+@@ -193,7 +105,7 @@ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt0,
+ 	char *str;
+ 	int len;
+ 
+-	format = __ckpt_generate_fmt(ctx, fmt0, fmt);
++	format = ckpt_generate_fmt(ctx, fmt0, fmt);
+ 	va_copy(aq, ap);
+ 
+ 	/*
 diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index b959b27..94cbe57 100644
+index 260a1ee..c888a12 100644
 --- a/checkpoint/sys.c
 +++ b/checkpoint/sys.c
-@@ -433,6 +433,70 @@ void ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
- 	s[len] = '\0';
+@@ -339,6 +339,93 @@ int walk_task_subtree(struct task_struct *root,
+ 	return (ret < 0 ? ret : total);
  }
  
 +/*
-+ * Write ctx->msg_buf to user-provided log and to syslog
-+ * Called under ctx->msg_buf_mutex.
++ * ckpt_generate_fmt - generate standard checkpoint error message
++ * @ctx: checkpoint context
++ * @fmt0: c/r-format string
++ * @fmt: message format
++ *
++ * This generates a unified format of checkpoint error messages, to
++ * ease (after the failure) inspection by userspace tools. It converts
++ * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
++ *
++ * PREFMT is constructed from @fmt0 by subtituting format snippets
++ * according to the contents of @fmt0.  The format characters in
++ * @fmt0 can be E (error), O (objref), P (pointer), S (string) and
++ * V (variable/symbol). For example, E will generate a "err %d" in
++ * PREFMT (see prefmt_array below).
++ *
++ * If @fmt0 begins with T, PREFMT will begin with "pid %d tsk %s"
++ * with the pid and the tsk->comm of the currently checkpointed task.
++ * The latter is taken from ctx->tsk, and is it the responsbilility of
++ * the caller to have a valid pointer there (in particular, functions
++ * that iterate on the processes: collect_objects, checkpoint_task,
++ * and tree_count_tasks).
++ *
++ * The caller of ckpt_write_err() and _ckpt_write_err() must provide
++ * the additional variabes, in order, to match the @fmt0 (except for
++ * the T key), e.g.:
++ *
++ *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
++ *
++ * Here, T is simply passed, E expects an integer (err), O expects an
++ * integer (objref), and the last argument matches the format string.
 + */
-+void ckpt_do_write_msg(struct ckpt_ctx *ctx)
++char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt)
 +{
-+	struct file *file = ctx->logfile;
-+	mm_segment_t fs;
++	static int warn_notask = 0;
++	static int warn_prefmt = 0;
++	char *format;
++	int i, j, len = 0;
 +
-+	fs = get_fs();
-+	set_fs(KERNEL_DS);
-+	_ckpt_kwrite(file, ctx->msg_buf, ctx->msg_buf_len);
-+	set_fs(fs);
++	static struct {
++		char key;
++		char *fmt;
++	} prefmt_array[] = {
++		{ 'E', "err %d" },
++		{ 'O', "obj %d" },
++		{ 'P', "ptr %p" },
++		{ 'V', "sym %pS" },
++		{ 'S', "str %s" },
++		{ 0, "??? %pS" },
++	};
 +
-+	ckpt_debug("%s", ctx->msg_buf);
-+}
++	/*
++	 * 17 for "pid %d" (plus space)
++	 * 21 for "tsk %s" (tsk->comm)
++	 * up to 8 per varfmt entry
++	 */
++	format = kzalloc(37 + 8 * strlen(fmt0) + strlen(fmt), GFP_KERNEL);
++	if (!format)
++		return NULL;
 +
-+static void ckpt_log_msg_v(struct ckpt_ctx *ctx, char *fmt, va_list ap)
-+{
-+	char *msgbuf;
-+	va_list aq;
-+	int count, len;
++	format[len++] = '[';
 +
-+	mutex_lock(&ctx->msg_buf_mutex);
-+	/* expand the format into ctx->fmt_buf */
-+	spin_lock(&ctx->fmt_buf_lock);
-+	ckpt_generate_fmt(ctx, fmt);
-+	msgbuf = ctx->msg_buf;
-+
-+	/* write the prefix */
-+	len = snprintf(msgbuf, CKPT_MSG_BUFSZ, "[%d]=[%d]:[%lld]:[%d] ",
-+			 current->pid, task_pid_vnr(current), ctx->total,
-+			 ctx->errno);
-+	/* fill in the message */
-+	va_copy(aq, ap);
-+	count = vsnprintf(msgbuf+len, CKPT_MSG_BUFSZ-len, ctx->fmt_buf, aq);
-+	va_end(aq);
-+
-+	spin_unlock(&ctx->fmt_buf_lock);
-+
-+	count += len;
-+	if (count > CKPT_MSG_BUFSZ) {
-+		printk(KERN_WARNING "%s:%s:%d error string too long (%d)\n",
-+		       __FILE__, __func__, __LINE__, count);
-+		msgbuf[CKPT_MSG_BUFSZ-1] = '\0';
++	if (fmt0[0] == 'T') {
++		if (ctx->tsk)
++			len = sprintf(format, "pid %d tsk %s ",
++				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
++		else if (warn_notask++ < 5)
++			printk(KERN_ERR "c/r: no target task set\n");
++		fmt0++;
 +	}
 +
-+	ctx->msg_buf_len = count;
-+	ckpt_do_write_msg(ctx);
-+	mutex_unlock(&ctx->msg_buf_mutex);
++	for (i = 0; i < strlen(fmt0); i++) {
++		for (j = 0; prefmt_array[j].key; j++)
++			if (prefmt_array[j].key == fmt0[i])
++				break;
++		if (!prefmt_array[j].key && warn_prefmt++ < 5)
++			printk(KERN_ERR "c/r: unknown prefmt %c\n", fmt0[i]);
++		len += sprintf(&format[len], "%s ", prefmt_array[j].fmt);
++	}
++
++	if (len > 1)
++		sprintf(&format[len-1], "]: %s", fmt);  /* erase last space */
++	else
++		sprintf(format, "%s", fmt);
++
++	return format;
 +}
-+
-+void ckpt_log_msg(struct ckpt_ctx *ctx, char *fmt, ...)
-+{
-+	va_list ap;
-+
-+	if (!ctx || !ctx->logfile)
-+		return;
-+
-+	va_start(ap, fmt);
-+	ckpt_log_msg_v(ctx, fmt, ap);
-+	va_end(ap);
-+}
-+
+ 
  /**
   * sys_checkpoint - checkpoint a container
-  * @pid: pid of the container init(1) process
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 6464851..0c2bb56 100644
+index dfcb59b..541bfa8 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -371,7 +371,11 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+@@ -370,6 +370,8 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
+ 
  #endif /* CONFIG_CHECKPOINT_DEBUG */
  
- extern void ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
--static inline void ckpt_do_write_msg(struct ckpt_ctx *ctx) { }
-+extern void ckpt_do_write_msg(struct ckpt_ctx *ctx);
-+extern void ckpt_log_msg(struct ckpt_ctx *ctx, char *fmt, ...);
++extern char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt);
 +
-+#define ckpt_error(ctx, fmt, args...)					\
-+	ckpt_log_msg(ctx, "%s:%d " fmt, __func__, __LINE__, ## args);
- 
  #endif /* CONFIG_CHECKPOINT */
  #endif /* __KERNEL__ */
+ 
 -- 
 1.6.1
