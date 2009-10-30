@@ -1,17 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/17] ckpt_write_err: use single format with %(T)
-	style tokens
-Date: Fri, 30 Oct 2009 08:33:29 -0500
-Message-ID: <20091030133329.GA9138@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 01/17] ckpt_write_err: use single format with %(T)	style
+	tokens
+Date: Fri, 30 Oct 2009 11:45:07 -0400
+Message-ID: <4AEB0A03.7000500@librato.com>
 References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
 	<1256849682-858-2-git-send-email-serue@us.ibm.com>
-	<20091030063712.GA409@us.ibm.com>
+	<4AEA1527.7090907@librato.com> <20091030021819.GB10379@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091030063712.GA409-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091030021819.GB10379-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,35 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-> | From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> | 
-> | Matt Helsley originally suggested this to avoid having two
-> | format strings.  This is not bisect-safe and therefore not
-> | even compile-tested.  Every call to ckpt_write_err must be
-> | updated to use a single format.
+
+
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+>>
+>> serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>>> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+[...]
+>>> +	 */
+>>> +	alloclen = 37 + 8 * strlen(fmt);
+>> This calculation assumed that @fmt had only format string...
+>> At the very minimum you could take strlen(fmt)/3 (+1 to round up)
 > 
-> It maybe easier to review this patch if this is broken up into smaller
-> patches:
+> Yeah, I didn't want to think about that in detail yet :)
 > 
-> 	- move the code to new place
-> 	- leave the fmt0 parameter to ckpt_generate_fmt() but ensure it
-> 	  is unused.
-> 	- finally remove the unused parameters from ckpt_generate_fmt()
-> 	  and the callers. 
+>> I thought you were going to use a @ctx->buffer or something ?
+> 
+> And I am, for my string.  We need one for the expanded fmt here,
+> and then one to snprintf the final string into so we can write it
+> out.
+> 
+> Shall I just add a @ctx->fmtbuf?
 
-That's going a bit far...  I did leave the moving of the code in a separate
-patch up until this last posting, but the new and old versions of
-ckpt_generate_fmt() don't look alike enough to be able to compare side by
-side anyway imo.
+Sure.
 
-One thing which would help however imo would be if I keep a non-rebased
-tagged tree alongside the rebased tree, so you can see what changes I'm
-making over the last posting.  I'll do that as of today.
+> 
+>>> +	format = kzalloc(alloclen, GFP_KERNEL);
+>>> +	if (!format)
+>>> +		return NULL;
+>>> +
+>>> +	for (; *fmt; fmt++) {
+>>> +		BUG_ON(len > alloclen);
+>>> +		if (*fmt != '%' || fmt[1] != '(' || fmt[3] != ')') {
+>> This is still a bit risky .. how about adding
+>> 	|| fmt[2] == '\0'
+>> between the 2nd and 3rd test ?
+> 
+> Well I can do that, but since we provide the fmt strings and there is
+> no risk for an information leak I didn't think it was worth making
+> the line even longer.  But ok, I'll add it...
 
--serge
+Well, if a developer gives a string like "hello %(", then you
+will potentially go past the end of the string and eventually
+crash (or worse).
+
+Oren.
