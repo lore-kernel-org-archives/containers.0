@@ -1,10 +1,15 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-126-gc1405ac
-Date: Thu, 29 Oct 2009 20:43:12 -0400
-Message-ID: <200910300043.n9U0hCTX023094@gorgona.ncl.cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/17] Standardize c/r error reporting
+Date: Thu, 29 Oct 2009 21:12:48 -0500
+Message-ID: <20091030021248.GA10379@us.ibm.com>
+References: <1256849682-858-1-git-send-email-serue@us.ibm.com>
+	<4AEA17E6.6050609@librato.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1520003767598590419=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AEA17E6.6050609-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,122 +19,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============1520003767598590419==
-Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id n9U0g2Hf027528
+Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
+> 
+> 
+> serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > 
+> > This patchset
+> > 	1. defines ckpt_error() 
+> > 	2. allows users to pass a logfd into sys_checkpoint and
+> > 	   sys_restart
+> > 	3. Switches ckpt_write_err() to accepting a single enhanced
+> > 	   format string, instead of two separate formats.
+> > 	4. Has ckpt_write_err() call ckpt_error() to also log the
+> > 	   error in the user-provided logfile and syslog.
+> > 
+> > Every ckpt_error() message is prefixed by current's global pid,
+> > current's virtual pid, number of bytes read/written, and the
+> > ctx->errno.
+> 
+> Hmmm... I thought that we'd have:
+> 
+> ckpt_error() will be used _only_ when there is an error.
+> (will always print ctx->errno, which is assumed to be set)
+> 
+> ckpt_debug() will be used to report "log-able" debugging info
+> (will not print ctx->errno, because there wasn't any error)
+> 
+> _ckpt_debug() will be used to throw debugging info that isn't
+> logged (only goes to dmesg) and will not be compiled unless
+> CONFIG_CHECKPOINT_DEBUG is selected. This is useful for those
+> debug messages that are a pain to add remove, but that we
+> don't want to spit to users' logs.
+> 
+> Maybe rename ckpt_debug() to ckpt_log() and then _ckpt_debug()
+> to ckpt_debug()...
+> 
+> I think it's confusing for ckpt_error() to be used everywhere.
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+Agreed, and I almost changed it today but didn't.  However note
+that ckpt_error really is just for errors.  So I'll just rename
+ckpt_log_error()->ckpt_log_msg() (and same with *_v).
 
-The branch, ckpt-v18-dev has been updated
-       via  c1405acba1fe1450593da966a4a4c37ab049e785 (commit)
-       via  c324b5fa45cada6be69061187fdcca93f84a87dd (commit)
-      from  8adba1cc04ec7c406969990e2a1c0ba5c94a9d73 (commit)
-
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
-
-- Log -----------------------------------------------------------------
-commit c1405acba1fe1450593da966a4a4c37ab049e785
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Thu Oct 29 20:32:50 2009 -0400
-
-    c/r: tolerate X86_EFLAGS_RF on restart
-   =20
-    On restart, the c/r code that sanitizes a task's EFLAGS failed with a=
-n
-    error if the X86_EFLAGS_RF was set. However, there are cases in which
-    a task legitimately has this flag recorded at checkpoint, such as:
-   =20
-    1) We are running inside a KVM guest, and the guest is being debugged
-    (see arch/x86/kvm/{svm,vmx}.c, via callbacks from qemu.
-   =20
-    2) The kernel itself is being debugged using kgbd.
-   =20
-    3) Exceptions that occur under certain condition will set this flag
-    on the currently running task. For details see page 679 in Intel's
-    manual (http://www.intel.com/Assets/PDF/manual/253668.pdf), like:
-   =20
-      When calling an event handler, Intel 64 and IA-32 processors
-      establish the value of the RF flag in the EFLAGS image pushed on th=
-e
-      stack:
-        =E2=80=A2 For any fault-class exception except a debug exception
-          generated in response to an instruction breakpoint, the value
-          pushed for RF is 1.
-        =E2=80=A2 For any interrupt arriving after any iteration of a rep=
-eated
-          string instruction but the last iteration, the value pushed for
-          RF is 1.
-        =E2=80=A2 For any trap-class exception generated by any iteration=
- of a
-          repeated string instruction but the last iteration, the value
-          pushed for RF is 1.
-        =E2=80=A2 For other cases, the value pushed for RF is the value t=
-hat was
-          in EFLAG.RF at the time the event handler was called.
-      [...]
-   =20
-    Case #3 is consistent with the fact that in all cases where we
-    observed the issue there was a sendmail process doing IO.
-   =20
-    Clearly, the X86_EFLAGS_RF is valid to be set.
-   =20
-    This patches fixes the restart to:
-   =20
-    1) Silently ignore the X86_EFLAGS_RF if was set at checkpoint: this
-    allows restart to tolerate the flag and safely complete the restart.
-   =20
-    2) Preserve the existing X86_EFLAGS_RF of a restarting task (instead
-    of overwriting it): this ensures that restarting does not interfere
-    with kvm, kgdb, etc.
-   =20
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-    Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-    Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Cc: Avi Kivity <avi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-commit c324b5fa45cada6be69061187fdcca93f84a87dd
-Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date:   Thu Oct 29 20:32:50 2009 -0400
-
-    c/r: factor out objref handling from {_,}ckpt_read_obj()
-   =20
-    As noted by Matt Helsley, a portion of one of these functions was
-    missing the block "dispatching" errors. Otherwise the handling of
-    shard objects is pretty much the same, so this patch factors out the
-    common code.
-   =20
-    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-    Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- arch/x86/mm/checkpoint.c |   42 +++++++++++++++++++++++++++++++-
- checkpoint/restart.c     |   58 ++++++++++++++++++++++++----------------=
------
- 2 files changed, 71 insertions(+), 29 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
-
---===============1520003767598590419==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Disposition: inline
-Content-Transfer-Encoding: 7bit
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============1520003767598590419==--
+-serge
