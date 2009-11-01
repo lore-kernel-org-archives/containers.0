@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v10][PATCH 5/9] Add target_pids parameter to copy_process()
-Date: Sun, 1 Nov 2009 12:44:54 -0800
-Message-ID: <20091101204454.GD23168@us.ibm.com>
+Subject: [v10][PATCH 7/9] Define do_fork_with_pids()
+Date: Sun, 1 Nov 2009 12:45:30 -0800
+Message-ID: <20091101204530.GF23168@us.ibm.com>
 References: <20091101204132.GA22116@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,62 +24,97 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Tue, 20 Oct 2009 21:51:45 -0700
-Subject: [v10][PATCH 5/9] Add target_pids parameter to copy_process()
+Date: Tue, 20 Oct 2009 21:53:39 -0700
+Subject: [v10][PATCH 7/9] Define do_fork_with_pids()
 
-Add a 'target_pids' parameter to copy_process().  The new parameter will be
-used in a follow-on patch when clone_with_pids() is implemented.
+do_fork_with_pids() is same as do_fork(), except that it takes an
+additional, 'pid_set', parameter. This parameter, currently unused,
+specifies the set of target pids of the process in each of its pid
+namespaces.
+
+Changelog[v7]:
+	- Drop 'struct pid_set' object and pass in 'pid_t *target_pids'
+	  instead of 'struct pid_set *'.
+
+Changelog[v6]:
+	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
+	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
+	  is constant across architectures.
+	- (Nathan Lynch) Change 'pid_set.num_pids' to 'unsigned int'.
+
+Changelog[v4]:
+	- Rename 'struct target_pid_set' to 'struct pid_set' since it may
+	  be useful in other contexts.
+
+Changelog[v3]:
+	- Fix "long-line" warning from checkpatch.pl
+
+Changelog[v2]:
+	- To facilitate moving architecture-inpdendent code to kernel/fork.c
+	  pass in 'struct target_pid_set __user *' to do_fork_with_pids()
+	  rather than 'pid_t *' (next patch moves the arch-independent
+	  code to kernel/fork.c)
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/fork.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ include/linux/sched.h |    3 +++
+ kernel/fork.c         |   17 +++++++++++++++--
+ 2 files changed, 18 insertions(+), 2 deletions(-)
 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 6b319a0..265efe5 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2153,6 +2153,9 @@ extern int disallow_signal(int);
+ 
+ extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
+ extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
++extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
++				unsigned long, int __user *, int __user *,
++				unsigned int, pid_t __user *);
+ struct task_struct *fork_idle(int);
+ 
+ extern void set_task_comm(struct task_struct *tsk, char *from);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 3f1dddf..c8a06de 100644
+index 11f77ed..210e841 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -975,12 +975,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 					unsigned long stack_size,
- 					int __user *child_tidptr,
- 					struct pid *pid,
-+					pid_t *target_pids,
- 					int trace)
+@@ -1377,12 +1377,14 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+  * It copies the process, and if successful kick-starts
+  * it and waits for it to finish using the VM if required.
+  */
+-long do_fork(unsigned long clone_flags,
++long do_fork_with_pids(unsigned long clone_flags,
+ 	      unsigned long stack_start,
+ 	      struct pt_regs *regs,
+ 	      unsigned long stack_size,
+ 	      int __user *parent_tidptr,
+-	      int __user *child_tidptr)
++	      int __user *child_tidptr,
++	      unsigned int num_pids,
++	      pid_t __user *upids)
  {
- 	int retval;
- 	struct task_struct *p;
- 	int cgroup_callbacks_done = 0;
--	pid_t *target_pids = NULL;
- 
- 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
- 		return ERR_PTR(-EINVAL);
-@@ -1361,7 +1361,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
- 	struct pt_regs regs;
- 
- 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
--			    &init_struct_pid, 0);
-+			    &init_struct_pid, NULL, 0);
- 	if (!IS_ERR(task))
- 		init_idle(task, cpu);
- 
-@@ -1384,6 +1384,7 @@ long do_fork(unsigned long clone_flags,
  	struct task_struct *p;
  	int trace = 0;
- 	long nr;
-+	pid_t *target_pids = NULL;
+@@ -1485,6 +1487,17 @@ long do_fork(unsigned long clone_flags,
+ 	return nr;
+ }
  
- 	/*
- 	 * Do some preliminary argument and permissions checking before we
-@@ -1424,7 +1425,7 @@ long do_fork(unsigned long clone_flags,
- 		trace = tracehook_prepare_clone(clone_flags);
- 
- 	p = copy_process(clone_flags, stack_start, regs, stack_size,
--			 child_tidptr, NULL, trace);
-+			 child_tidptr, NULL, target_pids, trace);
- 	/*
- 	 * Do this prior waking up the new thread - the thread pointer
- 	 * might get invalid after that point, if the thread exits quickly.
++long do_fork(unsigned long clone_flags,
++	      unsigned long stack_start,
++	      struct pt_regs *regs,
++	      unsigned long stack_size,
++	      int __user *parent_tidptr,
++	      int __user *child_tidptr)
++{
++	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
++			parent_tidptr, child_tidptr, 0, NULL);
++}
++
+ #ifndef ARCH_MIN_MMSTRUCT_ALIGN
+ #define ARCH_MIN_MMSTRUCT_ALIGN 0
+ #endif
 -- 
 1.6.0.4
