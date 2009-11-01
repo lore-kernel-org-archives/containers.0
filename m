@@ -1,13 +1,12 @@
-From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 01/22] Make __ckpt_generate_fmt public
-Date: Fri, 30 Oct 2009 18:00:23 -0500
-Message-ID: <1256943629-4531-2-git-send-email-serue@us.ibm.com>
-References: <1256943629-4531-1-git-send-email-serue@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [v10][PATCH] Implement clone_with_pids() syscall
+Date: Sun, 1 Nov 2009 12:41:33 -0800
+Message-ID: <20091101204132.GA22116@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1256943629-4531-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,241 +16,118 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Move it to checkpoint/sys.c, call it ckpt_generate_fmt, make it
-non-static.  It will be used later by ckpt_error, which is used
-during restart as well as checkpoint.
+[v10][PATCH 0/9] Implement clone_with_pids() system call
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/checkpoint.c    |   90 +-------------------------------------------
- checkpoint/sys.c           |   87 ++++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    2 +
- 3 files changed, 90 insertions(+), 89 deletions(-)
+To support application checkpoint/restart, a task must have the same pid it
+had when it was checkpointed.  When containers are nested, the tasks within
+the containers exist in multiple pid namespaces and hence have multiple pids
+to specify during restart.
 
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 6eb8f3b..d0ffd0d 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -96,94 +96,6 @@ int ckpt_write_string(struct ckpt_ctx *ctx, char *str, int len)
- 	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
- }
- 
--/*
-- * __ckpt_generate_fmt - generate standard checkpoint error message
-- * @ctx: checkpoint context
-- * @fmt0: c/r-format string
-- * @fmt: message format
-- *
-- * This generates a unified format of checkpoint error messages, to
-- * ease (after the failure) inspection by userspace tools. It converts
-- * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
-- *
-- * PREFMT is constructed from @fmt0 by subtituting format snippets
-- * according to the contents of @fmt0.  The format characters in
-- * @fmt0 can be E (error), O (objref), P (pointer), S (string) and
-- * V (variable/symbol). For example, E will generate a "err %d" in
-- * PREFMT (see prefmt_array below).
-- *
-- * If @fmt0 begins with T, PREFMT will begin with "pid %d tsk %s"
-- * with the pid and the tsk->comm of the currently checkpointed task.
-- * The latter is taken from ctx->tsk, and is it the responsbilility of
-- * the caller to have a valid pointer there (in particular, functions
-- * that iterate on the processes: collect_objects, checkpoint_task,
-- * and tree_count_tasks).
-- *
-- * The caller of ckpt_write_err() and _ckpt_write_err() must provide
-- * the additional variabes, in order, to match the @fmt0 (except for
-- * the T key), e.g.:
-- *
-- *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
-- *
-- * Here, T is simply passed, E expects an integer (err), O expects an
-- * integer (objref), and the last argument matches the format string.
-- */
--static char *__ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt)
--{
--	static int warn_notask = 0;
--	static int warn_prefmt = 0;
--	char *format;
--	int i, j, len = 0;
--
--	static struct {
--		char key;
--		char *fmt;
--	} prefmt_array[] = {
--		{ 'E', "err %d" },
--		{ 'O', "obj %d" },
--		{ 'P', "ptr %p" },
--		{ 'V', "sym %pS" },
--		{ 'S', "str %s" },
--		{ 0, "??? %pS" },
--	};
--
--	/*
--	 * 17 for "pid %d" (plus space)
--	 * 21 for "tsk %s" (tsk->comm)
--	 * up to 8 per varfmt entry
--	 */
--	format = kzalloc(37 + 8 * strlen(fmt0) + strlen(fmt), GFP_KERNEL);
--	if (!format)
--		return NULL;
--
--	format[len++] = '[';
--
--	if (fmt0[0] == 'T') {
--		if (ctx->tsk)
--			len = sprintf(format, "pid %d tsk %s ",
--				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
--		else if (warn_notask++ < 5)
--			printk(KERN_ERR "c/r: no target task set\n");
--		fmt0++;
--	}
--
--	for (i = 0; i < strlen(fmt0); i++) {
--		for (j = 0; prefmt_array[j].key; j++)
--			if (prefmt_array[j].key == fmt0[i])
--				break;
--		if (!prefmt_array[j].key && warn_prefmt++ < 5)
--			printk(KERN_ERR "c/r: unknown prefmt %c\n", fmt0[i]);
--		len += sprintf(&format[len], "%s ", prefmt_array[j].fmt);
--	}
--
--	if (len > 1)
--		sprintf(&format[len-1], "]: %s", fmt);  /* erase last space */
--	else
--		sprintf(format, "%s", fmt);
--
--	return format;
--}
--
- /* see _ckpt_generate_fmt for information on @fmt0 */
- static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt0,
- 				char *fmt, va_list ap)
-@@ -193,7 +105,7 @@ static void __ckpt_generate_err(struct ckpt_ctx *ctx, char *fmt0,
- 	char *str;
- 	int len;
- 
--	format = __ckpt_generate_fmt(ctx, fmt0, fmt);
-+	format = ckpt_generate_fmt(ctx, fmt0, fmt);
- 	va_copy(aq, ap);
- 
- 	/*
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 260a1ee..c888a12 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -339,6 +339,93 @@ int walk_task_subtree(struct task_struct *root,
- 	return (ret < 0 ? ret : total);
- }
- 
-+/*
-+ * ckpt_generate_fmt - generate standard checkpoint error message
-+ * @ctx: checkpoint context
-+ * @fmt0: c/r-format string
-+ * @fmt: message format
-+ *
-+ * This generates a unified format of checkpoint error messages, to
-+ * ease (after the failure) inspection by userspace tools. It converts
-+ * the (printf) message @fmt into a new format: "[PREFMT]: fmt".
-+ *
-+ * PREFMT is constructed from @fmt0 by subtituting format snippets
-+ * according to the contents of @fmt0.  The format characters in
-+ * @fmt0 can be E (error), O (objref), P (pointer), S (string) and
-+ * V (variable/symbol). For example, E will generate a "err %d" in
-+ * PREFMT (see prefmt_array below).
-+ *
-+ * If @fmt0 begins with T, PREFMT will begin with "pid %d tsk %s"
-+ * with the pid and the tsk->comm of the currently checkpointed task.
-+ * The latter is taken from ctx->tsk, and is it the responsbilility of
-+ * the caller to have a valid pointer there (in particular, functions
-+ * that iterate on the processes: collect_objects, checkpoint_task,
-+ * and tree_count_tasks).
-+ *
-+ * The caller of ckpt_write_err() and _ckpt_write_err() must provide
-+ * the additional variabes, in order, to match the @fmt0 (except for
-+ * the T key), e.g.:
-+ *
-+ *   ckpt_writ_err(ctx, "TEO", "FILE flags %d", err, objref, flags);
-+ *
-+ * Here, T is simply passed, E expects an integer (err), O expects an
-+ * integer (objref), and the last argument matches the format string.
-+ */
-+char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt)
-+{
-+	static int warn_notask = 0;
-+	static int warn_prefmt = 0;
-+	char *format;
-+	int i, j, len = 0;
-+
-+	static struct {
-+		char key;
-+		char *fmt;
-+	} prefmt_array[] = {
-+		{ 'E', "err %d" },
-+		{ 'O', "obj %d" },
-+		{ 'P', "ptr %p" },
-+		{ 'V', "sym %pS" },
-+		{ 'S', "str %s" },
-+		{ 0, "??? %pS" },
-+	};
-+
-+	/*
-+	 * 17 for "pid %d" (plus space)
-+	 * 21 for "tsk %s" (tsk->comm)
-+	 * up to 8 per varfmt entry
-+	 */
-+	format = kzalloc(37 + 8 * strlen(fmt0) + strlen(fmt), GFP_KERNEL);
-+	if (!format)
-+		return NULL;
-+
-+	format[len++] = '[';
-+
-+	if (fmt0[0] == 'T') {
-+		if (ctx->tsk)
-+			len = sprintf(format, "pid %d tsk %s ",
-+				      task_pid_vnr(ctx->tsk), ctx->tsk->comm);
-+		else if (warn_notask++ < 5)
-+			printk(KERN_ERR "c/r: no target task set\n");
-+		fmt0++;
-+	}
-+
-+	for (i = 0; i < strlen(fmt0); i++) {
-+		for (j = 0; prefmt_array[j].key; j++)
-+			if (prefmt_array[j].key == fmt0[i])
-+				break;
-+		if (!prefmt_array[j].key && warn_prefmt++ < 5)
-+			printk(KERN_ERR "c/r: unknown prefmt %c\n", fmt0[i]);
-+		len += sprintf(&format[len], "%s ", prefmt_array[j].fmt);
-+	}
-+
-+	if (len > 1)
-+		sprintf(&format[len-1], "]: %s", fmt);  /* erase last space */
-+	else
-+		sprintf(format, "%s", fmt);
-+
-+	return format;
-+}
- 
- /**
-  * sys_checkpoint - checkpoint a container
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index dfcb59b..541bfa8 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -370,6 +370,8 @@ static inline void restore_debug_free(struct ckpt_ctx *ctx) {}
- 
- #endif /* CONFIG_CHECKPOINT_DEBUG */
- 
-+extern char *ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt0, char *fmt);
-+
- #endif /* CONFIG_CHECKPOINT */
- #endif /* __KERNEL__ */
- 
--- 
-1.6.1
+This patchset implements a new system call, clone_with_pids() that lets a
+process specify the pids of the child process.
+
+Patches 1 through 6 are helper patches needed for choosing a pid for the
+child process.
+
+PATCH 8 defines a prototype of the new system call. PATCH 9 adds some
+documentation on the new system call, some/all of which will eventually
+go into a man page.
+
+Changelog[v10-rc1]:
+	- [Linus Torvalds] Use PTREGSCALL() implementation for clone rather
+	  than the generic system call
+	- Rename clone3() to clone_with_pids()
+	- Update Documentation/clone_with_pids() to show example usage with
+	  the PTREGSCALL implementation.
+
+Changelog[v9]:
+	- [Pavel Emelyanov] Drop the patch that made 'pid_max' a property
+	  of struct pid_namespace
+	- [Roland McGrath, H. Peter Anvin and earlier on, Serge Hallyn] To
+	  avoid inadvertent truncation clone_flags, preserve the first
+	  parameter of clone3() as 'u32 clone_flags' and specify newer
+	  flags in clone_args.flags_high (PATCH 8/9 and PATCH 9/9)
+	- [Eric Biederman] Generalize alloc_pidmap() code to simplify and
+	  remove duplication (see PATCH 3/9].
+	  
+Changelog[v8]:
+	- [Oren Laadan, Louis Rilling, KOSAKI Motohiro]
+	  The name 'clone2()' is in use - renamed new syscall to clone3().
+	- [Oren Laadan] ->parent_tidptr and ->child_tidptr need to be 64bit.
+	- [Oren Laadan] Ensure that unused fields/flags in clone_struct are 0.
+	  (Added [PATCH 7/10] to the patchset).
+
+Changelog[v7]:
+	- [Peter Zijlstra, Arnd Bergmann]
+	  Group the arguments to clone2() into a 'struct clone_arg' to
+	  workaround the issue of exceeding 6 arguments to the system call.
+	  Also define clone-flags as u64 to allow additional clone-flags.
+
+Changelog[v6]:
+	- [Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds]
+	  Change 'pid_set.pids' to 'pid_t pids[]' so sizeof(struct pid_set) is
+	  constant across architectures (Patches 7, 8).
+	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
+	  'unum_pids < 0' check (Patches 7,8)
+	- (Pavel Machek) New patch (Patch 9) to add some documentation.
+
+Changelog[v5]:
+	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
+	  into this set)
+	- (Eric Biederman): Avoid the new function, set_pidmap() - added
+	  couple of checks on 'target_pid' in alloc_pidmap() itself.
+
+=== IMPORTANT NOTE:
+
+clone() system call has another limitation - all but one, available bits in
+clone-flags are in use and if more new clone-flags are needed, we will need
+a variant of the clone() system call. 
+
+It appears to make sense to try and extend this new system call to address
+this limitation as well. The requirements of a new clone system call could
+then be summarized as:
+
+	- do everything clone() does today, and
+	- give application an ability to choose pids for the child process
+	  in all ancestor pid namespaces, and
+	- allow more clone_flags
+
+Contstraints:
+
+	- system-calls are restricted to 6 parameters and clone() already
+	  takes 5 parameters, any extension to clone() interface would require
+	  one or more copy_from_user().  (Not sure if copy_from_user() of ~40
+	  bytes would have a significant impact on performance of clone()).
+
+Based on these requirements and constraints, we explored a couple of system
+call interfaces (in earlier versions of this patchset).  Based on input from
+Arnd Bergmann and others, the new interface of the system call is: 
+
+	struct clone_args {
+		u64 clone_flags_high;
+		u64 child_stack_base;
+		u64 child_stack_size;
+		u64 parent_tid_ptr;
+		u64 child_tid_ptr;
+		u32 nr_pids;
+		u32 clone_args_size;
+		u64 reserved1;
+	};
+
+	sys_clone_with_pids(u32 flags_low, struct clone_args *cargs,
+			pid_t *pids)
+
+Details of the struct clone_args and the usage are explained in the
+documentation (PATCH 9/9).
+
+NOTE:
+	While this patchset enables support for more clone-flags, actual
+	implementation for additional clone-flags is best implemented as
+	a separate patchset (PATCH 8/9 identifies some TODOs)
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
