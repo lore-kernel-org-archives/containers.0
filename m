@@ -1,50 +1,35 @@
-From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 00/12] Standardize c/r error reporting (v3)
-Date: Mon,  2 Nov 2009 16:23:28 -0600
-Message-ID: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: pidns memory leak
+Date: Mon, 2 Nov 2009 14:47:52 -0800
+Message-ID: <20091102144752.71fd4a31.akpm@linux-foundation.org>
+References: <20091006040526.GA22923@us.ibm.com>
+	<4ACAFD6A.3060008@fr.ibm.com>
+	<20091008030828.GA18973@us.ibm.com>
+	<4ACD9ECC.90508@fr.ibm.com>
+	<20091009032928.GA2031@us.ibm.com>
+	<4ACF381F.9050808@fr.ibm.com>
+	<20091010013235.GA11904@us.ibm.com>
+	<4AD2EBC7.2020109@fr.ibm.com>
+	<20091014061533.GA23569@us.ibm.com>
+	<20091102133326.e3dc51fb.akpm@linux-foundation.org>
+	<20091102223818.GA15628@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757215AbZKBWsl@vger.kernel.org>
+In-Reply-To: <20091102223818.GA15628@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, andrea@cpushare.com, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+On Mon, 2 Nov 2009 16:38:18 -0600
+"Serge E. Hallyn" <serue@us.ibm.com> wrote:
 
-Here is a completely new approach, basically verbatim implementing
-Oren's recipe from last Friday.  It only implements the error part
-to replace ckpt_write_err.  The intent would be for ckpt_debug to
-also be replaced by ckpt_msg() which would be similar to ckpt_err()
-except adding a prefix to the message.
+> > This bug hasn't been fixed yet, has it?
+> 
+> Well Suka did trace the bug to commit 7766755a2f249e7, and posted a patch
+> to revert that, acked by Eric on Oct 20.  Suka, were you going to repost
+> that patch?
 
-My goal is for users to be able to get real errors printed to a logfile
-for checkpoint and restart (not have to check dmesg) in ckpt-v19,
-especially for things like 'oh you're on a btrfs which is not supported'.
-Having to check dmesg seems to walk right into the 'toy implementation'
-argument.
-
-Thanks Oren for the detailed explanation of what you want to see, and
-Matt for several excellent cleanup suggestions.
-
-If there are no major objections then I'll add ckpt_err()s at restart
-on top of this patchset, but probably hold off on converting ckpt_debugs
-for a bit.  Note that the heavyweight semaphore means that for real
-debugging we're only increasing the chances of hiding bugs with the
-debugging, so I'm open to the idea of keeping ckpt_debug() as is.
-
-You can fetch this tree as branch nov2.6 of
-git://git.kernel.org/pub/scm/linux/kernel/git/sergeh/linux-cr.git
-or see gitweb at http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/nov2.6
-
-thanks,
--serge
+Ah.  OK.  Thanks.  Found it in the backlog pile.
