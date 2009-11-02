@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 09/12] fs/eventpoll.c ckpt_write_err->ckpt_err
-Date: Mon,  2 Nov 2009 16:23:37 -0600
-Message-ID: <1257200620-15499-10-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 04/12] checkpoint/memory.c ckpt_write_err->ckpt_err
+Date: Mon,  2 Nov 2009 16:23:32 -0600
+Message-ID: <1257200620-15499-5-git-send-email-serue@us.ibm.com>
 References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,21 +25,50 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/eventpoll.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ checkpoint/memory.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-index e07de97..3e177ef 100644
---- a/fs/eventpoll.c
-+++ b/fs/eventpoll.c
-@@ -1549,7 +1549,7 @@ unlock:
- 	if (num_items != 0 || (num_items == 0 && rbp))
- 		ret = -EBUSY; /* extra item(s) -- checkpoint obj leak */
- 	if (ret)
--		ckpt_write_err(ctx, "E", " checkpointing epoll items.\n", ret);
-+		ckpt_err(ctx, "%(E)Checkpointing epoll items.\n", ret);
- 	return ret;
- }
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 656614c..6cfd079 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -679,8 +679,8 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			 vma->vm_start, vma->vm_end, vma->vm_flags);
  
+ 		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
+-			ckpt_write_err(ctx, "TE", "vma: bad flags (%#lx)\n",
+-				       -ENOSYS, vma->vm_flags);
++			ckpt_err(ctx, "%(T)%(E)vma: bad flags (%#lx)\n",
++					-ENOSYS, vma->vm_flags);
+ 			ret = -ENOSYS;
+ 			break;
+ 		}
+@@ -692,7 +692,7 @@ static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 		else
+ 			ret = -ENOSYS;
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "vma: failed", ret);
++			ckpt_err(ctx, "%(T)%(E)vma: failed\n", ret);
+ 			break;
+ 		}
+ 		/*
+@@ -821,7 +821,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	if (mm->exe_file) {
+ 		ret = ckpt_collect_file(ctx, mm->exe_file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect exe_file", ret);
++			ckpt_err(ctx, "%(T)%(E)mm: collect exe_file\n", ret);
+ 			goto out;
+ 		}
+ 	}
+@@ -831,7 +831,7 @@ static int collect_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 			continue;
+ 		ret = ckpt_collect_file(ctx, file);
+ 		if (ret < 0) {
+-			ckpt_write_err(ctx, "TE", "mm: collect vm_file", ret);
++			ckpt_err(ctx, "%(T)%(E)mm: collect vm_file\n", ret);
+ 			break;
+ 		}
+ 	}
 -- 
 1.6.1
