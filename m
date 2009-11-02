@@ -1,35 +1,151 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: pidns memory leak
-Date: Mon, 2 Nov 2009 14:47:52 -0800
-Message-ID: <20091102144752.71fd4a31.akpm@linux-foundation.org>
-References: <20091006040526.GA22923@us.ibm.com>
-	<4ACAFD6A.3060008@fr.ibm.com>
-	<20091008030828.GA18973@us.ibm.com>
-	<4ACD9ECC.90508@fr.ibm.com>
-	<20091009032928.GA2031@us.ibm.com>
-	<4ACF381F.9050808@fr.ibm.com>
-	<20091010013235.GA11904@us.ibm.com>
-	<4AD2EBC7.2020109@fr.ibm.com>
-	<20091014061533.GA23569@us.ibm.com>
-	<20091102133326.e3dc51fb.akpm@linux-foundation.org>
-	<20091102223818.GA15628@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 01/12] define a new set of functions for error and
+	debug logging
+Date: Mon, 2 Nov 2009 15:24:39 -0800
+Message-ID: <20091102232439.GK14023@count0.beaverton.ibm.com>
+References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
+	<1257200620-15499-2-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757215AbZKBWsl@vger.kernel.org>
-In-Reply-To: <20091102223818.GA15628@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, andrea@cpushare.com, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Pavel Emelianov <xemul@openvz.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1257200620-15499-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2 Nov 2009 16:38:18 -0600
-"Serge E. Hallyn" <serue@us.ibm.com> wrote:
+On Mon, Nov 02, 2009 at 04:23:29PM -0600, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> > This bug hasn't been fixed yet, has it?
-> 
-> Well Suka did trace the bug to commit 7766755a2f249e7, and posted a patch
-> to revert that, acked by Eric on Oct 20.  Suka, were you going to repost
-> that patch?
+<snip>
 
-Ah.  OK.  Thanks.  Found it in the backlog pile.
+> +/*
+> + * _ckpt_generate_fmt - handle the special flags in the enhanced format
+> + * strings used by checkpoint/restart error messages.
+
+<snip>
+
+> + *	ckpt_write_err(ctx, "%(T)FILE flags %d %O %E\n", flags, objref, err);
+> + *
+> + * Must be called with ctx->fmt_buf_lock held.  The expanded format
+> + * will be placed in ctx->fmt_buf.
+
+nit:
+
+I haven't gotten through the series but this looks like either a stale
+comment (re: "ctx->fmt_buf_lock"), or it's premature -- I don't see you
+introduce or use this lock in this patch.
+
+> + */
+> +void _ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
+> +{
+> +	char *s = ctx->fmt;
+> +	int len = 0;
+> +	int first = 1;
+> +
+> +	for (; *fmt && len < CKPT_MSG_LEN; fmt++) {
+> +		if (!is_special_flag(fmt)) {
+> +			s[len++] = *fmt;
+> +			continue;
+> +		}
+> +		if (!first)
+> +			s[len++] = ' ';
+> +		else
+> +			first = 0;
+
+I'm tempted to say leave the space out. The square brackets delimit
+these enough. And if the caller really needs the space then it can be
+done: "%(E) %(O)foo".
+
+<snip>
+
+> +void _ckpt_msg_append(struct ckpt_ctx *ctx, char *fmt, ...)
+> +{
+> +	va_list ap;
+> +
+> +	va_start(ap, fmt);
+> +	_ckpt_msg_appendv(ctx, fmt, ap);
+> +	va_end(ap);
+> +}
+> +
+> +void _ckpt_msg_complete(struct ckpt_ctx *ctx)
+> +{
+> +	int ret;
+
+In the case of do_ckpt_msg() it's clear this won't happen. However
+since _do_ckpt_msg() is separate from _ckpt_msg_complete() (looking
+at the second patch) it's not clear that this will always be maintained
+correctly.
+
+BUG_ON(ctx->msglen < 1); /* detect msg_complete calls without any
+				messages */
+
+> +
+> +	if (ctx->kflags & CKPT_CTX_CHECKPOINT) {
+> +		ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
+> +		if (!ret)
+> +			ret = ckpt_write_string(ctx, ctx->msg, ctx->msglen);
+> +		if (ret < 0)
+> +			printk(KERN_NOTICE "c/r: error string unsaved (%d): %s\n",
+> +			       ret, ctx->msg+1);
+> +	}
+> +#if 0
+> +	if (ctx->logfile) {
+> +		mm_segment_t fs = get_fs();
+> +		set_fs(KERNEL_DS);
+> +		ret = _ckpt_kwrite(ctx->logfile, ctx->msg+1, ctx->msglen-1);
+> +		set_fs(fs);
+> +	}
+> +#endif
+> +#ifdef CONFIG_CHECKPOINT_DEBUG
+> +	printk(KERN_DEBUG "%s", ctx->msg+1);
+> +#endif
+
+Then clear:
+
+	ctx->msglen = 0;
+
+<snip>
+
+> +/*
+> + * Expand fmt into ctx->fmt.
+> + * This expands enhanced format flags such as %(T), which takes no
+> + * arguments, and %(E), which will require a properly positioned
+> + * int error argument.  Flags include:
+> + *   T: Task
+> + *   E: Errno
+> + *   O: Objref
+> + *   P: Pointer
+> + *   S: string
+> + *   V: Variable (symbol)
+> + * May be called under spinlock.
+> + * Must be called under ckpt_msg_lock.
+> + */
+> +extern void _ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
+
+I'm not seeing why this is needed outside checkpoint/sys.c. In a future
+patch?
+
+<snip>
+
+> +#define _ckpt_err(ctx, fmt, args...) do { \
+> +	_do_ckpt_msg(ctx, "[ error %s:%d]" fmt, __func__, __LINE__, ##args);	\
+> +} while (0)
+> +
+> +/* ckpt_logmsg() or ckpt_msg() will do do_ckpt_msg with an added
+> + * prefix */
+
+nit: This comment is about future code. It should perhaps be part of
+	the patch description rather than in the code as comment.
+
+<snip>
