@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 06/12] checkpoint/process.c ckpt_write_err->ckpt_err
-Date: Mon,  2 Nov 2009 16:23:34 -0600
-Message-ID: <1257200620-15499-7-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 08/12] drivers/char/tty_io.c ckpt_write_err->ckpt_err
+Date: Mon,  2 Nov 2009 16:23:36 -0600
+Message-ID: <1257200620-15499-9-git-send-email-serue@us.ibm.com>
 References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,46 +25,71 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/process.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ drivers/char/tty_io.c |   14 +++++++-------
+ 1 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 8e4a823..2c65e77 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -256,21 +256,21 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	files_objref = checkpoint_obj_file_table(ctx, t);
- 	ckpt_debug("files: objref %d\n", files_objref);
- 	if (files_objref < 0) {
--		ckpt_write_err(ctx, "TE", "files_struct", files_objref);
-+		ckpt_err(ctx, "%(T)%(E)files_struct\n", files_objref);
- 		return files_objref;
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 1b220c1..5a853a3 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -2622,19 +2622,19 @@ static int tty_can_checkpoint(struct ckpt_ctx *ctx, struct tty_struct *tty)
+ {
+ 	/* only support pty driver */
+ 	if (tty->driver->type != TTY_DRIVER_TYPE_PTY) {
+-		ckpt_write_err(ctx, "TSP", "tty: unknown driverv type %d",
++		ckpt_err(ctx, "%(T)%(S)%(P)tty: unknown driverv type %d\n",
+ 			       tty->driver, tty, tty->driver->type);
+ 		return 0;
  	}
- 
- 	mm_objref = checkpoint_obj_mm(ctx, t);
- 	ckpt_debug("mm: objref %d\n", mm_objref);
- 	if (mm_objref < 0) {
--		ckpt_write_err(ctx, "TE", "mm_struct", mm_objref);
-+		ckpt_err(ctx, "%(T)%(E)mm_struct\n", mm_objref);
- 		return mm_objref;
+ 	/* only support unix98 style */
+ 	if (tty->driver->major != UNIX98_PTY_MASTER_MAJOR &&
+ 	    tty->driver->major != UNIX98_PTY_SLAVE_MAJOR) {
+-		ckpt_write_err(ctx, "TP", "tty: legacy pty", tty);
++		ckpt_err(ctx, "%(T)%(P)tty: legacy pty\n", tty);
+ 		return 0;
  	}
- 
- 	sighand_objref = checkpoint_obj_sighand(ctx, t);
- 	ckpt_debug("sighand: objref %d\n", sighand_objref);
- 	if (sighand_objref < 0) {
--		ckpt_write_err(ctx, "TE", "sighand_struct", sighand_objref);
-+		ckpt_err(ctx, "%(T)%(E)sighand_struct\n", sighand_objref);
- 		return sighand_objref;
+ 	/* only support n_tty ldisc */
+ 	if (tty->ldisc->ops->num != N_TTY) {
+-		ckpt_write_err(ctx, "TSP", "tty: unknown ldisc type %d",
++		ckpt_err(ctx, "%(T)%(S)%(P)tty: unknown ldisc type %d\n",
+ 			       tty->ldisc->ops, tty, tty->ldisc->ops->num);
+ 		return 0;
  	}
+@@ -2711,7 +2711,7 @@ static int tty_file_collect(struct ckpt_ctx *ctx, struct file *file)
  
-@@ -303,7 +303,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	if (first)
- 		ret = checkpoint_obj_signal(ctx, t);
- 	if (ret < 0)
--		ckpt_write_err(ctx, "TE", "signal_struct", ret);
-+		ckpt_err(ctx, "%(T)%(E)signal_struct\n", ret);
+ 	if (tty->driver->subtype == PTY_TYPE_MASTER) {
+ 		if (!tty->link) {
+-			ckpt_write_err(ctx, "TP", "tty: missing link\n", tty);
++			ckpt_err(ctx, "%(T)%(P)tty: missing link\n\n", tty);
+ 			return -EIO;
+ 		}
+ 		ckpt_debug("collecting slave tty: %p\n", tty->link);
+@@ -2735,7 +2735,7 @@ static int checkpoint_tty_ldisc(struct ckpt_ctx *ctx, struct tty_struct *tty)
+ 	BUG_ON(tty->ldisc->ops->num != N_TTY);
  
- 	return ret;
- }
+ 	if ((tty->flags & CKPT_LDISC_FLAGS) != CKPT_LDISC_GOOD) {
+-		ckpt_write_err(ctx, "TP", "tty: bad ldisc flags %#lx\n",
++		ckpt_err(ctx, "%(T)%(P)tty: bad ldisc flags %#lx\n",
+ 			       tty, tty->flags);
+ 		return -EBUSY;
+ 	}
+@@ -2808,7 +2808,7 @@ static int do_checkpoint_tty(struct ckpt_ctx *ctx, struct tty_struct *tty)
+ 	int ret;
+ 
+ 	if ((tty->flags & (CKPT_TTY_BAD | CKPT_TTY_GOOD)) != CKPT_TTY_GOOD) {
+-		ckpt_write_err(ctx, "TP", "tty: bad flags %#lx\n",
++		ckpt_err(ctx, "%(T)%(P)tty: bad flags %#lx\n",
+ 			       tty, tty->flags);
+ 		return -EBUSY;
+ 	}
+@@ -3035,7 +3035,7 @@ static struct tty_struct *do_restore_tty(struct ckpt_ctx *ctx)
+ 	if (master) {
+ 		file = pty_open_by_index("/dev/ptmx", h->index);
+ 		if (IS_ERR(file)) {
+-			ckpt_write_err(ctx, "TE", "open ptmx", PTR_ERR(file));
++			ckpt_err(ctx, "%(T)%(E)Open ptmx\n", PTR_ERR(file));
+ 			tty = ERR_PTR(PTR_ERR(file));
+ 			goto out;
+ 		}
 -- 
 1.6.1
