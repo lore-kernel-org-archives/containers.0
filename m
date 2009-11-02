@@ -1,65 +1,50 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: pidns memory leak
-Date: Mon, 2 Nov 2009 16:38:18 -0600
-Message-ID: <20091102223818.GA15628@us.ibm.com>
-References: <20091006040526.GA22923@us.ibm.com> <4ACAFD6A.3060008@fr.ibm.com> <20091008030828.GA18973@us.ibm.com> <4ACD9ECC.90508@fr.ibm.com> <20091009032928.GA2031@us.ibm.com> <4ACF381F.9050808@fr.ibm.com> <20091010013235.GA11904@us.ibm.com> <4AD2EBC7.2020109@fr.ibm.com> <20091014061533.GA23569@us.ibm.com> <20091102133326.e3dc51fb.akpm@linux-foundation.org>
+From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 00/12] Standardize c/r error reporting (v3)
+Date: Mon,  2 Nov 2009 16:23:28 -0600
+Message-ID: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932565AbZKBWiV@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20091102133326.e3dc51fb.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, andrea@cpushare.com, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Pavel Emelianov <xemul@openvz.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm@linux-foundation.org):
-> On Tue, 13 Oct 2009 23:15:33 -0700
-> Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> wrote:
-> 
-> > Daniel Lezcano [dlezcano@fr.ibm.com] wrote:
-> > > Sukadev Bhattiprolu wrote:
-> > >> Ccing  Andrea's new email id:
-> > >>
-> > >> Daniel Lezcano [dlezcano@fr.ibm.com] wrote:
-> > >>   
-> > >>> Following your explanation I was able to reproduce a simple program   
-> > >>> added in attachment. But there is something I do not understand is 
-> > >>> why  the leak does not appear if I do the 'lstat' (cf. test program) 
-> > >>> in the  pid 2 context.
-> > >>>     
-> > >>
-> > >> Hmm, are you sure there is no leak with this test program ? If I put back
-> > >> the commit (7766755a2f249e7), I do see a leak in all three data structures
-> > >> (pid_2, proc_inode, pid_namespace).
-> > >>   
-> > >
-> > > Let me clarify :)
-> > >
-> > > The program leaks with the commit 7766755a2f249e7 and does not leak  
-> > > without this commit.
-> > > This is the expected behaviour and this simple program spots the problem.
-> > >
-> > > I tried to modify the program and I moved the lstat to the process 2 in  
-> > > the child namespace. Conforming your analysis, I was expecting to see a  
-> > > leak too, but this one didn't occur. I was wondering why, maybe there is  
-> > > something I didn't understood in the analysis.
-> > 
-> > Hmm, There are two separate dentries associated with the processes.
-> > One in each mount of /proc. The proc dentries in the child container
-> > are freed when the child container unmounts its /proc so you don't see
-> > the leak when the lstat() is inside the container.
-> > 
-> > When the lstat() is in the root container, it is accessing proc-dentries
-> > from the _root container_ - They are supposed to  be flushed when the task
-> > exits (but the above commit prevents that flush). They should be freed
-> > when the /proc in root container is unmounted - and leak until then ?
-> > 
-> 
-> This bug hasn't been fixed yet, has it?
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Well Suka did trace the bug to commit 7766755a2f249e7, and posted a patch
-to revert that, acked by Eric on Oct 20.  Suka, were you going to repost
-that patch?
+Here is a completely new approach, basically verbatim implementing
+Oren's recipe from last Friday.  It only implements the error part
+to replace ckpt_write_err.  The intent would be for ckpt_debug to
+also be replaced by ckpt_msg() which would be similar to ckpt_err()
+except adding a prefix to the message.
 
+My goal is for users to be able to get real errors printed to a logfile
+for checkpoint and restart (not have to check dmesg) in ckpt-v19,
+especially for things like 'oh you're on a btrfs which is not supported'.
+Having to check dmesg seems to walk right into the 'toy implementation'
+argument.
+
+Thanks Oren for the detailed explanation of what you want to see, and
+Matt for several excellent cleanup suggestions.
+
+If there are no major objections then I'll add ckpt_err()s at restart
+on top of this patchset, but probably hold off on converting ckpt_debugs
+for a bit.  Note that the heavyweight semaphore means that for real
+debugging we're only increasing the chances of hiding bugs with the
+debugging, so I'm open to the idea of keeping ckpt_debug() as is.
+
+You can fetch this tree as branch nov2.6 of
+git://git.kernel.org/pub/scm/linux/kernel/git/sergeh/linux-cr.git
+or see gitweb at http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/nov2.6
+
+thanks,
 -serge
