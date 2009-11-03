@@ -1,24 +1,54 @@
-From: Paul Menage <menage@google.com>
-Subject: Re: [PATCH 2/3] Fix the 'current css_set' problem in debug subsystem
-Date: Mon, 2 Nov 2009 17:23:31 -0800
-Message-ID: <6599ad830911021723t77583792q1a22c345d3b0d3c1@mail.gmail.com>
-References: <b741c2440911012346k7213befcida229606f10c0399@mail.gmail.com>
-	 <4AEF81E2.3060403@cn.fujitsu.com>
-	 <b741c2440911021721o610ee4f1la123146e6e503d2d@mail.gmail.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/3] cgroups: support for module-loadable subsystems
+Date: Tue, 03 Nov 2009 10:03:42 +0800
+Message-ID: <4AEF8F7E.1000007__33321.665498852$1257213923$gmane$org@cn.fujitsu.com>
+References: <20091102212825.GA13692@andrew.cmu.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757592AbZKCBXd@vger.kernel.org>
-In-Reply-To: <b741c2440911021721o610ee4f1la123146e6e503d2d@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Liu Aleaxander <aleaxander@gmail.com>
-Cc: Li Zefan <lizf@cn.fujitsu.com>, linux-kernel@vger.kernel.org, "containers@lists.osdl.org" <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091102212825.GA13692-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 2, 2009 at 5:21 PM, Liu Aleaxander <aleaxander@gmail.com> wrote:
-> Yes, I know it means 'current task', but is this useful to print the
-> same things with two more files in all the cgroups?
->
+Ben Blum wrote:
+> This patch series implements simple support for building and loading
+> subsystems as modules, both within and outside the kernel source tree.
+> Module unloading is as yet unimplemented - it will require more advanced
+> reference counting in the mount/unmount code, and I plan to work on this
+> soon.
+> 
 
-We could just export those files in the root cgroup in the debug hierarchy.
+I doubt the value of module-loadable subsystems. A cgroup subsystem
+is usually a kernel resource controller, and normally it needs to
+add some hooks in some in-kernel structures and functions, which
+makes it impossible to be a module.
 
-Paul
+In fact, net_cls is the only subsystem that can be a module, and
+make it a module doesn't seem to have real benefit?
+
+> Patch #1 sets up the subsys[] array so its contents can be dynamic as
+> modules appear and (eventually) disappear. I introduce an rwsem called
+> subsys_mutex to protect against concurrent loads/unloads/reads, and
+> modify iterations over the array to handle when subsystems are absent.
+> 
+> Patch #2 implements an interface for modules to load subsystems, called
+> cgroup_load_subsys, similar to cgroup_init_subsys, and adds a module
+> pointer in struct cgroup_subsys.
+> 
+> Patch #3 modifies the net_cls subsystem, which already had some module
+> declarations, to be configurable as a module, which also serves as a
+> simple proof-of-concept.
+> 
+> -- bblum
+>  
