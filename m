@@ -1,151 +1,101 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/12] define a new set of functions for error and
-	debug logging
-Date: Mon, 2 Nov 2009 15:24:39 -0800
-Message-ID: <20091102232439.GK14023@count0.beaverton.ibm.com>
-References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
-	<1257200620-15499-2-git-send-email-serue@us.ibm.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 2/3] Fix the 'current css_set' problem in debug subsystem
+Date: Tue, 03 Nov 2009 09:05:38 +0800
+Message-ID: <4AEF81E2.3060403@cn.fujitsu.com>
+References: <b741c2440911012346k7213befcida229606f10c0399@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1257200620-15499-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757568AbZKCBGk@vger.kernel.org>
+In-Reply-To: <b741c2440911012346k7213befcida229606f10c0399@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Liu Aleaxander <aleaxander@gmail.com>
+Cc: Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 02, 2009 at 04:23:29PM -0600, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Liu Aleaxander wrote:
+>>From 61c93b1a66e43d44820e9b8d22ef0bec80dfc814 Mon Sep 17 00:00:00 2001
+> From: Liu Aleaxander <Aleaxander@gmail.com>
+> Date: Mon, 2 Nov 2009 14:30:07 +0800
+> Subject: [PATCH 2/3] Fix the 'current css_set' problem in debug subsystem
+> 
+> In the current implementation, it always print the same information
+> no matter which group you are in. And this would be meaningless. So
+> we should make it print the information of the 'real' current one.
+> 
+> Well, I am not sure it's the current one, but I'm sure it's the first
+> one of that cgroup.
+> 
 
-<snip>
+I don't think there is a bug with current 'curent_css_set'. The
+"current" in all debug.current_xxx interfaces means "current task".
 
-> +/*
-> + * _ckpt_generate_fmt - handle the special flags in the enhanced format
-> + * strings used by checkpoint/restart error messages.
+Besides we already print out a cgroup's css links through
+debug.cgroup_css_links, without showing the refcount of
+each css_set, but we can, if it can be useful:
 
-<snip>
+  # cat debug.cgroup_css_links
+  css_set c10d92e0
 
-> + *	ckpt_write_err(ctx, "%(T)FILE flags %d %O %E\n", flags, objref, err);
-> + *
-> + * Must be called with ctx->fmt_buf_lock held.  The expanded format
-> + * will be placed in ctx->fmt_buf.
-
-nit:
-
-I haven't gotten through the series but this looks like either a stale
-comment (re: "ctx->fmt_buf_lock"), or it's premature -- I don't see you
-introduce or use this lock in this patch.
-
-> + */
-> +void _ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt)
-> +{
-> +	char *s = ctx->fmt;
-> +	int len = 0;
-> +	int first = 1;
+> Signed-off-by: Liu Aleaxander <Aleaxander@gmail.com>
+> ---
+>  include/linux/cgroup.h |    2 --
+>  kernel/cgroup.c        |   19 ++++++++++++-------
+>  2 files changed, 12 insertions(+), 9 deletions(-)
+> 
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index 4d63c5c..0008dee 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -389,8 +389,6 @@ int cgroup_add_files(struct cgroup *cgrp,
+>              const struct cftype cft[],
+>              int count);
+> 
+> -struct css_set* cgroup_first_css_set(const struct cgroup *cgrp);
+> -
+>  int cgroup_is_removed(const struct cgroup *cgrp);
+> 
+>  int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 863089f..ddd4d33 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -340,7 +340,7 @@ static inline void put_css_set_taskexit(struct css_set *cg)
+>  /*
+>   * Get the first css_set of the cgroup 'cgrp'.
+>   */
+> -struct css_set* cgroup_first_css_set(const struct cgroup *cgrp)
+> +static struct css_set* cgroup_first_css_set(const struct cgroup *cgrp)
+>  {
+>         struct list_head *head = &cgrp->css_sets;
+>         struct cg_cgroup_link *link;
+> @@ -4093,17 +4093,22 @@ static u64 debug_taskcount_read(struct cgroup
+> *cont, struct cftype *cft)
+> 
+>  static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
+>  {
+> -    return (u64)(unsigned long)current->cgroups;
+> +    return (u64)(long)cgroup_first_css_set(cont);
+>  }
+> 
+>  static u64 current_css_set_refcount_read(struct cgroup *cont,
+>                         struct cftype *cft)
+>  {
+> -    u64 count;
+> -
+> -    rcu_read_lock();
+> -    count = atomic_read(&current->cgroups->refcount);
+> -    rcu_read_unlock();
+> +    u64 count = 0;
+> +    struct css_set *cg;
 > +
-> +	for (; *fmt && len < CKPT_MSG_LEN; fmt++) {
-> +		if (!is_special_flag(fmt)) {
-> +			s[len++] = *fmt;
-> +			continue;
-> +		}
-> +		if (!first)
-> +			s[len++] = ' ';
-> +		else
-> +			first = 0;
-
-I'm tempted to say leave the space out. The square brackets delimit
-these enough. And if the caller really needs the space then it can be
-done: "%(E) %(O)foo".
-
-<snip>
-
-> +void _ckpt_msg_append(struct ckpt_ctx *ctx, char *fmt, ...)
-> +{
-> +	va_list ap;
+> +    cg = cgroup_first_css_set(cont);
+> +    if (cg) {
+> +        rcu_read_lock();
+> +        count = atomic_read(&cg->refcount);
+> +        rcu_read_unlock();
+> +    }
 > +
-> +	va_start(ap, fmt);
-> +	_ckpt_msg_appendv(ctx, fmt, ap);
-> +	va_end(ap);
-> +}
-> +
-> +void _ckpt_msg_complete(struct ckpt_ctx *ctx)
-> +{
-> +	int ret;
-
-In the case of do_ckpt_msg() it's clear this won't happen. However
-since _do_ckpt_msg() is separate from _ckpt_msg_complete() (looking
-at the second patch) it's not clear that this will always be maintained
-correctly.
-
-BUG_ON(ctx->msglen < 1); /* detect msg_complete calls without any
-				messages */
-
-> +
-> +	if (ctx->kflags & CKPT_CTX_CHECKPOINT) {
-> +		ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
-> +		if (!ret)
-> +			ret = ckpt_write_string(ctx, ctx->msg, ctx->msglen);
-> +		if (ret < 0)
-> +			printk(KERN_NOTICE "c/r: error string unsaved (%d): %s\n",
-> +			       ret, ctx->msg+1);
-> +	}
-> +#if 0
-> +	if (ctx->logfile) {
-> +		mm_segment_t fs = get_fs();
-> +		set_fs(KERNEL_DS);
-> +		ret = _ckpt_kwrite(ctx->logfile, ctx->msg+1, ctx->msglen-1);
-> +		set_fs(fs);
-> +	}
-> +#endif
-> +#ifdef CONFIG_CHECKPOINT_DEBUG
-> +	printk(KERN_DEBUG "%s", ctx->msg+1);
-> +#endif
-
-Then clear:
-
-	ctx->msglen = 0;
-
-<snip>
-
-> +/*
-> + * Expand fmt into ctx->fmt.
-> + * This expands enhanced format flags such as %(T), which takes no
-> + * arguments, and %(E), which will require a properly positioned
-> + * int error argument.  Flags include:
-> + *   T: Task
-> + *   E: Errno
-> + *   O: Objref
-> + *   P: Pointer
-> + *   S: string
-> + *   V: Variable (symbol)
-> + * May be called under spinlock.
-> + * Must be called under ckpt_msg_lock.
-> + */
-> +extern void _ckpt_generate_fmt(struct ckpt_ctx *ctx, char *fmt);
-
-I'm not seeing why this is needed outside checkpoint/sys.c. In a future
-patch?
-
-<snip>
-
-> +#define _ckpt_err(ctx, fmt, args...) do { \
-> +	_do_ckpt_msg(ctx, "[ error %s:%d]" fmt, __func__, __LINE__, ##args);	\
-> +} while (0)
-> +
-> +/* ckpt_logmsg() or ckpt_msg() will do do_ckpt_msg with an added
-> + * prefix */
-
-nit: This comment is about future code. It should perhaps be part of
-	the patch description rather than in the code as comment.
-
-<snip>
+>      return count;
+>  }
+> 
