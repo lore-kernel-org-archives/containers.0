@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 01/12] define a new set of functions for error and debug
-	logging
-Date: Tue, 03 Nov 2009 11:58:35 -0500
-Message-ID: <4AF0613B.2030804@librato.com>
-References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
-	<1257200620-15499-2-git-send-email-serue@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [v10][PATCH 8/9] Define clone_with_pids() syscall
+Date: Tue, 3 Nov 2009 09:16:22 -0800
+Message-ID: <20091103171622.GA18403@us.ibm.com>
+References: <20091101204132.GA22116@us.ibm.com>
+	<20091101204548.GG23168@us.ibm.com>
+	<1257264980.31972.2518.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1257200620-15499-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1257264980.31972.2518.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,57 +20,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| On Sun, 2009-11-01 at 12:45 -0800, Sukadev Bhattiprolu wrote:
+| > +int sys_clone_with_pids(struct pt_regs *regs)
+| > +{
+| ...
+| > +       rc = copy_from_user(&kcs, ucs, sizeof(kcs));
+| > +       if (rc)
+| > +               return -EFAULT;
+| > +
+| > +       /*
+| > +        * TODO: If size of clone_args is not what the kernel expects, it
+| > +        *       could be that kernel is newer and has an extended structure.
+| > +        *       When that happens, this check needs to be smarter (and we
+| > +        *       need an additional copy_from_user()). For now, assume exact
+| > +        *       match.
+| > +        */
+| > +       if (kcs.clone_args_size != sizeof(kcs))
+| > +               return -EINVAL;
+| > +
+| > +       /*
+| > +        * To avoid future compatibility issues, ensure unused fields are 0.
+| > +        */
+| > +       if (kcs.reserved1 || kcs.clone_flags_high)
+| > +               return -EINVAL;
+| 
+| Suka, is there a reason we don't have these bits in some
+| arch-independent code?  I would have thought the stuff in the
+| process_32.c code would be just as thin a wrapper as possible to unwrap
+| the pt_regs and call into generic code.
 
+Yes, it can be in arch independent code: but couple of minor inconvinences:
 
-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> The checkpoint context now includes buffers for an expanded
-> format and for messages to be written out.  A mutex protects
-> these buffers as they are being built up and written out.
-> ckpt_msg() will write general informative (debug) messages to
-> syslog and an optional user-provided logfile.  ckpt_err() will
-> write errors to the same places, and, if it is a checkpoint
-> operation, also to the checkpoint image.
-> 
-> (This is intended to implement Oren's suggestion verbatim)
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+	- currently the arch independent code does not know about the
+	  'clone_args' structure. This helps keep this patchset smaller.
+	  It could know about it in the future (when more flags are added).
 
-[...]
+	- and we need to check these *before* unwrapping the values from
+	  pt_regs.
 
-> +void _ckpt_msg_complete(struct ckpt_ctx *ctx)
-> +{
-> +	int ret;
-> +
-> +	if (ctx->kflags & CKPT_CTX_CHECKPOINT) {
-> +		ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
+Well, you are right. Will define 'check_clone_with_pids_params()' in
+kernel/fork.c and call it here before unwrapping the params.
 
-The _ckpt_msg_... interface is (will be?) used also for non-errors.
-So writing and error record should also depend on ctx->errno, to be
-set by someone before (ckpt_err ?)
-
-> +		if (!ret)
-> +			ret = ckpt_write_string(ctx, ctx->msg, ctx->msglen);
-> +		if (ret < 0)
-> +			printk(KERN_NOTICE "c/r: error string unsaved (%d): %s\n",
-> +			       ret, ctx->msg+1);
-> +	}
-> +#if 0
-> +	if (ctx->logfile) {
-> +		mm_segment_t fs = get_fs();
-> +		set_fs(KERNEL_DS);
-> +		ret = _ckpt_kwrite(ctx->logfile, ctx->msg+1, ctx->msglen-1);
-> +		set_fs(fs);
-> +	}
-> +#endif
-
-This piece perhaps belongs to another patch ?
-
-[...]
-
-Oren.
+Suka
