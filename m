@@ -1,44 +1,54 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: pidns memory leak
-Date: Tue, 03 Nov 2009 00:41:36 -0800
-Message-ID: <m1ljiogfun.fsf@fess.ebiederm.org>
-References: <20091006040526.GA22923@us.ibm.com> <4ACAFD6A.3060008@fr.ibm.com>
-	<20091008030828.GA18973@us.ibm.com> <4ACD9ECC.90508@fr.ibm.com>
-	<20091009032928.GA2031@us.ibm.com> <4ACF381F.9050808@fr.ibm.com>
-	<20091010013235.GA11904@us.ibm.com> <4AD2EBC7.2020109@fr.ibm.com>
-	<20091014061533.GA23569@us.ibm.com>
-	<20091102133326.e3dc51fb.akpm@linux-foundation.org>
-	<20091102223818.GA15628@us.ibm.com>
-	<20091102144752.71fd4a31.akpm@linux-foundation.org>
-	<4AEFDAAE.500@free.fr>
+From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Subject: Re: [v10][PATCH 8/9] Define clone_with_pids() syscall
+Date: Tue, 3 Nov 2009 09:46:52 +0100
+Message-ID: <200911030946.52962.arnd@arndb.de>
+References: <20091101204132.GA22116@us.ibm.com> <4AEF2077.5080107@librato.com>
+	<20091103064454.GA22483@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755947AbZKCIlo@vger.kernel.org>
-In-Reply-To: <4AEFDAAE.500@free.fr> (Cedric Le Goater's message of "Tue\, 03 Nov 2009 08\:24\:30 +0100")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <legoater@free.fr>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Serge E. Hallyn" <serue@us.ibm.com>, andrea@cpushare.com, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Emelianov <xemul@openvz.org>, Alexey Dobriyan <adobriyan@mail.ru>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091103064454.GA22483-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <legoater@free.fr> writes:
+On Tuesday 03 November 2009, Sukadev Bhattiprolu wrote:
+> 
+> Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
+> | 
+> | > +   /*
+> | > +    * TODO: If size of clone_args is not what the kernel expects, it
+> | > +    *       could be that kernel is newer and has an extended structure.
+> | > +    *       When that happens, this check needs to be smarter (and we
+> | > +    *       need an additional copy_from_user()). For now, assume exact
+> | > +    *       match.
+> | > +    */
+> | > +   if (kcs.clone_args_size != sizeof(kcs))
+> | > +           return -EINVAL;
+> | 
+> | I wonder if this is a reason to move the clone_args_size outside the
+> | structure and pass it as a regular argument ?  This will rid the
+> | (futuristic) additional copy-from-user (in case it causes a concern
+> | for clone performance ?)
+> 
+> Your idea makes sense to me. 
+> 
+> Roland, Peter Arnd: do you have any concerns with removing clone_args_size
+> from the structure and making it a parameter ?
 
-> On 11/02/2009 11:47 PM, Andrew Morton wrote:
->> On Mon, 2 Nov 2009 16:38:18 -0600
->> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
->> 
->>>> This bug hasn't been fixed yet, has it?
->>>
->>> Well Suka did trace the bug to commit 7766755a2f249e7, and posted a patch
->>> to revert that, acked by Eric on Oct 20.  Suka, were you going to repost
->>> that patch?
->> 
->> Ah.  OK.  Thanks.  Found it in the backlog pile.
->
-> We've added the patch to our patchset and we confirm that the pid_* leaks have 
-> been reduced to 'nearly' nothing but we still have a lot of inodes and dentries
-> leaks. I hope to find some time to investigate and reproduce with a small 
-> scenario, we are running a LTP like testsuite in a container environment.
+As I mentioned before when it came up the first time, I think that the
+clone_args_size argument is completely bogus and unnecessary in the
+presence of the flags word, but I agree that if we have it, it should
+better be a separate argument.
 
-Does forcing a cache flush help with the other leaks?
-
-Eric
+	Arnd <><
