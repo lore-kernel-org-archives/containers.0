@@ -1,56 +1,35 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/12] define a new set of functions for error and
-	debug logging
-Date: Mon, 2 Nov 2009 23:24:18 -0800
-Message-ID: <20091103072418.GA19243@count0.beaverton.ibm.com>
-References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
-	<1257200620-15499-2-git-send-email-serue@us.ibm.com>
-	<20091102232439.GK14023@count0.beaverton.ibm.com>
-	<20091103023959.GA19697@us.ibm.com>
+From: Cedric Le Goater <legoater@free.fr>
+Subject: Re: pidns memory leak
+Date: Tue, 03 Nov 2009 08:24:30 +0100
+Message-ID: <4AEFDAAE.500@free.fr>
+References: <20091006040526.GA22923@us.ibm.com> <4ACAFD6A.3060008@fr.ibm.com>	<20091008030828.GA18973@us.ibm.com> <4ACD9ECC.90508@fr.ibm.com>	<20091009032928.GA2031@us.ibm.com> <4ACF381F.9050808@fr.ibm.com>	<20091010013235.GA11904@us.ibm.com> <4AD2EBC7.2020109@fr.ibm.com>	<20091014061533.GA23569@us.ibm.com>	<20091102133326.e3dc51fb.akpm@linux-foundation.org>	<20091102223818.GA15628@us.ibm.com> <20091102144752.71fd4a31.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091103023959.GA19697-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756099AbZKCHY4@vger.kernel.org>
+In-Reply-To: <20091102144752.71fd4a31.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, andrea@cpushare.com, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Emelianov <xemul@openvz.org>, Alexey Dobriyan <adobriyan@mail.ru>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 02, 2009 at 08:39:59PM -0600, Serge E. Hallyn wrote:
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > On Mon, Nov 02, 2009 at 04:23:29PM -0600, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> > > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ...
-
-<snip>
-
-> > > +#define _ckpt_err(ctx, fmt, args...) do { \
-> > > +	_do_ckpt_msg(ctx, "[ error %s:%d]" fmt, __func__, __LINE__, ##args);	\
-> > > +} while (0)
-> > > +
-> > > +/* ckpt_logmsg() or ckpt_msg() will do do_ckpt_msg with an added
-> > > + * prefix */
-> > 
-> > nit: This comment is about future code. It should perhaps be part of
-> > 	the patch description rather than in the code as comment.
+On 11/02/2009 11:47 PM, Andrew Morton wrote:
+> On Mon, 2 Nov 2009 16:38:18 -0600
+> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
 > 
-> Sure - and if there are no basic objectiosn then apart from addressing
-> these I'll also aim to put some meaningful ckpt_errs() on restart failure
-> paths tomorrow.
+>>> This bug hasn't been fixed yet, has it?
+>>
+>> Well Suka did trace the bug to commit 7766755a2f249e7, and posted a patch
+>> to revert that, acked by Eric on Oct 20.  Suka, were you going to repost
+>> that patch?
+> 
+> Ah.  OK.  Thanks.  Found it in the backlog pile.
 
-No objections from me.
+We've added the patch to our patchset and we confirm that the pid_* leaks have 
+been reduced to 'nearly' nothing but we still have a lot of inodes and dentries
+leaks. I hope to find some time to investigate and reproduce with a small 
+scenario, we are running a LTP like testsuite in a container environment.
 
-Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Also, Alexey had questions about it.
 
-Cheers,
-	-Matt Helsley
+C.
