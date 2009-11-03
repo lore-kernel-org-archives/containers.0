@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] Add a choosepid() syscall as a simpler alternative to
-	clone_with_pids()
-Date: Tue, 03 Nov 2009 10:44:41 -0500
-Message-ID: <4AF04FE9.6090301@librato.com>
-References: <1257194293-12099-1-git-send-email-danms@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [v10][PATCH 8/9] Define clone_with_pids() syscall
+Date: Tue, 03 Nov 2009 08:16:20 -0800
+Message-ID: <1257264980.31972.2518.camel@nimitz>
+References: <20091101204132.GA22116@us.ibm.com>
+	<20091101204548.GG23168@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1257194293-12099-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091101204548.GG23168-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +18,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Sun, 2009-11-01 at 12:45 -0800, Sukadev Bhattiprolu wrote:
+> +int sys_clone_with_pids(struct pt_regs *regs)
+> +{
+...
+> +       rc = copy_from_user(&kcs, ucs, sizeof(kcs));
+> +       if (rc)
+> +               return -EFAULT;
+> +
+> +       /*
+> +        * TODO: If size of clone_args is not what the kernel expects, it
+> +        *       could be that kernel is newer and has an extended structure.
+> +        *       When that happens, this check needs to be smarter (and we
+> +        *       need an additional copy_from_user()). For now, assume exact
+> +        *       match.
+> +        */
+> +       if (kcs.clone_args_size != sizeof(kcs))
+> +               return -EINVAL;
+> +
+> +       /*
+> +        * To avoid future compatibility issues, ensure unused fields are 0.
+> +        */
+> +       if (kcs.reserved1 || kcs.clone_flags_high)
+> +               return -EINVAL;
 
+Suka, is there a reason we don't have these bits in some
+arch-independent code?  I would have thought the stuff in the
+process_32.c code would be just as thin a wrapper as possible to unwrap
+the pt_regs and call into generic code.
 
-Dan Smith wrote:
-> This proposed simpler interface builds on all the real work done by Suka's
-> early patches in his clone3() set.  Instead of passing in the pids we want
-> in the clone3() call itself, this interface lets us build that list ahead
-> of time, to be used on the next regular clone().
-> 
-> Some points about the implementation:
->  - The first call to choosepid() allocates a pid_t array on current
->  - All pids in that list start as zero, which do_fork_with_pids treats as
->    undefined
->  - A call to clone() or exec() always clears the current set of next pids
->  - This was Serge's idea, based on a permutation of Daniel Lezcano's
->    cloneat() suggestion
->  - This is based on all Suka's hard work, with a trivial change to the
->    do_fork_with_pids() function to eliminate the copy_from_user() of the
->    pid_t list
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-I don't recall the details, but you probably wanna look at how/when
-kernel threads are created and also at usermode helpers created from
-the kernel (e.g. to load a module on-demand) - make sure they don't
-intentionally (or not) consume the nextpid prepared by the program.
-
-Oren.
+-- Dave
