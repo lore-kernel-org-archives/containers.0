@@ -1,13 +1,15 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 00/12] Standardize c/r error reporting (v3)
-Date: Tue, 03 Nov 2009 11:51:57 -0500
-Message-ID: <4AF05FAD.7060007@librato.com>
+Subject: Re: [PATCH 01/12] define a new set of functions for error and debug
+	logging
+Date: Tue, 03 Nov 2009 11:58:35 -0500
+Message-ID: <4AF0613B.2030804@librato.com>
 References: <1257200620-15499-1-git-send-email-serue@us.ibm.com>
+	<1257200620-15499-2-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1257200620-15499-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1257200620-15499-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,32 +28,48 @@ List-Id: containers.vger.kernel.org
 serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
 > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> Here is a completely new approach, basically verbatim implementing
-> Oren's recipe from last Friday.  It only implements the error part
-> to replace ckpt_write_err.  The intent would be for ckpt_debug to
-> also be replaced by ckpt_msg() which would be similar to ckpt_err()
-> except adding a prefix to the message.
+> The checkpoint context now includes buffers for an expanded
+> format and for messages to be written out.  A mutex protects
+> these buffers as they are being built up and written out.
+> ckpt_msg() will write general informative (debug) messages to
+> syslog and an optional user-provided logfile.  ckpt_err() will
+> write errors to the same places, and, if it is a checkpoint
+> operation, also to the checkpoint image.
 > 
-> My goal is for users to be able to get real errors printed to a logfile
-> for checkpoint and restart (not have to check dmesg) in ckpt-v19,
-> especially for things like 'oh you're on a btrfs which is not supported'.
-> Having to check dmesg seems to walk right into the 'toy implementation'
-> argument.
+> (This is intended to implement Oren's suggestion verbatim)
 > 
-> Thanks Oren for the detailed explanation of what you want to see, and
-> Matt for several excellent cleanup suggestions.
-> 
-> If there are no major objections then I'll add ckpt_err()s at restart
-> on top of this patchset, but probably hold off on converting ckpt_debugs
-> for a bit.  Note that the heavyweight semaphore means that for real
-> debugging we're only increasing the chances of hiding bugs with the
-> debugging, so I'm open to the idea of keeping ckpt_debug() as is.
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-"Heavyweight semaphore" ?
+[...]
 
-Maybe also mention that during checkpoint only one process uses this
-interface - no contention;  During restart, for the most part, one
-process runs at a time, except when transferring control to the the
-next process in line - contention unlikely too.
+> +void _ckpt_msg_complete(struct ckpt_ctx *ctx)
+> +{
+> +	int ret;
+> +
+> +	if (ctx->kflags & CKPT_CTX_CHECKPOINT) {
+> +		ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
+
+The _ckpt_msg_... interface is (will be?) used also for non-errors.
+So writing and error record should also depend on ctx->errno, to be
+set by someone before (ckpt_err ?)
+
+> +		if (!ret)
+> +			ret = ckpt_write_string(ctx, ctx->msg, ctx->msglen);
+> +		if (ret < 0)
+> +			printk(KERN_NOTICE "c/r: error string unsaved (%d): %s\n",
+> +			       ret, ctx->msg+1);
+> +	}
+> +#if 0
+> +	if (ctx->logfile) {
+> +		mm_segment_t fs = get_fs();
+> +		set_fs(KERNEL_DS);
+> +		ret = _ckpt_kwrite(ctx->logfile, ctx->msg+1, ctx->msglen-1);
+> +		set_fs(fs);
+> +	}
+> +#endif
+
+This piece perhaps belongs to another patch ?
+
+[...]
 
 Oren.
