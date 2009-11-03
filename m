@@ -1,15 +1,15 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/3] cgroups: support for module-loadable subsystems
-Date: Tue, 03 Nov 2009 10:42:02 +0800
-Message-ID: <4AEF987A.5090308__13473.2997314588$1257216283$gmane$org@cn.fujitsu.com>
-References: <20091102212825.GA13692@andrew.cmu.edu>	
-	<4AEF8F7E.1000007@cn.fujitsu.com>
-	<6599ad830911021811n7ccf7a70y6939ac581381c22f@mail.gmail.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [v10][PATCH 8/9] Define clone_with_pids() syscall
+Date: Mon, 2 Nov 2009 22:44:54 -0800
+Message-ID: <20091103064454.GA22483@us.ibm.com>
+References: <20091101204132.GA22116@us.ibm.com>
+	<20091101204548.GG23168@us.ibm.com> <4AEF2077.5080107@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830911021811n7ccf7a70y6939ac581381c22f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AEF2077.5080107-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +19,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Mon, Nov 2, 2009 at 6:03 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->> I doubt the value of module-loadable subsystems. A cgroup subsystem
->> is usually a kernel resource controller, and normally it needs to
->> add some hooks in some in-kernel structures and functions, which
->> makes it impossible to be a module.
-> 
-> Not true - as the classifier example shows, if there's already a
-> framework that supports hooking loadable modules into some kernel
-> system, a resource controller can be a module.
-> 
+Oren Laadan [orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org] wrote:
+| 
+| > +	/*
+| > +	 * TODO: If size of clone_args is not what the kernel expects, it
+| > +	 * 	 could be that kernel is newer and has an extended structure.
+| > +	 * 	 When that happens, this check needs to be smarter (and we
+| > +	 * 	 need an additional copy_from_user()). For now, assume exact
+| > +	 * 	 match.
+| > +	 */
+| > +	if (kcs.clone_args_size != sizeof(kcs))
+| > +		return -EINVAL;
+| 
+| I wonder if this is a reason to move the clone_args_size outside the
+| structure and pass it as a regular argument ?  This will rid the
+| (futuristic) additional copy-from-user (in case it causes a concern
+| for clone performance ?)
 
-True. Just reminds me a pure cfq-based io controller can be a
-module too, though the io controller discussed in the mini summit
-won't be a pure cfq-based one.
+Your idea makes sense to me. 
 
->> In fact, net_cls is the only subsystem that can be a module, and
->> make it a module doesn't seem to have real benefit?
-> 
-> Wouldn't it be just as useful as any other module-loadable classifier,
-> of which there are quite a few?
-> 
-> It's true that net_cls is currently the only subsystem that makes
-> sense to use as a module, but its existence shows that the concept
-> isn't too outlandish.
-> 
+Roland, Peter Arnd: do you have any concerns with removing clone_args_size
+from the structure and making it a parameter ?
 
-Yes, sounds reasonable. 
+	struct clone_args {
+		u64 clone_flags_high;
+		u64 child_stack_base;
+		u64 child_stack_size;
+		u64 parent_tid_ptr;
+		u64 child_tid_ptr;
+		u32 nr_pids;
+		u32 reserved0;
+		u64 reserved1;
+	};
+
+	sys_clone_with_pids(u32 flags_low, struct clone_args *cargs,
+			u32 nr_pids, u32 clone_args_size)
+
+Sukadev
