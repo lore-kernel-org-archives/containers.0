@@ -1,50 +1,35 @@
-From: Liu Aleaxander <aleaxander@gmail.com>
-Subject: [PATCH] cgroup: Fixes the un-paired cgroup lock problem
-Date: Wed, 4 Nov 2009 09:40:40 +0800
-Message-ID: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] cgroup: Fixes the un-paired cgroup lock problem
+Date: Wed, 04 Nov 2009 13:11:10 +0800
+Message-ID: <4AF10CEE.5020807@cn.fujitsu.com>
+References: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753682AbZKDBkg@vger.kernel.org>
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1750865AbZKDFME@vger.kernel.org>
+In-Reply-To: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>, Li Zefan <lizf@cn.fujitsu.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+To: Liu Aleaxander <aleaxander@gmail.com>
+Cc: Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-From: Liu Aleaxander <Aleaxander@gmail.com>
-Date: Wed, 4 Nov 2009 09:27:06 +0800
-Subject: [PATCH] Fixes the un-paired cgroup lock problem
+Liu Aleaxander wrote:
+> From: Liu Aleaxander <Aleaxander@gmail.com>
+> Date: Wed, 4 Nov 2009 09:27:06 +0800
+> Subject: [PATCH] Fixes the un-paired cgroup lock problem
+> 
+> In cgroup_lock_live_group, it locks the cgroup by mutex_lock, while in the
+> cgroup_tasks_write, it unlock it by cgroup_unlock. Even though they are
+> equal, but I do think we should make it pair.
+> 
+> BTW, should we replace others with cgroup_lock and cgroup_unlock?
+> Since we already have a wrapper one and it's meaningful.
+> 
 
-In cgroup_lock_live_group, it locks the cgroup by mutex_lock, while in the
-cgroup_tasks_write, it unlock it by cgroup_unlock. Even though they are
-equal, but I do think we should make it pair.
+Before I read the email body, I thought there is a bug where
+there is a lock without unlock or vise versa.
 
-BTW, should we replace others with cgroup_lock and cgroup_unlock?
-Since we already have a wrapper one and it's meaningful.
-
-Signed-off-by: Liu Aleaxander <Aleaxander@gmail.com>
----
- kernel/cgroup.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 0249f4b..ee2274e 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1660,9 +1660,9 @@ static int cgroup_tasks_write(struct cgroup
-*cgrp, struct cftype *cft, u64 pid)
-  */
- bool cgroup_lock_live_group(struct cgroup *cgrp)
- {
--	mutex_lock(&cgroup_mutex);
-+	cgroup_lock();
- 	if (cgroup_is_removed(cgrp)) {
--		mutex_unlock(&cgroup_mutex);
-+		cgroup_unlock();
- 		return false;
- 	}
- 	return true;
--- 
-1.6.2.5
-
--- 
-regards
-Liu Aleaxander
+I agree the case here can be called "unpaired", but I'm not
+convinced this patch is needed. The code is not buggy or
+confusing. So the patch neither fixes a bug nor make the code
+more readable.
