@@ -1,86 +1,51 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] Mount point suggestions for cgroup
-Date: Wed, 4 Nov 2009 13:46:18 +0530
-Message-ID: <20091104081618.GD3560__17164.4536116675$1257322721$gmane$org@balbir.in.ibm.com>
-References: <20091104063005.GC3560@balbir.in.ibm.com>
-	<20091104154024.0b8f6123.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Bill Davidsen <davidsen@tmr.com>
+Subject: Re: [PATCH] cgroup: Fixes the un-paired cgroup lock problem
+Date: Wed, 04 Nov 2009 09:26:14 -0500
+Message-ID: <4AF18F06.50807@tmr.com>
+References: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com> <4AF10CEE.5020807@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091104154024.0b8f6123.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756546AbZKDO05@vger.kernel.org>
+In-Reply-To: <4AF10CEE.5020807@cn.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Liu Aleaxander <aleaxander@gmail.com>, Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2009-11-04 15:40:24]:
+Li Zefan wrote:
+> Liu Aleaxander wrote:
+>> From: Liu Aleaxander <Aleaxander@gmail.com>
+>> Date: Wed, 4 Nov 2009 09:27:06 +0800
+>> Subject: [PATCH] Fixes the un-paired cgroup lock problem
+>>
+>> In cgroup_lock_live_group, it locks the cgroup by mutex_lock, while in the
+>> cgroup_tasks_write, it unlock it by cgroup_unlock. Even though they are
+>> equal, but I do think we should make it pair.
+>>
+>> BTW, should we replace others with cgroup_lock and cgroup_unlock?
+>> Since we already have a wrapper one and it's meaningful.
+>>
+> 
+> Before I read the email body, I thought there is a bug where
+> there is a lock without unlock or vise versa.
+> 
+> I agree the case here can be called "unpaired", but I'm not
+> convinced this patch is needed. The code is not buggy or
+> confusing. So the patch neither fixes a bug nor make the code
+> more readable.
+> 
+I would say it fixes a bug, the one that would be introduced when the two 
+methods are no longer compatible and essentially two names for the same thing. 
+And while you may know the code so well that you knew without looking that this 
+was (currently) okay, there will be lots of eyes on this code over the years, I 
+think most people would find use of cgroup_lock to lock the cgroup a LOT more 
+readable.
 
-> On Wed, 4 Nov 2009 12:00:05 +0530
-> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> 
-> > Hi, All,
-> > 
-> > We've been having a discussion as to what would be the right place to
-> > mount the cgroup filesystem. Jan has been proactively looking into
-> > this. The FHS has no recommendation since cgroup filesystem came in
-> > much later.
-> > 
-> > The options are
-> > 
-> > 1. /dev/cgroup
-> > 2. /cgroup
-> > 3. Some place under /sys
-> > 
-> > The problem with (2) is that it is quite non-standard and pollutes the
-> > root directory. (3) requires some basic support to create a directory
-> > for cgroup under /sys. (1) seems the most obvious choice since cpusets
-> > were mounted under /dev/cpuset, but /dev is controlled by udev.
-> > 
-> > Given the three choices or any other suggestions, is there a general
-> > preference as to where we can mount it? The goal is to standardize
-> > the mount point (if possible).
-> > 
-> > BTW, the mounting is expected to be done using cgconfigparser present
-> > in libcgroup.
-> > 
-> 
-> IMHO, even if anywhere is ok to me, the suggestion should includes the fact
->   - Each cgroup subsystem can be mounted independenty from other cgroup.
->   - some cgroup (noop) can be mounted multiple times
-> etc...there are some points which is different from /proc or /sys.
-> So, we need multiple mount points.
-> 
-> Then, to say my own not-seriously-considered idea, I vote for
->  - /cgroup/[HierarchyName]/
-> rather than /dev/ or /sys or /opt. This sounds straightforward.
-
-The reason I liked /dev/cgroup was because cpusets could be
-mounted at /dev/cpuset or /dev/cgroup/cpuset. My concern with /cgroup
-is that a ls "/" now becomes larger in size. But I'll take your vote
-for it as +1 for /cgroup.
-
-> 
-> If /sys,  /sys/cgroup/[HierarchyName] will be candidate. But considering
-> users can use arbitarary combination of subsystem, using /sys may require
-> much work, I think.
-> 
-
-Yes, Agreed.
-
-> Thanks,
-> -Kame
-> 
+While you can't go back in time to murder your grandfather, it creates no 
+paradox to fix a bug before someone writes it.
 
 -- 
-	Balbir
+Bill Davidsen <davidsen@tmr.com>
+   "We have more to fear from the bungling of the incompetent than from
+the machinations of the wicked."  - from Slashdot
