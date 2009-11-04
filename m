@@ -1,11 +1,15 @@
-From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-139-g371f330
-Date: Wed, 4 Nov 2009 13:00:27 -0500
-Message-ID: <200911041800.nA4I0RRc013545@gorgona.ncl.cs.columbia.edu>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/3] cgroups: subsystem module interface
+Date: Wed, 4 Nov 2009 15:30:25 -0500
+Message-ID: <20091104203024.GA14471__15581.5491606065$1257366927$gmane$org@andrew.cmu.edu>
+References: <20091102212825.GA13692@andrew.cmu.edu>
+	<20091102213022.GC13692@andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091102213022.GC13692-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,184 +19,177 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lizf-zuA2N8Q4brPw3oLZptLEjg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is an automated email from the git hooks/post-receive script. It was
-generated because a ref change was pushed to the repository containing
-the project "linux-cr".
+On Mon, Nov 02, 2009 at 04:30:22PM -0500, Ben Blum wrote:
+> Add interface between cgroups subsystem management and module loading
+> 
+> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> 
+> This patch implements rudimentary module-loading support for cgroups - namely,
+> a cgroup_load_subsys (similar to cgroup_init_subsys) for use as a module
+> initcall, and a struct module pointer in struct cgroup_subsys. Support for
+> subsystem unloading not here, yet to be done (requires more advanced reference
+> counting, for one thing).
+> 
+> I tested compiling a subsystem outside of the kernel source tree, and it was
+> apparent that I wanted the EXPORT_SYMBOL for several functions, but I'm not
+> sure what else it might be good to put them on. Suggestions welcome.
+> 
+> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> ---
+> 
+>  include/linux/cgroup.h |    4 ++
+>  kernel/cgroup.c        |   92 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 96 insertions(+), 0 deletions(-)
+> 
+> 
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index d7f1545..c8474c4 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -38,6 +38,7 @@ extern void cgroup_fork_failed(struct task_struct *p, int run_callbacks,
+>  			       unsigned long clone_flags);
+>  extern int cgroupstats_build(struct cgroupstats *stats,
+>  				struct dentry *dentry);
+> +extern int cgroup_load_subsys(struct cgroup_subsys *ss);
+>  
+>  extern struct file_operations proc_cgroup_operations;
+>  
+> @@ -477,6 +478,9 @@ struct cgroup_subsys {
+>  	/* used when use_id == true */
+>  	struct idr idr;
+>  	spinlock_t id_lock;
+> +
+> +	/* should be defined only by modular subsystems */
+> +	struct module *module;
+>  };
+>  
+>  #define SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 9966dfe..8eba8a5 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -2491,6 +2491,7 @@ int cgroup_add_file(struct cgroup *cgrp,
+>  		error = PTR_ERR(dentry);
+>  	return error;
+>  }
+> +EXPORT_SYMBOL_GPL(cgroup_add_file);
+>  
+>  int cgroup_add_files(struct cgroup *cgrp,
+>  			struct cgroup_subsys *subsys,
+> @@ -2505,6 +2506,7 @@ int cgroup_add_files(struct cgroup *cgrp,
+>  	}
+>  	return 0;
+>  }
+> +EXPORT_SYMBOL_GPL(cgroup_add_files);
+>  
+>  /**
+>   * cgroup_task_count - count the number of tasks in a cgroup.
+> @@ -3650,7 +3652,97 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+>  	mutex_init(&ss->hierarchy_mutex);
+>  	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
+>  	ss->active = 1;
+> +
+> +	/* this function shouldn't be used with modular subsystems, since they
+> +	 * need to register a subsys_id, among other things */
+> +	BUG_ON(ss->module);
+> +}
+> +
+> +/**
+> + * cgroup_load_subsys: load and register a modular subsystem at runtime
+> + * @ss: the subsystem to load
+> + *
+> + * This function should be called in a modular subsystem's initcall. If the
+> + * subsytem is built as a module, it will be assigned a new subsys_id and set
+> + * up for use. If the subsystem is built-in anyway, work is delegated to the
+> + * simpler cgroup_init_subsys.
+> + */
+> +int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
+> +{
+> +	int i;
+> +	struct cgroup_subsys_state *css;
+> +
+> +	/* check name validity */
+> +	if (ss->name == NULL || strlen(ss->name) > MAX_CGROUP_TYPE_NAMELEN)
+> +		return -EINVAL;
+> +
+> +	/* we don't support callbacks in modular subsystems. this check is
+> +	 * before the ss->module check for consistency - a module that *could*
+> +	 * be a module should still have no callbacks for consistency. */
+> +	if (ss->fork || ss->exit)
+> +		return -EINVAL;
+> +
+> +	/* an optionally modular subsystem is built-in: we want to do nothing,
+> +	 * since cgroup_init_subsys will take care of it. */
+> +	if (ss->module == NULL) {
+> +		/* sanity: ss->module NULL only if the subsys is built-in and
+> +		 * appears in subsys[] already. */
+> +		BUG_ON(ss->subsys_id >= CGROUP_BUILTIN_SUBSYS_COUNT);
+> +		BUG_ON(subsys[ss->subsys_id] != ss);
+> +		return 0;
+> +	}
+> +
+> +	/* need to register a subsys id before anything else - for example,
+> +	 * init_cgroup_css needs it. also, subsys_mutex needs to nest outside
+> +	 * cgroup_mutex. */
+> +	down_write(&subsys_mutex);
+> +	/* find the first empty slot in the array */
+> +	for (i = CGROUP_BUILTIN_SUBSYS_COUNT; i < CGROUP_SUBSYS_COUNT; i++) {
+> +		if (subsys[i] == NULL)
+> +			break;
+> +	}
+> +	if (i == CGROUP_SUBSYS_COUNT) {
+> +		/* maximum number of subsystems already registered! */
+> +		up_write(&subsys_mutex);
+> +		return -EBUSY;
+> +	}
+> +	/* assign ourselves the subsys_id */
+> +	ss->subsys_id = i;
+> +	subsys[i] = ss;
+> +
+> +	mutex_lock(&cgroup_mutex);
+> +	/* no ss->create seems to need anything important in the ss struct, so
+> +	 * this can happen first (i.e. before the rootnode attachment). */
+> +	css = ss->create(ss, dummytop);
+> +	if (IS_ERR(css)) {
+> +		/* failure case - need to deassign the subsys[] slot. */
+> +		mutex_unlock(&cgroup_mutex);
+> +		subsys[i] = NULL;
+> +		up_write(&subsys_mutex);
+> +		return PTR_ERR(css);
+> +	}
+> +
+> +	list_add(&ss->sibling, &rootnode.subsys_list);
+> +	ss->root = &rootnode;
+> +
+> +	init_cgroup_css(css, ss, dummytop);
+> +	init_css_set.subsys[ss->subsys_id] = dummytop->subsys[ss->subsys_id];
 
-The branch, ckpt-v18-dev has been updated
-       via  371f33026ee110e6232f3160fd312f1fdbe4bd3b (commit)
-       via  e124bb2fef7172526f66834f84db33cf63e2f1f2 (commit)
-       via  30478e9427ec50428ab58877fc76147968445ca1 (commit)
-       via  09a6bd88b4c84621ccefd446fcd2b0536268828c (commit)
-       via  03521a11a9599061518ebee50315cac83928d3ce (commit)
-       via  30a76affe75a99a12aa5f746aad309ca95f2eb79 (commit)
-       via  b03424642f4c7d944ca0f636c0f6c9fd20401903 (commit)
-       via  cb48d731108ac61f9381c1581449de78acfc4b36 (commit)
-       via  518a37d1285da2595facc2586e32e4f9a309ef8e (commit)
-       via  92c90a19579d4bf45a1017d6fbb1c4d269d3e789 (commit)
-       via  901cea729d7e6df21fbf89ea596eacb918a9aea9 (commit)
-       via  c7fbaefb08e672ececb8ac2a6fa862d8b5bf3ae7 (commit)
-       via  4aab33cac4c6d82b396108004c36fdffad36c694 (commit)
-      from  c1405acba1fe1450593da966a4a4c37ab049e785 (commit)
+There is a problem here; namely, the init_css_set is supposed to be
+immutable after boot. Putting a new subsystem state in it seems like it
+will be impossible to get right, since a hierarchy might be mounted and
+already using the init_css_set. Perhaps it would be better to use
+find_css_set for this?
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
-
-- Log -----------------------------------------------------------------
-commit 371f33026ee110e6232f3160fd312f1fdbe4bd3b
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:47 2009 -0500
-
-    add logfd to c/r api
-    
-    and write msgs to user-provided logfile if one exists.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit e124bb2fef7172526f66834f84db33cf63e2f1f2
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:45 2009 -0500
-
-    remove ckpt_write_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 30478e9427ec50428ab58877fc76147968445ca1
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:44 2009 -0500
-
-    net/{,unix}/checkpoint.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 09a6bd88b4c84621ccefd446fcd2b0536268828c
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:43 2009 -0500
-
-    fs/eventpoll.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 03521a11a9599061518ebee50315cac83928d3ce
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:42 2009 -0500
-
-    drivers/char/tty_io.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 30a76affe75a99a12aa5f746aad309ca95f2eb79
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:41 2009 -0500
-
-    checkpoint/signal.c: use ckpt_err
-    
-    Also fix an instance of ckpt_write_err under spinlock
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit b03424642f4c7d944ca0f636c0f6c9fd20401903
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:40 2009 -0500
-
-    checkpoint/process.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit cb48d731108ac61f9381c1581449de78acfc4b36
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:39 2009 -0500
-
-    checkpoint/objhash.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 518a37d1285da2595facc2586e32e4f9a309ef8e
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:38 2009 -0500
-
-    checkpoint/memory.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 92c90a19579d4bf45a1017d6fbb1c4d269d3e789
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:37 2009 -0500
-
-    checkpoint/files.c: use ckpt_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 901cea729d7e6df21fbf89ea596eacb918a9aea9
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:36 2009 -0500
-
-    checkpoint/checkpoint.c: use ckpt_err
-    
-    This also fixes a bug where ckpt_write_err was called under rwlock_t.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit c7fbaefb08e672ececb8ac2a6fa862d8b5bf3ae7
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 4 12:08:34 2009 -0500
-
-    arch/x86/mm/checkpoint.c: use ckp_err
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-commit 4aab33cac4c6d82b396108004c36fdffad36c694
-Author: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date:   Sun Nov 1 09:19:40 2009 -0500
-
-    define a new set of functions for error and debug logging
-    
-    The checkpoint context now includes buffers for an expanded
-    format and for messages to be written out.  A mutex protects
-    these buffers as they are being built up and written out.
-    ckpt_msg() will write general informative (debug) messages to
-    syslog and an optional user-provided logfile.  ckpt_err() will
-    write errors to the same places, and, if it is a checkpoint
-    operation, also to the checkpoint image.
-    
-    (This is intended to implement Oren's suggestion verbatim)
-    
-    Changelog:
-    	Nov 3: Several suggestions by Matt, including:
-    		msg_complete return on empty msg; make _ckpt_generate_fmt
-    		static; and dont put spaces between prefix tags.
-    	Nov 3: Make sure ctx->fmt ends with \0!
-    	Nov 3: pass errno to ckpt_err(), and have ckpt_msg_complete()
-    		only write to checkpoint image if ctx->errno is set.
-    
-    Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-    Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
------------------------------------------------------------------------
-
-Summary of changes:
- arch/x86/mm/checkpoint.c         |    5 +-
- checkpoint/checkpoint.c          |  217 ++++----------------------------------
- checkpoint/files.c               |   23 ++--
- checkpoint/memory.c              |   10 +-
- checkpoint/objhash.c             |   27 +++---
- checkpoint/process.c             |    8 +-
- checkpoint/signal.c              |   11 +-
- checkpoint/sys.c                 |  203 ++++++++++++++++++++++++++++++++++-
- drivers/char/tty_io.c            |   24 +++--
- fs/eventpoll.c                   |    2 +-
- include/linux/checkpoint.h       |   75 ++++++++++++--
- include/linux/checkpoint_types.h |    6 +
- include/linux/syscalls.h         |    5 +-
- net/checkpoint.c                 |   14 ++--
- net/unix/checkpoint.c            |    5 +-
- 15 files changed, 363 insertions(+), 272 deletions(-)
-
-
-hooks/post-receive
---
-linux-cr
+> +
+> +	mutex_init(&ss->hierarchy_mutex);
+> +	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
+> +	ss->active = 1;
+> +
+> +	/* pin the subsystem's module so it doesn't go away. this shouldn't
+> +	 * fail, since the module's initcall calls us.
+> +	 * TODO: with module unloading, move this elsewhere */
+> +	BUG_ON(!try_module_get(ss->module));
+> +
+> +	/* success! */
+> +	mutex_unlock(&cgroup_mutex);
+> +	up_write(&subsys_mutex);
+> +	return 0;
+>  }
+> +EXPORT_SYMBOL_GPL(cgroup_load_subsys);
+>  
+>  /**
+>   * cgroup_init_early - cgroup initialization at system boot
+> 
