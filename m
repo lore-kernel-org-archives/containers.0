@@ -1,35 +1,51 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] cgroup: Fixes the un-paired cgroup lock problem
-Date: Wed, 04 Nov 2009 13:11:10 +0800
-Message-ID: <4AF10CEE.5020807@cn.fujitsu.com>
-References: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC] Mount point suggestions for cgroup
+Date: Wed, 4 Nov 2009 12:00:05 +0530
+Message-ID: <20091104063005.GC3560__13668.5751531788$1257316262$gmane$org@balbir.in.ibm.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1750865AbZKDFME@vger.kernel.org>
-In-Reply-To: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Liu Aleaxander <aleaxander@gmail.com>
-Cc: Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Liu Aleaxander wrote:
-> From: Liu Aleaxander <Aleaxander@gmail.com>
-> Date: Wed, 4 Nov 2009 09:27:06 +0800
-> Subject: [PATCH] Fixes the un-paired cgroup lock problem
-> 
-> In cgroup_lock_live_group, it locks the cgroup by mutex_lock, while in the
-> cgroup_tasks_write, it unlock it by cgroup_unlock. Even though they are
-> equal, but I do think we should make it pair.
-> 
-> BTW, should we replace others with cgroup_lock and cgroup_unlock?
-> Since we already have a wrapper one and it's meaningful.
-> 
+Hi, All,
 
-Before I read the email body, I thought there is a bug where
-there is a lock without unlock or vise versa.
+We've been having a discussion as to what would be the right place to
+mount the cgroup filesystem. Jan has been proactively looking into
+this. The FHS has no recommendation since cgroup filesystem came in
+much later.
 
-I agree the case here can be called "unpaired", but I'm not
-convinced this patch is needed. The code is not buggy or
-confusing. So the patch neither fixes a bug nor make the code
-more readable.
+The options are
+
+1. /dev/cgroup
+2. /cgroup
+3. Some place under /sys
+
+The problem with (2) is that it is quite non-standard and pollutes the
+root directory. (3) requires some basic support to create a directory
+for cgroup under /sys. (1) seems the most obvious choice since cpusets
+were mounted under /dev/cpuset, but /dev is controlled by udev.
+
+Given the three choices or any other suggestions, is there a general
+preference as to where we can mount it? The goal is to standardize
+the mount point (if possible).
+
+BTW, the mounting is expected to be done using cgconfigparser present
+in libcgroup.
+
+
+-- 
+	Balbir
