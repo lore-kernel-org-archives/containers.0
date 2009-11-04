@@ -1,18 +1,11 @@
-From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] Mount point suggestions for cgroup
-Date: Thu, 5 Nov 2009 03:10:30 +0530
-Message-ID: <20091104214030.GO5495__22247.3980546512$1257370973$gmane$org@linux.vnet.ibm.com>
-References: <20091104063005.GC3560@balbir.in.ibm.com>
-	<20091104154024.0b8f6123.kamezawa.hiroyu@jp.fujitsu.com>
-	<20091104173517.GA3668@count0.beaverton.ibm.com>
-	<6599ad830911041325i9b309a7y4d912d6be7ddbdd9@mail.gmail.com>
-Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Subject: [cr][git]linux-cr branch, ckpt-v18-dev, updated. v2.6.31-140-g50583e5
+Date: Wed, 4 Nov 2009 17:53:03 -0500
+Message-ID: <200911042253.nA4Mr3og014210@gorgona.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830911041325i9b309a7y4d912d6be7ddbdd9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,29 +15,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Jan-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 04, 2009 at 01:25:46PM -0800, Paul Menage wrote:
-> On Wed, Nov 4, 2009 at 9:35 AM, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >
-> > If anything, "standardizing" the mount point(s) will likely provide a false
-> > sense of uniformity and we'll get some bad userspace scripts/tools that
-> > break when "nonstandard" usage appears. Leaving the mount point undefined
-> > forces anyone writing scripts or tools to consider whether they want to be
-> > portable and, if so, the proper way to find the cgroup hierarchies they need
-> > to manipulate.
-> 
-> Scanning /proc/mounts to find the relevant mount locations is pretty
-> simple, for code that's just wanting to use existing cgroup mounts.
-> But for the code that sets up mounts in the first place, its probably
-> helpful to have recommendations of suitable locations.
-> 
+This is an automated email from the git hooks/post-receive script. It was
+generated because a ref change was pushed to the repository containing
+the project "linux-cr".
 
-libcgroup uses a configuration file specified by the user to do this.
+The branch, ckpt-v18-dev has been updated
+       via  50583e50d36f32368ec7e2b1f4056248a981a4c1 (commit)
+      from  371f33026ee110e6232f3160fd312f1fdbe4bd3b (commit)
 
-thanks,
--- 
-regards,
-Dhaval
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
+
+- Log -----------------------------------------------------------------
+commit 50583e50d36f32368ec7e2b1f4056248a981a4c1
+Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Date:   Wed Nov 4 17:51:01 2009 -0500
+
+    c/r: reflect api change (previous commit) in docs and examples
+    
+    Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+
+-----------------------------------------------------------------------
+
+Summary of changes:
+ Documentation/checkpoint/self_checkpoint.c |    2 +-
+ Documentation/checkpoint/self_restart.c    |    2 +-
+ Documentation/checkpoint/usage.txt         |   19 ++++++++++++-------
+ checkpoint/sys.c                           |    2 +-
+ include/linux/checkpoint.h                 |    3 +++
+ 5 files changed, 18 insertions(+), 10 deletions(-)
+
+
+hooks/post-receive
+--
+linux-cr
