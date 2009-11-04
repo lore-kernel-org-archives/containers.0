@@ -1,15 +1,15 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/3] cgroups: subsystem module interface
-Date: Wed, 4 Nov 2009 15:30:25 -0500
-Message-ID: <20091104203024.GA14471__15581.5491606065$1257366927$gmane$org@andrew.cmu.edu>
-References: <20091102212825.GA13692@andrew.cmu.edu>
-	<20091102213022.GC13692@andrew.cmu.edu>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Mount point suggestions for cgroup
+Date: Wed, 4 Nov 2009 09:35:17 -0800
+Message-ID: <20091104173517.GA3668@count0.beaverton.ibm.com>
+References: <20091104063005.GC3560@balbir.in.ibm.com>
+	<20091104154024.0b8f6123.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091102213022.GC13692-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+In-Reply-To: <20091104154024.0b8f6123.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,177 +19,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lizf-zuA2N8Q4brPw3oLZptLEjg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Jan-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 02, 2009 at 04:30:22PM -0500, Ben Blum wrote:
-> Add interface between cgroups subsystem management and module loading
+On Wed, Nov 04, 2009 at 03:40:24PM +0900, KAMEZAWA Hiroyuki wrote:
+> On Wed, 4 Nov 2009 12:00:05 +0530
+> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > 
-> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> > Hi, All,
+> > 
+> > We've been having a discussion as to what would be the right place to
+> > mount the cgroup filesystem. Jan has been proactively looking into
+> > this. The FHS has no recommendation since cgroup filesystem came in
+> > much later.
+> > 
+> > The options are
+> > 
+> > 1. /dev/cgroup
+> > 2. /cgroup
+> > 3. Some place under /sys
+> > 
+> > The problem with (2) is that it is quite non-standard and pollutes the
+> > root directory. (3) requires some basic support to create a directory
+> > for cgroup under /sys. (1) seems the most obvious choice since cpusets
+> > were mounted under /dev/cpuset, but /dev is controlled by udev.
+> > 
+> > Given the three choices or any other suggestions, is there a general
+> > preference as to where we can mount it? The goal is to standardize
+> > the mount point (if possible).
+> > 
+> > BTW, the mounting is expected to be done using cgconfigparser present
+> > in libcgroup.
+> > 
 > 
-> This patch implements rudimentary module-loading support for cgroups - namely,
-> a cgroup_load_subsys (similar to cgroup_init_subsys) for use as a module
-> initcall, and a struct module pointer in struct cgroup_subsys. Support for
-> subsystem unloading not here, yet to be done (requires more advanced reference
-> counting, for one thing).
+> IMHO, even if anywhere is ok to me, the suggestion should includes the fact
+>   - Each cgroup subsystem can be mounted independenty from other cgroup.
+>   - some cgroup (noop) can be mounted multiple times
+> etc...there are some points which is different from /proc or /sys.
+> So, we need multiple mount points.
 > 
-> I tested compiling a subsystem outside of the kernel source tree, and it was
-> apparent that I wanted the EXPORT_SYMBOL for several functions, but I'm not
-> sure what else it might be good to put them on. Suggestions welcome.
+> Then, to say my own not-seriously-considered idea, I vote for
+>  - /cgroup/[HierarchyName]/
+> rather than /dev/ or /sys or /opt. This sounds straightforward.
 > 
-> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-> ---
-> 
->  include/linux/cgroup.h |    4 ++
->  kernel/cgroup.c        |   92 ++++++++++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 96 insertions(+), 0 deletions(-)
-> 
-> 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index d7f1545..c8474c4 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -38,6 +38,7 @@ extern void cgroup_fork_failed(struct task_struct *p, int run_callbacks,
->  			       unsigned long clone_flags);
->  extern int cgroupstats_build(struct cgroupstats *stats,
->  				struct dentry *dentry);
-> +extern int cgroup_load_subsys(struct cgroup_subsys *ss);
->  
->  extern struct file_operations proc_cgroup_operations;
->  
-> @@ -477,6 +478,9 @@ struct cgroup_subsys {
->  	/* used when use_id == true */
->  	struct idr idr;
->  	spinlock_t id_lock;
-> +
-> +	/* should be defined only by modular subsystems */
-> +	struct module *module;
->  };
->  
->  #define SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 9966dfe..8eba8a5 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -2491,6 +2491,7 @@ int cgroup_add_file(struct cgroup *cgrp,
->  		error = PTR_ERR(dentry);
->  	return error;
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_add_file);
->  
->  int cgroup_add_files(struct cgroup *cgrp,
->  			struct cgroup_subsys *subsys,
-> @@ -2505,6 +2506,7 @@ int cgroup_add_files(struct cgroup *cgrp,
->  	}
->  	return 0;
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_add_files);
->  
->  /**
->   * cgroup_task_count - count the number of tasks in a cgroup.
-> @@ -3650,7 +3652,97 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
->  	mutex_init(&ss->hierarchy_mutex);
->  	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
->  	ss->active = 1;
-> +
-> +	/* this function shouldn't be used with modular subsystems, since they
-> +	 * need to register a subsys_id, among other things */
-> +	BUG_ON(ss->module);
-> +}
-> +
-> +/**
-> + * cgroup_load_subsys: load and register a modular subsystem at runtime
-> + * @ss: the subsystem to load
-> + *
-> + * This function should be called in a modular subsystem's initcall. If the
-> + * subsytem is built as a module, it will be assigned a new subsys_id and set
-> + * up for use. If the subsystem is built-in anyway, work is delegated to the
-> + * simpler cgroup_init_subsys.
-> + */
-> +int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
-> +{
-> +	int i;
-> +	struct cgroup_subsys_state *css;
-> +
-> +	/* check name validity */
-> +	if (ss->name == NULL || strlen(ss->name) > MAX_CGROUP_TYPE_NAMELEN)
-> +		return -EINVAL;
-> +
-> +	/* we don't support callbacks in modular subsystems. this check is
-> +	 * before the ss->module check for consistency - a module that *could*
-> +	 * be a module should still have no callbacks for consistency. */
-> +	if (ss->fork || ss->exit)
-> +		return -EINVAL;
-> +
-> +	/* an optionally modular subsystem is built-in: we want to do nothing,
-> +	 * since cgroup_init_subsys will take care of it. */
-> +	if (ss->module == NULL) {
-> +		/* sanity: ss->module NULL only if the subsys is built-in and
-> +		 * appears in subsys[] already. */
-> +		BUG_ON(ss->subsys_id >= CGROUP_BUILTIN_SUBSYS_COUNT);
-> +		BUG_ON(subsys[ss->subsys_id] != ss);
-> +		return 0;
-> +	}
-> +
-> +	/* need to register a subsys id before anything else - for example,
-> +	 * init_cgroup_css needs it. also, subsys_mutex needs to nest outside
-> +	 * cgroup_mutex. */
-> +	down_write(&subsys_mutex);
-> +	/* find the first empty slot in the array */
-> +	for (i = CGROUP_BUILTIN_SUBSYS_COUNT; i < CGROUP_SUBSYS_COUNT; i++) {
-> +		if (subsys[i] == NULL)
-> +			break;
-> +	}
-> +	if (i == CGROUP_SUBSYS_COUNT) {
-> +		/* maximum number of subsystems already registered! */
-> +		up_write(&subsys_mutex);
-> +		return -EBUSY;
-> +	}
-> +	/* assign ourselves the subsys_id */
-> +	ss->subsys_id = i;
-> +	subsys[i] = ss;
-> +
-> +	mutex_lock(&cgroup_mutex);
-> +	/* no ss->create seems to need anything important in the ss struct, so
-> +	 * this can happen first (i.e. before the rootnode attachment). */
-> +	css = ss->create(ss, dummytop);
-> +	if (IS_ERR(css)) {
-> +		/* failure case - need to deassign the subsys[] slot. */
-> +		mutex_unlock(&cgroup_mutex);
-> +		subsys[i] = NULL;
-> +		up_write(&subsys_mutex);
-> +		return PTR_ERR(css);
-> +	}
-> +
-> +	list_add(&ss->sibling, &rootnode.subsys_list);
-> +	ss->root = &rootnode;
-> +
-> +	init_cgroup_css(css, ss, dummytop);
-> +	init_css_set.subsys[ss->subsys_id] = dummytop->subsys[ss->subsys_id];
+> If /sys,  /sys/cgroup/[HierarchyName] will be candidate. But considering
+> users can use arbitarary combination of subsystem, using /sys may require
+> much work, I think.
 
-There is a problem here; namely, the init_css_set is supposed to be
-immutable after boot. Putting a new subsystem state in it seems like it
-will be impossible to get right, since a hierarchy might be mounted and
-already using the init_css_set. Perhaps it would be better to use
-find_css_set for this?
+I agree.
 
-> +
-> +	mutex_init(&ss->hierarchy_mutex);
-> +	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
-> +	ss->active = 1;
-> +
-> +	/* pin the subsystem's module so it doesn't go away. this shouldn't
-> +	 * fail, since the module's initcall calls us.
-> +	 * TODO: with module unloading, move this elsewhere */
-> +	BUG_ON(!try_module_get(ss->module));
-> +
-> +	/* success! */
-> +	mutex_unlock(&cgroup_mutex);
-> +	up_write(&subsys_mutex);
-> +	return 0;
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_load_subsys);
->  
->  /**
->   * cgroup_init_early - cgroup initialization at system boot
-> 
+If anything, "standardizing" the mount point(s) will likely provide a false
+sense of uniformity and we'll get some bad userspace scripts/tools that
+break when "nonstandard" usage appears. Leaving the mount point undefined
+forces anyone writing scripts or tools to consider whether they want to be
+portable and, if so, the proper way to find the cgroup hierarchies they need
+to manipulate.
+
+Cheers,
+	-Matt Helsley
