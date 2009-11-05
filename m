@@ -1,60 +1,47 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] cgroup: Fixes the un-paired cgroup lock problem
-Date: Thu, 05 Nov 2009 16:02:29 +0800
-Message-ID: <4AF28695.7070806@cn.fujitsu.com>
-References: <b741c2440911031740m52f8c11dt6e57b549cc6ce465@mail.gmail.com> <4AF10CEE.5020807@cn.fujitsu.com> <4AF18F06.50807@tmr.com>
+From: Gabor Gombas <gombasg-SuEj7oiQppWHXe+LvDLADg@public.gmane.org>
+Subject: Re: [RFC] Mount point suggestions for cgroup
+Date: Thu, 5 Nov 2009 09:26:12 +0100
+Message-ID: <20091105082612.GE24467__13287.6313561157$1257409612$gmane$org@boogie.lpds.sztaki.hu>
+References: <20091104063005.GC3560@balbir.in.ibm.com>
+	<20091104154024.0b8f6123.kamezawa.hiroyu@jp.fujitsu.com>
+	<20091104081618.GD3560@balbir.in.ibm.com>
+	<1257348117.31972.4360.camel@nimitz>
+	<20091104161142.GA8825@us.ibm.com> <4AF1AACE.6060705@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755655AbZKEIDX@vger.kernel.org>
-In-Reply-To: <4AF18F06.50807@tmr.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Bill Davidsen <davidsen@tmr.com>
-Cc: Liu Aleaxander <aleaxander@gmail.com>, Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4AF1AACE.6060705-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Bill Davidsen wrote:
-> Li Zefan wrote:
->> Liu Aleaxander wrote:
->>> From: Liu Aleaxander <Aleaxander@gmail.com>
->>> Date: Wed, 4 Nov 2009 09:27:06 +0800
->>> Subject: [PATCH] Fixes the un-paired cgroup lock problem
->>>
->>> In cgroup_lock_live_group, it locks the cgroup by mutex_lock, while
->>> in the
->>> cgroup_tasks_write, it unlock it by cgroup_unlock. Even though they are
->>> equal, but I do think we should make it pair.
->>>
->>> BTW, should we replace others with cgroup_lock and cgroup_unlock?
->>> Since we already have a wrapper one and it's meaningful.
->>>
->>
->> Before I read the email body, I thought there is a bug where
->> there is a lock without unlock or vise versa.
->>
->> I agree the case here can be called "unpaired", but I'm not
->> convinced this patch is needed. The code is not buggy or
->> confusing. So the patch neither fixes a bug nor make the code
->> more readable.
->>
-> I would say it fixes a bug, the one that would be introduced when the
-> two methods are no longer compatible and essentially two names for the
-> same thing. And while you may know the code so well that you knew
-> without looking that this was (currently) okay, there will be lots of
-> eyes on this code over the years, I think most people would find use of
-> cgroup_lock to lock the cgroup a LOT more readable.
+On Wed, Nov 04, 2009 at 05:24:46PM +0100, Jan Safranek wrote:
+
+> LSB (and FHS) IMHO does not specify any place for such stuff:
 > 
-> While you can't go back in time to murder your grandfather, it creates
-> no paradox to fix a bug before someone writes it.
-> 
+> /dev - for devices only, cgroups are not devices
 
-cgroup_lock() is not necessarily more readable than mutex_lock(&cgroup_mutex),
-at least the former doesn't tell you the lock is a spin_lock or a mutex.
+The FHS says the following for /dev on Linux:
 
-In fact, Ingo showed his distaste towards cgroup_lock():
-	http://lkml.org/lkml/2009/1/18/39
+	/dev : Devices and special files
 
-And I won't worry about the issue you mentioned above. If It does
-happen, the one, who makes the 2 mehtods no long compatible, will
-definitely find out all the places where cgroup_mutex is used and
-make proper change.
+IMHO cgroups are covered by "special files".
+
+Gabor
+
+-- 
+     ---------------------------------------------------------
+     MTA SZTAKI Computer and Automation Research Institute
+                Hungarian Academy of Sciences
+     ---------------------------------------------------------
