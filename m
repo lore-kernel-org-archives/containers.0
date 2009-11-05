@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [v11][PATCH 2/9] Have alloc_pidmap() return actual error code
-Date: Wed, 4 Nov 2009 21:37:36 -0800
-Message-ID: <20091105053736.GB16142__28626.2558926412$1257399665$gmane$org@us.ibm.com>
+Subject: [v11][PATCH 6/9] Check invalid clone flags
+Date: Wed, 4 Nov 2009 21:40:02 -0800
+Message-ID: <20091105054002.GF16142__21495.8622389988$1257399683$gmane$org@us.ibm.com>
 References: <20091105053053.GA11289@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,92 +24,63 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [v11][PATCH 2/9] Have alloc_pidmap() return actual error code
+Subject: [v11][PATCH 6/9] Check invalid clone flags
 
-alloc_pidmap() can fail either because all pid numbers are in use or
-because memory allocation failed.  With support for setting a specific
-pid number, alloc_pidmap() would also fail if either the given pid
-number is invalid or in use.
+As pointed out by Oren Laadan, we want to ensure that unused bits in the
+clone-flags remain unused and available for future. To ensure this, define
+a mask of clone-flags and check the flags in the clone() system calls.
 
-Rather than have callers assume -ENOMEM, have alloc_pidmap() return
-the actual error.
+Changelog[v9]:
+	- Include the unused clone-flag (CLONE_UNUSED) to VALID_CLONE_FLAGS
+	  to avoid breaking any applications that may have set it. IOW, this
+	  patch/check only applies to clone-flags bits 33 and higher.
+
+Changelog[v8]:
+	- New patch in set
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/fork.c |    5 +++--
- kernel/pid.c  |   14 +++++++++-----
- 2 files changed, 12 insertions(+), 7 deletions(-)
+ include/linux/sched.h |   12 ++++++++++++
+ kernel/fork.c         |    3 +++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 75e6e60..6b319a0 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -29,6 +29,18 @@
+ #define CLONE_NEWNET		0x40000000	/* New network namespace */
+ #define CLONE_IO		0x80000000	/* Clone io context */
+ 
++#define CLONE_UNUSED        	0x00001000	/* Can be reused ? */
++
++#define VALID_CLONE_FLAGS	(CSIGNAL | CLONE_VM | CLONE_FS | CLONE_FILES |\
++				 CLONE_SIGHAND | CLONE_UNUSED | CLONE_PTRACE |\
++				 CLONE_VFORK  | CLONE_PARENT | CLONE_THREAD  |\
++				 CLONE_NEWNS  | CLONE_SYSVSEM | CLONE_SETTLS |\
++				 CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID  |\
++				 CLONE_DETACHED | CLONE_UNTRACED             |\
++				 CLONE_CHILD_SETTID | CLONE_STOPPED          |\
++				 CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER |\
++				 CLONE_NEWPID | CLONE_NEWNET| CLONE_IO)
++
+ /*
+  * Scheduling policies
+  */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 4c20fff..93626b2 100644
+index c8a06de..11f77ed 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1156,10 +1156,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		goto bad_fork_cleanup_io;
+@@ -982,6 +982,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
  
- 	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
- 		pid = alloc_pid(p->nsproxy->pid_ns);
--		if (!pid)
-+		if (IS_ERR(pid)) {
-+			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-+		}
- 
- 		if (clone_flags & CLONE_NEWPID) {
- 			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 7d4bb6e..c4d9914 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -150,7 +150,7 @@ static int alloc_pidmap_page(struct pidmap *map)
- static int alloc_pidmap(struct pid_namespace *pid_ns)
- {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
--	int rc;
-+	int rc = -EAGAIN;
- 	struct pidmap *map;
- 
- 	pid = last + 1;
-@@ -189,12 +189,14 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 		} else {
- 			map = &pid_ns->pidmap[0];
- 			offset = RESERVED_PIDS;
--			if (unlikely(last == offset))
-+			if (unlikely(last == offset)) {
-+				rc = -EAGAIN;
- 				break;
-+			}
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
--	return -1;
-+	return rc;
- }
- 
- int next_pidmap(struct pid_namespace *pid_ns, int last)
-@@ -263,8 +265,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 	struct upid *upid;
- 
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
--	if (!pid)
-+	if (!pid) {
-+		pid = ERR_PTR(-ENOMEM);
- 		goto out;
-+	}
- 
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
-@@ -299,7 +303,7 @@ out_free:
- 		free_pidmap(pid->numbers + i);
- 
- 	kmem_cache_free(ns->pid_cachep, pid);
--	pid = NULL;
-+	pid = ERR_PTR(nr);
- 	goto out;
- }
++	if (clone_flags & ~VALID_CLONE_FLAGS)
++		return ERR_PTR(-EINVAL);
++
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
  
 -- 
 1.6.0.4
