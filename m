@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 5/7] kernel/cred.c: ckpt_err at restart
-Date: Thu,  5 Nov 2009 18:00:17 -0600
-Message-ID: <1257465619-1777-6-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 2/7] restart.c: use ckpt_err
+Date: Thu,  5 Nov 2009 18:00:14 -0600
+Message-ID: <1257465619-1777-3-git-send-email-serue@us.ibm.com>
 References: <1257465619-1777-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,103 +24,231 @@ List-Id: containers.vger.kernel.org
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- kernel/cred.c |   46 ++++++++++++++++++++++++++++++++++++----------
- 1 files changed, 36 insertions(+), 10 deletions(-)
 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 62d28a4..c941078 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -764,32 +764,46 @@ static struct cred *do_restore_cred(struct ckpt_ctx *ctx)
- 	int i;
+Changelog:
+	Nove 4: update restart.c ckpt_err usage
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/restart.c |   81 +++++++++++++++++++++++++++++++++++---------------
+ 1 files changed, 57 insertions(+), 24 deletions(-)
+
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 130b4b2..e1bd0ad 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -64,7 +64,7 @@ static int restore_debug_task(struct ckpt_ctx *ctx, int flags)
  
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CRED);
--	if (IS_ERR(h))
-+	if (IS_ERR(h)) {
-+		ckpt_err(ctx, ret, "reading cred entry\n");
- 		return ERR_PTR(PTR_ERR(h));
+ 	s = kmalloc(sizeof(*s), GFP_KERNEL);
+ 	if (!s) {
+-		ckpt_debug("no memory to register ?!\n");
++		ckpt_err(ctx, 0, "no memory to register ?!\n");
+ 		return -ENOMEM;
+ 	}
+ 	s->pid = current->pid;
+@@ -197,13 +197,13 @@ static int _ckpt_read_err(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
+ 	len = h->len - sizeof(*h);
+ 	ptr = kzalloc(len + 1, GFP_KERNEL);
+ 	if (!ptr) {
+-		ckpt_debug("insufficient memory to report image error\n");
++		ckpt_err(ctx, 0, "insufficient memory to report image error\n");
+ 		return -ENOMEM;
+ 	}
+ 
+ 	ret = ckpt_kread(ctx, ptr, len);
+ 	if (ret >= 0) {
+-		ckpt_debug("%s\n", &ptr[1]);
++		ckpt_err(ctx, 0, "%(S)Error recorded in image\n", &ptr[1]);
+ 		ret = -EIO;
+ 	}
+ 
+@@ -757,7 +757,8 @@ static int set_task_ctx(struct task_struct *task, struct ckpt_ctx *ctx)
+ 		task->checkpoint_ctx = ckpt_ctx_get(ctx);
+ 		ret = 0;
+ 	} else {
+-		ckpt_debug("task %d has checkpoint_ctx\n", task_pid_vnr(task));
++		ckpt_err(ctx, 0, "task %d already has checkpoint_ctx\n",
++			 task_pid_vnr(task));
+ 		ret = 1;
+ 	}
+ 	task_unlock(task);
+@@ -807,7 +808,7 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
+ 		rcu_read_unlock();
+ 
+ 		if (!task) {
+-			ckpt_debug("could not find task %d\n", pid);
++			ckpt_err(ctx, 0, "could not find task %d\n", pid);
+ 			restore_notify_error(ctx, -ESRCH);
+ 			return -ESRCH;
+ 		}
+@@ -962,29 +963,38 @@ static int do_restore_task(void)
+ 	current->flags |= PF_RESTARTING;
+ 
+ 	ret = wait_sync_threads();
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "wait_sync_threads\n");
+ 		goto out;
 +	}
  
- 	cred = prepare_creds();
--	if (!cred)
-+	if (!cred) {
-+		ckpt_err(ctx, ret, "prepare_creds()\n");
- 		goto error;
+ 	/* wait for our turn, do the restore, and tell next task in line */
+ 	ret = wait_task_active(ctx);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "wait_task_active\n");
+ 		goto out;
 +	}
  
+ 	restore_debug_running(ctx);
  
- 	/* Do we care if the target user and target group were compatible?
- 	 * Probably.  But then, we can't do any setuid without CAP_SETUID,
- 	 * so we must have been privileged to abuse it... */
- 	groupinfo = ckpt_obj_fetch(ctx, h->groupinfo_ref, CKPT_OBJ_GROUPINFO);
--	if (IS_ERR(groupinfo))
-+	if (IS_ERR(groupinfo)) {
-+		ret = PTR_ERR(groupinfo);
-+		ckpt_err(ctx, ret, "%(O)fetching group\n", h->groupinfo_ref);
- 		goto err_putcred;
+ 	ret = pre_restore_task();
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "pre_restore_task\n");
+ 		goto out;
 +	}
- 	user = ckpt_obj_fetch(ctx, h->user_ref, CKPT_OBJ_USER);
--	if (IS_ERR(user))
-+	if (IS_ERR(user)) {
-+		ret = PTR_ERR(user);
-+		ckpt_err(ctx, ret, "%(O)fetching user\n", h->user_ref);
- 		goto err_putcred;
+ 
+ 	zombie = restore_task(ctx);
+ 	if (zombie < 0) {
+ 		ret = zombie;
++		ckpt_err(ctx, ret, "restore_task\n");
+ 		goto out;
+ 	}
+ 
+ 	ret = restore_activate_next(ctx);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "restore_activate_next\n");
+ 		goto out;
 +	}
  
  	/*
- 	 * TODO: this check should  go into the common helper in
- 	 * kernel/sys.c, and should account for user namespaces
- 	 */
-+	ret = -EPERM;
- 	if (!capable(CAP_SETGID))
- 		for (i = 0; i < groupinfo->ngroups; i++) {
--			if (!in_egroup_p(GROUP_AT(groupinfo, i)))
-+			gid_t g = GROUP_AT(groupinfo, i);
-+			if (!in_egroup_p(g)) {
-+				ckpt_err(ctx, ret, "group %d\n", g);
- 				goto err_putcred;
-+			}
- 		}
- 	ret = set_groups(cred, groupinfo);
- 	if (ret < 0)
-@@ -797,20 +811,32 @@ static struct cred *do_restore_cred(struct ckpt_ctx *ctx)
- 	free_uid(cred->user);
- 	cred->user = get_uid(user);
- 	ret = cred_setresuid(cred, h->uid, h->euid, h->suid);
+ 	 * zombie: we're done here; do_exit() will notice the @ctx on
+@@ -1025,12 +1035,12 @@ static int __prepare_descendants(struct task_struct *task, void *data)
+ 	ckpt_debug("consider task %d\n", task_pid_vnr(task));
+ 
+ 	if (!ptrace_may_access(task, PTRACE_MODE_ATTACH)) {
+-		ckpt_debug("stranger task %d\n", task_pid_vnr(task));
++		ckpt_err(ctx, 0, "stranger task %d\n", task_pid_vnr(task));
+ 		return -EPERM;
+ 	}
+ 
+ 	if (task_ptrace(task) & PT_PTRACED) {
+-		ckpt_debug("ptraced task %d\n", task_pid_vnr(task));
++		ckpt_err(ctx, 0, "ptraced task %d\n", task_pid_vnr(task));
+ 		return -EBUSY;
+ 	}
+ 
+@@ -1187,23 +1197,34 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 
+ 	ret = restore_read_header(ctx);
+ 	ckpt_debug("restore header: %d\n", ret);
 -	if (ret < 0)
 +	if (ret < 0) {
-+		ckpt_err(ctx, ret, "setting uid %d euid %d suid %d\n",
-+			 h->uid, h->euid, h->suid);
- 		goto err_putcred;
++		ckpt_err(ctx, ret, "restore header\n");
+ 		return ret;
 +	}
- 	ret = cred_setfsuid(cred, h->fsuid, &olduid);
--	if (olduid != h->fsuid && ret < 0)
-+	if (olduid != h->fsuid && ret < 0) {
-+		ckpt_err(ctx, ret, "setting fs uid %d\n", h->fsuid);
- 		goto err_putcred;
-+	}
- 	ret = cred_setresgid(cred, h->gid, h->egid, h->sgid);
+ 	ret = restore_container(ctx);
+ 	ckpt_debug("restore container: %d\n", ret);
 -	if (ret < 0)
 +	if (ret < 0) {
-+		ckpt_err(ctx, ret, "setting gid %d egid %d sgid %d\n",
-+			 h->gid, h->egid, h->sgid);
- 		goto err_putcred;
++		ckpt_err(ctx, ret, "restore container\n");
+ 		return ret;
 +	}
- 	ret = cred_setfsgid(cred, h->fsgid, &oldgid);
--	if (oldgid != h->fsgid && ret < 0)
-+	if (oldgid != h->fsgid && ret < 0) {
-+		ckpt_err(ctx, ret, "setting fs gid %d\n", h->fsgid);
- 		goto err_putcred;
-+	}
- 	ret = restore_capabilities(&h->cap_s, cred);
--	if (ret)
-+	if (ret) {
-+		ckpt_err(ctx, ret, "restoring capabilities\n");
- 		goto err_putcred;
+ 	ret = restore_read_tree(ctx);
+ 	ckpt_debug("restore tree: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "restore tree\n");
+ 		return ret;
 +	}
  
- 	ckpt_hdr_put(ctx, h);
- 	return cred;
+-	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1)
++	if ((ctx->uflags & RESTART_TASKSELF) && ctx->nr_pids != 1) {
++		ckpt_err(ctx, 0, "self-restart but nr_pids=%d\n",
++			 ctx->nr_pids);
+ 		return -EINVAL;
++	}
+ 
+ 	ret = init_restart_ctx(ctx, pid);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "init_restart_ctx\n");
+ 		return ret;
++	}
+ 
+ 	/*
+ 	 * Populate own ->checkpoint_ctx: if an ancestor attempts to
+@@ -1216,7 +1237,7 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 		 * We are a bad-behaving descendant: an ancestor must
+ 		 * have prepare_descendants() us as part of a restart.
+ 		 */
+-		ckpt_debug("coord already has checkpoint_ctx\n");
++		ckpt_err(ctx, 0, "coord already has checkpoint_ctx\n");
+ 		return -EBUSY;
+ 	}
+ 
+@@ -1229,34 +1250,46 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ctx->uflags & RESTART_TASKSELF) {
+ 		ret = pre_restore_task();
+ 		ckpt_debug("pre restore task: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "pre restore task\n");
+ 			goto out;
++		}
+ 		ret = restore_task(ctx);
+ 		ckpt_debug("restore task: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "restore task\n");
+ 			goto out;
++		}
+ 	} else {
+ 		/* prepare descendants' t->checkpoint_ctx point to coord */
+ 		ret = prepare_descendants(ctx, ctx->root_task);
+ 		ckpt_debug("restore prepare: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "prepare_descendants\n");
+ 			goto out;
++		}
+ 		/* wait for all other tasks to complete do_restore_task() */
+ 		ret = wait_all_tasks_finish(ctx);
+ 		ckpt_debug("restore finish: %d\n", ret);
+-		if (ret < 0)
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "wait_all_tasks_finish\n");
+ 			goto out;
++		}
+ 	}
+ 
+ 	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
+ 	ckpt_debug("restore deferqueue: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "restore deferqueue\n");
+ 		goto out;
++	}
+ 
+ 	ret = restore_read_tail(ctx);
+ 	ckpt_debug("restore tail: %d\n", ret);
+-	if (ret < 0)
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "restore tail\n");
+ 		goto out;
++	}
+ 
+ 	if (ctx->uflags & RESTART_FROZEN) {
+ 		ret = cgroup_freezer_make_frozen(ctx->root_task);
+@@ -1368,7 +1401,7 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
+ 	if (!ctx || (ctx->uflags & RESTART_TASKSELF)) {
+ 		if (ret < 0) {
+ 			/* partial restore is undefined: terminate */
+-			ckpt_debug("restart err %ld, exiting\n", ret);
++			ckpt_err(ctx, ret, "restart error, exiting\n");
+ 			force_sig(SIGKILL, current);
+ 		} else {
+ 			ret = restore_retval();
 -- 
 1.6.1
