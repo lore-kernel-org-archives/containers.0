@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 4/7] files.c: ckpt_err() during restore
-Date: Thu,  5 Nov 2009 18:00:16 -0600
-Message-ID: <1257465619-1777-5-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 7/7] (debug) print vpids for all restarting tasks
+Date: Thu,  5 Nov 2009 18:00:19 -0600
+Message-ID: <1257465619-1777-8-git-send-email-serue@us.ibm.com>
 References: <1257465619-1777-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,42 +25,21 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c |    8 +++++++-
- 1 files changed, 7 insertions(+), 1 deletions(-)
+ checkpoint/restart.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 14ccfd6..9686b0b 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -649,6 +649,9 @@ static struct file *do_restore_file(struct ckpt_ctx *ctx)
- 	if (ops->restore)
- 		file = ops->restore(ctx, h);
-  out:
-+	if (IS_ERR(file))
-+		ckpt_err(ctx, PTR_ERR(file), "file restore\n");
-+
- 	ckpt_hdr_put(ctx, h);
- 	return file;
- }
-@@ -738,8 +741,10 @@ static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 9e2647e..724b7b2 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -158,7 +158,7 @@ void restore_debug_free(struct ckpt_ctx *ctx)
+ 		   ctx->errno);
+ 	ckpt_debug("kflags %lu uflags %lu oflags %lu", ctx->kflags,
+ 		   ctx->uflags, ctx->oflags);
+-	for (i = 0; i < ctx->active_pid; i++)
++	for (i = 0; i < ctx->nr_pids; i++)
+ 		ckpt_debug("task[%d] to run %d\n", i, ctx->pids_arr[i].vpid);
  
- 	/* point of no return -- close all file descriptors */
- 	ret = close_all_fds(current->files);
--	if (ret < 0)
-+	if (ret < 0) {
-+		ckpt_err(ctx, ret, "closing fds\n");
- 		goto out;
-+	}
- 
- 	for (i = 0; i < h->fdt_nfds; i++) {
- 		ret = restore_file_desc(ctx);
-@@ -757,6 +762,7 @@ static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
- 		files = current->files;
- 		atomic_inc(&files->count);
- 	} else {
-+		ckpt_err(ctx, ret, "restoring file table\n");
- 		files = ERR_PTR(ret);
- 	}
- 	return files;
+ 	list_for_each_entry_safe(s, p, &ctx->task_status, list) {
 -- 
 1.6.1
