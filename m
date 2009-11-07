@@ -1,16 +1,14 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [v11][PATCH 8/9] Define clone_with_pids() syscall
-Date: Sat, 7 Nov 2009 12:18:10 -0800
-Message-ID: <20091107201810.GA26787__21886.4870876589$1257625106$gmane$org@us.ibm.com>
-References: <20091105053053.GA11289@us.ibm.com>
-	<20091105054124.GH16142@us.ibm.com>
-	<20091106180210.GA31652@us.ibm.com>
+From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [v11][PATCH 9/9] Document clone_with_pids() syscall
+Date: Sat, 07 Nov 2009 16:56:13 -0500
+Message-ID: <4AF5ECFD.3000509__2737.58178013868$1257631021$gmane$org@librato.com>
+References: <20091105053053.GA11289@us.ibm.com>	<20091105054204.GI16142@us.ibm.com>	<20091106183936.GA32531@us.ibm.com>	<20091106201814.GA26614@count0.beaverton.ibm.com>	<20091106214529.GB26614@count0.beaverton.ibm.com>
+	<20091107022612.GA18039@suka>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091106180210.GA31652-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091107022612.GA18039@suka>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,56 +18,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| Quoting Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-| > +	stack_size = (unsigned long)kca.child_stack_size;
-| > +	child_stack = (unsigned long)kca.child_stack_base + stack_size;
-| > +
-| > +	if (!child_stack)
-| > +		child_stack = regs->sp;
-| 
-| I'm hooking up the s390 version right now.  Do you think you should
-| make this
-| 
-| 	if (!kca.child_stack_base)
-| 		child_stack = regs->sp;
-| 
-| ?
-| 
-| I suppose that in general if I pass in a NULL kca.child_stack_base
-| I'll also pass in a 0 stacksize, but as a user I'd expect that if
-| I pass in NULL, the size gets ignored.  Instead, if I pass in NULL
-| plus a size, then the kernel will take (void *)size as the stacktop.
 
-Good point. Like copy_thread() on IA64, how about ignoring 'stack_size'
-if base is NULL ?
 
-        child_stack = 0UL;
-        if (kca.child_stack_base)
-                child_stack = (unsigned long)kca.child_stack_base + stack_size;
+Sukadev Bhattiprolu wrote:
+> Matt Helsley [matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | > If userspace passes an array with n pids and there are k namespace levels
+> | > then clone_with_pids() makes sure that the kernel sees a pid array like:
+> | > 
+> | > index	  0     ... k - (n + 1)        ...          k - 1
+> | > 	+-----------------------+-------------------------+
+> | > pid_t	| 0 ..................0 | <copied from userspace> |
+> | > 	+-----------------------+-------------------------+
+> | 
+> | (diagram assumes n != k. If n == k then pids[0] is the pid desired
+> | in the initial namespace..)
+> 
+> True.
+> 
+> Also I was not sure if we should prevent choosing pids in ancestor containers.
+> since a process is not even supposed to know of ancestor namespaces. Is there
+> a need for choosing pids in those namespaces.
 
-        if (!child_stack)
-                child_stack = regs->sp;
+IMHO this is a bit confusing.
 
-The other question is whether we should force all architectures to pass in
-the stack *base* ? clone(2) man page says:
+A process observes a single namespace - the one in which it "lives".
+There is no such thing as descendant namespaces for that process.
+There may be ancestor namespaces.
 
-	Stacks grow  downwards  on  all  processors  that  run  Linux (except
-	the  HP  PA  processors), so child_stack usually points to the topmost
-	address of the memory space set up for the child stack.
+The clone occurs in the context of the process. So the process that
+is forking _must_ indicate pids in _ancestor_ namespaces if it wishes
+to select pids in those (as is the case in c/r).
 
-To be compatibile with clone() on most architectures, should we rename
-'clone_args.child_stack_base' to 'clone_args.child_stack' and let
-architectures use this field like they currently use the 'child_stack'
-parameter to clone(2) ?
+> 
+> | 
+> | > 
+> | > So even though the order is different from choosepid() the calling
+> | > task still doesn't need to know its pidns level. Of course, just
+> | > like choosepid(), n <= k or userspace will get EINVAL.
+> | 
+> | Forgot to mention that I prefer the way choosepid orders the pids.
+> | It's not inspired by the way that the kernel implements pid namespaces
+> | and has more to do with the way userspace sees things (IMHO).
+> 
+> Hmm, In general we C/R a descendant container. So the way userspace
+> sees it at that point is "what are the pids of this process in my current
+> and in any descendant namespaces". IOW, the pid of container from which
+> we checkpoint seems more interesting first - right ?  If so, the pids[]
+> are better ordered from older namespace to younger namespace ?
 
-So x86 would pass in address of top-of-stack while HP-PA can pass in address
-of base-of-stack.
+When we checkpoint, we use an external process to record the state of
+(current or) descendant namespaces.
 
-Arnd, Roland, Peter please let me know if you have any inputs on this.
+When we restart, we run in the context of the restarting process, so
+we select a pid in the current and _ancestor_ namespaces.
 
-Sukadev
+So the order of pids as it (will) appear in the checkpoint image for
+a given process will be from an ancestor down to descendant namespaces.
+And this is how we (will) hand it over to eclone().
+
+> 
+> | I don't know if it makes more sense to change clone_with_pids() or have
+> | [e]glibc wrappers swap the array contents.
+
+I prefer to decide now on an order and stick to it in the kernel and
+in glibc.
+
+Oren
