@@ -1,14 +1,16 @@
-From: Linus Walleij <linus.ml.walleij-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC] Mount point suggestions for cgroup
-Date: Sat, 7 Nov 2009 16:23:48 +0100
-Message-ID: <63386a3d0911070723m79351432na3d01382df53097b__12324.6250710965$1257607489$gmane$org@mail.gmail.com>
-References: <20091104063005.GC3560@balbir.in.ibm.com>
-	<20091104154024.0b8f6123.kamezawa.hiroyu@jp.fujitsu.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [v11][PATCH 8/9] Define clone_with_pids() syscall
+Date: Sat, 7 Nov 2009 12:18:10 -0800
+Message-ID: <20091107201810.GA26787__21886.4870876589$1257625106$gmane$org@us.ibm.com>
+References: <20091105053053.GA11289@us.ibm.com>
+	<20091105054124.GH16142@us.ibm.com>
+	<20091106180210.GA31652@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091104154024.0b8f6123.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091106180210.GA31652-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,23 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Bharata B Rao <bharata.rao-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-2009/11/4 KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>:
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > +	stack_size = (unsigned long)kca.child_stack_size;
+| > +	child_stack = (unsigned long)kca.child_stack_base + stack_size;
+| > +
+| > +	if (!child_stack)
+| > +		child_stack = regs->sp;
+| 
+| I'm hooking up the s390 version right now.  Do you think you should
+| make this
+| 
+| 	if (!kca.child_stack_base)
+| 		child_stack = regs->sp;
+| 
+| ?
+| 
+| I suppose that in general if I pass in a NULL kca.child_stack_base
+| I'll also pass in a 0 stacksize, but as a user I'd expect that if
+| I pass in NULL, the size gets ignored.  Instead, if I pass in NULL
+| plus a size, then the kernel will take (void *)size as the stacktop.
 
-> Then, to say my own not-seriously-considered idea, I vote for
-> =A0- /cgroup/[HierarchyName]/
-> rather than /dev/ or /sys or /opt. This sounds straightforward.
+Good point. Like copy_thread() on IA64, how about ignoring 'stack_size'
+if base is NULL ?
 
-I second this. IMHO it is more important to enforce that the mounts
-below the topdir are named after the subsystem and only mounted
-once for each subsystem, avoiding the multiple-subsystem mounts,
-which are a funny way of doing things but in my experience useless.
+        child_stack = 0UL;
+        if (kca.child_stack_base)
+                child_stack = (unsigned long)kca.child_stack_base + stack_size;
 
-I have used this hierarchy under /cgroup with libcgroup and
-CGFreak in the preliminary Fedora packages and it works like a
-charm.
+        if (!child_stack)
+                child_stack = regs->sp;
 
-Linus Walleij
+The other question is whether we should force all architectures to pass in
+the stack *base* ? clone(2) man page says:
+
+	Stacks grow  downwards  on  all  processors  that  run  Linux (except
+	the  HP  PA  processors), so child_stack usually points to the topmost
+	address of the memory space set up for the child stack.
+
+To be compatibile with clone() on most architectures, should we rename
+'clone_args.child_stack_base' to 'clone_args.child_stack' and let
+architectures use this field like they currently use the 'child_stack'
+parameter to clone(2) ?
+
+So x86 would pass in address of top-of-stack while HP-PA can pass in address
+of base-of-stack.
+
+Arnd, Roland, Peter please let me know if you have any inputs on this.
+
+Sukadev
