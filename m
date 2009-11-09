@@ -1,14 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by
-	tgid at	once
-Date: Mon, 09 Nov 2009 18:07:52 +0100
-Message-ID: <4AF84C68.7010803__38867.9113043056$1257786858$gmane$org@free.fr>
-References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
-	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [v11][PATCH 8/9] Define clone_with_pids() syscall
+Date: Mon, 9 Nov 2009 14:37:19 -0600
+Message-ID: <20091109203719.GA14448__33515.3609900319$1257799099$gmane$org@us.ibm.com>
+References: <20091105053053.GA11289@us.ibm.com>
+	<20091105054124.GH16142@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------010908060905020000010907"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090724032200.2463.82408.stgit-/yCBOHwbXCxd3OlUiQof+WCaruZE5nAUZeezCHUQhQ4@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20091105054124.GH16142-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,328 +19,244 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------010908060905020000010907
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Here is a stab at the s390 syscall.
 
-Ben Blum wrote:
-> Makes procs file writable to move all threads by tgid at once
->
-> This patch adds functionality that enables users to move all threads in a
-> threadgroup at once to a cgroup by writing the tgid to the 'cgroup.procs'
-> file. This current implementation makes use of a rwsem that's taken for
-> reading in the fork() path to prevent newly forking threads within the
-> threadgroup from "escaping" while moving is in progress.
->
-> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->   
-[ cut ]
->  /**
-> + * cgroup_fork_failed - undo operations for fork failure
-> + * @tsk: pointer to  task_struct of exiting process
-> + * @run_callback: run exit callbacks?
-> + *
-> + * Description: Undo cgroup operations after cgroup_fork in fork failure.
-> + *
-> + * We release the read lock that was taken in cgroup_fork(), since it is
-> + * supposed to be dropped in cgroup_post_fork in the success case. The other
-> + * thing that wants to be done is detaching the failed child task from the
-> + * cgroup, so we wrap cgroup_exit.
-> + */
-> +void cgroup_fork_failed(struct task_struct *tsk, int run_callbacks)
-> +{
-> +	up_read(&cgroup_fork_mutex);
-> +	cgroup_exit(tsk, run_callbacks);
-> +}
-> +
-> +/**
->   * cgroup_clone - clone the cgroup the given subsystem is attached to
->   * @tsk: the task to be moved
->   * @subsys: the given subsystem
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 926c117..027ec16 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1300,7 +1300,7 @@ bad_fork_cleanup_policy:
->  	mpol_put(p->mempolicy);
->  bad_fork_cleanup_cgroup:
->  #endif
-> -	cgroup_exit(p, cgroup_callbacks_done);
-> +	cgroup_fork_failed(p, cgroup_callbacks_done);
->  	delayacct_tsk_free(p);
->  	if (p->binfmt)
->  		module_put(p->binfmt->module);
->   
-Hi Ben,
+From f710be4f1296d50551210bcc9ff6ba25d288bc46 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Fri, 6 Nov 2009 19:03:43 -0500
+Subject: [PATCH 1/1] implement s390 clone_with_pids syscall
 
-The current code (with or without your patch) may lead to an error 
-because the fork hook can fail and the exit hook is called in all the 
-cases making the fork / exit asymmetric.
+This does the s390 hook for v11 of clone-with-pids.
 
-I will take the usual example with a cgroup with a counter of tasks, in 
-the fork hook it increments the counter, in the exit hook it decrements 
-the counter. There is one process in the cgroup, hence the counter value 
-is 1. Now this process forks and the fork hook fails before the task 
-counter is incremented to 2, this is not detected in copy process 
-function because the cgroup_fork_callbacks does not return an error, so 
-the process will be forked without error and when the process will exits 
-the counter will be decremented reaching 0 instead of 1.
+I've got a program using the syscall successfully passing
+args to the child function and continuing to run - but I
+haven't yet gotten that hooked into user-cr/restart.c
+successfully.
 
-IMO, the correct fix should be to make the fork hook to return an error 
-and have the cgroup to call the exit method of the subsystem where the 
-fork hook was called. For example, there are 10 subsystems using the 
-fork / exit hooks, when the a process forks, the fork callbacks is 
-called for these subsystems but, let's say, the 3rd fails. So we undo, 
-by calling the exit hooks of the first two.
+The core of my user-space code to use it is:
 
-I wrote a patchset to consolidate the hooks called in the cgroup for 
-fork and exit, and one of them does a rollback for the fork hook when an 
-error occurs. I added an attachment the patch as an example.
+int do_child(void *arg)
+{
+	int iarg = (int ) arg;
 
-Thanks
-  -- Daniel
->   
+	printf("here i am, i was passed %d, my tid is %d\n", iarg, gettid());
+	return 0;
+}
 
+ #define do_cwp(flags, pids, args, sz) \
+( { \
+	register unsigned long int __r2 asm ("2") = (unsigned long int)(flags); \
+	register unsigned long int __r3 asm ("3") = (unsigned long int)(args); \
+	register unsigned long int __r4 asm ("4") = (unsigned long int)(sz); \
+	register unsigned long int __r5 asm ("5") = (unsigned long int)(pids); \
+	register unsigned long int __result asm ("2"); \
+	__asm__ __volatile__( \
+		" lghi %%r1,%5\n" /* put __NR_cwp in r1 for svc 0 */ \
+		" svc 0\n" /* do __NR_cwp syscall */ \
+		" ltgr %%r2,%%r2\n" /* returned 0? */ \
+		" jnz 1f\n" /* if not goto label 1 */ \
+		" lg %%r3,0(%%r15)\n"   /* get fnarg off stack into arg 1 */ \
+		" lg %%r2,8(%%r15)\n"   /* get fn off stack into r3 for basr*/ \
+		" lgr %%r1,%%r15\n" /* tmp store old stack pointer */ \
+		" aghi %%r15,-160\n" /* move the stack */ \
+		" stg %%r1,0(%%r15)\n" /* and save old stack pointer */ \
+		" basr %%r14,%%r3\n" /* call fn(arg) */ \
+		" svc 1\n"  /* call exit */ \
+		" 1:\n" \
+		: "=d" (__result) \
+		: "0" (__r2), "d" (__r3), "d" (__r4), "d" (__r5), \
+		  "i" (__NR_clone_with_pids) \
+		: "1", "cc", "memory"); \
+	__result; \
+} )
 
+int clone_with_pids(int (*fn)(void *), int flags, int nrpids, int *pids,
+		    void *fnarg)
+{
+	long retval;
+	struct clone_args clone_args, *ca = &clone_args;
+	int stacksize;
+	void *sb;
+	u64 *s;
+	int i;
 
---------------010908060905020000010907
-Content-Type: text/x-diff;
- name="0001-cgroup-make-fork-hook-to-return-an-error.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="0001-cgroup-make-fork-hook-to-return-an-error.patch"
+	memset(ca, 0, sizeof(struct clone_args));
+	stacksize = 4*getpagesize();
+	sb  = (void *) malloc(stacksize);
+	if (!sb) {
+		perror("malloc");
+		_exit(1);
+	}
 
-Subject: make the fork hook to return an error
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+	ca->child_stack_base = (u64) sb;
+	ca->child_stack_size = stacksize-8;
+	s = (u64 *)(sb + ca->child_stack_size);
+	*--s = (u64)fnarg;
+	*--s = (u64)fn;
+	ca->child_stack_size -= 16;
+	ca->nr_pids = nrpids;
+	retval = do_cwp(flags, pids, ca, sizeof(struct clone_args));
 
-The fork hooks does not do any error checking making possible to have
-a cgroup subsystem to fail without detecting an error.
+	return retval;
+}
 
-This patch makes the fork hook to return an error if a fork hook failed
-in one of the subsystems. When a fork hook fails for a subsystem,
-the function 'cgroup_fork_callbacks' rollbacks, by calling the exit
-callback for all the subsystem the fork callback were called at this
-point.
-
-Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cgroup.h  |    8 ++++----
- kernel/cgroup.c         |   37 +++++++++++++++++++++++++++----------
- kernel/cgroup_freezer.c |    6 ++++--
- kernel/exit.c           |    2 +-
- kernel/fork.c           |   13 +++++++------
- 5 files changed, 43 insertions(+), 23 deletions(-)
+ arch/s390/include/asm/unistd.h  |    3 +-
+ arch/s390/kernel/compat_linux.c |   50 ++++++++++++++++++++++++++++++++++++++
+ arch/s390/kernel/process.c      |   51 +++++++++++++++++++++++++++++++++++++++
+ arch/s390/kernel/syscalls.S     |    1 +
+ 4 files changed, 104 insertions(+), 1 deletions(-)
 
-Index: linux-2.6/include/linux/cgroup.h
-===================================================================
---- linux-2.6.orig/include/linux/cgroup.h
-+++ linux-2.6/include/linux/cgroup.h
-@@ -31,9 +31,9 @@ extern void cgroup_lock(void);
- extern bool cgroup_lock_live_group(struct cgroup *cgrp);
- extern void cgroup_unlock(void);
- extern void cgroup_fork(struct task_struct *p);
--extern void cgroup_fork_callbacks(struct task_struct *p);
-+extern int cgroup_fork_callbacks(struct task_struct *p);
- extern void cgroup_post_fork(struct task_struct *p);
--extern void cgroup_exit(struct task_struct *p, int run_callbacks);
-+extern void cgroup_exit(struct task_struct *p);
- extern int cgroupstats_build(struct cgroupstats *stats,
- 				struct dentry *dentry);
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index cb5232d..ae9474e 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -269,7 +269,8 @@
+ #define	__NR_pwritev		329
+ #define __NR_rt_tgsigqueueinfo	330
+ #define __NR_perf_event_open	331
+-#define NR_syscalls 332
++#define __NR_clone_with_pids	332
++#define NR_syscalls 333
  
-@@ -430,7 +430,7 @@ struct cgroup_subsys {
- 	void (*attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 			struct cgroup *old_cgrp, struct task_struct *tsk,
- 			bool threadgroup);
--	void (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
-+	int  (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
- 	void (*exit)(struct cgroup_subsys *ss, struct task_struct *task);
- 	int (*populate)(struct cgroup_subsys *ss,
- 			struct cgroup *cgrp);
-@@ -569,7 +569,7 @@ unsigned short css_depth(struct cgroup_s
- static inline int cgroup_init_early(void) { return 0; }
- static inline int cgroup_init(void) { return 0; }
- static inline void cgroup_fork(struct task_struct *p) {}
--static inline void cgroup_fork_callbacks(struct task_struct *p) {}
-+static inline int cgroup_fork_callbacks(struct task_struct *p) {}
- static inline void cgroup_post_fork(struct task_struct *p) {}
- static inline void cgroup_exit(struct task_struct *p, int callbacks) {}
- 
-Index: linux-2.6/kernel/cgroup.c
-===================================================================
---- linux-2.6.orig/kernel/cgroup.c
-+++ linux-2.6/kernel/cgroup.c
-@@ -3436,16 +3436,33 @@ void cgroup_fork(struct task_struct *chi
-  * tasklist. No need to take any locks since no-one can
-  * be operating on this task.
-  */
--void cgroup_fork_callbacks(struct task_struct *child)
-+int cgroup_fork_callbacks(struct task_struct *child)
- {
--	if (need_forkexit_callback) {
--		int i;
--		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
--			struct cgroup_subsys *ss = subsys[i];
--			if (ss->fork)
--				ss->fork(ss, child);
--		}
-+	int i, ret = 0;
-+	struct cgroup_subsys *ss;
-+
-+	if (!need_forkexit_callback)
-+		goto out;
-+
-+	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+		ss = subsys[i];
-+		if (!ss->fork)
-+			continue;
-+		ret = ss->fork(ss, child);
-+		if (ret)
-+			goto out_exit;
- 	}
-+out:
-+	return ret;
-+
-+out_exit:
-+	for (i--; i >= 0; i--) {
-+		ss = subsys[i];
-+		if (!ss->exit)
-+			continue;
-+		ss->exit(ss, child);
-+	}
-+	goto out;
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+index 0debcec..1750fae 100644
+--- a/arch/s390/kernel/compat_linux.c
++++ b/arch/s390/kernel/compat_linux.c
+@@ -762,6 +762,56 @@ asmlinkage long sys32_write(unsigned int fd, char __user * buf, size_t count)
+ 	return sys_write(fd, buf, count);
  }
  
- /**
-@@ -3503,12 +3520,12 @@ void cgroup_post_fork(struct task_struct
-  *    which wards off any cgroup_attach_task() attempts, or task is a failed
-  *    fork, never visible to cgroup_attach_task.
-  */
--void cgroup_exit(struct task_struct *tsk, int run_callbacks)
-+void cgroup_exit(struct task_struct *tsk)
- {
- 	int i;
- 	struct css_set *cg;
- 
--	if (run_callbacks && need_forkexit_callback) {
-+	if (need_forkexit_callback) {
- 		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 			struct cgroup_subsys *ss = subsys[i];
- 			if (ss->exit)
-Index: linux-2.6/kernel/cgroup_freezer.c
-===================================================================
---- linux-2.6.orig/kernel/cgroup_freezer.c
-+++ linux-2.6/kernel/cgroup_freezer.c
-@@ -193,7 +193,7 @@ static int freezer_can_attach(struct cgr
- 	return 0;
- }
- 
--static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
-+static int freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
- {
- 	struct freezer *freezer;
- 
-@@ -210,7 +210,7 @@ static void freezer_fork(struct cgroup_s
- 	 * following check.
- 	 */
- 	if (!freezer->css.cgroup->parent)
--		return;
-+		goto out;
- 
- 	spin_lock_irq(&freezer->lock);
- 	BUG_ON(freezer->state == CGROUP_FROZEN);
-@@ -219,6 +219,8 @@ static void freezer_fork(struct cgroup_s
- 	if (freezer->state == CGROUP_FREEZING)
- 		freeze_task(task, true);
- 	spin_unlock_irq(&freezer->lock);
-+out:
-+	return 0;
- }
- 
++asmlinkage long sys32_clone_with_pids(void)
++{
++	int rc;
++	struct pt_regs *regs = task_pt_regs(current);
++	int args_size;
++	struct clone_args kca;
++	unsigned long flags;
++	int __user *parent_tid_ptr;
++	int __user *child_tid_ptr;
++	unsigned long __user child_stack;
++	unsigned long stack_size;
++	unsigned int flags_low;
++	struct clone_args __user *uca;
++	pid_t __user *pids;
++
++	flags_low = regs->gprs[2] & 0xffffffffUL;
++	uca = compat_ptr(regs->gprs[3]);
++	args_size = regs->gprs[4] & 0xffffffffUL;
++	pids = compat_ptr(regs->gprs[5]);
++
++	rc = fetch_clone_args_from_user(uca, args_size, &kca);
++	if (rc)
++		return rc;
++
++	/*
++	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
++	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
++	 * 	 higher word(s) of 'flags':
++	 *
++	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
++	 */
++	flags = flags_low;
++	parent_tid_ptr = (int *)kca.parent_tid_ptr;
++	child_tid_ptr =  (int *)kca.child_tid_ptr;
++
++	stack_size = (unsigned long)kca.child_stack_size;
++	child_stack = (unsigned long)kca.child_stack_base + stack_size;
++
++	if (!child_stack)
++		child_stack = regs->gprs[15];
++
++	/*
++	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
++	 * 	 to several functions. Need to convert clone_flags to 64-bit.
++	 */
++	return do_fork_with_pids(flags, child_stack, regs, stack_size,
++				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
++				pids);
++}
++
  /*
-Index: linux-2.6/kernel/exit.c
-===================================================================
---- linux-2.6.orig/kernel/exit.c
-+++ linux-2.6/kernel/exit.c
-@@ -968,7 +968,7 @@ NORET_TYPE void do_exit(long code)
- 	exit_fs(tsk);
- 	check_stack_usage();
- 	exit_thread();
--	cgroup_exit(tsk, 1);
-+	cgroup_exit(tsk);
+  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
+  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 5417eb5..e27a1b4 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -241,6 +241,57 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
+ 		       parent_tidptr, child_tidptr);
+ }
  
- 	if (group_dead && tsk->signal->leader)
- 		disassociate_ctty(1);
-Index: linux-2.6/kernel/fork.c
-===================================================================
---- linux-2.6.orig/kernel/fork.c
-+++ linux-2.6/kernel/fork.c
-@@ -979,7 +979,6 @@ static struct task_struct *copy_process(
- {
- 	int retval;
- 	struct task_struct *p;
--	int cgroup_callbacks_done = 0;
- 
- 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
- 		return ERR_PTR(-EINVAL);
-@@ -1217,13 +1216,14 @@ static struct task_struct *copy_process(
- 	/* Now that the task is set up, run cgroup callbacks if
- 	 * necessary. We need to run them before the task is visible
- 	 * on the tasklist. */
--	cgroup_fork_callbacks(p);
--	cgroup_callbacks_done = 1;
-+	retval = cgroup_fork_callbacks(p);
-+	if (retval)
-+		goto bad_fork_free_pid;
- 
- 	if (current->nsproxy != p->nsproxy) {
- 		retval = ns_cgroup_clone(p, pid);
- 		if (retval)
--			goto bad_fork_free_pid;
-+			goto bad_fork_cgroup_callbacks;
- 	}
- 
- 	/* Need tasklist lock for parent etc handling! */
-@@ -1268,7 +1268,7 @@ static struct task_struct *copy_process(
- 		spin_unlock(&current->sighand->siglock);
- 		write_unlock_irq(&tasklist_lock);
- 		retval = -ERESTARTNOINTR;
--		goto bad_fork_free_pid;
-+		goto bad_fork_cgroup_callbacks;
- 	}
- 
- 	if (clone_flags & CLONE_THREAD) {
-@@ -1306,6 +1306,8 @@ static struct task_struct *copy_process(
- 	perf_event_fork(p);
- 	return p;
- 
-+bad_fork_cgroup_callbacks:
-+	cgroup_exit(p);
- bad_fork_free_pid:
- 	if (pid != &init_struct_pid)
- 		free_pid(pid);
-@@ -1335,7 +1337,6 @@ bad_fork_cleanup_policy:
- 	mpol_put(p->mempolicy);
- bad_fork_cleanup_cgroup:
- #endif
--	cgroup_exit(p, cgroup_callbacks_done);
- 	delayacct_tsk_free(p);
- 	module_put(task_thread_info(p)->exec_domain->module);
- bad_fork_cleanup_count:
-
---------------010908060905020000010907
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------010908060905020000010907--
++SYSCALL_DEFINE0(clone_with_pids)
++{
++	int rc;
++	struct pt_regs *regs = task_pt_regs(current);
++	int args_size;
++	struct clone_args kca;
++	unsigned long flags;
++	int __user *parent_tid_ptr;
++	int __user *child_tid_ptr;
++	unsigned long __user child_stack;
++	unsigned long stack_size;
++	unsigned int flags_low;
++	struct clone_args __user *uca;
++	pid_t __user *pids;
++
++	flags_low = regs->gprs[2];
++	uca = (struct clone_args __user *)regs->gprs[3];
++	args_size = regs->gprs[4];
++	pids = (pid_t __user *)regs->gprs[5];
++
++	rc = fetch_clone_args_from_user(uca, args_size, &kca);
++	if (rc)
++		return rc;
++
++	/*
++	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
++	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
++	 * 	 higher word(s) of 'flags':
++	 *
++	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
++	 */
++	flags = flags_low;
++	parent_tid_ptr = (int *)kca.parent_tid_ptr;
++	child_tid_ptr =  (int *)kca.child_tid_ptr;
++
++	stack_size = (unsigned long)kca.child_stack_size;
++	child_stack = (unsigned long)kca.child_stack_base;
++	if (child_stack)
++		child_stack += stack_size;
++	else
++		child_stack = regs->gprs[15];
++
++	/*
++	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
++	 * 	 to several functions. Need to convert clone_flags to 64-bit.
++	 */
++	return do_fork_with_pids(flags, child_stack, regs, stack_size,
++				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
++				pids);
++}
++
+ /*
+  * This is trivial, and on the face of it looks like it
+  * could equally well be done in user mode.
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index 30eca07..c6dc240 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
+ SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
+ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
+ SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
++SYSCALL(sys_clone_with_pids,sys_clone_with_pids,sys_clone_with_pids_wrapper)
+-- 
+1.6.1
