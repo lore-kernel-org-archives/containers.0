@@ -1,12 +1,16 @@
-From: "Bremer Zeitung" <pp.yjfi-//Ng/5JZm0N6k2ZkT/Rh8A@public.gmane.org>
-Subject: =?ISO-8859-1?B?R2VoZWltd2FmZmUgZvxyIE1hZW5uZXI=?=
-Date: Mon, 09 Nov 2009 23:25:28 -1100
-Message-ID: <2B05C5BB.5C4B0668@ertelecom.ru>
-Reply-To: Bremer Zeitung <pp.yjfi-//Ng/5JZm0N6k2ZkT/Rh8A@public.gmane.org>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by
+	tgid at	once
+Date: Tue, 10 Nov 2009 11:26:45 +0100
+Message-ID: <4AF93FE5.1080009@free.fr>
+References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
+	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
+	<4AF84C68.7010803@free.fr> <4AF8C20C.1070003@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4AF8C20C.1070003-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,51 +20,116 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Leser <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-containers
+Li Zefan wrote:
+> Daniel Lezcano wrote:
+>   
+>> Ben Blum wrote:
+>>     
+>>> Makes procs file writable to move all threads by tgid at once
+>>>
+>>> This patch adds functionality that enables users to move all threads in a
+>>> threadgroup at once to a cgroup by writing the tgid to the 'cgroup.procs'
+>>> file. This current implementation makes use of a rwsem that's taken for
+>>> reading in the fork() path to prevent newly forking threads within the
+>>> threadgroup from "escaping" while moving is in progress.
+>>>
+>>> Signed-off-by: Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>>>   
+>>>       
+>> [ cut ]
+>>     
+>>>  /**
+>>> + * cgroup_fork_failed - undo operations for fork failure
+>>> + * @tsk: pointer to  task_struct of exiting process
+>>> + * @run_callback: run exit callbacks?
+>>> + *
+>>> + * Description: Undo cgroup operations after cgroup_fork in fork
+>>> failure.
+>>> + *
+>>> + * We release the read lock that was taken in cgroup_fork(), since it is
+>>> + * supposed to be dropped in cgroup_post_fork in the success case.
+>>> The other
+>>> + * thing that wants to be done is detaching the failed child task
+>>> from the
+>>> + * cgroup, so we wrap cgroup_exit.
+>>> + */
+>>> +void cgroup_fork_failed(struct task_struct *tsk, int run_callbacks)
+>>> +{
+>>> +    up_read(&cgroup_fork_mutex);
+>>> +    cgroup_exit(tsk, run_callbacks);
+>>> +}
+>>> +
+>>> +/**
+>>>   * cgroup_clone - clone the cgroup the given subsystem is attached to
+>>>   * @tsk: the task to be moved
+>>>   * @subsys: the given subsystem
+>>> diff --git a/kernel/fork.c b/kernel/fork.c
+>>> index 926c117..027ec16 100644
+>>> --- a/kernel/fork.c
+>>> +++ b/kernel/fork.c
+>>> @@ -1300,7 +1300,7 @@ bad_fork_cleanup_policy:
+>>>      mpol_put(p->mempolicy);
+>>>  bad_fork_cleanup_cgroup:
+>>>  #endif
+>>> -    cgroup_exit(p, cgroup_callbacks_done);
+>>> +    cgroup_fork_failed(p, cgroup_callbacks_done);
+>>>      delayacct_tsk_free(p);
+>>>      if (p->binfmt)
+>>>          module_put(p->binfmt->module);
+>>>   
+>>>       
+>> Hi Ben,
+>>
+>> The current code (with or without your patch) may lead to an error
+>> because the fork hook can fail and the exit hook is called in all the
+>> cases making the fork / exit asymmetric.
+>>
+>>     
+>
+> The _current_ code won't lead to this error, because the fork hook
+> can't fail.
+>   
+Right, as no subsystem is using both hooks right now, the bug is never 
+triggered and the current code won't lead to an error.
+But from my POV, there is a bug hidden in a corner waiting for a 
+subsystem to make use of the fail-able fork / exit :)
 
-Direkt aus der EU: Potenzmittel f=FCr jedermann !
+>> I will take the usual example with a cgroup with a counter of tasks, in
+>> the fork hook it increments the counter, in the exit hook it decrements
+>> the counter. There is one process in the cgroup, hence the counter value
+>> is 1. Now this process forks and the fork hook fails before the task
+>> counter is incremented to 2, this is not detected in copy process
+>> function because the cgroup_fork_callbacks does not return an error, so
+>> the process will be forked without error and when the process will exits
+>> the counter will be decremented reaching 0 instead of 1.
+>>
+>> IMO, the correct fix should be to make the fork hook to return an error
+>> and have the cgroup to call the exit method of the subsystem where the
+>> fork hook was called. For example, there are 10 subsystems using the
+>> fork / exit hooks, when the a process forks, the fork callbacks is
+>> called for these subsystems but, let's say, the 3rd fails. So we undo,
+>> by calling the exit hooks of the first two.
+>>
+>> I wrote a patchset to consolidate the hooks called in the cgroup for
+>> fork and exit, and one of them does a rollback for the fork hook when an
+>> error occurs. I added an attachment the patch as an example.
+>>
+>>     
+>
+> I'd like to see this patch sent with another patch that needs this
+> fail-able fork() hook.
+>
+> Note this patch is not doing a _fix_, but does an extension. And
+> for now, this extension is not needed.
+>   
+I don't know, may be it could be interesting to implement that before 
+more subsystems make use of these hooks.
+This is not critical, that can be sent later, separately from this 
+patchset of course.
 
-Mann muss ja keine Problem mit der Standkraft haben. Dieses Wundermittel
-ist f=FCr jedermann!
-Damit die n=E4chste Nacht auch der Frau in bleibender Erinnerung bleibt.
-L=E4nger Standhaft bleiben - kein vorzeitiger Samenerguss mehr - mehr Power
-im Bett
-
-Das Doping f=FCr den Penis !
-
-Hier informieren:
-www.pillendienst-online.info
-
-Das beste daran: Sie werden keine Probleme mit dem Versand oder dem Zoll
-haben.
-Das Produkt kommt diskret verpackt zu Ihnen - Versand innerhalb der EU -
-daher keine Probleme!
-
-Hier direkt bestellen:
-www.pillendienst-online.info
-
-Nochmal die Vorteile auf einen Blick:
-- kein langes Warten - Auslieferung innerhalb von 2-3 Tagen
-- kein peinlicher Arztbesuch erforderlich
-- diskrete Zahlung
-- keine versteckte Kosten
-- bequem und diskret online bestellen.
-- diskrete Verpackung im Briefformat!
-
-Hier sofort bestellen:
-www.pillendienst-online.info
-
-
-
-Tipp: Bestellen Sie gleich f=FCr Ihre Freunde & Bekannte mit und sparen Sie
-durch den Kauf von Gro=DFpackungen. Ideal auch f=FCr Wiederverk=E4ufer.
-
-
-Mon, 09 Nov 2009 23:25:28 -1100
-
----
-Wenn Sie keine weiteren eMails erhalten wollen, senden Sie eine eMail mit
-dem Text AUSTRAGEN an: stopp.pillen.24334-OXqh7BnrQJY@public.gmane.org
+Thanks
+  -- Daniel
