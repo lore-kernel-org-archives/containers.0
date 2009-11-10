@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [v11][PATCH 8/9] Define clone_with_pids() syscall
-Date: Mon, 9 Nov 2009 14:37:19 -0600
-Message-ID: <20091109203719.GA14448__33515.3609900319$1257799099$gmane$org@us.ibm.com>
-References: <20091105053053.GA11289@us.ibm.com>
-	<20091105054124.GH16142@us.ibm.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
+Date: Mon, 9 Nov 2009 16:22:58 -0800
+Message-ID: <20091109162258.25d3f202.akpm__4442.55312108925$1257812701$gmane$org@linux-foundation.org>
+References: <4AEF94E8.3030403@cn.fujitsu.com> <4AF23EC0.2070606@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091105054124.GH16142-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4AF23EC0.2070606-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,244 +17,137 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Here is a stab at the s390 syscall.
+(cc containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org)
 
-From f710be4f1296d50551210bcc9ff6ba25d288bc46 Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Fri, 6 Nov 2009 19:03:43 -0500
-Subject: [PATCH 1/1] implement s390 clone_with_pids syscall
+On Thu, 05 Nov 2009 11:56:00 +0900
+Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 
-This does the s390 hook for v11 of clone-with-pids.
-
-I've got a program using the syscall successfully passing
-args to the child function and continuing to run - but I
-haven't yet gotten that hooked into user-cr/restart.c
-successfully.
-
-The core of my user-space code to use it is:
-
-int do_child(void *arg)
-{
-	int iarg = (int ) arg;
-
-	printf("here i am, i was passed %d, my tid is %d\n", iarg, gettid());
-	return 0;
-}
-
- #define do_cwp(flags, pids, args, sz) \
-( { \
-	register unsigned long int __r2 asm ("2") = (unsigned long int)(flags); \
-	register unsigned long int __r3 asm ("3") = (unsigned long int)(args); \
-	register unsigned long int __r4 asm ("4") = (unsigned long int)(sz); \
-	register unsigned long int __r5 asm ("5") = (unsigned long int)(pids); \
-	register unsigned long int __result asm ("2"); \
-	__asm__ __volatile__( \
-		" lghi %%r1,%5\n" /* put __NR_cwp in r1 for svc 0 */ \
-		" svc 0\n" /* do __NR_cwp syscall */ \
-		" ltgr %%r2,%%r2\n" /* returned 0? */ \
-		" jnz 1f\n" /* if not goto label 1 */ \
-		" lg %%r3,0(%%r15)\n"   /* get fnarg off stack into arg 1 */ \
-		" lg %%r2,8(%%r15)\n"   /* get fn off stack into r3 for basr*/ \
-		" lgr %%r1,%%r15\n" /* tmp store old stack pointer */ \
-		" aghi %%r15,-160\n" /* move the stack */ \
-		" stg %%r1,0(%%r15)\n" /* and save old stack pointer */ \
-		" basr %%r14,%%r3\n" /* call fn(arg) */ \
-		" svc 1\n"  /* call exit */ \
-		" 1:\n" \
-		: "=d" (__result) \
-		: "0" (__r2), "d" (__r3), "d" (__r4), "d" (__r5), \
-		  "i" (__NR_clone_with_pids) \
-		: "1", "cc", "memory"); \
-	__result; \
-} )
-
-int clone_with_pids(int (*fn)(void *), int flags, int nrpids, int *pids,
-		    void *fnarg)
-{
-	long retval;
-	struct clone_args clone_args, *ca = &clone_args;
-	int stacksize;
-	void *sb;
-	u64 *s;
-	int i;
-
-	memset(ca, 0, sizeof(struct clone_args));
-	stacksize = 4*getpagesize();
-	sb  = (void *) malloc(stacksize);
-	if (!sb) {
-		perror("malloc");
-		_exit(1);
-	}
-
-	ca->child_stack_base = (u64) sb;
-	ca->child_stack_size = stacksize-8;
-	s = (u64 *)(sb + ca->child_stack_size);
-	*--s = (u64)fnarg;
-	*--s = (u64)fn;
-	ca->child_stack_size -= 16;
-	ca->nr_pids = nrpids;
-	retval = do_cwp(flags, pids, ca, sizeof(struct clone_args));
-
-	return retval;
-}
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/include/asm/unistd.h  |    3 +-
- arch/s390/kernel/compat_linux.c |   50 ++++++++++++++++++++++++++++++++++++++
- arch/s390/kernel/process.c      |   51 +++++++++++++++++++++++++++++++++++++++
- arch/s390/kernel/syscalls.S     |    1 +
- 4 files changed, 104 insertions(+), 1 deletions(-)
-
-diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
-index cb5232d..ae9474e 100644
---- a/arch/s390/include/asm/unistd.h
-+++ b/arch/s390/include/asm/unistd.h
-@@ -269,7 +269,8 @@
- #define	__NR_pwritev		329
- #define __NR_rt_tgsigqueueinfo	330
- #define __NR_perf_event_open	331
--#define NR_syscalls 332
-+#define __NR_clone_with_pids	332
-+#define NR_syscalls 333
- 
- /* 
-  * There are some system calls that are not present on 64 bit, some
-diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
-index 0debcec..1750fae 100644
---- a/arch/s390/kernel/compat_linux.c
-+++ b/arch/s390/kernel/compat_linux.c
-@@ -762,6 +762,56 @@ asmlinkage long sys32_write(unsigned int fd, char __user * buf, size_t count)
- 	return sys_write(fd, buf, count);
- }
- 
-+asmlinkage long sys32_clone_with_pids(void)
-+{
-+	int rc;
-+	struct pt_regs *regs = task_pt_regs(current);
-+	int args_size;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
-+	unsigned int flags_low;
-+	struct clone_args __user *uca;
-+	pid_t __user *pids;
-+
-+	flags_low = regs->gprs[2] & 0xffffffffUL;
-+	uca = compat_ptr(regs->gprs[3]);
-+	args_size = regs->gprs[4] & 0xffffffffUL;
-+	pids = compat_ptr(regs->gprs[5]);
-+
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
-+
-+	/*
-+	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
-+	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
-+	 * 	 higher word(s) of 'flags':
-+	 *
-+	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
-+	 */
-+	flags = flags_low;
-+	parent_tid_ptr = (int *)kca.parent_tid_ptr;
-+	child_tid_ptr =  (int *)kca.child_tid_ptr;
-+
-+	stack_size = (unsigned long)kca.child_stack_size;
-+	child_stack = (unsigned long)kca.child_stack_base + stack_size;
-+
-+	if (!child_stack)
-+		child_stack = regs->gprs[15];
-+
-+	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
-+	 */
-+	return do_fork_with_pids(flags, child_stack, regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
-+}
-+
- /*
-  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
-  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
-diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-index 5417eb5..e27a1b4 100644
---- a/arch/s390/kernel/process.c
-+++ b/arch/s390/kernel/process.c
-@@ -241,6 +241,57 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
- 		       parent_tidptr, child_tidptr);
- }
- 
-+SYSCALL_DEFINE0(clone_with_pids)
-+{
-+	int rc;
-+	struct pt_regs *regs = task_pt_regs(current);
-+	int args_size;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
-+	unsigned int flags_low;
-+	struct clone_args __user *uca;
-+	pid_t __user *pids;
-+
-+	flags_low = regs->gprs[2];
-+	uca = (struct clone_args __user *)regs->gprs[3];
-+	args_size = regs->gprs[4];
-+	pids = (pid_t __user *)regs->gprs[5];
-+
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
-+
-+	/*
-+	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
-+	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
-+	 * 	 higher word(s) of 'flags':
-+	 *
-+	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
-+	 */
-+	flags = flags_low;
-+	parent_tid_ptr = (int *)kca.parent_tid_ptr;
-+	child_tid_ptr =  (int *)kca.child_tid_ptr;
-+
-+	stack_size = (unsigned long)kca.child_stack_size;
-+	child_stack = (unsigned long)kca.child_stack_base;
-+	if (child_stack)
-+		child_stack += stack_size;
-+	else
-+		child_stack = regs->gprs[15];
-+
-+	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
-+	 */
-+	return do_fork_with_pids(flags, child_stack, regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
-+}
-+
- /*
-  * This is trivial, and on the face of it looks like it
-  * could equally well be done in user mode.
-diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-index 30eca07..c6dc240 100644
---- a/arch/s390/kernel/syscalls.S
-+++ b/arch/s390/kernel/syscalls.S
-@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
- SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
- SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
- SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
-+SYSCALL(sys_clone_with_pids,sys_clone_with_pids,sys_clone_with_pids_wrapper)
--- 
-1.6.1
+> Hi, Ingo
+> 
+> Could you see the following problems?
+> 
+> Regards
+> Miao
+> 
+> on 2009-11-3 11:26, Miao Xie wrote:
+> > Hi, Peter.
+> > 
+> > I found two problems about cpu controller:
+> > 1) cpu controller didn't provide fair CPU time to groups when the tasks
+> >    attached into those groups were bound to the same logic CPU.
+> > 2) cpu controller didn't provide fair CPU time to groups when shares of
+> >    each group <= 2 * nr_cpus.
+> > 
+> > The detail is following:
+> > 1) The first one is that cpu controller didn't provide fair CPU time to
+> >    groups when the tasks attached into those groups were bound to the
+> >    same logic CPU.
+> > 
+> >    The reason is that there is something with the computing of the per
+> >    cpu shares.
+> > 
+> >    on my test box with 16 logic CPU, I did the following manipulation:
+> >    a. create 2 cpu controller groups.
+> >    b. attach a task into one group and 2 tasks into the other.
+> >    c. bind three tasks to the same logic cpu.
+> >             +--------+     +--------+
+> >             | group1 |     | group2 |
+> >             +--------+     +--------+
+> >                 |              |
+> >    CPU0      Task A      Task B & Task C
+> > 
+> >    The following is the reproduce steps:
+> >    # mkdir /dev/cpuctl
+> >    # mount -t cgroup -o cpu,noprefix cpuctl /dev/cpuctl
+> >    # mkdir /dev/cpuctl/1
+> >    # mkdir /dev/cpuctl/2
+> >    # cat /dev/zero > /dev/null &
+> >    # pid1=$!
+> >    # echo $pid1 > /dev/cpuctl/1/tasks
+> >    # taskset -p -c 0 $pid1
+> >    # cat /dev/zero > /dev/null &
+> >    # pid2=$!
+> >    # echo $pid2 > /dev/cpuctl/2/tasks
+> >    # taskset -p -c 0 $pid2
+> >    # cat /dev/zero > /dev/null &
+> >    # pid3=$!
+> >    # echo $pid3 > /dev/cpuctl/2/tasks
+> >    # taskset -p -c 0 $pid3
+> > 
+> >    some time later, I found the the task in the group1 got the 35% CPU 
+> > time not
+> >    50% CPU time. It was very strange that this result against the expected.
+> > 
+> >    this problem was caused by the wrong computing of the per cpu shares.
+> >    According to the design of the cpu controller, the shares of each cpu
+> >    controller group will be divided for every CPU by the workload of each
+> >    logic CPU.
+> >       cpu[i] shares = group shares * CPU[i] workload / sum(CPU workload)
+> > 
+> >    But if the CPU has no task, cpu controller will pretend there is one of
+> >    average load, usually this average load is 1024, the load of the task 
+> > whose
+> >    nice is zero. So in the test, the shares of group1 on CPU0 is:
+> >       1024 * (1 * 1024) / ((1 * 1024 + 15 * 1024)) = 64
+> >    and the shares of group2 on CPU0 is:
+> >       1024 * (2 * 1024) / ((2 * 1024 + 15 * 1024)) = 120
+> >    The scheduler of the CPU0 provided CPU time to each group by the shares
+> >    above. The bug occured.
+> > 
+> > 2) The second problem is that cpu controller didn't provide fair CPU 
+> > time to
+> >    groups when shares of each group <= 2 * nr_cpus
+> > 
+> >    The reason is that per cpu shares was set to MIN_SHARES(=2) if shares of
+> >    each group <= 2 * nr_cpus.
+> > 
+> >    on the test box with 16 logic CPU, we do the following test:
+> >    a. create two cpu controller groups
+> >    b. attach 32 tasks into each group
+> >    c. set shares of the first group to 16, the other to 32
+> >             +--------+     +--------+
+> >             | group1 |     | group2 |
+> >             +--------+     +--------+
+> >             |shares=16     |shares=32
+> >                 |              |
+> >              16 Tasks       32 Tasks
+> > 
+> >    some time later, the first group got 50% CPU time, not 33%. It also 
+> > was very
+> >    strange that this result against the expected.
+> > 
+> >    It is because the shares of cpuctl group was small, and there is many 
+> > logic
+> >    CPU. So per cpu shares that was computed was less than MIN_SHARES, 
+> > and then
+> >    was set to MIN_SHARES.
+> > 
+> >    Maybe 16 and 32 is not used usually. We can set a usual number(such 
+> > as 1024)
+> >    to avoid this problem on my box. But the number of CPU on a machine will
+> >    become more and more in the future. If the number of CPU is greater 
+> > than 512,
+> >    this bug will occur even we set shares of group to 1024. This is a usual
+> >    number. At this rate, the usual user will feel strange.
+> > 
+> > 
+> > 
+> > -- 
+> > To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > Please read the FAQ at  http://www.tux.org/lkml/
+> > 
+> > 
+> > 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
