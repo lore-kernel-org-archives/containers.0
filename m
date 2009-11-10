@@ -1,13 +1,12 @@
 From: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 2/3] restart: add --warn-* and --fail-* command line switches
-Date: Tue, 10 Nov 2009 17:04:51 -0500
-Message-ID: <1257890692-28046-2-git-send-email-orenl@librato.com>
-References: <1257890692-28046-1-git-send-email-orenl@librato.com>
+Subject: [PATCH 1/3] restart: coordinator in new pidns to always report status
+	via pipe
+Date: Tue, 10 Nov 2009 17:04:50 -0500
+Message-ID: <1257890692-28046-1-git-send-email-orenl@librato.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1257890692-28046-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,165 +20,83 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Serge Hallyn reports:
+  "another question: if i run 'restart < out' and sys_restart returns
+  due to a -EPERM on some object, then restart.c returns 1.  but if i
+  'restart --pids', then it reports the error and returns 0.  unless i
+  add --copy-status to the flags.  that seems inconsistent?"
+
+It was with a subtree checkpoint in a child pidns, root-task is not
+pid 1, So, the restarts calls ckpt_coordinator_pidns() execution.
+
+In commit 2000bbb4b9... "restart: fix race in ckpt_coordinator_pidns
+and --no-wait" adds a pipe for a coordinator in a new pids to report
+success/failure of the restart operation back to the parent when the
+parent does not wish to wait.
+
+IOW, the coordinator's exit value is overloaded - used once to report
+success/failure and once (optionally) to report root-tasks exit status.
+
+This patch fixes this by extending the previous commit to make the
+coordinator-pidns always report the restart status via the pipe, and
+only use the exit status for --wait --copy-status case.
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   74 ++++++++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 files changed, 64 insertions(+), 10 deletions(-)
+ restart.c |   25 ++++++++++++-------------
+ 1 files changed, 12 insertions(+), 13 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index 5871bbf..2efe879 100644
+index 35c54ea..5871bbf 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -79,6 +79,10 @@ static char usage_str[] =
- "     --inspect          inspect image on-the-fly for error records\n"
- "  -v,--verbose          verbose output\n"
- "  -d,--debug            debugging output\n"
-+"     --warn-COND        warn on condition COND, but proceed anyways\n"
-+"     --fail-COND        warn on condition COND, and abort operation\n"
-+"  	  COND=any:        any condition\n"
-+"  	  COND=pidzero:    task with sid/pgid zero in a --no-pidns restart\n"
- "";
+@@ -942,10 +942,12 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 	ckpt_dbg("forking coordinator in new pidns\n");
  
- /*
-@@ -359,8 +363,13 @@ struct args {
- 	int infd;
- 	char *logfile;
- 	int logfd;
-+	long warn;
-+	long fail;
- };
+ 	/*
+-	 * We won't wait for (collect) the coordinator, so we use a
+-	 * pipe instead for the coordinator to report success/failure.
++	 * The coordinator report restart susccess/failure via pipe.
++	 * (It cannot use return value, because the in the default
++	 * --wait --copy-status case it is already used to report the
++	 * root-task's return value).
+ 	 */
+-	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
++	if (pipe(ctx->pipe_coord) < 0) {
+ 		perror("pipe");
+ 		return -1;
+ 	}
+@@ -981,10 +983,7 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 		return -1;
  
-+#define CKPT_COND_PIDZERO  0x1
-+#define CKPT_COND_ANY      ULONG_MAX
-+
- static void usage(char *str)
- {
- 	fprintf(stderr, "%s", str);
-@@ -379,6 +388,37 @@ static int str2num(char *str)
- 	return num;
+ 	ctx->args->copy_status = copy;
+-	if (ctx->args->wait)
+-		return ckpt_collect_child(ctx);
+-	else
+-		return ckpt_coordinator_status(ctx);
++	return ckpt_coordinator_status(ctx);
  }
- 
-+static long cond_to_mask(const char *cond)
-+{
-+	static struct {
-+		char *cond;
-+		long mask;
-+	} conditions[] = {
-+		{"pidzero", CKPT_COND_PIDZERO},
-+		{"any", CKPT_COND_ANY},
-+		{NULL, 0}
-+	};
+ #else
+ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+@@ -1040,13 +1039,13 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 		 * around and be reaper until all tasks are gone.
+ 		 * Otherwise, container will die as soon as we exit.
+ 		 */
+-		if (!ctx->args->wait) {
+-			/* report status because parent won't wait for us */
+-			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
+-				perror("failed to report status");
+-				exit(1);
+-			}
 +
-+	int i;
-+
-+	for (i = 0; conditions[i].cond; i++)
-+		if (!strcmp(cond, conditions[i].cond))
-+			return conditions[i].mask;
-+
-+	printf("restart: invalid warn/fail condition '%s'\n", cond);
-+	exit(1);
-+}
-+
-+static inline int ckpt_cond_warn(struct ckpt_ctx *ctx, long mask)
-+{
-+	return (ctx->args->warn & mask);
-+}
-+		
-+static inline int ckpt_cond_fail(struct ckpt_ctx *ctx, long mask)
-+{
-+	return (ctx->args->fail & mask);
-+}
-+
- static void parse_args(struct args *args, int argc, char *argv[])
- {
- 	static struct option opts[] = {
-@@ -401,10 +441,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		{ "freezer",	required_argument,	NULL, 'F' },
- 		{ "verbose",	no_argument,		NULL, 'v' },
- 		{ "debug",	no_argument,		NULL, 'd' },
-+		{ "warn-pidzero",	no_argument,	NULL, 9 },
-+		{ "fail-pidzero",	no_argument,	NULL, 10 },
- 		{ NULL,		0,			NULL, 0 }
- 	};
- 	static char optc[] = "hdvpPwWF:r:i:l:";
- 
-+	int optind;
- 	int sig;
- 
- 	/* defaults */
-@@ -414,7 +457,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 	args->logfd = -1;
- 
- 	while (1) {
--		int c = getopt_long(argc, argv, optc, opts, NULL);
-+		int c = getopt_long(argc, argv, optc, opts, &optind);
- 		if (c == -1)
- 			break;
- 		switch (c) {
-@@ -494,6 +537,12 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		case 'F':
- 			args->freezer = optarg;
- 			break;
-+		case 9:
-+			args->warn |= cond_to_mask(&opts[optind].name[5]);
-+			break;
-+		case 10:
-+			args->fail |= cond_to_mask(&opts[optind].name[5]);
-+			break;
- 		default:
- 			usage(usage_str);
++		/* Report success/failure to the parent */
++		if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
++			perror("failed to report status");
++			exit(1);
  		}
-@@ -1171,15 +1220,21 @@ static int ckpt_setup_task(struct ckpt_ctx *ctx, pid_t pid, pid_t ppid)
- 	return 0;
- }
- 
--static inline int ckpt_valid_pid(pid_t pid, int pidns, char *which, int i)
-+static int ckpt_valid_pid(struct ckpt_ctx *ctx, pid_t pid, char *which, int i)
- {
- 	if (pid < 0) {
- 		ckpt_err("Invalid %s %d (for task#%d)\n", which, pid, i);
- 		return 0;
- 	}
--	if (!pidns && pid == 0) {
--		ckpt_err("Zero %s (task#%d) requires pid-ns\n", which, i + 1);
--		return 0;
-+	if (!ctx->args->pidns && pid == 0) {
-+		if (ckpt_cond_fail(ctx, CKPT_COND_PIDZERO)) {
-+			ckpt_err("[err] task # %d with %s zero"
-+				 " (requires --pidns)\n", i + 1, which);
-+			return 0;
-+		} else if (ckpt_cond_warn(ctx, CKPT_COND_PIDZERO)) {
-+			ckpt_err("[warn] task # %d with %s zero"
-+				 " (consider --pidns)\n", i + 1, which);
-+		}
- 	}
- 	return 1;
- }
-@@ -1188,7 +1243,6 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_pids *pids_arr = ctx->pids_arr;
- 	int pids_nr = ctx->pids_nr;
--	int pidns = ctx->args->pidns;
- 	struct task *task;
- 	pid_t root_pid;
- 	pid_t root_sid;
-@@ -1225,13 +1279,13 @@ static int ckpt_init_tree(struct ckpt_ctx *ctx)
- 
- 		task->flags = 0;
- 
--		if (!ckpt_valid_pid(pids_arr[i].vpid, pidns, "pid", i))
-+		if (!ckpt_valid_pid(ctx, pids_arr[i].vpid, "pid", i))
- 			return -1;
--		else if (!ckpt_valid_pid(pids_arr[i].vtgid, pidns, "tgid", i))
-+		else if (!ckpt_valid_pid(ctx, pids_arr[i].vtgid, "tgid", i))
- 			return -1;
--		else if (!ckpt_valid_pid(pids_arr[i].vsid, pidns, "sid", i))
-+		else if (!ckpt_valid_pid(ctx, pids_arr[i].vsid, "sid", i))
- 			return -1;
--		else if (!ckpt_valid_pid(pids_arr[i].vpgid, pidns, "pgid", i))
-+		else if (!ckpt_valid_pid(ctx, pids_arr[i].vpgid, "pgid", i))
- 			return -1;
- 
- 		/* zero references to root_sid (root_sid != root_pid) */
++
+ 		ret = ckpt_pretend_reaper(ctx);
+ 	} else if (ctx->args->wait) {
+ 		ret = ckpt_collect_child(ctx);
 -- 
 1.6.0.4
