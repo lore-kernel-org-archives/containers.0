@@ -1,11 +1,13 @@
-From: Michael Tokarev <mjt-XAri/EZa3C4vJsYlp49lxw@public.gmane.org>
-Subject: lxc-start: Invalid argument - failed to remove CAP_SYS_BOOT capability
-Date: Tue, 10 Nov 2009 09:37:30 +0300
-Message-ID: <4AF90A2A.2010601@msgid.tls.msk.ru>
+From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
+Date: Tue, 10 Nov 2009 10:48:38 +0100
+Message-ID: <1257846518.4648.18.camel__49326.4252473184$1257847096$gmane$org@twins>
+References: <4AEF94E8.3030403@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4AEF94E8.3030403-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,27 +17,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-VGhlIG1lc3NhZ2UgaW4gJHN1YmogaXMgZGlzcGxheWVkIChhbmQgdGhlIHV0aWxpdHkgZmFpbHMp
-IHdoZW4KdHJ5aW5nIHRvIHN0YXJ0IGEgY29udGFpbmVyIG9uIGFueSBvZiBteSBzeXN0ZW1zLiAg
-SSB0cmFjZWQgaXQKdG8gZmFpbGluZyBwcmN0bChQUl9DQVBCU0VUX0RST1AsIENBUF9TWVNfQk9P
-VCkuICBBY2NvcmRpbmcgdG8KdGhlIG1hbnBhZ2U6CgogICBUaGUgY2FsbCBmYWlscyB3aXRoIHRo
-ZSBlcnJvcjogRVBFUk0gaWYgdGhlIGNhbGxpbmcgdGhyZWFkIGRvZXMKICAgbm90IGhhdmUgdGhl
-IENBUF9TRVRQQ0FQOyBFSU5WQUwgaWYgYXJnMiBkb2VzIG5vdCByZXByZXNlbnQgYQogICB2YWxp
-ZCBjYXBhYmlsaXR5OyBvciBFSU5WQUwgaWYgZmlsZSBjYXBhYmlsaXRpZXMgYXJlIG5vdAogICBl
-bmFibGVkIGluIHRoZSBrZXJuZWwsIGluIHdoaWNoIGNhc2UgYm91bmRpbmcgc2V0cyBhcmUgbm90
-IHN1cOKAkAogICBwb3J0ZWQuCgphbmQgdGhlIGNvcnJlc3BvbmRpbmcga2VybmVsIGNvbmZpZyBp
-cyBTRUNVUklUWV9GSUxFX0NBUEFCSUxJVElFUywKd2hpY2ggaXMgaW4gIlNlY3VyaXR5IG9wdGlv
-bnMiIG1lbnUgbmFtZWQgIkZpbGUgUE9TSVggQ2FwYWJpbGl0aWVzIi4KClRoaXMgaXMgYSBjb25m
-aWcgb3B0aW9uIHRoYXQncyBub3QgY2hlY2tlZCBieSBseGMtY2hlY2tjb25maWcsIGJ1dApzaW5j
-ZSBub3Qgc2V0dGluZyBpdCBlbnRpcmVseSBwcmV2ZW50cyBseGMgZnJvbSB3b3JraW5nLCBJIHRo
-aW5rIGl0CnNob3VsZCBiZSBjaGVja2VkIHRvby4gIEluIGFueSB3YXksIEkgZG9uJ3QgdGhpbmsg
-SSd2ZSBzZWVuIGFueQpyZWZlcmVuY2VzIHRvIHRoYXQgb3B0aW9uIGFueXdoZXJlLgoKU28gaGVy
-ZSBpdCBnb2VzLCBpZiBub3Qgb25seSBmb3IgcmVmZXJlbmNlIHNvIHRoYXQgb3RoZXJzIHdobyB3
-aWxsCmNvbWUgdG8gdGhpcyBpc3N1ZSBpbiB0aGUgZnV0dXJlIHdpbGwga25vdyB3aGF0IHRvIGRv
-LgoKVGhhbmtzIQoKL21qdApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+On Tue, 2009-11-03 at 11:26 +0900, Miao Xie wrote:
+> Hi, Peter.
+> 
+> I found two problems about cpu controller:
+> 1) cpu controller didn't provide fair CPU time to groups when the tasks
+>     attached into those groups were bound to the same logic CPU.
+> 2) cpu controller didn't provide fair CPU time to groups when shares of
+>     each group <= 2 * nr_cpus.
+  3) if you nest them too deep you're too going to see similar funnies.
+
+Too sodding bad gcc messed up unsigned long long for LP64 mode, so we're
+stuck with 64bit fixed point math where otherwise we could have used
+128bit things.
+
+Also, I don't really care much about fairness vs affinity, if you're
+going to constrain the load-balancer and make his life impossible by
+using affinities you get to keep the pieces.
+
+But you've got a point, since you can probably see the same issue (1)
+with cpusets, and that is because the whole cpu-controller vs cpusets
+thing was done wrong.
+
+Someone needs to fix that if they really care.
