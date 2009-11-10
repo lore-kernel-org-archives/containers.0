@@ -1,7 +1,8 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/4] Add some content to the readme.txt for socket c/r
-Date: Tue, 10 Nov 2009 10:47:36 -0800
-Message-ID: <1257878856-25520-5-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 3/4] Update the UNIX buffer restore code to match the new
+	format saved in the image file
+Date: Tue, 10 Nov 2009 10:47:35 -0800
+Message-ID: <1257878856-25520-4-git-send-email-danms@us.ibm.com>
 References: <1257878856-25520-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,40 +23,99 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/checkpoint/readme.txt |   21 +++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
+ net/unix/checkpoint.c |   54 ++++++++++++++++++++++++++----------------------
+ 1 files changed, 29 insertions(+), 25 deletions(-)
 
-diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-index 33c70d4..c98e5ba 100644
---- a/Documentation/checkpoint/readme.txt
-+++ b/Documentation/checkpoint/readme.txt
-@@ -341,6 +341,27 @@ we will be forced to more carefully review each of those features.
- However, this can be controlled with a sysctl-variable.
+diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
+index 8b7cb22..bd1fc35 100644
+--- a/net/unix/checkpoint.c
++++ b/net/unix/checkpoint.c
+@@ -200,7 +200,6 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+ 	uint8_t peer_shutdown = 0;
+ 	void *buf = NULL;
+ 	int sndbuf;
+-	int len;
+ 	int ret = 0;
  
+ 	memset(&msg, 0, sizeof(msg));
+@@ -209,14 +208,30 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
  
-+Sockets
-+=======
+-	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
+-	if (len < 0) {
+-		ret = len;
++	if (h->lin_len > SKB_MAX_ALLOC) {
++		ckpt_debug("socket buffer too big (%llu > %lu)\n",
++			   h->lin_len, SKB_MAX_ALLOC);
++		ret = -EINVAL;
++		goto out;
++	} else if (h->nr_frags != 0) {
++		ckpt_debug("unix socket claims to have fragments\n");
++		ret = -EINVAL;
+ 		goto out;
+-	} else if (len > SKB_MAX_ALLOC) {
+-		ckpt_debug("Socket buffer too big (%i > %lu)",
+-			   len, SKB_MAX_ALLOC);
+-		ret = -ENOSPC;
++	}
 +
-+For AF_UNIX sockets, both endpoints must be within the checkpointed
-+task set to maintain a connected state after restart.  UNIX sockets
-+that are in the process of passing a descriptor will cause the
-+checkpoint to fail with -EBUSY indicating a transient state that
-+cannot be checkpointed.  Listening sockets with an unaccepted peer
-+will also cause an -EBUSY result.
++	buf = kmalloc(h->lin_len, GFP_KERNEL);
++	if (!buf) {
++		ret = -ENOMEM;
++		goto out;
++	}
 +
-+AF_INET sockets with endpoints outside the checkpointed task set may
-+remain open if care is taken to avoid TCP timeouts and resets.
-+Careful use of a virtual IP address can help avoid emission of an RST
-+to the non-checkpointed endpoint.  If desired, the
-+RESTART_SOCK_LISTENONLY flag may be passed to the restart syscall
-+which will cause all connected AF_INET sockets to be closed during the
-+restore process.  Listening sockets will still be restored to their
-+original state, which makes this mode a candidate for something like
-+an HTTP server.
-+
-+
- Kernel interfaces
- =================
++	kvec.iov_len = h->lin_len;
++	kvec.iov_base = buf;
++	ret = _ckpt_read_obj_type(ctx, kvec.iov_base,
++				  h->lin_len, CKPT_HDR_BUFFER);
++	ckpt_debug("read unix socket buffer %llu: %i\n", h->lin_len, ret);
++	if (ret < h->lin_len) {
++		ret = -EINVAL;
+ 		goto out;
+ 	}
  
+@@ -245,18 +260,6 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+ 		}
+ 	}
+ 
+-	kvec.iov_len = len;
+-	buf = kmalloc(len, GFP_KERNEL);
+-	kvec.iov_base = buf;
+-	if (!buf) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
+-
+-	ret = ckpt_kread(ctx, kvec.iov_base, len);
+-	if (ret < 0)
+-		goto out;
+-
+ 	msg.msg_name = addr;
+ 	msg.msg_namelen = addrlen;
+ 
+@@ -272,15 +275,16 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+ 
+ 	/* Make sure there's room in the send buffer */
+ 	sndbuf = sk->sk_sndbuf;
+-	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < len) &&
++	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < h->lin_len) &&
+ 	    capable(CAP_NET_ADMIN))
+-		sk->sk_sndbuf += len;
++		sk->sk_sndbuf += h->lin_len;
+ 	else
+ 		sk->sk_sndbuf = sysctl_wmem_max;
+ 
+-	ret = kernel_sendmsg(sk->sk_socket, &msg, &kvec, 1, len);
+-	ckpt_debug("kernel_sendmsg(%i,%i): %i\n", h->sk_objref, len, ret);
+-	if ((ret > 0) && (ret != len))
++	ret = kernel_sendmsg(sk->sk_socket, &msg, &kvec, 1, h->lin_len);
++	ckpt_debug("kernel_sendmsg(%i,%llu): %i\n",
++		   h->sk_objref, h->lin_len, ret);
++	if ((ret > 0) && (ret != h->lin_len))
+ 		ret = -ENOMEM;
+ 
+ 	sk->sk_sndbuf = sndbuf;
 -- 
 1.6.3.3
