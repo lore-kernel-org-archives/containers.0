@@ -1,17 +1,17 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by
-	tgid at	once
-Date: Wed, 11 Nov 2009 21:06:48 +0100
-Message-ID: <4AFB1958.30201__17802.3820081309$1257970128$gmane$org@free.fr>
-References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
-	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
-	<4AF84C68.7010803@free.fr> <4AF8C20C.1070003@cn.fujitsu.com>
-	<4AF93FE5.1080009@free.fr> <4AFA1C70.5070700@cn.fujitsu.com>
+From: Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+Subject: Re: [PATCH 1/1] implement s390 clone_with_pids syscall
+Date: Wed, 11 Nov 2009 14:19:38 -0600
+Message-ID: <1257970778.7132.1364.camel@localhost.localdomain>
+References: <20091110163708.GA19122@us.ibm.com>
+	<1257924442.7132.467.camel@localhost.localdomain>
+	<20091111144600.GA6925@us.ibm.com>
+	<1257958793.7132.1068.camel@localhost.localdomain>
+	<20091111183303.GA8761@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AFA1C70.5070700-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20091111183303.GA8761-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,84 +21,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
->>>> Hi Ben,
->>>>
->>>> The current code (with or without your patch) may lead to an error
->>>> because the fork hook can fail and the exit hook is called in all the
->>>> cases making the fork / exit asymmetric.
->>>>
->>>>     
->>>>         
->>> The _current_ code won't lead to this error, because the fork hook
->>> can't fail.
->>>   
->>>       
->> Right, as no subsystem is using both hooks right now, the bug is never
->> triggered and the current code won't lead to an error.
->> But from my POV, there is a bug hidden in a corner waiting for a
->> subsystem to make use of the fail-able fork / exit :)
->>
->>     
->
-> Actually the freezer subsystem is using the fork hook, but it doesn't
-> need to be able to fail it.
->
-> I don't think we can claim this a bug. If there is a new subsystem
-> that needs fail-able fork hook, it has to extent the hook interface
-> and adjust the code to meet its needs.
->
-> We always adjust our code to meet new needs, don't we?
->   
-Sure.
+On Wed, 2009-11-11 at 12:33 -0600, Serge E. Hallyn wrote:
+> Quoting Nathan Lynch (nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org):
+> > On Wed, 2009-11-11 at 08:46 -0600, Serge E. Hallyn wrote:
+> > > Quoting Nathan Lynch (nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org):
+> > > > 
+> > > > > +	parent_tid_ptr = (int *)kca.parent_tid_ptr;
+> > > > > +	child_tid_ptr =  (int *)kca.child_tid_ptr;
+> > > > > +
+> > > > > +	stack_size = (unsigned long)kca.child_stack_size;
+> > > > > +	child_stack = (unsigned long)kca.child_stack_base;
+> > > > > +	if (child_stack)
+> > > > > +		child_stack += stack_size;
+> > > > 
+> > > > Should this calculation not be of the form:
+> > > > child_stack = arch_dependent_alignment(child_stack + stack_size - 1)
+> > > > ?
+> > > > 
+> > > > Is overflow a concern?
+> > > > 
+> > > > Same questions apply to the x86 version.
+> > > 
+> > > Hmm...  if the stack isn't valid, the task will just segfault, so
+> > > it's not dangerous for the kernel, right?  Note that for instance
+> > > arch/s390/kernel/process.c:SYS_clone() doesn't check the validity
+> > > of the new stack pointer passed in either.
+> > 
+> > clone expects the stack argument to be the desired value of the stack
+> > pointer in the child.
+> 
+> And doesn't verify it.
 
->>>> I will take the usual example with a cgroup with a counter of tasks, in
->>>> the fork hook it increments the counter, in the exit hook it decrements
->>>> the counter. There is one process in the cgroup, hence the counter value
->>>> is 1. Now this process forks and the fork hook fails before the task
->>>> counter is incremented to 2, this is not detected in copy process
->>>> function because the cgroup_fork_callbacks does not return an error, so
->>>> the process will be forked without error and when the process will exits
->>>> the counter will be decremented reaching 0 instead of 1.
->>>>
->>>> IMO, the correct fix should be to make the fork hook to return an error
->>>> and have the cgroup to call the exit method of the subsystem where the
->>>> fork hook was called. For example, there are 10 subsystems using the
->>>> fork / exit hooks, when the a process forks, the fork callbacks is
->>>> called for these subsystems but, let's say, the 3rd fails. So we undo,
->>>> by calling the exit hooks of the first two.
->>>>
->>>> I wrote a patchset to consolidate the hooks called in the cgroump for
->>>> fork and exit, and one of them does a rollback for the fork hook when an
->>>> error occurs. I added an attachment the patch as an example.
->>>>
->>>>     
->>>>         
->>> I'd like to see this patch sent with another patch that needs this
->>> fail-able fork() hook.
->>>
->>> Note this patch is not doing a _fix_, but does an extension. And
->>> for now, this extension is not needed.
->>>   
->>>       
->> I don't know, may be it could be interesting to implement that before
->> more subsystems make use of these hooks.
->> This is not critical, that can be sent later, separately from this
->> patchset of course.
->>
->>     
->
-> We tend to remove code that is not used. For example, we may remove
-> subsys->bind() interface, because no one is using it, though it has
-> been there for years.
->
-> So adding things that are not used is normally not good.
->   
-Makes sense.
+That's not the point.  Garbage inputs will get garbage behavior with
+either interface and that's fine.
 
-Thanks
-  -- Daniel
+
+> > cwp is different in that the clone_args struct
+> > specifies the base and size of the region the child is to use for stack,
+> > meaning that the kernel must derive from these a sane value for the
+> > child's stack pointer (on every arch where the stack grows down).
+> 
+> And with regular clone, the kernel must expect userspace to do that
+> calculation correctly!  Userspace always still has to do
+> 	base = malloc(size);
+> 	base += size - 1;
+> 
+> > Your current calculation results in an unaligned SP outside of the
+> 
+> Can you send the patch to align it properly? 
+
+For powerpc I have
+usp = _ALIGN_DOWN((stack_base + stack_sz - 1), 16);
+
+Afraid I don't have s390 ABI docs at hand.  But my remarks were based on
+the incorrect assumption that kca.child_stack_size conveys, well, the
+stack size; see below.
+
+
+> 
+> > region that the caller has presumably allocated for the child stack.
+> > How is that useful behavior?
+> 
+> It's useful because stack_size still gets passed through copy_process
+> to the arch-dependent copy_thread().  That then mostly ignores the
+> size, but in theory we could start tracking it.
+
+Something I missed earlier is that the stack_size you are passing in
+from user space is not actually the size of the stack.  It's adjusted to
+account for arguments that have been placed at the end of the stack
+region.  So stack_size becomes a value that you want the kernel to add
+to stack_base to get the desired stack pointer value in the child --
+it's not a size at all.  At this point we may as well communicate the
+desired stack pointer value directly (which could be denoted by
+stack_size == 0, or we could add another member to clone_args), or
+rename stack_size to stack_offset or similar.
