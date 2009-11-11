@@ -1,15 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] restart: coordinator in new pidns to always report
-	status via pipe
-Date: Tue, 10 Nov 2009 17:31:17 -0600
-Message-ID: <20091110233117.GA29388@us.ibm.com>
-References: <1257890692-28046-1-git-send-email-orenl@librato.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 5/6] Makes procs file writable to move all threads by
+	tgid at	once
+Date: Wed, 11 Nov 2009 10:07:44 +0800
+Message-ID: <4AFA1C70.5070700__17887.5426449396$1257905376$gmane$org@cn.fujitsu.com>
+References: <20090724032033.2463.79256.stgit@hastromil.mtv.corp.google.com>
+	<20090724032200.2463.82408.stgit@hastromil.mtv.corp.google.com>
+	<4AF84C68.7010803@free.fr> <4AF8C20C.1070003@cn.fujitsu.com>
+	<4AF93FE5.1080009@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1257890692-28046-1-git-send-email-orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4AF93FE5.1080009-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,98 +21,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org):
-> Serge Hallyn reports:
->   "another question: if i run 'restart < out' and sys_restart returns
->   due to a -EPERM on some object, then restart.c returns 1.  but if i
->   'restart --pids', then it reports the error and returns 0.  unless i
->   add --copy-status to the flags.  that seems inconsistent?"
+>>> Hi Ben,
+>>>
+>>> The current code (with or without your patch) may lead to an error
+>>> because the fork hook can fail and the exit hook is called in all the
+>>> cases making the fork / exit asymmetric.
+>>>
+>>>     
+>>
+>> The _current_ code won't lead to this error, because the fork hook
+>> can't fail.
+>>   
+> Right, as no subsystem is using both hooks right now, the bug is never
+> triggered and the current code won't lead to an error.
+> But from my POV, there is a bug hidden in a corner waiting for a
+> subsystem to make use of the fail-able fork / exit :)
 > 
-> It was with a subtree checkpoint in a child pidns, root-task is not
-> pid 1, So, the restarts calls ckpt_coordinator_pidns() execution.
-> 
-> In commit 2000bbb4b9... "restart: fix race in ckpt_coordinator_pidns
-> and --no-wait" adds a pipe for a coordinator in a new pids to report
-> success/failure of the restart operation back to the parent when the
-> parent does not wish to wait.
-> 
-> IOW, the coordinator's exit value is overloaded - used once to report
-> success/failure and once (optionally) to report root-tasks exit status.
-> 
-> This patch fixes this by extending the previous commit to make the
-> coordinator-pidns always report the restart status via the pipe, and
-> only use the exit status for --wait --copy-status case.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Seems to be working fine for me.
+Actually the freezer subsystem is using the fork hook, but it doesn't
+need to be able to fail it.
 
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+I don't think we can claim this a bug. If there is a new subsystem
+that needs fail-able fork hook, it has to extent the hook interface
+and adjust the code to meet its needs.
 
-to all 3.
+We always adjust our code to meet new needs, don't we?
 
-thanks,
--serge
-
-> ---
->  restart.c |   25 ++++++++++++-------------
->  1 files changed, 12 insertions(+), 13 deletions(-)
+>>> I will take the usual example with a cgroup with a counter of tasks, in
+>>> the fork hook it increments the counter, in the exit hook it decrements
+>>> the counter. There is one process in the cgroup, hence the counter value
+>>> is 1. Now this process forks and the fork hook fails before the task
+>>> counter is incremented to 2, this is not detected in copy process
+>>> function because the cgroup_fork_callbacks does not return an error, so
+>>> the process will be forked without error and when the process will exits
+>>> the counter will be decremented reaching 0 instead of 1.
+>>>
+>>> IMO, the correct fix should be to make the fork hook to return an error
+>>> and have the cgroup to call the exit method of the subsystem where the
+>>> fork hook was called. For example, there are 10 subsystems using the
+>>> fork / exit hooks, when the a process forks, the fork callbacks is
+>>> called for these subsystems but, let's say, the 3rd fails. So we undo,
+>>> by calling the exit hooks of the first two.
+>>>
+>>> I wrote a patchset to consolidate the hooks called in the cgroup for
+>>> fork and exit, and one of them does a rollback for the fork hook when an
+>>> error occurs. I added an attachment the patch as an example.
+>>>
+>>>     
+>>
+>> I'd like to see this patch sent with another patch that needs this
+>> fail-able fork() hook.
+>>
+>> Note this patch is not doing a _fix_, but does an extension. And
+>> for now, this extension is not needed.
+>>   
+> I don't know, may be it could be interesting to implement that before
+> more subsystems make use of these hooks.
+> This is not critical, that can be sent later, separately from this
+> patchset of course.
 > 
-> diff --git a/restart.c b/restart.c
-> index 35c54ea..5871bbf 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -942,10 +942,12 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
->  	ckpt_dbg("forking coordinator in new pidns\n");
-> 
->  	/*
-> -	 * We won't wait for (collect) the coordinator, so we use a
-> -	 * pipe instead for the coordinator to report success/failure.
-> +	 * The coordinator report restart susccess/failure via pipe.
-> +	 * (It cannot use return value, because the in the default
-> +	 * --wait --copy-status case it is already used to report the
-> +	 * root-task's return value).
->  	 */
-> -	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
-> +	if (pipe(ctx->pipe_coord) < 0) {
->  		perror("pipe");
->  		return -1;
->  	}
-> @@ -981,10 +983,7 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
->  		return -1;
-> 
->  	ctx->args->copy_status = copy;
-> -	if (ctx->args->wait)
-> -		return ckpt_collect_child(ctx);
-> -	else
-> -		return ckpt_coordinator_status(ctx);
-> +	return ckpt_coordinator_status(ctx);
->  }
->  #else
->  static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-> @@ -1040,13 +1039,13 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
->  		 * around and be reaper until all tasks are gone.
->  		 * Otherwise, container will die as soon as we exit.
->  		 */
-> -		if (!ctx->args->wait) {
-> -			/* report status because parent won't wait for us */
-> -			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-> -				perror("failed to report status");
-> -				exit(1);
-> -			}
-> +
-> +		/* Report success/failure to the parent */
-> +		if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-> +			perror("failed to report status");
-> +			exit(1);
->  		}
-> +
->  		ret = ckpt_pretend_reaper(ctx);
->  	} else if (ctx->args->wait) {
->  		ret = ckpt_collect_child(ctx);
-> -- 
-> 1.6.0.4
+
+We tend to remove code that is not used. For example, we may remove
+subsys->bind() interface, because no one is using it, though it has
+been there for years.
+
+So adding things that are not used is normally not good.
