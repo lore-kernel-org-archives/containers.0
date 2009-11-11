@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v12][PATCH 1/9] Factor out code to allocate pidmap page
-Date: Tue, 10 Nov 2009 20:42:50 -0800
-Message-ID: <20091111044250.GA11393__37930.8351818056$1257914693$gmane$org@suka>
+Subject: [v12][PATCH 4/9] Add target_pids parameter to alloc_pid()
+Date: Tue, 10 Nov 2009 20:43:47 -0800
+Message-ID: <20091111044347.GD11393__13789.8164954551$1257914791$gmane$org@suka>
 References: <20091111043440.GA9377@suka>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,91 +23,85 @@ Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@publi
 List-Id: containers.vger.kernel.org
 
 
-Subject: [v12][PATCH 1/9] Factor out code to allocate pidmap page
+Subject: [v12][PATCH 4/9] Add target_pids parameter to alloc_pid()
 
-To simplify alloc_pidmap(), move code to allocate a pid map page to a
-separate function.
-
-Changelog[v3]:
-	- Earlier version of patchset called alloc_pidmap_page() from two
-	  places. But now its called from only one place. Even so, moving
-	  this code out into a separate function simplifies alloc_pidmap().
-Changelog[v2]:
-	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
-	  -ENOMEM on error instead of -1.
+This parameter is currently NULL, but will be used in a follow-on patch.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/pid.c |   45 ++++++++++++++++++++++++++++++---------------
- 1 files changed, 30 insertions(+), 15 deletions(-)
+ include/linux/pid.h |    2 +-
+ kernel/fork.c       |    3 ++-
+ kernel/pid.c        |    9 +++++++--
+ 3 files changed, 10 insertions(+), 4 deletions(-)
 
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index 49f1c2f..914185d 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
+ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ 
+-extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 93626b2..3f1dddf 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -980,6 +980,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
++	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1156,7 +1157,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 		goto bad_fork_cleanup_io;
+ 
+ 	if (pid != &init_struct_pid) {
+-		pid = alloc_pid(p->nsproxy->pid_ns);
++		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
+ 		if (IS_ERR(pid)) {
+ 			retval = PTR_ERR(pid);
+ 			goto bad_fork_cleanup_io;
 diff --git a/kernel/pid.c b/kernel/pid.c
-index d3f722d..7d4bb6e 100644
+index afef766..3ee52cd 100644
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -122,9 +122,35 @@ static void free_pidmap(struct upid *upid)
- 	atomic_inc(&map->nr_free);
+@@ -281,13 +281,14 @@ void free_pid(struct pid *pid)
+ 	call_rcu(&pid->rcu, delayed_put_pid);
  }
  
-+static int alloc_pidmap_page(struct pidmap *map)
-+{
-+	void *page;
-+
-+	if (likely(map->page))
-+		return 0;
-+
-+	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+
-+	/*
-+	 * Free the page if someone raced with us installing it:
-+	 */
-+	spin_lock_irq(&pidmap_lock);
-+	if (map->page)
-+		kfree(page);
-+	else
-+		map->page = page;
-+	spin_unlock_irq(&pidmap_lock);
-+
-+	if (unlikely(!map->page))
-+		return -ENOMEM;
-+
-+	return 0;
-+}
-+
- static int alloc_pidmap(struct pid_namespace *pid_ns)
+-struct pid *alloc_pid(struct pid_namespace *ns)
++struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
  {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-+	int rc;
- 	struct pidmap *map;
+ 	struct pid *pid;
+ 	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
+ 	struct upid *upid;
++	pid_t tpid;
  
- 	pid = last + 1;
-@@ -134,21 +160,10 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (map->page)
--				kfree(page);
--			else
--				map->page = page;
--			spin_unlock_irq(&pidmap_lock);
--			if (unlikely(!map->page))
--				break;
--		}
-+		rc = alloc_pidmap_page(map);
-+		if (rc)
-+			break;
+ 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
+ 	if (!pid) {
+@@ -297,7 +298,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 
+ 	tmp = ns;
+ 	for (i = ns->level; i >= 0; i--) {
+-		nr = alloc_pidmap(tmp);
++		tpid = 0;
++		if (target_pids)
++			tpid = target_pids[i];
 +
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
++		nr = set_pidmap(tmp, tpid);
+ 		if (nr < 0)
+ 			goto out_free;
+ 
 -- 
 1.6.0.4
