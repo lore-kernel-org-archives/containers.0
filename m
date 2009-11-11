@@ -1,15 +1,16 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
-Date: Wed, 11 Nov 2009 21:51:31 +0100
-Message-ID: <1257972691.4039.15.camel__2767.00229519538$1257972737$gmane$org@laptop>
-References: <4AEF94E8.3030403@cn.fujitsu.com> <1257846518.4648.18.camel@twins>
-	<20091111134910.5F42.E1E9C6FF@jp.fujitsu.com>
-	<1257924007.23203.18.camel@twins>  <4AFB2109.8010708@nortel.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/4] Update the UNIX buffer restore code to match the
+	new format saved in the image file
+Date: Wed, 11 Nov 2009 15:38:51 -0600
+Message-ID: <20091111213851.GE8761@us.ibm.com>
+References: <1257878856-25520-1-git-send-email-danms@us.ibm.com>
+	<1257878856-25520-4-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4AFB2109.8010708-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1257878856-25520-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,34 +20,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chris Friesen <cfriesen-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
-Cc: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2009-11-11 at 14:39 -0600, Chris Friesen wrote:
-> On 11/11/2009 01:20 AM, Peter Zijlstra wrote:
-> > On Wed, 2009-11-11 at 15:21 +0900, Yasunori Goto wrote:
-> > 
-> >> When users use cpuset/cpu affinity, then they would like to controll cpu affinity.
-> >> Not CPU time.
-> > 
-> > What are people using affinity for? The only use of affinity is to
-> > restrict or disable the load-balancer. Don't complain the load-balancer
-> > doesn't work when you're taking active steps to hinder its work.
-> 
-> I have one active user of scheduler groups (using CKRM though, but they
-> want to switch to a new kernel using CFS and sched groups in the near
-> future).
-> 
-> They want to run their app on one cpu by itself with as little
-> interference as possible.  Pure cpu processing, not even any I/O except
-> via shared memory buffers.  Everything else gets done on the other cpu,
-> but they want to control how much of the other cpu is assigned to packet
-> processing, how much to system maintenance, normal user shell commands, etc.
-> 
-> This would seem like a case where some sort of cpuset/affinity  and
-> sched groups would be expected to play nice together.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>  	/* Make sure there's room in the send buffer */
+>  	sndbuf = sk->sk_sndbuf;
+> -	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < len) &&
+> +	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < h->lin_len) &&
+>  	    capable(CAP_NET_ADMIN))
+> -		sk->sk_sndbuf += len;
+> +		sk->sk_sndbuf += h->lin_len;
+>  	else
+>  		sk->sk_sndbuf = sysctl_wmem_max;
 
-Agreed, and I'd like the load-balance partition feature of cpusets and
-the cpu task-groups to work well together, except that the current
-interface doesn't allow that nicely.
+Can you explain what's going on here?  'if the size of the send buffer
+minus tranmit queue bytes committed is less than linear length,
+then if you're privileged you add h->len to sk->sk_sndbuf, but if
+either you're not privileged or the length was greater than linear
+length, then you add sysctl_wmem_max.'  ?
+
+I realize that's a question on the original code, not on this
+patch...
+
+-serge
