@@ -1,12 +1,13 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v12][PATCH 0/9] Implement eclone() syscall
-Date: Tue, 10 Nov 2009 20:34:40 -0800
-Message-ID: <20091111043440.GA9377__30318.7835882001$1257915630$gmane$org@suka>
+From: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
+Date: Wed, 11 Nov 2009 15:21:33 +0900
+Message-ID: <20091111134910.5F42.E1E9C6FF__25545.7564410337$1257920589$gmane$org@jp.fujitsu.com>
+References: <4AEF94E8.3030403@cn.fujitsu.com> <1257846518.4648.18.camel@twins>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1257846518.4648.18.camel@twins>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,138 +17,111 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
-Cc: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, matthltc-npbjlsIvGkV82hYKe6nXyg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi.
 
-Based on discussions on containers mailing list and IRC, we settled on
-the name eclone(). Please let me know of a better name or if there are
-other comments on the patchset.
+I have concern about these issues.
 
----
+> On Tue, 2009-11-03 at 11:26 +0900, Miao Xie wrote:
+> > Hi, Peter.
+> > 
+> > I found two problems about cpu controller:
+> > 1) cpu controller didn't provide fair CPU time to groups when the tasks
+> >     attached into those groups were bound to the same logic CPU.
+> > 2) cpu controller didn't provide fair CPU time to groups when shares of
+> >     each group <= 2 * nr_cpus.
+>   3) if you nest them too deep you're too going to see similar funnies.
+> 
+> Too sodding bad gcc messed up unsigned long long for LP64 mode, so we're
+> stuck with 64bit fixed point math where otherwise we could have used
+> 128bit things.
+> 
+> Also, I don't really care much about fairness vs affinity, if you're
+> going to constrain the load-balancer and make his life impossible by
+> using affinities you get to keep the pieces.
 
-Subject: [v12][PATCH 0/9] Implement eclone() syscall
 
-To support application checkpoint/restart, a task must have the same pid it
-had when it was checkpointed.  When containers are nested, the tasks within
-the containers exist in multiple pid namespaces and hence have multiple pids
-to specify during restart.
+I think 1) differs from 2) and 3). 1) should be fixed at least.
+Because 1) is hard to understand for normal users.
 
-This patchset implements a new system call, eclone() that lets a process
-specify the pids of the child process.
+------
+> >    a. create 2 cpu controller groups.
+> >    b. attach a task into one group and 2 tasks into the other.
+> >    c. bind three tasks to the same logic cpu.
+> >             +--------+     +--------+
+> >             | group1 |     | group2 |
+> >             +--------+     +--------+
+> >                 |              |
+> >    CPU0      Task A      Task B & Task C
 
-Patches 1 through 6 are helper patches needed for choosing a pid for the
-child process.
+(snip)
 
-PATCH 8 implements the eclone() system call on x86. The interface defined in
-PATCH 8 has been ported to s390 and ppc64 architectures, but they will be
-posted as a separate patchset if this patchset is accepted.
+> >    some time later, I found the the task in the group1 got the 35% CPU time not
+> >    50% CPU time. It was very strange that this result against the expected.
+------
 
-PATCH 9 adds some documentation on the new system call, some/all of which
-will eventually go into a man page.
 
-Changelog[v12]:
-	- Ignore ->child_stack_size when ->child_stack_base is NULL (PATCH 8)
-	- Cleanup/simplify example in Documentation/eclone (PATCH 9).
-	- Rename sys call to a shorter name, eclone()
+Probably, if normal users start to use cpu controller, then they must make
+same test by way of trial. They will find same results which differ from their
+expectation in spite of SIMPLE test case.
+Then, they will think cpu controller must have many bugs, and will never
+use it.
 
-Changelog[v11]:
-	- [Dave Hansen] Move clone_args validation checks to arch-indpeendent
-	  code.
-	- [Oren Laadan] Make args_size a parameter to system call and remove
-	  it from 'struct clone_args'
+When 2) and 3), I can explain users the reason like "It's due to accurate
+error of internal calculation."
+Beacause the test case is a bit fussy, and user will understand it.
 
-Changelog[v10]:
-	- [Linus Torvalds] Use PTREGSCALL() implementation for clone rather
-	  than the generic system call
-	- Rename clone3() to clone_with_pids()
-	- Update Documentation/clone_with_pids() to show example usage with
-	  the PTREGSCALL implementation.
+However, I can't explain anything for 1), because it seems not fussy case.
 
-Changelog[v9]:
-	- [Pavel Emelyanov] Drop the patch that made 'pid_max' a property
-	  of struct pid_namespace
-	- [Roland McGrath, H. Peter Anvin and earlier on, Serge Hallyn] To
-	  avoid inadvertent truncation clone_flags, preserve the first
-	  parameter of clone3() as 'u32 clone_flags' and specify newer
-	  flags in clone_args.flags_high (PATCH 8/9 and PATCH 9/9)
-	- [Eric Biederman] Generalize alloc_pidmap() code to simplify and
-	  remove duplication (see PATCH 3/9].
-	  
-Changelog[v8]:
-	- [Oren Laadan, Louis Rilling, KOSAKI Motohiro]
-	  The name 'clone2()' is in use - renamed new syscall to clone3().
-	- [Oren Laadan] ->parent_tidptr and ->child_tidptr need to be 64bit.
-	- [Oren Laadan] Ensure that unused fields/flags in clone_struct are 0.
-	  (Added [PATCH 7/10] to the patchset).
 
-Changelog[v7]:
-	- [Peter Zijlstra, Arnd Bergmann]
-	  Group the arguments to clone2() into a 'struct clone_arg' to
-	  workaround the issue of exceeding 6 arguments to the system call.
-	  Also define clone-flags as u64 to allow additional clone-flags.
+> But you've got a point, since you can probably see the same issue (1)
+> with cpusets, and that is because the whole cpu-controller vs cpusets
+> thing was done wrong.
 
-Changelog[v6]:
-	- [Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds]
-	  Change 'pid_set.pids' to 'pid_t pids[]' so sizeof(struct pid_set) is
-	  constant across architectures (Patches 7, 8).
-	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
-	  'unum_pids < 0' check (Patches 7,8)
-	- (Pavel Machek) New patch (Patch 9) to add some documentation.
+When users use cpuset/cpu affinity, then they would like to controll cpu affinity.
+Not CPU time.
 
-Changelog[v5]:
-	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
-	  into this set)
-	- (Eric Biederman): Avoid the new function, set_pidmap() - added
-	  couple of checks on 'target_pid' in alloc_pidmap() itself.
+When users use cpu controller, they would like to controll cpu time, right?
+However, the cpu time is far from their expectation. I think it is strange.
 
-=== IMPORTANT NOTE:
+> 
+> Someone needs to fix that if they really care.
 
-clone() system call has another limitation - all but one bits in clone-flags
-are in use and if more new clone-flags are needed, we will need a variant of
-the clone() system call. 
+To be honest, I don't have any good idea because I'm not familiar with
+schduler's code. But I have one question.
 
-It appears to make sense to try and extend this new system call to address
-this limitation as well. The requirements of a new clone system call could
-then be summarized as:
 
-	- do everything clone() does today, and
-	- give application an ability to choose pids for the child process
-	  in all ancestor pid namespaces, and
-	- allow more clone_flags
+1618 static int tg_shares_up(struct task_group *tg, void *data)
+1619 {
+1620         unsigned long weight, rq_weight = 0, shares = 0;
 
-Contstraints:
+(snip)
 
-	- system-calls are restricted to 6 parameters and clone() already
-	  takes 5 parameters, any extension to clone() interface would require
-	  one or more copy_from_user().  (Not sure if copy_from_user() of ~40
-	  bytes would have a significant impact on performance of clone()).
+1632         for_each_cpu(i, sched_domain_span(sd)) {
+1633                 weight = tg->cfs_rq[i]->load.weight;
+1634                 usd->rq_weight[i] = weight;
+1635 
+1636                 /*
+1637                  * If there are currently no tasks on the cpu pretend there
+1638                  * is one of average load so that when a new task gets to
+1639                  * run here it will not get delayed by group starvation.
+1640                  */
+1641                 if (!weight)
+1642                         weight = NICE_0_LOAD; ---------(*)
 
-Based on these requirements and constraints, we explored a couple of system
-call interfaces (in earlier versions of this patchset). Based on input from
-Arnd Bergmann and others, the new interface of the system call is: 
+I heard from test team when (*) was removed, 1) didn't occur.
 
-	struct clone_args {
-		u64 clone_flags_high;
-		u64 child_stack_base;
-		u64 child_stack_size;
-		u64 parent_tid_ptr;
-		u64 child_tid_ptr;
-		u32 nr_pids;
-		u32 reserved0;
-		u64 reserved1;
-	};
+The comment said (*) is to avoid starvation condition.
+However, I don't understand why NICE_0_LOAD must be specified.
+Could you tell me why small value (like 2 or 3) is not used for (*)?
+What is side effect?
 
-	sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
-			pid_t *pids)
 
-Details of the struct clone_args and the usage are explained in the
-documentation (PATCH 9/9).
 
-NOTE:
-	While this patchset enables support for more clone-flags, actual
-	implementation for additional clone-flags is best implemented as
-	a separate patchset (PATCH 8/9 identifies some TODOs)
+Thanks.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+-- 
+Yasunori Goto 
