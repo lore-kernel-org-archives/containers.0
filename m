@@ -1,14 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [v12][PATCH 3/9] Define set_pidmap() function
-Date: Wed, 11 Nov 2009 14:39:24 -0800
-Message-ID: <20091111223924.GD24988__36481.3712695197$1257979202$gmane$org@suka>
-References: <20091111043440.GA9377@suka> <20091111044329.GC11393@suka>
+Subject: Re: [v12][PATCH 5/9] Add target_pids parameter to copy_process()
+Date: Wed, 11 Nov 2009 14:40:04 -0800
+Message-ID: <20091111224004.GF24988__180.869029327546$1257979232$gmane$org@suka>
+References: <20091111043440.GA9377@suka> <20091111044403.GE11393@suka>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20091111044329.GC11393@suka>
+In-Reply-To: <20091111044403.GE11393@suka>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,122 +22,66 @@ To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
 Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, matthltc-npbjlsIvGkV82hYKe6nXyg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cc: LKML
+CC: LKML
 
 Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
 | 
-| Subject: [v12][PATCH 3/9] Define set_pidmap() function
+| Subject: [v12][PATCH 5/9] Add target_pids parameter to copy_process()
 | 
-| Define a set_pidmap() interface which is like alloc_pidmap() only that
-| caller specifies the pid number to be assigned.
+| Add a 'target_pids' parameter to copy_process().  The new parameter will be
+| used in a follow-on patch when eclone() is implemented.
 | 
-| Changelog[v9]:
-| 	- Completely rewrote this patch based on Eric Biederman's code.
-| Changelog[v7]:
-|         - [Eric Biederman] Generalize alloc_pidmap() to take a range of pids.
-| Changelog[v6]:
-|         - Separate target_pid > 0 case to minimize the number of checks needed.
-| Changelog[v3]:
-|         - (Eric Biederman): Avoid set_pidmap() function. Added couple of
-|           checks for target_pid in alloc_pidmap() itself.
-| Changelog[v2]:
-|         - (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
-|           actually checks for 'pid <= 0' for completeness).
-| 
-| Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-| Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+| Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 | ---
-|  kernel/pid.c |   41 +++++++++++++++++++++++++++++++++--------
-|  1 files changed, 33 insertions(+), 8 deletions(-)
+|  kernel/fork.c |    7 ++++---
+|  1 files changed, 4 insertions(+), 3 deletions(-)
 | 
-| diff --git a/kernel/pid.c b/kernel/pid.c
-| index c4d9914..afef766 100644
-| --- a/kernel/pid.c
-| +++ b/kernel/pid.c
-| @@ -147,18 +147,19 @@ static int alloc_pidmap_page(struct pidmap *map)
-|  	return 0;
-|  }
-| 
-| -static int alloc_pidmap(struct pid_namespace *pid_ns)
-| +static int do_alloc_pidmap(struct pid_namespace *pid_ns, int last, int min,
-| +		int max)
+| diff --git a/kernel/fork.c b/kernel/fork.c
+| index 3f1dddf..c8a06de 100644
+| --- a/kernel/fork.c
+| +++ b/kernel/fork.c
+| @@ -975,12 +975,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+|  					unsigned long stack_size,
+|  					int __user *child_tidptr,
+|  					struct pid *pid,
+| +					pid_t *target_pids,
+|  					int trace)
 |  {
-| -	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-| +	int i, offset, max_scan, pid;
-|  	int rc = -EAGAIN;
-|  	struct pidmap *map;
+|  	int retval;
+|  	struct task_struct *p;
+|  	int cgroup_callbacks_done = 0;
+| -	pid_t *target_pids = NULL;
 | 
-|  	pid = last + 1;
-|  	if (pid >= pid_max)
-| -		pid = RESERVED_PIDS;
-| +		pid = min;
-|  	offset = pid & BITS_PER_PAGE_MASK;
-|  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-| -	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-| +	max_scan = (max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-|  	for (i = 0; i <= max_scan; ++i) {
-|  		rc = alloc_pidmap_page(map);
-|  		if (rc)
-| @@ -168,7 +169,6 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
-|  			do {
-|  				if (!test_and_set_bit(offset, map->page)) {
-|  					atomic_dec(&map->nr_free);
-| -					pid_ns->last_pid = pid;
-|  					return pid;
-|  				}
-|  				offset = find_next_offset(map, offset);
-| @@ -179,16 +179,16 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
-|  			 * bitmap block and the final block was the same
-|  			 * as the starting point, pid is before last_pid.
-|  			 */
-| -			} while (offset < BITS_PER_PAGE && pid < pid_max &&
-| +			} while (offset < BITS_PER_PAGE && pid < max &&
-|  					(i != max_scan || pid < last ||
-|  					    !((last+1) & BITS_PER_PAGE_MASK)));
-|  		}
-| -		if (map < &pid_ns->pidmap[(pid_max-1)/BITS_PER_PAGE]) {
-| +		if (map < &pid_ns->pidmap[(max-1)/BITS_PER_PAGE]) {
-|  			++map;
-|  			offset = 0;
-|  		} else {
-|  			map = &pid_ns->pidmap[0];
-| -			offset = RESERVED_PIDS;
-| +			offset = min;
-|  			if (unlikely(last == offset)) {
-|  				rc = -EAGAIN;
-|  				break;
-| @@ -199,6 +199,31 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
-|  	return rc;
-|  }
+|  	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+|  		return ERR_PTR(-EINVAL);
+| @@ -1361,7 +1361,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
+|  	struct pt_regs regs;
 | 
-| +static int alloc_pidmap(struct pid_namespace *pid_ns)
-| +{
-| +	int nr;
-| +
-| +	nr = do_alloc_pidmap(pid_ns, pid_ns->last_pid, RESERVED_PIDS, pid_max);
-| +	if (nr >= 0)
-| +		pid_ns->last_pid = nr;
-| +	return nr;
-| +}
-| +
-| +static int set_pidmap(struct pid_namespace *pid_ns, int target)
-| +{
-| +	if (!target)
-| +		return alloc_pidmap(pid_ns);
-| +
-| +	if (target >= pid_max)
-| +		return -EINVAL;
-| +
-| +	if ((target < 0) || (target < RESERVED_PIDS &&
-| +				pid_ns->last_pid >= RESERVED_PIDS))
-| +		return -EINVAL;
-| +
-| +	return do_alloc_pidmap(pid_ns, target - 1, target, target + 1);
-| +}
-| +
-|  int next_pidmap(struct pid_namespace *pid_ns, int last)
-|  {
-|  	int offset;
+|  	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
+| -			    &init_struct_pid, 0);
+| +			    &init_struct_pid, NULL, 0);
+|  	if (!IS_ERR(task))
+|  		init_idle(task, cpu);
+| 
+| @@ -1384,6 +1384,7 @@ long do_fork(unsigned long clone_flags,
+|  	struct task_struct *p;
+|  	int trace = 0;
+|  	long nr;
+| +	pid_t *target_pids = NULL;
+| 
+|  	/*
+|  	 * Do some preliminary argument and permissions checking before we
+| @@ -1424,7 +1425,7 @@ long do_fork(unsigned long clone_flags,
+|  		trace = tracehook_prepare_clone(clone_flags);
+| 
+|  	p = copy_process(clone_flags, stack_start, regs, stack_size,
+| -			 child_tidptr, NULL, trace);
+| +			 child_tidptr, NULL, target_pids, trace);
+|  	/*
+|  	 * Do this prior waking up the new thread - the thread pointer
+|  	 * might get invalid after that point, if the thread exits quickly.
 | -- 
 | 1.6.0.4
 | 
