@@ -1,14 +1,18 @@
-From: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
-Date: Thu, 12 Nov 2009 10:12:35 +0900
-Message-ID: <20091112095947.7229.E1E9C6FF__16975.9371121929$1257988524$gmane$org@jp.fujitsu.com>
-References: <20091111134910.5F42.E1E9C6FF@jp.fujitsu.com>
-	<1257934048.23203.76.camel@twins>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/4] Update the UNIX buffer restore code to match the
+	new format saved in the image file
+Date: Wed, 11 Nov 2009 20:18:24 -0600
+Message-ID: <20091112021824.GA14646@us.ibm.com>
+References: <1257878856-25520-1-git-send-email-danms@us.ibm.com>
+	<1257878856-25520-4-git-send-email-danms@us.ibm.com>
+	<20091111213851.GE8761@us.ibm.com>
+	<87vdhgvi6b.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1257934048.23203.76.camel@twins>
+Content-Disposition: inline
+In-Reply-To: <87vdhgvi6b.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,70 +22,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> On Wed, 2009-11-11 at 15:21 +0900, Yasunori Goto wrote:
-> > > Someone needs to fix that if they really care.
-> > 
-> > To be honest, I don't have any good idea because I'm not familiar with
-> > schduler's code. 
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> >> /* Make sure there's room in the send buffer */
+> >> sndbuf = sk->sk_sndbuf;
+> >> -	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < len) &&
+> >> +	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < h->lin_len) &&
+> >> capable(CAP_NET_ADMIN))
+> >> -		sk->sk_sndbuf += len;
+> >> +		sk->sk_sndbuf += h->lin_len;
+> >> else
+> sk-> sk_sndbuf = sysctl_wmem_max;
 > 
-> You could possible try something like the below, its rather gross but
-> might maybe work,.. has other issues though.
-
-Thank you very much for your patch. I'm very glad.
-
-Unfortunately, my test staff and I don't have test box today,
-I'll report the result later.
-
-Thanks again for your time.
-
+> SH> Can you explain what's going on here?
 > 
+> If we're trying to restore a buffer that is larger than the remaining
+> space in the buffer, then one of two things can happen:
 > 
-> ---
->  kernel/sched.c |    9 +++++++--
->  1 files changed, 7 insertions(+), 2 deletions(-)
+> 1. You're privileged and we make the space you need
+> 2. You're not privileged so we give you the benefit of the doubt and
+>    set the buffer limit to the system default
 > 
-> diff --git a/kernel/sched.c b/kernel/sched.c
-> index 91642c1..65629a3 100644
-> --- a/kernel/sched.c
-> +++ b/kernel/sched.c
-> @@ -1614,7 +1614,7 @@ static void update_group_shares_cpu(struct task_group *tg, int cpu,
->   */
->  static int tg_shares_up(struct task_group *tg, void *data)
->  {
-> -	unsigned long weight, rq_weight = 0, shares = 0;
-> +	unsigned long weight, rq_weight = 0, sum_weight = 0, shares = 0;
->  	unsigned long *usd_rq_weight;
->  	struct sched_domain *sd = data;
->  	unsigned long flags;
-> @@ -1630,6 +1630,7 @@ static int tg_shares_up(struct task_group *tg, void *data)
->  		weight = tg->cfs_rq[i]->load.weight;
->  		usd_rq_weight[i] = weight;
->  
-> +		rq_weight += weight;
->  		/*
->  		 * If there are currently no tasks on the cpu pretend there
->  		 * is one of average load so that when a new task gets to
-> @@ -1638,10 +1639,14 @@ static int tg_shares_up(struct task_group *tg, void *data)
->  		if (!weight)
->  			weight = NICE_0_LOAD;
->  
-> -		rq_weight += weight;
-> +		sum_weight += weight;
-> +
->  		shares += tg->cfs_rq[i]->shares;
->  	}
->  
-> +	if (!rq_weight)
-> +		rq_weight = sum_weight;
-> +
->  	if ((!shares && rq_weight) || shares > tg->shares)
->  		shares = tg->shares;
->  
-> 
+> In the case of 2, if that system default still isn't enough then the
+> sendmsg() will fail like it normally would.
 
--- 
-Yasunori Goto 
+But so should check whether h->len_len < sysctl_wmem_max before
+doing the capable check?  Remember that any check for capable()
+will set PF_SUPERPRIV on the task, so it's better to not call it
+if it wasn't definately needed.
+
+> The reason for this is that the application could have loaded up its
+> legitimate buffer with data and then set the buffer limit low.  That
+> doesn't purge the data it already had buffered, it just limits how
+> much you can add to it.  So, in order to not fail a restart of such a
+> legitimate situation, we assume the system default instead of the
+> limit set by the user.
+
+thanks,
+-serge
