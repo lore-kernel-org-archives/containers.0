@@ -1,11 +1,13 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH linux-cr] implement s390 eclone syscall
-Date: Thu, 12 Nov 2009 23:24:44 -0600
-Message-ID: <1258089886-10034-1-git-send-email-serue@us.ibm.com>
+Subject: [PATCH user-cr 2/2] add nsexeccwp to test clone-with-pids
+Date: Thu, 12 Nov 2009 23:24:46 -0600
+Message-ID: <1258089886-10034-3-git-send-email-serue@us.ibm.com>
+References: <1258089886-10034-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1258089886-10034-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,219 +22,477 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This patch implements the s390 hook for sys_eclone.
+One of the concerns with clone-with-pids is whether the
+stack handling is all correct and robust enough to withstand
+real usage.  Little testcases playing with pid values are
+also necessary, but can't replace really using clone-with-pids
+to start a shell from which to keep working.
 
-The user-space clone-with-pids glue for s390 (clone_s390x.c
-from the user-cr package) is now:
+This patch tweaks the old ns_exec.c namespace manipulation
+program to add a -z option to specify a pid.  So you can:
 
-struct pid_set {
-	int num_pids;
-	pid_t *pids;
-};
-
- #define do_eclone(flags, pids, args, sz) \
-( { \
-  register unsigned long int __r1 asm ("1") = (unsigned long int)(__NR_eclone); \
-  register unsigned long int __r2 asm ("2") = (unsigned long int)(flags); \
-  register unsigned long int __r3 asm ("3") = (unsigned long int)(args); \
-  register unsigned long int __r4 asm ("4") = (unsigned long int)(sz); \
-  register unsigned long int __r5 asm ("5") = (unsigned long int)(pids); \
-  register long int __result asm ("2"); \
-  __asm__ __volatile__( \
-	  " svc 0\n" /* do __NR_eclone syscall */ \
-	  " ltgr %%r2,%%r2\n" /* returned 0? */ \
-	  " jnz 1f\n" /* if not goto label 1 */ \
-	  " lg %%r3,0(%%r15)\n"   /* get fnarg off stack into arg 1 */ \
-	  " lg %%r2,8(%%r15)\n"   /* get fn off stack int r3 basr*/ \
-	  " lgr %%r1,%%r15\n" /* tmp store old stack pointer */ \
-	  " aghi %%r15,-160\n" /* move the stack */ \
-	  " stg %%r1,0(%%r15)\n" /* and save old stack pointer */ \
-	  " basr %%r14,%%r3\n" /* call fn(arg) */ \
-	  " svc 1\n"  /* call exit */ \
-	  " 1:\n" \
-	  : "=d" (__result) \
-	  : "d" (__r1), "0" (__r2), "d" (__r3), "d" (__r4), "d" (__r5) \
-	  : "memory"); \
-	__result; \
-} )
-int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
-			struct pid_set *target_pids, void *arg)
-{
-	struct clone_args clone_args, *ca = &clone_args;
-	u64 *s;
-
-	memset(ca, 0, sizeof(struct clone_args));
-	ca->nr_pids = target_pids->num_pids;
-	if (!child_stack) {
-		/* we could pass in null and then in eclone not
-		 * call exit if child_stack was null, but we'll
-		 * just malloc here */
-		int sz = 4*getpagesize();
-		child_stack = malloc(sz);
-		if (!child_stack)
-			return -ENOMEM;
-		child_stack += sz; /* we'll decrement before assigning */
-	}
-	ca->child_stack = (u64) child_stack;
-	s = (u64 *) ca->child_stack;
-	*--s = (u64) arg;
-	*--s = (u64) fn;
-	ca->child_stack -= 16;
-	return do_eclone(flags, target_pids->pids, ca,
-				    sizeof(struct clone_args));
-}
-
-Changelog:
-	Nov 12: switch to latest (Nov 12) eclone format
-	Nov 10: use orig_gpr2, not gprs[2] for input arg 1
+	nsexeccwp -cmp /bin/bash # start a shell in a new pidns+mntns
+	mount -t proc proc /proc # mount private /proc
+	echo $$
+		1
+	nsexeccwp -z /bin/bash   #  start a shell with pid 999
+	echo $$
+		999
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/s390/include/asm/unistd.h  |    3 +-
- arch/s390/kernel/compat_linux.c |   47 ++++++++++++++++++++++++++++++++++++++
- arch/s390/kernel/process.c      |   48 +++++++++++++++++++++++++++++++++++++++
- arch/s390/kernel/syscalls.S     |    1 +
- 4 files changed, 98 insertions(+), 1 deletions(-)
+ Makefile    |    5 +-
+ clone.h     |   54 +++++++++
+ nsexeccwp.c |  352 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 410 insertions(+), 1 deletions(-)
+ create mode 100644 clone.h
+ create mode 100644 nsexeccwp.c
 
-diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
-index cb5232d..cbf6c7c 100644
---- a/arch/s390/include/asm/unistd.h
-+++ b/arch/s390/include/asm/unistd.h
-@@ -269,7 +269,8 @@
- #define	__NR_pwritev		329
- #define __NR_rt_tgsigqueueinfo	330
- #define __NR_perf_event_open	331
--#define NR_syscalls 332
-+#define __NR_eclone		332
-+#define NR_syscalls 333
+diff --git a/Makefile b/Makefile
+index 181cc1c..32a6893 100644
+--- a/Makefile
++++ b/Makefile
+@@ -20,7 +20,7 @@ CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
+ # install dir
+ INSTALL_DIR = /bin
  
- /* 
-  * There are some system calls that are not present on 64 bit, some
-diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
-index 0debcec..c3dc6bd 100644
---- a/arch/s390/kernel/compat_linux.c
-+++ b/arch/s390/kernel/compat_linux.c
-@@ -762,6 +762,53 @@ asmlinkage long sys32_write(unsigned int fd, char __user * buf, size_t count)
- 	return sys_write(fd, buf, count);
- }
+-PROGS =	checkpoint restart ckptinfo
++PROGS =	checkpoint restart ckptinfo nsexeccwp
  
-+asmlinkage long sys32_eclone(void)
+ # other cleanup
+ OTHER = ckptinfo_types.c
+@@ -39,11 +39,14 @@ restart: CFLAGS += -D__REENTRANT -pthread
+ ifneq ($(SUBARCH),)
+ restart: clone_$(SUBARCH).o
+ restart: CFLAGS += -DARCH_HAS_CLONE_WITH_PID
++nsexeccwp: clone_$(SUBARCH).o
++nsexeccwp: CFLAGS += -DARCH_HAS_CLONE_WITH_PID
+ endif
+ 
+ # on powerpc, need also assembly file
+ ifeq ($(SUBARCH),ppc)
+ restart: clone_$(SUBARCH)_.o
++nsexeccwp: clone_$(SUBARCH)_.o
+ endif
+ 
+ # ckptinfo dependencies
+diff --git a/clone.h b/clone.h
+new file mode 100644
+index 0000000..3569a45
+--- /dev/null
++++ b/clone.h
+@@ -0,0 +1,54 @@
++#ifndef CLONE_H
++#define CLONE_H
++/*
++ *  Copyright (C) 2007 IBM Corporation
++ *
++ *  Author: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *
++ *  This program is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU General Public License as
++ *  published by the Free Software Foundation, version 2 of the
++ *  License.
++ *
++ */
++#include <sys/syscall.h>
++
++#ifndef HAVE_UNSHARE
++
++#if __i386__
++#    define __NR_unshare 310
++#elif __x86_64__
++#    define __NR_unshare 272
++#elif __ia64__
++#    define __NR_unshare 1296
++#elif __s390x__
++#    define __NR_unshare 303
++#elif __powerpc__
++#    define __NR_unshare 282
++#else
++#    error "Architecture not supported"
++#endif
++
++#endif /* HAVE_UNSHARE */
++
++#ifndef CLONE_NEWUTS
++#define CLONE_NEWUTS		0x04000000
++#endif
++
++#ifndef CLONE_NEWIPC
++#define CLONE_NEWIPC		0x08000000
++#endif
++
++#ifndef CLONE_NEWUSER
++#define CLONE_NEWUSER		0x10000000
++#endif
++
++#ifndef CLONE_NEWPID
++#define CLONE_NEWPID		0x20000000
++#endif
++
++#ifndef CLONE_NEWNET
++#define CLONE_NEWNET		0x40000000
++#endif
++
++#endif /* CLONE_H */
+diff --git a/nsexeccwp.c b/nsexeccwp.c
+new file mode 100644
+index 0000000..453fb8c
+--- /dev/null
++++ b/nsexeccwp.c
+@@ -0,0 +1,352 @@
++/*
++ * Copyright 2008,2009 IBM Corp.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <sched.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++#include <signal.h>
++#include <string.h>
++#include <errno.h>
++#include <libgen.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <sys/wait.h>
++
++#include "clone.h"
++
++struct pid_set {
++	int num_pids;
++	pid_t *pids;
++};
++
++typedef unsigned long long u64;
++typedef unsigned int u32;
++typedef int pid_t;
++struct clone_args {
++	u64 clone_flags_high;
++
++	u64 child_stack_base;
++	u64 child_stack_size;
++
++	u64 parent_tid_ptr;
++	u64 child_tid_ptr;
++
++	u32 nr_pids;
++
++	u32 reserved0;
++	u64 reserved1;
++};
++/* (until it's supported by libc) from clone_ARCH.c */
++extern int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
++			   struct pid_set *target_pids, void *arg);
++
++extern pid_t getpgid(pid_t pid);
++extern pid_t getsid(pid_t pid);
++
++static const char* procname;
++
++static void usage(const char *name)
 +{
-+	int rc;
-+	struct pt_regs *regs = task_pt_regs(current);
-+	int args_size;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
-+	unsigned int flags_low;
-+	struct clone_args __user *uca;
-+	pid_t __user *pids;
-+
-+	flags_low = regs->orig_gpr2 & 0xffffffffUL;
-+	uca = compat_ptr(regs->gprs[3]);
-+	args_size = regs->gprs[4] & 0xffffffffUL;
-+	pids = compat_ptr(regs->gprs[5]);
-+
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
-+
-+	if (kca.clone_flags_high)
-+		return -EINVAL;
-+	flags = flags_low;
-+	parent_tid_ptr = (int __user *) kca.parent_tid_ptr;
-+	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
-+
-+	stack_size = (unsigned long) kca.child_stack_size;
-+	if (stack_size)
-+		return -EINVAL;
-+
-+	child_stack = (unsigned long) kca.child_stack;
-+	if (!child_stack)
-+		child_stack = regs->gprs[15];
-+
-+	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
-+	 */
-+	return do_fork_with_pids(flags, child_stack, regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
++	printf("usage: %s [-h] [-c] [-mnuUip] [-P <pid-file>]"
++			"[command [arg ..]]\n", name);
++	printf("\n");
++	printf("  -h		this message\n");
++	printf("\n");
++	printf("  -z <pid>	use clone_with_pids and specify chosen pid\n");
++	printf("  		Note that -z and -p are not compatible\n");
++	printf("  -c		use 'clone' rather than 'unshare' system call\n");
++	printf("  -g		launch in new cgroup\n");
++	printf("  -m		mount namespace\n");
++	printf("  -n		network namespace\n");
++	printf("  -u		utsname namespace\n");
++	printf("  -U		userid namespace\n");
++	printf("  -i		ipc namespace\n");
++	printf("  -P <pid-file>	File in which to write global pid of cinit\n");
++	printf("  -p		pid namespace\n");
++	printf("  -f <flag>	extra clone flags\n");
++	printf("\n");
++	printf("(C) Copyright IBM Corp. 2006\n");
++	printf("\n");
++	exit(1);
 +}
 +
- /*
-  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
-  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
-diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-index 5417eb5..51f11a1 100644
---- a/arch/s390/kernel/process.c
-+++ b/arch/s390/kernel/process.c
-@@ -241,6 +241,54 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
- 		       parent_tidptr, child_tidptr);
- }
- 
-+SYSCALL_DEFINE0(eclone)
++static int string_to_ul(const char *str, unsigned long int *res)
 +{
-+	int rc;
-+	struct pt_regs *regs = task_pt_regs(current);
-+	int args_size;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
-+	unsigned int flags_low;
-+	struct clone_args __user *uca;
-+	pid_t __user *pids;
++	char *tail;
++	long long int r;
 +
-+	flags_low = regs->orig_gpr2;
-+	uca = (struct clone_args __user *) regs->gprs[3];
-+	args_size = regs->gprs[4];
-+	pids = (pid_t __user *) regs->gprs[5];
++	if (!*str)
++		return -1;
 +
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
++	errno = 0;
 +
-+	if (kca.clone_flags_high)
-+		return -EINVAL;
-+
-+	flags = flags_low;
-+	parent_tid_ptr = (int __user *) kca.parent_tid_ptr;
-+	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
-+
-+	stack_size = (unsigned long) kca.child_stack_size;
-+	if (stack_size)
-+		return -EINVAL;
-+
-+	child_stack = (unsigned long) kca.child_stack;
-+	if (!child_stack)
-+		child_stack = regs->gprs[15];
++	r = strtol(str, &tail, 16);
 +
 +	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
++	 * according to strtol(3), if errno is set or tail does no point
++	 * to the ending '\0', the conversion failed.
 +	 */
-+	return do_fork_with_pids(flags, child_stack, regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
++	if (errno || *tail)
++		return -1;
++
++	*res = r;
++	return 0;
 +}
 +
- /*
-  * This is trivial, and on the face of it looks like it
-  * could equally well be done in user mode.
-diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-index 30eca07..fb8708d 100644
---- a/arch/s390/kernel/syscalls.S
-+++ b/arch/s390/kernel/syscalls.S
-@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
- SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
- SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
- SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
-+SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
++/*
++ * Copied following opentty() from Fedora's util-linux rpm
++ * I just changed the "FATAL" message below from syslog()
++ * to printf
++ */
++static void
++opentty(const char * tty) {
++        int i, fd, flags;
++
++        fd = open(tty, O_RDWR | O_NONBLOCK);
++        if (fd == -1) {
++		printf("FATAL: can't reopen tty: %s", strerror(errno));
++                sleep(1);
++                exit(1);
++        }
++
++        flags = fcntl(fd, F_GETFL);
++        flags &= ~O_NONBLOCK;
++        fcntl(fd, F_SETFL, flags);
++
++        for (i = 0; i < fd; i++)
++                close(i);
++        for (i = 0; i < 3; i++)
++                if (fd != i)
++                        dup2(fd, i);
++        if (fd >= 3)
++                close(fd);
++}
++// Code copy end
++
++int do_newcgrp = 0;
++
++int load_cgroup_dir(char *dest, int len)
++{
++	FILE *f = fopen("/proc/mounts", "r");
++	char buf[200];
++	char *name, *path, *fsname, *options, *p1, *p2, *s;
++	if (!f)
++		return 0;
++	while (fgets(buf, 200, f)) {
++		name = strtok_r(buf, " ", &p1);
++		path = strtok_r(NULL, " ", &p1);
++		fsname = strtok_r(NULL, " ", &p1);
++		options = strtok_r(NULL, " ", &p1);
++		if (strcmp(fsname, "cgroup") != 0)
++			continue;
++
++		/* make sure the freezer is composed */
++		s = strtok_r(options, ",", &p2);
++		while (s && strcmp(s, "freezer") != 0)
++			s = strtok_r(NULL, ",", &p2);
++		if (!s)
++			continue;
++		strncpy(dest, path, len);
++		fclose(f);
++		return 1;
++	}
++	fclose(f);
++	printf("Freezer not mounted\n");
++	return 0;
++}
++
++int move_to_new_cgroup(int newcgroup)
++{
++	char cgroupname[150], cgroupbase[100], tasksfname[200];
++	FILE *fout;
++	int ret;
++
++	if (!load_cgroup_dir(cgroupbase, 100))
++		return 0;
++
++	snprintf(cgroupname, 150, "%s/%d", cgroupbase, newcgroup);
++	ret = mkdir(cgroupname, 0755);
++	if (ret)
++		return 0;
++	snprintf(tasksfname, 200, "%s/tasks", cgroupname);
++	fout = fopen(tasksfname, "w");
++	if (!fout)
++		return 0;
++	fprintf(fout, "%d\n", getpid());
++	fclose(fout);
++	return 1;
++}
++
++int pipefd[2];
++
++/* gah. opentty will close the pipefd */
++int check_newcgrp(void)
++{
++	int ret, newgroup;
++	char buf[20];
++
++	if (!do_newcgrp)
++		return 0;
++
++	close(pipefd[1]);
++	ret = read(pipefd[0], buf, 20);
++	close(pipefd[0]);
++	if (ret == -1) {
++		perror("read");
++		return 1;
++	}
++	newgroup = atoi(buf);
++	if (!move_to_new_cgroup(newgroup))
++		return 1;
++	do_newcgrp = 0;
++	return 0;
++}
++
++int do_child(void *vargv)
++{
++	char **argv = (char **)vargv;
++
++	if (check_newcgrp())
++		return 1;
++
++	execve(argv[0], argv, __environ);
++	perror("execve");
++	return 1;
++}
++
++void write_pid(char *pid_file, int pid)
++{
++	FILE *fp;
++
++	if (!pid_file)
++		return;
++
++	fp = fopen(pid_file, "w");
++	if (!fp) {
++		perror("fopen, pid_file");
++		exit(1);
++	}
++	fprintf(fp, "%d", pid);
++	fflush(fp);
++	fclose(fp);
++}
++
++int main(int argc, char *argv[])
++{	
++	int c;
++	unsigned long flags = 0, eflags = 0;
++	char ttyname[256];
++	int status;
++	int ret, use_clone = 0;
++	int pid;
++	char *pid_file = NULL;
++	struct pid_set pid_set;
++	int chosen_pid = 0;
++
++	pid_set.num_pids = 1;
++	pid_set.pids = &chosen_pid;
++
++	procname = basename(argv[0]);
++
++	memset(ttyname, '\0', sizeof(ttyname));
++	readlink("/proc/self/fd/0", ttyname, sizeof(ttyname));
++
++	while ((c = getopt(argc, argv, "+mguUiphz:cnf:P:")) != EOF) {
++		switch (c) {
++		case 'g': do_newcgrp = getpid();		break;
++		case 'm': flags |= CLONE_NEWNS;			break;
++		case 'c': use_clone = 1;			break;
++		case 'P': pid_file = optarg; 			break;
++		case 'u': flags |= CLONE_NEWUTS;		break;
++		case 'i': flags |= CLONE_NEWIPC;		break;
++		case 'U': flags |= CLONE_NEWUSER;		break;
++		case 'n': flags |= CLONE_NEWNET;		break;
++		case 'p': flags |= CLONE_NEWNS|CLONE_NEWPID;	break;
++		case 'z': chosen_pid = atoi(optarg);		break;
++		case 'f': if (!string_to_ul(optarg, &eflags)) {
++				flags |= eflags;
++				break;
++			}
++		case 'h':
++		default:
++			usage(procname);
++		}
++	};
++
++	if (chosen_pid) {
++		use_clone = 1;
++		if (flags & CLONE_NEWPID) {
++			printf("Error: can't use CLONE_NEWPID and pick a pid\n");
++			exit(1);
++		}
++	}
++	argv = &argv[optind];
++	argc = argc - optind;	
++
++	if (do_newcgrp) {
++		ret = pipe(pipefd);
++		if (ret) {
++			perror("pipe");
++			return -1;
++		}
++		do_newcgrp = pipefd[0];
++	}
++
++	if (use_clone) {
++		int stacksize = 4*getpagesize();
++		void *stack = malloc(stacksize);
++
++		if (!stack) {
++			perror("malloc");
++			return -1;
++		}
++
++		printf("about to clone with %lx\n", flags);
++		if (chosen_pid)
++			printf("Will choose pid %d\n", chosen_pid);
++		flags |= SIGCHLD;
++		pid = clone_with_pids(do_child, stack, flags, &pid_set,
++					(void *)argv);
++		if (pid == -1) {
++			perror("clone");
++			return -1;
++		}
++	} else {
++		if ((pid = fork()) == 0) {
++			// Child.
++			//print_my_info(procname, ttyname);
++
++			if (check_newcgrp())
++				return 1;
++			opentty(ttyname);
++
++			printf("about to unshare with %lx\n", flags);
++			ret = unshare(flags);
++			if (ret < 0) {
++				perror("unshare");
++				return 1;
++			}		
++			
++			return do_child((void*)argv);
++		}
++
++	}
++	if (pid != -1 && do_newcgrp) {
++		char buf[20];
++		snprintf(buf, 20, "%d", pid);
++		close(pipefd[0]);
++		write(pipefd[1], buf, strlen(buf)+1);
++		close(pipefd[1]);
++	}
++
++	write_pid(pid_file, pid);
++
++	if ((ret = waitpid(pid, &status, __WALL)) < 0)
++		printf("waitpid() returns %d, errno %d\n", ret, errno);
++
++	exit(0);
++}
 -- 
-1.6.1
+1.6.1.1
