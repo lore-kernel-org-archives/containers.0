@@ -1,10 +1,9 @@
-From: "ANK" <info-0LLBES8nxUw@public.gmane.org>
-Subject: ANK,s PROMO notebook
-Date: Sun, 15 Nov 2009 04:33:21 +0400
-Message-ID: <200911150033.nAF0XP5D024803@smtp1.linux-foundation.org>
+From: "MIXRIOT" <noreply-K6h/MnLURPVBDgjK7y7TUQ@public.gmane.org>
+Subject: MIXRIOT NEWS - NOV 15TH, 2009 - DJ ZINC ESSENTIAL MIX
+Date: Sun, 15 Nov 2009 15:39:06 +0000 (UTC)
+Message-ID: <20091115153906.CFF4D674A@mail.mixriot.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1251"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="8b25e36021a9a9600e7e80bdf90e08ad"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,38 +14,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-YXFjaWEgWmFsYVNpYSAzMCBub2VtYnJhbWRlIChyYW9kZW5vYmEgU2V6UnVkdWxpYSkgCgoKCkhQ
-IFByb0Jvb2sgNDUxMHMgTm90ZWJvb2sgUEMgKE5YNDExRUEpCklOVEVMIER1YWwtQ29yZSBQcm9j
-ZXNzb3IgVDE2MDAgLDEuNjYgR0h6LDEgTUIgTDIgY2FjaGUsIDY2NyBNSHogRlNCLC8xNSw0NiJU
-RlQgaW50ZWdyYXRlZCAyIE1QIHdlYmNhbS8yR2IvMjUwR2IgNTQwMHJwbS9EVkQrUlcvRnJlZSBE
-b3MKMSB4IDIwNDggTUIgRERSMiBERFIyIDgwMCAgTWh6KHVwIHRvIDQgR2IpLCAyIFNPRElNTSBz
-bG90cyBzdXBwb3J0aW5nIGR1YWwgY2hhbm5lbCBtZW1vcnkgIE1vYmlsZZkKIEludGVsriBHTDQw
-IEV4cHJlc3MgQ2hpcHNldCwgTW9iaWxlmSAKSW50ZWyuIEdyYXBoaWNzIE1lZGlhIEFjY2VsZXJh
-dG9yIFg0NTAwIHVwIHRvIDEgR2IsClNBVEEgRFZEKy8tUlcgU3VwZXJNdWx0aSBMaWdodFNjcmli
-ZSBEcml2ZSB3aXRoIERvdWJsZSBMYXllciBGaXhlZCwKIDE1LjYiIFRGVCwgTEVEIEhEIEJyaWdo
-dFZpZXcgKDEzNjYgeCA3NjggcmVzb2x1dGlvbiksIGludGVncmF0ZWQgMiBNUCB3ZWJjYW0pLCAK
-QnJvYWRjb20gODAyLjExIGIvZywgQmx1ZXRvb3RoriAyLjAsIApNYXJ2ZWxsIEV0aGVybmV0ICgx
-MC8xMDAvMTAwMCBOSUMpLCAKMSBFeHByZXNzQ2FyZC8zNCBzbG90LCBNZWRpYSBDYXJkIFJlYWRl
-ciwgNCBVU0IgMi4wIHBvcnRzLCBSSi00NSwgIEhETUkgb3V0LCAgCnN0ZXJlbyBzcGVha2Vycywg
-c3RlcmVvIGhlYWRwaG9uZS9saW5lIG91dCwgc3RlcmVvIG1pY3JvcGhvbmUgaW4sIGludGVncmF0
-ZWQgbWljcm9waG9uZSwgCkZ1bGwtc2l6ZWQgY2hpY2xldCBrZXlib2FyZCB3aXRoIHNlcGFyYXRl
-IG51bWVyaWMga2V5cGFkLCBUb3VjaHBhZCB3aXRoIHNjcm9sbCB6b25lLAo2LWNlbGwgKDQ3IFdI
-cikgTGktSW9uIGJhdHRlcnksICAgVXAgdG8gNWgsCldlaWdodCBTdGFydGluZyBhdCAyLjU5IGtn
-LCAzNy4xOCB4IDI0Ljk2IHggMy4xNSAoYXQgZnJvbnQpIGNtLAoxIHllYXIgd2FycmFudHkKZmFz
-aTsgMTA1MCBsYXJpIGRSZy1zIENhVHZsaVQKQ2FuVGEgc2FDdXFyYWQKCgoKUy5wLnMgImFuayBr
-b21waXV0ZXJzaSIgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKa29tcGl1dGVydWxpIHRl
-cW5pa2EgZGEgYXFzZXN1YXJlYmkuIHNydWxpIGluZm9ybWFjaXVsIHRlcW5vbG9naXVyaSBrb25z
-dWx0YWNpYSBkYSBzZXJ2aXNpIGFkZ2lsemUgbW9tc2F4dXJlYmlUCiBkLmdhbXJla2VsaXMgKGt1
-dHV6b3ZpKSBxLjE3CiB0ZWwuOiAgMzAtNzgtNzksIDQyLTE3LTU3LCA0OC00OS01MAogbW9iLjog
-OCAoOTMpIDUzLTI5LTIxLCBGQWZhcXNpOiA0Mi0xNy01NyAKIGUtbWFpbDogaW5mb0BhbmsuZ2Ug
-IHdlYjogd3d3LmFuay5nZSAgICAgICAKU2t5cGU6IGFua2NvbXB1dGVycwoKCgogVHUgYXIgZ3N1
-clQgQ3ZlbmkgU2V0eW9iaW5lYmViaXMgbWlSZWJhIGdUeG92VCBnYW1vZ3ZpZ3phdm5vVCAgd2Vy
-aWxpIG1pc2FtYXJUemU7ICB1bnN1YnNjcmliZUBhbmsuZ2UgIHdlcmlsU2kgZ1R4b3ZUIG1pdVRp
-VG9UIGlzIG1pc2FtYXJUaSwgcm9tZWx6ZWMgYXIgZ3N1clQgQ3ZlbmkgZ3phdm5pbGViaXMgbWlS
-ZWJhIAoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
-dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-ZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+This is a multi-part message in MIME format.
+
+--8b25e36021a9a9600e7e80bdf90e08ad
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+
+
+MIXRIOT NEWS - NOV 15TH, 2009
+
+DJ ZINC ESSENTIAL MIX [http://www.mixriot.com/content/dj-zinc-em-2009-11-14]
+
+join MIXRIOT
+
+Please paste this link into your browser to manage subscriptions for containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org:
+http://www.mixriot.com/mailout/subscriptions/992866/1258299546/21a1843b813db6b069b31c84149cf205
+
+--8b25e36021a9a9600e7e80bdf90e08ad
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--8b25e36021a9a9600e7e80bdf90e08ad--
