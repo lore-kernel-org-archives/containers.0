@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Avoid memcpy overruns in fill|load_sigset()
-Date: Mon, 16 Nov 2009 13:43:21 -0500
-Message-ID: <4B019D49.7040603@cs.columbia.edu>
-References: <41033d2ce4f31d016400bde1c5d393ae6f6b856a.1258153503.git.matthltc@us.ibm.com>
+Subject: Re: [PATCH 2/2] [RFC] checkpoint/restart signalfd
+Date: Mon, 16 Nov 2009 13:46:44 -0500
+Message-ID: <4B019E14.20200@cs.columbia.edu>
+References: <41033d2ce4f31d016400bde1c5d393ae6f6b856a.1258153503.git.matthltc@us.ibm.com>	<aa65242a98bf851a1d8432dd21850391c91607cf.1258153503.git.matthltc@us.ibm.com>
+	<20091116040129.GJ891@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <41033d2ce4f31d016400bde1c5d393ae6f6b856a.1258153503.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091116040129.GJ891-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,38 +23,19 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-struct ckpt_sigset is defined to match the size of sigset_t.
-Compilation should fail if it does not. Am I missing something ?
-
-Oren.
-
 
 Matt Helsley wrote:
-> Only copy the minimum size of the two structs. I believe gcc
-> will recognize that these are constants so the resulting code
-> should be the same size and just as fast.
+> On Fri, Nov 13, 2009 at 03:05:05PM -0800, Matt Helsley wrote:
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/signal.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
+> <snip>
 > 
-> diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-> index 989b974..c65ee00 100644
-> --- a/checkpoint/signal.c
-> +++ b/checkpoint/signal.c
-> @@ -22,12 +22,12 @@
->  
->  static inline void fill_sigset(struct ckpt_sigset *h, sigset_t *sigset)
->  {
-> -	memcpy(&h->sigset, sigset, sizeof(*sigset));
-> +	memcpy(&h->sigset, sigset, min(sizeof(*h), sizeof(*sigset)));
->  }
->  
->  static inline void load_sigset(sigset_t *sigset, struct ckpt_sigset *h)
->  {
-> -	memcpy(sigset, &h->sigset, sizeof(*sigset));
-> +	memcpy(sigset, &h->sigset, min(sizeof(*h), sizeof(*sigset)));
->  }
->  
->  /***********************************************************************
+>> ---
+>>  checkpoint/signal.c            |   10 ------
+>>  fs/signalfd.c                  |   62 ++++++++++++++++++++++++++++++++++++++++
+> 
+> Argh. Missed the "restore" path which requires installing a handler for
+> these files in checkpoint/file.c. Fixed.
+
+Where ?
+
+Oren.
