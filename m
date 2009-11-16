@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] use ckpt_err in ckpt_obj_fetch()
-Date: Mon, 16 Nov 2009 15:00:30 -0600
-Message-ID: <1258405231-13784-2-git-send-email-serge@us.ibm.com>
+Subject: [PATCH 3/3] use ckpt_err in ckpt_read_obj_type()
+Date: Mon, 16 Nov 2009 15:00:31 -0600
+Message-ID: <1258405231-13784-3-git-send-email-serge@us.ibm.com>
 References: <1258405231-13784-1-git-send-email-serge@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,29 +25,30 @@ From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
+ checkpoint/restart.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 9b1b2f4..1f7ce0e 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -1004,8 +1004,14 @@ void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
- 	struct ckpt_obj *obj;
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 4af4647..b684d7a 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -416,11 +416,16 @@ void *ckpt_read_obj_type(struct ckpt_ctx *ctx, int len, int type)
+ 	BUG_ON(!len);
  
- 	obj = obj_find_by_objref(ctx, objref);
--	if (!obj)
-+	if (!obj) {
-+		ckpt_err(ctx, -EINVAL, "%(O)No such object\n", objref);
- 		return ERR_PTR(-EINVAL);
+ 	h = ckpt_read_obj(ctx, len, len);
+-	if (IS_ERR(h))
++	if (IS_ERR(h)) {
++		ckpt_err(ctx, PTR_ERR(h), "Looking for type %d in ckptfile\n",
++			 type);
+ 		return h;
 +	}
- 	ckpt_debug("%s ref %d\n", obj->ops->obj_name, obj->objref);
--	return (obj->ops->obj_type == type ? obj->ptr : ERR_PTR(-ENOMSG));
-+	if (obj->ops->obj_type == type)
-+		return obj->ptr;
-+	ckpt_err(ctx, -ENOMSG, "%(O)Hashed objed was type %d, not %d\n",
-+		 objref, obj->ops->obj_type, type);
-+	return ERR_PTR(-ENOMSG);
- }
+ 
+ 	if (h->type != type) {
+ 		ckpt_hdr_put(ctx, h);
++		ckpt_err(ctx, -EINVAL, "Next object was type %d, not %d\n",
++			h->type, type);
+ 		h = ERR_PTR(-EINVAL);
+ 	}
+ 
 -- 
 1.6.1
