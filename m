@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] checkpoint/restart timerfd
-Date: Mon, 16 Nov 2009 13:56:54 -0500
-Message-ID: <4B01A076.7010102@cs.columbia.edu>
-References: <96703bfb68e1626100dd5fa6ce033ec204bcb58b.1258159772.git.matthltc@us.ibm.com>
-	<20091116040403.GK891@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 1/4] Unify skb read/write functions and fix for fragmented
+	buffers
+Date: Mon, 16 Nov 2009 14:05:18 -0500
+Message-ID: <4B01A26E.2010307@cs.columbia.edu>
+References: <1257878856-25520-1-git-send-email-danms@us.ibm.com>	<1257878856-25520-2-git-send-email-danms@us.ibm.com>	<4B019A2C.9090507@cs.columbia.edu>
+	<87einyuwum.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091116040403.GK891-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <87einyuwum.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +19,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Matt Helsley wrote:
-> On Fri, Nov 13, 2009 at 04:49:35PM -0800, Matt Helsley wrote:
->> Support checkpoint/restart of timers specified via timerfd. Checkpoint
->> essentially does the timerfd_gettime() syscall and saves the expired flags
->> and tick count. This ensures there will be no lost expirations/ticks
->> between checkpoint restart.
->>
->> This should largely work as expected since the time returned from gettime
->> is always relative.
->>
->> However, like any time-sensitive state, timerfds set with TFD_TIMER_ABSTIME
->> may expire/tick at the "wrong time" because that time has long since passed.
->> Short of introducing time namespaces there's almost nothing that can be done
->> to checkpoint these uses of timerfd. Would it make more sense to mark timerfds
->> which were (re)set with TFD_TIMER_ABSTIME and refuse to checkpoint them rather
->> than deliver a "best-effort" expiration/tick?
->>
->> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->> --
->> NOTE: Compiles, untested.
->> ---
->>  fs/timerfd.c                   |  113 ++++++++++++++++++++++++++++++++++++----
+Dan Smith wrote:
+>>> struct ckpt_hdr_socket_buffer {
+>>> struct ckpt_hdr h;
+>>> +	__u64 transport_header;
+>>> +	__u64 network_header;
+>>> +	__u64 mac_header;
+>>> +	__u64 lin_len; /* Length of linear data */
+>>> +	__u64 frg_len; /* Length of fragment data */
+>>> +	__u64 skb_len; /* Length of skb (adjusted) */
+>>> +	__u64 hdr_len; /* Length of skipped header */
+>>> +	__u64 mac_len;
 > 
-> Argh. Missed the "restore" path which requires installing a handler for
-> these files in checkpoint/file.c. Fixed.
+> OL> Can you use u32 (or even less ?) for these ?
+> 
+> Well, in the structure the len is an unsigned int, so u64 seemed
+> appropriate.
+> 
+>>> __s32 sk_objref;
+>>> __s32 pr_objref;
+>>> +	__u16 protocol;
+>>> +	__u16 nr_frags;
+>>> +	__u8 cb[48];
+> 
+> OL> Do you it will ever be required that cb[] be aligned ?
+> 
+> It's not aligned in the real structure and it's mostly opaque data, so
+> no, I wouldn't think so.
+> 
+> OL> I'm unsure how much of a performance issue this is - I sort of
+> OL> expected a comment from Dave Hansen about this; Did you consider
+> OL> reusing the restore_read_page() from checkpoint/memory.c ?  (and
+> OL> the matching checkpoint_dump_page() for the checkpoint).
+> 
+> Nope, I'll take a look.
+> 
+>>> +	for (i = 0; i < h->nr_frags; i++) {
+> 
+> OL> Sanitize h->nr_frags ?
+> 
+> To what?  I've already checked h->frg_len at this point, so I think
+> maybe just making sure frag_len never crosses zero would be
+> sufficient.
 
-So in that missing part (here and in signalfd), make sure it also
-compiles without CONFIG_{SIGNAL,TIMER}_FD. And ignore this comment
-if you already did...
+MAX_SKB_FRAGS.
+
+You use @i when calling skb_add_rx_frag() which in turn uses it
+to index in the skb's fragments array without checking.
+
+> 
+>>> +	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
+>>> +		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
+>>> +		u8 *vaddr = kmap(frag->page);
+> 
+> OL> Here, too, consider checkpoint_dump_page() to avoid kmap() ?
+> 
+> OL> It makes sense to have a scratch page to be used (also) for this,
+> OL> on ckpt_ctx - to avoid alloc/dealloc repeatedly.
+> 
+> Hmm, is there an alloc/dealloc here?
+
+Sorry, should have been more explicit: these two functions use an
+temporary page to read the data to (write the data from) without
+holding kmap(); instead they use kmap_atomic(), copy the data to
+the scratch page, kunmap_atomic(), and then write the data.
+
+When dumping memory, the scratch page is allocated once for every
+big group of pages and then freed Here, you will need to allocate
+for each skb, which makes less sense - hence my suggestion that
+we keep a scratch page for that purpose. (and it can be used by
+the memory dump/restore too).
+
+> 
+> I'll take a look at checkpoint_dump_page()...
+> 
 
 Oren.
