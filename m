@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Expose page read/write functions
-Date: Tue, 17 Nov 2009 12:24:43 -0800
-Message-ID: <1258489484-28227-2-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 2/2] Change net c/r to use exported page I/O functions
+Date: Tue, 17 Nov 2009 12:24:44 -0800
+Message-ID: <1258489484-28227-3-git-send-email-danms@us.ibm.com>
 References: <1258489484-28227-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,175 +20,165 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Expose checkpoint_dump_page() and restore_read_page() from memory.c.
-Also convert them to use a common scratch buffer in the ckpt_ctx
-to avoid alloc/dealloc on every page I/O (or group of them).
+This changes the net c/r functions that save out the socket buffers to
+use the exported page I/O functions, just like the memory dump routines.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/memory.c              |   29 ++++++++---------------------
- checkpoint/sys.c                 |    8 ++++++++
- include/linux/checkpoint.h       |    3 +++
- include/linux/checkpoint_types.h |    2 ++
- 4 files changed, 21 insertions(+), 21 deletions(-)
+ include/linux/checkpoint_hdr.h |    8 ++++
+ net/checkpoint.c               |   86 ++++++++++++++++++++++++++-------------
+ 2 files changed, 65 insertions(+), 29 deletions(-)
 
-diff --git a/checkpoint/memory.c b/checkpoint/memory.c
-index ec3603a..9a4fe83 100644
---- a/checkpoint/memory.c
-+++ b/checkpoint/memory.c
-@@ -394,16 +394,15 @@ static int vma_fill_pgarr(struct ckpt_ctx *ctx,
- }
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index d1a93e3..95ea3dd 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -170,6 +170,8 @@ enum {
+ #define CKPT_HDR_SOCKET_QUEUE CKPT_HDR_SOCKET_QUEUE
+ 	CKPT_HDR_SOCKET_BUFFER,
+ #define CKPT_HDR_SOCKET_BUFFER CKPT_HDR_SOCKET_BUFFER
++	CKPT_HDR_SOCKET_FRAG,
++#define CKPT_HDR_SOCKET_FRAG CKPT_HDR_SOCKET_FRAG
+ 	CKPT_HDR_SOCKET_UNIX,
+ #define CKPT_HDR_SOCKET_UNIX CKPT_HDR_SOCKET_UNIX
+ 	CKPT_HDR_SOCKET_INET,
+@@ -610,6 +612,12 @@ struct ckpt_hdr_socket_buffer {
+ 	__u8 cb[48];
+ };
  
- /* dump contents of a pages: use kmap_atomic() to avoid TLB flush */
--static int checkpoint_dump_page(struct ckpt_ctx *ctx,
--				struct page *page, char *buf)
-+int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page)
++struct ckpt_hdr_socket_buffer_frag {
++	struct ckpt_hdr h;
++	__u32 size;
++	__u32 offset;
++};
++
+ #define CKPT_UNIX_LINKED 1
+ struct ckpt_hdr_socket_unix {
+ 	struct ckpt_hdr h;
+diff --git a/net/checkpoint.c b/net/checkpoint.c
+index 7f7d914..a67d72f 100644
+--- a/net/checkpoint.c
++++ b/net/checkpoint.c
+@@ -174,39 +174,42 @@ static int sock_restore_skb_frag(struct ckpt_ctx *ctx,
+ 				 int frag_idx)
  {
- 	void *ptr;
- 
- 	ptr = kmap_atomic(page, KM_USER1);
--	memcpy(buf, ptr, PAGE_SIZE);
-+	memcpy(ctx->scratch_page, ptr, PAGE_SIZE);
- 	kunmap_atomic(ptr, KM_USER1);
- 
--	return ckpt_kwrite(ctx, buf, PAGE_SIZE);
-+	return ckpt_kwrite(ctx, ctx->scratch_page, PAGE_SIZE);
- }
- 
- /**
-@@ -416,7 +415,6 @@ static int checkpoint_dump_page(struct ckpt_ctx *ctx,
- static int vma_dump_pages(struct ckpt_ctx *ctx, int total)
- {
- 	struct ckpt_pgarr *pgarr;
+ 	int ret = 0;
+-	int fraglen;
+ 	struct page *page;
 -	void *buf;
- 	int i, ret = 0;
++	struct ckpt_hdr_socket_buffer_frag *h;
  
- 	if (!total)
-@@ -434,19 +432,14 @@ static int vma_dump_pages(struct ckpt_ctx *ctx, int total)
- 			return ret;
- 	}
- 
--	buf = (void *) __get_free_page(GFP_KERNEL);
--	if (!buf)
--		return -ENOMEM;
--
- 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
- 		for (i = 0; i < pgarr->nr_used; i++) {
--			ret = checkpoint_dump_page(ctx, pgarr->pages[i], buf);
-+			ret = checkpoint_dump_page(ctx, pgarr->pages[i]);
- 			if (ret < 0)
- 				goto out;
- 		}
- 	}
-  out:
--	free_page((unsigned long) buf);
- 	return ret;
- }
- 
-@@ -889,17 +882,17 @@ static int read_pages_vaddrs(struct ckpt_ctx *ctx, unsigned long nr_pages)
- 	return 0;
- }
- 
--static int restore_read_page(struct ckpt_ctx *ctx, struct page *page, void *p)
-+int restore_read_page(struct ckpt_ctx *ctx, struct page *page)
- {
- 	void *ptr;
- 	int ret;
- 
--	ret = ckpt_kread(ctx, p, PAGE_SIZE);
-+	ret = ckpt_kread(ctx, ctx->scratch_page, PAGE_SIZE);
- 	if (ret < 0)
- 		return ret;
- 
- 	ptr = kmap_atomic(page, KM_USER1);
--	memcpy(ptr, p, PAGE_SIZE);
-+	memcpy(ptr, ctx->scratch_page, PAGE_SIZE);
- 	kunmap_atomic(ptr, KM_USER1);
- 
- 	return 0;
-@@ -937,13 +930,8 @@ static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
- {
- 	struct ckpt_pgarr *pgarr;
- 	unsigned long *vaddrs;
--	char *buf;
- 	int i, ret = 0;
- 
--	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
--	if (!buf)
--		return -ENOMEM;
--
- 	down_read(&current->mm->mmap_sem);
- 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
- 		vaddrs = pgarr->vaddrs;
-@@ -961,7 +949,7 @@ static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
- 				goto out;
- 			}
- 
--			ret = restore_read_page(ctx, page, buf);
-+			ret = restore_read_page(ctx, page);
- 			page_cache_release(page);
- 
- 			if (ret < 0)
-@@ -971,7 +959,6 @@ static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
- 
-  out:
- 	up_read(&current->mm->mmap_sem);
--	kfree(buf);
- 	return 0;
- }
- 
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index baed891..88a8f25 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -246,6 +246,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 
- 	sock_listening_list_free(&ctx->listen_sockets);
- 
-+	free_page((unsigned long)ctx->scratch_page);
-+
- 	kfree(ctx);
- }
- 
-@@ -259,6 +261,12 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	if (!ctx)
- 		return ERR_PTR(-ENOMEM);
- 
-+	ctx->scratch_page = (void *)__get_free_page(GFP_KERNEL);
-+	if (!ctx->scratch_page) {
-+		err = -ENOMEM;
-+		goto err;
+-	fraglen = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
+-	if (fraglen < 0)
+-		return fraglen;
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_FRAG);
++	if (IS_ERR(h)) {
++		ckpt_err(ctx, PTR_ERR(h), "failed to read buffer object\n");
++		return PTR_ERR(h);
 +	}
-+
- 	ctx->uflags = uflags;
- 	ctx->kflags = kflags;
- 	ctx->ktime_begin = ktime_get();
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 2bf7755..72a299e 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -94,6 +94,9 @@ extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
- extern char *ckpt_fill_fname(struct path *path, struct path *root,
- 			     char *buf, int *len);
  
-+int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
-+int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
-+
- /* pids */
- extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
- extern struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid);
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 79c9c09..c13532d 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -69,6 +69,8 @@ struct ckpt_ctx {
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
- 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+-	if (fraglen > PAGE_SIZE) {
+-		ckpt_err(ctx, -EINVAL,
+-			 "skb frag size %i > PAGE_SIZE\n", fraglen);
+-		return -EINVAL;
++	if ((h->size > PAGE_SIZE) || (h->offset >= PAGE_SIZE)) {
++		ret = -EINVAL;
++		ckpt_err(ctx, ret,
++			 "skb frag size=%i,offset=%i > PAGE_SIZE\n",
++			 h->size, h->offset);
++		goto out;
+ 	}
  
-+	void *scratch_page;             /* Scratch buffer for page I/O */
+ 	page = alloc_page(GFP_KERNEL);
+-	if (!page)
+-		return -ENOMEM;
+-
+-	buf = kmap(page);
+-	ret = ckpt_kread(ctx, buf, fraglen);
+-	kunmap(page);
++	if (!page) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 
++	ret = restore_read_page(ctx, page);
+ 	if (ret) {
+-		ret = -EINVAL;
+-		ckpt_err(ctx, ret,
+-			 "failed to read fragment: %i\n", ret);
++		ckpt_err(ctx, ret, "failed to read fragment: %i\n", ret);
+ 		__free_page(page);
+ 	} else {
+-		ckpt_debug("read %i for fragment %i\n", fraglen, frag_idx);
+-		skb_add_rx_frag(skb, frag_idx, page, 0, fraglen);
++		ckpt_debug("read %i+%i for fragment %i\n",
++			   h->offset, h->size, frag_idx);
++		skb_add_rx_frag(skb, frag_idx, page, h->offset, h->size);
++		ret = h->size;
+ 	}
+-
+-	return ret < 0 ? ret : fraglen;
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
+ }
+ 
+ struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx,
+@@ -282,6 +285,35 @@ struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx,
+ 	return skb;
+ }
+ 
++static int __sock_write_skb_frag(struct ckpt_ctx *ctx,
++				 skb_frag_t *frag)
++{
++	struct ckpt_hdr_socket_buffer_frag *h;
++	int ret;
 +
- 	/* [multi-process checkpoint] */
- 	struct task_struct **tasks_arr; /* array of all tasks [checkpoint] */
- 	int nr_tasks;                   /* size of tasks array */
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_FRAG);
++	if (!h)
++		return -ENOMEM;
++
++	h->size = frag->size;
++	h->offset = frag->page_offset;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		goto out;
++
++	ret = checkpoint_dump_page(ctx, frag->page);
++	ckpt_debug("writing frag page: %i\n", ret);
++	if (ret < 0)
++		goto out;
++
++ out:
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
+ static int __sock_write_skb(struct ckpt_ctx *ctx,
+ 			    struct sk_buff *skb,
+ 			    int dst_objref)
+@@ -316,16 +348,12 @@ static int __sock_write_skb(struct ckpt_ctx *ctx,
+ 
+ 	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
+ 		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
+-		u8 *vaddr = kmap(frag->page);
+-
++		ret = __sock_write_skb_frag(ctx, frag);
+ 		ckpt_debug("writing buffer fragment %i/%i (%i)\n",
+-			   i + 1, h->nr_frags, frag->size);
+-		ret = ckpt_write_obj_type(ctx, vaddr + frag->page_offset,
+-					  frag->size, CKPT_HDR_BUFFER);
+-		kunmap(frag->page);
+-		h->frg_len -= frag->size;
++			   i + 1, h->nr_frags, ret);
+ 		if (ret < 0)
+ 			goto out;
++		h->frg_len -= frag->size;
+ 	}
+ 
+ 	WARN_ON(h->frg_len != 0);
 -- 
 1.6.2.5
