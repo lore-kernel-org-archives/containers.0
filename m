@@ -1,15 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH linux-cr] fix warnings in i386 sys_eclone
-Date: Tue, 17 Nov 2009 15:33:24 -0600
-Message-ID: <1258493604.4031.1201.camel@localhost.localdomain>
-References: <1258089886-10034-1-git-send-email-serue@us.ibm.com>
-	<1258414596.4031.1058.camel@localhost.localdomain>
-	<20091117040321.GA32461@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] Avoid memcpy overruns in fill|load_sigset()
+Date: Tue, 17 Nov 2009 14:45:33 -0800
+Message-ID: <20091117224533.GB18690@count0.beaverton.ibm.com>
+References: <41033d2ce4f31d016400bde1c5d393ae6f6b856a.1258153503.git.matthltc@us.ibm.com>
+	<4B019D49.7040603@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091117040321.GA32461-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B019D49.7040603-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,28 +19,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-V2l0aCB5b3VyIGVjbG9uZS12MTMtczM5MHgucHBjLjIgYnJhbmNoIEkgZ2V0OgoKYXJjaC94ODYv
-a2VybmVsL3Byb2Nlc3NfMzIuYzogSW4gZnVuY3Rpb24g4oCYc3lzX2VjbG9uZeKAmToKYXJjaC94
-ODYva2VybmVsL3Byb2Nlc3NfMzIuYzo0Nzk6IHdhcm5pbmc6IGNhc3QgdG8gcG9pbnRlciBmcm9t
-IGludGVnZXIKb2YgZGlmZmVyZW50IHNpemUKYXJjaC94ODYva2VybmVsL3Byb2Nlc3NfMzIuYzo0
-ODA6IHdhcm5pbmc6IGNhc3QgdG8gcG9pbnRlciBmcm9tIGludGVnZXIKb2YgZGlmZmVyZW50IHNp
-emUKCiBhcmNoL3g4Ni9rZXJuZWwvcHJvY2Vzc18zMi5jIHwgICAgNCArKy0tCiAxIGZpbGVzIGNo
-YW5nZWQsIDIgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9hcmNo
-L3g4Ni9rZXJuZWwvcHJvY2Vzc18zMi5jIGIvYXJjaC94ODYva2VybmVsL3Byb2Nlc3NfMzIuYwpp
-bmRleCAxNjFhZTRlLi4yYmI4YzFlIDEwMDY0NAotLS0gYS9hcmNoL3g4Ni9rZXJuZWwvcHJvY2Vz
-c18zMi5jCisrKyBiL2FyY2gveDg2L2tlcm5lbC9wcm9jZXNzXzMyLmMKQEAgLTQ3Niw4ICs0NzYs
-OCBAQCBpbnQgc3lzX2VjbG9uZShzdHJ1Y3QgcHRfcmVncyAqcmVncykKIAkgKiAJCWZsYWdzID0g
-KGtjYS5jbG9uZV9mbGFnc19oaWdoIDw8IDMyKSB8IGZsYWdzX2xvdzsKIAkgKi8KIAlmbGFncyA9
-IGZsYWdzX2xvdzsKLQlwYXJlbnRfdGlkX3B0ciA9IChpbnQgKilrY2EucGFyZW50X3RpZF9wdHI7
-Ci0JY2hpbGRfdGlkX3B0ciA9IChpbnQgKilrY2EuY2hpbGRfdGlkX3B0cjsKKwlwYXJlbnRfdGlk
-X3B0ciA9IChpbnQgKikodW5zaWduZWQgbG9uZylrY2EucGFyZW50X3RpZF9wdHI7CisJY2hpbGRf
-dGlkX3B0ciA9IChpbnQgKikodW5zaWduZWQgbG9uZylrY2EuY2hpbGRfdGlkX3B0cjsKIAogCXN0
-YWNrX3NpemUgPSAodW5zaWduZWQgbG9uZylrY2EuY2hpbGRfc3RhY2tfc2l6ZTsKIAlpZiAoc3Rh
-Y2tfc2l6ZSkKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+On Mon, Nov 16, 2009 at 01:43:21PM -0500, Oren Laadan wrote:
+> 
+> struct ckpt_sigset is defined to match the size of sigset_t.
+> Compilation should fail if it does not. Am I missing something ?
+
+OK, I didn't see where it would cause compilation to fail. That's
+better than this patch which would "fail" silently if they differ.
+
+Cheers,
+	-Matt
+
+> 
+> Oren.
+> 
+> 
+> Matt Helsley wrote:
+> > Only copy the minimum size of the two structs. I believe gcc
+> > will recognize that these are constants so the resulting code
+> > should be the same size and just as fast.
+> > 
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  checkpoint/signal.c |    4 ++--
+> >  1 files changed, 2 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+> > index 989b974..c65ee00 100644
+> > --- a/checkpoint/signal.c
+> > +++ b/checkpoint/signal.c
+> > @@ -22,12 +22,12 @@
+> >  
+> >  static inline void fill_sigset(struct ckpt_sigset *h, sigset_t *sigset)
+> >  {
+> > -	memcpy(&h->sigset, sigset, sizeof(*sigset));
+> > +	memcpy(&h->sigset, sigset, min(sizeof(*h), sizeof(*sigset)));
+> >  }
+> >  
+> >  static inline void load_sigset(sigset_t *sigset, struct ckpt_sigset *h)
+> >  {
+> > -	memcpy(sigset, &h->sigset, sizeof(*sigset));
+> > +	memcpy(sigset, &h->sigset, min(sizeof(*h), sizeof(*sigset)));
+> >  }
+> >  
+> >  /***********************************************************************
