@@ -1,13 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] Change net c/r to use exported page I/O functions
-Date: Tue, 17 Nov 2009 12:24:44 -0800
-Message-ID: <1258489484-28227-3-git-send-email-danms@us.ibm.com>
-References: <1258489484-28227-1-git-send-email-danms@us.ibm.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH linux-cr] fix warnings in i386 sys_eclone
+Date: Tue, 17 Nov 2009 15:33:24 -0600
+Message-ID: <1258493604.4031.1201.camel@localhost.localdomain>
+References: <1258089886-10034-1-git-send-email-serue@us.ibm.com>
+	<1258414596.4031.1058.camel@localhost.localdomain>
+	<20091117040321.GA32461@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1258489484-28227-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091117040321.GA32461-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,168 +19,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This changes the net c/r functions that save out the socket buffers to
-use the exported page I/O functions, just like the memory dump routines.
-
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint_hdr.h |    8 ++++
- net/checkpoint.c               |   86 ++++++++++++++++++++++++++-------------
- 2 files changed, 65 insertions(+), 29 deletions(-)
-
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index d1a93e3..95ea3dd 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -170,6 +170,8 @@ enum {
- #define CKPT_HDR_SOCKET_QUEUE CKPT_HDR_SOCKET_QUEUE
- 	CKPT_HDR_SOCKET_BUFFER,
- #define CKPT_HDR_SOCKET_BUFFER CKPT_HDR_SOCKET_BUFFER
-+	CKPT_HDR_SOCKET_FRAG,
-+#define CKPT_HDR_SOCKET_FRAG CKPT_HDR_SOCKET_FRAG
- 	CKPT_HDR_SOCKET_UNIX,
- #define CKPT_HDR_SOCKET_UNIX CKPT_HDR_SOCKET_UNIX
- 	CKPT_HDR_SOCKET_INET,
-@@ -610,6 +612,12 @@ struct ckpt_hdr_socket_buffer {
- 	__u8 cb[48];
- };
- 
-+struct ckpt_hdr_socket_buffer_frag {
-+	struct ckpt_hdr h;
-+	__u32 size;
-+	__u32 offset;
-+};
-+
- #define CKPT_UNIX_LINKED 1
- struct ckpt_hdr_socket_unix {
- 	struct ckpt_hdr h;
-diff --git a/net/checkpoint.c b/net/checkpoint.c
-index 7f7d914..a67d72f 100644
---- a/net/checkpoint.c
-+++ b/net/checkpoint.c
-@@ -174,39 +174,42 @@ static int sock_restore_skb_frag(struct ckpt_ctx *ctx,
- 				 int frag_idx)
- {
- 	int ret = 0;
--	int fraglen;
- 	struct page *page;
--	void *buf;
-+	struct ckpt_hdr_socket_buffer_frag *h;
- 
--	fraglen = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
--	if (fraglen < 0)
--		return fraglen;
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_FRAG);
-+	if (IS_ERR(h)) {
-+		ckpt_err(ctx, PTR_ERR(h), "failed to read buffer object\n");
-+		return PTR_ERR(h);
-+	}
- 
--	if (fraglen > PAGE_SIZE) {
--		ckpt_err(ctx, -EINVAL,
--			 "skb frag size %i > PAGE_SIZE\n", fraglen);
--		return -EINVAL;
-+	if ((h->size > PAGE_SIZE) || (h->offset >= PAGE_SIZE)) {
-+		ret = -EINVAL;
-+		ckpt_err(ctx, ret,
-+			 "skb frag size=%i,offset=%i > PAGE_SIZE\n",
-+			 h->size, h->offset);
-+		goto out;
- 	}
- 
- 	page = alloc_page(GFP_KERNEL);
--	if (!page)
--		return -ENOMEM;
--
--	buf = kmap(page);
--	ret = ckpt_kread(ctx, buf, fraglen);
--	kunmap(page);
-+	if (!page) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 
-+	ret = restore_read_page(ctx, page);
- 	if (ret) {
--		ret = -EINVAL;
--		ckpt_err(ctx, ret,
--			 "failed to read fragment: %i\n", ret);
-+		ckpt_err(ctx, ret, "failed to read fragment: %i\n", ret);
- 		__free_page(page);
- 	} else {
--		ckpt_debug("read %i for fragment %i\n", fraglen, frag_idx);
--		skb_add_rx_frag(skb, frag_idx, page, 0, fraglen);
-+		ckpt_debug("read %i+%i for fragment %i\n",
-+			   h->offset, h->size, frag_idx);
-+		skb_add_rx_frag(skb, frag_idx, page, h->offset, h->size);
-+		ret = h->size;
- 	}
--
--	return ret < 0 ? ret : fraglen;
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
- }
- 
- struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx,
-@@ -282,6 +285,35 @@ struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx,
- 	return skb;
- }
- 
-+static int __sock_write_skb_frag(struct ckpt_ctx *ctx,
-+				 skb_frag_t *frag)
-+{
-+	struct ckpt_hdr_socket_buffer_frag *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_FRAG);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->size = frag->size;
-+	h->offset = frag->page_offset;
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
-+	ckpt_hdr_put(ctx, h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = checkpoint_dump_page(ctx, frag->page);
-+	ckpt_debug("writing frag page: %i\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
- static int __sock_write_skb(struct ckpt_ctx *ctx,
- 			    struct sk_buff *skb,
- 			    int dst_objref)
-@@ -316,16 +348,12 @@ static int __sock_write_skb(struct ckpt_ctx *ctx,
- 
- 	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
- 		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
--		u8 *vaddr = kmap(frag->page);
--
-+		ret = __sock_write_skb_frag(ctx, frag);
- 		ckpt_debug("writing buffer fragment %i/%i (%i)\n",
--			   i + 1, h->nr_frags, frag->size);
--		ret = ckpt_write_obj_type(ctx, vaddr + frag->page_offset,
--					  frag->size, CKPT_HDR_BUFFER);
--		kunmap(frag->page);
--		h->frg_len -= frag->size;
-+			   i + 1, h->nr_frags, ret);
- 		if (ret < 0)
- 			goto out;
-+		h->frg_len -= frag->size;
- 	}
- 
- 	WARN_ON(h->frg_len != 0);
--- 
-1.6.2.5
+V2l0aCB5b3VyIGVjbG9uZS12MTMtczM5MHgucHBjLjIgYnJhbmNoIEkgZ2V0OgoKYXJjaC94ODYv
+a2VybmVsL3Byb2Nlc3NfMzIuYzogSW4gZnVuY3Rpb24g4oCYc3lzX2VjbG9uZeKAmToKYXJjaC94
+ODYva2VybmVsL3Byb2Nlc3NfMzIuYzo0Nzk6IHdhcm5pbmc6IGNhc3QgdG8gcG9pbnRlciBmcm9t
+IGludGVnZXIKb2YgZGlmZmVyZW50IHNpemUKYXJjaC94ODYva2VybmVsL3Byb2Nlc3NfMzIuYzo0
+ODA6IHdhcm5pbmc6IGNhc3QgdG8gcG9pbnRlciBmcm9tIGludGVnZXIKb2YgZGlmZmVyZW50IHNp
+emUKCiBhcmNoL3g4Ni9rZXJuZWwvcHJvY2Vzc18zMi5jIHwgICAgNCArKy0tCiAxIGZpbGVzIGNo
+YW5nZWQsIDIgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9hcmNo
+L3g4Ni9rZXJuZWwvcHJvY2Vzc18zMi5jIGIvYXJjaC94ODYva2VybmVsL3Byb2Nlc3NfMzIuYwpp
+bmRleCAxNjFhZTRlLi4yYmI4YzFlIDEwMDY0NAotLS0gYS9hcmNoL3g4Ni9rZXJuZWwvcHJvY2Vz
+c18zMi5jCisrKyBiL2FyY2gveDg2L2tlcm5lbC9wcm9jZXNzXzMyLmMKQEAgLTQ3Niw4ICs0NzYs
+OCBAQCBpbnQgc3lzX2VjbG9uZShzdHJ1Y3QgcHRfcmVncyAqcmVncykKIAkgKiAJCWZsYWdzID0g
+KGtjYS5jbG9uZV9mbGFnc19oaWdoIDw8IDMyKSB8IGZsYWdzX2xvdzsKIAkgKi8KIAlmbGFncyA9
+IGZsYWdzX2xvdzsKLQlwYXJlbnRfdGlkX3B0ciA9IChpbnQgKilrY2EucGFyZW50X3RpZF9wdHI7
+Ci0JY2hpbGRfdGlkX3B0ciA9IChpbnQgKilrY2EuY2hpbGRfdGlkX3B0cjsKKwlwYXJlbnRfdGlk
+X3B0ciA9IChpbnQgKikodW5zaWduZWQgbG9uZylrY2EucGFyZW50X3RpZF9wdHI7CisJY2hpbGRf
+dGlkX3B0ciA9IChpbnQgKikodW5zaWduZWQgbG9uZylrY2EuY2hpbGRfdGlkX3B0cjsKIAogCXN0
+YWNrX3NpemUgPSAodW5zaWduZWQgbG9uZylrY2EuY2hpbGRfc3RhY2tfc2l6ZTsKIAlpZiAoc3Rh
+Y2tfc2l6ZSkKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
