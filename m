@@ -1,17 +1,11 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] Update the UNIX buffer restore code to match the new
-	format saved in the image file
-Date: Wed, 18 Nov 2009 06:28:02 -0800
-Message-ID: <876397vrf1.fsf@caffeine.danplanet.com>
-References: <1258471590-29768-1-git-send-email-danms@us.ibm.com>
-	<1258471590-29768-4-git-send-email-danms@us.ibm.com>
-	<20091118043920.GD19841@us.ibm.com>
+Subject: [PATCH] Avoid capable() call in UNIX buffer check unless necessary
+Date: Wed, 18 Nov 2009 07:17:57 -0800
+Message-ID: <1258557477-28642-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091118043920.GD19841-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Tue\, 17 Nov 2009 22\:39\:20 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,22 +15,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sk-> sk_sndbuf = sysctl_wmem_max;
+As pointed out by Serge, we shouldn't call capable() unless we know we'll
+need to exercise the ability.
 
-SH> Again, should you check whether h->len_len < sysctl_wmem_max
-SH> before doing the capable(CAP_NET_ADMIN)?  The goal is to prevent
-SH> setting PF_SUPERPRIV in task->flags if it wasn't absolutely
-SH> necessary.
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+---
+ net/unix/checkpoint.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-Yes, I think we agreed that we should, I just wasn't going to fold
-that into these other unrelated changes.   I'll spin another small
-patch for that right away.
-
+diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
+index 23040ce..55dfac1 100644
+--- a/net/unix/checkpoint.c
++++ b/net/unix/checkpoint.c
+@@ -278,9 +278,18 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+ 		unix_sk(sk)->peer->sk_shutdown &= ~SHUTDOWN_MASK;
+ 	}
+ 
+-	/* Make sure there's room in the send buffer */
++	/* Make sure there's room in the send buffer: Worst case, we
++	 * give them the benefit of the doubt and set the buffer limit
++	 * to the system default.  This should cover the case where
++	 * the user set the limit low after loading up the buffer.
++	 *
++	 * However, if there isn't room in the buffer and the system
++	 * default won't accommodate them either, then increase the
++	 * limit as needed, only if they have CAP_NET_ADMIN.
++	 */
+ 	sndbuf = sk->sk_sndbuf;
+ 	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < h->lin_len) &&
++	    (h->lin_len > sysctl_wmem_max) &&
+ 	    capable(CAP_NET_ADMIN))
+ 		sk->sk_sndbuf += h->lin_len;
+ 	else
 -- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+1.6.2.5
