@@ -1,16 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] Unify skb read/write functions and fix for
-	fragmented buffers (v2)
-Date: Tue, 17 Nov 2009 22:34:13 -0600
-Message-ID: <20091118043413.GB19841@us.ibm.com>
+Subject: Re: [PATCH 3/4] Update the UNIX buffer restore code to match the
+	new format saved in the image file
+Date: Tue, 17 Nov 2009 22:39:20 -0600
+Message-ID: <20091118043920.GD19841@us.ibm.com>
 References: <1258471590-29768-1-git-send-email-danms@us.ibm.com>
-	<1258471590-29768-2-git-send-email-danms@us.ibm.com>
+	<1258471590-29768-4-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1258471590-29768-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1258471590-29768-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,358 +25,107 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> The INET code often creates socket buffers by attaching fragments instead
-> of writing to the linear region.  This extends the skb write functions
-> to write out the linear and fragment regions of an skb, and adds a
-> function to be used by others wishing to restore an skb in the same way.
-> This also includes the header-mark-setting bits from a previous patch.
-> 
-> Changes in v2:
->  - Change the length variables in ckpt_hdr_socket_buffer to u32
->  - Check frag number against MAX_SKB_FRAGS
-> 
 > Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
 > ---
->  include/linux/checkpoint.h     |    1 +
->  include/linux/checkpoint_hdr.h |   11 ++
->  net/checkpoint.c               |  258 ++++++++++++++++++++++++++++++++++++----
->  3 files changed, 247 insertions(+), 23 deletions(-)
+>  net/unix/checkpoint.c |   54 ++++++++++++++++++++++++++----------------------
+>  1 files changed, 29 insertions(+), 25 deletions(-)
 > 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 550f6e8..0eff43e 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -104,6 +104,7 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
->  			      struct socket *socket,
->  			      struct sockaddr *loc, unsigned *loc_len,
->  			      struct sockaddr *rem, unsigned *rem_len);
-> +struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx);
+> diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
+> index 749673d..c6a1b27 100644
+> --- a/net/unix/checkpoint.c
+> +++ b/net/unix/checkpoint.c
+> @@ -201,7 +201,6 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+>  	uint8_t peer_shutdown = 0;
+>  	void *buf = NULL;
+>  	int sndbuf;
+> -	int len;
+>  	int ret = 0;
 > 
->  /* ckpt kflags */
->  #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 667b7aa..787cf89 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -594,8 +594,19 @@ struct ckpt_hdr_socket_queue {
+>  	memset(&msg, 0, sizeof(msg));
+> @@ -210,14 +209,30 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+>  	if (IS_ERR(h))
+>  		return PTR_ERR(h);
 > 
->  struct ckpt_hdr_socket_buffer {
->  	struct ckpt_hdr h;
-> +	__u32 transport_header;
-> +	__u32 network_header;
-> +	__u32 mac_header;
-> +	__u32 lin_len; /* Length of linear data */
-> +	__u32 frg_len; /* Length of fragment data */
-> +	__u32 skb_len; /* Length of skb (adjusted) */
-> +	__u32 hdr_len; /* Length of skipped header */
-> +	__u32 mac_len;
->  	__s32 sk_objref;
->  	__s32 pr_objref;
-> +	__u16 protocol;
-> +	__u16 nr_frags;
-> +	__u8 cb[48];
->  };
-> 
->  #define CKPT_UNIX_LINKED 1
-> diff --git a/net/checkpoint.c b/net/checkpoint.c
-> index 7e8e137..49d9a2f 100644
-> --- a/net/checkpoint.c
-> +++ b/net/checkpoint.c
-> @@ -17,9 +17,11 @@
->  #include <linux/syscalls.h>
->  #include <linux/sched.h>
->  #include <linux/fs_struct.h>
-> +#include <linux/highmem.h>
-> 
->  #include <net/af_unix.h>
->  #include <net/tcp_states.h>
-> +#include <net/tcp.h>
-> 
->  #include <linux/deferqueue.h>
->  #include <linux/checkpoint.h>
-> @@ -88,6 +90,238 @@ static int sock_copy_buffers(struct sk_buff_head *from,
->  	return -EAGAIN;
->  }
-> 
-> +static void sock_record_header_info(struct sk_buff *skb,
-> +				    struct ckpt_hdr_socket_buffer *h)
-> +{
-> +
-> +	h->mac_len = skb->mac_len;
-> +	h->skb_len = skb->len;
-> +	h->hdr_len = skb->data - skb->head;
-> +	h->lin_len = (skb->tail - skb->head);
-> +	h->frg_len = skb->data_len;
-> +
-> +#ifdef NET_SKBUFF_DATA_USES_OFFSET
-> +	h->transport_header = skb->transport_hdr;
-> +	h->network_header = skb->network_header;
-> +	h->mac_header = skb->mac_header;
-> +#else
-> +	h->transport_header = skb->transport_header - skb->head;
-> +	h->network_header = skb->network_header - skb->head;
-> +	h->mac_header = skb->mac_header - skb->head;
-> +#endif
-> +
-> +	memcpy(h->cb, skb->cb, sizeof(skb->cb));
-> +	h->nr_frags = skb_shinfo(skb)->nr_frags;
-> +}
-> +
-> +int sock_restore_header_info(struct sk_buff *skb,
-> +			     struct ckpt_hdr_socket_buffer *h)
-> +{
-> +	if (h->mac_header + h->mac_len != h->network_header) {
-> +		ckpt_debug("skb mac_header %u+%u != network header %u\n",
-> +			   h->mac_header, h->mac_len, h->network_header);
-> +		return -EINVAL;
-> +	}
-> +
-> +	if (h->network_header > h->lin_len) {
-> +		ckpt_debug("skb network header %u > linear length %u\n",
-> +			   h->network_header, h->lin_len);
-> +		return -EINVAL;
-> +	}
-> +
-> +	if (h->transport_header > h->lin_len) {
-> +		ckpt_debug("skb transport header %u > linear length %u\n",
-> +			   h->transport_header, h->lin_len);
-> +		return -EINVAL;
-> +	}
-> +
-> +	if (h->skb_len > SKB_MAX_ALLOC) {
-> +		ckpt_debug("skb total length %u larger than max of %lu\n",
-> +			   h->skb_len, SKB_MAX_ALLOC);
-> +		return -EINVAL;
-> +	}
-> +
-> +	skb_set_transport_header(skb, h->transport_header);
-> +	skb_set_network_header(skb, h->network_header);
-> +	skb_set_mac_header(skb, h->mac_header);
-> +	skb->mac_len = h->mac_len;
-> +
-> +	/* FIXME: This should probably be sanitized per-protocol to
-> +	 * make sure nothing bad happens if it is hijacked.  For the
-> +	 * current set of protocols that we restore this way, the data
-> +	 * contained within is not very risky (flags and sequence
-> +	 * numbers) but could still be evalutated from a
-> +	 * could-the-user- have-set-these-flags point of view.
-> +	 */
-> +	memcpy(skb->cb, h->cb, sizeof(skb->cb));
-> +
-> +	skb->data = skb->head + skb->hdr_len;
-> +	skb->len = h->skb_len;
-> +
-> +	return 0;
-> +}
-> +
-> +static int sock_restore_skb_frag(struct ckpt_ctx *ctx,
-> +				 struct sk_buff *skb,
-> +				 int frag_idx)
-> +{
-> +	int ret = 0;
-> +	int fraglen;
-> +	struct page *page;
-> +	void *buf;
-> +
-> +	fraglen = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
-> +	if (fraglen < 0)
-> +		return fraglen;
-> +
-> +	if (fraglen > PAGE_SIZE) {
-> +		ckpt_debug("skb frag size %i > PAGE_SIZE\n", fraglen);
-> +		return -EINVAL;
-> +	}
-> +
-> +	page = alloc_page(GFP_KERNEL);
-> +	if (!page)
-> +		return -ENOMEM;
-> +
-> +	buf = kmap(page);
-> +	ret = ckpt_kread(ctx, buf, fraglen);
-> +	kunmap(page);
-> +
-> +	if (ret) {
-> +		ckpt_debug("failed to read fragment: %i\n", ret);
-> +		ret = -EINVAL;
-> +		__free_page(page);
-> +	} else {
-> +		ckpt_debug("read %i for fragment %i\n", fraglen, frag_idx);
-> +		skb_add_rx_frag(skb, frag_idx, page, 0, fraglen);
-> +	}
-> +
-> +	return ret < 0 ? ret : fraglen;
-> +}
-> +
-> +struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx)
-> +{
-> +	struct ckpt_hdr_socket_buffer *h;
-> +	struct sk_buff *skb = NULL;
-> +	int i;
-> +	int ret = 0;
-> +
-> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
-> +	if (IS_ERR(h))
-> +		return (struct sk_buff *)h;
-> +
+> -	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
+> -	if (len < 0) {
+> -		ret = len;
 > +	if (h->lin_len > SKB_MAX_ALLOC) {
-> +		ckpt_debug("socket linear buffer too big (%u > %lu)\n",
+> +		ckpt_debug("socket buffer too big (%u > %lu)\n",
 > +			   h->lin_len, SKB_MAX_ALLOC);
-> +		ret = -ENOSPC;
+> +		ret = -EINVAL;
 > +		goto out;
-> +	} else if (h->frg_len > SKB_MAX_ALLOC) {
-> +		ckpt_debug("socket frag size too big (%u > %lu\n",
-> +			   h->frg_len, SKB_MAX_ALLOC);
-> +		ret = -ENOSPC;
-> +		goto out;
-> +	} else if (h->nr_frags >= MAX_SKB_FRAGS) {
-> +		ckpt_debug("socket frag count too big (%u > %lu\n",
-> +			   h->nr_frags, MAX_SKB_FRAGS);
-> +		ret = -ENOSPC;
-> +		goto out;
+> +	} else if (h->nr_frags != 0) {
+> +		ckpt_debug("unix socket claims to have fragments\n");
+> +		ret = -EINVAL;
+>  		goto out;
+> -	} else if (len > SKB_MAX_ALLOC) {
+> -		ckpt_debug("Socket buffer too big (%i > %lu)",
+> -			   len, SKB_MAX_ALLOC);
+> -		ret = -ENOSPC;
 > +	}
 > +
-> +	skb = alloc_skb(h->lin_len, GFP_KERNEL);
-> +	if (!skb) {
+> +	buf = kmalloc(h->lin_len, GFP_KERNEL);
+> +	if (!buf) {
 > +		ret = -ENOMEM;
 > +		goto out;
 > +	}
 > +
-> +	ret = _ckpt_read_obj_type(ctx, skb_put(skb, h->lin_len),
+> +	kvec.iov_len = h->lin_len;
+> +	kvec.iov_base = buf;
+> +	ret = _ckpt_read_obj_type(ctx, kvec.iov_base,
 > +				  h->lin_len, CKPT_HDR_BUFFER);
-> +	ckpt_debug("read linear skb length %u: %i\n", h->lin_len, ret);
-> +	if (ret < 0) {
-> +		goto out;
-> +	}
-> +
-> +	for (i = 0; i < h->nr_frags; i++) {
-> +		ret = sock_restore_skb_frag(ctx, skb, i);
-> +		ckpt_debug("read skb frag %i/%i: %i\n",
-> +			   i + 1, h->nr_frags, ret);
-> +		if (ret < 0)
-> +			goto out;
-> +		h->frg_len -= ret;
-> +	}
-> +
-> +	if (h->frg_len != 0) {
-> +		ckpt_debug("length %u remaining after reading frags\n",
-> +			   h->frg_len);
+> +	ckpt_debug("read unix socket buffer %u: %i\n", h->lin_len, ret);
+> +	if (ret < h->lin_len) {
 > +		ret = -EINVAL;
-> +		goto out;
-> +	}
-> +
-> +	sock_restore_header_info(skb, h);
-> +
-> + out:
-> +	ckpt_hdr_put(ctx, h);
-> +	if (ret < 0) {
-> +		kfree_skb(skb);
-> +		skb = ERR_PTR(ret);
-> +	}
-> +
-> +	return skb;
-> +}
-> +
-> +static int __sock_write_skb(struct ckpt_ctx *ctx,
-> +			    struct sk_buff *skb,
-> +			    int dst_objref)
-> +{
-> +	struct ckpt_hdr_socket_buffer *h;
-> +	int ret = 0;
-> +	int i;
-> +
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
-> +	if (!h)
-> +		return -ENOMEM;
-> +
-> +	if (dst_objref > 0) {
-> +		BUG_ON(!skb->sk);
-> +		ret = checkpoint_obj(ctx, skb->sk, CKPT_OBJ_SOCK);
-> +		if (ret < 0)
-> +			goto out;
-> +		h->sk_objref = ret;
-> +		h->pr_objref = dst_objref;
-> +	}
-> +
-> +	sock_record_header_info(skb, h);
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_obj_type(ctx, skb->head, h->lin_len, CKPT_HDR_BUFFER);
-> +	ckpt_debug("writing skb linear region %u: %i\n", h->lin_len, ret);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
-> +		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
-> +		u8 *vaddr = kmap(frag->page);
-> +
-> +		ckpt_debug("writing buffer fragment %i/%i (%i)\n",
-> +			   i + 1, h->nr_frags, frag->size);
-> +		ret = ckpt_write_obj_type(ctx, vaddr + frag->page_offset,
-> +					  frag->size, CKPT_HDR_BUFFER);
-> +		kunmap(frag->page);
-> +		h->frg_len -= frag->size;
-> +		if (ret < 0)
-> +			goto out;
-> +	}
-> +
-> +	WARN_ON(h->frg_len != 0);
-> +
-> + out:
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	return ret;
-> +}
-> +
->  static int __sock_write_buffers(struct ckpt_ctx *ctx,
->  				struct sk_buff_head *queue,
->  				int dst_objref)
-> @@ -95,13 +329,8 @@ static int __sock_write_buffers(struct ckpt_ctx *ctx,
->  	struct sk_buff *skb;
-> 
->  	skb_queue_walk(queue, skb) {
-> -		struct ckpt_hdr_socket_buffer *h;
->  		int ret = 0;
-> 
-> -		/* FIXME: This could be a false positive for non-unix
-> -		 *        buffers, so add a type check here in the
-> -		 *        future
-> -		 */
->  		if (UNIXCB(skb).fp) {
->  			ckpt_err(ctx, -EBUSY, "%(T)af_unix: pass fd\n");
->  			return -EBUSY;
-> @@ -113,25 +342,8 @@ static int __sock_write_buffers(struct ckpt_ctx *ctx,
->  		 * because we don't save out (or restore) the control
->  		 * information contained in the skb.
->  		 */
-> -		h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_BUFFER);
-> -		if (!h)
-> -			return -ENOMEM;
-> -
-> -		BUG_ON(!skb->sk);
-> -		ret = checkpoint_obj(ctx, skb->sk, CKPT_OBJ_SOCK);
-> -		if (ret < 0)
-> -			goto end;
-> -		h->sk_objref = ret;
-> -		h->pr_objref = dst_objref;
-> -
-> -		ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
-> -		if (ret < 0)
-> -			goto end;
-> 
-> -		ret = ckpt_write_obj_type(ctx, skb->data, skb->len,
-> -					  CKPT_HDR_BUFFER);
-> -	end:
-> -		ckpt_hdr_put(ctx, h);
-> +		ret = __sock_write_skb(ctx, skb, dst_objref);
->  		if (ret < 0)
->  			return ret;
+>  		goto out;
 >  	}
+> 
+> @@ -246,18 +261,6 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+>  		}
+>  	}
+> 
+> -	kvec.iov_len = len;
+> -	buf = kmalloc(len, GFP_KERNEL);
+> -	kvec.iov_base = buf;
+> -	if (!buf) {
+> -		ret = -ENOMEM;
+> -		goto out;
+> -	}
+> -
+> -	ret = ckpt_kread(ctx, kvec.iov_base, len);
+> -	if (ret < 0)
+> -		goto out;
+> -
+>  	msg.msg_name = addr;
+>  	msg.msg_namelen = addrlen;
+> 
+> @@ -273,15 +276,16 @@ static int sock_read_buffer_sendmsg(struct ckpt_ctx *ctx,
+> 
+>  	/* Make sure there's room in the send buffer */
+>  	sndbuf = sk->sk_sndbuf;
+> -	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < len) &&
+> +	if (((sk->sk_sndbuf - atomic_read(&sk->sk_wmem_alloc)) < h->lin_len) &&
+>  	    capable(CAP_NET_ADMIN))
+> -		sk->sk_sndbuf += len;
+> +		sk->sk_sndbuf += h->lin_len;
+>  	else
+>  		sk->sk_sndbuf = sysctl_wmem_max;
+
+Again, should you check whether h->len_len < sysctl_wmem_max before doing
+the capable(CAP_NET_ADMIN)?  The goal is to prevent setting PF_SUPERPRIV
+in task->flags if it wasn't absolutely necessary.
+
+> 
+> -	ret = kernel_sendmsg(sk->sk_socket, &msg, &kvec, 1, len);
+> -	ckpt_debug("kernel_sendmsg(%i,%i): %i\n", h->sk_objref, len, ret);
+> -	if ((ret > 0) && (ret != len))
+> +	ret = kernel_sendmsg(sk->sk_socket, &msg, &kvec, 1, h->lin_len);
+> +	ckpt_debug("kernel_sendmsg(%i,%u): %i\n",
+> +		   h->sk_objref, h->lin_len, ret);
+> +	if ((ret > 0) && (ret != h->lin_len))
+>  		ret = -ENOMEM;
+> 
+>  	sk->sk_sndbuf = sndbuf;
 > -- 
 > 1.6.2.5
 > 
