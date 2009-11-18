@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/9] user-cr: s390 eclone wrapper
-Date: Tue, 17 Nov 2009 18:55:40 -0600
-Message-ID: <1258505746-31182-4-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/9] user-cr: ppc32 eclone wrapper
+Date: Tue, 17 Nov 2009 18:55:41 -0600
+Message-ID: <1258505746-31182-5-git-send-email-ntl@pobox.com>
 References: <1258505746-31182-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,82 +21,147 @@ To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 Cc: Oren-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Based on original work from Serge Hallyn.
-
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- clone_s390x.c |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 62 insertions(+), 0 deletions(-)
+ clone_ppc.c  |   43 ++++++++++++++++++++++++++++++++
+ clone_ppc_.S |   77 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 120 insertions(+), 0 deletions(-)
 
-diff --git a/clone_s390x.c b/clone_s390x.c
-index dada822..5ed6f15 100644
---- a/clone_s390x.c
-+++ b/clone_s390x.c
-@@ -70,3 +70,65 @@ int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
+diff --git a/clone_ppc.c b/clone_ppc.c
+index 49797fd..c9eee8b 100644
+--- a/clone_ppc.c
++++ b/clone_ppc.c
+@@ -56,3 +56,46 @@ int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
  }
  
- #endif  /* !defined(__NR_clone_with_pids) */
+ #endif
 +
 +#include "eclone.h"
 +
-+#ifndef __NR_eclone
-+#define __NR_eclone 332
-+#endif
-+
-+typedef unsigned long long u64;
-+
-+#define do_eclone(flags, pids, args, sz) \
-+( { \
-+  register unsigned long int __r1 asm ("1") = (unsigned long int)(__NR_eclone); 
-+  register unsigned long int __r2 asm ("2") = (unsigned long int)(flags); \
-+  register unsigned long int __r3 asm ("3") = (unsigned long int)(args); \
-+  register unsigned long int __r4 asm ("4") = (unsigned long int)(sz); \
-+  register unsigned long int __r5 asm ("5") = (unsigned long int)(pids); \
-+  register long int __result asm ("2"); \
-+  __asm__ __volatile__( \
-+	  " svc 0\n" /* do __NR_eclone syscall */ \
-+	  " ltgr %%r2,%%r2\n" /* returned 0? */ \
-+	  " jnz 1f\n" /* if not goto label 1 */ \
-+	  " lg %%r3,0(%%r15)\n"	  /* get fnarg off stack into arg 1 */ \
-+	  " lg %%r2,8(%%r15)\n"	  /* get fn off stack int r3 basr*/ \
-+	  " lgr %%r1,%%r15\n" /* tmp store old stack pointer */ \
-+	  " aghi %%r15,-160\n" /* move the stack */ \
-+	  " stg %%r1,0(%%r15)\n" /* and save old stack pointer */ \
-+	  " basr %%r14,%%r3\n" /* call fn(arg) */ \
-+	  " svc 1\n"  /* call exit */ \
-+	  " 1:\n" \
-+	  : "=d" (__result) \
-+	  : "d" (__r1), "0" (__r2), "d" (__r3), "d" (__r4), "d" (__r5) \
-+	  : "memory"); \
-+	__result; \
-+} )
++extern int __eclone(int (*fn)(void *arg),
++		    void *child_sp,
++		    int flags,
++		    void *fn_arg,
++		    struct clone_args *args,
++		    size_t args_size,
++		    pid_t *pids);
 +
 +int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
 +	   struct clone_args *clone_args, pid_t *pids)
 +{
 +	struct clone_args my_args;
-+	u64 *child_sp;
-+	int rc;
++	unsigned long child_sp;
++	int newpid;
 +
-+	if (clone_args->child_stack) {
-+		child_sp = (void *)(clone_args->child_stack +
-+				    clone_args->child_stack_size);
-+		*--child_sp = (u64)fn_arg;
-+		*--child_sp = (u64)fn;
-+	} else
-+		child_sp = (u64 *)0;
++	if (clone_args->child_stack)
++		child_sp = clone_args->child_stack +
++			clone_args->child_stack_size - 1;
++	else
++		child_sp = 0;
 +
 +	my_args = *clone_args;
-+	my_args.child_stack = (unsigned long)child_sp;
++	my_args.child_stack = child_sp;
 +	my_args.child_stack_size = 0;
 +
-+	rc = do_eclone(flags, pids, &my_args, sizeof(struct clone_args));
-+	if (rc < 0) {
-+		errno = rc;
-+		rc = -1;
++	newpid = __eclone(fn,
++			  (void *)child_sp,
++			  clone_flags_low,
++			  fn_arg,
++			  &my_args,
++			  sizeof(my_args),
++			  pids);
++
++	if (newpid < 0) {
++		errno = -newpid;
++		newpid = -1;
 +	}
 +
-+	return rc;
++	return newpid;
 +}
+diff --git a/clone_ppc_.S b/clone_ppc_.S
+index cb3e053..fa89c31 100644
+--- a/clone_ppc_.S
++++ b/clone_ppc_.S
+@@ -88,3 +88,80 @@ parent:
+ 	neg	r3,r3
+ 	blr
+ 
++#ifndef __NR_eclone
++#define __NR_eclone     323
++#endif
++
++/* int [r3] eclone(int (*fn)(void *arg) [r3],
++ *                          void *child_sp [r4],
++ *                          int flags [r5],
++ *                          void *fn_arg [r6],
++ *                          struct clone_args *args [r7],
++ *                          size_t args_size [r8],
++ *                          pid_t *pids [r9]);
++ * Creates a child task with the pids specified by pids.
++ * Returns to parent only, child execution and exit is handled here.
++ * On error, returns negated errno.  On success, returns the pid of the child
++ * created.
++ */
++
++.globl __eclone
++__eclone:
++
++	/* No argument validation. */
++
++	/* Set up parent's stack frame. */
++	stwu	r1,-32(r1)
++
++	/* Save non-volatiles (r28-r31) which we plan to use. */
++	stmw	r28,16(r1)
++
++	/* Set up child's stack frame. */
++	clrrwi	r4,r4,4
++	li	r0,0
++	stw	r0,-16(r4)
++
++	/* Save fn, stack pointer, flags, and fn_arg across system call. */
++	mr	r28,r3
++	mr	r29,r4
++	mr	r30,r5
++	mr	r31,r6
++
++	/* Set up arguments for system call. */
++	mr	r3,r5	/* flags */
++	mr	r4,r7	/* clone_args */
++	mr	r5,r8	/* clone_args' size */
++	mr	r6,r9	/* pids */
++
++	/* Do the system call */
++	li	r0,__NR_eclone
++	sc
++
++	/* Parent or child? */
++	cmpwi	cr1,r3,0
++	crandc	4*cr1+eq,4*cr1+eq,4*cr0+so
++	bne	cr1,eclone_parent
++
++	/* Child. Call fn. */
++	mtctr	r28
++	mr	r3,r31
++	bctrl
++
++	/* Assume result of fn in r3 and exit. */
++	li	r0,__NR_exit
++	sc
++
++eclone_parent:
++	/* Restore non-volatiles. */
++	lmw	r28,16(r1)
++
++	addi	r1,r1,32
++
++	/* Return to caller on success. */
++	bnslr
++
++	/* Handle error.  Negate the return value to signal an error
++	 * to the caller, which must set errno.
++	 */
++	neg	r3,r3
++	blr
 -- 
 1.6.2.5
