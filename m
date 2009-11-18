@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 6/9] user-cr: use eclone API for restart
-Date: Tue, 17 Nov 2009 18:55:43 -0600
-Message-ID: <1258505746-31182-7-git-send-email-ntl@pobox.com>
+Subject: [PATCH 8/9] user-cr: remove s390 clone_with_pids
+Date: Tue, 17 Nov 2009 18:55:45 -0600
+Message-ID: <1258505746-31182-9-git-send-email-ntl@pobox.com>
 References: <1258505746-31182-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,22 +21,35 @@ To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 Cc: Oren-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Replace use of clone_with_pids with clone_args/eclone.  After this the
-clone_with_pids support code can go away.
+Remove support code for old clone_with_pids interface and update
+comments accordingly.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- restart.c |   46 +++++++++++++++-------------------------------
- 1 files changed, 15 insertions(+), 31 deletions(-)
+ clone_s390x.c |   51 ++-------------------------------------------------
+ 1 files changed, 2 insertions(+), 49 deletions(-)
 
-diff --git a/restart.c b/restart.c
-index d5d069a..258cda9 100644
---- a/restart.c
-+++ b/restart.c
-@@ -34,25 +34,7 @@
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+diff --git a/clone_s390x.c b/clone_s390x.c
+index 5ed6f15..af3d41f 100644
+--- a/clone_s390x.c
++++ b/clone_s390x.c
+@@ -1,5 +1,5 @@
+ /*
+- *  clone_s390.c: support for clone_with_pid() on s390x (64 bit)
++ *  clone_s390.c: support for eclone() on s390x (64 bit)
+  *
+  *  Copyright (C) IBM Corporation
+  *
+@@ -19,57 +19,10 @@
+ #include <asm/unistd.h>
  
+ /*
+- * libc doesn't support clone_with_pid() yet...
++ * libc doesn't support eclone() yet...
+  * below is arch-dependent code to use the syscall
+  */
+ #include <linux/checkpoint.h>
+-#if defined(__NR_clone_with_pids)
 -
 -/* this really belongs to some kernel header ! */
 -struct pid_set {
@@ -44,75 +57,47 @@ index d5d069a..258cda9 100644
 -	pid_t *pids;
 -};
 -
--/* (until it's supported by libc) from clone_ARCH.c */
--#if defined(__NR_clone_with_pids) && defined(ARCH_HAS_CLONE_WITH_PID)
--extern int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
--			   struct pid_set *target_pids, void *arg);
--#else
--static int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
--			   struct pid_set *target_pids, void *arg)
+-/* (see: http://lkml.indiana.edu/hypermail/linux/kernel/9604.3/0204.html) */
+-
+-#define do_clone_with_pids(stack, flags, ptid, ctid, setp) ({ \
+-	register unsigned long int __r2 asm ("2") = (unsigned long int)(stack);\
+-	register unsigned long int __r3 asm ("3") = (unsigned long int)(flags);\
+-	register unsigned long int __r4 asm ("4") = (unsigned long int)(ptid); \
+-	register unsigned long int __r5 asm ("5") = (unsigned long int)(ctid); \
+-	register unsigned long int __r6 asm ("6") = (unsigned long int)(NULL); \
+-	register unsigned long int __r7 asm ("7") = (unsigned long int)(setp); \
+-	register unsigned long int __result asm ("2"); \
+-	__asm__ __volatile__( \
+-		" lghi %%r1,%7\n" \
+-		" svc 0\n" \
+-		: "=d" (__result) \
+-		: "0" (__r2), "d" (__r3), \
+-		  "d" (__r4), "d" (__r5), "d" (__r6), "d" (__r7), \
+-		  "i" (__NR_clone_with_pids) \
+-		: "1", "cc", "memory" \
+-	); \
+-		__result; \
+-	})
+-
+-int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
+-			struct pid_set *target_pids, void *arg)
 -{
--	return clone(fn, child_stack, flags, arg);
+-	long retval;
+-	retval = do_clone_with_pids(child_stack, flags, NULL, NULL,
+-				    target_pids);
+-
+-	if (retval < 0) {
+-		errno = -retval;
+-		return -1;
+-	} else if (retval == 0) {
+-		return fn(arg);
+-	} else
+-		return retval;
 -}
--#endif
 -
-+#include "eclone.h"
+-#endif  /* !defined(__NR_clone_with_pids) */
  
- static char usage_str[] =
- "usage: restart [opts]\n"
-@@ -1852,23 +1834,20 @@ int ckpt_fork_stub(void *data)
+ #include "eclone.h"
  
- static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
- {
--	struct pid_set pid_set;
--	char *stack_region;
--	char *stack_start;
-+	struct clone_args clone_args;
-+	void *stack;
- 	unsigned long flags = SIGCHLD;
-+	size_t stack_sz = PTHREAD_STACK_MIN;
-+	size_t nr_pids = 1;
- 	pid_t pid = 0;
- 
- 	ckpt_dbg("forking child vpid %d flags %#x\n", child->pid, child->flags);
- 
--	stack_region = malloc(PTHREAD_STACK_MIN);
--	if (!stack_region) {
-+	stack = malloc(stack_sz);
-+	if (!stack) {
- 		perror("stack malloc");
- 		return -1;
- 	}
--	stack_start = stack_region + PTHREAD_STACK_MIN - 1;
--
--	pid_set.pids = &pid;
--	pid_set.num_pids = 1;
- 
- 	if (child->flags & TASK_THREAD) {
- 		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
-@@ -1893,15 +1872,20 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
- 	else
- 		child->real_parent = _getpid();
- 
--	pid = clone_with_pids(ckpt_fork_stub, stack_start, flags, &pid_set, child);
-+	memset(&clone_args, 0, sizeof(clone_args));
-+	clone_args.child_stack = (unsigned long)stack;
-+	clone_args.child_stack_size = stack_sz;
-+	clone_args.nr_pids = nr_pids;
-+
-+	pid = eclone(ckpt_fork_stub, child, flags, &clone_args, &pid);
- 	if (pid < 0) {
- 		perror("clone");
--		free(stack_region);
-+		free(stack);
- 		return -1;
- 	}
- 
- 	if (!(child->flags & TASK_THREAD))
--		free(stack_region);
-+		free(stack);
- 
- 	ckpt_dbg("forked child vpid %d (asked %d)\n", pid, child->pid);
- 	return pid;
 -- 
 1.6.2.5
