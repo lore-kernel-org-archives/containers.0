@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/9] user-cr: s390 eclone wrapper
-Date: Tue, 17 Nov 2009 21:23:33 -0600
-Message-ID: <20091118032333.GA18641@us.ibm.com>
-References: <1258505746-31182-1-git-send-email-ntl@pobox.com>
-	<1258505746-31182-4-git-send-email-ntl@pobox.com>
+From: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH] devpts_get_tty() should validate inode
+Date: Tue, 17 Nov 2009 19:44:50 -0800
+Message-ID: <20091118034450.GB17349__10689.8148464554$1258516707$gmane$org@suse.de>
+References: <20091118023541.GA14430@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1258505746-31182-4-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20091118023541.GA14430-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,57 +18,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> Based on original work from Serge Hallyn.
+On Tue, Nov 17, 2009 at 06:35:43PM -0800, Sukadev Bhattiprolu wrote:
+> 
+> devpts_get_tty() assumes that the inode passed in is associated with a valid
+> pty.  But if the only reference to the pty is via a bind-mount, the inode
+> passed to devpts_get_tty() while valid, would refer to a pty that no longer
+> exists.
+> 
+> With a lot of debug effort, Grzegorz Nosek developed a small program (see
+> below) to reproduce a crash on recent kernels. This crash is a regression
+> introduced by the commit:
+> 
+> 	commit 527b3e4773628b30d03323a2cb5fb0d84441990f
+> 	Author: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 	Date:   Mon Oct 13 10:43:08 2008 +0100
+> 
+> To fix, ensure that the dentry associated with the inode has not yet been
+> deleted/unhashed by devpts_pty_kill().
+> 
+> See also:
+> https://lists.linux-foundation.org/pipermail/containers/2009-July/019273.html 
 
-Needed the following patch on top of that.  Otherwise the
-whole set looks good to me, thanks!
+Good debugging, I'll queue this up.
 
-(Oh, one other note, the default #ifdef for NR_eclone actually
-is different depending on whether we're on a c/r kernel or not,
-unfortunately :(.  I'm leaving it as the non-c/r kernel value
-for now.)
-
-thanks,
--serge
-
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] a few bugfixes for s390
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- clone_s390x.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/clone_s390x.c b/clone_s390x.c
-index af3d41f..64d4436 100644
---- a/clone_s390x.c
-+++ b/clone_s390x.c
-@@ -34,7 +34,7 @@ typedef unsigned long long u64;
- 
- #define do_eclone(flags, pids, args, sz) \
- ( { \
--  register unsigned long int __r1 asm ("1") = (unsigned long int)(__NR_eclone); 
-+  register unsigned long int __r1 asm ("1") = (unsigned long int)(__NR_eclone);  \
-   register unsigned long int __r2 asm ("2") = (unsigned long int)(flags); \
-   register unsigned long int __r3 asm ("3") = (unsigned long int)(args); \
-   register unsigned long int __r4 asm ("4") = (unsigned long int)(sz); \
-@@ -77,9 +77,10 @@ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
- 	my_args.child_stack = (unsigned long)child_sp;
- 	my_args.child_stack_size = 0;
- 
--	rc = do_eclone(flags, pids, &my_args, sizeof(struct clone_args));
-+	rc = do_eclone(clone_flags_low, pids, &my_args,
-+			sizeof(struct clone_args));
- 	if (rc < 0) {
--		errno = rc;
-+		errno = -rc;
- 		rc = -1;
- 	}
- 
--- 
-1.6.1.1
+greg k-h
