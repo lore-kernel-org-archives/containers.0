@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/9] user-cr: ppc32 eclone wrapper
-Date: Tue, 17 Nov 2009 18:55:41 -0600
-Message-ID: <1258505746-31182-5-git-send-email-ntl@pobox.com>
+Subject: [PATCH 6/9] user-cr: use eclone API for restart
+Date: Tue, 17 Nov 2009 18:55:43 -0600
+Message-ID: <1258505746-31182-7-git-send-email-ntl@pobox.com>
 References: <1258505746-31182-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,147 +21,98 @@ To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 Cc: Oren-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Replace use of clone_with_pids with clone_args/eclone.  After this the
+clone_with_pids support code can go away.
+
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- clone_ppc.c  |   43 ++++++++++++++++++++++++++++++++
- clone_ppc_.S |   77 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 120 insertions(+), 0 deletions(-)
+ restart.c |   46 +++++++++++++++-------------------------------
+ 1 files changed, 15 insertions(+), 31 deletions(-)
 
-diff --git a/clone_ppc.c b/clone_ppc.c
-index 49797fd..c9eee8b 100644
---- a/clone_ppc.c
-+++ b/clone_ppc.c
-@@ -56,3 +56,46 @@ int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
- }
+diff --git a/restart.c b/restart.c
+index d5d069a..258cda9 100644
+--- a/restart.c
++++ b/restart.c
+@@ -34,25 +34,7 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- #endif
-+
+-
+-/* this really belongs to some kernel header ! */
+-struct pid_set {
+-	int num_pids;
+-	pid_t *pids;
+-};
+-
+-/* (until it's supported by libc) from clone_ARCH.c */
+-#if defined(__NR_clone_with_pids) && defined(ARCH_HAS_CLONE_WITH_PID)
+-extern int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
+-			   struct pid_set *target_pids, void *arg);
+-#else
+-static int clone_with_pids(int (*fn)(void *), void *child_stack, int flags,
+-			   struct pid_set *target_pids, void *arg)
+-{
+-	return clone(fn, child_stack, flags, arg);
+-}
+-#endif
+-
 +#include "eclone.h"
-+
-+extern int __eclone(int (*fn)(void *arg),
-+		    void *child_sp,
-+		    int flags,
-+		    void *fn_arg,
-+		    struct clone_args *args,
-+		    size_t args_size,
-+		    pid_t *pids);
-+
-+int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
-+	   struct clone_args *clone_args, pid_t *pids)
-+{
-+	struct clone_args my_args;
-+	unsigned long child_sp;
-+	int newpid;
-+
-+	if (clone_args->child_stack)
-+		child_sp = clone_args->child_stack +
-+			clone_args->child_stack_size - 1;
-+	else
-+		child_sp = 0;
-+
-+	my_args = *clone_args;
-+	my_args.child_stack = child_sp;
-+	my_args.child_stack_size = 0;
-+
-+	newpid = __eclone(fn,
-+			  (void *)child_sp,
-+			  clone_flags_low,
-+			  fn_arg,
-+			  &my_args,
-+			  sizeof(my_args),
-+			  pids);
-+
-+	if (newpid < 0) {
-+		errno = -newpid;
-+		newpid = -1;
-+	}
-+
-+	return newpid;
-+}
-diff --git a/clone_ppc_.S b/clone_ppc_.S
-index cb3e053..fa89c31 100644
---- a/clone_ppc_.S
-+++ b/clone_ppc_.S
-@@ -88,3 +88,80 @@ parent:
- 	neg	r3,r3
- 	blr
  
-+#ifndef __NR_eclone
-+#define __NR_eclone     323
-+#endif
+ static char usage_str[] =
+ "usage: restart [opts]\n"
+@@ -1852,23 +1834,20 @@ int ckpt_fork_stub(void *data)
+ 
+ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ {
+-	struct pid_set pid_set;
+-	char *stack_region;
+-	char *stack_start;
++	struct clone_args clone_args;
++	void *stack;
+ 	unsigned long flags = SIGCHLD;
++	size_t stack_sz = PTHREAD_STACK_MIN;
++	size_t nr_pids = 1;
+ 	pid_t pid = 0;
+ 
+ 	ckpt_dbg("forking child vpid %d flags %#x\n", child->pid, child->flags);
+ 
+-	stack_region = malloc(PTHREAD_STACK_MIN);
+-	if (!stack_region) {
++	stack = malloc(stack_sz);
++	if (!stack) {
+ 		perror("stack malloc");
+ 		return -1;
+ 	}
+-	stack_start = stack_region + PTHREAD_STACK_MIN - 1;
+-
+-	pid_set.pids = &pid;
+-	pid_set.num_pids = 1;
+ 
+ 	if (child->flags & TASK_THREAD) {
+ 		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
+@@ -1893,15 +1872,20 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ 	else
+ 		child->real_parent = _getpid();
+ 
+-	pid = clone_with_pids(ckpt_fork_stub, stack_start, flags, &pid_set, child);
++	memset(&clone_args, 0, sizeof(clone_args));
++	clone_args.child_stack = (unsigned long)stack;
++	clone_args.child_stack_size = stack_sz;
++	clone_args.nr_pids = nr_pids;
 +
-+/* int [r3] eclone(int (*fn)(void *arg) [r3],
-+ *                          void *child_sp [r4],
-+ *                          int flags [r5],
-+ *                          void *fn_arg [r6],
-+ *                          struct clone_args *args [r7],
-+ *                          size_t args_size [r8],
-+ *                          pid_t *pids [r9]);
-+ * Creates a child task with the pids specified by pids.
-+ * Returns to parent only, child execution and exit is handled here.
-+ * On error, returns negated errno.  On success, returns the pid of the child
-+ * created.
-+ */
-+
-+.globl __eclone
-+__eclone:
-+
-+	/* No argument validation. */
-+
-+	/* Set up parent's stack frame. */
-+	stwu	r1,-32(r1)
-+
-+	/* Save non-volatiles (r28-r31) which we plan to use. */
-+	stmw	r28,16(r1)
-+
-+	/* Set up child's stack frame. */
-+	clrrwi	r4,r4,4
-+	li	r0,0
-+	stw	r0,-16(r4)
-+
-+	/* Save fn, stack pointer, flags, and fn_arg across system call. */
-+	mr	r28,r3
-+	mr	r29,r4
-+	mr	r30,r5
-+	mr	r31,r6
-+
-+	/* Set up arguments for system call. */
-+	mr	r3,r5	/* flags */
-+	mr	r4,r7	/* clone_args */
-+	mr	r5,r8	/* clone_args' size */
-+	mr	r6,r9	/* pids */
-+
-+	/* Do the system call */
-+	li	r0,__NR_eclone
-+	sc
-+
-+	/* Parent or child? */
-+	cmpwi	cr1,r3,0
-+	crandc	4*cr1+eq,4*cr1+eq,4*cr0+so
-+	bne	cr1,eclone_parent
-+
-+	/* Child. Call fn. */
-+	mtctr	r28
-+	mr	r3,r31
-+	bctrl
-+
-+	/* Assume result of fn in r3 and exit. */
-+	li	r0,__NR_exit
-+	sc
-+
-+eclone_parent:
-+	/* Restore non-volatiles. */
-+	lmw	r28,16(r1)
-+
-+	addi	r1,r1,32
-+
-+	/* Return to caller on success. */
-+	bnslr
-+
-+	/* Handle error.  Negate the return value to signal an error
-+	 * to the caller, which must set errno.
-+	 */
-+	neg	r3,r3
-+	blr
++	pid = eclone(ckpt_fork_stub, child, flags, &clone_args, &pid);
+ 	if (pid < 0) {
+ 		perror("clone");
+-		free(stack_region);
++		free(stack);
+ 		return -1;
+ 	}
+ 
+ 	if (!(child->flags & TASK_THREAD))
+-		free(stack_region);
++		free(stack);
+ 
+ 	ckpt_dbg("forked child vpid %d (asked %d)\n", pid, child->pid);
+ 	return pid;
 -- 
 1.6.2.5
