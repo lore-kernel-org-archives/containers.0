@@ -1,11 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH] clone_with_pids()^w eclone() for x86_64
-Date: Wed, 18 Nov 2009 16:48:38 -0800
-Message-ID: <20091119004838.AD278DE0@kernel>
+From: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [BUG] cpu controller can't provide fair CPU time for each group
+Date: Thu, 19 Nov 2009 16:09:53 +0900
+Message-ID: <20091119152535.0C18.E1E9C6FF__15623.8513686278$1258614687$gmane$org@jp.fujitsu.com>
+References: <1257934048.23203.76.camel@twins>
+	<20091112095947.7229.E1E9C6FF@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091112095947.7229.E1E9C6FF-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,264 +18,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Kengo Kuwahara <kuwahara.kengo-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi, Peter-san.
+Sorry for late response.
 
-This is still a bit rough, but I figured I'd post it for kicks.
+> > On Wed, 2009-11-11 at 15:21 +0900, Yasunori Goto wrote:
+> > > > Someone needs to fix that if they really care.
+> > > 
+> > > To be honest, I don't have any good idea because I'm not familiar with
+> > > schduler's code. 
+> > 
+> > You could possible try something like the below, its rather gross but
+> > might maybe work,.. has other issues though.
+> 
+> Thank you very much for your patch. I'm very glad.
+> 
+> Unfortunately, my test staff and I don't have test box today,
+> I'll report the result later.
+> 
+> Thanks again for your time.
 
-Most of the process.c stuff is copy-n-paste with i386 and needs
-to get consolidated.  I also need to give this the new name.
+We tested your patch. It works perfectly as we expected.
 
-I'd appreciate anybody that knows inline assembly well to make
-sure that I'm not being a complete doofus with this call below.
-This seems to work, but I'm not confident it is the best way.
+In addition, we confirmed the environment how this issue occurs.
+Even if we doesn't use neither affinity nor cpuset, this issue can be
+reproduced.
 
-int clone_with_pids(long flags_low, struct clone_args *clone_args, long args_size,
-                 int *pids)
-{
-        long retval;
+For example, we made 2 groups which had same share values on the box
+which had 2 cores.
 
-        __asm__  __volatile__(
-                 "movq %3, %%r10\n\t"           /* pids in r10*/
-                 "pushq %%rbp\n\t"              /* save value of ebp */
-                :
-                :"D" (flags_low), /* rdi */
-                 "S" (clone_args),/* rsi */
-                 "d" (args_size), /* rdx */
-                 "a" (pids)       /* use rax, which gets moved to r10 */
-                );
+                                      CPU time            CPU time
+           # of tasks      shares    w/o your patch     with your patch
+group A       1             1024       Avg  71%           Avg 100%
+group B       3             1024       Avg 129%           Avg 100%
 
-        __asm__ __volatile__(
-                 "syscall\n\t"  /* Linux/x86_64 system call */
-                 "testq %0,%0\n\t"      /* check return value */
-                 "jne 1f\n\t"           /* jump if parent */
-                 "popq %%rbx\n\t"       /* get subthread function */
-                 "call *%%rbx\n\t"      /* start subthread function */
-                 "movq %2,%0\n\t"
-                 "syscall\n"            /* exit system call: exit subthread */
-                 "1:\n\t"
-                 "popq %%rbp\t"         /* restore parent's ebp */
-                :"=a" (retval)
-                :"0" (__NR_clone3), "i" (__NR_exit)
-                :"ebx", "ecx", "edx"
-                );
+Probably, this is the worst case for current cpu controller.
+But your patch can fix this.
 
-        if (retval < 0) {
-                errno = -retval;
-                retval = -1;
-        }
-        return retval;
-}
+So, I would like to push this patch into main line if you are ok.
+Though you may feel this patch is ugly, I think this is good for stable kernel.
+
+Anyway, thanks a lot for your patch.
+
+Regards.
+
+Acked-by: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Tested-by: Kengo Kuwahara <kuwahara.kengo-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
 
----
+> 
+> > 
+> > 
+> > ---
+> >  kernel/sched.c |    9 +++++++--
+> >  1 files changed, 7 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/kernel/sched.c b/kernel/sched.c
+> > index 91642c1..65629a3 100644
+> > --- a/kernel/sched.c
+> > +++ b/kernel/sched.c
+> > @@ -1614,7 +1614,7 @@ static void update_group_shares_cpu(struct task_group *tg, int cpu,
+> >   */
+> >  static int tg_shares_up(struct task_group *tg, void *data)
+> >  {
+> > -	unsigned long weight, rq_weight = 0, shares = 0;
+> > +	unsigned long weight, rq_weight = 0, sum_weight = 0, shares = 0;
+> >  	unsigned long *usd_rq_weight;
+> >  	struct sched_domain *sd = data;
+> >  	unsigned long flags;
+> > @@ -1630,6 +1630,7 @@ static int tg_shares_up(struct task_group *tg, void *data)
+> >  		weight = tg->cfs_rq[i]->load.weight;
+> >  		usd_rq_weight[i] = weight;
+> >  
+> > +		rq_weight += weight;
+> >  		/*
+> >  		 * If there are currently no tasks on the cpu pretend there
+> >  		 * is one of average load so that when a new task gets to
+> > @@ -1638,10 +1639,14 @@ static int tg_shares_up(struct task_group *tg, void *data)
+> >  		if (!weight)
+> >  			weight = NICE_0_LOAD;
+> >  
+> > -		rq_weight += weight;
+> > +		sum_weight += weight;
+> > +
+> >  		shares += tg->cfs_rq[i]->shares;
+> >  	}
+> >  
+> > +	if (!rq_weight)
+> > +		rq_weight = sum_weight;
+> > +
+> >  	if ((!shares && rq_weight) || shares > tg->shares)
+> >  		shares = tg->shares;
+> >  
+> > 
+> 
+> -- 
+> Yasunori Goto 
 
- linux-2.6.git-dave/arch/x86/include/asm/syscalls.h  |    5 ++
- linux-2.6.git-dave/arch/x86/include/asm/unistd_64.h |    2 
- linux-2.6.git-dave/arch/x86/kernel/entry_64.S       |    8 +++
- linux-2.6.git-dave/arch/x86/kernel/process_64.c     |   49 ++++++++++++++++++++
- linux-2.6.git-dave/kernel/fork.c                    |   18 +++++++
- 5 files changed, 82 insertions(+)
-
-diff -puN arch/x86/include/asm/syscalls.h~cwp-x86_64 arch/x86/include/asm/syscalls.h
---- linux-2.6.git/arch/x86/include/asm/syscalls.h~cwp-x86_64	2009-11-18 16:37:09.000000000 -0800
-+++ linux-2.6.git-dave/arch/x86/include/asm/syscalls.h	2009-11-18 16:37:09.000000000 -0800
-@@ -78,6 +78,11 @@ asmlinkage long sys_iopl(unsigned int, s
- asmlinkage long sys_clone(unsigned long, unsigned long,
- 			  void __user *, void __user *,
- 			  struct pt_regs *);
-+asmlinkage long sys_clone_with_pids(unsigned int flags_low,
-+				struct clone_args * __user cargs,
-+				int cargs_size,
-+				pid_t * __user pids,
-+				struct pt_regs *pt_regs);
- asmlinkage long sys_execve(char __user *, char __user * __user *,
- 			   char __user * __user *,
- 			   struct pt_regs *);
-diff -puN arch/x86/include/asm/unistd_64.h~cwp-x86_64 arch/x86/include/asm/unistd_64.h
---- linux-2.6.git/arch/x86/include/asm/unistd_64.h~cwp-x86_64	2009-11-18 16:37:09.000000000 -0800
-+++ linux-2.6.git-dave/arch/x86/include/asm/unistd_64.h	2009-11-18 16:37:09.000000000 -0800
-@@ -661,6 +661,8 @@ __SYSCALL(__NR_pwritev, sys_pwritev)
- __SYSCALL(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo)
- #define __NR_perf_counter_open			298
- __SYSCALL(__NR_perf_counter_open, sys_perf_counter_open)
-+#define __NR_clone_with_pids			299
-+__SYSCALL(__NR_clone_with_pids, stub_clone_with_pids)
- 
- #ifndef __NO_STUBS
- #define __ARCH_WANT_OLD_READDIR
-diff -puN arch/x86/kernel/entry_64.S~cwp-x86_64 arch/x86/kernel/entry_64.S
---- linux-2.6.git/arch/x86/kernel/entry_64.S~cwp-x86_64	2009-11-18 16:37:09.000000000 -0800
-+++ linux-2.6.git-dave/arch/x86/kernel/entry_64.S	2009-11-18 16:37:09.000000000 -0800
-@@ -684,6 +684,13 @@ END(system_call)
- 
- /*
-  * Certain special system calls that need to save a complete full stack frame.
-+ *
-+ * 'arg' should be the register that pt_regs will show up in when
-+ * 'func' is called.  Using normal calling conventions, this is:
-+ *
-+ * 	func(%rdi, %rsi, %rdx, %rcx, %r8, %r9)
-+ *
-+ * So, if you want pt_regs as the third argument, use %rdx.
-  */
- 	.macro PTREGSCALL label,func,arg
- ENTRY(\label)
-@@ -704,6 +711,7 @@ END(\label)
- 	PTREGSCALL stub_vfork, sys_vfork, %rdi
- 	PTREGSCALL stub_sigaltstack, sys_sigaltstack, %rdx
- 	PTREGSCALL stub_iopl, sys_iopl, %rsi
-+	PTREGSCALL stub_clone_with_pids, sys_clone_with_pids, %r8
- 
- ENTRY(ptregscall_common)
- 	DEFAULT_FRAME 1 8	/* offset 8: return address */
-diff -puN arch/x86/kernel/process_64.c~cwp-x86_64 arch/x86/kernel/process_64.c
---- linux-2.6.git/arch/x86/kernel/process_64.c~cwp-x86_64	2009-11-18 16:37:09.000000000 -0800
-+++ linux-2.6.git-dave/arch/x86/kernel/process_64.c	2009-11-18 16:37:09.000000000 -0800
-@@ -534,6 +534,55 @@ sys_clone(unsigned long clone_flags, uns
- 	return do_fork(clone_flags, newsp, regs, 0, parent_tid, child_tid);
- }
- 
-+asmlinkage long
-+sys_clone_with_pids(unsigned int flags_low, struct clone_args * __user cargs,
-+		int args_size, pid_t * __user pids, struct pt_regs *pt_regs)
-+{
-+	int rc;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
-+
-+	printk("%s() 0\n", __func__);
-+	rc = fetch_clone_args_from_user(cargs, args_size, &kca);
-+	if (rc) {
-+		printk("%s() 1\n", __func__);
-+		return rc;
-+	}
-+
-+	/*
-+	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
-+	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
-+	 * 	 higher word(s) of 'flags':
-+	 *
-+	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
-+	 */
-+	printk("%s() 2\n", __func__);
-+	flags = flags_low;
-+	parent_tid_ptr = (int *)kca.parent_tid_ptr;
-+	child_tid_ptr =  (int *)kca.child_tid_ptr;
-+
-+	printk("%s() 3\n", __func__);
-+	stack_size = (unsigned long)kca.child_stack_size;
-+	child_stack = (unsigned long)kca.child_stack_base + stack_size;
-+
-+	printk("%s() 4\n", __func__);
-+	if (!child_stack)
-+		child_stack = pt_regs->sp;
-+	printk("%s() 5\n", __func__);
-+
-+	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
-+	 */
-+	return do_fork_with_pids(flags, child_stack, pt_regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
-+}
-+
- unsigned long get_wchan(struct task_struct *p)
- {
- 	unsigned long stack;
-diff -puN kernel/fork.c~cwp-x86_64 kernel/fork.c
---- linux-2.6.git/kernel/fork.c~cwp-x86_64	2009-11-18 16:37:09.000000000 -0800
-+++ linux-2.6.git-dave/kernel/fork.c	2009-11-18 16:37:09.000000000 -0800
-@@ -1359,8 +1359,10 @@ static pid_t *copy_target_pids(int unum_
- 
- 	if (!unum_pids)
- 		return NULL;
-+	printk("%s(%d, %p) 0\n", __func__, unum_pids, upids);
- 
- 	knum_pids = task_pid(current)->level + 1;
-+	printk("%s(%d, %p) knum_pids: %d\n", __func__, unum_pids, upids, knum_pids);
- 	if (unum_pids > knum_pids)
- 		return ERR_PTR(-EINVAL);
- 
-@@ -1407,6 +1409,7 @@ static pid_t *copy_target_pids(int unum_
- 	size = unum_pids * sizeof(pid_t);
- 
- 	rc = copy_from_user(&target_pids[j], upids, size);
-+	printk("%s() copy(%p, %p, %d) rc: %d\n", __func__, &target_pids[j], upids, size, rc);
- 	if (rc) {
- 		rc = -EFAULT;
- 		goto out_free;
-@@ -1467,6 +1470,8 @@ long do_fork_with_pids(unsigned long clo
- 	long nr;
- 	pid_t *target_pids;
- 
-+	if (upids)
-+		printk("%s() 0\n", __func__);
- 	/*
- 	 * Do some preliminary argument and permissions checking before we
- 	 * actually start allocating stuff
-@@ -1482,6 +1487,8 @@ long do_fork_with_pids(unsigned long clo
- 			return -EPERM;
- 	}
- 
-+	if (upids)
-+		printk("%s() 1\n", __func__);
- 	/*
- 	 * We hope to recycle these flags after 2.6.26
- 	 */
-@@ -1501,6 +1508,7 @@ long do_fork_with_pids(unsigned long clo
- 
- 	target_pids = copy_target_pids(num_pids, upids);
- 	if (target_pids) {
-+		printk("%s() 1a\n", __func__);
- 		if (IS_ERR(target_pids))
- 			return PTR_ERR(target_pids);
- 
-@@ -1509,6 +1517,8 @@ long do_fork_with_pids(unsigned long clo
- 			goto out_free;
- 	}
- 
-+	if (upids)
-+		printk("%s() 2\n", __func__);
- 	/*
- 	 * When called from kernel_thread, don't do user tracing stuff.
- 	 */
-@@ -1517,12 +1527,16 @@ long do_fork_with_pids(unsigned long clo
- 
- 	p = copy_process(clone_flags, stack_start, regs, stack_size,
- 			 child_tidptr, NULL, target_pids, trace);
-+	if (upids)
-+		printk("%s() 3\n", __func__);
- 	/*
- 	 * Do this prior waking up the new thread - the thread pointer
- 	 * might get invalid after that point, if the thread exits quickly.
- 	 */
- 	if (!IS_ERR(p)) {
- 		struct completion vfork;
-+		if (upids)
-+			printk("%s() 4\n", __func__);
- 
- 		trace_sched_process_fork(current, p);
- 
-@@ -1571,9 +1585,13 @@ long do_fork_with_pids(unsigned long clo
- 		nr = PTR_ERR(p);
- 	}
- 
-+	if (upids)
-+		printk("%s() 5\n", __func__);
- out_free:
- 	kfree(target_pids);
- 
-+	if (upids)
-+		printk("%s() 6\n", __func__);
- 	return nr;
- }
- 
-_
+-- 
+Yasunori Goto 
