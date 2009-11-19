@@ -1,12 +1,13 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][PATCH] clone_with_pids()^w eclone() for x86_64
-Date: Thu, 19 Nov 2009 10:58:44 +0100
-Message-ID: <20091119095844.GP4379@hawkmoon.kerlabs.com>
-References: <20091119004838.AD278DE0@kernel>
+From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Subject: Re: [v12][PATCH 0/9] Implement eclone() syscall
+Date: Thu, 19 Nov 2009 15:20:46 +0100
+Message-ID: <200911191520.46445.arnd@arndb.de>
+References: <20091111043440.GA9377@suka>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1588460728422748873=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091119004838.AD278DE0@kernel>
+In-Reply-To: <20091111043440.GA9377@suka>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,150 +15,42 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, matthltc-npbjlsIvGkV82hYKe6nXyg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Wednesday 11 November 2009, Sukadev Bhattiprolu wrote:
+> Based on these requirements and constraints, we explored a couple of system
+> call interfaces (in earlier versions of this patchset). Based on input from
+> Arnd Bergmann and others, the new interface of the system call is: 
+> 
+>         struct clone_args {
+>                 u64 clone_flags_high;
+>                 u64 child_stack_base;
+>                 u64 child_stack_size;
+>                 u64 parent_tid_ptr;
+>                 u64 child_tid_ptr;
+>                 u32 nr_pids;
+>                 u32 reserved0;
+>                 u64 reserved1;
+>         };
+> 
+>         sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
+>                         pid_t *pids)
+ 
+Sorry if I'm beating a dead horse here, but having three methods for
+possible extensions (flags, args_size and reserved fields) is going
+a bit too far, as I think we've discussed a few times before.
 
---===============1588460728422748873==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-24107-1258624667-0001-2"
-Content-Disposition: inline
+The flags field seems necessary and the reserved fields are moderately
+sensible if you don't have the args_size argument (a flag could still
+express the same), but if you have args_size I see no point in reserving
+space. I'd much prefer if you could get rid of the args_size, but if
+other insist on keeping that, please loose the redundant reserved
+fields at the end.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Alternatively, just keep my name out of it ;-)
 
---=_bohort-24107-1258624667-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hi Dave,
-
-On 18/11/09 16:48 -0800, Dave Hansen wrote:
->=20
-> This is still a bit rough, but I figured I'd post it for kicks.
->=20
-> Most of the process.c stuff is copy-n-paste with i386 and needs
-> to get consolidated.  I also need to give this the new name.
->=20
-> I'd appreciate anybody that knows inline assembly well to make
-> sure that I'm not being a complete doofus with this call below.
-> This seems to work, but I'm not confident it is the best way.
-
-I'm not a total guru of inline assembly, but I have comments :)
-
->=20
-> int clone_with_pids(long flags_low, struct clone_args *clone_args, long a=
-rgs_size,
->                  int *pids)
-> {
->         long retval;
->=20
->         __asm__  __volatile__(
->                  "movq %3, %%r10\n\t"           /* pids in r10*/
->                  "pushq %%rbp\n\t"              /* save value of ebp */
->                 :
->                 :"D" (flags_low), /* rdi */
->                  "S" (clone_args),/* rsi */
->                  "d" (args_size), /* rdx */
->                  "a" (pids)       /* use rax, which gets moved to r10 */
->                 );
-
-1. The fourth C arg is not in rax, but in rcx.
-
->=20
->         __asm__ __volatile__(
->                  "syscall\n\t"  /* Linux/x86_64 system call */
->                  "testq %0,%0\n\t"      /* check return value */
->                  "jne 1f\n\t"           /* jump if parent */
->                  "popq %%rbx\n\t"       /* get subthread function */
->                  "call *%%rbx\n\t"      /* start subthread function */
->                  "movq %2,%0\n\t"
->                  "syscall\n"            /* exit system call: exit subthre=
-ad */
->                  "1:\n\t"
->                  "popq %%rbp\t"         /* restore parent's ebp */
->                 :"=3Da" (retval)
->                 :"0" (__NR_clone3), "i" (__NR_exit)
->                 :"ebx", "ecx", "edx"
->                 );
-
-2. You should probably not separate this into two asm statements. In partic=
-ular,
-   the compiler has no way to know that r10 should be preserved between the=
- two
-   statements, and may be confused by the change of rsp.
-
-3. r10 and r11 should be listed as clobbered.
-
-4. I fail to see the magic that puts the subthread function pointer in the
-   stack.
-
-5. Maybe rdi should contain the subthread argument before calling the subth=
-read?
-
-6. rdi, rsi, rdx, rcx, r8 and r9 should be added to the clobber list becaus=
-e of
-   the call to the subthread function.
-
-7. rsi could be used in place of rbx to hold the function pointer, which wo=
-uld
-   allow you to remove ebx from the clobber list.
-
-8. I don't see why rbp should be saved. The ABI says it must be saved by the
-   callee.
-
-9. Before calling exit(), maybe put some exit code in rdi?
-
->=20
->         if (retval < 0) {
->                 errno =3D -retval;
->                 retval =3D -1;
->         }
->         return retval;
-> }
-
-Thanks,
-
-Louis
-
-[...]
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-24107-1258624667-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAksFFtQACgkQVKcRuvQ9Q1TlXQCgnHNNHqtQKDRV/oW5lwyYIdKF
-AMIAoMIidVt3jfQamA69VTmFkPNc9iEz
-=JyZ5
------END PGP SIGNATURE-----
-
---=_bohort-24107-1258624667-0001-2--
-
---===============1588460728422748873==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============1588460728422748873==--
+	Arnd <><
