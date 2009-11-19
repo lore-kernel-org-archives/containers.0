@@ -1,17 +1,14 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC][PATCH] clone_with_pids()^w eclone() for x86_64
-Date: Thu, 19 Nov 2009 22:44:34 +0100
-Message-ID: <20091119214433.GD4767@localdomain>
-References: <20091119004838.AD278DE0@kernel>
-	<20091119095844.GP4379@hawkmoon.kerlabs.com>
-	<1258652929.20093.8941.camel@nimitz>
-	<20091119212646.GA4767@localdomain>
-	<1258666356.20093.9622.camel@nimitz>
-Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [v12][PATCH 0/9] Implement eclone() syscall
+Date: Thu, 19 Nov 2009 15:56:44 -0800
+Message-ID: <20091119235644.GA18720__13052.8416405015$1258675038$gmane$org@us.ibm.com>
+References: <20091111043440.GA9377@suka> <200911191520.46445.arnd@arndb.de>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8918356529845658848=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1258666356.20093.9622.camel@nimitz>
+Content-Disposition: inline
+In-Reply-To: <200911191520.46445.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,94 +16,41 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, matthltc-npbjlsIvGkV82hYKe6nXyg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Arnd Bergmann [arnd-r2nGTMty4D4@public.gmane.org] wrote:
+| On Wednesday 11 November 2009, Sukadev Bhattiprolu wrote:
+| > Based on these requirements and constraints, we explored a couple of system
+| > call interfaces (in earlier versions of this patchset). Based on input from
+| > Arnd Bergmann and others, the new interface of the system call is: 
+| > 
+| >         struct clone_args {
+| >                 u64 clone_flags_high;
+| >                 u64 child_stack_base;
+| >                 u64 child_stack_size;
+| >                 u64 parent_tid_ptr;
+| >                 u64 child_tid_ptr;
+| >                 u32 nr_pids;
+| >                 u32 reserved0;
+| >                 u64 reserved1;
+| >         };
+| > 
+| >         sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
+| >                         pid_t *pids)
+| 
+| Sorry if I'm beating a dead horse here, but having three methods for
+| possible extensions (flags, args_size and reserved fields) is going
+| a bit too far, as I think we've discussed a few times before.
 
---===============8918356529845658848==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-2061-1258667018-0001-2"
-Content-Disposition: inline
+Based on earlier discussions, it looked like using 'flags' to extend
+the number of arguments or size of clone_args was not clean. But I 
+agree with your point on the redundancy.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+How about dropping ->reserved1 and leaving the 'u32 reserved0' so the
+structure size is same on all architectures ?
 
---=_bohort-2061-1258667018-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Thu, Nov 19, 2009 at 01:32:36PM -0800, Dave Hansen wrote:
-> On Thu, 2009-11-19 at 22:26 +0100, Louis Rilling wrote:
-> > But actually this is even better :D:
-> >=20
-> >          __asm__  __volatile__(
-> >                   "movq %3, %%r10\n\t"           /* pids in r10*/
-> >                   "pushq %%rbp\n\t"              /* save value of ebp */
-> >                  :
-> >                  :"D" (flags_low), /* rdi */
-> >                   "S" (clone_args),/* rsi */
-> >                   "d" (args_size), /* rdx */
-> >                   "r10" (pids)     /* Linux reads its fourth arg from r=
-10 */
-> >                  );
->=20
-> That gives me:
->=20
-> clone-lib.c:28: error: matching constraint references invalid operand
-> number
-
-?? I know that this syntax works for r8, but I don't remember for r9-r15. I=
- don't
-have my handy documentation nearby, so let met check tomorrow (if nobody fi=
-nds
-before).
-
-Anyway, although not optimal, even your first version should be ok with res=
-pect
-to placing the fourth arg in r10 (assuming that the compiler keeps it until=
- the
-next asm statement of course, which any [future?] code instrumentation of t=
-he
-compiler could break).
-
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-2061-1258667018-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAksFvEEACgkQVKcRuvQ9Q1RjQACfQN7Jrprapcu7pTqhOYg4OtXt
-gy0An2gnkfnVtPhn5/7TnoF6FjkCoG/J
-=TQb6
------END PGP SIGNATURE-----
-
---=_bohort-2061-1258667018-0001-2--
-
---===============8918356529845658848==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============8918356529845658848==--
+Sukadev
