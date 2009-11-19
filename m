@@ -1,13 +1,13 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [v12][PATCH 0/9] Implement eclone() syscall
-Date: Thu, 19 Nov 2009 15:20:46 +0100
-Message-ID: <200911191520.46445.arnd@arndb.de>
-References: <20091111043440.GA9377@suka>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH user-cr v19-rc1] Revert "restart: coordinator in new pidns
+	to always report status via pipe"
+Date: Thu, 19 Nov 2009 09:37:54 -0600
+Message-ID: <20091119153754.GA18377@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091111043440.GA9377@suka>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,40 +17,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, matthltc-npbjlsIvGkV82hYKe6nXyg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wednesday 11 November 2009, Sukadev Bhattiprolu wrote:
-> Based on these requirements and constraints, we explored a couple of system
-> call interfaces (in earlier versions of this patchset). Based on input from
-> Arnd Bergmann and others, the new interface of the system call is: 
-> 
->         struct clone_args {
->                 u64 clone_flags_high;
->                 u64 child_stack_base;
->                 u64 child_stack_size;
->                 u64 parent_tid_ptr;
->                 u64 child_tid_ptr;
->                 u32 nr_pids;
->                 u32 reserved0;
->                 u64 reserved1;
->         };
-> 
->         sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
->                         pid_t *pids)
+Hi Oren,
+
+commit 464ff47b6a1241410f432a55ce4bf93c8bd10861 isn't right.  I guess
+the problem is that ckpt_coordinator_status(), doesn't do a waitpid
+on the global_child_pid?  So if I do a 'restart -w --pids', then the
+restarted task proceeds just fine, but restart immediately returns.
+
+Maybe the right answer is to modify ckpt_coordinator_status() to
+do a waitpid if ctx->args->wait, but just reverting this commit
+doesn't seem to have any ill effects - all my default tests pass.
+
+This reverts commit 464ff47b6a1241410f432a55ce4bf93c8bd10861.
+---
+ restart.c |   25 +++++++++++++------------
+ 1 files changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/restart.c b/restart.c
+index d5d069a..cfc359b 100644
+--- a/restart.c
++++ b/restart.c
+@@ -994,12 +994,10 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 	ckpt_dbg("forking coordinator in new pidns\n");
  
-Sorry if I'm beating a dead horse here, but having three methods for
-possible extensions (flags, args_size and reserved fields) is going
-a bit too far, as I think we've discussed a few times before.
-
-The flags field seems necessary and the reserved fields are moderately
-sensible if you don't have the args_size argument (a flag could still
-express the same), but if you have args_size I see no point in reserving
-space. I'd much prefer if you could get rid of the args_size, but if
-other insist on keeping that, please loose the redundant reserved
-fields at the end.
-
-Alternatively, just keep my name out of it ;-)
-
-	Arnd <><
+ 	/*
+-	 * The coordinator report restart susccess/failure via pipe.
+-	 * (It cannot use return value, because the in the default
+-	 * --wait --copy-status case it is already used to report the
+-	 * root-task's return value).
++	 * We won't wait for (collect) the coordinator, so we use a
++	 * pipe instead for the coordinator to report success/failure.
+ 	 */
+-	if (pipe(ctx->pipe_coord) < 0) {
++	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
+ 		perror("pipe");
+ 		return -1;
+ 	}
+@@ -1035,7 +1033,10 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 		return -1;
+ 
+ 	ctx->args->copy_status = copy;
+-	return ckpt_coordinator_status(ctx);
++	if (ctx->args->wait)
++		return ckpt_collect_child(ctx);
++	else
++		return ckpt_coordinator_status(ctx);
+ }
+ #else
+ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+@@ -1093,13 +1094,13 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 		 * around and be reaper until all tasks are gone.
+ 		 * Otherwise, container will die as soon as we exit.
+ 		 */
+-
+-		/* Report success/failure to the parent */
+-		if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
+-			perror("failed to report status");
+-			exit(1);
++		if (!ctx->args->wait) {
++			/* report status because parent won't wait for us */
++			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
++				perror("failed to report status");
++				exit(1);
++			}
+ 		}
+-
+ 		ret = ckpt_pretend_reaper(ctx);
+ 	} else if (ctx->args->wait) {
+ 		ret = ckpt_collect_child(ctx);
+-- 
+1.6.1.1
