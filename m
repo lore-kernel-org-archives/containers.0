@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH user-cr v19-rc1] Revert "restart: coordinator in new pidns
-	to always report status via pipe"
-Date: Thu, 19 Nov 2009 12:51:24 -0500
-Message-ID: <4B05859C.7060008@cs.columbia.edu>
-References: <20091119153754.GA18377@us.ibm.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] clone_with_pids()^w eclone() for x86_64
+Date: Thu, 19 Nov 2009 22:26:47 +0100
+Message-ID: <20091119212646.GA4767@localdomain>
+References: <20091119004838.AD278DE0@kernel>
+	<20091119095844.GP4379@hawkmoon.kerlabs.com>
+	<1258652929.20093.8941.camel@nimitz>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0717356879718211007=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091119153754.GA18377-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1258652929.20093.8941.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,87 +17,215 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-The problem is actually elsewhere: ckpt_coordinator_pidns() should
-test for args->wait and wait for the coordinator (which became the
-pidns's init) before exiting.
+--===============0717356879718211007==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-1706-1258665954-0001-2"
+Content-Disposition: inline
 
-Will send a patch soon.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Oren.
+--=_bohort-1706-1258665954-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Serge E. Hallyn wrote:
-> Hi Oren,
-> 
-> commit 464ff47b6a1241410f432a55ce4bf93c8bd10861 isn't right.  I guess
-> the problem is that ckpt_coordinator_status(), doesn't do a waitpid
-> on the global_child_pid?  So if I do a 'restart -w --pids', then the
-> restarted task proceeds just fine, but restart immediately returns.
-> 
-> Maybe the right answer is to modify ckpt_coordinator_status() to
-> do a waitpid if ctx->args->wait, but just reverting this commit
-> doesn't seem to have any ill effects - all my default tests pass.
-> 
-> This reverts commit 464ff47b6a1241410f432a55ce4bf93c8bd10861.
-> ---
->  restart.c |   25 +++++++++++++------------
->  1 files changed, 13 insertions(+), 12 deletions(-)
-> 
-> diff --git a/restart.c b/restart.c
-> index d5d069a..cfc359b 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -994,12 +994,10 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
->  	ckpt_dbg("forking coordinator in new pidns\n");
->  
->  	/*
-> -	 * The coordinator report restart susccess/failure via pipe.
-> -	 * (It cannot use return value, because the in the default
-> -	 * --wait --copy-status case it is already used to report the
-> -	 * root-task's return value).
-> +	 * We won't wait for (collect) the coordinator, so we use a
-> +	 * pipe instead for the coordinator to report success/failure.
->  	 */
-> -	if (pipe(ctx->pipe_coord) < 0) {
-> +	if (!ctx->args->wait && pipe(ctx->pipe_coord)) {
->  		perror("pipe");
->  		return -1;
->  	}
-> @@ -1035,7 +1033,10 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
->  		return -1;
->  
->  	ctx->args->copy_status = copy;
-> -	return ckpt_coordinator_status(ctx);
-> +	if (ctx->args->wait)
-> +		return ckpt_collect_child(ctx);
-> +	else
-> +		return ckpt_coordinator_status(ctx);
->  }
->  #else
->  static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
-> @@ -1093,13 +1094,13 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
->  		 * around and be reaper until all tasks are gone.
->  		 * Otherwise, container will die as soon as we exit.
->  		 */
-> -
-> -		/* Report success/failure to the parent */
-> -		if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-> -			perror("failed to report status");
-> -			exit(1);
-> +		if (!ctx->args->wait) {
-> +			/* report status because parent won't wait for us */
-> +			if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
-> +				perror("failed to report status");
-> +				exit(1);
-> +			}
->  		}
-> -
->  		ret = ckpt_pretend_reaper(ctx);
->  	} else if (ctx->args->wait) {
->  		ret = ckpt_collect_child(ctx);
+On Thu, Nov 19, 2009 at 09:48:49AM -0800, Dave Hansen wrote:
+> On Thu, 2009-11-19 at 10:58 +0100, Louis Rilling wrote:
+> > > int clone_with_pids(long flags_low, struct clone_args *clone_args, lo=
+ng args_size,
+> > >                  int *pids)
+> > > {
+> > >         long retval;
+> > >=20
+> > >         __asm__  __volatile__(
+> > >                  "movq %3, %%r10\n\t"           /* pids in r10*/
+> > >                  "pushq %%rbp\n\t"              /* save value of ebp =
+*/
+> > >                 :
+> > >                 :"D" (flags_low), /* rdi */
+> > >                  "S" (clone_args),/* rsi */
+> > >                  "d" (args_size), /* rdx */
+> > >                  "a" (pids)       /* use rax, which gets moved to r10=
+ */
+> > >                 );
+> >=20
+> > 1. The fourth C arg is not in rax, but in rcx.
+>=20
+> Hey Louis,
+>=20
+> So, try as I might, I couldn't get that to work.  I thought it was rcx,
+> too.
+>=20
+> So, changing that instruction to:
+>=20
+>                 "movq %3, %%rcx\n\t"           /* pids in r10*/
+
+Hm, no.
+
+I meant (without taking into account my other comments):
+
+         __asm__  __volatile__(
+                  "movq %3, %%r10\n\t"           /* pids in r10*/
+                  "pushq %%rbp\n\t"              /* save value of ebp */
+                 :
+                 :"D" (flags_low), /* rdi */
+                  "S" (clone_args),/* rsi */
+                  "d" (args_size), /* rdx */
+                  "c" (pids)       /* use rcx, which gets moved to r10 */
+                 );
+
+But actually this is even better :D:
+
+         __asm__  __volatile__(
+                  "movq %3, %%r10\n\t"           /* pids in r10*/
+                  "pushq %%rbp\n\t"              /* save value of ebp */
+                 :
+                 :"D" (flags_low), /* rdi */
+                  "S" (clone_args),/* rsi */
+                  "d" (args_size), /* rdx */
+                  "r10" (pids)     /* Linux reads its fourth arg from r10 */
+                 );
+
+
+>=20
+> and putting 0x11111, etc... in for the args the strace output for the
+> syscall looks like this:
+>=20
+>         syscall_299(0x11111, 0x22222, 0x33333, 0x1, 0x1, 0x2, 0, 0, 0,
+>         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+>         0, 0) =3D -1 (errno 22)
+>=20
+> and I get -EFAULT back from the function doing the copy_from_user() of
+> the pids argument, even when using good values.
+>=20
+> If I use the asm posted above, I get this:
+>        =20
+>         syscall_299(0x11111, 0x22222, 0x33333, 0x44444, 0x1, 0x2, 0, 0,
+>         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+>         0, 0, 0) =3D -1 (errno 22)
+>        =20
+> Or, this from a real call:
+>        =20
+>         syscall_299(0x1100011, 0x7fff19f0fd40, 0x38, 0x602070, 0x1, 0x2,
+>         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+>         0, 0, 0, 0, 0[2992, 377]: Child:
+>        =20
+> I had to find r10 basically by trial and error.  I have no idea why it
+> works.
+
+r10 is used to pass the fourth arg to the kernel because the syscall instru=
+ction
+puts next rip (return address) in rcx. Using r10 instead of rcx is defined =
+as part
+of Linux ABI for x86_64.
+
+For all the details, read the comments in
+arch/x86/kernel/entry_64.S:ENTRY(system_call).
+
+>=20
+> > >=20
+> > >         __asm__ __volatile__(
+> > >                  "syscall\n\t"  /* Linux/x86_64 system call */
+> > >                  "testq %0,%0\n\t"      /* check return value */
+> > >                  "jne 1f\n\t"           /* jump if parent */
+> > >                  "popq %%rbx\n\t"       /* get subthread function */
+> > >                  "call *%%rbx\n\t"      /* start subthread function */
+> > >                  "movq %2,%0\n\t"
+> > >                  "syscall\n"            /* exit system call: exit sub=
+thread */
+> > >                  "1:\n\t"
+> > >                  "popq %%rbp\t"         /* restore parent's ebp */
+> > >                 :"=3Da" (retval)
+> > >                 :"0" (__NR_clone3), "i" (__NR_exit)
+> > >                 :"ebx", "ecx", "edx"
+> > >                 );
+> >=20
+> > 2. You should probably not separate this into two asm statements. In pa=
+rticular,
+> >    the compiler has no way to know that r10 should be preserved between=
+ the two
+> >    statements, and may be confused by the change of rsp.
+>=20
+> Yeah, I wondered about that.  Suka, we should probably fix your tests
+> and the i386 code, too.
+>=20
+> > 3. r10 and r11 should be listed as clobbered.
+>=20
+> D'oh!  I didn't even touch the bottom registers because it continued to
+> work from the i386 version that I stole from Suka. =20
+
+That's again because of the syscall instruction, which saves EFLAGS to r11
+(and sysret restores EFLAGS from r11).
+
+>=20
+> > 4. I fail to see the magic that puts the subthread function pointer in =
+the
+> >    stack.
+> >=20
+> > 5. Maybe rdi should contain the subthread argument before calling the s=
+ubthread?
+> >=20
+> > 6. rdi, rsi, rdx, rcx, r8 and r9 should be added to the clobber list be=
+cause of
+> >    the call to the subthread function.
+> >=20
+> > 7. rsi could be used in place of rbx to hold the function pointer, whic=
+h would
+> >    allow you to remove ebx from the clobber list.
+> >=20
+> > 8. I don't see why rbp should be saved. The ABI says it must be saved b=
+y the
+> >    callee.
+> >=20
+> > 9. Before calling exit(), maybe put some exit code in rdi?
+>=20
+> Thanks for looking through this, Louis.  I'll send out another version
+> in a bit.
+
+Thanks,
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-1706-1258665954-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAksFuBYACgkQVKcRuvQ9Q1TXuQCgw4pZoiSA21fQnSy5V7t0EMn9
+Fi8AoKCl7GnGCtyBryLCJtUVB/5+fPQT
+=bvSX
+-----END PGP SIGNATURE-----
+
+--=_bohort-1706-1258665954-0001-2--
+
+--===============0717356879718211007==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============0717356879718211007==--
