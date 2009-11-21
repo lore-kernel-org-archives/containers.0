@@ -1,11 +1,12 @@
-From: "Rosanna snowball" <WilkesEfren-SCr9LJjfuaWWWcMjyys3pNBPR1lH4CV8@public.gmane.org>
-Subject: Target your ads to the medical community
-Date: Fri, 20 Nov 2009 17:37:51 -0800
-Message-ID: <8avrnj$ctao2@mail.brasilsat.com.br>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] return the error value from read_pages_contents
+Date: Sat, 21 Nov 2009 14:46:34 -0600
+Message-ID: <20091121204634.GA29685@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,78 +16,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: qlyj-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-Cc: 199508221948.oaa05062-EH77f/fEdnLHMyndblgE7AC/G2K4zDHf@public.gmane.org, feiguhdcr-Zc2Q0YTFXZPlvI1QD92V/A@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, baden01-Y8qEzhMunLyT9ig0jae3mg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/memory.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-
-
-788,114 in total Doctors * 17,482 emails 
-Coverage in many different areas of medicine such as Endocrinology,  
-Pathology, Urology, Neurology, Plastic Surgery, Psychiatry, Cardiology 
-and much more 16 different sortable fields 
-  
-Our AMERICAN Medical Doctor list has full contact data for all states.  
-Coverage for These specialties and more: 
-allergy/immunology 
-anesthesiology 
-cardiology 
-dermatology 
-emergency_medicine 
-endocrinology_diabetes metabolism 
-family_practice 
-gastroenterology 
-general_practice 
-geriatrics 
-infectious_disease 
-internal medicine 
-internal medicine 
-medical genetics 
-nephrology 
-neurological_surgery 
-neurology 
-obgyn 
-oncology 
-ophthalmology 
-orthopedics 
-otolaryngology 
-pathology 
-pediatrics 
-physical_medicine 
-plastic_surgery 
-preventive_medicine 
-psychiatry 
-radiology 
-surgery 
-urology 
-gen.pract 
-This week only the complete list is on sale for half price. 
-
-
-Email me at Darrel-QeLZVGoH3Aj0hpXw02HgpEc+sMTvUKpN@public.gmane.org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-To stop future email correspondence please send a blank email to rembox-QeLZVGoH3Aj0hpXw02HgpGGXanvQGlWp@public.gmane.org
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index ec3603a..cfb25a3 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -972,7 +972,7 @@ static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
+  out:
+ 	up_read(&current->mm->mmap_sem);
+ 	kfree(buf);
+-	return 0;
++	return ret;
+ }
+ 
+ /**
+-- 
+1.6.1
