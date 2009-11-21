@@ -1,13 +1,11 @@
-From: Wallace <bijiaoaro65awnku-LWAfsSFWpa4@public.gmane.org>
-Subject: =?GB2312?B?UGhvdG8gRWRpdGluZyAtIFBob3RvIEN1dG91dCBTZXJ2aWNlcw==?=
-Date: Sat, 21 Nov 2009 05:01:06 +0800
-Message-ID: <ffd96db8-bfd6-46ef-975f-a282e5fe11ec@SRV09.wettoe.at>
-Reply-To: imagingservice-Mj/0Miq2reM@public.gmane.org
+From: "Rosanna snowball" <WilkesEfren-SCr9LJjfuaWWWcMjyys3pNBPR1lH4CV8@public.gmane.org>
+Subject: Target your ads to the medical community
+Date: Fri, 20 Nov 2009 17:37:51 -0800
+Message-ID: <8avrnj$ctao2@mail.brasilsat.com.br>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,38 +15,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-8MiXsm1LNw7vu62uXDUzXA@public.gmane.org>
+To: qlyj-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+Cc: 199508221948.oaa05062-EH77f/fEdnLHMyndblgE7AC/G2K4zDHf@public.gmane.org, feiguhdcr-Zc2Q0YTFXZPlvI1QD92V/A@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, baden01-Y8qEzhMunLyT9ig0jae3mg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Digital Photo Editing Services :
-
-We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques. 
-
-Our strength in providing Editing solutions for digital images like photo masking, photo re-touching, back ground cleaning & cloning, sharpening & restoration of color, all this derive from our vast experience. Our dedicated team of highly skilled and experienced professionals serves the photo Editing requirements of our clients. An in house quality checking mechanism assures value addition and delivers perfect job. Our team can deliver your job overnight or in time bounded fashion irrespective of job size. 
-
-Our mainly services are: 
-
-1. Photo Cutout
-2. Photo Enhancement
-3. Photo Retouching
-4. Vector Conversion
-5. Pop Art
-6. Images Masking
-7. Clipping Path
-8. Photo Restoration 
-9. Web Design
-
-Photo Editing Services:
-
-Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
-
-Best regards,
-Wallace
-Rsutacsy Imaging Professionals
-Contact: wallacecontact-Mj/0Miq2reM@public.gmane.org
 
 
 
+788,114 in total Doctors * 17,482 emails 
+Coverage in many different areas of medicine such as Endocrinology,  
+Pathology, Urology, Neurology, Plastic Surgery, Psychiatry, Cardiology 
+and much more 16 different sortable fields 
+  
+Our AMERICAN Medical Doctor list has full contact data for all states.  
+Coverage for These specialties and more: 
+allergy/immunology 
+anesthesiology 
+cardiology 
+dermatology 
+emergency_medicine 
+endocrinology_diabetes metabolism 
+family_practice 
+gastroenterology 
+general_practice 
+geriatrics 
+infectious_disease 
+internal medicine 
+internal medicine 
+medical genetics 
+nephrology 
+neurological_surgery 
+neurology 
+obgyn 
+oncology 
+ophthalmology 
+orthopedics 
+otolaryngology 
+pathology 
+pediatrics 
+physical_medicine 
+plastic_surgery 
+preventive_medicine 
+psychiatry 
+radiology 
+surgery 
+urology 
+gen.pract 
+This week only the complete list is on sale for half price. 
+
+
+Email me at Darrel-QeLZVGoH3Aj0hpXw02HgpEc+sMTvUKpN@public.gmane.org
 
 
 
@@ -65,4 +81,12 @@ Contact: wallacecontact-Mj/0Miq2reM@public.gmane.org
 
 
 
-Pls send adress to sendingmve-uAjRD0nVeow@public.gmane.org for remove
+
+
+
+
+
+
+
+
+To stop future email correspondence please send a blank email to rembox-QeLZVGoH3Aj0hpXw02HgpGGXanvQGlWp@public.gmane.org
