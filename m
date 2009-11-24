@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v13][PATCH 01/12] Factor out code to allocate pidmap page
-Date: Tue, 24 Nov 2009 12:07:05 -0800
-Message-ID: <20091124200705.GB24400__14279.9570611261$1259094018$gmane$org@us.ibm.com>
+Subject: [v13][PATCH 10/12] Implement sys_eclone for s390
+Date: Tue, 24 Nov 2009 12:09:40 -0800
+Message-ID: <20091124200940.GK24400__31676.847433164$1259094038$gmane$org@us.ibm.com>
 References: <20091124200449.GA24400@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,92 +23,114 @@ Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@publi
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v13][PATCH 01/12] Factor out code to allocate pidmap page
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [v13][PATCH 10/12] Implement sys_eclone for s390
 
-To simplify alloc_pidmap(), move code to allocate a pid map page to a
-separate function.
+Implement the s390 hook for sys_eclone().
 
-Changelog[v3]:
-	- Earlier version of patchset called alloc_pidmap_page() from two
-	  places. But now its called from only one place. Even so, moving
-	  this code out into a separate function simplifies alloc_pidmap().
-Changelog[v2]:
-	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
-	  -ENOMEM on error instead of -1.
+Changelog:
+	Nov 24: Removed user-space code from commit log. See user-cr git tree.
+	Nov 17: remove redundant flags_high check
+	Nov 13: As suggested by Heiko, convert eclone to take its
+		parameters via registers.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/pid.c |   45 ++++++++++++++++++++++++++++++---------------
- 1 files changed, 30 insertions(+), 15 deletions(-)
+ arch/s390/include/asm/unistd.h    |    3 ++-
+ arch/s390/kernel/compat_wrapper.S |    8 ++++++++
+ arch/s390/kernel/process.c        |   37 +++++++++++++++++++++++++++++++++++++
+ arch/s390/kernel/syscalls.S       |    1 +
+ 4 files changed, 48 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/pid.c b/kernel/pid.c
-index d3f722d..7d4bb6e 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -122,9 +122,35 @@ static void free_pidmap(struct upid *upid)
- 	atomic_inc(&map->nr_free);
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index cb5232d..cbf6c7c 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -269,7 +269,8 @@
+ #define	__NR_pwritev		329
+ #define __NR_rt_tgsigqueueinfo	330
+ #define __NR_perf_event_open	331
+-#define NR_syscalls 332
++#define __NR_eclone		332
++#define NR_syscalls 333
+ 
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+index cbd9901..816ae61 100644
+--- a/arch/s390/kernel/compat_wrapper.S
++++ b/arch/s390/kernel/compat_wrapper.S
+@@ -1849,6 +1849,14 @@ sys_clone_wrapper:
+ 	llgtr	%r5,%r5			# int *
+ 	jg	sys_clone		# branch to system call
+ 
++	.globl	sys_eclone_wrapper
++sys_eclone_wrapper:
++	llgfr	%r2,%r2			# unsigned int
++	llgtr	%r3,%r3			# struct clone_args *
++	lgfr	%r4,%r4			# int
++	llgtr	%r5,%r5			# pid_t *
++	jg	sys_eclone		# branch to system call
++
+ 	.globl	sys32_execve_wrapper
+ sys32_execve_wrapper:
+ 	llgtr	%r2,%r2			# char *
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 5417eb5..0a59317 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -241,6 +241,43 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
+ 		       parent_tidptr, child_tidptr);
  }
  
-+static int alloc_pidmap_page(struct pidmap *map)
++SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
++		uca, int, args_size, pid_t __user *, pids)
 +{
-+	void *page;
++	int rc;
++	struct pt_regs *regs = task_pt_regs(current);
++	struct clone_args kca;
++	int __user *parent_tid_ptr;
++	int __user *child_tid_ptr;
++	unsigned long flags;
++	unsigned long __user child_stack;
++	unsigned long stack_size;
 +
-+	if (likely(map->page))
-+		return 0;
++	rc = fetch_clone_args_from_user(uca, args_size, &kca);
++	if (rc)
++		return rc;
 +
-+	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
++	flags = flags_low;
++	parent_tid_ptr = (int __user *) kca.parent_tid_ptr;
++	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
++
++	stack_size = (unsigned long) kca.child_stack_size;
++	if (stack_size)
++		return -EINVAL;
++
++	child_stack = (unsigned long) kca.child_stack;
++	if (!child_stack)
++		child_stack = regs->gprs[15];
 +
 +	/*
-+	 * Free the page if someone raced with us installing it:
++	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
++	 * 	 to several functions. Need to convert clone_flags to 64-bit.
 +	 */
-+	spin_lock_irq(&pidmap_lock);
-+	if (map->page)
-+		kfree(page);
-+	else
-+		map->page = page;
-+	spin_unlock_irq(&pidmap_lock);
-+
-+	if (unlikely(!map->page))
-+		return -ENOMEM;
-+
-+	return 0;
++	return do_fork_with_pids(flags, child_stack, regs, stack_size,
++				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
++				pids);
 +}
 +
- static int alloc_pidmap(struct pid_namespace *pid_ns)
- {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-+	int rc;
- 	struct pidmap *map;
- 
- 	pid = last + 1;
-@@ -134,21 +160,10 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (map->page)
--				kfree(page);
--			else
--				map->page = page;
--			spin_unlock_irq(&pidmap_lock);
--			if (unlikely(!map->page))
--				break;
--		}
-+		rc = alloc_pidmap_page(map);
-+		if (rc)
-+			break;
-+
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
+ /*
+  * This is trivial, and on the face of it looks like it
+  * could equally well be done in user mode.
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index 30eca07..fb8708d 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
+ SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
+ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
+ SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
++SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
 -- 
 1.6.0.4
