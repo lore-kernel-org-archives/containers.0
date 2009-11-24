@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v13][PATCH 03/12] Define set_pidmap() function
-Date: Tue, 24 Nov 2009 12:07:38 -0800
-Message-ID: <20091124200738.GD24400__48440.696419175$1259093648$gmane$org@us.ibm.com>
+Subject: [v13][PATCH 06/12] Check invalid clone flags
+Date: Tue, 24 Nov 2009 12:08:34 -0800
+Message-ID: <20091124200834.GG24400__16202.8005034246$1259093891$gmane$org@us.ibm.com>
 References: <20091124200449.GA24400@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,126 +24,62 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v13][PATCH 03/12] Define set_pidmap() function
+Subject: [v13][PATCH 06/12] Check invalid clone flags
 
-Define a set_pidmap() interface which is like alloc_pidmap() only that
-caller specifies the pid number to be assigned.
+As pointed out by Oren Laadan, we want to ensure that unused bits in the
+clone-flags remain unused and available for future. To ensure this, define
+a mask of clone-flags and check the flags in the clone() system calls.
 
-Changelog[v13]:
-	- Don't let do_alloc_pidmap return 0 if it failed to find a pid.
 Changelog[v9]:
-	- Completely rewrote this patch based on Eric Biederman's code.
-Changelog[v7]:
-        - [Eric Biederman] Generalize alloc_pidmap() to take a range of pids.
-Changelog[v6]:
-        - Separate target_pid > 0 case to minimize the number of checks needed.
-Changelog[v3]:
-        - (Eric Biederman): Avoid set_pidmap() function. Added couple of
-          checks for target_pid in alloc_pidmap() itself.
-Changelog[v2]:
-        - (Serge Hallyn) Check for 'pid < 0' in set_pidmap().(Code
-          actually checks for 'pid <= 0' for completeness).
+	- Include the unused clone-flag (CLONE_UNUSED) to VALID_CLONE_FLAGS
+	  to avoid breaking any applications that may have set it. IOW, this
+	  patch/check only applies to clone-flags bits 33 and higher.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Changelog[v8]:
+	- New patch in set
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- kernel/pid.c |   46 +++++++++++++++++++++++++++++++++++-----------
- 1 files changed, 35 insertions(+), 11 deletions(-)
+ include/linux/sched.h |   12 ++++++++++++
+ kernel/fork.c         |    3 +++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/pid.c b/kernel/pid.c
-index c4d9914..c50a711 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -147,28 +147,29 @@ static int alloc_pidmap_page(struct pidmap *map)
- 	return 0;
- }
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 75e6e60..a4d2c23 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -29,6 +29,18 @@
+ #define CLONE_NEWNET		0x40000000	/* New network namespace */
+ #define CLONE_IO		0x80000000	/* Clone io context */
  
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int do_alloc_pidmap(struct pid_namespace *pid_ns, int last, int min,
-+		int max)
- {
--	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-+	int i, offset, max_scan, pid;
- 	int rc = -EAGAIN;
- 	struct pidmap *map;
++#define CLONE_UNUSED        	0x00001000	/* Can be reused ? */
++
++#define VALID_CLONE_FLAGS	(CSIGNAL | CLONE_VM | CLONE_FS | CLONE_FILES |\
++				 CLONE_SIGHAND | CLONE_UNUSED | CLONE_PTRACE |\
++				 CLONE_VFORK  | CLONE_PARENT | CLONE_THREAD  |\
++				 CLONE_NEWNS  | CLONE_SYSVSEM | CLONE_SETTLS |\
++				 CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID  |\
++				 CLONE_DETACHED | CLONE_UNTRACED             |\
++				 CLONE_CHILD_SETTID | CLONE_STOPPED          |\
++				 CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER |\
++				 CLONE_NEWPID | CLONE_NEWNET | CLONE_IO)
++
+ /*
+  * Scheduling policies
+  */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 72c76a1..317adcf 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -982,6 +982,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
  
- 	pid = last + 1;
- 	if (pid >= pid_max)
--		pid = RESERVED_PIDS;
-+		pid = min;
- 	offset = pid & BITS_PER_PAGE_MASK;
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
--	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-+	max_scan = (max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
- 		rc = alloc_pidmap_page(map);
- 		if (rc)
- 			break;
++	if (clone_flags & ~VALID_CLONE_FLAGS)
++		return ERR_PTR(-EINVAL);
++
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
  
-+		rc = -EAGAIN;
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
- 					atomic_dec(&map->nr_free);
--					pid_ns->last_pid = pid;
- 					return pid;
- 				}
- 				offset = find_next_offset(map, offset);
-@@ -179,26 +180,49 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 			 * bitmap block and the final block was the same
- 			 * as the starting point, pid is before last_pid.
- 			 */
--			} while (offset < BITS_PER_PAGE && pid < pid_max &&
-+			} while (offset < BITS_PER_PAGE && pid < max &&
- 					(i != max_scan || pid < last ||
- 					    !((last+1) & BITS_PER_PAGE_MASK)));
- 		}
--		if (map < &pid_ns->pidmap[(pid_max-1)/BITS_PER_PAGE]) {
-+		if (map < &pid_ns->pidmap[(max-1)/BITS_PER_PAGE]) {
- 			++map;
- 			offset = 0;
- 		} else {
- 			map = &pid_ns->pidmap[0];
--			offset = RESERVED_PIDS;
--			if (unlikely(last == offset)) {
--				rc = -EAGAIN;
-+			offset = min;
-+			if (unlikely(last == offset))
- 				break;
--			}
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
- 	return rc;
- }
- 
-+static int alloc_pidmap(struct pid_namespace *pid_ns)
-+{
-+	int nr;
-+
-+	nr = do_alloc_pidmap(pid_ns, pid_ns->last_pid, RESERVED_PIDS, pid_max);
-+	if (nr >= 0)
-+		pid_ns->last_pid = nr;
-+	return nr;
-+}
-+
-+static int set_pidmap(struct pid_namespace *pid_ns, int target)
-+{
-+	if (!target)
-+		return alloc_pidmap(pid_ns);
-+
-+	if (target >= pid_max)
-+		return -EINVAL;
-+
-+	if ((target < 0) || (target < RESERVED_PIDS &&
-+				pid_ns->last_pid >= RESERVED_PIDS))
-+		return -EINVAL;
-+
-+	return do_alloc_pidmap(pid_ns, target - 1, target, target + 1);
-+}
-+
- int next_pidmap(struct pid_namespace *pid_ns, int last)
- {
- 	int offset;
 -- 
 1.6.0.4
