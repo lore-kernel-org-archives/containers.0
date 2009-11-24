@@ -1,12 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [v13][PATCH 00/12] Implement eclone() system call
-Date: Tue, 24 Nov 2009 12:04:49 -0800
-Message-ID: <20091124200449.GA24400__23043.5317651883$1259093133$gmane$org@us.ibm.com>
+Subject: [v13][PATCH 04/12] Add target_pids parameter to alloc_pid()
+Date: Tue, 24 Nov 2009 12:08:00 -0800
+Message-ID: <20091124200800.GE24400__3205.39983590624$1259093406$gmane$org@us.ibm.com>
+References: <20091124200449.GA24400@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20091124200449.GA24400-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,146 +19,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
-Cc: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew,
 
-We ported the syscall to x86_64, powerpc and s390 and in the process hashed
-out couple of minor issues in the interface.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [v13][PATCH 04/12] Add target_pids parameter to alloc_pid()
 
-Can you please merge or let me know if there are other comments ?
-
----
-
-Subject: [v13][PATCH 00/12] Implement eclone() system call
-
-To support application checkpoint/restart, a task must have the same pid it
-had when it was checkpointed.  When containers are nested, the tasks within
-the containers exist in multiple pid namespaces and hence have multiple pids
-to specify during restart.
-
-This patchset implements a new system call, eclone() that lets a process
-specify the pids of the child process.
-
-Patches 1 through 7 are helper patches needed for choosing a pid for the
-child process.
-
-Patches 8 through 11 implement the eclone() system call on x86, x86_64, s390
-and powerpc.
-
-Patch 12 documents the new system call, some/all of which will eventually
-go into a man page.
-
-Changelog[v13]:
-	- Implement sys_eclone() on x86_64, s390 and powerpc architectures
-	- Reorg x86 implementation to enable sharing code with x86_64
-	- [Arnd Bergmann] Remove the ->reserved1 field we now have args_size
-	- [Nathan Lynch, Serge Hallyn]: Rename ->child_stack_base to
-	  ->child_stack and ensure ->child_stack_size is 0 on architectures
-	  that don't need the stack size.
-	- Modify exmaple in Documentation to avoid unnecessary register copy.
-
-Changelog[v12]:
-	- Ignore ->child_stack_size when ->child_stack_base is NULL (PATCH 8)
-	- Cleanup/simplify example in Documentation/eclone (PATCH 9).
-	- Rename sys call to a shorter name, eclone()
-
-Changelog[v11]:
-	- [Dave Hansen] Move clone_args validation checks to arch-indpeendent
-	  code.
-	- [Oren Laadan] Make args_size a parameter to system call and remove
-	  it from 'struct clone_args'
-
-Changelog[v10]:
-	- [Linus Torvalds] Use PTREGSCALL() implementation for clone rather
-	  than the generic system call
-	- Rename clone3() to clone_with_pids()
-	- Update Documentation/clone_with_pids() to show example usage with
-	  the PTREGSCALL implementation.
-
-Changelog[v9]:
-	- [Pavel Emelyanov] Drop the patch that made 'pid_max' a property
-	  of struct pid_namespace
-	- [Roland McGrath, H. Peter Anvin and earlier on, Serge Hallyn] To
-	  avoid inadvertent truncation clone_flags, preserve the first
-	  parameter of clone3() as 'u32 clone_flags' and specify newer
-	  flags in clone_args.flags_high (PATCH 8/9 and PATCH 9/9)
-	- [Eric Biederman] Generalize alloc_pidmap() code to simplify and
-	  remove duplication (see PATCH 3/9].
-	  
-Changelog[v8]:
-	- [Oren Laadan, Louis Rilling, KOSAKI Motohiro]
-	  The name 'clone2()' is in use - renamed new syscall to clone3().
-	- [Oren Laadan] ->parent_tidptr and ->child_tidptr need to be 64bit.
-	- [Oren Laadan] Ensure that unused fields/flags in clone_struct are 0.
-	  (Added [PATCH 7/10] to the patchset).
-
-Changelog[v7]:
-	- [Peter Zijlstra, Arnd Bergmann]
-	  Group the arguments to clone2() into a 'struct clone_arg' to
-	  workaround the issue of exceeding 6 arguments to the system call.
-	  Also define clone-flags as u64 to allow additional clone-flags.
-
-Changelog[v6]:
-	- [Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds]
-	  Change 'pid_set.pids' to 'pid_t pids[]' so sizeof(struct pid_set) is
-	  constant across architectures (Patches 7, 8).
-	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
-	  'unum_pids < 0' check (Patches 7,8)
-	- (Pavel Machek) New patch (Patch 9) to add some documentation.
-
-Changelog[v5]:
-	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
-	  into this set)
-	- (Eric Biederman): Avoid the new function, set_pidmap() - added
-	  couple of checks on 'target_pid' in alloc_pidmap() itself.
-
-=== IMPORTANT NOTE:
-
-clone() system call has another limitation - all but one bits in clone-flags
-are in use and if more new clone-flags are needed, we will need a variant of
-the clone() system call. 
-
-It appears to make sense to try and extend this new system call to address
-this limitation as well. The requirements of a new clone system call could
-then be summarized as:
-
-	- do everything clone() does today, and
-	- give application an ability to choose pids for the child process
-	  in all ancestor pid namespaces, and
-	- allow more clone_flags
-
-Contstraints:
-
-	- system-calls are restricted to 6 parameters and clone() already
-	  takes 5 parameters, any extension to clone() interface would require
-	  one or more copy_from_user().  (Not sure if copy_from_user() of ~40
-	  bytes would have a significant impact on performance of clone()).
-
-Based on these requirements and constraints, we explored a couple of system
-call interfaces (in earlier versions of this patchset). Based on input from
-Arnd Bergmann and others, the new interface of the system call is: 
-
-	struct clone_args {
-		u64 clone_flags_high;
-		u64 child_stack_base;
-		u64 child_stack_size;
-		u64 parent_tid_ptr;
-		u64 child_tid_ptr;
-		u32 nr_pids;
-		u32 reserved0;
-	};
-
-	sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
-			pid_t *pids)
-
-Details of the struct clone_args and the usage are explained in the
-documentation (PATCH 12/12).
-
-NOTE:
-	While this patchset enables support for more clone-flags, actual
-	implementation for additional clone-flags is best implemented as
-	a separate patchset (PATCH 8/9 identifies some TODOs)
+This parameter is currently NULL, but will be used in a follow-on patch.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ include/linux/pid.h |    2 +-
+ kernel/fork.c       |    3 ++-
+ kernel/pid.c        |    9 +++++++--
+ 3 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index 49f1c2f..914185d 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
+ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ 
+-extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 8053c10..00adf9f 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -980,6 +980,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
++	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1156,7 +1157,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 		goto bad_fork_cleanup_io;
+ 
+ 	if (pid != &init_struct_pid) {
+-		pid = alloc_pid(p->nsproxy->pid_ns);
++		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
+ 		if (IS_ERR(pid)) {
+ 			retval = PTR_ERR(pid);
+ 			goto bad_fork_cleanup_io;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index c50a711..ad3408b 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -280,13 +280,14 @@ void free_pid(struct pid *pid)
+ 	call_rcu(&pid->rcu, delayed_put_pid);
+ }
+ 
+-struct pid *alloc_pid(struct pid_namespace *ns)
++struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
+ {
+ 	struct pid *pid;
+ 	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
+ 	struct upid *upid;
++	pid_t tpid;
+ 
+ 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
+ 	if (!pid) {
+@@ -296,7 +297,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ 
+ 	tmp = ns;
+ 	for (i = ns->level; i >= 0; i--) {
+-		nr = alloc_pidmap(tmp);
++		tpid = 0;
++		if (target_pids)
++			tpid = target_pids[i];
++
++		nr = set_pidmap(tmp, tpid);
+ 		if (nr < 0)
+ 			goto out_free;
+ 
+-- 
+1.6.0.4
