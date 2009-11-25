@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/6] add image offset to ckpt_err output
-Date: Wed, 25 Nov 2009 13:49:16 -0500
-Message-ID: <4B0D7C2C.70605@cs.columbia.edu>
-References: <1258509213-15318-1-git-send-email-serue@us.ibm.com>
+Subject: Re: Add support for connected INET sockets
+Date: Wed, 25 Nov 2009 13:51:56 -0500
+Message-ID: <4B0D7CCC.2010206@cs.columbia.edu>
+References: <1258471590-29768-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1258509213-15318-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1258471590-29768-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,39 +17,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Cool. Entire patchset queued for v19-rc2.
-
-Thanks,
+Great !  will add to v19-rc2.
 
 Oren.
 
-
-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Dan Smith wrote:
+> This is an update of the previous set to apply on top of v19-rc1 and to
+> address some of the trivial changes suggested on list.  Those are detailed
+> per-patch.  I will follow up with a patch to change ckpt_debug to ckpt_err
+> where appropriate, across the whole net/*/checkpoint.c set.  Since this
+> will apply to the unchanged gso patch as well, I decided to do this as a
+> follow-on cleanup patch.
 > 
-> Changelog:
-> 	Nov 17: check for len overrun
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/sys.c |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
-> 
-> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> index c1c4e99..d64f5a7 100644
-> --- a/checkpoint/sys.c
-> +++ b/checkpoint/sys.c
-> @@ -471,6 +471,8 @@ static void _ckpt_msg_appendv(struct ckpt_ctx *ctx, int err, char *fmt,
->  			goto full;
->  	}
->  
-> +	len += snprintf(&ctx->msg[len], CKPT_MSG_LEN-len, "[offset %lld]",
-> +			ctx->total);
->  	len += vsnprintf(&ctx->msg[len], CKPT_MSG_LEN-len, fmt, ap);
->  	if (len > CKPT_MSG_LEN) {
->  full:
