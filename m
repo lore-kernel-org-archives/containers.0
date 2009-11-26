@@ -1,14 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: invoke exit system call directly from
-	ckpt_do_feeder
-Date: Thu, 26 Nov 2009 10:10:15 -0500
-Message-ID: <4B0E9A57.4020501@cs.columbia.edu>
-References: <1259108404.10928.3.camel@localhost.localdomain>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: [PATCH RFC v0 0/3] cgroup notifications API and memory thresholds
+Date: Thu, 26 Nov 2009 18:27:35 +0200
+Message-ID: <cover.1259248846.git.kirill__43120.2641259462$1259252921$gmane$org@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1259108404.10928.3.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,79 +15,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+It's my first attempt to implement cgroup notifications API and memory
+thresholds on top of it. The idea of API was proposed by Paul Menage.
 
+It lacks some important features and need more testing, but I want publish
+it as soon as possible to get feedback from community.
 
-Nathan Lynch wrote:
-> The feeder thread can cause the restart process to fail by indirectly
-> calling exit_group, which sends SIGKILL to all other threads in the
-> process.  If the feeder thread "wins" the race, the restart is
-> disrupted.  A common symptom of this race is the coordinator task
-> returning from the wait_for_completion_interruptible in
-> wait_all_tasks_finish with a signal (the SIGKILL) pending.
+TODO:
+ - memory thresholds on root cgroup;
+ - memsw support;
+ - documentation.
 
-So the clone mage page says:
-  ...
-  The main use of clone() is to implement threads: multiple threads
-  of control in a program that run concurrently in a shared memory
-  space.
-  ...
-  When the fn(arg) function application returns, the child process
-  terminates. The integer returned by fn is the exit code for the
-  child process.  The child process may also terminate explicitly by
-  calling exit(2) or after receiving a fatal signal.
-  ...
-(http://www.kernel.org/doc/man-pages/online/pages/man2/__clone2.2.html)
+Kirill A. Shutemov (3):
+  cgroup: implement eventfd-based generic API for notifications
+  res_counter: implement thresholds
+  memcg: implement memory thresholds
 
-I expected "terminates" here to mean invoke the syscall _exit().
-Clearly this is desirable with CLONE_THREAD, but not for regular
-processes that will want to proceed to the usual glibc exit path
-(e.g. process at_exit() and what-not). Then again, the last thread
-to exit should also call glibc's exit for the same reason. So
-that's probably why it's handled this way.
-
-This matters for us because our user-space wrapper to eclone()
-should eventually do what the glibc's clone() wrapper does, instead
-of calling _exit() directly as it is today...
-
-???
-
-Oren.
-
-> 
-> Calling _exit isn't enough; see
-> http://www.kernel.org/doc/man-pages/online/pages/man2/exit.2.html#NOTES
-> 
-> Exit the feeder thread by using the syscall() macro.
-> 
-> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-> ---
->  restart.c |   12 ++++++++++--
->  1 files changed, 10 insertions(+), 2 deletions(-)
-> 
-> diff --git a/restart.c b/restart.c
-> index d5d069a..ed4268c 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -2079,8 +2079,16 @@ static int ckpt_do_feeder(void *data)
->  		ckpt_read_write_inspect(ctx);
->  	else
->  		ckpt_read_write_blind(ctx);
-> -		
-> -	/* all is well: feeder thread is done */
-> +
-> +	/* All is well: feeder thread is done.  However, we must
-> +	 * invoke the exit system call directly. Otherwise, upon
-> +	 * return from this function, glibc's clone wrapper will call
-> +	 * _exit, which calls exit_group, which will terminate the
-> +	 * whole process, which is not what we want.
-> +	 */
-> +	syscall(SYS_exit, 0);
-> +
-> +	/* not reached */
->  	return 0;
->  }
->  
+ include/linux/cgroup.h      |    8 ++
+ include/linux/res_counter.h |   44 +++++++++++
+ kernel/cgroup.c             |  181 ++++++++++++++++++++++++++++++++++++++++++-
+ kernel/res_counter.c        |    4 +
+ mm/memcontrol.c             |  149 +++++++++++++++++++++++++++++++++++
+ 5 files changed, 385 insertions(+), 1 deletions(-)
