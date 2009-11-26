@@ -1,13 +1,16 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH RFC v0 0/3] cgroup notifications API and memory thresholds
-Date: Thu, 26 Nov 2009 18:02:46 +0100
-Message-ID: <4B0EB4B6.5000702__17680.6602663875$1259255090$gmane$org@free.fr>
-References: <cover.1259248846.git.kirill@shutemov.name>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH RFC v0 3/3] memcg: implement memory thresholds
+Date: Thu, 26 Nov 2009 22:33:08 +0530
+Message-ID: <661de9470911260903h4996070emec678f09a7ba2c9e__38323.5714435161$1259255283$gmane$org@mail.gmail.com>
+References: <bc4dc055a7307c8667da85a4d4d9d5d189af27d5.1259248846.git.kirill@shutemov.name>
+	<cover.1259248846.git.kirill@shutemov.name>
+	<8524ba285f6dd59cda939c28da523f344cdab3da.1259248846.git.kirill@shutemov.name>
+	<d977350fcc9bc3e1fe484440c1fc3a7470a4e26b.1259248846.git.kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <d977350fcc9bc3e1fe484440c1fc3a7470a4e26b.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,22 +21,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Kirill A. Shutemov wrote:
-> It's my first attempt to implement cgroup notifications API and memory
-> thresholds on top of it. The idea of API was proposed by Paul Menage.
+On Thu, Nov 26, 2009 at 9:57 PM, Kirill A. Shutemov
+<kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> It allows to register multiple memory thresholds and gets notifications
+> when it crosses.
 >
-> It lacks some important features and need more testing, but I want publish
-> it as soon as possible to get feedback from community.
+> To register a threshold application need:
+> - create an eventfd;
+> - open file memory.usage_in_bytes of a cgroup
+> - write string "<event_fd> <memory.usage_in_bytes> <threshold>" to
+> =A0cgroup.event_control.
 >
-> TODO:
->  - memory thresholds on root cgroup;
->  - memsw support;
->  - documentation.
->   
-Maybe it would be interesting to do that for the /cgroup/<name>/tasks by 
-sending in the event the number of tasks in the cgroup when it changes, 
-so it more easy to detect 0 process event and then remove the cgroup 
-directory, no ?
+> Application will be notified through eventfd when memory usage crosses
+> threshold in any direction.
+>
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+>
+
+I don't see the patches attached or inlined in the emails that follow
+
+Balbir
