@@ -1,15 +1,14 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH RFC v0 3/3] memcg: implement memory thresholds
-Date: Thu, 26 Nov 2009 18:27:38 +0200
-Message-ID: <d977350fcc9bc3e1fe484440c1fc3a7470a4e26b.1259248846.git.kirill__11511.3253043548$1259252938$gmane$org@shutemov.name>
+Subject: [PATCH RFC v0 1/3] cgroup: implement eventfd-based generic API for
+	notifications
+Date: Thu, 26 Nov 2009 18:27:36 +0200
+Message-ID: <bc4dc055a7307c8667da85a4d4d9d5d189af27d5.1259248846.git.kirill__24803.1115196229$1259252942$gmane$org@shutemov.name>
 References: <cover.1259248846.git.kirill@shutemov.name>
-	<bc4dc055a7307c8667da85a4d4d9d5d189af27d5.1259248846.git.kirill@shutemov.name>
-	<8524ba285f6dd59cda939c28da523f344cdab3da.1259248846.git.kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8524ba285f6dd59cda939c28da523f344cdab3da.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <cover.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 In-Reply-To: <cover.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 References: <cover.1259248846.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -25,17 +24,20 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-It allows to register multiple memory thresholds and gets notifications
-when it crosses.
+This patch introduces write-only file "cgroup.event_control" in every
+cgroup.
 
-To register a threshold application need:
+To register new notification handler you need:
 - create an eventfd;
-- open file memory.usage_in_bytes of a cgroup
-- write string "<event_fd> <memory.usage_in_bytes> <threshold>" to
-  cgroup.event_control.
+- open a control file to be monitored. Callbacks register_event() and
+  unregister_event() must be defined for the control file;
+- write "<event_fd> <control_fd> <args>" to cgroup.event_control.
+  Interpretation of args is defined by control file implementation;
 
-Application will be notified through eventfd when memory usage crosses
-threshold in any direction.
+eventfd will be woken up by control file implementation or when the
+cgroup is removed.
+
+To unregister notification handler just close eventfd.
 
 Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
