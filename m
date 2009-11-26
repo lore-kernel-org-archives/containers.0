@@ -1,17 +1,14 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH RFC v0 3/3] memcg: implement memory thresholds
-Date: Thu, 26 Nov 2009 19:11:17 +0200
-Message-ID: <d977350fcc9bc3e1fe484440c1fc3a7470a4e26b.1259255307.git.kirill__8515.44465772367$1259256047$gmane$org@shutemov.name>
-References: <cover.1259255307.git.kirill@shutemov.name>
-	<bc4dc055a7307c8667da85a4d4d9d5d189af27d5.1259255307.git.kirill@shutemov.name>
-	<8524ba285f6dd59cda939c28da523f344cdab3da.1259255307.git.kirill@shutemov.name>
+Subject: Re: [PATCH RFC v0 0/3] cgroup notifications API and memory thresholds
+Date: Thu, 26 Nov 2009 20:38:27 +0200
+Message-ID: <cc557aab0911261038y63ee617oad5198d04cc38aca__19991.632019128$1259260756$gmane$org@mail.gmail.com>
+References: <cover.1259248846.git.kirill@shutemov.name>
+	<4B0EB4B6.5000702@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8524ba285f6dd59cda939c28da523f344cdab3da.1259255307.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-In-Reply-To: <cover.1259255307.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-References: <cover.1259255307.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <4B0EB4B6.5000702-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,234 +18,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-It allows to register multiple memory thresholds and gets notifications
-when it crosses.
-
-To register a threshold application need:
-- create an eventfd;
-- open file memory.usage_in_bytes of a cgroup
-- write string "<event_fd> <memory.usage_in_bytes> <threshold>" to
-  cgroup.event_control.
-
-Application will be notified through eventfd when memory usage crosses
-threshold in any direction.
-
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- mm/memcontrol.c |  149 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 149 insertions(+), 0 deletions(-)
-
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index f99f599..af1af0b 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -6,6 +6,10 @@
-  * Copyright 2007 OpenVZ SWsoft Inc
-  * Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-  *
-+ * Memory thresholds
-+ * Copyright (C) 2009 Nokia Corporation
-+ * Author: Kirill A. Shutemov
-+ *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; either version 2 of the License, or
-@@ -38,6 +42,7 @@
- #include <linux/vmalloc.h>
- #include <linux/mm_inline.h>
- #include <linux/page_cgroup.h>
-+#include <linux/eventfd.h>
- #include "internal.h"
- 
- #include <asm/uaccess.h>
-@@ -174,6 +179,12 @@ struct mem_cgroup_tree {
- 
- static struct mem_cgroup_tree soft_limit_tree __read_mostly;
- 
-+struct mem_cgroup_threshold {
-+	struct list_head list;
-+	struct eventfd_ctx *eventfd;
-+	u64 threshold;
-+};
-+
- /*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
-@@ -225,6 +236,9 @@ struct mem_cgroup {
- 	/* set when res.limit == memsw.limit */
- 	bool		memsw_is_minimum;
- 
-+	struct list_head thresholds;
-+	struct mem_cgroup_threshold *current_threshold;
-+
- 	/*
- 	 * statistics. This must be placed at the end of memcg.
- 	 */
-@@ -2839,12 +2853,119 @@ static int mem_cgroup_swappiness_write(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- }
- 
-+static inline void mem_cgroup_set_thresholds(struct res_counter *counter,
-+		u64 above, u64 below)
-+{
-+	BUG_ON(res_counter_set_thresholds(counter, above, below));
-+}
-+
-+static void mem_cgroup_threshold(struct res_counter *counter, u64 usage,
-+		u64 threshold)
-+{
-+	struct mem_cgroup *memcg = container_of(counter,
-+			struct mem_cgroup,res);
-+	struct mem_cgroup_threshold *above, *below;
-+
-+	above = below = memcg->current_threshold;
-+
-+	if (threshold <= usage) {
-+		list_for_each_entry_continue(above, &memcg->thresholds,
-+				list) {
-+			if (above->threshold > usage)
-+				break;
-+			below = above;
-+			eventfd_signal(below->eventfd, 1);
-+		}
-+	} else {
-+		list_for_each_entry_continue_reverse(below,
-+				&memcg->thresholds, list) {
-+			eventfd_signal(above->eventfd, 1);
-+			if (below->threshold <= usage)
-+				break;
-+			above = below;
-+		}
-+	}
-+
-+	mem_cgroup_set_thresholds(&memcg->res, above->threshold,
-+			below->threshold);
-+	memcg->current_threshold = below;
-+}
-+
-+static void mem_cgroup_invalidate_thresholds(struct cgroup *cgrp)
-+{
-+	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	struct mem_cgroup_threshold *tmp, *prev = NULL;
-+	u64 usage = memcg->res.usage;
-+
-+	list_for_each_entry(tmp, &memcg->thresholds, list) {
-+		if (tmp->threshold > usage) {
-+			BUG_ON(!prev);
-+			memcg->current_threshold = prev;
-+			break;
-+		}
-+		prev = tmp;
-+	}
-+
-+	mem_cgroup_set_thresholds(&memcg->res, tmp->threshold,
-+			prev->threshold);
-+}
-+
-+static int mem_cgroup_register_event(struct cgroup *cgrp, struct cftype *cft,
-+		struct eventfd_ctx *eventfd, const char *args)
-+{
-+	u64 threshold;
-+	struct mem_cgroup_threshold *new, *tmp;
-+	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	int ret;
-+
-+	/* TODO: Root cgroup is a special case */
-+	if (mem_cgroup_is_root(memcg))
-+		return -ENOSYS;
-+
-+	ret = res_counter_memparse_write_strategy(args, &threshold);
-+	if (ret)
-+		return ret;
-+
-+	new = kmalloc(sizeof(*new), GFP_KERNEL);
-+	if (!new)
-+		return -ENOMEM;
-+	INIT_LIST_HEAD(&new->list);
-+	new->eventfd = eventfd;
-+	new->threshold = threshold;
-+
-+	list_for_each_entry(tmp, &memcg->thresholds, list)
-+		if (new->threshold < tmp->threshold) {
-+			list_add_tail(&new->list, &tmp->list);
-+			break;
-+		}
-+	mem_cgroup_invalidate_thresholds(cgrp);
-+
-+	return 0;
-+}
-+
-+static int mem_cgroup_unregister_event(struct cgroup *cgrp, struct cftype *cft,
-+		struct eventfd_ctx *eventfd)
-+{
-+	struct mem_cgroup_threshold *threshold, *tmp;
-+	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+
-+	list_for_each_entry_safe(threshold, tmp, &memcg->thresholds, list)
-+		if (threshold->eventfd == eventfd) {
-+			list_del(&threshold->list);
-+			kfree(threshold);
-+		}
-+	mem_cgroup_invalidate_thresholds(cgrp);
-+
-+	return 0;
-+}
- 
- static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "usage_in_bytes",
- 		.private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
- 		.read_u64 = mem_cgroup_read,
-+		.register_event = mem_cgroup_register_event,
-+		.unregister_event = mem_cgroup_unregister_event,
- 	},
- 	{
- 		.name = "max_usage_in_bytes",
-@@ -3080,6 +3201,32 @@ static int mem_cgroup_soft_limit_tree_init(void)
- 	return 0;
- }
- 
-+static int mem_cgroup_thresholds_init(struct mem_cgroup *mem)
-+{
-+	struct mem_cgroup_threshold *new;
-+
-+	mem->res.threshold_notifier = mem_cgroup_threshold;
-+	INIT_LIST_HEAD(&mem->thresholds);
-+
-+	new = kmalloc(sizeof(*new), GFP_KERNEL);
-+	if (!new)
-+		return -ENOMEM;
-+	INIT_LIST_HEAD(&new->list);
-+	new->threshold = 0ULL;
-+	list_add(&new->list, &mem->thresholds);
-+
-+	mem->current_threshold = new;
-+
-+	new = kmalloc(sizeof(*new), GFP_KERNEL);
-+	if (!new)
-+		return -ENOMEM;
-+	INIT_LIST_HEAD(&new->list);
-+	new->threshold = RESOURCE_MAX;
-+	list_add_tail(&new->list, &mem->thresholds);
-+
-+	return 0;
-+}
-+
- static struct cgroup_subsys_state * __ref
- mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- {
-@@ -3125,6 +3272,8 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- 	mem->last_scanned_child = 0;
- 	spin_lock_init(&mem->reclaim_param_lock);
- 
-+	mem_cgroup_thresholds_init(mem);
-+
- 	if (parent)
- 		mem->swappiness = get_swappiness(parent);
- 	atomic_set(&mem->refcnt, 1);
--- 
-1.6.5.3
+T24gVGh1LCBOb3YgMjYsIDIwMDkgYXQgNzowMiBQTSwgRGFuaWVsIExlemNhbm8gPGRhbmllbC5s
+ZXpjYW5vQGZyZWUuZnI+IHdyb3RlOgo+IEtpcmlsbCBBLiBTaHV0ZW1vdiB3cm90ZToKPj4KPj4g
+SXQncyBteSBmaXJzdCBhdHRlbXB0IHRvIGltcGxlbWVudCBjZ3JvdXAgbm90aWZpY2F0aW9ucyBB
+UEkgYW5kIG1lbW9yeQo+PiB0aHJlc2hvbGRzIG9uIHRvcCBvZiBpdC4gVGhlIGlkZWEgb2YgQVBJ
+IHdhcyBwcm9wb3NlZCBieSBQYXVsIE1lbmFnZS4KPj4KPj4gSXQgbGFja3Mgc29tZSBpbXBvcnRh
+bnQgZmVhdHVyZXMgYW5kIG5lZWQgbW9yZSB0ZXN0aW5nLCBidXQgSSB3YW50IHB1Ymxpc2gKPj4g
+aXQgYXMgc29vbiBhcyBwb3NzaWJsZSB0byBnZXQgZmVlZGJhY2sgZnJvbSBjb21tdW5pdHkuCj4+
+Cj4+IFRPRE86Cj4+IMKgLSBtZW1vcnkgdGhyZXNob2xkcyBvbiByb290IGNncm91cDsKPj4gwqAt
+IG1lbXN3IHN1cHBvcnQ7Cj4+IMKgLSBkb2N1bWVudGF0aW9uLgo+Pgo+Cj4gTWF5YmUgaXQgd291
+bGQgYmUgaW50ZXJlc3RpbmcgdG8gZG8gdGhhdCBmb3IgdGhlIC9jZ3JvdXAvPG5hbWU+L3Rhc2tz
+IGJ5Cj4gc2VuZGluZyBpbiB0aGUgZXZlbnQgdGhlIG51bWJlciBvZiB0YXNrcyBpbiB0aGUgY2dy
+b3VwIHdoZW4gaXQgY2hhbmdlcywgc28KPiBpdCBtb3JlIGVhc3kgdG8gZGV0ZWN0IDAgcHJvY2Vz
+cyBldmVudCBhbmQgdGhlbiByZW1vdmUgdGhlIGNncm91cCBkaXJlY3RvcnksCj4gbm8gPwoKSSds
+bCBkbyBpdCBsYXRlci4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
