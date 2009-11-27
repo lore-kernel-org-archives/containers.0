@@ -1,18 +1,11 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH RFC v0 2/3] res_counter: implement thresholds
-Date: Fri, 27 Nov 2009 09:08:19 +0200
-Message-ID: <cc557aab0911262308h452e836fo94c11c2d051e98a0__14634.2614818879$1259305754$gmane$org@mail.gmail.com>
-References: <cover.1259255307.git.kirill@shutemov.name>
-	<bc4dc055a7307c8667da85a4d4d9d5d189af27d5.1259255307.git.kirill@shutemov.name>
-	<8524ba285f6dd59cda939c28da523f344cdab3da.1259255307.git.kirill@shutemov.name>
-	<20091127092035.bbf2efdc.nishimura@mxp.nes.nec.co.jp>
-	<20091127114511.bbb43d5a.kamezawa.hiroyu@jp.fujitsu.com>
-	<661de9470911261908i4bb51e91v649025e6c75bd91b@mail.gmail.com>
+From: Jun OKAJIMA <okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org>
+Subject: LXC for desktop
+Date: Fri, 27 Nov 2009 16:23:35 +0900
+Message-ID: <2c2629fa0911262323t2c3d0c51j92375eeda5d6bf4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <661de9470911261908i4bb51e91v649025e6c75bd91b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,43 +15,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBOb3YgMjcsIDIwMDkgYXQgNTowOCBBTSwgQmFsYmlyIFNpbmdoIDxiYWxiaXJAbGlu
-dXgudm5ldC5pYm0uY29tPiB3cm90ZToKPiBPbiBGcmksIE5vdiAyNywgMjAwOSBhdCA4OjE1IEFN
-LCBLQU1FWkFXQSBIaXJveXVraQo+IDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+IHdy
-b3RlOgo+PiBPbiBGcmksIDI3IE5vdiAyMDA5IDA5OjIwOjM1ICswOTAwCj4+IERhaXN1a2UgTmlz
-aGltdXJhIDxuaXNoaW11cmFAbXhwLm5lcy5uZWMuY28uanA+IHdyb3RlOgo+Pgo+Pj4gSGkuCj4+
-PiA+Cj4+PiA+IEBAIC03Myw2ICs3Niw3IEBAIHZvaWQgcmVzX2NvdW50ZXJfdW5jaGFyZ2VfbG9j
-a2VkKHN0cnVjdCByZXNfY291bnRlciAqY291bnRlciwgdW5zaWduZWQgbG9uZyB2YWwpCj4+PiA+
-IMKgIMKgIMKgIMKgIMKgIMKgIHZhbCA9IGNvdW50ZXItPnVzYWdlOwo+Pj4gPgo+Pj4gPiDCoCDC
-oCBjb3VudGVyLT51c2FnZSAtPSB2YWw7Cj4+PiA+ICsgwqAgcmVzX2NvdW50ZXJfdGhyZXNob2xk
-X25vdGlmeV9sb2NrZWQoY291bnRlcik7Cj4+PiA+IMKgfQo+Pj4gPgo+Pj4gaG1tLi4gdGhpcyBh
-ZGRzIG5ldyBjaGVja3MgdG8gaG90LXBhdGggb2YgcHJvY2VzcyBsaWZlIGN5Y2xlLgo+Pj4KPj4+
-IERvIHlvdSBoYXZlIGFueSBudW1iZXIgb24gcGVyZm9ybWFuY2UgaW1wYWN0IG9mIHRoZXNlIHBh
-dGNoZXMody9vIHNldHRpbmcgYW55IHRocmVzaG9sZCk/CgpObywgSSBkb24ndC4gSSBkaWQgb25s
-eSBmdW5jdGlvbmFsIHRlc3Rpbmcgb24gdGhpcyBzdGFnZS4KCj4+PiBJTUhPLCBpdCBtaWdodCBi
-ZSBzbWFsbCBlbm91Z2ggdG8gYmUgaWdub3JlZCBiZWNhdXNlIEtBTUVaQVdBLXNhbidzIGNvYWxl
-c2NlIGNoYXJnZS91bmNoYXJnZQo+Pj4gcGF0Y2hlcyBoYXZlIGRlY3JlYXNlZCBjaGFyZ2UvdW5j
-aGFyZ2UgZm9yIHJlc19jb3VudGVyIGl0c2VsZiwgYnV0IEkgd2FudCB0byBrbm93IGp1c3QgdG8g
-bWFrZSBzdXJlLgo+Pj4KPj4gQW5vdGhlciBjb25jZXJuIGlzIHRvIHN1cHBvcnQgcm9vdCBjZ3Jv
-dXAsIHlvdSBuZWVkIGFub3RoZXIgbm90aWZpZXIgaG9vayBpbgo+PiBtZW1jZyBiZWNhdXNlIHJv
-b3QgY2dyb3VwIGRvZXNuJ3QgdXNlIHJlc19jb3VudGVyIG5vdy4KPj4KPj4gQ2FuJ3QgdGhpcyBi
-ZSBpbXBsZW1lbnRlZCBpbiBhIHdheSBsaWtlIHNvZnRsaW1pdCBjaGVjayA/CgpJJ2xsIGludmVz
-dGlnYXRlIGl0LgoKPj4gRmlsdGVyIGJ5IHRoZSBudW1iZXIgb2YgZXZlbnQgd2lsbCBiZSBnb29k
-IGZvciBub3RpZmllciBiZWhhdmlvciwgZm9yIGF2b2lkaW5nCj4+IHRvbyBtdWNoIHdha2UgdXAs
-IHRvby4KCkdvb2QgaWRlYSwgdGhhbmtzLgoKPiBJIGd1ZXNzIHRoZSBzZW1hbnRpY3Mgd291bGQg
-dmFyeSB0aGVuLCB0aGV5IHdvdWxkIGJlY29tZSBhY3Rpdml0eQo+IHNlbWFudGljcy4gSSB0aGlu
-ayB3ZSBzaG91bGQgYXZvaWQgdGhyZXNob2xkIG5vdGlmaWNhdGlvbiBmb3Igcm9vdCwKPiBzaW5j
-ZSB3ZSBoYXZlIG5vIGxpbWl0cyBpbiByb290IGFueW1vcmUuCgpUaHJlc2hvbGQgbm90aWZpY2F0
-aW9ucyBmb3Igcm9vdCBjZ3JvdXAgaXMgcmVhbGx5IG5lZWRlZCBvbiBlbWJlZGRlZApzeXN0ZW1z
-IHRvIGF2aWQgT09NLWtpbGxlci4KCj4KPiBCVFcsIEtpcmlsbCwgSSd2ZSBiZWVuIG1lYW5pbmcg
-dG8gd3JpdGUgdGhpcyBsYXllciBvbiB0b3Agb2YKPiBjZ3JvdXBzdGF0cywgaXMgdGhlcmUgYW55
-dGhpbmcgdGhhdCBwcmV2ZW50cyB1cyBmcm9tIHVzaW5nIHRoYXQgdG9kYXk/CgpJJ2xsIGludmVz
-dGlnYXRlIGl0LgoKPiBDQydpbmcgRGFuIE1hbGVrIGFuZCBWbGFkc2xhdiBCdXpvdiB3aG8gd29y
-a2VkIG9uIHNpbWlsYXIgcGF0Y2hlcwo+IGVhcmxpZXIuCj4KPiBCYWxiaXIgU2luZ2guCj4KX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
-YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
-L2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hello, LXC guys.
+
+Secure Click ( command line version) is the world first
+LXC desktop environment.
+( Or you know another one of same kind? ).
+
+Anyway, try it please.
+http://www.secureclick.jp/
+
+
+High lights:
+   - You can run *ANY* distribution under LXC jail.
+   - You can run any application *SAFELY* under LXC jail.
+   - Downloading is fast, executing is fast.
+
+
+Note:
+Secure Click comes with two versions.
+1. ISO boot.      This uses OpenVZ.
+2. Command line.  This uses LXC.
+If you want to try OpenVZ one, download ISO and boot it.
+
+
+   --- Okajima, Jun. Tokyo, Japan.
+        okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org
+        http://www.digitalinfra.co.jp/
+        http://www.secureclick.jp/
+        http://www.colinux.org/
+        http://www.machboot.com/
