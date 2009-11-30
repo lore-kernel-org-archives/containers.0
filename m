@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: stop checkpointed process
-Date: Sun, 29 Nov 2009 09:45:35 -0600
-Message-ID: <20091129154535.GA1115@us.ibm.com>
-References: <2f0d4790911261815s6ba92aa1w9dce17b0c582bb62@mail.gmail.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] user-cr: invoke exit system call directly from
+	ckpt_do_feeder
+Date: Mon, 30 Nov 2009 12:14:34 -0600
+Message-ID: <1259604874.6060.41.camel@localhost.localdomain>
+References: <1259108404.10928.3.camel@localhost.localdomain>
+	<4B0E9A57.4020501@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <2f0d4790911261815s6ba92aa1w9dce17b0c582bb62-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4B0E9A57.4020501-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +19,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jianwei Liao <liaotoad1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Jianwei Liao (liaotoad1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> hi all,
-> I am using ckpt-v18, everything is fine.
-> i have read some of the code of ckpt, but i was wondering that where does
-> kernel module to stop the checkpointee? (something related to context?) i
-> hope you can point me out how to find such stuff.
-> Can i use SIGSTOPand SIGCONT to do such things?
-> Thank you very much.
-> Liao
+On Thu, 2009-11-26 at 10:10 -0500, Oren Laadan wrote:
+> 
+> Nathan Lynch wrote:
+> > The feeder thread can cause the restart process to fail by indirectly
+> > calling exit_group, which sends SIGKILL to all other threads in the
+> > process.  If the feeder thread "wins" the race, the restart is
+> > disrupted.  A common symptom of this race is the coordinator task
+> > returning from the wait_for_completion_interruptible in
+> > wait_all_tasks_finish with a signal (the SIGKILL) pending.
+> 
+> So the clone mage page says:
+>   ...
+>   The main use of clone() is to implement threads: multiple threads
+>   of control in a program that run concurrently in a shared memory
+>   space.
+>   ...
+>   When the fn(arg) function application returns, the child process
+>   terminates. The integer returned by fn is the exit code for the
+>   child process.  The child process may also terminate explicitly by
+>   calling exit(2) or after receiving a fatal signal.
+>   ...
+> (http://www.kernel.org/doc/man-pages/online/pages/man2/__clone2.2.html)
+> 
+> I expected "terminates" here to mean invoke the syscall _exit().
+> Clearly this is desirable with CLONE_THREAD,
 
-Userspace should do this in advance by using the freezer cgroup.  So
-for instance if you are wanting to checkpoint /usr/bin/myapp, then
-one way to do it is:
+Calling _exit (as glibc's clone support code does) is clearly
+undesirable for CLONE_THREAD users such as restart.c because _exit calls
+exit_group, terminating the whole thread group.  That's kind of the
+whole point of the patch :)
 
-	(terminal 1)
-	mkdir -p /cgroup
-	mount -t cgroup -o freezer freezer /cgroup
-	mkdir /cgroup/myapp
 
-	(terminal 2)
-	echo $$ > /cgroup/myapp/tasks
-	/usr/bin/myapp
+>  but not for regular
+> processes that will want to proceed to the usual glibc exit path
+> (e.g. process at_exit() and what-not). Then again, the last thread
+> to exit should also call glibc's exit for the same reason. So
+> that's probably why it's handled this way.
+> 
+> This matters for us because our user-space wrapper to eclone()
+> should eventually do what the glibc's clone() wrapper does, instead
+> of calling _exit() directly as it is today...
 
-	(terminal 1)
-	echo FROZEN > /cgroup/myapp/freezer.state
-	pid=`pidof myapp`
-	checkpoint $pid > myapp.ckpt
-	echo THAWED > /cgroup/myapp/freezer.state
-
-If the application hasn't been frozen using the freezer cgroup,
-then sys_checkpoint() will return -EBUSY.
-
--serge
+For compatibility's sake, the user-space eclone wrapper should
+eventually do what glibc's clone support code does, yes -- branch to
+_exit.  But I think you've stated the case backwards?  Currently the
+eclone wrappers call sys_exit directly (e.g. "li r0,__NR_exit; sc" on
+powerpc).
