@@ -1,15 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: how to handle devpts
-Date: Tue, 1 Dec 2009 09:02:17 -0600
-Message-ID: <20091201150217.GC32117@us.ibm.com>
-References: <20091130202223.GA20224@us.ibm.com>
-	<20091201093708.GC2430@hawkmoon.kerlabs.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: ckpt-v19-rc2
+Date: Wed, 2 Dec 2009 00:23:18 -0500 (EST)
+Message-ID: <Pine.LNX.4.64.0912012352420.5665@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091201093708.GC2430-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,64 +15,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Louis Rilling (Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org):
-> Hi Serge,
-> =
 
-> On 30/11/09 14:22 -0600, Serge E. Hallyn wrote:
-> > We currently checkpoint and restart unix98 ptys in the kernel.
-> > So what do we want to do about the userspace part?  In particular,
-> > if I run the following test program and checkpoint it, it
-> > has `tty` open.  What do we want to do about that?
-> > =
+I put together ckpt-v19-rc2 (kernel and user) that includes:
 
-> > Just having user-cr/restart.c take an option to mount a new
-> > instance of devpts isn't enough - we don't get hooked up to
-> > restart.c's stdin/out obviously, and restart succeeds but the
-> > restarted program exists with -EIO.  At the same time, just
-> > doing a cradvise type of thing to plug fds 0,1,2 suffice for
-> > this testcase, but not for something more complicated which
-> > also has other unix98 ptys open.
-> =
+* eclone
+* INET sockets
+* timerfd, signalfd
+* rebase to 2.6.32-rc8
+* c/r thread/cpu state earlier
+* misc fixes
 
-> In Kerrighed we are implementing something =E0-la-cradvise: we allow the
-> caller of sys_restart() to give replacement fds for arbitrary files. To a=
-chieve
-> this, each checkpointed file descriptor (struct file) has a unique key, a=
-nd
-> sys_restart() takes a substitution table in parameter, where an entry is a
-> pair (key, fd).
+Hoping to give it some testing to clean remaining rough edges, and
+in particular net-c/r patches whose folding wasn't trivial, as well
+as the other archs.
 
-Thanks - that sounds somewhat like what I was leaning toward last
-night.  In particular, I was thinking that a user-space tool could
-walk over the checkpoint image and replace certain checkpointed
-filenames with a string like "\0RESERVED_FD0".  Sys_restart() would
-see that filename at restore_file() and plug in the coordinator task's
-fd 0.
+On the todo-list are:
 
-The thing I don't like about it is that I'm replacing pathnames,
-and so I worry that applications playing with mounts namespaces
-will be a problem for the program rewriting the checkpoint image.
-Not insurmountable, but requiring a lot more work...
+* assorted cleanup/fixes
+* more cleanups on ckpt_err/ckpt_msg
+* support for x86-64
+* unlinked files (if ready ?)
 
-> In Kerrighed sys_checkpoint() exports a human-readable table of checkpoin=
-ted
-> file descriptors, with types, fd in each checkpointed task, etc.
-> With Oren's patchset, I presume that some userspace tool could extract su=
-ch a
-> table from the checkpoint.
+Now back to work...
 
-Yeah, I guess such a program for analyzing and rewriting resources
-in a checkpoint image would be very useful.  Could perhaps also
-be used for network interfaces, internal mounts, uids, in-kernel
-keyring...
-
-> Hope this makes the discussion progress...
-
-Yup, thanks!
-
--serge
+Oren.
