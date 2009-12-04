@@ -1,14 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: ckpt-v19-rc2
-Date: Fri, 4 Dec 2009 12:17:32 -0600
-Message-ID: <20091204181732.GA29195@us.ibm.com>
-References: <Pine.LNX.4.64.0912012352420.5665@takamine.ncl.cs.columbia.edu>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Relax tcp.window_clamp value in INET restore
+Date: Fri,  4 Dec 2009 11:03:19 -0800
+Message-ID: <1259953399-8530-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0912012352420.5665-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +15,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> I put together ckpt-v19-rc2 (kernel and user) that includes:
-> 
-> * eclone
-> * INET sockets
-> * timerfd, signalfd
-> * rebase to 2.6.32-rc8
-> * c/r thread/cpu state earlier
-> * misc fixes
-> 
-> Hoping to give it some testing to clean remaining rough edges, and
-> in particular net-c/r patches whose folding wasn't trivial, as well
-> as the other archs.
-> 
-> On the todo-list are:
-> 
-> * assorted cleanup/fixes
-> * more cleanups on ckpt_err/ckpt_msg
-> * support for x86-64
-> * unlinked files (if ready ?)
+This value can grow higher than 16k, but it clamped at packet receive
+time if over that limit.  Instead of failing here, just clamp to the same
+limit.
 
-Ok, I only just realized, through a segfault on restart, that
-current->fs->pwd isn't being restored.  Were you thinking of
-supporting that in v19?
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org
+---
+ net/ipv4/checkpoint.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-If we don't want to do 'proper' current->fs c/r, I htink it's
-worthwhile doing a cheap c/r of current->fs->pwd as a filename.
-
-(I'd send the cheap patch, but am mostly out from now until wed)
-
-thanks,
--serge
+diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
+index 788e110..c80324f 100644
+--- a/net/ipv4/checkpoint.c
++++ b/net/ipv4/checkpoint.c
+@@ -429,10 +429,8 @@ static int inet_precheck(struct socket *sock, struct ckpt_hdr_socket_inet *in)
+ 	/* do_tcp_setsockopt() quietly makes this coercion */
+ 	if (in->tcp.window_clamp < (SOCK_MIN_RCVBUF / 2))
+ 		in->tcp.window_clamp = SOCK_MIN_RCVBUF / 2;
+-	else if (in->tcp.window_clamp > 65535U) {
+-		ckpt_debug("invalid window_clamp value\n");
+-		return -EINVAL;
+-	}
++	else
++		in->tcp.window_clamp = min(in->tcp.window_clamp, 65535U);
+ 
+ 	if (in->tcp.rcv_ssthresh > (4U * in->tcp.advmss))
+ 		in->tcp.rcv_ssthresh = 4U * in->tcp.advmss;
+-- 
+1.6.2.5
