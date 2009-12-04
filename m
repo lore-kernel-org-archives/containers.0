@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH user-cr] remount /proc for new pidns
-Date: Thu, 3 Dec 2009 20:06:10 -0600
-Message-ID: <20091204020610.GA17971@us.ibm.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: [RFC] [PATCH 0/5] cgroups: support for module-loadable subsystems
+Date: Fri, 4 Dec 2009 03:53:50 -0500
+Message-ID: <20091204085349.GA18867__35341.8587743819$1259916899$gmane$org@andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,49 +16,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Not doing this can be a pain for restarted software which relies on
-proc...
+[This is a revision of http://lkml.org/lkml/2009/11/2/442 ]
 
-Signed-off-by: root <root-Z+ypJZ3u8cnx6HRWoRZK3AC/G2K4zDHf@public.gmane.org>
----
- restart.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+This patch series implements support for building, loading, and
+unloading subsystems as modules, both within and outside the kernel
+source tree. It provides an interface cgroup_load_subsys() and
+cgroup_unload_subsys() which modular subsystems can use to register and
+depart during runtime. The net_cls classifier subsystem serves as the
+example for a subsystem which can be converted into a module using these
+changes. Additionally, support for subsystem dependencies is implemented
+with the new modular subsystem scenario in mind.
 
-diff --git a/restart.c b/restart.c
-index d25561a..cefe639 100644
---- a/restart.c
-+++ b/restart.c
-@@ -1005,6 +1005,13 @@ static int ckpt_probe_child(pid_t pid, char *str)
- static int __ckpt_coordinator(void *arg)
- {
- 	struct ckpt_ctx *ctx = (struct ckpt_ctx *) arg;
-+	int ret;
-+
-+	ret = mount("proc", "/proc", "proc", 0, NULL);
-+	if (ret) {
-+		perror("mount -t proc proc /proc");
-+		exit(1);
-+	}
- 
- 	if (!ctx->args->wait)
- 		close(ctx->pipe_coord[0]);
-@@ -1869,6 +1876,13 @@ int ckpt_fork_stub(void *data)
- 	struct task *task = (struct task *) data;
- 	struct ckpt_ctx *ctx = task->ctx;
- 
-+	if (task->flags & TASK_NEWPID) {
-+		int ret = mount("proc", "/proc", "proc", 0, NULL);
-+		if (ret) {
-+			perror("mount -t proc");
-+			exit(1);
-+		}
-+	}
- 	/*
- 	 * In restart into a new pid namespace (--pidns), coordinator
- 	 * is the container init, hence if it terminated permatutely
--- 
-1.6.4.4
+Patch #1 sets up the subsys[] array so its contents can be dynamic as
+modules appear and (eventually) disappear. I introduce an rwsem called
+subsys_mutex to protect against concurrent loads/unloads/reads, and
+modify iterations over the array to handle when subsystems are absent.
+
+Patch #2 implements an interface for modules to load subsystems, called
+cgroup_load_subsys, similar to cgroup_init_subsys, and adds a module
+pointer in struct cgroup_subsys.
+
+Patch #3 modifies the net_cls subsystem, which already had some module
+declarations, to be configurable as a module, which also serves as a
+simple proof-of-concept.
+
+Patch #4 adds a mechanism for unloading modular subsystems, which
+includes a more advanced rework of the rudimentary reference counting
+introduced in patch 2. It also modifies the exitcall of net_cls to use
+this interface.
+
+Patch #5 implements support for subsystems to specify dependencies on
+other subsystems. It requires the subsystem to give a list of its
+dependencies in the form of a NULL-terminated array of strings, each
+being the name of a depended-upon subsystem, for reasons explained in
+the patch itself.
+
+Part of implementing patches 2 and 4 involved updating css pointers in
+each css_set when the module appears or leaves. In doing this, it was
+discovered that css_sets always remain linked to the dummy cgroup,
+regardless of whether or not any subsystems are actually bound to it
+(i.e., not mounted on an actual hierarchy). The subsystem loading and
+unloading code therefore should keep in mind the special cases where the
+added subsystem is the only one in the dummy cgroup (and therefore all
+css_sets need to be linked back into it) and where the removed subsys
+was the only one in the dummy cgroup (and therefore all css_sets should
+be unlinked from it) - however, as all css_sets always stay attached to
+the dummy cgroup anyway, these cases are ignored. Any fix that addresses
+this issue should also make sure these cases are addressed in the
+subsystem loading and unloading code.
+
+-- bblum
