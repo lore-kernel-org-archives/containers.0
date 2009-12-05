@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/5] user-cr: align powerpc sp for eclone, clean up __eclone
-Date: Fri,  4 Dec 2009 23:02:28 -0600
-Message-ID: <1259989351-28552-3-git-send-email-ntl@pobox.com>
+Subject: [PATCH 3/5] user-cr: add generic stack API
+Date: Fri,  4 Dec 2009 23:02:29 -0600
+Message-ID: <1259989351-28552-4-git-send-email-ntl@pobox.com>
 References: <1259989351-28552-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,135 +21,170 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Using genstack in nsexeccwp exposed this bug.  The child_stack value
-being passed to the kernel via clone_args was not properly aligned,
-causing the child function to access the guard page.
+A few problems exist with the management of stacks for clone/eclone in
+the restart utility.
 
-And it turns out we needn't pass child_sp [r4] to the __eclone wrapper
-at all, so remove it.
+* Stacks are allocated from the heap via malloc.  This means any
+  mishandling of the the stack setup by the platform eclone code can
+  result in silent data corruption.  At a time when architecture
+  support for eclone is an ongoing effort, this seems unwise...
 
-Finally, the flags value as passed to __eclone in r4 is not used after the
-system call, so there is no need to save it in a nonvolatile register
-(r29).
+* Determining a suitable stack pointer to pass to clone(2) is
+  platform-dependent; we don't handle e.g. parisc where the stack
+  grows upwards.
+
+* There are at least two cases (ckpt_coordinator_pidns and
+  ckpt_fork_feeder) where the stack pointer provided to
+  clone(2) is outside of the region allocated.
+
+To address these issues, introduce an opaque "genstack" (generic
+stack) type and accessor functions.  Stacks are allocated via mmap()
+and guard pages are instantiated at both ends.  The accessor functions
+provide suitable values for passing to clone(2) and eclone(2) (via
+struct clone_args in the latter case).
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- clone_ppc.c  |   12 ++++++++----
- clone_ppc_.S |   40 ++++++++++++++++------------------------
- 2 files changed, 24 insertions(+), 28 deletions(-)
+ genstack.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ genstack.h |   22 +++++++++++++
+ 2 files changed, 123 insertions(+), 0 deletions(-)
+ create mode 100644 genstack.c
+ create mode 100644 genstack.h
 
-diff --git a/clone_ppc.c b/clone_ppc.c
-index 47b8290..f047a9e 100644
---- a/clone_ppc.c
-+++ b/clone_ppc.c
-@@ -25,7 +25,6 @@
- #include "eclone.h"
- 
- extern int __eclone(int (*fn)(void *arg),
--		    void *child_sp,
- 		    int flags,
- 		    void *fn_arg,
- 		    struct clone_args *args,
-@@ -39,9 +38,15 @@ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
- 	unsigned long child_sp;
- 	int newpid;
- 
-+	/* The stack pointer for the child is communicated to the
-+	 * kernel via clone_args.child_stack, and to the __eclone
-+	 * assembly wrapper via the child_sp argument [r4].  So we
-+	 * need to align child_sp here and ensure that the wrapper and
-+	 * the kernel receive the same value.
+diff --git a/genstack.c b/genstack.c
+new file mode 100644
+index 0000000..c552d04
+--- /dev/null
++++ b/genstack.c
+@@ -0,0 +1,101 @@
++#include <stdbool.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <sys/mman.h>
++
++#include "genstack.h"
++
++struct genstack {
++	void *addr;  /* Return value from mmap. Accessors must account
++		      * for guard pages at both ends.
++		      */
++	size_t size; /* Size of the region as passed to mmap. */
++};
++
++static size_t page_size(void)
++{
++	return sysconf(_SC_PAGESIZE);
++}
++
++/* Allocate a stack region with guard pages (PROT_NONE) at both ends.
++ * The size requested will be rounded up to the system page size.
++ * Callers must check for errors with genstack_err().
++ */
++struct genstack *genstack_alloc(size_t sz)
++{
++	struct genstack *stk;
++	int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
++	int mmap_prot = PROT_READ | PROT_WRITE;
++	void *addr;
++
++	/* Align requested size up to page boundary */
++	sz = (sz + page_size() - 1) & (~(page_size() - 1));
++
++	if (sz == 0)
++		return NULL;
++
++	stk = malloc(sizeof(*stk));
++	if (!stk)
++		return NULL;
++
++	/* Make space for guard pages */
++	sz += page_size() * 2;
++
++	addr = mmap(NULL, sz, mmap_prot, mmap_flags, -1, 0);
++	if (addr == MAP_FAILED) {
++		free(stk);
++		return NULL;
++	}
++
++	/* guard pages */
++	mprotect(addr, page_size(), PROT_NONE);
++	mprotect(addr + sz - page_size(), page_size(), PROT_NONE);
++
++	stk->addr = addr;
++	stk->size = sz;
++
++	return stk;
++}
++
++/* Unmap the stack region. */
++void genstack_release(struct genstack *stk)
++{
++	munmap(stk->addr, stk->size);
++	free(stk);
++}
++
++/* Return the size of the usable stack region.  Suitable for providing
++ * the child_stack_size value for struct clone_args.
++ */
++size_t genstack_size(const struct genstack *stk)
++{
++	return stk->size - (page_size() * 2);
++}
++
++/* Return the lowest usable address in the stack region.  Suitable for
++ * providing the child_stack value for struct clone_args.
++ */
++void *genstack_base(const struct genstack *stk)
++{
++	return stk->addr + page_size();
++}
++
++/* Return a suitable stack pointer value for passing to clone(2),
++ * accounting for platform differences in stack behavior.
++ */
++void *genstack_sp(const struct  genstack *stk)
++{
++#ifdef __hppa__
++	/*
++	 * If stack grows upwards, return the lowest address between
++	 * the guard pages.
 +	 */
- 	if (clone_args->child_stack)
--		child_sp = clone_args->child_stack +
--			clone_args->child_stack_size - 1;
-+		child_sp = (clone_args->child_stack +
-+			    clone_args->child_stack_size - 1) & ~0xf;
- 	else
- 		child_sp = 0;
- 
-@@ -50,7 +55,6 @@ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
- 	my_args.child_stack_size = 0;
- 
- 	newpid = __eclone(fn,
--			  (void *)child_sp,
- 			  clone_flags_low,
- 			  fn_arg,
- 			  &my_args,
-diff --git a/clone_ppc_.S b/clone_ppc_.S
-index ebc07f3..b7e50e3 100644
---- a/clone_ppc_.S
-+++ b/clone_ppc_.S
-@@ -20,12 +20,11 @@
- #endif
- 
- /* int [r3] eclone(int (*fn)(void *arg) [r3],
-- *                          void *child_sp [r4],
-- *                          int flags [r5],
-- *                          void *fn_arg [r6],
-- *                          struct clone_args *args [r7],
-- *                          size_t args_size [r8],
-- *                          pid_t *pids [r9]);
-+ *                          int flags [r4],
-+ *                          void *fn_arg [r5],
-+ *                          struct clone_args *args [r6],
-+ *                          size_t args_size [r7],
-+ *                          pid_t *pids [r8]);
-  * Creates a child task with the pids specified by pids.
-  * Returns to parent only, child execution and exit is handled here.
-  * On error, returns negated errno.  On success, returns the pid of the child
-@@ -40,25 +39,18 @@ __eclone:
- 	/* Set up parent's stack frame. */
- 	stwu	r1,-32(r1)
- 
--	/* Save non-volatiles (r28-r31) which we plan to use. */
--	stmw	r28,16(r1)
-+	/* Save non-volatiles (r30-r31) which we plan to use. */
-+	stmw	r30,16(r1)
- 
--	/* Set up child's stack frame. */
--	clrrwi	r4,r4,4
--	li	r0,0
--	stw	r0,-16(r4)
--
--	/* Save fn, stack pointer, flags, and fn_arg across system call. */
--	mr	r28,r3
--	mr	r29,r4
--	mr	r30,r5
--	mr	r31,r6
-+	/* Save fn and fn_arg across system call. */
-+	mr	r30,r3
-+	mr	r31,r5
- 
- 	/* Set up arguments for system call. */
--	mr	r3,r5	/* flags */
--	mr	r4,r7	/* clone_args */
--	mr	r5,r8	/* clone_args' size */
--	mr	r6,r9	/* pids */
-+	mr	r3,r4	/* flags */
-+	mr	r4,r6	/* clone_args */
-+	mr	r5,r7	/* clone_args' size */
-+	mr	r6,r8	/* pids */
- 
- 	/* Do the system call */
- 	li	r0,__NR_eclone
-@@ -70,7 +62,7 @@ __eclone:
- 	bne	cr1,eclone_parent
- 
- 	/* Child. Call fn. */
--	mtctr	r28
-+	mtctr	r30
- 	mr	r3,r31
- 	bctrl
- 
-@@ -80,7 +72,7 @@ __eclone:
- 
- eclone_parent:
- 	/* Restore non-volatiles. */
--	lmw	r28,16(r1)
-+	lmw	r30,16(r1)
- 
- 	addi	r1,r1,32
- 
++	return stk->addr + page_size();
++#else
++	/*
++	 * Otherwise return the highest address between the guard pages.
++	 * glibc's clone wrappers apply any necessary alignment.
++	 */
++	return (stk->addr + stk->size - page_size()) - 1;
++#endif
++}
+diff --git a/genstack.h b/genstack.h
+new file mode 100644
+index 0000000..6970d99
+--- /dev/null
++++ b/genstack.h
+@@ -0,0 +1,22 @@
++#ifndef _GENSTACK_H_
++#define _GENSTACK_H_
++
++#include <stdbool.h>
++#include <stdint.h>
++
++/* A generic stack API. */
++
++struct genstack;
++typedef struct genstack *genstack;
++
++extern struct genstack *genstack_alloc(size_t size);
++
++extern void genstack_release(struct genstack *stack);
++
++extern size_t genstack_size(const struct genstack *stack);
++
++extern void *genstack_base(const struct genstack *stack);
++
++extern void *genstack_sp(const struct genstack *stack);
++
++#endif
 -- 
 1.6.0.6
