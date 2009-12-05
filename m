@@ -1,7 +1,8 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/3] checkpoint/powerpc: fix 32-bit build
-Date: Fri,  4 Dec 2009 20:48:25 -0600
-Message-ID: <1259981307-24936-2-git-send-email-ntl@pobox.com>
+Subject: [PATCH 3/3] checkpoint/powerpc: warn if full register state
+	unavailable
+Date: Fri,  4 Dec 2009 20:48:27 -0600
+Message-ID: <1259981307-24936-4-git-send-email-ntl@pobox.com>
 References: <1259981307-24936-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,27 +22,27 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Need to cast u64 to unsigned long before casting it to a pointer type.
+Emit a warning if we attempt to checkpoint a task for which the user
+nonvolatile register state (r13-r31) has not been saved.  This should
+not ever happen.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/kernel/process.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ arch/powerpc/mm/checkpoint.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/powerpc/kernel/process.c b/arch/powerpc/kernel/process.c
-index c1900b3..457c269 100644
---- a/arch/powerpc/kernel/process.c
-+++ b/arch/powerpc/kernel/process.c
-@@ -939,8 +939,8 @@ int sys_eclone(unsigned long clone_flags_low,
+diff --git a/arch/powerpc/mm/checkpoint.c b/arch/powerpc/mm/checkpoint.c
+index de18467..2634011 100644
+--- a/arch/powerpc/mm/checkpoint.c
++++ b/arch/powerpc/mm/checkpoint.c
+@@ -107,6 +107,8 @@ static void checkpoint_gprs(struct ckpt_hdr_cpu *cpu_hdr,
  
- 	nr_pids = kclone_args.nr_pids;
+ 	cpu_hdr->pt_regs_size = sizeof(*pt_regs);
+ 	pt_regs = task_pt_regs(task);
++	WARN_ON(!FULL_REGS(pt_regs));
++
+ 	cpu_hdr->pt_regs = *pt_regs;
  
--	parent_tidp = (int __user *)kclone_args.parent_tid_ptr;
--	child_tidp = (int __user *)kclone_args.child_tid_ptr;
-+	parent_tidp = (int __user *)(unsigned long)kclone_args.parent_tid_ptr;
-+	child_tidp = (int __user *)(unsigned long)kclone_args.child_tid_ptr;
- 
- #ifdef CONFIG_PPC64
- 	if (test_thread_flag(TIF_32BIT)) {
+ 	if (task == current)
 -- 
 1.6.0.6
