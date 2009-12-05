@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/5] user-cr: add generic stack API
-Date: Fri,  4 Dec 2009 23:02:29 -0600
-Message-ID: <1259989351-28552-4-git-send-email-ntl@pobox.com>
+Subject: [PATCH 5/5] user-cr: use genstack API in nsexeccwp
+Date: Fri,  4 Dec 2009 23:02:31 -0600
+Message-ID: <1259989351-28552-6-git-send-email-ntl@pobox.com>
 References: <1259989351-28552-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,170 +21,59 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-A few problems exist with the management of stacks for clone/eclone in
-the restart utility.
-
-* Stacks are allocated from the heap via malloc.  This means any
-  mishandling of the the stack setup by the platform eclone code can
-  result in silent data corruption.  At a time when architecture
-  support for eclone is an ongoing effort, this seems unwise...
-
-* Determining a suitable stack pointer to pass to clone(2) is
-  platform-dependent; we don't handle e.g. parisc where the stack
-  grows upwards.
-
-* There are at least two cases (ckpt_coordinator_pidns and
-  ckpt_fork_feeder) where the stack pointer provided to
-  clone(2) is outside of the region allocated.
-
-To address these issues, introduce an opaque "genstack" (generic
-stack) type and accessor functions.  Stacks are allocated via mmap()
-and guard pages are instantiated at both ends.  The accessor functions
-provide suitable values for passing to clone(2) and eclone(2) (via
-struct clone_args in the latter case).
-
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- genstack.c |  101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- genstack.h |   22 +++++++++++++
- 2 files changed, 123 insertions(+), 0 deletions(-)
- create mode 100644 genstack.c
- create mode 100644 genstack.h
+ Makefile    |    2 +-
+ nsexeccwp.c |   11 ++++++-----
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/genstack.c b/genstack.c
-new file mode 100644
-index 0000000..c552d04
---- /dev/null
-+++ b/genstack.c
-@@ -0,0 +1,101 @@
-+#include <stdbool.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <sys/mman.h>
-+
+diff --git a/Makefile b/Makefile
+index b1485cb..35188f9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -39,7 +39,7 @@ restart: CFLAGS += -D__REENTRANT -pthread
+ ifneq ($(SUBARCH),)
+ restart: clone_$(SUBARCH).o genstack.o
+ restart: CFLAGS += -DARCH_HAS_ECLONE
+-nsexeccwp: clone_$(SUBARCH).o
++nsexeccwp: clone_$(SUBARCH).o genstack.o
+ nsexeccwp: CFLAGS += -DARCH_HAS_ECLONE
+ endif
+ 
+diff --git a/nsexeccwp.c b/nsexeccwp.c
+index d3853f0..859b6c3 100644
+--- a/nsexeccwp.c
++++ b/nsexeccwp.c
+@@ -18,6 +18,7 @@
+ 
+ #include "clone.h"
+ #include "eclone.h"
 +#include "genstack.h"
-+
-+struct genstack {
-+	void *addr;  /* Return value from mmap. Accessors must account
-+		      * for guard pages at both ends.
-+		      */
-+	size_t size; /* Size of the region as passed to mmap. */
-+};
-+
-+static size_t page_size(void)
-+{
-+	return sysconf(_SC_PAGESIZE);
-+}
-+
-+/* Allocate a stack region with guard pages (PROT_NONE) at both ends.
-+ * The size requested will be rounded up to the system page size.
-+ * Callers must check for errors with genstack_err().
-+ */
-+struct genstack *genstack_alloc(size_t sz)
-+{
-+	struct genstack *stk;
-+	int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
-+	int mmap_prot = PROT_READ | PROT_WRITE;
-+	void *addr;
-+
-+	/* Align requested size up to page boundary */
-+	sz = (sz + page_size() - 1) & (~(page_size() - 1));
-+
-+	if (sz == 0)
-+		return NULL;
-+
-+	stk = malloc(sizeof(*stk));
-+	if (!stk)
-+		return NULL;
-+
-+	/* Make space for guard pages */
-+	sz += page_size() * 2;
-+
-+	addr = mmap(NULL, sz, mmap_prot, mmap_flags, -1, 0);
-+	if (addr == MAP_FAILED) {
-+		free(stk);
-+		return NULL;
-+	}
-+
-+	/* guard pages */
-+	mprotect(addr, page_size(), PROT_NONE);
-+	mprotect(addr + sz - page_size(), page_size(), PROT_NONE);
-+
-+	stk->addr = addr;
-+	stk->size = sz;
-+
-+	return stk;
-+}
-+
-+/* Unmap the stack region. */
-+void genstack_release(struct genstack *stk)
-+{
-+	munmap(stk->addr, stk->size);
-+	free(stk);
-+}
-+
-+/* Return the size of the usable stack region.  Suitable for providing
-+ * the child_stack_size value for struct clone_args.
-+ */
-+size_t genstack_size(const struct genstack *stk)
-+{
-+	return stk->size - (page_size() * 2);
-+}
-+
-+/* Return the lowest usable address in the stack region.  Suitable for
-+ * providing the child_stack value for struct clone_args.
-+ */
-+void *genstack_base(const struct genstack *stk)
-+{
-+	return stk->addr + page_size();
-+}
-+
-+/* Return a suitable stack pointer value for passing to clone(2),
-+ * accounting for platform differences in stack behavior.
-+ */
-+void *genstack_sp(const struct  genstack *stk)
-+{
-+#ifdef __hppa__
-+	/*
-+	 * If stack grows upwards, return the lowest address between
-+	 * the guard pages.
-+	 */
-+	return stk->addr + page_size();
-+#else
-+	/*
-+	 * Otherwise return the highest address between the guard pages.
-+	 * glibc's clone wrappers apply any necessary alignment.
-+	 */
-+	return (stk->addr + stk->size - page_size()) - 1;
-+#endif
-+}
-diff --git a/genstack.h b/genstack.h
-new file mode 100644
-index 0000000..6970d99
---- /dev/null
-+++ b/genstack.h
-@@ -0,0 +1,22 @@
-+#ifndef _GENSTACK_H_
-+#define _GENSTACK_H_
-+
-+#include <stdbool.h>
-+#include <stdint.h>
-+
-+/* A generic stack API. */
-+
-+struct genstack;
-+typedef struct genstack *genstack;
-+
-+extern struct genstack *genstack_alloc(size_t size);
-+
-+extern void genstack_release(struct genstack *stack);
-+
-+extern size_t genstack_size(const struct genstack *stack);
-+
-+extern void *genstack_base(const struct genstack *stack);
-+
-+extern void *genstack_sp(const struct genstack *stack);
-+
-+#endif
+ 
+ extern pid_t getpgid(pid_t pid);
+ extern pid_t getsid(pid_t pid);
+@@ -270,17 +271,17 @@ int main(int argc, char *argv[])
+ 
+ 	if (use_clone) {
+ 		struct clone_args clone_args;
+-		int stacksize = 4*getpagesize();
+-		void *stack = malloc(stacksize);
++		size_t stacksize = 4 * sysconf(_SC_PAGESIZE);
++		genstack stack = genstack_alloc(stacksize);
+ 
+ 		if (!stack) {
+-			perror("malloc");
++			perror("genstack_alloc");
+ 			return -1;
+ 		}
+ 
+ 		memset(&clone_args, 0, sizeof(clone_args));
+-		clone_args.child_stack = (unsigned long)stack;
+-		clone_args.child_stack_size = stacksize;
++		clone_args.child_stack = (unsigned long)genstack_base(stack);
++		clone_args.child_stack_size = genstack_size(stack);
+ 		clone_args.nr_pids = nr_pids;
+ 
+ 		printf("about to clone with %lx\n", flags);
 -- 
 1.6.0.6
