@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 1/3] c/r: call restore_notify_error for restart (not
-	checkpoint !)
-Date: Sun,  6 Dec 2009 15:08:33 -0500
-Message-ID: <1260130113-2423-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 2/3] c/r: kread/kwrite() to abort if CKPT_CTX_ERROR is set
+Date: Sun,  6 Dec 2009 15:09:11 -0500
+Message-ID: <1260130151-2500-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,110 +18,40 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This is useful particularly in restart to force a task that is
+restoring to respond quickly to an error condition due to another
+task, instead of only detecting it when it completes (or fails).
+For example, when a restarting tasks activates the next task, and
+then fails.
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/restart.c       |   25 +++++--------------------
- checkpoint/sys.c           |    4 ++--
- include/linux/checkpoint.h |    8 ++++++++
- 3 files changed, 15 insertions(+), 22 deletions(-)
+ checkpoint/sys.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 88d791b..7c79419 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -863,9 +863,9 @@ static int wait_task_active(struct ckpt_ctx *ctx)
- 				       ckpt_test_ctx_error(ctx));
- 	ckpt_debug("active %d < %d (ret %d, errno %d)\n",
- 		   ctx->active_pid, ctx->nr_pids, ret, ctx->errno);
--	if (!ret && ckpt_test_ctx_error(ctx))
--		ret = -EBUSY;
--	return ret;
-+	if (ckpt_test_ctx_error(ctx))
-+		return ckpt_get_error(ctx);
-+	return 0;
- }
- 
- static int wait_task_sync(struct ckpt_ctx *ctx)
-@@ -874,7 +874,7 @@ static int wait_task_sync(struct ckpt_ctx *ctx)
- 	wait_event_interruptible(ctx->waitq, ckpt_test_ctx_complete(ctx));
- 	ckpt_debug("task sync done (errno %d)\n", ctx->errno);
- 	if (ckpt_test_ctx_error(ctx))
--		return -EBUSY;
-+		return ckpt_get_error(ctx);
- 	return 0;
- }
- 
-@@ -1127,14 +1127,6 @@ static int wait_all_tasks_finish(struct ckpt_ctx *ctx)
- 
- 	ret = wait_for_completion_interruptible(&ctx->complete);
- 	ckpt_debug("final sync kflags %#lx (ret %d)\n", ctx->kflags, ret);
--	/*
--	 * Usually when restart fails, the restarting task will first
--	 * set @ctx->errno before waking us up. In the rare event that
--	 * @ctx->errno is unset, we must have been interrupted and
--	 * then checked for an error prior to ctx->errno update...
--	 */
--	if (ckpt_test_ctx_error(ctx))
--		ret = ctx->errno ? ctx->errno : -EINTR;
- 
- 	return ret;
- }
-@@ -1303,14 +1295,7 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 
- 	if (ckpt_test_ctx_error(ctx)) {
- 		destroy_descendants(ctx);
--		/*
--		 * If a restaring task (or we) reported an error, that set
--		 * out return value to that error. (Need the unlikely loop
--		 * because the error is recorded after the flag is set).
--		 */
--		while (!ctx->errno)
--			yield();
--		ret = ctx->errno;
-+		ret = ckpt_get_error(ctx);
- 	} else {
- 		ckpt_set_ctx_success(ctx);
- 		wake_up_all(&ctx->waitq);
 diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 749e2fd..dbee469 100644
+index dbee469..afcfa1e 100644
 --- a/checkpoint/sys.c
 +++ b/checkpoint/sys.c
-@@ -333,7 +333,7 @@ static void ckpt_set_error(struct ckpt_ctx *ctx, int err)
- 	if (!ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR)) {
- 		ctx->errno = err;
- 		/* on restart, notify all tasks in restarting subtree */
--		if (!(ctx->kflags & CKPT_CTX_RESTART))
-+		if (ctx->kflags & CKPT_CTX_RESTART)
- 			restore_notify_error(ctx);
- 	}
- }
-@@ -480,7 +480,7 @@ void _ckpt_msg_complete(struct ckpt_ctx *ctx)
- 	if (ctx->msglen <= 1)
- 		return;
+@@ -65,6 +65,9 @@ int ckpt_kwrite(struct ckpt_ctx *ctx, void *addr, int count)
+ 	mm_segment_t fs;
+ 	int ret;
  
--	if (ctx->kflags & CKPT_CTX_CHECKPOINT && ctx->errno) {
-+	if (ctx->kflags & CKPT_CTX_CHECKPOINT && ckpt_test_ctx_error(ctx)) {
- 		ret = ckpt_write_obj_type(ctx, NULL, 0, CKPT_HDR_ERROR);
- 		if (!ret)
- 			ret = ckpt_write_string(ctx, ctx->msg, ctx->msglen);
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 1f85162..c6c8d56 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -126,6 +126,14 @@ extern void sock_listening_list_free(struct list_head *head);
- #define ckpt_test_ctx_complete(ctx)  \
- 	((ctx)->kflags & (CKPT_CTX_SUCCESS | CKPT_CTX_ERROR))
- 
-+static inline int ckpt_get_error(struct ckpt_ctx *ctx)
-+{
-+	/* errno is set after error flag: make sure we don't miss it */
-+	while (!ctx->errno)
-+		yield();
-+	return ctx->errno;
-+}
++	if (ckpt_test_ctx_error(ctx))
++		return ckpt_get_error(ctx);
 +
- extern void restore_notify_error(struct ckpt_ctx *ctx);
+ 	fs = get_fs();
+ 	set_fs(KERNEL_DS);
+ 	ret = _ckpt_kwrite(ctx->file, addr, count);
+@@ -102,6 +105,9 @@ int ckpt_kread(struct ckpt_ctx *ctx, void *addr, int count)
+ 	mm_segment_t fs;
+ 	int ret;
  
- /* obj_hash */
++	if (ckpt_test_ctx_error(ctx))
++		return ckpt_get_error(ctx);
++
+ 	fs = get_fs();
+ 	set_fs(KERNEL_DS);
+ 	ret = _ckpt_kread(ctx->file , addr, count);
 -- 
 1.6.3.3
