@@ -1,14 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cr_tests: fix syscall numbers for powerpc
-Date: Wed, 9 Dec 2009 10:23:24 -0600
-Message-ID: <20091209162324.GA18327@us.ibm.com>
-References: <1259983334-25854-1-git-send-email-ntl@pobox.com>
+Subject: Re: [PATCH 1/2] c/r: [x86_32] sys_restore to use ptregs prototype
+Date: Wed, 9 Dec 2009 10:52:47 -0600
+Message-ID: <20091209165247.GA20538@us.ibm.com>
+References: <1260131469-2917-1-git-send-email-orenl@cs.columbia.edu>
+	<1260131469-2917-2-git-send-email-orenl@cs.columbia.edu>
+	<4B1C357C.2090003@cs.columbia.edu>
+	<1260219307.7151.3.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1259983334-25854-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1260219307.7151.3.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,36 +26,70 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> Update to the values for ckpt-v19-rc2, and add eclone.
+> 
+> > > * Changes the syscall prototype and definition to accept the pt_regs
+> > >   struct as an argument (into %eax register).
+> > 
+> > I forgot to mention that this of course breaks s390 and ppc: you
+> > need to provide an arch-dependent sys_restart() similar to how it's
+> > done here.
+> 
+> Thanks, here's the fixup for powerpc.
 
-Thanks, both applied.
+Does this need to be in a #ifdef CONFIG_CHECKPOINT?
 
+Near as I can tell there is no dummy do_sys_restart() for the
+CONFIG_CHECKPOINT=n case.
+
+> >From 981dca4f3a879827d6e19a0cf32c7fd25b08a878 Mon Sep 17 00:00:00 2001
+> From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> Date: Mon, 7 Dec 2009 14:51:13 -0600
+> Subject: [PATCH] checkpoint/powerpc: fix up restart code for ptregscall semantics
+> 
+> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 > ---
->  cr.h |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
+>  arch/powerpc/kernel/process.c |   20 ++++++++++++++++++++
+>  1 files changed, 20 insertions(+), 0 deletions(-)
 > 
-> diff --git a/cr.h b/cr.h
-> index a58c2e4..8acd750 100644
-> --- a/cr.h
-> +++ b/cr.h
-> @@ -71,12 +71,16 @@
->  /* parisc unsupported. */
->  #if __powerpc__
+> diff --git a/arch/powerpc/kernel/process.c b/arch/powerpc/kernel/process.c
+> index 457c269..f9da9eb 100644
+> --- a/arch/powerpc/kernel/process.c
+> +++ b/arch/powerpc/kernel/process.c
+> @@ -30,6 +30,7 @@
+>  #include <linux/init_task.h>
+>  #include <linux/module.h>
+>  #include <linux/kallsyms.h>
+> +#include <linux/checkpoint.h>
+>  #include <linux/mqueue.h>
+>  #include <linux/hardirq.h>
+>  #include <linux/utsname.h>
+> @@ -990,6 +991,25 @@ out:
+>  	return error;
+>  }
 > 
-> +#ifndef __NR_eclone
-> +#define __NR_eclone 323
-> +#endif
+> +int sys_restart(unsigned long a0, unsigned long a1, unsigned long a2,
+> +	       unsigned long a3, unsigned long a4, unsigned long a5,
+> +	       struct pt_regs *regs)
+> +{
+> +	unsigned long flags;
+> +	pid_t pid;
+> +	int logfd;
+> +	int fd;
 > +
->  #ifndef __NR_checkpoint
-> -#define __NR_checkpoint 323
-> +#define __NR_checkpoint 324
->  #endif
-> 
->  #ifndef __NR_restart
-> -#define __NR_restart 324
-> +#define __NR_restart 325
->  #endif
-> 
->  #elif __s390x__
+> +	CHECK_FULL_REGS(regs);
+> +
+> +	pid = a0;
+> +	fd = a1;
+> +	flags = a2;
+> +	logfd = a3;
+> +
+> +	return do_sys_restart(pid, fd, flags, logfd);
+> +}
+> +
+>  #ifdef CONFIG_IRQSTACKS
+>  static inline int valid_irq_stack(unsigned long sp, struct task_struct *p,
+>  				  unsigned long nbytes)
 > -- 
 > 1.6.0.6
+> 
+> 
