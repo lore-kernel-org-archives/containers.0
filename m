@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/2] c/r: [x86_32] sys_restore to use ptregs prototype
-Date: Wed, 9 Dec 2009 10:52:47 -0600
-Message-ID: <20091209165247.GA20538@us.ibm.com>
+Date: Wed, 9 Dec 2009 11:02:05 -0600
+Message-ID: <20091209170205.GA21507@us.ibm.com>
 References: <1260131469-2917-1-git-send-email-orenl@cs.columbia.edu>
 	<1260131469-2917-2-git-send-email-orenl@cs.columbia.edu>
 	<4B1C357C.2090003@cs.columbia.edu>
@@ -25,71 +25,36 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> 
-> > > * Changes the syscall prototype and definition to accept the pt_regs
-> > >   struct as an argument (into %eax register).
-> > 
-> > I forgot to mention that this of course breaks s390 and ppc: you
-> > need to provide an arch-dependent sys_restart() similar to how it's
-> > done here.
-> 
-> Thanks, here's the fixup for powerpc.
+Here I guess is the s390 version.  If we need the pt_regs later, we
+can get it using get_pt_regs(current) as the clone wrapper right
+above it does.
 
-Does this need to be in a #ifdef CONFIG_CHECKPOINT?
+Subject: [PATCH 1/1] define s390x sys_restart wrapper
 
-Near as I can tell there is no dummy do_sys_restart() for the
-CONFIG_CHECKPOINT=n case.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/kernel/process.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-> >From 981dca4f3a879827d6e19a0cf32c7fd25b08a878 Mon Sep 17 00:00:00 2001
-> From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-> Date: Mon, 7 Dec 2009 14:51:13 -0600
-> Subject: [PATCH] checkpoint/powerpc: fix up restart code for ptregscall semantics
-> 
-> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-> ---
->  arch/powerpc/kernel/process.c |   20 ++++++++++++++++++++
->  1 files changed, 20 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/powerpc/kernel/process.c b/arch/powerpc/kernel/process.c
-> index 457c269..f9da9eb 100644
-> --- a/arch/powerpc/kernel/process.c
-> +++ b/arch/powerpc/kernel/process.c
-> @@ -30,6 +30,7 @@
->  #include <linux/init_task.h>
->  #include <linux/module.h>
->  #include <linux/kallsyms.h>
-> +#include <linux/checkpoint.h>
->  #include <linux/mqueue.h>
->  #include <linux/hardirq.h>
->  #include <linux/utsname.h>
-> @@ -990,6 +991,25 @@ out:
->  	return error;
->  }
-> 
-> +int sys_restart(unsigned long a0, unsigned long a1, unsigned long a2,
-> +	       unsigned long a3, unsigned long a4, unsigned long a5,
-> +	       struct pt_regs *regs)
-> +{
-> +	unsigned long flags;
-> +	pid_t pid;
-> +	int logfd;
-> +	int fd;
-> +
-> +	CHECK_FULL_REGS(regs);
-> +
-> +	pid = a0;
-> +	fd = a1;
-> +	flags = a2;
-> +	logfd = a3;
-> +
-> +	return do_sys_restart(pid, fd, flags, logfd);
-> +}
-> +
->  #ifdef CONFIG_IRQSTACKS
->  static inline int valid_irq_stack(unsigned long sp, struct task_struct *p,
->  				  unsigned long nbytes)
-> -- 
-> 1.6.0.6
-> 
-> 
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 0a59317..087f52c 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -241,6 +241,15 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
+ 		       parent_tidptr, child_tidptr);
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++extern long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
++SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
++		int, logfd)
++{
++	return do_sys_restart(pid, fd, flags, logfd);
++}
++#endif
++
+ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+ 		uca, int, args_size, pid_t __user *, pids)
+ {
+-- 
+1.6.1
