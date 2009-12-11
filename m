@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH][cr-tests] Ensure pthread stack attributes are restored
-Date: Fri, 11 Dec 2009 09:20:26 -0600
-Message-ID: <20091211152026.GA28032@us.ibm.com>
+Date: Fri, 11 Dec 2009 09:34:02 -0600
+Message-ID: <20091211153402.GA28867@us.ibm.com>
 References: <20091211041126.GC20947@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,14 +23,16 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Wed, 9 Dec 2009 18:31:47 +0530
-> Subject: [PATCH] Ensure pthread stack attributes are restored
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> +++ b/process-tree/run-pthread2.sh
+> @@ -0,0 +1,206 @@
+> +#!/bin/bash
+> +
+> +source ../common.sh
+> +
+> +#dir=`mktemp -p . -d -t cr_pthread2_XXXXXXX` || (echo "mktemp failed"; exit 1)
+> +dir=cr_pthread2
 
-Thanks - all applied, plus a patch to make pthread2 compile on
-64-bit (int vs size_t vs pthread).
+Note that this means we won't be able to run multiple instances in
+parallel.  Why did you need to do this?
 
 -serge
