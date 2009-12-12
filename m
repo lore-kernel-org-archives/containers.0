@@ -1,18 +1,19 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Subject: Re: [PATCH RFC v2 4/4] memcg: implement memory thresholds
-Date: Sat, 12 Dec 2009 15:11:33 +0200
-Message-ID: <cc557aab0912120511r7c83e97di3f97d2bb5eae326c__37887.4024878771$1260623541$gmane$org@mail.gmail.com>
+Date: Sat, 12 Dec 2009 15:13:52 +0200
+Message-ID: <cc557aab0912120513q6e9cd518y1af2c6fbbd407b85__39381.2392642305$1260623672$gmane$org@mail.gmail.com>
 References: <cover.1260571675.git.kirill@shutemov.name>
 	<ca59c422b495907678915db636f70a8d029cbf3a.1260571675.git.kirill@shutemov.name>
 	<c1847dfb5c4fed1374b7add236d38e0db02eeef3.1260571675.git.kirill@shutemov.name>
 	<747ea0ec22b9348208c80f86f7a813728bf8e50a.1260571675.git.kirill@shutemov.name>
 	<9e6e8d687224c6cbc54281f7c3d07983f701f93d.1260571675.git.kirill@shutemov.name>
 	<20091212121902.e95f9561.d-nishimura@mtf.biglobe.ne.jp>
+	<cc557aab0912120511r7c83e97di3f97d2bb5eae326c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091212121902.e95f9561.d-nishimura-1T/T2zRcyZr+G+EEi5ephHgSJqDPrsil@public.gmane.org>
+In-Reply-To: <cc557aab0912120511r7c83e97di3f97d2bb5eae326c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,39 +27,11 @@ To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCBEZWMgMTIsIDIwMDkgYXQgNToxOSBBTSwgRGFpc3VrZSBOaXNoaW11cmEKPGQtbmlz
-aGltdXJhQG10Zi5iaWdsb2JlLm5lLmpwPiB3cm90ZToKPj4gQEAgLTU2LDYgKzYxLDcgQEAgc3Rh
-dGljIGludCByZWFsbHlfZG9fc3dhcF9hY2NvdW50IF9faW5pdGRhdGEgPSAxOyAvKiBmb3IgcmVt
-ZW1iZXIgYm9vdCBvcHRpb24qLwo+Pgo+PiDCoHN0YXRpYyBERUZJTkVfTVVURVgobWVtY2dfdGFz
-a2xpc3QpOyAvKiBjYW4gYmUgaG9sZCB1bmRlciBjZ3JvdXBfbXV0ZXggKi8KPiBUaGlzIG11dGV4
-IGhhcyBhbHJlYWR5IHJlbW92ZWQgaW4gY3VycmVudCBtbW90bS4KPiBQbGVhc2Ugd3JpdGUgYSBw
-YXRjaCBmb3IgbWVtY2cgYmFzZWQgb24gbW1vdC4KCk9rLgoKPgo+PiDCoCNkZWZpbmUgU09GVExJ
-TUlUX0VWRU5UU19USFJFU0ggKDEwMDApCj4+ICsjZGVmaW5lIFRIUkVTSE9MRFNfRVZFTlRTX1RI
-UkVTSCAoMTAwKQo+Pgo+PiDCoC8qCj4+IMKgICogU3RhdGlzdGljcyBmb3IgbWVtb3J5IGNncm91
-cC4KPgo+IChzbmlwKQo+Cj4+IEBAIC0xMzYzLDYgKzEzOTUsMTEgQEAgc3RhdGljIGludCBfX21l
-bV9jZ3JvdXBfdHJ5X2NoYXJnZShzdHJ1Y3QgbW1fc3RydWN0ICptbSwKPj4gwqAgwqAgwqAgaWYg
-KG1lbV9jZ3JvdXBfc29mdF9saW1pdF9jaGVjayhtZW0pKQo+PiDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCBtZW1fY2dyb3VwX3VwZGF0ZV90cmVlKG1lbSwgcGFnZSk7Cj4+IMKgZG9uZToKPj4gKyDCoCDC
-oCBpZiAobWVtX2Nncm91cF90aHJlc2hvbGRfY2hlY2sobWVtKSkgewo+PiArIMKgIMKgIMKgIMKg
-IMKgIMKgIG1lbV9jZ3JvdXBfdGhyZXNob2xkKG1lbSwgZmFsc2UpOwo+PiArIMKgIMKgIMKgIMKg
-IMKgIMKgIGlmIChkb19zd2FwX2FjY291bnQpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgbWVtX2Nncm91cF90aHJlc2hvbGQobWVtLCB0cnVlKTsKPj4gKyDCoCDCoCB9Cj4+IMKg
-IMKgIMKgIHJldHVybiAwOwo+PiDCoG5vbWVtOgo+PiDCoCDCoCDCoCBjc3NfcHV0KCZtZW0tPmNz
-cyk7Cj4+IEBAIC0xOTA2LDYgKzE5NDMsMTEgQEAgX19tZW1fY2dyb3VwX3VuY2hhcmdlX2NvbW1v
-bihzdHJ1Y3QgcGFnZSAqcGFnZSwgZW51bSBjaGFyZ2VfdHlwZSBjdHlwZSkKPj4KPj4gwqAgwqAg
-wqAgaWYgKG1lbV9jZ3JvdXBfc29mdF9saW1pdF9jaGVjayhtZW0pKQo+PiDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCBtZW1fY2dyb3VwX3VwZGF0ZV90cmVlKG1lbSwgcGFnZSk7Cj4+ICsgwqAgwqAgaWYg
-KG1lbV9jZ3JvdXBfdGhyZXNob2xkX2NoZWNrKG1lbSkpIHsKPj4gKyDCoCDCoCDCoCDCoCDCoCDC
-oCBtZW1fY2dyb3VwX3RocmVzaG9sZChtZW0sIGZhbHNlKTsKPj4gKyDCoCDCoCDCoCDCoCDCoCDC
-oCBpZiAoZG9fc3dhcF9hY2NvdW50KQo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IG1lbV9jZ3JvdXBfdGhyZXNob2xkKG1lbSwgdHJ1ZSk7Cj4+ICsgwqAgwqAgfQo+PiDCoCDCoCDC
-oCAvKiBhdCBzd2Fwb3V0LCB0aGlzIG1lbWNnIHdpbGwgYmUgYWNjZXNzZWQgdG8gcmVjb3JkIHRv
-IHN3YXAgKi8KPj4gwqAgwqAgwqAgaWYgKGN0eXBlICE9IE1FTV9DR1JPVVBfQ0hBUkdFX1RZUEVf
-U1dBUE9VVCkKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgY3NzX3B1dCgmbWVtLT5jc3MpOwo+IENh
-biAiaWYgKGRvX3N3YXBfYWNjb3VudCkiIGNoZWNrIGJlIG1vdmVkIGludG8gbWVtX2Nncm91cF90
-aHJlc2hvbGQgPwoKT2ssIEknbGwgbW92ZSBpdC4gSXQgd2lsbCBhZmZlY3QgcGVyZm9ybWFuY2Ug
-b2YKbWVtX2Nncm91cF9pbnZhbGlkYXRlX3RocmVzaG9sZHMoKSwKYnV0IEkgZG9uJ3QgdGhpbmsg
-dGhhdCBpdCdzIGltcG9ydGFudC4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Sat, Dec 12, 2009 at 3:11 PM, Kirill A. Shutemov
+<kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> Ok, I'll move it. It will affect performance of
+> mem_cgroup_invalidate_thresholds(),
+> but I don't think that it's important.
+
+s/mem_cgroup_invalidate_thresholds()/mem_cgroup_register_event() and
+mem_cgroup_unregister_event()/
