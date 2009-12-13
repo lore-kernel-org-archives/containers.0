@@ -1,90 +1,115 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
+From: Michael Stone <michael@laptop.org>
 Subject: Re: Network isolation with RLIMIT_NETWORK, cont'd.
-Date: Sun, 13 Dec 2009 02:05:19 -0800
-Message-ID: <m1ljh7jijk.fsf@fess.ebiederm.org>
-References: <20091213034418.GA4416@heat>
+Date: Sun, 13 Dec 2009 09:21:50 -0500
+Message-ID: <20091213142149.GB4777@heat>
+References: <m1ljh7jijk.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20091213034418.GA4416@heat> (Michael Stone's message of "Sat\, 12 Dec 2009 22\:44\:18 -0500")
-Sender: linux-security-module-owner@vger.kernel.org
-To: Michael Stone <michael@laptop.org>
-Cc: linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-security-module@vger.kernel.org, Andi Kleen <andi@firstfloor.org>, David Lang <david@lang.hm>, Oliver Hartkopp <socketcan@hartkopp.net>, Alan Cox <alan@lxorguk.ukuu.org.uk>, Herbert Xu <herbert@gondor.apana.org.au>, Valdis Kletnieks <Valdis.Kletnieks@vt.edu>, Bryan Donlan <bdonlan@gmail.com>, =?utf-8?Q?R=C3=A9mi?= Denis-Courmont <rdenis@simphalempin.com>, Evgeniy Polyakov <zbr@ioremap.net>, "C. Scott Ananian" <cscott@cscott.net>, James Morris <jmorris@namei.org>, Bernie Innocenti <bernie@codewiz.org>, Mark Seaborn <mrs@mythic-beasts.com>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1ljh7jijk.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Michael Stone <michael@laptop.org>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-security-module@vger.kernel.org, Andi Kleen <andi@firstfloor.org>, David Lang <david@lang.hm>, Oliver Hartkopp <socketcan@hartkopp.net>, Alan Cox <alan@lxorguk.ukuu.org.uk>, Herbert Xu <herbert@gondor.apana.org.au>, Valdis Kletnieks <Valdis.Kletnieks@vt.edu>, Bryan Donlan <bdonlan@gmail.com>, =?iso-8859-1?Q?R=E9mi?= Denis-Courmont <rdenis@simphalempin.com>, Evgeniy Polyakov <zbr@ioremap.net>, "C. Scott Ananian" <cscott@cscott.net>, James Morris <jmorris@namei.org>, Bernie Innocenti <bernie@codewiz.org>, Mark Seaborn <mrs@mythic-beasts.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
+Eric Biederman wrote:
 
-I have added the container's list to the cc as there is some overlap.
+> I have added the container's list to the cc as there is some overlap.
 
-Michael Stone <michael@laptop.org> writes:
+Good idea; thanks.
 
-> Dear lkml,
+> Overall what you have looks ad-hoc, and very special case which is
+> likely to impair maintenance in the future.
+
+Unfortunately, these are the semantics which are necessary to make further
+progress on sandboxing real Linux apps with the discretionary access control
+facilities which are available today.
+
+> You can in theory confuse a suid root application and cause it to take action
+> with it's elevated privileges that violate the security policy. 
+
+You're right, in theory. In practice, the setuid-root facility is a rather
+special escape hatch which *everyone* in this field knows must be carefully
+audited and maintained when building or updating trustworthy systems.
+
+Also, in practice, I'm not expecting perfection today. Nor was I last year, nor
+am I next year. What I am expecting is that the kernel will supply me (perhaps
+with my assistance along the way) with the access control facilities that I
+need to do my job in userland. This is one of them.
+
+> The network namespace has more potential to confuse existing applications
+> than your mechanism, but the problem seems to remain.
+
+I'm glad to hear that you find this mechanism to be comparatively less
+confusing.
+
+>>   1. ptrace() 
+>>      
+>>      It was pointed out by Alan Cox, Andi Kleen, and others that processes
+>>      which dropped their RLIMIT_NETWORK rlimit were still able to directly
+>>      perform networking through a ptrace()'d victim.
+>> 
+>>      The new patchset adds an access check to __ptrace_may_access() to prevent
+>>      this behavior.
 > 
-> A few months ago [1], I asked for feedback on a new network isolation primitive
-> named "RLIMIT_NETWORK" designed for use with Unix sandboxing utilities like
-> Rainbow, Plash, and friends [2]. Thank you to all those CC'ed for your helpful
-> early remarks.
+> Solve that with an unused uid.  
+
+I already do, in general. (As do the other people requesting this facility.)
+
+The reason for the __ptrace_may_access() check is that the logical way for
+*application authors* whose code is *already* running in a fresh uid to further
+improve system security is to separate their network I/O from their parsing
+code a process boundary and to drop networking privileges in the parser.
+
+>>   2. unshare(CLONE_NEWNET)
+>> 
+>>      It was pointed out by James Morris that network namespaces could be used
+>>      to implement behavior similar to the behavior this patchset is designed to
+>>      implement. To address this criticism, I added support for network
+>>      namespaces to my sandboxing utility (Rainbow).
+>> 
+>>      Unfortunately, I have discovered that network namespaces in their current
+>>      form are not appropriate for my use cases because they prevent the
+>>      namespace'd apps from connecting to the X server, even over plain old
+>>      AF_UNIX sockets.
+>
+>We discussed that a while ago, and there is no fundamental reason to
+>disallow opening unix domain sockets from another network namespace.
+
+I disagree. I like that the network namespaces have (fairly) clear semantics.
+They are excellent semantics for some of my other use cases, like testing
+networked software [1]. They're probably quite nice for full-blown
+containerization. They're just not right for the kind of lightweight sandboxing
+of complicated legacy apps that I'm doing.
+
+[1]: http://dev.laptop.org/git/users/mstone/dnshash/tree/docs/unit_testing.txt
+
+>> The RLIMIT_NETWORK facility I propose contains a specific exception for
+>> AF_UNIX filesystem sockets since those sockets are already bound by
+>> regular Unix discretionary access control.
 > 
-> Here is an updated patchset with responses to the following criticisms:
+> What is more significant than unix discretionary access control is the
+> fact that the set of available af_unix sockets you can bind to is filtered
+> by the mount namespace.
 
-Overall what you have looks addhoc, and very special case which is
-likely to impair maintenance in the future.
+Actually, the Unix DAC is far more important for my purposes. The reason is
+that it's unprivileged, already understood by literally *everyone* involved in
+Unix security, and it has the best tools support of any access control
+mechanism.
 
-Furthermore you have not addressed the primary issue that keeps
-unshare(CLONE_NEWNET) requiring root privileges.  You can in theory
-confuse a suid root application and cause it to take action with it's
-elevated privileges that violate the security policy.  The network
-namespace has more potential to confuse existing applications than
-your mechanism, but the problem seems to remain.
+For comparison, I do use CLONE_NEWNS mount namespaces and they've been a real
+pain because
 
->   1. ptrace() 
->      
->      It was pointed out by Alan Cox, Andi Kleen, and others that processes
->      which dropped their RLIMIT_NETWORK rlimit were still able to directly
->      perform networking through a ptrace()'d victim.
-> 
->      The new patchset adds an access check to __ptrace_may_access() to prevent
->      this behavior.
+   a) unlike in Plan 9, they're privileged,
 
-Solve that with an unused uid.  That ptrace_may_access check is
-completely non-intuitive, and a problem if we ever remove the current
-== task security module bug avoidance.
+   b) they greatly complicate debugging the isolated app because you see
+      different things inside and outside the namespace,
 
->   2. unshare(CLONE_NEWNET)
-> 
->      It was pointed out by James Morris that network namespaces could be used
->      to implement behavior similar to the behavior this patchset is designed to
->      implement. To address this criticism, I added support for network
->      namespaces to my sandboxing utility (Rainbow).
-> 
->      Unfortunately, I have discovered that network namespaces in their current
->      form are not appropriate for my use cases because they prevent the
->      namespace'd apps from connecting to the X server, even over plain old
->      AF_UNIX sockets.
+   c) there's no good way to manipulate them from userland, and
 
-We discussed that a while ago, and there is no fundamental reason to
-disallow opening unix domain sockets from another network namespace.
-The reason this has not been done, is that no one has taken a good
-hard look at the packet transmit path and said there are no technical
-problems for packets traversing between two network namespaces.
+   d) they're poorly documented outside of the mount man page.
 
-It is probably time to revisit that.
+Regards,
 
-
->      The RLIMIT_NETWORK facility I propose contains a specific exception for
->      AF_UNIX filesystem sockets since those sockets are already bound by
->      regular Unix discretionary access control.
-
-What is more significant that unix discretionary access control is the
-fact that the set of available af_unix sockets you can bind to is filtered
-by the mount namespace.
-
-
-With respect to the problem of handling suid root applications my long
-term plan is to finish the security credentials namespace aka
-unshare(NEWUSER).  Making the capabilities namespace local and
-changing all uid based checks from uid1 == uid2 to (ns1, uid1) ==
-(ns2, uid2).  At which point suid root applications will not be a
-problem because the problem root capabilities will not be available
-for them to acquire.
-
-Eric
+Michael
