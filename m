@@ -1,68 +1,90 @@
-From: Daisuke Nishimura <d-nishimura-1T/T2zRcyZr+G+EEi5ephHgSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH RFC v2 3/4] memcg: rework usage of stats by soft limit
-Date: Sun, 13 Dec 2009 10:30:21 +0900
-Message-ID: <20091213103021.405374b4.d-nishimura__8001.47839258916$1260667970$gmane$org@mtf.biglobe.ne.jp>
-References: <cover.1260571675.git.kirill@shutemov.name>
-	<ca59c422b495907678915db636f70a8d029cbf3a.1260571675.git.kirill@shutemov.name>
-	<c1847dfb5c4fed1374b7add236d38e0db02eeef3.1260571675.git.kirill@shutemov.name>
-	<747ea0ec22b9348208c80f86f7a813728bf8e50a.1260571675.git.kirill@shutemov.name>
-	<20091212125046.14df3134.d-nishimura@mtf.biglobe.ne.jp>
-	<cc557aab0912120506x56b9a707ob556035fdcf40a22@mail.gmail.com>
-	<20091212233409.60da66fb.d-nishimura@mtf.biglobe.ne.jp>
-	<cc557aab0912121146y276a8d26v8baee15be1f83a97@mail.gmail.com>
-Reply-To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: Network isolation with RLIMIT_NETWORK, cont'd.
+Date: Sun, 13 Dec 2009 02:05:19 -0800
+Message-ID: <m1ljh7jijk.fsf@fess.ebiederm.org>
+References: <20091213034418.GA4416@heat>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cc557aab0912121146y276a8d26v8baee15be1f83a97-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20091213034418.GA4416@heat> (Michael Stone's message of "Sat\, 12 Dec 2009 22\:44\:18 -0500")
+Sender: linux-security-module-owner@vger.kernel.org
+To: Michael Stone <michael@laptop.org>
+Cc: linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-security-module@vger.kernel.org, Andi Kleen <andi@firstfloor.org>, David Lang <david@lang.hm>, Oliver Hartkopp <socketcan@hartkopp.net>, Alan Cox <alan@lxorguk.ukuu.org.uk>, Herbert Xu <herbert@gondor.apana.org.au>, Valdis Kletnieks <Valdis.Kletnieks@vt.edu>, Bryan Donlan <bdonlan@gmail.com>, =?utf-8?Q?R=C3=A9mi?= Denis-Courmont <rdenis@simphalempin.com>, Evgeniy Polyakov <zbr@ioremap.net>, "C. Scott Ananian" <cscott@cscott.net>, James Morris <jmorris@namei.org>, Bernie Innocenti <bernie@codewiz.org>, Mark Seaborn <mrs@mythic-beasts.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCAxMiBEZWMgMjAwOSAyMTo0NjowOCArMDIwMAoiS2lyaWxsIEEuIFNodXRlbW92IiA8
-a2lyaWxsQHNodXRlbW92Lm5hbWU+IHdyb3RlOgoKPiBPbiBTYXQsIERlYyAxMiwgMjAwOSBhdCA0
-OjM0IFBNLCBEYWlzdWtlIE5pc2hpbXVyYQo+IDxkLW5pc2hpbXVyYUBtdGYuYmlnbG9iZS5uZS5q
-cD4gd3JvdGU6Cj4gPiBPbiBTYXQsIDEyIERlYyAyMDA5IDE1OjA2OjUyICswMjAwCj4gPiAiS2ly
-aWxsIEEuIFNodXRlbW92IiA8a2lyaWxsQHNodXRlbW92Lm5hbWU+IHdyb3RlOgo+ID4KPiA+PiBP
-biBTYXQsIERlYyAxMiwgMjAwOSBhdCA1OjUwIEFNLCBEYWlzdWtlIE5pc2hpbXVyYQo+ID4+IDxk
-LW5pc2hpbXVyYUBtdGYuYmlnbG9iZS5uZS5qcD4gd3JvdGU6Cj4gPj4gPiBBbmQgSUlVQywgaXQn
-cyB0aGUgc2FtZSBmb3IgeW91ciB0aHJlc2hvbGQgZmVhdHVyZSwgcmlnaHQgPwo+ID4+ID4gSSB0
-aGluayBpdCB3b3VsZCBiZSBiZXR0ZXI6Cj4gPj4gPgo+ID4+ID4gLSBkaXNjYXJkIHRoaXMgY2hh
-bmdlLgo+ID4+ID4gLSBpbiA0LzQsIHJlbmFtZSBtZW1fY2dyb3VwX3NvZnRfbGltaXRfY2hlY2sg
-dG8gbWVtX2Nncm91cF9ldmVudF9jaGVjaywKPiA+PiA+IMKgYW5kIGluc3RlYWQgb2YgYWRkaW5n
-IGEgbmV3IFNUQVQgY291bnRlciwgZG8gbGlrZToKPiA+PiA+Cj4gPj4gPiDCoCDCoCDCoCDCoGlm
-IChtZW1fY2dyb3VwX2V2ZW50X2NoZWNrKG1lbSkpIHsKPiA+PiA+IMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgbWVtX2Nncm91cF91cGRhdGVfdHJlZShtZW0sIHBhZ2UpOwo+ID4+ID4gwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgwqBtZW1fY2dyb3VwX3RocmVzaG9sZChtZW0pOwo+ID4+ID4gwqAgwqAgwqAg
-wqB9Cj4gPj4KPiA+PiBJIHRoaW5rIHRoYXQgbWVtX2Nncm91cF91cGRhdGVfdHJlZSgpIGFuZCBt
-ZW1fY2dyb3VwX3RocmVzaG9sZCgpIHNob3VsZCBiZQo+ID4+IHJ1biB3aXRoIGRpZmZlcmVudCBm
-cmVxdWVuY3kuIEhvdyB0byBzaGFyZSBNRU1fQ0dST1VQX1NUQVRfRVZFTlRTCj4gPj4gYmV0d2Vl
-biBzb2Z0IGxpbWl0cyBhbmQgdGhyZXNob2xkcyBpbiB0aGlzIGNhc2U/Cj4gPj4KPiA+IGhtbSwg
-Ym90aCBzb2Z0bGltaXQgYW5kIHlvdXIgdGhyZXNob2xkIGNvdW50IGV2ZW50cyBhdCB0aGUgc2Ft
-ZSBwbGFjZShjaGFyZ2UgYW5kIHVuY2hhcmdlKS4KPiA+IFNvLCBJIHRoaW5rIHRob3NlIGV2ZW50
-cyBjYW4gYmUgc2hhcmVkLgo+ID4gSXMgdGhlcmUgYW55IHJlYXNvbiB0aGV5IHNob3VsZCBydW4g
-aW4gZGlmZmVyZW50IGZyZXF1ZW5jeSA/Cj4gCj4gU09GVExJTUlUX0VWRU5UU19USFJFU0ggaXMg
-MTAwMC4gSWYgdXNlIHRoZSBzYW1lIHZhbHVlIGZvciB0aHJlc2hvbGRzLAo+IGEgdGhyZXNob2xk
-IGNhbgo+IGJlIGV4Y2VlZCBvbiAxMDAwKm5yX2NwdV9pZCBwYWdlcy4gSXQncyB0b28gbWFueS4g
-SSB0aGluaywgdGhhdCAxMDAgaXMKPiBhIHJlYXNvbmFibGUgdmFsdWUuCj4gCk8uSy4gSSBzZWUu
-Cgo+IG1lbV9jZ3JvdXBfc29mdF9saW1pdF9jaGVjaygpIHJlc2V0cyBNRU1fQ0dST1VQX1NUQVRf
-RVZFTlRTIHdoZW4gaXQgcmVhY2hlcwo+IFNPRlRMSU1JVF9FVkVOVFNfVEhSRVNILiBJZiBJIHdp
-bGwgZG8gdGhlIHNhbWUgdGhpbmcgZm9yCj4gVEhSRVNIT0xEU19FVkVOVFNfVEhSRVNICj4gKHdo
-aWNoIGlzIDEwMCkgLCBtZW1fY2dyb3VwX2V2ZW50X2NoZWNrKCkgd2lsbCBuZXZlciBiZSAndHJ1
-ZScuIEFueQo+IGlkZWEgaG93IHRvIHNoYXJlCj4gTUVNX0NHUk9VUF9TVEFUX0VWRU5UUyBpbiB0
-aGlzIGNhc2U/Cj4gCkl0J3MgaW1wb3NzaWJsZSBpZiB0aGV5IGhhdmUgZGlmZmVyZW50IGZyZXF1
-ZW5jeSBhcyB5b3Ugc2F5LgoKVGhhbmsgeW91IGZvciB5b3VyIGNsYXJpZmljYXRpb24uCgoKRGFp
-c3VrZSBOaXNoaW11cmEuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
-c3RpbmZvL2NvbnRhaW5lcnM=
+
+I have added the container's list to the cc as there is some overlap.
+
+Michael Stone <michael@laptop.org> writes:
+
+> Dear lkml,
+> 
+> A few months ago [1], I asked for feedback on a new network isolation primitive
+> named "RLIMIT_NETWORK" designed for use with Unix sandboxing utilities like
+> Rainbow, Plash, and friends [2]. Thank you to all those CC'ed for your helpful
+> early remarks.
+> 
+> Here is an updated patchset with responses to the following criticisms:
+
+Overall what you have looks addhoc, and very special case which is
+likely to impair maintenance in the future.
+
+Furthermore you have not addressed the primary issue that keeps
+unshare(CLONE_NEWNET) requiring root privileges.  You can in theory
+confuse a suid root application and cause it to take action with it's
+elevated privileges that violate the security policy.  The network
+namespace has more potential to confuse existing applications than
+your mechanism, but the problem seems to remain.
+
+>   1. ptrace() 
+>      
+>      It was pointed out by Alan Cox, Andi Kleen, and others that processes
+>      which dropped their RLIMIT_NETWORK rlimit were still able to directly
+>      perform networking through a ptrace()'d victim.
+> 
+>      The new patchset adds an access check to __ptrace_may_access() to prevent
+>      this behavior.
+
+Solve that with an unused uid.  That ptrace_may_access check is
+completely non-intuitive, and a problem if we ever remove the current
+== task security module bug avoidance.
+
+>   2. unshare(CLONE_NEWNET)
+> 
+>      It was pointed out by James Morris that network namespaces could be used
+>      to implement behavior similar to the behavior this patchset is designed to
+>      implement. To address this criticism, I added support for network
+>      namespaces to my sandboxing utility (Rainbow).
+> 
+>      Unfortunately, I have discovered that network namespaces in their current
+>      form are not appropriate for my use cases because they prevent the
+>      namespace'd apps from connecting to the X server, even over plain old
+>      AF_UNIX sockets.
+
+We discussed that a while ago, and there is no fundamental reason to
+disallow opening unix domain sockets from another network namespace.
+The reason this has not been done, is that no one has taken a good
+hard look at the packet transmit path and said there are no technical
+problems for packets traversing between two network namespaces.
+
+It is probably time to revisit that.
+
+
+>      The RLIMIT_NETWORK facility I propose contains a specific exception for
+>      AF_UNIX filesystem sockets since those sockets are already bound by
+>      regular Unix discretionary access control.
+
+What is more significant that unix discretionary access control is the
+fact that the set of available af_unix sockets you can bind to is filtered
+by the mount namespace.
+
+
+With respect to the problem of handling suid root applications my long
+term plan is to finish the security credentials namespace aka
+unshare(NEWUSER).  Making the capabilities namespace local and
+changing all uid based checks from uid1 == uid2 to (ns1, uid1) ==
+(ns2, uid2).  At which point suid root applications will not be a
+problem because the problem root capabilities will not be available
+for them to acquire.
+
+Eric
