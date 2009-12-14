@@ -1,115 +1,72 @@
-From: Michael Stone <michael@laptop.org>
-Subject: Re: Network isolation with RLIMIT_NETWORK, cont'd.
-Date: Sun, 13 Dec 2009 09:21:50 -0500
-Message-ID: <20091213142149.GB4777@heat>
-References: <m1ljh7jijk.fsf@fess.ebiederm.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] clean up checkpoint_task_objs
+Date: Mon, 14 Dec 2009 13:41:45 -0600
+Message-ID: <20091214194145.GA21259@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Return-path: <netdev-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1ljh7jijk.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Michael Stone <michael@laptop.org>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-security-module@vger.kernel.org, Andi Kleen <andi@firstfloor.org>, David Lang <david@lang.hm>, Oliver Hartkopp <socketcan@hartkopp.net>, Alan Cox <alan@lxorguk.ukuu.org.uk>, Herbert Xu <herbert@gondor.apana.org.au>, Valdis Kletnieks <Valdis.Kletnieks@vt.edu>, Bryan Donlan <bdonlan@gmail.com>, =?iso-8859-1?Q?R=E9mi?= Denis-Courmont <rdenis@simphalempin.com>, Evgeniy Polyakov <zbr@ioremap.net>, "C. Scott Ananian" <cscott@cscott.net>, James Morris <jmorris@namei.org>, Bernie Innocenti <bernie@codewiz.org>, Mark Seaborn <mrs@mythic-beasts.com>, Linux Containers <containers@lists.osdl.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric Biederman wrote:
+Make the flow more regular.  With the existing code, one can barely
+find the call to checkpoint_task_obj_ns() even if looking for it!
 
-> I have added the container's list to the cc as there is some overlap.
+This is on top of the task->fs c/r patch I sent last week.
 
-Good idea; thanks.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/process.c |   17 ++++++++++++-----
+ 1 files changed, 12 insertions(+), 5 deletions(-)
 
-> Overall what you have looks ad-hoc, and very special case which is
-> likely to impair maintenance in the future.
-
-Unfortunately, these are the semantics which are necessary to make further
-progress on sandboxing real Linux apps with the discretionary access control
-facilities which are available today.
-
-> You can in theory confuse a suid root application and cause it to take action
-> with it's elevated privileges that violate the security policy. 
-
-You're right, in theory. In practice, the setuid-root facility is a rather
-special escape hatch which *everyone* in this field knows must be carefully
-audited and maintained when building or updating trustworthy systems.
-
-Also, in practice, I'm not expecting perfection today. Nor was I last year, nor
-am I next year. What I am expecting is that the kernel will supply me (perhaps
-with my assistance along the way) with the access control facilities that I
-need to do my job in userland. This is one of them.
-
-> The network namespace has more potential to confuse existing applications
-> than your mechanism, but the problem seems to remain.
-
-I'm glad to hear that you find this mechanism to be comparatively less
-confusing.
-
->>   1. ptrace() 
->>      
->>      It was pointed out by Alan Cox, Andi Kleen, and others that processes
->>      which dropped their RLIMIT_NETWORK rlimit were still able to directly
->>      perform networking through a ptrace()'d victim.
->> 
->>      The new patchset adds an access check to __ptrace_may_access() to prevent
->>      this behavior.
-> 
-> Solve that with an unused uid.  
-
-I already do, in general. (As do the other people requesting this facility.)
-
-The reason for the __ptrace_may_access() check is that the logical way for
-*application authors* whose code is *already* running in a fresh uid to further
-improve system security is to separate their network I/O from their parsing
-code a process boundary and to drop networking privileges in the parser.
-
->>   2. unshare(CLONE_NEWNET)
->> 
->>      It was pointed out by James Morris that network namespaces could be used
->>      to implement behavior similar to the behavior this patchset is designed to
->>      implement. To address this criticism, I added support for network
->>      namespaces to my sandboxing utility (Rainbow).
->> 
->>      Unfortunately, I have discovered that network namespaces in their current
->>      form are not appropriate for my use cases because they prevent the
->>      namespace'd apps from connecting to the X server, even over plain old
->>      AF_UNIX sockets.
->
->We discussed that a while ago, and there is no fundamental reason to
->disallow opening unix domain sockets from another network namespace.
-
-I disagree. I like that the network namespaces have (fairly) clear semantics.
-They are excellent semantics for some of my other use cases, like testing
-networked software [1]. They're probably quite nice for full-blown
-containerization. They're just not right for the kind of lightweight sandboxing
-of complicated legacy apps that I'm doing.
-
-[1]: http://dev.laptop.org/git/users/mstone/dnshash/tree/docs/unit_testing.txt
-
->> The RLIMIT_NETWORK facility I propose contains a specific exception for
->> AF_UNIX filesystem sockets since those sockets are already bound by
->> regular Unix discretionary access control.
-> 
-> What is more significant than unix discretionary access control is the
-> fact that the set of available af_unix sockets you can bind to is filtered
-> by the mount namespace.
-
-Actually, the Unix DAC is far more important for my purposes. The reason is
-that it's unprivileged, already understood by literally *everyone* involved in
-Unix security, and it has the best tools support of any access control
-mechanism.
-
-For comparison, I do use CLONE_NEWNS mount namespaces and they've been a real
-pain because
-
-   a) unlike in Plan 9, they're privileged,
-
-   b) they greatly complicate debugging the isolated app because you see
-      different things inside and outside the namespace,
-
-   c) there's no good way to manipulate them from userland, and
-
-   d) they're poorly documented outside of the mount man page.
-
-Regards,
-
-Michael
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 603bbf4..bef909a 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -247,12 +247,17 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	ret = checkpoint_task_creds(ctx, t);
+ 	ckpt_debug("cred: objref %d\n", ret);
+-	if (!ret) {
+-		ret = checkpoint_task_ns(ctx, t);
+-		ckpt_debug("ns: objref %d\n", ret);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "%(T)process credentials\n");
++		return ret;
+ 	}
+-	if (ret < 0)
++
++	ret = checkpoint_task_ns(ctx, t);
++	ckpt_debug("ns: objref %d\n", ret);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "%(T)process namespaces\n");
+ 		return ret;
++	}
+ 
+ 	fs_objref = checkpoint_get_task_fs(ctx, t);
+ 	if (fs_objref < 0) {
+@@ -291,8 +296,10 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	signal_objref = ckpt_obj_lookup_add(ctx, t->signal,
+ 					    CKPT_OBJ_SIGNAL, &first);
+ 	ckpt_debug("signal: objref %d\n", signal_objref);
+-	if (signal_objref < 0)
++	if (signal_objref < 0) {
++		ckpt_err(ctx, signal_objref, "%(T)process signals\n");
+ 		return signal_objref;
++	}
+ 
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+ 	if (!h)
+-- 
+1.6.0.4
