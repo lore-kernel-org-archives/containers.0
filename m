@@ -1,12 +1,20 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH (trivial)] ipc_objref should be s32 like all objrefs
-Date: Mon, 14 Dec 2009 14:10:40 -0600
-Message-ID: <20091214201040.GA23054@us.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH RFC v2 3/4] memcg: rework usage of stats by soft limit
+Date: Tue, 15 Dec 2009 10:35:17 +0900
+Message-ID: <20091215103517.75645536.kamezawa.hiroyu__21624.4244752035$1260841204$gmane$org@jp.fujitsu.com>
+References: <cover.1260571675.git.kirill@shutemov.name>
+	<ca59c422b495907678915db636f70a8d029cbf3a.1260571675.git.kirill@shutemov.name>
+	<c1847dfb5c4fed1374b7add236d38e0db02eeef3.1260571675.git.kirill@shutemov.name>
+	<747ea0ec22b9348208c80f86f7a813728bf8e50a.1260571675.git.kirill@shutemov.name>
+	<20091212125046.14df3134.d-nishimura@mtf.biglobe.ne.jp>
+	<cc557aab0912120506x56b9a707ob556035fdcf40a22@mail.gmail.com>
+	<20091212233409.60da66fb.d-nishimura@mtf.biglobe.ne.jp>
+	<cc557aab0912121146y276a8d26v8baee15be1f83a97@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <cc557aab0912121146y276a8d26v8baee15be1f83a97-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,27 +24,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: Balbir-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint_hdr.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 1d3982d..57e1306 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -435,7 +435,7 @@ struct ckpt_hdr_task_ns {
- struct ckpt_hdr_ns {
- 	struct ckpt_hdr h;
- 	__s32 uts_objref;
--	__u32 ipc_objref;
-+	__s32 ipc_objref;
- } __attribute__((aligned(8)));
- 
- /* cannot include <linux/tty.h> from userspace, so define: */
--- 
-1.6.0.4
+T24gU2F0LCAxMiBEZWMgMjAwOSAyMTo0NjowOCArMDIwMAoiS2lyaWxsIEEuIFNodXRlbW92IiA8
+a2lyaWxsQHNodXRlbW92Lm5hbWU+IHdyb3RlOgoKPiBPbiBTYXQsIERlYyAxMiwgMjAwOSBhdCA0
+OjM0IFBNLCBEYWlzdWtlIE5pc2hpbXVyYQo+IDxkLW5pc2hpbXVyYUBtdGYuYmlnbG9iZS5uZS5q
+cD4gd3JvdGU6Cj4gPiBPbiBTYXQsIDEyIERlYyAyMDA5IDE1OjA2OjUyICswMjAwCj4gPiAiS2ly
+aWxsIEEuIFNodXRlbW92IiA8a2lyaWxsQHNodXRlbW92Lm5hbWU+IHdyb3RlOgo+ID4KPiA+PiBP
+biBTYXQsIERlYyAxMiwgMjAwOSBhdCA1OjUwIEFNLCBEYWlzdWtlIE5pc2hpbXVyYQo+ID4+IDxk
+LW5pc2hpbXVyYUBtdGYuYmlnbG9iZS5uZS5qcD4gd3JvdGU6Cj4gPj4gPiBBbmQgSUlVQywgaXQn
+cyB0aGUgc2FtZSBmb3IgeW91ciB0aHJlc2hvbGQgZmVhdHVyZSwgcmlnaHQgPwo+ID4+ID4gSSB0
+aGluayBpdCB3b3VsZCBiZSBiZXR0ZXI6Cj4gPj4gPgo+ID4+ID4gLSBkaXNjYXJkIHRoaXMgY2hh
+bmdlLgo+ID4+ID4gLSBpbiA0LzQsIHJlbmFtZSBtZW1fY2dyb3VwX3NvZnRfbGltaXRfY2hlY2sg
+dG8gbWVtX2Nncm91cF9ldmVudF9jaGVjaywKPiA+PiA+IMKgYW5kIGluc3RlYWQgb2YgYWRkaW5n
+IGEgbmV3IFNUQVQgY291bnRlciwgZG8gbGlrZToKPiA+PiA+Cj4gPj4gPiDCoCDCoCDCoCDCoGlm
+IChtZW1fY2dyb3VwX2V2ZW50X2NoZWNrKG1lbSkpIHsKPiA+PiA+IMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgbWVtX2Nncm91cF91cGRhdGVfdHJlZShtZW0sIHBhZ2UpOwo+ID4+ID4gwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqBtZW1fY2dyb3VwX3RocmVzaG9sZChtZW0pOwo+ID4+ID4gwqAgwqAgwqAg
+wqB9Cj4gPj4KPiA+PiBJIHRoaW5rIHRoYXQgbWVtX2Nncm91cF91cGRhdGVfdHJlZSgpIGFuZCBt
+ZW1fY2dyb3VwX3RocmVzaG9sZCgpIHNob3VsZCBiZQo+ID4+IHJ1biB3aXRoIGRpZmZlcmVudCBm
+cmVxdWVuY3kuIEhvdyB0byBzaGFyZSBNRU1fQ0dST1VQX1NUQVRfRVZFTlRTCj4gPj4gYmV0d2Vl
+biBzb2Z0IGxpbWl0cyBhbmQgdGhyZXNob2xkcyBpbiB0aGlzIGNhc2U/Cj4gPj4KPiA+IGhtbSwg
+Ym90aCBzb2Z0bGltaXQgYW5kIHlvdXIgdGhyZXNob2xkIGNvdW50IGV2ZW50cyBhdCB0aGUgc2Ft
+ZSBwbGFjZShjaGFyZ2UgYW5kIHVuY2hhcmdlKS4KPiA+IFNvLCBJIHRoaW5rIHRob3NlIGV2ZW50
+cyBjYW4gYmUgc2hhcmVkLgo+ID4gSXMgdGhlcmUgYW55IHJlYXNvbiB0aGV5IHNob3VsZCBydW4g
+aW4gZGlmZmVyZW50IGZyZXF1ZW5jeSA/Cj4gCj4gU09GVExJTUlUX0VWRU5UU19USFJFU0ggaXMg
+MTAwMC4gSWYgdXNlIHRoZSBzYW1lIHZhbHVlIGZvciB0aHJlc2hvbGRzLAo+IGEgdGhyZXNob2xk
+IGNhbgo+IGJlIGV4Y2VlZCBvbiAxMDAwKm5yX2NwdV9pZCBwYWdlcy4gSXQncyB0b28gbWFueS4g
+SSB0aGluaywgdGhhdCAxMDAgaXMKPiBhIHJlYXNvbmFibGUgdmFsdWUuCj4gCgpIbW0sIHRoZW4g
+d2hhdCBhbW91bnQgb2YgY29zdHMgZG9lcyB0aGlzIGNvZGUgYWRkID8KCkRvIHlvdSBoYXZlIGJl
+bmNobWFyayByZXN1bHQgPwoKVGhhbmtzLAotS2FtZQoKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
