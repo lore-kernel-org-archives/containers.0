@@ -1,12 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH RFC] refuse checkpoint of file with f_owner
-Date: Wed, 16 Dec 2009 15:22:58 -0600
-Message-ID: <20091216212258.GA31602@us.ibm.com>
+Subject: Re: [PATCH RFC] refuse checkpoint of file with f_owner
+Date: Wed, 16 Dec 2009 15:24:47 -0600
+Message-ID: <20091216212447.GA31662@us.ibm.com>
+References: <20091216212258.GA31602@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20091216212258.GA31602-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,42 +22,15 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-... because we don't yet support its restore.
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> ... because we don't yet support its restore.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/files.c |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+BTW, I am queueing patches on top of v19-rc2 at branch
+cr-next of git://git.kernel.org/pub/scm/linux/kernel/git/sergeh/linux-cr.git
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index c8e8d7f..cac5236 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -261,6 +261,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
- 	struct fdtable *fdt;
- 	int objref, ret;
- 	int coe = 0;	/* avoid gcc warning */
-+	pid_t pid;
- 
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
- 	if (!h)
-@@ -283,6 +284,17 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
- 	}
- 
- 	/*
-+	 * TODO: Implement c/r of fowner and f_sigio.  Should be
-+	 * trivial, but for now we just refuse its checkpoint
-+	 */
-+	pid = f_getown(file);
-+	if (pid) {
-+		ret = -EBUSY;
-+		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
-+		goto out;
-+	}
-+
-+	/*
- 	 * if seen first time, this will add 'file' to the objhash, keep
- 	 * a reference to it, dump its state while at it.
- 	 */
--- 
-1.6.0.4
+which you can see at
+
+http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/cr-next
+
+thanks,
+-serge
