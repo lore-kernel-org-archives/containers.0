@@ -1,17 +1,12 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH RFC v2 2/4] memcg: extract mem_group_usage() from
-	mem_cgroup_read()
-Date: Wed, 16 Dec 2009 14:10:37 +0530
-Message-ID: <20091216084037.GA4397__18147.0741205432$1260952899$gmane$org@balbir.in.ibm.com>
-References: <cover.1260571675.git.kirill@shutemov.name>
-	<c1847dfb5c4fed1374b7add236d38e0db02eeef3.1260571675.git.kirill@shutemov.name>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH RFC] refuse checkpoint of file with f_owner
+Date: Wed, 16 Dec 2009 15:22:58 -0600
+Message-ID: <20091216212258.GA31602@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <c1847dfb5c4fed1374b7add236d38e0db02eeef3.1260571675.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,19 +16,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> [2009-12-12 00:59:17]:
+... because we don't yet support its restore.
 
-> Helper to get memory or mem+swap usage of the cgroup.
-> 
-> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/files.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-Looks like a good cleanup to me!
-
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index c8e8d7f..cac5236 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -261,6 +261,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	struct fdtable *fdt;
+ 	int objref, ret;
+ 	int coe = 0;	/* avoid gcc warning */
++	pid_t pid;
  
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+ 	if (!h)
+@@ -283,6 +284,17 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	}
+ 
+ 	/*
++	 * TODO: Implement c/r of fowner and f_sigio.  Should be
++	 * trivial, but for now we just refuse its checkpoint
++	 */
++	pid = f_getown(file);
++	if (pid) {
++		ret = -EBUSY;
++		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
++		goto out;
++	}
++
++	/*
+ 	 * if seen first time, this will add 'file' to the objhash, keep
+ 	 * a reference to it, dump its state while at it.
+ 	 */
 -- 
-	Balbir
+1.6.0.4
