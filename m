@@ -1,13 +1,11 @@
-From: Mark Seaborn <mrs-ChQETwBkFSdCgCasaBwmdgC/G2K4zDHf@public.gmane.org>
-Subject: Re: Network isolation with RLIMIT_NETWORK, cont'd.
-Date: Thu, 17 Dec 2009 17:31:23 +0000
-Message-ID: <fb69ef3c0912170931l5cbf0e3dh81c88e6502651042@mail.gmail.com>
-References: <m1ljh7jijk.fsf@fess.ebiederm.org> <20091213142149.GB4777@heat>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH] ckpt-files: error out on file locks and leases
+Date: Thu, 17 Dec 2009 09:35:13 -0800
+Message-ID: <1261071313-14162-1-git-send-email-dave@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091213142149.GB4777@heat>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,38 +15,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Stone <michael-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: David Lang <david-gFPdbfVZQbY@public.gmane.org>, Valdis Kletnieks <Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org>, Herbert Xu <herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "C. Scott Ananian" <cscott-FML+fnLth/WsTnJN9+BGXg@public.gmane.org>, Bernie Innocenti <bernie-+SBua99wBSpAfugRpC6u6w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oliver Hartkopp <socketcan-fJ+pQTUTwRTk1uMJSBkQmQ@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Evgeniy Polyakov <zbr-i6C2adt8DTjR7s880joybQ@public.gmane.org>, Bryan Donlan <bdonlan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, =?ISO-8859-1?Q?R=E9mi_Denis=2DCourmont?= <rdenis-uaTwlBVGafag2h7rfAr7Vg@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+To: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
+Cc: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Dec 13, 2009 at 2:21 PM, Michael Stone <michael-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org> wrote:
+We do not currently handle the holding of any file locks.
+If a process being checkpointed is holding one, error out
+of the checkpoint process.
 
-> For comparison, I do use CLONE_NEWNS mount namespaces and they've been a
-> real
-> pain because
->
->  a) unlike in Plan 9, they're privileged,
->
->  b) they greatly complicate debugging the isolated app because you see
->     different things inside and outside the namespace,
->
->  c) there's no good way to manipulate them from userland, and
->
->  d) they're poorly documented outside of the mount man page.
->
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ checkpoint/files.c |   12 ++++++++++++
+ fs/locks.c         |   35 +++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |    6 ++++++
+ 3 files changed, 53 insertions(+), 0 deletions(-)
 
-Maybe we could try to fix those problems.
-
-The reason chroot() and clone()/CLONE_NEWNS are privileged is that they
-provide a way to violate the assumptions of setuid/setgid executables.  If
-we add a per-process flag that prevents a process from exec'ing setuid
-executables, we could allow chroot() and CLONE_NEWNS when that flag is set.
-That fixes (a).
-
-Maybe we could fix (b) by making mount namespaces into first class objects
-that can be named through a file descriptor, so that one process can
-manipulate another process's namespace without itself being subject to the
-namespace.
-
-Cheers,
-Mark
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index b622588..46a103d 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -272,6 +272,18 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	}
+ 	rcu_read_unlock();
+ 
++	ret = find_locks_with_owner(file, files);
++	/*
++	 * find_locks_with_owner() returns an error when there
++	 * are no locks found, so we *want* it to return an error
++	 * code.  Its success means we have to fail the checkpoint.
++	 */
++	if (!ret) {
++		ret = -EBADF;
++		ckpt_err(ctx, ret, "%(T)fd %d has file lock or lease\n", fd);
++		goto out;
++	}
++
+ 	/* sanity check (although this shouldn't happen) */
+ 	ret = -EBADF;
+ 	if (!file) {
+diff --git a/fs/locks.c b/fs/locks.c
+index a8794f2..721481a 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -1994,6 +1994,41 @@ void locks_remove_posix(struct file *filp, fl_owner_t owner)
+ 
+ EXPORT_SYMBOL(locks_remove_posix);
+ 
++int find_locks_with_owner(struct file *filp, fl_owner_t owner)
++{
++	struct inode *inode = filp->f_path.dentry->d_inode;
++	struct file_lock **inode_fl;
++	int ret = -EEXIST;
++
++	lock_kernel();
++	for_each_lock(inode, inode_fl) {
++		struct file_lock *fl = *inode_fl;
++		/*
++		 * We could use posix_same_owner() along with a 'fake'
++		 * file_lock.  But, the fake file will never have the
++		 * same fl_lmops as the fl that we are looking for and
++		 * posix_same_owner() would just fall back to this
++		 * check anyway.
++		 */
++		if (IS_POSIX(fl)) {
++			if (fl->fl_owner == owner) {
++				ret = 0;
++				break;
++			}
++		} else if (IS_FLOCK(fl) || IS_LEASE(fl)) {
++			if (fl->fl_file == filp) {
++				ret = 0;
++				break;
++			}
++		} else {
++			WARN(1, "unknown file lock type, fl_flags: %x",
++				fl->fl_flags);
++		}
++	}
++	unlock_kernel();
++	return ret;
++}
++
+ /*
+  * This function is called on the last close of an open file.
+  */
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 5ae34fc..089549b 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1122,6 +1122,7 @@ extern void locks_remove_posix(struct file *, fl_owner_t);
+ extern void locks_remove_flock(struct file *);
+ extern void locks_release_private(struct file_lock *);
+ extern void posix_test_lock(struct file *, struct file_lock *);
++extern int find_locks_with_owner(struct file *filp, fl_owner_t owner);
+ extern int posix_lock_file(struct file *, struct file_lock *, struct file_lock *);
+ extern int posix_lock_file_wait(struct file *, struct file_lock *);
+ extern int posix_unblock_lock(struct file *, struct file_lock *);
+@@ -1190,6 +1191,11 @@ static inline void locks_remove_posix(struct file *filp, fl_owner_t owner)
+ 	return;
+ }
+ 
++static inline int find_locks_with_owner(struct file *filp, fl_owner_t owner)
++{
++	return -ENOENT;
++}
++
+ static inline void locks_remove_flock(struct file *filp)
+ {
+ 	return;
+-- 
+1.6.6.rc3
