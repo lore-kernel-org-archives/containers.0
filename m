@@ -1,13 +1,14 @@
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: [PATCH 1/4] cgroups: revamp subsys array
-Date: Mon, 21 Dec 2009 15:35:15 -0500
-Message-ID: <20091221203515.GB5683__26947.0494044528$1261428168$gmane$org@andrew.cmu.edu>
+Subject: [PATCH 2/4] cgroups: subsystem module loading interface
+Date: Mon, 21 Dec 2009 15:36:13 -0500
+Message-ID: <20091221203613.GC5683__6414.53258363089$1261428191$gmane$org@andrew.cmu.edu>
 References: <20091221203253.GA5683@andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: attachment; filename="cgroups-revamp-subsys-array.patch"
+Content-Disposition: attachment;
+	filename="cgroups-subsys-module-interface.patch"
 In-Reply-To: <20091221203253.GA5683-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,287 +22,199 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make subsys[] able to be dynamically populated to support modular subsystems
+Add interface between cgroups subsystem management and module loading
 
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 
-This patch reworks the way the subsys[] array is used so that subsystems can
-register themselves after boot time, and enables the internals of cgroups to
-be able to handle when subsystems are not present or may appear/disappear.
+This patch implements rudimentary module-loading support for cgroups - namely,
+a cgroup_load_subsys (similar to cgroup_init_subsys) for use as a module
+initcall, and a struct module pointer in struct cgroup_subsys.
+
+Several functions that might be wanted by modules have had EXPORT_SYMBOL added
+to them, but it's unclear exactly which functions want it and which won't.
 
 Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 ---
 
- include/linux/cgroup.h |    8 ++++-
- kernel/cgroup.c        |   77 +++++++++++++++++++++++++++++++++++++++---------
- 2 files changed, 68 insertions(+), 17 deletions(-)
+ Documentation/cgroups/cgroups.txt |    3 +
+ include/linux/cgroup.h            |    4 +
+ kernel/cgroup.c                   |  114 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 121 insertions(+), 0 deletions(-)
 
 
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 3df4b9a..dd0d6f1 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -492,6 +492,9 @@ Each subsystem should:
+ - add an entry in linux/cgroup_subsys.h
+ - define a cgroup_subsys object called <name>_subsys
+ 
++If a subsystem can be compiled as a module, it should also have in its
++module initcall a call to cgroup_load_subsys().
++
+ Each subsystem may export the following methods. The only mandatory
+ methods are create/destroy. Any others that are null are presumed to
+ be successful no-ops.
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 642a47f..d7f1545 100644
+index d7f1545..c8474c4 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -41,13 +41,17 @@ extern int cgroupstats_build(struct cgroupstats *stats,
+@@ -38,6 +38,7 @@ extern void cgroup_fork_failed(struct task_struct *p, int run_callbacks,
+ 			       unsigned long clone_flags);
+ extern int cgroupstats_build(struct cgroupstats *stats,
+ 				struct dentry *dentry);
++extern int cgroup_load_subsys(struct cgroup_subsys *ss);
  
  extern struct file_operations proc_cgroup_operations;
  
--/* Define the enumeration of all cgroup subsystems */
-+/* Define the enumeration of all builtin cgroup subsystems */
- #define SUBSYS(_x) _x ## _subsys_id,
- enum cgroup_subsys_id {
- #include <linux/cgroup_subsys.h>
--	CGROUP_SUBSYS_COUNT
-+	CGROUP_BUILTIN_SUBSYS_COUNT
+@@ -477,6 +478,9 @@ struct cgroup_subsys {
+ 	/* used when use_id == true */
+ 	struct idr idr;
+ 	spinlock_t id_lock;
++
++	/* should be defined only by modular subsystems */
++	struct module *module;
  };
- #undef SUBSYS
-+/* This define indicates the maximum number of subsystems that can be loaded
-+ * at once. We limit to this many since cgroupfs_root has subsys_bits to keep
-+ * track of all of them. */
-+#define CGROUP_SUBSYS_COUNT (BITS_PER_BYTE*sizeof(unsigned long))
  
- /* Per-subsystem/per-cgroup state maintained by the system. */
- struct cgroup_subsys_state {
+ #define SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 7af6168..ece9321 100644
+index ece9321..bddf96b 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -56,10 +56,12 @@
- 
- static DEFINE_MUTEX(cgroup_mutex);
- 
--/* Generate an array of cgroup subsystem pointers */
-+/* Generate an array of cgroup subsystem pointers. At boot time, this is
-+ * populated up to CGROUP_BUILTIN_SUBSYS_COUNT, and modular subsystems are
-+ * registered after that. The mutable section of this array is protected by
-+ * cgroup_mutex. */
- #define SUBSYS(_x) &_x ## _subsys,
--
--static struct cgroup_subsys *subsys[] = {
-+static struct cgroup_subsys *subsys[CGROUP_SUBSYS_COUNT] = {
- #include <linux/cgroup_subsys.h>
- };
- 
-@@ -433,8 +435,9 @@ static struct css_set *find_existing_css_set(
- 	struct hlist_node *node;
- 	struct css_set *cg;
- 
--	/* Built the set of subsystem state objects that we want to
--	 * see in the new css_set */
-+	/* Build the set of subsystem state objects that we want to see in the
-+	 * new css_set. while subsystems can change globally, the entries here
-+	 * won't change, so no need for locking. */
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		if (root->subsys_bits & (1UL << i)) {
- 			/* Subsystem is in this hierarchy. So we want
-@@ -869,7 +872,9 @@ void cgroup_release_and_wakeup_rmdir(struct cgroup_subsys_state *css)
- 	css_put(css);
+@@ -2477,6 +2477,7 @@ int cgroup_add_file(struct cgroup *cgrp,
+ 		error = PTR_ERR(dentry);
+ 	return error;
  }
++EXPORT_SYMBOL_GPL(cgroup_add_file);
  
--
-+/*
-+ * Call with cgroup_mutex held.
-+ */
- static int rebind_subsystems(struct cgroupfs_root *root,
- 			      unsigned long final_bits)
- {
-@@ -877,6 +882,8 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 	struct cgroup *cgrp = &root->top_cgroup;
- 	int i;
+ int cgroup_add_files(struct cgroup *cgrp,
+ 			struct cgroup_subsys *subsys,
+@@ -2491,6 +2492,7 @@ int cgroup_add_files(struct cgroup *cgrp,
+ 	}
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(cgroup_add_files);
  
-+	BUG_ON(!mutex_is_locked(&cgroup_mutex));
+ /**
+  * cgroup_task_count - count the number of tasks in a cgroup.
+@@ -3638,7 +3640,119 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 	mutex_init(&ss->hierarchy_mutex);
+ 	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
+ 	ss->active = 1;
 +
- 	removed_bits = root->actual_subsys_bits & ~final_bits;
- 	added_bits = final_bits & ~root->actual_subsys_bits;
- 	/* Check that any added subsystems are currently free */
-@@ -885,6 +892,10 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 		struct cgroup_subsys *ss = subsys[i];
- 		if (!(bit & added_bits))
- 			continue;
-+		/* nobody should tell us to do a subsys that doesn't exist:
-+		 * parse_cgroupfs_options should catch that case and refcounts
-+		 * ensure that subsystems won't disappear once selected. */
-+		BUG_ON(ss == NULL);
- 		if (ss->root != &rootnode) {
- 			/* Subsystem isn't free */
- 			return -EBUSY;
-@@ -904,6 +915,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 		unsigned long bit = 1UL << i;
- 		if (bit & added_bits) {
- 			/* We're binding this subsystem to this hierarchy */
-+			BUG_ON(ss == NULL);
- 			BUG_ON(cgrp->subsys[i]);
- 			BUG_ON(!dummytop->subsys[i]);
- 			BUG_ON(dummytop->subsys[i]->cgroup != dummytop);
-@@ -917,6 +929,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			mutex_unlock(&ss->hierarchy_mutex);
- 		} else if (bit & removed_bits) {
- 			/* We're removing this subsystem */
-+			BUG_ON(ss == NULL);
- 			BUG_ON(cgrp->subsys[i] != dummytop->subsys[i]);
- 			BUG_ON(cgrp->subsys[i]->cgroup != cgrp);
- 			mutex_lock(&ss->hierarchy_mutex);
-@@ -929,6 +942,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			mutex_unlock(&ss->hierarchy_mutex);
- 		} else if (bit & final_bits) {
- 			/* Subsystem state should already exist */
-+			BUG_ON(ss == NULL);
- 			BUG_ON(!cgrp->subsys[i]);
- 		} else {
- 			/* Subsystem state shouldn't exist */
-@@ -971,14 +985,18 @@ struct cgroup_sb_opts {
- 
- };
- 
--/* Convert a hierarchy specifier into a bitmask of subsystems and
-- * flags. */
-+/*
-+ * Convert a hierarchy specifier into a bitmask of subsystems and flags. Call
-+ * with cgroup_mutex held to protect the subsys[] array.
-+ */
- static int parse_cgroupfs_options(char *data,
- 				     struct cgroup_sb_opts *opts)
- {
- 	char *token, *o = data ?: "all";
- 	unsigned long mask = (unsigned long)-1;
- 
-+	BUG_ON(!mutex_is_locked(&cgroup_mutex));
++	/* this function shouldn't be used with modular subsystems, since they
++	 * need to register a subsys_id, among other things */
++	BUG_ON(ss->module);
++}
 +
- #ifdef CONFIG_CPUSETS
- 	mask = ~(1UL << cpuset_subsys_id);
- #endif
-@@ -994,6 +1012,8 @@ static int parse_cgroupfs_options(char *data,
- 			opts->subsys_bits = 0;
- 			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 				struct cgroup_subsys *ss = subsys[i];
-+				if (ss == NULL)
-+					continue;
- 				if (!ss->disabled)
- 					opts->subsys_bits |= 1ul << i;
- 			}
-@@ -1038,6 +1058,8 @@ static int parse_cgroupfs_options(char *data,
- 			int i;
- 			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 				ss = subsys[i];
-+				if (ss == NULL)
-+					continue;
- 				if (!strcmp(token, ss->name)) {
- 					if (!ss->disabled)
- 						set_bit(i, &opts->subsys_bits);
-@@ -1291,7 +1313,9 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
- 	struct cgroupfs_root *new_root;
- 
- 	/* First find the desired set of subsystems */
++/**
++ * cgroup_load_subsys: load and register a modular subsystem at runtime
++ * @ss: the subsystem to load
++ *
++ * This function should be called in a modular subsystem's initcall. If the
++ * subsytem is built as a module, it will be assigned a new subsys_id and set
++ * up for use. If the subsystem is built-in anyway, work is delegated to the
++ * simpler cgroup_init_subsys.
++ */
++int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
++{
++	int i;
++	struct cgroup_subsys_state *css;
++
++	/* check name and function validity */
++	if (ss->name == NULL || strlen(ss->name) > MAX_CGROUP_TYPE_NAMELEN ||
++	    ss->create == NULL || ss->destroy == NULL)
++		return -EINVAL;
++
++	/* we don't support callbacks in modular subsystems. this check is
++	 * before the ss->module check for consistency - a module that *could*
++	 * be a module should still have no callbacks for consistency. */
++	if (ss->fork || ss->exit)
++		return -EINVAL;
++
++	/* an optionally modular subsystem is built-in: we want to do nothing,
++	 * since cgroup_init_subsys will take care of it. */
++	if (ss->module == NULL) {
++		/* sanity: ss->module NULL only if the subsys is built-in and
++		 * appears in subsys[] already. */
++		BUG_ON(ss->subsys_id >= CGROUP_BUILTIN_SUBSYS_COUNT);
++		BUG_ON(subsys[ss->subsys_id] != ss);
++		return 0;
++	}
++
++	/* need to register a subsys id before anything else - for example,
++	 * init_cgroup_css needs it. */
 +	mutex_lock(&cgroup_mutex);
- 	ret = parse_cgroupfs_options(data, &opts);
++	/* find the first empty slot in the array */
++	for (i = CGROUP_BUILTIN_SUBSYS_COUNT; i < CGROUP_SUBSYS_COUNT; i++) {
++		if (subsys[i] == NULL)
++			break;
++	}
++	if (i == CGROUP_SUBSYS_COUNT) {
++		/* maximum number of subsystems already registered! */
++		mutex_unlock(&cgroup_mutex);
++		return -EBUSY;
++	}
++	/* assign ourselves the subsys_id */
++	ss->subsys_id = i;
++	subsys[i] = ss;
++
++	/* no ss->create seems to need anything important in the ss struct, so
++	 * this can happen first (i.e. before the rootnode attachment). */
++	css = ss->create(ss, dummytop);
++	if (IS_ERR(css)) {
++		/* failure case - need to deassign the subsys[] slot. */
++		subsys[i] = NULL;
++		mutex_unlock(&cgroup_mutex);
++		return PTR_ERR(css);
++	}
++
++	list_add(&ss->sibling, &rootnode.subsys_list);
++	ss->root = &rootnode;
++
++	/* our new subsystem will be attached to the dummy hierarchy. */
++	init_cgroup_css(css, ss, dummytop);
++	/* now we need to entangle the css into the existing css_sets. unlike
++	 * in cgroup_init_subsys, there are now multiple css_sets, so each one
++	 * will need a new pointer to it; done by iterating the css_set_table.
++	 * furthermore, modifying the existing css_sets will corrupt the hash
++	 * table state, so each changed css_set will need its hash recomputed.
++	 * this is all done under the css_set_lock. */
++	write_lock(&css_set_lock);
++	for (i = 0; i < CSS_SET_TABLE_SIZE; i++) {
++		struct css_set *cg;
++		struct hlist_node *node, *tmp;
++		struct hlist_head *bucket = &css_set_table[i], *new_bucket;
++		hlist_for_each_entry_safe(cg, node, tmp, bucket, hlist) {
++			/* skip entries that we already rehashed */
++			if (cg->subsys[ss->subsys_id])
++				continue;
++			/* remove existing entry */
++			hlist_del(&cg->hlist);
++			/* set new value */
++			cg->subsys[ss->subsys_id] = css;
++			/* recompute hash and restore entry */
++			new_bucket = css_set_hash(cg->subsys);
++			hlist_add_head(&cg->hlist, new_bucket);
++		}
++	}
++	write_unlock(&css_set_lock);
++
++	mutex_init(&ss->hierarchy_mutex);
++	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
++	ss->active = 1;
++
++	/* pin the subsystem's module so it doesn't go away. this shouldn't
++	 * fail, since the module's initcall calls us.
++	 * TODO: with module unloading, move this elsewhere */
++	BUG_ON(!try_module_get(ss->module));
++
++	/* success! */
 +	mutex_unlock(&cgroup_mutex);
- 	if (ret)
- 		goto out_err;
++	return 0;
+ }
++EXPORT_SYMBOL_GPL(cgroup_load_subsys);
  
-@@ -3277,8 +3301,12 @@ static void cgroup_lock_hierarchy(struct cgroupfs_root *root)
- 	/* We need to take each hierarchy_mutex in a consistent order */
- 	int i;
- 
-+	/* no worry about a race with rebind_subsystems that might mess up the
-+	 * locking order, since both parties are under cgroup_mutex. */
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
-+		if (ss == NULL)
-+			continue;
- 		if (ss->root == root)
- 			mutex_lock(&ss->hierarchy_mutex);
- 	}
-@@ -3290,6 +3318,8 @@ static void cgroup_unlock_hierarchy(struct cgroupfs_root *root)
- 
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
-+		if (ss == NULL)
-+			continue;
- 		if (ss->root == root)
- 			mutex_unlock(&ss->hierarchy_mutex);
- 	}
-@@ -3410,11 +3440,14 @@ static int cgroup_has_css_refs(struct cgroup *cgrp)
- 	 * synchronization other than RCU, and the subsystem linked
- 	 * list isn't RCU-safe */
- 	int i;
-+	/* we won't need to lock the subsys array, because the subsystems
-+	 * we're concerned about aren't going anywhere since our cgroup root
-+	 * has a reference on them. */
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
- 		struct cgroup_subsys_state *css;
--		/* Skip subsystems not in this hierarchy */
--		if (ss->root != cgrp->root)
-+		/* Skip subsystems not present or not in this hierarchy */
-+		if (ss == NULL || ss->root != cgrp->root)
- 			continue;
- 		css = cgrp->subsys[ss->subsys_id];
- 		/* When called from check_for_release() it's possible
-@@ -3635,7 +3668,8 @@ int __init cgroup_init_early(void)
- 	for (i = 0; i < CSS_SET_TABLE_SIZE; i++)
- 		INIT_HLIST_HEAD(&css_set_table[i]);
- 
--	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+	/* at bootup time, we don't worry about modular subsystems */
-+	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
- 
- 		BUG_ON(!ss->name);
-@@ -3670,7 +3704,8 @@ int __init cgroup_init(void)
- 	if (err)
- 		return err;
- 
--	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+	/* at bootup time, we don't worry about modular subsystems */
-+	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
- 		if (!ss->early_init)
- 			cgroup_init_subsys(ss);
-@@ -3779,9 +3814,14 @@ static int proc_cgroupstats_show(struct seq_file *m, void *v)
- 	int i;
- 
- 	seq_puts(m, "#subsys_name\thierarchy\tnum_cgroups\tenabled\n");
-+	/* ideally we don't want subsystems moving around while we do this.
-+	 * cgroup_mutex is also necessary to guarantee an atomic snapshot of
-+	 * subsys/hierarchy state. */
- 	mutex_lock(&cgroup_mutex);
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		struct cgroup_subsys *ss = subsys[i];
-+		if (ss == NULL)
-+			continue;
- 		seq_printf(m, "%s\t%d\t%d\t%d\n",
- 			   ss->name, ss->root->hierarchy_id,
- 			   ss->root->number_of_cgroups, !ss->disabled);
-@@ -3841,7 +3881,10 @@ void cgroup_fork_callbacks(struct task_struct *child)
- {
- 	if (need_forkexit_callback) {
- 		int i;
--		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+		/* forkexit callbacks are only supported for builtin modules,
-+		 * and the builtin section of the subsys array is immutable,
-+		 * so we don't need to lock the subsys array here. */
-+		for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
- 			struct cgroup_subsys *ss = subsys[i];
- 			if (ss->fork)
- 				ss->fork(ss, child);
-@@ -3912,7 +3955,9 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- 	struct css_set *cg;
- 
- 	if (run_callbacks && need_forkexit_callback) {
--		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+		/* modular subsystems can't use callbacks, so no need to lock
-+		 * the subsys array */
-+		for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
- 			struct cgroup_subsys *ss = subsys[i];
- 			if (ss->exit)
- 				ss->exit(ss, tsk);
-@@ -4221,7 +4266,9 @@ static int __init cgroup_disable(char *str)
- 		if (!*token)
- 			continue;
- 
--		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+		/* cgroup_disable, being at boot time, can't know about module
-+		 * subsystems, so we don't worry about them. */
-+		for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
- 			struct cgroup_subsys *ss = subsys[i];
- 
- 			if (!strcmp(token, ss->name)) {
+ /**
+  * cgroup_init_early - cgroup initialization at system boot
