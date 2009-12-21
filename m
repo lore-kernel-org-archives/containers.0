@@ -1,14 +1,13 @@
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: [PATCH 2/4] cgroups: subsystem module loading interface
-Date: Mon, 21 Dec 2009 15:36:13 -0500
-Message-ID: <20091221203613.GC5683__6414.53258363089$1261428191$gmane$org@andrew.cmu.edu>
+Subject: [PATCH 3/4] cgroups: net_cls as module
+Date: Mon, 21 Dec 2009 15:37:05 -0500
+Message-ID: <20091221203704.GD5683__3146.68661817468$1261428411$gmane$org@andrew.cmu.edu>
 References: <20091221203253.GA5683@andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: attachment;
-	filename="cgroups-subsys-module-interface.patch"
+Content-Disposition: attachment; filename="cgroups-net_cls-as-module.patch"
 In-Reply-To: <20091221203253.GA5683-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,201 +19,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add interface between cgroups subsystem management and module loading
+Allows the net_cls cgroup subsystem to be compiled as a module
 
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 
-This patch implements rudimentary module-loading support for cgroups - namely,
-a cgroup_load_subsys (similar to cgroup_init_subsys) for use as a module
-initcall, and a struct module pointer in struct cgroup_subsys.
-
-Several functions that might be wanted by modules have had EXPORT_SYMBOL added
-to them, but it's unclear exactly which functions want it and which won't.
+This patch modifies net/sched/cls_cgroup.c to allow the net_cls subsystem to
+be optionally compiled as a module instead of builtin. The cgroup_subsys
+struct is moved around a bit to allow the subsys_id to be either declared as a
+compile-time constant by the cgroup_subsys.h include in cgroup.h, or, if it's
+a module, initialized within the struct by cgroup_load_subsys.
 
 Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 ---
 
- Documentation/cgroups/cgroups.txt |    3 +
- include/linux/cgroup.h            |    4 +
- kernel/cgroup.c                   |  114 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 121 insertions(+), 0 deletions(-)
+ net/sched/Kconfig      |    5 ++++-
+ net/sched/cls_cgroup.c |   37 ++++++++++++++++++++++++++++---------
+ 2 files changed, 32 insertions(+), 10 deletions(-)
 
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 3df4b9a..dd0d6f1 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -492,6 +492,9 @@ Each subsystem should:
- - add an entry in linux/cgroup_subsys.h
- - define a cgroup_subsys object called <name>_subsys
+diff --git a/net/sched/Kconfig b/net/sched/Kconfig
+index 929218a..08ff9bc 100644
+--- a/net/sched/Kconfig
++++ b/net/sched/Kconfig
+@@ -328,13 +328,16 @@ config NET_CLS_FLOW
+ 	  module will be called cls_flow.
  
-+If a subsystem can be compiled as a module, it should also have in its
-+module initcall a call to cgroup_load_subsys().
+ config NET_CLS_CGROUP
+-	bool "Control Group Classifier"
++	tristate "Control Group Classifier"
+ 	select NET_CLS
+ 	depends on CGROUPS
+ 	---help---
+ 	  Say Y here if you want to classify packets based on the control
+ 	  cgroup of their process.
+ 
++	  To compile this code as a module, choose M here: the
++	  module will be called cls_cgroup.
 +
- Each subsystem may export the following methods. The only mandatory
- methods are create/destroy. Any others that are null are presumed to
- be successful no-ops.
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index d7f1545..c8474c4 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -38,6 +38,7 @@ extern void cgroup_fork_failed(struct task_struct *p, int run_callbacks,
- 			       unsigned long clone_flags);
- extern int cgroupstats_build(struct cgroupstats *stats,
- 				struct dentry *dentry);
-+extern int cgroup_load_subsys(struct cgroup_subsys *ss);
- 
- extern struct file_operations proc_cgroup_operations;
- 
-@@ -477,6 +478,9 @@ struct cgroup_subsys {
- 	/* used when use_id == true */
- 	struct idr idr;
- 	spinlock_t id_lock;
-+
-+	/* should be defined only by modular subsystems */
-+	struct module *module;
+ config NET_EMATCH
+ 	bool "Extended Matches"
+ 	select NET_CLS
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index e4877ca..df9723b 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -24,6 +24,25 @@ struct cgroup_cls_state
+ 	u32 classid;
  };
  
- #define SUBSYS(_x) extern struct cgroup_subsys _x ## _subsys;
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ece9321..bddf96b 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2477,6 +2477,7 @@ int cgroup_add_file(struct cgroup *cgrp,
- 		error = PTR_ERR(dentry);
- 	return error;
++static struct cgroup_subsys_state *cgrp_create(struct cgroup_subsys *ss,
++					       struct cgroup *cgrp);
++static void cgrp_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp);
++static int cgrp_populate(struct cgroup_subsys *ss, struct cgroup *cgrp);
++
++struct cgroup_subsys net_cls_subsys = {
++	.name		= "net_cls",
++	.create		= cgrp_create,
++	.destroy	= cgrp_destroy,
++	.populate	= cgrp_populate,
++#ifdef CONFIG_NET_CLS_CGROUP
++	.subsys_id	= net_cls_subsys_id,
++#else
++#define net_cls_subsys_id net_cls_subsys.subsys_id
++#endif
++	.module		= THIS_MODULE,
++};
++
++
+ static inline struct cgroup_cls_state *cgrp_cls_state(struct cgroup *cgrp)
+ {
+ 	return container_of(cgroup_subsys_state(cgrp, net_cls_subsys_id),
+@@ -79,14 +98,6 @@ static int cgrp_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
+ 	return cgroup_add_files(cgrp, ss, ss_files, ARRAY_SIZE(ss_files));
  }
-+EXPORT_SYMBOL_GPL(cgroup_add_file);
  
- int cgroup_add_files(struct cgroup *cgrp,
- 			struct cgroup_subsys *subsys,
-@@ -2491,6 +2492,7 @@ int cgroup_add_files(struct cgroup *cgrp,
- 	}
- 	return 0;
+-struct cgroup_subsys net_cls_subsys = {
+-	.name		= "net_cls",
+-	.create		= cgrp_create,
+-	.destroy	= cgrp_destroy,
+-	.populate	= cgrp_populate,
+-	.subsys_id	= net_cls_subsys_id,
+-};
+-
+ struct cls_cgroup_head
+ {
+ 	u32			handle;
+@@ -277,12 +288,20 @@ static struct tcf_proto_ops cls_cgroup_ops __read_mostly = {
+ 
+ static int __init init_cgroup_cls(void)
+ {
+-	return register_tcf_proto_ops(&cls_cgroup_ops);
++	int ret = register_tcf_proto_ops(&cls_cgroup_ops);
++	if (ret)
++		return ret;
++	ret = cgroup_load_subsys(&net_cls_subsys);
++	if (ret)
++		unregister_tcf_proto_ops(&cls_cgroup_ops);
++	return ret;
  }
-+EXPORT_SYMBOL_GPL(cgroup_add_files);
  
- /**
-  * cgroup_task_count - count the number of tasks in a cgroup.
-@@ -3638,7 +3640,119 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	mutex_init(&ss->hierarchy_mutex);
- 	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
- 	ss->active = 1;
-+
-+	/* this function shouldn't be used with modular subsystems, since they
-+	 * need to register a subsys_id, among other things */
-+	BUG_ON(ss->module);
-+}
-+
-+/**
-+ * cgroup_load_subsys: load and register a modular subsystem at runtime
-+ * @ss: the subsystem to load
-+ *
-+ * This function should be called in a modular subsystem's initcall. If the
-+ * subsytem is built as a module, it will be assigned a new subsys_id and set
-+ * up for use. If the subsystem is built-in anyway, work is delegated to the
-+ * simpler cgroup_init_subsys.
-+ */
-+int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
-+{
-+	int i;
-+	struct cgroup_subsys_state *css;
-+
-+	/* check name and function validity */
-+	if (ss->name == NULL || strlen(ss->name) > MAX_CGROUP_TYPE_NAMELEN ||
-+	    ss->create == NULL || ss->destroy == NULL)
-+		return -EINVAL;
-+
-+	/* we don't support callbacks in modular subsystems. this check is
-+	 * before the ss->module check for consistency - a module that *could*
-+	 * be a module should still have no callbacks for consistency. */
-+	if (ss->fork || ss->exit)
-+		return -EINVAL;
-+
-+	/* an optionally modular subsystem is built-in: we want to do nothing,
-+	 * since cgroup_init_subsys will take care of it. */
-+	if (ss->module == NULL) {
-+		/* sanity: ss->module NULL only if the subsys is built-in and
-+		 * appears in subsys[] already. */
-+		BUG_ON(ss->subsys_id >= CGROUP_BUILTIN_SUBSYS_COUNT);
-+		BUG_ON(subsys[ss->subsys_id] != ss);
-+		return 0;
-+	}
-+
-+	/* need to register a subsys id before anything else - for example,
-+	 * init_cgroup_css needs it. */
-+	mutex_lock(&cgroup_mutex);
-+	/* find the first empty slot in the array */
-+	for (i = CGROUP_BUILTIN_SUBSYS_COUNT; i < CGROUP_SUBSYS_COUNT; i++) {
-+		if (subsys[i] == NULL)
-+			break;
-+	}
-+	if (i == CGROUP_SUBSYS_COUNT) {
-+		/* maximum number of subsystems already registered! */
-+		mutex_unlock(&cgroup_mutex);
-+		return -EBUSY;
-+	}
-+	/* assign ourselves the subsys_id */
-+	ss->subsys_id = i;
-+	subsys[i] = ss;
-+
-+	/* no ss->create seems to need anything important in the ss struct, so
-+	 * this can happen first (i.e. before the rootnode attachment). */
-+	css = ss->create(ss, dummytop);
-+	if (IS_ERR(css)) {
-+		/* failure case - need to deassign the subsys[] slot. */
-+		subsys[i] = NULL;
-+		mutex_unlock(&cgroup_mutex);
-+		return PTR_ERR(css);
-+	}
-+
-+	list_add(&ss->sibling, &rootnode.subsys_list);
-+	ss->root = &rootnode;
-+
-+	/* our new subsystem will be attached to the dummy hierarchy. */
-+	init_cgroup_css(css, ss, dummytop);
-+	/* now we need to entangle the css into the existing css_sets. unlike
-+	 * in cgroup_init_subsys, there are now multiple css_sets, so each one
-+	 * will need a new pointer to it; done by iterating the css_set_table.
-+	 * furthermore, modifying the existing css_sets will corrupt the hash
-+	 * table state, so each changed css_set will need its hash recomputed.
-+	 * this is all done under the css_set_lock. */
-+	write_lock(&css_set_lock);
-+	for (i = 0; i < CSS_SET_TABLE_SIZE; i++) {
-+		struct css_set *cg;
-+		struct hlist_node *node, *tmp;
-+		struct hlist_head *bucket = &css_set_table[i], *new_bucket;
-+		hlist_for_each_entry_safe(cg, node, tmp, bucket, hlist) {
-+			/* skip entries that we already rehashed */
-+			if (cg->subsys[ss->subsys_id])
-+				continue;
-+			/* remove existing entry */
-+			hlist_del(&cg->hlist);
-+			/* set new value */
-+			cg->subsys[ss->subsys_id] = css;
-+			/* recompute hash and restore entry */
-+			new_bucket = css_set_hash(cg->subsys);
-+			hlist_add_head(&cg->hlist, new_bucket);
-+		}
-+	}
-+	write_unlock(&css_set_lock);
-+
-+	mutex_init(&ss->hierarchy_mutex);
-+	lockdep_set_class(&ss->hierarchy_mutex, &ss->subsys_key);
-+	ss->active = 1;
-+
-+	/* pin the subsystem's module so it doesn't go away. this shouldn't
-+	 * fail, since the module's initcall calls us.
-+	 * TODO: with module unloading, move this elsewhere */
-+	BUG_ON(!try_module_get(ss->module));
-+
-+	/* success! */
-+	mutex_unlock(&cgroup_mutex);
-+	return 0;
+ static void __exit exit_cgroup_cls(void)
+ {
+ 	unregister_tcf_proto_ops(&cls_cgroup_ops);
++	/* TODO: unload subsystem. for now, the try_module_get in load_subsys
++	 * prevents us from getting here. */
  }
-+EXPORT_SYMBOL_GPL(cgroup_load_subsys);
  
- /**
-  * cgroup_init_early - cgroup initialization at system boot
+ module_init(init_cgroup_cls);
