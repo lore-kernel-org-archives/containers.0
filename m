@@ -1,15 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Ian Molton <ian.molton-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org>
 Subject: Re: Fw: cgroups and dbus
-Date: Tue, 22 Dec 2009 13:46:49 +0900
-Message-ID: <20091222134649.61a0e290.kamezawa.hiroyu__25474.7612205849$1261457475$gmane$org@jp.fujitsu.com>
-References: <20091221142438.1c70fadb.kamezawa.hiroyu@jp.fujitsu.com>
-	<661de9470912202135s5869f0d0w6379ef6f3a668e8a@mail.gmail.com>
-	<4B2F480E.8090303@collabora.co.uk>
+Date: Tue, 22 Dec 2009 10:39:02 +0000
+Message-ID: <4B30A1C6.5040405__28754.0903235369$1261478625$gmane$org@collabora.co.uk>
+References: <20091221142438.1c70fadb.kamezawa.hiroyu@jp.fujitsu.com>	<661de9470912202135s5869f0d0w6379ef6f3a668e8a@mail.gmail.com>	<4B2F480E.8090303@collabora.co.uk>
+	<20091222134649.61a0e290.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B2F480E.8090303-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org>
+In-Reply-To: <20091222134649.61a0e290.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,60 +18,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ian Molton <ian.molton-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 21 Dec 2009 10:03:58 +0000
-Ian Molton <ian.molton-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org> wrote:
+KAMEZAWA Hiroyuki wrote:
 
-> Balbir Singh wrote:
-> > On Mon, Dec 21, 2009 at 10:54 AM, KAMEZAWA Hiroyuki <
-> > kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > 
-> >> Forwarding to container mailing list. Sorry, I myself don't have quick
-> >> answer. But, hmm, what you want cannot be achieved with libcgroup ?
-> 
-> Cheers guys,
-> 
-> my subscription to containers@ hasnt come through yet so please CC me :)
-> 
-> I'm working on implementing a kernel-based dbus solution, where the
-> 'daemon' is more of a routing manager that updates some in kernel
-> tables, allowing a lightweight kernel daemon to route messages
-> appropriately, and thus reducing the number of context switches needed
-> to send messages by half.
-> 
-> DBus has the concepts of 'system' and 'session' busses, and it seems
-> like cgroups could be a good fit for determining which busses an
-> application is on.
-> 
-> AIUI, an application can be connected to:
-> 
-I'm not sure wheter this kind of moving function from user to kernel
-is welcomed or not..
+> I'm not sure wheter this kind of moving function from user to kernel
+> is welcomed or not..
 
-
-> 1) The system bus
-> 2) A session bus (singular)
-> 3) Both of the above
-> 4) A private (point to point) bus
+The aim is to improve dbus performance by avoiding context switching as often.
+ 
+> It seems what you asked was an example of cgroup.
+> Maybe the simplest cgroup in the kernel is CONFIG_CGROUP_CPUACCT. 
+> (kernel/sched.c) The next one is CGROUP_DEVICE (security/device_cgroup.c)
 > 
-> so ideally we would need a process to inherit the system bus cgroup from
-> its parent, and also be able to be in a session bus cgroup (which would
-> be mutually exclusive with being in another session bus cgroup).
-> 
-> Point to point dbus connections could happily continue using unix
-> sockets (or whatever). These have neever been under the control of
-> dbus-daemon anyway.
-> 
+> Documentation under Documentation/cgroups/ is always taken care to be updated.
+> If you notice some description is unclear or obsolete, please report it.
 
-It seems what you asked was an example of cgroup.
-Maybe the simplest cgroup in the kernel is CONFIG_CGROUP_CPUACCT. 
-(kernel/sched.c) The next one is CGROUP_DEVICE (security/device_cgroup.c)
+I found my problem with the example there,
 
-Documentation under Documentation/cgroups/ is always taken care to be updated.
-If you notice some description is unclear or obsolete, please report it.
+my machine has no RAM on node 0.
 
-Thanks,
--Kame
+Can I suggest that the example might be better if it uses node 0 ? or had a
+note saying that if you have no memory on node 1 that it will fail with:
+"/bin/echo: write error: No space left on device" ?
+
+Also it would be a good idea if the example pointed out that the parent to
+'sh' is in the cgroup Charlie also.
+
+Heres a patch:
+
+From e6e430d3c3e865f21dffc75ff090bb283a4f32a0 Mon Sep 17 00:00:00 2001
+From: Ian Molton <ian.molton-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org>
+Date: Tue, 22 Dec 2009 10:31:20 +0000
+Subject: [PATCH] cgroup: Clarify documentation
+
+        This patch clarifies the cgroup documentation, giving some info on why
+the example given may fail, and a little more detail on its expected behaviour.
+
+Signed-off-by: Ian Molton <ian.molton-ZGY8ohtN/8pPYcu2f3hruQ@public.gmane.org>
+---
+ Documentation/cgroups/cgroups.txt |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 0b33bfe..8ac8615 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -309,7 +309,9 @@ the "cpuset" cgroup subsystem, the steps are something like:
+
+ For example, the following sequence of commands will setup a cgroup
+ named "Charlie", containing just CPUs 2 and 3, and Memory Node 1,
+-and then start a subshell 'sh' in that cgroup:
++and then start a subshell 'sh' in that cgroup. Note that if you have no RAM
++on node 1 or dont have 4 CPUs you will want to modify the example
++accordingly:
+
+   mount -t cgroup cpuset -ocpuset /dev/cgroup
+   cd /dev/cgroup
+@@ -317,7 +319,12 @@ and then start a subshell 'sh' in that cgroup:
+   cd Charlie
+   /bin/echo 2-3 > cpuset.cpus
+   /bin/echo 1 > cpuset.mems
++  # If you have no RAM on Node 0 the next command will return an error, eg.
++  # write error: No space left on device
+   /bin/echo $$ > tasks
++  # The current shell is now in cgroup Charlie. You can check this with:
++  cat /proc/self/cgroup
++  # Now launch a subshell which should inherit the cgroup:
+   sh
+   # The subshell 'sh' is now running in cgroup Charlie
+   # The next line should display '/Charlie'
+-- 
+1.6.5.7
