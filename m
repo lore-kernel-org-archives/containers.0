@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH RFC] c/r mounts ns.  Except not really.
-Date: Tue, 22 Dec 2009 20:18:59 -0500
-Message-ID: <4B317003.2060706@cs.columbia.edu>
-References: <20091215023945.GA12100@us.ibm.com>
-	<20091215201928.GA20037@us.ibm.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC] Restore task fs_root and pwd
+Date: Tue, 22 Dec 2009 19:43:25 -0600
+Message-ID: <20091223014325.GA765@hallyn.com>
+References: <20091210190031.GA19315@us.ibm.com>
+	<4B316869.90306@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091215201928.GA20037-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B316869.90306-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,88 +19,164 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Serge E. Hallyn wrote:
-> Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> We only c/r a mounts ns with objref 0, meaning inherit the existing
->> mounts ns.  We do intend to implement c/r of mounts and mounts
->> namespaces in the kernel.  It shouldn't be ugly or complicate locking
->> to do so.  Just haven't gotten around to it.
->>
->> Why did I bother with this?  Because we can't re-create private
->> mounts yet, and while I don't expect trouble doing so, I think
->> it's more than we want to take on now for v19.  But I'd like
->> as much as possible for everything which we don't support, to not
->> be checkpointable, since not doing so has in the past invited
->> slanderous accusations of being a toy implementation  :)
->>
->> Comments?
-
-This seems to me like the proper intermediary step.
-
->>
->> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-[...]
-
->> @@ -2323,3 +2324,37 @@ void put_mnt_ns(struct mnt_namespace *ns)
->>  	kfree(ns);
->>  }
->>  EXPORT_SYMBOL(put_mnt_ns);
->> +
->> +#ifdef CONFIG_CHECKPOINT
->> +int checkpoint_mounts_ns(struct ckpt_ctx *ctx, struct mnt_namespace *mnt_ns)
->> +{
->> +	if (mnt_ns == ctx->root_nsproxy->mnt_ns)
->> +		return 0;
-
-As you mention below, this should be CKPT_MNT_NS_INHERIT.
-
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> Technically note that this is not even correct.  If the container
-> being checkpointed had a mnt_ns private from its parents, then
-> it could have its own mounts which are not checkpointed (and therefore
-> can't even be generically restored by userspace).  So really this should
-> be returning 0 (which should be CKPT_MNT_NS_INHERIT) only if mnt_ns
-> == ctx->root_task->parent->nsproxy->mnt_ns (requiring more careful
-> dereferencing since we don't have it pinned).
 > 
-> Whatever we do here for v19, I intend to do the same thing for
-> network devices for v19.  The question is, are we being unprofessional,
-> or are we being useful+flexible, by simply ignoring these things at
-> checkpoint when we know we won't restore them?
+> Serge E. Hallyn wrote:
+> > Checkpoint and restore task->fs.  Tasks sharing task->fs will
+> > share them again after restart.
+> > 
+> > The fs/fs_struct.c part should of course be broken out, but
+> > this does the right thing for me.
+> > 
+> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Looks good. See a few comments below.
+> 
+> > ---
+> >  checkpoint/files.c             |  211 ++++++++++++++++++++++++++++++++++++++++
+> >  checkpoint/objhash.c           |    9 ++
+> >  checkpoint/process.c           |   13 +++
+> >  fs/open.c                      |   53 ++++++----
+> >  include/linux/checkpoint.h     |   10 ++-
+> >  include/linux/checkpoint_hdr.h |   10 ++
+> >  include/linux/fs.h             |    4 +
+> >  7 files changed, 287 insertions(+), 23 deletions(-)
+> > 
+> > diff --git a/checkpoint/files.c b/checkpoint/files.c
+> > index b622588..c8e8d7f 100644
+> > --- a/checkpoint/files.c
+> > +++ b/checkpoint/files.c
+> > @@ -24,6 +24,9 @@
+> >  #include <linux/checkpoint_hdr.h>
+> >  #include <linux/eventpoll.h>
+> >  #include <linux/eventfd.h>
+> > +#include <linux/fs.h>
+> > +#include <linux/fs_struct.h>
+> > +#include <linux/namei.h>
+> >  #include <net/sock.h>
+> >  
+> >  
+> > @@ -449,6 +452,71 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+> >  	return ret;
+> >  }
+> >  
+> > +int checkpoint_get_task_fs(struct ckpt_ctx *ctx, struct task_struct *t)
+> > +{
+> > +	struct fs_struct *fs;
+> > +	int fs_objref;
+> > +	int kill;
+> > +
+> > +	task_lock(current);
+> > +	fs = t->fs;
+> > +	write_lock(&fs->lock);
+> > +	fs->users++;
+> > +	write_unlock(&fs->lock);
+> 
+> 3 lines above are the same in obj_task_fs_grab()...
+> 
+> > +	task_unlock(current);
+> > +
+> > +	fs_objref = checkpoint_obj(ctx, fs, CKPT_OBJ_TASK_FS);
+> > +	write_lock(&fs->lock);
+> > +	kill = !--fs->users;
+> > +	write_unlock(&fs->lock);
+> > +	if (kill)
+> > +		free_fs_struct(fs);
+> 
+> And last 5 lines are the same in obj_task_fs_drop().
+> 
+> Perhaps put as helpers in fs_struct.h ?
 
-IIRC we agreed that so-called "external" mounts - whatever is mounted
-at the root of the container is the responsibility of userspace to have
-prepared properly before restart.
+Absolutely.  Aside from waiting on confirmation on the basics, I
+was also a little intimidated about adding more generic refcount
+handling to fs_struct.h, since it appears to me to be a case where
+generic handlers were not-added on purpose :)  But it's not right
+to have this code here.
 
-So I don't see an issue with ignoring these at checkpoint, with one
-exception: leak detection in full-container checkpoint should complain
-if the root container fs is shared with parent (above container) tasks.
+> > +
+> > +	return fs_objref;
+> > +}
+> > +
+> > +/*
+> > + * called with fs read_lock()d
+> > + */
+> 
+> Am I right to guess that this comment is stale ?
 
-I think about it this way: at checkpoint, we care about container (or
-checkpoint) root and below. Then at restart, we should decide whether
-the root task (of the restore) should inherit its initial FS, or
-whether it should start with a private one.
+Sure enough - read_locking it will deadlock checkpoint :)  Should
+be "called with fs refcount bumped".
 
-Recall that we had/have this dilemma also with UTS namespace, and with
-IPC namespace.
+> > +int checkpoint_obj_task_fs(struct ckpt_ctx *ctx, struct fs_struct *fs)
+> > +{
+> > +	struct ckpt_hdr_task_fs *h;
+> > +	int ret;
+> > +	struct fs_struct *fscopy;
+> > +
+> 
+> ...
+> 
+> > +/* this is the fn called by objhash when it runs into a
+> > + * CKPT_OBJ_TASK_FS entry.  Creates an fs_struct and
+> > + * places it in the hash. */
+> > +static struct fs_struct *restore_obj_task_fs(struct ckpt_ctx *ctx)
+> > +{
+> > +	struct ckpt_hdr_task_fs *h;
+> > +	struct fs_struct *fs;
+> > +	int ret = 0;
+> > +	char *root, *cwd;
+> > +	int len;
+> > +
+> > +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_FS);
+> > +	if (IS_ERR(h))
+> > +		return ERR_PTR(PTR_ERR(h));
+> > +	ckpt_hdr_put(ctx, h);
+> > +
+> > +	fs = copy_fs_struct(current->fs);
+> > +	if (!fs)
+> > +		return ERR_PTR(-ENOMEM);
+> > +
+> > +	len = ckpt_read_payload(ctx, (void **) &root,
+> > +				PATH_MAX, CKPT_HDR_FILE_NAME);
+> 
+> Test for len < 0 ... ?
+> 
+> Since this is another place where we read file-name (also in
+> checkpoint/files.c), perhaps introduce a ckpt_read_fname() ?
 
-Here is one way to do it:  (consider ipc-ns) at checkpoint, for the
-kernel will compare every task's ipc-ns to the container's _parent_'s
-ipc-ns, and if equal will save CKPT_OBJ_NS_INHERIT. If --inherit-ipc
-is given, it will not the state of the parent's namespace, otherwise
-it will.
+Ok.
 
-At restart, if --inherit-ipc then whenever the kernel sees objref
-that is CKPT_OBJ_NS_INHERIT, it will use the container's parent's
-ipc-ns. Otherwise, it will create a new, private namespace for it.
-(Also, with --inherit-ipc, if there is namespace state following
-the CKPT_OBJ_NS_INHERIT, it should skip it without using it).
+> > +	ret = restore_chroot(ctx, fs, root);
+> > +	kfree(root);
+> > +	if (ret) {
+> > +		free_fs_struct(fs);
+> > +		return ERR_PTR(ret);
+> > +	}
+> > +
+> > +	len = ckpt_read_payload(ctx, (void **) &cwd,
+> > +				PATH_MAX, CKPT_HDR_FILE_NAME);
+> > +	ret = restore_cwd(ctx, fs, cwd);
+> > +	kfree(cwd);
+> > +
+> > +	if (ret) {
+> > +		free_fs_struct(fs);
+> > +		return ERR_PTR(ret);
+> > +	}
+> > +	return fs;
+> > +}
+> 
+> ...
+> 
+> Oren.
 
-Oren.
+Laptop is rebuilding at the moment (plus I'm out) so I may not
+get this out until Monday.  If you wanted to apply this now I'll
+send a patch to move the refcounting to the right place etc next
+week, else I'll just send a whole new patch.
+
+Thanks,
+-serge
