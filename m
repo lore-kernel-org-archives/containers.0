@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH RFC] refuse c/r with nested network namespaces
-Date: Tue, 22 Dec 2009 19:48:47 -0500
-Message-ID: <4B3168EF.8020100@cs.columbia.edu>
-References: <20091215215854.GA26783@us.ibm.com>
+Subject: Re: [PATCH RFC] refuse checkpoint of file with f_owner
+Date: Tue, 22 Dec 2009 19:49:10 -0500
+Message-ID: <4B316906.20501@cs.columbia.edu>
+References: <20091216212258.GA31602@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091215215854.GA26783-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091216212258.GA31602-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,35 +22,43 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-For v19-rc3.
+Also for v19-rc3.
 
 Serge E. Hallyn wrote:
-> ...because we can't restore network devices in private
-> namespaces anyway.  This leaves userspace to set up
-> network devices however it wants at restart, and leaves
-> it free to restart the application either in the global
-> or a private (configured) network namespace.
+> ... because we don't yet support its restore.
 > 
 > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  kernel/nsproxy.c |    7 +++++++
->  1 files changed, 7 insertions(+), 0 deletions(-)
+>  checkpoint/files.c |   12 ++++++++++++
+>  1 files changed, 12 insertions(+), 0 deletions(-)
 > 
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index c91b725..851777a 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -291,6 +291,13 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> index c8e8d7f..cac5236 100644
+> --- a/checkpoint/files.c
+> +++ b/checkpoint/files.c
+> @@ -261,6 +261,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+>  	struct fdtable *fdt;
+>  	int objref, ret;
+>  	int coe = 0;	/* avoid gcc warning */
+> +	pid_t pid;
 >  
->  	/* TODO: Write other namespaces here */
+>  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+>  	if (!h)
+> @@ -283,6 +284,17 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+>  	}
 >  
-> +	/* We do not support >1 private netns */
-> +	ret = -EINVAL;
-> +	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
-> +		ckpt_err(ctx, ret, "%(T)Nested net_ns unsupported\n");
+>  	/*
+> +	 * TODO: Implement c/r of fowner and f_sigio.  Should be
+> +	 * trivial, but for now we just refuse its checkpoint
+> +	 */
+> +	pid = f_getown(file);
+> +	if (pid) {
+> +		ret = -EBUSY;
+> +		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
 > +		goto out;
 > +	}
 > +
->  	ret = ckpt_write_obj(ctx, &h->h);
->   out:
->  	ckpt_hdr_put(ctx, h);
+> +	/*
+>  	 * if seen first time, this will add 'file' to the objhash, keep
+>  	 * a reference to it, dump its state while at it.
+>  	 */
