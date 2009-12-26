@@ -1,11 +1,14 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH] [TRIVIAL] cgroups: fix CONTENTS in cgroups documentation
-Date: Sat, 26 Dec 2009 21:33:12 +0200
-Message-ID: <1261855992-3406-1-git-send-email-kirill@shutemov.name>
+Subject: Re: [PATCH v3 0/4] cgroup notifications API and memory thresholds
+Date: Sun, 27 Dec 2009 01:37:28 +0200
+Message-ID: <cc557aab0912261537n2f2e798u4338b4d1f31067e6__44589.0493960634$1261870706$gmane$org@mail.gmail.com>
+References: <cover.1261786326.git.kirill@shutemov.name>
+	<20091226133011.GA10944@balbir.in.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20091226133011.GA10944-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,28 +18,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add a forgotten item into CONTENTS.
-
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 0b33bfe..3bda601 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -22,6 +22,7 @@ CONTENTS:
- 2. Usage Examples and Syntax
-   2.1 Basic Usage
-   2.2 Attaching processes
-+  2.3 Mounting hierarchies by name
- 3. Kernel API
-   3.1 Overview
-   3.2 Synchronization
--- 
-1.6.5.7
+T24gU2F0LCBEZWMgMjYsIDIwMDkgYXQgMzozMCBQTSwgQmFsYmlyIFNpbmdoIDxiYWxiaXJAbGlu
+dXgudm5ldC5pYm0uY29tPiB3cm90ZToKPiAqIEtpcmlsbCBBLiBTaHV0ZW1vdiA8a2lyaWxsQHNo
+dXRlbW92Lm5hbWU+IFsyMDA5LTEyLTI2IDAyOjMwOjU2XToKPgo+PiBUaGlzIHBhdGNoc2V0IGlu
+dHJvZHVjZXMgZXZlbnRmZC1iYXNlZCBBUEkgZm9yIG5vdGlmaWNhdGlvbnMgaW4gY2dyb3VwcyBh
+bmQKPj4gaW1wbGVtZW50cyBtZW1vcnkgbm90aWZpY2F0aW9ucyBvbiB0b3Agb2YgaXQuCj4+Cj4+
+IEl0IHVzZXMgc3RhdGlzdGljcyBpbiBtZW1vcnkgY29udHJvbGVyIHRvIHRyYWNrIG1lbW9yeSB1
+c2FnZS4KPj4KPj4gT3V0cHV0IG9mIHRpbWUoMSkgb24gYnVpbGRpbmcga2VybmVsIG9uIHRtcGZz
+Ogo+Pgo+PiBSb290IGNncm91cCBiZWZvcmUgY2hhbmdlczoKPj4gwqAgwqAgwqAgbWFrZSAtajIg
+wqA1MDYuMzcgdXNlciA2MC45M3Mgc3lzdGVtIDE5MyUgY3B1IDQ6NTIuNzcgdG90YWwKPj4gTm9u
+LXJvb3QgY2dyb3VwIGJlZm9yZSBjaGFuZ2VzOgo+PiDCoCDCoCDCoCBtYWtlIC1qMiDCoDUwNy4x
+NCB1c2VyIDYyLjY2cyBzeXN0ZW0gMTkzJSBjcHUgNDo1NC43NCB0b3RhbAo+PiBSb290IGNncm91
+cCBhZnRlciBjaGFuZ2VzICgwIHRocmVzaG9sZHMpOgo+PiDCoCDCoCDCoCBtYWtlIC1qMiDCoDUw
+Ny4xMyB1c2VyIDYyLjIwcyBzeXN0ZW0gMTkzJSBjcHUgNDo1My41NSB0b3RhbAo+PiBOb24tcm9v
+dCBjZ3JvdXAgYWZ0ZXIgY2hhbmdlcyAoMCB0aHJlc2hvbGRzKToKPj4gwqAgwqAgwqAgbWFrZSAt
+ajIgwqA1MDcuNzAgdXNlciA2NC4yMHMgc3lzdGVtIDE5MyUgY3B1IDQ6NTUuNzAgdG90YWwKPj4g
+Um9vdCBjZ3JvdXAgYWZ0ZXIgY2hhbmdlcyAoMSB0aHJlc2hvbGRzLCBuZXZlciBjcm9zc2VkKToK
+Pj4gwqAgwqAgwqAgbWFrZSAtajIgwqA1MDYuOTcgdXNlciA2Mi4yMHMgc3lzdGVtIDE5MyUgY3B1
+IDQ6NTMuOTAgdG90YWwKPj4gTm9uLXJvb3QgY2dyb3VwIGFmdGVyIGNoYW5nZXMgKDEgdGhyZXNo
+b2xkcywgbmV2ZXIgY3Jvc3NlZCk6Cj4+IMKgIMKgIMKgIG1ha2UgLWoyIMKgNTA3LjU1IHVzZXIg
+NjQuMDhzIHN5c3RlbSAxOTMlIGNwdSA0OjU1LjYzIHRvdGFsCj4+Cj4+IEFueSBjb21tZW50cz8K
+Pgo+IENvdWxkIHlvdSBwbGVhc2UgYWRkIHNvbWUgZG9jdW1lbnRhdGlvbiBmb3IgZW5kIHVzZXJz
+LgoKU3VyZS4gSSdsbCBzZW5kIG5ldyB2ZXJzaW9uIG9mIHBhdGNoc2V0IHdpdGggZG9jdW1lbnRh
+dGlvbiBzb29uLgoKPiBJJ3ZlIGp1c3QKPiBjb21waWxlZCBhIGtlcm5lbCB3aXRoIHlvdXIgY2hh
+bmdlcyBmb3IgdGVzdC4gQWxzbywgaXMgdGhlcmUgYSByZWFzb24KPiBub3QgdG8gdXNlIGNncm91
+cHN0YXRzPwoKSSdtIG5vdCBzdXJlIHRoYXQgdW5kZXJzdGFuZCB5b3UgY29ycmVjdGx5LiBDb3Vs
+ZCB5b3UgZXhwbGFpbiB0aGUgaWRlYT8KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
