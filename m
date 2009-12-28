@@ -1,17 +1,18 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Subject: Re: [PATCH v4 4/4] memcg: implement memory thresholds
-Date: Mon, 28 Dec 2009 11:43:25 +0900
-Message-ID: <20091228114325.e9b3b3d6.kamezawa.hiroyu__47922.16868741$1261968441$gmane$org@jp.fujitsu.com>
+Date: Mon, 28 Dec 2009 05:23:51 +0200
+Message-ID: <cc557aab0912271923v4a4ed8cco168193c63efd44f__26494.8476026349$1261970674$gmane$org@mail.gmail.com>
 References: <cover.1261858972.git.kirill@shutemov.name>
 	<3f29ccc3c93e2defd70fc1c4ca8c133908b70b0b.1261858972.git.kirill@shutemov.name>
 	<59a7f92356bf1508f06d12c501a7aa4feffb1bbc.1261858972.git.kirill@shutemov.name>
 	<c2379f3965225b6d62e64c64f8c0e67fee085d7f.1261858972.git.kirill@shutemov.name>
 	<7a4e1d758b98ca633a0be06e883644ad8813c077.1261858972.git.kirill@shutemov.name>
+	<20091228114325.e9b3b3d6.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <7a4e1d758b98ca633a0be06e883644ad8813c077.1261858972.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <20091228114325.e9b3b3d6.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,457 +22,318 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 27 Dec 2009 04:09:02 +0200
-"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-
-> It allows to register multiple memory and memsw thresholds and gets
-> notifications when it crosses.
-> 
-> To register a threshold application need:
-> - create an eventfd;
-> - open memory.usage_in_bytes or memory.memsw.usage_in_bytes;
-> - write string like "<event_fd> <memory.usage_in_bytes> <threshold>" to
->   cgroup.event_control.
-> 
-> Application will be notified through eventfd when memory usage crosses
-> threshold in any direction.
-> 
-> It's applicable for root and non-root cgroup.
-> 
-> It uses stats to track memory usage, simmilar to soft limits. It checks
-> if we need to send event to userspace on every 100 page in/out. I guess
-> it's good compromise between performance and accuracy of thresholds.
-> 
-> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> ---
->  Documentation/cgroups/memory.txt |   19 +++-
->  mm/memcontrol.c                  |  275 ++++++++++++++++++++++++++++++++++++++
->  2 files changed, 293 insertions(+), 1 deletions(-)
-> 
-> diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/memory.txt
-> index b871f25..195af07 100644
-> --- a/Documentation/cgroups/memory.txt
-> +++ b/Documentation/cgroups/memory.txt
-> @@ -414,7 +414,24 @@ NOTE1: Soft limits take effect over a long period of time, since they involve
->  NOTE2: It is recommended to set the soft limit always below the hard limit,
->         otherwise the hard limit will take precedence.
->  
-> -8. TODO
-> +8. Memory thresholds
-> +
-> +Memory controler implements memory thresholds using cgroups notification
-> +API (see cgroups.txt). It allows to register multiple memory and memsw
-> +thresholds and gets notifications when it crosses.
-> +
-> +To register a threshold application need:
-> + - create an eventfd using eventfd(2);
-> + - open memory.usage_in_bytes or memory.memsw.usage_in_bytes;
-> + - write string like "<event_fd> <memory.usage_in_bytes> <threshold>" to
-> +   cgroup.event_control.
-> +
-> +Application will be notified through eventfd when memory usage crosses
-> +threshold in any direction.
-> +
-> +It's applicable for root and non-root cgroup.
-> +
-> +9. TODO
->  
->  1. Add support for accounting huge pages (as a separate controller)
->  2. Make per-cgroup scanner reclaim not-shared pages first
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 36eb7af..3a0a6a1 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -6,6 +6,10 @@
->   * Copyright 2007 OpenVZ SWsoft Inc
->   * Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->   *
-> + * Memory thresholds
-> + * Copyright (C) 2009 Nokia Corporation
-> + * Author: Kirill A. Shutemov
-> + *
->   * This program is free software; you can redistribute it and/or modify
->   * it under the terms of the GNU General Public License as published by
->   * the Free Software Foundation; either version 2 of the License, or
-> @@ -39,6 +43,8 @@
->  #include <linux/mm_inline.h>
->  #include <linux/page_cgroup.h>
->  #include <linux/cpu.h>
-> +#include <linux/eventfd.h>
-> +#include <linux/sort.h>
->  #include "internal.h"
->  
->  #include <asm/uaccess.h>
-> @@ -56,6 +62,7 @@ static int really_do_swap_account __initdata = 1; /* for remember boot option*/
->  #endif
->  
->  #define SOFTLIMIT_EVENTS_THRESH (1000)
-> +#define THRESHOLDS_EVENTS_THRESH (100)
->  
->  /*
->   * Statistics for memory cgroup.
-> @@ -72,6 +79,8 @@ enum mem_cgroup_stat_index {
->  	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
->  	MEM_CGROUP_STAT_SOFTLIMIT, /* decrements on each page in/out.
->  					used by soft limit implementation */
-> +	MEM_CGROUP_STAT_THRESHOLDS, /* decrements on each page in/out.
-> +					used by threshold implementation */
->  
->  	MEM_CGROUP_STAT_NSTATS,
->  };
-> @@ -182,6 +191,20 @@ struct mem_cgroup_tree {
->  
->  static struct mem_cgroup_tree soft_limit_tree __read_mostly;
->  
-> +struct mem_cgroup_threshold {
-> +	struct eventfd_ctx *eventfd;
-> +	u64 threshold;
-> +};
-> +
-> +struct mem_cgroup_threshold_ary {
-> +	unsigned int size;
-> +	atomic_t cur;
-> +	struct mem_cgroup_threshold entries[0];
-> +};
-> +
-Why "array" is a choice here ? IOW, why not list ?
-How many waiters are expected as usual workload ?
-
-> +static bool mem_cgroup_threshold_check(struct mem_cgroup* mem);
-> +static void mem_cgroup_threshold(struct mem_cgroup* mem);
-> +
->  /*
->   * The memory controller data structure. The memory controller controls both
->   * page cache and RSS per cgroup. We would eventually like to provide
-> @@ -233,6 +256,15 @@ struct mem_cgroup {
->  	/* set when res.limit == memsw.limit */
->  	bool		memsw_is_minimum;
->  
-> +	/* protect arrays of thresholds */
-> +	struct mutex thresholds_lock;
-> +
-> +	/* thresholds for memory usage. RCU-protected */
-> +	struct mem_cgroup_threshold_ary *thresholds;
-> +
-> +	/* thresholds for mem+swap usage. RCU-protected */
-> +	struct mem_cgroup_threshold_ary *memsw_thresholds;
-> +
->  	/*
->  	 * statistics. This must be placed at the end of memcg.
->  	 */
-> @@ -525,6 +557,8 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem,
->  		__mem_cgroup_stat_add_safe(cpustat,
->  				MEM_CGROUP_STAT_PGPGOUT_COUNT, 1);
->  	__mem_cgroup_stat_add_safe(cpustat, MEM_CGROUP_STAT_SOFTLIMIT, -1);
-> +	__mem_cgroup_stat_add_safe(cpustat, MEM_CGROUP_STAT_THRESHOLDS, -1);
-> +
->  	put_cpu();
->  }
->  
-> @@ -1510,6 +1544,8 @@ charged:
->  	if (mem_cgroup_soft_limit_check(mem))
->  		mem_cgroup_update_tree(mem, page);
->  done:
-> +	if (mem_cgroup_threshold_check(mem))
-> +		mem_cgroup_threshold(mem);
->  	return 0;
->  nomem:
->  	css_put(&mem->css);
-> @@ -2075,6 +2111,8 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
->  
->  	if (mem_cgroup_soft_limit_check(mem))
->  		mem_cgroup_update_tree(mem, page);
-> +	if (mem_cgroup_threshold_check(mem))
-> +		mem_cgroup_threshold(mem);
->  	/* at swapout, this memcg will be accessed to record to swap */
->  	if (ctype != MEM_CGROUP_CHARGE_TYPE_SWAPOUT)
->  		css_put(&mem->css);
-> @@ -3071,12 +3109,246 @@ static int mem_cgroup_swappiness_write(struct cgroup *cgrp, struct cftype *cft,
->  	return 0;
->  }
->  
-> +static bool mem_cgroup_threshold_check(struct mem_cgroup *mem)
-> +{
-> +	bool ret = false;
-> +	int cpu;
-> +	s64 val;
-> +	struct mem_cgroup_stat_cpu *cpustat;
-> +
-> +	cpu = get_cpu();
-> +	cpustat = &mem->stat.cpustat[cpu];
-> +	val = __mem_cgroup_stat_read_local(cpustat, MEM_CGROUP_STAT_THRESHOLDS);
-> +	if (unlikely(val < 0)) {
-> +		__mem_cgroup_stat_set(cpustat, MEM_CGROUP_STAT_THRESHOLDS,
-> +				THRESHOLDS_EVENTS_THRESH);
-> +		ret = true;
-> +	}
-> +	put_cpu();
-> +	return ret;
-> +}
-> +
-> +static void __mem_cgroup_threshold(struct mem_cgroup *memcg, bool swap)
-> +{
-> +	struct mem_cgroup_threshold_ary *thresholds;
-> +	u64 usage = mem_cgroup_usage(memcg, swap);
-> +	int i, cur;
-> +
-> +	rcu_read_lock();
-> +	if (!swap) {
-> +		thresholds = rcu_dereference(memcg->thresholds);
-> +	} else {
-> +		thresholds = rcu_dereference(memcg->memsw_thresholds);
-> +	}
-> +
-> +	if (!thresholds)
-> +		goto unlock;
-> +
-> +	cur = atomic_read(&thresholds->cur);
-> +
-> +	/* Check if a threshold crossed in any direction */
-> +
-> +	for(i = cur; i >= 0 &&
-> +		unlikely(thresholds->entries[i].threshold > usage); i--) {
-> +		atomic_dec(&thresholds->cur);
-> +		eventfd_signal(thresholds->entries[i].eventfd, 1);
-> +	}
-> +
-> +	for(i = cur + 1; i < thresholds->size &&
-> +		unlikely(thresholds->entries[i].threshold <= usage); i++) {
-> +		atomic_inc(&thresholds->cur);
-> +		eventfd_signal(thresholds->entries[i].eventfd, 1);
-> +	}
-> +unlock:
-> +	rcu_read_unlock();
-> +}
-> +
-> +static void mem_cgroup_threshold(struct mem_cgroup *memcg)
-> +{
-> +	__mem_cgroup_threshold(memcg, false);
-> +	if (do_swap_account)
-> +		__mem_cgroup_threshold(memcg, true);
-> +}
-> +
-> +static int compare_thresholds(const void *a, const void *b)
-> +{
-> +	const struct mem_cgroup_threshold *_a = a;
-> +	const struct mem_cgroup_threshold *_b = b;
-> +
-> +	return _a->threshold - _b->threshold;
-> +}
-> +
-> +static int mem_cgroup_register_event(struct cgroup *cgrp, struct cftype *cft,
-> +		struct eventfd_ctx *eventfd, const char *args)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +	struct mem_cgroup_threshold_ary *thresholds, *thresholds_new;
-> +	int type = MEMFILE_TYPE(cft->private);
-> +	u64 threshold, usage;
-> +	int size;
-> +	int i, ret;
-> +
-> +	ret = res_counter_memparse_write_strategy(args, &threshold);
-> +	if (ret)
-> +		return ret;
-> +
-> +	mutex_lock(&memcg->thresholds_lock);
-> +	if (type == _MEM)
-> +		thresholds = memcg->thresholds;
-> +	else if (type == _MEMSWAP)
-> +		thresholds = memcg->memsw_thresholds;
-> +	else
-> +		BUG();
-> +
-> +	usage = mem_cgroup_usage(memcg, type == _MEMSWAP);
-> +
-> +	/* Check if a threshold crossed before adding a new one */
-> +	if (thresholds)
-> +		__mem_cgroup_threshold(memcg, type == _MEMSWAP);
-> +
-> +	if (thresholds)
-> +		size = thresholds->size + 1;
-> +	else
-> +		size = 1;
-> +
-> +	/* Allocate memory for new array of thresholds */
-> +	thresholds_new = kmalloc(sizeof(*thresholds_new) +
-> +			size * sizeof(struct mem_cgroup_threshold),
-> +			GFP_KERNEL);
-> +	if (!thresholds_new) {
-> +		ret = -ENOMEM;
-> +		goto unlock;
-> +	}
-> +	thresholds_new->size = size;
-> +
-> +	/* Copy thresholds (if any) to new array */
-> +	if (thresholds)
-> +		memcpy(thresholds_new->entries, thresholds->entries,
-> +				thresholds->size *
-> +				sizeof(struct mem_cgroup_threshold));
-> +	/* Add new threshold */
-> +	thresholds_new->entries[size - 1].eventfd = eventfd;
-> +	thresholds_new->entries[size - 1].threshold = threshold;
-> +
-> +	/* Sort thresholds. Registering of new threshold isn't time-critical */
-> +	sort(thresholds_new->entries, size,
-> +			sizeof(struct mem_cgroup_threshold),
-> +			compare_thresholds, NULL);
-> +
-> +	/* Find current threshold */
-> +	atomic_set(&thresholds_new->cur, -1);
-> +	for(i = 0; i < size; i++) {
-> +		if (thresholds_new->entries[i].threshold < usage)
-> +			atomic_inc(&thresholds_new->cur);
-> +	}
-> +
-> +	/*
-> +	 * We need to increment refcnt to be sure that all thresholds
-> +	 * will be unregistered before calling __mem_cgroup_free()
-> +	 */
-> +	mem_cgroup_get(memcg);
-> +
-> +	if (type == _MEM)
-> +		rcu_assign_pointer(memcg->thresholds, thresholds_new);
-> +	else
-> +		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
-> +
-> +	synchronize_rcu();
-
-Could you add explanation when you use synchronize_rcu() ?
-
-> +	kfree(thresholds);
-
-Can't this be freed by RCU instead of synchronize_rcu() ?
-
-
-> +unlock:
-> +	mutex_unlock(&memcg->thresholds_lock);
-> +
-> +	return ret;
-> +}
-> +
-> +static int mem_cgroup_unregister_event(struct cgroup *cgrp, struct cftype *cft,
-> +		struct eventfd_ctx *eventfd)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +	struct mem_cgroup_threshold_ary *thresholds, *thresholds_new;
-> +	int type = MEMFILE_TYPE(cft->private);
-> +	u64 usage;
-> +	int size = 0;
-> +	int i, j, ret;
-> +
-> +	mutex_lock(&memcg->thresholds_lock);
-> +	if (type == _MEM)
-> +		thresholds = memcg->thresholds;
-> +	else if (type == _MEMSWAP)
-> +		thresholds = memcg->memsw_thresholds;
-> +	else
-> +		BUG();
-> +
-> +	/*
-> +	 * Something went wrong if we trying to unregister a threshold
-> +	 * if we don't have thresholds
-> +	 */
-> +	BUG_ON(!thresholds);
-> +
-> +	usage = mem_cgroup_usage(memcg, type == _MEMSWAP);
-> +
-> +	/* Check if a threshold crossed before removing */
-> +	__mem_cgroup_threshold(memcg, type == _MEMSWAP);
-> +
-> +	/* Calculate new number of threshold */
-> +	for(i = 0; i < thresholds->size; i++) {
-> +		if (thresholds->entries[i].eventfd != eventfd)
-> +			size++;
-> +	}
-> +
-> +	/* Set thresholds array to NULL if we don't have thresholds */
-> +	if (!size) {
-> +		thresholds_new = NULL;
-> +		goto assign;
-> +	}
-> +
-> +	/* Allocate memory for new array of thresholds */
-> +	thresholds_new = kmalloc(sizeof(*thresholds_new) +
-> +			size * sizeof(struct mem_cgroup_threshold),
-> +			GFP_KERNEL);
-> +	if (!thresholds_new) {
-> +		ret = -ENOMEM;
-> +		goto unlock;
-> +	}
-> +	thresholds_new->size = size;
-> +
-> +	/* Copy thresholds and find current threshold */
-> +	atomic_set(&thresholds_new->cur, -1);
-> +	for(i = 0, j = 0; i < thresholds->size; i++) {
-> +		if (thresholds->entries[i].eventfd == eventfd)
-> +			continue;
-> +
-> +		thresholds_new->entries[j] = thresholds->entries[i];
-> +		if (thresholds_new->entries[j].threshold < usage)
-> +			atomic_inc(&thresholds_new->cur);
-It's better to do atomic set after loop.
-
-> +		j++;
-> +	}
-
-Hmm..is this "copy array" usual coding style for handling eventfd ?
-
-
-> +
-> +assign:
-> +	if (type == _MEM)
-> +		rcu_assign_pointer(memcg->thresholds, thresholds_new);
-> +	else
-> +		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
-> +
-> +	synchronize_rcu();
-> +
-> +	for(i = 0; i < thresholds->size - size; i++)
-> +		mem_cgroup_put(memcg);
-> +
-> +	kfree(thresholds);
-> +unlock:
-> +	mutex_unlock(&memcg->thresholds_lock);
-> +
-> +	return ret;
-> +}
->  
->  static struct cftype mem_cgroup_files[] = {
->  	{
->  		.name = "usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
->  		.read_u64 = mem_cgroup_read,
-> +		.register_event = mem_cgroup_register_event,
-> +		.unregister_event = mem_cgroup_unregister_event,
->  	},
->  	{
->  		.name = "max_usage_in_bytes",
-> @@ -3128,6 +3400,8 @@ static struct cftype memsw_cgroup_files[] = {
->  		.name = "memsw.usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_USAGE),
->  		.read_u64 = mem_cgroup_read,
-> +		.register_event = mem_cgroup_register_event,
-> +		.unregister_event = mem_cgroup_unregister_event,
->  	},
->  	{
->  		.name = "memsw.max_usage_in_bytes",
-> @@ -3367,6 +3641,7 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
->  	if (parent)
->  		mem->swappiness = get_swappiness(parent);
->  	atomic_set(&mem->refcnt, 1);
-> +	mutex_init(&mem->thresholds_lock);
->  	return &mem->css;
->  free_out:
->  	__mem_cgroup_free(mem);
-> -- 
-> 1.6.5.7
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+T24gTW9uLCBEZWMgMjgsIDIwMDkgYXQgNDo0MyBBTSwgS0FNRVpBV0EgSGlyb3l1a2kKPGthbWV6
+YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4gT24gU3VuLCAyNyBEZWMgMjAwOSAw
+NDowOTowMiArMDIwMAo+ICJLaXJpbGwgQS4gU2h1dGVtb3YiIDxraXJpbGxAc2h1dGVtb3YubmFt
+ZT4gd3JvdGU6Cj4KPj4gSXQgYWxsb3dzIHRvIHJlZ2lzdGVyIG11bHRpcGxlIG1lbW9yeSBhbmQg
+bWVtc3cgdGhyZXNob2xkcyBhbmQgZ2V0cwo+PiBub3RpZmljYXRpb25zIHdoZW4gaXQgY3Jvc3Nl
+cy4KPj4KPj4gVG8gcmVnaXN0ZXIgYSB0aHJlc2hvbGQgYXBwbGljYXRpb24gbmVlZDoKPj4gLSBj
+cmVhdGUgYW4gZXZlbnRmZDsKPj4gLSBvcGVuIG1lbW9yeS51c2FnZV9pbl9ieXRlcyBvciBtZW1v
+cnkubWVtc3cudXNhZ2VfaW5fYnl0ZXM7Cj4+IC0gd3JpdGUgc3RyaW5nIGxpa2UgIjxldmVudF9m
+ZD4gPG1lbW9yeS51c2FnZV9pbl9ieXRlcz4gPHRocmVzaG9sZD4iIHRvCj4+IMKgIGNncm91cC5l
+dmVudF9jb250cm9sLgo+Pgo+PiBBcHBsaWNhdGlvbiB3aWxsIGJlIG5vdGlmaWVkIHRocm91Z2gg
+ZXZlbnRmZCB3aGVuIG1lbW9yeSB1c2FnZSBjcm9zc2VzCj4+IHRocmVzaG9sZCBpbiBhbnkgZGly
+ZWN0aW9uLgo+Pgo+PiBJdCdzIGFwcGxpY2FibGUgZm9yIHJvb3QgYW5kIG5vbi1yb290IGNncm91
+cC4KPj4KPj4gSXQgdXNlcyBzdGF0cyB0byB0cmFjayBtZW1vcnkgdXNhZ2UsIHNpbW1pbGFyIHRv
+IHNvZnQgbGltaXRzLiBJdCBjaGVja3MKPj4gaWYgd2UgbmVlZCB0byBzZW5kIGV2ZW50IHRvIHVz
+ZXJzcGFjZSBvbiBldmVyeSAxMDAgcGFnZSBpbi9vdXQuIEkgZ3Vlc3MKPj4gaXQncyBnb29kIGNv
+bXByb21pc2UgYmV0d2VlbiBwZXJmb3JtYW5jZSBhbmQgYWNjdXJhY3kgb2YgdGhyZXNob2xkcy4K
+Pj4KPj4gU2lnbmVkLW9mZi1ieTogS2lyaWxsIEEuIFNodXRlbW92IDxraXJpbGxAc2h1dGVtb3Yu
+bmFtZT4KPj4gLS0tCj4+IMKgRG9jdW1lbnRhdGlvbi9jZ3JvdXBzL21lbW9yeS50eHQgfCDCoCAx
+OSArKystCj4+IMKgbW0vbWVtY29udHJvbC5jIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgfCDC
+oDI3NSArKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKwo+PiDCoDIgZmlsZXMg
+Y2hhbmdlZCwgMjkzIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4+Cj4+IGRpZmYgLS1n
+aXQgYS9Eb2N1bWVudGF0aW9uL2Nncm91cHMvbWVtb3J5LnR4dCBiL0RvY3VtZW50YXRpb24vY2dy
+b3Vwcy9tZW1vcnkudHh0Cj4+IGluZGV4IGI4NzFmMjUuLjE5NWFmMDcgMTAwNjQ0Cj4+IC0tLSBh
+L0RvY3VtZW50YXRpb24vY2dyb3Vwcy9tZW1vcnkudHh0Cj4+ICsrKyBiL0RvY3VtZW50YXRpb24v
+Y2dyb3Vwcy9tZW1vcnkudHh0Cj4+IEBAIC00MTQsNyArNDE0LDI0IEBAIE5PVEUxOiBTb2Z0IGxp
+bWl0cyB0YWtlIGVmZmVjdCBvdmVyIGEgbG9uZyBwZXJpb2Qgb2YgdGltZSwgc2luY2UgdGhleSBp
+bnZvbHZlCj4+IMKgTk9URTI6IEl0IGlzIHJlY29tbWVuZGVkIHRvIHNldCB0aGUgc29mdCBsaW1p
+dCBhbHdheXMgYmVsb3cgdGhlIGhhcmQgbGltaXQsCj4+IMKgIMKgIMKgIMKgIG90aGVyd2lzZSB0
+aGUgaGFyZCBsaW1pdCB3aWxsIHRha2UgcHJlY2VkZW5jZS4KPj4KPj4gLTguIFRPRE8KPj4gKzgu
+IE1lbW9yeSB0aHJlc2hvbGRzCj4+ICsKPj4gK01lbW9yeSBjb250cm9sZXIgaW1wbGVtZW50cyBt
+ZW1vcnkgdGhyZXNob2xkcyB1c2luZyBjZ3JvdXBzIG5vdGlmaWNhdGlvbgo+PiArQVBJIChzZWUg
+Y2dyb3Vwcy50eHQpLiBJdCBhbGxvd3MgdG8gcmVnaXN0ZXIgbXVsdGlwbGUgbWVtb3J5IGFuZCBt
+ZW1zdwo+PiArdGhyZXNob2xkcyBhbmQgZ2V0cyBub3RpZmljYXRpb25zIHdoZW4gaXQgY3Jvc3Nl
+cy4KPj4gKwo+PiArVG8gcmVnaXN0ZXIgYSB0aHJlc2hvbGQgYXBwbGljYXRpb24gbmVlZDoKPj4g
+KyAtIGNyZWF0ZSBhbiBldmVudGZkIHVzaW5nIGV2ZW50ZmQoMik7Cj4+ICsgLSBvcGVuIG1lbW9y
+eS51c2FnZV9pbl9ieXRlcyBvciBtZW1vcnkubWVtc3cudXNhZ2VfaW5fYnl0ZXM7Cj4+ICsgLSB3
+cml0ZSBzdHJpbmcgbGlrZSAiPGV2ZW50X2ZkPiA8bWVtb3J5LnVzYWdlX2luX2J5dGVzPiA8dGhy
+ZXNob2xkPiIgdG8KPj4gKyDCoCBjZ3JvdXAuZXZlbnRfY29udHJvbC4KPj4gKwo+PiArQXBwbGlj
+YXRpb24gd2lsbCBiZSBub3RpZmllZCB0aHJvdWdoIGV2ZW50ZmQgd2hlbiBtZW1vcnkgdXNhZ2Ug
+Y3Jvc3Nlcwo+PiArdGhyZXNob2xkIGluIGFueSBkaXJlY3Rpb24uCj4+ICsKPj4gK0l0J3MgYXBw
+bGljYWJsZSBmb3Igcm9vdCBhbmQgbm9uLXJvb3QgY2dyb3VwLgo+PiArCj4+ICs5LiBUT0RPCj4+
+Cj4+IMKgMS4gQWRkIHN1cHBvcnQgZm9yIGFjY291bnRpbmcgaHVnZSBwYWdlcyAoYXMgYSBzZXBh
+cmF0ZSBjb250cm9sbGVyKQo+PiDCoDIuIE1ha2UgcGVyLWNncm91cCBzY2FubmVyIHJlY2xhaW0g
+bm90LXNoYXJlZCBwYWdlcyBmaXJzdAo+PiBkaWZmIC0tZ2l0IGEvbW0vbWVtY29udHJvbC5jIGIv
+bW0vbWVtY29udHJvbC5jCj4+IGluZGV4IDM2ZWI3YWYuLjNhMGE2YTEgMTAwNjQ0Cj4+IC0tLSBh
+L21tL21lbWNvbnRyb2wuYwo+PiArKysgYi9tbS9tZW1jb250cm9sLmMKPj4gQEAgLTYsNiArNiwx
+MCBAQAo+PiDCoCAqIENvcHlyaWdodCAyMDA3IE9wZW5WWiBTV3NvZnQgSW5jCj4+IMKgICogQXV0
+aG9yOiBQYXZlbCBFbWVsaWFub3YgPHhlbXVsQG9wZW52ei5vcmc+Cj4+IMKgICoKPj4gKyAqIE1l
+bW9yeSB0aHJlc2hvbGRzCj4+ICsgKiBDb3B5cmlnaHQgKEMpIDIwMDkgTm9raWEgQ29ycG9yYXRp
+b24KPj4gKyAqIEF1dGhvcjogS2lyaWxsIEEuIFNodXRlbW92Cj4+ICsgKgo+PiDCoCAqIFRoaXMg
+cHJvZ3JhbSBpcyBmcmVlIHNvZnR3YXJlOyB5b3UgY2FuIHJlZGlzdHJpYnV0ZSBpdCBhbmQvb3Ig
+bW9kaWZ5Cj4+IMKgICogaXQgdW5kZXIgdGhlIHRlcm1zIG9mIHRoZSBHTlUgR2VuZXJhbCBQdWJs
+aWMgTGljZW5zZSBhcyBwdWJsaXNoZWQgYnkKPj4gwqAgKiB0aGUgRnJlZSBTb2Z0d2FyZSBGb3Vu
+ZGF0aW9uOyBlaXRoZXIgdmVyc2lvbiAyIG9mIHRoZSBMaWNlbnNlLCBvcgo+PiBAQCAtMzksNiAr
+NDMsOCBAQAo+PiDCoCNpbmNsdWRlIDxsaW51eC9tbV9pbmxpbmUuaD4KPj4gwqAjaW5jbHVkZSA8
+bGludXgvcGFnZV9jZ3JvdXAuaD4KPj4gwqAjaW5jbHVkZSA8bGludXgvY3B1Lmg+Cj4+ICsjaW5j
+bHVkZSA8bGludXgvZXZlbnRmZC5oPgo+PiArI2luY2x1ZGUgPGxpbnV4L3NvcnQuaD4KPj4gwqAj
+aW5jbHVkZSAiaW50ZXJuYWwuaCIKPj4KPj4gwqAjaW5jbHVkZSA8YXNtL3VhY2Nlc3MuaD4KPj4g
+QEAgLTU2LDYgKzYyLDcgQEAgc3RhdGljIGludCByZWFsbHlfZG9fc3dhcF9hY2NvdW50IF9faW5p
+dGRhdGEgPSAxOyAvKiBmb3IgcmVtZW1iZXIgYm9vdCBvcHRpb24qLwo+PiDCoCNlbmRpZgo+Pgo+
+PiDCoCNkZWZpbmUgU09GVExJTUlUX0VWRU5UU19USFJFU0ggKDEwMDApCj4+ICsjZGVmaW5lIFRI
+UkVTSE9MRFNfRVZFTlRTX1RIUkVTSCAoMTAwKQo+Pgo+PiDCoC8qCj4+IMKgICogU3RhdGlzdGlj
+cyBmb3IgbWVtb3J5IGNncm91cC4KPj4gQEAgLTcyLDYgKzc5LDggQEAgZW51bSBtZW1fY2dyb3Vw
+X3N0YXRfaW5kZXggewo+PiDCoCDCoCDCoCBNRU1fQ0dST1VQX1NUQVRfU1dBUE9VVCwgLyogIyBv
+ZiBwYWdlcywgc3dhcHBlZCBvdXQgKi8KPj4gwqAgwqAgwqAgTUVNX0NHUk9VUF9TVEFUX1NPRlRM
+SU1JVCwgLyogZGVjcmVtZW50cyBvbiBlYWNoIHBhZ2UgaW4vb3V0Lgo+PiDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCB1c2VkIGJ5IHNvZnQg
+bGltaXQgaW1wbGVtZW50YXRpb24gKi8KPj4gKyDCoCDCoCBNRU1fQ0dST1VQX1NUQVRfVEhSRVNI
+T0xEUywgLyogZGVjcmVtZW50cyBvbiBlYWNoIHBhZ2UgaW4vb3V0Lgo+PiArIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHVzZWQgYnkgdGhyZXNo
+b2xkIGltcGxlbWVudGF0aW9uICovCj4+Cj4+IMKgIMKgIMKgIE1FTV9DR1JPVVBfU1RBVF9OU1RB
+VFMsCj4+IMKgfTsKPj4gQEAgLTE4Miw2ICsxOTEsMjAgQEAgc3RydWN0IG1lbV9jZ3JvdXBfdHJl
+ZSB7Cj4+Cj4+IMKgc3RhdGljIHN0cnVjdCBtZW1fY2dyb3VwX3RyZWUgc29mdF9saW1pdF90cmVl
+IF9fcmVhZF9tb3N0bHk7Cj4+Cj4+ICtzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQgewo+PiAr
+IMKgIMKgIHN0cnVjdCBldmVudGZkX2N0eCAqZXZlbnRmZDsKPj4gKyDCoCDCoCB1NjQgdGhyZXNo
+b2xkOwo+PiArfTsKPj4gKwo+PiArc3RydWN0IG1lbV9jZ3JvdXBfdGhyZXNob2xkX2FyeSB7Cj4+
+ICsgwqAgwqAgdW5zaWduZWQgaW50IHNpemU7Cj4+ICsgwqAgwqAgYXRvbWljX3QgY3VyOwo+PiAr
+IMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZCBlbnRyaWVzWzBdOwo+PiArfTsKPj4g
+Kwo+IFdoeSAiYXJyYXkiIGlzIGEgY2hvaWNlIGhlcmUgPyBJT1csIHdoeSBub3QgbGlzdCA/CgpX
+ZSBuZWVkIGJlIGFibGUgdG8gd2FsayBieSB0aHJlc2hvbGRzIGluIGJvdGggZGlyZWN0aW9ucyB0
+byBiZSBmYXN0LgpBRkFJSywgSXQncyBpbXBvc3NpYmxlIHdpdGggUkNVLXByb3RlY3RlZCBsaXN0
+LgoKPiBIb3cgbWFueSB3YWl0ZXJzIGFyZSBleHBlY3RlZCBhcyB1c3VhbCB3b3JrbG9hZCA/CgpB
+cnJheSBvZiB0aHJlc2hvbGRzIHJlYWRzIGV2ZXJ5IDEwMCBwYWdlIGluL291dCBmb3IgZXZlcnkg
+Q1BVLgpXcml0ZSBhY2Nlc3Mgb25seSB3aGVuIHJlZ2lzdGVyaW5nIG5ldyB0aHJlc2hvbGQuCgo+
+PiArc3RhdGljIGJvb2wgbWVtX2Nncm91cF90aHJlc2hvbGRfY2hlY2soc3RydWN0IG1lbV9jZ3Jv
+dXAqIG1lbSk7Cj4+ICtzdGF0aWMgdm9pZCBtZW1fY2dyb3VwX3RocmVzaG9sZChzdHJ1Y3QgbWVt
+X2Nncm91cCogbWVtKTsKPj4gKwo+PiDCoC8qCj4+IMKgICogVGhlIG1lbW9yeSBjb250cm9sbGVy
+IGRhdGEgc3RydWN0dXJlLiBUaGUgbWVtb3J5IGNvbnRyb2xsZXIgY29udHJvbHMgYm90aAo+PiDC
+oCAqIHBhZ2UgY2FjaGUgYW5kIFJTUyBwZXIgY2dyb3VwLiBXZSB3b3VsZCBldmVudHVhbGx5IGxp
+a2UgdG8gcHJvdmlkZQo+PiBAQCAtMjMzLDYgKzI1NiwxNSBAQCBzdHJ1Y3QgbWVtX2Nncm91cCB7
+Cj4+IMKgIMKgIMKgIC8qIHNldCB3aGVuIHJlcy5saW1pdCA9PSBtZW1zdy5saW1pdCAqLwo+PiDC
+oCDCoCDCoCBib29sIMKgIMKgIMKgIMKgIMKgIMKgbWVtc3dfaXNfbWluaW11bTsKPj4KPj4gKyDC
+oCDCoCAvKiBwcm90ZWN0IGFycmF5cyBvZiB0aHJlc2hvbGRzICovCj4+ICsgwqAgwqAgc3RydWN0
+IG11dGV4IHRocmVzaG9sZHNfbG9jazsKPj4gKwo+PiArIMKgIMKgIC8qIHRocmVzaG9sZHMgZm9y
+IG1lbW9yeSB1c2FnZS4gUkNVLXByb3RlY3RlZCAqLwo+PiArIMKgIMKgIHN0cnVjdCBtZW1fY2dy
+b3VwX3RocmVzaG9sZF9hcnkgKnRocmVzaG9sZHM7Cj4+ICsKPj4gKyDCoCDCoCAvKiB0aHJlc2hv
+bGRzIGZvciBtZW0rc3dhcCB1c2FnZS4gUkNVLXByb3RlY3RlZCAqLwo+PiArIMKgIMKgIHN0cnVj
+dCBtZW1fY2dyb3VwX3RocmVzaG9sZF9hcnkgKm1lbXN3X3RocmVzaG9sZHM7Cj4+ICsKPj4gwqAg
+wqAgwqAgLyoKPj4gwqAgwqAgwqAgwqAqIHN0YXRpc3RpY3MuIFRoaXMgbXVzdCBiZSBwbGFjZWQg
+YXQgdGhlIGVuZCBvZiBtZW1jZy4KPj4gwqAgwqAgwqAgwqAqLwo+PiBAQCAtNTI1LDYgKzU1Nyw4
+IEBAIHN0YXRpYyB2b2lkIG1lbV9jZ3JvdXBfY2hhcmdlX3N0YXRpc3RpY3Moc3RydWN0IG1lbV9j
+Z3JvdXAgKm1lbSwKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgX19tZW1fY2dyb3VwX3N0YXRfYWRk
+X3NhZmUoY3B1c3RhdCwKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgTUVNX0NHUk9VUF9TVEFUX1BHUEdPVVRfQ09VTlQsIDEpOwo+PiDCoCDCoCDCoCBfX21l
+bV9jZ3JvdXBfc3RhdF9hZGRfc2FmZShjcHVzdGF0LCBNRU1fQ0dST1VQX1NUQVRfU09GVExJTUlU
+LCAtMSk7Cj4+ICsgwqAgwqAgX19tZW1fY2dyb3VwX3N0YXRfYWRkX3NhZmUoY3B1c3RhdCwgTUVN
+X0NHUk9VUF9TVEFUX1RIUkVTSE9MRFMsIC0xKTsKPj4gKwo+PiDCoCDCoCDCoCBwdXRfY3B1KCk7
+Cj4+IMKgfQo+Pgo+PiBAQCAtMTUxMCw2ICsxNTQ0LDggQEAgY2hhcmdlZDoKPj4gwqAgwqAgwqAg
+aWYgKG1lbV9jZ3JvdXBfc29mdF9saW1pdF9jaGVjayhtZW0pKQo+PiDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCBtZW1fY2dyb3VwX3VwZGF0ZV90cmVlKG1lbSwgcGFnZSk7Cj4+IMKgZG9uZToKPj4gKyDC
+oCDCoCBpZiAobWVtX2Nncm91cF90aHJlc2hvbGRfY2hlY2sobWVtKSkKPj4gKyDCoCDCoCDCoCDC
+oCDCoCDCoCBtZW1fY2dyb3VwX3RocmVzaG9sZChtZW0pOwo+PiDCoCDCoCDCoCByZXR1cm4gMDsK
+Pj4gwqBub21lbToKPj4gwqAgwqAgwqAgY3NzX3B1dCgmbWVtLT5jc3MpOwo+PiBAQCAtMjA3NSw2
+ICsyMTExLDggQEAgX19tZW1fY2dyb3VwX3VuY2hhcmdlX2NvbW1vbihzdHJ1Y3QgcGFnZSAqcGFn
+ZSwgZW51bSBjaGFyZ2VfdHlwZSBjdHlwZSkKPj4KPj4gwqAgwqAgwqAgaWYgKG1lbV9jZ3JvdXBf
+c29mdF9saW1pdF9jaGVjayhtZW0pKQo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtZW1fY2dyb3Vw
+X3VwZGF0ZV90cmVlKG1lbSwgcGFnZSk7Cj4+ICsgwqAgwqAgaWYgKG1lbV9jZ3JvdXBfdGhyZXNo
+b2xkX2NoZWNrKG1lbSkpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgbWVtX2Nncm91cF90aHJlc2hv
+bGQobWVtKTsKPj4gwqAgwqAgwqAgLyogYXQgc3dhcG91dCwgdGhpcyBtZW1jZyB3aWxsIGJlIGFj
+Y2Vzc2VkIHRvIHJlY29yZCB0byBzd2FwICovCj4+IMKgIMKgIMKgIGlmIChjdHlwZSAhPSBNRU1f
+Q0dST1VQX0NIQVJHRV9UWVBFX1NXQVBPVVQpCj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIGNzc19w
+dXQoJm1lbS0+Y3NzKTsKPj4gQEAgLTMwNzEsMTIgKzMxMDksMjQ2IEBAIHN0YXRpYyBpbnQgbWVt
+X2Nncm91cF9zd2FwcGluZXNzX3dyaXRlKHN0cnVjdCBjZ3JvdXAgKmNncnAsIHN0cnVjdCBjZnR5
+cGUgKmNmdCwKPj4gwqAgwqAgwqAgcmV0dXJuIDA7Cj4+IMKgfQo+Pgo+PiArc3RhdGljIGJvb2wg
+bWVtX2Nncm91cF90aHJlc2hvbGRfY2hlY2soc3RydWN0IG1lbV9jZ3JvdXAgKm1lbSkKPj4gK3sK
+Pj4gKyDCoCDCoCBib29sIHJldCA9IGZhbHNlOwo+PiArIMKgIMKgIGludCBjcHU7Cj4+ICsgwqAg
+wqAgczY0IHZhbDsKPj4gKyDCoCDCoCBzdHJ1Y3QgbWVtX2Nncm91cF9zdGF0X2NwdSAqY3B1c3Rh
+dDsKPj4gKwo+PiArIMKgIMKgIGNwdSA9IGdldF9jcHUoKTsKPj4gKyDCoCDCoCBjcHVzdGF0ID0g
+Jm1lbS0+c3RhdC5jcHVzdGF0W2NwdV07Cj4+ICsgwqAgwqAgdmFsID0gX19tZW1fY2dyb3VwX3N0
+YXRfcmVhZF9sb2NhbChjcHVzdGF0LCBNRU1fQ0dST1VQX1NUQVRfVEhSRVNIT0xEUyk7Cj4+ICsg
+wqAgwqAgaWYgKHVubGlrZWx5KHZhbCA8IDApKSB7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgX19t
+ZW1fY2dyb3VwX3N0YXRfc2V0KGNwdXN0YXQsIE1FTV9DR1JPVVBfU1RBVF9USFJFU0hPTERTLAo+
+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIFRIUkVTSE9MRFNf
+RVZFTlRTX1RIUkVTSCk7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgcmV0ID0gdHJ1ZTsKPj4gKyDC
+oCDCoCB9Cj4+ICsgwqAgwqAgcHV0X2NwdSgpOwo+PiArIMKgIMKgIHJldHVybiByZXQ7Cj4+ICt9
+Cj4+ICsKPj4gK3N0YXRpYyB2b2lkIF9fbWVtX2Nncm91cF90aHJlc2hvbGQoc3RydWN0IG1lbV9j
+Z3JvdXAgKm1lbWNnLCBib29sIHN3YXApCj4+ICt7Cj4+ICsgwqAgwqAgc3RydWN0IG1lbV9jZ3Jv
+dXBfdGhyZXNob2xkX2FyeSAqdGhyZXNob2xkczsKPj4gKyDCoCDCoCB1NjQgdXNhZ2UgPSBtZW1f
+Y2dyb3VwX3VzYWdlKG1lbWNnLCBzd2FwKTsKPj4gKyDCoCDCoCBpbnQgaSwgY3VyOwo+PiArCj4+
+ICsgwqAgwqAgcmN1X3JlYWRfbG9jaygpOwo+PiArIMKgIMKgIGlmICghc3dhcCkgewo+PiArIMKg
+IMKgIMKgIMKgIMKgIMKgIHRocmVzaG9sZHMgPSByY3VfZGVyZWZlcmVuY2UobWVtY2ctPnRocmVz
+aG9sZHMpOwo+PiArIMKgIMKgIH0gZWxzZSB7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgdGhyZXNo
+b2xkcyA9IHJjdV9kZXJlZmVyZW5jZShtZW1jZy0+bWVtc3dfdGhyZXNob2xkcyk7Cj4+ICsgwqAg
+wqAgfQo+PiArCj4+ICsgwqAgwqAgaWYgKCF0aHJlc2hvbGRzKQo+PiArIMKgIMKgIMKgIMKgIMKg
+IMKgIGdvdG8gdW5sb2NrOwo+PiArCj4+ICsgwqAgwqAgY3VyID0gYXRvbWljX3JlYWQoJnRocmVz
+aG9sZHMtPmN1cik7Cj4+ICsKPj4gKyDCoCDCoCAvKiBDaGVjayBpZiBhIHRocmVzaG9sZCBjcm9z
+c2VkIGluIGFueSBkaXJlY3Rpb24gKi8KPj4gKwo+PiArIMKgIMKgIGZvcihpID0gY3VyOyBpID49
+IDAgJiYKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCB1bmxpa2VseSh0aHJlc2hvbGRzLT5lbnRyaWVz
+W2ldLnRocmVzaG9sZCA+IHVzYWdlKTsgaS0tKSB7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgYXRv
+bWljX2RlYygmdGhyZXNob2xkcy0+Y3VyKTsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBldmVudGZk
+X3NpZ25hbCh0aHJlc2hvbGRzLT5lbnRyaWVzW2ldLmV2ZW50ZmQsIDEpOwo+PiArIMKgIMKgIH0K
+Pj4gKwo+PiArIMKgIMKgIGZvcihpID0gY3VyICsgMTsgaSA8IHRocmVzaG9sZHMtPnNpemUgJiYK
+Pj4gKyDCoCDCoCDCoCDCoCDCoCDCoCB1bmxpa2VseSh0aHJlc2hvbGRzLT5lbnRyaWVzW2ldLnRo
+cmVzaG9sZCA8PSB1c2FnZSk7IGkrKykgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIGF0b21pY19p
+bmMoJnRocmVzaG9sZHMtPmN1cik7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgZXZlbnRmZF9zaWdu
+YWwodGhyZXNob2xkcy0+ZW50cmllc1tpXS5ldmVudGZkLCAxKTsKPj4gKyDCoCDCoCB9Cj4+ICt1
+bmxvY2s6Cj4+ICsgwqAgwqAgcmN1X3JlYWRfdW5sb2NrKCk7Cj4+ICt9Cj4+ICsKPj4gK3N0YXRp
+YyB2b2lkIG1lbV9jZ3JvdXBfdGhyZXNob2xkKHN0cnVjdCBtZW1fY2dyb3VwICptZW1jZykKPj4g
+K3sKPj4gKyDCoCDCoCBfX21lbV9jZ3JvdXBfdGhyZXNob2xkKG1lbWNnLCBmYWxzZSk7Cj4+ICsg
+wqAgwqAgaWYgKGRvX3N3YXBfYWNjb3VudCkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBfX21lbV9j
+Z3JvdXBfdGhyZXNob2xkKG1lbWNnLCB0cnVlKTsKPj4gK30KPj4gKwo+PiArc3RhdGljIGludCBj
+b21wYXJlX3RocmVzaG9sZHMoY29uc3Qgdm9pZCAqYSwgY29uc3Qgdm9pZCAqYikKPj4gK3sKPj4g
+KyDCoCDCoCBjb25zdCBzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQgKl9hID0gYTsKPj4gKyDC
+oCDCoCBjb25zdCBzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQgKl9iID0gYjsKPj4gKwo+PiAr
+IMKgIMKgIHJldHVybiBfYS0+dGhyZXNob2xkIC0gX2ItPnRocmVzaG9sZDsKPj4gK30KPj4gKwo+
+PiArc3RhdGljIGludCBtZW1fY2dyb3VwX3JlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNn
+cnAsIHN0cnVjdCBjZnR5cGUgKmNmdCwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBzdHJ1Y3QgZXZl
+bnRmZF9jdHggKmV2ZW50ZmQsIGNvbnN0IGNoYXIgKmFyZ3MpCj4+ICt7Cj4+ICsgwqAgwqAgc3Ry
+dWN0IG1lbV9jZ3JvdXAgKm1lbWNnID0gbWVtX2Nncm91cF9mcm9tX2NvbnQoY2dycCk7Cj4+ICsg
+wqAgwqAgc3RydWN0IG1lbV9jZ3JvdXBfdGhyZXNob2xkX2FyeSAqdGhyZXNob2xkcywgKnRocmVz
+aG9sZHNfbmV3Owo+PiArIMKgIMKgIGludCB0eXBlID0gTUVNRklMRV9UWVBFKGNmdC0+cHJpdmF0
+ZSk7Cj4+ICsgwqAgwqAgdTY0IHRocmVzaG9sZCwgdXNhZ2U7Cj4+ICsgwqAgwqAgaW50IHNpemU7
+Cj4+ICsgwqAgwqAgaW50IGksIHJldDsKPj4gKwo+PiArIMKgIMKgIHJldCA9IHJlc19jb3VudGVy
+X21lbXBhcnNlX3dyaXRlX3N0cmF0ZWd5KGFyZ3MsICZ0aHJlc2hvbGQpOwo+PiArIMKgIMKgIGlm
+IChyZXQpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgcmV0dXJuIHJldDsKPj4gKwo+PiArIMKgIMKg
+IG11dGV4X2xvY2soJm1lbWNnLT50aHJlc2hvbGRzX2xvY2spOwo+PiArIMKgIMKgIGlmICh0eXBl
+ID09IF9NRU0pCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgdGhyZXNob2xkcyA9IG1lbWNnLT50aHJl
+c2hvbGRzOwo+PiArIMKgIMKgIGVsc2UgaWYgKHR5cGUgPT0gX01FTVNXQVApCj4+ICsgwqAgwqAg
+wqAgwqAgwqAgwqAgdGhyZXNob2xkcyA9IG1lbWNnLT5tZW1zd190aHJlc2hvbGRzOwo+PiArIMKg
+IMKgIGVsc2UKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBCVUcoKTsKPj4gKwo+PiArIMKgIMKgIHVz
+YWdlID0gbWVtX2Nncm91cF91c2FnZShtZW1jZywgdHlwZSA9PSBfTUVNU1dBUCk7Cj4+ICsKPj4g
+KyDCoCDCoCAvKiBDaGVjayBpZiBhIHRocmVzaG9sZCBjcm9zc2VkIGJlZm9yZSBhZGRpbmcgYSBu
+ZXcgb25lICovCj4+ICsgwqAgwqAgaWYgKHRocmVzaG9sZHMpCj4+ICsgwqAgwqAgwqAgwqAgwqAg
+wqAgX19tZW1fY2dyb3VwX3RocmVzaG9sZChtZW1jZywgdHlwZSA9PSBfTUVNU1dBUCk7Cj4+ICsK
+Pj4gKyDCoCDCoCBpZiAodGhyZXNob2xkcykKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBzaXplID0g
+dGhyZXNob2xkcy0+c2l6ZSArIDE7Cj4+ICsgwqAgwqAgZWxzZQo+PiArIMKgIMKgIMKgIMKgIMKg
+IMKgIHNpemUgPSAxOwo+PiArCj4+ICsgwqAgwqAgLyogQWxsb2NhdGUgbWVtb3J5IGZvciBuZXcg
+YXJyYXkgb2YgdGhyZXNob2xkcyAqLwo+PiArIMKgIMKgIHRocmVzaG9sZHNfbmV3ID0ga21hbGxv
+YyhzaXplb2YoKnRocmVzaG9sZHNfbmV3KSArCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgc2l6ZSAqIHNpemVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQpLAo+PiArIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIEdGUF9LRVJORUwpOwo+PiArIMKgIMKgIGlmICgh
+dGhyZXNob2xkc19uZXcpIHsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCByZXQgPSAtRU5PTUVNOwo+
+PiArIMKgIMKgIMKgIMKgIMKgIMKgIGdvdG8gdW5sb2NrOwo+PiArIMKgIMKgIH0KPj4gKyDCoCDC
+oCB0aHJlc2hvbGRzX25ldy0+c2l6ZSA9IHNpemU7Cj4+ICsKPj4gKyDCoCDCoCAvKiBDb3B5IHRo
+cmVzaG9sZHMgKGlmIGFueSkgdG8gbmV3IGFycmF5ICovCj4+ICsgwqAgwqAgaWYgKHRocmVzaG9s
+ZHMpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgbWVtY3B5KHRocmVzaG9sZHNfbmV3LT5lbnRyaWVz
+LCB0aHJlc2hvbGRzLT5lbnRyaWVzLAo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIHRocmVzaG9sZHMtPnNpemUgKgo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNpemVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQp
+KTsKPj4gKyDCoCDCoCAvKiBBZGQgbmV3IHRocmVzaG9sZCAqLwo+PiArIMKgIMKgIHRocmVzaG9s
+ZHNfbmV3LT5lbnRyaWVzW3NpemUgLSAxXS5ldmVudGZkID0gZXZlbnRmZDsKPj4gKyDCoCDCoCB0
+aHJlc2hvbGRzX25ldy0+ZW50cmllc1tzaXplIC0gMV0udGhyZXNob2xkID0gdGhyZXNob2xkOwo+
+PiArCj4+ICsgwqAgwqAgLyogU29ydCB0aHJlc2hvbGRzLiBSZWdpc3RlcmluZyBvZiBuZXcgdGhy
+ZXNob2xkIGlzbid0IHRpbWUtY3JpdGljYWwgKi8KPj4gKyDCoCDCoCBzb3J0KHRocmVzaG9sZHNf
+bmV3LT5lbnRyaWVzLCBzaXplLAo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNp
+emVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQpLAo+PiArIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIGNvbXBhcmVfdGhyZXNob2xkcywgTlVMTCk7Cj4+ICsKPj4gKyDCoCDCoCAv
+KiBGaW5kIGN1cnJlbnQgdGhyZXNob2xkICovCj4+ICsgwqAgwqAgYXRvbWljX3NldCgmdGhyZXNo
+b2xkc19uZXctPmN1ciwgLTEpOwo+PiArIMKgIMKgIGZvcihpID0gMDsgaSA8IHNpemU7IGkrKykg
+ewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIGlmICh0aHJlc2hvbGRzX25ldy0+ZW50cmllc1tpXS50
+aHJlc2hvbGQgPCB1c2FnZSkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBhdG9t
+aWNfaW5jKCZ0aHJlc2hvbGRzX25ldy0+Y3VyKTsKPj4gKyDCoCDCoCB9Cj4+ICsKPj4gKyDCoCDC
+oCAvKgo+PiArIMKgIMKgIMKgKiBXZSBuZWVkIHRvIGluY3JlbWVudCByZWZjbnQgdG8gYmUgc3Vy
+ZSB0aGF0IGFsbCB0aHJlc2hvbGRzCj4+ICsgwqAgwqAgwqAqIHdpbGwgYmUgdW5yZWdpc3RlcmVk
+IGJlZm9yZSBjYWxsaW5nIF9fbWVtX2Nncm91cF9mcmVlKCkKPj4gKyDCoCDCoCDCoCovCj4+ICsg
+wqAgwqAgbWVtX2Nncm91cF9nZXQobWVtY2cpOwo+PiArCj4+ICsgwqAgwqAgaWYgKHR5cGUgPT0g
+X01FTSkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCByY3VfYXNzaWduX3BvaW50ZXIobWVtY2ctPnRo
+cmVzaG9sZHMsIHRocmVzaG9sZHNfbmV3KTsKPj4gKyDCoCDCoCBlbHNlCj4+ICsgwqAgwqAgwqAg
+wqAgwqAgwqAgcmN1X2Fzc2lnbl9wb2ludGVyKG1lbWNnLT5tZW1zd190aHJlc2hvbGRzLCB0aHJl
+c2hvbGRzX25ldyk7Cj4+ICsKPj4gKyDCoCDCoCBzeW5jaHJvbml6ZV9yY3UoKTsKPgo+IENvdWxk
+IHlvdSBhZGQgZXhwbGFuYXRpb24gd2hlbiB5b3UgdXNlIHN5bmNocm9uaXplX3JjdSgpID8KCkl0
+IHVzZXMgYmVmb3JlIGZyZWVpbmcgb2xkIGFycmF5IG9mIHRocmVzaG9sZHMgdG8gYmUgc3VyZSB0
+aGFuIG5vYm9keSB1c2VzIGl0LgoKPj4gKyDCoCDCoCBrZnJlZSh0aHJlc2hvbGRzKTsKPgo+IENh
+bid0IHRoaXMgYmUgZnJlZWQgYnkgUkNVIGluc3RlYWQgb2Ygc3luY2hyb25pemVfcmN1KCkgPwoK
+WWVzLCB0aGlzIGNhbi4gQnV0IEkgZG9uJ3QgdGhpbmsgdGhhdCAodW4pcmVnaXN0ZXJpbmcgb3Mg
+dGhyZXNob2xkcyBpcwp0aW1lIGNyaXRpY2FsLgpJIHRoaW5rIG15IHZhcmlhbnQgaXMgbW9yZSBj
+bGVhbi4KCj4+ICt1bmxvY2s6Cj4+ICsgwqAgwqAgbXV0ZXhfdW5sb2NrKCZtZW1jZy0+dGhyZXNo
+b2xkc19sb2NrKTsKPj4gKwo+PiArIMKgIMKgIHJldHVybiByZXQ7Cj4+ICt9Cj4+ICsKPj4gK3N0
+YXRpYyBpbnQgbWVtX2Nncm91cF91bnJlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNncnAs
+IHN0cnVjdCBjZnR5cGUgKmNmdCwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBzdHJ1Y3QgZXZlbnRm
+ZF9jdHggKmV2ZW50ZmQpCj4+ICt7Cj4+ICsgwqAgwqAgc3RydWN0IG1lbV9jZ3JvdXAgKm1lbWNn
+ID0gbWVtX2Nncm91cF9mcm9tX2NvbnQoY2dycCk7Cj4+ICsgwqAgwqAgc3RydWN0IG1lbV9jZ3Jv
+dXBfdGhyZXNob2xkX2FyeSAqdGhyZXNob2xkcywgKnRocmVzaG9sZHNfbmV3Owo+PiArIMKgIMKg
+IGludCB0eXBlID0gTUVNRklMRV9UWVBFKGNmdC0+cHJpdmF0ZSk7Cj4+ICsgwqAgwqAgdTY0IHVz
+YWdlOwo+PiArIMKgIMKgIGludCBzaXplID0gMDsKPj4gKyDCoCDCoCBpbnQgaSwgaiwgcmV0Owo+
+PiArCj4+ICsgwqAgwqAgbXV0ZXhfbG9jaygmbWVtY2ctPnRocmVzaG9sZHNfbG9jayk7Cj4+ICsg
+wqAgwqAgaWYgKHR5cGUgPT0gX01FTSkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRz
+ID0gbWVtY2ctPnRocmVzaG9sZHM7Cj4+ICsgwqAgwqAgZWxzZSBpZiAodHlwZSA9PSBfTUVNU1dB
+UCkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRzID0gbWVtY2ctPm1lbXN3X3RocmVz
+aG9sZHM7Cj4+ICsgwqAgwqAgZWxzZQo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIEJVRygpOwo+PiAr
+Cj4+ICsgwqAgwqAgLyoKPj4gKyDCoCDCoCDCoCogU29tZXRoaW5nIHdlbnQgd3JvbmcgaWYgd2Ug
+dHJ5aW5nIHRvIHVucmVnaXN0ZXIgYSB0aHJlc2hvbGQKPj4gKyDCoCDCoCDCoCogaWYgd2UgZG9u
+J3QgaGF2ZSB0aHJlc2hvbGRzCj4+ICsgwqAgwqAgwqAqLwo+PiArIMKgIMKgIEJVR19PTighdGhy
+ZXNob2xkcyk7Cj4+ICsKPj4gKyDCoCDCoCB1c2FnZSA9IG1lbV9jZ3JvdXBfdXNhZ2UobWVtY2cs
+IHR5cGUgPT0gX01FTVNXQVApOwo+PiArCj4+ICsgwqAgwqAgLyogQ2hlY2sgaWYgYSB0aHJlc2hv
+bGQgY3Jvc3NlZCBiZWZvcmUgcmVtb3ZpbmcgKi8KPj4gKyDCoCDCoCBfX21lbV9jZ3JvdXBfdGhy
+ZXNob2xkKG1lbWNnLCB0eXBlID09IF9NRU1TV0FQKTsKPj4gKwo+PiArIMKgIMKgIC8qIENhbGN1
+bGF0ZSBuZXcgbnVtYmVyIG9mIHRocmVzaG9sZCAqLwo+PiArIMKgIMKgIGZvcihpID0gMDsgaSA8
+IHRocmVzaG9sZHMtPnNpemU7IGkrKykgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIGlmICh0aHJl
+c2hvbGRzLT5lbnRyaWVzW2ldLmV2ZW50ZmQgIT0gZXZlbnRmZCkKPj4gKyDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCBzaXplKys7Cj4+ICsgwqAgwqAgfQo+PiArCj4+ICsgwqAgwqAgLyog
+U2V0IHRocmVzaG9sZHMgYXJyYXkgdG8gTlVMTCBpZiB3ZSBkb24ndCBoYXZlIHRocmVzaG9sZHMg
+Ki8KPj4gKyDCoCDCoCBpZiAoIXNpemUpIHsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hv
+bGRzX25ldyA9IE5VTEw7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgZ290byBhc3NpZ247Cj4+ICsg
+wqAgwqAgfQo+PiArCj4+ICsgwqAgwqAgLyogQWxsb2NhdGUgbWVtb3J5IGZvciBuZXcgYXJyYXkg
+b2YgdGhyZXNob2xkcyAqLwo+PiArIMKgIMKgIHRocmVzaG9sZHNfbmV3ID0ga21hbGxvYyhzaXpl
+b2YoKnRocmVzaG9sZHNfbmV3KSArCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+c2l6ZSAqIHNpemVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQpLAo+PiArIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIEdGUF9LRVJORUwpOwo+PiArIMKgIMKgIGlmICghdGhyZXNo
+b2xkc19uZXcpIHsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCByZXQgPSAtRU5PTUVNOwo+PiArIMKg
+IMKgIMKgIMKgIMKgIMKgIGdvdG8gdW5sb2NrOwo+PiArIMKgIMKgIH0KPj4gKyDCoCDCoCB0aHJl
+c2hvbGRzX25ldy0+c2l6ZSA9IHNpemU7Cj4+ICsKPj4gKyDCoCDCoCAvKiBDb3B5IHRocmVzaG9s
+ZHMgYW5kIGZpbmQgY3VycmVudCB0aHJlc2hvbGQgKi8KPj4gKyDCoCDCoCBhdG9taWNfc2V0KCZ0
+aHJlc2hvbGRzX25ldy0+Y3VyLCAtMSk7Cj4+ICsgwqAgwqAgZm9yKGkgPSAwLCBqID0gMDsgaSA8
+IHRocmVzaG9sZHMtPnNpemU7IGkrKykgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIGlmICh0aHJl
+c2hvbGRzLT5lbnRyaWVzW2ldLmV2ZW50ZmQgPT0gZXZlbnRmZCkKPj4gKyDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCBjb250aW51ZTsKPj4gKwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIHRo
+cmVzaG9sZHNfbmV3LT5lbnRyaWVzW2pdID0gdGhyZXNob2xkcy0+ZW50cmllc1tpXTsKPj4gKyDC
+oCDCoCDCoCDCoCDCoCDCoCBpZiAodGhyZXNob2xkc19uZXctPmVudHJpZXNbal0udGhyZXNob2xk
+IDwgdXNhZ2UpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgYXRvbWljX2luYygm
+dGhyZXNob2xkc19uZXctPmN1cik7Cj4gSXQncyBiZXR0ZXIgdG8gZG8gYXRvbWljIHNldCBhZnRl
+ciBsb29wLgoKV2UgbmVlZCBvbmUgbW9yZSBjb3VudGVyIHRvIGRvIHRoaXMuIERvIHlvdSBsaWtl
+IGl0PwoKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBqKys7Cj4+ICsgwqAgwqAgfQo+Cj4gSG1tLi5p
+cyB0aGlzICJjb3B5IGFycmF5IiB1c3VhbCBjb2Rpbmcgc3R5bGUgZm9yIGhhbmRsaW5nIGV2ZW50
+ZmQgPwoKU2luY2Ugd2Ugc3RvcmUgb25seSBwb2ludGVyIHRvIHN0cnVjdCBldmVudGZkX2N0eCwg
+SSBkb24ndCBzZWUgYSBwcm9ibGVtLgoKPj4gKwo+PiArYXNzaWduOgo+PiArIMKgIMKgIGlmICh0
+eXBlID09IF9NRU0pCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgcmN1X2Fzc2lnbl9wb2ludGVyKG1l
+bWNnLT50aHJlc2hvbGRzLCB0aHJlc2hvbGRzX25ldyk7Cj4+ICsgwqAgwqAgZWxzZQo+PiArIMKg
+IMKgIMKgIMKgIMKgIMKgIHJjdV9hc3NpZ25fcG9pbnRlcihtZW1jZy0+bWVtc3dfdGhyZXNob2xk
+cywgdGhyZXNob2xkc19uZXcpOwo+PiArCj4+ICsgwqAgwqAgc3luY2hyb25pemVfcmN1KCk7Cj4+
+ICsKPj4gKyDCoCDCoCBmb3IoaSA9IDA7IGkgPCB0aHJlc2hvbGRzLT5zaXplIC0gc2l6ZTsgaSsr
+KQo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIG1lbV9jZ3JvdXBfcHV0KG1lbWNnKTsKPj4gKwo+PiAr
+IMKgIMKgIGtmcmVlKHRocmVzaG9sZHMpOwo+PiArdW5sb2NrOgo+PiArIMKgIMKgIG11dGV4X3Vu
+bG9jaygmbWVtY2ctPnRocmVzaG9sZHNfbG9jayk7Cj4+ICsKPj4gKyDCoCDCoCByZXR1cm4gcmV0
+Owo+PiArfQo+Pgo+PiDCoHN0YXRpYyBzdHJ1Y3QgY2Z0eXBlIG1lbV9jZ3JvdXBfZmlsZXNbXSA9
+IHsKPj4gwqAgwqAgwqAgewo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCAubmFtZSA9ICJ1c2FnZV9p
+bl9ieXRlcyIsCj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIC5wcml2YXRlID0gTUVNRklMRV9QUklW
+QVRFKF9NRU0sIFJFU19VU0FHRSksCj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIC5yZWFkX3U2NCA9
+IG1lbV9jZ3JvdXBfcmVhZCwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCAucmVnaXN0ZXJfZXZlbnQg
+PSBtZW1fY2dyb3VwX3JlZ2lzdGVyX2V2ZW50LAo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIC51bnJl
+Z2lzdGVyX2V2ZW50ID0gbWVtX2Nncm91cF91bnJlZ2lzdGVyX2V2ZW50LAo+PiDCoCDCoCDCoCB9
+LAo+PiDCoCDCoCDCoCB7Cj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIC5uYW1lID0gIm1heF91c2Fn
+ZV9pbl9ieXRlcyIsCj4+IEBAIC0zMTI4LDYgKzM0MDAsOCBAQCBzdGF0aWMgc3RydWN0IGNmdHlw
+ZSBtZW1zd19jZ3JvdXBfZmlsZXNbXSA9IHsKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgLm5hbWUg
+PSAibWVtc3cudXNhZ2VfaW5fYnl0ZXMiLAo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCAucHJpdmF0
+ZSA9IE1FTUZJTEVfUFJJVkFURShfTUVNU1dBUCwgUkVTX1VTQUdFKSwKPj4gwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgLnJlYWRfdTY0ID0gbWVtX2Nncm91cF9yZWFkLAo+PiArIMKgIMKgIMKgIMKgIMKg
+IMKgIC5yZWdpc3Rlcl9ldmVudCA9IG1lbV9jZ3JvdXBfcmVnaXN0ZXJfZXZlbnQsCj4+ICsgwqAg
+wqAgwqAgwqAgwqAgwqAgLnVucmVnaXN0ZXJfZXZlbnQgPSBtZW1fY2dyb3VwX3VucmVnaXN0ZXJf
+ZXZlbnQsCj4+IMKgIMKgIMKgIH0sCj4+IMKgIMKgIMKgIHsKPj4gwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgLm5hbWUgPSAibWVtc3cubWF4X3VzYWdlX2luX2J5dGVzIiwKPj4gQEAgLTMzNjcsNiArMzY0
+MSw3IEBAIG1lbV9jZ3JvdXBfY3JlYXRlKHN0cnVjdCBjZ3JvdXBfc3Vic3lzICpzcywgc3RydWN0
+IGNncm91cCAqY29udCkKPj4gwqAgwqAgwqAgaWYgKHBhcmVudCkKPj4gwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgbWVtLT5zd2FwcGluZXNzID0gZ2V0X3N3YXBwaW5lc3MocGFyZW50KTsKPj4gwqAgwqAg
+wqAgYXRvbWljX3NldCgmbWVtLT5yZWZjbnQsIDEpOwo+PiArIMKgIMKgIG11dGV4X2luaXQoJm1l
+bS0+dGhyZXNob2xkc19sb2NrKTsKPj4gwqAgwqAgwqAgcmV0dXJuICZtZW0tPmNzczsKPj4gwqBm
+cmVlX291dDoKPj4gwqAgwqAgwqAgX19tZW1fY2dyb3VwX2ZyZWUobWVtKTsKPj4gLS0KPj4gMS42
+LjUuNwo+PgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpD
+b250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
