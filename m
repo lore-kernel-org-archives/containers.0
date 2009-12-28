@@ -1,13 +1,16 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH v4 0/4] cgroup notifications API and memory thresholds
-Date: Mon, 28 Dec 2009 11:27:20 +0900
-Message-ID: <20091228112720.2087ae73.kamezawa.hiroyu__2065.68400976739$1261967496$gmane$org@jp.fujitsu.com>
+Subject: Re: [PATCH v4 3/4] memcg: rework usage of stats by soft limit
+Date: Mon, 28 Dec 2009 11:28:35 +0900
+Message-ID: <20091228112835.937c8c20.kamezawa.hiroyu__8102.50273575566$1261967570$gmane$org@jp.fujitsu.com>
 References: <cover.1261858972.git.kirill@shutemov.name>
+	<3f29ccc3c93e2defd70fc1c4ca8c133908b70b0b.1261858972.git.kirill@shutemov.name>
+	<59a7f92356bf1508f06d12c501a7aa4feffb1bbc.1261858972.git.kirill@shutemov.name>
+	<c2379f3965225b6d62e64c64f8c0e67fee085d7f.1261858972.git.kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1261858972.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <c2379f3965225b6d62e64c64f8c0e67fee085d7f.1261858972.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,74 +24,21 @@ To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 27 Dec 2009 04:08:58 +0200
+On Sun, 27 Dec 2009 04:09:01 +0200
 "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 
-> This patchset introduces eventfd-based API for notifications in cgroups and
-> implements memory notifications on top of it.
+> Instead of incrementing counter on each page in/out and comparing it
+> with constant, we set counter to constant, decrement counter on each
+> page in/out and compare it with zero. We want to make comparing as fast
+> as possible. On many RISC systems (probably not only RISC) comparing
+> with zero is more effective than comparing with a constant, since not
+> every constant can be immediate operand for compare instruction.
 > 
-> It uses statistics in memory controler to track memory usage.
+> Also, I've renamed MEM_CGROUP_STAT_EVENTS to MEM_CGROUP_STAT_SOFTLIMIT,
+> since really it's not a generic counter.
 > 
-> Output of time(1) on building kernel on tmpfs:
-> 
-> Root cgroup before changes:
-> 	make -j2  506.37 user 60.93s system 193% cpu 4:52.77 total
-> Non-root cgroup before changes:
-> 	make -j2  507.14 user 62.66s system 193% cpu 4:54.74 total
-> Root cgroup after changes (0 thresholds):
-> 	make -j2  507.13 user 62.20s system 193% cpu 4:53.55 total
-> Non-root cgroup after changes (0 thresholds):
-> 	make -j2  507.70 user 64.20s system 193% cpu 4:55.70 total
-> Root cgroup after changes (1 thresholds, never crossed):
-> 	make -j2  506.97 user 62.20s system 193% cpu 4:53.90 total
-> Non-root cgroup after changes (1 thresholds, never crossed):
-> 	make -j2  507.55 user 64.08s system 193% cpu 4:55.63 total
-> 
-> Any comments?
-> 
-Hmm, 2 secs of overhead is added by this.
-(larger than expected.)
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-But optimization/claun up after merging is okay to me because the function
-itself is attractive.
+I have to sort out these counter stuff after this. But now,
 
-Thanks,
--Kame
-
-
-
-> v3 -> v4:
->  - documentation.
-> 
-> v2 -> v3:
->  - remove [RFC];
->  - rebased to 2.6.33-rc2;
->  - fixes based on comments;
->  - fixed potential race on event removing;
->  - use RCU-protected arrays to track trasholds.
-> 
-> v1 -> v2:
->  - use statistics instead of res_counter to track resource usage;
->  - fix bugs with locking.
-> 
-> v0 -> v1:
->  - memsw support implemented.
-> 
-> Kirill A. Shutemov (4):
->   cgroup: implement eventfd-based generic API for notifications
->   memcg: extract mem_group_usage() from mem_cgroup_read()
->   memcg: rework usage of stats by soft limit
->   memcg: implement memory thresholds
-> 
->  Documentation/cgroups/cgroups.txt |   20 ++
->  Documentation/cgroups/memory.txt  |   19 ++-
->  include/linux/cgroup.h            |   24 +++
->  kernel/cgroup.c                   |  208 ++++++++++++++++++++++-
->  mm/memcontrol.c                   |  348 ++++++++++++++++++++++++++++++++++---
->  5 files changed, 590 insertions(+), 29 deletions(-)
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
