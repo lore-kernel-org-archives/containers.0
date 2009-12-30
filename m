@@ -1,15 +1,14 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH v5 3/4] memcg: rework usage of stats by soft limit
-Date: Wed, 30 Dec 2009 17:57:58 +0200
-Message-ID: <03152dd4f660cff87b16bb581718b1c53d4775aa.1262186098.git.kirill__34035.1949133494$1262189274$gmane$org@shutemov.name>
+Subject: [PATCH v5 2/4] memcg: extract mem_group_usage() from mem_cgroup_read()
+Date: Wed, 30 Dec 2009 17:57:57 +0200
+Message-ID: <34fedc324199dd64149889ed6eac5d8f9441a9db.1262186098.git.kirill__31740.5074988075$1262189332$gmane$org@shutemov.name>
 References: <cover.1262186097.git.kirill@shutemov.name>
 	<9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill@shutemov.name>
-	<34fedc324199dd64149889ed6eac5d8f9441a9db.1262186098.git.kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <34fedc324199dd64149889ed6eac5d8f9441a9db.1262186098.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 In-Reply-To: <cover.1262186097.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 References: <cover.1262186097.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -25,77 +24,91 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Instead of incrementing counter on each page in/out and comparing it
-with constant, we set counter to constant, decrement counter on each
-page in/out and compare it with zero. We want to make comparing as fast
-as possible. On many RISC systems (probably not only RISC) comparing
-with zero is more effective than comparing with a constant, since not
-every constant can be immediate operand for compare instruction.
-
-Also, I've renamed MEM_CGROUP_STAT_EVENTS to MEM_CGROUP_STAT_SOFTLIMIT,
-since really it's not a generic counter.
+Helper to get memory or mem+swap usage of the cgroup.
 
 Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-
+Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 ---
-
-KAMEZAWA-san, I've changed the patch a bit. Can I reuse your Acked-by?
-
----
- mm/memcontrol.c |   18 ++++++++++--------
- 1 files changed, 10 insertions(+), 8 deletions(-)
+ mm/memcontrol.c |   54 ++++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 32 insertions(+), 22 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 1d71cb4..c36d4f3 100644
+index 488b644..1d71cb4 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -69,8 +69,9 @@ enum mem_cgroup_stat_index {
- 	MEM_CGROUP_STAT_FILE_MAPPED,  /* # of pages charged as file rss */
- 	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
- 	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
--	MEM_CGROUP_STAT_EVENTS,	/* sum of pagein + pageout for internal use */
- 	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
-+	MEM_CGROUP_STAT_SOFTLIMIT, /* decrements on each page in/out.
-+					used by soft limit implementation */
+@@ -2722,40 +2722,50 @@ mem_cgroup_get_recursive_idx_stat(struct mem_cgroup *mem,
+ 	*val = d.val;
+ }
  
- 	MEM_CGROUP_STAT_NSTATS,
- };
-@@ -84,10 +85,10 @@ struct mem_cgroup_stat {
- };
- 
- static inline void
--__mem_cgroup_stat_reset_safe(struct mem_cgroup_stat_cpu *stat,
--				enum mem_cgroup_stat_index idx)
-+__mem_cgroup_stat_set_safe(struct mem_cgroup_stat_cpu *stat,
-+				enum mem_cgroup_stat_index idx, s64 val)
++static inline u64 mem_cgroup_usage(struct mem_cgroup *mem, bool swap)
++{
++	u64 idx_val, val;
++
++	if (!mem_cgroup_is_root(mem)) {
++		if (!swap)
++			return res_counter_read_u64(&mem->res, RES_USAGE);
++		else
++			return res_counter_read_u64(&mem->memsw, RES_USAGE);
++	}
++
++	mem_cgroup_get_recursive_idx_stat(mem, MEM_CGROUP_STAT_CACHE, &idx_val);
++	val = idx_val;
++	mem_cgroup_get_recursive_idx_stat(mem, MEM_CGROUP_STAT_RSS, &idx_val);
++	val += idx_val;
++
++	if (swap) {
++		mem_cgroup_get_recursive_idx_stat(mem,
++				MEM_CGROUP_STAT_SWAPOUT, &idx_val);
++		val += idx_val;
++	}
++
++	return val << PAGE_SHIFT;
++}
++
+ static u64 mem_cgroup_read(struct cgroup *cont, struct cftype *cft)
  {
--	stat->count[idx] = 0;
-+	stat->count[idx] = val;
- }
+ 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
+-	u64 idx_val, val;
++	u64 val;
+ 	int type, name;
  
- static inline s64
-@@ -380,9 +381,10 @@ static bool mem_cgroup_soft_limit_check(struct mem_cgroup *mem)
- 
- 	cpu = get_cpu();
- 	cpustat = &mem->stat.cpustat[cpu];
--	val = __mem_cgroup_stat_read_local(cpustat, MEM_CGROUP_STAT_EVENTS);
--	if (unlikely(val > SOFTLIMIT_EVENTS_THRESH)) {
--		__mem_cgroup_stat_reset_safe(cpustat, MEM_CGROUP_STAT_EVENTS);
-+	val = __mem_cgroup_stat_read_local(cpustat, MEM_CGROUP_STAT_SOFTLIMIT);
-+	if (unlikely(val < 0)) {
-+		__mem_cgroup_stat_set_safe(cpustat, MEM_CGROUP_STAT_SOFTLIMIT,
-+				SOFTLIMIT_EVENTS_THRESH);
- 		ret = true;
- 	}
- 	put_cpu();
-@@ -515,7 +517,7 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem,
- 	else
- 		__mem_cgroup_stat_add_safe(cpustat,
- 				MEM_CGROUP_STAT_PGPGOUT_COUNT, 1);
--	__mem_cgroup_stat_add_safe(cpustat, MEM_CGROUP_STAT_EVENTS, 1);
-+	__mem_cgroup_stat_add_safe(cpustat, MEM_CGROUP_STAT_SOFTLIMIT, -1);
- 	put_cpu();
- }
- 
+ 	type = MEMFILE_TYPE(cft->private);
+ 	name = MEMFILE_ATTR(cft->private);
+ 	switch (type) {
+ 	case _MEM:
+-		if (name == RES_USAGE && mem_cgroup_is_root(mem)) {
+-			mem_cgroup_get_recursive_idx_stat(mem,
+-				MEM_CGROUP_STAT_CACHE, &idx_val);
+-			val = idx_val;
+-			mem_cgroup_get_recursive_idx_stat(mem,
+-				MEM_CGROUP_STAT_RSS, &idx_val);
+-			val += idx_val;
+-			val <<= PAGE_SHIFT;
+-		} else
++		if (name == RES_USAGE)
++			val = mem_cgroup_usage(mem, false);
++		else
+ 			val = res_counter_read_u64(&mem->res, name);
+ 		break;
+ 	case _MEMSWAP:
+-		if (name == RES_USAGE && mem_cgroup_is_root(mem)) {
+-			mem_cgroup_get_recursive_idx_stat(mem,
+-				MEM_CGROUP_STAT_CACHE, &idx_val);
+-			val = idx_val;
+-			mem_cgroup_get_recursive_idx_stat(mem,
+-				MEM_CGROUP_STAT_RSS, &idx_val);
+-			val += idx_val;
+-			mem_cgroup_get_recursive_idx_stat(mem,
+-				MEM_CGROUP_STAT_SWAPOUT, &idx_val);
+-			val += idx_val;
+-			val <<= PAGE_SHIFT;
+-		} else
++		if (name == RES_USAGE)
++			val = mem_cgroup_usage(mem, true);
++		else
+ 			val = res_counter_read_u64(&mem->memsw, name);
+ 		break;
+ 	default:
 -- 
 1.6.5.7
