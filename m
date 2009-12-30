@@ -1,16 +1,12 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH v5 2/4] memcg: extract mem_group_usage() from mem_cgroup_read()
-Date: Wed, 30 Dec 2009 17:57:57 +0200
-Message-ID: <34fedc324199dd64149889ed6eac5d8f9441a9db.1262186098.git.kirill__31740.5074988075$1262189332$gmane$org@shutemov.name>
-References: <cover.1262186097.git.kirill@shutemov.name>
-	<9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill@shutemov.name>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] checkpoint: don't checkpoint a task with aio requests
+Date: Wed, 30 Dec 2009 14:37:22 -0600
+Message-ID: <20091230203722.GA25170@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-In-Reply-To: <cover.1262186097.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-References: <cover.1262186097.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,95 +16,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Helper to get memory or mem+swap usage of the cgroup.
+Not sure this is the best way, or entirely foolproof, but at
+least make an attempt to not checkpoint a task which is using
+aio.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+A checkpoint-aware application using aio can have the checkpointer
+signal all tasks to complete aio and wait for the checkpoint to
+complete.
+
+(Note I still have a queue of the patches at
+http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/cr-next
+so you should be able to
+
+git fetch git://git.kernel.org/pub/scm/linux/kernel/git/sergeh/linux-cr.git cr-next:serge
+
+and cherrypick patches from that branch instead
+of wrangling all the patches from mbox...)
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- mm/memcontrol.c |   54 ++++++++++++++++++++++++++++++++----------------------
- 1 files changed, 32 insertions(+), 22 deletions(-)
+ checkpoint/memory.c |    6 ++++++
+ fs/aio.c            |   17 +++++++++++++++++
+ include/linux/aio.h |    2 ++
+ 3 files changed, 25 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 488b644..1d71cb4 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2722,40 +2722,50 @@ mem_cgroup_get_recursive_idx_stat(struct mem_cgroup *mem,
- 	*val = d.val;
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 0108dbe..49e16c5 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -25,6 +25,7 @@
+ #include <linux/swap.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
++#include <linux/aio.h>
+ 
+ /*
+  * page-array chains: each ckpt_pgarr describes a set of <struct page *,vaddr>
+@@ -666,6 +667,11 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	struct file *exe_file = NULL;
+ 	int ret;
+ 
++	ret = check_for_outstanding_aio(mm);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "(%T)Outstanding aio\n");
++		return ret;
++	}
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM);
+ 	if (!h)
+ 		return -ENOMEM;
+diff --git a/fs/aio.c b/fs/aio.c
+index 02a2c93..7eb764c 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -1784,3 +1784,20 @@ SYSCALL_DEFINE5(io_getevents, aio_context_t, ctx_id,
+ 	asmlinkage_protect(5, ret, ctx_id, min_nr, nr, events, timeout);
+ 	return ret;
  }
- 
-+static inline u64 mem_cgroup_usage(struct mem_cgroup *mem, bool swap)
++
++int check_for_outstanding_aio(struct mm_struct *mm)
 +{
-+	u64 idx_val, val;
++	int ret = -EBUSY;
++	struct kioctx *ctx;
++	struct hlist_node *n;
 +
-+	if (!mem_cgroup_is_root(mem)) {
-+		if (!swap)
-+			return res_counter_read_u64(&mem->res, RES_USAGE);
-+		else
-+			return res_counter_read_u64(&mem->memsw, RES_USAGE);
-+	}
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(ctx, n, &mm->ioctx_list, list)
++		if (!ctx->dead)
++			goto found;
++	ret = 0;
++found:
++	rcu_read_unlock();
 +
-+	mem_cgroup_get_recursive_idx_stat(mem, MEM_CGROUP_STAT_CACHE, &idx_val);
-+	val = idx_val;
-+	mem_cgroup_get_recursive_idx_stat(mem, MEM_CGROUP_STAT_RSS, &idx_val);
-+	val += idx_val;
-+
-+	if (swap) {
-+		mem_cgroup_get_recursive_idx_stat(mem,
-+				MEM_CGROUP_STAT_SWAPOUT, &idx_val);
-+		val += idx_val;
-+	}
-+
-+	return val << PAGE_SHIFT;
++	return ret;
 +}
-+
- static u64 mem_cgroup_read(struct cgroup *cont, struct cftype *cft)
- {
- 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
--	u64 idx_val, val;
-+	u64 val;
- 	int type, name;
+diff --git a/include/linux/aio.h b/include/linux/aio.h
+index aea219d..462f22e 100644
+--- a/include/linux/aio.h
++++ b/include/linux/aio.h
+@@ -214,6 +214,7 @@ extern void kick_iocb(struct kiocb *iocb);
+ extern int aio_complete(struct kiocb *iocb, long res, long res2);
+ struct mm_struct;
+ extern void exit_aio(struct mm_struct *mm);
++extern int check_for_outstanding_aio(struct mm_struct *mm);
+ #else
+ static inline ssize_t wait_on_sync_kiocb(struct kiocb *iocb) { return 0; }
+ static inline int aio_put_req(struct kiocb *iocb) { return 0; }
+@@ -221,6 +222,7 @@ static inline void kick_iocb(struct kiocb *iocb) { }
+ static inline int aio_complete(struct kiocb *iocb, long res, long res2) { return 0; }
+ struct mm_struct;
+ static inline void exit_aio(struct mm_struct *mm) { }
++static inline int check_for_outstanding_aio(struct mm_struct *mm) { return 0; }
+ #endif /* CONFIG_AIO */
  
- 	type = MEMFILE_TYPE(cft->private);
- 	name = MEMFILE_ATTR(cft->private);
- 	switch (type) {
- 	case _MEM:
--		if (name == RES_USAGE && mem_cgroup_is_root(mem)) {
--			mem_cgroup_get_recursive_idx_stat(mem,
--				MEM_CGROUP_STAT_CACHE, &idx_val);
--			val = idx_val;
--			mem_cgroup_get_recursive_idx_stat(mem,
--				MEM_CGROUP_STAT_RSS, &idx_val);
--			val += idx_val;
--			val <<= PAGE_SHIFT;
--		} else
-+		if (name == RES_USAGE)
-+			val = mem_cgroup_usage(mem, false);
-+		else
- 			val = res_counter_read_u64(&mem->res, name);
- 		break;
- 	case _MEMSWAP:
--		if (name == RES_USAGE && mem_cgroup_is_root(mem)) {
--			mem_cgroup_get_recursive_idx_stat(mem,
--				MEM_CGROUP_STAT_CACHE, &idx_val);
--			val = idx_val;
--			mem_cgroup_get_recursive_idx_stat(mem,
--				MEM_CGROUP_STAT_RSS, &idx_val);
--			val += idx_val;
--			mem_cgroup_get_recursive_idx_stat(mem,
--				MEM_CGROUP_STAT_SWAPOUT, &idx_val);
--			val += idx_val;
--			val <<= PAGE_SHIFT;
--		} else
-+		if (name == RES_USAGE)
-+			val = mem_cgroup_usage(mem, true);
-+		else
- 			val = res_counter_read_u64(&mem->memsw, name);
- 		break;
- 	default:
+ #define io_wait_to_kiocb(wait) container_of(wait, struct kiocb, ki_wait)
 -- 
-1.6.5.7
+1.6.0.4
