@@ -1,14 +1,18 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH v5 0/4] cgroup notifications API and memory thresholds
-Date: Mon, 4 Jan 2010 12:15:02 +0200
-Message-ID: <cc557aab1001040215r1bdaaed0n2fe461e5ff396cdb__13599.6448611424$1262600245$gmane$org@mail.gmail.com>
-References: <cover.1262186097.git.kirill@shutemov.name>
-	<20100104003612.GF16187@balbir.in.ibm.com>
+From: Dwight Schauer <dschauer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: lxc-start: Device or resource busy - failed to remove previous
+	cgroup
+Date: Mon, 4 Jan 2010 09:21:42 -0600
+Message-ID: <68e6eac61001040721m250c0f14u9c07d04ef9ec3648@mail.gmail.com>
+References: <68e6eac61001031710w3e16f62blfb3b5bfb86ea43b7@mail.gmail.com>
+	<661de9471001031722o21c6bd55kb73403c85a8145e3@mail.gmail.com>
+	<68e6eac61001031746r44668e6cheb497c7df5f68a18@mail.gmail.com>
+	<68e6eac61001031854v35c9b0a0sebce033812977e73@mail.gmail.com>
+	<4B41C5A4.704@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100104003612.GF16187-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <4B41C5A4.704-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +22,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBKYW4gNCwgMjAxMCBhdCAyOjM2IEFNLCBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51
-eC52bmV0LmlibS5jb20+IHdyb3RlOgo+ICogS2lyaWxsIEEuIFNodXRlbW92IDxraXJpbGxAc2h1
-dGVtb3YubmFtZT4gWzIwMDktMTItMzAgMTc6NTc6NTVdOgo+Cj4+IFRoaXMgcGF0Y2hzZXQgaW50
-cm9kdWNlcyBldmVudGZkLWJhc2VkIEFQSSBmb3Igbm90aWZpY2F0aW9ucyBpbiBjZ3JvdXBzIGFu
-ZAo+PiBpbXBsZW1lbnRzIG1lbW9yeSBub3RpZmljYXRpb25zIG9uIHRvcCBvZiBpdC4KPj4KPj4g
-SXQgdXNlcyBzdGF0aXN0aWNzIGluIG1lbW9yeSBjb250cm9sZXIgdG8gdHJhY2sgbWVtb3J5IHVz
-YWdlLgo+Pgo+PiBPdXRwdXQgb2YgdGltZSgxKSBvbiBidWlsZGluZyBrZXJuZWwgb24gdG1wZnM6
-Cj4+Cj4+IFJvb3QgY2dyb3VwIGJlZm9yZSBjaGFuZ2VzOgo+PiDCoCDCoCDCoCBtYWtlIC1qMiDC
-oDUwNi4zNyB1c2VyIDYwLjkzcyBzeXN0ZW0gMTkzJSBjcHUgNDo1Mi43NyB0b3RhbAo+PiBOb24t
-cm9vdCBjZ3JvdXAgYmVmb3JlIGNoYW5nZXM6Cj4+IMKgIMKgIMKgIG1ha2UgLWoyIMKgNTA3LjE0
-IHVzZXIgNjIuNjZzIHN5c3RlbSAxOTMlIGNwdSA0OjU0Ljc0IHRvdGFsCj4+IFJvb3QgY2dyb3Vw
-IGFmdGVyIGNoYW5nZXMgKDAgdGhyZXNob2xkcyk6Cj4+IMKgIMKgIMKgIG1ha2UgLWoyIMKgNTA3
-LjEzIHVzZXIgNjIuMjBzIHN5c3RlbSAxOTMlIGNwdSA0OjUzLjU1IHRvdGFsCj4+IE5vbi1yb290
-IGNncm91cCBhZnRlciBjaGFuZ2VzICgwIHRocmVzaG9sZHMpOgo+PiDCoCDCoCDCoCBtYWtlIC1q
-MiDCoDUwNy43MCB1c2VyIDY0LjIwcyBzeXN0ZW0gMTkzJSBjcHUgNDo1NS43MCB0b3RhbAo+PiBS
-b290IGNncm91cCBhZnRlciBjaGFuZ2VzICgxIHRocmVzaG9sZHMsIG5ldmVyIGNyb3NzZWQpOgo+
-PiDCoCDCoCDCoCBtYWtlIC1qMiDCoDUwNi45NyB1c2VyIDYyLjIwcyBzeXN0ZW0gMTkzJSBjcHUg
-NDo1My45MCB0b3RhbAo+PiBOb24tcm9vdCBjZ3JvdXAgYWZ0ZXIgY2hhbmdlcyAoMSB0aHJlc2hv
-bGRzLCBuZXZlciBjcm9zc2VkKToKPj4gwqAgwqAgwqAgbWFrZSAtajIgwqA1MDcuNTUgdXNlciA2
-NC4wOHMgc3lzdGVtIDE5MyUgY3B1IDQ6NTUuNjMgdG90YWwKPj4KPj4gQW55IGNvbW1lbnRzPwo+
-Cj4gSGksCj4KPiBJIGp1c3Qgc2F3IHRoYXQgdGhlIG5vdGlmaWNhdGlvbiB3b3JrIGZvciBtZSB1
-c2luZyB0aGUgdG9vbCB5b3UKPiBzdXBwbGllZC4gT25lIHN0cmFuZ2UgdGhpbmcgd2FzIHRoYXQg
-SSBnb3Qgbm90aWZpZWQgZXZlbiB0aG91Z2gKPiB0aGUgYW1vdW50IG9mIGRhdGEgSSB3YXMgdXNp
-bmcgd2FzIHJlZHVjaW5nLCBzbyBJIGhpdCB0aGUgbm90aWZpY2F0aW9uCj4gdHdvIHdheXMKPgo+
-IMKgIMKgIMKgIMKgKy0tLS0tLS0tLS0tLSstLS0tLS0tLS0tLQo+IMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgMUcKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoC0tLS0+IChnb3Qgbm90aWZp
-ZWQgb24gaW5jcmVhc2UpCj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqA8LS0tLSAoZ290IG5vdGlm
-aWVkIG9uIGRlY3JlYXNlKQo+Cj4gSSBhbSBub3QgYWdhaW5zdCB0aGUgYmVoYXZpb3VyLCBidXQg
-aXQgY2FuIGJlIGNvbmZ1c2luZyB1bmxlc3MKPiBjbGFyaWZpZWQgd2l0aCB0aGUgZXZlbnQuCgpJ
-SVVDLCB5b3UndmUgZ290IHR3byBldmVudHMuIE9uZSBvbiBjcm9zc2luZyB0aGUgdGhyZXNob2xk
-IHVwIGFuZApvbmUgb24gY3Jvc3NpbmcgaXQgZG93bi4gSXQncyBPay4KCkJ5IGRlc2lnbiwgbm90
-aWZpY2F0aW9uIG1lYW5zIHRoYXQgdGhlIHRocmVzaG9sZCBwcm9iYWJseSBjcm9zc2VkCihpdCBj
-YW4gYmUgY3Jvc3NlZCB0d2ljZSAtLSB1cCBhbmQgZG93bikgb3IgdGhlIGNncm91cCB3YXMgcmVt
-b3ZlZC4KVG8gdW5kZXJzdGFuZCB3aGF0IHJlYWxseSBoYXBwZW4geW91IG5lZWQgdG8gY2hlY2sg
-aWYgdGhlIGNncm91cApleGlzdHMgYW5kIHJlYWQgY3VycmVudCB1c2FnZSBvZiB0aGUgcmVzb3Vy
-Y2UuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
-aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
-aHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
-aW5lcnM=
+On Mon, Jan 4, 2010 at 4:40 AM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wro=
+te:
+> Did you check the file /cgroup/<name>/tasks is empty ? it's probably a du=
+mb
+> question, but just in case :)
+>
+
+Ok, since this is easy enough to reproduce, I got it into this state again.
+
+$ cat /cgroup/arch64-1/tasks
+$
+
+it is empty
+
+> Can you give the content of cat /proc/slabinfo =A0| grep namespace ? Does=
+ the
+> number of objects reach zero ? (assuming you have just one container).
+>
+
+cat /proc/slabinfo  | grep namespace
+pid_namespace          4      6   2112    3    2 : tunables   24   12
+  8 : slabdata      2      2      0
+net_namespace          0      0   1984    2    1 : tunables   24   12
+  8 : slabdata      0      0      0
+
+I have two containers, but only one was started and stopped this session.
+
+> Maybe I am missing something, but I suspect a bug in the kernel. Can you
+> check if that happens with a more recent kernel ?
+
+Ok, yes, I'll do that.
+
+Dwight
