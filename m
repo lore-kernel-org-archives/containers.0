@@ -1,15 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 1/1] RFC: taking a crack at targeted capabilities
-Date: Wed, 6 Jan 2010 14:17:25 -0600
-Message-ID: <20100106201725.GA24242@us.ibm.com>
+Date: Wed, 06 Jan 2010 12:43:41 -0800
+Message-ID: <m14omzx8ua.fsf@fess.ebiederm.org>
 References: <20100106062809.GA17064@us.ibm.com>
-	<m17hrv18ad.fsf@fess.ebiederm.org>
+	<m13a2j2q7c.fsf@fess.ebiederm.org> <20100106173056.GC15784@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m17hrv18ad.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <20100106173056.GC15784-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Wed\, 6 Jan 2010 11\:30\:56 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,48 +19,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > So i was thinking about how to safely but incrementally introduce
-> > targeted capabilities - which we decided was a prereq to making VFS
-> > handle user namespaces - and the following seemed doable.  My main
-> > motivations were (in order):
-> >
-> >         1. don't make any unconverted capable() checks unsafe
-> >         2. minimize performance impact on non-container case
-> >         3. minimize performance impact on containers
-> 
-> My motivation is a bit different.  I would like to get to the
-> unprivileged creation of new namespaces.  It looks like this gets us
-> 90% of the way there, with only potential uid confusion issues left.
-> 
-> I still need to handle getting all caps after creation but otherwise I
-> think I have a good starter patch that achieves all of your goals.
-> 
-> Of course kill_permission needs the checks you have suggested as well.
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+
+> But that's only if fred has CAP_KILL in a user namespace which is
+> ancestor to joe's process.  Only fred's processes in a child
+> userns should have CAP_KILL.
+
+Got it.  What I don't see in your implementation is how you can kill a
+child that is in it's own user namespace if you don't have CAP_KILL.
+
+>> Which matters because we can set the hostname through /proc/sys....
 >
-> Eric
-> 
-> 
-> >From db104af741b5f0a2f128688905498cae68fbbde2 Mon Sep 17 00:00:00 2001
-> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Date: Wed, 6 Jan 2010 08:26:21 -0800
-> Subject: [PATCH] security:  Make capabilities relative to the user namespace.
-> 
-> - Introduce ns_capable to test for a capability in a non-default
->   user namespace.
-> - Teach cap_capable to handle capabilities in a non-default
->   user namespace.
+> Oh, right.  However, utsname doesn't have a creator, and we won't always
+> want to use user namespaces to authorize.  For instance, for CAP_NET_ADMIN
+> we'll want to compare the net_ns.  That's why I had the switch inside
+> capable_to() based on ns type.
 
-So yeah, I didn't address the whole has_capability junk.  Feh.
+I disagree.  For CAP_NET_ADMIN we will want to do:
+ns_capable(net->userns, CAP_NET_ADMIN);
 
-So do you intend to tag all namespaces with the userns which
-created it?  So sys_hostname() can check utsname->uts_ns->creator,
-and net ioctl SIOCSIFNAME checks struct net->creator?
+Network namespaces do not have a hierarchy so I don't see how they
+would be useful in this context.
 
--serge
+When we add an unprivileged unshare it is trivial to capture either
+the creator or at least the creators user namespace.  Giving us a
+usernamespace to compare against.
+
+Eric
