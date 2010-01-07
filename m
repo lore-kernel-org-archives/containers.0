@@ -1,15 +1,14 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [PATCH v4 0/4] cgroups: support for module-loadable subsystems
-Date: Wed, 6 Jan 2010 20:26:06 -0500
-Message-ID: <20100107012606.GA25577__13263.4617657915$1262827625$gmane$org@andrew.cmu.edu>
-References: <20091231051050.GA714@andrew.cmu.edu>
-	<20100106160414.bd555474.akpm@linux-foundation.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 1/2] Add clone_child control file
+Date: Wed, 6 Jan 2010 17:28:58 -0800
+Message-ID: <6599ad831001061728n63375ff8qb3a084e3f9fd7c98@mail.gmail.com>
+References: <20091228230454.000895089@mai.lab.toulouse-stg.fr.ibm.com>
+	<20091228230620.494084022@mai.lab.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100106160414.bd555474.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20091228230620.494084022-7Ha4D/yM3XKqUVqbrEjtMkN0fxke0PB7qyM6JfAXOaQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,27 +18,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 06, 2010 at 04:04:14PM -0800, Andrew Morton wrote:
-> On Thu, 31 Dec 2009 00:10:50 -0500
-> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> 
-> > This patch series implements support for building, loading, and
-> > unloading subsystems as modules, both within and outside the kernel
-> > source tree. It provides an interface cgroup_load_subsys() and
-> > cgroup_unload_subsys() which modular subsystems can use to register and
-> > depart during runtime. The net_cls classifier subsystem serves as the
-> > example for a subsystem which can be converted into a module using these
-> > changes.
-> 
-> What is the value in this?  What are the usage scenarios?  Why does the
-> benefit of this change exceed the cost/risk/etc of merging it?
+On Mon, Dec 28, 2009 at 3:04 PM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+> This patch is sent as an answer to a previous thread around the ns_cgroup.
+>
+> https://lists.linux-foundation.org/pipermail/containers/2009-June/018627.html
+>
+> It adds a control file 'clone_children' for a cgroup.
+> This control file is a boolean specifying if the child cgroup should
+> be a clone of the parent cgroup or not. The default value is 'false'.
+>
+> This flag makes the child cgroup to call the post_clone callback of all
+> the subsystem, if it is available.
 
-As discussed in the first posting of these patches, this provides the
-ability for arbitrary subsystems to be used with cgroups.. cls_cgroup
-would have already been a module except for a lack of support from
-cgroups, and the change also allows other module-loadable classifiers
-to add subsystems of their own.
+Basic idea looks OK, and it seems like a plausible way to handle
+automatic construction/inheritance of control values. I have a minor
+worry that it might not be fine-grained enough though - are there
+maybe cases where you'd want cloning for one subsystem but not for
+others? I suppose in that case you can just put them on separate
+hierarchies.
+
+The file should be called cgroup.clone_children rather than plain
+clone_children, to fit in with the other new generic-cgroup control
+files that we've started introducing, and to avoid naming clashes.
+
+Paul
