@@ -1,16 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 1/1] RFC: taking a crack at targeted capabilities
-Date: Wed, 06 Jan 2010 16:16:35 -0800
-Message-ID: <m1y6kasra4.fsf@fess.ebiederm.org>
-References: <20100106062809.GA17064@us.ibm.com>
-	<m17hrv18ad.fsf@fess.ebiederm.org> <20100106201725.GA24242@us.ibm.com>
-	<m1skajszuw.fsf@fess.ebiederm.org> <20100106215721.GA5823@us.ibm.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 2/2] Remove the ns_cgroup
+Date: Wed, 6 Jan 2010 16:38:45 -0800
+Message-ID: <6599ad831001061638t2f3c4aafl20ba19ec99ed2ec5@mail.gmail.com>
+References: <20091228230454.000895089@mai.lab.toulouse-stg.fr.ibm.com>
+	<20091228230623.907397717@mai.lab.toulouse-stg.fr.ibm.com>
+	<20091228233611.GA6309@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100106215721.GA5823-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Wed\, 6 Jan 2010 15\:57\:21 -0600")
+In-Reply-To: <20091228233611.GA6309-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,34 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> >> - Introduce ns_capable to test for a capability in a non-default
->> >>   user namespace.
->> >> - Teach cap_capable to handle capabilities in a non-default
->> >>   user namespace.
->> >
->> > So yeah, I didn't address the whole has_capability junk.  Feh.
->> 
->> That just fell out...
->> 
->> > So do you intend to tag all namespaces with the userns which
->> > created it?  So sys_hostname() can check utsname->uts_ns->creator,
->> > and net ioctl SIOCSIFNAME checks struct net->creator?
->> 
->> That is the plan.  Add a creator/usernamespace as part of the patches
->> to support creating a new namespace without the global CAP_SYS_ADMIN.
+On Mon, Dec 28, 2009 at 3:36 PM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>> The ns_cgroup is an annoying cgroup at the namespace / cgroup frontier.
 >
-> Cool - are you working on that right now, or should I start it myself
-> if i'm bored and restless tonight?
+> True. =A0However, it remains - apart from using smack or SELinux - the
+> only way to truly lock a container into a cgroup configuration. =A0That's
+> unlikely to change until we finally support user namespaces in the VFS.
+>
+> Do we worry about that?
 
-Go for it.  I have some things to wrap up before I can do much with this,
-despite the fact I want to.
+I think we worry about the fact that we don't have a good way to do
+this. I don't think we worry about removing a bad way to do it :-)
 
-Eric
+Paul
