@@ -1,19 +1,16 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [PATCH v4 0/4] cgroups: support for module-loadable subsystems
-Date: Thu, 7 Jan 2010 03:22:54 -0500
-Message-ID: <20100107082254.GD16656__1874.75552452288$1262852634$gmane$org@andrew.cmu.edu>
-References: <20091231051050.GA714@andrew.cmu.edu>
-	<20100106160414.bd555474.akpm@linux-foundation.org>
-	<20100107012606.GA25577@andrew.cmu.edu>
-	<20100107120732.97d502bd.kamezawa.hiroyu@jp.fujitsu.com>
-	<4B45824B.9030108@cn.fujitsu.com>
-	<20100107081432.GC16656@andrew.cmu.edu>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [PATCH v5 1/4] cgroup: implement eventfd-based generic API for
+	notifications
+Date: Thu, 7 Jan 2010 14:36:29 +0200
+Message-ID: <cc557aab1001070436w446ef85n55dd2af5e733f55e__48518.7667342418$1262867906$gmane$org@mail.gmail.com>
+References: <cover.1262186097.git.kirill@shutemov.name>
+	<9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill@shutemov.name>
+	<6599ad831001061701x72098dacn7a5d916418396e33@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100107081432.GC16656-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+In-Reply-To: <6599ad831001061701x72098dacn7a5d916418396e33-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,46 +20,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 07, 2010 at 03:14:32AM -0500, Ben Blum wrote:
-> On Thu, Jan 07, 2010 at 02:42:19PM +0800, Li Zefan wrote:
-> > KAMEZAWA Hiroyuki wrote:
-> > > On Wed, 6 Jan 2010 20:26:06 -0500
-> > > Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> > > 
-> > >> On Wed, Jan 06, 2010 at 04:04:14PM -0800, Andrew Morton wrote:
-> > >>> On Thu, 31 Dec 2009 00:10:50 -0500
-> > >>> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> > >>>
-> > >>>> This patch series implements support for building, loading, and
-> > >>>> unloading subsystems as modules, both within and outside the kernel
-> > >>>> source tree. It provides an interface cgroup_load_subsys() and
-> > >>>> cgroup_unload_subsys() which modular subsystems can use to register and
-> > >>>> depart during runtime. The net_cls classifier subsystem serves as the
-> > >>>> example for a subsystem which can be converted into a module using these
-> > >>>> changes.
-> > >>> What is the value in this?  What are the usage scenarios?  Why does the
-> > >>> benefit of this change exceed the cost/risk/etc of merging it?
-> > >> As discussed in the first posting of these patches, this provides the
-> > >> ability for arbitrary subsystems to be used with cgroups.. cls_cgroup
-> > >> would have already been a module except for a lack of support from
-> > >> cgroups, and the change also allows other module-loadable classifiers
-> > >> to add subsystems of their own.
-> > > 
-> > > Hmm, do you have your own module in plan ?
-> > > 
-> > 
-> > Maybe the new blkio_cgroup can also be made module-able.
-> 
-> certainly looks promising. one thing I note while looking over it is
-> that it wants .use_id = 1, and the load_subsys interface neglects to
-> make a call to init_idr. adding calls to cgroup_init_idr has a few
-> possible complications... what use does blkio have for use_id?
-
-oh, oops, while tracing the calls that init_idr does i ended up looking
-at the wrong functions and made it out to be harder than it was (in
-several places, even). still it would need to be included in load_subsys
-and the single error case handled appropriately.
+T24gVGh1LCBKYW4gNywgMjAxMCBhdCAzOjAxIEFNLCBQYXVsIE1lbmFnZSA8bWVuYWdlQGdvb2ds
+ZS5jb20+IHdyb3RlOgo+IE9uIFdlZCwgRGVjIDMwLCAyMDA5IGF0IDc6NTcgQU0sIEtpcmlsbCBB
+LiBTaHV0ZW1vdgo+IDxraXJpbGxAc2h1dGVtb3YubmFtZT4gd3JvdGU6Cj4+ICsKPj4gKyDCoCDC
+oCDCoCBpZiAoIUlTX0VSUihlZmlsZSkpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgZnB1dChl
+ZmlsZSk7Cj4KPiBXaGlsZSB0aGlzIGlzIE9LIGN1cnJlbnRseSwgaXQncyBhIGJpdCBmcmFnaWxl
+LiBlZmlsZSBzdGFydHMgYXMgTlVMTCwKPiBhbmQgSVNfRVJSKE5VTEwpIGlzIGZhbHNlLiBTbyBp
+ZiB3ZSBqdW1wIHRvIGZhaWw6IGJlZm9yZSB0cnlpbmcgdG8gZG8KPiB0aGUgZXZlbnRmZF9mZ2V0
+KCkgdGhlbiB3ZSdsbCB0cnkgdG8gZnB1dChOVUxMKSwgd2hpY2ggd2lsbCBvb3BzLiBUaGlzCj4g
+d29ya3MgYmVjYXVzZSB3ZSBkb24ndCBjdXJyZW50bHkganVtcCB0byBmYWlsOiB1bnRpbCBhZnRl
+cgo+IGV2ZW50ZmRfZmdldCgpLCBidXQgc29tZW9uZSBjb3VsZCBhZGQgYW4gZXh0cmEgc2V0dXAg
+c3RlcCBiZXR3ZWVuIHRoZQo+IGt6YWxsb2MoKSBhbmQgdGhlIGV2ZW50ZmRfZmdldCgpIHdoaWNo
+IGNvdWxkIGZhaWwuCgpTbyB3ZSBuZWVkIHRvIHVzZSBJU19FUlJfT1JfTlVMTCBoZXJlIGluc3Ry
+ZWFkIG9mIElTX0VSUiwgZG9uJ3Qgd2U/Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
