@@ -1,18 +1,18 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v5 1/4] cgroup: implement eventfd-based generic API for
-	notifications
-Date: Thu, 7 Jan 2010 17:05:37 -0800
-Message-ID: <6599ad831001071705k3954642eo3e04cef7a31e3727__18364.2022464939$1262912776$gmane$org@mail.gmail.com>
-References: <cover.1262186097.git.kirill@shutemov.name>
-	<9411cbdd545e1232c916bfef03a60cf95510016d.1262186098.git.kirill@shutemov.name>
-	<6599ad831001061701x72098dacn7a5d916418396e33@mail.gmail.com>
-	<cc557aab1001070436w446ef85n55dd2af5e733f55e@mail.gmail.com>
-	<4B46828C.5000703@cn.fujitsu.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: [PATCH v4 0/4] cgroups: support for module-loadable subsystems
+Date: Fri, 8 Jan 2010 00:27:34 -0500
+Message-ID: <20100108052734.GA13168__37239.8707936101$1262928583$gmane$org@andrew.cmu.edu>
+References: <20091231051050.GA714@andrew.cmu.edu>
+	<20100106160414.bd555474.akpm@linux-foundation.org>
+	<20100107012606.GA25577@andrew.cmu.edu>
+	<20100107120732.97d502bd.kamezawa.hiroyu@jp.fujitsu.com>
+	<4B45824B.9030108@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B46828C.5000703-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B45824B.9030108-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,50 +22,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Alexander Shishkin <virtuoso-0lOfPCoBze7YtjvyW6yDsg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Vladislav Buzov <vbuzov-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 7, 2010 at 4:55 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
-> Use multi labels is much better:
+On Thu, Jan 07, 2010 at 02:42:19PM +0800, Li Zefan wrote:
+> KAMEZAWA Hiroyuki wrote:
+> > On Wed, 6 Jan 2010 20:26:06 -0500
+> > Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
+> > 
+> >> On Wed, Jan 06, 2010 at 04:04:14PM -0800, Andrew Morton wrote:
+> >>> On Thu, 31 Dec 2009 00:10:50 -0500
+> >>> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
+> >>>
+> >>>> This patch series implements support for building, loading, and
+> >>>> unloading subsystems as modules, both within and outside the kernel
+> >>>> source tree. It provides an interface cgroup_load_subsys() and
+> >>>> cgroup_unload_subsys() which modular subsystems can use to register and
+> >>>> depart during runtime. The net_cls classifier subsystem serves as the
+> >>>> example for a subsystem which can be converted into a module using these
+> >>>> changes.
+> >>> What is the value in this?  What are the usage scenarios?  Why does the
+> >>> benefit of this change exceed the cost/risk/etc of merging it?
+> >> As discussed in the first posting of these patches, this provides the
+> >> ability for arbitrary subsystems to be used with cgroups.. cls_cgroup
+> >> would have already been a module except for a lack of support from
+> >> cgroups, and the change also allows other module-loadable classifiers
+> >> to add subsystems of their own.
+> > 
+> > Hmm, do you have your own module in plan ?
+> > 
+> 
+> Maybe the new blkio_cgroup can also be made module-able.
 
-I disagree with that - in the absence of a language that can do proper
-destructor-based cleanup (i.e. a strictly controlled subset of C++ :-)
-) I think it's clearer to have a single failure path where you can
-clean up anything that needs to be cleaned up, without excessive
-dependencies on exactly when the failure occurred. Changes then become
-less error-prone.
+Ok, the following two patches make this happen (or at least pretend to
+well enough to fool me). The first one adds use_id initialization in
+cgroup_load_subsys, and the second rearranges config options and some
+code as appropriate in block/ and adds EXPORT_SYMBOLs in cgroup.c.
 
-Paul
+-- bblum
 
->
-> label4::
-> =A0 =A0 =A0 =A0fput(cfile);
-> label3:
-> =A0 =A0 =A0 =A0eventfd_ctx_put(event->eventfd);
-> label2:
-> =A0 =A0 =A0 =A0fput(efile);
-> label1:
-> =A0 =A0 =A0 =A0kfree(event);
->
-> compared to:
->
-> +fail:
-> + =A0 =A0 =A0 if (!IS_ERR(cfile))
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 fput(cfile);
-> +
-> + =A0 =A0 =A0 if (event && event->eventfd && !IS_ERR(event->eventfd))
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 eventfd_ctx_put(event->eventfd);
-> +
-> + =A0 =A0 =A0 if (!IS_ERR(efile))
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 fput(efile);
-> +
-> + =A0 =A0 =A0 kfree(event);
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at =A0http://www.tux.org/lkml/
->
+---
+ block/Kconfig             |    2 -
+ block/Kconfig.iosched     |    2 -
+ block/blk-cgroup.c        |   53 +++++++++++++++++++++++++++++++++++-----------
+ block/blk-cgroup.h        |   10 ++++++--
+ include/linux/iocontext.h |    2 -
+ kernel/cgroup.c           |   31 +++++++++++++++++++++-----
+ 6 files changed, 77 insertions(+), 23 deletions(-)
