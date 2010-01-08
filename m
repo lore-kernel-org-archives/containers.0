@@ -1,16 +1,17 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: LXC container,
-	unmounting unneeded mount points (from the 	container namespace)
-Date: Fri, 08 Jan 2010 15:35:20 +0100
-Message-ID: <4B4742A8.1000708@free.fr>
-References: <8e04b5821001080608w47b0529dhcd6f8a26e38f24e0@mail.gmail.com>	
+From: "Ciprian Dorin, Craciun" <ciprian.craciun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: LXC container, unmounting unneeded mount points (from the
+	container namespace)
+Date: Fri, 8 Jan 2010 16:59:25 +0200
+Message-ID: <8e04b5821001080659y3c4bad1akbaa1e355bb1f730f@mail.gmail.com>
+References: <8e04b5821001080608w47b0529dhcd6f8a26e38f24e0@mail.gmail.com>
 	<4B473E89.1040200@free.fr>
 	<8e04b5821001080625j22517f1i22ec3495d8d1e53b@mail.gmail.com>
+	<4B4742A8.1000708@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8e04b5821001080625j22517f1i22ec3495d8d1e53b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4B4742A8.1000708-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +21,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Ciprian Dorin, Craciun" <ciprian.craciun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ciprian Dorin, Craciun wrote:
-> On Fri, Jan 8, 2010 at 4:17 PM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
->   
->> Ciprian Dorin, Craciun wrote:
->>     
->>>    Hy all!
->>>
->>>    Today I've started to play with the LXC containers, and I've got a
->>> question: when starting a container (with it's own mount point
->>> namespace), and I do a `cat /proc/mounts` I also see the mount points
->>> from my host system.
->>>
->>>    So the question is: how can I force `lxc-create` to remove any
->>> uneeded mount points (maybe all)?
->>>
->>>       
->> Committed today :)
->>
->> http://git.lab.toulouse-stg.fr.ibm.com/?p=lxc.git;a=commit;h=ed83715df7666879116d1657b1dd54a8fc6513f6
->>     
-
-Oops, this one:
-
-http://lxc.git.sourceforge.net/git/gitweb.cgi?p=lxc/lxc;a=commit;h=bf601689a9e0cea1ceaf17e4f7f853f5392c2827
+T24gRnJpLCBKYW4gOCwgMjAxMCBhdCA0OjM1IFBNLCBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVsLmxl
+emNhbm9AZnJlZS5mcj4gd3JvdGU6Cj4gQ2lwcmlhbiBEb3JpbiwgQ3JhY2l1biB3cm90ZToKPj4K
+Pj4gT24gRnJpLCBKYW4gOCwgMjAxMCBhdCA0OjE3IFBNLCBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVs
+LmxlemNhbm9AZnJlZS5mcj4KPj4gd3JvdGU6Cj4+Cj4+Pgo+Pj4gQ2lwcmlhbiBEb3JpbiwgQ3Jh
+Y2l1biB3cm90ZToKPj4+Cj4+Pj4KPj4+PiDCoCBIeSBhbGwhCj4+Pj4KPj4+PiDCoCBUb2RheSBJ
+J3ZlIHN0YXJ0ZWQgdG8gcGxheSB3aXRoIHRoZSBMWEMgY29udGFpbmVycywgYW5kIEkndmUgZ290
+IGEKPj4+PiBxdWVzdGlvbjogd2hlbiBzdGFydGluZyBhIGNvbnRhaW5lciAod2l0aCBpdCdzIG93
+biBtb3VudCBwb2ludAo+Pj4+IG5hbWVzcGFjZSksIGFuZCBJIGRvIGEgYGNhdCAvcHJvYy9tb3Vu
+dHNgIEkgYWxzbyBzZWUgdGhlIG1vdW50IHBvaW50cwo+Pj4+IGZyb20gbXkgaG9zdCBzeXN0ZW0u
+Cj4+Pj4KPj4+PiDCoCBTbyB0aGUgcXVlc3Rpb24gaXM6IGhvdyBjYW4gSSBmb3JjZSBgbHhjLWNy
+ZWF0ZWAgdG8gcmVtb3ZlIGFueQo+Pj4+IHVuZWVkZWQgbW91bnQgcG9pbnRzIChtYXliZSBhbGwp
+Pwo+Pj4+Cj4+Pj4KPj4+Cj4+PiBDb21taXR0ZWQgdG9kYXkgOikKPj4+Cj4+Pgo+Pj4gaHR0cDov
+L2dpdC5sYWIudG91bG91c2Utc3RnLmZyLmlibS5jb20vP3A9bHhjLmdpdDthPWNvbW1pdDtoPWVk
+ODM3MTVkZjc2NjY4NzkxMTZkMTY1N2IxZGQ1NGE4ZmM2NTEzZjYKPj4+Cj4KPiBPb3BzLCB0aGlz
+IG9uZToKPgo+IGh0dHA6Ly9seGMuZ2l0LnNvdXJjZWZvcmdlLm5ldC9naXQvZ2l0d2ViLmNnaT9w
+PWx4Yy9seGM7YT1jb21taXQ7aD1iZjYwMTY4OWE5ZTBjZWExY2VhZjE3ZTRmN2Y4NTNmNTM5MmMy
+ODI3CgoKICAgIFRoYW5rcywgaXQgd29ya3MgYXMgZXhwZWN0ZWQuIChJdCBzZWVtcyB0aGF0IGl0
+IHdhcyBpbiB0aGUKcmVwb3NpdG9yeS4uLiA6KSApCgogICAgQW5kIG9uZSBxdWVzdGlvbiAob2Zm
+LXRvcGljKTogaXMgdGhlcmUgYW55IG1haWxpbmcgbGlzdCBkZWRpY2F0ZWQKdG8gTFhDIHVzZXJz
+PyAoSSBndWVzcyB0aGF0IHRoaXMgbWFpbGluZyBsaXN0IGlzIGZvciB0aGUgZGV2ZWxvcGVycwpv
+bmx5LCBvcj8pCgogICAgQ2lwcmlhbi4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
