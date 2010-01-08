@@ -1,7 +1,7 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH] memcg: typo in comment to mem_cgroup_print_oom_info()
-Date: Fri,  8 Jan 2010 17:13:53 +0200
-Message-ID: <1262963633-21965-1-git-send-email-kirill@shutemov.name>
+Subject: [PATCH] cgroups: fix CONTENTS in cgroups documentation
+Date: Fri,  8 Jan 2010 17:12:02 +0200
+Message-ID: <1262963522-21762-1-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,31 +16,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-s/mem_cgroup_print_mem_info/mem_cgroup_print_oom_info/
+Add a forgotten item into CONTENTS.
 
 Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 ---
- mm/memcontrol.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ Documentation/cgroups/cgroups.txt |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 4572907..0d78570 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -1070,7 +1070,7 @@ static int mem_cgroup_count_children_cb(struct mem_cgroup *mem, void *data)
- }
- 
- /**
-- * mem_cgroup_print_mem_info: Called from OOM with tasklist_lock held in read mode.
-+ * mem_cgroup_print_oom_info: Called from OOM with tasklist_lock held in read mode.
-  * @memcg: The memory cgroup that went over limit
-  * @p: Task that is going to be killed
-  *
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 13ecd52..5a052ff 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -22,6 +22,7 @@ CONTENTS:
+ 2. Usage Examples and Syntax
+   2.1 Basic Usage
+   2.2 Attaching processes
++  2.3 Mounting hierarchies by name
+ 3. Kernel API
+   3.1 Overview
+   3.2 Synchronization
 -- 
 1.6.5.7
