@@ -1,15 +1,16 @@
-From: "Ciprian Dorin, Craciun" <ciprian.craciun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: LXC container, unmounting unneeded mount points (from the
-	container namespace)
-Date: Fri, 8 Jan 2010 16:25:18 +0200
-Message-ID: <8e04b5821001080625j22517f1i22ec3495d8d1e53b@mail.gmail.com>
-References: <8e04b5821001080608w47b0529dhcd6f8a26e38f24e0@mail.gmail.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: LXC container,
+	unmounting unneeded mount points (from the 	container namespace)
+Date: Fri, 08 Jan 2010 15:35:20 +0100
+Message-ID: <4B4742A8.1000708@free.fr>
+References: <8e04b5821001080608w47b0529dhcd6f8a26e38f24e0@mail.gmail.com>	
 	<4B473E89.1040200@free.fr>
+	<8e04b5821001080625j22517f1i22ec3495d8d1e53b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B473E89.1040200-GANU6spQydw@public.gmane.org>
+In-Reply-To: <8e04b5821001080625j22517f1i22ec3495d8d1e53b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,27 +20,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: "Ciprian Dorin, Craciun" <ciprian.craciun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBKYW4gOCwgMjAxMCBhdCA0OjE3IFBNLCBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVsLmxl
-emNhbm9AZnJlZS5mcj4gd3JvdGU6Cj4gQ2lwcmlhbiBEb3JpbiwgQ3JhY2l1biB3cm90ZToKPj4K
-Pj4gwqAgwqBIeSBhbGwhCj4+Cj4+IMKgIMKgVG9kYXkgSSd2ZSBzdGFydGVkIHRvIHBsYXkgd2l0
-aCB0aGUgTFhDIGNvbnRhaW5lcnMsIGFuZCBJJ3ZlIGdvdCBhCj4+IHF1ZXN0aW9uOiB3aGVuIHN0
-YXJ0aW5nIGEgY29udGFpbmVyICh3aXRoIGl0J3Mgb3duIG1vdW50IHBvaW50Cj4+IG5hbWVzcGFj
-ZSksIGFuZCBJIGRvIGEgYGNhdCAvcHJvYy9tb3VudHNgIEkgYWxzbyBzZWUgdGhlIG1vdW50IHBv
-aW50cwo+PiBmcm9tIG15IGhvc3Qgc3lzdGVtLgo+Pgo+PiDCoCDCoFNvIHRoZSBxdWVzdGlvbiBp
-czogaG93IGNhbiBJIGZvcmNlIGBseGMtY3JlYXRlYCB0byByZW1vdmUgYW55Cj4+IHVuZWVkZWQg
-bW91bnQgcG9pbnRzIChtYXliZSBhbGwpPwo+Pgo+Cj4gQ29tbWl0dGVkIHRvZGF5IDopCj4KPiBo
-dHRwOi8vZ2l0LmxhYi50b3Vsb3VzZS1zdGcuZnIuaWJtLmNvbS8/cD1seGMuZ2l0O2E9Y29tbWl0
-O2g9ZWQ4MzcxNWRmNzY2Njg3OTExNmQxNjU3YjFkZDU0YThmYzY1MTNmNgoKCiAgICBUaGFua3Mg
-Zm9yIHRoZSBxdWljayByZXNwb25zZSEgKEJveSBJJ20gbHVja3kuLi4gOikgKQoKICAgIE9uZSBw
-cm9ibGVtIHRob3VnaC4uLiBUaGUgbGluayBhYm92ZSBpcyBub3QgYXZhaWxhYmxlIChJIGNhbid0
-CnJlc29sdmUgdGhlIGdpdC5sYWIuLi4uIEROUyBuYW1lKS4uLiBDb3VsZCB5b3UgcGxlYXNlIGF0
-dGFjaCB0aGUKcGF0Y2g/IChJJ3ZlIGFsc28gdHJpZWQgdG8gcHVsbCB0aGUgbHhjIGdpdCByZXBv
-c2l0b3J5LCBidXQgaXQncyBub3QKaW4gdGhlcmUgeWV0Li4uIDopICkKCiAgICBUaGFua3MsCiAg
-ICBDaXByaWFuLgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+Ciprian Dorin, Craciun wrote:
+> On Fri, Jan 8, 2010 at 4:17 PM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+>   
+>> Ciprian Dorin, Craciun wrote:
+>>     
+>>>    Hy all!
+>>>
+>>>    Today I've started to play with the LXC containers, and I've got a
+>>> question: when starting a container (with it's own mount point
+>>> namespace), and I do a `cat /proc/mounts` I also see the mount points
+>>> from my host system.
+>>>
+>>>    So the question is: how can I force `lxc-create` to remove any
+>>> uneeded mount points (maybe all)?
+>>>
+>>>       
+>> Committed today :)
+>>
+>> http://git.lab.toulouse-stg.fr.ibm.com/?p=lxc.git;a=commit;h=ed83715df7666879116d1657b1dd54a8fc6513f6
+>>     
+
+Oops, this one:
+
+http://lxc.git.sourceforge.net/git/gitweb.cgi?p=lxc/lxc;a=commit;h=bf601689a9e0cea1ceaf17e4f7f853f5392c2827
